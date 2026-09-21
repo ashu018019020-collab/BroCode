@@ -2,6 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore, setState } from '../offline/store';
 
+const Choice = ({ options, value, onPick }: { options: string[]; value: string; onPick: (v: string) => void }) => (
+  <div className="row" style={{ margin: '12px 0' }}>
+    {options.map((o) => (
+      <button key={o} className={`stagepill ${value === o ? 'active' : ''}`} onClick={() => onPick(o)}>{o}</button>
+    ))}
+  </div>
+);
+
 export default function Onboarding() {
   const nav = useNavigate();
   const state = useStore();
@@ -15,14 +23,6 @@ export default function Onboarding() {
     setState((s) => ({ ...s, profile: { name, goal, level, dailyMinutes: minutes, onboarded: true } }));
     nav('/lesson/s01/learn');
   };
-
-  const Choice = ({ options, value, onPick }: { options: string[]; value: string; onPick: (v: string) => void }) => (
-    <div className="row" style={{ margin: '12px 0' }}>
-      {options.map((o) => (
-        <button key={o} className={`stagepill ${value === o ? 'active' : ''}`} onClick={() => onPick(o)}>{o}</button>
-      ))}
-    </div>
-  );
 
   return (
     <div className="card" style={{ maxWidth: 640, margin: '40px auto', padding: 26 }}>

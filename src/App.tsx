@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { HashRouter, Routes, Route, NavLink, useNavigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { CurriculumProvider, useCurriculum } from './data/curriculum';
 import { useStore } from './offline/store';
 import { levelForXp, levelProgress, LEVEL_NAMES } from './engine/keys';
@@ -58,6 +58,7 @@ function Shell() {
   const { sections, extras } = useCurriculum();
   const state = useStore();
   const nav = useNavigate();
+  const loc = useLocation();
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   useEffect(() => {
@@ -74,9 +75,10 @@ function Shell() {
   }, [state.settings.reduceMotion]);
 
   // First-run gate: send new users through onboarding before anything else.
+  // Re-asserts on every route change so Back/stray links cannot skip onboarding.
   useEffect(() => {
-    if (!state.profile.onboarded && location.hash !== '#/onboarding') location.hash = '/onboarding';
-  }, [state.profile.onboarded]);
+    if (!state.profile.onboarded && loc.pathname !== '/onboarding') nav('/onboarding');
+  }, [state.profile.onboarded, loc.pathname]);
 
   const xp = state.xp;
   const level = levelForXp(xp);
