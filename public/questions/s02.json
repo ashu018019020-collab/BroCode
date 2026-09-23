@@ -379,6 +379,621 @@
    "tags": [
     "debug"
    ]
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "arithmetic",
+    "interview"
+   ],
+   "id": "s02:interview:6",
+   "sectionId": "s02",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: `/`, `//` aur `%` teeno ka farq batao, aur result ka type kya hota hai?",
+   "answer": "· `/` float division — result HAMESHA float hota hai, chahe exact divide ho: `10 / 2` → 5.0\n· `//` floor division — quotient floor karke deta hai (int ya float jo operands hain)\n· `%` modulo — remainder\n\nVerified:\nprint(17 / 5, 17 // 5, 17 % 5)\n# 3.4 3 2\nprint(type(10 / 2).__name__, 10 / 2, type(6 // 3).__name__)\n# float 5.0 int\n\nRelation: `a == b * (a // b) + (a % b)` — isliye divmod ek hi call me dono deta hai.",
+   "explanation": "Interview me ye type detail bolna zaroori hai: real bug aksar `10 / 2` ko int samajh lena hota hai (5.0 vs 5).",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "floor-division",
+    "modulo",
+    "interview"
+   ],
+   "id": "s02:interview:7",
+   "sectionId": "s02",
+   "type": "interview",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Interview: negative numbers par `//` aur `%` ka behaviour kya hai? `-7 // 2` aur `-7 % 2` kitna aata hai?",
+   "answer": "`//` FLOOR karta hai (zero ki taraf truncate nahi). Verified:\n\nprint(-7 // 2, -7 % 2, 7 // -2)\n# -4 1 -4\n\nTruncation chahiye to alag tarika: `int(-7 / 2)` → -3, `math.trunc(-7 / 2)` → -3, jabki `-7 // 2` → -4.\n\nRule (hamesha sach): `a == b * (a // b) + (a % b)`. Python me `%` ka sign DIVISOR ka hota hai (C/Java me dividend ka) — isliye `-7 % 2` = 1 aur `7 % -2` = -1.",
+   "explanation": "Interview trap: C background wale -7//2 par -3 bol dete hain. Floor vs truncate ka farq + `a = b*q + r` identity — dono bolo.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "chained-comparison",
+    "interview"
+   ],
+   "id": "s02:interview:8",
+   "sectionId": "s02",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: chained comparison kaise kaam karta hai? `1 < x > 3` ka matlab kya hai?",
+   "answer": "Chained comparison AND ka shortcut hai, par beech wala operand SIRF EK BAAR evaluate hota hai. Verified:\n\nx = 5\nprint(1 < x < 10, 1 < x > 3, 10 >= x >= 5)\n# True True True\n\n`1 < x > 3` ka matlab `(1 < x) and (x > 3)` hai — ye \"x between 1 and 3\" NAHI hai (uske liye `1 < x < 3`). x = 5 par `1 < x > 3` True dega, `1 < x < 3` False.\n\nFaayda: `0 <= idx < len(items)` jaise range checks ek hi line me, aur side-effect wala expression do baar run nahi hota.",
+   "explanation": "Ye question identity/precedence ke साथ mila ke puchha jata hai: chained comparison short-circuit karta hai aur middle operand ek hi baar evaluate hota hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "short-circuit",
+    "interview"
+   ],
+   "id": "s02:interview:9",
+   "sectionId": "s02",
+   "type": "interview",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Interview: short-circuit evaluation kya hai, aur `and` / `or` value kya return karte hain (bool ya operand)?",
+   "answer": "`and` / `or` bool NAHI, OPERAND return karte hain, aur right side tabhi evaluate hoti hai jab sach me zarurat ho. Verified:\n\nprint(0 and 10 / 0)      # 0      ← right side chala hi nahi\nprint(1 or 10 / 0)       # 1      ← right side chala hi nahi\nprint(False and 1 / 0, True or 1 / 0)\n# False True\nprint(0 or 'x', 'a' and 'b', None or 'default')\n# x b default\n\nIsi wajah se do idioms bante hain: (1) guard — `if x != 0 and 10 / x > 1:` (2) default value — `name = user_input or 'guest'`.",
+   "explanation": "Interview me \"Python returns the operand, not a bool\" line bolna impresses — aur guard/default idioms isi se aate hain.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "round",
+    "float",
+    "interview"
+   ],
+   "id": "s02:interview:10",
+   "sectionId": "s02",
+   "type": "interview",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Interview: `round(2.5)` aur `round(2.675, 2)` ka result kya hai, aur ye int/float conversions me kaise dhoka deta hai?",
+   "answer": "Python banker's rounding (half-to-even) use karta hai, aur float ka binary representation bhi asar dalta hai. Verified:\n\nprint(divmod(29, 6), round(2.675, 2), abs(-7), round(2.5), round(3.5))\n# (4, 5) 2.67 7 2 4\n\n· `round(2.5)` → 2 (even), `round(3.5)` → 4 — .5 par \"upar\" nahi, nearest-even.\n· `round(2.675, 2)` → 2.67, kyunki 2.675 binary me 2.67499999… hai (float artifact, rounding rule nahi).\n· Paisa/precision chahiye to `decimal.Decimal`: `Decimal('2.675').quantize(Decimal('0.01'))` → 2.68.\n· Comparison ke liye `math.isclose()` use karo, `==` nahi.",
+   "explanation": "Do alag cheezein hain: banker's rounding (2.5 → 2) aur float representation error (2.675 → 2.67). Interview me dono distinguish karna scoring hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "equality",
+    "identity",
+    "interview"
+   ],
+   "id": "s02:interview:11",
+   "sectionId": "s02",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: `==` aur `is` ka farq example se samjhao — `1 == 1.0`, `1 == True` aur `[] == []` par kya aata hai?",
+   "answer": "Verified:\n\nprint(1 == 1.0, 1 == True, '1' == 1, [] == [], [] is [])\n# True True False True False\n\n· `1 == 1.0` → True: numeric equality type ke across chalti hai.\n· `1 == True` → True: bool int ka subclass hai (True==1), isliye `if value == True:` mat likho — `is True` / direct truthiness use karo.\n· `'1' == 1` → False: str aur int kabhi equal nahi.\n· `[] == []` True par `[] is []` False: do alag objects, same value.\n\nRule: equality ke liye `==`, identity ke liye `is` (sirf None/True/False/singletons).",
+   "explanation": "Ye cross-type equality ka question hai — `1 == True` aur `'1' == 1` ka contrast interview me clarity dikhata hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "precedence",
+    "interview"
+   ],
+   "id": "s02:interview:12",
+   "sectionId": "s02",
+   "type": "interview",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Interview: operator precedence kaun sa operator kis se pehle chalta hai? `-2 ** 2` aur `2 ** 3 ** 2` ka result kya hoga?",
+   "answer": "Uunchi se neechi priority: arithmetic (`**` → unary `-` → `* / // %` → `+ -`) → comparison (`< > == in is`) → `not` → `and` → `or`. Sath me `**` RIGHT-associative hai. Verified:\n\nprint(2 + 3 * 4, (2 + 3) * 4, 2 ** 3 ** 2, -2 ** 2)\n# 14 20 512 -4\n\n· `2 + 3 * 4` = 14 (× pehle)\n· `2 ** 3 ** 2` = 512 (`2 ** (3 ** 2)` — right se)\n· `-2 ** 2` = -4 (`-(2 ** 2)` — unary minus baad me aata hai)\n\nShak ho to bracket lagao: `(2 + 3) * 4` par koi debate nahi hoti.",
+   "explanation": "`-2 ** 2` aur `2 ** 3 ** 2` do classic traps hain — interviewer inhe precedence + associativity ke liye puchhta hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "membership",
+    "interview"
+   ],
+   "id": "s02:interview:13",
+   "sectionId": "s02",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: `in` / `not in` kaise kaam karta hai str, list aur dict par?",
+   "answer": "Verified:\n\nprint('a' in 'cat', 2 in [1, 2, 3], 'k' not in {'a': 1}, 'py' in 'python')\n# True True True True\n\n· str → substring check\n· list/tuple/set → membership check (O(n) list, O(1) set/dict)\n· dict → KEYS check karta hai, values nahi (`'a' in {'a': 1}` True, `1 in {'a': 1}` False)\n\nValues chahiye to `1 in d.values()` — par wo O(n) hai; lookup O(1) rakhne ke liye keys hi use karo.",
+   "explanation": "Dict par `in` keys check karta hai — ye line interviewer sunna chahta hai, sath me set/dict O(1) vs list O(n) ka performance point.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "assignment",
+    "walrus",
+    "interview"
+   ],
+   "id": "s02:interview:14",
+   "sectionId": "s02",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: compound assignment operators (`+=`, `*=`, `//=`) aur walrus (`:=`) — kab use karte hain?",
+   "answer": "Compound assignment short form hai, aur immutable par naya object banata hai; mutable (list) par in-place extend karta hai. Verified:\n\nx = 10\nx += 5\nx *= 2\nx //= 3\nprint(x)\n# 10\n\ndata = [1, 2, 3, 4]\nif (n := len(data)) > 3:\n    print('long', n)\n# long 4\n\nWalrus (3.8+) value ko expression ke andar assign karta hai — loops/if me \"compute once, use twice\" ke liye: `while (line := f.readline()):`. `++`/`--` Python me nahi hote.",
+   "explanation": "Interview me `lst += [1]` (in-place, extend) vs `lst = lst + [1]` (nayi list) ka farq bolo, aur walrus ka ek clean example do.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "arithmetic",
+    "coding"
+   ],
+   "id": "s02:coding:8",
+   "sectionId": "s02",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "question": "17 ko 5 se divide karke float result, `//` quotient aur `%` remainder teeno print karo.",
+   "answer": "print(17 / 5, 17 // 5, 17 % 5)\n# 3.4 3 2\n\nAur ek hi call me dono: print(divmod(17, 5))\n# (3, 2)",
+   "explanation": "Dekho ki `/` 3.4 (float) deta hai jabki `//` 3 (int). `divmod` quotient+remainder ek tuple me deta hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "divmod",
+    "coding"
+   ],
+   "id": "s02:coding:9",
+   "sectionId": "s02",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "3671 seconds ko minutes aur seconds me todo — `divmod` use karo aur dono values alag variables me lo.",
+   "answer": "print(divmod(3671, 60), divmod(3671, 60)[0], divmod(3671, 60)[1])\n# (61, 11) 61 11\n\nm, s = divmod(3671, 60)\nprint(m, s)\n# 61 11",
+   "explanation": "`divmod` ek hi call me quotient aur remainder deta hai — time/currency conversion ka standard pattern.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "division",
+    "types",
+    "coding"
+   ],
+   "id": "s02:coding:10",
+   "sectionId": "s02",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "`10 / 2` aur `6 // 3` ka result aur unka type print karke dikhao ki division ka type hamesha float kyun hota hai.",
+   "answer": "print(type(10 / 2).__name__, 10 / 2, type(6 // 3).__name__)\n# float 5.0 int",
+   "explanation": "Exact division par bhi `/` float deta hai — isliye `int` chahiye to explicit `//` ya `int()` lagao.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "floor-division",
+    "float",
+    "coding"
+   ],
+   "id": "s02:coding:11",
+   "sectionId": "s02",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "Float par floor division aur modulo print karo: `7.5 // 2`, `7.5 % 2` aur negative case `-7.5 // 2`.",
+   "answer": "print(7.5 // 2, 7.5 % 2, -7.5 // 2)\n# 3.0 1.5 -4.0",
+   "explanation": "Float operands par result float rehta hai, par floor rule wahi hai — `-7.5 // 2` neeche ki taraf jata hai (-4.0), zero ki taraf nahi.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "round",
+    "coding"
+   ],
+   "id": "s02:coding:12",
+   "sectionId": "s02",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "Rounding quirks print karo: `round(2.675, 2)`, `abs(-7)`, `round(2.5)`, `round(3.5)`.",
+   "answer": "print(round(2.675, 2), abs(-7), round(2.5), round(3.5))\n# 2.67 7 2 4\n\nDecimal se expected paisa rounding: from decimal import Decimal\nprint(Decimal('2.675').quantize(Decimal('0.01')))\n# 2.68",
+   "explanation": "2.5 → 2 par 3.5 → 4: banker's rounding. Aur 2.675 → 2.67 float representation ki wajah se — budget/paisa code me Decimal use karo.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "assignment",
+    "coding"
+   ],
+   "id": "s02:coding:13",
+   "sectionId": "s02",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "question": "Compound assignment chain karo: x = 10 se shuru karke `+= 5`, `*= 2`, `//= 3` karo aur final value print karo.",
+   "answer": "x = 10\nx += 5\nx *= 2\nx //= 3\nprint(x)\n# 10",
+   "explanation": "Step by step: 10 → 15 → 30 → 10. Har operator assignment ke sath mila hua short form hai (x = x + 5).",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "walrus",
+    "coding"
+   ],
+   "id": "s02:coding:14",
+   "sectionId": "s02",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "question": "Walrus operator use karo: condition ke andar hi length assign karo aur dono baar wahi value use karo.",
+   "answer": "data = [1, 2, 3, 4]\nif (n := len(data)) > 3:\n    print('long', n)\n# long 4",
+   "explanation": "Walrus (:=) assignment ko expression banata hai — isliye compute once, use twice possible hota hai bina extra line ke. Python 3.8+.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "membership",
+    "coding"
+   ],
+   "id": "s02:coding:15",
+   "sectionId": "s02",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "question": "Membership operators teeno containers par test karo: string, list aur dict.",
+   "answer": "print('a' in 'cat', 2 in [1, 2, 3], 'py' in 'python')\n# True True True\n\nprint('a' in {'a': 1}, 1 in {'a': 1})\n# True False   ← dict me keys check hoti hain",
+   "explanation": "Dict par `in` keys par chalta hai — agar values check karni hain to `in d.values()` (O(n)) chahiye.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "bool",
+    "coding"
+   ],
+   "id": "s02:coding:16",
+   "sectionId": "s02",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "Bool arithmetic aur `not` print karo: `True + True`, `True * 3`, `not 0`, `not []`.",
+   "answer": "print(True + True, True * 3, not 0, not [])\n# 2 3 True True",
+   "explanation": "True = 1 aur False = 0 ki tarah arithmetic me chalta hai, aur `not` kisi bhi truthy/falsy value par bool deta hai (0 aur [] falsy hain).",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "logic-operators",
+    "coding"
+   ],
+   "id": "s02:coding:17",
+   "sectionId": "s02",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "`or` aur `and` se default value aur last-operand behaviour print karo: `0 or 'x'`, `'a' and 'b'`, `None or 'default'`.",
+   "answer": "print(0 or 'x', 'a' and 'b', None or 'default')\n# x b default",
+   "explanation": "`or` pehla truthy operand deta hai (warna last), `and` pehla falsy deta hai (warna last). Isliye `name = user_input or 'guest'` default dene ka clean tareeka hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "ZeroDivisionError",
+    "debug"
+   ],
+   "id": "s02:debug:1",
+   "sectionId": "s02",
+   "type": "debug",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "Bug fix karo: `print(10 % 0)` crash karta hai, aur program ko zero divisor par graceful banana hai.",
+   "answer": "Error: ZeroDivisionError (0 se modulo bhi invalid hai — modulo andar division hi karta hai)\n\nFix — guard lagao:\nx = 0\nprint(10 / x if x else 'undefined')\n# undefined\n\nYa early return:\ndef safe_div(a, b):\n    if b == 0:\n        return None\n    return a / b\nprint(safe_div(10, 0))\n# None",
+   "explanation": "Try/except ke bajaye pehle guard lagao — 'undefined' ko represent karna clear hota hai. Note: zero se `/`, `//` aur `%` teeno ZeroDivisionError dete hain.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "chained-comparison",
+    "debug"
+   ],
+   "id": "s02:debug:2",
+   "sectionId": "s02",
+   "type": "debug",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "question": "Bug dhoondo: x = 5 ke liye `if 1 < x > 3: print('in range')` 'in range' print kar deta hai, jabki 5 range me nahi hai. Kyun, aur fix?",
+   "answer": "Problem: `1 < x > 3` ka matlab `(1 < x) and (x > 3)` hai — ye 'between 1 and 3' nahi hai. x = 5 par dono sach hain, isliye True.\n\nprint(1 < x > 3, 1 < x < 3)\n# True False\n\nFix (range check):\nif 1 < x < 3:\n    print('in range')\n# (x = 5 par kuch print nahi hoga)\n\nRule: chained comparison me saare operators same direction me likho — `1 < x < 3`.",
+   "explanation": "Ye real bug hai: mixed-direction chain (`a < x > b`) silently galat branch chunta hai. Debugging me chain ko `and` me kholke padho.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "float",
+    "round",
+    "debug"
+   ],
+   "id": "s02:debug:3",
+   "sectionId": "s02",
+   "type": "debug",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "question": "Bug fix karo: `round(2.675, 2) == 2.68` False aata hai. Kyun, aur paisa/price ke liye sahi kya hai?",
+   "answer": "print(round(2.675, 2), round(2.675, 2) == 2.68)\n# 2.67 False\n\nKyun: 2.675 float me exactly store nahi hota (2.6749999…), isliye round usse neeche le jata hai.\n\nFix (paisa): from decimal import Decimal\nprint(Decimal('2.675').quantize(Decimal('0.01')))\n# 2.68\n\nFix (comparison): import math\nprint(math.isclose(round(2.675, 2), 2.67))\n# True",
+   "explanation": "Do fixes alag problems ke liye hain: Decimal rounding ki accuracy ke liye, math.isclose comparison ke liye. Floats par `==` kabhi mat karo.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "short-circuit"
+   ],
+   "id": "s02:logic:6",
+   "sectionId": "s02",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "question": "Predict: `print(0 and 10 / 0)` — crash hoga ya value print hogi?",
+   "answer": "0\n\nCrash nahi hoga: `and` left operand 0 (falsy) dekh kar right side evaluate hi nahi karta — isliye `10 / 0` kabhi nahi chalta.",
+   "explanation": "Short-circuit guard ka poora funda yahi hai. `and` = pehla falsy dhoondo; `or` = pehla truthy dhoondo.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "short-circuit"
+   ],
+   "id": "s02:logic:7",
+   "sectionId": "s02",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "question": "Predict: `print(1 or 10 / 0)` ka output, aur kya dono operands evaluate honge?",
+   "answer": "1\n\nSirf pehla operand. `or` pehla truthy milte hi ruk jata hai — `10 / 0` skip ho jata hai, isliye koi error nahi.",
+   "explanation": "Interview me ise \"short-circuit saves the day\" example kehte hain — default/fallback logic isi par bani hoti hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "precedence"
+   ],
+   "id": "s02:logic:8",
+   "sectionId": "s02",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "question": "Predict: `print(1 + 2 == 3 and 4 > 2)` — kaun sa operator pehle chalega aur output kya hoga?",
+   "answer": "True\n\nOrder: `1 + 2` → 3, phir `3 == 3` → True, phir `4 > 2` → True, phir `and` → True. Arithmetic > comparison > and.",
+   "explanation": "Agar precedence galat hoti, to `(1 + 2 == (3 and 4))` jaisa kuch ban jata — isliye precedence yaad rakho ya bracket lagao.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "round"
+   ],
+   "id": "s02:logic:9",
+   "sectionId": "s02",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "question": "Predict: `print(round(2.5), round(3.5))` — dono .5 par kya hoga?",
+   "answer": "2 4\n\nBanker's rounding (half-to-even): 2.5 → 2 (even), 3.5 → 4 (even). Python .5 ko hamesha upar nahi bhejta.",
+   "explanation": "Isliye `int(x + 0.5)` jaisa manual rounding ka logic round() ke result se match nahi karega — production me rule document karo.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "equality"
+   ],
+   "id": "s02:logic:10",
+   "sectionId": "s02",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "question": "Predict: `print(1 == True, '1' == 1, [] == [])` ka output?",
+   "answer": "True False True\n\n`1 == True` → True (bool int ka subclass), `'1' == 1` → False (str aur int kabhi equal nahi), `[] == []` → True (value-based equality, alag objects).",
+   "explanation": "Pehla case `if flag == True:` jaisa code likhne se bachaata hai — seedha `if flag:` likho.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "precedence"
+   ],
+   "id": "s02:logic:11",
+   "sectionId": "s02",
+   "type": "logic",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "question": "Why: `print(not True and False or True)` → True kyun? Bina brackets ke order samjhao.",
+   "answer": "True\n\nOrder: `not` pehle → `not True` = False. Phir `and` → `False and False` = False. Phir `or` → `False or True` = True.\n\nPrecedence: not > and > or (arithmetic/comparison se neeche).",
+   "explanation": "Long conditions me ye precedence mix ho kar bugs banati hai — isliye 2 se zyada operators hon to brackets lagao.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "checkpoint",
+    "self-grade"
+   ],
+   "id": "s02:checkpoint:0",
+   "sectionId": "s02",
+   "type": "checkpoint",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Checkpoint (self-grade): division family ke saare rules batao — `/`, `//`, `%`, divmod, negative numbers aur zero divisor.",
+   "answer": "1) `/` HAMESHA float deta hai (`10 / 2` → 5.0); `//` floor quotient; `%` remainder; `divmod(a, b)` dono deta hai.\n\n2) Identity: `a == b * (a // b) + (a % b)`. Python me remainder ka sign DIVISOR ka hota hai.\n\n3) Negative: `-7 // 2` → -4 (floor, truncate nahi); `-7 % 2` → 1; `7 // -2` → -4. Truncate chahiye to `math.trunc(-7 / 2)` → -3.\n\n4) Zero divisor: `/`, `//`, `%` teeno ZeroDivisionError dete hain — guard lagao (`if b != 0`).\n\n5) Float operands par bhi floor rule same: `7.5 // 2` → 3.0, `-7.5 // 2` → -4.0.",
+   "explanation": "Self-grade: agar negative floor ya `10/2 == 5.0` (float) yaad nahi, to ye section dobara padho — ye daily bugs pakadta hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "checkpoint",
+    "self-grade"
+   ],
+   "id": "s02:checkpoint:1",
+   "sectionId": "s02",
+   "type": "checkpoint",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Checkpoint (self-grade): comparison, identity aur membership operators — teeno ke rules ek-ek line me bolo.",
+   "answer": "1) `==` value compare karta hai, types ke across bhi: `1 == 1.0` True, `1 == True` True (bool int subclass hai), `'1' == 1` False.\n\n2) `is` identity: `[] == []` True par `[] is []` False. `is` sirf None/True/False/singletons ke liye.\n\n3) Chained comparison AND ka shortcut hai aur middle operand ek hi baar evaluate hota hai: `0 <= idx < len(items)` safe hai. Mixed direction (`1 < x > 3`) mat likho — wo between check nahi hai.\n\n4) `in` / `not in`: str → substring, list → O(n), set/dict → O(1), dict me KEYS check hoti hain (values nahi).",
+   "explanation": "Self-grade: `1 == True` aur dict-`in`-keys — ye do points production bugs aur interview dono me aate hain.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "checkpoint",
+    "self-grade"
+   ],
+   "id": "s02:checkpoint:2",
+   "sectionId": "s02",
+   "type": "checkpoint",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Checkpoint (self-grade): logical operators ke rules — short-circuit, return value aur precedence.",
+   "answer": "1) `and` / `or` OPERAND return karte hain, bool nahi: `0 or 'x'` → x, `'a' and 'b'` → b, `None or 'default'` → default.\n\n2) Short-circuit: `and` pehla falsy par rukta hai, `or` pehla truthy par. Isliye `0 and 10 / 0` → 0 (koi crash nahi) aur `1 or 10 / 0` → 1.\n\n3) Precedence: not > and > or (aur unse upar arithmetic + comparison). `not True and False or True` → True.\n\n4) Patience: do idioms — guard (`if x != 0 and 10 / x > 1:`) aur default (`name = inp or 'guest'`).",
+   "explanation": "Self-grade: agar \"and/or always return True/False\" lagta hai, to ye checkpoint fail hai — operand-return behaviour hi advanced code likhwaata hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "checkpoint",
+    "self-grade"
+   ],
+   "id": "s02:checkpoint:3",
+   "sectionId": "s02",
+   "type": "checkpoint",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Checkpoint (self-grade): precedence, associativity aur rounding — jo traps yahan hain wo batao.",
+   "answer": "1) Precedence: `**` > unary `-` > `* / // %` > `+ -` > comparison > not > and > or. `2 + 3 * 4` → 14, `(2 + 3) * 4` → 20.\n\n2) Associativity: `**` right se — `2 ** 3 ** 2` → 512 (`2 ** (3 ** 2)`), aur unary minus baad me — `-2 ** 2` → -4.\n\n3) Rounding: banker's rounding `round(2.5)` → 2, `round(3.5)` → 4; float representation `round(2.675, 2)` → 2.67 (2.68 nahi). Paisa → Decimal, comparison → math.isclose.\n\n4) Assignment ops: `x += 5` short form hai; mutable par in-place, immutable par naya object. Walrus `:=` expression me assign karta hai.",
+   "explanation": "Self-grade: `-2 ** 2` aur `2 ** 3 ** 2` bina chintan ke bata pao, warna exponent wale code me bug aayega.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
   }
  ],
  "flags": []

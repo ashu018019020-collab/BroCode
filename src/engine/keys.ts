@@ -18,6 +18,9 @@ export const debugDone = (sid: string) => `st:${sid}:debugdone`;
 export const learnView = (sid: string) => `view:${sid}:learn`;
 /** Final assessment coding tasks. */
 export const finalTaskAttempt = (i: number) => `final:task${i}`;
+/** Question-bank self-grade: one record per bank question id. */
+export const bankAttempt = (questionId: string) => `qb:${questionId}`;
+export const BANK_ATTEMPT_PREFIX = 'qb:';
 /** Final assessment per-part scores. */
 export const finalPart = (k: string) => `final:part:${k}`;
 

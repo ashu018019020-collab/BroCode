@@ -376,6 +376,662 @@
    "tags": [
     "debug"
    ]
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "find",
+    "index",
+    "interview"
+   ],
+   "id": "s05:interview:6",
+   "sectionId": "s05",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: `find()` aur `index()` ka farq — return value, error behaviour aur `start` argument ke saath samjhao.",
+   "answer": "Verified:\n\ns = 'banana'\nprint(s.find('na'), s.find('na', 3), s.rfind('na'), s.find('zz'))\n# 2 4 4 -1\nprint(s.index('zz'))\n# ValueError: substring not found\n\n· `find()` not-found par **-1** deta hai (safe), `index()` **ValueError** raise karta hai (strict).\n· `start` argument search ko aage se shuru karta hai: `s.find('na', 3)` → 4.\n· `rfind()`/`rindex()` right se dhoondte hain.\n· Comparison ke liye `in` operator fast hai: `'na' in s`.\n\nRule: missing value handle karni ho → `find()` + `if pos != -1`; pakka hona chahiye ki milega → `index()`.",
+   "explanation": "Interview me \"find returns -1, index raises — choose by whether absence is normal or exceptional\" — ye line clarity dikhati hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "count",
+    "interview"
+   ],
+   "id": "s05:interview:7",
+   "sectionId": "s05",
+   "type": "interview",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Interview: `count()` exactly kya ginta hai? Overlapping matches aur khaali substring ka behaviour batao.",
+   "answer": "`count()` NON-OVERLAPPING occurrences ginta hai. Verified:\n\nprint('aaa'.count('aa'), 'banana'.count('a'), 'banana'.count('na'))\n# 1 3 2\nprint('banana'.count(''), 'banana'.count('z'))\n# 7 0\n\n· `'aaa'.count('aa')` → 1 (do match overlap karte the, sirf ek ginа gaya)\n· Khaali substring har position par match hoti hai: `'banana'.count('')` → 7 = len + 1\n· Missing substring par 0 (koi error nahi)\n\nRegex/overlapping counting chahiye to `re.findall('(?=aa)', s)` jaisa lookahead use karna padta hai — `count()` usse kaam nahi karega.",
+   "explanation": "Ye ek precise interview question hai: non-overlapping counting aur empty-substring edge case dono bolo, warna answer adhoora lagta hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "replace",
+    "immutability",
+    "interview"
+   ],
+   "id": "s05:interview:8",
+   "sectionId": "s05",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: `replace()` ka third argument kya karta hai, aur original string par kya asar hota hai?",
+   "answer": "Verified:\n\ns = 'a-b-c'\nprint(s.replace('-', '+', 1), s.replace('-', '+'), s)\n# a+b-c a+b+c a-b-c      ← original untouched\nprint('banana'.replace('a', 'A', 2))\n# bAnAna\n\n· Third argument = maximum replacements (left se), isliye pehla case a+b-c deta hai.\n· Original string KABHI change nahi hoti (immutability) — result naya string hai, isliye assign karna zaroori hai: `s = s.replace(...)`.\n· Argument na do to saare occurrences replace hote hain.",
+   "explanation": "Interview point: \"replace returns a new string; forgetting to reassign is the classic silent bug.\"",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "split",
+    "splitlines",
+    "interview"
+   ],
+   "id": "s05:interview:9",
+   "sectionId": "s05",
+   "type": "interview",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Interview: `split()` ke saare behaviours batao — separator, khaali string, aur `splitlines()` se farq.",
+   "answer": "Verified:\n\nprint('a,b,,c'.split(','), 'a b  c'.split(), '', ''.split())\n# ['a', 'b', '', 'c'] ['a', 'b', 'c'] []\nprint(repr(''.split(',')))\n# ['']\nprint('a\\nb\\n'.splitlines(), 'a\\nb\\n'.split('\\n'))\n# ['a', 'b'] ['a', 'b', '']   ← splitlines trailing empty drop karta hai\n\n· `split()` bina argument → koi bhi whitespace run, leading/trailing empties drop (aur `''` → `[]`).\n· `split(sep)` → exact separator, consecutive separators khaali strings dete hain, `''.split(',')` → `['']`.\n· `maxsplit` se limit lagao: `'a-b-c'.split('-', 1)` → `['a', 'b-c']`.\n· `splitlines()` line-breaks (`\\n`, `\\r\\n`, `\\r`) handle karta hai aur trailing empty drop karta hai; `splitlines(True)` line-endings rakhta hai.",
+   "explanation": "`split()` aur `split(sep)` ka khaali-string behaviour alag hai — asli data parsing me yahi bug banata hai, isliye interview me bolo.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "strip",
+    "interview"
+   ],
+   "id": "s05:interview:10",
+   "sectionId": "s05",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: `strip()` / `lstrip()` / `rstrip()` — default kya hatate hain, aur `chars` argument ka kya role hai?",
+   "answer": "Verified:\n\nprint(repr('xxhixx'.strip('x')), repr('xxhixx'.lstrip('x')), repr('xxhixx'.rstrip('x')))\n# 'hi' 'hixx' 'xxhi'\nprint(repr('   '.strip()), repr('  hi  '.strip()))\n# '' 'hi'\n\n· Default `strip()` whitespace hatata hai: spaces, tabs, newlines (`\\n`, `\\r`, `\\t`) — SIRF kinaron se, beech se nahi: `'a  b'.strip()` → 'a  b' (unchanged).\n· `chars` argument wo characters ka set hai jo hatane hain (substring nahi — set): `'xxhixx'.strip('x')` → 'hi'.\n· `lstrip`/`rstrip` sirf ek side karte hain.\n· Sirf-whitespace string `''` ban jati hai — validate karte waqt `if not s.strip():` kaam aata hai.",
+   "explanation": "`chars` set hai, substring nahi — `'abc'.strip('ac')` bhi kaam karta hai. Interview me ye detail impress karti hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "case",
+    "unicode",
+    "interview"
+   ],
+   "id": "s05:interview:11",
+   "sectionId": "s05",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: case conversion methods — `upper`/`lower`/`title`/`capitalize`/`swapcase` ke farq, aur Unicode surprise kya hai?",
+   "answer": "Verified:\n\nprint('hello world'.title(), '|', 'hello world'.capitalize(), '|', 'Hello World'.swapcase(), '|', 'MIXED'.lower(), '|', 'mixed'.upper())\n# Hello World | Hello world | hELLO wORLD | mixed | MIXED\n\n· `title()` — har word ka pehla letter capital (`'hello world'` → 'Hello World')\n· `capitalize()` — sirf pehla letter capital, baaki lowercase\n· `swapcase()` — case ulta\n· Unicode surprise: `'straße'.upper()` → 'STRASSE' (length badal jati hai!), `'ß'.upper()` → 'SS'\n\nIsliye case-insensitive comparison ke liye `lower()`/`casefold()` use karo — kabhi `upper()` se length assume mat karo. `casefold()` Unicode par zyada sahi hai (`'STRASSE'.casefold()` → 'strasse').",
+   "explanation": "Interview me Turing-complete case mapping ka example do (ß → SS) — ye dikhata hai ki tum Unicode ki nuance jaante ho.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "padding",
+    "interview"
+   ],
+   "id": "s05:interview:12",
+   "sectionId": "s05",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: padding/alignment methods batao — `zfill`, `ljust`, `rjust`, `center` (aur sign ka behaviour).",
+   "answer": "Verified:\n\nprint('42'.zfill(5), '-42'.zfill(5), 'ab'.ljust(5, '.'), 'ab'.rjust(5, '.'), 'ab'.center(6, '-'))\n# 00042 -0042 ab... ...ab --ab--\n\n· `zfill(n)` — left me zeros, aur sign ko respect karta hai: '-42'.zfill(5) → **-0042** (zeros sign ke baad)\n· `ljust(n, fill)` / `rjust(n, fill)` / `center(n, fill)` — default fill space\n· Ye STRING level formatting hai; numbers ke liye f-string specs (`{n:05d}`, `{n:>6}`) zyada standard hain\n\nUse-case: fixed-width report columns, padded IDs (order numbers), log alignment.",
+   "explanation": "zfill ka sign handling ek chhota trap hai (-\"0042\" nahi, \"-0042\") — ye detail interview me yaad rakho.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "isalpha",
+    "isdigit",
+    "interview"
+   ],
+   "id": "s05:interview:13",
+   "sectionId": "s05",
+   "type": "interview",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Interview: `isdigit()` / `isalpha()` / `isalnum()` / `isspace()` ke edge cases batao — khaali string aur decimals?",
+   "answer": "Verified:\n\nprint('123'.isdigit(), '12.3'.isdigit(), 'abc1'.isalnum(), 'a b'.isalnum(), ' '.isspace(), 'abc'.isalpha(), ''.isdigit())\n# True False True False True True False\n\n· `'12.3'.isdigit()` → **False** — dot allowed nahi (ye sabse bada trap hai)\n· `''.isdigit()` → **False** — khaali string har `is*` check par False deti hai (non-empty requirement)\n· `'a b'.isalnum()` → False — space allowed nahi\n· `'abc1'.isalnum()` → True — letters + digits mix\n· `' '.isspace()` → True, par `''.isspace()` → False\n· Unicode: `'१२३'.isdigit()` → True (Devanagari digits bhi digit hain) — sirf ASCII chahiye to `s.isascii() and s.isdigit()`\n\nInput validation me ye trap: `isnumeric()` se float check karne ki koshish karna — decimal ke liye try/except float() behtar hai.",
+   "explanation": "Interview me bolo: \"is* methods non-empty aur full-string check karte hain — '12.3' isdigit False deta hai, yahi bug production me aata hai.\"",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "startswith",
+    "partition",
+    "join",
+    "interview"
+   ],
+   "id": "s05:interview:14",
+   "sectionId": "s05",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "question": "Interview: text parsing ke tools — `startswith`/`endswith` (tuple ke saath), `partition`/`rpartition` aur `join` ki type requirement.",
+   "answer": "Verified:\n\nprint('ftp://x'.startswith(('http', 'ftp')), 'ftp://x'.startswith('x', 6), 'report.pdf'.endswith(('.csv', '.pdf')))\n# True True True\nprint('a=b=c'.partition('='), 'a=b=c'.rpartition('='), 'abc'.partition('='))\n# ('a', '=', 'b=c') ('a=b', '=', 'c') ('abc', '', '')\nprint('-'.join(['a', '1']))\n\n· `startswith`/`endswith` TUPLE leta hai (ek check me kai options) aur `start` index bhi: `.startswith('x', 6)`.\n· `partition(sep)` hamesha 3-tuple deta hai: (before, sep, after); mil nahi to (s, '', ''). `rpartition` right se (`key=value=more` ke liye better).\n· `join` sirf STRINGS leta hai — `'-'.join(['a', 1])` → TypeError: sequence item 1: expected str instance, int found. Fix: `map(str, items)`.\n\nKya choose karein: simple split ke liye `split()`, pehla separator hi chahiye to `partition`, multiple checks ke liye tuple `startswith`.",
+   "explanation": "Interview me partition ka \"always 3 parts\" guarantee bolo — isliye key=value parsing me ye split se safer hai (IndexError nahi).",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "find",
+    "index",
+    "coding"
+   ],
+   "id": "s05:coding:8",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "'banana' me 'na' dhoondho — find, find with start, rfind print karo; phir missing substring par index() ka crash dikhao.",
+   "answer": "s = 'banana'\nprint(s.find('na'), s.find('na', 3), s.rfind('na'), s.find('zz'))\n# 2 4 4 -1\n\nprint(s.index('zz'))\n# ValueError: substring not found",
+   "explanation": "find() missing par -1 deta hai (safe), index() crash karta hai. Start argument se search ko aage badha sakte ho.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "count",
+    "coding"
+   ],
+   "id": "s05:coding:9",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "count() ke teen cases print karo: `'aaa'.count('aa')`, `'banana'.count('a')`, `'banana'.count('na')`.",
+   "answer": "print('aaa'.count('aa'), 'banana'.count('a'), 'banana'.count('na'))\n# 1 3 2",
+   "explanation": "'aaa' me 'aa' do baar overlap hota hai par count() non-overlapping ginta hai — isliye 1. Ye behaviour regex se alag hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "replace",
+    "coding"
+   ],
+   "id": "s05:coding:10",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "replace() ka count argument use karo: 'a-b-c' me pehla dash, saare dashes, aur sirf 2 'a' badlo — original bhi print karo.",
+   "answer": "s = 'a-b-c'\nprint(s.replace('-', '+', 1), s.replace('-', '+'), s)\n# a+b-c a+b+c a-b-c\n\nprint('banana'.replace('a', 'A', 2))\n# bAnAna",
+   "explanation": "Original `s` last me unchanged print hota hai — replace naya string return karta hai, isliye result assign karna zaroori hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "split",
+    "coding"
+   ],
+   "id": "s05:coding:11",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "split() ke chaar behaviours print karo: consecutive separators, whitespace run, khaali string (dono tarah se).",
+   "answer": "print('a,b,,c'.split(','), 'a b  c'.split())\n# ['a', 'b', '', 'c'] ['a', 'b', 'c']\nprint(''.split(), repr(''.split(',')))\n# [] ['']",
+   "explanation": "Separator dene par khaali fields bhi aati hain ('a,b,,c' me ''), par bina argument split whitespace run ko collapse kar deta hai. Khaali string par dono ka result alag hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "splitlines",
+    "coding"
+   ],
+   "id": "s05:coding:12",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "question": "splitlines() aur split('\\n') ka farq dikhao ek trailing-newline wale text par; splitlines(True) bhi print karo.",
+   "answer": "s = 'a\\nb\\n'\nprint(s.splitlines(), s.splitlines(True), s.split('\\n'))\n# ['a', 'b'] ['a\\n', 'b\\n'] ['a', 'b', '']",
+   "explanation": "split('\\n') trailing newline par khaali string chhod deta hai (aapko filter karna padta hai), jabki splitlines() usse drop karta hai aur \\r\\n bhi handle karta hai — file parsing me splitlines behtar hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "strip",
+    "coding"
+   ],
+   "id": "s05:coding:13",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "strip() ke chars argument ke saath lstrip aur rstrip ke results print karo, aur sirf-whitespace string bhi.",
+   "answer": "print(repr('xxhixx'.strip('x')), repr('xxhixx'.lstrip('x')), repr('xxhixx'.rstrip('x')))\n# 'hi' 'hixx' 'xxhi'\nprint(repr('   '.strip()), repr('  hi  '.strip()))\n# '' 'hi'",
+   "explanation": "chars ek CHARACTER SET hai (substring nahi) aur sirf kinaron se hatata hai. Sirf-whitespace string strip ke baad khaali ho jati hai — validation me `if not s.strip():`.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "case",
+    "coding"
+   ],
+   "id": "s05:coding:14",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "question": "Case methods ke outputs print karo: title, capitalize, swapcase, lower aur upper ek hi string par.",
+   "answer": "print('hello world'.title(), '|', 'hello world'.capitalize(), '|', 'Hello World'.swapcase(), '|', 'MIXED'.lower(), '|', 'mixed'.upper())\n# Hello World | Hello world | hELLO wORLD | mixed | MIXED",
+   "explanation": "title() har word ka pehla letter capital karta hai, capitalize() sirf sentence ka — farq do-word example par turant dikh jata hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "padding",
+    "coding"
+   ],
+   "id": "s05:coding:15",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "Padding methods print karo: '42'.zfill(5), '-42'.zfill(5), ljust, rjust aur center (fill character ke saath).",
+   "answer": "print('42'.zfill(5), '-42'.zfill(5), 'ab'.ljust(5, '.'), 'ab'.rjust(5, '.'), 'ab'.center(6, '-'))\n# 00042 -0042 ab... ...ab --ab--",
+   "explanation": "zfill sign ke baad zeros lagata hai (-0042), ljust/rjust/center custom fill character lete hain — fixed-width report tables ke liye.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "validation",
+    "coding"
+   ],
+   "id": "s05:coding:16",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "is* family ke edge cases print karo: digits, decimal, alnum, space, khaali string.",
+   "answer": "print('123'.isdigit(), '12.3'.isdigit(), 'abc1'.isalnum(), 'a b'.isalnum(), ' '.isspace(), 'abc'.isalpha(), ''.isdigit())\n# True False True False True True False",
+   "explanation": "'12.3'.isdigit() False hai (dot allowed nahi) aur khaali string hamesha False deti hai — input validation me yahi do traps sabse zyada bugs banate hain.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "startswith",
+    "coding"
+   ],
+   "id": "s05:coding:17",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "startswith/endswith ko tuple ke saath use karo: protocol check, start-index check aur file extension check.",
+   "answer": "print('ftp://x'.startswith(('http', 'ftp')), 'ftp://x'.startswith('x', 6), 'report.pdf'.endswith(('.csv', '.pdf')))\n# True True True",
+   "explanation": "Tuple se ek hi call me kai options check ho jate hain — `if url.startswith(('http','ftp'))` routing/filter code me standard hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "format",
+    "coding"
+   ],
+   "id": "s05:coding:18",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "`format()` ke fields use karo: positional, repeated index, named argument aur ek format spec.",
+   "answer": "print('{}-{}'.format(1, 2), '{0} {0}'.format('x'), '{n}'.format(n=5), '{:,.2f}'.format(1234.5))\n# 1-2 x x 5 1,234.50",
+   "explanation": "`{0}` ko repeat karke same value kai jagah use kar sakte ho — f-string me ye poori expression dobara likhni padti hai. Isliye reusable templates ke liye .format() still useful hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "chaining",
+    "coding"
+   ],
+   "id": "s05:coding:19",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "Normalization chain likho: '  Hello World  ' se 'hello_world' banao (strip → lower → replace).",
+   "answer": "raw = '  Hello World  '\nprint(repr(raw.strip().lower().replace(' ', '_')))\n# 'hello_world'",
+   "explanation": "Chaining order matter karta hai: pehle strip (kinare saaf), phir lower (case), phir replace (separator). Methods naye string dete hain, isliye chain ka result assign karna zaroori hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "word-counter",
+    "coding"
+   ],
+   "id": "s05:coding:20",
+   "sectionId": "s05",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "question": "Word counter banao: 'the cat and the hat' ka frequency dict print karo aur sabse zyada aane wala word nikaalo.",
+   "answer": "text = 'the cat and the hat'\ncounts = {}\nfor w in text.split():\n    counts[w] = counts.get(w, 0) + 1\nprint(counts)\n# {'the': 2, 'cat': 1, 'and': 1, 'hat': 1}\nprint(sorted(counts.items(), key=lambda kv: -kv[1])[:2])\n# [('the', 2), ('cat', 1)]",
+   "explanation": "`counts.get(w, 0) + 1` missing key ka KeyError bachaata hai. Sorting `-kv[1]` se descending order milti hai (reverse=True bhi same).",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "join",
+    "TypeError",
+    "debug"
+   ],
+   "id": "s05:debug:1",
+   "sectionId": "s05",
+   "type": "debug",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "Bug fix karo: `'-'.join(['a', 1])` TypeError deta hai, par output 'a-1' chahiye tha.",
+   "answer": "Error: TypeError: sequence item 1: expected str instance, int found\n\nFix 1 (map + str):\nprint('-'.join(map(str, ['a', 1])))\n# a-1\n\nFix 2 (generator):\nprint('-'.join(str(x) for x in ['a', 1]))\n# a-1\n\nFix 3 (already-broken list theek karo):\nparts = [str(x) for x in ['a', 1]]",
+   "explanation": "join hamesha strings maangta hai — numbers ke saath `map(str, ...)` idiomatic fix hai (f-string se better kyunki list ka structure preserve rehta hai).",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "join",
+    "debug"
+   ],
+   "id": "s05:debug:2",
+   "sectionId": "s05",
+   "type": "debug",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "question": "Bug dhoondo: `' '.join('abc')` ne 'a b c' print kar diya, jabki intent tha 'abc' jodna. Kyun, aur fix?",
+   "answer": "Reason: join() iterable leta hai, aur string bhi iterable hai (characters) — isliye har character ke beech separator lag gaya.\n\nprint(repr(' '.join('abc')))\n# 'a b c'      ← characters split\nprint(repr('-'.join('abc')))\n# 'a-b-c'\n\nFix 1 (single string ko join karne ki zarurat hi nahi hai):\nprint('abc')\n\nFix 2 (words ki list thi):\nwords = ['a', 'b', 'c']\nprint(' '.join(words))\n# a b c",
+   "explanation": "Ye \"silent\" bug hai — koi exception nahi, sirf extra spaces. Jab join ka result double-spaced lage to check karo ki list pass hui ya string.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "tags": [
+    "strip",
+    "normalization",
+    "debug"
+   ],
+   "id": "s05:debug:3",
+   "sectionId": "s05",
+   "type": "debug",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "question": "Bug fix karo: `'a   b'.strip()` se internal extra spaces hatne ki umeed thi, par string waisi hi rahi. Sahi tarika?",
+   "answer": "Reason: strip() sirf KINARON se whitespace hatata hai, beech ka nahi.\n\nprint(repr('a   b'.strip()))\n# 'a   b'      ← unchanged\n\nFix (whitespace collapse):\nprint(' '.join('a   b'.split()))\n# 'a b'\n\nFix (sirf exact double-space):\nprint('a   b'.replace('  ', ' '))\n# 'a b'   ← par triple space ek baar hi fix hota hai",
+   "explanation": "Text normalization ka sabse saaf idiom hai `' '.join(text.split())` — leading/trailing + multiple spaces sab ek saath handle ho jate hain.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "count"
+   ],
+   "id": "s05:logic:6",
+   "sectionId": "s05",
+   "type": "logic",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "question": "Predict: `'banana'.count('')` kitna aata hai, aur kyun?",
+   "answer": "7\n\n'banana' ki length 6 hai, aur khaali string har position par match karti hai — including end — isliye count = len + 1.",
+   "explanation": "Khaali substring ka ye behaviour `s.count('')` ko useless banata hai validation me; `in` ke saath bhi wahi edge case aata hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "strip"
+   ],
+   "id": "s05:logic:7",
+   "sectionId": "s05",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "question": "Predict: `'xxhixx'.strip('x')` ka output, aur `'xxhixx'.lstrip('x')` se kaise alag hai?",
+   "answer": "'hi' aur 'hixx'\n\nstrip('x') dono taraf se saare 'x' hataata hai; lstrip sirf left se — isliye right ke 'xx' bache rehte hain.",
+   "explanation": "chars argument ko CHARACTER SET samjho: 'x' ek character hai. `'abcba'.strip('ab')` bhi valid hai (donon letters ka set).",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "split"
+   ],
+   "id": "s05:logic:8",
+   "sectionId": "s05",
+   "type": "logic",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "question": "Predict: `''.split()` aur `''.split(',')` ke outputs — dono khaali string par alag kyun?",
+   "answer": "[] aur ['']\n\n· Bina argument split() whitespace par todta hai aur khaali string me koi token nahi hai → khaali list.\n· Separator dene par Python \"khaali string me ek khaali field\" maanta hai → `['']` (ek element).\n\nIsliye `if s.split(','):` aur `if s.split():` ka behaviour alag ho sakta hai — khaali input ke liye explicit check likho.",
+   "explanation": "CSV parsing me ye edge case real bug banata hai: khaali line `['']` deti hai, `[]` nahi — next code phir IndexError de sakta.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "splitlines"
+   ],
+   "id": "s05:logic:9",
+   "sectionId": "s05",
+   "type": "logic",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "question": "Why: `'a\\nb\\n'.splitlines()` → ['a', 'b'] par `'a\\nb\\n'.split('\\n')` → ['a', 'b', ''] — farq kyun?",
+   "answer": "splitlines() line-ORIENTED hai — trailing line terminator ko do lines me nahi todta, isliye last khaali element nahi aata. split('\\n') har exact separator par todta hai, aur string ke end me ek separator hai — isliye trailing '' milta hai.\n\nBonus: splitlines() \\r\\n (Windows) aur \\r (old Mac) bhi handle karta hai; split('\\n') \\r ko character ki tarah chhod deta hai (line ke end me '\\r' chipka reh jata hai).",
+   "explanation": "File parsing me isi wajah se splitlines() safer hai — cross-platform line endings aur trailing newline dono handle ho jate hain.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "unicode"
+   ],
+   "id": "s05:logic:10",
+   "sectionId": "s05",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "question": "Predict: `'straße'.upper()` aur `'ß'.upper()` ka output — length par kya asar hoga?",
+   "answer": "'STRASSE' aur 'SS'\n\nLength badal jati hai: 'straße' (6 characters) → 'STRASSE' (7). Ye Unicode case mapping ka exception hai (German sharp s expand hota hai).",
+   "explanation": "Isliye case conversion ke baad index/length par kabhi rely nahi karo. Case-insensitive comparison ke liye `casefold()` use karo — wo aise cases ke liye sahi result deta hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "tags": [
+    "practice",
+    "format"
+   ],
+   "id": "s05:logic:11",
+   "sectionId": "s05",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "question": "Predict: `'{:,.2f}'.format(1234.5)` aur `'{0}-{0}'.format('x')` ka output?",
+   "answer": "1,234.50 aur 'x-x'\n\n`.format()` me `{0}` positional index ko REPEAT kar sakte ho (same value dobara), aur format spec (`:,.2f`) f-string jaisa hi kaam karta hai.",
+   "explanation": "Yahi .format() ka f-string par edge hai: repeated field ek hi value se bhar sakte ho, bina expression dobara likhne ke — reusable templates ke liye.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "checkpoint",
+    "self-grade"
+   ],
+   "id": "s05:checkpoint:0",
+   "sectionId": "s05",
+   "type": "checkpoint",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Checkpoint (self-grade): strip/split/join family ke rules yaad se batao — kya return karte hain aur kya edge cases hain?",
+   "answer": "1) All three NAYA string/list dete hain — original kabhi mutate nahi hota.\n\n2) `strip()` — default whitespace (space, tab, \\n, \\r) sirf KINARON se; `chars` argument se specific characters ka set; beech ka whitespace nahi hatata ('a  b' unchanged). Sirf-whitespace string → ''.\n\n3) `split()` bina argument → whitespace runs collapse, `''` → `[]`; `split(sep)` → exact separator, consecutive separators khaali fields dete hain, `''.split(',')` → `['']`; `maxsplit` se limit; `splitlines()` trailing newline drop karta hai aur \\r\\n handle karta hai.\n\n4) `join()` — separator method hai, sirf strings leta hai (`map(str, ...)` chahiye); string par join karna characters ko todta hai (' '.join('abc') → 'a b c'). Loop me `+` se build karna O(n²) hai, join O(n).\n\n5) Normalization idiom: `' '.join(text.split())` — leading/trailing + multiple spaces ek saath saaf.",
+   "explanation": "Self-grade: in teeno ke return types aur khaali-string edge cases bina dekhe bata pao to text processing ka base clear hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "checkpoint",
+    "self-grade"
+   ],
+   "id": "s05:checkpoint:1",
+   "sectionId": "s05",
+   "type": "checkpoint",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Checkpoint (self-grade): case, padding aur validation methods — rules aur unke traps batao.",
+   "answer": "1) Case: `upper`/`lower` (poora), `title` (har word ka pehla capital), `capitalize` (sirf pehla), `swapcase` (ulta). Comparison ke liye `lower()`/`casefold()` — `casefold()` Unicode par zyada sahi.\n\n2) Trap: case mapping length badal sakti hai — 'straße'.upper() → 'STRASSE' (6 → 7 characters).\n\n3) Padding: `zfill(n)` sign ke baad zeros ('-42' → '-0042'); `ljust`/`rjust`/`center` custom fill character lete hain. Numbers ke liye f-string specs (`{n:05d}`) zyada standard.\n\n4) Validation family: `isdigit`/`isalpha`/`isalnum`/`isspace` — non-empty requirement (khaali string par sab False) aur full-string check ('12.3'.isdigit() → False, 'abc1'.isalnum() → True, 'a b'.isalnum() → False). Unicode digits bhi pass hote hain ('१२३'.isdigit() → True).\n\n5) Decimal/negative numbers ke liye `is*` par bharosa mat karo — try/except `float()` ya regex use karo.",
+   "explanation": "Self-grade: '12.3'.isdigit() False aur khaali string False — ye do facts yaad ho gaye to validation me bachaav ho jayega.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
+  },
+  {
+   "priority": "P1",
+   "status": "PUBLISHED",
+   "tags": [
+    "checkpoint",
+    "self-grade"
+   ],
+   "id": "s05:checkpoint:2",
+   "sectionId": "s05",
+   "type": "checkpoint",
+   "difficulty": "hard",
+   "importance": "interview_critical",
+   "question": "Checkpoint (self-grade): search aur replace tools — kab kaun sa method, aur kaun se edge cases?",
+   "answer": "1) `in` → fastest existence check; `find()` → position ya -1 (safe); `index()` → position ya ValueError (strict); `rfind`/`rindex` right se; `start` argument se search offset.\n\n2) `count()` non-overlapping ginta hai ('aaa'.count('aa') → 1) aur khaali substring par len+1 ('banana'.count('') → 7) — missing par 0.\n\n3) `replace(old, new, count)` — count = max replacements, original untouched (result assign karo).\n\n4) `startswith`/`endswith` tuple + start/end indexes lete hain: `url.startswith(('http', 'ftp'))`, `f.endswith(('.csv', '.pdf'))`.\n\n5) `partition(sep)` → always 3-tuple (before, sep, after), mil nahi to (s, '', ''); `rpartition` right se — key=value parsing ke liye split se safe. `join` sirf strings leta hai.\n\n6) Method chaining naye strings deta hai; order matter karta hai (strip → lower → split).",
+   "explanation": "Self-grade: find-vs-index, count ka non-overlap, aur partition ka 3-tuple — teeno bina dekhe bata pao to ye section complete hai.",
+   "source": "authored",
+   "sourceVersion": "1.0.0",
+   "verifiedAt": "2026-09-24"
   }
  ],
  "flags": []

@@ -7,7 +7,7 @@ const MonacoIDE = lazy(() => import('../components/MonacoIDE').then((m) => ({ de
 type IdeError = import('../components/MonacoIDE').IdeError;
 import { runPython, stopPython, explainError } from '../features/coding/runners';
 import { parseTraceback } from '../engine/traceback';
-import { explainDiagnostic, hintLadder, nextTask, mistakeFromDiagnostic } from '../engine/tutor';
+import { explainDiagnostic, hintLadder, nextTask, mistakeFromDiagnostic, coachFor, coachSectionFor } from '../engine/tutor';
 import { useStore, setState, addXp, addMistake } from '../offline/store';
 import { codeSlot } from '../engine/keys';
 import { OFFLINE_PACKAGES, findPkg } from '../data/packages';
@@ -71,7 +71,10 @@ export default function Playground() {
   const [busy, setBusy] = useState(false);
   const [out, setOut] = useState<{ ok: boolean; text: string; ms?: number } | null>(null);
   const [showPackages, setShowPackages] = useState(false);
-  const [tutorTab, setTutorTab] = useState<'explain' | 'hints' | 'next'>('explain');
+  const [tutorTab, setTutorTab] = useState<'explain' | 'hints' | 'next' | 'coach'>('explain');
+  const [coachOpen, setCoachOpen] = useState(false);
+  const [coachRevealed, setCoachRevealed] = useState<Record<number, boolean>>({});
+  const [drillShown, setDrillShown] = useState(false);
   const [hintLevel, setHintLevel] = useState(1);
   const [mistakeSaved, setMistakeSaved] = useState(false);
   const [newName, setNewName] = useState('');
@@ -197,6 +200,15 @@ export default function Playground() {
   const attemptCount = state.attempts['pg:run']?.done ? 2 : 1;
   const hints = useMemo(() => hintLadder(tutor, attemptCount + (out?.ok === false ? 1 : 0), stdin.trim().length > 0), [tutor, attemptCount, out, stdin]);
   const task = useMemo(() => nextTask(state, sections ?? []), [state, sections]);
+  const coachPick = useMemo(() => coachSectionFor(state, sections ?? []), [state, sections]);
+  const coach = useMemo(() => coachFor(coachPick.section, state, coachPick.why), [coachPick, state]);
+
+  // Coach state is per-section — reset it when the coached section changes.
+  useEffect(() => {
+    setCoachOpen(false);
+    setCoachRevealed({});
+    setDrillShown(false);
+  }, [coachPick.section?.id]);
   const saveMistake = () => {
     if (!tutor || !file || mistakeSaved) return;
     addMistake(mistakeFromDiagnostic(tutor, file.content, errText));
@@ -317,9 +329,9 @@ export default function Playground() {
           </div>
           <p className="muted small" style={{ margin: '4px 0 8px' }}>{t('pg.tutorSub')}</p>
           <div className="lang-toggle" style={{ width: '100%' }}>
-            {(['explain', 'hints', 'next'] as const).map((k) => (
+            {(['explain', 'hints', 'next', 'coach'] as const).map((k) => (
               <button key={k} className={tutorTab === k ? 'on' : ''} style={{ flex: 1 }} onClick={() => setTutorTab(k)}>
-                {k === 'explain' ? t('pg.explain') : k === 'hints' ? t('pg.hints') : t('pg.nextTask')}
+                {k === 'explain' ? t('pg.explain') : k === 'hints' ? t('pg.hints') : k === 'next' ? t('pg.nextTask') : 'Coach'}
               </button>
             ))}
           </div>
@@ -382,6 +394,84 @@ export default function Playground() {
               <button className="btn small primary" onClick={() => nav(task.route)}>Start →</button>
               <p className="small muted" style={{ marginTop: 8 }}>Playground runs so far: {runCount} stage activities</p>
             </div>
+          )}
+          {tutorTab === 'coach' && (
+            !coach ? (
+              <div className="stat" style={{ marginTop: 10 }}>
+                <b className="small">Coach</b>
+                <p className="small muted" style={{ marginTop: 4 }}>Curriculum load hone ke baad coaching yahan aayegi.</p>
+              </div>
+            ) : (
+              <div className="stat" style={{ marginTop: 10 }}>
+                <b className="small">Coach · {coach.sectionTitle}</b>
+                <p className="small muted" style={{ margin: '4px 0 8px' }}>{coach.why}</p>
+
+                {coach.concept && (
+                  <div className="card" style={{ margin: 0, padding: '8px 10px' }}>
+                    <b className="small">Concept: {coach.concept.title}</b>
+                    <p className="small" style={{ margin: '4px 0' }}>
+                      {coachOpen ? coach.concept.body : `${coach.concept.body.slice(0, 220)}${coach.concept.body.length > 220 ? '…' : ''}`}
+                    </p>
+                    {coachOpen && coach.concept.code && (
+                      <pre className="codeblock" style={{ fontSize: '.72rem', margin: '6px 0' }}><code>{coach.concept.code}</code></pre>
+                    )}
+                    {coachOpen && coach.concept.output && (
+                      <p className="small muted mono" style={{ margin: '4px 0' }}>output: {coach.concept.output}</p>
+                    )}
+                    {coachOpen && coach.concept.tip && <p className="small" style={{ margin: '4px 0' }}>💡 {coach.concept.tip}</p>}
+                    {coach.concept.body.length > 220 && (
+                      <button className="btn small" style={{ marginTop: 4 }} onClick={() => setCoachOpen((v) => !v)}>
+                        {coachOpen ? 'Chhota karo' : 'Poora padho'}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {coach.recap && (
+                  <p className="small muted" style={{ marginTop: 8 }}><b>Recap:</b> {coach.recap}</p>
+                )}
+                {!!coach.remember.length && (
+                  <div style={{ marginTop: 4 }}>
+                    {coach.remember.map((r, i) => <p key={i} className="small" style={{ margin: '3px 0' }}>• {r}</p>)}
+                  </div>
+                )}
+
+                {coach.socratic.map((s, i) => (
+                  <div key={i} className="card" style={{ margin: '8px 0 0', padding: '8px 10px' }}>
+                    <span className="chip">{s.label}</span>
+                    <p className="small" style={{ margin: '6px 0 0' }}>{s.question}</p>
+                    {coachRevealed[i]
+                      ? <pre className="codeblock" style={{ fontSize: '.72rem' }}><code>{s.answer}</code></pre>
+                      : (
+                        <button className="btn small" style={{ marginTop: 6 }} onClick={() => setCoachRevealed((r) => ({ ...r, [i]: true }))}>
+                          Jawab dekho
+                        </button>
+                      )}
+                  </div>
+                ))}
+
+                {coach.drill && (
+                  <div className="card" style={{ margin: '8px 0 0', padding: '8px 10px' }}>
+                    <b className="small">Drill (next coding task)</b>
+                    <p className="small" style={{ margin: '4px 0' }}>{coach.drill.text}</p>
+                    {drillShown && coach.drill.solution && (
+                      <pre className="codeblock" style={{ fontSize: '.72rem' }}><code>{coach.drill.solution}</code></pre>
+                    )}
+                    {drillShown && coach.drill.check && <p className="small muted" style={{ margin: '4px 0' }}>check: {coach.drill.check}</p>}
+                    <div className="row" style={{ marginTop: 6 }}>
+                      {coach.drill.solution && (
+                        <button className="btn small" onClick={() => setDrillShown((v) => !v)}>{drillShown ? 'Solution chhupao' : 'Solution dekho'}</button>
+                      )}
+                      <button className="btn small primary" onClick={() => nav(`/lesson/${coach.sectionId}/coding`)}>Coding Lab me karo →</button>
+                    </div>
+                  </div>
+                )}
+
+                <p className="small muted" style={{ marginTop: 8 }}>
+                  Ye poora content PDF curriculum se hai — koi cloud AI call nahi, sab offline.
+                </p>
+              </div>
+            )
           )}
         </div>
 

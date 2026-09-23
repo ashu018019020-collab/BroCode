@@ -1,40 +1,47 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ListChecks, Search, ExternalLink, RefreshCw, Database } from 'lucide-react';
+import { ListChecks, Search, ExternalLink, Database, Check, X, RotateCcw } from 'lucide-react';
 import {
-  useBankManifest, useBank, filterQuestions, countByField,
+  useBankManifest, useBank, filterQuestions, countByField, mistakeTypeFor,
   TYPE_LABEL, TYPE_STAGE, QUESTION_TYPES, DIFFICULTIES,
   type BankFilter,
 } from '../data/questions';
 import type { QuestionRecord, QuestionType, Difficulty } from '../data/schema';
+import { useStore, setState, addXp, addMistake, recordAttempt } from '../offline/store';
+import { bankAttempt } from '../engine/keys';
 
 const EMPTY_FILTER: BankFilter = { type: 'all', difficulty: 'all', search: '', includeDrafts: false };
 const PAGE_SIZE = 25;
+const XP_PER_CORRECT = 2;
 
 /**
- * Question Bank — browses the local content pack (public/questions/*.json).
- * Read-only by design: nothing here writes progress, awards XP or fakes a score.
+ * Question Bank — browses the local content pack (public/questions/*.json) and
+ * lets the learner self-grade. Self-grading writes REAL state: one attempt per
+ * question, mistakes for wrong answers, and a review-queue reset for that
+ * section. No score is computed or invented by the app.
  */
 export default function QuestionBank() {
   const manifest = useBankManifest();
+  const state = useStore();
   const [selected, setSelected] = useState<string | null>(null);
   const [sectionSearch, setSectionSearch] = useState('');
   const [filter, setFilter] = useState<BankFilter>(EMPTY_FILTER);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [shown, setShown] = useState(PAGE_SIZE);
+  const [onlyWrong, setOnlyWrong] = useState(false);
 
-  // Default to the first bank once the manifest arrives.
   useEffect(() => {
     if (manifest && !selected && manifest.sections.length) setSelected(manifest.sections[0].sectionId);
   }, [manifest, selected]);
 
   const bank = useBank(selected ?? undefined);
 
-  // New section → reset the view state so filters never look stale.
+  // New section → reset view state so filters/answers never look stale.
   useEffect(() => {
     setFilter(EMPTY_FILTER);
     setRevealed({});
     setShown(PAGE_SIZE);
+    setOnlyWrong(false);
   }, [selected]);
 
   const sectionList = useMemo(() => {
@@ -45,11 +52,52 @@ export default function QuestionBank() {
       : manifest.sections;
   }, [manifest, sectionSearch]);
 
+  const attemptOf = (id: string) => state.attempts[bankAttempt(id)];
+
   const entry = manifest?.sections.find((s) => s.sectionId === selected) ?? null;
-  const rows = useMemo(() => (bank ? filterQuestions(bank.questions, filter) : []), [bank, filter]);
+  const rows = useMemo(() => {
+    if (!bank) return [];
+    const filtered = filterQuestions(bank.questions, filter);
+    return onlyWrong ? filtered.filter((q) => attemptOf(q.id) && !attemptOf(q.id)!.done) : filtered;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bank, filter, onlyWrong, state.attempts]);
+
+  const bankStats = useMemo(() => {
+    if (!bank) return { graded: 0, correct: 0, wrong: 0 };
+    let graded = 0, correct = 0, wrong = 0;
+    for (const q of bank.questions) {
+      const a = state.attempts[bankAttempt(q.id)];
+      if (!a) continue;
+      graded++;
+      if (a.done) correct++; else wrong++;
+    }
+    return { graded, correct, wrong };
+  }, [bank, state.attempts]);
+
   const hasDrafts = useMemo(() => (bank ? bank.questions.some((q) => q.status !== 'PUBLISHED') : false), [bank]);
   const typeCounts = useMemo(() => (bank ? countByField(bank.questions, 'type') : {}), [bank]);
-  const touched = Object.keys(revealed).length;
+
+  /** Self-grade one question. Honest state only: attempt, mistake, review reset, XP once. */
+  const grade = (q: QuestionRecord, correct: boolean) => {
+    const prev = state.attempts[bankAttempt(q.id)];
+    recordAttempt(bankAttempt(q.id), { done: correct, tries: (prev?.tries ?? 0) + 1 });
+
+    if (correct) {
+      if (!prev?.done) addXp(XP_PER_CORRECT, 'practice', 'Question Bank self-grade');
+      return;
+    }
+
+    addMistake({
+      section: q.sectionId,
+      topic: (q.tags ?? [])[0] ?? TYPE_LABEL[q.type as QuestionType] ?? q.type,
+      question: q.question.slice(0, 140),
+      myAnswer: '(self-grade: galat)',
+      correct: q.answer.slice(0, 220),
+      type: mistakeTypeFor(q.type),
+    });
+    // Wrong answer ⇒ this section comes back sooner (spaced repetition level reset).
+    setState((s) => ({ ...s, review: { ...s.review, [q.sectionId]: { level: 0, last: new Date().toISOString() } } }));
+  };
 
   if (!manifest) {
     return (
@@ -59,7 +107,7 @@ export default function QuestionBank() {
           <p className="muted small">Content pack load ho raha hai…</p>
           <p className="muted small">
             Agar banks missing hain to pipeline chalao: <code>npm run questions:seed</code> — phir
-            <code> npm run questions:validate</code>.
+            {' '}<code>npm run questions:validate</code>.
           </p>
         </div>
       </div>
@@ -72,8 +120,8 @@ export default function QuestionBank() {
     <div>
       <h1 className="row" style={{ gap: 10 }}><Database size={22} /> Question Bank</h1>
       <p className="muted small">
-        Local content pack — <b>{manifest.published}</b> published questions across{' '}
-        <b>{manifest.sections.length}</b> sections. Sab kuch offline hai; answers reveal karke self-check karo.
+        Local content pack — <b>{manifest.published}</b> questions across <b>{manifest.sections.length}</b> sections.
+        Answer padho, phir khud grade karo: sahi/galat tum batate ho, app koi score nahi banata.
       </p>
 
       <div className="stat-row">
@@ -82,11 +130,14 @@ export default function QuestionBank() {
           <div><div className="n">{manifest.published}</div><div className="l">published questions</div></div>
         </div>
         <div className="stat-card">
-          <div className="ic"><ListChecks size={18} /></div>
-          <div><div className="n">{manifest.sections.length}</div><div className="l">sections with a bank</div></div>
+          <div className="ic"><Check size={18} /></div>
+          <div>
+            <div className="n">{Object.keys(state.attempts).filter((k) => k.startsWith('qb:')).length}</div>
+            <div className="l">self-graded by you</div>
+          </div>
         </div>
         <div className="stat-card">
-          <div className="ic"><RefreshCw size={18} /></div>
+          <div className="ic"><RotateCcw size={18} /></div>
           <div>
             <div className="n">{Math.round((manifest.published / baseline) * 100)}%</div>
             <div className="l">of {baseline} baseline target</div>
@@ -97,6 +148,7 @@ export default function QuestionBank() {
       <p className="muted small" style={{ marginTop: -4 }}>
         Baseline {manifest.baseline}/section PDF ke hisaab se hai — jo sections kam hain unme honestly
         <i> CONTENT_INCOMPLETE</i> flag laga hai, aur wahi gaps authoring ke liye listed hain.
+        Galat answer dene par mistake tracker entry banti hai aur us section ka review 1 din baad due ho jata hai.
       </p>
 
       <div className="path-grid" style={{ marginTop: 12 }}>
@@ -152,8 +204,8 @@ export default function QuestionBank() {
                 </span>
               </div>
               <p className="muted small" style={{ marginTop: 4 }}>
-                {bank ? `${bank.questions.length} questions in this bank` : 'loading bank…'}
-                {touched > 0 && ` · ${touched} answer${touched === 1 ? '' : 's'} revealed`}
+                {bank ? `${bank.questions.length} questions` : 'loading bank…'}
+                {bankStats.graded > 0 && ` · tumne ${bankStats.graded} grade kiye: ${bankStats.correct} sahi, ${bankStats.wrong} galat`}
               </p>
 
               {/* type filter */}
@@ -172,7 +224,7 @@ export default function QuestionBank() {
                 ))}
               </div>
 
-              {/* difficulty / search / drafts */}
+              {/* difficulty / search / drafts / repeat */}
               <div className="row" style={{ marginTop: 8 }}>
                 <select
                   value={filter.difficulty}
@@ -192,6 +244,10 @@ export default function QuestionBank() {
                     style={{ border: 'none', background: 'transparent', flex: 1, padding: '6px 4px', minWidth: 0 }}
                   />
                 </div>
+                <label className="small row" style={{ gap: 6 }}>
+                  <input type="checkbox" checked={onlyWrong} onChange={(e) => { setOnlyWrong(e.target.checked); setShown(PAGE_SIZE); }} />
+                  sirf jo galat kiye (repeat)
+                </label>
                 {hasDrafts && (
                   <label className="small row" style={{ gap: 6 }}>
                     <input
@@ -202,7 +258,7 @@ export default function QuestionBank() {
                     drafts dikhao
                   </label>
                 )}
-                <button className="btn small" onClick={() => setRevealed({})}>Reset reveals</button>
+                <button className="btn small" onClick={() => { setRevealed({}); setOnlyWrong(false); }}>Reset view</button>
               </div>
 
               <div style={{ marginTop: 10 }}>
@@ -211,10 +267,16 @@ export default function QuestionBank() {
                     key={q.id}
                     q={q}
                     open={!!revealed[q.id]}
+                    graded={attemptOf(q.id)}
                     onToggle={() => setRevealed((r) => ({ ...r, [q.id]: !r[q.id] }))}
+                    onGrade={(correct) => grade(q, correct)}
                   />
                 ))}
-                {!rows.length && <p className="muted small">Is filter me koi question nahi mila — filter badlo.</p>}
+                {!rows.length && (
+                  <p className="muted small">
+                    {onlyWrong ? 'Is section me abhi koi galat-kiya question nahi hai — pehle grade karo.' : 'Is filter me koi question nahi mila — filter badlo.'}
+                  </p>
+                )}
               </div>
 
               {rows.length > shown && (
@@ -223,7 +285,7 @@ export default function QuestionBank() {
                 </button>
               )}
               <p className="muted small" style={{ marginTop: 8 }}>
-                {rows.length} of {bank?.questions.length ?? 0} match{rows.length === 1 ? '' : 'es'} · answer khud check karo, koi score store nahi hota.
+                {rows.length} of {bank?.questions.length ?? 0} match{rows.length === 1 ? '' : 'es'} · galat par +1 mistake tracker entry, sahi par +{XP_PER_CORRECT} XP (pehli baar).
               </p>
             </>
           )}
@@ -233,14 +295,26 @@ export default function QuestionBank() {
   );
 }
 
-function QuestionCard({ q, open, onToggle }: { q: QuestionRecord; open: boolean; onToggle: () => void }) {
+function QuestionCard({
+  q, open, graded, onToggle, onGrade,
+}: {
+  q: QuestionRecord;
+  open: boolean;
+  graded?: { done?: boolean; tries?: number };
+  onToggle: () => void;
+  onGrade: (correct: boolean) => void;
+}) {
   return (
     <div className="card" style={{ margin: '0 0 8px', padding: '10px 12px' }}>
       <div className="row spread" style={{ gap: 8 }}>
         <span className="row" style={{ gap: 6 }}>
           <span className={`chip ${q.type}`}>{TYPE_LABEL[q.type as QuestionType] ?? q.type}</span>
           <span className={`chip ${q.difficulty}`}>{q.difficulty}</span>
-          {q.status !== 'PUBLISHED' && <span className="chip medium">{q.status}</span>}
+          {graded && (
+            <span className={`chip ${graded.done ? 'easy' : 'hard'}`}>
+              {graded.done ? '✓ sahi' : '✗ galat'}{graded.tries && graded.tries > 1 ? ` ×${graded.tries}` : ''}
+            </span>
+          )}
           {(q.tags ?? []).slice(0, 2).map((t) => <span key={t} className="chip">{t}</span>)}
         </span>
         <span className="row" style={{ gap: 6 }}>
@@ -255,6 +329,11 @@ function QuestionCard({ q, open, onToggle }: { q: QuestionRecord; open: boolean;
         <div style={{ marginTop: 8 }}>
           <pre className="codeblock" style={{ fontSize: '.78rem' }}>{q.answer || '(no answer)'}</pre>
           {q.explanation && <p className="small muted" style={{ marginTop: 6 }}><b>Kyun:</b> {q.explanation}</p>}
+          <div className="row" style={{ marginTop: 8 }}>
+            <span className="small muted">Khud grade karo:</span>
+            <button className="btn small" onClick={() => onGrade(true)}><Check size={12} /> Sahi tha</button>
+            <button className="btn small" onClick={() => onGrade(false)}><X size={12} /> Galti hui</button>
+          </div>
           <p className="small muted" style={{ marginTop: 4 }}>
             source: {q.source}
             {q.verifiedAt ? ` · verified ${q.verifiedAt.slice(0, 10)}` : ''} · id: <span className="mono">{q.id}</span>

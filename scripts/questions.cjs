@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /** npm run questions:* — local content-pack pipeline. No network. */
 const fs = require('fs');
-const path = require('path');
 const { validateBank, coverageGate } = require('./lib/validate.cjs');
-const { loadSections, bankExists, loadBank, saveBank, allSectionIds, existingBankIds, seedAll, seedBank, QUESTIONS_DIR } = require('./lib/banks.cjs');
+const {
+  loadSections, bankExists, loadBank, saveBank, existingBankIds,
+  seedAll, seedBank, mergeIntoBank, writeManifest,
+} = require('./lib/banks.cjs');
 
 const ok = (m) => console.log(`\x1b[32m✓\x1b[0m ${m}`);
 const bad = (m) => console.log(`\x1b[31m✕\x1b[0m ${m}`);
@@ -22,28 +24,6 @@ function cmdSeed() {
     warn(`dropped ${d.duplicateText} duplicate-text, ${d.missingAnswer} empty-answer, ${d.tooShort} too-short entries (honest skip — nothing fabricated)`);
   }
   if (r.created) writeManifest();
-}
-
-/** Write public/questions/manifest.json — the UI's index of banks (no 29-file fetch). */
-function writeManifest() {
-  const entries = [];
-  let total = 0, published = 0;
-  for (const s of loadSections()) {
-    if (!bankExists(s.id)) continue;
-    const bank = loadBank(s.id);
-    const { stats } = validateBank(bank);
-    const { flags } = coverageGate(bank, stats);
-    entries.push({
-      sectionId: s.id, no: s.no, title: s.title,
-      total: stats.total, published: stats.published,
-      byType: stats.byType, byDifficulty: stats.byDifficulty, flags,
-    });
-    total += stats.total; published += stats.published;
-  }
-  const manifest = { generatedAt: new Date().toISOString(), baseline: 50, total, published, sections: entries };
-  fs.mkdirSync(QUESTIONS_DIR, { recursive: true });
-  fs.writeFileSync(path.join(QUESTIONS_DIR, 'manifest.json'), JSON.stringify(manifest, null, 1));
-  return manifest;
 }
 
 function cmdManifest() {
@@ -146,28 +126,19 @@ function cmdExpand() {
   const sid = arg('topic') || arg('section');
   const file = arg('file');
   if (!sid || !file) { bad('usage: npm run questions:expand -- --section=s01 --file=new-questions.json'); process.exit(2); }
-  const bank = bankExists(sid) ? loadBank(sid) : seedBank(loadSections().find((s) => s.id === sid));
+  const section = loadSections().find((s) => s.id === sid);
+  if (!section && !bankExists(sid)) { bad(`unknown section "${sid}"`); process.exit(2); }
+  const bank = bankExists(sid) ? loadBank(sid) : seedBank(section).bank;
   const incoming = JSON.parse(fs.readFileSync(file, 'utf8'));
   const items = Array.isArray(incoming) ? incoming : incoming.questions;
-  const existingIds = new Set(bank.questions.map((q) => q.id));
-  const existingNorms = new Set(bank.questions.map((q) => (q.question ?? '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim()));
-  let added = 0, skippedDupes = 0;
-  const addedByStatus = {};
-  for (const q of items) {
-    const rec = { priority: 'P2', status: 'DRAFT', tags: [], ...q, sectionId: sid };
-    if (existingIds.has(rec.id)) { skippedDupes++; continue; }
-    const nq = (rec.question ?? '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
-    if (existingNorms.has(nq)) { skippedDupes++; continue; }
-    existingIds.add(rec.id); existingNorms.add(nq);
-    bank.questions.push(rec); added++;
-    addedByStatus[rec.status] = (addedByStatus[rec.status] ?? 0) + 1;
-  }
+  const { added, skipped, byStatus } = mergeIntoBank(bank, items, sid);
   const { problems } = validateBank(bank);
   if (problems.length) { bad(`validation failed after merge: ${problems.length} problem(s)`); problems.slice(0, 8).forEach((p) => console.log('   · ' + p)); process.exit(1); }
   saveBank(bank);
   writeManifest();
-  const statuses = Object.entries(addedByStatus).map(([k, v]) => `${v} ${k}`).join(', ') || 'nothing';
-  ok(`${sid}: +${added} question(s) added (${statuses})${skippedDupes ? `, ${skippedDupes} duplicate(s) skipped` : ''}. DRAFT entries stay out of the learner UI until PUBLISHED.`);
+  const skippedDupes = skipped.byId + skipped.byText;
+  const statuses = Object.entries(byStatus).map(([k, v]) => `${v} ${k}`).join(', ') || 'nothing';
+  ok(`${sid}: +${added.length} question(s) added (${statuses})${skippedDupes ? `, ${skippedDupes} duplicate(s) skipped` : ''}. DRAFT entries stay out of the learner UI until PUBLISHED.`);
 }
 
 function cmdImport() {

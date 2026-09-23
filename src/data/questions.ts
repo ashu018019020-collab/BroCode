@@ -97,6 +97,14 @@ export function filterQuestions(questions: QuestionRecord[], f: BankFilter): Que
 }
 
 /** Count questions by any string field (type, difficulty, status…). */
+/** Mistake-tracker type for a bank question (keeps the tracker's four buckets). */
+export function mistakeTypeFor(t: QuestionType): 'code' | 'debug' | 'logic' | 'interview' {
+  if (t === 'debug') return 'debug';
+  if (t === 'logic') return 'logic';
+  if (t === 'coding' || t === 'solved') return 'code';
+  return 'interview'; // interview, checkpoint, theory
+}
+
 export function countByField(questions: QuestionRecord[], field: keyof QuestionRecord): Record<string, number> {
   return questions.reduce<Record<string, number>>((acc, q) => {
     const k = String(q[field]);

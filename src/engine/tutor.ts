@@ -1,6 +1,7 @@
 import { parseTraceback, type Diagnostic } from './traceback';
 import type { AppState, Section, Mistake } from '../types';
 import { nextBestAction, currentSection } from './progress';
+import { itemAttempt } from './keys';
 
 /**
  * Offline tutor engine — deterministic, rule-based, no cloud AI.
@@ -215,6 +216,92 @@ export function nextTask(state: AppState, sections: Section[]): NextTask {
   const cur = currentSection(sections, state);
   const nba = nextBestAction(cur, state);
   return { label: nba.label, reason: nba.reason, route: nba.route };
+}
+
+/* ------------------------- Coach mode (concept + Socratic) ------------------------- */
+
+export interface CoachStep {
+  label: string;
+  question: string;
+  answer: string;
+}
+
+export interface CoachSession {
+  sectionId: string;
+  sectionTitle: string;
+  why: string;
+  concept: { title: string; body: string; code: string; output: string; tip: string } | null;
+  recap: string;
+  remember: string[];
+  socratic: CoachStep[];
+  drill: { text: string; solution: string; check: string } | null;
+}
+
+const squeeze = (s: string | undefined, max = 1200) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+
+/**
+ * Which section the coach should teach right now, and why.
+ * Open mistake's section wins; otherwise the learner's frontier section.
+ */
+export function coachSectionFor(state: AppState, sections: Section[]): { section: Section | null; why: string } {
+  const open = state.mistakes.find((m) => !m.fixed);
+  const fromMistake = open ? sections.find((s) => s.id === open.section) : undefined;
+  if (fromMistake && open) {
+    return { section: fromMistake, why: `"${open.topic}" ki galti is section me hui thi — isi concept ko pakka karo.` };
+  }
+  if (sections.length) {
+    return { section: currentSection(sections, state), why: 'Frontier section — yahi tumhari next best progress hai.' };
+  }
+  return { section: null, why: '' };
+}
+
+/**
+ * Coach session for a section — concept explanation, recap, Socratic questions and a drill.
+ * Every string comes from the PDF curriculum (concepts, interview Q&A, logic cards,
+ * checkpoint keys, coding tasks). Nothing is generated, nothing is fetched.
+ */
+export function coachFor(section: Section | null, state: AppState, why = ''): CoachSession | null {
+  if (!section) return null;
+  const concepts = section.learn?.concepts ?? [];
+  // Prefer a concept that actually carries content; code-bearing concepts make better teaching cards.
+  const concept = concepts.find((c) => c.code?.trim() && c.body?.trim())
+    ?? concepts.find((c) => c.body?.trim())
+    ?? concepts[0]
+    ?? null;
+
+  const socratic: CoachStep[] = [];
+  const iv = (section.interview ?? []).find((q) => q.q?.trim() && q.a?.trim());
+  if (iv) {
+    socratic.push({
+      label: 'Interview drill',
+      question: iv.q,
+      answer: [iv.a, iv.tip && `TIP: ${iv.tip}`, iv.fu && `FOLLOW-UP: ${iv.fu}`].filter(Boolean).join('\n\n'),
+    });
+  }
+  const lg = (section.logic ?? []).find((l) => l.text?.trim() && l.answer?.trim());
+  if (lg) socratic.push({ label: `Pehle predict karo (${lg.kind})`, question: lg.text, answer: lg.answer });
+  const cp = (section.checkpoint ?? []).find((c) => c.q?.trim() && (c.key ?? '').trim().length > 1);
+  if (cp) socratic.push({ label: 'Self-check', question: cp.q, answer: cp.key });
+
+  // Drill = next coding task in this section that isn't marked done yet.
+  const coding = section.coding ?? [];
+  const nextIdx = coding.findIndex((c, i) => c.text?.trim() && !state.attempts[itemAttempt(section.id, 'coding', i)]?.done);
+  const drill = nextIdx >= 0
+    ? { text: coding[nextIdx].text, solution: coding[nextIdx].solution ?? '', check: coding[nextIdx].check ?? '' }
+    : null;
+
+  return {
+    sectionId: section.id,
+    sectionTitle: section.title,
+    why,
+    concept: concept
+      ? { title: concept.title, body: squeeze(concept.body, 1400), code: concept.code ?? '', output: squeeze(concept.output, 400), tip: squeeze(concept.tip, 300) }
+      : null,
+    recap: squeeze(section.learn?.recap, 900),
+    remember: (section.learn?.remember ?? []).map((r) => squeeze(r, 220)).filter(Boolean).slice(0, 4),
+    socratic,
+    drill,
+  };
 }
 
 /** Mistake record shaped exactly like the Lesson page's addMistake payloads. */

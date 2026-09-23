@@ -1,6 +1,7 @@
 /** Bank read/write + seeder from the real curriculum (no fabrication). */
 const fs = require('fs');
 const path = require('path');
+const { validateBank, coverageGate } = require('./validate.cjs');
 
 const QUESTIONS_DIR = path.join(__dirname, '..', '..', 'public', 'questions');
 const SECTIONS_JSON = path.join(__dirname, '..', '..', 'public', 'curriculum', 'sections.json');
@@ -118,6 +119,56 @@ function seedBank(section, generatedAt = new Date().toISOString()) {
   return { bank, count: questions.length, skipped };
 }
 
+const MANIFEST_PATH = path.join(QUESTIONS_DIR, 'manifest.json');
+/** Every bank targets this many questions; below it a bank is honestly incomplete. */
+const BASELINE_PER_SECTION = 50;
+
+/**
+ * Merge candidate records into a bank. Duplicate ids and duplicate question texts
+ * are SKIPPED (never overwritten) so re-running an import is a no-op.
+ */
+function mergeIntoBank(bank, items, sid) {
+  const existingIds = new Set(bank.questions.map((q) => q.id));
+  const existingNorms = new Set(bank.questions.map((q) => norm(q.question)));
+  const added = [];
+  const skipped = { byId: 0, byText: 0 };
+  for (const q of items) {
+    const rec = { priority: 'P2', status: 'DRAFT', tags: [], ...q, sectionId: sid };
+    if (existingIds.has(rec.id)) { skipped.byId++; continue; }
+    const nq = norm(rec.question);
+    if (existingNorms.has(nq)) { skipped.byText++; continue; }
+    existingIds.add(rec.id);
+    existingNorms.add(nq);
+    bank.questions.push(rec);
+    added.push(rec);
+  }
+  const byStatus = added.reduce((acc, q) => { acc[q.status] = (acc[q.status] ?? 0) + 1; return acc; }, {});
+  return { added, skipped, byStatus };
+}
+
+/** Write public/questions/manifest.json — the UI's index of banks (no 29-file fetch). */
+function writeManifest() {
+  const entries = [];
+  let total = 0, published = 0;
+  for (const s of loadSections()) {
+    if (!bankExists(s.id)) continue;
+    const bank = loadBank(s.id);
+    const { stats } = validateBank(bank);
+    const { flags } = coverageGate(bank, stats);
+    entries.push({
+      sectionId: s.id, no: s.no, title: s.title,
+      total: stats.total, published: stats.published,
+      byType: stats.byType, byDifficulty: stats.byDifficulty, flags,
+    });
+    total += stats.total;
+    published += stats.published;
+  }
+  const manifest = { generatedAt: new Date().toISOString(), baseline: BASELINE_PER_SECTION, total, published, sections: entries };
+  fs.mkdirSync(QUESTIONS_DIR, { recursive: true });
+  fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 1));
+  return manifest;
+}
+
 function seedAll({ force = false } = {}) {
   const sections = loadSections();
   let created = 0, skippedBanks = 0, questions = 0;
@@ -133,4 +184,8 @@ function seedAll({ force = false } = {}) {
   return { created, skipped: skippedBanks, total: sections.length, questions, dropped };
 }
 
-module.exports = { loadSections, bankPath, bankExists, loadBank, saveBank, allSectionIds, existingBankIds, seedBank, seedAll, QUESTIONS_DIR };
+module.exports = {
+  loadSections, bankPath, bankExists, loadBank, saveBank, allSectionIds, existingBankIds,
+  seedBank, seedAll, mergeIntoBank, writeManifest, norm,
+  QUESTIONS_DIR, MANIFEST_PATH, BASELINE_PER_SECTION,
+};
