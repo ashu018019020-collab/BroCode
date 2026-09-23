@@ -3,7 +3,7 @@ import { HashRouter, Routes, Route, NavLink, useNavigate, useLocation } from 're
 import {
   LayoutDashboard, Map, Layers, Repeat, Bug, Mic2, Shield, FlaskConical,
   Sigma, Database, Sparkles, Bot, Briefcase, BarChart3, FileText, Settings as SettingsIcon,
-  Search, Wifi, Sun, Star, Flame, Target, Trophy, Code2, GraduationCap,
+  Search, Wifi, Sun, Star, Flame, Target, Trophy, Code2, GraduationCap, ListChecks,
 } from 'lucide-react';
 import { CurriculumProvider, useCurriculum } from './data/curriculum';
 import ConceptHub from './pages/ConceptHub';
@@ -31,6 +31,7 @@ import ResumeLabs from './pages/ResumeLabs';
 import { searchAll } from './engine/search';
 import { CommandPalette } from './components/CommandPalette';
 import TrackOverview from './pages/TrackOverview';
+import QuestionBank from './pages/QuestionBank';
 
 const NAV: { to: string; icon: typeof LayoutDashboard; key: 'learn' | 'practice' | 'build' | 'you'; fallback: string; group: string }[] = [
   { to: '/', icon: LayoutDashboard, key: 'learn', fallback: 'Dashboard', group: 'nav.learn' },
@@ -41,6 +42,7 @@ const NAV: { to: string; icon: typeof LayoutDashboard; key: 'learn' | 'practice'
   { to: '/interview', icon: Mic2, key: 'practice', fallback: 'Interview Mode', group: 'nav.practice' },
   { to: '/defense', icon: Shield, key: 'practice', fallback: 'Project Defense', group: 'nav.practice' },
   { to: '/playground', icon: FlaskConical, key: 'practice', fallback: 'Code Playground', group: 'nav.practice' },
+  { to: '/questions', icon: ListChecks, key: 'practice', fallback: 'Question Bank', group: 'nav.practice' },
   { to: '/numpy-pandas', icon: Sigma, key: 'practice', fallback: 'NumPy + Pandas Lab', group: 'nav.practice' },
   { to: '/sql', icon: Database, key: 'practice', fallback: 'SQL Lab', group: 'nav.practice' },
   { to: '/ai', icon: Sparkles, key: 'build', fallback: 'AI / GenAI Lab', group: 'nav.build' },
@@ -170,6 +172,7 @@ function Shell() {
             <Route path="/lesson/:sid/:stage" element={<Lesson />} />
             <Route path="/lesson/:sid" element={<Lesson />} />
             <Route path="/playground" element={<Playground />} />
+            <Route path="/questions" element={<QuestionBank />} />
             <Route path="/sql" element={<SQLLab />} />
             <Route path="/interview" element={<InterviewMode />} />
             <Route path="/defense" element={<DefensePage />} />

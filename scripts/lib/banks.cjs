@@ -15,7 +15,10 @@ const saveBank = (bank) => {
   fs.writeFileSync(bankPath(bank.sectionId), JSON.stringify(bank, null, 1));
 };
 const allSectionIds = () => loadSections().map((s) => s.id);
-const existingBankIds = () => fs.existsSync(QUESTIONS_DIR) ? fs.readdirSync(QUESTIONS_DIR).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')) : [];
+/** Bank files only — manifest.json is pipeline metadata, not a bank. */
+const existingBankIds = () => fs.existsSync(QUESTIONS_DIR)
+  ? fs.readdirSync(QUESTIONS_DIR).filter((f) => f.endsWith('.json') && f !== 'manifest.json').map((f) => f.replace(/\.json$/, ''))
+  : [];
 
 const difficultyOf = (d) => (['easy', 'medium', 'hard', 'interview', 'debug'].includes(d) ? (d === 'interview' ? 'medium' : d === 'debug' ? 'hard' : d) : 'medium');
 

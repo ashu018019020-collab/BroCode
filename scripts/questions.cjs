@@ -21,6 +21,35 @@ function cmdSeed() {
   if (d.duplicateText || d.missingAnswer || d.tooShort) {
     warn(`dropped ${d.duplicateText} duplicate-text, ${d.missingAnswer} empty-answer, ${d.tooShort} too-short entries (honest skip — nothing fabricated)`);
   }
+  if (r.created) writeManifest();
+}
+
+/** Write public/questions/manifest.json — the UI's index of banks (no 29-file fetch). */
+function writeManifest() {
+  const entries = [];
+  let total = 0, published = 0;
+  for (const s of loadSections()) {
+    if (!bankExists(s.id)) continue;
+    const bank = loadBank(s.id);
+    const { stats } = validateBank(bank);
+    const { flags } = coverageGate(bank, stats);
+    entries.push({
+      sectionId: s.id, no: s.no, title: s.title,
+      total: stats.total, published: stats.published,
+      byType: stats.byType, byDifficulty: stats.byDifficulty, flags,
+    });
+    total += stats.total; published += stats.published;
+  }
+  const manifest = { generatedAt: new Date().toISOString(), baseline: 50, total, published, sections: entries };
+  fs.mkdirSync(QUESTIONS_DIR, { recursive: true });
+  fs.writeFileSync(path.join(QUESTIONS_DIR, 'manifest.json'), JSON.stringify(manifest, null, 1));
+  return manifest;
+}
+
+function cmdManifest() {
+  const m = writeManifest();
+  if (!m.sections.length) { warn('no banks yet — run: npm run questions:seed'); return; }
+  ok(`manifest: ${m.sections.length} banks · ${m.published} published / ${m.total} questions → public/questions/manifest.json`);
 }
 
 function cmdValidate() {
@@ -123,6 +152,7 @@ function cmdExpand() {
   const existingIds = new Set(bank.questions.map((q) => q.id));
   const existingNorms = new Set(bank.questions.map((q) => (q.question ?? '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim()));
   let added = 0, skippedDupes = 0;
+  const addedByStatus = {};
   for (const q of items) {
     const rec = { priority: 'P2', status: 'DRAFT', tags: [], ...q, sectionId: sid };
     if (existingIds.has(rec.id)) { skippedDupes++; continue; }
@@ -130,11 +160,14 @@ function cmdExpand() {
     if (existingNorms.has(nq)) { skippedDupes++; continue; }
     existingIds.add(rec.id); existingNorms.add(nq);
     bank.questions.push(rec); added++;
+    addedByStatus[rec.status] = (addedByStatus[rec.status] ?? 0) + 1;
   }
   const { problems } = validateBank(bank);
   if (problems.length) { bad(`validation failed after merge: ${problems.length} problem(s)`); problems.slice(0, 8).forEach((p) => console.log('   · ' + p)); process.exit(1); }
   saveBank(bank);
-  ok(`${sid}: +${added} question(s) added as DRAFT${skippedDupes ? `, ${skippedDupes} duplicate(s) skipped` : ''}. Drafts stay out of learner UI until PUBLISHED.`);
+  writeManifest();
+  const statuses = Object.entries(addedByStatus).map(([k, v]) => `${v} ${k}`).join(', ') || 'nothing';
+  ok(`${sid}: +${added} question(s) added (${statuses})${skippedDupes ? `, ${skippedDupes} duplicate(s) skipped` : ''}. DRAFT entries stay out of the learner UI until PUBLISHED.`);
 }
 
 function cmdImport() {
@@ -165,6 +198,7 @@ function cmdImport() {
     saveBank(bank);
     ok(`${sid}: imported ${bank.questions.length} question(s)`);
   }
+  if (!failed) writeManifest();
   process.exit(failed ? 1 : 0);
 }
 
@@ -176,6 +210,6 @@ function cmdExport() {
 }
 
 const cmd = process.argv[2];
-const commands = { seed: cmdSeed, validate: cmdValidate, report: cmdReport, coverage: cmdCoverage, duplicates: cmdDuplicates, expand: cmdExpand, import: cmdImport, export: cmdExport };
+const commands = { seed: cmdSeed, validate: cmdValidate, report: cmdReport, coverage: cmdCoverage, duplicates: cmdDuplicates, expand: cmdExpand, import: cmdImport, export: cmdExport, manifest: cmdManifest };
 if (commands[cmd]) commands[cmd]();
-else { console.error('usage: node scripts/questions.cjs seed|validate|report|coverage|duplicates|expand|import|export [--options]'); process.exit(2); }
+else {  console.error('usage: node scripts/questions.cjs seed|validate|report|coverage|duplicates|expand|import|export|manifest [--options]'); process.exit(2); }
