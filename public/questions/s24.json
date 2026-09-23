@@ -1,0 +1,395 @@
+{
+ "sectionId": "s24",
+ "title": "APIs, Flask/FastAPI & Production Python",
+ "contentVersion": "1.0.0",
+ "generatedAt": "2026-09-23T18:36:17.767Z",
+ "topics": [
+  "FLASK + REST APIs - study notes (p.337)",
+  "FLASK + REST APIs - study notes (p.338)"
+ ],
+ "questions": [
+  {
+   "id": "s24:interview:0",
+   "sectionId": "s24",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "GET vs POST?",
+   "answer": "GET data retrieve karne ke liye; POST new resource/action request ke liye commonly.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: POST /chat.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s24:interview:1",
+   "sectionId": "s24",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "route thin kyun?",
+   "answer": "Business logic separate service layer me rakhne se testing and maintenance eas hoti hai.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Controller/service separation.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s24:interview:2",
+   "sectionId": "s24",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "AI API timeout?",
+   "answer": "401 authentication missing/invalid; 403 authenticated client ko permission nahi. Timeout set, safe retry where appropriate, fallback/error response, logs and use friendly status.",
+   "explanation": "TIP: 30-45 sec, then give one project example. 30-45 sec, then give one project example. · FOLLOW-UP: API security. Do not retry unsafe side effects blindly.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s24:interview:3",
+   "sectionId": "s24",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "JSON validation?",
+   "answer": "Required fields, types, limits and allowed values check karo before business logic.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Schema validation.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s24:interview:4",
+   "sectionId": "s24",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "REST API scalable kaise?",
+   "answer": "Stateless endpoints, pagination, caching where useful, DB optimization, async/background work and observability.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Context dependent.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s24:interview:5",
+   "sectionId": "s24",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Flask me DB safety?",
+   "answer": "Parameterized queries/ORM and correct connection lifecycle.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Never concatenate raw SQL.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s24:interview:6",
+   "sectionId": "s24",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "AI service abstraction?",
+   "answer": "Provider SDK ko wrapper/service me isolate karo so provider change rest of app affect na kare.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: OpenAI/Gemini swap.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s24:coding:0",
+   "sectionId": "s24",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "MODULE 05 � CODING LAB CODING LAB � FLASK + REST APIs Pehle solve karo then answer compare karo complexity + edge case explain karo.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s24:coding:1",
+   "sectionId": "s24",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Create /health endpoint. ANSWER @app.get",
+   "answer": "h\") def health(): return {\"status\":\"ok\"}",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s24:coding:2",
+   "sectionId": "s24",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Read JSON input. ANSWER data = r",
+   "answer": "et_json(silent=True) name = data.get(\"name\")",
+   "explanation": "Input edge cases + expected output + or {} complexity.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s24:coding:3",
+   "sectionId": "s24",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Validate required field. ANSWER if not nam",
+   "answer": "n {\"error\":\"name is required\"}, 400",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s24:coding:4",
+   "sectionId": "s24",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Return created status. ANSWER return {\"i",
+   "answer": "id}, 201",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s24:coding:5",
+   "sectionId": "s24",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "\"Main pehle constraints aur edge cases clarify karunga, phir simplest correct solution, phir complexity aur test cases explain karunga.\"",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s24:coding:6",
+   "sectionId": "s24",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "AI provider wrapper pattern. ANSWER def gene",
+   "answer": "ly(prompt, client): # validate prompt before provider call return client.generate(prompt)",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s24:coding:7",
+   "sectionId": "s24",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Handle provider timeout. ANSWER try: res",
+   "answer": "ll_model(prompt, timeout=20) except TimeoutError: return {\"error\":\"provider timeout\"}, 504",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s24:coding:8",
+   "sectionId": "s24",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Route contains 150 lines -- improve. ANSWER Move validation/se",
+   "answer": "tabase/provider logic into and keep route orchestration thin.",
+   "explanation": "Input edge cases + expected output + complexity. separate Parameterized SQL concept. ANSWER functions/cmuordsuolre.sexecute(\"SELECT * FROM users WHERE id = %s\", CHECK Input edge cases + expected output + complexity. (user_id,))",
+   "source": "curriculum",
+   "tags": [
+    "interview code"
+   ]
+  },
+  {
+   "id": "s24:logic:0",
+   "sectionId": "s24",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: What changes first: input, transformed data, or output?",
+   "answer": "Trace data flow from boundary validation transformation result.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s24:logic:1",
+   "sectionId": "s24",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "trace: Pick one code example from today and write variable state after every step.",
+   "answer": "Interviewers value reasoning, not only final output.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "trace"
+   ]
+  },
+  {
+   "id": "s24:logic:2",
+   "sectionId": "s24",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "why: What is the most likely bug if the result is unexpectedly empty?",
+   "answer": "Check input shape/type, filtering condition, join keys or model response.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "why"
+   ]
+  },
+  {
+   "id": "s24:logic:3",
+   "sectionId": "s24",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "fix: What edge case breaks the simple solution?",
+   "answer": "Empty input, NULL/None, duplicate IDs, invalid JSON, timeout or shape mismatc",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "fix"
+   ]
+  },
+  {
+   "id": "s24:logic:4",
+   "sectionId": "s24",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "design: Where should validation happen?",
+   "answer": "At system boundaries before expensive or irreversible operations.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "design"
+   ]
+  },
+  {
+   "id": "s24:logic:5",
+   "sectionId": "s24",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "tradeoff: What would you optimize first?",
+   "answer": "Measure first; then target the actual bottleneck in latency, memory, cost or correctness.MASTER CHECK A topic is interview-ready when you can explain it simply, code it without copying, debug one failure, state a trade-off and connect it to your resume",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "tradeoff"
+   ]
+  },
+  {
+   "id": "s24:solved:0",
+   "sectionId": "s24",
+   "type": "solved",
+   "difficulty": "easy",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Validate numeric JSON body in Flask.",
+   "answer": "Validate numeric JSON body in Flask.\ndata=request.get_json(silent=True) or {} if not isinstance(data.get(\"value\"),(int, float)): return {\"error\":\"bad value\"},400 Reason: Reject malformed input early. Complexity: O(1)",
+   "explanation": "Expected result: Parsed dict or safe recovery path.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s24:solved:1",
+   "sectionId": "s24",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Make an HTTP request with timeout.",
+   "answer": "Make an HTTP request with timeout.\nimport requests r=requests.get(url,timeout=10) r.raise_for_status() Reason: Bound waiting time and Complexity: Network-dependent\nsurface\nHTTP\nerrors.",
+   "explanation": "Expected result: Compare with the code and verify one edge case.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s24:solved:2",
+   "sectionId": "s24",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "API error mapping.",
+   "answer": "API error mapping.\ntry: result=service(data) except TimeoutError: return {\"error\":\"upstream timeout\"},504 Reason: Client receives meaningful status Complexity: Service-dependent\ncodes.",
+   "explanation": "Expected result: Specific exception is handled without hiding unrelated failures.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  }
+ ],
+ "flags": []
+}

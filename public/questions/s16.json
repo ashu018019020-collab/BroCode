@@ -1,0 +1,351 @@
+{
+ "sectionId": "s16",
+ "title": "Advanced Python & Performance",
+ "contentVersion": "1.0.0",
+ "generatedAt": "2026-09-23T18:36:17.760Z",
+ "topics": [
+  "Core Concepts",
+  "Interview Depth"
+ ],
+ "questions": [
+  {
+   "id": "s16:interview:0",
+   "sectionId": "s16",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Generator memory kaise bachata hai?",
+   "answer": "Saara result list me materialize karne ke bajay yield se ek item at a time produce karta hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s16:interview:1",
+   "sectionId": "s16",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Decorator ka basic model?",
+   "answer": "Outer function inner wrapper return karta hai; wrapper original function call se pehle/baad behavior add karta hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s16:interview:2",
+   "sectionId": "s16",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Shallow vs deep copy?",
+   "answer": "Shallow copy outer container copy karta hai but nested references share ho sakte hain. Deep copy recursively nested objects clone karta hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s16:interview:3",
+   "sectionId": "s16",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Dataclass ka benefit?",
+   "answer": "Data-holding classes ke boilerplate __init__, repr, comparison etc. reduce karta hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s16:interview:4",
+   "sectionId": "s16",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "O(n) se O(log n) better kab?",
+   "answer": "Large input me growth slower hoti hai, but operation aur data structure fit hona zaroori hai. Binary search classic example hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s16:interview:5",
+   "sectionId": "s16",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Profiling kyun?",
+   "answer": "Performance guess se nahi, measurement se optimize karo. Hot path identify karke targeted change karo.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s16:coding:0",
+   "sectionId": "s16",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "INTERVIEW + CODING + LOGIC CODING LAB / Advanced Python & Performance Pehle problem ko 10 sec me explain karo -> then code -> edge case -> complexity.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s16:coding:1",
+   "sectionId": "s16",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Create generator for squares 0..n-1. ANSW",
+   "answer": "quares(n): for i in range(n): yield i*i Reason: yield is lazy. Complexity: O(n) time / O(1) extra",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s16:coding:2",
+   "sectionId": "s16",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Demonstrate shallow copy aliasing. ANSWER",
+   "answer": "copy a=[[1],[2]] b=copy.copy(a) b[0].append(9) print(a) Reason: Nested list remains shared. Complexity: O(n) copy outer",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s16:coding:3",
+   "sectionId": "s16",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Binary search index of target in sorted list. ANSW",
+   "answer": "inary_search(a,t): lo,hi=0,len(a)-1 while lo<=hi: m=(lo+hi)//2 if a[m]==t:return m iRfeaaso[mn]: <Eta:chlos=temp+h1alves the search interval. eClosmep:lheix=itmy:-1O(log n) return -1",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s16:coding:4",
+   "sectionId": "s16",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Write a timing decorator skeleton. ANSW",
+   "answer": "imed(fn): def wrap(*a,**kw): import time t=time.perf_counter(); r=fn(*a,**kw) return r, time.perf_counter()-t rReetausorn: wMreaapsure actual runtime. Complexity: O(1) extra",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s16:coding:5",
+   "sectionId": "s16",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Use dataclass for a record. ANSWER",
+   "answer": "taclasses import dataclass @dataclass class User: name:str active:bool=True Reason: Removes repetitive constructor/repr boilerplate. Complexity: O(1)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s16:debug:0",
+   "sectionId": "s16",
+   "type": "debug",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "What is the complexity of two nested loops over n? ANSWE",
+   "answer": "in range(n): for j in range(n): work(i,j) Reason: If both loops run n times independently, it is O(n^2). Complexity: O(n^2) 116",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "debug"
+   ]
+  },
+  {
+   "id": "s16:logic:0",
+   "sectionId": "s16",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: g=(i*i for i in range(3)); print(next(g), next(g))",
+   "answer": "0 1 WHY Generator yields lazily.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s16:logic:1",
+   "sectionId": "s16",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "trace: a=[[1],[2]]; b=a.copy(); b[0].append(9); print(a)",
+   "answer": "[[1, 9], [2]] WHY Nested list reference is shared.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "trace"
+   ]
+  },
+  {
+   "id": "s16:logic:2",
+   "sectionId": "s16",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "think: O(n)+O(n)",
+   "answer": "O(n) WHY Sequential linear passes add, they do not multiply.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "think"
+   ]
+  },
+  {
+   "id": "s16:logic:3",
+   "sectionId": "s16",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: binary search on 1,000,000 items",
+   "answer": "About 20 comparisons (log2 1e6) WHY Each step halves search interval.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s16:logic:4",
+   "sectionId": "s16",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "fix: for i in range(n): for j in range(n): pass",
+   "answer": "O(n^2) WHY Independent nested loops multiply.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "fix"
+   ]
+  },
+  {
+   "id": "s16:logic:5",
+   "sectionId": "s16",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "why: profile before optimizing?",
+   "answer": "To target actual hotspots instead of guessing. WHY Measurement guides effort. Mastery: Explain without notes + solve one fresh problem + predict two outputs + tell one edge case. 117",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "why"
+   ]
+  },
+  {
+   "id": "s16:solved:0",
+   "sectionId": "s16",
+   "type": "solved",
+   "difficulty": "easy",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Create generator for squares 0..n-1.",
+   "answer": "Create generator for squares 0..n-1.\ndef squares(n): for i in range(n): yield i*i Reason: yield is lazy. Complexity: O(n) time /\nO(1)\nextra",
+   "explanation": "Expected result: Values arrive lazily, one item at a time.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s16:solved:1",
+   "sectionId": "s16",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Demonstrate shallow copy aliasing.",
+   "answer": "Demonstrate shallow copy aliasing.\nimport copy a=[[1],[2]] b=copy.copy(a) b[0].append(9) print(a) Reason: Nested list remains Complexity: O(n) copy outer\nshared.",
+   "explanation": "Expected result: Compare with the code and verify one edge case.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s16:solved:2",
+   "sectionId": "s16",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Binary search index of target in sorted list.",
+   "answer": "Binary search index of target in sorted list.\ndef binary_search(a,t): lo,hi=0,len(a)-1 while lo<=hi: m=(lo+hi)//2 if a[m]==t:return m if a[m]<t:lo=m+1 else:hi=m-1 return -1 Reason: Each step halves the search interval. EXPECTED RESULT Index of target or -1; O(log n).",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  }
+ ],
+ "flags": []
+}

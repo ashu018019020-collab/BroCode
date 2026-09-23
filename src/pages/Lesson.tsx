@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCurriculum } from '../data/curriculum';
 import { useStore, setState, addXp, recordAttempt, addMistake } from '../offline/store';
-import { STAGES, STAGE_META, sectionProgress, missingForMastery, type Stage } from '../engine/progress';
+import { STAGES, STAGE_META, sectionProgress, missingForMastery, nextBestAction, type Stage } from '../engine/progress';
 import { stageAttempt, itemAttempt, debugDone, learnView, lessonDefenseAnswer, interviewAnswer, codeSlot } from '../engine/keys';
 import { CodeLab } from '../components/CodeLab';
-import { SectionHeader, Chip } from '../components/ui';
+import { SectionHeader, Chip, ScoreBreakdown } from '../components/ui';
+import { ConceptVisual, visualFor } from '../components/ConceptVisual';
 import { keywordScore, questionRubric, defenseScore, DEFENSE_QUESTIONS } from '../engine/evaluate';
 import { outputCheck } from '../engine/evaluate';
 import type { Section, Concept } from '../types';
@@ -22,7 +23,8 @@ export default function Lesson() {
   const sec = sections.find((s) => s.id === sid);
   if (!sec) return <div className="loading">Section not found.</div>;
   const active: Stage = (STAGES.includes(stage as Stage) ? stage : 'learn') as Stage;
-  const { masterPct } = sectionProgress(sec, state);
+  const { masterPct, scores } = sectionProgress(sec, state);
+  const nba = nextBestAction(sec, state);
   const idx = STAGES.indexOf(active);
 
   return (
@@ -34,6 +36,18 @@ export default function Lesson() {
         minutes={45 + sec.coding.length * 4}
         pct={masterPct}
       />
+
+      <ScoreBreakdown scores={scores} />
+      <div className="card fadeup nba" style={{ borderColor: 'rgba(79,124,255,.4)' }}>
+        <div className="row spread">
+          <div>
+            <div className="small muted">NEXT BEST ACTION</div>
+            <b>{nba.label}</b>
+            <p className="small muted" style={{ margin: 0 }}>{nba.reason}</p>
+          </div>
+          <button className="btn primary" onClick={() => nav(nba.route)}>Start →</button>
+        </div>
+      </div>
 
       <div className="stages">
         {STAGES.map((st) => (
@@ -71,45 +85,85 @@ export default function Lesson() {
 function LearnStage({ sec }: { sec: Section }) {
   const state = useStore();
   const viewed = !!state.attempts[learnView(sec.id)];
+  const concepts = sec.learn.concepts;
+  const [sel, setSel] = useState(0);
+  const kind = visualFor(sec.id);
+  const triedKey = (i: number) => itemAttempt(sec.id, 'learn', i);
+  const tried = concepts.filter((_, i) => state.attempts[triedKey(i)]).length;
+
   useEffect(() => { if (!viewed) { recordAttempt(learnView(sec.id), { done: true }); addXp(2, 'read', 'Concept read'); } }, [sec.id]);
+
+  if (!concepts.length) return <div className="card muted">Is section me concepts nahi mile.</div>;
+  const cur = concepts[Math.min(sel, concepts.length - 1)];
+
   return (
-    <div>
-      {sec.learn.concepts.map((c: Concept, i: number) => (
-        <div key={i} className="card fadeup">
-          <div className="row spread">
-            <h3>{i + 1}. {c.title}</h3>
-            <Chip kind={c.level === 'advanced' ? 'hard' : 'easy'}>{c.level === 'advanced' ? 'ADVANCED' : c.level === 'notes' ? 'NOTES' : 'CORE'}</Chip>
+    <div className="workbench">
+      <div className="wb-main">
+        {concepts.map((c: Concept, i: number) => (
+          <div key={i} className={`card fadeup ${i === sel ? 'wb-active' : ''}`}>
+            <div className="row spread">
+              <h3>{i + 1}. {c.title}</h3>
+              <span className="row">
+                {state.attempts[triedKey(i)] && (
+                  <span className="chip" style={{ color: 'var(--green)', borderColor: 'rgba(52,211,153,.4)' }}>✓ ran</span>
+                )}
+                <Chip kind={c.level === 'advanced' ? 'hard' : 'easy'}>{c.level === 'advanced' ? 'ADVANCED' : c.level === 'notes' ? 'NOTES' : 'CORE'}</Chip>
+              </span>
+            </div>
+            {c.body && <p className="small" style={{ whiteSpace: 'pre-wrap' }}>{c.body}</p>}
+            {c.code && (
+              <>
+                <div className="small muted">CODE</div>
+                <pre className="codeblock"><code>{c.code}</code></pre>
+              </>
+            )}
+            {c.output && <p className="small"><b>OUTPUT:</b> <code>{c.output}</code></p>}
+            {c.tip && <p className="small muted">💡 {c.tip}</p>}
+            <ConceptVisual kind={kind} concept={c} section={sec} activeIndex={i} />
+            {c.code && (
+              <button className="btn small" style={{ marginTop: 8 }} onClick={() => setSel(i)}>
+                ▶ Try this in the editor →
+              </button>
+            )}
           </div>
-          {c.body && <p className="small" style={{ whiteSpace: 'pre-wrap' }}>{c.body}</p>}
-          {c.code && (
-            <>
-              <div className="small muted">CODE</div>
-              <pre className="codeblock"><code>{c.code}</code></pre>
-            </>
-          )}
-          {c.output && <p className="small"><b>OUTPUT:</b> <code>{c.output}</code></p>}
-          {c.tip && <p className="small muted">💡 {c.tip}</p>}
-        </div>
-      ))}
-      {sec.learn.recap && (
+        ))}
+        {sec.learn.recap && (
+          <div className="card">
+            <h3>🧾 Quick Recap</h3>
+            <p className="small" style={{ whiteSpace: 'pre-wrap' }}>{sec.learn.recap}</p>
+          </div>
+        )}
+        {sec.learn.remember.map((r, i) => r && (
+          <div key={i} className="card" style={{ borderLeft: '3px solid var(--purple)' }}>
+            <b className="small">YAAD RAKHO:</b> <span className="small">{r}</span>
+          </div>
+        ))}
+        {sec.learn.practice.length > 0 && (
+          <div className="card">
+            <h3>✍️ Practice Time</h3>
+            {sec.learn.practice.map((p, i) => (
+              <p key={i} className="small">{chipFor(p.difficulty)} {p.text}</p>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <aside className="wb-side">
         <div className="card">
-          <h3>🧾 Quick Recap</h3>
-          <p className="small" style={{ whiteSpace: 'pre-wrap' }}>{sec.learn.recap}</p>
+          <div className="row spread">
+            <b className="small">💻 CODE EDITOR</b>
+            <span className="small muted">{tried}/{concepts.length} tried</span>
+          </div>
+          <p className="small muted" style={{ margin: '6px 0' }}>{sel + 1}. {cur.title}</p>
+          <CodeLab
+            storageKey={codeSlot.lesson(sec.id, 'learn', sel)}
+            starter={cur.code || undefined}
+            compact
+            onComplete={() => recordAttempt(triedKey(sel), { done: true })}
+          />
+          <p className="small muted" style={{ marginTop: 8 }}>Padho → chalao → output dekho. Error aaye to Errors tab me explanation milega.</p>
         </div>
-      )}
-      {sec.learn.remember.map((r, i) => r && (
-        <div key={i} className="card" style={{ borderLeft: '3px solid var(--purple)' }}>
-          <b className="small">YAAD RAKHO:</b> <span className="small">{r}</span>
-        </div>
-      ))}
-      {sec.learn.practice.length > 0 && (
-        <div className="card">
-          <h3>✍️ Practice Time</h3>
-          {sec.learn.practice.map((p, i) => (
-            <p key={i} className="small">{chipFor(p.difficulty)} {p.text}</p>
-          ))}
-        </div>
-      )}
+      </aside>
     </div>
   );
 }

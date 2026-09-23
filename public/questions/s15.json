@@ -1,0 +1,351 @@
+{
+ "sectionId": "s15",
+ "title": "Exceptions, Files & Modules",
+ "contentVersion": "1.0.0",
+ "generatedAt": "2026-09-23T18:36:17.760Z",
+ "topics": [
+  "Core Concepts",
+  "Interview Depth"
+ ],
+ "questions": [
+  {
+   "id": "s15:interview:0",
+   "sectionId": "s15",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Bare except avoid kyun?",
+   "answer": "Ye har exception ko catch karta hai, including unexpected cases, aur debugging ko hide kar sakta hai. Expected exceptions specifically catch karo.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s15:interview:1",
+   "sectionId": "s15",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "finally kab run hota hai?",
+   "answer": "Normal success ya exception dono paths par cleanup ke liye use hota hai, jaise file/resource handling.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s15:interview:2",
+   "sectionId": "s15",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "JSON aur Python dict same hain?",
+   "answer": "JSON text serialization format hai; Python dict in-memory object hai. json.dumps/loads conversion karte hain.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s15:interview:3",
+   "sectionId": "s15",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "pathlib kyun?",
+   "answer": "Filesystem paths ko object-oriented, readable aur cross-platform style me handle karta hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s15:interview:4",
+   "sectionId": "s15",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "logging vs print?",
+   "answer": "Logging me levels, timestamps, handlers aur persistent configuration hoti hai. Production debugging ke liye more controllable hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s15:interview:5",
+   "sectionId": "s15",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Custom exception kyun?",
+   "answer": "Domain-specific failure ko clear type dene ke liye, jisse caller specific recovery strategy bana sakta hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s15:coding:0",
+   "sectionId": "s15",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "INTERVIEW + CODING + LOGIC CODING LAB / Exceptions, Files & Modules Pehle problem ko 10 sec me explain karo -> then code -> edge case -> complexity.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s15:coding:1",
+   "sectionId": "s15",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Read JSON text safely and return a key with default. ANSW",
+   "answer": "t json def get_role(text): data=json.loads(text) return data.get(\"role\",\"unknown\") Reason: JSON parse failure should be handled at a caller boundary when needed. Complexity: O(n)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s15:coding:2",
+   "sectionId": "s15",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Catch missing file separately from invalid JSON. ANSWER",
+   "answer": "xt=Path(\"x.json\").read_text(encoding=\"u tf-8\") data=json.loads(text) except FileNotFoundError: dRaetaaso={n}: Different errors deserve different recovery epaxtchesp. t json.JSONDecodeError: dCaotmap=l{e}xity: O(n)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s15:coding:3",
+   "sectionId": "s15",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Build a module-friendly config loader pattern. ANSW",
+   "answer": "oad_config(getenv): return {\"host\": getenv(\"HOST\", \"localhost\"), \"debug\": getenv(\"DEBUG\", \"0\")==\"1\"} Reason: Keep config access separate from business logic. Complexity: O(1)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s15:coding:4",
+   "sectionId": "s15",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Write a helper that loads text file with UTF-8. ANSW",
+   "answer": "pathlib import Path def load_text(path): return Path(path).read_text(encoding=\"utf-8\") Reason: Path keeps filesystem code clear. Complexity: O(n)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s15:coding:5",
+   "sectionId": "s15",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Create a custom exception for invalid score. ANSWER",
+   "answer": "nvalidScoreError(ValueError): pass def validate(score): if not 0<=score<=100: rRaeiasoenI: nDvoamlaiind-SscpoerciefiEcrerrroorrs(simcporroev)e caller clarity. Complexity: O(1)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s15:debug:0",
+   "sectionId": "s15",
+   "type": "debug",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Why is `except Exception: pass` dangerous? Give a safer pattern. ANSWE",
+   "answer": "un_job() except TimeoutError as exc: logger.warning(\"timeout: %s\", raise exc) Reason: Do not silently swallow unknown failures. Complexity: O(1) excluding work 110",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "debug"
+   ]
+  },
+  {
+   "id": "s15:logic:0",
+   "sectionId": "s15",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: try: 1/0 except ZeroDivisionError: print(\"handled\")",
+   "answer": "handled WHY Specific exception is caught.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s15:logic:1",
+   "sectionId": "s15",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "trace: data=json.loads(\"{bad}\")",
+   "answer": "JSONDecodeError WHY Malformed JSON text cannot parse.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "trace"
+   ]
+  },
+  {
+   "id": "s15:logic:2",
+   "sectionId": "s15",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "think: with open(\"x.txt\") as f: text=f.read()",
+   "answer": "File is automatically closed after block WHY Context manager handles cleanup.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "think"
+   ]
+  },
+  {
+   "id": "s15:logic:3",
+   "sectionId": "s15",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "fix: Path(\"a\") / \"b\"",
+   "answer": "a/b path object WHY Path composition is platform-aware.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "fix"
+   ]
+  },
+  {
+   "id": "s15:logic:4",
+   "sectionId": "s15",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "why: not hide all errors with except Exception?",
+   "answer": "It can swallow bugs and make root cause invisible. WHY Catch expected exceptions, log useful context, re-raise when needed.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "why"
+   ]
+  },
+  {
+   "id": "s15:logic:5",
+   "sectionId": "s15",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: d={\"a\":1}; print(json.dumps(d))",
+   "answer": "{\"a\": 1} WHY Python dict serialized to JSON text. Mastery: Explain without notes + solve one fresh problem + predict two outputs + tell one edge case. 111",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s15:solved:0",
+   "sectionId": "s15",
+   "type": "solved",
+   "difficulty": "easy",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Read JSON text safely and return a key with default.",
+   "answer": "Read JSON text safely and return a key with default.\nimport json def get_role(text): data=json.loads(text) return data.get(\"role\",\"unknown\") Reason: JSON parse failure should be handled at a caller boundary when needed. Complexity: O(n)",
+   "explanation": "Expected result: Parsed dict or safe recovery path.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s15:solved:1",
+   "sectionId": "s15",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Catch missing file separately from invalid JSON.",
+   "answer": "Catch missing file separately from invalid JSON.\ntry: text=Path(\"x.json\").read_text(encoding=\"u tf-8\") data=json.loads(text) except FileNotFoundError: data={} except json.JSONDecodeError: data={} Reason: Different errors deserve different EXPECTED RESULT Parsed dict or safe recovery path.\nrecovery",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s15:solved:2",
+   "sectionId": "s15",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Build a module-friendly config loader pattern.",
+   "answer": "Build a module-friendly config loader pattern.\ndef load_config(getenv): return {\"host\": getenv(\"HOST\", \"localhost\"), \"debug\": getenv(\"DEBUG\", \"0\")==\"1\"} Reason: Keep config access separate logic. Complexity: O(1)\nfrom\nbusiness",
+   "explanation": "Expected result: Compare with the code and verify one edge case.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  }
+ ],
+ "flags": []
+}

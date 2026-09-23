@@ -1,4 +1,4 @@
-import type { Section, AppState } from '../types';
+import type { Section, AppState, Mistake } from '../types';
 import { stageAttempt, itemAttempt, debugDone, learnView } from './keys';
 
 /** Every stage of the lesson flow with its completion gate. */
@@ -17,7 +17,6 @@ export const STAGE_META: Record<Stage, { label: string; icon: string; blurb: str
   defense: { label: 'Defense', icon: '🛡️', blurb: 'Explain the build, get scored' },
   checkpoint: { label: 'Checkpoint', icon: '🏆', blurb: 'Final gate before Mastered' },
 };
-
 
 export function sectionProgress(s: Section, state: AppState) {
   const tasks = {
@@ -50,31 +49,83 @@ export function sectionProgress(s: Section, state: AppState) {
       (tasks.debug as number) + tasks.solved +
       (tasks.mini ? 100 : 0) + (tasks.project ? 100 : 0) + tasks.defense + tasks.checkpoint
     ) / (8 + (s.coding.some((c) => c.difficulty === 'debug') ? 1 : 0) + (s.checkpoint.length ? 1 : 0)));
-  return { tasks, masterPct };
+
+  /**
+   * The breakdown a learner can act on — every number derived from a real gate,
+   * never invented. Theory = concept read + logic prediction; Project groups the
+   * three build gates (mini project, project lab, defense).
+   */
+  const scores = {
+    theory: s.logic.length ? Math.round(((tasks.learn ? 100 : 0) + tasks.logic) / 2) : (tasks.learn ? 100 : 0),
+    coding: tasks.coding,
+    debug: tasks.debug,
+    interview: tasks.interview,
+    project: Math.round(((tasks.mini ? 100 : 0) + (tasks.project ? 100 : 0) + tasks.defense) / 3),
+    mastery: masterPct,
+  };
+
+  return { tasks, masterPct, scores };
 }
+
+export type ScoreBreakdown = ReturnType<typeof sectionProgress>['scores'];
 
 export function missingForMastery(s: Section, state: AppState): string[] {
   const { tasks } = sectionProgress(s, state);
   const missing: string[] = [];
   if (!tasks.learn) missing.push('Read the Learn section');
-  if (tasks.interview < 70) missing.push(`Interview score ≥ 70% (now ${tasks.interview}%)`);
-  if (tasks.coding < 70) missing.push(`Coding tasks ≥ 70% (now ${tasks.coding}%)`);
-  if (tasks.logic < 70) missing.push(`Logic ≥ 70% (now ${tasks.logic}%)`);
-  if (s.coding.some((c) => c.difficulty === 'debug') && tasks.debug < 70) missing.push(`Debug ≥ 70% (now ${tasks.debug}%)`);
-  if (tasks.solved < 70) missing.push(`Practice solutions ≥ 70% (now ${tasks.solved}%)`);
+  if (tasks.interview < 70) missing.push(`Interview score >= 70% (now ${tasks.interview}%)`);
+  if (tasks.coding < 70) missing.push(`Coding tasks >= 70% (now ${tasks.coding}%)`);
+  if (tasks.logic < 70) missing.push(`Logic >= 70% (now ${tasks.logic}%)`);
+  if (s.coding.some((c) => c.difficulty === 'debug') && tasks.debug < 70) missing.push(`Debug >= 70% (now ${tasks.debug}%)`);
+  if (tasks.solved < 70) missing.push(`Practice solutions >= 70% (now ${tasks.solved}%)`);
   if (!tasks.mini) missing.push('Complete the mini project');
   if (!tasks.project) missing.push('Complete one Project Lab build');
-  if (tasks.defense < 60) missing.push(`Project defense ≥ 60 (now ${tasks.defense})`);
-  if (s.checkpoint.length && tasks.checkpoint < 70) missing.push(`Checkpoint ≥ 70% (now ${tasks.checkpoint}%)`);
+  if (tasks.defense < 60) missing.push(`Project defense >= 60 (now ${tasks.defense})`);
+  if (s.checkpoint.length && tasks.checkpoint < 70) missing.push(`Checkpoint >= 70% (now ${tasks.checkpoint}%)`);
   return missing;
 }
 
 export const isMastered = (s: Section, state: AppState) => missingForMastery(s, state).length === 0;
 
+/** Mistakes are logged against the section id (logic/defense) or a code slot key. */
+const inSection = (m: Mistake, sid: string) => m.section === sid || m.section.includes(sid);
+
+export interface WeakTopic { topic: string; count: number; route: string }
+
+const stageForMistake = (type: string): Stage =>
+  type === 'debug' ? 'debug' : type === 'code' ? 'coding' : type === 'logic' ? 'logic' : 'solved';
+
+/**
+ * The topic a learner keeps getting wrong in this section. Repeated open mistakes
+ * outrank the ordered gates — grinding ahead while a concept is broken is how
+ * learners stall at 68% forever.
+ */
+export function weakTopic(s: Section, state: AppState): WeakTopic | null {
+  const open = state.mistakes.filter((m) => !m.fixed && inSection(m, s.id));
+  if (!open.length) return null;
+  const byTopic = new Map<string, { count: number; type: string }>();
+  for (const m of open) {
+    const cur = byTopic.get(m.topic);
+    byTopic.set(m.topic, { count: (cur?.count ?? 0) + 1, type: cur?.type ?? m.type });
+  }
+  let best: { topic: string; count: number; type: string } | null = null;
+  for (const [topic, v] of byTopic) if (v.count >= 2 && (!best || v.count > best.count)) best = { topic, count: v.count, type: v.type };
+  if (!best) return null;
+  return { topic: best.topic, count: best.count, route: `/lesson/${s.id}/${stageForMistake(best.type)}` };
+}
+
 export interface NextAction { label: string; reason: string; route: string }
 
 export function nextBestAction(s: Section, state: AppState): NextAction {
   const { tasks } = sectionProgress(s, state);
+  const weak = weakTopic(s, state);
+  if (weak) {
+    return {
+      label: `Targeted practice: ${weak.topic}`,
+      reason: `"${weak.topic}" me ${weak.count} baar galti hui hai — pehle isko fix karo, phir aage badho.`,
+      route: weak.route,
+    };
+  }
   if (!tasks.learn) return { label: `Read: ${s.title}`, reason: 'Foundation first — concepts, examples, recap.', route: `/lesson/${s.id}/learn` };
   if (tasks.interview < 70) return { label: 'Interview practice', reason: `Score is ${tasks.interview}%. Answer aloud, then self-grade.`, route: `/lesson/${s.id}/interview` };
   if (tasks.coding < 70) return { label: 'Solve a coding task', reason: `Coding at ${tasks.coding}%. Run and verify your code.`, route: `/lesson/${s.id}/coding` };

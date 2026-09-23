@@ -1,0 +1,427 @@
+{
+ "sectionId": "s23",
+ "title": "Agentic AI + LangChain + n8n",
+ "contentVersion": "1.0.0",
+ "generatedAt": "2026-09-23T18:36:17.766Z",
+ "topics": [
+  "AGENTIC AI + LANGCHAIN + N8N - study notes (p.381)",
+  "AGENTIC AI + LANGCHAIN + N8N - study notes (p.382)"
+ ],
+ "questions": [
+  {
+   "id": "s23:interview:0",
+   "sectionId": "s23",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "agent vs workflow?",
+   "answer": "Workflow fixed orchestration; agent dynamically chooses actions based on state/model decisions.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Hybrid often practical.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s23:interview:1",
+   "sectionId": "s23",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "agent loop?",
+   "answer": "Observe decide tool result state update stop/continue.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Bound steps.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s23:interview:2",
+   "sectionId": "s23",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "n8n webhook risk?",
+   "answer": "Narrow permissions, validated inputs, explicit outputs, authorization and audit logs. Unauthenticated/duplicate/malformed requests.",
+   "explanation": "TIP: 30-45 sec, then give one project example. 30-45 sec, then give one project example. · FOLLOW-UP: No unrestricted execution. Authenticate, validate, idempotency.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s23:interview:3",
+   "sectionId": "s23",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "agent loop kaise prevent?",
+   "answer": "Max iterations, state-based stop condition, timeouts and fallback.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Observability.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s23:interview:4",
+   "sectionId": "s23",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "human approval kab?",
+   "answer": "Irreversible, sensitive or high-impact actions.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Approval before execution.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s23:interview:5",
+   "sectionId": "s23",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "agent evaluation?",
+   "answer": "Task success, tool correctness, latency, cost, retries and unsafe actions.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Use test scenarios.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s23:interview:6",
+   "sectionId": "s23",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "60% reduction kaise explain?",
+   "answer": "Baseline manual steps define karo, automated workflow measure karo, time/intervention comparison batao.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Do not invent measurement details.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s23:coding:0",
+   "sectionId": "s23",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "MODULE 09 � CODING LAB CODING LAB � AGENTIC AI + LANGCHAIN + N8N Pehle solve karo then answer compare karo complexity + edge case explain karo.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s23:coding:1",
+   "sectionId": "s23",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Bound agent loop. ANSWER for step",
+   "answer": "e(max_steps): action=decide(state) if action==\"stop\": break",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s23:coding:2",
+   "sectionId": "s23",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Tool schema idea. ANSWER tool={\"n",
+   "answer": "arch_customer\",\"input\":{\"customer_id\":\"string\"}}",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s23:coding:3",
+   "sectionId": "s23",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Validate tool argument. ANSWER if not isi",
+   "answer": "customer_id,str) or not customer_id: raise ValueError(\"invalid customer_id\")",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s23:coding:4",
+   "sectionId": "s23",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Retry only transient errors. ANSWER for attemp",
+   "answer": "ge(3): try: return call() except TimeoutError: continue except ValueError: raise",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s23:coding:5",
+   "sectionId": "s23",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "\"Main pehle constraints aur edge cases clarify karunga, phir simplest correct solution, phir complexity aur test cases explain karunga.\"",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s23:coding:6",
+   "sectionId": "s23",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Idempotent webhook concept. ANSWER event_id",
+   "answer": "ad[\"event_id\"] if already_processed(event_id): return {\"status\":\"duplicate\"}",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s23:coding:7",
+   "sectionId": "s23",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Human approval gate. ANSWER if actio",
+   "answer": "es_approval: return {\"status\":\"awaiting_approval\",\"action\":action}",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s23:coding:8",
+   "sectionId": "s23",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Agent repeats same tool forever. ANSWER Track tool/action",
+   "answer": "set max detect repeated identical actions.",
+   "explanation": "Input edge cases + expected output iterations, add + complexity. state-based stop Audit log concept. ANSWER condliotgi_oenvsenatn(duser_id, CHECK Input edge cases + action, tool_name, success, latency) expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "interview code"
+   ]
+  },
+  {
+   "id": "s23:logic:0",
+   "sectionId": "s23",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: What changes first: input, transformed data, or output?",
+   "answer": "Trace data flow from boundary validation transformation result.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s23:logic:1",
+   "sectionId": "s23",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "trace: Pick one code example from today and write variable state after every step.",
+   "answer": "Interviewers value reasoning, not only final output.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "trace"
+   ]
+  },
+  {
+   "id": "s23:logic:2",
+   "sectionId": "s23",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "why: What is the most likely bug if the result is unexpectedly empty?",
+   "answer": "Check input shape/type, filtering condition, join keys or model response.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "why"
+   ]
+  },
+  {
+   "id": "s23:logic:3",
+   "sectionId": "s23",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "fix: What edge case breaks the simple solution?",
+   "answer": "Empty input, NULL/None, duplicate IDs, invalid JSON, timeout or shape mismatc",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "fix"
+   ]
+  },
+  {
+   "id": "s23:logic:4",
+   "sectionId": "s23",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "design: Where should validation happen?",
+   "answer": "At system boundaries before expensive or irreversible operations.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "design"
+   ]
+  },
+  {
+   "id": "s23:logic:5",
+   "sectionId": "s23",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "tradeoff: What would you optimize first?",
+   "answer": "Measure first; then target the actual bottleneck in latency, memory, cost or correctness.MASTER CHECK A topic is interview-ready when you can explain it simply, code it without copying, debug one failure, state a trade-off and connect it to your resume",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "tradeoff"
+   ]
+  },
+  {
+   "id": "s23:solved:0",
+   "sectionId": "s23",
+   "type": "solved",
+   "difficulty": "easy",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Bound agent loop.",
+   "answer": "Bound agent loop.\nfor step in range(max_steps): action=decide(state) if action==\"stop\": break",
+   "explanation": "Expected result: Tool call is bounded, validated and auditable.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s23:solved:1",
+   "sectionId": "s23",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Validate tool argument.",
+   "answer": "Validate tool argument.\nif not isinstance(customer_id,str) or not customer_id: raise ValueError(\"invalid customer_id\")",
+   "explanation": "Expected result: Tool call is bounded, validated and auditable.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s23:solved:2",
+   "sectionId": "s23",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Idempotent webhook concept.",
+   "answer": "Idempotent webhook concept.\nevent_id = payload[\"event_id\"] if already_processed(event_id): return {\"status\":\"duplicate\"}",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s23:solved:3",
+   "sectionId": "s23",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Agent repeats same tool forever.",
+   "answer": "Agent repeats same tool forever.",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "debug"
+   ]
+  },
+  {
+   "id": "s23:solved:4",
+   "sectionId": "s23",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Audit log concept.",
+   "answer": "Audit log concept.\nTrack tool/action history, set max iterations, add state-based stop conditions and detect repeated identical actions.\nlog_event(user_id, action, tool_name, success, latency)",
+   "explanation": "Expected result: Tool call is bounded, validated and auditable. Tool call is bounded, validated and auditable.",
+   "source": "curriculum",
+   "tags": [
+    "interview code"
+   ]
+  }
+ ],
+ "flags": []
+}

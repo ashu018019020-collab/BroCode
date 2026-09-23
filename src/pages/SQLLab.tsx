@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { runSQL } from '../features/coding/runners';
 import { DATASETS, seedForSQL } from '../data/datasets';
 import { useStore, setState } from '../offline/store';
 import { codeSlot } from '../engine/keys';
+import { parseTraceback } from '../engine/traceback';
+
+/** Same Monaco editor the Playground and lessons use — one editor experience app-wide. */
+const MonacoIDE = lazy(() => import('../components/MonacoIDE').then((m) => ({ default: m.MonacoIDE })));
+type IdeError = import('../components/MonacoIDE').IdeError;
 
 const EXAMPLES = [
   { title: 'SELECT + WHERE', q: 'SELECT name, marks FROM students WHERE marks > 80;' },
@@ -26,6 +31,15 @@ export default function SQLLab() {
     if (r.error) setErr(r.error); else setRes(r);
     setState((s) => ({ ...s, savedCode: { ...s.savedCode, [codeSlot.sqlLab]: q } }));
   };
+  const save = () => setState((s) => ({ ...s, savedCode: { ...s.savedCode, [codeSlot.sqlLab]: q } }));
+
+  // Squiggle the failing token's line straight from the SQLite error message.
+  const sqlErrLine = (() => {
+    if (!err) return null;
+    const m = err.match(/line (\d+)/i) ?? err.match(/near \"[^\"]*\"[^\n]*\n([^\n]*)/);
+    return m ? parseInt(m[1], 10) : null;
+  })();
+  const markers: IdeError[] = sqlErrLine ? [{ line: sqlErrLine, message: err!, severity: 'error' }] : [];
 
   return (
     <div>
@@ -53,8 +67,20 @@ export default function SQLLab() {
         ))}
       </div>
 
-      <textarea className="editor" rows={6} value={q} onChange={(e) => setQ(e.target.value)} aria-label="SQL query" />
-      <button className="btn primary" style={{ margin: '8px 0' }} onClick={run}>▶ Run query</button>
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <Suspense fallback={<div className="editor loading" style={{ height: 220 }}>Loading editor…</div>}>
+          <MonacoIDE
+            value={q}
+            language="sql"
+            onChange={setQ}
+            onRun={run}
+            onSave={save}
+            errors={markers}
+            height={220}
+          />
+        </Suspense>
+      </div>
+      <button className="btn primary" style={{ margin: '8px 0' }} onClick={run}>▶ Run query <span className="kbd">Ctrl+↵</span></button>
 
       {err && <pre className="codeblock" style={{ color: 'var(--red)' }}>{err}</pre>}
       {res && (

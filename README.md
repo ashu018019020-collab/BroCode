@@ -1,12 +1,28 @@
 # AI ENGINEER MASTER LAB
 
-> Learn → Understand → Code → Debug → Build → Explain → Master
+> Learn → Code → Practice → Build → Master
 
-An offline-first personal learning OS built from
+A **premium offline-first AI Python Learning IDE** built from
 **Python_Complete_Guide_AI_Engineer_SMART_SECTION_REBUILD_V5_2026.pdf** (457 pages).
 The PDF is the primary source of truth: all 29 sections, interview Q&A, coding/logic/debug
 tasks, solved practice, mini projects, project labs, checkpoints and mock interviews were
 extracted from it and transformed into an interactive curriculum — nothing is invented.
+
+## What's inside
+
+- **AI Python Learning Studio** — a VS Code-style IDE (Monaco editor, file explorer,
+  Program Input, Output Console, offline AI Tutor, honest package manager) with real
+  in-browser Python (bundled Pyodide, NumPy + pandas wheels included).
+- **Error intelligence** — tracebacks are parsed to file/line/column, the exact line is
+  highlighted in the editor, and a teaching card explains the mistake in Hinglish or
+  English with hints and a one-click Fix It where derivable.
+- **Learning dashboard + roadmap** — 8 tracks (Python Core → Interview + Projects) mapped
+  onto the 29 PDF sections, with prerequisite gates, real XP/levels, streaks, daily
+  mission, mistake tracker and spaced review.
+- **Hinglish-first i18n** — instant Hinglish/English toggle, persisted locally; missing
+  keys fall back to English.
+- **100% offline** — Monaco, icons, fonts, Python runtime, SQL engine, datasets and the
+  PDF are all bundled. No CDN, no cloud APIs, no telemetry.
 
 ## Requirements
 
@@ -61,6 +77,35 @@ the "Program input" box under the editor (one value per line).
 ## SQL runtime setup
 
 Nothing to do: sql.js is imported from npm and loads its `.wasm` from `public/sqljs`.
+
+## Diagnostics
+
+```bash
+npm run doctor
+```
+
+Checks Node/npm, required project files, bundled runtime assets (Pyodide, SQLite WASM,
+curriculum, PDF), dependencies (and rejects cloud/online packages), and storage setup.
+Every line reports ✓ ready, ⚠ warning, or ✕ missing.
+
+## Language system
+
+`src/i18n/` holds the packs: `locales.ts` (English + Hinglish dictionaries, keyed) and
+`index.tsx` (`I18nProvider`, `useI18n().t`, instant switch, `localStorage` persistence,
+English fallback for missing keys). Adding strings: add the key to `en`, then translate
+in `hinglish`. UI labels only — lesson content is PDF-authored.
+
+## Adding offline packages
+
+Edit `src/data/packages.ts`. `availableOffline: true` may only be used for packages
+actually bundled with the runtime (numpy, pandas, stdlib). Anything else must stay
+`false` — the UI then honestly says the package is not available offline.
+
+## Adding lessons / tasks
+
+The curriculum lives in `public/curriculum/sections.json` (generated from the PDF by
+`tools/extract.mjs`). See "Regenerating the curriculum" below for the maintainer flow;
+the app renders whatever the schema contains — no page changes needed for content.
 The bundled datasets seed fresh tables on every query run.
 
 ## Data storage (local only)

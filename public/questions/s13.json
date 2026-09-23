@@ -1,0 +1,388 @@
+{
+ "sectionId": "s13",
+ "title": "OOP (Object Oriented Programming)",
+ "contentVersion": "1.0.0",
+ "generatedAt": "2026-09-23T18:36:17.758Z",
+ "topics": [
+  "class & object 13.2 __init__() 13.3 instance method 13.4 class variable 13.5 class method 13.6 static method 13.7 inheritance 13.8 method overriding 13.9 polymorphism 13.10 encapsulation 13.11 __str__() 13.12 property decorator 13.13 super() 13.14 __repr__ vs __str__ 13.15 isinstance() & issubclass() 13.16 property setter (Validation) 13.17 Magic (Dunder) Methods 13.18 Composition (has-a) 13.19 @dataclass",
+  "class & object",
+  "__init__()",
+  "instance method",
+  "class variable",
+  "class method",
+  "static method",
+  "inheritance",
+  "method overriding",
+  "polymorphism",
+  "28.26"
+ ],
+ "questions": [
+  {
+   "id": "s13:interview:0",
+   "sectionId": "s13",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Class aur object kya hain?",
+   "answer": "Class blueprint hai; object us blueprint ka real instance. Ek class se multiple objects ban sakte hain.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s13:interview:1",
+   "sectionId": "s13",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "self kya hota hai?",
+   "answer": "Instance method me current object ka reference. self.brand jaise attributes us object ke data ko access karte hain.",
+   "explanation": "TIP: 20-30 sec me clearly bolo. 20-30 sec me clearly bolo.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s13:interview:2",
+   "sectionId": "s13",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Instance/class/static method difference?",
+   "answer": "Instance method self use karta hai, classmethod cls se class data handle karta hai, staticmethod ko self/cls ki zarurat nahi.",
+   "explanation": "TIP: 20-30 sec me clearly bolo.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s13:interview:3",
+   "sectionId": "s13",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Inheritance aur overriding?",
+   "answer": "Inheritance me child parent ka code reuse karta hai. Overriding me child same method ko apne behavior se redefine karta hai.",
+   "explanation": "TIP: 20-30 sec me clearly bolo.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s13:interview:4",
+   "sectionId": "s13",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Polymorphism kya hai?",
+   "answer": "Same interface/method call ko different classes apne behavior ke saath implement karti hain.",
+   "explanation": "TIP: 20-30 sec me clearly bolo.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s13:interview:5",
+   "sectionId": "s13",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Encapsulation/property ka use?",
+   "answer": "Data ko controlled access dena. @property getter ko attribute-style access deta hai; setter validation add kar sakta hai.",
+   "explanation": "TIP: 20-30 sec me clearly bolo. Mini speaking drill: Har answer bina PDF dekhe 2 baar bolo. Dusri baar ek real example add karo.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s13:coding:0",
+   "sectionId": "s13",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "CODING LAB CODING LAB / OOP (Object Oriented Programming) Rule: Pehle problem ko 10 sec me apne words me bolo, phir code likho. Copy-paste ke bajaye khud type karo.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s13:coding:1",
+   "sectionId": "s13",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Person class with name, age aur introduce() banao.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s13:coding:2",
+   "sectionId": "s13",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Animal parent aur Dog/ Cat child classes se method overriding karo.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s13:coding:3",
+   "sectionId": "s13",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Private balance + @property + setter validation wala Account banao.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s13:coding:4",
+   "sectionId": "s13",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "BankAccount me deposit/withdraw methods banao.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s13:coding:5",
+   "sectionId": "s13",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Shape base class, Rectangle/Circle area() implement karo.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s13:debug:0",
+   "sectionId": "s13",
+   "type": "debug",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "super().__init__() kab use karoge?",
+   "answer": "super().__init__() kab use karoge?\nclass Child(Parent): def __init__(self,x,y): super().__init__(x) self.y=y",
+   "explanation": "Expected result: Parent initializer ko child se reuse karna ho.",
+   "source": "curriculum",
+   "tags": [
+    "debug"
+   ]
+  },
+  {
+   "id": "s13:coding:6",
+   "sectionId": "s13",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "class __init__ self super() @property inheritance override",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s13:coding:7",
+   "sectionId": "s13",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "1. Error/bug ko reproduce karo 2. Values/types/conditions print karke isolate karo 3. Ek change karo, rerun karo, phir reason explain karo",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s13:logic:0",
+   "sectionId": "s13",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: Dog(Animal) aur Dog inherits Animal -> isinstance(dog, Animal)?",
+   "answer": "True",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s13:logic:1",
+   "sectionId": "s13",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "trace: Car().start() where Car has Engine -> kya concept?",
+   "answer": "Composition / has-a",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "trace"
+   ]
+  },
+  {
+   "id": "s13:logic:2",
+   "sectionId": "s13",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "think: __str__ vs __repr__?",
+   "answer": "str user-readable; repr debug/developer representation",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "think"
+   ]
+  },
+  {
+   "id": "s13:logic:3",
+   "sectionId": "s13",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: len(custom_object) tabhi chalega jab?",
+   "answer": "__len__ defined ho",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s13:logic:4",
+   "sectionId": "s13",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "fix: Setter me negative age allow kar di to bug kya?",
+   "answer": "Invalid state object me aa sakta hai",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "fix"
+   ]
+  },
+  {
+   "id": "s13:logic:5",
+   "sectionId": "s13",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "explain: OOP ka benefit simple words me?",
+   "answer": "Data + related behavior ko organized reusable unit me rakhna",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "explain"
+   ]
+  },
+  {
+   "id": "s13:solved:0",
+   "sectionId": "s13",
+   "type": "solved",
+   "difficulty": "easy",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Person class with name, age aur introduce().",
+   "answer": "Person class with name, age aur introduce().\nclass Person: def __init__(self,name,age): self.name,self.age=name,age def introduce(self): return f\"I am {self.name}\"\np=Person(\"Ahetesham\",23); print(p.introduce())",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s13:solved:1",
+   "sectionId": "s13",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Animal parent + Dog/Cat overriding.",
+   "answer": "Animal parent + Dog/Cat overriding.\nclass Animal: def sound(self):\nclass Dog(Animal): def sound(self):\nprint(Dog().sound())\nreturn return\n\"...\" \"woof\"",
+   "explanation": "Expected result: woof",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s13:solved:2",
+   "sectionId": "s13",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Private balance + property setter validation.",
+   "answer": "Private balance + property setter validation.\nclass Account: def __init__(self,b): self._balance=b @property def balance(self): return self._balance @balance.setter def balance(self,v): if v<0: raise ValueError(\"negative\") self._balance=v\nprint(Account(100).balance) EXPECTED RESULT 100",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  }
+ ],
+ "flags": []
+}

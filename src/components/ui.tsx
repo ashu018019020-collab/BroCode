@@ -68,3 +68,32 @@ export function ArchitectureDiagram({ nodes, note }: { nodes: string[]; note?: s
 export function Chip({ kind, children }: { kind?: string; children: ReactNode }) {
   return <span className={`chip ${kind ?? ''}`}>{children}</span>;
 }
+
+/** The acting breakdown: every number comes from a real gate, never estimated. */
+export function ScoreBreakdown({ scores }: { scores: { theory: number; coding: number; debug: number; interview: number; project: number; mastery: number } }) {
+  const rows: [string, number][] = [
+    ['Theory', scores.theory],
+    ['Coding', scores.coding],
+    ['Debug', scores.debug],
+    ['Interview', scores.interview],
+    ['Project', scores.project],
+    ['Mastery', scores.mastery],
+  ];
+  return (
+    <div className="card fadeup" style={{ marginTop: 10 }}>
+      <div className="row spread">
+        <b className="small">SCORE BREAKDOWN</b>
+        <span className="small muted">Theory = padha + logic · Project = mini + lab + defense</span>
+      </div>
+      <div className="scoregrid">
+        {rows.map(([label, v]) => (
+          <div key={label} className="scorecell">
+            <span className="small muted">{label}</span>
+            <b>{v}%</b>
+            <Bar pct={v} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

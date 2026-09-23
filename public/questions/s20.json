@@ -1,0 +1,381 @@
+{
+ "sectionId": "s20",
+ "title": "Machine Learning + scikit-learn",
+ "contentVersion": "1.0.0",
+ "generatedAt": "2026-09-23T18:36:17.764Z",
+ "topics": [
+  "MACHINE LEARNING + SCIKIT-LEARN - study notes (p.345)",
+  "MACHINE LEARNING + SCIKIT-LEARN - study notes (p.346)"
+ ],
+ "questions": [
+  {
+   "id": "s20:interview:0",
+   "sectionId": "s20",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "data leakage?",
+   "answer": "Validation/test information training process me accidentally use ho jana, resulting in unrealistically high metrics.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Fit scaler only on train.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s20:interview:1",
+   "sectionId": "s20",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "accuracy kab misleading?",
+   "answer": "Severe class imbalance me.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Use precision/recall/F1/PR-AUC based on cost.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s20:interview:2",
+   "sectionId": "s20",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "baseline?",
+   "answer": "Preprocessing and model ko one reproducible object me combine karke leakage rSisikmple reference model/heuristic jisse improvement meaningful compare ho.",
+   "explanation": "TIP: Majority class or mean predictor. CV-safe workflow. SPEAK: 30-45 sec, then give one project example. SPEAK: 30-45 sec, then give one project example. INTERVIEW UPGRADE If interviewer asks \"why?\", add a trade-off. If asks \"how?\", give implementation steps. If asks \"what if it fails?\", explain the failure path.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s20:interview:3",
+   "sectionId": "s20",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "overfitting?",
+   "answer": "Training performance strong but unseen data poor.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Regularization, simpler model, more data, CV.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s20:interview:4",
+   "sectionId": "s20",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "precision?",
+   "answer": "Predicted positives me kitne actually positive.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: False positives costly.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s20:interview:5",
+   "sectionId": "s20",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "model deployment me kya version?",
+   "answer": "Code, model, preprocessing, config and ideally data/schema assumptions.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Reproducibility.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s20:coding:0",
+   "sectionId": "s20",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "MODULE 06 � CODING LAB CODING LAB � MACHINE LEARNING + SCIKIT-LEARN Pehle solve karo then answer compare karo complexity + edge case explain karo.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s20:coding:1",
+   "sectionId": "s20",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Train/test split. Classification report. ANSWER ANSWER f",
+   "answer": "arn.model_selection import train_test_split from sklearn.metrics import classification_report X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_psrtiante(=c4l2a)ssification_report(y_test, pred))",
+   "explanation": "CHECK Input edge cases + expected output + complexity. Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s20:coding:2",
+   "sectionId": "s20",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Pipeline with scaler + logistic regression. Categorical preprocessing. ANSWER ANSWER fro",
+   "answer": "n.pipeline import Pipeline ColumnTransformer([(\"num\",StandardScaler(),num_cols),(\"cat\",OneHotEnco pipe=Pipeline([(\"scale\",StandardScaler()),(\"model\",LogisticRegression())C]H)ECK",
+   "explanation": "Input edge cases + expected output + complexity. Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s20:coding:3",
+   "sectionId": "s20",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "\"Main pehle constraints aur edge cases clarify karunga, phir simplest correct solution, phir complexity aur test cases explain karunga.\"",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s20:coding:4",
+   "sectionId": "s20",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Cross-validation score. ANSWER from skl",
+   "answer": "el_selection import cross_val_score scores=cross_val_score(pipe,X,y,cv=5,scoring=\"f1\")",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s20:coding:5",
+   "sectionId": "s20",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Handle class imbalance. ANSWER Logistic",
+   "answer": "on(class_weight=\"balanced\")",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s20:coding:6",
+   "sectionId": "s20",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Accuracy 99% but minority recall 10% -- explain. ANSWER Likely class imbal",
+   "answer": "threshold issue. Inspect recall/F1/PR-AUC aligned to business cost.",
+   "explanation": "Input edge cases + expected output + complexity. confusion matrix Regression MAE. ANSWER and fursoem sklearn.metrics import mean_absolute_error mae=mean_absolute_error(y_test,pred) CHECK Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "interview code"
+   ]
+  },
+  {
+   "id": "s20:logic:0",
+   "sectionId": "s20",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: What changes first: input, transformed data, or output?",
+   "answer": "Trace data flow from boundary validation transformation result.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s20:logic:1",
+   "sectionId": "s20",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "trace: Pick one code example from today and write variable state after every step.",
+   "answer": "Interviewers value reasoning, not only final output.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "trace"
+   ]
+  },
+  {
+   "id": "s20:logic:2",
+   "sectionId": "s20",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "why: What is the most likely bug if the result is unexpectedly empty?",
+   "answer": "Check input shape/type, filtering condition, join keys or model response.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "why"
+   ]
+  },
+  {
+   "id": "s20:logic:3",
+   "sectionId": "s20",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "fix: What edge case breaks the simple solution?",
+   "answer": "Empty input, NULL/None, duplicate IDs, invalid JSON, timeout or shape mismatc",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "fix"
+   ]
+  },
+  {
+   "id": "s20:logic:4",
+   "sectionId": "s20",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "design: Where should validation happen?",
+   "answer": "At system boundaries before expensive or irreversible operations.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "design"
+   ]
+  },
+  {
+   "id": "s20:logic:5",
+   "sectionId": "s20",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "tradeoff: What would you optimize first?",
+   "answer": "Measure first; then target the actual bottleneck in latency, memory, cost or correctness.MASTER CHECK A topic is interview-ready when you can explain it simply, code it without copying, debug one failure, state a trade-off and connect it to your resume",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "tradeoff"
+   ]
+  },
+  {
+   "id": "s20:solved:0",
+   "sectionId": "s20",
+   "type": "solved",
+   "difficulty": "easy",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Train/test split.",
+   "answer": "Train/test split.",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s20:solved:1",
+   "sectionId": "s20",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Pipeline with scaler + logistic regression.",
+   "answer": "Pipeline with scaler + logistic regression.\nfrom sklearn.pipeline import Pipeline pipe=Pipeline([(\"scale\",StandardScaler()),(\"model\",LogisticRegressio n())])",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s20:solved:2",
+   "sectionId": "s20",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Cross-validation score.",
+   "answer": "Cross-validation score.\nfrom sklearn.model_selection import cross_val_score scores=cross_val_score(pipe,X,y,cv=5,scoring=\"f1\")",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s20:solved:3",
+   "sectionId": "s20",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Accuracy 99% but minority recall 10% - explain.",
+   "answer": "Accuracy 99% but minority recall 10% - explain.\nLikely class imbalance or threshold issue. Inspect confusion matrix and use recall/F1/PR-AUC aligned to business cost.",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "debug"
+   ]
+  },
+  {
+   "id": "s20:solved:4",
+   "sectionId": "s20",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Regression MAE.",
+   "answer": "Regression MAE.\nfrom sklearn.metrics import mean_absolute_error mae=mean_absolute_error(y_test,pred)",
+   "explanation": "Expected result: Metric/validation result is printed. Metric/validation result is printed.",
+   "source": "curriculum",
+   "tags": [
+    "interview code"
+   ]
+  }
+ ],
+ "flags": []
+}

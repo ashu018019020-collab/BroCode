@@ -1,0 +1,399 @@
+{
+ "sectionId": "s22",
+ "title": "Generative AI, LLMs & RAG",
+ "contentVersion": "1.0.0",
+ "generatedAt": "2026-09-23T18:36:17.765Z",
+ "topics": [
+  "GENAI + LLM + RAG - study notes (p.369)",
+  "GENAI + LLM + RAG - study notes (p.370)"
+ ],
+ "questions": [
+  {
+   "id": "s22:interview:0",
+   "sectionId": "s22",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "chunking kyun?",
+   "answer": "Relevant external context retrieve karke model prompt me dena before generatioDno. cuments ko retrievable units me todta hai. Too small loses context; too large",
+   "explanation": "TIP: hurts retrieval precision. Private/changing knowledge. SPEAK: 30-45 sec, then give one project example. Tune with evaluation. SPEAK: 30-45 sec, then give one project example.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s22:interview:1",
+   "sectionId": "s22",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "tool calling?",
+   "answer": "Sampling variability control karta hai; lower often more deterministic, but not a correctness guarantee. Model structured tool request deta hai; application validates and executes tool.",
+   "explanation": "TIP: 30-45 sec, then give one project example. 30-45 sec, then give one project example. · FOLLOW-UP: Use case based. Never trust tool args blindly.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s22:interview:2",
+   "sectionId": "s22",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "RAG vs fine-tune?",
+   "answer": "Retrieval wrong, chunking poor, stale docs, prompt injection, unsupported answerR. AG grounds changing knowledge; fine-tuning adapts behavior/task.",
+   "explanation": "TIP: Evaluate retrieval separately. Different problems. SPEAK: 30-45 sec, then give one project example. SPEAK: 30-45 sec, then give one project example.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s22:interview:3",
+   "sectionId": "s22",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "LLM production metrics?",
+   "answer": "Quality, latency, cost, failure rate, safety/tool correctness and user satisfaction.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Not token count alone.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s22:interview:4",
+   "sectionId": "s22",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "structured output?",
+   "answer": "Constrain/validate output against schema before downstream automation.",
+   "explanation": "TIP: 30-45 sec, then give one project example. · FOLLOW-UP: Important for n8n/API workflows.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s22:coding:0",
+   "sectionId": "s22",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "MODULE 08 � CODING LAB CODING LAB � GENAI + LLM + RAG Pehle solve karo then answer compare karo complexity + edge case explain karo.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s22:coding:1",
+   "sectionId": "s22",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Prompt template function. ANSWER def prom",
+   "answer": "ion, context): return f\"Answer only from context: {context} Q:{question}\"",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s22:coding:2",
+   "sectionId": "s22",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Structured result. ANSWER result={",
+   "answer": ":answer,\"sources\":sources,\"confidence\":score}",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s22:coding:3",
+   "sectionId": "s22",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Chunk text. ANSWER def chunks",
+   "answer": "ize=500): return [text[i:i+size] for i in range(0,len(text),size)]",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s22:coding:4",
+   "sectionId": "s22",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Top-k retrieval concept. ANSWER scores = c",
+   "answer": "milarity(query_vec, doc_vecs)[0] top_idx = scores.argsort()[-5:][::-1]",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s22:coding:5",
+   "sectionId": "s22",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "\"Main pehle constraints aur edge cases clarify karunga, phir simplest correct solution, phir complexity aur test cases explain karunga.\"",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s22:coding:6",
+   "sectionId": "s22",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "RAG pipeline. ANSWER docs=ret",
+   "answer": "ery) context=\"\\n\".join(docs) answer=llm(prompt(query,context))",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s22:coding:7",
+   "sectionId": "s22",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Validate JSON output. ANSWER import j",
+   "answer": "=json.loads(model_text) assert \"answer\" in data",
+   "explanation": "Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s22:coding:8",
+   "sectionId": "s22",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "RAG answers unrelated facts. ANSWER Inspect query embe",
+   "answer": "hunk quality, top-k relevance, prompt grounding instructions.",
+   "explanation": "Input edge cases + expected output + complexity. metadata Token/cost logging wrapper concept. ANSWER filtersstaarntd=time.perf_counter() result=call_model(prompt) latency=time.perf_counter()-start log(latency=latency) CHECK Input edge cases + expected output + complexity.",
+   "source": "curriculum",
+   "tags": [
+    "interview code"
+   ]
+  },
+  {
+   "id": "s22:logic:0",
+   "sectionId": "s22",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: What changes first: input, transformed data, or output?",
+   "answer": "Trace data flow from boundary validation transformation result.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s22:logic:1",
+   "sectionId": "s22",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "trace: Pick one code example from today and write variable state after every step.",
+   "answer": "Interviewers value reasoning, not only final output.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "trace"
+   ]
+  },
+  {
+   "id": "s22:logic:2",
+   "sectionId": "s22",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "why: What is the most likely bug if the result is unexpectedly empty?",
+   "answer": "Check input shape/type, filtering condition, join keys or model response.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "why"
+   ]
+  },
+  {
+   "id": "s22:logic:3",
+   "sectionId": "s22",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "fix: What edge case breaks the simple solution?",
+   "answer": "Empty input, NULL/None, duplicate IDs, invalid JSON, timeout or shape mismatc",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "fix"
+   ]
+  },
+  {
+   "id": "s22:logic:4",
+   "sectionId": "s22",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "design: Where should validation happen?",
+   "answer": "At system boundaries before expensive or irreversible operations.",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "design"
+   ]
+  },
+  {
+   "id": "s22:logic:5",
+   "sectionId": "s22",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "tradeoff: What would you optimize first?",
+   "answer": "Measure first; then target the actual bottleneck in latency, memory, cost or correctness.MASTER CHECK A topic is interview-ready when you can explain it simply, code it without copying, debug one failure, state a trade-off and connect it to your resume",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "tradeoff"
+   ]
+  },
+  {
+   "id": "s22:solved:0",
+   "sectionId": "s22",
+   "type": "solved",
+   "difficulty": "easy",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Prompt template function.",
+   "answer": "Prompt template function.\ndef prompt(question, context): return f\"Answer only from context:\n{context} Q:{question}\"",
+   "explanation": "Expected result: Grounded context is included before model generation.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s22:solved:1",
+   "sectionId": "s22",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Chunk text.",
+   "answer": "Chunk text.\ndef chunks(text, size=500): return [text[i:i+size] for i in range(0,len(text),size)]",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s22:solved:2",
+   "sectionId": "s22",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "RAG pipeline.",
+   "answer": "RAG pipeline.\ndocs=retrieve(query) context=\"\\n\".join(docs) answer=llm(prompt(query,context))",
+   "explanation": "Expected result: Grounded context is included before model generation.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s22:solved:3",
+   "sectionId": "s22",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "RAG answers unrelated facts.",
+   "answer": "RAG answers unrelated facts.\nInspect query embedding, chunk quality, top-k relevance, metadata filters and prompt grounding instructions.",
+   "explanation": "Expected result: Grounded context is included before model generation.",
+   "source": "curriculum",
+   "tags": [
+    "debug"
+   ]
+  },
+  {
+   "id": "s22:solved:4",
+   "sectionId": "s22",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Token/cost logging wrapper concept.",
+   "answer": "Token/cost logging wrapper concept.\nstart=time.perf_counter() result=call_model(prompt) latency=time.perf_counter()-start log(latency=latency)",
+   "explanation": "Expected result: Grounded context is included before model generation.",
+   "source": "curriculum",
+   "tags": [
+    "interview code"
+   ]
+  }
+ ],
+ "flags": []
+}

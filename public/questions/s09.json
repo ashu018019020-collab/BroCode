@@ -1,0 +1,390 @@
+{
+ "sectionId": "s09",
+ "title": "List Methods",
+ "contentVersion": "1.0.0",
+ "generatedAt": "2026-09-23T18:36:17.754Z",
+ "topics": [
+  "append() 9.2 extend() 9.3 insert() 9.4 remove() 9.5 pop() 9.6 clear() 9.7 index() 9.8 count() 9.9 sort() 9.10 sort(reverse=True) 9.11 reverse() 9.12 copy() 9.13 sorted() vs sort() 9.14 sort with key= (custom sorting) 9.15 Stack (LIFO) using List 9.16 Remove Duplicates, Order Safe",
+  "append()",
+  "extend()",
+  "insert()",
+  "remove()",
+  "pop()",
+  "clear()",
+  "index()",
+  "count()",
+  "sorted() vs sort()",
+  "sort with key= (custom sorting)",
+  "Stack (LIFO) using List",
+  "Remove Duplicates, Order Safe"
+ ],
+ "questions": [
+  {
+   "id": "s09:interview:0",
+   "sectionId": "s09",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "append vs extend?",
+   "answer": "append ek single item add karta hai; extend iterable ke items ko alag-alag add karta hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s09:interview:1",
+   "sectionId": "s09",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "remove vs pop?",
+   "answer": "remove value ke first matching item ko hataata hai. pop index se item hataata hai aur removed value return karta hai.",
+   "explanation": "TIP: 20-30 sec me clearly bolo. 20-30 sec me clearly bolo.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s09:interview:2",
+   "sectionId": "s09",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "sort vs sorted?",
+   "answer": "sort list ko in-place modify karta hai aur None return karta hai. sorted nayi sorted list deta hai aur any iterable par chal sakta hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s09:interview:3",
+   "sectionId": "s09",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "sort(key=...) ka use?",
+   "answer": "Custom sorting criterion define karne ke liye, jaise strings ko length ya tuples ko score ke basis par.",
+   "explanation": "TIP: 20-30 sec me clearly bolo. 20-30 sec me clearly bolo.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s09:interview:4",
+   "sectionId": "s09",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "List ko stack ke roop me kaise use karte hain?",
+   "answer": "append() push aur pop() pop. Isse LIFO behaviour milta hai.",
+   "explanation": "See model answer.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s09:interview:5",
+   "sectionId": "s09",
+   "type": "interview",
+   "difficulty": "medium",
+   "importance": "interview_critical",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Order-safe duplicate removal?",
+   "answer": "dict.fromkeys(items) se insertion order preserve karte hue duplicates remove kar sakte hain.",
+   "explanation": "TIP: 20-30 sec me clearly bolo. 20-30 sec me clearly bolo. Mini speaking drill: Har answer bina PDF dekhe 2 baar bolo. Dusri baar ek real example add karo.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s09:coding:0",
+   "sectionId": "s09",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "CODING LAB / List Methods Rule: Pehle problem ko 10 sec me apne words me bolo, phir code likho. Copy-paste ke bajaye khud type karo. CODING LAB",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s09:coding:1",
+   "sectionId": "s09",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Empty list me 10,20,30 append karo.",
+   "answer": "Empty list me 10,20,30 append karo.\nx=[] x.append(10); x.append(20); x.append(30) print(x)",
+   "explanation": "Try first, then compare with the answer key.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s09:coding:2",
+   "sectionId": "s09",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Words ko length ke descending order me sort karo.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s09:coding:3",
+   "sectionId": "s09",
+   "type": "coding",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "[1,2,2,3,1,4] se duplicates hatao, order same rakho.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s09:coding:4",
+   "sectionId": "s09",
+   "type": "coding",
+   "difficulty": "easy",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "List se last item pop karke print karo.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "easy"
+   ]
+  },
+  {
+   "id": "s09:coding:5",
+   "sectionId": "s09",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "Students tuples ko marks ke descending order me sort karo.",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s09:debug:0",
+   "sectionId": "s09",
+   "type": "debug",
+   "difficulty": "hard",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "nums = nums.append(5) galat kyun?",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": [
+    "debug"
+   ]
+  },
+  {
+   "id": "s09:coding:6",
+   "sectionId": "s09",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "append() extend() pop() remove() sort() sorted() key=",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s09:coding:7",
+   "sectionId": "s09",
+   "type": "coding",
+   "difficulty": "medium",
+   "importance": "must_know",
+   "priority": "P0",
+   "status": "PUBLISHED",
+   "question": "1. Error/bug ko reproduce karo 2. Values/types/conditions print karke isolate karo 3. Ek change karo, rerun karo, phir reason explain karo",
+   "answer": "(solve in the Coding Lab)",
+   "explanation": "Run the task in the Coding Lab and compare with the expected output.",
+   "source": "curriculum",
+   "tags": []
+  },
+  {
+   "id": "s09:logic:0",
+   "sectionId": "s09",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: [\"a\",\"b\"].append([\"c\",\"d\"]) -> ?",
+   "answer": "[\"a\",\"b\",[\"c\",\"d\"]]",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s09:logic:1",
+   "sectionId": "s09",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "trace: nums=[3,1,2]; x=nums.sort(); print(x)",
+   "answer": "None",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "trace"
+   ]
+  },
+  {
+   "id": "s09:logic:2",
+   "sectionId": "s09",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "think: sorted(\"python\") ka output kis type ka hai?",
+   "answer": "List of characters",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "think"
+   ]
+  },
+  {
+   "id": "s09:logic:3",
+   "sectionId": "s09",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "predict: [\"pear\",\"fig\"].sort(key=len) -> ?",
+   "answer": "[\"fig\",\"pear\"]",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "predict"
+   ]
+  },
+  {
+   "id": "s09:logic:4",
+   "sectionId": "s09",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "fix: remove(\"x\") on missing item?",
+   "answer": "ValueError; check membership",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "fix"
+   ]
+  },
+  {
+   "id": "s09:logic:5",
+   "sectionId": "s09",
+   "type": "logic",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "explain: Stack ka core rule?",
+   "answer": "LIFO: last in, first out",
+   "explanation": "Predict first, then verify by running the code.",
+   "source": "curriculum",
+   "tags": [
+    "explain"
+   ]
+  },
+  {
+   "id": "s09:solved:0",
+   "sectionId": "s09",
+   "type": "solved",
+   "difficulty": "medium",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "Words ko length descending order me sort karo.",
+   "answer": "Words ko length descending order me sort karo.\nw=[\"ai\",\"python\",\"api\"] print(sorted(w,key=len,reverse=True))",
+   "explanation": "Expected result: ['python', 'api', 'ai']",
+   "source": "curriculum",
+   "tags": [
+    "medium"
+   ]
+  },
+  {
+   "id": "s09:solved:1",
+   "sectionId": "s09",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "[1,2,2,3,1,4] duplicates hatao, order same rakho.",
+   "answer": "[1,2,2,3,1,4] duplicates hatao, order same rakho.\nx=[1,2,2,3,1,4]; out=[] for v in x:\nif v not in out: out.append(v) print(out)",
+   "explanation": "Expected result: [1, 2, 3, 4]",
+   "source": "curriculum",
+   "tags": [
+    "hard"
+   ]
+  },
+  {
+   "id": "s09:solved:2",
+   "sectionId": "s09",
+   "type": "solved",
+   "difficulty": "hard",
+   "importance": "high_value",
+   "priority": "P2",
+   "status": "PUBLISHED",
+   "question": "nums=nums.append(5) galat kyun?",
+   "answer": "nums=nums.append(5) galat kyun?\nnums=[1,2] nums.append(5) print(nums)",
+   "explanation": "Expected result: append() list ko mutate karta hai aur None return karta hai.",
+   "source": "curriculum",
+   "tags": [
+    "debug"
+   ]
+  }
+ ],
+ "flags": []
+}
