@@ -1,0 +1,91 @@
+{
+  "$comment": "Authored guide for the GenAI / RAG track (s22). The retrieval, prompt-assembly and eval examples are pure Python (a toy lexical index), so they really execute and their stdout is captured by scripts/guides.cjs. The LLM call itself is described in steps, never faked as a local run.",
+  "version": 1,
+  "guides": [
+    {
+      "section": "s22",
+      "title": "RAG: Chunk, Retrieve, Ground & Evaluate",
+      "level": "advanced",
+      "what": "RAG = retrieval + generation: apne documents ko chunks me todo, unhe index karo, query par relevant chunks laao, aur model ko sirf usi context se jawab likhne do — citation ke saath.",
+      "why": "LLM apne parameters se jawab 'bana' deta hai (hallucination) aur private/fresh data nahi jaanta. RAG grounding deta hai: jawab source se bandha hota hai, aur update sirf index refresh se hota hai (retraining nahi).",
+      "whereUsed": "Docs/support assistants, policy aur order lookups, codebase Q&A, aur internal knowledge search.",
+      "prereqs": ["Text Preprocessing & Bag-of-Words", "Cosine similarity", "FastAPI Request, Validation & Response (serving ke liye)"],
+      "howItWorks": "Offline: chunk (size + overlap) → embedding → vector index. Online: query embed → top-k similarity search → context assembly (chunk ids ke saath) → LLM call under a prompt contract → answer + citations. Do jagah evaluation hoti hai: retrieval (hit-rate/recall@k) aur generation (faithfulness/correctness).",
+      "syntax": "# offline\nchunks = chunk(doc, size=800, overlap=100)\nindex = [(c.id, embed(c.text)) for c in chunks]\n\n# online\nhits = top_k(index, embed(question), k=5, threshold=0.35)\nif not hits:\n    return \"context me nahi hai\"        # abstain\nprompt = build_prompt(question, hits)   # ids included\nanswer = llm(prompt)",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "docs = {\n    \"d1\": \"python list methods append extend remove\",\n    \"d2\": \"sets give o(1) membership and dedupe\",\n    \"d3\": \"offline retrieval uses cosine similarity\",\n}\n\ndef retrieve(query, k=2):\n    qs = set(query.lower().split())\n    scored = [(d, len(qs & set(text.split()))) for d, text in docs.items()]\n    return sorted((s for s in scored if s[1] > 0), key=lambda p: -p[1])[:k]\n\nprint(retrieve(\"set membership dedupe\"))\nprint(retrieve(\"kubernetes cluster\"))",
+          "output": "",
+          "explain": [
+            "Token overlap ek explainable baseline hai — production me embedding search isse behtar hoti hai par ye zero-dependency version debugging me kaam aata hai.",
+            "Sirf positive score wale chunks lautate hain, isliye zero-hit par khaali list milti hai (ye abstain ka signal hai).",
+            "Threshold ke bina har query kuch na kuch lauta degi — aur wahi hallucination ka pehla karan hai."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "chunks = [\n    {\"id\": \"d2\", \"text\": \"sets give o(1) membership and dedupe\", \"score\": 2.0},\n    {\"id\": \"d4\", \"text\": \"offline retrieval uses cosine similarity\", \"score\": 0.5},\n]\n\ndef build_prompt(question, chunks, threshold=1.0):\n    kept = [c for c in chunks if c[\"score\"] >= threshold]\n    if not kept:\n        return \"NO_CONTEXT: jawab context me nahi hai\"\n    ctx = \"\\n\".join(f\"[{c['id']}] {c['text']}\" for c in kept)\n    return f\"Answer only from the context and cite ids.\\n\\nContext:\\n{ctx}\\n\\nQ: {question}\"\n\nprint(build_prompt(\"dedupe kaise?\", chunks))\nprint(build_prompt(\"kubernetes?\", []))",
+          "output": "",
+          "explain": [
+            "Score threshold se kam-relevance chunk prompt me jata hi nahi — isse grounding better hoti hai aur tokens bhi bachte hain.",
+            "Har context block ke saath stable id bhejna citations ko reliable banata hai (warna model id andaaza lagata hai).",
+            "Zero-hit case ka explicit jawab ('NO_CONTEXT') model ko apni memory se banane se rokta hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "cases = [\n    {\"q\": \"sets dedupe\", \"gold\": \"d2\"},\n    {\"q\": \"cosine similarity\", \"gold\": \"d3\"},\n]\npreds = {\"sets dedupe\": [\"d2\", \"d1\"], \"cosine similarity\": [\"d1\"]}\n\ndef recall_at_k(cases, preds, k):\n    hits = sum(1 for c in cases if c[\"gold\"] in preds.get(c[\"q\"], [])[:k])\n    return round(hits / len(cases), 3)\n\nprint(\"recall@1\", recall_at_k(cases, preds, 1))\nprint(\"recall@2\", recall_at_k(cases, preds, 2))\nprint(\"frozen eval set size\", len(cases))",
+          "output": "",
+          "explain": [
+            "Retrieval evaluation generation se alag hai: recall@k yahi batata hai ki sahi chunk aaya ya nahi.",
+            "recall@1 vs recall@2 ka farq se pata chalta hai ki top-1 ranking weak hai ya retrieval hi.",
+            "Frozen eval set (small, versioned) hi honest improvement ka proof hai — 'better lagta hai' nahi."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Chunking strategy chuno", "detail": "Chunk size aur overlap data ke shape se chuno (table-heavy PDF me structure-aware). Bahut chhota chunk context todta hai, bahut bada noise laata hai.", "code": "chunk(doc, size=800, overlap=100)" },
+        { "step": "Retrieval ke saath threshold rakho", "detail": "Top-k plus score threshold — threshold ke bina har query kuch lauta deti hai aur model galat context par jawab bana deta hai.", "code": "hits = top_k(index, q, k=5, threshold=0.35)\nif not hits: return abstain()" },
+        { "step": "Prompt contract likho", "detail": "Context ke saath chunk ids bhejo, model se structured output (answer + source_ids) maango, aur 'sirf context se jawab do, warna abstain' rule likho." },
+        { "step": "Do-level eval banao", "detail": "Retrieval par recall@k/hit-rate aur generation par faithfulness/correctness — ek hi 'accuracy' me mila dena debug impossible banata hai." }
+      ],
+      "commonMistakes": [
+        "Zero-hit par bhi top-k bhej dena (ya context khaali chhod dena) — model apni memory se jawab likh deta hai.",
+        "Citation ids prompt me na bhejna, phir citation ka reliable hone ki umeed rakhna.",
+        "Chunk size ko tune na karna (sabse zyada impact wala knob yahi hai).",
+        "Grounding ko sirf prompt instruction se maangna — output schema validation ke bina.",
+        "Retrieval aur generation ko ek metric me mila dena."
+      ],
+      "bestPractices": [
+        "Citations ko output schema ka part banao (structured output + validation).",
+        "Relevance threshold par explicitly abstain karo — 'context me nahi hai' ek valid answer hai.",
+        "Prompt me context dedupe karo aur max tokens cap lagao (cost + noise dono kam).",
+        "Eval set frozen rakho (JSONL + version) aur regression gate lagao.",
+        "Chunk ids ko stable rakho taaki citation aur trace id match karein."
+      ],
+      "realWorld": "Support assistant jo article ids cite karta hai, policy lookup jahan 'docs me nahi mila' acceptable answer hai, aur internal codebase Q&A — teeno me yahi pipeline chalti hai. Interview me 'recall@5 0.62 se 0.86 (table-aware chunking + hybrid retrieval)' bolna strong evidence hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek chunk(text, size, overlap) function likho aur overlap ka effect word count par dikhaao." },
+        { "difficulty": "medium", "text": "Retrieval ke liye hit-rate aur recall@k implement karo aur ek score threshold tune karo." },
+        { "difficulty": "hard", "text": "Ek full eval harness likho: 20 cases, recall@k + abstention rate + markdown report — CI me gate karne layak." }
+      ],
+      "interview": [
+        { "q": "RAG aur fine-tuning me kab kaunsa?", "a": "RAG tab jab knowledge badalti rahe aur citations chahiye (update = index refresh). Fine-tuning tab jab style/format/behaviour chahiye ya latency critical ho. Dono saath bhi use hote hain." },
+        { "q": "Hallucination ko kaise kam karoge?", "a": "Retrieval threshold + abstention, chunk ids ke saath grounded prompt, structured output validation, aur citation-checking eval — sirf prompt me 'sach bolo' likhna kaafi nahi." },
+        { "q": "RAG me evaluation do level par kyun?", "a": "Retrieval fail ho to model ke paas sahi context hi nahi tha; generation fail ho to context tha par jawab galat bana. Dono ko alag measure karke hi pata chalta hai fix kahan karna hai." }
+      ],
+      "miniChallenge": "Ek toy RAG evaluator likho jo 5 documents par query de, top-k laute, abstain kare jab score threshold se neeche ho, aur recall@k print kare.",
+      "debugTask": "Citations galat chunk ka naam de rahe hain jabki answer sahi hai. Prompt me kya missing hoga, aur fix kya hai?",
+      "related": ["Text Preprocessing & Bag-of-Words", "Embeddings & vector search", "Agent Loops, Tools & Guardrails", "FastAPI Request, Validation & Response"],
+      "revision": [
+        "chunk → embed → index → retrieve → ground → cite",
+        "Threshold ke bina retrieval = hallucination",
+        "Chunk ids prompt me, output schema me citations",
+        "Eval: recall@k (retrieval) + faithfulness (generation)",
+        "Zero-hit par abstain ek valid answer hai"
+      ],
+      "interviewTip": "Interview me RAG ko do-stage system ki tarah describe karo aur har stage ka metric batao — isse pata chalta hai ki tum measurement culture laate ho, sirf prompt engineering nahi."
+    }
+  ]
+}

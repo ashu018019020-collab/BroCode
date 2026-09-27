@@ -52,6 +52,43 @@ const forbidden = Object.keys(pkg.dependencies ?? {}).filter((d) => /openai|anth
 if (forbidden.length) { bad(`forbidden online deps: ${forbidden.join(', ')}`); failures++; }
 else ok('no cloud/online dependencies');
 
+section('Topic workspaces (16-part structure)');
+try {
+  const { partCoverage, PARTS } = require('./lib/packs.cjs');
+  const sections = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'curriculum', 'sections.json'), 'utf8'));
+  const complete = sections.filter((s) => s.topic && partCoverage(s).complete);
+  const partial = sections.filter((s) => s.topic && !partCoverage(s).complete);
+  ok(`${complete.length}/${sections.length} sections carry a complete authored workspace (${PARTS.length} parts)`);
+  if (partial.length) { bad(`${partial.length} section(s) have a half-built workspace: ${partial.map((s) => s.id).join(', ')}`); failures++; }
+  if (complete.length < sections.length) {
+    warn(`${sections.length - complete.length} section(s) still to restructure — author content/curriculum/packs/<sectionId>.json, then npm run packs:write`);
+  }
+} catch (e) {
+  warn(`topic workspace check skipped: ${e.message}`);
+}
+
+section('Jupyter notebooks (Notebook Lab)');
+try {
+  const manifestPath = path.join(__dirname, '..', 'public', 'notebooks', 'manifest.json');
+  if (!fs.existsSync(manifestPath)) warn('no published notebooks — run npm run notebooks:write');
+  else {
+    const m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    const cells = m.notebooks.reduce((a, n) => a + n.codeCells, 0);
+    const verified = m.notebooks.reduce((a, n) => a + (n.verifiedCells ?? 0), 0);
+    const appCells = m.notebooks.reduce((a, n) => a + (n.appRuntimeCells ?? 0), 0);
+    ok(`${m.notebooks.length} notebooks · ${cells} code cells · ${verified} executed while authoring`);
+    if (appCells) {
+      const wheels = fs.existsSync(path.join(__dirname, '..', 'public', 'pyodide'))
+        ? fs.readdirSync(path.join(__dirname, '..', 'public', 'pyodide')).filter((f) => /^(numpy|pandas)-/.test(f) && f.endsWith('.whl'))
+        : [];
+      if (wheels.length >= 2) ok(`${appCells} cell(s) run in the bundled runtime (${wheels.length} wheel(s) present)`);
+      else { bad(`app-only notebook cells need bundled numpy/pandas wheels — found ${wheels.length}`); failures++; }
+    }
+  }
+} catch (e) {
+  warn(`notebook check skipped: ${e.message}`);
+}
+
 section('Storage');
 for (const s of ['localStorage (progress, workspace, language)', 'IndexedDB-ready (large assets via runtime)']) ok(s);
 

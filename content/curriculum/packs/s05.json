@@ -1,0 +1,662 @@
+{
+  "section": "s05",
+  "topic": "String Methods",
+  "authored": true,
+  "intro": "String methods wahi roz-marra ka kaam karte hain: input saaf karna, text todna-jodna, dhundna aur validate karna. Sabse bada trap ye hai ki string immutable hai — method naya string return karta hai, original ko chhoota nahi. Isliye 'method chala diya par result store nahi kiya' wala bug beginners ke saath hamesha hota hai, aur isi section me usko hamesha ke liye theek kiya jata hai.",
+  "theory": [
+    "Har string method naya string (ya number/list) return karta hai; original string kabhi nahi badalti. Isliye cleaned = text.strip().lower() likhna padta hai — sirf text.strip() ka result kho jata hai.",
+    "Case methods: lower/upper display ke liye, casefold comparison ke liye (Unicode-safe, 'STRASSE'.casefold() == 'strasse'), title/capitalize human display ke liye — aur ye har word ki hyphen/quote boundary par bhi todte hain.",
+    "Whitespace aur splitting: strip/lstrip/rstrip optional characters lete hain, split() bina argument kisi bhi whitespace run par todta hai (aur leading/trailing hatata hai), jabki split(',') exact character par todta hai. join() list ko jodta hai — separator 'sep'.join(parts).",
+    "Search aur replace: find() -1 deta hai, index() ValueError deta hai; startswith/endswith tuples accept karte hain (multiple suffixes), replace() ek count limit leta hai, removeprefix/removesuffix (3.9+) prefix/suffix ke liye safer aur explicit hain.",
+    "Validation: isalpha/isdigit/isalnum/isspace/isnumeric/isupper/islower. Ye Unicode-aware hain — '१२'.isdigit() True ho sakta hai. Translation ke liye str.maketrans + translate, aur formatting ke liye format/format_map."
+  ],
+  "syntax": [
+    "s.strip(); s.lstrip('0'); s.rstrip('.!?')\ns.split(); s.split(',', 1); s.rsplit(',', 1)\n'-'.join(parts); s.partition(',')\ns.replace('a', 'b', 2); s.expandtabs(4)",
+    "s.lower(); s.upper(); s.casefold(); s.title(); s.capitalize()\ns.find('x'); s.rfind('x'); s.index('x'); s.count('x')\ns.startswith(('http://', 'https://')); s.endswith('.csv')\ns.removeprefix('v'); s.removesuffix('.txt')",
+    "s.isalpha(); s.isdigit(); s.isspace(); s.isidentifier()\nstr.maketrans({'a': '4', 'e': '3'}); s.translate(table)\nf'{name}'.strip(); '{:.2f}'.format(value); '{name}'.format_map(row)",
+    "s.zfill(8); s.center(20, '-'); s.ljust(10); s.rjust(10)\ns.splitlines(); s.splitlines(keepends=True)\ns.encode('utf-8'); b.decode('utf-8')"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "raw = '  Anjali Sharma  '\n\nprint(repr(raw.strip()))\nprint(repr(raw.lstrip()))\nprint(repr(raw.rstrip()))\nprint(raw.strip().lower(), '|', raw.strip().upper())\nprint('first name:', raw.strip().split()[0])\nprint('length now:', len(raw), '->', len(raw.strip()))",
+      "output": "",
+      "explain": [
+        "strip() dono taraf se whitespace hatata hai, lstrip/rstrip sirf ek taraf — output me repr() se spaces nazar aate hain.",
+        "strip() ka result store nahi kiya, isliye raw waise hi raha — len() dono ka fark yahi dikhata hai (immutability ka live proof).",
+        "split() bina argument kisi bhi whitespace par todta hai, isliye double space bhi ek hi separator maana jata hai (split(' ') aisa nahi karta)."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "line = 'idli, 60, breakfast,  south-indian '\n\nparts = [p.strip() for p in line.split(',')]\nprint(parts)\nprint('joined with | :', ' | '.join(parts))\n\npath = 'data/report_2026.csv'\nprint('is csv?      :', path.endswith(('.csv', '.tsv')))\nprint('filename     :', path.rsplit('/', 1)[-1])\nprint('without ext  :', path.rsplit('.', 1)[0].removeprefix('data/'))\n\nlog = 'ERROR: disk full; WARNING: retry later; ERROR: retry failed'\nprint('error count  :', log.count('ERROR'))\nprint('after replace:', log.replace('ERROR', 'ERR', 1))\nprint('first error  :', log[log.find('ERROR'):log.find(';')].strip())",
+      "output": "",
+      "explain": [
+        "split(',') ke baad har part par strip() karna necessary hai — CSV me space aksar separator ke baad hota hai, warna 'breakfast' aur ' breakfast' alag values ban jati hain.",
+        "endswith() tuple leta hai, isliye ek hi call me multiple extensions check ho jate hain.",
+        "rsplit('/', 1) aur rsplit('.', 1) right side se ek hi baar todte hain — filename aur extension nikalne ka safe tarika (path me multiple dots ho to bhi kaam karta hai).",
+        "find() position deta hai, count() ginti — replace() ka count argument sirf pehli n occurrences badalta hai."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "TEXT = '''Python   string methods\nmany kaam karte hain!!  \n\nClean karna zaroori hai.'''\n\ndef normalize(text):\n    lines = [line.strip() for line in text.splitlines()]\n    lines = [line for line in lines if line]\n    return ' '.join(lines)\n\ndef collapse_spaces(text):\n    return ' '.join(text.split())\n\nclean = collapse_spaces(normalize(TEXT))\nprint(repr(clean))\nprint('words:', len(clean.split()))\n\nstripped = clean.lower().strip('!. ')\nprint('stripped punctuation:', repr(stripped[-30:]))\n\ntable = str.maketrans({'a': '4', 'e': '3', 'i': '1', 'o': '0'})\nprint('leet:', clean[:28].translate(table))\n\nprint('title :', clean.title()[:34])\nprint('center:', '[{}]'.format(clean[:10].center(16, '=')))\nprint('checks:', clean[:5].isalpha(), clean[:5].istitle(), repr(clean[:5].zfill(8)))",
+      "output": "",
+      "explain": [
+        "splitlines() newline types (\\n, \\r\\n) dono handle karta hai — isliye file text clean karne me splitlines safer hai.",
+        "collapse: text.split() saare whitespace runs ko todta hai aur ' '.join se single spaces aate hain — double space aur tabs ek saath normalize ho jate hain.",
+        "translate + maketrans character-level replacement ka fast tarika hai (chain of replace() se behtar), aur strip('!. ') strip ko char-set treat karta hai, prefix nahi."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Form aur CSV cleaning: user ka ' Pune ' aur 'pune' ek hi city hai — strip + casefold + punctuation remove ka order har data pipeline ka pehla step hota hai, warna group-by me do rows ban jati hain.",
+    "Log parsing: find/index se message nikalna, count se error tally, aur replace se masking (credit card digits, email) — security logs me PII redaction isi tarah hota hai.",
+    "Filename aur URL handling: removesuffix/removeprefix aur endswith tuple validation se extension-based routing (upload API me .csv/.json) safe rehta hai — bina regex ke."
+  ],
+  "interview": [
+    {
+      "q": "strip() aur replace() ne string badla nahi — kaise?",
+      "a": "Strings immutable hain: ye methods naya object return karte hain aur original waisa hi rehta hai. Isliye s.strip() ka result store karna padta hai. Performance-wise in-place feel deta hai kyunki Python internally join/replace ko optimized C me karta hai, par semantics copy-based hai.",
+      "tip": "Interview me immutability ka practical asar (hashability, thread safety, memory) bhi mention karo."
+    },
+    {
+      "q": "split() aur split(' ') me difference kya hai?",
+      "a": "split() whitespace ka koi bhi run separator maanta hai aur leading/trailing whitespace hata deta hai — is liye 'a  b'.split() -> ['a', 'b']. split(' ') exact single space par todta hai, isliye 'a  b'.split(' ')-> ['a', '', 'b'] (empty string aa jati hai). CSV/TSV me exact separator chahiye, human text me split() better hai.",
+      "tip": "Ye interview me favor ka question hai — ek line ka example do, bas."
+    },
+    {
+      "q": "Text comparison ke liye lower() ya casefold()?",
+      "a": "casefold() — ye Unicode ke liye aggressive normalize karta hai (ß -> ss), isliye case-insensitive comparison correct hoti hai. lower() sirf character-wise lowercasing karta hai aur kuch scripts me 'equal hone chahiye' wale cases miss kar deta hai. Display ke liye lower()/title() theek hai, comparison ke liye casefold().",
+      "tip": "Turkish 'I'/dotless-i case bhi batao — locale-aware comparison ka nuance dikhata hai."
+    },
+    {
+      "q": "find() vs index() vs in — kab kaun?",
+      "a": "Sirf 'mojood hai ya nahi' puchna ho to 'sub in s' (fast, readable). Position chahiye par missing case normal hai to find() (-1). Missing case exception hona chahiye to index(). Repeated search ya multiple patterns ke liye re module better hai — 1000 calls se pehle regex consider karo.",
+      "tip": "Exception-driven flow vs sentinel return ka trade-off discuss karo — interviewer design sense dekhta hai."
+    },
+    {
+      "q": "Ek bada log text se saare URLs nikalne hain — string methods kaafi hain?",
+      "a": "Nahi. String methods substring ke liye hain, pattern ke liye nahi. URL/email jaise structured patterns ke liye re (regex) use karo: re.findall(r'https?://[^\\s]+', text). String methods tab best hain jab delimiter fix ho (split, partition, startswith/endswith).",
+      "tip": "Regex ka answer dene ke baad ek simple case bhi batao jahan string method better hai — balanced judgement dikhata hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "'  Pune  ' ko saaf karke title case me print karo.",
+        "a": "text.strip().title() -> 'Pune'",
+        "explain": "strip pehle (warna title extra spaces par bhi kaam karega) aur title display ke liye.",
+        "code": "raw = '  pUnE  '\nprint(repr(raw.strip().title()))\nprint(repr(raw.strip().capitalize()))\nprint(repr(raw.strip().swapcase()))",
+        "output": "",
+        "tip": "title() har word capitalize karta hai, capitalize() sirf pehla — farak naam ke saath samjhao."
+      },
+      {
+        "q": "Ek sentence ke words ki list banao aur unhe '/' se join karke print karo.",
+        "a": "'/'.join(text.split())",
+        "explain": "split() words deta hai (extra spaces bhi handle), join list ko string me badalta hai — ye dono ka jodi hamesha use hoti hai.",
+        "code": "text = 'Python   string methods are  useful'\nwords = text.split()\nprint(words)\nprint('|'.join(words))\nprint('word count:', len(words))",
+        "output": "",
+        "tip": "split(' ') galat answer deta (empty strings) — ye common interview trap hai."
+      },
+      {
+        "q": "Check karo ki string sirf digits hai, sirf letters hai, ya mixed.",
+        "a": "s.isdigit(), s.isalpha(), s.isalnum() — mixed ke liye isalnum True par isdigit/isalpha False.",
+        "explain": "Ye methods Unicode-aware hain, isliye Devanagari digits bhi digit maane jate hain.",
+        "code": "for s in ('12345', 'Python', 'Py3', '   ', ''):\n    print(f'{s!r:10} isdigit={s.isdigit():5} isalpha={s.isalpha():5} isalnum={s.isalnum():5} isspace={s.isspace()}')\n\nprint('unicode digits:', '१२३'.isdigit())",
+        "output": "",
+        "tip": "Numeric validation ke liye int() try karna zyada reliable hai — isnumeric() float ('١.٥') ke liye bhi True de sakta hai."
+      },
+      {
+        "q": "String ke shuru aur aakhir se fixed text hatao (bina replace ke).",
+        "a": "s.removeprefix('v') aur s.removesuffix('.csv') — exact match par kaam karte hain aur na mile to string unchanged return karte hain.",
+        "explain": "replace() galat jagah bhi kaam kar jata hai (e.g. 'report.csv.csv' yaa middle me), removeprefix/suffix sirf boundary par.",
+        "code": "name = 'report_2026.csv'\nprint(name.removesuffix('.csv'))\nprint(name.removeprefix('report_'))\nprint(repr('data'.removeprefix('x')))\nprint('with replace:', name.replace('.csv', ''))",
+        "output": "",
+        "tip": "3.9 se pehle ke code me ye kaam slicing/split se hota tha — migration me ye point mention karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Ek email-ish string ko validate karo: ek '@', koi space nahi, domain me dot.",
+        "a": "count('@') == 1 and ' ' not in s and '.' in s.split('@')[1] — basic structural check (full RFC nahi).",
+        "explain": "Regex se pehle structural checks se 90% garbage nikal jata hai aur error message user-friendly banta hai.",
+        "code": "def basic_email(s):\n    s = s.strip()\n    if ' ' in s:\n        return False, 'spaces not allowed'\n    if s.count('@') != 1:\n        return False, 'exactly one @ required'\n    local, domain = s.split('@')\n    if not local:\n        return False, 'local part empty'\n    if '.' not in domain or domain.startswith('.') or domain.endswith('.'):\n        return False, 'domain must contain a dot'\n    return True, 'ok'\n\nfor email in ('anjali@example.com', 'a b@x.com', 'user@@x.com', '@x.com', 'user@x'):\n    print(f'{email:20} -> {basic_email(email)}')",
+        "output": "",
+        "tip": "Production me full validation ke liye email-validator ya regex + MX lookup hota hai — ye answer mention karo."
+      },
+      {
+        "q": "Text ke duplicate words dhundo aur batao kaun kitni baar aaya.",
+        "a": "casefold ke baad split, Counter se ginti, phir 1 se zyada count wale words.",
+        "explain": "Case normalization pehle karna zaroori hai warna 'Data' aur 'data' alag maane jayenge.",
+        "code": "from collections import Counter\n\ntext = 'Data science me data clean karna Data ka pehla step hai'\nwords = [w.strip('.,!?').casefold() for w in text.split() if w.strip('.,!?')]\ncounts = Counter(words)\n\nprint('total words:', len(words), 'unique:', len(counts))\nfor word, n in counts.most_common(5):\n    print(f'  {word:10} {n}')\nprint('duplicates:', sorted(w for w, n in counts.items() if n > 1))",
+        "output": "",
+        "tip": "Stop-words hata kar dekho — 'ka', 'me' jaise shabd top par aa jate hain warna."
+      },
+      {
+        "q": "Log line se severity, timestamp aur message alag karo (string methods se).",
+        "a": "partition ya split(' ', 2) use karo; severity uppercase hai to isupper() se validate karo.",
+        "explain": "Fixed-prefix logs ko parse karne me split(maxsplit) sabse simple aur fast hai.",
+        "code": "lines = [\n    '2026-09-24 10:15:02 ERROR disk full',\n    '2026-09-24 10:15:03 WARN  retry scheduled',\n    'malformed log line',\n]\n\ndef parse(line):\n    parts = line.split(' ', 2)\n    if len(parts) < 3:\n        return None, 'too few fields'\n    date, clock, rest = parts\n    severity, _, message = rest.partition(' ')\n    if not severity.isupper():\n        return None, f'severity {severity!r} not uppercase'\n    return {'date': date, 'time': clock, 'severity': severity, 'message': message.strip()}, 'ok'\n\nfor line in lines:\n    parsed, status = parse(line)\n    if parsed:\n        print(f\"{parsed['severity']:6} {parsed['date']} {parsed['message']}\")\n    else:\n        print('skip:', status, '->', line)",
+        "output": "",
+        "tip": "partition() missing separator par bhi 3-tuple deta hai (empty strings ke saath) — split se alag behaviour."
+      },
+      {
+        "q": "Slug banao: 'Python String Methods!' -> 'python-string-methods'.",
+        "a": "casefold, non-alnum ko space me badlo, split, strip, join('-').",
+        "explain": "Slug generation URL-safe naming ka standard hai; translate() se punctuation hatana fast hai.",
+        "code": "import string\n\ndef slugify(text):\n    lowered = text.casefold()\n    cleaned = ''.join(ch if ch.isalnum() else ' ' for ch in lowered)\n    return '-'.join(cleaned.split())\n\nfor title in ('Python String Methods!', '  Data   Science & AI  ', 'C++ vs Python: 2026'):\n    print(f'{title!r:28} -> {slugify(title)}')\n\nprint('punctuation set:', string.punctuation[:12], '...')",
+        "output": "",
+        "tip": "Unicode text ke liye unicodedata.normalize('NFKD', ...) aur ASCII filter add karna better hota hai."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Ek redaction function likho jo email aur phone ko mask kare (log safety ke liye).",
+        "a": "Pattern-based replace: email ke local part ka pehla character rakho, phone ke aakhri 4 digits rakho.",
+        "explain": "Security-safe logging me PII mask karna compliance requirement hoti hai.",
+        "code": "import re\n\ndef mask_email(match):\n    local, domain = match.group(0).split('@')\n    return f'{local[0]}***@{domain}'\n\ndef mask_phone(match):\n    digits = match.group(0)\n    return '*' * (len(digits) - 4) + digits[-4:]\n\nEMAIL = re.compile(r'[\\w.+-]+@[\\w-]+\\.[\\w.]+')\nPHONE = re.compile(r'\\b\\d{10}\\b')\n\nline = 'user anjali.sharma@example.com called from 9876543210 on 2026-09-24'\nredacted = EMAIL.sub(mask_email, line)\nredacted = PHONE.sub(mask_phone, redacted)\nprint(redacted)\nprint('email still present?', bool(EMAIL.search(redacted)))\nprint('phone still present?', bool(PHONE.search(redacted)))",
+        "output": "",
+        "tip": "Interview me 'regex ke bina kya karoge' poochha ja sakta hai — split/partition se partial masking ka tarika bhi sochо."
+      },
+      {
+        "q": "Do texts ki similarity nikaalo (Jaccard) string methods se, aur sabse common shabd batao.",
+        "a": "Donon ko normalize karke word sets banao; jaccard = |A∩B| / |A∪B|.",
+        "explain": "Preprocessing (normalize) ke bina similarity galat aati hai — yahi NLP ka pehla lesson hai.",
+        "code": "def normalize(text):\n    words = [w.strip('.,!?;:').casefold() for w in text.split()]\n    return {w for w in words if w}\n\ndef jaccard(a, b):\n    set_a, set_b = normalize(a), normalize(b)\n    union = set_a | set_b\n    return len(set_a & set_b) / len(union) if union else 0.0, sorted(set_a & set_b)\n\ntext1 = 'Python string methods se text clean karna aasan hai'\ntext2 = 'Text clean karna string methods se aasan hai Python me'\ntext3 = 'NumPy arrays aur pandas dataframes'\n\nfor a, b, label in ((text1, text2, 'similar'), (text1, text3, 'different')):\n    score, shared = jaccard(a, b)\n    print(f'{label:10} score={score:.2f} shared={shared[:6]}')",
+        "output": "",
+        "tip": "Bade texts me shingling/tf-idf better hai — Jaccard short texts ke liye theek hai, ye limitation batao."
+      },
+      {
+        "q": "Ek 'smart title' function likho: chhote words (a, an, the, of) ko capitalize na kare, pehla/aakhri word hamesha capitalize ho.",
+        "a": "Words ko casefold karo, position dekhkar title-case lagao, aur minor words ko skip karo (boundary chhodkar).",
+        "explain": "title() ka naive behaviour (the -> The) publishing/docs me galat lagta hai — ye real-world polishing task hai.",
+        "code": "MINOR = {'a', 'an', 'the', 'and', 'or', 'of', 'in', 'on', 'to', 'for'}\n\ndef smart_title(text):\n    words = text.split()\n    out = []\n    for i, word in enumerate(words):\n        core = word.casefold().strip(string_punct(word))\n        if core in MINOR and 0 < i < len(words) - 1:\n            out.append(word.casefold())\n        else:\n            out.append(word[:1].upper() + word[1:].casefold())\n    return ' '.join(out)\n\ndef string_punct(word):\n    return ''.join(ch for ch in word if not ch.isalnum())\n\nfor title in ('the art of python programming', 'a guide to string methods', 'analysis of data and ai'):\n    print(f'{title:34} -> {smart_title(title)}')",
+        "output": "",
+        "tip": "Hyphenated words aur acronyms (AI, API) ke liye exception list rakho — production me config se aata hai."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Ek 50 MB log file se saari unique error types nikalni hain — approach kya hogi?",
+        "a": "Line-by-line stream karo (file ko memory me na padho), severity partition se nikalo, set me unique collect karo — memory sirf unique types par. I/O bound hai isliye chunking aur buffered reads use karo.",
+        "explain": "Large-file handling me streaming aur memory discipline ka jawab chahiye hota hai.",
+        "code": "import io\n\nLOG = \"\"\"2026-09-24 10:00:00 ERROR disk full\n2026-09-24 10:00:01 WARN retry\n2026-09-24 10:00:02 ERROR disk full\"\"\"\n\nkinds = set()\nfor line in io.StringIO(LOG):\n    parts = line.rstrip().split(' ', 2)\n    if len(parts) == 3 and parts[2].split(' ', 1)[0].isupper():\n        kinds.add(parts[2].split(' ', 1)[0])\nprint('unique severities:', sorted(kinds))\nprint('memory freed per line: yes (streaming)')",
+        "output": "",
+        "tip": "Generator + set ka combo, aur 'file ko poori padhna' ke nuksan (memory spike) — dono mention karo."
+      },
+      {
+        "q": "String methods se aisa operation karo jo regex se aasan tha — kya limitations hain?",
+        "a": "String methods fixed substrings, delimiters aur boundary checks ke liye best hain (fast, readable, escape-free). Limitations: repeated patterns, optional groups, lookarounds, captures, aur greedy/lazy matching — in sab ke liye re chahiye. Thumb rule: agar query ko 'plain example' me keh sakte ho to method; agar 'rule/pattern' hai to regex.",
+        "explain": "Interviewer tool-choice ka judgement test kar raha hai, sirf syntax nahi.",
+        "code": "import re\n\ntext = 'order-1200, order-45, order-9999'\nprint('methods :', [p.split('-')[1] for p in text.split(', ') if p.startswith('order-')])\nprint('regex   :', re.findall(r'order-(\\d+)', text))",
+        "output": "",
+        "tip": "Language (idiomatic) argument do: 'regex se aasan nahi, padhne me mehnga' — clarity bhi ek factor hai."
+      },
+      {
+        "q": "Ek input field se number lena hai jisme comma aur spaces ho sakte hain — parsing approach batao.",
+        "a": "Normalize pehle: strip, non-breaking space hatana, thousands comma hatana, aur last comma ko decimal separator maan lena sirf tab jab locale waisa ho. Phir float/Decimal parse, aur invalid par clear error. Ambiguity ('1,234') ko locale ke saath document karo — guess mat karo.",
+        "explain": "Ambiguous input par guess karna silently galat number deta hai — isliye explicit rule chahiye.",
+        "code": "def parse_amount(raw, decimal_comma=False):\n    text = raw.strip().replace(chr(160), '').replace(' ', '')\n    if decimal_comma:\n        text = text.replace('.', '').replace(',', '.')\n    else:\n        text = text.replace(',', '')\n    try:\n        return float(text), 'ok'\n    except ValueError:\n        return None, f'not a number: {raw!r}'\n\nfor raw in ('1,234.50', ' 12 000 ', '1.234,50', 'abc'):\n    print(f\"{raw!r:12} -> {parse_amount(raw) if raw != '1.234,50' else parse_amount(raw, decimal_comma=True)}\")",
+        "output": "",
+        "tip": "Money ke liye Decimal mention karo — float parse karke paise handle karna bug hai."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "User-submitted tags ko normalize karo: lowercase, spaces hatana, khaali tags hatao, duplicates remove karo (order preserve).",
+        "a": "casefold + strip per tag, empty filter, aur dict/set-based de-dup with insertion order.",
+        "explain": "Tag normalization se search aur analytics consistent ho jate hain.",
+        "code": "raw_tags = '  Python , Data Science ,python,  ML  , , DATA SCIENCE  '\n\ndef normalize_tags(raw, sep=','):\n    seen, out = set(), []\n    for tag in raw.split(sep):\n        clean = ' '.join(tag.casefold().split())\n        if not clean or clean in seen:\n            continue\n        seen.add(clean)\n        out.append(clean)\n    return out\n\nprint(normalize_tags(raw_tags))\nprint('count:', len(normalize_tags(raw_tags)))",
+        "output": "",
+        "tip": "' '.join(x.split()) whitespace-collapse ka idiom hai — yaad rakho."
+      },
+      {
+        "q": "Ek uploaded file ke extension se route karo, aur galat extension par friendly error do.",
+        "a": "endswith tuple se allowed list check karo; error me allowed formats aur mila hua extension dono likho.",
+        "explain": "File handling ka pehla security step hai extension whitelist (blacklist kabhi kaafi nahi hoti).",
+        "code": "ROUTES = {\n    ('.csv', '.tsv'): 'tabular',\n    ('.json', '.jsonl'): 'semi-structured',\n    ('.txt', '.md'): 'text',\n}\n\ndef route(filename):\n    name = filename.strip().casefold()\n    for suffixes, handler in ROUTES.items():\n        if name.endswith(suffixes):\n            return handler, suffixes[0]\n    return None, f'unsupported extension (allowed: {[s for k in ROUTES for s in k]})'\n\nfor name in ('Report_2026.CSV', 'data.jsonl ', 'archive.zip ', 'notes'):\n    print(f'{name!r:18} -> {route(name)}')",
+        "output": "",
+        "tip": "Security note: extension par bharosa mat karo — MIME/magic bytes bhi check karo (python-magic)."
+      },
+      {
+        "q": "Ek template renderer banao jo '{name} ne {count} tasks kiye' ko values se bhare, missing key par error de.",
+        "a": "str.format_map + custom dict subclass jo missing key par KeyError ke saath available keys bataye.",
+        "explain": "format_map me missing-key error ko actionable banana production template systems ki basic requirement hai.",
+        "code": "class Strict(dict):\n    def __missing__(self, key):\n        raise KeyError(f'{{{{{key}}}}} missing — available: {sorted(self)}')\n\ntemplate = '{name} ne {count} tasks kiye, score {score}'\n\nprint(template.format_map(Strict(name='Anjali', count=3, score=91.5)))\ntry:\n    template.format_map(Strict(name='Rehan', count=1))\nexcept KeyError as e:\n    print('error:', e)\n\nprint('safe subset:', '{name} ne {count} tasks kiye'.format_map(Strict(name='Rehan', count=1)))\nprint('escape braces:', '{{literal}} {name}'.format_map(Strict(name='x')))",
+        "output": "",
+        "tip": "User-controlled templates ko sandbox karo (attribute access '{a.__class__}' leak karta hai) — security point."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Text cleaner likho: input ka extra whitespace, mixed case aur punctuation hatao, phir words ki list return karo.",
+      "build": "clean_words(text) -> list of lowercase words without punctuation.",
+      "input": "'  Python   STRING methods!!  Text clean karna aasan hai.  '",
+      "expected": "['python', 'string', 'methods', 'text', 'clean', 'karna', 'aasan', 'hai']",
+      "hint": "casefold pehle, phir strip punctuation per word, aur ' '.join(x.split()) se collapse karo.",
+      "concept": "split/join, strip with char set, casefold",
+      "solution": "import string\n\nPUNCT = string.punctuation\n\ndef clean_words(text):\n    words = []\n    for raw in text.split():\n        word = raw.strip(PUNCT).casefold()\n        if word:\n            words.append(word)\n    return words\n\ntext = '  Python   STRING methods!!  Text clean karna aasan hai.  '\ncleaned = clean_words(text)\nprint(cleaned)\nprint('count:', len(cleaned))\nprint('unique:', len(set(cleaned)))\nprint('collapsed repr:', repr(' '.join(cleaned)))",
+      "output": "",
+      "explanation": "split() pehle whitespace runs ko todta hai (isliye multiple spaces ka issue khatam), phir strip(PUNCT) har word ke dono kinaron se punctuation hatata hai — beech ka punctuation (data-set) safe rehta hai. casefold comparison aur storage ke liye lower() se better hai.",
+      "time": "O(n) characters",
+      "space": "O(n) words",
+      "better": "Bade documents me generator banao (yield words) taaki list materialize na ho; Unicode normalization (unicodedata.normalize) add karo.",
+      "followUp": "Hyphenated words ('state-of-the-art') ko ek word rakhoge ya todoge — aur ye decision downstream search ko kaise affect karta hai?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Filename utility likho: base name, extension, aur bina extension wala naam nikaalo.",
+      "build": "split_name(path) -> (base, ext, stem)",
+      "input": "'data/reports/summary.final.v2.csv'",
+      "expected": "base='summary.final.v2.csv', ext='.csv', stem='summary.final.v2'",
+      "hint": "rsplit('/', 1) se path todо; extension ke liye rsplit('.', 1) ya removesuffix use karo (slash se pehle ka dot na pakdo).",
+      "concept": "rsplit, removesuffix, path handling with strings",
+      "solution": "def split_name(path):\n    base = path.strip().rsplit('/', 1)[-1]\n    if '.' in base[1:]:\n        stem, ext = base.rsplit('.', 1)\n        return base, '.' + ext, stem\n    return base, '', base\n\nfor path in ('data/reports/summary.final.v2.csv', 'README', '/var/log/app.log', 'archive.tar.gz'):\n    base, ext, stem = split_name(path)\n    print(f\"{path:34} base={base:22} ext={ext or '-':6} stem={stem}\")",
+      "output": "",
+      "explanation": "rsplit('/', 1) last component nikalta hai, aur base[1:] par dot check karna hidden files (.bashrc) ko stem maan leta hai bina extension ke — ye wahi edge case hai jo naive split('.') me tootta hai. archive.tar.gz me ext '.gz' milta hai (single extension semantics).",
+      "time": "O(len(path))",
+      "space": "O(1)",
+      "better": "Production me pathlib.Path use karo (.stem, .suffix, .suffixes, .name) — cross-platform aur tested code milta hai.",
+      "followUp": "pathlib.Path('archive.tar.gz').suffixes kya deta hai, aur double-extension files ka sahi handling kaise karte ho?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Ek 'keyword search' function likho jo text me query ke saare occurrences position ke saath de, case-insensitive.",
+      "build": "find_all(text, query) -> list of (start, end, snippet)",
+      "input": "text with 'data' 3 baar; query = 'DATA'",
+      "expected": "Har occurrence ki index aur 20-char snippet.",
+      "hint": "Dono ko casefold karo (length same rehta hai lowercase me) aur find() ko loop me start se aage badhao.",
+      "concept": "Case-insensitive search, find loop, slicing",
+      "solution": "def find_all(text, query, context=12):\n    haystack = text.casefold()\n    needle = query.casefold()\n    if not needle:\n        return []\n    hits, start = [], haystack.find(needle)\n    while start != -1:\n        end = start + len(needle)\n        snippet = text[max(0, start - context): end + context].replace(chr(10), ' ')\n        hits.append((start, end, snippet))\n        start = haystack.find(needle, end)\n    return hits\n\ntext = 'Data science me data cleaning zaroori hai. Data ka analysis baad me hota hai.'\nfor start, end, snippet in find_all(text, 'DATA'):\n    print(f'{start:>3}-{end:<3} ...{snippet}...')\nprint('total hits:', len(find_all(text, 'data')))\nprint('empty query:', find_all(text, ''))",
+      "output": "",
+      "explanation": "start = end se aage badhna overlapping hits ko rok deta hai aur infinite loop bhi (query 'aa' ke saath) — ye zaroori safety hai. casefold ke baad index positions original text me hi valid rehte hain (length preservation assumption document karo).",
+      "time": "O(n × m) worst case (n text, m query) — Python ka find optimized C me hai",
+      "space": "O(hits)",
+      "better": "Bahut bade text ke liye re.finditer ya KMP/Aho-Corasick (multi-pattern) use karo; overlapping matches chahiye to ek-ek index par check karo.",
+      "followUp": "Multiple keywords (100+) search karne ho to ek-ek find loop kaise slow ho jayega, aur Aho-Corasick ise kaise theek karta hai?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Ek 'field extractor' likho jo fixed-format lines se named fields nikaale, missing field par 'NA' de.",
+      "build": "extract(line) -> dict with id, name, amount, country (pipe separated, optional last field).",
+      "input": "'1001 |  Anjali Sharma | 122000 | India'",
+      "expected": "Typed dict, amount float, aur missing country par 'NA'.",
+      "hint": "split('|') + strip per field; optional fields ke liye padha ja sake to index check karo.",
+      "concept": "Split-based parsing, optional fields, type conversion",
+      "solution": "FIELDS = ('id', 'name', 'amount', 'country')\n\ndef extract(line):\n    parts = [p.strip() for p in line.split('|')]\n    row = {}\n    for i, field in enumerate(FIELDS):\n        raw = parts[i] if i < len(parts) else ''\n        if not raw:\n            row[field] = 'NA'\n            continue\n        if field == 'id':\n            row[field] = int(raw) if raw.isdigit() else 'NA'\n        elif field == 'amount':\n            try:\n                row[field] = float(raw.replace(',', ''))\n            except ValueError:\n                row[field] = 'NA'\n        else:\n            row[field] = ' '.join(raw.split())\n    return row\n\nfor line in ('1001 |  Anjali Sharma | 122000 | India', '1002|Rehan|120,500', 'bad|data',):\n    print(extract(line))",
+      "output": "",
+      "explanation": "Har field apni conversion rule rakhta hai aur galat value par 'NA' deta hai — parse crash nahi karta, data-quality issue report karta hai. ' '.join(raw.split()) se internal double spaces collapse ho jate hain (name normalization).",
+      "time": "O(len(line))",
+      "space": "O(fields)",
+      "better": "Schema-driven parser banao (field -> converter mapping) aur errors ko row index ke saath collect karo; fixed-format ke liye csv module (delimiter='|') zyada robust hai.",
+      "followUp": "Kab 'NA' return karna better hai aur kab row ko outright reject karna — iska decision data pipeline me kaha lena chahiye?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Duplicate detector likho jo text me repeated words aur repeated lines dhunde, case-insensitive.",
+      "build": "find_duplicates(text) -> (duplicate_words, duplicate_lines)",
+      "input": "Multi-line text with repeated words and one repeated line",
+      "expected": "Aise words/lines ki list jo ek se zyada baar aayein.",
+      "hint": "Words ke liye Counter, lines ke liye normalize (strip + casefold) karke Counter.",
+      "concept": "Counter, normalization, dedupe reporting",
+      "solution": "from collections import Counter\n\nTEXT = '''Data cleaning is step one.\nPython me data cleaning aasan hai.\nDATA CLEANING sabse pehla step hai.\n'''\n\ndef tokens(text):\n    return [w.strip('.,!?;:').casefold() for w in text.split() if w.strip('.,!?;:')]\n\ndef find_duplicates(text):\n    word_counts = Counter(tokens(text))\n    line_counts = Counter(' '.join(line.split()).casefold() for line in text.splitlines() if line.strip())\n    dup_words = {w: c for w, c in word_counts.items() if c > 1}\n    dup_lines = {l: c for l, c in line_counts.items() if c > 1}\n    return dup_words, dup_lines\n\ndup_words, dup_lines = find_duplicates(TEXT)\nprint('duplicate words:', dup_words)\nprint('duplicate lines:', list(dup_lines)[:2])\nprint('first line duplicates found:', bool(dup_lines))\nprint('word count check:', len(tokens(TEXT)))",
+      "output": "",
+      "explanation": "Words ke liye punctuation strip + casefold (warna 'Data' aur 'data' alag), lines ke liye whitespace collapse + casefold — dono normalization levels alag hain kyunki comparison unit alag hai.",
+      "time": "O(n) tokens",
+      "space": "O(unique tokens)",
+      "better": "Bade corpuses ke liye streaming Counter (line-by-line) aur n-gram duplicate detection (near-duplicate lines ke liye) use karo; fuzzy dupes ke liye difflib.SequenceMatcher.",
+      "followUp": "Near-duplicate lines ('Data cleaning step one' vs 'Data cleaning is step one') kaise pakdoge — similarity threshold kaise choose karoge?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Ek text preprocessing pipeline likho: normalize, punctuation strip, stop-word removal, aur token stats — sab string methods + sets se.",
+      "build": "preprocess(text, stopwords) -> dict with tokens, counts, stats, aur removed info",
+      "input": "Paragraph + stop-word list",
+      "expected": "Clean tokens, top-5 frequency, aur original vs clean token count.",
+      "hint": "Ek pass me tokens banao, ek pass me filter; stats dict me counts rakho (aur normalization ke stats bhi).",
+      "concept": "Pipeline design, string normalization, Counter aggregation",
+      "solution": "from collections import Counter\n\nSTOPWORDS = {'is', 'me', 'ka', 'ki', 'hai', 'aur', 'se', 'the', 'a', 'an', 'of', 'to'}\n\nTEXT = '''Python string methods se text clean karna aasan hai!\nData cleaning is the first step of any pipeline.\nMethods like strip, split and replace are used the most.'''\n\ndef strip_punct(word):\n    return word.strip('.,!?;:\"()[]')\n\ndef preprocess(text, stopwords=STOPWORDS):\n    raw_tokens = text.split()\n    lowered = [strip_punct(w).casefold() for w in raw_tokens]\n    tokens = [w for w in lowered if w]\n    kept = [w for w in tokens if w not in stopwords]\n    counts = Counter(kept)\n    stats = {\n        'lines': len(text.splitlines()),\n        'raw_tokens': len(raw_tokens),\n        'clean_tokens': len(tokens),\n        'kept_tokens': len(kept),\n        'removed_stopwords': len(tokens) - len(kept),\n        'unique': len(counts),\n        'avg_token_len': round(sum(len(w) for w in kept) / len(kept), 2) if kept else 0.0,\n    }\n    return {'tokens': kept, 'top': counts.most_common(5), 'stats': stats}\n\nresult = preprocess(TEXT)\nfor key, value in result['stats'].items():\n    print(f'{key:20}: {value}')\nprint('top terms       :', result['top'])\nprint('sample tokens   :', result['tokens'][:8])",
+      "output": "",
+      "explanation": "Pipeline ke stages explicit hain (lower -> strip -> filter empty -> stopwords) isliye har stage ka count track hota hai — data quality debug karna aasan ho jata hai. stats me avg_token_len aur unique jaisa information rakhna downstream analysis (keyword density) me kaam aata hai.",
+      "time": "O(n) tokens; Counter O(n)",
+      "space": "O(unique tokens)",
+      "better": "Large corpus ke liye streaming + nltk/spaCy tokenizers, aur stemming/lemmatization add karo; stopword list ko language-specific config se load karo (hardcode na karo).",
+      "followUp": "Kya stopwords hataana sahi hai? ('not' hataane se sentiment ulta ho jata hai) — real NLP me ye decision kaise lena chahiye?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "text = 'python basics'\nprint(text.replace('python', 'Python')\nprint('done')",
+      "error": "SyntaxError: '(' was never closed",
+      "why": "print( ke andar replace( ka closing parenthesis missing hai — Python parse stage par hi error deta hai, isliye koi runtime line execute nahi hoti.",
+      "fix": "Parentheses balance karo. Bare syntax errors me IDE ka bracket matching sabse fast fix hai.",
+      "correct": "text = 'python basics'\nprint(text.replace('python', 'Python'))\nprint('done')",
+      "output": "",
+      "lesson": "SyntaxError runtime par nahi aata — file ka koi bhi part nahi chalta. Isliye editor ka bracket highlight aur 'python -m py_compile' pehla debugging step hai."
+    },
+    {
+      "difficulty": "easy",
+      "mode": "logic",
+      "broken": "text = '  Anjali Sharma  '\ntext.strip()\ntext.title()\nprint(repr(text))",
+      "error": "Logic error — output '  Anjali Sharma  ' aata hai, cleaned text nahi",
+      "why": "Strings immutable hain: strip() aur title() naye strings return karte hain aur original text ko nahi badalte. Return values discard ho gayi.",
+      "fix": "Result ko store karo aur aage use karo: clean = text.strip().title().",
+      "correct": "text = '  anjali sharma  '\nclean = text.strip().title()\nprint(repr(clean))\nprint(repr(text))\nprint('length:', len(text), '->', len(clean))",
+      "output": "",
+      "lesson": "Ye Python ka sabse common beginner bug hai. Rule: method ka result hamesha variable me lo (ya seedha use karo) — sirf call karke chhod dena silent no-op hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "line = 'idli, 60, breakfast'\nparts = line.split(',')\nprint(parts)\n\ncsv_line = ','.join(parts)\nprint(csv_line)\nprint('round trip ok?', csv_line == line)",
+      "error": "Logic error — round trip 'idli,60,breakfast' deta hai, original se spaces gayab",
+      "why": "split(',') ke baad har part me leading space rehta hai, aur join se wo spaces hat jaate hain (kyunki join original line nahi, parts ko jodta hai). Comparison galat hone ka asli karan: split+join round trip tab hi identical hota hai jab separator ke around koi normalization na ho.",
+      "fix": "Do options: (a) parse karte waqt strip karo aur spaces ko intentional normalization maano, ya (b) exact round trip chahiye to split(sep) ke bajaye partition/custom parser use karo. Test me round-trip assertion normalization ke aware likho.",
+      "correct": "line = 'idli, 60, breakfast'\nparts = [p.strip() for p in line.split(',')]\nnormalized = ','.join(parts)\nprint(parts)\nprint(normalized)\nprint('normalized differs from input:', normalized != line)\nprint('values match:', parts == ['idli', '60', 'breakfast'])",
+      "output": "",
+      "lesson": "split+join ko 'lossless' maan lena bug hai — whitespace aur quotes kho sakte hain. Parsing ke saath normalization usually chahiye hoti hai, par usko explicit likho."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "line = 'user@example.com'\nlocal = line[:line.index('+')]\nprint(local)",
+      "error": "ValueError: substring not found",
+      "why": "'+' string me hai hi nahi, aur index() missing substring par exception deta hai (find() ki tarah -1 nahi). Optional substring ke liye index() khatarnak hai.",
+      "fix": "find() use karo aur -1 handle karo, ya partition() use karo jo missing separator par bhi safe 3-tuple deta hai.",
+      "correct": "line = 'user@example.com'\nplus = line.find('+')\nlocal = line[:plus] if plus != -1 else line\nprint(local)\n\nhead, sep, tail = 'user+tag@example.com'.partition('+')\nprint('partition:', repr(head), repr(sep), repr(tail))\n\nprint('without tag:', 'user+tag@example.com'.split('+', 1)[0])",
+      "output": "",
+      "lesson": "index()/find() ka choice error-handling strategy ka faisla hai. Optional parts ke liye partition() sabse readable hai kyunki missing case bhi normal output deta hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "def normalize(text):\n    return text.strip().title().replace('  ', ' ')\n\ntext = 'the   quick  brown    fox'\nresult = normalize(text)\nprint(repr(result))\nprint('double spaces left?', '  ' in result)\nprint('word count:', len(result.split()))",
+      "error": "Logic error — output me abhi bhi double spaces bache hue hain",
+      "why": "replace('  ', ' ') do spaces ko ek se replace karta hai, par teen spaces me overlap ki wajah se sirf ek pass kaafi nahi — aur chaar spaces wale runs bhi bach jate hain. Order bhi galat hai: spaces collapse title se pehle hona chahiye.",
+      "fix": "Whitespace collapse ke liye ' '.join(text.split()) use karo (single pass, sab runs handle) aur normalization order sahi karo: collapse -> strip -> case.",
+      "correct": "def normalize(text):\n    return ' '.join(text.split()).casefold()\n\ntext = 'the   quick  brown    fox'\nresult = normalize(text)\nprint(repr(result))\nprint('double spaces left?', '  ' in result)\nprint('word count:', len(result.split()))\nprint('title case:', ' '.join(text.split()).title())",
+      "output": "",
+      "lesson": "Repeated replace() se multi-character runs reliably nahi hote. split+join whitespace collapse ka idiom hai — ek line me poora kaam."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Ek line me '  Data-Science  ' ko 'data science' banao (case, spaces, hyphen sab normalize).",
+      "hint": "casefold + hyphen ko space me replace + ' '.join(split()).",
+      "deliverable": "Ek expression + uska output."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Ek 'log summarizer' likho: lines se severity count, unique messages, aur sabse frequent error word nikaalo.",
+      "hint": "split(maxsplit) se parts, Counter se counting, aur most_common se top items.",
+      "deliverable": "Summarizer + sample log par output."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Ek 'text normalizer library' likho: multiple normalization strategies (lower/casefold, accent stripping, punctuation modes), config ke saath aur tests ke saath.",
+      "hint": "Strategy functions alag rakho aur ek normalize(text, profile) dispatcher do; Unicode ke liye unicodedata normalise karo.",
+      "deliverable": "Library + 3 profiles ka before/after output."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview-style: 'string methods se ek search aur autocomplete ka base banao' — prefix index kaise banaoge aur query kaise match karoge?",
+      "hint": "Prefix dictionary (startswith) ya sorted list + bisect; casefold normalize karke index banao.",
+      "deliverable": "Prefix index + 3 queries ka output (hit, prefix-only, no match)."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Ek 'text statistics CLI' banao: input text se word count, unique words, top keywords, character class distribution aur JSON export.",
+      "hint": "Stats ko dict me rakho aur isalpha/isdigit/isspace se character classes count karo.",
+      "deliverable": "CLI + text aur JSON dono output."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Text Cleaner (Version 1)",
+      "problem": "Har jagah se aaya text (forms, CSV, pasted content) me extra spaces, inconsistent case aur punctuation hota hai — isko saaf kiye bina comparison aur storage dono galat hote hain.",
+      "objective": "Ek chhota program jo text ko normalize kare: whitespace collapse, casefold, punctuation strip aur word count report.",
+      "features": [
+        "Whitespace collapse aur trim",
+        "Case normalization (casefold)",
+        "Punctuation strip aur empty token removal",
+        "Before/after report (words, unique words, chars)"
+      ],
+      "concepts": [
+        "split/join aur strip(char set)",
+        "casefold comparison ke liye",
+        "Before/after stats se verification"
+      ],
+      "structure": "text_cleaner/\n└── cleaner.py        # saara logic, ek file",
+      "steps": [
+        "normalize(text) function banao: split -> join -> casefold.",
+        "clean_words(text) banao jo punctuation strip karke tokens de.",
+        "Report print karo: original vs clean word count, unique words.",
+        "Test karo: multiple spaces, tabs, newlines, leading/trailing punctuation."
+      ],
+      "code": "import string\n\nSAMPLE = '''  Python   STRING methods!!\n\nText clean karna   aasan hai.  '''\n\ndef normalize(text):\n    return ' '.join(text.split()).casefold()\n\ndef clean_words(text):\n    return [w.strip(string.punctuation) for w in normalize(text).split() if w.strip(string.punctuation)]\n\nclean = normalize(SAMPLE)\nwords = clean_words(SAMPLE)\n\nprint('original chars :', len(SAMPLE))\nprint('clean chars    :', len(clean))\nprint('clean text     :', repr(clean))\nprint('words          :', words)\nprint('word count     :', len(words))\nprint('unique words   :', len(set(words)))\nprint('avg word len   :', round(sum(len(w) for w in words) / len(words), 2))",
+      "output": "",
+      "explanation": "' '.join(text.split()) ek line me saare whitespace runs (spaces, tabs, newlines) ko single space me badal deta hai — multi-pass replace se better. clean_words me strip(string.punctuation) kinaron par kaam karta hai, so 'data-set' jaisa internal hyphen bacha rehta hai.",
+      "testing": "Empty string (zero division se bacho), sirf punctuation wala text, tabs/newlines, aur Unicode text (casefold behaviour) — chaar tests minimum.",
+      "errors": "Empty words list par avg_word_len me ZeroDivisionError aayega — Version 1 me guard nahi hai (jaisa code me dikhaya gaya with sample), Version 2 me add hota hai.",
+      "improvements": [
+        "Empty input par guard aur stats dict me 'empty: true' flag",
+        "Config se options (lower vs casefold, punctuation rakhna ya hatana)",
+        "Stats ko JSON me export karo"
+      ],
+      "advanced": [
+        "Unicode normalization (NFKC) aur accent stripping add karo",
+        "Streaming cleaner: lines/blocks me text ko process karo (bade files)",
+        "Test suite: har normalization rule ka ek test + regression tests"
+      ],
+      "realWorld": "Search indexing, dedupe jobs aur analytics me text normalization pehla step hai; bina uske 'Pune' aur 'pune' alag dimensions ban jate hain.",
+      "interview": [
+        {
+          "q": "Normalization order (collapse, strip, case) ka kya role hai?",
+          "a": "Pehle whitespace collapse karo (tokens ki boundaries fix), phir per-token strip (punctuation), phir case normalize — agar case pehle karo to koi farak nahi padta par strip/collapse ke baad empty tokens ban sakte hain jo filter karne padte hain. Order document karna zaroori hai taaki tests stable rahein."
+        },
+        {
+          "q": "casefold vs lower is cleaner me kaunsa?",
+          "a": "casefold — ye Unicode-aware hai aur comparison ke liye aggressive normalize karta hai. lower() display ke liye theek hai par ija comparison me edge cases miss karta hai."
+        },
+        {
+          "q": "Punctuation hatana kab galat decision hai?",
+          "a": "Jab punctuation meaning badalta ho: 'C++' -> 'c', 'state-of-the-art' -> toota hua word, ya '1,234.50' -> '123450'. Isliye cleanup mode configurable rakho aur domain-specific exceptions (allowed chars) do."
+        }
+      ],
+      "resume": "Text Cleaner: whitespace/case/punctuation normalization aur before-after statistics ke saath reusable utility.",
+      "readme": [
+        "Project ek line me: text normalization utility",
+        "Normalization rules ka order aur config options",
+        "Before/after sample output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Text Processing & Analyzer (Version 2)",
+      "problem": "Cleaned text milne ke baad asli sawaal aata hai: kaunse keywords important hain, kaha duplicate content hai, aur ek query kaha match karti hai — manual me ye kaam slow aur error-prone hai.",
+      "objective": "Cleaner ke upar analysis layer banao: keyword frequency, duplicate word/line detection, aur case-insensitive search with context.",
+      "features": [
+        "Stop-word aware keyword frequency (top-N)",
+        "Duplicate word aur near-duplicate line detection",
+        "Case-insensitive keyword search with context snippets",
+        "Analyzer report (stats + keywords + duplicates)"
+      ],
+      "concepts": [
+        "Counter aggregation",
+        "Normalization levels (word vs line)",
+        "Search loops with find + slicing"
+      ],
+      "structure": "text_analyzer/\n├── cleaner.py       # v1 se normalize/clean_words\n├── analyzer.py      # keywords, duplicates, search\n└── demo.py          # sample run",
+      "steps": [
+        "cleaner.py ko reuse karo (normalize + clean_words).",
+        "Keyword analysis: stop-words hatao, Counter se top-N nikaalo.",
+        "Duplicate detection: word-level aur line-level dono.",
+        "Search: find loop se positions aur snippets do."
+      ],
+      "code": "import string\nfrom collections import Counter\n\nSTOPWORDS = {'is', 'me', 'ka', 'ki', 'hai', 'aur', 'se', 'the', 'a', 'an', 'of', 'to', 'and', 'hai.'}\n\nTEXT = '''Python string methods se text clean karna aasan hai.\nData cleaning is the first step of any data pipeline.\nMethods like strip, split and replace are the most used methods.\n'''\n\ndef normalize(text):\n    return ' '.join(text.split()).casefold()\n\ndef tokens(text):\n    return [w.strip(string.punctuation) for w in normalize(text).split() if w.strip(string.punctuation)]\n\ndef keywords(text, top=5, stopwords=STOPWORDS):\n    kept = [w for w in tokens(text) if w not in stopwords]\n    return Counter(kept).most_common(top), len(kept)\n\ndef duplicates(text):\n    word_counts = Counter(tokens(text))\n    lines = [normalize(line) for line in text.splitlines() if line.strip()]\n    line_counts = Counter(lines)\n    return ({w: c for w, c in word_counts.items() if c > 1},\n            {l: c for l, c in line_counts.items() if c > 1})\n\ndef search(text, query, context=18):\n    low, needle = text.casefold(), query.casefold()\n    hits, pos = [], low.find(needle)\n    while needle and pos != -1:\n        end = pos + len(needle)\n        hits.append((pos, text[max(0, pos - context):end + context].replace(chr(10), ' ')))\n        pos = low.find(needle, end)\n    return hits\n\ntotal = len(tokens(TEXT))\nprint(f'tokens: {total} | unique: {len(set(tokens(TEXT)))}')\n\ntop_terms, kept = keywords(TEXT)\nprint(f'keywords (kept {kept}):')\nfor word, count in top_terms:\n    print(f'  {word:12} {count}')\n\ndup_words, dup_lines = duplicates(TEXT)\nprint('duplicate words:', dup_words)\nprint('duplicate lines:', len(dup_lines))\n\nprint('search \\'data\\':')\nfor pos, snippet in search(TEXT, 'data'):\n    print(f'  @{pos:<4} ...{snippet}...')",
+      "output": "",
+      "explanation": "Teen analysis functions cleaner ke upar bane hain — normalization ek jagah hai isliye word count, keywords, duplicates aur search sab same definition use karte hain (consistency). Search overlapping matches skip karta hai (pos = end) taaki infinite loop na ho.",
+      "testing": "Stop-words ke bina aur saath keyword output compare karo; duplicate detection ko repeat text par test karo; search ke 0/1/many matches teen cases lo; empty query par empty list.",
+      "errors": "Empty text par tokens empty hote hain aur Counter empty — crash nahi hota, par report me 'no content' flag add karna chahiye. Stopword list me punctuation wale tokens ('hai.') na aayen — normalize order ka dhyan rakho.",
+      "improvements": [
+        "Stop-words ko file/config se load karo (multi-language support)",
+        "Search me regex mode add karo (whole word vs substring)",
+        "Report ko text aur JSON dono formats me do"
+      ],
+      "advanced": [
+        "TF-IDF scoring se document-level keywords nikaalo (paths se tf/idf dono)",
+        "Near-duplicate lines ke liye difflib ratio threshold ke saath dedupe",
+        "CLI banao: file input, --top, --search flags aur exit codes"
+      ],
+      "realWorld": "SEO/content tools, log analyzers aur documentation linters isi analysis pattern par kaam karte hain — keyword density, repeated lines aur searchable index sab isi base par bante hain.",
+      "interview": [
+        {
+          "q": "Keyword extraction me stop-words hataana hamesha sahi hai?",
+          "a": "Nahi — 'not', 'no', 'without' jaise negation words hataane se meaning ulta ho jata hai (sentiment/QA me). Domain-specific stopword lists rakho (e.g. search queries me 'the' skip karo, legal text me nahi)."
+        },
+        {
+          "q": "Duplicate detection Counter par kyun, difflib par kyun nahi?",
+          "a": "Exact duplicates ke liye Counter O(n) hai aur simple; difflib near-duplicates ke liye hai par O(n^2) comparisons leta hai. Strategy: Counter se exact dupes nikalo, phir un clusters par difflib chalao (cost kam)."
+        },
+        {
+          "q": "Search me casefold ke baad index original text par valid kaise rehta hai?",
+          "a": "casefold() length badal sakta hai kuch Unicode cases me (ß -> ss), isliye index mismatch ka risk hai. Safe tarika: case-insensitive search ke liye re.IGNORECASE, ya text ko map karke positions track karna. Simple ASCII text me casefold length preserve karta hai — isliye ye assumption document karni chahiye."
+        }
+      ],
+      "resume": "Text Processing & Analyzer: stop-word aware keyword ranking, duplicate detection aur context search ke saath analysis layer.",
+      "readme": [
+        "Features: keywords, duplicates, search",
+        "Stop-word configuration ka tarika",
+        "Sample report output"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Intelligent Text Processing System (Version 3)",
+      "problem": "Ek hi project me cleaning, analysis, search aur export chahiye hota hai — ad-hoc scripts bikhre hue rehte hain aur unka output reproducible nahi hota.",
+      "objective": "Ek modular textprocessing system banao: preprocessing pipeline, keyword extraction, search index, similarity, statistics, JSON/text export aur error handling — sab ek interface ke peeche.",
+      "features": [
+        "Composable preprocessing pipeline (steps configurable aur orderable)",
+        "Keyword extraction + inverted index for fast search",
+        "Document similarity (Jaccard) aur duplicate reporting",
+        "Stats + JSON/text export, validation aur custom errors"
+      ],
+      "concepts": [
+        "Modular architecture (pipelines aur registries)",
+        "Inverted index (word -> positions) aur search performance",
+        "Similarity metrics aur JSON serialization"
+      ],
+      "structure": "text_system/\n├── pipeline.py      # preprocessing steps\n├── index.py         # inverted index + search\n├── analyze.py       # keywords, similarity, stats\n├── export.py        # json/text writers\n└── demo.py          # end-to-end run",
+      "steps": [
+        "Preprocessing steps ko functions ki registry banao (lower, strip_punct, stopwords, min_len).",
+        "Processed tokens se inverted index banao (token -> [positions]).",
+        "Analysis: keyword counts, Jaccard similarity, stats.",
+        "Export layer: JSON aur human text; invalid config par custom error."
+      ],
+      "code": "import json, string\nfrom collections import Counter, defaultdict\n\nclass TextError(ValueError):\n    pass\n\nSTEPS = {\n    'casefold': lambda tokens: [t.casefold() for t in tokens],\n    'strip_punct': lambda tokens: [t.strip(string.punctuation) for t in tokens],\n    'drop_empty': lambda tokens: [t for t in tokens if t],\n    'drop_stop': lambda tokens: [t for t in tokens if t not in {'is', 'me', 'ka', 'ki', 'hai', 'the', 'a', 'of', 'and'}],\n    'min_len': lambda tokens: [t for t in tokens if len(t) > 2],\n}\n\ndef process(text, steps):\n    unknown = [s for s in steps if s not in STEPS]\n    if unknown:\n        raise TextError(f'unknown steps {unknown}; available {sorted(STEPS)}')\n    if not isinstance(text, str):\n        raise TextError(f'text must be str, got {type(text).__name__}')\n    tokens = text.split()\n    for step in steps:\n        tokens = STEPS[step](tokens)\n    return tokens\n\nclass TextSystem:\n    def __init__(self, steps=('casefold', 'strip_punct', 'drop_empty', 'drop_stop')):\n        self.steps = steps\n        self.tokens = []\n        self.index = defaultdict(list)\n\n    def load(self, name, text):\n        self.tokens = process(text, self.steps)\n        self.index = defaultdict(list)\n        for pos, token in enumerate(self.tokens):\n            self.index[token].append(pos)\n        return self\n\n    def search(self, term):\n        term = term.casefold()\n        return self.index.get(term, [])\n\n    def keywords(self, top=5):\n        return Counter(self.tokens).most_common(top)\n\n    def stats(self):\n        return {\n            'tokens': len(self.tokens),\n            'unique': len(self.index),\n            'avg_len': round(sum(map(len, self.tokens)) / len(self.tokens), 2) if self.tokens else 0.0,\n            'longest': max(self.tokens, key=len, default=''),\n        }\n\n    def similarity(self, other_text):\n        other = set(process(other_text, self.steps))\n        mine = set(self.tokens)\n        union = mine | other\n        return round(len(mine & other) / len(union), 3) if union else 0.0\n\n    def export(self, fmt='json'):\n        payload = {'stats': self.stats(), 'top': self.keywords(), 'index_size': len(self.index)}\n        if fmt == 'json':\n            return json.dumps(payload, ensure_ascii=False)\n        if fmt == 'text':\n            lines = [f'{k:10}: {v}' for k, v in payload['stats'].items()]\n            lines += [f\"top       : {payload['top']}\"]\n            return chr(10).join(lines)\n        raise TextError(f'unsupported format {fmt!r}; use json or text')\n\nDOC = '''Python string methods se text clean karna aasan hai.\nData cleaning is the first step of a data pipeline!'''\n\nsystem = TextSystem().load('doc1', DOC)\nprint(system.export('text'))\nprint()\nprint('search \"data\"   :', system.search('data'))\nprint('search \"machine\":', system.search('machine'))\nprint('similarity (same doc) :', system.similarity(DOC))\nprint('similarity (other)    :', system.similarity('NumPy arrays and pandas dataframes for data work'))\nprint('json (first 110)      :', system.export('json')[:110] + ' ...')\n\nfor bad_call in (lambda: process('text', ['nope']), lambda: process(123, ['casefold']), lambda: system.export('pdf')):\n    try:\n        bad_call()\n    except TextError as e:\n        print('TextError:', e)",
+      "output": "",
+      "explanation": "Steps ki registry se pipeline data-driven ban jati hai (config se ordering), aur inverted index se search O(1) average ho jata hai (list scan nahi). Stats me guard (empty tokens) aur custom TextError se error messages actionable rehte hain; export JSON/text dono deta hai isliye downstream tooling aur human dono serve hote hain.",
+      "testing": "Unknown step, wrong type, empty text, export format error, aur search miss — sab tests banao. Similarity same doc ke liye 1.0 ho, aur unrelated doc ke liye kam; index positions tokens ke idx se match karein.",
+      "errors": "TextError ek hi exception type hai jisme message me available options hote hain. Validation load() se pehle hoti hai (fail fast), aur empty text par stats me default values aati hain (crash nahi).",
+      "improvements": [
+        "Multiple documents support karo (doc registry + per-document search)",
+        "Index ko disk par persist karo (JSON/pickle) taaki restart par rebuild na karna pade",
+        "CLI: --file, --steps, --search, --export flags with exit codes"
+      ],
+      "advanced": [
+        "TF-IDF ranking aur per-document scores add karo",
+        "Streaming load: bade files ke liye chunked processing + incremental index",
+        "Benchmark suite: 1 lakh tokens par search aur load time measure karo (aur optimize karo)"
+      ],
+      "realWorld": "Search services, documentation platforms aur RAG ke retrieval layer me yahi pattern hota hai: preprocess -> index -> search -> score -> export; isliye ye project interview me bolne layak architecture deta hai.",
+      "interview": [
+        {
+          "q": "Inverted index se search fast kaise hota hai?",
+          "a": "Design time par word -> positions ki mapping ban jati hai, isliye query O(1) average hash lookup hai instead of O(n) scan. Cost: build time O(n) aur memory (positions store karni padti hain). Trade-off: positional index space zyada leta hai, boolean index kam."
+        },
+        {
+          "q": "Pipeline steps ko registry kyun banaya, hardcoded sequence kyun nahi?",
+          "a": "Registry se configuration data ban jati hai (per-dataset profiles), testing aasan hoti hai (ek step alag test), aur naya transformer add karna ek dict entry ka kaam hai. Hardcoded sequence me har change code-review aur redeploy maangta hai."
+        },
+        {
+          "q": "Ye system 50 lakh documents par kaise scale karoge?",
+          "a": "Inverted index ko shard karo, index disk/memory-mapped store me rakho (LMDB, Lucene/Elasticsearch jaisa), aur query layer par caching lagao. Preprocessing ko batch/parallel karo (multiprocessing). Similarity computation ko candidate generation ke saath combine karo (blocking/ANN) warna O(n^2) ho jayega."
+        }
+      ],
+      "resume": "Intelligent Text Processing System: composable preprocessing pipeline, inverted index search, similarity scoring aur JSON/text export ke saath modular architecture.",
+      "readme": [
+        "Architecture diagram (pipeline -> index -> analyze -> export)",
+        "Available steps aur config profiles",
+        "Benchmark aur extension guide"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      "Text cleaner me collapse pehle karna kyun zaroori hai?",
+      "Analyzer me search loop me pos = end kyun set kiya gaya?",
+      "Text system me steps ko registry me rakhne ka kya fayda mila?"
+    ],
+    "coding": [
+      "Text cleaner me accent stripping (unicodedata) add karo aur tests update karo.",
+      "Analyzer me whole-word search mode add karo (substring ke saath ek option).",
+      "Text system me multiple documents support karo aur per-document search do."
+    ],
+    "advanced": [
+      "Text system ka index disk par persist karo aur restart ke baad reuse karo.",
+      "Analyzer me near-duplicate line detection add karo (similarity threshold ke saath).",
+      "Teenon projects ka shared core banao (ek package) aur unittest suite likho."
+    ],
+    "interview": [
+      "Analyzer me keyword frequency 1 lakh documents par kaise scale karoge?",
+      "Text system me similarity calculation ka worst case kya hai aur usse kaise bachoge?",
+      "Cleaner ko production service banayein to input validation kaha rakhenge?",
+      "Aap multi-language text (Hindi/Devanagari) ke liye kya badlenge?"
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Live coding: 'my_file_name.txt' se 'My File Name' banao — saare edge cases batao (multiple dots, hidden files, no extension).",
+      "a": "Stem nikalo (rsplit('.', 1) ya pathlib .stem), underscore/hyphen ko space me badlo, split+join se collapse, aur title case lagao. Edge cases: '.bashrc' (koi stem nahi), 'archive.tar.gz' (multi-extension), trailing spaces, mixed case.",
+      "deliverable": "Function + 5 edge cases ka output."
+    },
+    {
+      "q": "Interviewer bole: 'do strings ko compare karo user input ke liye' — approach batao aur implementation do.",
+      "a": "Normalize dono (strip, casefold, internal whitespace collapse) phir casefold comparison; locale-specific sorting chahiye to locale or unicodedata ka dhyan. Report karo ki comparison normalized tha ya strict, aur Unicode lookalikes ke liye NFKC normalization mention karo.",
+      "deliverable": "compare(a, b) function + 4 sample pairs ka result."
+    },
+    {
+      "q": "Debug task: 'user ne extra spaces ke saath data enter kiya aur group-by me duplicate rows aa gaye' — fix karo aur verify karo.",
+      "a": "Root cause: normalization miss (strip/collapse/casefold). Fix: ingestion par normalize function lagao aur unique key usi normalized value par banao. Verify: set of normalized keys ka count aur unique-row assertion; regression test me ' Pune ' aur 'pune' same count me jayein.",
+      "deliverable": "Before/after grouping output + normalization function."
+    },
+    {
+      "q": "Explain karo: apne text system me 'kab string methods kaafi hain aur kab regex chahiye' — example ke saath rule banao.",
+      "a": "Rule: fixed delimiter/boundary/prefix-suffix ke liye string methods (split, partition, startswith/endswith, replace) — fast aur escape-free. Repeated patterns, optional parts, groups, anchors, ya ek pass me multiple patterns chahiye to re. Example: 'filename extension' -> endswith/removesuffix; 'email address' -> regex.",
+      "deliverable": "Do examples (ek method-based, ek regex-based) aur ek line ka decision rule."
+    }
+  ],
+  "revision": [
+    "Strings immutable hain — har method naya string return karta hai, result store karna zaroori hai.",
+    "' '.join(text.split()) whitespace collapse ka idiom hai (saare runs, tabs aur newlines ek saath).",
+    "split() vs split(' '): bina argument whitespace runs par todta hai, exact char par split empty strings deta hai.",
+    "Comparison ke liye casefold(), display ke liye lower/title/capitalize — inhe mix mat karo.",
+    "find() -1 deta hai, index() ValueError; optional substring ke liye partition() sabse safe hai.",
+    "removeprefix/removesuffix boundary par kaam karte hain, replace() kahin bhi — extension/filename ke liye prefix/suffix methods better hain.",
+    "Validation methods (isalpha/isdigit/isalnum) Unicode-aware hain — numeric parsing ke liye int()/float() try karna zyada reliable hai.",
+    "Punctuation strip strip(chars) se karo (char set), multi-pass replace se whitespace collapse never reliable.",
+    "Large text ke liye streaming (line-by-line) karo; search ke liye regex aur indexing (inverted index) socho."
+  ]
+}

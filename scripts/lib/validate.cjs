@@ -1,11 +1,29 @@
-/** Validator for question banks (CJS, used by scripts/questions.cjs). */
+/**
+ * Validator for question banks (CJS, used by scripts/questions.cjs).
+ *
+ * `defense` is the Project Defense type (a bank question whose stage is the existing
+ * `defense` lesson stage). `theory` is the Concept/Theory type. Both are first-class
+ * so the quota report can prove 20-new-per-type-per-track without a separate tracker.
+ */
 const DIFFICULTIES = ['easy', 'medium', 'hard', 'expert'];
-const TYPES = ['interview', 'coding', 'debug', 'logic', 'solved', 'checkpoint', 'theory'];
+const TYPES = ['interview', 'coding', 'debug', 'logic', 'solved', 'checkpoint', 'theory', 'defense'];
 const IMPORTANCES = ['must_know', 'high_value', 'interview_critical', 'production', 'advanced'];
 const PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 const STATUSES = ['DRAFT', 'REVIEWED', 'PUBLISHED'];
 
-const norm = (s) => (s ?? '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+/**
+ * Dedupe key for a question/answer. Case- and whitespace-insensitive and it strips
+ * decorative punctuation (backticks, quotes, dashes, commas), but KEEPS operator-like
+ * symbols — otherwise distinct questions like "= aur == me fark?" and "/ aur // me
+ * fark?" collapse into one key and get reported as duplicates. The key is strictly more
+ * specific than a blanket [^a-z0-9] strip, so it can only remove duplicate reports,
+ * never invent new ones.
+ */
+const norm = (s) => (s ?? '')
+  .toLowerCase()
+  .replace(/[`"'\u2018\u2019\u201c\u201d,\u201e;\u2026\u00b7\u00ab\u00bb\u2013\u2014]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
 
 function validateBank(bank, { strictSource = true } = {}) {
   const problems = [];
@@ -68,4 +86,4 @@ function coverageGate(bank, vstats) {
   return { flags, complete: vstats.total >= 50 && vstats.published === vstats.total };
 }
 
-module.exports = { validateBank, coverageGate, TYPES, DIFFICULTIES, IMPORTANCES };
+module.exports = { validateBank, coverageGate, norm, TYPES, DIFFICULTIES, IMPORTANCES };

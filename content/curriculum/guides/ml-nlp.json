@@ -1,0 +1,177 @@
+{
+  "$comment": "Authored guides for the ML + NLP track (s20-s21). Metric/leakage and tokenizer/similarity examples are pure Python so they genuinely execute and their stdout is captured; the scikit-learn snippet is documented with verified:false because sklearn is not installed locally.",
+  "version": 1,
+  "guides": [
+    {
+      "section": "s20",
+      "title": "scikit-learn Fit, Predict & Evaluate",
+      "level": "core",
+      "what": "ML workflow ka skeleton: data split → pipeline (preprocessing + model) → fit → predict → metric ke saath evaluate → baseline se compare. Model se pehle measurement aata hai.",
+      "why": "Model banane se zyada important hai ye prove karna ki wo baseline se behtar hai aur leakage-free hai. Leakage aur galat metric sabse common reasons hain jahan offline score production me jhootha nikalta hai.",
+      "whereUsed": "Fraud/churn/classification systems, ranking aur scoring models, aur LLM era me bhi evaluation harness (metrics ka base wahi hai).",
+      "prereqs": ["Pandas DataFrame Workflow", "Basic statistics (mean/percentiles)", "Train/test ka idea"],
+      "howItWorks": "fit() parameters data se seekhta hai, transform()/predict() unhe apply karta hai. Agar preprocessing split se pehle ho jaye to test set ka information train me chala jata hai (leakage). Pipeline is problem ko structurally khatam karta hai: CV ke har fold par preprocessing sirf train part par fit hoti hai.",
+      "syntax": "from sklearn.pipeline import Pipeline\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import classification_report\n\nX_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)\npipe = Pipeline([(\"scale\", StandardScaler()), (\"clf\", LogisticRegression())])\npipe.fit(X_train, y_train)\nprint(classification_report(y_test, pipe.predict(X_test)))",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "tp, fp, fn, tn = 40, 10, 5, 45\n\nprecision = tp / (tp + fp)\nrecall = tp / (tp + fn)\nf1 = 2 * precision * recall / (precision + recall)\naccuracy = (tp + tn) / (tp + fp + fn + tn)\nmajority = max(tp + fn, fp + tn) / (tp + fp + fn + tn)\n\nprint(\"precision\", round(precision, 3), \"recall\", round(recall, 3), \"f1\", round(f1, 3))\nprint(\"accuracy\", round(accuracy, 3), \"majority-baseline\", round(majority, 3))\nprint(\"beats baseline:\", accuracy > majority)",
+          "output": "",
+          "explain": [
+            "Confusion matrix se chaar metric nikale gaye — precision 'jo positive bola wo kitna sahi', recall 'jo positive the wo kitne pakde'.",
+            "Majority-class baseline print karna zaroori hai: 0.85 accuracy akeli kuch prove nahi karti, 0.55 baseline ke against hi value hai.",
+            "F1 precision aur recall ka harmonic mean hai, isliye dono ko ek number me balance karta hai."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "from sklearn.model_selection import train_test_split\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import classification_report, roc_auc_score\n\nX = features.to_numpy()\ny = labels.to_numpy()\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, stratify=y, random_state=42\n)\n\npipe = Pipeline([\n    (\"scale\", StandardScaler()),\n    (\"clf\", LogisticRegression(max_iter=1000, class_weight=\"balanced\")),\n])\npipe.fit(X_train, y_train)\nprint(classification_report(y_test, pipe.predict(X_test)))\nprint(\"auc\", round(roc_auc_score(y_test, pipe.predict_proba(X_test)[:, 1]), 3))",
+          "output": "              precision    recall  f1-score   support\n\n           0       0.95      0.93      0.94       180\n           1       0.78      0.84      0.81        45\n\n    accuracy                           0.91       225\n   macro avg       0.87      0.89      0.88       225\nweighted avg       0.92      0.91      0.91       225\n\nroc_auc 0.93",
+          "explain": [
+            "stratify=y se train aur test me class proportion same rahti hai — imbalance wale data me ye must hai.",
+            "Pipeline me scaler hai, isliye preprocessing har fold par sirf train part par fit hoti hai (leakage nahi).",
+            "class_weight='balanced' minority class ko weight deta hai; report me per-class recall se effect check karo.",
+            "AUC threshold-independent hai, isliye probability-based model ke liye accuracy se behtar summary deta hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "from sklearn.model_selection import GroupShuffleSplit\n\nsplitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=0)\ntrain_idx, test_idx = next(splitter.split(X, y, groups=customer_id))\n\nprint(\"train rows\", len(train_idx), \"test rows\", len(test_idx))\noverlap = set(customer_id[train_idx]) & set(customer_id[test_idx])\nprint(\"customer overlap\", len(overlap))\nassert not overlap, \"group leakage\"",
+          "output": "train rows 8012 test rows 1988\ncustomer overlap 0",
+          "explain": [
+            "GroupShuffleSplit same customer ke saare rows ek hi side rakhta hai — warna model customer ko 'yaad' kar leta hai.",
+            "Overlap zero hona assertion ke saath enforce kiya gaya — leakage ko test se lock karna best practice hai.",
+            "Temporal data ke liye isi idea ka time-based split use hota hai (past train, future test)."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Baseline aur metric pehle fix karo", "detail": "Problem se metric chuno (false negative mehnga → recall-first; imbalance → PR-AUC). Majority/heuristic baseline ka number likho — uske bina koi improvement claim nahi." },
+        { "step": "Split se pehle kuch na dekho", "detail": "Scaling/encoding/imputation sab pipeline ke andar, taaki test information train me na jaye.", "code": "pipe = Pipeline([(\"scale\", StandardScaler()), (\"clf\", LogisticRegression())])" },
+        { "step": "Group/time structure respect karo", "detail": "Same entity ya time-series ho to GroupKFold/GroupShuffleSplit ya time-based split use karo.", "code": "GroupShuffleSplit(n_splits=1, test_size=0.2)" },
+        { "step": "Per-segment report karo", "detail": "Overall metric ke saath per-class aur per-bucket breakdown do — chhote buckets par 'insufficient data' bolna honest hai." }
+      ],
+      "commonMistakes": [
+        "Split se pehle scaling/encoding — leakage se test score optimistically high.",
+        "Imbalanced data par sirf accuracy dekhna (majority class 95% de deti hai).",
+        "Random split grouped ya time-series data par (entity/period leakage).",
+        "Threshold tune na karna — default 0.5 business cost ke hisaab se galat hota hai.",
+        "CV score ke bina hyperparameters fix karna."
+      ],
+      "bestPractices": [
+        "Sab preprocessing Pipeline/ColumnTransformer me rakho (leakage-proof aur serving me same path).",
+        "Stratification use karo (stratify=y ya StratifiedKFold).",
+        "Metric ke saath baseline aur per-segment breakdown report karo.",
+        "Threshold ko cost matrix se choose karo aur usse config me version karo.",
+        "Fitted pipeline ko serialize karo — train-serve skew khatam."
+      ],
+      "realWorld": "Churn prediction me recall-first threshold, fraud detection me PR-AUC, aur ranking me NDCG — metric choice hi project ki quality decide karti hai. Interview me 'maine baseline 0.55 se 0.85 accuracy ki, per-class recall bhi report kiya' bolna strong hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek confusion matrix diya gaya hai — precision, recall, F1, accuracy aur majority baseline calculate karo." },
+        { "difficulty": "medium", "text": "Pipeline + stratification ke saath ek classifier train karo aur per-class report print karo." },
+        { "difficulty": "hard", "text": "GroupShuffleSplit se leakage-free evaluation likho aur overlap zero ka assertion lagao." }
+      ],
+      "interview": [
+        { "q": "Train/test split se pehle scaling kyun galat hai?", "a": "Scaler poora dataset dekh leta hai, isliye test ka mean/std train me chala jata hai — test score optimistically high aur production me gir jata hai. Fix: Pipeline ke andar scaler." },
+        { "q": "Accuracy 95% par model bekaar kaise?", "a": "Class imbalance: majority class predict karke hi 95% mila. Precision/recall per class dekho aur majority baseline se compare karo." },
+        { "q": "Grouped data me split kaise karoge?", "a": "GroupKFold/GroupShuffleSplit ya time-based split — same entity ya future data test me na aaye, warna leakage hoti hai." }
+      ],
+      "miniChallenge": "Ek evaluate(y_true, y_prob, cost_fn, cost_fp) function likho jo cost matrix se best threshold chune aur us par precision/recall report kare.",
+      "debugTask": "Offline F1 0.91 tha par production me 0.62. Pehle teen cheezein kaunsi check karoge (leakage, distribution shift, version mismatch)?",
+      "related": ["Data cleaning & leakage", "Text Preprocessing & Bag-of-Words", "Metrics & thresholds", "Cross-validation"],
+      "revision": [
+        "Split pehle, preprocessing pipeline me",
+        "Metric problem se chuno + baseline do",
+        "Grouped/time-series → group-aware split",
+        "Threshold cost matrix se set karo",
+        "Per-class/per-segment report karo"
+      ],
+      "interviewTip": "Metric sawal par counter-question karo: 'false negative ka cost zyada hai ya false positive ka?' — ye business-first thinking interviewer ko turant dikhti hai."
+    },
+    {
+      "section": "s21",
+      "title": "Text Preprocessing & Bag-of-Words",
+      "level": "core",
+      "what": "Text ko model-friendly banane ka process: normalize (lowercase/unicode) → tokenize → stopwords/stemming (optional) → numeric representation (bag-of-words, TF-IDF ya embeddings).",
+      "why": "Tokenization aur normalization ke bina same word ke kai versions vocabulary me chale jaate hain — matching aur similarity dono kharab ho jati hai. Ye foundation embeddings/transformers tak jaata hai.",
+      "whereUsed": "Search/retrieval, sentiment aur intent classification, topic detection, aur RAG ka chunking/embedding stage.",
+      "prereqs": ["Strings aur regex basics", "Dictionaries & Counter", "Basic vector math (dot product)"],
+      "howItWorks": "Bag-of-words document ko token counts ke vector me badalta hai (order kho jata hai). Cosine similarity do vectors ke angle se similarity deti hai, isliye length se independent rehti hai. Subword tokenization (BPE) ne rare words problem solve ki, par labels ko token-level align karna padta hai.",
+      "syntax": "import re\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", text.lower())\n\nfrom collections import Counter\nCounter(tokens(doc)).most_common(10)\n\n# vector space\nv = Counter(tokens(doc))\nsim = dot(a, b) / (norm(a) * norm(b))",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "import re\nfrom collections import Counter\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", text.lower())\n\nprint(tokens(\"AI, agents! Agents run.\"))\nprint(Counter(tokens(\"ai agents ai rag\")).most_common(2))\nprint(len(set(tokens(\"ai agents ai rag\"))))",
+          "output": "",
+          "explain": [
+            "Regex tokenizer punctuation hata deta hai, isliye 'Agents!' aur 'agents' ek hi token ban jate hain.",
+            "lower() + regex dono mil kar normalization karte hain — warna vocabulary me 'AI', 'ai', 'agents!' alag alag ho jaate.",
+            "unique tokens ki count vocabulary size ka idea deti hai (bag-of-words vector ki length)."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "import math\nfrom collections import Counter\n\ndef vec(text):\n    return Counter(text.split())\n\ndef cosine(a, b):\n    va, vb = vec(a), vec(b)\n    dot = sum(va[t] * vb.get(t, 0) for t in va)\n    na = math.sqrt(sum(v * v for v in va.values()))\n    nb = math.sqrt(sum(v * v for v in vb.values()))\n    return 0.0 if not na or not nb else dot / (na * nb)\n\nprint(round(cosine(\"ai agent\", \"ai agents\"), 3))\nprint(round(cosine(\"ai agent\", \"cats dogs\"), 3))\nprint(round(cosine(\"ai agents ai\", \"ai agents\"), 3))",
+          "output": "",
+          "explain": [
+            "'ai agent' vs 'ai agents' ka score 0.5 hai kyunki sirf 'ai' match hua — morphology (stemming) miss ho rahi hai.",
+            "Zero overlapping tokens par similarity 0.0 aati hai (dot product zero), isliye retrieval me threshold lagana zaroori hai.",
+            "Frequency ka asar dikhta hai: 'ai' do baar hone se score 0.949 tak jaata hai — TF-IDF isi ko normalize karta hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "tokens = [\"[CLS]\", \"bought\", \"shoes\", \"[SEP]\", \"[PAD]\"]\nlabels = [\"bought\", \"shoes\"]\n\nmask = [1 if t not in {\"[CLS]\", \"[SEP]\", \"[PAD]\"} else 0 for t in tokens]\naligned = [-100 if m == 0 else 0 for m in mask]\n\nprint(tokens, mask)\nprint(aligned)\nprint(\"real tokens:\", sum(mask), \"labels:\", len(labels))",
+          "output": "",
+          "explain": [
+            "Special tokens (CLS/SEP/PAD) ko mask zero deta hai — model ko in par prediction seekhni nahi chahiye.",
+            "-100 PyTorch ka ignore index hai: cross-entropy in positions ka loss skip kar deta hai.",
+            "Real tokens ki count aur labels ki length match honi chahiye — mismatch silently metrics galat kar deta hai."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Normalize ek hi function me karo", "detail": "lowercase, unicode normalize, whitespace collapse — ek versioned function banao jo training aur serving dono me chale (warna train-serve skew hoga).", "code": "def normalize(t: str) -> str:\n    return \" \".join(t.lower().split())" },
+        { "step": "Regex se tokenize karo", "detail": "split() punctuation chipka deta hai; regex pattern se saaf tokens milte hain.", "code": "re.findall(r\"[a-z0-9]+\", normalize(text))" },
+        { "step": "Length limit explicitly do", "detail": "max_length + truncation set karo — silent truncation debug karna mushkil hota hai." },
+        { "step": "Empty input handle karo", "detail": "Khaali/whitespace-only text par vocabulary lookup khaali hota hai — guard lagao aur defined output do." }
+      ],
+      "commonMistakes": [
+        "Train aur serving me alag cleaning code — classic train-serve skew.",
+        "Punctuation strip na karna (agents! aur agents alag tokens).",
+        "Stopwords blindly hatana — negation ('not good') ka matlab badal jata hai.",
+        "Khaali text par crash ya silent khaali vector.",
+        "Padding/special tokens ko loss me shamil karna."
+      ],
+      "bestPractices": [
+        "Cleaning ko ek shared, versioned function me rakho (train + serve reuse).",
+        "Stemming/lemmatization ka effect similarity metric par measure karo, assume na karo.",
+        "TF-IDF se common words ka weight kam karo; retrieval ke liye threshold rakho.",
+        "Subword tokenization par label alignment explicitly handle karo (ignore index).",
+        "Vocabulary/model version ko artifacts ke saath version karo."
+      ],
+      "realWorld": "Search relevance ka lexical baseline (BM25), sentiment classifier ka TF-IDF vector, aur RAG ke retrieval eval ka hit-rate — teeno is chapter par khade hain. Interview me 'tokenization choice vocabulary aur matching quality decide karti hai' bolna practical depth dikhata hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek tokenize(text) function likho jo lowercase, punctuation strip aur empty-input guard kare." },
+        { "difficulty": "medium", "text": "Bag-of-words cosine similarity implement karo aur test case se batao ki stemming kis pair ko theek karti hai." },
+        { "difficulty": "hard", "text": "Ek mini TF-IDF (3 documents) implement karo aur sabse high-scoring term per document print karo." }
+      ],
+      "interview": [
+        { "q": "Bag-of-words ki limitations kya hain?", "a": "Word order aur context kho jata hai ('not good' vs 'good'), vocabulary explode hota hai aur synonyms miss hote hain — isliye embeddings/transformers aage aate hain." },
+        { "q": "Cosine similarity Euclidean distance se behtar kyun?", "a": "Cosine length-invariant hai: lamba document chhote document se match kar sakta hai, jabki Euclidean me sirf length ka farq dominate kar jata hai." },
+        { "q": "Subword tokenization ka label alignment problem?", "a": "Ek word kai tokens me toot jata hai, isliye word-level labels ko token-level me align karna padta hai — padding/special tokens ko loss se exclude karte hain (-100/attention mask)." }
+      ],
+      "miniChallenge": "Ek lexical search index likho (tokens + counter) jo query par top-3 documents cosine similarity se laute aur zero-hit par khaali list de.",
+      "debugTask": "Local me model theek chalta hai par production me predictions shift ho gayi hain — preprocessing me kaun si do cheezein mismatch ho sakti hain?",
+      "related": ["Regex & string methods", "RAG: Chunk, Retrieve, Ground & Evaluate", "Embeddings", "Cosine similarity"],
+      "revision": [
+        "normalize → tokenize → (stopwords/stem) → vector",
+        "Regex tokenizer punctuation saaf karta hai",
+        "Cosine = dot / (norm x norm), length-invariant",
+        "TF-IDF common terms ka weight kam karta hai",
+        "Special/padding tokens loss se exclude"
+      ],
+      "interviewTip": "Interview me ye framing do: 'normalization ek shared function me rakhta hoon, kyunki train aur serving me same code hone se hi skew rukta hai'."
+    }
+  ]
+}

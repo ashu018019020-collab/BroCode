@@ -1,0 +1,666 @@
+{
+  "section": "s03",
+  "topic": "Input & Output",
+  "authored": true,
+  "intro": "Program ka kaam sirf calculate karna nahi — input lena aur output saaf dikhana bhi utna hi important hai. Yahan print ke sep/end, f-string ke format specs, input() ka 'hamesha string' behaviour aur stdout vs stderr ka fark cover hota hai. Ye section wo habit banata hai jisse aapka output readable aur aapka input crash-proof ho.",
+  "theory": [
+    "print() har argument ko str() se convert karta hai, sep (default space) ke saath jodta hai, end (default newline) lagata hai, aur None return karta hai — isliye 'x = print(...)' se x None hi milega.",
+    "input() hamesha str return karta hai, chahe user number daale. Isliye conversion alag step hai aur usme ValueError aa sakta hai; input khatam ho jaye to EOFError aata hai.",
+    "f-string ka format spec chhota language hai: [[fill]align][sign][width][,][.precision][type] — jaise f'{x:>10,.2f}' (right align, comma grouping, 2 decimal). Type code value ke type ke saath match karna zaroori hai, warna ValueError.",
+    "stdout data ke liye hai, stderr errors/logs ke liye. Ye Unix convention script ko pipe-able banata hai: 'prog > out.csv' se sirf data file me jata hai aur logs screen par dikhte hain.",
+    "repr() debug ke liye hai (quotes aur escapes dikhata hai), str() dikhane ke liye. '\"7\"' aur '7' ka fark output me dikhana ho to !r use karo — warna debugging guesswork ban jati hai."
+  ],
+  "syntax": [
+    "print('a', 'b', sep=' | ')          # a | b\nprint('loading', end='...')          # newline nahi\nprint('done', end='')                # ek hi line me aage likhna\nprint(f'{name!r} -> {score:>6.2f}')  # repr + formatted",
+    "raw = input('Enter port: ')     # hamesha str\nvalue = int(raw)                 # ValueError possible\nprint('got', value)              # None return nahi karta",
+    "import sys\nprint('debug line', file=sys.stderr)   # logs stderr par\nsys.stdout.write('no auto newline')\nargs = sys.argv[1:]\nlines = sys.stdin.read().splitlines()",
+    "f'{42:>8}'      # '      42'\nf'{42:<8}|'     # '42      |'\nf'{3.14159:.2f}'  # '3.14'\nf'{0.185:.1%}'    # '18.5%'\nf'{1234567:,}'    # '1,234,567'\nf'{7:04d}'        # '0007'"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "print('Receipt', 'v1', sep=' | ')\nprint('Loading', end='')\nprint('... done')\n\nname = 'Anjali'\nscore = 91.456\nprint(f'{name:<8}|{score:>8.2f}|')\nprint(f'{name!r} raw value -> {score!r}')\n\nitems = ['idli', 'dosa', 'filter coffee']\nprint(*items, sep=', ')",
+      "output": "",
+      "explain": [
+        "sep sirf arguments ke beech aata hai (end par nahi), isliye 'Receipt | v1' milta hai — dono taraf separator nahi.",
+        "end='' se newline rukta hai, isliye agla print usi line par chalta hai: 'Loading... done'.",
+        "Width/alignment ka combo (< aur >) se columns align hote hain; repr (!r) string ke quotes bhi dikhata hai, jo debugging me farak rakhta hai.",
+        "*items se list ke elements alag-alag arguments ban jate hain (unpacking) — sep phir har element ke beech apply hota hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "rows = [\n    ('Basmati rice 5kg', 645.5, 0.05),\n    ('Olive oil 1L', 1299.0, 0.12),\n    ('Dark chocolate', 249.99, 0.18),\n]\n\nprint(f'{\"item\":<18}{\"price\":>10}{\"tax\":>8}{\"total\":>11}')\nprint('-' * 47)\nfor name, price, tax_rate in rows:\n    tax = price * tax_rate\n    print(f'{name:<18}{price:>10,.2f}{tax_rate:>8.1%}{price + tax:>11,.2f}')\n\nprint()\nprint('bytes :', f'{1536:,.0f}', '->', f'{1536 / 1024:.1f} KB')\nprint('pad   :', f'{7:04d}', '|', f'{\"skewed\":*^12}', '|', f'{-12:+d}')",
+      "output": "",
+      "explain": [
+        "Header aur data rows same width specs use karte hain, isliye columns perfectly align hote hain (monospace font me table jaisa).",
+        ":,.2f me comma grouping + 2 decimals hai — finance output ka standard format.",
+        ":>8.1% percent type hai: value ko 100 se multiply karke percent sign lagata hai, isliye 0.05 -> 5.0%.",
+        "Fill+align (*^12) string ko stars se center me pad karta hai; +d sign force karta hai (-12 -> -12, 12 -> +12)."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import io, sys\nfrom contextlib import redirect_stdout, redirect_stderr\n\nout, err = io.StringIO(), io.StringIO()\nwith redirect_stdout(out), redirect_stderr(err):\n    print('data row: 1,idli,60')\n    print('processed 1 rows', file=sys.stderr)\n    print('data row: 2,dosa,80')\n    print('warning: missing tax for row 2', file=sys.stderr)\n\nprint('--- stdout (data) ---')\nfor line in out.getvalue().splitlines():\n    print(' ', line)\nprint('--- stderr (logs) ---')\nfor line in err.getvalue().splitlines():\n    print(' ', line)\n\nprint('tricky repr:', f'{\"7\"!r}', 'vs', f'{7!r}')\nprint('escaped   :', f'{\"a\" + chr(10) + \"b\"!r}')",
+      "output": "",
+      "explain": [
+        "redirect_stdout/redirect_stderr se do streams ko alag buffer me capture kiya — yahi test karne ka tarika hai ki data aur logs mix nahi hue.",
+        "stdout me sirf machine-readable rows gaye aur stderr me human logs — isi wajah se 'python x.py > data.csv' clean data deta hai.",
+        "!r se string ka quotes aur escape (\n) dikhta hai; plain str me '7' aur 7 dono same dikhte hain aur debugging me confusion hoti hai."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Logging discipline: logs stderr par jaate hain aur data stdout par, isliye CLI tools ko shell pipeline me use kiya ja sakta hai (prog | grep, prog > report.csv) bina logs file kharaab kiye.",
+    "Billing aur invoices me format specs legal requirement ban jate hain — currency grouping, 2 decimal aur percent display galat hone par customer complaint aati hai (aur audit me mismatch nikalta hai).",
+    "ETL me 'input hamesha string' rule sabse zyada bug deta hai: CSV/JSON/env se aaya '007' int ban gaya to leading zero gaya, ya '3.10' ko float banaya to version number 3.1 ho gaya (aur comparison galat)."
+  ],
+  "interview": [
+    {
+      "q": "stdout aur stderr alag rakhna kyun zaroori hai?",
+      "a": "Unix philosophy: stdout machine-readable output ke liye, stderr diagnostics ke liye. Isse 'prog > file' par sirf data jata hai aur errors screen par dikhte hain; 'prog 2>/dev/null' se logs silence kiye ja sakte hain bina data khoye. Interactive tools (progress bar) bhi stderr par likhte hain taaki pipe na toote.",
+      "tip": "Ek concrete pipeline example do (prog > data.csv, 2> app.log) — isse pata chalta hai aapne real CLI banayi hai."
+    },
+    {
+      "q": "input() se number lene me kya kya edge cases hain?",
+      "a": "Ek: input() hamesha str deta hai, isliye conversion explicit hai aur ValueError possible hai. Do: EOFError jab input stream khatam ho (Ctrl+D ya piped file) — library code me ye crash banata hai. Teen: whitespace ('42\n' vs ' 42 '), locale decimal comma ('1,5'), aur huge input par block waiting. Isliye library me input() na rakho — parameter lo, aur CLI layer par validation karo.",
+      "tip": "Ye question 'testability' ko touch karta hai — input() ko function boundary se bahar rakhne ka reason batao."
+    },
+    {
+      "q": "f-string ke format specs ke common pitfalls kya hain?",
+      "a": "Type mismatch (str par :f, float par :d) ValueError deta hai; precision money me silently rounding hai (:.0f se paise gayab); width se truncate nahi hota (string bada ho to column toot jayega); aur locale-aware grouping (!, aur locale module) ka farak. Plus f-string '=' spec (f'{x=}') debugging me useful hai.",
+      "tip": "Truncation ke liye ':.3' (precision on str) bhi batao — log messages me kaam aata hai."
+    },
+    {
+      "q": "Ek function likhna ho jo output ko testable banae — architecture kya hogi?",
+      "a": "Business logic ko pure function rakho jo data return kare, aur printing ko thin layer me. Tests phir return value par assertions karenge; output format ke liye contextlib.redirect_stdout se capture karke compare karo (ya snapshot test). Isse output badalna test todta nahi, sirf ek format test todta hai.",
+      "tip": "redirect_stdout ka mention karna practical signal hai — isse pata chalta hai aapne output ko actually test kiya hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Aur bina newline ke 'Loading...' aur uske baad 'done' ek hi line me print karo.",
+        "a": "print('Loading', end='') phir print('... done') — pehle print newline nahi deta, dusra apna newline de deta hai.",
+        "explain": "end ka default '\\n' hai; end='' karne se cursor usi line par rehta hai (progress output ka basic tarika).",
+        "code": "print('Loading', end='')\nprint('... done')\nprint('row 1', end=' | ')\nprint('row 2')",
+        "output": "",
+        "tip": "Progress bar me end='\\r' bhi use hota hai — same line overwrite karne ke liye."
+      },
+      {
+        "q": "Teen words ko 'a - b - c' format me print karo bina manual join ke.",
+        "a": "print('a', 'b', 'c', sep=' - ') — sep sirf beech me lagta hai.",
+        "explain": "sep arguments ke beech apply hota hai, isliye shuru/ant me separator nahi aata (manual join me ye galti hoti hai).",
+        "code": "print('a', 'b', 'c', sep=' - ')\nprint('a', 'b', 'c', sep='')\nprint(1, 2, 3, sep=', ', end=';\\n')",
+        "output": "",
+        "tip": "CSV banate waqt sep=',' kaafi nahi — quoting chahiye (advanced coding task me hai)."
+      },
+      {
+        "q": "Score 7 ko '0007' aur 3.14159 ko '3.14' print karo.",
+        "a": "f'{7:04d}' aur f'{3.14159:.2f}' — width 0 se pad karta hai aur precision decimals limit karta hai.",
+        "explain": "0 flag width ke saath pad karta hai (sirf numbers par); .2f rounding karta hai, truncate nahi.",
+        "code": "print(f'{7:04d}', f'{-7:04d}')\nprint(f'{3.14159:.2f}', f'{2.5:.0f}', f'{3.5:.0f}')\nprint(f'{2.675:.2f}')",
+        "output": "",
+        "tip": "Banker's rounding: 2.5 -> 2 par round() aur format dono same rule follow karte hain — money me Decimal use karo."
+      },
+      {
+        "q": "Kisi string aur number ko print karo taaki quotes/type saaf dikhein.",
+        "a": "!r (repr) use karo: f'{value!r}' se '7' quotes ke saath aur 7 bina quotes dikhta hai.",
+        "explain": "Debugging me '7' vs 7 ka fark sabse common confusion hai; repr usko ek nazar me clear kar deta hai.",
+        "code": "values = ['7', 7, 'a\\nb', None, [1, 2]]\nfor v in values:\n    print(f'{str(v):<10} | repr: {v!r} | type: {type(v).__name__}')",
+        "output": "",
+        "tip": "Python 3.8+ me f'{v=}' se variable ka naam bhi print hota hai — debugging shortcut."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Ek 4-column table print karo jisme auto width ho (columns ki max length se).",
+        "a": "Har column ki max width nikaalo, phir f-string me dynamically width pass karo: f'{cell:<{w}}'.",
+        "explain": "Hardcoded widths content badalne par toot jati hain; computed width har dataset par kaam karti hai.",
+        "code": "rows = [\n    ('product', 'qty', 'price', 'total'),\n    ('Basmati rice 5kg', 2, 645.5, 1291.0),\n    ('Olive oil', 1, 1299.0, 1299.0),\n    ('Dark chocolate 70%', 4, 249.99, 999.96),\n]\n\nwidths = [max(len(str(row[i])) for row in rows) for i in range(len(rows[0]))]\nfor row in rows:\n    cells = []\n    for i, cell in enumerate(row):\n        text = f'{cell:,.2f}' if isinstance(cell, float) else str(cell)\n        cells.append(f'{text:<{widths[i]}}')\n    print('  '.join(cells))\nprint('widths:', widths)",
+        "output": "",
+        "explain": "Width computation ek pass me transpose karke hoti hai (column-wise max). Numeric cells ko format karne ke baad hi width count karo, warna decimal add hone par alignment tootegi.",
+        "tip": "Interview me '{:<{w}}' nested format spec explain karna bonus hai."
+      },
+      {
+        "q": "Ek function likho jo 'answers' ki list se number parse kare aur invalid par dobara aage badhe (input() ke bina).",
+        "a": "Iterator/queue se values lo; parse karo; invalid par next value try karo; khatam ho jaye to error do (EOFError ki simulation).",
+        "explain": "input() ko parameterize karne se function testable ho jata hai — production code me yahi pattern use hota hai.",
+        "code": "class Exhausted(Exception):\n    pass\n\ndef next_value(answers):\n    try:\n        return next(answers)\n    except StopIteration:\n        raise Exhausted('no more input available') from None\n\ndef read_port(answers, default=8000):\n    for raw in answers:\n        raw = raw.strip()\n        if not raw:\n            continue\n        try:\n            port = int(raw)\n        except ValueError:\n            print(f'  reject {raw!r}: not a number')\n            continue\n        if not 0 < port < 65536:\n            print(f'  reject {raw!r}: out of range')\n            continue\n        return port\n    return default\n\nprint('port1:', read_port(iter(['8000'])))\nprint('port2:', read_port(iter(['  ', 'abc', '99999', '8080'])))\nprint('port3:', read_port(iter(['oops']), default=9000))",
+        "output": "",
+        "explain": "Iterator protocol se 'prompt loop' ka logic testable ban jata hai. Invalid values par reason print karna UX ka hissa hai, aur exhausted input par default lena documented behaviour hai.",
+        "tip": "Real CLI me ye loop while True + break hota hai; yahan same logic bina blocking test kiya gaya."
+      },
+      {
+        "q": "Bytes ko human-readable banao: 1536 -> '1.5 KB', 1048576 -> '1.0 MB'.",
+        "a": "1024 ke power se divide karke unit choose karo, aur 1 decimal tak format karo.",
+        "explain": "Binary (KiB) aur decimal (KB) ka farak hota hai; jo bhi choose karo output me unit clearly likho.",
+        "code": "def human_bytes(size, binary=True):\n    step = 1024 if binary else 1000\n    units = ['B', 'KB', 'MB', 'GB', 'TB']\n    value = float(size)\n    for unit in units:\n        if value < step or unit == units[-1]:\n            return f'{value:.1f} {unit}' if unit != 'B' else f'{int(value)} B'\n        value /= step\n\nfor size in (0, 512, 1536, 1048576, 5 * 1024 ** 3):\n    print(f'{size:>14,} -> {human_bytes(size):>10} | decimal: {human_bytes(size, binary=False)}')",
+        "output": "",
+        "explain": "Loop tab rukta hai jab value step se chhoti ho jaye; aakhri unit par guard zaroori hai taaki TB se aage na nikal jaye.",
+        "tip": "Docker/k8s me decimal units use hote hain (1 GB = 1000^3) — interview me ye distinction batao."
+      },
+      {
+        "q": "Ek warning line stderr par aur data line stdout par likho, phir dono ko alag capture karke verify karo.",
+        "a": "print(..., file=sys.stderr) aur print(...) default stdout; capture ke liye io.StringIO + redirect_stdout/redirect_stderr.",
+        "explain": "Stream separation ko test karna hi proof hai ki pipeline me data clean rahega.",
+        "code": "import io, sys\nfrom contextlib import redirect_stdout, redirect_stderr\n\nout, err = io.StringIO(), io.StringIO()\nwith redirect_stdout(out), redirect_stderr(err):\n    print('id,name,amount')\n    print('1,idli,60')\n    print('warning: 1 row has missing category', file=sys.stderr)\n\nprint('stdout lines:', out.getvalue().splitlines())\nprint('stderr lines:', err.getvalue().splitlines())\nprint('stdout has warning?', 'warning' in out.getvalue())",
+        "output": "",
+        "explain": "Assertions ke saath ye pattern CI me 'logs kabhi data me leak na hon' test ban jata hai.",
+        "tip": "Production me logging module stdout/stderr split automatically handle karta hai — but custom writers me ye test rakho."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Ek function likho jo text ko fixed width me wrap kare (word boundaries par) bina textwrap ke.",
+        "a": "Words ko iterate karo aur current line me fit hone tak jodo; width se bada word alag line par rakho.",
+        "explain": "Ye rendering/CLI formatting ka core hai aur textwrap ke behaviour ko samajhne ka best exercise.",
+        "code": "def wrap(text, width):\n    lines, current = [], ''\n    for word in text.split():\n        if not current:\n            current = word\n        elif len(current) + 1 + len(word) <= width:\n            current += ' ' + word\n        else:\n            lines.append(current)\n            current = word\n    if current:\n        lines.append(current)\n    return lines\n\ntext = 'String formatting ka pehla rule hai: output readable ho aur har column apni jagah rahe'\nfor line in wrap(text, 28):\n    print(f'|{line:<28}|')\nprint('line count:', len(wrap(text, 28)))",
+        "output": "",
+        "explain": "Greedy wrapping hai (jaise textwrap default) — har word ko current line me fit karne ki koshish, warna nayi line. Empty current ka special case first word ke liye zaroori hai.",
+        "tip": "Complex text (URLs, hyphenation) par greedy wrap kharab dikhta hai — textwrap module ka break_long_words option mention karo."
+      },
+      {
+        "q": "Ek 'output contract' test likho: function ka stdout exactly kya hona chahiye, assertion ke saath verify karo.",
+        "a": "io.StringIO + redirect_stdout se output capture karo, phir expected string ya lines list se compare karo.",
+        "explain": "Print-based programs ko testable banane ka standard tarika — return value na ho to output hi contract hai.",
+        "code": "import io\nfrom contextlib import redirect_stdout\n\ndef report(rows):\n    print(f'{\"name\":<10}{\"score\":>6}')\n    for name, score in rows:\n        print(f'{name:<10}{score:>6.1f}')\n\ndef capture(fn, *args):\n    buf = io.StringIO()\n    with redirect_stdout(buf):\n        fn(*args)\n    return buf.getvalue()\n\nactual = capture(report, [('Anjali', 91.45), ('Rehan', 88.0)])\nexpected = 'name        score\\nAnjali       91.5\\nRehan        88.0\\n'\nprint(actual, end='')\nprint('matches expected?', actual == expected)\nprint('first line width:', len(actual.splitlines()[0]), '| third line width:', len(actual.splitlines()[2]))",
+        "output": "",
+        "explain": "Exact string compare output contract ko pin karta hai; agar format intentionally flexible ho to lines/columns par assertions karo.",
+        "tip": "Snapshot testing (stored expected output) bade reports ke liye better hai — diff se change pata chalta hai."
+      },
+      {
+        "q": "CSV line ko safely quote karo: comma, double quote aur newline wale fields handle karo.",
+        "a": "Field ko double quotes me wrap karo aur andar ke \" ko \"\" karo (RFC 4180 style).",
+        "explain": "Naive ','.join() se CSV toot jati hai aur downstream parser galat columns padhta hai.",
+        "code": "def csv_field(value):\n    text = str(value)\n    if any(ch in text for ch in ',\"\\n\\r'):\n        return '\"' + text.replace('\"', '\"\"') + '\"'\n    return text\n\ndef to_csv_row(values):\n    return ','.join(csv_field(v) for v in values)\n\nrows = [\n    ['id', 'item', 'note'],\n    [1, 'idli', 'plain'],\n    [2, 'dosa', 'extra, spicy'],\n    [3, 'coffee', 'he said \"strong\"'],\n    [4, 'thali', 'multi\\nline note'],\n]\nfor row in rows:\n    print(to_csv_row(row))",
+      "output": "",
+      "explain": "Quoting sirf zaroorat par hoti hai (comma, quote, newline) — yahi conditional rule RFC 4180 ka core hai. Andar ke quotes double karne se parser unhe correctly unescape kar pata hai.",
+      "tip": "Hand-rolled CSV se aage badhkar csv module use karo (dialect, quoting options) — interview me ye mention karo."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Ek CLI tool ke output ko testable banane ke liye kya karoge?",
+      "a": "Logic ko pure functions me rakho jo data return karein, aur print sirf thin layer me karo. Format tests ke liye redirect_stdout/stderr se capture karke compare karo; colours/progress ko TTY check par conditional rakho (sys.stdout.isatty()) taaki piped output me escape codes na jayein.",
+      "explain": "isatty() ka zikr production CLI experience dikhata hai.",
+      "code": "import sys\nimport io\nfrom contextlib import redirect_stdout\n\nbuf = io.StringIO()\nwith redirect_stdout(buf):\n    print('plain row')\nprint('captured:', buf.getvalue().strip())\nprint('stdout is tty?', sys.stdout.isatty())",
+      "output": "",
+      "tip": "Colour codes ke liye NO_COLOR env variable ka convention bhi batao."
+    },
+    {
+      "q": "Bade output (lakhs of lines) ko efficiently kaise likhoge?",
+      "a": "str join karke ek write karo (ya generator + writelines), per-line print se bacho; '\".join(lines)' memory leta hai to chunking karo (10k lines per flush). sys.stdout.write buffering, aur flush sirf zaroorat par (interactive/progress) karo — warna syscall overhead performance kha jata hai.",
+      "explain": "Print per line I/O bound hota hai; buffered writes ka farak measurable hota hai.",
+      "code": "import io\n\nlines = [f'{i},{i * i}' for i in range(5)]\nbuf = io.StringIO()\nbuf.write('\\n'.join(lines))\nbuf.write('\\n')\nprint('wrote', len(lines), 'lines, chars =', len(buf.getvalue()))\nprint(buf.getvalue().splitlines()[:3])",
+      "output": "",
+      "tip": "Ye answer 'benchmark karke dekha hai' confidence deta hai — print loop vs join ka farak mention karo."
+    },
+    {
+      "q": "CSV vs TSV vs JSON output — kab kaunsa choose karoge?",
+      "a": "CSV: flat tabular data, spreadsheet-friendly, human-readable; nested data nahi rakhta aur escaping ka dhyan rakhna padta hai. TSV: tabs na aayein to escaping sasti hai, par tab wale text par toot jata hai. JSON: nested/typed data ke liye best, streaming ke liye JSON Lines (ek object per line) use karo. Decision input consumers par depend karta hai, 'kaun padhega' se.",
+      "explain": "JSON Lines ka mention streaming/ETL context dikhata hai.",
+      "code": "import json\n\nrecord = {'id': 1, 'name': 'idli', 'tags': ['breakfast', 'south-indian']}\nprint(json.dumps(record, ensure_ascii=False))\nprint(json.dumps([record], indent=None, separators=(',', ':')))\nprint('jsonl:', json.dumps(record) if True else '')",
+      "output": "",
+      "tip": "ensure_ascii=False se non-English text readable rehta hai — ye ek chhota par impressive detail hai."
+    }
+  ],
+  "realworld": [
+    {
+      "q": "Invoice output banao jisme currency grouping, 2 decimal, aur percent rate sab legal format me ho.",
+      "a": "Format specs: ':,.2f' for money aur ':.1%' for percent; header ke saath widths align karo.",
+      "explain": "Money display me grouping aur precision galat hone par customer-facing document invalid ho jata hai.",
+      "code": "items = [('Consulting hours', 42, 1500.0), ('Report design', 1, 7500.0)]\nTAX = 0.18\n\nprint(f'{\"Item\":<20}{\"Qty\":>5}{\"Rate\":>12}{\"Amount\":>14}')\nprint('-' * 51)\nsubtotal = 0.0\nfor name, qty, rate in items:\n    amount = qty * rate\n    subtotal += amount\n    print(f'{name:<20}{qty:>5}{rate:>12,.2f}{amount:>14,.2f}')\n\ntax = subtotal * TAX\nprint('-' * 51)\nprint(f'{\"Subtotal\":<37}{subtotal:>14,.2f}')\nprint(f'{\"GST (18%)\":<37}{tax:>14,.2f}')\nprint(f'{\"Total payable\":<37}{subtotal + tax:>14,.2f}')\nprint(f'tax rate shown as percent: {TAX:.1%}')",
+      "output": "",
+      "explain": "Amount column me raw calculation se pehle format lagana zaroori hai (rounding display-only hai). Total ko subtotal + tax se dobara compute karo taaki formatted rows se drift na ho.",
+      "tip": "Real invoices me line totals round karke sum karte hain (sum of rounded == rounded sum guarantee) — ye business rule clarify karo."
+    },
+    {
+      "q": "CLI tool ka usage/help output likho jo argv ke saath validations kare aur exit code de.",
+      "a": "argv parse karo, missing/invalid par stderr par usage print karo aur non-zero exit code do (usage error ke liye 2, business error ke liye 1).",
+      "explain": "Exit codes shell scripts aur CI ke liye contract hain — sirf messages kaafi nahi hote.",
+      "code": "import sys\n\nUSAGE = 'usage: report.py <rows:int> [--format=text|json]'\n\ndef parse_args(argv):\n    if not argv:\n        raise SystemExit(f'missing rows\\n{USAGE}')\n    rows_raw = argv[0]\n    try:\n        rows = int(rows_raw)\n    except ValueError:\n        raise SystemExit(f'rows must be an integer, got {rows_raw!r}\\n{USAGE}') from None\n    if rows <= 0:\n        raise SystemExit(f'rows must be positive, got {rows}')\n    fmt = 'text'\n    for arg in argv[1:]:\n        if arg.startswith('--format='):\n            fmt = arg.split('=', 1)[1]\n    if fmt not in ('text', 'json'):\n        raise SystemExit(f'unknown format {fmt!r}\\n{USAGE}')\n    return rows, fmt\n\ndef main(argv):\n    rows, fmt = parse_args(argv)\n    if fmt == 'json':\n        print('[' + ', '.join('{\"row\": %d}' % i for i in range(1, rows + 1)) + ']')\n    else:\n        for i in range(1, rows + 1):\n            print(f'row {i:>3} | value {i * i:>6}')\n    return 0\n\nprint('exit code:', main(['3']))\nprint('json mode :', end=' ')\nprint('exit code:', main(['2', '--format=json']))\ntry:\n    main(['0'])\nexcept SystemExit as e:\n    print('usage error:', e)",
+      "output": "",
+      "explain": "SystemExit with a message stderr par likhta hai aur non-zero status deta hai — ye argparse ke bina bhi standard behaviour hai. main() int return karta hai isliye tests exit code assert kar sakte hain.",
+      "tip": "Interview me sys.exit(main(argv)) ka pattern batao — isse exit codes testable rehte hain."
+    },
+    {
+      "q": "Ek progress/status line banao jo pipe hone par (non-TTY) saaf ho jaye aur file me garbage na likhe.",
+      "a": "isatty() check karo: TTY par '\\r' wali dynamic line, warna sirf final summary print karo.",
+      "explain": "Piped output me carriage returns aur escape codes file ko kharab kar dete hain — ye classic CLI bug hai.",
+      "code": "import sys\n\ndef progress_line(done, total, tty=False):\n    percent = done / total\n    bar = '#' * int(percent * 20)\n    line = f'[{bar:<20}] {done}/{total} ({percent:.0%})'\n    if tty:\n        return '\\r' + line\n    return line if done == total else None\n\nfor done in (1, 2, 3):\n    line = progress_line(done, 3, tty=False)\n    if line:\n        print(line)\n\npreview = progress_line(2, 3, tty=True)\nprint('tty mode repr:', repr(preview))",
+      "output": "",
+      "explain": "Non-TTY me intermediate lines skip kar di jati hain aur sirf final line aati hai — isse logs/CI me clean output rehta hai. TTY mode me '\\r' prefix hota hai jo same line overwrite karta hai.",
+      "tip": "sys.stdout.isatty() real detection hai; tests me flag pass karna better hai (dependency injection)."
+    }
+  ]
+},
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Receipt printer likho: items ki list se aligned receipt banao (item, qty, rate, amount) aur total print karo.",
+      "build": "print_receipt(items) — column widths compute ho, currency 2 decimal me ho, aur total last line par.",
+      "input": "[('Idli', 2, 60.0), ('Filter coffee', 3, 45.5), ('Masala dosa', 1, 120.0)]",
+      "expected": "Aligned table + 'Total: 366.50'",
+      "hint": "Widths ke liye max(len(...)) use karo; amount ko :>10,.2f se format karo.",
+      "concept": "print formatting, width alignment, accumulation",
+      "solution": "def print_receipt(items):\n    header = ('Item', 'Qty', 'Rate', 'Amount')\n    rows = [(name, str(qty), f'{rate:,.2f}', f'{qty * rate:,.2f}') for name, qty, rate in items]\n    widths = [max(len(header[i]), *(len(r[i]) for r in rows)) for i in range(4)]\n\n    def line(cells):\n        return '  '.join(f'{cell:<{widths[i]}}' if i == 0 else f'{cell:>{widths[i]}}'\n                         for i, cell in enumerate(cells))\n\n    print(line(header))\n    print('-' * (sum(widths) + 6))\n    for row in rows:\n        print(line(row))\n    total = sum(qty * rate for _, qty, rate in items)\n    print('-' * (sum(widths) + 6))\n    print(line(('Total', '', '', f'{total:,.2f}')))\n\nprint_receipt([('Idli', 2, 60.0), ('Filter coffee', 3, 45.5), ('Masala dosa', 1, 120.0)])",
+      "output": "",
+      "explanation": "Widths pehle compute hoti hain (header + saare rows ka max), phir ek hi line() helper left-align/right-align apply karta hai — isse alignment code duplicate nahi hota. Total raw floats se nikaalta hai, formatted strings se nahi (warna rounding drift aata).",
+      "time": "O(rows × cols) — width calculation aur printing",
+      "space": "O(rows × cols) formatted cells ke liye",
+      "better": "Bahut bade reports ke liye streaming: widths ke liye ek pass, printing ke liye dusra pass (ya file me do baar padho) — memory bachti hai.",
+      "followUp": "Receipt me discount line add karni ho (percent) to rounding ka order kya hoga aur total kaise reconcile karoge?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Safe number reader likho jo 'answers' ke sequence se pehla valid int nikaale aur invalid values reject karke reason bataye.",
+      "build": "read_int(answers, default=None) — strip, validate, reason ke saath reject.",
+      "input": "['', 'abc', '  12  ', '99']",
+      "expected": "invalid par reason lines, phir 12 return.",
+      "hint": "for loop se values lo (iterator me next() ka StopIteration handle karo); int(raw) ko try me rakho.",
+      "concept": "Iterators, validation loop, error messaging",
+      "solution": "def read_int(answers, default=None):\n    for raw in answers:\n        text = str(raw).strip()\n        if not text:\n            print('  reject: empty value')\n            continue\n        try:\n            return int(text)\n        except ValueError:\n            print(f'  reject {text!r}: not an integer')\n    return default\n\nprint('result:', read_int(['', 'abc', '  12  ', '99']))\nprint('all bad:', read_int(['x', 'y'], default=-1))\nprint('floats rejected:', read_int(['3.5'], default=None))",
+      "output": "",
+      "explanation": "Validation loop pehla valid value return karta hai; empty input ka case alag message deta hai taaki user ko pata chale kya galat tha. default param se 'koi valid value nahi mili' situation explicitly handle hoti hai.",
+      "time": "O(n) values",
+      "space": "O(1)",
+      "better": "Real CLI me retry limit ya loop + prompt hota hai; library me validator callback pass karo (parametrized) taaki testable rahe.",
+      "followUp": "Agar input stream khatam ho jaye (EOF) to crash ke bajaye kya behaviour better hai — default, error, ya loop exit?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Ek report printer likho jo auto-width table, currency aur percent columns ek saath handle kare.",
+      "build": "print_table(rows, formats) jahan formats column-wise 'text', 'money', 'percent', 'int' specify kare.",
+      "input": "Employee salary rows with hike percent",
+      "expected": "Aligned table jisme money comma-grouped aur percent 1 decimal ho.",
+      "hint": "Number ko format karo, phir uske length se width count karo (raw value ke nahi).",
+      "concept": "Dynamic format specs, column-wise formatting metadata",
+      "solution": "FORMATTERS = {\n    'text': lambda v: str(v),\n    'int': lambda v: f'{v:,d}',\n    'money': lambda v: f'{v:,.2f}',\n    'percent': lambda v: f'{v:.1%}',\n}\n\ndef print_table(headers, rows, formats):\n    cells = [[FORMATTERS[fmt](value) for fmt, value in zip(formats, row)] for row in rows]\n    widths = [max(len(headers[i]), *(len(r[i]) for r in cells)) for i in range(len(headers))]\n\n    def line(values, numeric):\n        parts = []\n        for i, value in enumerate(values):\n            parts.append(f'{value:>{widths[i]}}' if numeric[i] else f'{value:<{widths[i]}}')\n        return ' | '.join(parts)\n\n    print(line(headers, [False] * len(headers)))\n    print('-+-'.join('-' * w for w in widths))\n    for row in cells:\n        print(line(row, [f != 'text' for f in formats]))\n\nheaders = ('Name', 'Dept', 'Salary', 'Hike')\nrows = [\n    ('Anjali', 'DB2 Team', 122000, 0.082),\n    ('Rehan', 'Testing', 120000, 0.045),\n    ('Salman', 'Data Engineering', 125000, 0.12),\n]\nprint_table(headers, rows, ('text', 'text', 'money', 'percent'))",
+      "output": "",
+      "explanation": "Format metadata alag rakhi gayi (formatters dict) isliye naya column type add karna ek line ka kaam hai. Width formatted string se nikaali jati hai — yahi alignment ka asli reason hai. Numeric columns right-aligned hote hain, text left.",
+      "time": "O(rows × cols)",
+      "space": "O(rows × cols)",
+      "better": "Bade datasets ke liye width ka pehla pass streaming karo; ya tabulate/rich jaise libraries use karo jo wrapping, colour aur unicode widths handle karte hain.",
+      "followUp": "Unicode (Devanagari/emoji) widths ka problem kya hai aur len() wahi solution kyun nahi hai?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Debug dumper likho jo kisi bhi value ka type, len, str aur repr dikhae — aur '7' vs 7 jaise traps expose kare.",
+      "build": "dump(value) -> single line; multiple values ke liye aligned output.",
+      "input": "['7', 7, 7.0, True, None, [1, 2], {'a': 1}, 'a\\nb']",
+      "expected": "Aligned rows jisme str aur repr alag columns me hon.",
+      "hint": "len ke liye hasattr check, aur repr me newline ko visible banao (replace '\\n' with '\\\\n').",
+      "concept": "repr vs str, type introspection, defensive attribute access",
+      "solution": "def dump(value):\n    kind = type(value).__name__\n    size = len(value) if hasattr(value, '__len__') else '-'\n    shown = str(value).replace(chr(10), '\\\\n')\n    return kind, str(size), shown, repr(value).replace(chr(10), '\\\\n')\n\nvalues = ['7', 7, 7.0, True, None, [1, 2], {'a': 1}, 'a' + chr(10) + 'b']\nrows = [dump(v) for v in values]\nwidths = [max(len(h), *(len(r[i]) for r in rows)) for i, h in enumerate(('type', 'len', 'str', 'repr'))]\n\nprint(f'{\"type\":<{widths[0]}} {\"len\":<{widths[1]}} {\"str\":<{widths[2]}} {\"repr\":<{widths[3]}}')\nfor row in rows:\n    print(f'{row[0]:<{widths[0]}} {row[1]:<{widths[1]}} {row[2]:<{widths[2]}} {row[3]:<{widths[3]}}')",
+      "output": "",
+      "explanation": "repr aur str dono columns me rakhna isliye zaroori hai kyunki trap wahi hai: '7' aur 7 str me same dikhte hain par repr me quotes ka fark nazar aata hai. Newline ko visible escape me badalna table ko tootne se bachata hai.",
+      "time": "O(n) values",
+      "space": "O(n) rows",
+      "better": "Production me pprint/rich.pretty ya logging with repr formatting use karo; custom dumpers ko nested structures ke liye depth limit do.",
+      "followUp": "Enum, Decimal, datetime aur custom objects ke repr me kaun si information honi chahiye (aur debug ke liye kya zaroori hai)?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Mini 'report pipeline' likho: data rows ko teen formats (text table, CSV, JSON lines) me emit kare, format argv-style config se aaye, aur logs stderr par jayein.",
+      "build": "emit(rows, fmt) jo stdout par data likhe; har stage ka summary stderr par; invalid rows count ho.",
+      "input": "rows with one invalid record; fmt = 'text' | 'csv' | 'jsonl'",
+      "expected": "Teenon formats me same data, aur stderr par '3 rows ok, 1 skipped'.",
+      "hint": "Rendering ko render_* functions me todo; ek dispatcher dict se format choose karo; stderr ke liye print(file=sys.stderr) use karo.",
+      "concept": "Output streams, format dispatch, validation aur error reporting",
+      "solution": "import io, json, sys\nfrom contextlib import redirect_stdout, redirect_stderr\n\nCOLUMNS = ('id', 'name', 'amount')\n\nFORMATS = ('text', 'csv', 'jsonl')\n\ndef is_valid(row):\n    return isinstance(row.get('id'), int) and isinstance(row.get('amount'), (int, float)) and bool(row.get('name'))\n\ndef render_text(rows):\n    widths = [max(len(c), *(len(str(r[c])) for r in rows)) for c in COLUMNS]\n    out = [' | '.join(f'{c:<{widths[i]}}' for i, c in enumerate(COLUMNS))]\n    for row in rows:\n        out.append(' | '.join(f'{str(row[c]):>{widths[i]}}' if isinstance(row[c], (int, float)) else f'{row[c]:<{widths[i]}}' for i, c in enumerate(COLUMNS)))\n    return '\\n'.join(out)\n\ndef render_csv(rows):\n    def field(v):\n        text = str(v)\n        return '\"' + text.replace('\"', '\"\"') + '\"' if any(ch in text for ch in ',\"\\n') else text\n    lines = [','.join(COLUMNS)]\n    lines += [','.join(field(row[c]) for c in COLUMNS) for row in rows]\n    return '\\n'.join(lines)\n\ndef render_jsonl(rows):\n    return '\\n'.join(json.dumps({c: row[c] for c in COLUMNS}) for row in rows)\n\nRENDERERS = {'text': render_text, 'csv': render_csv, 'jsonl': render_jsonl}\n\ndef emit(rows, fmt, out=sys.stdout):\n    if fmt not in RENDERERS:\n        raise ValueError(f'unknown format {fmt!r}; choose from {FORMATS}')\n    valid = [r for r in rows if is_valid(r)]\n    skipped = len(rows) - len(valid)\n    if valid:\n        print(RENDERERS[fmt](valid), file=out)\n    print(f'{len(valid)} rows ok, {skipped} skipped', file=sys.stderr)\n    return len(valid), skipped\n\nraw = [\n    {'id': 1, 'name': 'idli', 'amount': 60},\n    {'id': 2, 'name': 'dosa', 'amount': 80.5},\n    {'id': 'three', 'name': 'vada', 'amount': 40},\n    {'id': 4, 'name': '', 'amount': 30},\n]\n\nfor fmt in FORMATS:\n    out, err = io.StringIO(), io.StringIO()\n    with redirect_stdout(out), redirect_stderr(err):\n        counts = emit(raw, fmt)\n    print(f'--- {fmt} ({counts[0]} ok, {counts[1]} skipped) ---')\n    print(out.getvalue().rstrip())\nprint('stderr sample:', err.getvalue().strip())",
+      "output": "",
+      "explanation": "Har format ka apna pure renderer hai (string return karta hai), aur emit() sirf stream + summary handle karta hai — isliye renderers ko bina I/O test kiya ja sakta hai. Validation ek hi jagah hai, isliye saare formats me same rows filter hote hain (consistency). Summary stderr par jata hai taaki piped output me sirf data rahe.",
+      "time": "O(rows × cols) per format",
+      "space": "O(rows) buffer (StringIO me poora output)",
+      "better": "Streaming writes (yield lines + writelines) se memory flat rahegi; bade exports ke liye gzip/Parquet aur chunking add karo; format registry ko plugin-style extendable banao.",
+      "followUp": "Agar output 5 GB ho jaye to StringIO buffer approach kaise todega — streaming architecture kaise likhoge?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Ek 'explainable diff' printer likho: do dicts ke fark ko aligned, human-readable output me dikhao (added, removed, changed).",
+      "build": "print_diff(old, new) — sections: CHANGED, ADDED, REMOVED, aur summary line.",
+      "input": "old = {'host': 'localhost', 'port': 5432, 'debug': False} vs new with port change + new key",
+      "expected": "Readable sections with aligned keys aur old -> new arrows.",
+      "hint": "Keys ka union lo, phir teen buckets me classify karo; har bucket ki width alag compute karo.",
+      "concept": "Set operations, formatting, structured reporting",
+      "solution": "def bucketize(old, new):\n    removed = sorted(set(old) - set(new))\n    added = sorted(set(new) - set(old))\n    changed = sorted(k for k in set(old) & set(new) if old[k] != new[k])\n    same = sorted(k for k in set(old) & set(new) if old[k] == new[k])\n    return removed, added, changed, same\n\ndef print_diff(old, new):\n    removed, added, changed, same = bucketize(old, new)\n    width = max((len(k) for k in set(old) | set(new)), default=0)\n    arrow = ' -> '\n\n    def section(title, keys, render):\n        print(f'{title} ({len(keys)})')\n        if not keys:\n            print('  (none)')\n        for key in keys:\n            print(f'  {key:<{width}}{render(key)}')\n\n    section('CHANGED', changed, lambda k: f'  {old[k]!r}{arrow}{new[k]!r}')\n    section('ADDED', added, lambda k: f'  {new[k]!r}')\n    section('REMOVED', removed, lambda k: f'  {old[k]!r}')\n    print(f'UNCHANGED ({len(same)}): ' + ', '.join(same) if same else 'UNCHANGED (0)')\n\nold = {'host': 'localhost', 'port': 5432, 'debug': False, 'workers': 4}\nnew = {'host': 'localhost', 'port': 6543, 'retries': 3, 'workers': 4}\nprint_diff(old, new)",
+      "output": "",
+      "explanation": "Set operations (union/difference/intersection) fark ko teen saaf buckets me todti hain, aur per-bucket width se keys align hoti hain. Lambdas se render logic section ke andar hi rehta hai, isliye teen sections same loop se print hote hain.",
+      "time": "O(k) keys",
+      "space": "O(k)",
+      "better": "Nested dicts ke liye recursive diff (dotted paths) likho, aur values ko unified-diff style line format me do taaki tooling parse kar sake; colour output optional rakho (TTY check).",
+      "followUp": "Nested structures aur lists ka diff kaise represent karoge (index-based vs key-based) — aur kaunsa format tooling ke liye best hai?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "print('saving report', file='report.log')\nprint('done')",
+      "error": "AttributeError: 'str' object has no attribute 'write'",
+      "why": "file parameter file-like object maangta hai (jiske paas write method ho), file ka naam nahi. String dene par print usko write karne ki koshish karta hai aur AttributeError aata hai.",
+      "fix": "open() se file object banao (with block me), ya logging module use karo. Path dena ho to context manager ke saath kholo.",
+      "correct": "import io, sys\n\nbuffer = io.StringIO()\nprint('saving report', file=buffer)\nprint('done')\nprint('captured:', repr(buffer.getvalue()))\nprint('stderr is a file object:', hasattr(sys.stderr, 'write'))",
+      "output": "",
+      "lesson": "print() ka file ek stream hai, path nahi. Ye bug beginners ka classic hai, aur isi wajah se logging module ('file path do') aur print ('stream do') me confusion banti hai."
+    },
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "price = '249.99'\nprint(f'{price:>10.2f}')",
+      "error": "ValueError: Unknown format code 'f' for object of type 'str'",
+      "why": "Format code 'f' sirf numeric types ke liye valid hai. Yahan price string hai (raw input/CSV se aaya), isliye f-string numeric formatting refuse kar deta hai.",
+      "fix": "Pehle type convert karo (float/Decimal), phir format lagao — ya '.2' (precision on string) use karo agar display-only truncation chahiye.",
+      "correct": "raw = '249.99'\nprice = float(raw)\nprint(f'{price:>10.2f}')\nprint(f'{raw:>10.2}')\n\nfrom decimal import Decimal\nprint(f'{Decimal(raw):>10.2f}')",
+      "output": "",
+      "lesson": "Format code type par depend karta hai — CSV/JSON se aaya har number string hota hai, isliye conversion step kabhi skip mat karo."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "total = 250\nprint('Total:', total, sep='=')",
+      "error": "Logic error — output 'Total:=250' aata hai, jabki intent 'Total: 250' tha",
+      "why": "sep sirf arguments ke beech lagta hai. Yahan do arguments hain ('Total:' aur 250) isliye sep '=' unke beech aata hai; colon pehle argument ke andar hai isliye double separator dikhta hai.",
+      "fix": "Do options: sep=',' ke bajaye f-string use karo (print(f'Total: {total}')) ya argument me colon na rakho (print('Total', total, sep=': ')).",
+      "correct": "total = 250\nprint(f'Total: {total}')\nprint('Total', total, sep=': ')\nprint('Total:', total)",
+      "output": "",
+      "lesson": "sep ke saath punctuation pehle se argument me likhna confusing output deta hai. Formatting ke liye f-string saaf aur predictable hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "amount = 1234.56\nprint(f'Amount: {amount:>10.0f}')\nprint(f'Rate  : {0.185:>8.0%}')",
+      "error": "Logic error — output 'Amount:       1235' aur 'Rate  :      19%' aata hai; cents aur precision gayab",
+      "why": "Precision 0 ne decimals truncate kar diye: money ka 0.56 round hokar 1235 ban gaya aur percent 18.5% se 19% ho gaya. Display ne data kho diya.",
+      "fix": "Money ke liye ':,.2f' aur percent ke liye ':.1%' use karo — precision ko business requirement ke hisaab se set karo, 0 par default mat chhodo.",
+      "correct": "amount = 1234.56\nprint(f'Amount: {amount:>10,.2f}')\nprint(f'Rate  : {0.185:>8.1%}')\nprint(f'Exact in words: {amount} rupees, rate {0.185}')",
+      "output": "",
+      "lesson": "Precision ek business decision hai, formatting detail nahi. Money display me 2 decimals aur rates me kam se kam 1 decimal rakho — warna customer dispute aata hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "rows = [('idli', 60), ('dosa', 80)]\nout = ''\nfor name, price in rows:\n    out += f'{name},{price}'\nprint(out)\nprint('lines written:', out.count(chr(10)))",
+      "error": "Logic error — CSV do columns ek hi line me chipak jati hain; lines count 0 aata hai",
+      "why": "Har row ke baad newline add nahi hui, aur row ke andar bhi ',' separator ke baad newline ka confusion hai. Result: ek single line 'idli,60dosa,80' jo CSV parser ke liye invalid hai.",
+      "fix": "Har row ko newline ke saath join karo — list collect karke '\\n'.join(lines) (ya har row par end='\\n' wala print) use karo.",
+      "correct": "rows = [('idli', 60), ('dosa', 80)]\nlines = ['name,price']\nlines += [f'{name},{price}' for name, price in rows]\nout = chr(10).join(lines) + chr(10)\nprint(out, end='')\nprint('lines written:', out.count(chr(10)))",
+      "output": "",
+      "lesson": "Record boundaries (newline) data ka hissa hain, decoration nahi. CSV likhte waqt hamesha 'ek row ek line' contract rakho aur lines count se verify karo."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Ek line me banao: '1234567' ko right-aligned width 12 me comma-grouped print karo, aur uske baad '18.5%' percent pair.",
+      "hint": "f'{1234567:>12,}' aur f'{0.185:.1%}'",
+      "deliverable": "Do print lines exact aligned output ke saath."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Auto-width table printer likho jo header, text aur numeric columns ko align kare aur empty rows par bhi crash na kare.",
+      "hint": "Widths max(header, *rows) se nikaalo; empty rows ke liye max default handle karo.",
+      "deliverable": "Printer + output do datasets (normal aur empty) par."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Ek CLI report generator likho: argv se input format aur output format lo, invalid flags par usage + exit code 2, aur logs stderr par bhejo.",
+      "hint": "parse_args ko pure function rakho jo (config, errors) return kare — SystemExit sirf main me raise karo.",
+      "deliverable": "CLI + argv ke 4 cases ka output (valid, missing arg, bad flag, json output)."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview-style: 'aapke tool ka output file me zip ho raha hai — debugging approach kya hoga?' — 5 steps likho aur ek repro script banao.",
+      "hint": "Encoding (UTF-8), newline convention, stream mixing (logs stdout me), buffering/flush, aur quoting — inko systematically check karo.",
+      "deliverable": "5-step checklist + chhota repro script."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Ek 'report engine' banao: data rows + column spec se text/CSV/JSON report gen karo, validation errors collect karo, aur summary print karo.",
+      "hint": "Renderers alag rakho, validation ek jagah, aur summary me counts + first few errors do.",
+      "deliverable": "Engine + teen formats ka sample output + error summary."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Receipt Printer (Version 1)",
+      "problem": "Dukaan/restaurant ka bill haath se likhna ya spreadsheet me banana slow hai, aur columns align na hone se padhna mushkil hota hai.",
+      "objective": "Ek program jo items ki list se aligned receipt print kare — qty, rate, amount aur total ke saath.",
+      "features": [
+        "Aligned columns with auto-computed widths",
+        "Money 2 decimal aur comma grouping me",
+        "Header, separator lines aur total row"
+      ],
+      "concepts": [
+        "print/f-string formatting",
+        "Width calculation",
+        "Accumulation (subtotal)"
+      ],
+      "structure": "receipt_printer/\n└── receipt.py        # saara logic, ek file",
+      "steps": [
+        "Items ki list define karo: (name, qty, rate).",
+        "Widths compute karo: header aur saare formatted rows ka max.",
+        "Rows print karo aur end par total line do.",
+        "Edge cases test karo: empty list, bahut lamba item name, 0 qty."
+      ],
+      "code": "ITEMS = [\n    ('Idli', 2, 60.0),\n    ('Filter coffee', 3, 45.5),\n    ('Masala dosa', 1, 120.0),\n]\n\nHEADERS = ('Item', 'Qty', 'Rate', 'Amount')\n\nrows = [(name, str(qty), f'{rate:,.2f}', f'{qty * rate:,.2f}') for name, qty, rate in ITEMS]\nwidths = [max(len(HEADERS[i]), *(len(r[i]) for r in rows)) for i in range(4)]\nrule = '-' * (sum(widths) + 6)\n\nprint('=' * (sum(widths) + 6))\nprint('RECEIPT'.center(sum(widths) + 6))\nprint('=' * (sum(widths) + 6))\n\nprint('  '.join(f'{h:<{widths[i]}}' if i == 0 else f'{h:>{widths[i]}}' for i, h in enumerate(HEADERS)))\nprint(rule)\nfor row in rows:\n    print('  '.join(f'{cell:<{widths[i]}}' if i == 0 else f'{cell:>{widths[i]}}' for i, cell in enumerate(row)))\nprint(rule)\n\ntotal = sum(qty * rate for _, qty, rate in ITEMS)\nprint('  '.join([f'{\"Total\":<{widths[0]}}', f'{\"\":>{widths[1]}}', f'{\"\":>{widths[2]}}', f'{total:>{widths[3]},.2f}']))",
+      "output": "",
+      "explanation": "Widths ek hi baar compute hoti hain aur phir wahi header aur rows par use hoti hain — isliye alignment consistent rehti hai. Total raw floats se nikalti hai, formatted strings se nahi.",
+      "testing": "Empty items list (max() par error aa sakta hai — guard add karo), 100-character item name, 0 qty wala item, aur 1000+ rate ke saath alignment check karo.",
+      "errors": "Empty list par widths computation ValueError dega kyunki max() khali sequence par fail hota hai — Version 2 me empty guard add hoti hai.",
+      "improvements": [
+        "Items ko file se load karo (CSV/JSON) taaki har baar code na badalna pade",
+        "Empty list aur invalid rows ke liye validation + clear error messages",
+        "Items ke input mode add karo (library function se, stdin se nahi)"
+      ],
+      "advanced": [
+        "Multi-page receipt with page breaks aur repeated headers",
+        "Tax/discount lines with per-line rounding aur reconciliation",
+        "Output formats: text, 58mm thermal-style (narrow width), aur HTML"
+      ],
+      "realWorld": "POS systems, invoice printers aur accounting exports sab isi column-alignment problem par kaam karte hain; galat receipt customer complaint aur audit issue banata hai.",
+      "interview": [
+        {
+          "q": "Widths compute karne ke liye do passes chahiye — memory bachane ke liye kya karoge?",
+          "a": "Pehla pass sirf max length record karega (O(cols) memory), dusra pass print karega. Streaming source (file/cursor) ho to dobara padhna padega ya intermediate spool file use karo."
+        },
+        {
+          "q": "Item name bahut lamba ho to kya karna chahiye?",
+          "a": "Wrap ya truncate with ellipsis — truncation ka rule document karo aur chhoti width par readability badhane ke liye second line me poora naam do."
+        },
+        {
+          "q": "Receipt ka format region-specific kaise handle karoge?",
+          "a": "Format spec ko config me rakho (currency symbol, decimal separator, date format) aur locale-aware formatting use karo — code me hardcode na karo."
+        }
+      ],
+      "resume": "Receipt Formatter: aligned multi-column output, currency formatting aur edge-case handling ke saath CLI-ready printer.",
+      "readme": [
+        "Project ek line me: formatted receipt printer",
+        "Sample output (monospace block)",
+        "Input format (items list) aur supported currencies"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Report Formatter (Version 2)",
+      "problem": "Ek hi data ko kabhi table me dikhana hota hai, kabhi CSV me export karna hota hai, aur kabhi JSON API ko dena hota hai — har baar naya script likhna waste hai.",
+      "objective": "Ek report formatter banao jo ek hi rows+spec input se text table, CSV aur JSON output generate kare, validation ke saath.",
+      "features": [
+        "Column spec (name, type, format) se render",
+        "Teen output formats: text, csv, json",
+        "Validation: invalid rows skip + reason report",
+        "Summary line (rendered, skipped, total)"
+      ],
+      "concepts": [
+        "Formatting as data (spec-driven rendering)",
+        "Dispatch table for renderers",
+        "Validation aur report generation"
+      ],
+      "structure": "report_formatter/\n├── spec.py          # column specifications\n├── render.py        # text / csv / json renderers\n└── demo.py          # sample run",
+      "steps": [
+        "Column spec define karo: (key, label, type, align).",
+        "Ek formatter function per type banao (text, int, money, percent).",
+        "Teen renderers likho jo same formatted rows consume karein.",
+        "Validation add karo (missing key, wrong type) aur summary print karo."
+      ],
+      "code": "import json\n\nFORMATTERS = {\n    'text': (str, '<'),\n    'int': (lambda v: f'{v:,d}', '>'),\n    'money': (lambda v: f'{v:,.2f}', '>'),\n    'percent': (lambda v: f'{v:.1%}', '>'),\n}\n\nSPEC = [\n    ('name', 'Employee', 'text'),\n    ('dept', 'Department', 'text'),\n    ('salary', 'Salary', 'money'),\n    ('hike', 'Hike', 'percent'),\n]\n\nROWS = [\n    {'name': 'Anjali', 'dept': 'DB2 Team', 'salary': 122000, 'hike': 0.082},\n    {'name': 'Rehan', 'dept': 'Testing', 'salary': 120000, 'hike': 0.045},\n    {'name': 'Salman', 'dept': 'Data Engineering', 'salary': 125000, 'hike': 0.12},\n    {'name': 'Broken', 'dept': None, 'salary': 'n/a', 'hike': 0.1},\n]\n\ndef validate(row):\n    problems = []\n    for key, _, kind in SPEC:\n        value = row.get(key)\n        if value is None:\n            problems.append(f'{key} missing')\n        elif kind in ('money', 'percent') and not isinstance(value, (int, float)):\n            problems.append(f'{key} not numeric ({value!r})')\n    return problems\n\ndef clean(rows):\n    good, rejected = [], []\n    for row in rows:\n        problems = validate(row)\n        if problems:\n            rejected.append((row.get('name', '?'), problems))\n        else:\n            good.append(row)\n    return good, rejected\n\ndef render_text(rows):\n    cells = [[FORMATTERS[kind][0](row[key]) for key, _, kind in SPEC] for row in rows]\n    labels = [label for _, label, _ in SPEC]\n    widths = [max([len(labels[i])] + [len(c[i]) for c in cells]) for i in range(len(SPEC))]\n    lines = [' | '.join(f'{labels[i]:<{widths[i]}}' for i in range(len(SPEC)))]\n    lines.append('-+-'.join('-' * w for w in widths))\n    for row in cells:\n        parts = []\n        for i, (_, _, kind) in enumerate(SPEC):\n            parts.append(f'{row[i]:{FORMATTERS[kind][1]}{widths[i]}}')\n        lines.append(' | '.join(parts))\n    return chr(10).join(lines)\n\ndef render_csv(rows):\n    def field(v):\n        text = str(v)\n        return '\"' + text.replace('\"', '\"\"') + '\"' if any(ch in text for ch in ',\"\\n') else text\n    header = ','.join(key for key, _, _ in SPEC)\n    body = [','.join(field(row[key]) for key, _, _ in SPEC) for row in rows]\n    return chr(10).join([header] + body)\n\ndef render_json(rows):\n    return json.dumps([{key: row[key] for key, _, _ in SPEC} for row in rows], indent=2)\n\nRENDERERS = {'text': render_text, 'csv': render_csv, 'json': render_json}\n\ngood, rejected = clean(ROWS)\nprint('=== TEXT ===')\nprint(render_text(good))\nprint()\nprint('=== CSV ===')\nprint(render_csv(good))\nprint()\nprint('=== JSON (first 120 chars) ===')\nprint(render_json(good)[:120].replace(chr(10), ' ') + ' ...')\nprint()\nprint(f'summary: {len(good)} rendered, {len(rejected)} rejected')\nfor name, problems in rejected:\n    print(f'  {name}: ' + '; '.join(problems))",
+      "output": "",
+      "explanation": "Spec-driven approach ka fayda yahi hai: column add/remove karne par saare renderers automatically adjust ho jate hain. clean() valid aur rejected rows ko alag karta hai aur reasons collect karta hai, isliye report 'kuch rows missing thi' ke bajaye exact list deti hai.",
+      "testing": "Teenon formats me same row count aana chahiye, rejected rows kisi bhi format me na aayein, aur CSV output ko csv module se parse karke round-trip verify karo.",
+      "errors": "Validation missing key aur wrong type dono pakadti hai. JSON output me Decimal/datetime na aayein warna serialization error aata hai — spec-driven conversion isse bachata hai.",
+      "improvements": [
+        "Column spec ko config file se load karo (per client columns)",
+        "CSV ke liye csv module use karo aur quoting dialect configurable rakho",
+        "Text width (terminal width) detect karke wrapping add karo"
+      ],
+      "advanced": [
+        "Excel export (openpyxl) aur PDF-style pagination",
+        "Report templates (jinja2) se branded output",
+        "Streaming renderers: generator-based output for laakhs of rows"
+      ],
+      "realWorld": "Analytics teams same data ko different consumers (spreadsheet, dashboard, API) ke liye different formats me chahiye hota hai; ek spec-driven formatter duplication khatam kar deta hai.",
+      "interview": [
+        {
+          "q": "Spec-driven design ka trade-off kya hai?",
+          "a": "Flexibility milti hai (naya format/column bina renderer change) par indirection badhta hai aur simple case bhi heavy lagta hai. Sahi jagah tab hai jab same data ke multiple outputs ho; ek hi output ho to seedha code better hai."
+        },
+        {
+          "q": "Rejected rows ko poori report fail karne ke bajaye skip kyun kiya?",
+          "a": "Partial report business ko turant kaam de deti hai aur rejected list fix karne ka target deti hai. Trade-off: partial output ko clearly label karna zaroori hai (summary + audit), warna log galat numbers par decision le lete hain."
+        },
+        {
+          "q": "CSV output me type information kaha gayi?",
+          "a": "CSV me sab kuch text hota hai; types consumer par reconstruct karne padte hain — isliye decimal separator aur date format (ISO 8601) document karo, ya saath me JSON/schema file bhejo."
+        }
+      ],
+      "resume": "Spec-driven Report Formatter: same data se text/CSV/JSON output, validation aur rejected-row reporting ke saath.",
+      "readme": [
+        "Column spec ka format aur supported types",
+        "Teen output formats ka example",
+        "Validation rules aur rejected-row report"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "CLI Report Generator (Version 3)",
+      "problem": "Data analysts ko roz ek hi report banani hoti hai — argv se input, format aur filters dene padte hain, aur CI me iska exit code aur clean output chahiye.",
+      "objective": "Ek production-style CLI banao: argv parsing, input file loading, validation, multiple output formats, logs stderr par, aur meaningful exit codes.",
+      "features": [
+        "argv parsing with usage help aur exit codes (0/1/2)",
+        "Input loading (CSV text) with typed column spec",
+        "Output: text table, CSV, JSON — stdout par sirf data",
+        "Logs aur warnings stderr par, plus --quiet/--verbose flags"
+      ],
+      "concepts": [
+        "CLI design (stdout/stderr/exit code contract)",
+        "Parsing aur validation pipelines",
+        "Testable main(): return code, injectable streams"
+      ],
+      "structure": "report_cli/\n├── cli.py           # argv parsing + main(argv, stdout, stderr)\n├── loader.py        # CSV text -> typed rows\n├── render.py        # text / csv / json\n└── test_cli.py      # argv cases",
+      "steps": [
+        "parse_args(argv) pure function banao jo config ya UsageError return kare.",
+        "CSV text ko rows me parse karo aur spec ke hisaab se types cast karo.",
+        "Renderers alag rakho aur output stdout par likho.",
+        "main(argv, stdout, stderr) likho jo exit code return kare; logs stderr par jayein."
+      ],
+      "code": "import io, json, sys\nfrom contextlib import redirect_stderr, redirect_stdout\n\nUSAGE = 'usage: report [--format=text|csv|json] [--quiet]'\nCSV_INPUT = 'id,name,amount\\n1,idli,60\\n2,dosa,80.5\\n3,vada,40\\n'\nSPEC = [('id', int), ('name', str), ('amount', float)]\n\nclass UsageError(Exception):\n    pass\n\ndef parse_args(argv):\n    cfg = {'format': 'text', 'quiet': False}\n    for arg in argv:\n        if arg.startswith('--format='):\n            value = arg.split('=', 1)[1]\n            if value not in ('text', 'csv', 'json'):\n                raise UsageError(f'unknown format {value!r}')\n            cfg['format'] = value\n        elif arg == '--quiet':\n            cfg['quiet'] = True\n        else:\n            raise UsageError(f'unknown flag {arg!r}')\n    return cfg\n\ndef load(text):\n    lines = [line for line in text.splitlines() if line.strip()]\n    if not lines:\n        raise ValueError('input is empty')\n    header = lines[0].split(',')\n    if tuple(header) != tuple(name for name, _ in SPEC):\n        raise ValueError(f'bad header {header}, expected {[n for n, _ in SPEC]}')\n    rows, rejected = [], []\n    for line in lines[1:]:\n        parts = line.split(',')\n        if len(parts) != len(SPEC):\n            rejected.append((line, 'wrong column count'))\n            continue\n        try:\n            rows.append({name: cast(value) for (name, cast), value in zip(SPEC, parts)})\n        except ValueError:\n            rejected.append((line, 'type conversion failed'))\n    return rows, rejected\n\ndef render_text(rows):\n    labels = [name for name, _ in SPEC]\n    cells = [[f'{row[n]:,.2f}' if isinstance(row[n], float) else str(row[n]) for n, _ in SPEC] for row in rows]\n    widths = [max([len(labels[i])] + [len(c[i]) for c in cells]) for i in range(len(SPEC))]\n    out = [' | '.join(f'{labels[i]:<{widths[i]}}' for i in range(len(SPEC)))]\n    out += [' | '.join(f'{cell:>{widths[i]}}' for i, cell in enumerate(row)) for row in cells]\n    return '\\n'.join(out)\n\ndef render_csv(rows):\n    return '\\n'.join([','.join(name for name, _ in SPEC)] + [','.join(str(row[name]) for name, _ in SPEC) for row in rows])\n\ndef render_json(rows):\n    return json.dumps(rows, indent=2)\n\nRENDERERS = {'text': render_text, 'csv': render_csv, 'json': render_json}\n\ndef main(argv, input_text=CSV_INPUT, stdout=sys.stdout, stderr=sys.stderr):\n    try:\n        cfg = parse_args(argv)\n    except UsageError as e:\n        print(f'error: {e}\\n{USAGE}', file=stderr)\n        return 2\n    try:\n        rows, rejected = load(input_text)\n    except ValueError as e:\n        print(f'error: {e}', file=stderr)\n        return 1\n    if not cfg['quiet']:\n        print(f'loaded {len(rows)} rows, rejected {len(rejected)}', file=stderr)\n    for line, reason in rejected:\n        print(f'warn: skipping {line!r} ({reason})', file=stderr)\n    print(RENDERERS[cfg['format']](rows), file=stdout)\n    return 0\n\nfor argv in (['--format=csv'], ['--format=json', '--quiet'], ['--format=xml'], ['--bogus']):\n    out, err = io.StringIO(), io.StringIO()\n    with redirect_stdout(out), redirect_stderr(err):\n        code = main(argv, stdout=out, stderr=err)\n    print(f'argv={argv} -> exit {code}')\n    print('  stdout:', out.getvalue().strip().replace(chr(10), ' | ')[:80])\n    print('  stderr:', err.getvalue().strip().replace(chr(10), ' | ')[:80])\n\ncode = main([], input_text='id,name,amount\\n1,idli,60\\n2,dosa,oops\\n')\nprint('exit code with bad row:', code)",
+      "output": "",
+      "explanation": "main() ne streams inject kiye (stdout/stderr params) aur exit code return kiya — isliye poori CLI bina subprocess ke test ho jati hai. Usage errors (exit 2) aur data errors (exit 1) alag rakhe gaye, aur child rows reject hone par bhi report milti hai (partial output + warnings).",
+      "testing": "argv ke cases: no args, valid format, invalid flag, invalid format — exit codes assert karo. Data cases: empty input, bad header, bad row. Aur verify karo ki stdout me sirf report hai (warnings nahi).",
+      "errors": "Custom UsageError se usage errors ko data errors se alag kiya. Header validation fail-fast hai, par row-level errors skip hote hain — do levels ka error policy documented hai.",
+      "improvements": [
+        "argparse use karo (free help, subcommands) aur --input file path support do",
+        "CSV ke liye csv module aur encoding errors ka handling add karo",
+        "Test suite: subprocess-based end-to-end test jo exit code aur stdout verify kare"
+      ],
+      "advanced": [
+        "Streaming mode: bade inputs ke liye generator-based loader + incremental render",
+        "Column selection/filtering flags (--columns, --where amount>50)",
+        "Packaging: console_scripts entry point, version flag, aur man-page style docs"
+      ],
+      "realWorld": "Har production data pipeline ka last mile ek CLI hota hai; exit codes aur stream discipline hi iske automation me use hone ka base hai.",
+      "interview": [
+        {
+          "q": "Exit codes ka convention kya hai?",
+          "a": "0 success, 1 general/runtime failure, 2 usage error (argparse bhi 2 use karta hai), aur 126/127 permission/not-found jaise shell codes. CI aur shell scripts isi par branch karte hain, isliye 'always 0 return karna' sabse mehnga bug hai."
+        },
+        {
+          "q": "Partial failure par exit code kya hona chahiye?",
+          "a": "Policy decision: agar kuch rows reject hui par report bani, exit 0 + warnings (ya --strict flag ke saath 1). Isko document karo taaki CI strictness configurable ho. Silent partial success sabse khatarnak hai."
+        },
+        {
+          "q": "CLI ko testable kaise banaya?",
+          "a": "main(argv, stdout, stderr) signature — streams inject karo aur exit code return karo (sys.exit sirf wrapper me). Isse tests StringIO ke saath chalti hain, subprocess nahi chahiye, aur failures ka output easily assert hota hai."
+        }
+      ],
+      "resume": "Production-style CLI Report Generator: argv parsing, typed CSV loading, multi-format output, stderr logging aur testable exit-code contract.",
+      "readme": [
+        "Usage, flags aur exit codes ka table",
+        "Input CSV format aur column spec",
+        "Testability note: main(argv, stdout, stderr) injection"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      "Receipt printer me widths compute karna zaroori kyun hai — direct format spec kyun kaam nahi karta?",
+      "Report formatter me renderers ko pure functions kyun rakha gaya?",
+      "CLI me logs stderr par aur data stdout par kyun bheja gaya?"
+    ],
+    "coding": [
+      "Receipt printer me discount aur tax lines add karo, rounding order ke saath.",
+      "Report formatter me naya column type 'date' add karo aur teenon renderers me support do.",
+      "CLI me --columns flag add karo jo sirf selected columns output kare."
+    ],
+    "advanced": [
+      "CLI ke renderers ko streaming banao (generator + writelines) taaki laakh rows par memory flat rahe.",
+      "Report formatter me validation ko schema-driven banao aur errors JSON me export karo.",
+      "Receipt printer me narrow (58mm) aur wide formats ke liye adaptive widths add karo."
+    ],
+    "interview": [
+      "Aapke CLI ka output CI me parse hoga — machine-readable kaise banaoge?",
+      "Report formatter me 20 columns ho jayein to table readable kaise rakhoge?",
+      "Input file 2 GB ki ho to current design kaha tootega aur kya badalna padega?",
+      "Ye teen projects ek monorepo me kaise organize karoge, aur shared code kya hoga?"
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Live coding: user input se do numbers lo aur divide karo — saare failure modes (non-numeric, zero, EOF) handle karo, bina input() ko logic layer me daale.",
+      "a": "Core function divide(a, b) pure rakho jo ZeroDivisionError/TypeError ko documented behaviour me badle (ya custom exception). Input reading alag layer me: iterator-based read_int with default, aur CLI layer par EOF handling. Tests me iterator fixtures use karo.",
+      "deliverable": "Pure function + reader + 4 cases ka output (valid, non-numeric, zero, exhausted)."
+    },
+    {
+      "q": "Interviewer ek sample output dekar poochta hai: 'iska code likho' — 3-line receipt jisme columns aligned hon. Pehle format spec batao, phir likho.",
+      "a": "Widths estimate karo ya compute karo: f'{name:<12}{qty:>4}{amount:>10,.2f}'. Pehle alignment ke teen components naam lo (left align, right align, numeric precision), phir code likho — isse interviewer ko process dikhta hai.",
+      "deliverable": "Working snippet jo exact sample output reproduce kare."
+    },
+    {
+      "q": "Debug task: output file me escape codes aur teen-teen line break aa rahe hain — root cause batao aur fix karo.",
+      "a": "Cause: progress/colour output (\\r, ANSI codes) non-TTY par bhi emit ho raha hai aur print per-line flush ke bajaye adhoori lines likh raha hai. Fix: sys.stdout.isatty() (ya --color/--progress flag) par conditional output, aur record-level writes with explicit newline. Verify: output ko 'cat -A' equivalent se dekhkar control characters check karo.",
+      "deliverable": "Buggy vs fixed output comparison + 1-line rule."
+    },
+    {
+      "q": "Explain karo: apne CLI me 'stdout me sirf data' contract kaise enforce karoge — tests ke saath.",
+      "a": "Logs ke liye logging module with StreamHandler(stderr), aur tests me redirect_stdout/redirect_stderr se capture karke assert karo ki stdout me sirf expected rows hain (koi 'warn:' ya timestamp nahi). CI me ek test rakho jo output ko JSON parse kare — parse success hi proof hai.",
+      "deliverable": "Test snippet + 3 assertions (rows count, no warnings in stdout, valid JSON/CSV)."
+    }
+  ],
+  "revision": [
+    "print(): sep arguments ke beech, end sabse aakhir me; return value None hoti hai.",
+    "input() hamesha str deta hai; conversion explicit hai aur ValueError/EOFError handle karna padta hai.",
+    "Format spec ka structure: [[fill]align][sign][width][,][.precision][type] — money ':,.2f', percent ':.1%', pad ':04d'.",
+    "Type mismatch (str par :f, float par :d) ValueError deta hai — pehle convert, phir format.",
+    "stdout data, stderr diagnostics; pipeline-friendly output ke liye ye separation zaroori hai.",
+    "Output ko testable banane ke liye io.StringIO + redirect_stdout/redirect_stderr use karo.",
+    "repr vs str: '7' aur 7 ka fark debug me !r se dikhao.",
+    "CLI contract: exit 0 success, 1 data/runtime error, 2 usage error; isatty() par colour/progress conditional rakho."
+  ]
+}

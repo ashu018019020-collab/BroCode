@@ -6,10 +6,13 @@ export const useCurriculumData = () => {
   const [extras, setExtras] = useState<Extras | null>(null);
   useEffect(() => {
     let alive = true;
-    Promise.all([
-      fetch('./curriculum/sections.json').then((r) => r.json()),
-      fetch('./curriculum/extras.json').then((r) => r.json()),
-    ]).then(([s, e]) => { if (alive) { setSections(s); setExtras(e); } });
+    // `no-cache` = always revalidate the content pack with the server, so an
+    // updated sections.json can never be shadowed by a stale local cache.
+    const load = (file: string) =>
+      fetch(`./curriculum/${file}`, { cache: 'no-cache' }).then((r) => r.json());
+    Promise.all([load('sections.json'), load('extras.json')])
+      .then(([s, e]) => { if (alive) { setSections(s); setExtras(e); } })
+      .catch(() => { /* offline with no cache yet — the loader stays on screen */ });
     return () => { alive = false; };
   }, []);
   return { sections, extras };

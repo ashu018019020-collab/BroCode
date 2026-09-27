@@ -1,0 +1,261 @@
+{
+  "$comment": "Authored guides for the Interview + Projects track (s27-s29). Answer structures, percentile maths, trade-off selection and pattern decision maps are all executable Python, so scripts/guides.cjs captures real stdout. These guides tie the authored question bank back to how the answer is actually delivered.",
+  "version": 1,
+  "guides": [
+    {
+      "section": "s27",
+      "title": "Interview Answer Structures & Trade-offs",
+      "level": "core",
+      "what": "Structured answer = fixed skeleton + ek measurable result. Technical me problem → approach → trade-off → result, behavioural me STAR (Situation, Task, Action, Result), aur dono me 60-90 second ka time budget.",
+      "why": "Interviewer ke paas 45 minute hote hain aur wo signal dhoondhte hain: kya tum trade-offs sochte ho, kya numbers ke saath baat karte ho, aur kya honest ho. Structure ke bina achha kaam bhi adhoora lagta hai.",
+      "whereUsed": "Technical rounds, behavioural rounds, project deep-dives, aur salary/negotiation conversations.",
+      "prereqs": ["Ek real project (ya course project) jiska data tumhare paas ho", "Metrics ki basic samajh (latency/accuracy/cost)"],
+      "howItWorks": "Skeleton ka kaam hai attention ko content par laana. Har jawab me teen layer rakho: context (problem + constraint), decision (option + kyun), proof (number/outcome). Aur last me ek 'kya alag karta' line — ye senior signal hai kyunki isse pata chalta hai ki tumne result ke baad socha.",
+      "syntax": "def star(situation, task, action, result):\n    return {\"S\": situation, \"T\": task, \"A\": action, \"R\": result}\n\n# 90 second max: present → proof point → why this role\n# har number ka source: kaunsa dataset, kitne cases, kaunsa tool",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "def star(situation, task, action, result):\n    return {\"S\": situation, \"T\": task, \"A\": action, \"R\": result}\n\nanswer = star(\n    situation=\"RAG recall table-heavy PDFs par 0.62 tha\",\n    task=\"recall badhana tha bina latency budget todne\",\n    action=\"table-aware chunking + hybrid retrieval (BM25 + embeddings) + RRF\",\n    result=\"recall@5 0.62 -> 0.86, p95 400ms\",\n)\n\nprint(len(answer[\"R\"]), answer[\"R\"])\nprint(\" | \".join(f\"{k}:{v}\" for k, v in answer.items()))",
+          "output": "",
+          "explain": [
+            "STAR ke chaar slots fix hote hain, isliye jawab me koi part bhoolna mushkil ho jata hai.",
+            "Result me number hona chahiye (0.62 → 0.86) — 'bahut improve hua' koi evidence nahi hai.",
+            "Action me lever ka naam hai (table-aware chunking, hybrid retrieval) — interviewer isi par follow-up karega."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "lat = [120, 130, 125, 140, 360, 400]\nlat.sort()\n\ndef pct(xs, p):\n    if not xs:\n        return None\n    k = (len(xs) - 1) * p\n    lo, hi = int(k), min(int(k) + 1, len(xs) - 1)\n    return xs[lo] + (xs[hi] - xs[lo]) * (k - lo)\n\nimport statistics\nprint(\"p50\", pct(lat, 0.5), \"p95\", pct(lat, 0.95), \"max\", max(lat))\nprint(\"mean\", round(statistics.mean(lat), 1))\nprint(\"tail ratio\", round(pct(lat, 0.95) / pct(lat, 0.5), 2))",
+          "output": "",
+          "explain": [
+            "Percentile interpolation se p50/p95 nikalte hain — average ke bajaye tail experience describe karna strong hota hai.",
+            "Mean (212.5) aur p95 (390.0) ka bada farq batata hai ki kuch requests outliers hain (cold start/dependency).",
+            "Tail ratio (p95/p50) ek line me 'kitna bura worst case hai' bata deta hai — interviewer ise instantly samajhta hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "options = [\n    {\"name\": \"greedy\", \"cost\": \"low\", \"quality\": 0.62, \"latency_ms\": 120},\n    {\"name\": \"hybrid+rerank\", \"cost\": \"mid\", \"quality\": 0.86, \"latency_ms\": 400},\n    {\"name\": \"hybrid+rerank+cache\", \"cost\": \"mid\", \"quality\": 0.86, \"latency_ms\": 180},\n]\n\ndef pick(options, quality_bar, latency_budget):\n    ok = [o for o in options\n          if o[\"quality\"] >= quality_bar and o[\"latency_ms\"] <= latency_budget]\n    return min(ok, key=lambda o: (o[\"latency_ms\"], o[\"cost\"]))[\"name\"] if ok else None\n\nprint(pick(options, quality_bar=0.8, latency_budget=500))\nprint(pick(options, quality_bar=0.9, latency_budget=500))\nprint(pick(options, quality_bar=0.6, latency_budget=200))",
+          "output": "",
+          "explain": [
+            "Trade-off ko explicit constraint (quality bar + latency budget) me likha gaya — isi tarah interview me bolo: 'budget ye tha, isliye ye chuna'.",
+            "Jab koi option bar meet nahi karta to None lauta rahe hain — yahi honest jawab hai: 'is budget me koi option nahi tha, isliye main constraint change karne ko bolta'.",
+            "Sorting key (latency, phir cost) decision ko deterministic banati hai — 'kyun ye option' ka jawab reproducible ho jata hai."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Answer ka skeleton fix karo", "detail": "Har jawab: context → decision → proof → next step. Behavioural ke liye STAR, technical ke liye problem-tradeoff-result.", "code": "context: problem + constraint\ndecision: option + reason\nproof: number\nnext: kya alag karta" },
+        { "step": "Numbers pehle se prepare karo", "detail": "3-4 numbers yaad karo (scale, latency, accuracy/cost) aur har number ka source bata sako — 'kitne cases par measure kiya'." },
+        { "step": "60-90 second me bound karo", "detail": "Timer ke saath bolkar practice karo; lamba jawab interviewer ke follow-up ke liye jagah nahi chhodta.", "code": "sections = [(problem, 10), (role, 10), (approach, 15), (result, 10), (lesson, 15)]" },
+        { "step": "Ek honest 'kya alag karta' line rakho", "detail": "Result ke baad ek improvement/lesson bolo — ye senior signal hai, aur follow-up ko tumhari direction me le jaata hai." }
+      ],
+      "commonMistakes": [
+        "Numbers ke bina claim ('bahut improve hua', 'large scale', 'fast').",
+        "30+ minute ka 'tell me about yourself' (focus kho jata hai).",
+        "Sirf tools list karna, decisions na batana.",
+        "Failure ka jawab defensive tone me dena (blame) — seniority opposite dikhti hai.",
+        "Follow-up par atak jana kyunki metrics/metric source yaad nahi."
+      ],
+      "bestPractices": [
+        "Har claim ke saath ek number aur us number ka source.",
+        "Answer me ek explicit trade-off mention karo (choice + reason + cost).",
+        "Behavioural me 'I' se bolo (team ne kya nahi, maine kya kiya).",
+        "Feedback ka jawab curiosity se do: 'koi specific example de sakte ho?'",
+        "Ant me 2-3 thoughtful questions poochho (team challenge, success definition, next steps)."
+      ],
+      "realWorld": "Interview me project deep-dive ke waqt yahi skeleton chalta hai, aur perform review me bhi — context → decision → metric hota hai. Production me incident postmortem likhna bhi isi structure par hota hai (symptom → measurement → fix → verification).",
+      "practice": [
+        { "difficulty": "easy", "text": "Apne ek project ka 60-second answer likho (context, decision, number, lesson) — aur word count count karo." },
+        { "difficulty": "medium", "text": "Apne project ke latency numbers se p50/p95/max nikalo aur tail ratio explain karo." },
+        { "difficulty": "hard", "text": "Ek trade-off table banao (3 options, quality/latency/cost) aur batao kis budget me kaunsa chunte aur kyun." }
+      ],
+      "interview": [
+        { "q": "'Tell me about yourself' ka best structure?", "a": "Teen part: ab kya karte ho, ek relevant proof point number ke saath, aur is specific role me kyun — 90 second max." },
+        { "q": "Average ke bajaye p95 kyun bolo?", "a": "Average tail chhupa deta hai; p95 batata hai ki 1 in 20 request kitni slow hai — interviewer us experience ko judge karta hai." },
+        { "q": "Failure ka sawal kaise handle karoge?", "a": "Failure + impact + diagnosis + fix + permanent change (test/process). Blame-free aur measurable — yahi strength dikhata hai." }
+      ],
+      "miniChallenge": "Apne project ke liye ek 'metrics card' banao: scale, latency p50/p95, quality metric, cost per task — har number ka source likho.",
+      "debugTask": "Ek follow-up par tum atak gaye (chunk size kyun 800 tha?). Root cause batao aur aage ke liye kya prepare karoge?",
+      "related": ["Resume Project Defense Playbook", "Coding Patterns Decision Map", "Analytics KPIs & Growth Metrics", "Observability"],
+      "revision": [
+        "Skeleton: context → decision → proof → next",
+        "Har claim ke saath number + source",
+        "p95/max average se zyada informative",
+        "Trade-off me choice + reason + cost",
+        "Ant me 2-3 questions poochho"
+      ],
+      "interviewTip": "Agar interviewer 'ek number do' bole to turant ek do aur uska source batao — number ke bina confidence claim ka koi weight nahi hota."
+    },
+    {
+      "section": "s28",
+      "title": "Coding Patterns Decision Map",
+      "level": "core",
+      "what": "Coding round me pattern recall kaam aata hai: problem ke signals se data structure aur technique chunna (hash-map, two-pointer, sliding window, binary search, heap, DP, graph traversal).",
+      "why": "Har problem naye sire se solve karne me time khatam ho jata hai. Signals → pattern map hone se approach 30 second me nikal jati hai aur baaki time complexity aur edge cases par lagta hai.",
+      "whereUsed": "DSA rounds, online assessments, aur production me bhi (streaming metrics, dedupe, batching, top-K).",
+      "prereqs": ["Loops, list, dict, set", "Recursion & stack basics", "Complexity (Big-O) reading"],
+      "howItWorks": "Constraints hi hint dete hain: n = 1e5 → O(n log n) ya O(n) chahiye, n = 20 → exponential/bitmask, memory tight → streaming. Uske baad do sawal: kya lookup/grouping hai (hash), kya monotonic/sorted hai (two-pointer/binary search), kya repeated subproblem hai (DP).",
+      "syntax": "# decision map (signals -> pattern)\nlookup/complement/grouping      -> hash map / set      O(n) time\nsorted + pair/window           -> two-pointer          O(n) time, O(1) space\ncontiguous subarray + condition -> sliding window      O(n) time\nsorted + value predicate       -> binary search        O(log n)\ntop-K / streaming max-min      -> heap                 O(n log k)\noverlapping subproblems        -> DP                   states x transitions\nreachability/levels/ordering   -> BFS/DFS (queue/stack) O(V+E)",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "def two_sum(nums, target):\n    seen = {}\n    for i, x in enumerate(nums):\n        if target - x in seen:\n            return (seen[target - x], i)\n        seen[x] = i\n    return None\n\nprint(two_sum([2, 7, 11, 15], 9))\nprint(two_sum([1, 2, 3], 100))\nprint(two_sum([], 5))",
+          "output": "",
+          "explain": [
+            "Hash map se O(n^2) brute force O(n) ban jata hai: complement dhoondhna ek O(1) lookup hai.",
+            "Pehle check karte hain ki complement mila kya, phir current value store karte hain — isse same element do baar use nahi hota.",
+            "Khaali input aur no-solution case defined output dete hain (None) — edge cases bolkar test karna strong signal hai."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "def longest_unique(s):\n    seen, start, best = {}, 0, 0\n    for i, ch in enumerate(s):\n        if ch in seen and seen[ch] >= start:\n            start = seen[ch] + 1\n        seen[ch] = i\n        best = max(best, i - start + 1)\n    return best\n\nprint(longest_unique(\"abcabcbb\"))\nprint(longest_unique(\"\"))\nprint(longest_unique(\"bbbbb\"))\nprint(longest_unique(\"abba\"))",
+          "output": "",
+          "explain": [
+            "Sliding window: window ka start sirf aage badhta hai, isliye total work O(n) rehta hai (har character ek baar add, ek baar remove).",
+            "seen[ch] >= start check zaroori hai — warna purana index window ke bahar wale character par start peeche chala jata.",
+            "Edge cases (khaali string, repeated characters, 'abba' jaisa trap) explicitly print kiye gaye."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "PATTERNS = [\n    {\"name\": \"hash-map\", \"when\": \"lookup complement grouping\",\n     \"cost\": \"O(n) time, O(n) space\"},\n    {\"name\": \"two-pointer\", \"when\": \"sorted monotonic window\",\n     \"cost\": \"O(n) time, O(1) space\"},\n    {\"name\": \"binary-search\", \"when\": \"sorted predicate on value\", \"cost\": \"O(log n)\"},\n    {\"name\": \"heap\", \"when\": \"top-K streaming max-min\", \"cost\": \"O(n log k)\"},\n    {\"name\": \"DP\", \"when\": \"overlapping subproblems optimal substructure\",\n     \"cost\": \"states x transitions\"},\n]\n\ndef suggest(signals):\n    return [p[\"name\"] for p in PATTERNS if any(s in p[\"when\"] for s in signals)]\n\nprint(suggest([\"sorted\", \"monotonic\"]))\nprint(suggest([\"top-K\", \"streaming\"]))\nprint(suggest([\"overlapping\"]))\nprint(suggest([\"lookup\"]))",
+          "output": "",
+          "explain": [
+            "Pattern selection ko data banaya gaya hai — interview me tum 'signals se pattern' wali table bolkar approach justify kar sakte ho.",
+            "Ek signal multiple pattern suggest kar sakta hai ('sorted' → two-pointer ya binary search) — us waqt constraint (space/time) se decide karo.",
+            "Har pattern ke saath complexity likhi hai, isliye jawab me time aur space dono claim ho jate hain."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Constraints se hint lo", "detail": "n ka size likho aur usse allowed complexity nikalo — n = 1e5 par O(n^2) nahi chalega, n = 20 par exponential ya bitmask theek hai." },
+        { "step": "Signal dhoondo", "detail": "Sorted? Monotonic? Contiguous? Lookup/grouping? Repeated subproblem? Ek signal mil gaya to approach 30 second me clear ho jati hai.", "code": "if is_sorted(nums): two_pointer()\nelif need_lookup: hash_map()" },
+        { "step": "Brute force bolkar optimize karo", "detail": "Brute force + uski complexity bolo, bottleneck identify karo, phir data structure/patteren badlo — interviewer ko process dikhta hai.", "code": "# O(n^2) -> hash map -> O(n)" },
+        { "step": "Edge cases likh kar test karo", "detail": "Empty, single element, duplicates, negative, all-same, max size — solution likhne ke baad khud hi bolo aur trace karo." }
+      ],
+      "commonMistakes": [
+        "Constraints padhe bina solution likhna (n = 1e5 par O(n^2) propose karna).",
+        "Two-pointer bina monotonic property ke lagana (silent galat answer).",
+        "Hash map ka worst case (O(n) collisions) ya extra space mention na karna.",
+        "Edge cases (empty/single/duplicates) skip karna.",
+        "Silent coding — approach verbalize na karna."
+      ],
+      "bestPractices": [
+        "Har jawab me complexity (time + space) explicitly bolo.",
+        "Approach pehle verbalize karo, phir code likho.",
+        "Test cases teen bucket me socho: small, typical, edge.",
+        "Library functions allowed hone par bolo: 'production me Counter use karunga, algorithm core yahan likh raha hoon'.",
+        "Interviewer ke bug par argument nahi — acknowledge, trace, fix, aur wahi test add karo."
+      ],
+      "realWorld": "Ye patterns production me bhi aate hain: dedupe/grouping (hash), rate limiting (sliding window), top-K frequent queries (heap), retry scheduling (binary search on time), aur dependency ordering (graph traversal). Coding round ki tayari asal me system design ki tayari bhi hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "two_sum hash map se solve karo aur uski complexity dono case (average, worst) me batao." },
+        { "difficulty": "medium", "text": "Sliding window se minimum length subarray nikalo jiska sum target se bada ho." },
+        { "difficulty": "hard", "text": "Ek 'signals → pattern' table banao apne 10 practice problems ke liye aur likho kis signal ne kaunsa pattern diya." }
+      ],
+      "interview": [
+        { "q": "O(n^2) ko optimize karne ka pehla step?", "a": "Bottleneck identify karo: dobara kya compute ho raha hai? Lookup hai to hash/set, sorted property hai to two-pointer/binary search, repeated subproblem hai to DP." },
+        { "q": "Two-pointer kab valid hai?", "a": "Jab monotonic property ho — sorted array, ya window me add/remove se condition predictably badle. Bina monotonicity ke pointer movement ka logic galat ho jata hai." },
+        { "q": "Hash map ka worst case kab O(n) ho jata hai?", "a": "Collisions zyada hone par (bura hash ya adversarial keys) lookup O(n) ho jata hai — isliye average aur worst case dono bolna sahi hai." }
+      ],
+      "miniChallenge": "Top-K frequent elements nikalo (streaming input, bounded memory) — hash + heap ka combo use karo aur complexity likho.",
+      "debugTask": "Sliding window solution interview me ek test case par fail hua (window ke bahar ka purana index use kiya gaya). Bug reproduce karo aur fix likho.",
+      "related": ["Interview Answer Structures & Trade-offs", "Dictionary Patterns & Merging", "Advanced Python & Performance", "Complexity & constraints"],
+      "revision": [
+        "Constraints → allowed complexity",
+        "Signals: sorted, monotonic, contiguous, lookup, subproblem",
+        "Hash O(n), two-pointer O(1) space, heap O(n log k)",
+        "Brute force → bottleneck → optimize",
+        "Small/typical/edge test cases"
+      ],
+      "interviewTip": "Interviewer ki help se approach nikalo: 'kya main maan sakta hoon ki input sorted hai?' jaisa sawal galat direction se bacha leta hai aur collaboration dikhata hai."
+    },
+    {
+      "section": "s29",
+      "title": "Resume Project Defense Playbook",
+      "level": "advanced",
+      "what": "Project defense = 60-second pitch + evidence card + honest boundaries. Interviewer tumhare system ke numbers, failures aur decisions sunna chahta hai — tool list nahi.",
+      "why": "Resume par project likhna aasan hai; uski depth prove karna mushkil. Jo candidates numbers, trade-offs aur 'kya alag karta' bata paate hain, unka project 'tutorial' nahi lagta.",
+      "whereUsed": "Portfolio projects, final-year projects, capstone, aur internal projects (promotion/promo conversations me bhi).",
+      "prereqs": ["Interview Answer Structures & Trade-offs", "Ek deployed project (ya local demo)", "Metrics/observability ki basic samajh"],
+      "howItWorks": "Defense teen cheezon par khada hai: (1) architecture ek line me (client → API → data flow), (2) evidence — measured numbers aur unka source, (3) failure stories — kya toota, kaise detect hua, kaise fix hua. Sabse strong signal: '3 numbers jo mera kaam prove karte hain' aur ek honest 'dobara banata to kya alag karta'.",
+      "syntax": "# 60-second pitch\nproblem+scale (10s) -> my role (10s) -> approach + tradeoff (15s)\n-> measured result (10s) -> lesson + next step (15s)\n\n# evidence card\nevidence = {\"recall@5\": (0.62, 0.86), \"p95_ms\": (1400, 400)}",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "sections = [\n    (\"problem + scale\", 10),\n    (\"my role + constraints\", 10),\n    (\"approach + tradeoff\", 15),\n    (\"measured result\", 10),\n    (\"lesson + next step\", 15),\n]\n\ntotal = sum(s for _, s in sections)\nprint(total, \"seconds\")\nfor name, secs in sections:\n    print(f\"{name:<22} {secs:>3}s\")\nprint(\"fits 60s:\", total <= 60)",
+          "output": "",
+          "explain": [
+            "Pitch ko time budget me toda gaya — isse jawab khatam hone se pehle interview ko dikh jata hai ki structure hai.",
+            "Har section ka second count likhne se practice me pata chalta hai kahan time zyada jaa raha hai.",
+            "Ant me lesson + next step rakhna deliberate hai: ye hissa sabse strong senior signal hai."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "evidence = {\n    \"recall@5\": (0.62, 0.86),\n    \"p95_ms\": (1400, 400),\n    \"cost_per_task_usd\": (0.041, 0.019),\n}\n\ndef delta(before, after):\n    if before == 0:\n        return None\n    return round((after - before) / before * 100, 1)\n\nfor metric, (before, after) in evidence.items():\n    print(f\"{metric:<20} {before} -> {after}  ({delta(before, after)}%)\")\nprint(\"measured on:\", \"180 eval cases\", \"| source:\", \"nightly eval log\")",
+          "output": "",
+          "explain": [
+            "Evidence card me har metric ka before → after aur % change hai — interviewer numbers ko instantly verify kar sakta hai.",
+            "Lower-is-better metrics (latency, cost) ka negative % improvement dikhata hai; direction ko naam ke saath samjhao (p95 1400 → 400ms).",
+            "Ye bhi print kiya gaya ki numbers kis dataset par measure hue — bina source ke number ka weight kam ho jata hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "questions = [\n    {\"q\": \"Kitna scale karega?\", \"have_number\": True, \"have_plan\": True},\n    {\"q\": \"Cost per user?\", \"have_number\": False, \"have_plan\": True},\n    {\"q\": \"Security posture?\", \"have_number\": True, \"have_plan\": False},\n]\n\ndef gaps(qs):\n    out = []\n    for item in qs:\n        missing = []\n        if not item[\"have_number\"]:\n            missing.append(\"number\")\n        if not item[\"have_plan\"]:\n            missing.append(\"plan\")\n        if missing:\n            out.append((item[\"q\"], missing))\n    return out\n\nprint(gaps(questions))\nprint(\"ready:\", len(gaps(questions)) == 0)\n\nfor q, missing in gaps(questions):\n    print(f\"TODO: {q} -> prepare {', '.join(missing)}\")",
+          "output": "",
+          "explain": [
+            "Defense me har expected question ke do hisse hote hain: ek number (current state) aur ek plan (next step). Ek missing ho to jawab aadha lagta hai.",
+            "Gaps ko print karke rehearsal list ban jati hai — practice targeted ho jaati hai, generic nahi.",
+            "Ye pattern interview se pehle ek baar chalane se 'kya poocha ja sakta hai' ka checklist ban jata hai."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Architecture ek line me likho", "detail": "Client → API → services → data stores; arrows par protocol/async. Framework names baad me, data flow pehle." },
+        { "step": "Evidence card banao", "detail": "4 numbers likho: scale, latency (p50/p95), quality metric, cost — har ek ka source (dataset size, tool, date).", "code": "evidence = {\"recall@5\": (0.62, 0.86), \"p95_ms\": (1400, 400)}" },
+        { "step": "Failure story tayyar rakho", "detail": "Ek incident: symptom → measurement → fix → verification. Yahi story 'kya tum production sochte ho' ka jawab hai." },
+        { "step": "Boundaries declare karo", "detail": "Kya solve nahi karta (freshness lag, high-stakes decisions) — scope honest bolna maturity dikhata hai." }
+      ],
+      "commonMistakes": [
+        "Frameworks ki list dena bina data flow ya trade-off batane ke.",
+        "Numbers yaad na hona (kitne rows, kaun sa chunk size, kaun sa index).",
+        "Demo reproduce na ho paana (data/branch/environment alag).",
+        "Sirf happy path batana — failure aur degraded mode ka koi zikr nahi.",
+        "Team project me apna contribution unclear chhodna."
+      ],
+      "bestPractices": [
+        "Seeded sample data + README steps rakho taaki demo reproducible ho.",
+        "Har number ka source likho (kis dataset par, kab measure kiya).",
+        "Decision log (ADR) maintain karo — 'kya alag karta' ka material wahi se aata hai.",
+        "Degraded modes likho (dependency down par kya hota hai) aur ek test se prove karo.",
+        "Claim ko bound karo: 'is data par ye metric' — global claim se bacho."
+      ],
+      "realWorld": "Portfolio project ka interview round, capstone viva, aur internal design review — teeno me yahi playbook chalti hai. Interview me 'teen numbers do jo mera kaam prove karte hain' ka ready jawab alag level par rakhta hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Apne project ka 60-second pitch likho aur time budget ke saath mark karo." },
+        { "difficulty": "medium", "text": "Apna evidence card banao (4 metrics, before → after, source) aur deltas calculate karo." },
+        { "difficulty": "hard", "text": "10 expected defense questions ki list banao aur har ek ke liye number + plan likho." }
+      ],
+      "interview": [
+        { "q": "System kitna scale karega — kaise answer karoge?", "a": "Current measured state + bottleneck + plan: '20 rps par p95 400ms, bottleneck DB connections aur vector index; plan read replicas + caching + sharding'." },
+        { "q": "Accuracy par confidence kya hai?", "a": "Eval set size, per-bucket breakdown aur limitation batao: chhote buckets par 'insufficient data' — overclaiming se better hai honest confidence interval." },
+        { "q": "Dependency failure par system kya karta hai?", "a": "Degraded modes named hon: retrieval down → retry with message, model down → fallback provider, DB slow → cached response. Aur har mode test se proven." }
+      ],
+      "miniChallenge": "Apne project ka ek 'defense card' banao: architecture ek line, 4 numbers source ke saath, 2 failure stories, aur 2 known boundaries.",
+      "debugTask": "Interviewer ne tumhari claim ('p95 400ms') par poocha 'kis load par?' — ye kya batata hai, aur aage ke liye kya prepare karoge?",
+      "related": ["Interview Answer Structures & Trade-offs", "MLOps: Docker, CI/CD & Deploy", "RAG: Chunk, Retrieve, Ground & Evaluate", "Observability"],
+      "revision": [
+        "Pitch: problem → role → tradeoff → number → lesson",
+        "Evidence card me har number ka source",
+        "Failure story: symptom → fix → verification",
+        "Boundaries bhi bolo (kya nahi karta)",
+        "Demo reproducible rakho"
+      ],
+      "interviewTip": "Interview ke ant me khud ek limitation batao ('freshness async refresh se hai, realtime nahi') — honest boundary batana overclaiming se zyada credibility deta hai."
+    }
+  ]
+}

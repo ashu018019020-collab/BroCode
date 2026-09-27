@@ -1,0 +1,91 @@
+{
+  "$comment": "Authored guide for the SQL track (s19). SQL examples run for real: the sqlite3 module from the Python standard library opens an in-memory database, so the stored output is genuine query output captured by scripts/guides.cjs.",
+  "version": 1,
+  "guides": [
+    {
+      "section": "s19",
+      "title": "SQL Joins, Grouping & Window Functions",
+      "level": "core",
+      "what": "SQL ek declarative language hai: tum batate ho kya chahiye, planner decide karta hai kaise. Core tools — JOIN (tables jodna), GROUP BY + aggregates (summarise) aur window functions (row ke context ke saath value).",
+      "why": "Data ka 90% kaam SQL me hi hota hai. NULL semantics, logical execution order aur grain samajh liya to reports bharosemand banti hain; warna silent galat numbers aate hain jinpar business decisions liye jaate hain.",
+      "whereUsed": "Analytics reports, feature extraction for ML, KPI dashboards, aur application queries (list/filter/paginate).",
+      "prereqs": ["Tables ke basics (rows/columns/keys)", "Grouping aur aggregation ka idea", "Data cleaning mindset"],
+      "howItWorks": "Logical execution order hai: FROM → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT. Isliye WHERE aggregate par nahi chal sakta (aggregates GROUP BY ke baad banti hain) aur ORDER BY me SELECT alias use ho sakta hai. NULL ke saath comparison 'unknown' deta hai, isliye IS NULL likhna padta hai.",
+      "syntax": "SELECT region, COUNT(*) AS n, SUM(amount) AS revenue\nFROM orders\nWHERE amount IS NOT NULL\nGROUP BY region\nHAVING SUM(amount) > 0\nORDER BY revenue DESC\nLIMIT 5;\n\n-- window: har row ke saath partition ka context\nROW_NUMBER() OVER (PARTITION BY region ORDER BY revenue DESC)",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "import sqlite3\n\ncon = sqlite3.connect(\":memory:\")\ncur = con.cursor()\ncur.executescript(\"\"\"\nCREATE TABLE orders (id INTEGER, region TEXT, amount REAL, city TEXT);\nINSERT INTO orders VALUES\n (1,'east',10.0,'delhi'),\n (2,'west',5.0,NULL),\n (3,'east',7.0,'delhi'),\n (4,'west',20.0,'pune');\n\"\"\")\nprint(cur.execute(\"SELECT region, COUNT(*), ROUND(SUM(amount),1) FROM orders GROUP BY region ORDER BY region\").fetchall())\nprint(cur.execute(\"SELECT COUNT(*), COUNT(city) FROM orders\").fetchone())\ncon.close()",
+          "output": "",
+          "explain": [
+            "GROUP BY region rows ko region par split karke count aur sum deta hai — har group ek row ban jata hai.",
+            "COUNT(*) sab rows ginta hai jabki COUNT(city) sirf non-NULL values — NULL kisi aggregate me count nahi hota.",
+            "Ye do numbers ka farq (4 vs 3) completeness ka honest signal hai: ek city missing hai."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "import sqlite3\n\ncon = sqlite3.connect(\":memory:\")\ncur = con.cursor()\ncur.executescript(\"\"\"\nCREATE TABLE users (id INTEGER, name TEXT);\nCREATE TABLE orders (id INTEGER, user_id INTEGER, amount REAL);\nINSERT INTO users VALUES (1,'a'),(2,'b'),(3,'c');\nINSERT INTO orders VALUES (10,1,5.0),(11,1,7.0),(12,2,3.0),(13,NULL,9.0);\n\"\"\")\nprint(cur.execute(\"\"\"\nSELECT u.name, COALESCE(SUM(o.amount), 0) AS total\nFROM users u LEFT JOIN orders o ON o.user_id = u.id\nGROUP BY u.id ORDER BY u.id\n\"\"\").fetchall())\nprint(\"NOT IN with NULL:\", cur.execute(\"SELECT COUNT(*) FROM users WHERE id NOT IN (SELECT user_id FROM orders)\").fetchone())\nprint(\"NOT EXISTS:\", cur.execute(\"SELECT COUNT(*) FROM users u WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)\").fetchone())\ncon.close()",
+          "output": "",
+          "explain": [
+            "LEFT JOIN har user ko rakhta hai; jis user ke paas order nahi hai uske liye SUM NULL aata hai, isliye COALESCE se 0 dikhate hain.",
+            "Subquery me ek NULL hone se NOT IN ka poora comparison unknown ban jata hai — result chup-chaap khaali (0) aa jata hai.",
+            "NOT EXISTS wahi sawal sahi jawab deta hai (1 user bilkul bina order) — isliye NULL-safe anti-join NOT EXISTS se likho."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "import sqlite3\n\ncon = sqlite3.connect(\":memory:\")\ncur = con.cursor()\ncur.executescript(\"\"\"\nCREATE TABLE sales (region TEXT, month TEXT, revenue INTEGER);\nINSERT INTO sales VALUES\n ('east','2026-01',120),('east','2026-02',150),\n ('west','2026-01',90),('west','2026-02',99);\n\"\"\")\nrows = cur.execute(\"\"\"\nSELECT region, month, revenue,\n       ROW_NUMBER() OVER (PARTITION BY region ORDER BY revenue DESC) AS rn,\n       revenue - LAG(revenue) OVER (PARTITION BY region ORDER BY month) AS mom_delta\nFROM sales ORDER BY region, month\n\"\"\").fetchall()\nfor r in rows:\n    print(r)\ncon.close()",
+          "output": "",
+          "explain": [
+            "ROW_NUMBER() har partition (region) ke andar revenue ke descending order par rank deta hai — 'best month' ka deterministic jawab.",
+            "LAG() pichhli row ki value deta hai (ORDER BY month), isliye month-over-month delta ek hi query me mil jata hai.",
+            "PARTITION BY se window group-wise reset hoti hai — bina partition ke east aur west ka data mix ho jata."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Grain likho", "detail": "Kaam shuru karne se pehle likho ki output ki ek row kya represent karegi (per region? per region-month?). Grain galat hone par har number galat hoga." },
+        { "step": "NULL ka behaviour decide karo", "detail": "Filter me IS NULL / IS NOT NULL explicitly likho, aur anti-join NOT EXISTS se karo — NOT IN NULL ke saath chup-chaap khaali ho jata hai.", "code": "WHERE u.id IS NOT NULL\n  AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)" },
+        { "step": "Aggregation aur filter alag karo", "detail": "Row-level filters WHERE me, group-level filters HAVING me — order of execution yahi enforce karta hai.", "code": "WHERE amount > 0\nGROUP BY region\nHAVING SUM(amount) > 100" },
+        { "step": "Tie-aware top-N likho", "detail": "LIMIT ke saath ROW_NUMBER() ya deterministic tiebreaker (id/date) lagao, warna baar-baar chalane par result badal sakta hai.", "code": "ROW_NUMBER() OVER (ORDER BY revenue DESC, id)" }
+      ],
+      "commonMistakes": [
+        "col = NULL likhna — kabhi true nahi hota, IS NULL chahiye.",
+        "NOT IN me NULL — subquery NULL deti hai to poora result khaali.",
+        "WHERE me aggregate use karna (SUM(x) > 10) — wahi HAVING me likhna padta hai.",
+        "Fan-out join (duplicate keys) se double counting, aur join ke bina fan-out detect na karna.",
+        "LIMIT top-N me ties par arbitrary cutoff — report reproducible nahi rehti."
+      ],
+      "bestPractices": [
+        "Query ko EXPLAIN se dekho, phir index/rewrite ka decision lo.",
+        "Slow query ke liye pehle: sargable conditions (column par function mat lagao), phir index, phir rewrite.",
+        "Integrity DB constraints se enforce karo (NOT NULL/UNIQUE/FK), app validation se sirf UX.",
+        "Aggregation ke baad totals reconcile karo (grouped sum = overall sum).",
+        "Window function se rank/row_number dete waqt tiebreaker column likho."
+      ],
+      "realWorld": "Revenue dashboard, funnel analysis, aur daily active users ka report — sab joins + grouping + window functions se bante hain. ML me feature extraction bhi SQL se hoti hai (per-customer aggregates). Interview me 'NOT IN + NULL' ka example batana instantly depth dikhata hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Orders table se per-region count aur sum nikalo, non-NULL amounts par hi." },
+        { "difficulty": "medium", "text": "Customers LEFT JOIN orders karke wo customers dhundo jinhone kabhi order nahi kiya (NULL-safe)." },
+        { "difficulty": "hard", "text": "Har region ka top-2 month revenue window function se nikalo aur ties ko deterministically handle karo." }
+      ],
+      "interview": [
+        { "q": "SQL ka logical execution order kya hai?", "a": "FROM → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT. Isliye WHERE aggregate par nahi chalta aur ORDER BY me SELECT alias chal jata hai." },
+        { "q": "NULL ke saath NOT IN kyun khatarnak hai?", "a": "Agar subquery me ek bhi NULL aaya to har comparison unknown ho jata hai aur result khaali aa jata hai. NULL-safe alternative NOT EXISTS hai." },
+        { "q": "GROUP BY ke bina COUNT(*) aur COUNT(col) me farq?", "a": "COUNT(*) rows ginta hai, COUNT(col) sirf non-NULL values — null-heavy column par completeness ka proxy samajhna galat hai." }
+      ],
+      "miniChallenge": "sqlite3 par ek query likho jo per-region monthly revenue, growth % (LAG) aur region ke andar rank (ROW_NUMBER) — teeno ek hi result me de.",
+      "debugTask": "Ek report 'top 3 products' dikha rahi hai jo har run par badalti hai (ties). Reproduce karo aur deterministic fix likho.",
+      "related": ["SQL Joins & NULL semantics", "Analytics KPIs & Growth Metrics", "Pandas DataFrame Workflow", "Query performance"],
+      "revision": [
+        "Execution order: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY",
+        "NULL = unknown → IS NULL, NOT EXISTS",
+        "COUNT(*) rows, COUNT(col) non-NULL",
+        "Fan-out join = double counting",
+        "Window: PARTITION BY + ORDER BY (+ tiebreaker)"
+      ],
+      "interviewTip": "SQL design question par ye bolo: 'main pehle grain aur NULL behaviour likhta hoon, phir query — aur EXPLAIN se verify karta hoon ki index use ho raha hai'."
+    }
+  ]
+}

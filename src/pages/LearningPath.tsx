@@ -1,9 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Map as MapIcon, List, ChevronRight, Target, BarChart3, Lightbulb, CalendarCheck, Compass,
+  Map as MapIcon, List, ChevronRight, Target, BarChart3, Lightbulb, CalendarCheck, Compass, BookOpen,
+  BookMarked,
 } from 'lucide-react';
+import { NotebookShelf } from '../components/JupyterNotebook';
+import PlaybookLayer from '../components/PlaybookLayer';
+import PathGrid from '../components/PathGrid';
 import { useCurriculum } from '../data/curriculum';
+import { usePlaybookCoverage } from '../data/playbook';
 import { useTrackIndex } from '../data/tracks';
 import { useStore } from '../offline/store';
 import { sectionProgress, currentSection } from '../engine/progress';
@@ -24,6 +29,14 @@ export default function LearningPath() {
   const { t } = useI18n();
   const nav = useNavigate();
   const [view, setView] = useState<'roadmap' | 'list'>('roadmap');
+
+  /**
+   * The Playbook V15 layer, computed once for the whole page: the band renders the coverage rows,
+   * each track card shows its own share of the document, and the rail gets the next best target.
+   * The maths lives in engine/playbook.ts (pure, tested) — this page only arranges it.
+   */
+  const pb = usePlaybookCoverage(TRACK_DEFS);
+  const pbByTrack = useMemo(() => new Map(pb.rows.map((r) => [r.trackId, r])), [pb.rows]);
 
   /** Progress per track from REAL section mastery (guidance only, no gating). */
   const pctOf = useMemo(() => {
@@ -90,7 +103,9 @@ export default function LearningPath() {
     const slug = slugOf(def.id);
     const idxEntry = slug ? trackIndex?.find((x) => x.slug === slug) : undefined;
     const recs = (def.prereq ?? []).filter((p) => pctOf(p) < 60); // informational only
-    return { def, i, pct, slug, chapters: idxEntry?.chapters ?? (def.to - def.from + 1), recs };
+    // The document's share of this track: real imported items, or null when it never reached it.
+    const pbRow = pbByTrack.get(def.id);
+    return { def, i, pct, slug, chapters: idxEntry?.chapters ?? (def.to - def.from + 1), recs, pbRow };
   });
 
   return (
@@ -122,11 +137,11 @@ export default function LearningPath() {
         <div>
           {view === 'roadmap' ? (
             <div className="track-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
-              {trackRows.map(({ def, i, pct, slug, chapters, recs }) => {
+              {trackRows.map(({ def, i, pct, slug, chapters, recs, pbRow }) => {
                 const Icon = def.icon;
                 const status = pct >= 100 ? 'complete' : pct > 0 ? 'progress' : 'available';
                 return (
-                  <div key={def.id} className="track-card">
+                  <div key={def.id} className={`track-card tone-${def.tone}`}>
                     <span className="num">{String(i + 1).padStart(2, '0')}</span>
                     <div className="head">
                       <span className="ic" style={{ color: def.color }}><Icon size={21} /></span>
@@ -136,6 +151,14 @@ export default function LearningPath() {
                     <p className="desc">{def.desc}</p>
                     <div className="meta"><span>⏱ ~{def.hours} {t('track.hours')}</span><span>{chapters} Chapters</span></div>
                     <Bar pct={pct} />
+                    {/* What the second source added to THIS track. Tracks it never reached show
+                        nothing here — the band below states that honestly, per track. */}
+                    {pbRow && pbRow.items > 0 && pbRow.topSection && (
+                      <Link className="pbline" to={`/questions?section=${pbRow.topSection}&playbook=1`}>
+                        <BookMarked size={12} /> {t('path.pbV15')} · {pbRow.items} {t('path.pbItems')} ·
+                        {' '}{pbRow.chapters} {t('path.pbChapters')} → {t('path.pbPractice')}
+                      </Link>
+                    )}
                     {recs.length > 0 ? (
                       <div className="prereq ok">
                         <Compass size={12} /> Recommended: {recs.map((m) => t(TRACK_DEFS.find((d) => d.id === m)!.nameKey as LocaleKey)).join(', ')} (60%+)
@@ -157,12 +180,19 @@ export default function LearningPath() {
           ) : (
             <div className="tablewrap card">
               <table className="data">
-                <thead><tr><th>Track</th><th>Progress</th><th>Hours</th><th>Recommended Before</th><th></th></tr></thead>
+                <thead><tr><th>Track</th><th>Progress</th><th>{t('path.pbV15')}</th><th>Hours</th><th>Recommended Before</th><th></th></tr></thead>
                 <tbody>
-                  {trackRows.map(({ def, i, pct, slug, chapters, recs }) => (
+                  {trackRows.map(({ def, i, pct, slug, chapters, recs, pbRow }) => (
                     <tr key={def.id}>
                       <td><b>{String(i + 1).padStart(2, '0')} — {t(def.nameKey as LocaleKey)}</b><div className="small muted">{chapters} chapters</div></td>
                       <td style={{ minWidth: 120 }}><Bar pct={pct} /></td>
+                      <td>
+                        {pbRow && pbRow.items > 0 && pbRow.topSection ? (
+                          <Link className="chip" to={`/questions?section=${pbRow.topSection}&playbook=1`}>
+                            <BookMarked size={11} /> {pbRow.items}
+                          </Link>
+                        ) : <span className="small muted">—</span>}
+                      </td>
                       <td>~{def.hours}h</td>
                       <td className="small muted">{recs.length ? recs.map((m) => t(TRACK_DEFS.find((d) => d.id === m)!.nameKey as LocaleKey)).join(', ') + ' (60%+)' : '—'}</td>
                       <td><button className="btn small" onClick={() => slug && nav(`/track/${slug}`)}>Explore Track</button></td>
@@ -172,6 +202,26 @@ export default function LearningPath() {
               </table>
             </div>
           )}
+
+          {/* The second source, as a layer of the roadmap rather than a detour from it. */}
+          <PlaybookLayer coverage={pb} />
+
+          {/* And every OTHER path in the project, numbered on from the 8 tracks. */}
+          <PathGrid />
+
+          {/* The Notebook Lab lives on the path itself: pick a notebook and run its cells here,
+              offline, without leaving the roadmap. */}
+          <div className="card" style={{ marginTop: 16 }}>
+            <div className="row spread">
+              <h3 className="row" style={{ gap: 8, margin: 0 }}>
+                <BookOpen size={16} color="var(--cyan)" /> {t('nb.labTitle')}
+              </h3>
+              <span className="chip easy">{t('nb.offline')}</span>
+            </div>
+            <p className="muted small" style={{ marginTop: 4 }}>{t('nb.labSub')}</p>
+            {/* Open by default: on the path the shelf is the content, not a detour from it. */}
+            <NotebookShelf defaultOpen />
+          </div>
 
           <div className="goalbar" style={{ marginTop: 16 }}>
             {[t('dash.stage1'), t('dash.stage2'), t('dash.stage3'), t('dash.stage4')].map((l, i) => (
@@ -192,6 +242,34 @@ export default function LearningPath() {
             <Link className="btn small primary" style={{ marginTop: 10, width: '100%', justifyContent: 'center' }} to={`/lesson/${cur.id}/learn`}>
               {t('path.openLesson')} <ChevronRight size={13} />
             </Link>
+          </div>
+
+          {/* The V15 layer's own progress, and the single best place to push it forward. */}
+          <div className="card">
+            <div className="row spread">
+              <h3 className="row" style={{ gap: 8, margin: 0 }}>
+                <BookMarked size={16} color="var(--cyan)" /> {t('path.pbV15')}
+              </h3>
+              <span className="small">{pb.touched}/{pb.total}</span>
+            </div>
+            <Bar pct={pb.total ? Math.round((pb.touched / pb.total) * 100) : 0} />
+            <p className="muted small" style={{ margin: '8px 0 6px' }}>{t('path.pbRailSub')}</p>
+            {pb.target ? (
+              <>
+                <div className="row spread small muted">
+                  <span>{t('path.pbNext')}</span>
+                  <span>{pb.target.remaining} {t('path.pbItems')}</span>
+                </div>
+                <Link className="btn small primary" style={{ marginTop: 6, width: '100%', justifyContent: 'center' }} to={`/questions?section=${pb.target.sectionId}&playbook=1`}>
+                  {String(pb.target.no).padStart(2, '0')} · {pb.target.sectionTitle} <ChevronRight size={13} />
+                </Link>
+              </>
+            ) : pb.ready ? (
+              <span className="chip easy">✓ {t('path.pbAllDone')}</span>
+            ) : (
+              <span className="chip">{t('path.pbLoading')}</span>
+            )}
+            <Link className="small" to="/playbook" style={{ display: 'inline-block', marginTop: 8 }}>{t('path.pbIndex')} →</Link>
           </div>
 
           <div className="card">

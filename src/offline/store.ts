@@ -1,5 +1,7 @@
-import { useSyncExternalStore } from 'react';
-import type { AppState } from '../types';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import type { AppState, Note } from '../types';
+import type { ExamWriteEntry } from '../engine/exam';
+import { bankAttempt } from '../engine/keys';
 
 const KEY = 'aiml:state:v1';
 
@@ -17,12 +19,17 @@ export const defaultState = (): AppState => ({
   savedCode: {},
   settings: { reduceMotion: false },
   activity: {},
+  notes: [],
+  jobPrep: {},
+  readNotifs: [],
 });
 
 function sanitize(s: AppState): AppState {
   if (typeof s.xp !== 'number' || !isFinite(s.xp)) s.xp = 0;
   for (const k of ['mistakes', 'bookmarks'] as const) if (!Array.isArray(s[k])) s[k] = [];
-  for (const k of ['attempts', 'review', 'interviewAnswers', 'defenseAnswers', 'savedCode', 'activity'] as const) if (!s[k] || typeof s[k] !== 'object') s[k] = {};
+  for (const k of ['attempts', 'review', 'interviewAnswers', 'defenseAnswers', 'savedCode', 'activity', 'jobPrep'] as const) if (!s[k] || typeof s[k] !== 'object') s[k] = {};
+  if (!Array.isArray(s.notes)) s.notes = [];
+  if (!Array.isArray(s.readNotifs)) s.readNotifs = [];
   if (!s.profile || typeof s.profile !== 'object') s.profile = defaultState().profile;
   return s;
 }
@@ -55,6 +62,16 @@ export function useStore(): AppState {
   return useSyncExternalStore(subscribe, getState, getState);
 }
 
+/**
+ * Read the current state outside React. Async flows (running a whole notebook cell by cell)
+ * must check what is REALLY stored right now instead of the snapshot their render captured,
+ * otherwise the first cell's write would look like it never happened. Read-only: writes still
+ * go through setState/recordAttempt/addXp.
+ */
+export function stateSnapshot(): AppState {
+  return state;
+}
+
 // ---- helpers ----
 export const today = () => new Date().toISOString().slice(0, 10);
 
@@ -73,6 +90,78 @@ export function recordAttempt(key: string, attempt: Partial<AppState['attempts']
   }));
 }
 
+// ---- written answers -------------------------------------------------------
+/**
+ * The single place a WRITTEN answer lives.
+ *
+ * Every surface that asks the learner to type something — the question bank, the per-stage Q&A
+ * panel, the logic and debug drills, the final paper — stores its text in the same field of the
+ * same attempt record, `Attempt.answer`. That field already existed (the exam wrote it through
+ * `applyExamWrites`), so nothing new was invented and no stored progress needed migrating: an
+ * answer written before this helper existed still reads back.
+ *
+ * The reason it is a helper instead of an inline write: typing used to be local component state,
+ * so a refresh threw the answer away, and the mistake tracker had nothing to record and fell back
+ * to placeholders like "(self-grade: galat)". One reader and one writer means a question answered
+ * in the lesson is answered in the bank too.
+ */
+export function savedAnswer(state: AppState, key: string): string {
+  return state.attempts[key]?.answer ?? '';
+}
+
+/**
+ * Persist a written answer WITHOUT touching the grade. Setting `done` here would be a lie about
+ * the learner's skill — typing an answer is not passing — so `saveAnswer` never moves a gate.
+ */
+export function saveAnswer(key: string, text: string) {
+  recordAttempt(key, { answer: text });
+}
+
+/**
+ * A controlled answer field backed by the store.
+ *
+ * Saves on a 400 ms debounce: the whole state is one JSON blob in localStorage, so writing on
+ * every keystroke (as the interview box did) is wasteful, but waiting for a submit is worse —
+ * a refresh or a closed tab mid-sentence used to lose the answer outright. The pending write is
+ * flushed when the field's key changes (next question / next item) and when it unmounts.
+ */
+export function useSavedAnswer(key: string): [string, (value: string) => void] {
+  const state = useStore();
+  const stored = savedAnswer(state, key);
+  const [local, setLocal] = useState(stored);
+  const timer = useRef<number | undefined>(undefined);
+  const scheduled = useRef<{ key: string; value: string } | null>(null);
+
+  const flush = useCallback(() => {
+    if (timer.current !== undefined) { window.clearTimeout(timer.current); timer.current = undefined; }
+    const pending = scheduled.current;
+    scheduled.current = null;
+    if (pending && pending.value !== (stateSnapshot().attempts[pending.key]?.answer ?? '')) {
+      saveAnswer(pending.key, pending.value);
+    }
+  }, []);
+
+  // A new key means a new field: commit the old one, then show what is stored for the new one.
+  // Deliberately keyed on `key` alone — re-running on every store change would overwrite the
+  // text the learner is still typing with the last debounced value.
+  useEffect(() => {
+    flush();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLocal(stateSnapshot().attempts[key]?.answer ?? '');
+  }, [key, flush]);
+
+  useEffect(() => () => flush(), [flush]);
+
+  const set = useCallback((value: string) => {
+    setLocal(value);
+    scheduled.current = { key, value };
+    if (timer.current !== undefined) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(flush, 400);
+  }, [key, flush]);
+
+  return [local, set];
+}
+
 export function bumpStreak() {
   const t = today();
   const s = getState();
@@ -87,6 +176,84 @@ export function addMistake(m: Omit<AppState['mistakes'][number], 'id' | 'date' |
     ...s,
     mistakes: [{ ...m, id: `m${Date.now()}${Math.random().toString(36).slice(2, 6)}`, date: today(), attempts: 1, fixed: false }, ...s.mistakes].slice(0, 200),
   }));
+}
+
+/**
+ * File a finished exam in ONE atomic write: attempts, mistakes, review resets,
+ * XP and activity all land together, so a paper can never be half-saved (which
+ * would otherwise inflate XP or lose wrong answers if the tab closed mid-loop).
+ *
+ * Nothing about a question the learner left UNGRADED reaches this function —
+ * the caller filters those out, so an ungraded question can never be recorded
+ * as wrong.
+ */
+export function applyExamWrites(entries: ExamWriteEntry[], xp: number) {
+  if (!entries.length) return;
+  const now = Date.now();
+  setState((s) => {
+    const attempts = { ...s.attempts };
+    const review = { ...s.review };
+    const fresh: AppState['mistakes'] = [];
+    const stamp = new Date(now).toISOString();
+
+    entries.forEach((e, i) => {
+      // Through the key owner, not a hand-typed "qb:" string — a typo here would file every
+      // graded exam answer under a key nothing else can read.
+      const key = bankAttempt(e.questionId);
+      attempts[key] = { ...(attempts[key] ?? {}), done: e.correct, tries: e.tries, answer: e.answer, ts: now };
+      if (e.reviewReset) review[e.sectionId] = { level: 0, last: stamp };
+      if (e.mistake) {
+        fresh.push({ ...e.mistake, id: `m${now}${i}`, date: today(), attempts: 1, fixed: false });
+      }
+    });
+
+    return {
+      ...s,
+      attempts,
+      review,
+      mistakes: [...fresh, ...s.mistakes].slice(0, 200),
+      xp: s.xp + xp,
+      activity: xp > 0 ? { ...s.activity, [today()]: (s.activity[today()] ?? 0) + xp } : s.activity,
+    };
+  });
+}
+
+// ---- notes ----
+export const newNote = (partial: Partial<Note> = {}): Note => ({
+  id: `n${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+  title: '', body: '', tags: [], fav: false,
+  created: Date.now(), updated: Date.now(),
+  ...partial,
+});
+
+export function upsertNote(note: Note) {
+  setState((s) => {
+    const exists = s.notes.some((n) => n.id === note.id);
+    const next = { ...note, updated: Date.now() };
+    return { ...s, notes: exists ? s.notes.map((n) => (n.id === note.id ? next : n)) : [next, ...s.notes] };
+  });
+}
+
+export function deleteNote(id: string) {
+  setState((s) => ({ ...s, notes: s.notes.filter((n) => n.id !== id) }));
+}
+
+export function toggleNoteFav(id: string) {
+  setState((s) => ({ ...s, notes: s.notes.map((n) => (n.id === id ? { ...n, fav: !n.fav, updated: Date.now() } : n)) }));
+}
+
+// ---- job-prep checklist ----
+export function toggleJobPrep(id: string) {
+  setState((s) => ({ ...s, jobPrep: { ...s.jobPrep, [id]: !s.jobPrep[id] } }));
+}
+
+// ---- notifications ----
+export function markNotifsRead(ids: string[]) {
+  setState((s) => ({ ...s, readNotifs: [...new Set([...s.readNotifs, ...ids])].slice(-300) }));
+}
+
+export function clearNotifs() {
+  setState((s) => ({ ...s, readNotifs: [] }));
 }
 
 export function exportProgress() {

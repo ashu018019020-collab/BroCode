@@ -1,7 +1,9 @@
 /* AI Engineer Master Lab — offline service worker.
  * Strategy: precache nothing at install (content is static files under scope);
- * cache-first for same-origin GETs with runtime caching. All app assets are local. */
-const CACHE = 'aiml-v2';
+ * cache-first for immutable app assets, network-first for the JSON content packs
+ * (curriculum / question banks / tracks) so a content update is never shadowed
+ * by a stale cache. All app assets are local — nothing leaves the device. */
+const CACHE = 'aiml-v5';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
@@ -30,6 +32,27 @@ self.addEventListener('fetch', (e) => {
           return res;
         })
         .catch(() => caches.match(req).then((r) => r ?? caches.match(new Request('./index.html')))),
+    );
+    return;
+  }
+
+  // JSON content packs: network-first, cache fallback (offline). Bumping CACHE
+  // above purges the older cache on activate, so a content fix always lands.
+  const isContent = /\.json$/i.test(url.pathname)
+    && (url.pathname.includes('/curriculum') || url.pathname.includes('/questions')
+      || url.pathname.includes('/tracks') || url.pathname.includes('/playbook')
+      || url.pathname.includes('/search'));
+  if (isContent) {
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req).then((r) => r ?? new Response('[]', { status: 504, headers: { 'content-type': 'application/json' } }))),
     );
     return;
   }

@@ -1,0 +1,91 @@
+{
+  "$comment": "Authored guide for the Agentic AI track (s23). The loop, repeated-action detection and tool-argument validation examples are real executable Python, so scripts/guides.cjs stores genuine stdout.",
+  "version": 1,
+  "guides": [
+    {
+      "section": "s23",
+      "title": "Agent Loops, Tools & Guardrails",
+      "level": "advanced",
+      "what": "Agent ek loop hai: observe → plan → tool call → result → repeat, jab tak goal na pura ho ya bound hit na ho. LLM decision leta hai, host loop ko bound karta hai, aur tools side effects karte hain.",
+      "why": "Unbounded agents cost blow-up aur production incidents ka source hote hain (infinite tool calls, duplicate orders, galat arguments). Bounds + validation + idempotency ke bina agent demo theek chalta hai, production me nahi.",
+      "whereUsed": "Support automation, data pipelines jo multi-step hain, research/summarisation workflows, aur n8n/LangChain style orchestrations.",
+      "prereqs": ["Functions aur exceptions", "RAG basics (retrieval tool)", "FastAPI request validation (webhook/handler)"],
+      "howItWorks": "Har step par planner ek action chunta hai (tool + arguments), host action ko validate karta hai, tool execute hota hai aur uska result context me wapas jaata hai. Loop ke teen guards: max_steps, repeated-action detection, aur per-tool attempt cap. Side-effecting tools ke liye idempotency key chahiye — retry ko naya event samajhna duplicate side effect deta hai.",
+      "syntax": "def run_agent(plan, max_steps=5):\n    trace, history = [], []\n    for i, action in enumerate(plan, 1):\n        if i > max_steps: trace.append((\"halt\", \"max_steps\")); break\n        if history.count(action) >= 1 and action != \"stop\":\n            trace.append((\"halt\", f\"repeated action: {action}\")); break\n        history.append(action)\n        trace.append((i, action))\n        if action == \"stop\": break\n    return trace",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "def run_agent(plan, max_steps=4):\n    trace = []\n    for i, action in enumerate(plan, 1):\n        if i > max_steps:\n            trace.append((\"halt\", \"max_steps\"))\n            break\n        trace.append((i, action))\n        if action == \"stop\":\n            break\n    else:\n        if not plan:\n            trace.append((1, \"stop\"))\n    return trace\n\nprint(run_agent([\"search\", \"calc\", \"stop\"]))\nprint(run_agent([]))\nprint(run_agent([\"search\", \"search\", \"search\", \"search\", \"search\"]))",
+          "output": "",
+          "explain": [
+            "Bounded loop: har action ek step hai, aur 'stop' action par clean exit hota hai.",
+            "Khaali plan par safe no-op (stop) hota hai — agent ko crash nahi hone dena chahiye.",
+            "Plan me stop na ho to max_steps guard loop ko rokta hai — yahi cost runaway se bachata hai."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "def run_agent(plan, max_steps=5):\n    trace, history = [], []\n    for i, action in enumerate(plan, 1):\n        if i > max_steps:\n            trace.append((\"halt\", \"max_steps\"))\n            break\n        if history.count(action) >= 1 and action != \"stop\":\n            trace.append((\"halt\", f\"repeated action: {action}\"))\n            break\n        history.append(action)\n        trace.append((i, action))\n        if action == \"stop\":\n            break\n    return trace\n\nprint(run_agent([\"search\", \"search\", \"finish\"]))\nprint(run_agent([\"search\", \"calc\", \"stop\"], max_steps=4))",
+          "output": "",
+          "explain": [
+            "Repeated-action detection wahi action dobara dekh kar loop halt kar deta hai — planner ke loop me phasne ka fix.",
+            "max_steps host ka guard hai aur repeated-action check planner ke bug ka guard — dono chahiye.",
+            "Dusre case me teen alag actions hain aur 'stop' par clean exit hota hai, isliye halting trigger nahi hoti."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "import json\n\ndef call_tool(name, payload):\n    schema = {\"query\": (str, None, None), \"top_k\": (int, 1, 10)}\n    problems = []\n    for key, (typ, lo, hi) in schema.items():\n        if key not in payload:\n            problems.append(f\"{key}: missing\")\n        elif not isinstance(payload[key], typ) or isinstance(payload[key], bool):\n            problems.append(f\"{key}: expected {typ.__name__}\")\n        elif lo is not None and not (lo <= payload[key] <= hi):\n            problems.append(f\"{key}: out of range\")\n    if problems:\n        return {\"ok\": False, \"errors\": problems}\n    return {\"ok\": True, \"result\": f\"ran {name} with {payload['top_k']} results\"}\n\nprint(call_tool(\"search\", {\"query\": \"rag\", \"top_k\": 5}))\nprint(call_tool(\"search\", {\"query\": \"rag\", \"top_k\": 99}))\nprint(json.dumps(call_tool(\"search\", {\"top_k\": \"5\"})))",
+          "output": "",
+          "explain": [
+            "Tool arguments ko execute karne se PEHLE schema se validate kiya jata hai — LLM output 99% sahi hota hai, bacha 1% production me har din aata hai.",
+            "bool ko explicitly reject kiya gaya kyunki Python me True int ka subclass hai (isinstance(True, int) True hota hai).",
+            "Invalid payload par structured error lauta rahe hain, crash nahi — agent isi error ko dekh kar repair kar sakta hai."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Loop ko bound karo", "detail": "max_steps, per-tool attempt cap aur deadline set karo; koi bhi loop bina bound ke production me nahi jaana chahiye.", "code": "for step in range(1, max_steps + 1):\n    ..." },
+        { "step": "Tool call se pehle validate karo", "detail": "Arguments ko schema se check karo (types + ranges), aur invalid par agent ko structured error do — crash nahi.", "code": "problems = validate(payload)\nif problems: return {\"ok\": False, \"errors\": problems}" },
+        { "step": "Side effects ko idempotent banao", "detail": "Side-effecting tool ke saath idempotency key bhejo aur webhook handlers me event_id ka processed-log rakho — retry duplicate order nahi banaye." },
+        { "step": "Har step log karo", "detail": "Step number, action, arguments, result aur latency log karo — cost attribution aur debugging dono isi se hota hai." }
+      ],
+      "commonMistakes": [
+        "Bina max_steps/attempt cap ke loop chalana — cost runaway.",
+        "Repeated action ke liye koi check na hona (planner loop me phans jata hai).",
+        "Tool arguments bina validate execute karna (wrong type se 500 error).",
+        "Retry ko naya event samajhna — duplicate payments/orders.",
+        "Human approval gate har tool me duplicate karna (ek policy layer me hona chahiye)."
+      ],
+      "bestPractices": [
+        "Policy (approval/whitelist) loop level par rakho, mechanism tool me.",
+        "Har tool call ka structured log rakho (step, action, args, result, latency, cost).",
+        "Structured output (JSON schema) maango aur validate karo — free-text parse karna fragile hai.",
+        "Failure par degraded behaviour define karo (retry → fallback → clear message).",
+        "Golden trace set rakho aur regression test ki tarah chalाओ."
+      ],
+      "realWorld": "Order automation jahan agent tool call karta hai (aur webhook retry par duplicate order nahi banna chahiye), aur multi-step research agent jahan 8 steps ke baad summary chahiye — dono bounded + logged design maangte hain. Interview me 'maine multi-agent ko single agent + deterministic state machine me badla, 40% cost kam hui' bolna excellent signal hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek bounded agent loop likho jo max_steps ke baad 'halt' log kare." },
+        { "difficulty": "medium", "text": "Repeated-action detection add karo aur do trace print karo (loop halt vs clean exit)." },
+        { "difficulty": "hard", "text": "Ek tool registry likho jisme schema validation, idempotency key aur audit log ho." }
+      ],
+      "interview": [
+        { "q": "Agent ko cost runaway se kaise bachaaoge?", "a": "max_steps + per-tool attempt cap + deadline, aur har tool call ka cost log. Retry policy sirf transient errors par — aur prompt/context size cap lagao." },
+        { "q": "Webhook dobara aane par duplicate order kaise rokoge?", "a": "event_id par processed-log (unique constraint) rakho; duplicate par short-circuit karke wahi response do. Side-effecting calls me idempotency key bhejo." },
+        { "q": "Human approval gate kahan rakho?", "a": "Loop/policy level par (action whitelist + approval state + audit log), tool ke andar nahi — warna naya tool add karte waqt enforcement toot jata hai." }
+      ],
+      "miniChallenge": "Ek agent loop likho jisme max_steps, repeated-action halt, tool schema validation aur ek audit log (list of dicts) — sab ek jagah ho.",
+      "debugTask": "Agent ne same search tool 6 baar call kiya aur bill 5x ho gaya. Reproduce karo aur guards likho jo ye rok dete.",
+      "related": ["RAG: Chunk, Retrieve, Ground & Evaluate", "FastAPI Request, Validation & Response", "Idempotency & retries", "Observability"],
+      "revision": [
+        "Loop = observe → plan → tool → result",
+        "max_steps + repeated-action + attempt cap",
+        "Arguments schema se validate (bool != int)",
+        "Idempotency key side effects ke liye",
+        "Policy loop me, mechanism tool me"
+      ],
+      "interviewTip": "Agent sawal par ye bolo: 'bounded aur logged loop hi tunable hota hai — bina cost/latency log ke agent quality vs cost ka decision hi nahi liya ja sakta'."
+    }
+  ]
+}

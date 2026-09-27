@@ -1,0 +1,661 @@
+{
+  "section": "s06",
+  "topic": "if / elif / else",
+  "authored": true,
+  "intro": "Decision making hi program ko 'sochne' layak banati hai. if/elif/else simple lagta hai, par asli dikkat do jagah aati hai: condition ka order (pehla match hi chalta hai) aur truthiness (0 aur '' valid data hote hain, par falsy hain). Ye section in dono traps ko pakadta hai aur match/case naam ka modern alternative bhi sikhata hai.",
+  "theory": [
+    "if/elif/else chain top se neeche evaluate hoti hai aur pehli true branch chalne ke baad poora chain skip ho jata hai. Isliye specific condition pehle aur general baad me likhni chahiye — ulta order silently galat result deta hai.",
+    "Condition me koi bhi object chalta hai (truthiness): 0, 0.0, '', [], {}, set(), None aur False falsy hain, baaki sab truthy. 'if value:' ko 'value mojood hai' maan lena trap hai — 0 aur '' valid values hain, unke liye 'is None' ya 'is not None' use karo.",
+    "Ternary (x if cond else y) ek expression hai, statement nahi — isliye assignment, return aur function argument me seedha use hota hai. Readability ke liye ek level se zyada nesting mat karo.",
+    "Lambda/nested conditions ko guard clauses se flatten karo: invalid case pe early return ya continue karo, taaki happy path seedha aur indentation flat rahe.",
+    "match/case (3.10+) structural pattern matching hai: literal patterns, OR patterns (|), sequence/mapping patterns, class patterns aur guards (case X if cond). Ye long if/elif chains ko table jaisa readable banata hai jab decisions patterns par based hon."
+  ],
+  "syntax": [
+    "if score >= 90:\n    grade = 'A'\nelif score >= 75:\n    grade = 'B'\nelif score >= 50:\n    grade = 'C'\nelse:\n    grade = 'F'",
+    "label = 'pass' if score >= 40 else 'fail'\nif value is None:\n    value = default\nif not items:            # empty check\n    return 'no data'",
+    "match command.split():\n    case ['add', name]:\n        add(name)\n    case ['remove' | 'rm', name]:\n        remove(name)\n    case ['list']:\n        show()\n    case _:\n        raise ValueError('unknown command')",
+    "match payload:\n    case {'type': 'user', 'name': str(name)}:\n        print('user', name)\n    case {'type': 'order', 'total': total} if total > 1000:\n        print('big order', total)\n    case _:\n        print('unhandled')"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "def grade(score):\n    if score >= 90:\n        return 'A'\n    elif score >= 75:\n        return 'B'\n    elif score >= 50:\n        return 'C'\n    else:\n        return 'F'\n\nfor score in (95, 80, 62, 30):\n    print(f'{score:>3} -> {grade(score)}')\n\nfor value, expected in ((95, 'A'), (89, 'B')):\n    print('check', value, grade(value) == expected)",
+      "output": "",
+      "explain": [
+        "Chain descending order me hai (90, 75, 50) — agar sabse chhoti condition pehle likh do to baaki branches kabhi na chalein.",
+        "Har branch sirf ek value return karta hai, isliye ek hi output possible hai — chain ka pehla match hamesha jeetta hai.",
+        "return early pattern se else-less code bhi possible hai; idhar finally ek else hai taaki 'F' case explicit rahe."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "def validate_qty(raw):\n    if raw is None:\n        return None, 'quantity missing'\n    if not isinstance(raw, (int, float)):\n        return None, f'quantity must be a number, got {type(raw).__name__}'\n    if raw <= 0:\n        return None, f'quantity must be positive, got {raw}'\n    return raw, None\n\ndef discount_label(rate):\n    if rate is None:\n        return 'no discount configured'\n    if rate == 0:\n        return 'explicitly zero discount'\n    return f'{rate:.0%} off'\n\nfor raw in (5, '5', 0, -2, None):\n    value, error = validate_qty(raw)\n    print(f'{raw!r:6} -> value={value!r:6} error={error}')\n\nfor rate in (0, 0.15, None):\n    print('rate', rate, '->', discount_label(rate))",
+      "output": "",
+      "explain": [
+        "Guard clauses (early return) se nesting flat rehti hai: har check apna case handle karke return kar deta hai, happy path aakhir me ek line me.",
+        "Tuple return (value, error) se caller ko do possibilities explicitly handle karni padti hain — silent None se better design hai.",
+        "discount_label me 'rate is None' aur 'rate == 0' alag handle kiye gaye — yahi truthiness trap ka fix hai: 'if rate:' 0 ko 'no discount' bana deta."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "def handle(command, store=None):\n    store = store if store is not None else {}\n    parts = command.split()\n    match parts:\n        case ['add', key, value]:\n            store[key] = value\n            return f'added {key}={value}'\n        case ['get', key]:\n            if key not in store:\n                return f'{key}: not found'\n            return f'{key}={store[key]}'\n        case ['delete' | 'remove' | 'rm', key]:\n            return f'deleted {key}' if store.pop(key, None) is not None else f'{key}: not found'\n        case ['list'] if store:\n            return 'list: ' + ', '.join(sorted(store))\n        case ['list']:\n            return 'list: (empty)'\n        case ['set', *_] :\n            return 'set needs exactly key and value'\n        case _:\n            return f'unknown command: {command!r}'\n\nfor cmd in ('add city Pune', 'get city', 'get missing', 'rm city', 'list', 'set onlykey', 'hello there'):\n    print(f'{cmd:18} -> {handle(cmd)}')\n\nprint('rules:', sum(1 for c in ('add a b',) if c.startswith('add')))",
+      "output": "",
+      "explain": [
+        "Sequence patterns command string ko tokens me todkar match karte hain, aur OR patterns (delete|remove|rm) ek hi branch me aliases handle karte hain.",
+        "Guard (case ['list'] if store) pehle try hota hai; guard false hone par Python agla matching case dhundta hai, isliye 'list' ke liye do branches likh sakte hain.",
+        "Wildcard capture (*_) verify karta hai ki galat arity wala command explicit message de, aur case _ fallback hamesha last me — isi se unknown commands crash nahi karte."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Access aur eligibility decisions (loan, insurance, discount) rule chains hote hain — condition ka order aur boundary values (0, exactly threshold) business loss ya compliance issue bana dete hain.",
+    "API aur CLI command dispatch me match/case se readable routing banta hai; unknown input ke liye explicit fallback rakhna security aur UX dono ke liye zaroori hai.",
+    "Form validation me truthiness par bharosa karna classic production bug hai: 0 quantity, '' address aur False consent jaise valid-but-falsy values galat branch me chale jate hain."
+  ],
+  "interview": [
+    {
+      "q": "if/elif/else me condition ka order kyun critical hai?",
+      "a": "Chain pehla true branch chunte hai aur baaki skip karta hai, isliye general condition pehle likhne se specific case unreachable ho jata hai (dead code). Rule: sabse specific/tight condition pehle, broad baad me; aur agar overlap intentional ho to comment karo.",
+      "tip": "Dead branch ka chhota example de do — isse pata chalta hai aapne ye bug actually debug kiya hai."
+    },
+    {
+      "q": "Truthiness par bharosa karna kab galat hota hai?",
+      "a": "Jab 0, '' , False, [] valid data hon. 'if total:' se 0 total skip ho jata hai; 'if name:' se intentionally empty string alag treat hoti hai. Solutions: 'if total is not None:', sentinel object (UNSET), ya explicit type/boundary checks. Ye bug quantity, discount, port, retry-count jaise fields me aata hai.",
+      "tip": "Ek real field batao (retries=0) — abstract jawab se better hai."
+    },
+    {
+      "q": "match/case kab if/elif se better hai?",
+      "a": "Jab decision structure par ho: tuples/lists ka shape, dict keys, class types, OR alternatives. Tab code table jaisa readable ho jata hai. Simple range comparisons (score >= 90) me if/elif zyada clear hai. Note: match structural hai — 'case 1' value ka comparison nahi, pattern match hai (aur constants/classes ke liye special rules hain).",
+      "tip": "Guard clause aur wildcard ka mention karo — isse pata chalta hai aapne actual use kiya hai."
+    },
+    {
+      "q": "Ternary expression me kya limits rakhni chahiye?",
+      "a": "Ek level tak theek hai: label = 'ok' if status == 200 else 'error'. Nesting (a if x else b if y else c) me readability gir jati hai; walrus (:=) ke saath mix karna bhi confusing ho jata hai. Agar branch me side effect ho, to if/else statement hi likho — expression me side effect chhupana bad practice hai.",
+      "tip": "Side-effect wala example do: 'do(x) if cond else do(y)' — samajhna mushkil hota hai."
+    },
+    {
+      "q": "Comparison ko float ke saath kaise karte hain?",
+      "a": "Exact == avoid karo (0.1 + 0.2 != 0.3). Tolerance use karo: abs(a - b) < 1e-9, ya math.isclose(a, b, rel_tol=1e-9). Money ke liye Decimal aur boundary values par round/quantize karke compare karo.",
+      "tip": "Boundary condition ke liye > vs >= ka farak test case se dikhao (threshold exactly equal hone par kaun sa branch)."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Check karo ki number positive, negative ya zero hai.",
+        "a": "if n > 0 / elif n < 0 / else zero — order se farak nahi padta kyunki conditions exclusive hain.",
+        "explain": "Exclusive conditions me order se farak nahi padta; overlapping hone par padta hai.",
+        "code": "def sign(n):\n    if n > 0:\n        return 'positive'\n    elif n < 0:\n        return 'negative'\n    return 'zero'\n\nfor n in (5, -3, 0):\n    print(f'{n:>3} -> {sign(n)}')",
+        "output": "",
+        "tip": "Interview me boundary (0) ka test mention karo — yahi sabse common miss hota hai."
+      },
+      {
+        "q": "Ek number even hai ya odd, ternary se ek line me print karo.",
+        "a": "print('even' if n % 2 == 0 else 'odd')",
+        "explain": "Ternary expression ko seedha print ke argument me use kar sakte hain — statement nahi hai.",
+        "code": "for n in (0, 7, 42):\n    print(f'{n:>3}', 'even' if n % 2 == 0 else 'odd')",
+        "output": "",
+        "tip": "Ternary ko assignment me bhi use karo: label = 'even' if n % 2 == 0 else 'odd'."
+      },
+      {
+        "q": "Age ke hisaab se ticket category batao: 0-12 child, 13-59 adult, 60+ senior.",
+        "a": "Chained comparison ke saath if/elif, aur invalid age (negative) ke liye alag branch.",
+        "explain": "Chained comparison boundary ko readable banata hai (12 < age < 60 jaisi galti nahi hoti).",
+        "code": "def category(age):\n    if age < 0:\n        return 'invalid age'\n    if age <= 12:\n        return 'child'\n    if age <= 59:\n        return 'adult'\n    return 'senior'\n\nfor age in (5, 12, 13, 59, 60, 70, -1):\n    print(f'{age:>3} -> {category(age)}')",
+        "output": "",
+        "tip": "Boundary values (12/13 aur 59/60) hamesha test karo — interviewer yahi puchta hai."
+      },
+      {
+        "q": "Empty list par 'no data' print karo, warna count batao.",
+        "a": "if not items: print('no data') else: print(len(items)) — empty ke liye truthiness theek hai kyunki khali list ka koi valid content nahi.",
+        "explain": "Truthiness ka use acceptable hai jab falsy ka matlab genuinely 'kuch nahi' ho.",
+        "code": "for items in ([1, 2, 3], [], ()):\n    if not items:\n        print('no data')\n    else:\n        print('items:', len(items), 'first:', items[0])",
+        "output": "",
+        "tip": "Container ke liye 'if not items' idiomatic hai; number ke liye 'is None' — farak samjho."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Grade function me descending thresholds ka order demonstrate karo (galat order se kya hota hai).",
+        "a": "Agar sabse chhoti threshold (>= 40) pehle likhi jaye to har passing score wahi branch le leta hai; baaki branches unreachable ho jati hain.",
+        "explain": "Dead branch silently galat output deta hai — koi error nahi aata, isliye test zaroori hai.",
+        "code": "def wrong(score):\n    if score >= 40:\n        return 'C'\n    elif score >= 75:\n        return 'B'\n    elif score >= 90:\n        return 'A'\n    return 'F'\n\ndef right(score):\n    if score >= 90:\n        return 'A'\n    if score >= 75:\n        return 'B'\n    if score >= 40:\n        return 'C'\n    return 'F'\n\nfor score in (95, 80, 55):\n    print(f'{score:>3} wrong={wrong(score)} right={right(score)}')",
+        "output": "",
+        "tip": "Isi pattern se discount slabs me bhi bug aata hai — interview me bol dena."
+      },
+      {
+        "q": "Ek validation function likho jo guard clauses se invalid input pehle reject kare.",
+        "a": "Missing/None, wrong type, out of range — teen guards, phir happy path. Nesting ek level par rahegi.",
+        "explain": "Guard clause pattern se deep nested if-else khatam ho jata hai aur error messages specific ho jate hain.",
+        "code": "def parse_age(raw):\n    if raw is None:\n        return None, 'age is required'\n    if isinstance(raw, bool):\n        return None, 'age must not be a boolean'\n    try:\n        age = int(raw)\n    except (TypeError, ValueError):\n        return None, f'age must be a number, got {raw!r}'\n    if not 0 <= age <= 130:\n        return None, f'age out of range: {age}'\n    return age, None\n\nfor raw in (31, '42', None, True, 'abc', -5, 200):\n    age, error = parse_age(raw)\n    print(f'{raw!r:8} -> {age if age is not None else error}')",
+        "output": "",
+        "tip": "bool int ka subclass hai — isliye bool ko alag reject karna padta hai, warna True age 1 ban jata hai."
+      },
+      {
+        "q": "match/case se ek simple command dispatcher likho jo add/get/delete handle kare.",
+        "a": "List pattern se tokens match karo, OR pattern se aliases, aur case _ se unknown command.",
+        "explain": "Ye pattern-aware routing ka best example hai — if/elif chain se readable aur kam lines me.",
+        "code": "def dispatch(command, store=None):\n    store = store if store is not None else {}\n    match command.split():\n        case ['add', key, value]:\n            store[key] = value\n            return f'added {key}'\n        case ['get', key] if key in store:\n            return f'{key}={store[key]}'\n        case ['get', key]:\n            return f'{key} not found'\n        case ['delete' | 'rm', key]:\n            return f'removed {key}' if store.pop(key, None) is not None else 'nothing to remove'\n        case _:\n            return 'unknown command'\n\nfor cmd in ('add city Pune', 'get city', 'get x', 'rm city', 'rm city', 'boom'):\n    print(f'{cmd:14} -> {dispatch(cmd)}')",
+        "output": "",
+        "tip": "Guards ka order: pehle specific guard wala case, uske baad unguarded catch-all case."
+      },
+      {
+        "q": "Chained comparison se range validation karo aur batаo kab 'and' se better hai.",
+        "a": "0 <= age <= 130 — readable hai aur age ek hi baar evaluate hota hai; and me dono sides likhni padti hain aur duplicate evaluation ka risk hota hai.",
+        "explain": "Isolated case me farak sirf readability hai; side-effect wale expression me evaluation-count ka farak real hota hai.",
+        "code": "checks = [\n    ('chained', lambda age: 0 <= age <= 130),\n    ('and', lambda age: age >= 0 and age <= 130),\n]\nfor name, fn in checks:\n    print(name, [fn(age) for age in (-1, 0, 75, 130, 131)])\n\ndef calls():\n    print('  (evaluated!)')\n    return 50\n\nprint('chained:', 0 <= calls() <= 130)\nprint('and    :', calls() >= 0 and calls() <= 130)",
+        "output": "",
+        "tip": "Evaluation count demonstrate karna interview me strong signal hai (function ko twice call karke dikhao)."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Ek pricing tier decision likho jisme threshold exactly equal hone par higher tier mile, aur boundary tests ho.",
+        "a": ">= use karo (equal par upper tier), aur test table me har threshold ka exact value + 1 - 1 case rakho.",
+        "explain": "Boundary semantics business decision hai — code me explicit honi chahiye, guess nahi.",
+        "code": "def tier(amount):\n    if amount >= 10000:\n        return 'platinum', 0.15\n    if amount >= 5000:\n        return 'gold', 0.10\n    if amount >= 1000:\n        return 'silver', 0.05\n    return 'basic', 0.0\n\nfor amount in (999, 1000, 4999, 5000, 10000, 25000):\n    name, rate = tier(amount)\n    print(f'{amount:>6} -> {name:9} {rate:.0%} payable {amount * (1 - rate):>9.2f}')",
+        "output": "",
+        "tip": "Discount rate ko float me rakho par money calculation me Decimal — rate use karne se pehle round karo."
+      },
+      {
+        "q": "Nested if-else ko flat karo: state machine style decision (status -> next action) bina deep nesting ke.",
+        "a": "Pehle invalid/terminal states ko early return se handle karo; valid transitions ko dict/table me rakho.",
+        "explain": "Deep nesting ko lookup table me badalna maintainability ka classic win hai.",
+        "code": "TRANSITIONS = {\n    ('new', 'pay'): 'paid',\n    ('paid', 'ship'): 'shipped',\n    ('shipped', 'deliver'): 'delivered',\n    ('delivered', 'return'): 'returned',\n}\n\ndef advance(status, action):\n    if status in ('returned', 'cancelled'):\n        return status, f'{status} is terminal'\n    key = (status, action)\n    if key not in TRANSITIONS:\n        return status, f'illegal action {action!r} on {status}'\n    return TRANSITIONS[key], 'ok'\n\nfor status, action in (('new', 'pay'), ('paid', 'deliver'), ('delivered', 'return'), ('returned', 'pay')):\n    next_status, note = advance(status, action)\n    print(f'{status:10} + {action:8} -> {next_status:10} ({note})')",
+        "output": "",
+        "tip": "Table-driven approach test karna aasan hai (har key ke liye ek case) — ye production pattern hai."
+      },
+      {
+        "q": "Ek config validation likho jo key-specific rules if/elif se decide kare aur default rule bhi rakhe.",
+        "a": "Rules dict (key -> validator callable) + generic fallback; unknown key par warning, na crash.",
+        "explain": "Callable rules me dispatch karna if/elif chain se zyada extendable hota hai.",
+        "code": "def positive_int(value):\n    if isinstance(value, bool) or not isinstance(value, int):\n        raise ValueError(f'expected int, got {type(value).__name__}')\n    if value <= 0:\n        raise ValueError(f'expected positive, got {value}')\n    return value\n\ndef non_empty_str(value):\n    if not isinstance(value, str) or not value.strip():\n        raise ValueError('expected non-empty string')\n    return value.strip()\n\nRULES = {'host': non_empty_str, 'port': positive_int, 'workers': positive_int}\n\ndef validate(config):\n    clean, errors = {}, []\n    for key, value in config.items():\n        rule = RULES.get(key)\n        if rule is None:\n            clean[key] = value\n            continue\n        try:\n            clean[key] = rule(value)\n        except ValueError as e:\n            errors.append(f'{key}: {e}')\n    return clean, errors\n\nconfig = {'host': '  db.internal  ', 'port': 5432, 'workers': 0, 'debug': True}\nclean, errors = validate(config)\nprint('clean :', clean)\nprint('errors:', errors)",
+        "output": "",
+        "tip": "Partial valid config + error list return karna production-friendly hai — poori config reject karne se debug mushkil hota hai."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Ek API response ke status par decision lena hai: 2xx ok, 3xx redirect, 4xx client error, 5xx server error — approach batao.",
+        "a": "Integer range checks (200 <= code < 300) if/elif se likho; grouping ke liye code // 100 se family nikaal sakte hain. Boundary aur unknown (1xx) ko explicit handle karo, aur unknown par default 'unknown' return karo (crash nahi).",
+        "explain": "Range-based decision me arithmetic grouping readable bhi hai aur testable bhi.",
+        "code": "def family(code):\n    group = code // 100\n    if group == 2:\n        return 'ok'\n    if group == 3:\n        return 'redirect'\n    if group == 4:\n        return 'client error'\n    if group == 5:\n        return 'server error'\n    return 'informational/unknown'\n\nfor code in (200, 204, 301, 404, 500, 99, 600):\n    print(f'{code:>3} -> {family(code)}')",
+        "output": "",
+        "tip": "Retry decision bhi jodo: 5xx aur 429 retry-worthy hain, 4xx nahi — ye practical insight hai."
+      },
+      {
+        "q": "if-elif chain ko dictionary dispatch me kab badaloge?",
+        "a": "Jab conditions independent equality checks hon (status == 'x' -> handler). Fan-out badhne se (10+) chain slow aur unreadable hoti hai; dict lookup O(1) hai. Lekin jab conditions range/compound hon (>=, in, and) to chain behtar rehti hai — dict key me logic chhupana confusing hota hai.",
+        "explain": "Trade-off ka jawab do, blanket rule nahi — interviewer judgement dekhta hai.",
+        "code": "def chain(kind):\n    if kind == 'csv':\n        return 'text/csv'\n    if kind == 'json':\n        return 'application/json'\n    return 'application/octet-stream'\n\nMIME = {'csv': 'text/csv', 'json': 'application/json'}\n\nfor kind in ('csv', 'json', 'xml'):\n    print(f'{kind:5} chain={chain(kind):24} dict={MIME.get(kind, \"application/octet-stream\")}')",
+        "output": "",
+        "tip": "dict.get(key, default) se unknown case handle karna chain ke else jaisa hai — symmetry batao."
+      },
+      {
+        "q": "Boolean logic me De Morgan ke rules batаo aur ek example do jisme refactor se bug fix hua.",
+        "a": "not (a and b) == (not a or not b); not (a or b) == (not a and not b). Example: 'if not (user and user.is_active)' ko 'if user is None or not user.is_active' me todna safe rehta hai kyunki short-circuit explicit ho jata hai.",
+        "explain": "Complex negation ko clean positive conditions me todna readability aur correctness dono deta hai.",
+        "code": "def can_edit(user):\n    return user is not None and user.get('role') in ('editor', 'admin') and not user.get('banned')\n\nfor user in (None, {'role': 'editor'}, {'role': 'viewer'}, {'role': 'admin', 'banned': True}):\n    print(f'{str(user)[:34]:36} -> {can_edit(user)}')",
+        "output": "",
+        "tip": "Short-circuit order important hai: pehle None check, phir attribute access (warna AttributeError)."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Loan eligibility rule likho: age 21-60, income >= 25000, aur credit score >= 700 — rejection reason ke saath.",
+        "a": "Har rule apna reason return kare (pehla failure hi batana hai), aur boundary values inclusive rakho.",
+        "explain": "Rejection reason dena UX aur compliance dono ke liye zaroori hai — 'not eligible' alone useless hai.",
+        "code": "def eligible(applicant):\n    age = applicant.get('age')\n    income = applicant.get('income')\n    score = applicant.get('credit_score')\n\n    if age is None or not 21 <= age <= 60:\n        return False, f'age must be 21-60, got {age}'\n    if income is None or income < 25000:\n        return False, f'income must be >= 25000, got {income}'\n    if score is None or score < 700:\n        return False, f'credit score must be >= 700, got {score}'\n    return True, 'eligible'\n\napplicants = [\n    {'age': 30, 'income': 40000, 'credit_score': 720},\n    {'age': 19, 'income': 40000, 'credit_score': 720},\n    {'age': 30, 'income': 20000, 'credit_score': 720},\n    {'age': 30, 'income': 40000, 'credit_score': 650},\n]\nfor a in applicants:\n    ok, reason = eligible(a)\n    print(f'{ok!s:5} {reason}')",
+        "output": "",
+        "tip": "Order matters: pehle reject hone wale rules (age) rakhne se most-common failure fast return hoti hai."
+      },
+      {
+        "q": "Feature flag check likho jo environment, user tier aur rollout percentage teenon dekhe.",
+        "a": "Teen independent checks jo AND chain me hon, par har check alag function me — taaki flag TRUE hone ki exact wajah trace ho sake.",
+        "explain": "Compound condition ko naam wale checks me todna debugging ko aasan banata hai.",
+        "code": "def flag_enabled(flag, env, tier, user_id, rollout=100):\n    if env not in ('staging', 'production'):\n        return False, 'env not enabled'\n    if tier not in ('gold', 'platinum'):\n        return False, f'tier {tier} not included'\n    if rollout <= 0:\n        return False, 'rollout off'\n    bucket = user_id % 100\n    if bucket >= rollout:\n        return False, f'user bucket {bucket} outside rollout {rollout}'\n    return True, f'enabled for bucket {bucket}'\n\nfor args in (('staging', 'gold', 7, 25), ('dev', 'gold', 7, 25), ('production', 'bronze', 7, 25), ('production', 'gold', 7, 5)):\n    enabled, reason = flag_enabled('new-ui', args[0], args[1], args[2], args[3])\n    print(f'{args} -> {enabled!s:5} {reason}')",
+        "output": "",
+        "tip": "Deterministic bucketing (user_id % 100) se rollout consistent rehta hai — random use karna bug banata hai."
+      },
+      {
+        "q": "Ek 'safe division + reporting' function likho jo zero, None aur string inputs par clear message de.",
+        "a": "Type check, None check, zero check — teen guards, phir division; aur result ko round karke return karo.",
+        "explain": "Har failure mode ka apna message dena production debugging ka base hai.",
+        "code": "def ratio(numerator, denominator):\n    if numerator is None or denominator is None:\n        return None, 'numerator/denominator missing'\n    if not isinstance(numerator, (int, float)) or not isinstance(denominator, (int, float)):\n        return None, 'both values must be numbers'\n    if denominator == 0:\n        return None, 'division by zero avoided'\n    return round(numerator / denominator, 4), 'ok'\n\nfor pair in ((10, 4), (10, 0), (None, 4), ('10', 4)):\n    value, note = ratio(pair[0], pair[1])\n    print(f'{pair!s:14} -> {value} ({note})')",
+        "output": "",
+        "tip": "Interview me 'infinity return karna better hai ya error' — ye business decision hai, mention karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Grade calculator likho: marks se grade aur pass/fail status nikaalo, invalid marks par error do.",
+      "build": "grade(marks) -> (grade, status) jisme 0-100 ke bahar 'invalid marks' ho.",
+      "input": "[95, 82, 74, 61, 45, -3, 120]",
+      "expected": "Har marks ke liye grade (A/B/C/D/F), status aur invalid case ka message.",
+      "hint": "Pehle range validate karo, phir descending thresholds se grade do.",
+      "concept": "if/elif order, range validation, guard clause",
+      "solution": "def grade(marks):\n    if not isinstance(marks, (int, float)) or isinstance(marks, bool):\n        return None, f'invalid marks type: {type(marks).__name__}'\n    if not 0 <= marks <= 100:\n        return None, f'marks out of range: {marks}'\n    if marks >= 90:\n        letter = 'A'\n    elif marks >= 75:\n        letter = 'B'\n    elif marks >= 60:\n        letter = 'C'\n    elif marks >= 40:\n        letter = 'D'\n    else:\n        letter = 'F'\n    return letter, 'pass' if letter != 'F' else 'fail'\n\nfor marks in (95, 82, 74, 61, 45, -3, 120):\n    letter, status = grade(marks)\n    print(f'{marks:>5} -> {letter if letter else status:6} {status if letter else \"\"}')",
+      "output": "",
+      "explanation": "Validation pehle (type, phir range) aur grade chain descending order me — sabse pehle specific threshold check hota hai. bool ko alag reject kiya kyunki True int maana jata hai aur marks 1 ban jata.",
+      "time": "O(1) per call",
+      "space": "O(1)",
+      "better": "Threshold table [(90,'A'),(75,'B'),...] se loop chalao ya bisect use karo — naya grade add karna data change ban jata hai.",
+      "followUp": "Agar grading scheme configurable ho (per course thresholds), to code aur data kaise separate karoge?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Ek 'positive/negative/repeating' segment finder likho: numbers ki series me sign badalne par segment ki summary print karo.",
+      "build": "segments(nums) -> list of (sign_label, count, total)",
+      "input": "[1, 3, 5, -2, -4, 0, 7, -1]",
+      "expected": "Har consecutive sign-run ka count aur total.",
+      "hint": "Sign label helper banao (positive/negative/zero) aur current segment ko track karo.",
+      "concept": "Condition-based state tracking, sign comparison",
+      "solution": "def label(n):\n    if n > 0:\n        return 'positive'\n    if n < 0:\n        return 'negative'\n    return 'zero'\n\ndef segments(nums):\n    out, current_label, total = [], None, 0\n    count = 0\n    for n in nums:\n        n_label = label(n)\n        if n_label != current_label:\n            if current_label is not None:\n                out.append((current_label, count, total))\n            current_label, total, count = n_label, 0, 0\n        total += n\n        count += 1\n    if current_label is not None:\n        out.append((current_label, count, total))\n    return out\n\nfor segment in segments([1, 3, 5, -2, -4, 0, 7, -1]):\n    print(f'{segment[0]:9} count={segment[1]} total={segment[2]}')",
+      "output": "",
+      "explanation": "current_label None se 'pehla segment' aur 'label change' wala case alag ho jata hai — isse extra tuple append nahi hota. State (label, total, count) ek saath update karna segments ko single pass me nikaalta hai.",
+      "time": "O(n)",
+      "space": "O(1) extra (output chhodkar)",
+      "better": "itertools.groupby(nums, key=label) se grouping built-in mil jati hai aur code chhota ho jata hai (par total ke liye extra pass chahiye).",
+      "followUp": "Zero ko alag label dena ya sign-run me include karna — business ke hisaab se kaun sa better hai?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Ek form validator likho jo user dict ko validate kare: required fields, type checks aur dependent fields.",
+      "build": "validate(user) -> (clean, errors) jisme each error field name ke saath ho.",
+      "input": "{'name': 'Anjali', 'age': 31, 'country': 'IN', 'state': '', 'consent': False}",
+      "expected": "Clean dict + khaali state ka error jab country required ho, aur consent False valid mana jaye.",
+      "hint": "Required fields ki list, phir per-field checks; dependent check (country ke saath state) alag step me.",
+      "concept": "Multi-field validation, truthiness vs None, error collection",
+      "solution": "REQUIRED = ('name', 'age', 'consent')\n\ndef validate(user):\n    clean, errors = {}, []\n\n    for field in REQUIRED:\n        if field not in user:\n            errors.append(f'{field}: required field missing')\n\n    name = user.get('name')\n    if name is not None:\n        stripped = name.strip() if isinstance(name, str) else ''\n        if not stripped:\n            errors.append('name: must not be empty')\n        else:\n            clean['name'] = stripped\n\n    age = user.get('age')\n    if age is not None:\n        if isinstance(age, bool) or not isinstance(age, int):\n            errors.append(f'age: must be an integer, got {type(age).__name__}')\n        elif not 18 <= age <= 120:\n            errors.append(f'age: must be 18-120, got {age}')\n        else:\n            clean['age'] = age\n\n    if 'consent' in user:\n        consent = user['consent']\n        if not isinstance(consent, bool):\n            errors.append('consent: must be true or false')\n        elif not consent:\n            errors.append('consent: must be accepted to continue')\n        else:\n            clean['consent'] = True\n\n    country = user.get('country')\n    state = user.get('state')\n    if country == 'IN' and isinstance(state, str) and not state.strip():\n        errors.append('state: required when country is IN')\n    elif isinstance(state, str):\n        clean['state'] = state.strip()\n\n    return clean, errors\n\nuser = {'name': 'Anjali', 'age': 31, 'country': 'IN', 'state': '', 'consent': False}\nclean, errors = validate(user)\nprint('clean :', clean)\nfor e in errors:\n    print('error :', e)\n\nok_user = {'name': '  Rehan  ', 'age': 28, 'country': 'US', 'state': 'NY', 'consent': True}\nprint()\nprint('valid user:', validate(ok_user))",
+      "output": "",
+      "explanation": "Pehle presence, phir type, phir range/value — ye three-layer order har field me consistent hai, isliye messages predictable rehte hain. 'name not empty' ke liye truthiness ke bajaye type check + strip use kiya, aur consent ke liye bool check, kyunki False valid input hai (sirf rejected value nahi).",
+      "time": "O(fields)",
+      "space": "O(fields)",
+      "better": "Schema-driven validation (pydantic/dataclasses + validators) se ye sab declarative ho jata hai; ya rules ko dict of callables me rakho taaki field add karna ek entry ho.",
+      "followUp": "Kaun sa error pehle return karna chahiye — pehla error ya saare errors? Aap kaise decide karoge?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Ek ticket price calculator likho: age, day type (weekday/weekend) aur member status se price decide karo.",
+      "build": "price(age, day, member) -> (amount, explanation)",
+      "input": "age 8/31/65, day weekday/weekend, member True/False",
+      "expected": "Base price, discount logic ke saath, aur explanation string.",
+      "hint": "Pehle base price day se, phir age-based discount, phir member discount — order document karo.",
+      "concept": "Ordered decision chain, percentage calculation, explicit assumptions",
+      "solution": "BASE = {'weekday': 200, 'weekend': 300}\n\ndef price(age, day='weekday', member=False):\n    if age < 0:\n        return None, f'invalid age: {age}'\n    if day not in BASE:\n        return None, f'unknown day type: {day}'\n\n    amount = BASE[day]\n    notes = [f'base {amount} for {day}']\n\n    if age < 12:\n        amount *= 0.5\n        notes.append('child 50% off')\n    elif age >= 65:\n        amount *= 0.7\n        notes.append('senior 30% off')\n\n    if member and age < 12:\n        notes.append('member discount not stacked for children')\n    elif member:\n        amount *= 0.9\n        notes.append('member 10% off')\n\n    return round(amount, 2), '; '.join(notes)\n\nfor age, day, member in ((8, 'weekday', False), (31, 'weekend', True), (65, 'weekday', True), (8, 'weekend', True)):\n    amount, why = price(age, day, member)\n    print(f'age={age:>3} {day:8} member={member!s:5} -> {amount:>6} ({why})')",
+      "output": "",
+      "explanation": "Discount stacking ka rule explicit likha gaya hai (children ke saath member discount nahi) — ye business decision hai aur usko code me dikhna chahiye. notes list har decision ka reason deta hai, isse support queries ka jawab mil jata hai.",
+      "time": "O(1) per ticket",
+      "space": "O(1)",
+      "better": "Rules ko config (tuple list of (condition, multiplier, label)) me badlo aur loop se apply karo — pricing team bina code change rule badal sakti hai.",
+      "followUp": "Discount caps aur rounding ka order (ya tax) add karna ho to calculation order kaise decide karoge?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Ek match/case based CLI argument router likho jo --mode, --limit aur --verbose handle kare aur unknown flags reject kare.",
+      "build": "parse(args) -> (config, problems)",
+      "input": "['--mode=fast', '--limit', '10', '--verbose', '--oops']",
+      "expected": "Config dict with collected problems, aur invalid limit par message.",
+      "hint": "match se pattern shapes handle karo: ['--mode=' , ...] ki jagah prefix match, ya tokens pair pattern.",
+      "concept": "match/case patterns, guards, error collection",
+      "solution": "def parse(args):\n    config = {'mode': 'safe', 'limit': 5, 'verbose': False}\n    problems = []\n    i = 0\n    while i < len(args):\n        token = args[i]\n        match token.split('=', 1):\n            case ['--mode', value] if value in ('fast', 'safe'):\n                config['mode'] = value\n            case ['--mode', value]:\n                problems.append(f'--mode: unknown value {value!r} (use fast|safe)')\n            case ['--verbose']:\n                config['verbose'] = True\n            case ['--limit']:\n                if i + 1 >= len(args):\n                    problems.append('--limit: value missing')\n                else:\n                    i += 1\n                    raw = args[i]\n                    if raw.isdigit() and int(raw) > 0:\n                        config['limit'] = int(raw)\n                    else:\n                        problems.append(f'--limit: must be a positive integer, got {raw!r}')\n            case [unknown]:\n                problems.append(f'unknown flag: {unknown}')\n        i += 1\n    return config, problems\n\nconfig, problems = parse(['--mode=fast', '--limit', '10', '--verbose', '--oops'])\nprint('config  :', config)\nfor p in problems:\n    print('problem :', p)\nprint('invalid :', parse(['--limit', 'zero', '--mode=broken']))",
+      "output": "",
+      "explanation": "Token ko split('=', 1) karke pattern match karna value aur flag dono ko ek hi case me handle karta hai; guard (if value in [...]) se invalid value ka apna message milta hai. '--limit' ke liye index badhana (i += 1) value consume karta hai, aur problems collect karke return karna partial config ko bachata hai.",
+      "time": "O(args)",
+      "space": "O(args)",
+      "better": "Production me argparse use karo — free help text, type validation, error exit codes milte hain; custom parser sirf specific DSL ke liye likho.",
+      "followUp": "Positional arguments aur subcommands add karne ho to match/case structure kaise badlegi?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Ek rule engine likho jo JSON-style conditions (field, op, value) ko evaluate kare aur match hone par action chalae.",
+      "build": "evaluate(rules, facts) -> list of (rule_id, matched, detail)",
+      "input": "rules: age >= 18, country in ['IN','US'], score > 700; facts itne hi keys ke saath",
+      "expected": "Har rule ka result aur action summary, missing field par skip reason.",
+      "hint": "Operators ka dict banao (>=, <=, ==, !=, in, not_in) aur missing field ko explicit 'skipped' treat karo.",
+      "concept": "Data-driven conditions, dispatch table, missing-data handling",
+      "solution": "OPERATORS = {\n    '>=': lambda a, b: a >= b,\n    '<=': lambda a, b: a <= b,\n    '>': lambda a, b: a > b,\n    '==': lambda a, b: a == b,\n    '!=': lambda a, b: a != b,\n    'in': lambda a, b: a in b,\n    'not_in': lambda a, b: a not in b,\n}\n\nRULES = [\n    {'id': 'adult', 'when': [('age', '>=', 18)], 'action': 'allow_signup'},\n    {'id': 'region', 'when': [('country', 'in', ['IN', 'US'])], 'action': 'show_local_pricing'},\n    {'id': 'premium', 'when': [('score', '>', 700), ('tier', 'in', ['gold', 'platinum'])], 'action': 'unlock_premium'},\n]\n\ndef evaluate(rules, facts):\n    results, actions = [], []\n    for rule in rules:\n        details, matched, skipped = [], True, False\n        for field, op, expected in rule['when']:\n            if field not in facts:\n                skipped = True\n                details.append(f'{field} missing')\n                continue\n            actual = facts[field]\n            fn = OPERATORS.get(op)\n            if fn is None:\n                skipped = True\n                details.append(f'unknown operator {op!r}')\n                continue\n            ok = fn(actual, expected)\n            matched = matched and ok\n            details.append(f'{field}({actual!r}) {op} {expected!r} -> {ok}')\n        if skipped and matched:\n            results.append((rule['id'], 'skipped', '; '.join(details)))\n            continue\n        results.append((rule['id'], 'matched' if matched else 'no-match', '; '.join(details)))\n        if matched:\n            actions.append((rule['id'], rule['action']))\n    return results, actions\n\nfacts = {'age': 31, 'country': 'IN', 'score': 720, 'tier': 'gold'}\nresults, actions = evaluate(RULES, facts)\nfor rule_id, status, detail in results:\n    print(f'{rule_id:8} {status:9} {detail}')\nprint('actions:', actions)\n\nprint()\nresults2, actions2 = evaluate(RULES, {'age': 16, 'country': 'DE'})\nfor rule_id, status, detail in results2:\n    print(f'{rule_id:8} {status:9} {detail[:60]}')\nprint('actions:', actions2)",
+      "output": "",
+      "explanation": "Har condition ka result detail me likhna explainability deta hai — 'rule kyun match nahi hua' ka jawab seedha output se milta hai. Missing field ko skip treat kiya gaya (crash nahi) aur unknown operator bhi gracefully handle hota hai; actions sirf fully-matched rules ke liye collect hote hain.",
+      "time": "O(rules × conditions)",
+      "space": "O(rules)",
+      "better": "Rules ko cache/index karo (field-wise) taaki 1000+ rules me bhi sirf relevant rules evaluate hon; actions ko handler registry me map karo (id -> callable).",
+      "followUp": "Rule priority aur 'first match wins' semantics add karni ho to evaluation loop kaise badloge?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "count = 5\nif count = 5:\n    print('five')",
+      "error": "SyntaxError: invalid syntax",
+      "why": "Condition me assignment (=) allowed nahi hai — Python ko expression chahiye. Ye C style 'if (x = 5)' ka habit hai, aur Python deliberately isko syntax error banata hai taaki typo chhup na sake.",
+      "fix": "Comparison operator use karo (==). Agar assignment ke saath check bhi chahiye to walrus use karo: if (count := 5):",
+      "correct": "count = 5\nif count == 5:\n    print('five')\n\nif (value := 7) > 5:\n    print('walrus assigned', value)",
+      "output": "",
+      "lesson": "SyntaxError ka mtlb poora file nahi chalta — ek typo se sab kuch ruk jata hai. == vs = ka confusion editor/linter se pehle pakdo."
+    },
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "best = None\nif best > 5:\n    print('big')",
+      "error": "TypeError: '>' not supported between instances of 'NoneType' and 'int'",
+      "why": "None ke saath ordering comparison possible nahi hai — Python me None kisi number se bada/chhota nahi hota. Ye tab hota hai jab 'koi value nahi mili' state ko comparison me bhej diya jaye.",
+      "fix": "Comparison se pehle None check karo (guard clause) ya sentinel default (jaise 0 ya -inf) use karo.",
+      "correct": "best = None\nif best is None:\n    print('no value to compare')\nelif best > 5:\n    print('big')\n\nrunning = float('-inf')\nprint('sentinel compare:', running > 5)",
+      "output": "",
+      "lesson": "None ke liye comparison, arithmetic aur sorting — teenon jal jate hain. Isliye None check hamesha pehla guard hona chahiye."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "score = 95\n\nif score >= 40:\n    grade = 'C'\nelif score >= 75:\n    grade = 'B'\nelif score >= 90:\n    grade = 'A'\nelse:\n    grade = 'F'\n\nprint('grade:', grade)\nprint('A possible?', grade == 'A')",
+      "error": "Logic error — 95 ke liye 'C' aata hai",
+      "why": "Chain pehle true branch par ruk jati hai: 95 >= 40 sach hai, isliye baaki elif branches kabhi evaluate nahi hote. Thresholds ascending order me hone se specific cases unreachable ho gaye.",
+      "fix": "Order ulta karo (sabse strict threshold pehle) — descending chain me har check apna narrow window cover karta hai.",
+      "correct": "score = 95\n\nif score >= 90:\n    grade = 'A'\nelif score >= 75:\n    grade = 'B'\nelif score >= 40:\n    grade = 'C'\nelse:\n    grade = 'F'\n\nprint('grade:', grade)\nprint('A possible?', grade == 'A')",
+      "output": "",
+      "lesson": "Range-based chains me order hi correctness hai. Boundary cases (95, 75, 40) ke liye expected value pehle likho, phir code — test automatically bug pakad leta hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "discount = 0\n\nif discount:\n    message = f'discount of {discount}% applied'\nelse:\n    message = 'no discount configured'\n\nprint(message)",
+      "error": "Logic error — explicit 0% discount 'configured hi nahi' print karta hai",
+      "why": "0 falsy hai, isliye 'if discount:' 0 ko 'missing' treat kar deta hai. Yahan 0 ek valid business value thi (explicitly zero discount), koi absence nahi.",
+      "fix": "Identity check use karo: 'if discount is not None:' — ya sentinel object se 'missing' aur 'zero' alag karo.",
+      "correct": "discount = 0\n\nif discount is not None:\n    message = f'discount of {discount}% applied'\nelse:\n    message = 'no discount configured'\n\nprint(message)\n\nfor value in (0, 5, None):\n    label = f'{value}% applied' if value is not None else 'not configured'\n    print(value, '->', label)",
+      "output": "",
+      "lesson": "Falsy aur missing alag cheez hain. Numbers (0), strings ('') aur counters (retries=0) ke liye 'is None' likho — ye trap production me discount, timeout, retry aur quantity fields me aata hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "def can_access(user):\n    if user and not user['banned'] or user['role'] == 'admin':\n        return True\n    return False\n\nprint(can_access({'role': 'admin', 'banned': True}))\nprint(can_access({'role': 'viewer', 'banned': False}))",
+      "error": "Logic error — banned admin ko bhi access mil jata hai, aur precedence ki wajah se condition ka matlab expected nahi hai",
+      "why": "and kam precedence rakhta hai or se, isliye expression '(user and not banned) or (role == admin)' ban jata hai — banned admin ko role check bacha leta hai. Intended rule tha: admin ho ya (user aur banned nahi).",
+      "fix": "Parentheses se intent explicit karo aur overlapping rules ko alag early returns me todo: pehle banned check, phir role check.",
+      "correct": "def can_access(user):\n    if not user:\n        return False\n    if user.get('banned'):\n        return False\n    if user.get('role') == 'admin':\n        return True\n    return user.get('role') in ('editor', 'viewer')\n\ncases = [\n    {'role': 'admin', 'banned': True},\n    {'role': 'viewer', 'banned': False},\n    {'role': 'admin', 'banned': False},\n    {},\n]\nfor user in cases:\n    print(f'{str(user)[:36]:38} -> {can_access(user)}')",
+      "output": "",
+      "lesson": "and/or precedence aur missing parentheses authorization bugs ka classic source hain. Security-sensitive conditions ko ek expression me na likho — named guards me todo aur deny pehle check karo."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Ek line me batao kya output aayega: 'print(1 if 0 else 2)'. Phir aise teen examples banao jisme truthiness surprising ho.",
+      "hint": "0 falsy hai; '' aur [] bhi falsy — inko valid data maankar socho.",
+      "deliverable": "Output + teen surprising truthiness examples."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Ek 'validation pipeline' likho jo multiple checks ko sequence me chalae, saare errors collect kare aur first-error vs all-errors mode support kare.",
+      "hint": "Checks ki list of callables banao; mode flag se early exit control karo.",
+      "deliverable": "Pipeline + dono modes ka output."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Ek 'eligibility engine' likho jisme rules config se aate hain, reason ke saath REJECT karte hain, aur 'first failure' aur 'all failures' dono report kar sakte hain.",
+      "hint": "Rules me (field, operator, value, message) rakho; operators dispatch table me; results me reason collect karo.",
+      "deliverable": "Engine + 2 applicants ka decision output."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview-style: 20-branch if/elif chain ko refactor karo — kab match/case, kab dict dispatch, kab rules data? Trade-offs likho.",
+      "hint": "Decision criteria: structure-based, equality-based, ya config-driven.",
+      "deliverable": "Refactor comparison table + ek chhota before/after code."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Ek CLI 'workflow decider' banao jo status + action input le, legal transitions allow kare, illegal par reason de, aur audit log print kare.",
+      "hint": "Transition table + guards; audit log me (from, action, to, ok) record karo.",
+      "deliverable": "CLI + 5 actions ka audit output."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Grade Calculator (Version 1)",
+      "problem": "Marks se grade nikalna simple lagta hai par order, boundaries aur invalid input teen jagah galti hoti hai — aur report galat ban jati hai.",
+      "objective": "Ek program jo marks ki list se grade, pass/fail status aur class summary print kare.",
+      "features": [
+        "Descending thresholds se grade",
+        "Invalid marks (range/type) ka explicit message",
+        "Class summary: pass count, fail count, average",
+        "Formatted output table"
+      ],
+      "concepts": [
+        "if/elif order aur boundaries",
+        "Validation guards",
+        "Aggregation with loops"
+      ],
+      "structure": "grade_calculator/\n└── grades.py        # saara logic, ek file",
+      "steps": [
+        "grade(marks) function banao jo (letter, status) return kare.",
+        "Validation pehle rakho (type, range), phir descending thresholds.",
+        "Marks ki list par loop chalao aur summary aggregate karo.",
+        "Boundary tests: 39/40, 59/60, 74/75, 89/90 aur invalid values."
+      ],
+      "code": "RECORDS = [('Anjali', 95), ('Rehan', 82), ('Salman', 74), ('Tara', 61), ('Ravi', 39), ('Neha', 140)]\n\ndef grade(marks):\n    if not isinstance(marks, (int, float)) or isinstance(marks, bool):\n        return None, 'invalid marks type'\n    if not 0 <= marks <= 100:\n        return None, f'marks out of range ({marks})'\n    if marks >= 90:\n        return 'A', 'pass'\n    if marks >= 75:\n        return 'B', 'pass'\n    if marks >= 60:\n        return 'C', 'pass'\n    if marks >= 40:\n        return 'D', 'pass'\n    return 'F', 'fail'\n\nvalid, invalid = [], []\nfor name, marks in RECORDS:\n    letter, status = grade(marks)\n    if letter is None:\n        invalid.append((name, status))\n    else:\n        valid.append((name, marks, letter, status))\n\nprint(f'{\"name\":<8}{\"marks\":>6}  grade  status')\nfor name, marks, letter, status in valid:\n    print(f'{name:<8}{marks:>6}  {letter:^5}  {status}')\n\nfor name, reason in invalid:\n    print(f'{name:<8}  skipped: {reason}')\n\npasses = sum(1 for _, _, _, status in valid if status == 'pass')\nprint()\nprint(f'summary: {len(valid)} valid, {len(invalid)} skipped, {passes} passed')\nprint('average marks:', round(sum(m for _, m, _, _ in valid) / len(valid), 2))",
+      "output": "",
+      "explanation": "Valid aur invalid records alag collect karne se summary me sirf clean data use hota hai (average galat nahi hota) aur skipped rows bacause ke saath report ho jati hain. Grade chain descending hai, isliye 74 par 'C' aur 75 par 'B' — boundary semantics ek hi jagah dikhti hai.",
+      "testing": "Boundary values (39, 40, 59, 60, 74, 75, 89, 90), invalid type (True/None), range overflow (140, -5), aur empty list (zero division guard) — ye tests likho.",
+      "errors": "Empty valid list par average me ZeroDivisionError aayega — Version 2 me guard add hota hai. Invalid type ka message me type name aata hai taaki caller ko pata chale.",
+      "improvements": [
+        "Empty input aur all-invalid input par safe summary (guard ke saath)",
+        "Thresholds ko config (list) se load karo taaki grading scheme badal sake",
+        "Report ko CSV/JSON me export karne ka option do"
+      ],
+      "advanced": [
+        "Grade boundaries ko half-marks (89.5) ke saath handle karo aur rounding rule document karo",
+        "Weighted grading: theory + practical ke alag weights ke saath combined grade",
+        "Test suite (unittest) with boundary table + regression test for order bug"
+      ],
+      "realWorld": "School/college ERP aur certification platforms me grading rules configurable hote hain; galat boundary ya order se certificates aur eligibility decisions galat ho jate hain.",
+      "interview": [
+        {
+          "q": "Thresholds code me hardcode kyun nahi rakhne chahiye?",
+          "a": "Grading schemes badalte rehte hain (board, course, semester), aur hardcode karne par har change code-review aur deploy maangta hai. Config/data me rakhne se ops khud badal sakte hain — par config validation aur test coverage zaroori ho jati hai."
+        },
+        {
+          "q": "Invalid records ko skip karna better hai ya report fail karna?",
+          "a": "Dono ka context hai: live report me skip + visible reason (partial result turant chahiye), aur compliance/audit me fail-fast. Implement karo partial-by-default with counts aur ek --strict flag jo non-zero exit de."
+        },
+        {
+          "q": "Boundary test kaise likhoge?",
+          "a": "Table-driven: har threshold ke liye (threshold - 1, threshold) ka pair expected grade ke saath. Isse ascending/descending order bug apne aap pakda jata hai, kyunki ek value do grades me map nahi ho sakti."
+        }
+      ],
+      "resume": "Grade Calculator: configurable thresholds, boundary-safe grading aur invalid-record reporting ke saath CLI report generator.",
+      "readme": [
+        "Project ek line me: marks to grade calculator",
+        "Grading scheme (thresholds) table",
+        "Boundary cases aur sample output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Eligibility Decision Engine (Version 2)",
+      "problem": "Insurance/loan jaise decisions me rules change hote rehte hain, aur galat order ya missing rule decision ko audit me defend karna mushkil banata hai.",
+      "objective": "Ek rules engine banao: rules config se aate hain, har reject ka reason mile, aur decision trace (kaunsa rule kya check kiya) print ho.",
+      "features": [
+        "Rules config: (id, field, operator, value, reason)",
+        "Evaluate all vs first-failure modes",
+        "Decision trace with pass/fail per rule",
+        "Missing field handling (skip + reason)"
+      ],
+      "concepts": [
+        "Data-driven conditions (dispatch table)",
+        "Reason collection aur explainability",
+        "Validation of config itself"
+      ],
+      "structure": "eligibility_engine/\n├── rules.json       # decision rules (data)\n├── engine.py        # evaluator + trace\n└── demo.py          # sample applicants",
+      "steps": [
+        "Rule schema define karo aur ek operator dispatch table banao.",
+        "engine(rules, facts, mode) likho jo trace aur reasons return kare.",
+        "Config validation add karo (unknown operator/field par startup error).",
+        "Applicants par chalao aur approved/rejected summary print karo."
+      ],
+      "code": "OPERATORS = {\n    '>=': lambda a, b: a >= b,\n    '>': lambda a, b: a > b,\n    '<=': lambda a, b: a <= b,\n    '==': lambda a, b: a == b,\n    'in': lambda a, b: a in b,\n}\n\nRULES = [\n    {'id': 'R1', 'field': 'age', 'op': '>=', 'value': 21, 'reason': 'minimum age is 21'},\n    {'id': 'R2', 'field': 'age', 'op': '<=', 'value': 60, 'reason': 'maximum age is 60'},\n    {'id': 'R3', 'field': 'income', 'op': '>=', 'value': 25000, 'reason': 'minimum income is 25000'},\n    {'id': 'R4', 'field': 'credit_score', 'op': '>=', 'value': 700, 'reason': 'credit score below 700'},\n    {'id': 'R5', 'field': 'employment', 'op': 'in', 'value': ['salaried', 'self-employed'], 'reason': 'employment type not supported'},\n]\n\ndef validate_rules(rules):\n    problems = []\n    for rule in rules:\n        missing = [k for k in ('id', 'field', 'op', 'value', 'reason') if k not in rule]\n        if missing:\n            problems.append(f'{rule.get(\"id\", \"?\")}: missing keys {missing}')\n        elif rule['op'] not in OPERATORS:\n            problems.append(f'{rule[\"id\"]}: unknown operator {rule[\"op\"]!r}')\n    return problems\n\ndef evaluate(rules, facts, mode='all'):\n    trace, reasons = [], []\n    for rule in rules:\n        field = rule['field']\n        if field not in facts:\n            trace.append((rule['id'], 'skipped', f'{field} missing'))\n            reasons.append(f'{rule[\"id\"]}: {field} missing — cannot verify ({rule[\"reason\"]})')\n            continue\n        actual = facts[field]\n        ok = OPERATORS[rule['op']](actual, rule['value'])\n        trace.append((rule['id'], 'pass' if ok else 'fail', f'{field}={actual!r} {rule[\"op\"]} {rule[\"value\"]!r}'))\n        if not ok:\n            reasons.append(f'{rule[\"id\"]}: {rule[\"reason\"]} (got {actual!r})')\n            if mode == 'first-failure':\n                break\n    return (not reasons), reasons, trace\n\nproblems = validate_rules(RULES)\nprint('config problems:', problems if problems else 'none')\n\napplicants = [\n    ('Anjali', {'age': 31, 'income': 40000, 'credit_score': 720, 'employment': 'salaried'}),\n    ('Rehan', {'age': 19, 'income': 40000, 'credit_score': 720, 'employment': 'salaried'}),\n    ('Salman', {'age': 35, 'income': 40000, 'credit_score': 650, 'employment': 'salaried'}),\n    ('Tara', {'age': 40, 'income': 30000, 'employment': 'student'}),\n]\n\nfor name, facts in applicants:\n    approved, reasons, trace = evaluate(RULES, facts)\n    verdict = 'APPROVED' if approved else 'REJECTED'\n    print(f'{name:8} {verdict}')\n    for rule_id, status, detail in trace:\n        print(f'    {rule_id} {status:8} {detail}')\n    for reason in reasons:\n        print(f'    ! {reason}')\n    print()",
+      "output": "",
+      "explanation": "Rules data hain aur operator dispatch table se evaluate hote hain — naya operator ek dict entry hai. Har rule ka trace (pass/fail/skipped) explainability deta hai: audit me 'kaun sa rule kab fail hua' ka jawab seedha output se milta hai. Missing field ko skip + reason banaya gaya, silent pass nahi.",
+      "testing": "Config validation tests (unknown operator, missing keys), boundary tests (age 21 pass, 20 fail), missing-field case, aur first-failure vs all modes ka behaviour.",
+      "errors": "Config problems startup par report hote hain (fail fast), facts me missing field par decision 'cannot verify' note ke saath ho jata hai. Unknown operator runtime par nahi aata kyunki validate_rules pehle pakadta hai.",
+      "improvements": [
+        "rules.json se load karo aur schema validate karo (startup par)",
+        "Decision ko JSON me export karo (audit trail/API response ke liye)",
+        "Rule priorities aur 'override' rules add karo (e.g. manual approval)"
+      ],
+      "advanced": [
+        "Versioning: ruleset version ke saath decision store karo ('kis version ne decide kiya')",
+        "Shadow mode: purane aur naye ruleset ka comparison report (safe rollout)",
+        "Test suite + property tests: monotonicity (income badhane se rejection kam na ho)"
+      ],
+      "realWorld": "Banks, insurers aur KYC platforms isi pattern par decisions lete hain; regulation ke liye har rejection ka reason aur ruleset version record karna mandatory hota hai.",
+      "interview": [
+        {
+          "q": "Rules ko JSON me rakhne ke risks kya hain?",
+          "a": "Config drift (kisi ne prod me seedha badla), invalid rules ka runtime surprise, aur testing gaps. Mitigation: schema validation startup par, version control me rules, staging par apply, aur shadow mode testing naye ruleset ke liye."
+        },
+        {
+          "q": "Missing field par kya karna sahi hai?",
+          "a": "Business rule decide karta hai: 'fail closed' (reject — safer for regulated decisions) ya 'fail open' (skip). Jo bhi choose karo, trace me explain karo taaki audit me ambiguity na rahe. Default for compliance: fail closed."
+        },
+        {
+          "q": "Explainability ke liye kya store karoge?",
+          "a": "Rule ids + version, input facts (masked PII), per-rule result, final decision aur timestamp. Isse 'is decision ko reproduce karo' possible ho jata hai. Storage me size dekhkar sirf changed fields aur references rakho."
+        }
+      ],
+      "resume": "Eligibility Decision Engine: config-driven rules, per-rule decision trace aur audit-ready reason reporting ke saath evaluator.",
+      "readme": [
+        "Rule schema aur supported operators",
+        "Decision modes (first-failure vs all)",
+        "Sample decision trace aur audit fields"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Workflow State Machine CLI (Version 3)",
+      "problem": "Order/ticket workflows me illegal transitions (delivered se paid) production data corrupt karte hain, aur unhe debug karna mushkil hota hai bina audit trail ke.",
+      "objective": "Ek CLI state machine banao: allowed transitions table se aate hain, illegal actions par reason mile, guards lagaye ja sakein, aur poora audit log mile.",
+      "features": [
+        "Transition table with guards (role/amount conditions)",
+        "Illegal transition ke liye explicit reason",
+        "Audit log: (from, action, to, ok, note) per step",
+        "Batch mode: multiple actions ek list se (aur dry-run option)"
+      ],
+      "concepts": [
+        "Table-driven decisions (state machine)",
+        "Guards aur early returns",
+        "Audit trail design aur idempotency"
+      ],
+      "structure": "workflow_cli/\n├── machine.py       # transitions + guards\n├── cli.py           # argv parsing + batch mode\n└── demo.py          # sample workflow",
+      "steps": [
+        "States aur actions ki transitions table banao (guard ke saath).",
+        "step(state, action, context) likho jo (new_state, ok, note) de.",
+        "Audit log ko list me collect karo aur summary print karo.",
+        "Batch runner banao (dry-run optional) aur illegal cases dikhao."
+      ],
+      "code": "TERMINAL = {'delivered', 'returned', 'cancelled'}\n\nTRANSITIONS = {\n    'pay': {'from': {'new', 'payment_failed'}, 'to': 'paid', 'role': 'customer'},\n    'fail_payment': {'from': {'new'}, 'to': 'payment_failed', 'role': None},\n    'ship': {'from': {'paid'}, 'to': 'shipped', 'role': 'warehouse'},\n    'deliver': {'from': {'shipped'}, 'to': 'delivered', 'role': 'courier'},\n    'return': {'from': {'delivered'}, 'to': 'returned', 'role': 'customer'},\n    'cancel': {'from': {'new', 'paid'}, 'to': 'cancelled', 'role': 'customer'},\n}\n\ndef step(state, action, context=None):\n    context = context or {}\n    if state in TERMINAL and action != 'return':\n        return state, False, f'{state} is terminal — {action} not allowed'\n    rule = TRANSITIONS.get(action)\n    if rule is None:\n        return state, False, f'unknown action {action!r}'\n    if state not in rule['from']:\n        allowed = ', '.join(sorted(rule['from']))\n        return state, False, f'{action} not allowed from {state} (allowed from: {allowed})'\n    required = rule['role']\n    if required is not None and context.get('role') != required:\n        return state, False, f'{action} requires role {required!r}, got {context.get(\"role\")!r}'\n    return rule['to'], True, f'{action}: {state} -> {rule[\"to\"]}'\n\ndef run(steps, context=None, dry_run=False):\n    state, audit = 'new', []\n    for action in steps:\n        new_state, ok, note = step(state, action, context)\n        audit.append((state, action, new_state if ok else state, ok, note))\n        if ok and not dry_run:\n            state = new_state\n        elif ok and dry_run:\n            state = new_state\n    return state, audit\n\nprint('normal flow:')\nfinal, audit = run(['pay', 'ship', 'deliver'], {'role': 'customer'})\nfor frm, action, to, ok, note in audit:\n    print(f'  {frm:14} --{action:13}--> {to:14} {\"ok\" if ok else \"BLOCKED\"}  {note}')\nprint('  final:', final)\n\nprint()\nprint('illegal + role checks:')\nfinal, audit = run(['ship', 'pay', 'deliver', 'pay', 'cancel'], {'role': 'customer'})\nfor frm, action, to, ok, note in audit:\n    print(f'  {frm:14} --{action:13}--> {to:14} {\"ok\" if ok else \"BLOCKED\"}  {note}')\nprint('  final:', final)\n\nprint()\nprint('summary:', f'{sum(1 for a in audit if a[3])} ok, {sum(1 for a in audit if not a[3])} blocked')",
+      "output": "",
+      "explanation": "Transition table me 'from' set aur required role dono hain, isliye guards data me hi declare hote hain (code me hardcode nahi). step() ka pehla check terminal states ka hai (return ke alawa kuch nahi), phir action ka existence, phir transition legality, phir role — is order se error messages specific rehte hain. Audit log me blocked attempts bhi record hote hain, jo production me sabse zyada kaam aata hai.",
+      "testing": "Har legal transition ek test, har illegal pair ka ek test (expected reason ke saath), terminal-state case, role mismatch case, aur unknown action. Batch run ka summary count bhi assert karo.",
+      "errors": "Har failure ka apna message hai (terminal, unknown action, wrong source state, role mismatch) — koi generic 'invalid transition' nahi. State illegal step par unchanged rehti hai, isliye partial failure se data corrupt nahi hota.",
+      "improvements": [
+        "Transitions ko JSON se load karo aur schema validate karo",
+        "CLI: --steps, --role, --dry-run flags aur exit codes",
+        "Audit log ko JSONL file me append karo (durable trail)"
+      ],
+      "advanced": [
+        "Idempotency keys: same action dobara aane par duplicate transition na ho",
+        "Compensation/rollback actions (saga pattern) shipped -> cancelled jaise edge flows ke liye",
+        "Property test: kisi bhi random action sequence ke baad state terminal set me hi rahe ya valid ho"
+      ],
+      "realWorld": "E-commerce orders, ticketing systems aur approval workflows sab state machines hain; audit trail aur illegal-transition blocking hi data integrity aur compliance dete hain.",
+      "interview": [
+        {
+          "q": "Illegal transitions ko database level par kaise roka ja sakta hai?",
+          "a": "Row-level version/status check ke saath conditional update (UPDATE ... WHERE status = 'paid') — agar 0 rows update hui to transition reject. Isse race conditions bhi handle hote hain (optimistic concurrency)."
+        },
+        {
+          "q": "Audit log me kya-kya capture karna chahiye?",
+          "a": "Actor, action, from/to state, timestamp, request id, aur result (ok/blocked + reason). Isse lineage, debugging aur compliance reporting teenon possible hote hain. Blocked attempts bhi log karo — wahi attack patterns dikhate hain."
+        },
+        {
+          "q": "Ye state machine CLi ko library kaise banaoge?",
+          "a": "Core ko pure functions/class me rakho (no I/O), CLI sirf argument parsing aur printing kare. Isse service, worker aur test sab same engine use kar sakte hain; config (transitions) inject karo taaki per-tenant behaviour alag ho."
+        }
+      ],
+      "resume": "Workflow State Machine: table-driven transitions with roles/guards, blocked-action audit trail aur CLI batch runner ke saath.",
+      "readme": [
+        "States aur transitions ka diagram/table",
+        "Guards aur role requirements",
+        "Audit log format aur CLI flags"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      "Grade calculator me descending order kyun zaroori tha?",
+      "Eligibility engine me missing field ko skip maanna kaisa decision hai?",
+      "State machine me terminal state ka check sabse pehle kyun rakha gaya?"
+    ],
+    "coding": [
+      "Grade calculator ka grading scheme config file se load karo aur validation add karo.",
+      "Eligibility engine me 'fail closed' behaviour add karo missing field ke liye (config flag ke saath).",
+      "State machine me idempotency key support add karo taaki duplicate action ignore ho."
+    ],
+    "advanced": [
+      "Eligibility engine ka decision JSON export karo aur ruleset version store karo.",
+      "State machine ka audit log JSONL file me likho aur dobara load karke replay karo.",
+      "Teenon projects ka common validation helper nikalo aur unittest suite likho."
+    ],
+    "interview": [
+      "Aap in teenon me se kis project me sabse pehle unit tests likhoge aur kyun?",
+      "Eligibility engine me 500 rules ho jayein to performance kaise handle karoge?",
+      "State machine ko distributed system me kaise implement karoge (race conditions ke saath)?",
+      "Rules config me kisi ne galti kar di — production me iska asar kaise minimize karoge?"
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Live coding: ek function likho jo user ka access decide kare (admin always allowed, banned blocked, warna role check) — pehle condition likho, phir code.",
+      "a": "Deny pehle check karo (banned), phir allow-equivalents. Condition ko ek compound expression me likhne ki jagah named guards me todo: if user is None / if user.get('banned') / if role == 'admin' / return role in allowed. Isse precedence bugs nahi aate aur security intent visible hota hai.",
+      "deliverable": "Function + 5 cases ka truth table."
+    },
+    {
+      "q": "Interviewer ek buggy condition de: 'if 0 <= x <= 100 and x != None' — problem batao aur fix karo.",
+      "a": "x None hone par '0 <= None' TypeError dega (and ka pehla operand hi crash karta hai). Fix: order badlo (x is not None pehle) ya type validation alag karo. Note: 'x != None' bhi galat style hai — 'is not None' use karo.",
+      "deliverable": "Buggy vs fixed output + rule ki ek line."
+    },
+    {
+      "q": "Explain karo: 'elif chain order' ka bug aap kaise systematically pakdoge — process batao.",
+      "a": "Boundary value table banao: har threshold ke liye (t-1, t, t+1) expected output ke saath; monotonicity check karo (higher input se 'better' grade na ghate). Table-driven test se ascending/descending order bug turant pakda jata hai.",
+      "deliverable": "Test table (5 rows) + assertion snippet."
+    },
+    {
+      "q": "Interview me scenario: 'form me 0 quantity accept nahi ho raha' — debug steps likho aur fix karo.",
+      "a": "Steps: input ko log karo (0 aaya ya ''), validation condition dekho (truthiness vs None), aur downstream check (DB default ya HTML form serialization). Fix: explicit 'value is None' check + type conversion, aur regression test me 0 pass karo expect success.",
+      "deliverable": "3-step checklist + before/after output."
+    }
+  ],
+  "revision": [
+    "if/elif/else me pehla true branch jeetta hai — sabse specific condition pehle, broad baad me.",
+    "Truthiness me 0, '', [], {} aur None falsy hain; valid-but-falsy values ke liye 'is None' / 'is not None' use karo.",
+    "Guard clauses (early return) se deep nesting hatao aur happy path ko aakhir me seedha rakho.",
+    "Ternary ek expression hai — assignment/return me useful, par nesting aur side effect se bacho.",
+    "match/case structural patterns ke liye: sequence/mapping patterns, OR (|), guards (if) aur case _ fallback.",
+    "and/or precedence yaad rakho; security-sensitive compound conditions ko named guards me todo.",
+    "Float comparison me == avoid karo — tolerance (math.isclose) ya Decimal use karo.",
+    "Boundary logic ke liye table-driven tests (t-1, t, t+1) likho — order aur off-by-one dono pakde jate hain.",
+    "Comparison se pehle None check karo; None ka comparison, arithmetic aur sorting sab TypeError/behaviour issue dete hain."
+  ]
+}

@@ -1,13 +1,30 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCurriculum } from '../data/curriculum';
-import { useStore, addXp, addMistake, recordAttempt } from '../offline/store';
+import { useStore, addXp, addMistake, recordAttempt, savedAnswer, useSavedAnswer } from '../offline/store';
 import { keywordScore, questionRubric, DEFENSE_QUESTIONS, defenseScore } from '../engine/evaluate';
-import { finalTaskAttempt, finalPart, codeSlot } from '../engine/keys';
-import { CodeLab } from '../components/CodeLab';
+import { finalTaskAttempt, finalPart, finalAnswer, codeSlot } from '../engine/keys';
+import { JupyterNotebook } from '../components/JupyterNotebook';
 
 interface AQ { cat: string; q: string; a: string; src: string }
 interface Part { id: string; label: string; qs?: AQ[]; coding?: boolean; defense?: boolean; project?: boolean }
+
+/**
+ * One defense prompt's answer box. Its own component because the persisted answer is per-prompt
+ * state, and a hook cannot be called inside the list that renders the ten prompts.
+ */
+function DefenseField({ i }: { i: number }) {
+  const [text, setText] = useSavedAnswer(finalAnswer('defense:' + i));
+  return (
+    <textarea
+      rows={2}
+      value={text}
+      placeholder="Answer aloud, phir yahan likho (save ho jata hai)"
+      aria-label={`Defense answer ${i + 1}`}
+      onChange={(e) => setText(e.target.value)}
+    />
+  );
+}
 
 const RAG_RE = /rag|retriev|vector|embedding|chunk/i;
 
@@ -16,10 +33,8 @@ export default function FinalAssessment() {
   const state = useStore();
   const [part, setPart] = useState(0);
   const [idx, setIdx] = useState(0);
-  const [answer, setAnswer] = useState('');
   const [revealed, setRevealed] = useState(false);
   const [graded, setGraded] = useState<{ pct: number; missing: string[] } | null>(null);
-  const [defense, setDefense] = useState<string[]>(() => DEFENSE_QUESTIONS.map(() => ''));
   const [dResult, setDResult] = useState<{ total: number; per: { pct: number; missing: string[] }[] } | null>(null);
 
   const byId = Object.fromEntries(sections.map((s) => [s.id, s]));
@@ -68,17 +83,26 @@ export default function FinalAssessment() {
 
   const p = parts[part];
   const pool = p.qs ?? [];
-  const q: AQ | undefined = pool[Math.min(idx, Math.max(0, pool.length - 1))];
+  const safeIdx = Math.min(idx, Math.max(0, pool.length - 1));
+  const q: AQ | undefined = pool[safeIdx];
 
-  const switchPart = (i: number) => { setPart(i); setIdx(0); setAnswer(''); setRevealed(false); setGraded(null); };
+  /**
+   * The written answer for the question on screen, saved under `<part>:<index>`.
+   * It used to be plain component state, so stepping to the next question — or refreshing — threw
+   * away a paragraph the learner had just written, and a wrong answer reached the mistake tracker
+   * with nothing to compare against.
+   */
+  const [answer, setAnswer] = useSavedAnswer(finalAnswer(`${p.id}:${safeIdx}`));
+
+  const switchPart = (i: number) => { setPart(i); setIdx(0); setRevealed(false); setGraded(null); };
 
   const grade = () => {
     if (!q) return;
     const g = keywordScore(answer, questionRubric(q.a));
     setGraded(g);
-    recordAttempt(finalPart(p.id + ':' + Math.min(idx, pool.length - 1)), { score: g.pct });
+    recordAttempt(finalPart(p.id + ':' + safeIdx), { score: g.pct, answer });
     if (g.pct >= 70) addXp(10, 'final', 'Final assessment answer');
-    else addMistake({ section: 'final', topic: q.cat, question: q.q, myAnswer: answer, correct: q.a, type: 'final' });
+    else addMistake({ section: 'final', topic: q.cat, question: q.q, myAnswer: answer, correct: q.a, type: 'final', source: 'final' });
   };
 
   const cap = byId['s28']?.projectLab?.[0];
@@ -99,14 +123,20 @@ export default function FinalAssessment() {
       {p.qs && q && (
         <div className="card">
           <div className="row spread">
-            <span className="small muted">{q.cat} · {q.src} · #{Math.min(idx, pool.length - 1) + 1}/{pool.length}</span>
+            <span className="small muted">{q.cat} · {q.src} · #{safeIdx + 1}/{pool.length}</span>
             <div className="row">
               <button className="btn small" onClick={() => setIdx((i) => Math.max(0, i - 1))}>←</button>
               <button className="btn small" onClick={() => setIdx((i) => Math.min(pool.length - 1, i + 1))}>→</button>
             </div>
           </div>
           <h2 style={{ margin: '10px 0' }}>{q.q}</h2>
-          <textarea rows={4} placeholder="Answer aloud first…" value={answer} onChange={(e) => setAnswer(e.target.value)} />
+          <textarea
+            rows={4}
+            placeholder="Answer aloud first… (save ho jata hai)"
+            aria-label="My answer"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+          />
           <div className="row" style={{ marginTop: 8 }}>
             <button className="btn primary" onClick={grade} disabled={!answer.trim()}>Check</button>
             <button className="btn" onClick={() => setRevealed(!revealed)}>{revealed ? 'Hide' : 'Reveal model answer'}</button>
@@ -128,7 +158,17 @@ export default function FinalAssessment() {
             <div key={i}>
               <h3 className="small" style={{ margin: '12px 0 4px' }}>Task {i + 1} ({t.difficulty}, from section {t.sid})</h3>
               <p className="small muted">{t.text}</p>
-              <CodeLab storageKey={codeSlot.final(i)} starter={`# Task: ${t.text}\n\n`} solution={t.solution} compact onComplete={() => recordAttempt(finalTaskAttempt(i), { done: true })} />
+              <JupyterNotebook
+                storageKey={codeSlot.final(i)}
+                starter={`# Task: ${t.text}\n\n`}
+                solution={t.solution}
+                title={`Task ${i + 1}`}
+                taskText={`${t.text}\n\n**Section:** ${t.sid} · **Difficulty:** ${t.difficulty}`}
+                label={t.difficulty}
+                sectionId={t.sid}
+                compact
+                onComplete={() => recordAttempt(finalTaskAttempt(i), { done: true })}
+              />
             </div>
           ))}
         </div>
@@ -140,10 +180,20 @@ export default function FinalAssessment() {
       {DEFENSE_QUESTIONS.map((dq, i) => (
         <div key={i} style={{ margin: '10px 0' }}>
           <p className="small"><b>{i + 1}. {dq.q}</b></p>
-          <textarea rows={2} value={defense[i]} onChange={(e) => setDefense(defense.map((v, j) => (j === i ? e.target.value : v)))} />
+          <DefenseField i={i} />
         </div>
       ))}
-      <button className="btn primary" onClick={() => { const r = defenseScore(defense); setDResult(r); r.per.forEach((x, i) => recordAttempt(finalPart('defense:' + i), { score: x.pct })); }}>
+      <button
+        className="btn primary"
+        onClick={() => {
+          // Read the answers from the store, not from React state: each field saves its own text,
+          // so scoring uses what was really written even after a refresh.
+          const written = DEFENSE_QUESTIONS.map((_, i) => savedAnswer(state, finalAnswer('defense:' + i)));
+          const r = defenseScore(written);
+          setDResult(r);
+          r.per.forEach((x, i) => recordAttempt(finalPart('defense:' + i), { score: x.pct, answer: written[i] }));
+        }}
+      >
         Score defense
       </button>
       {dResult && (

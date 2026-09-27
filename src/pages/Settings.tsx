@@ -32,6 +32,22 @@ export default function SettingsPage() {
       </div>
 
       <div className="card">
+        <h3>Study flow</h3>
+        <label className="row small">
+          <input
+            type="checkbox"
+            checked={state.settings.autoAdvance !== false}
+            onChange={(e) => setState((s) => ({ ...s, settings: { ...s.settings, autoAdvance: e.target.checked } }))}
+          />
+          Auto-advance: task complete hote hi agla task / stage / topic kholo
+        </label>
+        <p className="small muted" style={{ margin: '6px 0 0' }}>
+          On hone par ek 7-second countdown wala card aata hai — &quot;Yahin ruko&quot; dabao to wahi ruk
+          jaoge. Off hone par bhi card batata hai ki agla kya hai, bas apne aap nahi khulta.
+        </p>
+      </div>
+
+      <div className="card">
         <h3>Accessibility & motion</h3>
         <label className="row small">
           <input

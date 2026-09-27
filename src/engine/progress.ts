@@ -5,33 +5,97 @@ import { stageAttempt, itemAttempt, debugDone, learnView } from './keys';
 export const STAGES = ['learn', 'interview', 'coding', 'logic', 'debug', 'solved', 'mini', 'project', 'defense', 'checkpoint'] as const;
 export type Stage = (typeof STAGES)[number];
 
-export const STAGE_META: Record<Stage, { label: string; icon: string; blurb: string }> = {
-  learn: { label: 'Learn', icon: '📖', blurb: 'Definition, easy explanation, code examples, recap' },
-  interview: { label: 'Interview', icon: '🎤', blurb: 'Questions paired with model answers' },
-  coding: { label: 'Coding Lab', icon: '💻', blurb: 'Tasks with runner + checks + solutions' },
-  logic: { label: 'Logic', icon: '🧠', blurb: 'Predict, trace, why, fix, explain' },
-  debug: { label: 'Debug', icon: '🐞', blurb: 'Broken code: find, explain, fix' },
-  solved: { label: 'Practice Solutions', icon: '✅', blurb: 'Try first, then compare with the answer key' },
-  mini: { label: 'Mini Project', icon: '🏗️', blurb: 'Runnable build for this topic' },
-  project: { label: 'Project Lab', icon: '🚀', blurb: 'Simple / Medium / Hard builds' },
-  defense: { label: 'Defense', icon: '🛡️', blurb: 'Explain the build, get scored' },
-  checkpoint: { label: 'Checkpoint', icon: '🏆', blurb: 'Final gate before Mastered' },
+/**
+ * Accent tones. Every tone defines exactly two custom properties (`--accent`
+ * and `--accent-rgb`), so a surface can be tinted without inventing new colors
+ * per component — see the `.tone-*` block in styles.css.
+ */
+export type Tone =
+  | 'blue' | 'cyan' | 'violet' | 'fuchsia' | 'red'
+  | 'green' | 'amber' | 'orange' | 'purple' | 'gold';
+
+/** Short menu label for the stage grid — the blurb's first clause, trimmed. */
+export const stageTagline = (st: Stage): string => {
+  const taglines: Record<Stage, string> = {
+    learn: 'Concepts & Theory', interview: 'Q&A + Mock', coding: 'Write & Run', logic: 'Think & Solve',
+    debug: 'Find & Fix', solved: 'Hands-on Tasks', mini: 'Build & Apply', project: 'Ship It For Real',
+    defense: 'Explain & Present', checkpoint: 'Test Your Mastery',
+  };
+  return taglines[st];
 };
 
+export const STAGE_META: Record<Stage, { label: string; icon: string; blurb: string; tone: Tone }> = {
+  learn: { label: 'Learn', icon: '📖', blurb: 'Definition, easy explanation, code examples, recap', tone: 'blue' },
+  interview: { label: 'Interview', icon: '🎤', blurb: 'Questions paired with model answers', tone: 'cyan' },
+  coding: { label: 'Coding Lab', icon: '💻', blurb: 'Tasks with runner + checks + solutions', tone: 'violet' },
+  logic: { label: 'Logic', icon: '🧠', blurb: 'Predict, trace, why, fix, explain', tone: 'fuchsia' },
+  debug: { label: 'Debug', icon: '🐞', blurb: 'Broken code: find, explain, fix', tone: 'red' },
+  solved: { label: 'Practice Solutions', icon: '✅', blurb: 'Try first, then compare with the answer key', tone: 'green' },
+  mini: { label: 'Mini Project', icon: '🏗️', blurb: 'Runnable build for this topic', tone: 'amber' },
+  project: { label: 'Project Lab', icon: '🚀', blurb: 'Simple / Medium / Hard builds', tone: 'orange' },
+  defense: { label: 'Defense', icon: '🛡️', blurb: 'Explain the build, get scored', tone: 'purple' },
+  checkpoint: { label: 'Checkpoint', icon: '🏆', blurb: 'Final gate before Mastered', tone: 'gold' },
+};
+
+/**
+ * The tasks the Coding Lab actually shows. Debug tasks have their own stage and their own
+ * gate (`debugDone`), so they must not appear here: counting them made the Coding percentage
+ * grade a task the learner could never tick from the Coding Lab, and it shifted the item keys
+ * for every task after it. One list, used by the lab, the progress maths and the tutor drill —
+ * that is what keeps a key like `st:s01:coding3` meaning the same task everywhere.
+ */
+export const codingTasks = (s: Section) => s.coding.filter((c) => c.difficulty !== 'debug');
+
+/** Debug tasks shown by the Debug stage (gated by a single section-level record). */
+export const debugTasks = (s: Section) => s.coding.filter((c) => c.difficulty === 'debug');
+
+export type StageTasks = ReturnType<typeof sectionProgress>['tasks'];
+
+/**
+ * The score a scored stage must reach. Read/test/build stages use plain booleans instead.
+ * One table, so the lesson tile, the mastery gate and the "what next" planner can never
+ * disagree — the defense gate in particular used to be 70 in the lesson and 60 for mastery,
+ * which left a learner with a passing defense staring at a stage that never went green.
+ */
+export const STAGE_PASS: Partial<Record<Stage, number>> = {
+  interview: 70, coding: 70, logic: 70, debug: 70, solved: 70, defense: 60, checkpoint: 70,
+};
+
+/**
+ * Some stages cannot exist for every section: the Debug stage needs a debugging task, the
+ * checkpoint needs a checkpoint bank. A stage that does not apply never blocks — otherwise the
+ * learner would be sent to a page that only says "nothing here" and mastery could never unlock.
+ */
+export function stageApplies(sec: Section, stage: Stage): boolean {
+  if (stage === 'debug') return debugTasks(sec).length > 0;
+  if (stage === 'checkpoint') return sec.checkpoint.length > 0;
+  return true;
+}
+
+/** The authoritative gate for one whole stage of one section. */
+export function stagePassed(sec: Section, state: AppState, stage: Stage): boolean {
+  if (!stageApplies(sec, stage)) return true;
+  const { tasks } = sectionProgress(sec, state);
+  if (stage === 'learn' || stage === 'mini' || stage === 'project') return !!tasks[stage];
+  return (tasks[stage] as number) >= (STAGE_PASS[stage] ?? 70);
+}
+
 export function sectionProgress(s: Section, state: AppState) {
+  const coding = codingTasks(s);
+  const debug = debugTasks(s);
   const tasks = {
     learn: !!state.attempts[learnView(s.id)],
     interview: s.interview.length
       ? state.attempts[stageAttempt(s.id, 'interview')]?.score ?? 0
       : 100,
-    coding: s.coding.length
-      ? Math.round(100 * s.coding.filter((_, i) => state.attempts[itemAttempt(s.id, 'coding', i)]?.done).length / s.coding.length)
+    coding: coding.length
+      ? Math.round(100 * coding.filter((_, i) => state.attempts[itemAttempt(s.id, 'coding', i)]?.done).length / coding.length)
       : 100,
     logic: s.logic.length
       ? Math.round(100 * s.logic.filter((_, i) => state.attempts[itemAttempt(s.id, 'logic', i)]?.done).length / s.logic.length)
       : 100,
-    debug: s.coding.some((c) => c.difficulty === 'debug')
-      ? Math.round(100 * s.coding.filter((c) => c.difficulty === 'debug' && state.attempts[debugDone(s.id)]?.done).length / s.coding.filter((c) => c.difficulty === 'debug').length)
+    debug: debug.length
+      ? Math.round(100 * debug.filter(() => state.attempts[debugDone(s.id)]?.done).length / debug.length)
       : 0,
     solved: s.solved.length
       ? Math.round(100 * s.solved.filter((_, i) => state.attempts[itemAttempt(s.id, 'solved', i)]?.done).length / s.solved.length)
@@ -48,7 +112,7 @@ export function sectionProgress(s: Section, state: AppState) {
       (tasks.learn ? 1 : 0) + tasks.interview + tasks.coding + tasks.logic +
       (tasks.debug as number) + tasks.solved +
       (tasks.mini ? 100 : 0) + (tasks.project ? 100 : 0) + tasks.defense + tasks.checkpoint
-    ) / (8 + (s.coding.some((c) => c.difficulty === 'debug') ? 1 : 0) + (s.checkpoint.length ? 1 : 0)));
+    ) / (8 + (debug.length ? 1 : 0) + (s.checkpoint.length ? 1 : 0)));
 
   /**
    * The breakdown a learner can act on — every number derived from a real gate,
@@ -72,16 +136,17 @@ export type ScoreBreakdown = ReturnType<typeof sectionProgress>['scores'];
 export function missingForMastery(s: Section, state: AppState): string[] {
   const { tasks } = sectionProgress(s, state);
   const missing: string[] = [];
+  const need = (st: Stage) => STAGE_PASS[st] ?? 70;
   if (!tasks.learn) missing.push('Read the Learn section');
-  if (tasks.interview < 70) missing.push(`Interview score >= 70% (now ${tasks.interview}%)`);
-  if (tasks.coding < 70) missing.push(`Coding tasks >= 70% (now ${tasks.coding}%)`);
-  if (tasks.logic < 70) missing.push(`Logic >= 70% (now ${tasks.logic}%)`);
-  if (s.coding.some((c) => c.difficulty === 'debug') && tasks.debug < 70) missing.push(`Debug >= 70% (now ${tasks.debug}%)`);
-  if (tasks.solved < 70) missing.push(`Practice solutions >= 70% (now ${tasks.solved}%)`);
+  if (tasks.interview < need('interview')) missing.push(`Interview score >= ${need('interview')}% (now ${tasks.interview}%)`);
+  if (tasks.coding < need('coding')) missing.push(`Coding tasks >= ${need('coding')}% (now ${tasks.coding}%)`);
+  if (tasks.logic < need('logic')) missing.push(`Logic >= ${need('logic')}% (now ${tasks.logic}%)`);
+  if (stageApplies(s, 'debug') && tasks.debug < need('debug')) missing.push(`Debug >= ${need('debug')}% (now ${tasks.debug}%)`);
+  if (tasks.solved < need('solved')) missing.push(`Practice solutions >= ${need('solved')}% (now ${tasks.solved}%)`);
   if (!tasks.mini) missing.push('Complete the mini project');
   if (!tasks.project) missing.push('Complete one Project Lab build');
-  if (tasks.defense < 60) missing.push(`Project defense >= 60 (now ${tasks.defense})`);
-  if (s.checkpoint.length && tasks.checkpoint < 70) missing.push(`Checkpoint >= 70% (now ${tasks.checkpoint}%)`);
+  if (tasks.defense < need('defense')) missing.push(`Project defense >= ${need('defense')} (now ${tasks.defense})`);
+  if (stageApplies(s, 'checkpoint') && tasks.checkpoint < need('checkpoint')) missing.push(`Checkpoint >= ${need('checkpoint')}% (now ${tasks.checkpoint}%)`);
   return missing;
 }
 
@@ -130,7 +195,7 @@ export function nextBestAction(s: Section, state: AppState): NextAction {
   if (tasks.interview < 70) return { label: 'Interview practice', reason: `Score is ${tasks.interview}%. Answer aloud, then self-grade.`, route: `/lesson/${s.id}/interview` };
   if (tasks.coding < 70) return { label: 'Solve a coding task', reason: `Coding at ${tasks.coding}%. Run and verify your code.`, route: `/lesson/${s.id}/coding` };
   if (tasks.logic < 70) return { label: 'Logic lab', reason: `Logic at ${tasks.logic}%. Predict before running.`, route: `/lesson/${s.id}/logic` };
-  if (tasks.debug < 70 && s.coding.some((c) => c.difficulty === 'debug')) return { label: 'Debug lab', reason: `Debug at ${tasks.debug}%. Find, explain, fix.`, route: `/lesson/${s.id}/debug` };
+  if (tasks.debug < 70 && stageApplies(s, 'debug')) return { label: 'Debug lab', reason: `Debug at ${tasks.debug}%. Find, explain, fix.`, route: `/lesson/${s.id}/debug` };
   if (tasks.solved < 70) return { label: 'Practice solutions', reason: `At ${tasks.solved}%. Try first, then compare.`, route: `/lesson/${s.id}/solved` };
   if (!tasks.mini) return { label: 'Build the mini project', reason: 'Nothing cements a topic like shipping its mini build.', route: `/lesson/${s.id}/mini` };
   if (!tasks.project) return { label: 'Project Lab build', reason: 'Pick Simple / Medium / Hard and build it.', route: `/lesson/${s.id}/project` };

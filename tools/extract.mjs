@@ -578,3 +578,12 @@ fs.writeFileSync(path.join(OUT, 'meta.json'), JSON.stringify({
 }, null, 1));
 console.log('sections:', result.length);
 console.log(JSON.stringify(JSON.parse(fs.readFileSync(path.join(OUT, 'meta.json'))).counts));
+
+// The plain-text extraction mashes each concept's code box, so the learn content
+// is rebuilt from a `pdftotext -layout` pass and execute-verified. Always run it
+// here, otherwise a re-extraction silently reverts `learn.concepts` to garbage.
+try {
+  execFileSync('node', [path.resolve('scripts', 'learn.cjs'), '--write', '--fresh'], { stdio: 'inherit' });
+} catch (e) {
+  console.error('learn rebuild skipped:', e.message);
+}

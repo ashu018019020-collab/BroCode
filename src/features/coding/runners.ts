@@ -50,16 +50,60 @@ function pythonReady(): Promise<void> {
   return pyReady!;
 }
 
-export async function runPython(code: string, stdin = ''): Promise<RunResult> {
+/**
+ * Boot the Pyodide worker early so the learner's first Run is instant, and let
+ * the UI show that the offline Python runtime is warming up (~5-15s, once).
+ * Python itself is bundled under public/pyodide — nothing to install, no network.
+ */
+export async function warmupPython(): Promise<boolean> {
+  try { await pythonReady(); return true; } catch { return false; }
+}
+
+export const isPythonReady = () => readyDone;
+
+export async function runPython(code: string, stdin = '', scope = ''): Promise<RunResult> {
   await pythonReady();
   const id = ++seq;
   const t0 = performance.now();
   outBuffers.set(id, { out: '', err: '' });
   return new Promise<RunResult>((resolve) => {
     pending.set(id, (r) => resolve({ ...r, ms: Math.round(performance.now() - t0) }));
-    pyWorker!.postMessage({ type: 'run', id, code, stdin });
+    pyWorker!.postMessage({ type: 'run', id, code, stdin, scope });
   });
 }
+
+/**
+ * Restart one notebook's kernel: its names vanish, other notebooks are untouched.
+ * Anything using the shared namespace (empty scope) is unaffected.
+ */
+export function resetKernel(scope: string) {
+  if (!scope) return;
+  pyWorker?.postMessage({ type: 'reset-kernel', id: -1, scope });
+}
+
+/**
+ * Names currently alive in a notebook's kernel — `[(name, type, repr), …]`.
+ * Runs in the same session as the cells, so it sees exactly what the learner built.
+ */
+export async function kernelVars(scope = ''): Promise<[string, string, string][]> {
+  const marker = NBVARS_MARKER;
+  try {
+    const r = await runPython(PROBE_SOURCE, '', scope);
+    const line = r.output.split('\n').find((l) => l.includes(marker));
+    if (!line) return [];
+    const parsed = JSON.parse(line.slice(line.indexOf(marker) + marker.length));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+
+/** Hidden stdout tag + snippet used by `kernelVars`; never shown to the learner. */
+const NBVARS_MARKER = '\u0001NBVARS\u0001';
+const PROBE_SOURCE = `import json as _nb_json
+try:
+    _nb_rows = [[_k, type(_v).__name__, repr(_v)[:64]] for _k, _v in list(globals().items()) if not _k.startswith('_')]
+except Exception:
+    _nb_rows = []
+print(${JSON.stringify(NBVARS_MARKER)} + _nb_json.dumps(_nb_rows[:40]))`;
 
 /** Hard-stop: terminate the worker (the only way to interrupt blocking Python). */
 export function stopPython() {

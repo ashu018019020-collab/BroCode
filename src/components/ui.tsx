@@ -1,6 +1,11 @@
 import { useState, type ReactNode } from 'react';
 
-export function ProgressRing({ pct, size = 54, label }: { pct: number; size?: number; label?: string }) {
+/**
+ * `text` overrides the centre figure for a ring that is drawing a percentage nobody measured.
+ * Without it a caller who has no data has to pass `pct={0}` — and the ring then states a literal
+ * "0%", which reads as a verdict rather than "abhi measure nahi hua". Accuracy surfaces pass a dash.
+ */
+export function ProgressRing({ pct, size = 54, label, text }: { pct: number; size?: number; label?: string; text?: string }) {
   const r = (size - 8) / 2;
   const c = 2 * Math.PI * r;
   const off = c * (1 - Math.min(100, Math.max(0, pct)) / 100);
@@ -15,7 +20,7 @@ export function ProgressRing({ pct, size = 54, label }: { pct: number; size?: nu
           </linearGradient>
         </defs>
       </svg>
-      <span className="val">{pct}%</span>
+      <span className="val">{text ?? `${pct}%`}</span>
     </div>
   );
 }

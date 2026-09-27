@@ -1,0 +1,659 @@
+{
+  "section": "s02",
+  "topic": "Operators",
+  "authored": true,
+  "intro": "Operators wahi cheez hai jo data ko decision aur calculation me badalti hai. Yahan sirf '+' '-' nahi — precedence, short-circuit logic, bitwise flags aur in-place mutation wale operators bhi aate hain, aur inhi me sabse zyada chupke wale bugs hote hain. Ye section operators ka poora mental model deta hai: kaunsa operator kya return karta hai, kis order me chalta hai, aur kaha parentheses likhna zarooori hai.",
+  "theory": [
+    "Arithmetic: / hamesha float deta hai, // floor division hai (negative me neeche ki taraf, -7 // 2 == -4), % remainder deta hai (divmod se dono ek saath milte hain), ** power hai aur right-associative (2 ** 3 ** 2 == 512).",
+    "Comparison operators chaining support karte hain: 18 <= age < 60 ek hi expression me do check karta hai, aur and chain ki tarah short-circuit karta hai.",
+    "and / or operand return karte hain, True/False nahi: '' or 'default' se 'default' milta hai, aur config.get('x') or 5 default-value pattern isi par bana hai. Isliye 0 ya '' valid data hone par ye pattern sila jata hai.",
+    "Bitwise operators (|, &, ^, ~, <<, >>) integers par kaam karte hain — permission flags, feature masks aur hashing me use hote hain. Ye and/or se alag hain aur unke saath mix karne par precedence trap banta hai.",
+    "Augmented assignment (+=, -=, |=) immutable par rebinding karta hai par mutable par in-place mutation bhi kar sakta hai — isliye lst += [x] aur lst = lst + [x] ka asar alag ho sakta hai (aliasing ke saath)."
+  ],
+  "syntax": [
+    "a + b; a - b; a * b; a / b      # / -> float\na // b; a % b; divmod(a, b)     # floor division + remainder\na ** b                           # power (right associative)\n-a; +a; abs(a)",
+    "a == b; a != b; a < b; a >= b\nlow <= value <= high            # chained comparison\nx in items; x not in items      # membership\nx is None; x is not None        # identity (singletons)",
+    "a and b; a or b; not a          # short-circuit, operand return karte hain\na | b; a & b; a ^ b; ~a; a << 2 # bitwise flags / masks\na += 1; a *= 2; flags |= MASK   # augmented assignment\n(a + b) * c                     # precedence control"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "a, b = 17, 5\n\nprint('div  :', a / b)\nprint('floor:', a // b)\nprint('mod  :', a % b)\nprint('power:', a ** b)\nprint('divmod:', divmod(a, b))\nprint('neg floor:', -7 // 2, 'neg mod:', -7 % 2)",
+      "output": "",
+      "explain": [
+        "True division (/) hamesha float deta hai; floor division (//) quotient ko neeche round karta hai, isliye -7 // 2 = -4 (-3.5 se neeche).",
+        "% ka sign denominator follow karta hai, isliye -7 % 2 = 1 hota hai — ye aksar expected nahi hota.",
+        "divmod(a, b) ek hi call me (quotient, remainder) deta hai; bade loops me do operations se bachata hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "age = 27\nprint('in range:', 18 <= age < 60)\n\nname = ''\ndisplay = name or 'Anonymous'\nprint('or default:', display)\n\ncount = 0\nbad = count or 5          # trap: 0 valid ho sakta hai\nprint('or trap  :', bad)\n\nok = name and name.upper()\nprint('and short-circuit:', repr(ok))\n\nprint('safe check:', count if count is not None else 5)",
+      "output": "",
+      "explain": [
+        "Chained comparison ek hi readable condition deta hai: 18 <= age < 60 (and chaining se same, par dobara age likhne ki zaroorat nahi).",
+        "'a or b' pehla truthy operand return karta hai — isliye '' par 'Anonymous' milta hai.",
+        "Isi liye 0 ke saath ye pattern khatarnak hai: count = 0 hone par 5 aa jata hai, jabki 0 hi sahi value thi.",
+        "and pehla falsy operand deta hai (name khali hai to '' hi) — isliye Optional chaining ismein safe hai."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "READ = 0b001\nWRITE = 0b010\nDELETE = 0b100\n\nrole = READ | WRITE\nprint('role bits  :', bin(role))\nprint('can write? :', bool(role & WRITE))\nprint('can delete?:', bool(role & DELETE))\nprint('after revoke:', bin(role & ~WRITE))\n\nprint('priority :', bin(READ | WRITE << 1))\nprint('precedence trap:', bin((READ | WRITE) << 1))\n\nprint('xor flip :', bin(role ^ WRITE))\nprint('shift    :', 1 << 6, '| 256 >> 3 =', 256 >> 3)",
+      "output": "",
+      "explain": [
+        "Flag-style permission ko ek integer me store karte hain: | se grant, & se check, & ~ se revoke — ye Linux file permissions ka bhi pattern hai.",
+        "Shift ki precedence | se zyada hai, isliye WRITE << 1 pehle hota hai aur result alag aata hai — parentheses se intent saaf karo.",
+        "1 << 6 aur 256 >> 3 multiply/divide by powers of two hain — ye operator hardware-friendly hai par readability ke liye aksar seedha number better hota hai."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Permission systems (roles, feature flags, file modes) bits par bane hote hain: check fast hai, ek integer me 32 permissions fit hote hain, aur database me ek column kaafi hota hai.",
+    "Business rules me precedence bilkul critical hai: '10% discount on 500+ orders, agar loyalty member ho' jaisa rule galat parenthesize karne se pricing galat ho jati hai aur revenue loss hota hai.",
+    "Default-value pattern (value or default) production config me hota hai, isliye 0/''/False ko valid value maanne ka decision document karna padta hai — warna port 0 ya timeout 0 silently badal jata hai."
+  ],
+  "interview": [
+    {
+      "q": "Integer division aur modulo negative numbers par kaise behave karte hain?",
+      "a": "// floor deta hai (neeche ki taraf): -7 // 2 == -4. % ka result ka sign divisor follow karta hai: -7 % 2 == 1, 7 % -2 == -1. Ye Python ka floor-mod semantic hai; C/Java truncate karte hain isliye answers alag aate hain. Safar me divmod() se dono value ek saath lo.",
+      "tip": "Ye classic 'language behaviour' question hai — C se fark bata dena depth dikhata hai."
+    },
+    {
+      "q": "and/or exactly kya return karte hain aur ye kaha bug banata hai?",
+      "a": "Wo operands return karte hain, booleans nahi: a and b me agar a falsy hua to a milta hai warna b; a or b me pehla truthy. Bug tab hota hai jab truthiness ko existence maan lo: timeout = value or 5 se 0 ka timeout 5 ban jata hai. Fix: 'value if value is not None else 5' ya sentinel object.",
+      "tip": "Ek real example do (0, '', / False) — isse pata chalta hai ki aap sirf definition nahi, asar samajhte hain."
+    },
+    {
+      "q": "Operator precedence yaad rakhni chahiye ya parentheses likhne chahiye?",
+      "a": "Safety ke liye parentheses likho, par precedence ke common rules pata hone chahiye: arithmetic > shift > & > ^ > | > comparison > not > and > or. Phir bhi 'x & MASK == 0' wali galti hoti hai (== pehle chalta hai) — isliye '(x & MASK) == 0' likhna best practice hai.",
+      "tip": "Ek line ka precedence order aur ek classic trap bolo — dono se confidence dikhta hai."
+    },
+    {
+      "q": "+= mutable objects par kya karta hai?",
+      "a": "lst += [x] list.__iadd__ call karta hai jo in-place extend karta hai (same object, id same). lst = lst + [x] nayi list banata hai. Fark tab dikhta hai jab do naam ek hi list par hon: alias in-place version me badla hua dekh lega. Immutable (int/str/tuple) me += sirf rebinding hai.",
+      "tip": "id() se compare dikhane ka bolo — isse immutable/mutable ka concept bhi cover ho jata hai."
+    },
+    {
+      "q": "Comparison operators ko objects par use karne ke liye class me kya chahiye?",
+      "a": "Rich comparison dunders: __eq__, __ne__, __lt__, __le__, __gt__, __ge__. Sirf __eq__ aur __lt__ de kar @functools.total_ordering se baaki mil jate hain. Note: __eq__ define karte ho to __hash__ NULL ho jata hai (unhashable), aur dataclass(eq=True, frozen=True) defaults achhe dete hain.",
+      "tip": "Sorting ke liye key function better hai — class me ordering dene se pehle ye option mention karo."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "17 aur 5 par paanch arithmetic operators ka output batao aur code se verify karo.",
+        "a": "/ = 3.4, // = 3, % = 2, ** bahut bada number, divmod = (3, 2).",
+        "explain": "Ye paanchon patterns har calculation me aate hain; // aur % hi batching aur grouping ke base hain.",
+        "code": "a, b = 17, 5\nprint(a / b, a // b, a % b)\nprint(divmod(a, b))\nprint(a ** 2, pow(a, 2, 100))",
+        "output": "",
+        "tip": "pow(a, 2, 100) modular power hai — cryptography me isi ka use hota hai."
+      },
+      {
+        "q": "Check karo ki number even hai ya odd, aur 3 aur 5 dono se divisible hai ya nahi.",
+        "a": "even: n % 2 == 0; 3 aur 5 dono se: n % 15 == 0 (ya n % 3 == 0 and n % 5 == 0).",
+        "code": "n = 45\nprint('even?', n % 2 == 0)\nprint('div by 3 and 5?', n % 3 == 0 and n % 5 == 0)\nprint('mod 15 shortcut:', n % 15 == 0)",
+        "output": "",
+        "explain": "Modulo remainder deta hai; zero remainder ka matlab divisible. LCM ka shortcut (15) tab valid hai jab numbers coprime hon.",
+        "tip": "Coprime condition mention karna bonus hai (6 aur 4 ke liye n % 24 galat hoga)."
+      },
+      {
+        "q": "Chained comparison se check karo ki score 0 se 100 ke beech hai (both inclusive).",
+        "a": "0 <= score <= 100 — ek hi expression, aur score sirf ek baar evaluate hota hai.",
+        "code": "for score in (0, 57, 100, 101, -3):\n    print(score, 'valid' if 0 <= score <= 100 else 'invalid')",
+        "output": "",
+        "explain": "Chained comparison and ka short-circuit behaviour rakhta hai, isliye readability aur performance dono better.",
+        "tip": "Interview me 'and se kaise alag hai' poochha ja sakta hai — evaluation count ka fark batao."
+      },
+      {
+        "q": "Do numbers ka average nikaalo aur batao kaunsa expression float dena chahiye.",
+        "a": "(a + b) / 2 float deta hai; (a + b) // 2 galti se integer average de deta hai.",
+        "code": "a, b = 7, 8\nprint('true average :', (a + b) / 2)\nprint('floor average:', (a + b) // 2)\nprint('rounded      :', round((a + b) / 2, 1))",
+        "output": "",
+        "explain": "// ka integer result 'average' ke naam se lauta dena classic logic bug hai — 7.5 ki jagah 7 mil jata hai.",
+        "tip": "Paise ke average ke liye Decimal aur banker's rounding ka zikr karo."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "'value or default' pattern ka trap 0 ke saath dikhao aur safe version likho.",
+        "a": "0 or 5 -> 5 (galat, kyunki 0 valid ho sakta hai). Safe: 'value if value is not None else 5'.",
+        "code": "def with_or(value):\n    return value or 5\n\ndef with_sentinel(value):\n    return value if value is not None else 5\n\nfor value in (0, '', None, 42):\n    print(repr(value), '-> or:', with_or(value), '| safe:', with_sentinel(value))",
+        "output": "",
+        "explain": "or truthiness par chalta hai, isliye 0 aur '' default ban jate hain; identity check sirf None ko replace karta hai.",
+        "tip": "Ye bug production me timeout 0 ya retry 0 ke saath aata hai — ek real example batao."
+      },
+      {
+        "q": "Bitwise operators se ek chhota permission system likho (grant, check, revoke).",
+        "a": "Flags: READ=1, WRITE=2, DELETE=4. grant = role | WRITE, check = bool(role & WRITE), revoke = role & ~WRITE.",
+        "code": "READ, WRITE, DELETE = 0b001, 0b010, 0b100\n\ndef grant(role, flag):\n    return role | flag\n\ndef can(role, flag):\n    return (role & flag) == flag\n\ndef revoke(role, flag):\n    return role & ~flag\n\nrole = grant(0, READ)\nrole = grant(role, WRITE)\nprint('bits    :', bin(role))\nprint('R/W/D   :', can(role, READ), can(role, WRITE), can(role, DELETE))\nprint('revoked :', bin(revoke(role, WRITE)))",
+        "output": "",
+        "explain": "Masks decimal ya binary literal se likho; bob check me parentheses zaroori hain kyunki == , & se pehle chalta hai.",
+        "tip": "Interview me 'permissions database me kaise store karoge' ka jawab bhi soch lo (ek integer column)."
+      },
+      {
+        "q": "Left aur right shift se multiply/divide karke dikhao, aur negative numbers par kya hota hai batao.",
+        "a": "x << n = x * 2**n, x >> n = x // 2**n (floor). Negative numbers par >> floor karta hai: -5 >> 1 == -3.",
+        "code": "x = 5\nprint(x << 3, '==', x * 2 ** 3)\nprint(64 >> 3, '==', 64 // 2 ** 3)\nprint('-5 >> 1 =', -5 >> 1, '| -5 // 2 =', -5 // 2)\nprint('bit length:', bin(64).count('1'))",
+        "output": "",
+        "explain": "Shift right floor division hai, isliye negative numbers par expected se ek kam aata hai.",
+        "tip": "Production me shifts ko readability ke liye numbers se replace karo — sirf bit manipulation me rakho."
+      },
+      {
+        "q": "Ek rule engine likho jo discount nikaale: order 500+ par 10%, aur loyalty member ho to extra 5% — precedence sahi rakho.",
+        "a": "Rule conditions ko parentheses me saaf likho aur rate ko float me rakho; total = amount * (1 - rate).",
+        "code": "def discount_rate(amount, loyalty, coupon=False):\n    rate = 0.0\n    if amount >= 500:\n        rate += 0.10\n    if loyalty:\n        rate += 0.05\n    if coupon and amount >= 500:\n        rate += 0.05\n    return min(rate, 0.30)\n\nfor amount, loyalty, coupon in ((1200, True, False), (300, True, True), (500, False, True)):\n    rate = discount_rate(amount, loyalty, coupon)\n    print(f'amount={amount:>5} rate={rate:.2f} pay={amount * (1 - rate):.2f}')",
+        "output": "",
+        "explain": "Har rule ek alag if hai (elif nahi) kyunki rules independent hain; cap lagana business safety hai.",
+        "tip": "Discount rules me 'cap' aur 'order of application' dono document karne padte hain — ye interview point hai."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Short-circuiting ko use karke bina try/except ke safe division likho.",
+        "a": "denominator and numerator / denominator — denominator falsy (0) hone par pehla operand hi return ho jata hai aur division nahi hoti.",
+        "code": "def safe_div(numerator, denominator):\n    if denominator == 0:\n        return None\n    return numerator / denominator\n\ndef short_circuit(numerator, denominator):\n    return denominator and numerator / denominator\n\nfor n, d in ((10, 2), (10, 0)):\n    print(n, '/', d, '=', safe_div(n, d), '| short:', short_circuit(n, d))",
+        "output": "",
+        "explain": "Falsy short-circuit bacha deta hai, par return type 0/None/float mix ho jata hai — isliye explicit version production me better hai.",
+        "tip": "Interview me 'clever vs clear' ka trade-off discuss karo; clever code review me reject hota hai."
+      },
+      {
+        "q": "Operator precedence kaise test karoge? Ek table-driven test likho jo do expression variants compare kare.",
+        "a": "Expressions ko lambdas me rakho aur expected values ke saath compare karo — precedence par assumption test me pin ho jati hai.",
+        "code": "cases = [\n    (lambda: 2 + 3 * 4, 14),\n    (lambda: (2 + 3) * 4, 20),\n    (lambda: 2 ** 3 ** 2, 512),\n    (lambda: 1 << 2 | 1, 5),\n    (lambda: (1 << 2) | 1, 5),\n    (lambda: 10 - 4 - 3, 3),\n    (lambda: 7 & 3 == 3, 3),\n]\nfor fn, expected in cases:\n    got = fn()\n    print(f'{got:>4} expected {expected:>4} ->', 'ok' if got == expected else 'MISMATCH')",
+        "output": "",
+        "explain": "7 & 3 == 3 me == pehle chalta hai, isliye (7 & (3 == 3)) = (7 & 1) = 3 hota hai — yahi classic trap hai jo test me pin karta hai.",
+        "tip": "Apne codebase me 'flag & mask == x' pattern dhundo — review comment ready rakho."
+      },
+      {
+        "q": "Augmented assignment mutable aur immutable par alag kaise behave karta hai? id() se prove karo.",
+        "a": "List par += in-place extend hota hai (id same), tuple/str par naya object banta hai (id badalta hai).",
+        "code": "lst = [1, 2]\nalias = lst\nbefore = id(lst)\nlst += [3]\nprint('list id same?', id(lst) == before, '| alias:', alias)\n\nt = (1, 2)\nbefore_t = id(t)\nt += (3,)\nprint('tuple id same?', id(t) == before_t, '| value:', t)\n\ns = 'ab'\nbefore_s = id(s)\ns += 'c'\nprint('str id same?', id(s) == before_s, '| value:', s)",
+        "output": "",
+        "explain": "list.__iadd__ in-place extend karta hai; tuple/str immutable hain isliye __add__ naya object deta hai aur naam rebind hota hai.",
+        "tip": "Isi difference se 'aliasing surprise' aata hai — function ko list pass karni ho to copy ka faisla yahin se aata hai."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interviewer poochta hai: 'x & MASK == 0' ka result kya aayega aur kyun?",
+        "a": "Comparison (& se zyada precedence) pehle chalta hai: 3 == 0 -> False -> 3 & False -> 3 & 0 -> 0. Matlab condition hamesha 0 deti hai, jo 'flag set nahi' maan li jati hai — silent bug. Sahi: (x & MASK) == 0.",
+        "explain": "Precedence trap ko example se samjhana interviewer ko turant convince karta hai.",
+        "code": "x, MASK = 0b110, 0b010\nprint('trap   :', x & MASK == 0)\nprint('correct:', (x & MASK) == 0)",
+        "output": "",
+        "tip": "Linters (flake8 E712-ish / pycodestyle) isi class ke issues pakadte hain — tooling mention karo."
+      },
+      {
+        "q": "Comparisons ko chain karna C/Java se alag kyun hai?",
+        "a": "Python me 'a < b < c' ka matlab (a < b) and (b < c) hai (chained, aur b ek hi baar evaluate hota hai). C/Java me ye (a < b) < c maana jata hai — bool ko number samajhkar — jo almost hamesha bug hota hai.",
+        "explain": "Ye language semantics ka question hai, isliye contrast ke saath jawab dena best hai.",
+        "code": "values = [1, 5, 9]\nprint(1 < 5 < 9)\nprint((1 < 5) < 9)\nprint('C-style would be:', int(1 < 5) < 9)",
+        "output": "",
+        "tip": "Evaluated-once property ko highlight karo — side-effect wale function ke saath farak padta hai."
+      },
+      {
+        "q": "Membership aur equality me performance ka fark kya hai?",
+        "a": "'x in list' O(n) linear scan hai, 'x in set' O(1) average hash lookup, 'x in dict' key lookup bhi O(1). Equality comparison har element par chalti hai, isliye bade collections me set/frozenset use karna chahiye.",
+        "explain": "Hashability requirement (immutable elements) bhi mention karna zaroori hai.",
+        "code": "items_list = [1, 2, 3, 4, 5]\nitems_set = set(items_list)\nprint(4 in items_list, 4 in items_set)\nprint('nested tuple in set:', (1, 2) in {(1, 2), (3, 4)})\ntry:\n    bad = {[1, 2]}\nexcept TypeError as e:\n    print('unhashable:', e)",
+        "output": "",
+        "tip": "Big-O ke saath memory trade-off bhi bolo — set extra memory leta hai."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Ek payment amount par GST (18%) aur discount laga kar final payable nikaalo, rounding banker-safe rakho.",
+        "a": "Decimal use karo, ROUND_HALF_UP se paise round karo, aur discount pehle laga kar phir tax calculate karo (business rule ke hisaab se order document karo).",
+        "explain": "Money me float se rounding error aati hai; Decimal + explicit rounding mode audit-safe hota hai.",
+        "code": "from decimal import Decimal, ROUND_HALF_UP\n\ndef payable(amount, gst_rate=Decimal('0.18'), discount=Decimal('0')):\n    net = Decimal(str(amount)) * (Decimal('1') - Decimal(str(discount)))\n    total = net * (Decimal('1') + gst_rate)\n    return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)\n\nprint('1200, 10% off:', payable(1200, discount=0.10))\nprint('999.99, no discount:', payable(999.99))\nprint('float compare:', 0.1 + 0.2 == 0.3, '| decimal:', Decimal('0.1') + Decimal('0.2') == Decimal('0.3'))",
+        "output": "",
+        "tip": "Tax/discount order ka business rule clear karo — interviewers isi par follow-up karte hain."
+      },
+      {
+        "q": "Retry logic likho: 0 valid hai (turant fail) par missing value par default 3 retries chahiye.",
+        "a": "None par default, 0 par zero — identity check se, truthiness se nahi.",
+        "explain": "Isi pattern se production config me 'retries 0 valid' bug root hota hai.",
+        "code": "def resolve_retries(raw, default=3):\n    if raw is None:\n        return default\n    return max(0, int(raw))\n\nfor raw in (None, 0, 5, '2'):\n    print(repr(raw), '->', resolve_retries(raw))\nprint('truthiness trap  :', 0 or 3)",
+        "output": "",
+        "tip": "max(0, ...) se negative values clamp karna defensive coding hai."
+      },
+      {
+        "q": "Feature flags ko ek integer me store karke user ka access check karo, aur naya flag add karne par kya dhyan rakhoge?",
+        "a": "Bits ko named constants me rakho, naya flag agle free bit par (1 << n) do — purane bits ka matlab na badlo, warna database me stored values ka meaning badal jayega.",
+        "explain": "Backward compatibility ka issue: bits ka meaning change karna existing data ko corrupt kar deta hai.",
+        "code": "FEATURES = {'export': 1 << 0, 'dashboard': 1 << 1, 'api': 1 << 2}\n\ndef has_access(flags, name):\n    mask = FEATURES[name]\n    return (flags & mask) == mask\n\nflags = FEATURES['export'] | FEATURES['api']\nfor name in FEATURES:\n    print(f'{name:10}', has_access(flags, name))\nprint('raw flags stored:', flags, bin(flags))",
+        "output": "",
+        "tip": "Aage badhne par flags 64-bit se aage nikal sakein to BigInteger/array plan karo — ye scale awareness dikhata hai."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "BMI calculator likho jo weight (kg) aur height (m) se BMI nikaale aur category bataye.",
+      "build": "Function bmi(weight, height) aur category(bmi_value) jo underweight/normal/overweight/obese return kare.",
+      "input": "[(82, 1.78), (55, 1.70), (95, 1.72)]",
+      "expected": "Har input ke liye BMI 1 decimal me aur category.",
+      "hint": "bmi = weight / height ** 2; categories chained comparison se likho.",
+      "concept": "Arithmetic operators, chained comparison, formatting",
+      "solution": "def bmi(weight, height):\n    return weight / height ** 2\n\ndef category(value):\n    if value < 18.5:\n        return 'underweight'\n    if 18.5 <= value < 25:\n        return 'normal'\n    if 25 <= value < 30:\n        return 'overweight'\n    return 'obese'\n\nfor weight, height in ((82, 1.78), (55, 1.70), (95, 1.72)):\n    value = bmi(weight, height)\n    print(f'{weight:>3}kg {height:.2f}m -> BMI {value:5.1f} ({category(value)})')",
+      "output": "",
+      "explanation": "Chained comparisons se boundaries saaf dikhti hain aur overlap nahi hota. Function do hisson me hai (calculate vs classify) taaki thresholds badalna aasan ho.",
+      "time": "O(1) per record",
+      "space": "O(1)",
+      "better": "Thresholds ko tuple-list me rakho [(18.5, 'underweight'), ...] aur loop se erste matching category lo — configuration data, code nahi.",
+      "followUp": "Bade dataset par BMI column kaise calculate karoge? (pandas vectorized / numpy operations)"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Divisibility report likho: 1..30 me se 3, 5, aur dono (15) se divisible numbers ki lists print karo.",
+      "build": "Teen lists: mul3, mul5, mul15 — list comprehension ke saath.",
+      "input": "range(1, 31)",
+      "expected": "Teen alag lists aur overlap ka count.",
+      "hint": "Modulo se filter karo; 'dono' ke liye n % 3 == 0 and n % 5 == 0 ya n % 15 == 0.",
+      "concept": "Modulo, boolean operators, comprehensions",
+      "solution": "numbers = range(1, 31)\n\nmul3 = [n for n in numbers if n % 3 == 0]\nmul5 = [n for n in numbers if n % 5 == 0]\nmul15 = [n for n in numbers if n % 3 == 0 and n % 5 == 0]\n\nprint('by 3 :', mul3)\nprint('by 5 :', mul5)\nprint('by 15:', mul15)\nprint('overlap check:', mul15 == list(set(mul3) & set(mul5)))",
+      "output": "",
+      "explanation": "Set intersection se verify karna achhi practice hai — ye do independent tarike se same answer nikaalta hai aur logic ko confirm karta hai.",
+      "time": "O(n) per list",
+      "space": "O(n) — teen lists",
+      "better": "Ek hi pass me teen buckets bharo (O(n) total instead of 3n) aur generators use karo taaki sirf zaroorat par materialize ho.",
+      "followUp": "Bade ranges ke liye 'divisible by k' ka formula-based count batao ((hi - lo) // k)."
+    },
+    {
+      "difficulty": "medium",
+      "question": "Ek chhota expression evaluator likho jo '+', '-', '*', '/' aur parentheses wale simple integer expression ko evaluate kare.",
+      "build": "evaluate(expr: str) -> float — operator precedence aur parentheses handle kare.",
+      "input": "'2 + 3 * (4 - 1) / 3'",
+      "expected": "5.0",
+      "hint": "Shunting-yard ya do stacks (values/operators) ka classic algorithm use karo; precedence table me '*'/'/' > '+'/'-'.",
+      "concept": "Operator precedence, stacks, tokenisation",
+      "solution": "PRECEDENCE = {'+': 1, '-': 1, '*': 2, '/': 2}\n\ndef apply_op(values, ops):\n    op = ops.pop()\n    b, a = values.pop(), values.pop()\n    if op == '+':\n        values.append(a + b)\n    elif op == '-':\n        values.append(a - b)\n    elif op == '*':\n        values.append(a * b)\n    else:\n        values.append(a / b)\n\ndef evaluate(expr):\n    values, ops, i = [], [], 0\n    while i < len(expr):\n        ch = expr[i]\n        if ch == ' ':\n            i += 1\n            continue\n        if ch.isdigit():\n            number = ''\n            while i < len(expr) and (expr[i].isdigit() or expr[i] == '.'):\n                number += expr[i]\n                i += 1\n            values.append(float(number))\n            continue\n        if ch == '(':\n            ops.append(ch)\n        elif ch == ')':\n            while ops and ops[-1] != '(':\n                apply_op(values, ops)\n            ops.pop()\n        else:\n            while ops and ops[-1] != '(' and PRECEDENCE[ops[-1]] >= PRECEDENCE[ch]:\n                apply_op(values, ops)\n            ops.append(ch)\n        i += 1\n    while ops:\n        apply_op(values, ops)\n    return values[0]\n\nfor expr in ('2 + 3 * 4', '(2 + 3) * 4', '2 + 3 * (4 - 1) / 3', '10 - 4 - 3'):\n    print(f'{expr:22} = {evaluate(expr)}')",
+      "output": "",
+      "explanation": "Shunting-yard ka core: number ko seedha values me daalo, operator aane par higher/equal precedence wale pehle apply karo, aur ')' par '(' tak flush karo. Isi wajah se '10 - 4 - 3' me left-associativity sahi rehti hai.",
+      "time": "O(n) — har token ek baar process hota hai",
+      "space": "O(n) worst case (nested parentheses)",
+      "better": "AST banake evaluate karo to expression ek hi baar parse hoti hai aur dobara evaluate karna sasta hota hai; parse errors ke liye position-aware messages do.",
+      "followUp": "Unary minus, power operator aur functions (sin, max) add karne ke liye grammar kaise badhegi?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Retry/backoff calculator likho: attempt number se delay nikaalo (exponential + jitter), aur max delay cap lagao.",
+      "build": "delay_for(attempt, base=0.5, cap=30, jitter=True) -> float seconds.",
+      "input": "attempts 1..8",
+      "expected": "0.5, 1, 2, 4, 8, 16, 30 (capped) — jitter ke saath ±10%.",
+      "hint": "delay = min(cap, base * 2 ** (attempt - 1)); jitter ke liye random ke reproducible seed use karo.",
+      "concept": "Exponentiation operator, min/max, randomness control",
+      "solution": "import random\n\ndef delay_for(attempt, base=0.5, cap=30.0, jitter=True, rng=None):\n    raw = base * (2 ** (attempt - 1))\n    capped = min(raw, cap)\n    if not jitter:\n        return capped\n    rng = rng or random.Random(1234)  # deterministic demo\n    return round(capped * rng.uniform(0.9, 1.1), 3)\n\ntotal = 0.0\nfor attempt in range(1, 9):\n    delay = delay_for(attempt)\n    total += delay\n    print(f'attempt {attempt}: {delay:>6.3f}s (cumulative {total:7.3f}s)')\n\nprint('no jitter:', [delay_for(a, jitter=False) for a in range(1, 8)])",
+      "output": "",
+      "explanation": "2 ** (attempt - 1) exponential growth deta hai, min() cap lagata hai, aur jitter ko injectable rng se deterministic banaya gaya hai — tests me flaky-ness khatam. Total cumulative print karna 'kitni der ruk jayenge' ka realistic andaza deta hai.",
+      "time": "O(1) per attempt (naive O(2^n) avoid kiya)",
+      "space": "O(1)",
+      "better": "Production me decorator + full jitter (random.uniform(0, delay)) use karo, aur retry budget/total deadline bhi rakho taaki request infinite na chale.",
+      "followUp": "Jitter ke bina 'thundering herd' problem kaise banta hai aur full jitter isse kaise bachata hai?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Permission checker likho jo role bits aur required flags ka faisla kare, aur 'missing kaunsi permission hai' batao.",
+      "build": "check(role, required) -> (ok, missing_names) jahan required bhi bitmask ho.",
+      "input": "role = READ|WRITE, required = READ|DELETE",
+      "expected": "ok=False, missing=['delete']",
+      "hint": "missing = required & ~role; phir har set bit ka naam nikaalo bit shift se.",
+      "concept": "Bitwise & | ~, bit iteration, error reporting",
+      "solution": "FLAGS = {'read': 1 << 0, 'write': 1 << 1, 'delete': 1 << 2, 'admin': 1 << 3}\n\ndef names_to_mask(names):\n    mask = 0\n    for name in names:\n        mask |= FLAGS[name]\n    return mask\n\ndef mask_to_names(mask):\n    return [name for name, flag in FLAGS.items() if mask & flag]\n\ndef check(role, required):\n    missing = required & ~role\n    return missing == 0, mask_to_names(missing)\n\nrole = names_to_mask(['read', 'write'])\nprint('role:', mask_to_names(role), bin(role))\n\nok, missing = check(role, names_to_mask(['read', 'delete']))\nprint('can read+delete?', ok, '| missing:', missing)\n\nok2, missing2 = check(role, names_to_mask(['read', 'write']))\nprint('can read+write? ', ok2, '| missing:', missing2)\n\nprint('deny-list style:', mask_to_names(names_to_mask(['admin', 'delete']) & ~role))",
+      "output": "",
+      "explanation": "missing = required & ~role sirf wo bits chhodta hai jo role me nahi hain — isse error message actionable ban jata hai. mask_to_names ordering FLAGS ke order par depend karti hai (dict insertion order), jo deterministic hai.",
+      "time": "O(n) flags",
+      "space": "O(n)",
+      "better": "IntFlag ya enum.Flag use karo — aapko name printing, OR-ing aur serialization sab free milta hai, aur type safety bhi.",
+      "followUp": "IntFlag aur plain int bitmask me kya trade-off hai, aur API me permissions kaise expose karoge?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Ek 'safe calculator' likho jo arithmetic expression ki chhoti language parse kare, precedence/associativity respect kare, aur galat input par clear error de.",
+      "build": "safe_eval(tokens) — plus unary minus, power (right associative), aur division-by-zero error handling.",
+      "input": "['2', '+', '3', '*', '4'], ['-', '5', '+', '2'], ['2', '^', '3', '^', '2']",
+      "expected": "14, -3, 512 aur 1/0 par ZeroDivisionError with message.",
+      "hint": "Precedence: + - (1), * / (2), unary minus (3), ^ (4, right-assoc). ')' aur end par flush karo; unary detect karne ke liye previous token dekho.",
+      "concept": "Operator precedence, associativity, token stream parsing, error design",
+      "solution": "BINARY = {'+': (1, 'L'), '-': (1, 'L'), '*': (2, 'L'), '/': (2, 'L'), '^': (4, 'R')}\n\nclass CalcError(ValueError):\n    pass\n\ndef apply_op(values, ops):\n    op = ops.pop()\n    if op == 'u-':\n        values.append(-values.pop())\n        return\n    b, a = values.pop(), values.pop()\n    if op == '+':\n        values.append(a + b)\n    elif op == '-':\n        values.append(a - b)\n    elif op == '*':\n        values.append(a * b)\n    elif op == '/':\n        if b == 0:\n            raise CalcError('division by zero')\n        values.append(a / b)\n    else:\n        values.append(a ** b)\n\ndef safe_eval(tokens):\n    values, ops = [], []\n    prev = 'start'\n    for token in tokens:\n        if token.lstrip('-').replace('.', '', 1).isdigit():\n            values.append(float(token))\n            prev = 'value'\n            continue\n        if token == '(':\n            ops.append(token)\n        elif token == ')':\n            while ops and ops[-1] != '(':\n                apply_op(values, ops)\n            if not ops:\n                raise CalcError('unbalanced parenthesis')\n            ops.pop()\n        else:\n            if token == '-' and prev in ('start', 'op', '('):\n                ops.append('u-')\n                prev = 'op'\n                continue\n            if token not in BINARY:\n                raise CalcError(f'unknown token {token!r}')\n            while (ops and ops[-1] != '(' and ops[-1] != 'u-'\n                   and (BINARY[ops[-1]][0] > BINARY[token][0]\n                        or (BINARY[ops[-1]][0] == BINARY[token][0] and BINARY[token][1] == 'L'))):\n                apply_op(values, ops)\n            ops.append(token)\n            prev = 'op'\n    while ops:\n        if ops[-1] == '(':\n            raise CalcError('unbalanced parenthesis')\n        apply_op(values, ops)\n    if len(values) != 1:\n        raise CalcError('invalid expression')\n    return values[0]\n\nfor tokens in (['2', '+', '3', '*', '4'], ['-', '5', '+', '2'], ['2', '^', '3', '^', '2'], ['(', '2', '+', '3', ')', '*', '4']):\n    print(' '.join(tokens), '=', safe_eval(tokens))\n\ntry:\n    safe_eval(['1', '/', '0'])\nexcept CalcError as e:\n    print('CalcError:', e)",
+      "output": "",
+      "explanation": "Do stacks classic approach hai: precedence table associativity ke saath decide karta hai ki pehle kaunsa operator apply hoga (^ right-associative hai isliye equal precedence par flush nahi karta). Unary minus ko separate pseudo-operator 'u-' banaya gaya taaki binary minus se confuse na ho. Har error custom CalcError se aata hai — caller ko sirf ek exception type handle karna padta hai.",
+      "time": "O(n) tokens; har operator ek baar apply hota hai",
+      "space": "O(n) stacks",
+      "better": "Recursive descent parser ya ast module (Python ka safe subset) use karo — code chhota, errors positional, aur extension (functions, variables) aasan ho jata hai.",
+      "followUp": "eval() kyun khatarnak hai aur kaun se alternatives (ast.literal_eval, custom parser) kab use karoge?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "quantity = 3\nprice = None\ntotal = quantity * price\nprint(total)",
+      "error": "TypeError: unsupported operand type(s) for *: 'int' and 'NoneType'",
+      "why": "None ke saath arithmetic karna allowed nahi hai. Ye tab aata hai jab data incomplete ho (API field missing, config key absent) aur 'missing value' arithmetic me chali jaye.",
+      "fix": "Value ko pehle validate/default karo, ya jahan None possible ho wahan explicit check lagao.",
+      "correct": "quantity = 3\nprice = None\nprice = price if price is not None else 0\ntotal = quantity * price\nprint('total:', total)\nprint('has price?', price != 0 or quantity == 0)",
+      "output": "",
+      "lesson": "None 'zero' nahi hai. Arithmetic se pehle data contract clear karo — default, skip ya error: teen me se ek choose karo."
+    },
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "average = sum([1, 2, 3]) / 0\nprint(average)",
+      "error": "ZeroDivisionError: division by zero",
+      "why": "Denominator zero hai — colecciones empty hone par len() 0 aata hai, aur 'average of nothing' mathematically defined nahi hai.",
+      "fix": "Denominator check karo aur empty case ke liye None/0 return karo ya explicit error raise karo.",
+      "correct": "def average(values):\n    if not values:\n        return None\n    return sum(values) / len(values)\n\nprint('numbers:', average([1, 2, 3]))\nprint('empty  :', average([]))",
+      "output": "",
+      "lesson": "Empty-collection edge case har aggregation me hota hai — test list me empty case hamesha rakho."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "a, b, c = 10, 4, 2\naverage = a + b / c\nprint('average:', average)",
+      "error": "Logic error — precedence ki wajah se output 12.0 aata hai, average nahi",
+      "why": "Division pehle chalti hai (b / c = 2.0), phir addition (10 + 2.0). Parentheses ke bina ye average nahi, 'a plus (b/c)' hai.",
+      "fix": "Poora expression parentheses me likho: (a + b) / c.",
+      "correct": "a, b, c = 10, 4, 2\naverage = (a + b) / c\nprint('average:', average)",
+      "output": "",
+      "lesson": "Precedence bugs chupke hote hain kyunki code chalta hai aur plausible number deta hai. Formula likhte waqt hamesha parentheses se intent pin karo."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "score = 85\nif score > 0 or score < 100:\n    print('valid score')\nelse:\n    print('invalid score')\nprint('checked:', score)",
+      "error": "Logic error — 150 aur -20 bhi 'valid' print honge",
+      "why": "or hamesha True deta hai jab ek bhi condition satisfy ho: har number ya 0 se bada hoga ya 100 se chhota. Range check ke liye and chahiye.",
+      "fix": "and lagao ya chained comparison use karo: 0 <= score <= 100.",
+      "correct": "for score in (85, 150, -20):\n    if 0 <= score <= 100:\n        print(score, '-> valid score')\n    else:\n        print(score, '-> invalid score')",
+      "output": "",
+      "lesson": "and/or me ek operator flip karne se condition 'always true' ban jati hai. Boundary values (0, 100, 101, -1) se test karo, tabhi pakda jayega."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "FLAGS = {'read': 1, 'write': 2, 'delete': 4}\nrole = FLAGS['read'] | FLAGS['write']\n\nif role & FLAGS['write'] == 0:\n    print('write denied')\nelse:\n    print('write allowed')\n\nprint('raw checks passed regardless')",
+      "error": "Logic error — delete permission na hone par bhi 'delete allowed' print hota hai",
+      "why": "Comparison (==) bitwise & se zyada precedence rakhta hai, isliye expression (role & (FLAGS['delete'] == 0)) banta hai. 4 == 0 False hai, aur role & False == 0 — condition falsy hui, isliye else branch chala diya, halanki delete bit set hi nahi tha.",
+      "fix": "Parentheses lagao: (role & FLAGS['delete']) == 0, ya readable helper likho can(role, 'delete') jo flag ke saath compare kare.",
+      "correct": "FLAGS = {'read': 1, 'write': 2, 'delete': 4}\nrole = FLAGS['read'] | FLAGS['write']\n\ndef can(role, flag):\n    return (role & FLAGS[flag]) == FLAGS[flag]\n\nprint('delete allowed?', can(role, 'delete'))\nprint('read allowed?  ', can(role, 'read'))\nprint('role bits      :', bin(role))",
+      "output": "",
+      "lesson": "Precedence ke saath bitwise operators sabse zyada trap banate hain. Permission logic ko helper function me daalna (aur test likhna) hi asli fix hai."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Bina calculator ke batao: 17 % 5, -17 % 5, 17 // 5, -17 // 5 — phir code se verify karo aur ek line me rule likho.",
+      "hint": "Floor division neeche ki taraf jata hai; % ka sign divisor ka hota hai.",
+      "deliverable": "Chaar values + rule ka ek comment."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Ek 'bit flags' utility likho: named flags, grant/revoke/check, aur human-readable report (kaun si permissions set hain).",
+      "hint": "1 << n se flags banao aur mask_to_names helper likho.",
+      "deliverable": "Chalta hua utility + output jisme flag names dikhein."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Pricing rule engine likho: JSON-style rules (condition operators: >=, <=, ==, in) ko evaluate karo aur final price nikaalo, sab kuch Decimal me.",
+      "hint": "Rule ko (field, operator, value, effect) ki list banao aur operators ko functions ke dict me map karo.",
+      "deliverable": "Engine + 3 sample carts ka pricing output."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Interview-style: ek bug report mila — '0 discount kabhi apply nahi hota'. Root cause dhundo aur 3 fix options ka trade-off likho.",
+      "hint": "Truthiness vs identity; fix options: 'is None', sentinel object, ya explicit schema validation.",
+      "deliverable": "Bug demo + 3 fixes ka comparison table."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Ek mini 'permission service' banao: roles define karo, user-role assignment, permission check, aur audit log (kisne kya check kiya) — sab bit flags par based.",
+      "hint": "Roles ko masks me precompute karo (role -> mask) taaki check O(1) ho.",
+      "deliverable": "Working demo + audit log output."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Tip & Bill Splitter (Version 1)",
+      "problem": "Restaurant bill par tip, tax aur split ka calculation haath se karna error-prone hai — aur rounding ka jhagda hamesha hota hai.",
+      "objective": "Ek program jo bill amount, tip %, tax % aur logon ki ginti se per-person payable amount nikaale.",
+      "features": [
+        "Tip aur tax percentage based calculation",
+        "Per-person split with rounding report",
+        "Rounding adjustment ka summary (kitna extra/less hua)"
+      ],
+      "concepts": [
+        "Arithmetic aur precedence",
+        "Decimal rounding for money",
+        "Formatted output"
+      ],
+      "structure": "bill_splitter/\n└── splitter.py      # saara logic, ek file",
+      "steps": [
+        "Inputs ko clearly naam do: amount, tip_rate, tax_rate, people.",
+        "Pehle tip, phir tax calculate karo (order document karo) aur total banao.",
+        "Per-person amount round karo aur rounding difference ko alag report karo.",
+        "Kuch edge values (1 person, 0 tip, 7 people) se test karo."
+      ],
+      "code": "from decimal import Decimal, ROUND_HALF_UP\n\nMONEY = Decimal('0.01')\n\ndef split_bill(amount, tip_rate, tax_rate, people):\n    base = Decimal(str(amount))\n    tip = (base * Decimal(str(tip_rate))).quantize(MONEY, rounding=ROUND_HALF_UP)\n    taxable = base + tip\n    tax = (taxable * Decimal(str(tax_rate))).quantize(MONEY, rounding=ROUND_HALF_UP)\n    total = (base + tip + tax).quantize(MONEY, rounding=ROUND_HALF_UP)\n    per_head = (total / people).quantize(MONEY, rounding=ROUND_HALF_UP)\n    collected = (per_head * people).quantize(MONEY, rounding=ROUND_HALF_UP)\n    return {'base': base, 'tip': tip, 'tax': tax, 'total': total,\n            'per_head': per_head, 'rounding_gap': collected - total}\n\nresult = split_bill(1840.75, 0.10, 0.05, 3)\nfor key, value in result.items():\n    print(f'{key:13}: {value}')\nprint()\nfor people in (1, 2, 7):\n    r = split_bill(1000, 0.05, 0.05, people)\n    print(f'{people} people -> {r[\"per_head\"]} each, gap {r[\"rounding_gap\"]}')",
+      "output": "",
+      "explanation": "Decimal + explicit ROUND_HALF_UP se paise exact rehte hain (float ke 0.1 + 0.2 problem se bachte hain). rounding_gap batana honesty hai: 3 logon me exact split possible nahi, aur ye difference explicitly report hota hai.",
+      "testing": "Tip 0%, tax 0%, 1 person, aur 7 people (jahan rounding gap aata hai) — ye chaar tests minimum hain. Har case me total = base + tip + tax verify karo.",
+      "errors": "people = 0 par ZeroDivisionError aayega — abhi assumption documented hai; Version 2 me validation aati hai. Negative amount bhi reject karna chahiye.",
+      "improvements": [
+        "Input ko command line se lo aur validation lagao (people >= 1, rates 0..1)",
+        "Discount/coupon support add karo jiska order configurable ho",
+        "Receipt-style formatted output (aligned columns) banao"
+      ],
+      "advanced": [
+        "Currency support (symbol + minor units) aur per-currency rounding rules",
+        "Itemized bill: har item ka share nikaalo aur per-person item wise breakdown do",
+        "Test suite: har business rule ke liye ek test, Decimal vs float comparison ke saath"
+      ],
+      "realWorld": "Splitwise-jaisi apps, POS receipts aur expense tools sab isi calculation par chalte hain — money rounding ka rule hi audit-safe banata hai.",
+      "interview": [
+        {
+          "q": "Tip pehle lagega ya tax? Iska business impact kya hai?",
+          "a": "Depends on jurisdiction ka rule. Tip on base (tax ke bina) customer ke favour me hai; tip on total me tax par bhi tip di jati hai — typically galat. Isliye order document karna aur configurable rakhna zaroori hai."
+        },
+        {
+          "q": "Rounding gaps ka pura kya karna sahi hai?",
+          "a": "Gap ko last payer par lagao, ya poore gap ko summary me report karo. Chupke se ignore karna mismatch deta hai; always report karo taaki reconciliation possible ho."
+        },
+        {
+          "q": "Float use karke ye calculation kaise galat hoti hai?",
+          "a": "0.1 + 0.2 = 0.30000000000000004 jaise artifacts aate hain, aur hazaar rows par error accumulate hota hai. Decimal (decimal arithmetic) ya integer cents approach se money exact rehti hai."
+        }
+      ],
+      "resume": "Bill Splitter CLI: Decimal-based money handling, configurable tip/tax order aur rounding-gap reporting ke saath.",
+      "readme": [
+        "Project ek line me: restaurant bill splitter",
+        "Calculation order (tip -> tax) aur rounding rule",
+        "Sample output aur edge cases (1 person, 7 people)"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Role & Permission Toolkit (Version 2)",
+      "problem": "Chhote applications me permissions ko strings se compare karte hain (role == 'admin') — isse 'admin writable' jaise partial access aur audit-proof checks likhna muskil ho jata hai.",
+      "objective": "Bitmask based permission toolkit: roles define karo, permissions grant/revoke karo, check karo aur missing permissions report karo.",
+      "features": [
+        "Named permission constants aur role presets",
+        "Grant/revoke/toggle with immutable-returning API",
+        "check() jo missing permissions ki exact list deta hai",
+        "Human-readable report aur audit-log ready dict output"
+      ],
+      "concepts": [
+        "Bitwise operators aur masks",
+        "Immutability (naya role value return karna)",
+        "Designing actionable error messages"
+      ],
+      "structure": "permissions/\n├── flags.py        # permission constants + presets\n├── roles.py        # grant/revoke/check logic\n└── demo.py         # sample run",
+      "steps": [
+        "Permissions ko power-of-two constants me define karo aur ROLE_PRESETS banao.",
+        "grant/revoke functions likho jo naya integer return karein (original na badle).",
+        "check() banao jo (ok, missing_names) de aur readable report bhi print kare.",
+        "Presets par demo chalao: editor, reviewer, admin, aur ek partial role."
+      ],
+      "code": "PERMISSIONS = {\n    'read': 1 << 0,\n    'write': 1 << 1,\n    'delete': 1 << 2,\n    'publish': 1 << 3,\n    'manage_users': 1 << 4,\n}\n\nROLE_PRESETS = {\n    'viewer': PERMISSIONS['read'],\n    'editor': PERMISSIONS['read'] | PERMISSIONS['write'],\n    'reviewer': PERMISSIONS['read'] | PERMISSIONS['publish'],\n    'admin': sum(PERMISSIONS.values()),\n}\n\ndef names_to_mask(names):\n    mask = 0\n    for name in names:\n        mask |= PERMISSIONS[name]\n    return mask\n\ndef mask_to_names(mask):\n    return [name for name, flag in PERMISSIONS.items() if mask & flag]\n\ndef grant(mask, *names):\n    return mask | names_to_mask(names)\n\ndef revoke(mask, *names):\n    return mask & ~names_to_mask(names)\n\ndef check(mask, *required):\n    missing = names_to_mask(required) & ~mask\n    return missing == 0, mask_to_names(missing)\n\nrole = ROLE_PRESETS['editor']\nprint('start    :', mask_to_names(role))\nrole = grant(role, 'publish')\nprint('granted  :', mask_to_names(role))\nrole = revoke(role, 'write')\nprint('revoked  :', mask_to_names(role))\n\nok, missing = check(role, 'read', 'write')\nprint('read+write allowed?', ok, '| missing:', missing)\n\nfor name, preset in ROLE_PRESETS.items():\n    ok_all, _ = check(preset, 'read')\n    print(f'{name:9} bits={bin(preset):>12} can_read={ok_all}')",
+      "output": "",
+      "explanation": "Presets sum() se banaye gaye hain — naya permission add karne par admin automatically include ho jata hai. grant/revoke naya integer return karte hain aur ~names_to_mask(...) revoke ke liye correct hai kyunki ek role ke bahar ke bits ignore ho jate hain (& mask ke saath).",
+      "testing": "Presets sane hone chahiye (admin sab kuch kar sakta hai), revoke ke baad check False aana chahiye, unknown permission par KeyError, aur double grant idempotent hona chahiye.",
+      "errors": "Unknown permission name par KeyError aata hai — Version 3 me custom PermissionError with valid names list aati hai. Empty check() call 0 mask deta hai jo hamesha True hai (documented behaviour).",
+      "improvements": [
+        "Unknown permission par custom error with available names list do",
+        "Permissions ko JSON/YAML config se load karo taaki ops bina code change manage kar sake",
+        "Audit log: har grant/revoke ka timestamped record rakho"
+      ],
+      "advanced": [
+        "enum.IntFlag use karke type-safe permissions banao (name printing aur iteration free)",
+        "Resource-level permissions: 'project:42:read' jaise scoped permissions ka scheme design karo",
+        "Test suite: property test jo verify kare grant->check == True aur revoke->check == False"
+      ],
+      "realWorld": "Django/DRF permissions, cloud IAM policy bits aur feature-flag systems sab isi mask pattern par bane hote hain — check O(1) hota hai aur storage ek integer column.",
+      "interview": [
+        {
+          "q": "Bitmask permissions ke kya nuksan hain?",
+          "a": "Debugging me readable nahi hote (0b10110 ka matlab yaad rakhna padta hai), 64 se zyada permissions ke liye multiple integers chahiye, aur ek bit ka meaning badalna stored data corrupt kar deta hai. Solutions: named enums, name-level reporting, aur permissions ko versioned rakhna."
+        },
+        {
+          "q": "Deny rules kaise support karoge?",
+          "a": "Do masks rakho: granted aur denied; check me pehle denied dekho (deny wins). Ya callers ko policy function do jo context (resource owner, IP) dekhkar decide kare — bitmask sirf storage detail ban jata hai."
+        },
+        {
+          "q": "Frontend me permissions kaise expose karoge?",
+          "a": "Backend se permission names bhejo (integers nahi) taaki UI readable ho, aur UI ke checks ko sirf UX maano — authorization hamesha server par enforce karo."
+        }
+      ],
+      "resume": "Permission Toolkit: bitmask-based roles with immutable grant/revoke API, missing-permission reporting aur audit-ready output.",
+      "readme": [
+        "Permission aur role model ka table",
+        "Usage example: grant, revoke, check",
+        "Security note: authorization server-side enforce hoti hai"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Pricing Rule Engine (Version 3)",
+      "problem": "E-commerce me discount, coupon, membership aur shipping rules ek doosre se takrate hain; hardcoded if-else se precedence aur audit impossible ho jate hain.",
+      "objective": "Ek data-driven pricing engine banao: rules JSON-style config se aate hain, conditions evaluate hoti hain, aur har rule ka asar trail me record hota hai.",
+      "features": [
+        "Rule format: condition (field, operator, value) + effect (percent/fixed/shipping)",
+        "Priority, stacking aur cap support",
+        "Decimal money math with ROUND_HALF_UP",
+        "Audit trail: kaun sa rule laga, kitna change hua, kaun skip hua aur kyun"
+      ],
+      "concepts": [
+        "Operators ko data me map karna (operator dispatch table)",
+        "Decimal arithmetic + rounding discipline",
+        "Rule engine design, priority aur explainability"
+      ],
+      "structure": "pricing_engine/\n├── engine.py        # rules loader + evaluator\n├── rules.json       # pricing rules (data, code nahi)\n├── audit.py         # applied/skipped trail\n└── demo.py          # sample carts",
+      "steps": [
+        "Cart ka shape fix karo: items, subtotal, customer (tier, first_order), coupon.",
+        "Rule schema likho: id, priority, when (list of conditions), then (effect), stack flag.",
+        "Engine me operators ka dispatch table banao aur conditions evaluate karo.",
+        "Effects ko sequence me apply karo, cap lagao, aur audit trail banao."
+      ],
+      "code": "from decimal import Decimal, ROUND_HALF_UP\n\nMONEY = Decimal('0.01')\n\nOPERATORS = {\n    '>=': lambda a, b: a >= b,\n    '<=': lambda a, b: a <= b,\n    '==': lambda a, b: a == b,\n    '!=': lambda a, b: a != b,\n    'in': lambda a, b: a in b,\n}\n\nRULES = [\n    {'id': 'bulk10', 'priority': 10, 'when': [('subtotal', '>=', 500)],\n     'then': {'type': 'percent', 'value': 10, 'max': 200}, 'stack': True},\n    {'id': 'loyalty5', 'priority': 20, 'when': [('tier', 'in', ['gold', 'platinum'])],\n     'then': {'type': 'percent', 'value': 5}, 'stack': True},\n    {'id': 'firstorder', 'priority': 30, 'when': [('first_order', '==', True)],\n     'then': {'type': 'fixed', 'value': 100}, 'stack': False},\n    {'id': 'flatcoupon', 'priority': 40, 'when': [('coupon', '==', 'SAVE50')],\n     'then': {'type': 'fixed', 'value': 50}, 'stack': True},\n]\n\ndef matches(cart, conditions):\n    for field, op, expected in conditions:\n        actual = cart.get(field)\n        if field == 'subtotal':\n            actual = Decimal(str(actual))\n            expected = Decimal(str(expected))\n        if not OPERATORS[op](actual, expected):\n            return field, op, expected\n    return None\n\ndef apply_effect(amount, effect):\n    if effect['type'] == 'percent':\n        delta = (amount * Decimal(effect['value']) / 100).quantize(MONEY, rounding=ROUND_HALF_UP)\n        if 'max' in effect:\n            delta = min(delta, Decimal(str(effect['max'])))\n        return -delta\n    return -Decimal(str(effect['value']))\n\ndef price_cart(cart):\n    subtotal = Decimal(str(cart['subtotal']))\n    total = subtotal\n    trail = []\n    for rule in sorted(RULES, key=lambda r: r['priority']):\n        failed = matches(cart, rule['when'])\n        if failed:\n            trail.append((rule['id'], 'skipped', f'{failed[0]} {failed[1]} {failed[2]} failed'))\n            continue\n        delta = apply_effect(total, rule['then'])\n        new_total = (total + delta).quantize(MONEY, rounding=ROUND_HALF_UP)\n        if new_total < 0:\n            delta = -total\n            new_total = Decimal('0.00')\n        total = new_total\n        trail.append((rule['id'], 'applied', f'{delta}'))\n        if not rule['stack']:\n            trail.append((rule['id'], 'stop', 'non-stackable rule applied'))\n            break\n    return max(total, Decimal('0.00')), trail\n\ncarts = [\n    {'name': 'bulk only', 'subtotal': 1200, 'tier': 'silver', 'first_order': False, 'coupon': None},\n    {'name': 'bulk + loyalty', 'subtotal': 800, 'tier': 'gold', 'first_order': False, 'coupon': None},\n    {'name': 'first order + coupon', 'subtotal': 1500, 'tier': 'bronze', 'first_order': True, 'coupon': 'SAVE50'},\n]\n\nfor cart in carts:\n    total, trail = price_cart(cart)\n    print(f'{cart[\"name\"]:22} subtotal={cart[\"subtotal\"]:>6} -> payable {total}')\n    for rule_id, status, detail in trail:\n        print(f'    {rule_id:11} {status:8} {detail}')\n    print()",
+      "output": "",
+      "explanation": "Rules data hain (code nahi) aur operator dispatch table se evaluate hote hain — naya operator add karne ke liye ek line chahiye. Priority se order deterministic hota hai, 'stack' flag non-stackable rule par engine rok deta hai, aur trail har decision ka reason deta hai (production debugging ka asli hero). Total ko 0 par clamp kiya gaya hai taaki negative payable na ho.",
+      "testing": "Har rule ke liye ek matching case, ek non-matching case, cap wala case, non-stackable short-circuit, aur zero-total clamp. Priority order change hone par output badalna chahiye — ye bhi test karo.",
+      "errors": "Unknown operator ya missing field silently skip ho jata hai trail me reason ke saath — engine kabhi crash nahi karta. Invalid rule config ke liye startup validation (version 4) me schema check aata hai.",
+      "improvements": [
+        "Rules ko JSON file se load karo aur schema validate karo (startup par fail-fast)",
+        "Coupon validity (expiry, usage limit) aur customer-level constraints add karo",
+        "Explain output ko JSON me export karo taaki support team cart ka breakdown dekh sake"
+      ],
+      "advanced": [
+        "Rule performance: conditions ko index karo taaki 500 rules me bhi per-cart evaluation fast rahe",
+        "Shadow mode: naya ruleset purane ke saath parallel chala kar diff report nikalo (safe rollout)",
+        "Property-based tests: kis bhi rule order me payable 0 aur subtotal ke beech rahe"
+      ],
+      "realWorld": "Retail pricing engines, SaaS billing discounts aur promo-code systems yahi pattern use karte hain; audit trail compliance ke liye bhi zaroori hota hai.",
+      "interview": [
+        {
+          "q": "Rules ko code ke bajaye data kyun rakha?",
+          "a": "Data hone se ops/business naya rule bina deploy add kar sakti hai, A/B test karna aasan hota hai, aur same engine ko multiple tenants ke liye different configs ke saath chala sakte hain. Trade-off: config validation aur testing ki discipline zaroori ho jati hai."
+        },
+        {
+          "q": "Precedence kaun decide kare — priority number ya rules ki list ka order?",
+          "a": "Explicit priority field better hai kyunki list ka order accidentally badal sakta hai (merge conflicts, refactor). Priority ke saath stable sort aur duplicate priority detection rakho."
+        },
+        {
+          "q": "Money math me float kaise bacha?",
+          "a": "Subtotal aur effects ko Decimal me convert kiya, har step par .quantize(MONEY, ROUND_HALF_UP) lagaya, aur cap/min-max bhi Decimal me kiya. Isse float ke binary artifacts nahi aate aur receipts reconcile karte hain."
+        }
+      ],
+      "resume": "Data-driven Pricing Rule Engine: JSON rules, priority + stacking, Decimal money math aur per-cart explain audit trail ke saath.",
+      "readme": [
+        "Rule schema (condition operators + effects) ka documentation",
+        "Stacking aur cap rules ka explanation",
+        "Sample carts ka before/after breakdown"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      "Bill splitter me tip aur tax ka order kyun document karna zaroori hai?",
+      "Permission toolkit me grant/revoke naya integer kyun return karte hain, mutate kyun nahi karte?",
+      "Pricing engine me operator dispatch table use karne ka kya fayda mila?"
+    ],
+    "coding": [
+      "Bill splitter me multi-currency support add karo (symbol + minor units + rounding rules).",
+      "Permission toolkit me enum.IntFlag version likho aur name-based report same rakho.",
+      "Pricing engine me 'free shipping above 999' jaisa shipping effect add karo, audit trail ke saath."
+    ],
+    "advanced": [
+      "Pricing engine ke rules ko JSON file se load karo aur invalid config par startup error do.",
+      "Permission toolkit me resource-scoped permissions ('project:42:read') ka scheme design karo.",
+      "Bill splitter me itemized split add karo taaki har person ka share item-wise dikhe."
+    ],
+    "interview": [
+      "In teen projects me se kis ek ko aap production me sabse pehle deploy karoge aur kyun?",
+      "Pricing engine ka worst-case complexity kya hai aur 1000 rules par kaise handle karoge?",
+      "Permission model ko database me kaise store karoge aur query kaise karoge?",
+      "Money handling me aapne float kyun avoid kiya — ek concrete example do."
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Live coding: '0 discount apply nahi hota' bug do — root cause batao, fix karo aur ek test likho jo dobara na aane de.",
+      "a": "Cause: `if discount:` ya `discount or DEFAULT` truthiness use kiya gaya. Fix: `if discount is not None:` ya sentinel object; test me discount=0 pass karo aur expect karo zero-change pricing (payable == subtotal). Boundary values (0, 0.0, Decimal('0')) test me rakho.",
+      "deliverable": "Buggy/fixed output + ek boundary test."
+    },
+    {
+      "q": "Interviewer ek ambiguous condition de: 'order 500 se bada ho YA loyalty member ho, aur coupon ho to extra discount' — pehle conditions likho, phir code.",
+      "a": "Conditions ko parentheses ke saath likho: (amount >= 500 or loyalty) and coupon. Phir clarify karo: 'coupon ho to extra' ka matlab base discount ke upar hay ya sirf usi case me — ambiguous requirement par assumption likhna hi professional jawab hai.",
+      "deliverable": "Truth table + implement function."
+    },
+    {
+      "q": "Explain karo: '10 - 4 - 3' ka result Python me 3 kyun aata hai aur '10 - 4 + 3' me kya badalta hai? Associativity ka role batao.",
+      "a": "Subtraction left-associative hai: ((10 - 4) - 3) = 3. '10 - 4 + 3' me + aur - same precedence hain isliye ((10 - 4) + 3) = 9. Right-associative example hai **: 2 ** 3 ** 2 = 2 ** 9 = 512, (2 ** 3) ** 2 nahi.",
+      "deliverable": "Teen expressions ka evaluated output aur associativity rule."
+    },
+    {
+      "q": "Aap ek permission bug investigate kar rahe ho: 'admin ko delete allowed dikhta hai par API 403 deta hai' — debugging steps likho.",
+      "a": "Layers check karo: (1) stored mask value exactly kya hai (bin/int), (2) check expression me precedence sahi hai ya nahi ((mask & flag) == flag), (3) API layer ka map/role mapping, (4) cache purani role value to nahi de raha, (5) audit log me last grant/revoke. Ek 'dump role' endpoint/debug output sabse pehle add karo.",
+      "deliverable": "5-step debugging checklist + ek debug output snippet."
+    }
+  ],
+  "revision": [
+    "/ hamesha float, // floor, % remainder (sign divisor ka); divmod dono deta hai.",
+    "Negative numbers par // aur % C/Java se alag behave karte hain — -7 // 2 = -4, -7 % 2 = 1.",
+    "Comparison chaining (0 <= x <= 100) readable hai aur middle operand ek hi baar evaluate hota hai.",
+    "and/or operand return karte hain; '0 or 5' trap se bacho — identity check (is None) use karo.",
+    "Bitwise: | grant, & check, & ~ revoke; permission check hamesha '(mask & flag) == flag' likho.",
+    "Precedence: arithmetic > shift > & > ^ > | > comparison > not > and > or — shak ho to parentheses.",
+    "+= mutable par in-place ho sakta hai aur immutable par rebinding — aliasing ke saath farak dikhta hai.",
+    "Money ke liye Decimal + ROUND_HALF_UP; float comparison ke liye tolerance ya Decimal."
+  ]
+}

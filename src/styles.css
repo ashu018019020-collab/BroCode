@@ -41,13 +41,22 @@ code, pre { font-family: var(--mono); }
 .mono { font-family: var(--mono); }
 
 /* ---------- shell ---------- */
-.shell { display: flex; min-height: 100vh; }
+/* App shell: the sidebar stays put and only the main column scrolls, so the
+   navigation is always reachable no matter how far down the page you are. */
+.shell { display: flex; height: 100vh; overflow: hidden; }
 .sidebar {
   width: 224px; flex-shrink: 0; padding: 14px 10px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
   border-right: 1px solid var(--border); background: rgba(7, 11, 20, 0.7); backdrop-filter: blur(10px);
 }
-.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.content { padding: 18px 22px 60px; max-width: 1180px; width: 100%; margin: 0 auto; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; }
+/*
+ * Fluid, edge to edge. A centered `max-width: 1180px` used to leave ~340px of dead space on
+ * either side of a 1856px window, so every page read as a narrow column floating in an empty
+ * screen. The shell only pads; the cards and grids inside size themselves, and each one already
+ * uses 1fr / auto-fit tracks, so they absorb the extra width instead of stretching a single block.
+ * Padding scales with the viewport so a small laptop keeps its breathing room.
+ */
+.content { padding: 18px clamp(14px, 1.5vw, 30px) 60px; width: 100%; max-width: none; margin: 0; }
 
 .brand { display: flex; gap: 10px; align-items: center; padding: 6px 8px 14px; }
 .brand .logo {
@@ -75,6 +84,17 @@ code, pre { font-family: var(--mono); }
 .card.glow { box-shadow: var(--glow); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+/*
+ * Grid items default to `min-width: auto` (min-content), so ONE long line inside a card — a
+ * notebook output, a cheat-sheet snippet, a rendered prompt — stretched its `1fr` track and gave
+ * the whole page a horizontal scrollbar, instead of scrolling inside the block that already has
+ * `overflow-x: auto`. Measured on the real app: /ai carried 144px of sideways overflow, /cheats
+ * 120px (290px at 400px wide), /notebooks 189px. Letting the track child shrink hands the overflow
+ * to the scroller it already contains.
+ */
+.grid2 > *, .grid3 > *, .statgrid > *, .stat-row > *, .track-grid > *,
+.hero-stats > *, .coach-grid > *, .path-grid > *, .stage-grid > *,
+.nb-layout > *, .workbench > * { min-width: 0; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .spread { justify-content: space-between; }
 
@@ -210,7 +230,9 @@ table.data th { background: var(--panel2); color: var(--muted); font-weight: 600
 :root { --pink: #f472b6; --violet: #8b5cf6; }
 .topbar {
   display: flex; gap: 14px; align-items: center; justify-content: space-between;
-  padding: 10px 22px; border-bottom: 1px solid var(--border);
+  /* Left padding is tighter than the right so the sidebar toggle reads as attached to the
+     sidebar's edge rather than floating in the header. */
+  padding: 10px 22px 10px 12px; border-bottom: 1px solid var(--border);
   background: rgba(7, 11, 20, 0.55); backdrop-filter: blur(10px);
   position: sticky; top: 0; z-index: 30; flex-wrap: wrap;
 }
@@ -226,6 +248,13 @@ table.data th { background: var(--panel2); color: var(--muted); font-weight: 600
   background: transparent; color: var(--muted); border: none; padding: 7px 14px; font-size: .8rem; cursor: pointer; font-weight: 600;
 }
 .lang-toggle button.on { background: linear-gradient(135deg, rgba(34, 211, 238, .25), rgba(79, 124, 255, .25)); color: var(--text); }
+
+/* Tutor tab strip (Explain / Hints / Debug / Next / Coach) — five compact tabs. */
+.tutor-tabs { width: 100%; }
+.tutor-tabs button {
+  flex: 1 1 0; min-width: 0; padding: 7px 6px; font-size: .72rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .offline-pill {
   display: flex; gap: 8px; align-items: center; border: 1px solid rgba(52, 211, 153, .35);
   background: rgba(52, 211, 153, .08); color: var(--green); border-radius: 10px; padding: 6px 12px;
@@ -278,6 +307,9 @@ table.data th { background: var(--panel2); color: var(--muted); font-weight: 600
 .mission-row .t b { font-size: .86rem; font-weight: 600; }
 .track-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
 .track-card {
+  /* Default accent; a `.tone-*` class on the same element overrides both,
+     because the tone block is declared later in this file. */
+  --accent: #4f7cff; --accent-rgb: 79 124 255;
   position: relative; border: 1px solid var(--border); border-radius: 16px; background: var(--panel);
   padding: 18px; display: flex; flex-direction: column; gap: 10px; overflow: hidden;
   transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
@@ -343,6 +375,213 @@ table.data th { background: var(--panel2); color: var(--muted); font-weight: 600
 @media (max-width: 1200px) { .ide-grid { grid-template-columns: 200px 1fr; } .ide-right { grid-column: 1 / -1; position: static; max-height: none; } }
 @media (max-width: 860px) { .ide-grid { grid-template-columns: 1fr; } .ide-left { position: static; max-height: none; } }
 
+/* ============================================================
+   DESIGN SYSTEM — reusable premium primitives
+   (glass surfaces, glows, skeletons, toasts, stage cards, tiles)
+   ============================================================ */
+
+/* --- surfaces --- */
+.glass {
+  background: linear-gradient(160deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .02));
+  border: 1px solid var(--border); border-radius: var(--radius);
+  backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+.glow-border { position: relative; }
+.glow-border::before {
+  content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(135deg, rgba(34, 211, 238, .55), rgba(139, 92, 246, .25), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude; opacity: .8;
+}
+.tile {
+  border: 1px solid var(--border); border-radius: 12px; background: var(--panel);
+  padding: 10px 12px; display: flex; gap: 10px; align-items: center;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+}
+.tile:hover { border-color: rgba(34, 211, 238, .4); box-shadow: var(--glow); transform: translateY(-1px); }
+.tile .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--panel2); flex: none; }
+.tile .t b { display: block; font-size: .84rem; }
+.tile .t span { font-size: .7rem; color: var(--muted); }
+
+/* --- section heading --- */
+.sec-head { display: flex; align-items: center; gap: 10px; margin: 18px 0 8px; }
+.sec-head h2 { margin: 0; font-size: 1.02rem; }
+.sec-head .line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+/* --- buttons --- */
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--text); background: var(--panel); }
+.btn.danger { border-color: rgba(248, 113, 113, .45); color: var(--red); }
+.btn.sm-icon { padding: 5px; width: 28px; justify-content: center; }
+.btn.loading { position: relative; color: transparent !important; }
+.btn.loading::after {
+  content: ''; position: absolute; inset: 0; margin: auto; width: 14px; height: 14px;
+  border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%;
+  color: var(--text); animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- badges --- */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px; font-size: .68rem; font-weight: 650;
+  padding: 2px 8px; border-radius: 7px; letter-spacing: .2px;
+  background: linear-gradient(135deg, rgba(34, 211, 238, .18), rgba(139, 92, 246, .18));
+  border: 1px solid rgba(34, 211, 238, .35);
+}
+.badge.new { background: linear-gradient(135deg, rgba(244, 114, 182, .28), rgba(139, 92, 246, .28)); border-color: rgba(244, 114, 182, .5); }
+
+/* --- skeletons --- */
+.skeleton {
+  border-radius: 10px; min-height: 14px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .11), rgba(255, 255, 255, .05));
+  background-size: 200% 100%; animation: shimmer 1.3s ease-in-out infinite;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* --- empty / error states --- */
+.empty-state {
+  display: grid; place-items: center; gap: 6px; text-align: center;
+  padding: 28px 16px; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted);
+}
+.empty-state .big { font-size: 1.6rem; opacity: .8; }
+
+/* --- toasts --- */
+.toast-wrap { position: fixed; right: 18px; bottom: 46px; z-index: 90; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  display: flex; gap: 10px; align-items: center; min-width: 240px; max-width: 340px;
+  padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border);
+  background: rgba(11, 18, 32, .92); backdrop-filter: blur(10px); box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
+  animation: toastIn .22s ease both; font-size: .82rem;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+.toast.success { border-color: rgba(52, 211, 153, .45); }
+.toast.info { border-color: rgba(34, 211, 238, .45); }
+.toast.warning { border-color: rgba(251, 191, 36, .45); }
+.toast.error { border-color: rgba(248, 113, 113, .45); }
+
+/* --- notification centre --- */
+.notif-wrap { position: relative; }
+.notif-dot {
+  position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 99px; background: var(--red); color: #fff; font-size: .62rem; font-weight: 700;
+  display: grid; place-items: center; box-shadow: 0 0 10px rgba(248, 113, 113, .6);
+}
+.notif-panel {
+  position: absolute; right: 0; top: 42px; width: min(360px, 92vw); max-height: 62vh; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: 14px; background: rgba(9, 14, 26, .97);
+  backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0, 0, 0, .55); padding: 10px; z-index: 60;
+  animation: fadeUp .18s ease both;
+}
+.notif-item {
+  display: flex; gap: 10px; padding: 9px 10px; border-radius: 10px; align-items: flex-start;
+  border: 1px solid transparent; cursor: pointer;
+}
+.notif-item:hover { background: var(--panel); border-color: var(--border); }
+.notif-item.unread { background: rgba(34, 211, 238, .06); }
+.notif-item .kind { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--panel2); }
+.notif-item b { font-size: .82rem; display: block; }
+.notif-item span { font-size: .72rem; color: var(--muted); }
+
+/* --- lesson stage cards --- */
+.stage-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(122px, 1fr)); gap: 10px; margin: 12px 0; }
+.stage-card {
+  position: relative; text-align: center; padding: 12px 8px 10px; border-radius: 14px;
+  border: 1px solid var(--border); background: var(--panel); cursor: pointer; color: var(--text);
+  transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+.stage-card:hover { transform: translateY(-2px); border-color: rgba(34, 211, 238, .45); }
+.stage-card .no {
+  position: absolute; top: 6px; left: 8px; font-size: .6rem; font-weight: 700; letter-spacing: .5px;
+  color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 0 4px;
+}
+.stage-card .em { font-size: 1.25rem; display: block; margin: 6px 0 4px; }
+.stage-card b { font-size: .82rem; display: block; }
+.stage-card span { font-size: .66rem; color: var(--muted); display: block; }
+.stage-card.done { border-color: rgba(52, 211, 153, .5); background: rgba(52, 211, 153, .07); }
+.stage-card.done .st-check { position: absolute; top: 6px; right: 8px; color: var(--green); }
+.stage-card.current { border-color: var(--cyan); box-shadow: 0 0 22px rgba(34, 211, 238, .22); }
+.stage-card.locked { opacity: .5; }
+
+/* --- AI assistant card --- */
+.assistant {
+  border: 1px solid var(--border); border-radius: 16px; padding: 14px;
+  background: linear-gradient(150deg, rgba(79, 124, 255, .10), rgba(139, 92, 246, .07) 55%, rgba(34, 211, 238, .08));
+}
+/*
+ * The assistant is the one card that renders inside every notebook, every stage and the Dashboard,
+ * on screens down to 400px — so it must be able to shrink.
+ *
+ * A flex item defaults to `min-width: auto`, i.e. min-content, and a bare <input> is ~20 characters
+ * wide. `flex: 1` alone therefore could NOT shrink it: the ask row and the header's status chip
+ * pushed past the card, gave `.main` a horizontal scrollbar and left the send / clear buttons
+ * 130-171px off the edge of the screen. Both rows wrap and their text blocks may shrink instead.
+ */
+.assistant .head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.assistant .head > div { min-width: 0; }
+.assistant .head .chip { flex: none; }
+.assistant .bot {
+  width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; flex: none;
+  background: linear-gradient(135deg, rgba(79, 124, 255, .35), rgba(167, 139, 250, .35)); border: 1px solid var(--border);
+}
+.assistant .ask { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.assistant .ask input { flex: 1; min-width: 0; }
+.assistant .bubble {
+  margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-size: .82rem;
+  background: rgba(0, 0, 0, .28); border: 1px solid var(--border); white-space: pre-wrap;
+}
+.assistant .quick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.assistant-ctx {
+  display: flex; flex-direction: column; gap: 3px;
+  margin-top: 8px; padding: 6px 9px; border-radius: 9px;
+  background: rgba(0, 0, 0, .22); border: 1px dashed var(--border);
+}
+.assistant-ctx .ctx-err { color: var(--red, #ff6b6b); }
+/* Sits directly under a notebook, so it reads as part of the panel rather than a second hero. */
+.assistant.embedded {
+  margin-top: 12px; padding: 11px 12px; border-radius: 13px;
+  background: linear-gradient(150deg, rgba(79, 124, 255, .07), rgba(139, 92, 246, .05) 55%, rgba(34, 211, 238, .05));
+}
+.assistant.embedded .bot { width: 28px; height: 28px; border-radius: 9px; }
+.assistant.embedded .bot svg { width: 15px; height: 15px; }
+.assistant.embedded .bubble { font-size: .78rem; padding: 9px 11px; }
+
+/* --- timeline (activity / roadmap) --- */
+.timeline { position: relative; padding-left: 18px; }
+.timeline::before { content: ''; position: absolute; left: 5px; top: 4px; bottom: 4px; width: 2px; background: linear-gradient(var(--border), transparent); }
+.timeline .tl-item { position: relative; padding: 6px 0; }
+.timeline .tl-item::before {
+  content: ''; position: absolute; left: -17px; top: 12px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--bg2); border: 2px solid var(--border);
+}
+.timeline .tl-item.on::before { border-color: var(--cyan); box-shadow: var(--glow); }
+
+/* --- sidebar collapse --- */
+.sidebar { transition: width .18s ease; }
+.sidebar.collapsed { width: 66px; padding: 14px 8px; }
+.sidebar.collapsed .brand > div:last-child,
+.sidebar.collapsed .brand b, .sidebar.collapsed .brand .sub { display: none; }
+.sidebar.collapsed .navsep { text-align: center; font-size: .55rem; letter-spacing: 0; }
+.sidebar.collapsed .navlink { justify-content: center; padding: 9px 0; position: relative; }
+.sidebar.collapsed .navlink .lbl { display: none; }
+.sidebar.collapsed .side-foot { display: none; }
+.sidebar.collapsed .navlink[data-tip]:hover::after {
+  content: attr(data-tip); position: absolute; left: 56px; top: 50%; transform: translateY(-50%);
+  background: rgba(9, 14, 26, .97); border: 1px solid var(--border); border-radius: 8px;
+  padding: 4px 9px; font-size: .74rem; white-space: nowrap; z-index: 70; box-shadow: 0 8px 22px rgba(0, 0, 0, .5);
+}
+.side-toggle { background: var(--panel); border: 1px solid var(--border); color: var(--muted); border-radius: 8px; width: 26px; height: 26px; display: grid; place-items: center; cursor: pointer; }
+.side-toggle:hover { color: var(--text); border-color: rgba(34, 211, 238, .4); }
+.navlink .lbl { flex: 1; }
+
+/* --- profile chip --- */
+.profile-chip { display: flex; gap: 9px; align-items: center; border: 1px solid var(--border); border-radius: 11px; padding: 4px 10px 4px 4px; background: var(--panel); }
+.profile-chip .meta b { display: block; font-size: .78rem; line-height: 1.15; }
+.profile-chip .meta span { font-size: .66rem; color: var(--muted); }
+
+/* --- animate XP / achievement --- */
+@keyframes popIn { 0% { transform: scale(.85); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
+.pop-in { animation: popIn .3s ease both; }
+
 /* ---------- reduced motion & motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
@@ -352,18 +591,210 @@ body.reduce-motion * { animation: none !important; transition: none !important; 
 .fadeup { animation: fadeUp .25s ease both; }
 
 /* ---------- integrated Learn workbench (theory + editor on one screen) ---------- */
-.workbench { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 430px); gap: 14px; align-items: start; }
-.workbench .wb-main { min-width: 0; }
+/*
+ * Theory and the notebook are equal halves of the screen. The notebook used to be capped at 430px
+ * against a 1fr workspace, which on a wide display left it a cramped strip — code cells wrapped
+ * early and the right third of the screen stood empty. `minmax(0, 1fr)` on BOTH sides (and
+ * `min-width: 0`, without which a grid track refuses to shrink below its content) is what lets the
+ * split be genuinely even instead of overflowing at narrow widths.
+ */
+.workbench { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.workbench .wb-main, .workbench .wb-side { min-width: 0; }
 .workbench .wb-side { position: sticky; top: 12px; }
 .workbench .card.wb-active { border-color: rgba(56, 189, 248, 0.45); }
 .editor-skeleton {
   height: 240px; display: grid; place-items: center; font-size: 12px; color: var(--muted);
   border: 1px dashed rgba(148, 163, 184, 0.25); border-radius: 10px;
 }
-@media (max-width: 1100px) {
+@media (max-width: 1150px) {
+  /* Below this a half is under ~430px, which is narrower than the notebook ever was before the
+     split — squeezing two columns that small is worse than stacking them. 1150 is the width where
+     each half still clears 430px (sidebar 224 + scrollbar + padding + gap), so the even split is
+     only used where it is actually better. */
   .workbench { grid-template-columns: 1fr; }
   .workbench .wb-side { position: static; }
 }
+
+/* authored topic guide ("CODE KAISE KARTE HAIN") */
+.guide { border-left: 3px solid var(--purple); padding-left: 10px; }
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+.guide-grid p { margin: 4px 0 0; }
+.guide .chip { white-space: nowrap; }
+
+/* 16-part topic workspace (section.topic) */
+.pack { display: block; }
+.pack section { scroll-margin-top: 12px; }
+.pack-h { margin: 16px 0 8px; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+.pack-no {
+  display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+  border-radius: 8px; font-size: .78rem; background: rgba(34, 211, 238, .16);
+  border: 1px solid rgba(34, 211, 238, .35); color: var(--cyan);
+}
+.pack-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px dashed rgba(255, 255, 255, .07); }
+.pack-item.done { opacity: .72; }
+.pack-check { padding-top: 2px; }
+.pack-body { flex: 1; min-width: 0; }
+.pack-q { font-weight: 600; margin: 0 0 4px; }
+.pack-list { margin: 4px 0 0; padding-left: 18px; }
+.pack-list li { margin: 3px 0; }
+.reveal { margin-top: 6px; border-left: 2px solid rgba(167, 139, 250, .5); padding-left: 10px; }
+.pack .codeblock { max-height: 320px; overflow: auto; }
+
+/* Notebook Lab (Jupyter notebooks, run offline cell by cell) */
+.nb-page { display: block; }
+.nb-layout { display: grid; grid-template-columns: 250px 1fr; gap: 12px; margin-top: 12px; align-items: start; }
+/*
+ * The 250px notebook rail is fixed, so on anything narrow it kept its width and squeezed the
+ * notebook itself into a 97px sliver — too narrow for a single token, which then pushed the page
+ * into horizontal scroll (measured: /notebooks still scrolled 20px sideways at 400px wide, and the
+ * column was unusable). `.workbench` and `.ide-grid` already collapse in the same situation; this
+ * one was simply missed. Collapsing takes the column from 97px back to full width and the sideways
+ * scroll to 0.
+ */
+@media (max-width: 860px) { .nb-layout { grid-template-columns: 1fr; } }
+.nb-listcard { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 12px; }
+.nb-pick {
+  display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 8px 10px; cursor: pointer;
+  background: transparent; border: 1px solid var(--border); border-radius: 10px; color: inherit;
+}
+.nb-pick:hover { background: rgba(255, 255, 255, .05); }
+.nb-pick.active { border-color: rgba(34, 211, 238, .5); background: rgba(34, 211, 238, .08); }
+.nb-main { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.nb-cell { display: flex; flex-direction: column; gap: 8px; }
+.nb-label { font-size: .72rem; color: var(--muted); font-family: ui-monospace, monospace; }
+.nb-pct { font-size: .9rem; font-weight: 600; }
+.nb-editor {
+  width: 100%; resize: vertical; padding: 10px 12px; border-radius: 10px;
+  background: rgba(0, 0, 0, .35); border: 1px solid var(--border); color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; line-height: 1.45;
+  white-space: pre; overflow-wrap: normal; overflow-x: auto; tab-size: 4;
+}
+.nb-editor:focus-visible { border-color: rgba(34, 211, 238, .5); }
+.nb-out { border-left: 2px solid rgba(52, 211, 153, .4); padding-left: 10px; }
+.nb-mdwrap { border-left: 3px solid rgba(79, 124, 255, .45); }
+.nb-md h2 { margin: 2px 0 6px; font-size: 1.05rem; }
+.nb-md h3 { margin: 8px 0 6px; font-size: .98rem; }
+.nb-md h4 { margin: 8px 0 4px; font-size: .9rem; }
+.nb-md p { margin: 4px 0; font-size: .85rem; }
+.nb-list { margin: 4px 0 4px 18px; padding: 0; }
+.nb-list li { font-size: .85rem; margin: 2px 0; }
+/* `overflow-wrap: anywhere` because a single long inline-code token (a long identifier, a path, a
+   URL) cannot wrap on its own: on a narrow screen it pushed the whole main column into horizontal
+   scroll, which is why the notebook page could be dragged sideways on a phone. */
+.nb-inline { font-family: ui-monospace, monospace; font-size: .82em; background: rgba(255, 255, 255, .07); padding: 1px 5px; border-radius: 6px; overflow-wrap: anywhere; }
+/* …and the same for the prose around it. The rule above only protected inline code, so ordinary
+   markdown text with one long token (an identifier, a path, a URL) still pushed the page sideways. */
+.nb-md, .nb-md p, .nb-list li { overflow-wrap: anywhere; }
+
+/* Jupyter notebook panel — the coding surface that replaced the code editor everywhere */
+.jup { display: flex; flex-direction: column; gap: 8px; }
+.jup-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.jup-progress { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+/* The line under every notebook: cell stepping on the left, notebook stepping on the right.
+   `wrap` keeps it one useful line on a phone instead of a clipped row. */
+.nb-nav {
+  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between;
+  margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border);
+}
+.nb-nav > .row { flex-wrap: wrap; }
+.jup-cell { padding: 10px 12px; }
+.jup-cell.jup-primary { border-color: rgba(34, 211, 238, .38); }
+.jup-explain { border-color: rgba(248, 113, 113, .38); }
+.jup-shelf {
+  border: 1px dashed rgba(140, 170, 255, .22); border-radius: 10px; padding: 8px 10px;
+  background: rgba(11, 18, 32, .5);
+}
+/*
+ * A query container, because the card's width has nothing to do with the viewport's: the lesson
+ * column is ~502px wide at 1440px and ~523px at 860px, so no `@media` breakpoint can tell a roomy
+ * card from a cramped one. The shelf's hint below is sized against THIS, not the window.
+ */
+.jup-shelf-wrap {
+  border-top: 1px dashed rgba(255, 255, 255, .1); padding-top: 8px;
+  container-type: inline-size;
+}
+/*
+ * The shelf is a detour, not the lesson: it sits under every notebook on a page that renders many
+ * notebooks, so it collapses to this single line until the learner asks for it.
+ */
+.jup-shelf-head {
+  display: inline-flex; gap: 6px; align-items: center; cursor: pointer; text-align: left;
+  background: none; border: none; padding: 0; color: var(--muted); font: inherit;
+  flex: 1 1 auto; min-width: 0; overflow: hidden;
+}
+/*
+ * The shelf header is one line, always.
+ *
+ * Measured at 860px: the notebook column gives the row 523px, but the header is 418px and
+ * "Open Notebook Lab" is another 150px, so `.row`'s `flex-wrap: wrap` dropped the controls onto a
+ * SECOND line under the collapsed header — a stray "Close notebook" button that reads as attached
+ * to nothing and adds a line of scroll to every notebook on the page. The label truncates instead
+ * and the controls stay pinned right. Same family as the `.assistant .head` fix above.
+ */
+.jup-shelf-wrap > .row.spread { flex-wrap: nowrap; }
+.jup-shelf-wrap > .row.spread > .row { flex: none; }
+/*
+ * The label is the information, the hint is decoration: when the two cannot share the line the
+ * hint is the one that yields (it shrinks to nothing and `overflow: hidden` on the head clips the
+ * leftover) instead of the count being cut off the end of the label. This is the state that
+ * actually happens — the lesson column is ~502px wide even at 1440px, so there is no viewport
+ * breakpoint that could tell the two cases apart.
+ */
+.shelf-label { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shelf-hint { display: none; flex: none; }
+/*
+ * "click karke kholo" only once the card is wide enough to lend it ~95px without cutting the count
+ * off the label. At ~502px the head is 342px — the icons (38) plus the label (294) already fill it,
+ * so the old always-on hint bought its own line by wrapping and pushed the controls down with it.
+ */
+@container (min-width: 600px) { .shelf-hint { display: inline; } }
+.jup-shelf-head:hover { color: var(--text); }
+.shelf-caret { flex-shrink: 0; transition: transform .15s ease; }
+.shelf-caret.open { transform: rotate(90deg); }
+.shelf-hint { font-size: .68rem; opacity: .6; }
+.nb-pick.small { padding: 6px 9px; font-size: .74rem; }
+
+/*
+ * Workspace accordion (TopicWorkspace). The authored 16-part workspace renders every part at
+ * once, and each part carries its own notebook, so the page could only be read by scrolling past
+ * fifteen parts you were not on. Only the part named by `data-open` stays on screen.
+ *
+ * The suffixes are the PARTS keys, matched on the section id. A key that no longer exists simply
+ * matches nothing and its part stays visible — a renamed part degrades to "always open" rather
+ * than silently disappearing. Sections outside the 16 (`pack-always`) are never hidden.
+ */
+.pack[data-open="intro"] > section:not([id$="-intro"]):not(.pack-always),
+.pack[data-open="theory"] > section:not([id$="-theory"]):not(.pack-always),
+.pack[data-open="syntax"] > section:not([id$="-syntax"]):not(.pack-always),
+.pack[data-open="examples"] > section:not([id$="-examples"]):not(.pack-always),
+.pack[data-open="realWorld"] > section:not([id$="-realWorld"]):not(.pack-always),
+.pack[data-open="interview"] > section:not([id$="-interview"]):not(.pack-always),
+.pack[data-open="practice"] > section:not([id$="-practice"]):not(.pack-always),
+.pack[data-open="coding"] > section:not([id$="-coding"]):not(.pack-always),
+.pack[data-open="debugging"] > section:not([id$="-debugging"]):not(.pack-always),
+.pack[data-open="challenges"] > section:not([id$="-challenges"]):not(.pack-always),
+.pack[data-open="project-simple"] > section:not([id$="-project-simple"]):not(.pack-always),
+.pack[data-open="project-medium"] > section:not([id$="-project-medium"]):not(.pack-always),
+.pack[data-open="project-hard"] > section:not([id$="-project-hard"]):not(.pack-always),
+.pack[data-open="improvements"] > section:not([id$="-improvements"]):not(.pack-always),
+.pack[data-open="interviewTasks"] > section:not([id$="-interviewTasks"]):not(.pack-always),
+.pack[data-open="revision"] > section:not([id$="-revision"]):not(.pack-always) {
+  display: none;
+}
+.jup-vars { display: flex; flex-direction: column; gap: 4px; }
+.jup-var {
+  display: flex; gap: 8px; align-items: center; font-size: .76rem; font-family: var(--mono);
+  border-bottom: 1px dashed rgba(255, 255, 255, .06); padding: 2px 0;
+}
+.jup-var-n { color: var(--cyan); min-width: 80px; }
+.jup-var-v { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jup-stdin { padding: 8px 10px; }
+.jup .nb-editor { background: rgba(5, 8, 15, .85); }
+@media (max-width: 700px) { .jup-progress { margin-left: 0; width: 100%; } }
 
 /* result tabs + concept visuals */
 .resulttabs { gap: 6px; }
@@ -404,3 +835,534 @@ body.reduce-motion * { animation: none !important; transition: none !important; 
 .tree-topics { background: rgba(5, 8, 18, 0.4); animation: fadeup 0.18s ease; }
 .tree-footer { padding: 10px 12px 12px 30px; border-top: 1px solid var(--border); }
 .tree-footer .chip { margin-right: 4px; }
+
+/* ---------- responsive pass (sidebar drawer, stage cards, tiles, assistant) ---------- */
+.sidebar-backdrop { display: none; }
+.side-btn { display: none; }
+/*
+ * Sidebar toggle, docked in the header instead of inside the rail it collapses. It is the first
+ * thing in the topbar, flush against the sidebar's edge, and because the topbar is sticky it stays
+ * reachable at any scroll position. Phones get the drawer + menu button instead (780px block).
+ */
+.side-btn-desk {
+  display: grid; place-items: center; width: 34px; height: 34px; flex: none;
+  border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+  border-radius: 10px; cursor: pointer;
+  transition: color .14s ease, border-color .14s ease, background .14s ease;
+}
+.side-btn-desk:hover { color: var(--text); border-color: rgba(34, 211, 238, .45); }
+.side-btn-desk:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+@media (max-width: 1100px) {
+  .stage-cards { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+}
+@media (max-width: 900px) {
+  .toast-wrap { left: 12px; right: 12px; bottom: 74px; }
+  .toast { max-width: none; }
+}
+@media (max-width: 780px) {
+  /* sidebar becomes an off-canvas drawer */
+  .shell { position: relative; }
+  .sidebar {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 80; width: 258px;
+    height: 100%; overflow-y: auto; transform: translateX(-100%);
+    transition: transform .2s ease; border-right: 1px solid var(--border);
+    background: rgba(6, 10, 20, .98); backdrop-filter: blur(14px);
+  }
+  .shell.nav-open .sidebar { transform: none; }
+  .shell.nav-open .sidebar-backdrop {
+    display: block; position: fixed; inset: 0; z-index: 75; background: rgba(0, 0, 0, .55);
+  }
+  .side-btn {
+    display: grid; place-items: center; width: 34px; height: 34px; flex: none;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    border-radius: 10px; cursor: pointer;
+  }
+  /* The drawer's menu button replaces it here — two toggles for one panel would be a trap. */
+  .side-btn-desk { display: none; }
+  /*
+   * `:not(.mobile-only)` matters: the plain `.sidebar .side-toggle` selector is two classes and
+   * outranks `.mobile-only { display: grid }`, so it used to hide the drawer's OWN close button
+   * too — leaving a phone user with no visible way to shut the menu except guessing at the
+   * backdrop. Only the desktop toggle should be hidden here.
+   */
+  .sidebar .side-toggle:not(.mobile-only) { display: none; }
+  .topbar { padding: 9px 12px; gap: 9px; }
+  .content { padding: 14px 12px 90px; }
+  .hero h1 { font-size: 1.35rem; }
+  .stage-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
+  .statgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-chip .meta { display: none; }
+  .notif-panel { position: fixed; top: 60px; right: 10px; left: 10px; width: auto; }
+}
+@media (max-width: 430px) {
+  .card { padding: 12px; }
+  .stage-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .statgrid { grid-template-columns: 1fr 1fr; }
+  .tool-row { grid-template-columns: 1fr 1fr !important; }
+  .tile-grid { grid-template-columns: 1fr 1fr; }
+  .assistant .quick .btn { flex: 1 1 45%; }
+}
+@media (max-width: 340px) {
+  .statgrid, .stage-cards, .tool-row { grid-template-columns: 1fr !important; }
+}
+
+/* horizontal scroll safety — never let a card overflow the viewport */
+.wrap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+img, iframe, canvas, pre { max-width: 100%; }
+.tool-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+
+/* ---------- shell chrome: badges, drawer, focus mode, bottom nav ---------- */
+.navbadge {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px;
+  background: linear-gradient(135deg, var(--pink), var(--violet)); color: #fff;
+  font-size: .62rem; font-weight: 700; display: grid; place-items: center; flex: none;
+}
+.side-keep {
+  width: 100%; margin-top: 10px; display: flex; gap: 7px; align-items: center;
+  border: 1px solid var(--border); background: linear-gradient(120deg, rgba(139, 92, 246, .18), rgba(34, 211, 238, .12));
+  color: var(--text); border-radius: 11px; padding: 9px 10px; font-size: .74rem; cursor: pointer; text-align: left;
+}
+.side-keep:hover { border-color: rgba(34, 211, 238, .45); }
+.mobile-only { display: none; }
+.shell.focus .content { padding-top: 18px; }
+.shell.focus .topbar { justify-content: flex-end; }
+
+/* mobile bottom navigation */
+.bottomnav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+  background: rgba(8, 12, 22, .96); backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border); padding: 5px 4px calc(5px + env(safe-area-inset-bottom));
+}
+.bn-item {
+  position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  text-decoration: none; color: var(--muted); font-size: .6rem; padding: 5px 2px; border-radius: 10px;
+}
+.bn-item.active { color: var(--cyan); background: rgba(34, 211, 238, .09); }
+.bn-dot { position: absolute; top: 3px; right: 22%; width: 6px; height: 6px; border-radius: 50%; background: var(--pink); }
+
+@media (max-width: 780px) {
+  .mobile-only { display: grid; place-items: center; }
+  .bottomnav { display: flex; }
+  /* keep the status bar clear of the fixed bottom navigation */
+  .statusbar { bottom: 48px; }
+  .sidebar, .sidebar.collapsed { width: 258px; }
+  .sidebar.collapsed .brand > div:last-child, .sidebar.collapsed .brand b, .sidebar.collapsed .brand .sub { display: block; }
+  .sidebar.collapsed .navlink { justify-content: flex-start; padding: 9px 12px; }
+  .sidebar.collapsed .navlink .lbl { display: inline; }
+  .sidebar.collapsed .side-foot { display: block; }
+  .sidebar .side-toggle:not(.mobile-only) { display: none; }
+}
+@media (max-width: 980px) { .hide-sm { display: none; } }
+@media (max-width: 1200px) { .topbar-right .offline-pill div { display: none; } }
+
+/* ---------- utilities ---------- */
+.spin { animation: spin .8s linear infinite; }
+.inline-code { font-family: var(--mono); font-size: .86em; background: rgba(0, 0, 0, .32); border: 1px solid var(--border); border-radius: 5px; padding: 0 4px; }
+.tile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(196px, 1fr)); gap: 8px; }
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 10px; }
+.ach {
+  border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: var(--panel);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.ach.earned { border-color: rgba(251, 191, 36, .5); background: linear-gradient(150deg, rgba(251, 191, 36, .12), rgba(139, 92, 246, .08)); }
+.ach .em { font-size: 1.3rem; }
+.ach b { font-size: .78rem; }
+.ach span { font-size: .68rem; color: var(--muted); }
+@media print {
+  .sidebar, .topbar, .statusbar, .bottomnav, .toast-wrap, .no-print { display: none !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .card { border-color: #ccc !important; background: #fff !important; box-shadow: none !important; }
+  .codeblock { border-color: #ccc !important; background: #f6f6f6 !important; color: #111 !important; }
+}
+
+.stage-card.ahead { opacity: .62; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ============================================================
+   SMART HEADER — breadcrumb, contextual action, quick actions
+   ============================================================ */
+/* One row, always: the search box absorbs the slack, the action cluster never wraps. */
+.topbar { flex-wrap: nowrap; transition: padding .16s ease, background .16s ease; }
+.topbar .searchbox { flex: 1 1 340px; min-width: 120px; max-width: 680px; flex-wrap: nowrap; }
+.searchbox span:first-of-type { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.searchbox .kbd { flex: none; }
+.topbar .topbar-right { flex: none; }
+.crumbs { flex: 0 1 auto; }
+.profile-chip { max-width: 200px; overflow: hidden; }
+.profile-chip .meta { min-width: 0; }
+.profile-chip .meta b,
+.profile-chip .meta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar.compact { padding: 6px 22px; background: rgba(7, 11, 20, .82); }
+.topbar.compact .crumb-txt span { display: none; }
+.topbar.compact .searchbox { max-width: 320px; }
+
+.crumbs { display: flex; align-items: center; gap: 9px; min-width: 0; max-width: 260px; }
+.crumb-back {
+  flex: none; width: 26px; height: 26px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--panel); color: var(--muted); line-height: 1;
+}
+.crumb-back:hover { color: var(--text); border-color: rgba(34, 211, 238, .45); }
+.crumb-ico {
+  flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+  background: linear-gradient(135deg, rgba(34, 211, 238, .16), rgba(167, 139, 250, .16));
+  border: 1px solid var(--border); font-size: 15px;
+}
+.crumb-txt { min-width: 0; }
+.crumb-txt b { display: block; font-size: .84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crumb-txt span { display: block; font-size: .68rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.smart-chip {
+  display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;
+  border: 1px solid rgba(34, 211, 238, .38); border-radius: 11px; padding: 5px 9px;
+  background: linear-gradient(120deg, rgba(34, 211, 238, .14), rgba(139, 92, 246, .10));
+  max-width: 230px; transition: border-color .15s ease, transform .12s ease, box-shadow .15s ease;
+}
+.smart-chip:hover { text-decoration: none; transform: translateY(-1px); box-shadow: var(--glow); border-color: rgba(34, 211, 238, .6); }
+.smart-chip.warn { border-color: rgba(251, 191, 36, .45); background: linear-gradient(120deg, rgba(251, 191, 36, .14), rgba(244, 114, 182, .10)); }
+.smart-chip .sc-ico { flex: none; display: grid; place-items: center; color: var(--cyan); }
+.smart-chip.warn .sc-ico { color: var(--amber); }
+.smart-chip .sc-txt { min-width: 0; }
+.smart-chip .sc-txt b { display: block; font-size: .76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.smart-chip .sc-txt span { display: block; font-size: .64rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.quickmenu { position: relative; }
+.quickmenu-panel {
+  position: absolute; right: 0; top: 40px; width: 268px; z-index: 62; padding: 8px;
+  border: 1px solid var(--border); border-radius: 14px; background: rgba(9, 14, 26, .97);
+  backdrop-filter: blur(14px); box-shadow: 0 20px 50px rgba(0, 0, 0, .55); animation: fadeUp .16s ease both;
+}
+.quickmenu-item {
+  width: 100%; display: flex; gap: 10px; align-items: center; text-align: left; cursor: pointer;
+  padding: 8px 9px; border-radius: 10px; border: 1px solid transparent; background: transparent; color: var(--text);
+}
+.quickmenu-item:hover { background: var(--panel); border-color: var(--border); }
+.quickmenu-item .ico { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--panel2); }
+.quickmenu-item b { display: block; font-size: .8rem; }
+.quickmenu-item span span { font-size: .68rem; color: var(--muted); }
+.lang-toggle button { padding: 7px 10px; min-width: 40px; }
+
+@media (max-width: 1180px) {
+  .smart-chip .sc-txt span { display: none; }
+  .smart-chip { max-width: 190px; }
+}
+@media (max-width: 980px) {
+  .crumbs { max-width: 170px; }
+  .smart-chip { display: none; }
+}
+@media (max-width: 780px) {
+  .crumbs { max-width: 150px; }
+  .topbar.compact { padding: 8px 12px; }
+}
+@media (max-width: 430px) {
+  .crumbs .crumb-txt { display: none; }
+  .quickmenu-panel { position: fixed; top: 58px; right: 10px; left: 10px; width: auto; }
+}
+
+/* header density ladder — controls drop away in order of usefulness */
+@media (max-width: 1400px) { .profile-chip .meta { display: none; } }
+@media (max-width: 1000px) { .crumbs .crumb-txt span { display: none; } }
+@media (max-width: 900px) { .crumbs { display: none; } }
+@media (max-width: 430px) {
+  .topbar .searchbox span:not(.kbd) { display: none; }
+  /* min-width must be released too — it wins over max-width in CSS. */
+  .topbar .searchbox { flex: none; min-width: 0; max-width: 46px; justify-content: center; }
+  .topbar .kbd { display: none; }
+  .topbar .hide-xs { display: none; }
+}
+
+/* ---------- small-screen hard stop ----------
+   Several pages set grid-template-columns inline for desktop layouts; inline
+   styles beat media queries, so multi-column grids must be forced here or the
+   content is silently clipped by the shell's overflow. */
+@media (max-width: 900px) {
+  .grid2, .grid3, .path-grid, .workbench, .ide-grid { grid-template-columns: 1fr !important; }
+  .path-rail { position: static !important; }
+}
+@media (max-width: 620px) {
+  .track-grid, .statgrid, .tool-row, .ach-grid { grid-template-columns: 1fr !important; }
+  .grid2, .grid3, .path-grid { gap: 10px; }
+}
+@media (max-width: 360px) {
+  /* Language switch lives in the quick-actions menu at this size. */
+  .topbar .lang-toggle { display: none; }
+}
+
+/* ============================================================
+   LESSON COMMAND CENTRE
+   Accent tones + section hero + colour-coded stage rail +
+   utility strip + coach row.
+   ============================================================ */
+
+/* --- accent tones: one source of truth for every tinted surface ---
+   Each tone publishes a hex (--accent) and an rgb triplet (--accent-rgb) so
+   surfaces can be tinted with modern rgb(var(..) / alpha) syntax. */
+.tone-blue { --accent: #4f7cff; --accent-rgb: 79 124 255; }
+.tone-cyan { --accent: #22d3ee; --accent-rgb: 34 211 238; }
+.tone-violet { --accent: #a78bfa; --accent-rgb: 167 139 250; }
+.tone-fuchsia { --accent: #e879f9; --accent-rgb: 232 121 249; }
+.tone-red { --accent: #f87171; --accent-rgb: 248 113 113; }
+.tone-green { --accent: #34d399; --accent-rgb: 52 211 153; }
+.tone-amber { --accent: #fbbf24; --accent-rgb: 251 191 36; }
+.tone-orange { --accent: #fb923c; --accent-rgb: 251 146 60; }
+.tone-purple { --accent: #c4b5fd; --accent-rgb: 196 181 253; }
+.tone-gold { --accent: #facc15; --accent-rgb: 250 204 21; }
+
+/* --- section hero --- */
+.hero-wrap { display: grid; grid-template-columns: 162px 1fr; gap: 12px; align-items: stretch; margin: 14px 0 4px; }
+.back-tile {
+  display: flex; gap: 10px; align-items: center; padding: 12px 14px; text-decoration: none;
+  border-radius: 14px; border: 1px solid var(--border); background: var(--panel); color: inherit;
+  cursor: pointer; text-align: left; font: inherit;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.back-tile:hover { border-color: rgba(34, 211, 238, .45); box-shadow: var(--glow); transform: translateY(-1px); text-decoration: none; }
+.back-tile .arrow {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+}
+.back-tile b { display: block; font-size: .84rem; }
+.back-tile span span, .back-tile > span > span { display: block; font-size: .7rem; color: var(--muted); }
+
+.hero-main { display: flex; gap: 16px; align-items: center; justify-content: space-between; margin: 0; flex-wrap: wrap; }
+.hero-main h1 { font-size: 1.5rem; }
+.hero-glyph {
+  width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; flex: none;
+  background: linear-gradient(135deg, rgb(var(--accent-rgb) / .32), rgb(var(--accent-rgb) / .06));
+  border: 1px solid rgb(var(--accent-rgb) / .45); color: var(--accent);
+  box-shadow: 0 0 22px rgb(var(--accent-rgb) / .22);
+}
+.status-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: .72rem; font-weight: 600;
+  padding: 3px 10px; border-radius: 99px; color: var(--text);
+  border: 1px solid rgb(var(--accent-rgb) / .45); background: rgb(var(--accent-rgb) / .12);
+}
+.status-chip i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+
+.hero-stats { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(146px, 1fr)); gap: 10px; }
+.stat-tile {
+  display: flex; gap: 10px; align-items: center; padding: 11px 13px; border-radius: 13px;
+  border: 1px solid rgb(var(--accent-rgb) / .26); background: linear-gradient(180deg, rgb(var(--accent-rgb) / .10), rgba(255, 255, 255, .02));
+  color: inherit; text-decoration: none; min-width: 0;
+  transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+.stat-tile:hover { transform: translateY(-1px); border-color: rgb(var(--accent-rgb) / .55); box-shadow: 0 10px 24px rgb(var(--accent-rgb) / .16); text-decoration: none; }
+.stat-tile .ic {
+  width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; flex: none;
+  background: rgb(var(--accent-rgb) / .16); border: 1px solid rgb(var(--accent-rgb) / .32); color: var(--accent);
+}
+.stat-tile .n { display: block; font-weight: 750; font-size: 1rem; line-height: 1.15; }
+.stat-tile .l { display: block; font-size: .68rem; color: var(--muted); }
+
+/* --- colour-coded stage rail --- */
+.stage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; margin: 12px 0; }
+.stage-tile {
+  position: relative; text-align: left; cursor: pointer; color: var(--text); font: inherit;
+  padding: 11px 12px 10px; border-radius: 14px;
+  border: 1px solid rgb(var(--accent-rgb) / .3);
+  background: linear-gradient(180deg, rgb(var(--accent-rgb) / .16), rgb(var(--accent-rgb) / .04) 62%, rgba(255, 255, 255, .02));
+  transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+.stage-tile:hover { transform: translateY(-2px); border-color: rgb(var(--accent-rgb) / .7); box-shadow: 0 12px 28px rgb(var(--accent-rgb) / .2); }
+.stage-tile .no { display: block; font-size: .62rem; font-weight: 700; letter-spacing: .8px; color: var(--accent); opacity: .9; }
+.stage-tile .glyph {
+  width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; margin: 7px 0 6px;
+  background: rgb(var(--accent-rgb) / .18); border: 1px solid rgb(var(--accent-rgb) / .38); color: var(--accent);
+  box-shadow: 0 0 18px rgb(var(--accent-rgb) / .18);
+}
+.stage-tile b { display: block; font-size: .82rem; }
+.stage-tile .sub { display: block; font-size: .66rem; color: var(--muted); min-height: 1.9em; }
+.stage-tile .mini-bar { display: block; margin-top: 7px; height: 4px; border-radius: 99px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.stage-tile .mini-bar > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, rgb(var(--accent-rgb) / .7), var(--accent)); }
+.stage-tile.current {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, rgb(var(--accent-rgb) / .3), rgb(var(--accent-rgb) / .08) 66%, rgba(255, 255, 255, .03));
+  box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / .45), 0 14px 34px rgb(var(--accent-rgb) / .22);
+}
+.stage-tile.done .st-check { position: absolute; top: 8px; right: 9px; color: var(--green); font-size: .8rem; }
+.stage-tile.ahead { opacity: .6; }
+.stage-tile.na { opacity: .42; }
+.stage-tile .st-na {
+  position: absolute; top: 8px; right: 9px; font-size: .56rem; text-transform: uppercase;
+  letter-spacing: .6px; color: var(--muted); border: 1px solid var(--border);
+  border-radius: 99px; padding: 0 5px;
+}
+
+/* auto-advance card: "✓ complete → next" with a cancellable countdown */
+.adv-card {
+  position: relative; overflow: hidden; margin: 10px 0; padding: 10px 12px;
+  border: 1px solid rgba(52, 211, 153, .45); border-radius: 12px;
+  background: linear-gradient(120deg, rgba(52, 211, 153, .13), rgba(34, 211, 238, .07) 60%, transparent);
+}
+.adv-check {
+  width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+  font-size: .68rem; font-weight: 700; color: var(--green);
+  background: rgba(52, 211, 153, .18); border: 1px solid rgba(52, 211, 153, .5);
+}
+.adv-bar { margin-top: 8px; height: 4px; }
+.adv-bar > div { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+
+/* "Aage ka plan": the next steps laid out before anything is finished */
+.plan { margin: 12px 0 4px; }
+.plan-rows { display: grid; gap: 6px; margin-top: 7px; }
+.plan-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: 12px; cursor: pointer; font: inherit; color: inherit;
+  border: 1px solid var(--border); background: rgba(255, 255, 255, .022);
+  transition: border-color .14s ease, background .14s ease, transform .12s ease;
+}
+.plan-row:hover { border-color: rgba(34, 211, 238, .5); background: rgba(34, 211, 238, .07); transform: translateX(2px); }
+.plan-row:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.plan-row .plan-no {
+  flex: none; width: 34px; padding: 3px 0; text-align: center; border-radius: 99px;
+  font-size: .58rem; font-weight: 800; letter-spacing: .6px; color: var(--muted);
+  border: 1px solid var(--border);
+}
+.plan-row .plan-glyph { flex: none; font-size: .95rem; line-height: 1; }
+.plan-row .plan-body { flex: 1; min-width: 0; }
+.plan-row .plan-body b { display: block; font-size: .82rem; }
+.plan-row .plan-hint { display: block; font-size: .68rem; color: var(--muted); margin-top: 2px; }
+.plan-row .plan-min { flex: none; white-space: nowrap; }
+.plan-row.now {
+  border-color: rgba(52, 211, 153, .5);
+  background: linear-gradient(120deg, rgba(52, 211, 153, .14), rgba(34, 211, 238, .06) 62%, transparent);
+}
+.plan-row.now .plan-no { color: var(--green); border-color: rgba(52, 211, 153, .55); font-size: .5rem; }
+.plan-row.exit { border-style: dashed; }
+.plan-row.exit .plan-no { color: var(--cyan); border-color: rgba(34, 211, 238, .45); font-size: .78rem; }
+.stage-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- utility strip --- */
+.utility-strip {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0;
+  padding: 9px 11px; border-radius: 14px; border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .012));
+}
+.util-tile {
+  display: flex; gap: 9px; align-items: center; padding: 7px 10px; border-radius: 11px;
+  border: 1px solid transparent; background: transparent; color: inherit; font: inherit;
+  text-decoration: none; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, transform .12s ease;
+}
+.util-tile:hover { background: rgb(var(--accent-rgb) / .12); border-color: rgb(var(--accent-rgb) / .32); text-decoration: none; transform: translateY(-1px); }
+.util-tile .ic {
+  width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; flex: none;
+  background: rgb(var(--accent-rgb) / .15); border: 1px solid rgb(var(--accent-rgb) / .28); color: var(--accent);
+}
+.util-tile b { display: block; font-size: .8rem; }
+.util-tile span span, .util-tile > span > span { display: block; font-size: .64rem; color: var(--muted); }
+.util-sep { width: 1px; align-self: stretch; background: var(--border); margin: 0 3px; }
+.switch { width: 38px; height: 21px; border-radius: 99px; background: rgba(255, 255, 255, .14); position: relative; transition: background .18s ease; flex: none; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 15px; height: 15px; border-radius: 50%; background: #fff; transition: transform .18s ease; }
+.switch.on { background: linear-gradient(90deg, var(--cyan), var(--blue)); }
+.switch.on i { transform: translateX(17px); }
+
+/* --- coach row --- */
+.coach-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 12px; margin: 12px 0; }
+.coach-card {
+  margin: 0; position: relative; overflow: hidden;
+  border-color: rgb(var(--accent-rgb) / .3);
+  background: linear-gradient(160deg, rgb(var(--accent-rgb) / .1), rgba(255, 255, 255, .02) 60%);
+}
+.coach-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--accent), rgb(var(--accent-rgb) / .15));
+}
+.coach-card h3 { font-size: .92rem; }
+.count-pill {
+  display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 7px;
+  border-radius: 99px; font-size: .68rem; font-weight: 700; color: #fff; border: 1px solid var(--border);
+}
+
+/* --- track cards inherit their own accent (from a `.tone-*` class) --- */
+.track-card .num {
+  background: linear-gradient(135deg, rgb(var(--accent-rgb) / .3), rgb(var(--accent-rgb) / .08));
+  border-color: rgb(var(--accent-rgb) / .5); color: var(--accent);
+}
+.track-card .head .ic { background: rgb(var(--accent-rgb) / .14); border-color: rgb(var(--accent-rgb) / .32); }
+.track-card:hover { border-color: rgb(var(--accent-rgb) / .55); box-shadow: 0 14px 34px rgb(var(--accent-rgb) / .18); }
+.track-card .bar > div { background: linear-gradient(90deg, rgb(var(--accent-rgb) / .75), var(--accent)); }
+
+/* ---------- Learning Path: Playbook V15 layer + the extra path cards ---------- */
+/* The band reports what the second source contributed to each track. Rows are a grid, not a
+   table: the roadmap has to survive a 380px phone without a horizontal scrollbar. */
+.pb-band { margin-top: 16px; }
+/* The band's six figures: a fixed 3×2 block, so 91 "method answers" never lands alone on a
+   third row the way an auto-fit column count made it. */
+.pb-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+@media (max-width: 620px) { .pb-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pb-cover { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.pb-row {
+  display: grid; grid-template-columns: minmax(150px, 1.05fr) minmax(140px, 1.3fr) auto;
+  gap: 10px; align-items: center; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: 12px; background: rgba(11, 17, 32, 0.5);
+}
+.pb-row:hover { border-color: rgba(34, 211, 238, 0.35); }
+.pb-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pb-name .num {
+  flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px;
+  border: 1px solid rgb(var(--accent-rgb, 34 211 238) / .5); color: var(--cyan);
+  background: rgb(var(--accent-rgb, 34 211 238) / .12); font-weight: 700;
+}
+.pb-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pb-mid { min-width: 0; }
+.pb-mid .bar { margin-top: 5px; }
+.pb-links { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.pb-none { font-size: .76rem; color: var(--muted); }
+.pbline { display: inline-flex; align-items: center; gap: 6px; font-size: .72rem; color: var(--cyan); }
+.pbline:hover { text-decoration: underline; }
+
+/* The extra paths use the same card family as a track card, but lighter: there are 25 of them,
+   and full-size cards would triple the page for no extra information. */
+.more-head { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; }
+.more-head .chip { color: var(--cyan); }
+/* NOT `.path-grid`: that name already means the Learning Path's own 1fr/300px two-column frame
+   (above), and re-declaring it here silently widened the right rail to fill the row. */
+.more-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 10px; margin-top: 10px; }
+.path-card {
+  position: relative; display: flex; flex-direction: column; gap: 7px; overflow: hidden;
+  padding: 12px 13px 12px 17px; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; color: var(--text); text-decoration: none;
+  transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+/* The accent stripe names the family a card belongs to without another label. */
+.path-card::before {
+  content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--accent, var(--cyan)); opacity: .85;
+}
+.path-card:hover { transform: translateY(-2px); border-color: rgb(var(--accent-rgb, 34 211 238) / .5); box-shadow: var(--glow); }
+.path-card .pc-head { display: flex; align-items: center; gap: 8px; }
+.path-card .pc-num { font-size: .66rem; font-weight: 700; letter-spacing: .05em; color: var(--muted); }
+.path-card .pc-ic {
+  width: 26px; height: 26px; flex: none; border-radius: 9px; display: grid; place-items: center;
+  background: rgb(var(--accent-rgb, 34 211 238) / .14);
+  border: 1px solid rgb(var(--accent-rgb, 34 211 238) / .3); color: var(--accent, var(--cyan));
+}
+.path-card .pc-name { flex: 1; min-width: 0; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.path-card .pc-facts { display: flex; flex-wrap: wrap; gap: 5px; }
+.path-card .pc-facts .chip { font-size: .66rem; padding: 2px 7px; }
+.path-card .pc-foot { display: flex; align-items: center; gap: 8px; margin-top: auto; }
+.path-card .pc-foot .bar { flex: 1; }
+.path-card .pc-stat { font-size: .68rem; color: var(--muted); white-space: nowrap; }
+.path-card .bar > div { background: linear-gradient(90deg, rgb(var(--accent-rgb, 34 211 238) / .75), var(--accent, var(--cyan))); }
+
+@media (max-width: 760px) {
+  .pb-row { grid-template-columns: 1fr; }
+  .pb-links { justify-content: flex-start; }
+}
+
+@media (max-width: 900px) {
+  .hero-wrap { grid-template-columns: 1fr; }
+  .hero-main { align-items: flex-start; }
+}
+@media (max-width: 620px) {
+  .stage-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .coach-grid { grid-template-columns: 1fr; }
+  .utility-strip { gap: 6px; }
+  .util-tile span span, .util-tile > span > span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage-tile, .stat-tile, .util-tile, .back-tile, .track-card, .path-card { transition: none; }
+}

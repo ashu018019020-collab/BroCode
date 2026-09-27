@@ -1,7 +1,7 @@
 /** Bank read/write + seeder from the real curriculum (no fabrication). */
 const fs = require('fs');
 const path = require('path');
-const { validateBank, coverageGate } = require('./validate.cjs');
+const { validateBank, coverageGate, norm } = require('./validate.cjs');
 
 const QUESTIONS_DIR = path.join(__dirname, '..', '..', 'public', 'questions');
 const SECTIONS_JSON = path.join(__dirname, '..', '..', 'public', 'curriculum', 'sections.json');
@@ -23,7 +23,6 @@ const existingBankIds = () => fs.existsSync(QUESTIONS_DIR)
 
 const difficultyOf = (d) => (['easy', 'medium', 'hard', 'interview', 'debug'].includes(d) ? (d === 'interview' ? 'medium' : d === 'debug' ? 'hard' : d) : 'medium');
 
-const norm = (s) => (s ?? '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
 const isPlaceholder = (s) => /^\(/.test(String(s ?? '').trim());
 
 /**
@@ -146,6 +145,49 @@ function mergeIntoBank(bank, items, sid) {
   return { added, skipped, byStatus };
 }
 
+/**
+ * The lesson's stage → bank-type map, mirrored from `src/data/questions.ts` (`STAGE_QNA` +
+ * `STAGE_OWN_ARRAY`) for the build step.
+ *
+ * It exists in two languages because the pipeline is CommonJS and the app is TypeScript, so
+ * neither can import the other. `scripts/tests/lessonqna.test.mjs` closes that gap: it re-counts
+ * every stage of every section through the RUNTIME functions and fails if this copy drifts. A
+ * `own` extractor lists the flattened question texts the stage renders itself — those items are
+ * skipped, because the panel below the stage does not show them either.
+ */
+const STAGE_QNA_BUILD = {
+  learn: { types: ['theory'] },
+  interview: { types: ['interview'], own: (s) => (s.interview ?? []).map((x) => x.q) },
+  coding: { types: ['coding'], own: (s) => (s.coding ?? []).filter((x) => x.difficulty !== 'debug').map((x) => x.text) },
+  logic: { types: ['logic'], own: (s) => (s.logic ?? []).map((x) => x.text) },
+  debug: { types: ['debug'] },
+  solved: { types: ['solved'], own: (s) => (s.solved ?? []).map((x) => x.text) },
+  mini: { types: ['coding'], tag: 'mini-project' },
+  defense: { types: ['defense'] },
+  checkpoint: { types: ['checkpoint'], own: (s) => (s.checkpoint ?? []).map((x) => x.q) },
+};
+
+/** Whitespace/case-insensitive text key — MUST stay identical to `normText` in src/data/questions.ts. */
+const textKey = (s) => String(s ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+/** How many questions a lesson stage's panel shows for this section (published, after dedupe). */
+function stageCounts(bank, section) {
+  const byStage = {};
+  for (const [stage, spec] of Object.entries(STAGE_QNA_BUILD)) {
+    const own = new Set((spec.own ? spec.own(section) : []).map(textKey));
+    byStage[stage] = bank.questions.filter((q) => {
+      if (q.status !== 'PUBLISHED') return false;
+      if (!spec.types.includes(q.type)) return false;
+      if (q.type === 'coding') {
+        const isMini = (q.tags ?? []).includes('mini-project');
+        if (spec.tag ? !isMini : isMini) return false;
+      }
+      return !own.has(textKey(q.question));
+    }).length;
+  }
+  return byStage;
+}
+
 /** Write public/questions/manifest.json — the UI's index of banks (no 29-file fetch). */
 function writeManifest() {
   const entries = [];
@@ -155,10 +197,20 @@ function writeManifest() {
     const bank = loadBank(s.id);
     const { stats } = validateBank(bank);
     const { flags } = coverageGate(bank, stats);
+    // The per-LESSON-stage counts. `byType` alone cannot separate MINI PROJECT from CODING LAB
+    // (both are `coding`) and cannot know that the stage above the panel renders some questions
+    // itself, so the tile would promise more than the learner can find. `byStage` is the number
+    // the panel will really show — computed here by the build mirror, verified against the
+    // runtime by lessonqna.test.mjs.
+    const byStage = stageCounts(bank, s);
+    let miniProject = 0;
+    for (const q of bank.questions) {
+      if ((q.tags ?? []).includes('mini-project')) miniProject++;
+    }
     entries.push({
       sectionId: s.id, no: s.no, title: s.title,
       total: stats.total, published: stats.published,
-      byType: stats.byType, byDifficulty: stats.byDifficulty, flags,
+      byType: stats.byType, byDifficulty: stats.byDifficulty, byStage, miniProject, flags,
     });
     total += stats.total;
     published += stats.published;
@@ -186,6 +238,6 @@ function seedAll({ force = false } = {}) {
 
 module.exports = {
   loadSections, bankPath, bankExists, loadBank, saveBank, allSectionIds, existingBankIds,
-  seedBank, seedAll, mergeIntoBank, writeManifest, norm,
+  seedBank, seedAll, mergeIntoBank, writeManifest, norm, textKey, stageCounts, STAGE_QNA_BUILD,
   QUESTIONS_DIR, MANIFEST_PATH, BASELINE_PER_SECTION,
 };

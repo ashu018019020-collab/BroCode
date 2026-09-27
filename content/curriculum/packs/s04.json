@@ -1,0 +1,690 @@
+{
+  "section": "s04",
+  "topic": "Python Strings",
+  "authored": true,
+  "intro": "String Python me text ka data type hai — 'Ahetesham', 'select * from users', 'RAG pipeline' sab strings hain. Ye immutable sequence hai, yani ek baar bana to uske andar ka character badla nahi ja sakta; har method nayi string return karta hai. Aage ke poore course me jo bhi input aayega (file, CSV, API JSON, LLM prompt) wo pehle string hi hota hai, isliye string manipulation aana matlab data cleaning, validation aur parsing aana.",
+  "theory": [
+    "String ek ordered, immutable sequence hai Unicode characters ki. Index 0 se shuru hota hai, negative index peeche se ginta hai (-1 last character), aur s[i:j:k] slicing se sub-string banta hai.",
+    "Kyunki string immutable hai, s[0] = 'x' TypeError deta hai. 'Modify' karne ka matlab hamesha nayi string banana hai — isliye methods ka result store karna padta hai.",
+    "Methods kaafi hain par kaam ke groups: case (lower, upper, title, casefold), trim/pad (strip, lstrip, ljust), search (find, index, startswith, count), replace (replace, translate), split/join (split, rsplit, splitlines, join).",
+    "f-string (f'{name}') modern formatting hai: expression andar chalta hai, spec se rounding/width milti hai (f'{x:.2f}'), aur repr ke liye !r. Purane % aur .format() ab sirf legacy code me milte hain.",
+    "Escape sequences (\\n, \\t, \\\\, \\') aur raw string (r'C:\\new') ka fark yaad rakho — regex aur Windows paths me raw string hi sahi hai. Encoding ka default UTF-8 hai; multi-line text ke liye triple quotes use karo."
+  ],
+  "syntax": [
+    "s = 'Python'        # single quotes\ns2 = \"Python\"       # double quotes — same cheez\ntri = '''multi\nline'''\nraw = r'C:\\new\\test'  # backslash literal rehta hai",
+    "s[0]      # 'P'  — first character\ns[-1]     # 'n'  — last character\ns[1:4]    # 'yth' — start se pehle end tak\ns[::-1]   # 'nohtyP' — reverse\ns[::2]    # 'Pto'  — every second character",
+    "s.upper(); s.lower(); s.strip(); s.split(','); ','.join(parts)\ns.replace('old', 'new'); s.find('th'); s.startswith('Py'); s.count('t')\nf'{name} scored {score:.1f}'   # formatted insert"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "name = 'Ahetesham'\nprint(name[0], name[-1])\nprint(name[0:4])\nprint(len(name))\nprint(name.upper())",
+      "output": "",
+      "explain": [
+        "name[0] pehla character deta hai, name[-1] last — Python negative index ko length se jodta hai, isliye -1 ka matlab len(name) - 1.",
+        "name[0:4] me end index include nahi hota, isliye 4 characters aate hain: 'Ahet'.",
+        "len(name) characters ki ginti deta hai (bytes nahi) — 'Ahetesham' me 9.",
+        "upper() original ko nahi badalta, nayi uppercase string return karta hai; immutable hone ki wajah se ye hamesha naya object hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "raw = '  Python, SQL ,  pandas  '\nskills = [s.strip().lower() for s in raw.split(',')]\nprint(skills)\nprint('|'.join(skills))\nprint(f'{skills[0].title()} — {len(skills)} skills')\nprint(raw.strip().replace('  ', ' '))",
+      "output": "",
+      "explain": [
+        "split(',') har comma par todta hai aur spaces bhi saath le aata hai — isliye har tukde par strip() lagana zaroori hai.",
+        "casefold/lower lagane se 'SQL' aur 'sql' ek jaise ho jate hain; comparison ke liye ye normalization basic step hai.",
+        "'|'.join(skills) list ko wapas string banata hai — separator wo string hai jispar join call hua, list nahi.",
+        "f-string ke andar expression aur method call dono chalte hain: {skills[0].title()} aur {len(skills)}.",
+        "Aakhir me strip() bahar ke spaces hatata hai aur replace('  ',' ') andar ke double spaces single karta hai — typical clean-up pipeline."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import re\n\ndef normalize(text):\n    text = re.sub(r'[^a-z0-9\\s]', ' ', text.lower())\n    return ' '.join(text.split())\n\ndef compress(text):\n    out, count = [], 1\n    for i in range(1, len(text) + 1):\n        if i < len(text) and text[i] == text[i - 1]:\n            count += 1\n        else:\n            out.append(f'{text[i - 1]}{count}' if count > 1 else text[i - 1])\n            count = 1\n    return ''.join(out)\n\nprint(normalize('RAG,  Embeddings & Vector-DB!'))\nprint(compress('aaabbc'))",
+      "output": "",
+      "explain": [
+        "re.sub ke saath negated character class [^a-z0-9\\s] har non-alphanumeric ko space se badal deta hai — punctuation hat jata hai.",
+        "text.split() bina argument diye whitespace par todta hai aur duplicate spaces ignore karta hai, phir ' '.join se single-space version milta hai.",
+        "compress() run-length encoding hai: jab tak same character repeat ho raha hai count badhta hai.",
+        "f'{text[i-1]}{count}' wahi character plus count deta hai, par count 1 hone par sirf character likha jata hai — isliye 'abc' waisa hi rehta hai.",
+        "Loop len(text)+1 tak chalta hai taaki last run bhi flush ho jaye — boundary par ek extra iteration classic technique hai."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Data cleaning: CSV/Excel se aaya ' Pune ' aur 'pune' ek hi city hai — strip + casefold + replace ka combo har ETL job me pehla step hota hai.",
+    "Log parsing: production log line se timestamp, level aur message nikaalna split/rsplit aur startswith se hota hai; isi par alerting banti hai.",
+    "PII masking: 'Ahetesham Khan' ya '9876543210' ko report/LLM prompt me bhejne se pehle mask karna padta hai (s[:3] + '*'*n) — compliance requirement hai.",
+    "Prompt building: LLM ke liye system + context + user message ko f-string/template se jodna padta hai, aur token limit ke hisab se truncate karna padta hai."
+  ],
+  "interview": [
+    {
+      "q": "Strings immutable kyun hain aur iska practical asar kya hai?",
+      "a": "Immutable hone se string ko hash kiya ja sakta hai (dictionary key ban sakti hai), multiple threads bina lock share kar sakte hain, aur interned short strings memory bachate hain. Asar: har 'change' nayi string banata hai, isliye loop me s += x karne se O(n^2) ho jata hai — wahan list + join use karo.",
+      "tip": "Answer me hashability aur thread-safety dono mention karo, sirf 'change nahi kar sakte' mat kaho."
+    },
+    {
+      "q": "== aur is me string comparison me kya fark hai?",
+      "a": "== value compare karta hai (character by character), is identity compare karta hai (same object). CPython chhoti literal strings ko intern karta hai, isliye 'ab' is 'ab' aksar True milega — par ye guarantee nahi hai. Kabhi bhi identity par bharosa karke string equality mat likho; sirf identity check ke liye is use karo.",
+      "tip": "Interviewer yahan interned behaviour ka edge case sunna chahta hai — 'aksar True, par guaranteed nahi' bolna strong answer hai."
+    },
+    {
+      "q": "s[::-1] kaise reverse karta hai?",
+      "a": "Slice syntax start:stop:step hai. Jab start aur stop khaali ho aur step -1 ho, Python end se shuru karke 1-1 peeche chalta hai, isliye poora string reverse milta hai. Ye O(n) hai aur ek nayi string banati hai.",
+      "tip": "Slice ka default (start=0, stop=len, step=1) mention karo — interviewers basics ka clarity test karte hain."
+    },
+    {
+      "q": "Loop me string concatenation slow kyun hai aur alternative kya hai?",
+      "a": "String immutable hai, isliye har += nayi string banata hai aur purana content copy hota hai — n iterations par O(n^2). Sahi tarika: parts ki list banao aur ' '.join(parts) se ek hi allocation me jodo, jo O(n) hai.",
+      "tip": "Real numbers do: 100k strings par += seconds leta hai jabki join milliseconds."
+    },
+    {
+      "q": "split() aur split(' ') me kya fark hai?",
+      "a": "Bina argument split() whitespace ke har run par todta hai aur empty strings nikaal deta hai, isliye multiple spaces aur tabs ignore ho jate hain. split(' ') exactly ek space par todta hai, isliye consecutive spaces se khali strings aa jati hain — clean data ke liye pehla safer hai.",
+      "tip": "Isi logic se rsplit aur splitlines ke use case bhi bol dena."
+    },
+    {
+      "q": "String formatting ke liye f-string vs .format() vs % — production me kya choose karoge?",
+      "a": "f-string: fast, readable, debug-friendly (f'{x=}'), par expression evaluate hote hain isliye user-controlled template ke saath injection ka dhyan rakhna padta hai. .format() tab jab template runtime par aaye (config/translation files). % sirf legacy logging code me; logging me actually lazy % style logger.info('%s', x) recommended hai taaki message format sirf zaroorat par ho.",
+      "tip": "Logging ka lazy-format point batao, ye practical depth dikhata hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "String reverse karo.",
+        "a": "s[::-1] ek step me reverse kar deta hai (O(n), nayi string).", 
+        "explain": "Negative step end se start ki taraf chalta hai, isliye start/stop khaali chhod do.",
+        "code": "s = 'Ahetesham'\nprint(s[::-1])\nprint(''.join(reversed(s)))",
+        "output": "",
+        "tip": "Donon tarike batao — slice idiomatic hai, reversed() iterator deta hai."
+      },
+      {
+        "q": "String ki length find karo (spaces ke saath aur bina).",
+        "a": "len(s) total characters deta hai; spaces hata kar ginti ke liye len(s.replace(' ', '')) ya sum(not c.isspace() for c in s) use karo.",
+        "code": "s = 'RAG pipeline works'\nprint(len(s))\nprint(len(s.replace(' ', '')))",
+        "output": "",
+        "commonMistake": "len(s.strip()) se lagta hai spaces hat gaye, par strip sirf kinaron ke spaces hatata hai."
+      },
+      {
+        "q": "String me vowels count karo.",
+        "a": "Ek set me vowels rakho aur character-wise check karo — set lookup O(1) hai, isliye overall O(n).",
+        "code": "s = 'Machine Learning'\nvowels = set('aeiou')\nprint(sum(1 for c in s.lower() if c in vowels))",
+        "output": ""
+      },
+      {
+        "q": "String me uppercase aur lowercase characters count karo.",
+        "a": "c.isupper() aur c.islower() per-character check dete hai; ginti ke liye sum() ya loop use karo.",
+        "code": "s = 'PyThOn 3.14'\nprint(sum(c.isupper() for c in s), sum(c.islower() for c in s))\nprint(sum(c.isdigit() for c in s))",
+        "output": "",
+        "explain": "bool int ki tarah sum ho jata hai: True = 1, False = 0 — ye idiom Python me common hai."
+      },
+      {
+        "q": "First aur last character find karo.",
+        "a": "s[0] aur s[-1]. Empty string par IndexError aata hai, isliye pehle `if s:` check karo.",
+        "commonMistake": "Bina guard s[0] likhna — empty input par crash."
+      },
+      {
+        "q": "Palindrome hai ya nahi check karo.",
+        "a": "Normalize (lower + alphanumeric only) karke s == s[::-1] compare karo.",
+        "code": "def is_palindrome(s):\n    clean = ''.join(c.lower() for c in s if c.isalnum())\n    return clean == clean[::-1]\n\nprint(is_palindrome('Madam'))\nprint(is_palindrome('A man, a plan, a canal: Panama'))",
+        "output": "",
+        "tip": "Interview me yahi question 'ignore punctuation and case' ke saath aata hai — pehle normalization likho."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "String me duplicate characters find karo.",
+        "a": "collections.Counter se frequency lo aur count > 1 wale characters filter karo.",
+        "code": "from collections import Counter\n\ndupes = [c for c, n in Counter('programming').items() if n > 1]\nprint(sorted(dupes))",
+        "output": ""
+      },
+      {
+        "q": "Most frequent character find karo.",
+        "a": "Counter(s).most_common(1) ya max(counter, key=counter.get) — donon O(n).",
+        "code": "from collections import Counter\n\nc = Counter('machine learning')\nprint(c.most_common(2))",
+        "output": "",
+        "explain": "most_common ties ko insertion order me todta hai, isliye deterministic hai."
+      },
+      {
+        "q": "Sentence ke words ka order reverse karo (characters nahi).",
+        "a": "split() se words list banao, reverse karo, aur ' '.join se jodo.",
+        "code": "s = 'python for data science'\nprint(' '.join(s.split()[::-1]))",
+        "output": ""
+      },
+      {
+        "q": "String se duplicate characters remove karo, order preserve karke.",
+        "a": "Seen set rakho aur sirf naye characters append karo — O(n) aur order safe (set() alone order tod deta hai).",
+        "code": "s = 'programming'\nseen, out = set(), []\nfor ch in s:\n    if ch not in seen:\n        seen.add(ch)\n        out.append(ch)\nprint(''.join(out))",
+        "output": "",
+        "commonMistake": "set(s) se order random ho jata hai — interview me 'preserve order' likha ho to ye galat hai."
+      },
+      {
+        "q": "Text me word frequency nikaalo.",
+        "a": "split + Counter; case normalize karna na bhoolo warna 'The' aur 'the' alag gine jayenge.",
+        "code": "from collections import Counter\n\ntext = 'Data data science is data driven'\nprint(Counter(w.lower() for w in text.split()).most_common(3))",
+        "output": ""
+      },
+      {
+        "q": "Email format validate karo (regex ke bina bhi).",
+        "a": "Simple check: exactly ek '@', local aur domain dono non-empty, domain me '.' ho aur aakhri part 2+ characters ka. Regex copy-paste karne se pehle ye rules bolna interview me better lagta hai.",
+        "code": "def valid_email(e):\n    if e.count('@') != 1:\n        return False\n    user, domain = e.split('@')\n    return bool(user) and '.' in domain and len(domain.rsplit('.', 1)[1]) >= 2\n\nprint(valid_email('ahetesham@example.com'), valid_email('ahet@example'))",
+        "output": "",
+        "tip": "Real project me aakhri faisla server-side validation ka hota hai — client check sirf UX hai."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Custom string compression (run-length encoding) implement karo.",
+        "a": "Consecutive same characters ka run count karke 'char+count' likho; count 1 ho to sirf character. O(n) time, O(n) space.",
+        "code": "def rle(s):\n    out, count = [], 1\n    for i in range(1, len(s) + 1):\n        if i < len(s) and s[i] == s[i - 1]:\n            count += 1\n        else:\n            out.append(s[i - 1] + (str(count) if count > 1 else ''))\n            count = 1\n    return ''.join(out)\n\nprint(rle('aaabccccd'))\nprint(rle('abc'))",
+        "output": "",
+        "explain": "Loop len(s)+1 tak isliye chalta hai taaki last run flush ho jaye."
+      },
+      {
+        "q": "Longest substring without repeating characters find karo.",
+        "a": "Sliding window + last-seen index map: left pointer ko duplicate ke baad shift karo, har step par window length update karo. O(n) time.",
+        "code": "def longest_unique(s):\n    last, left, best, best_end = {}, 0, 0, 0\n    for i, ch in enumerate(s):\n        if ch in last and last[ch] >= left:\n            left = last[ch] + 1\n        last[ch] = i\n        if i - left + 1 > best:\n            best, best_end = i - left + 1, i\n    return s[best_end - best + 1:best_end + 1]\n\nprint(longest_unique('abcabcbb'))\nprint(longest_unique('bbbbb'))",
+        "output": "",
+        "tip": "Brute force O(n^2) se shuru karke window par optimize karna interviewer ko pasand aata hai."
+      },
+      {
+        "q": "Anagram groups banao.",
+        "a": "Har word ka sorted-characters ya character-count tuple key banake dictionary me group karo. Sorted key O(k log k) hai, count tuple O(k) — bade inputs par count tuple better.",
+        "code": "from collections import defaultdict\n\ngroups = defaultdict(list)\nfor w in ['eat', 'tea', 'tan', 'ate', 'nat', 'bat']:\n    groups[''.join(sorted(w))].append(w)\nprint(sorted(groups.values()))",
+        "output": ""
+      },
+      {
+        "q": "Text normalization system banao (punctuation, case, whitespace).",
+        "a": "Lowercase → non-alphanumeric ko space → whitespace collapse. Ye idempotent hona chahiye: normalize(normalize(x)) == normalize(x).",
+        "code": "import re\n\ndef normalize(text):\n    text = re.sub(r'[^a-z0-9\\s]', ' ', text.lower())\n    return ' '.join(text.split())\n\nprint(normalize('  RAG, Embeddings & Vector-DB!! '))\nprint(normalize(normalize('  RAG, Embeddings & Vector-DB!! ')) == normalize('  RAG, Embeddings & Vector-DB!! '))",
+        "output": "",
+        "explain": "Idempotency NLP me zaroori hai — warna dobara process karne par data badalta rehta hai."
+      },
+      {
+        "q": "Search/autocomplete logic implement karo (prefix match).",
+        "a": "Sorted words par bisect se prefix ka insertion point dhoondo aur aage scan karke matches do; O(log n + k) milta hai. Yehi tarika SQL ke LIKE 'abc%' se sasta hai jab data memory me ho.",
+        "code": "from bisect import bisect_left\n\nwords = sorted(['rag', 'ranking', 'random', 'range', 'transformer'])\n\ndef autocomplete(prefix, limit=3):\n    i = bisect_left(words, prefix)\n    return [w for w in words[i:i + limit] if w.startswith(prefix)]\n\nprint(autocomplete('ran'))\nprint(autocomplete('ra'))",
+        "output": ""
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview me poocha jaye: 'Ek 5 GB log file me ek keyword kitni baar aaya, nikalo' — string knowledge kaise use karoge?",
+        "a": "Poori file memory me mat lo; line by line padho aur per-line count += line.count(keyword) karo. Agar keyword line boundary par toot sakta hai to chunk overlap rakho. Agar multiple keywords hain to Aho-Corasick ya multi-pattern approach bolna depth dikhata hai.",
+        "tip": "Memory constraints pehle bolo, phir approach — interviewer yehi order sunna chahta hai."
+      },
+      {
+        "q": "Interview: do strings 'same characters, different order' hain ya nahi — O(n) me batao.",
+        "a": "Counter(s1) == Counter(s2) O(n) hai; sorted comparison O(n log n) hai. Unicode/bade alphabet me counting array 26 se kaam nahi chalega, Counter safer hai.",
+        "tip": "Edge cases bolna: length mismatch, spaces, case sensitivity."
+      },
+      {
+        "q": "Interview: string me first non-repeating character find karo.",
+        "a": "Ek pass me Counter, doosre pass me pehla character jiska count 1 ho — O(n) time, O(k) space.",
+        "code": "from collections import Counter\n\ndef first_unique(s):\n    c = Counter(s)\n    for ch in s:\n        if c[ch] == 1:\n            return ch\n    return None\n\nprint(first_unique('aabbcdd'))",
+        "output": "",
+        "tip": "Ordered pass zaroori hai — sirf Counter ka most_common se ye answer nahi milta."
+      },
+      {
+        "q": "Interview: password strength checker likho aur batao kaunse string operations lagenge.",
+        "a": "length, any(c.isupper()), any(c.islower()), any(c.isdigit()), any(not c.isalnum()) — paanch checks. Result ko score me convert karo aur weak/medium/strong do. Regex se bhi ho sakta hai par multiple lookaheads readability todte hain.",
+        "code": "def strength(p):\n    score = sum([len(p) >= 8, any(c.isupper() for c in p), any(c.islower() for c in p), any(c.isdigit() for c in p), any(not c.isalnum() for c in p)])\n    return ['very weak', 'weak', 'medium', 'medium', 'strong', 'very strong'][score]\n\nprint(strength('Ahetesham@2026'), strength('abcdef'))",
+        "output": "",
+        "tip": "Security interview me plain-text password store/log karne ka zikr bhi mat karo — hashing mention karo."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "CSV header names ko database-friendly banado ('Monthly Revenue ($)' → 'monthly_revenue').",
+        "a": "Lowercase → non-alphanumeric ko underscore → duplicate underscores collapse → kinare ke underscores strip. Ye idempotent hona chahiye.",
+        "code": "import re\n\ndef slug(name):\n    s = re.sub(r'[^a-z0-9]+', '_', name.lower()).strip('_')\n    return s\n\nprint(slug('Monthly Revenue ($)'))\nprint(slug('  User-ID  '))",
+        "output": ""
+      },
+      {
+        "q": "Log line '2026-09-24 10:31:02 ERROR db timeout' se level aur message nikalo.",
+        "a": "split(maxsplit=3) se chaar hisse milte hain — date, time, level, message. Fixed positions par split safe hai kyunki message me spaces ho sakti hain.",
+        "code": "line = '2026-09-24 10:31:02 ERROR db timeout'\ndate, time, level, msg = line.split(maxsplit=3)\nprint(level, '|', msg)\nprint(line.startswith('2026'))",
+        "output": "",
+        "explain": "maxsplit=3 exactly 4 hisse deta hai; message ke andar ke spaces safe rehte hain."
+      },
+      {
+        "q": "Customer name aur phone ko report/LLM prompt me mask karo.",
+        "a": "Pehle kuch characters rakho, baaki '*'. Phone ke liye last 4 digits dikhana standard hai.",
+        "code": "def mask_name(n):\n    return n[:2] + '*' * (len(n) - 2) if len(n) > 2 else '*' * len(n)\n\ndef mask_phone(p):\n    return '*' * (len(p) - 4) + p[-4:]\n\nprint(mask_name('Ahetesham'), mask_phone('9876543210'))",
+        "output": ""
+      },
+      {
+        "q": "LLM prompt me context ko token limit ke andar kaise laoge?",
+        "a": "Approximate tokens ≈ len(text) / 4 (English), isliye budget se characters nikaalo aur us se zyada context ko end se truncate karo — beginning me instruction rakho, kyunki models start/end par zyada dhyan dete hain. Exact count ke liye tokenizer use karo.",
+        "code": "def fit(context, budget_chars):\n    return context if len(context) <= budget_chars else context[:budget_chars - 3].rstrip() + '...'\n\nprint(fit('RAG context: retrievers fetch relevant chunks for grounding.', 24))",
+        "output": "",
+        "tip": "Ye 'lost in the middle' problem hai — real interview me ye term bolna strong hai."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Count vowels, consonants, digits aur spaces ek hi pass me.",
+      "build": "Function jo counts ka dictionary return kare.",
+      "input": "'Python 3.14 was released!'",
+      "expected": "vowels=7, consonants=12, digits=3, spaces=3, others=2",
+      "hint": "Set banao vowels ka, phir c.isalpha() se consonant verify karo (vowel minus).",
+      "concept": "Character classification methods + single-pass counting",
+      "solution": "def analyse(s):\n    vowels = set('aeiouAEIOU')\n    counts = {'vowels': 0, 'consonants': 0, 'digits': 0, 'spaces': 0, 'others': 0}\n    for c in s:\n        if c in vowels:\n            counts['vowels'] += 1\n        elif c.isalpha():\n            counts['consonants'] += 1\n        elif c.isdigit():\n            counts['digits'] += 1\n        elif c.isspace():\n            counts['spaces'] += 1\n        else:\n            counts['others'] += 1\n    return counts\n\nprint(analyse('Python 3.14 was released!'))",
+      "output": "",
+      "explanation": "Pehle vowel check karna zaroori hai, warna 'a' consonant group me chala jayega. elif chain single pass me sab classify karti hai.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "better": "Bade text ke liye Counter(categorise(c) for c in s) se grouped counts milega, par single pass me memory kam lagti hai.",
+      "followUp": "5 GB file par kaise karoge? (streaming, chunk overlap, multiprocessing)"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Palindrome checker likho jo punctuation aur case ignore kare.",
+      "build": "Function is_palindrome(text) -> bool, sirf alphanumeric compare.",
+      "input": "'A man, a plan, a canal: Panama'",
+      "expected": "True",
+      "hint": "Pehle normalized string banao, phir slicing se reverse.",
+      "concept": "String normalization + slicing",
+      "solution": "def is_palindrome(text):\n    clean = [c.lower() for c in text if c.isalnum()]\n    return clean == clean[::-1]\n\nprint(is_palindrome('A man, a plan, a canal: Panama'))\nprint(is_palindrome('Python Strings'))",
+      "output": "",
+      "explanation": "List of chars par comparison slice reverse se hoti hai; do pointers wala approach bhi O(n) hai par zyada code likhna padta hai.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "better": "Bade input par left/right do pointer use karo — extra list nahi banti, space O(1).",
+      "followUp": "Sirf punctuation ignore karna ho par case na ho to change kya hoga?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Run-length encoding aur decoding dono implement karo.",
+      "build": "encode(s) aur decode(s), dono round-trip par original wapas dein.",
+      "input": "'aaabccccd'",
+      "expected": "encode → 'a3bc4d' aur decode se original wapas",
+      "hint": "Decode me digits multi-digit ho sakte hain, isliye accumulate karo.",
+      "concept": "Run-length encoding + string parsing",
+      "solution": "def encode(s):\n    out, count = [], 1\n    for i in range(1, len(s) + 1):\n        if i < len(s) and s[i] == s[i - 1]:\n            count += 1\n        else:\n            out.append(s[i - 1] + (str(count) if count > 1 else ''))\n            count = 1\n    return ''.join(out)\n\ndef decode(s):\n    out, i = [], 0\n    while i < len(s):\n        ch, num, i = s[i], '', i + 1\n        while i < len(s) and s[i].isdigit():\n            num, i = num + s[i], i + 1\n        out.append(ch * int(num or 1))\n    return ''.join(out)\n\ncode = encode('aaabccccd')\nprint(code, decode(code))",
+      "output": "",
+      "explanation": "Encode me last run flush karne ke liye loop len+1 tak jata hai. Decode me digit run ko accumulate karna zaroori hai warna 'a12' do characters samajh liya jayega.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "better": "Decode ko index-based while loop ki jagah regex (\\w)(\\d*) findall se likh sakte hain — chhota code, same complexity.",
+      "followUp": "Best case me RLE compressed string badi ho jati hai — kab faayda, kab nuksan?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Longest substring without repeating characters nikalo.",
+      "build": "Function longest_unique(s) → substring return kare.",
+      "input": "'abcabcbb'",
+      "expected": "'abc'",
+      "hint": "Sliding window: har character ka last index yaad rakho aur left pointer ko duplicate ke aage shift karo.",
+      "concept": "Sliding window over an immutable sequence",
+      "solution": "def longest_unique(s):\n    last = {}\n    left = best = 0\n    best_start = 0\n    for i, ch in enumerate(s):\n        if ch in last and last[ch] >= left:\n            left = last[ch] + 1\n        last[ch] = i\n        if i - left + 1 > best:\n            best, best_start = i - left + 1, left\n    return s[best_start:best_start + best]\n\nprint(longest_unique('abcabcbb'))\nprint(longest_unique('pwwkew'))",
+      "output": "",
+      "explanation": "last[ch] >= left check window se bahar ke purane occurrence ko ignore karta hai — iske bina left galat shift hota hai.",
+      "time": "O(n)",
+      "space": "O(min(n, alphabet))",
+      "better": "Set-based version se bhi O(n) milta hai par set par remove karna padta hai; index map version ek pass me chalta hai.",
+      "followUp": "Agar at most k repeats allowed hon to kaise badaloge? (window + count map)"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Anagram groups banao aur har group ko alphabetical order me do.",
+      "build": "Function group_anagrams(words) → list of sorted groups.",
+      "input": "['eat', 'tea', 'tan', 'ate', 'nat', 'bat']",
+      "expected": "[['ate', 'eat', 'tea'], ['bat'], ['nat', 'tan']]",
+      "hint": "Key ke liye sorted characters ya character-count tuple use karo.",
+      "concept": "Dictionary grouping + canoncial key design",
+      "solution": "from collections import defaultdict\n\ndef group_anagrams(words):\n    groups = defaultdict(list)\n    for w in words:\n        key = tuple(sorted(w.lower()))\n        groups[key].append(w)\n    return sorted(sorted(g) for g in groups.values())\n\nprint(group_anagrams(['eat', 'tea', 'tan', 'ate', 'nat', 'bat']))",
+      "output": "",
+      "explanation": "Canonical key se 'eat' aur 'tea' ek hi bucket me aate hain. Post-processing me groups aur unke andar ke words sort karna expected output deterministic banata hai.",
+      "time": "O(n · k log k), k = word length",
+      "space": "O(n · k)",
+      "better": "Counting tuple (26-tuple) key O(k) hai isliye bade words par sorted key se tez — Unicode ke liye Counter tuple.",
+      "followUp": "Streaming input (words aate rehte hain) par grouping kaise karoge?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Text se top-N keywords nikalo stop words hata kar.",
+      "build": "Function top_keywords(text, n) → [(word, count)] frequency order me.",
+      "input": "Machine learning is a field of study and machine learning needs data",
+      "expected": "Top 3 stop-words removed (machine, learning, data)", 
+      "hint": "Normalize → split → stop word set se filter → Counter.",
+      "concept": "Normalization + stop-word filtering + frequency ranking",
+      "solution": "from collections import Counter\n\nSTOP = {'is', 'a', 'of', 'and', 'the', 'to', 'in', 'for', 'on'}\n\ndef top_keywords(text, n):\n    words = [w.strip('.,!?').lower() for w in text.split()]\n    return Counter(w for w in words if w and w not in STOP).most_common(n)\n\nprint(top_keywords('Machine learning is a field of study and machine learning needs data', 3))",
+      "output": "",
+      "explanation": "strip('.,!?') punctuation hatata hai, lower case normalize karta hai, aur generator expression stop words ko counter tak pahunchne hi nahi deta.",
+      "time": "O(n)",
+      "space": "O(k), k = unique words",
+      "better": "Stemming/lemmatization (learning → learn) se 'learning' aur 'learn' merge ho jate hain; bade corpora me regex tokenizer better.",
+      "followUp": "TF-IDF kya add karega frequency ke upar? (rare words ko weight)"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Caesar cipher (shift) implement karo aur shift-aware validation rakho.",
+      "build": "encrypt(text, shift) aur decrypt(text, shift) — sirf letters shift hon.",
+      "input": "encrypt('Attack at dawn!', 3)",
+      "expected": "'Dwwdfn dw gdzq!' — punctuation waisa hi",
+      "hint": "chr/ord se wrap karo: uppercase aur lowercase ka base alag hai.",
+      "concept": "Character arithmetic + modular wraparound",
+      "solution": "def shift_char(c, shift):\n    if not c.isalpha():\n        return c\n    base = ord('A') if c.isupper() else ord('a')\n    return chr((ord(c) - base + shift) % 26 + base)\n\ndef encrypt(text, shift):\n    return ''.join(shift_char(c, shift) for c in text)\n\ndef decrypt(text, shift):\n    return ''.join(shift_char(c, -shift) for c in text)\n\ncode = encrypt('Attack at dawn!', 3)\nprint(code, decrypt(code, 3))",
+      "output": "",
+      "explanation": "% 26 se z se aage wrap hota hai; base ord('A')/ord('a') alag rakhne se case preserve hota hai.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "better": "str.translate + translate table banane se C-level speed milti hai — per-character Python loop hat jata hai.",
+      "followUp": "Frequency analysis is cipher ko kaise todti hai, aur modern encryption kya alag karti hai?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "word = 'Python'\nprint(word[len(word)])",
+      "error": "IndexError: string index out of range",
+      "why": "Index 0-based hai, isliye last valid index len(word) - 1 = 5 hai. len(word) = 6 likhne se ek aage nikal jate hain.",
+      "fix": "Last character ke liye word[-1] ya word[len(word) - 1] use karo.",
+      "correct": "word = 'Python'\nprint(word[-1])\nprint(word[len(word) - 1])",
+      "output": "",
+      "lesson": "Off-by-one string indexing me sabse common bug hai; negative index readability ke liye better hai."
+    },
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "marks = 87\nprint('Marks: ' + marks)",
+      "error": "TypeError: can only concatenate str (not \"int\") to str",
+      "why": "Python weakly typed nahi hai — + do strings ko jodta hai, int ko automatic string nahi banata. Java/C# ka implicit conversion yahan nahi hota.",
+      "fix": "f-string use karo ya str() se convert karo.",
+      "correct": "marks = 87\nprint(f'Marks: {marks}')\nprint('Marks: ' + str(marks))",
+      "output": "",
+      "lesson": "Number aur text jodte waqt hamesha f-string prefer karo — conversion, spacing aur readability teenon ek jagah."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "topic = 'Strings'\nprint(topic.upperr())",
+      "error": "AttributeError: 'str' object has no attribute 'upperr'",
+      "why": "Method ka naam galat likha gaya hai. Python attribute na milne par AttributeError deta hai — ise typo samajh kar silent skip nahi karta.",
+      "fix": "Sahi method naam upper() use karo; editor ke autocomplete se typo avoid karo.",
+      "correct": "topic = 'Strings'\nprint(topic.upper())\nprint([m for m in dir(topic) if 'upper' in m])",
+      "output": "",
+      "lesson": "Unknown attribute par AttributeError turant fail-fast hota hai — isi current failure ko catch karta hai, jabki alag attribute-call bhi karta hai.", 
+      "explain": "dir() se available methods dekho — guess karne se better hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "def title_case(s):\n    return s.upper()\n\nprint(title_case('python strings basics'))",
+      "error": "Logic error: sab letters uppercase ho gaye, sirf pehla letter nahi",
+      "why": "title case ka matlab har word ka pehla letter capital hai, poori string uppercase nahi. Koi exception nahi aata isliye ye logic bug hai — output galat hai par program chalta rehta hai.",
+      "fix": "Har word par capitalize() lagao (ya .title() use karo).",
+      "correct": "def title_case(s):\n    return ' '.join(w.capitalize() for w in s.split())\n\nprint(title_case('python strings basics'))",
+      "output": "",
+      "lesson": "Crash bug turant dikhta hai; logic bug chup rehta hai — isliye logic ke liye expected output ke saath test likhna zaroori hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "raise",
+      "broken": "s = 'Machine Learning'\nprint(s.count())",
+      "error": "TypeError: count() takes at least 1 argument (0 given)",
+      "why": "str.count(sub) ka ek required argument hai. Bina argument call karne par Python TypeError deta hai, 'zero' return nahi karta.",
+      "fix": "Count karna hai to substring/character do: s.count('n'). Poori length chahiye ho to len(s) use karo.",
+      "correct": "s = 'Machine Learning'\nprint(s.count('n'), len(s))",
+      "output": "",
+      "lesson": "Method signature yaad ho to hi call karo; help(), docstring ya IDE hints se argument count confirm karna seconds bachata hai."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Ek line me batao aur likho: 'RAG' ko 'GAR' banao bina slicing ke (loops/reversed use karo).",
+      "hint": "reversed() iterator deta hai, join se string banega.",
+      "deliverable": "Ek snippet + uski complexity ka comment."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Word-wrap function likho jo text ko given width par tode, words ko beech se na kaate, aur naye words ko next line par le jaye.",
+      "hint": "Greedy: words ko line me jodo jab tak width cross na ho, phir flush karo.",
+      "deliverable": "wrap(text, width) function + 3 test cases."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Ek text 'diff' tool banao jo do strings ki line-by-line similarity report de (added, removed, % similar) bina external library ke.",
+      "hint": "difflib.SequenceMatcher ration() deta hai; opcodes se change blocks nikalte hain.",
+      "deliverable": "CLI script jo do files/two strings compare karke summary print kare."
+    },
+    {
+      "kind": "interview",
+      "minutes": 35,
+      "prompt": "Explain-and-code: given 1 crore log lines, tum woh 20 error messages nikalo jo sabse zyada aaye — memory limit 512 MB.",
+      "hint": "Streaming + Counter; agar huge unique keys ho to hashing/top-K (heap) approach.",
+      "deliverable": "Design ka 6-line jawab + working single-pass snippet small data par."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Ek chhota CLI 'textstat' tool banao jo file ka word count, top-5 words, avg word length aur longest sentence print kare.",
+      "hint": "argparse + sys.stdin fallback; sentences ko '.', '!', '?' par todo.",
+      "deliverable": "Script jo argument ya stdin se text le kar clean report de, invalid input par friendly error ke saath."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Text Analyzer (Version 1)",
+      "problem": "Naye learners ko string methods, loops aur dictionaries ka ek hi practical run chahiye — par plain practice ke bina ek 'result' feel hoti hai jo seekhne me madad karti hai.",
+      "objective": "Ek chhota program jo user ke text ka character count, word count, vowel count aur sentence count bataye.",
+      "features": [
+        "Character count (spaces ke saath aur bina)",
+        "Word count aur average word length",
+        "Vowel aur consonant count",
+        "Sentence count (. ! ? par)",
+        "Clean single-screen readable report"
+      ],
+      "concepts": ["String methods (split, lower, strip)", "Loop with counting", "Dictionary as result object", "Basic input handling"],
+      "structure": "simple_text_analyzer/\n└── analyzer.py      # saara logic, ek file",
+      "steps": [
+        "Text ko variable me lo (input ya fixed sample) aur normalize karo.",
+        "split() se words nikalo, counters ke liye simple loop likho.",
+        "Sentences ke liye ek pass me 'end-of-sentence' characters gino.",
+        "Counts ko dictionary me rakho aur f-string se report print karke test karo."
+      ],
+      "code": "def analyse(text):\n    words = text.split()\n    vowels = set('aeiou')\n    counts = {\n        'chars_with_spaces': len(text),\n        'chars_no_spaces': len(text.replace(' ', '')),\n        'words': len(words),\n        'vowels': sum(1 for c in text.lower() if c in vowels),\n        'sentences': sum(1 for c in text if c in '.!?'),\n    }\n    counts['avg_word_len'] = round(sum(len(w) for w in words) / len(words), 2) if words else 0\n    return counts\n\nreport = analyse('Python strings are immutable. String methods return new objects!')\nfor k, v in report.items():\n    print(f'{k:20} : {v}')",
+      "output": "",
+      "explanation": "Poora kaam ek function me hai taaki test karna aasan ho: input dena, dictionary lena, values assert karna. sentence count '.' '!' '?' par ginti hai — perfect nahi, par predictable.",
+      "testing": "Khali text, ek hi word, aur bina full-stop wala text teenon pass karo; empty input par zero-division nahi hona chahiye.",
+      "errors": "Empty string par words empty list hoti hai — isliye avg_word_len guard ke saath calculate hota hai.",
+      "improvements": [
+        "Input ko file ya command line argument se lo, hardcoded text hata do",
+        "Most frequent words add karo (Counter)",
+        "Result ko JSON me print karne ka option do"
+      ],
+      "advanced": [
+        "Stop-words hata kar keyword summary do, configurable file se",
+        "Bade files ke liye streaming (line-by-line) analyse karo",
+        "Tool ko pytest tests aur CLI flags ke saath package karo"
+      ],
+      "realWorld": "Content team ke liye readability checks aur SEO ke liye word/vowel statistics — yehi first draft har text tooling ka hota hai.",
+      "interview": [
+        { "q": "Is project me string methods ka use kahan hua?", "a": "split() words ke liye, replace() charset ke liye, lower() vowel matching se pehle, aur f-string report ke liye. Har method nayi string deta hai isliye loop ke andar original text safe rehta hai." },
+        { "q": "split() aur split(' ') me kya difference aaya hota?", "a": "split(' ') consecutive spaces par empty strings deta, isliye word count galat badhta; bina argument split() whitespace runs ko ignore karta hai." },
+        { "q": "Dictionary use kyun kiya, alag variables kyun nahi?", "a": "Result ek object ki tarah carry hota hai, loop se print/test ho jata hai, aur naye metrics add karna ek line ka kaam hai." }
+      ],
+      "resume": "Built a Python text analytics utility that reports word, vowel and sentence statistics and is testable as a pure function.",
+      "readme": [
+        "Project ka ek-line purpose aur sample output",
+        "Kaise chalao (python analyzer.py) aur expected output",
+        "Kya-kya concepts use hue (string methods, dict, loops)"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Text Processing & Analyzer (Version 2)",
+      "problem": "Version 1 sirf ginti karta hai. Real data clean nahi hota: mixed case, punctuation, duplicate words aur multiple spaces — analysis se pehle inhe normalize karna padta hai.",
+      "objective": "Ek processing layer add karo jo text ko clean kare, keyword search de, duplicate words detect kare, word frequency nikale aur sentence-wise analysis de.",
+      "features": [
+        "Text cleaning (punctuation + whitespace + case normalization)",
+        "Keyword search with positions",
+        "Duplicate word detection",
+        "Word frequency with stop-word filtering",
+        "Sentence-wise analysis (length, word count)",
+        "Reusable module with separate functions"
+      ],
+      "concepts": ["Regex based normalization", "Counter for frequency", "Functions/modules for separation of concerns", "String search with find/startswith"],
+      "structure": "text_toolkit/\n├── cleaner.py      # normalize + sentence split\n├── analyzer.py     # frequency, duplicates, stats\n└── main.py         # sample data se report",
+      "steps": [
+        "cleaner.normalize() likho jo lowercase kare, punctuation ko space kare aur double spaces collapse kare.",
+        "search() add karo jo position list de (find loop ya generator).",
+        "analyzer me Counter se frequency aur duplicates nikaalo.",
+        "main.py se sample text par poora report print karo aur outputs verify karo."
+      ],
+      "code": "import re\nfrom collections import Counter\n\nSTOP = {'is', 'a', 'of', 'and', 'the', 'to', 'in', 'for', 'on'}\n\ndef normalize(text):\n    return ' '.join(re.sub(r'[^a-z0-9\\s]', ' ', text.lower()).split())\n\ndef search(text, keyword):\n    pos, start = [], 0\n    while (i := text.find(keyword, start)) != -1:\n        pos.append(i)\n        start = i + 1\n    return pos\n\ndef analysis(text):\n    clean = normalize(text)\n    words = clean.split()\n    freq = Counter(w for w in words if w not in STOP)\n    duplicates = sorted({w for w, n in Counter(words).items() if n > 1})\n    return {\n        'clean': clean,\n        'top': freq.most_common(3),\n        'duplicates': duplicates,\n        'sentences': [s.strip() for s in re.split(r'[.!?]', text) if s.strip()],\n    }\n\nsample = 'Data science needs data. Data cleaning, and data validation is step one!'\nprint(search(normalize(sample), 'data'))\nprint(analysis(sample)['top'])\nprint(analysis(sample)['duplicates'])",
+      "output": "",
+      "explanation": "normalize() idempotent hai (dobara chalane par same output), isliye pipeline me safe hai. search() walrus operator se loop compact hai aur overlapping matches bhi pakadta hai. analysis() ek pure function hai — same input par same output, isliye test karna trivial.",
+      "testing": "normalize ka idempotency test, search ka overlapping case ('data' in 'datadata'), aur stop-word filtering ka test likhao.",
+      "errors": "Khali keyword par find() har position de deta hai — search se pehle guard lagao. Non-string input par TypeError aayega, isliye public function par type check rakho.",
+      "improvements": [
+        "Casefold use karo taki Unicode (Türkiye, ß) bhi sahi normalize ho",
+        "Result ko file/JSON me export karo aur CLI flag se control karo",
+        "Frequency ko percentage share ke saath dikhao, sirf raw count nahi"
+      ],
+      "advanced": [
+        "Sentence-level scoring add karo (keyword density per sentence)",
+        "Configuration file se stop words aur rules load karo",
+        "Streaming mode: files ko chunk me padho taki memory bounded rahe"
+      ],
+      "realWorld": "Support ticket analysis, survey free-text cleaning aur SEO content audits me exactly yahi pipeline lagti hai: clean → frequency → keyword → report.",
+      "interview": [
+        { "q": "normalize() idempotent kyun hona chahiye?", "a": "Agar function dobara chalane par output badalta rehta to pipeline har rerun par alag result deti aur debugging impossible ho jati. Idempotency test ek line me likha ja sakta hai." },
+        { "q": "Counter ki jagah manual dictionary kyun nahi?", "a": "Counter me most_common, arithmetic aur missing-key handling built-in hai; manual dict me default handling khud likhni padti hai. Interview me complexity same O(n) hai, Counter readability aur correctness dono deta hai." },
+        { "q": "Problems ye module kaise solve karta hai jo Version 1 nahi karta tha?", "a": "V1 raw text par ginti karta tha, isliye 'Data' aur 'data' alag gine jate the. V2 me normalization pehle hoti hai, iske baad hi koi analysis chalti hai — isliye numbers comparable hote hain." }
+      ],
+      "resume": "Developed a modular Python text-processing toolkit (normalization, keyword search, frequency and duplicate analysis) with idempotent cleaning functions.",
+      "readme": [
+        "Architecture diagram: cleaner → analyzer → report",
+        "Do sample inputs with output screenshot/text",
+        "Normalization rules aur stop-word list ka explanation"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Intelligent Text Processing System (Version 4)",
+      "problem": "Production me text system ko multiple documents handle karne padte hain: preprocessing, keyword extraction, similarity search, statistics, export aur failure par graceful behaviour — sab ek hi interface ke andar.",
+      "objective": "Ek modular, tested system banao jo documents ko ingest kare, normalize kare, keywords nikale, similar documents dhoonde, statistics de, JSON export kare aur bad input par clear error de.",
+      "features": [
+        "Config-driven preprocessing (lowercase, punctuation, min word length)",
+        "Keyword extraction with stop-word filtering and top-N",
+        "Similarity search over documents using difflib",
+        "Corpus statistics (doc count, vocab size, avg length)",
+        "JSON export and structured logging",
+        "Error handling for empty/invalid documents",
+        "Pure functions with unit-testable boundaries"
+      ],
+      "concepts": ["Regex + normalization pipeline", "difflib SequenceMatcher for similarity", "Dataclass based config", "JSON serialisation + logging", "Defensive programming"],
+      "structure": "intelligent_text/\n├── config.py        # TextConfig dataclass\n├── pipeline.py      # normalize, tokenize, keywords\n├── search.py        # similarity search\n├── report.py        # stats + JSON export\n└── main.py          # wiring + CLI-ish demo",
+      "steps": [
+        "TextConfig dataclass banao (min_word_len, top_n, stop words).",
+        "pipeline me normalize/keywords likho; search me similarity ranking.",
+        "report me corpus stats aur JSON export add karo.",
+        "main me teen sample documents wire karo, aur invalid input (empty doc) par clear error raise karke log karo."
+      ],
+      "code": "import json, logging, re\nfrom collections import Counter\nfrom dataclasses import dataclass, field\nfrom difflib import SequenceMatcher\n\nlogging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(message)s')\n\n@dataclass\nclass TextConfig:\n    min_word_len: int = 3\n    top_n: int = 3\n    stop: set = field(default_factory=lambda: {'the', 'and', 'for', 'with', 'from', 'that'})\n\n\ndef normalize(text, cfg):\n    if not isinstance(text, str):\n        raise TypeError('document must be a string')\n    words = re.sub(r'[^a-z0-9\\s]', ' ', text.lower()).split()\n    return [w for w in words if len(w) >= cfg.min_word_len]\n\n\ndef keywords(docs, cfg):\n    tokens = [w for d in docs for w in normalize(d, cfg) if w not in cfg.stop]\n    return Counter(tokens).most_common(cfg.top_n)\n\n\ndef similarity(doc, docs):\n    return sorted(((round(SequenceMatcher(None, doc, d).ratio(), 3), i) for i, d in enumerate(docs)), reverse=True)\n\n\ndef report(docs, cfg):\n    if not docs:\n        logging.warning('empty corpus — returning empty report')\n        return {'documents': 0, 'vocabulary': 0, 'keywords': [], 'avg_tokens': 0}\n    token_lists = [normalize(d, cfg) for d in docs]\n    vocab = {w for t in token_lists for w in t}\n    return {\n        'documents': len(docs),\n        'vocabulary': len(vocab),\n        'keywords': keywords(docs, cfg),\n        'avg_tokens': round(sum(len(t) for t in token_lists) / len(docs), 2),\n    }\n\n\ncfg = TextConfig()\ndocs = [\n    'Retrieval augmented generation grounds answers in retrieved context.',\n    'Vector databases store embeddings for similarity search over documents.',\n    'Embeddings enable similarity search when retrieval needs semantic matching.',\n]\nprint(json.dumps(report(docs, cfg)))\nprint(similarity(docs[1], docs))",
+      "output": "",
+      "explanation": "Dataclass config se magic numbers ek jagah aa jate hain aur tests me alag config pass ho jati hai. normalize() raise karta hai (silently skip nahi) taki galat input chup-chaap corrupt na ho; empty corpus par warning log hoti hai par caller crash nahi karta. similarity() sort se best match pehle deta hai. report() machine-readable JSON deta hai, isliye API/CI me directly use ho sakta hai.",
+      "testing": "normalize ke type error ka test, empty corpus report ka test, keywords ordering ka test, aur similarity ki ranking stability (ties par index) ka test likho.",
+      "errors": "Non-string document par TypeError, empty corpus par warning + empty report, aur JSON export me non-serialisable value aane par TypeError — inhe explicit rakha gaya hai.",
+      "improvements": [
+        "Embeddings based semantic search add karo (sentence-transformers) taki exact words match na hone par bhi relevant doc mile",
+        "Persistent storage (SQLite/Postgres) add karo, so process restart par index bacha rahe",
+        "CLI/API layer (FastAPI) do taki team ise service ki tarah use kare"
+      ],
+      "advanced": [
+        "Structured logging (JSON logs) aur request id propagation production me lagao",
+        "Unit + integration tests with pytest, aur CI pipeline me non-zero exit on regression",
+        "Config aur secrets environment variables se lo, code me hardcode na ho",
+        "Dockerfile + README (setup, endpoints, runbook) industry structure ke liye"
+      ],
+      "realWorld": "RAG pipeline ka ingestion aur retrieval stage isi shape ka hota hai: normalize → keyword/semantic index → similarity search → structured report; aur top-N score ke saath keyword extraction monitoring dashboards me bhi use hota hai.",
+      "interview": [
+        { "q": "Is system ko 1 lakh documents par kaise scale karoge?", "a": "SequenceMatcher O(n·m) hai isliye naive pairwise comparison scale nahi karta. Pehle inverted index se candidates filter karo, aur semantic retrieval ke liye embeddings + ANN (HNSW/FAISS) use karo; similarity sirf shortlisted docs par chalao." },
+        { "q": "Time aur space complexity kya hai?", "a": "Normalization O(total characters), keywords O(tokens) with O(vocab) memory, similarity har pair par O(len(a)·len(b)) worst case. Corpus-level memory tokens ke sum ke proportional hai." },
+        { "q": "Error handling kaise kiya aur kya miss ho sakta hai?", "a": "Type aur empty-corpus cases handle hue aur warning log hoti hai. Miss: partial input (truncated UTF-8), aur bahut bada document — uske liye streaming/tokenizer limits chahiye." },
+        { "q": "Is project ko API me kaise convert karoge?", "a": "report() aur similarity() pure functions hain, isliye FastAPI me POST /analyze (docs list) aur POST /similar (doc + corpus) wrap kar dunga; heavy embedding step alag worker me rakhunga, aur Pydantic se input validation aur response schema dunga." }
+      ],
+      "resume": "Engineered a modular Python text processing system with config-driven normalization, keyword extraction, difflib-based similarity search, JSON reporting and defensive error handling.",
+      "readme": [
+        "Architecture section: config → pipeline → search → report",
+        "Sample JSON output aur similarity ranking example",
+        "Setup, run steps aur validation errors ka behaviour"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      "Text Analyzer me string methods ka use kaha-kaha hua?",
+      "split() aur join() ka difference is project me kaise dikha?",
+      "Word frequency ke liye dictionary/Counter kyun use kiya, list kyun nahi?",
+      "normalize() step ko analysis se pehle kyun rakha gaya?"
+    ],
+    "coding": [
+      "Text Analyzer me character frequency feature add karo.",
+      "Stop words remove karne ka option add karo (config-able list se).",
+      "Case-insensitive keyword search aur uske positions print karo.",
+      "Report ko JSON me export karne ka flag add karo."
+    ],
+    "advanced": [
+      "Search ko optimize karo: repeated scanning ki jagah index banao.",
+      "Bade text files ko streaming me process karo, poori file memory me na lo.",
+      "Similarity threshold config karo aur neeche wale matches filter kar do.",
+      "Unicode (Hindi/emoji) text ke liye normalization rules update karo."
+    ],
+    "interview": [
+      "Is project ko production me kaise scale karoge?",
+      "Normalization aur keyword extraction ki time complexity kya hai?",
+      "Memory usage kaise reduce karoge jab corpus 10 GB ho?",
+      "Error handling kaise implement ki aur konsi error classes miss hain?",
+      "Is project ko API me kaise convert karoge?"
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Whiteboard: 'String ek palindrome hai, sirf alphanumeric characters consider karte hue' — interview me code likho aur edge cases batao.",
+      "a": "Normalization (lower + isalnum filter) ke baad two-pointer compare karo — O(n) time, O(1) extra space. Edge cases: empty string (True), single character (True), Unicode digits, aur bahut lambi string.",
+      "deliverable": "Working function + edge case list."
+    },
+    {
+      "q": "Interview me diya gaya: 'Ek string me sabse pehla character batao jo sirf ek baar aaya hai.' Live code likho.",
+      "a": "Counter se counts lo aur string par dobara chalo; pehla character jiska count 1 ho, wahi answer. Complexity O(n) time, O(k) space. Agar akshar sirf a-z hain to 26-length array use kar sakte hain.",
+      "deliverable": "Function + complexity explanation."
+    },
+    {
+      "q": "Practical task: do documents ka similarity score nikalo aur threshold ke saath 'duplicate' flag do.",
+      "a": "difflib.SequenceMatcher(None, a, b).ratio() 0..1 score deta hai; normalize karne ke baad compare karna zaroori hai warna case/formatting se score girta hai. Threshold (jaise 0.85) business decision hai — isliye config me rakho aur logs me score print karo.",
+      "deliverable": "Script + chosen threshold ka justification."
+    },
+    {
+      "q": "Interview me poocha jaye: 'CSV ka ek column galat parse ho raha hai, debugging kaise karoge?' — approach likho.",
+      "a": "Pehle problematic row isolate karo (minimal reproduction), us row ke raw bytes/whitespace check karo, split ke separator aur quoting dekho, phir csv module vs manual split ka farq test karo. Fix ke saath ek regression test add karo.",
+      "deliverable": "Step-wise debug plan + regression test."
+    },
+    {
+      "q": "Coding round: prompt template banao jo {context} aur {question} ko fill kare aur missing keys par clear error de.",
+      "a": "str.format_map ke saath ek dict pass karo jo missing keys par custom error raise kare, ya string.Template use karo ($context) aur substitute() se KeyError catch karo. Templating se prompt injection ka risk kam hota hai kyunki template code se aata hai, user input se nahi.",
+      "deliverable": "Template function + missing-key behaviour test."
+    }
+  ],
+  "revision": [
+    "String immutable hai — har 'change' nayi string banata hai (isliye loop me += nahi, list + join).",
+    "Indexing 0-based hai, negative index peeche se, aur slicing me end index exclude hota hai.",
+    "Case methods: lower/casefold (comparison), title/capitalize (display), upper (rarely correct for text).",
+    "Search methods: find (return -1), index (raise ValueError), startswith/endswith, count.",
+    "Cleaning order: strip → case normalize → punctuation remove → whitespace collapse, aur function idempotent rakho.",
+    "Formatting: f-string default, .format() runtime template ke liye, logging me lazy % style.",
+    "Parity: bytes/str ka fark, encoding UTF-8, raw string regex aur Windows paths ke liye."
+  ]
+}

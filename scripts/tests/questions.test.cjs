@@ -5,6 +5,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const path = require('path');
 
 const { validateBank, coverageGate } = require('../lib/validate.cjs');
 const {
@@ -26,6 +27,15 @@ const section = (extra = {}) => ({
 });
 
 const q = (question, answer, type = 'interview', more = {}) => ({ difficulty: 'medium', importance: 'must_know', question, answer, explanation: 'why', tags: [], ...more });
+
+/**
+ * The lesson stages that carry bank content, read from the single owner — `STAGE_QNA` in
+ * src/data/questions.ts — rather than typed out here. `project` is deliberately absent: the PDF
+ * has no project band, so Project Lab has no bank stage and the manifest must not grow one.
+ */
+const LESSON_STAGES = [...fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'data', 'questions.ts'), 'utf8')
+  .matchAll(/^ {2}(\w+): \{ types: \[[^\]]+\](?:, tag: '[^']+')?, label:/gm)].map((m) => m[1]);
+assert.ok(LESSON_STAGES.length >= 9, 'the lesson stage list must be readable from its own declaration');
 
 /* ----------------------------- seeder honesty ----------------------------- */
 
@@ -224,6 +234,32 @@ test('content pack: no duplicate question text within a single bank', () => {
   }
 });
 
+test('content pack: no question text repeats across banks (no boilerplate debt)', () => {
+  const seen = new Map();            // normalized question -> "<sid> (<id>)"
+  const offenders = [];
+  for (const sid of bankIds) {
+    for (const item of loadBank(sid).questions) {
+      const n = norm(item.question);
+      const where = `${sid} (${item.id})`;
+      const prev = seen.get(n);
+      if (prev && prev.split(' ')[0] !== sid) offenders.push(`"${item.question.slice(0, 70)}" → ${prev} and ${where}`);
+      else if (!prev) seen.set(n, where);
+    }
+  }
+  assert.deepEqual(offenders, [], `cross-section boilerplate (make it section-specific):\n${offenders.slice(0, 10).join('\n')}`);
+});
+
+test('norm: keeps operator symbols so distinct questions never collapse', () => {
+  // Regression: a blanket [^a-z0-9] strip merged these two real questions into one key.
+  assert.notEqual(norm('= aur == me fark?'), norm('/ aur // me fark?'));
+  assert.notEqual(norm('7 // 2 kya deta hai?'), norm('7 / 2 kya deta hai?'));
+  // Decorative punctuation is still ignored, so wrapper characters cannot hide a repeat.
+  assert.equal(norm('`a = b` assignment'), norm('"a = b" assignment'));
+  assert.equal(norm('Print(1),  phir  Print(2)'), norm('print(1) phir print(2)'));
+  // And a genuine repeat still collides (the detector must keep working).
+  assert.equal(norm('Same Question Here'), norm('same question here '));
+});
+
 /* ------------------------------- manifest ------------------------------- */
 
 test('manifest: matches the banks on disk and never overstates coverage', () => {
@@ -238,6 +274,33 @@ test('manifest: matches the banks on disk and never overstates coverage', () => 
     assert.equal(entry.total, stats.total, `${entry.sectionId}: manifest total is stale`);
     assert.equal(entry.published, stats.published, `${entry.sectionId}: manifest published count is stale`);
     assert.ok(entry.published <= entry.total);
+
+    // The lesson's per-stage counts read these two fields, so they must match the banks exactly —
+    // a stale byStage would put a wrong number on a stage tile.
+    let mini = 0;
+    for (const q of bank.questions) if ((q.tags ?? []).includes('mini-project')) mini++;
+    assert.equal(entry.miniProject, mini, `${entry.sectionId}: manifest miniProject is stale`);
+    assert.ok(mini <= entry.byType.coding, `${entry.sectionId}: mini-project items are coding items`);
+
+    // `byStage` is keyed by LESSON stage and counts what that stage's panel really shows, so it
+    // must be checked against the lesson's own stage list, not a copy kept here. The two
+    // rule-free properties are checked here: every stage is a real lesson stage, no stage is
+    // over-counted, and the counts never exceed what is published. They legitimately fall SHORT
+    // of `published`, because a stage skips the questions it renders itself — that deficit is
+    // the one part that needs the rule, and lessonqna.test.mjs verifies it against the running
+    // functions, where the TypeScript module can actually be executed.
+    const stageKeys = Object.keys(entry.byStage ?? {});
+    assert.deepEqual(stageKeys.sort(), LESSON_STAGES.slice().sort(), `${entry.sectionId}: byStage must be keyed by lesson stage`);
+    let assigned = 0;
+    for (const [st, n] of Object.entries(entry.byStage)) {
+      assert.ok(Number.isInteger(n) && n >= 0, `${entry.sectionId}: byStage.${st} must be a count`);
+      assert.ok(n <= entry.published, `${entry.sectionId}: byStage.${st} (${n}) cannot exceed published (${entry.published})`);
+      assigned += n;
+    }
+    assert.ok(assigned <= entry.published,
+      `${entry.sectionId}: stage counts (${assigned}) cannot exceed published (${entry.published})`);
+    assert.equal(entry.byStage.mini, entry.miniProject, `${entry.sectionId}: the Mini Project stage is the tagged coding items`);
+
     total += entry.total;
     published += entry.published;
   }

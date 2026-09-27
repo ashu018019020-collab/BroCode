@@ -1,0 +1,677 @@
+{
+  "section": "s07",
+  "topic": "Python Loops (for & while)",
+  "authored": true,
+  "intro": "Loop ka matlab hai 'ek kaam baar-baar karo' — bina code copy-paste kiye. Python me do loops hain: for jab sequence/range par chalna ho (known iterations) aur while jab condition par chalna ho (unknown iterations). Is topic ka asli skill sirf syntax nahi, balki ye samajh hai ki kab kaunsa loop use karna hai, break/continue se flow kaise control hota hai, aur range() ke off-by-one se kaise bacha jaye — yahi teen cheezein interview aur real bugs dono me decide karti hain.",
+  "theory": [
+    "for loop kisi bhi iterable par chalta hai (list, string, range, dict, file, generator) aur har value ko variable me bind karta hai — index ki zaroorat nahi. while loop tab use karo jab iterations ki ginti pehle se pata na ho aur koi state badal rahi ho.",
+    "range(start, stop, step) stop ko include nahi karta — yahi off-by-one ka source hai. range(5) → 0..4, range(1, 6) → 1..5, range(10, 0, -1) → 10..1 (reverse).",
+    "break loop se turant bahar nikalta hai, continue current iteration ko skip karke next par jata hai, pass kuch nahi karta (placeholder). Ye teenon sirf loop ke andar valid hain.",
+    "for-else aur while-else: else tab chalta hai jab loop bina break ke poora complete ho. Ye 'search and report not-found' pattern ke liye perfect hai, par break ke saath else nahi chalega — ye bhoolna classic bug hai.",
+    "Infinite loop se bacho: while me condition ko badalne wala step (i += 1) hamesha rakho, warna loop kabhi nahi rukega. Bade data par nested loops O(n²) ban jate hain — isliye loop ke andar loop likhne se pehle socho ki set/dict se lookup O(1) ho sakta hai ya nahi."
+  ],
+  "syntax": [
+    "for i in range(1, 6):          # 1..5\n    print(i)\n\nfor ch in 'abc':\n    print(ch)\n\nfor idx, val in enumerate(['a', 'b']):\n    print(idx, val)",
+    "i = 0\nwhile i < 5:\n    print(i)\n    i += 1                     # <- ye line na ho to infinite loop",
+    "for n in range(10):\n    if n == 3:\n        continue      # skip\n    if n == 7:\n        break         # exit\nelse:\n    print('loop poora chala, break nahi hua')"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "total = 0\nfor i in range(1, 11, 2):\n    total += i\nprint('sum of odds 1..10 =', total)\n\nfor i in range(1, 6):\n    print(f'7 x {i} = {7 * i}')",
+      "output": "",
+      "explain": [
+        "range(1, 11, 2) 1 se shuru hota hai, 11 par rukta hai (include nahi), aur 2-2 badhta hai — isliye 1,3,5,7,9 milte hain.",
+        "total += i har iteration me accumulator update karta hai; accumulator ko loop se pehle initialize karna zaroori hai.",
+        "Doosra loop table print karta hai — range(1, 6) se 1..5 aate hain, isliye table 5 tak hai; 10 tak chahiye to range(1, 11)."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "def count_digits(num):\n    count = 0\n    while num != 0:\n        num //= 10\n        count += 1\n    return count\n\ndef reverse_number(num):\n    rev = 0\n    while num != 0:\n        rev = rev * 10 + num % 10\n        num //= 10\n    return rev\n\nprint(count_digits(786))\nprint(reverse_number(121))\nprint(count_digits(0))",
+      "output": "",
+      "explain": [
+        "while num != 0 loop ka classic shape hai: condition ek state (num) par depend karti hai jo loop ke andar badalti hai.",
+        "num //= 10 integer division hai — sabse aakhri digit hata deta hai, isliye loop terminate hota hai.",
+        "reverse_number me rev * 10 se purane digits shift hote hain aur num % 10 naya last digit add karta hai — ye palindrome check ka base hai.",
+        "count_digits(0) → 0 return karta hai; edge case hai. Agar '0 me ek digit hai' chahiye to alag se handle karo."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "def primes_upto(limit):\n    primes = []\n    for n in range(2, limit + 1):\n        for d in range(2, int(n ** 0.5) + 1):\n            if n % d == 0:\n                break\n        else:\n            primes.append(n)\n    return primes\n\ndef find_missing(nums, n):\n    seen = set(nums)\n    for candidate in range(1, n + 1):\n        if candidate not in seen:\n            return candidate\n    return None\n\ndef collatz_steps(n):\n    steps = 0\n    while n != 1:\n        n = n // 2 if n % 2 == 0 else 3 * n + 1\n        steps += 1\n    return steps\n\nprint(primes_upto(50)[:8], len(primes_upto(50)))\nprint(find_missing([1, 2, 3, 5], 5))\nprint(collatz_steps(27))",
+      "output": "",
+      "explain": [
+        "Inner loop sirf sqrt(n) tak chalta hai — kyunki n ka divisor sqrt se bada ho to uska pair chhota hota hai, isliye O(√n) kaafi hai.",
+        "for-else yahan kaam ka hai: else sirf tab chalta hai jab inner loop ne break na kiya ho, yani koi divisor nahi mila — number prime hai.",
+        "find_missing set se O(1) lookup karta hai, isliye total O(n) — nested membership check O(n²) se bach jate hain.",
+        "Collatz loop while hai kyunki iterations ki ginti pehle se nahi pata; condition n != 1 terminate karti hai."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Batch jobs aur ETL loops: har chunk par loop chalta hai, aur retry logic while loop se likhi jati hai (attempt < max_attempts).",
+    "ETL/search me 'pehla match dhoondo' pattern for-else se likhna saaf hota hai — mil gaya to break, warna else me not-found handling.",
+    "Rate limiting / polling: while True loop me sleep + condition check, aur ek max-wait clause — warna infinite loop production me hang kar deta hai.",
+    "Model training loop: epochs ka for aur batches ka nested for; break conditions (early stopping) loop control ka real example hai."
+  ],
+  "interview": [
+    {
+      "q": "for aur while me kab kya choose karte ho?",
+      "a": "for jab iteration set pehle se pata ho (list, range, file lines) — isme index manage nahi karna padta aur off-by-one bugs kam hote hain. while jab iterations condition par depend karein (user input until valid, retry, 'jab tak queue khali na ho') — yani jab terminate condition data ki tarah aati hai, ginti ki tarah nahi.",
+      "tip": "Example ke saath bolo: 'retry with attempt count' while hai, 'process every row' for hai."
+    },
+    {
+      "q": "break aur continue ka difference?",
+      "a": "break loop poora chhod deta hai aur control loop ke baad wali line par chala jata hai; continue current iteration ka baaki code skip karke next iteration par jata hai. Nested loops me break sirf apne innermost loop se nikalta hai — bahar nikalne ke liye flag ya function+return use karo.",
+      "tip": "Nested break ka limitation batao — ye practical trap hai."
+    },
+    {
+      "q": "for-else kab chalta hai?",
+      "a": "else block tab chalta hai jab loop normal complete ho (yani break na hua ho). Ye search pattern ke liye ideal hai: mil gaya to break, warna else me 'not found'. Loop zero baar chale to bhi else chalta hai — ye detail interviewers test karte hain.",
+      "tip": "Zero-iteration case ka zikr karo."
+    },
+    {
+      "q": "Infinite loop kaise debug karoge?",
+      "a": "Pehle ye confirm karo ki loop variable badal raha hai (print/breakpoint), phir condition ka boundary dekho (<= vs <), phir input-dependent case (jaise empty list me while data stays same). Safe habit: loop me max-iterations guard ya timeout add karo, aur logging me iteration count rakho.",
+      "tip": "Guard lene ka habit bolna production-mindset dikhata hai."
+    },
+    {
+      "q": "Nested loops ko optimize karne ka kya tarika hai?",
+      "a": "Inner loop ke lookup ko set/dict me convert karo (O(n²) → O(n)), ya input ko sort karke two-pointer use karo (O(n log n)), ya precompute mapping (prefix sums, memoization) se repeated kaam hata do. Har baar 'inner loop kis cheez ki talash me hai' ye question poochho.",
+      "tip": "Complexity before/after bolo."
+    },
+    {
+      "q": "while loop me 'loop variable ko loop ke andar reassign' karna kyun risky hai?",
+      "a": "for loop me iteration value har step par iterable se aati hai, isliye andar reassign karne se sirf current value badalti hai — next iteration par wapas nayi value aati hai (isliye effect gum ho jata hai). List ko modify karna bhi index shift karta hai. Safe: nayi list banao ya reverse index loop.",
+      "tip": "Ek chhota example bolna best hai."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "1 se 10 tak ke odd numbers ka sum nikalo.",
+        "a": "range(1, 11, 2) se seedha odd values milti hain; accumulator loop se pehle initialize karo.",
+        "code": "total = 0\nfor i in range(1, 11, 2):\n    total += i\nprint(total, sum(range(1, 11, 2)))",
+        "output": "",
+        "commonMistake": "range(1, 10, 2) likhna — 9 tak chalega par 10 ka koi odd nahi, yahan farq nahi padta; par sum 1..n me boundary galat hone par answer badal jata hai."
+      },
+      {
+        "q": "Kisi number ka multiplication table print karo (1 se 10 tak).",
+        "a": "range(1, 11) par f-string se print — 10 bhi include karna hai isliye 11.",
+        "code": "num = 4\nfor i in range(1, 11):\n    print(f'{num} X {i} = {num * i}')",
+        "output": ""
+      },
+      {
+        "q": "Number me total digits count karo.",
+        "a": "String conversion se for loop, ya while loop me //10 se — dono O(digits).",
+        "code": "num = 786\ncount = 0\nfor ch in str(num):\n    count += 1\nprint(count)",
+        "output": "",
+        "explain": "String approach simple hai; negative numbers par '-' bhi count ho jayega, isliye abs() ya while version better hai."
+      },
+      {
+        "q": "Series me even aur odd numbers ki ginti karo.",
+        "a": "Ek pass me do counters update karo — condition per element.",
+        "code": "nums = [2, 4, 1, 6, 8, 7]\neven = odd = 0\nfor n in nums:\n    if n % 2 == 0:\n        even += 1\n    else:\n        odd += 1\nprint(even, odd)",
+        "output": ""
+      },
+      {
+        "q": "Pattern print karo: 5 rows me 1 se row-number tak numbers.",
+        "a": "Nested for: outer rows, inner 1..i.",
+        "code": "for i in range(1, 6):\n    for j in range(1, i + 1):\n        print(j, end=' ')\n    print()",
+        "output": "",
+        "tip": "print() ka end=' ' same line me rakhta hai; aakhir me khaali print() line todta hai."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Prime numbers nikalo ek range me.",
+        "a": "Har number ke liye sqrt tak divisibility check karo; for-else se clean likha ja sakta hai.",
+        "code": "def is_prime(n):\n    if n < 2:\n        return False\n    for d in range(2, int(n ** 0.5) + 1):\n        if n % d == 0:\n            return False\n    return True\n\nprint([n for n in range(1, 60) if is_prime(n)])",
+        "output": ""
+      },
+      {
+        "q": "Fibonacci series n terms tak print karo.",
+        "a": "Do variables (a, b) update karte chalo; loop while ya for count ke saath.",
+        "code": "a, b = 0, 1\nfor _ in range(9):\n    print(a, end=' ')\n    a, b = b, a + b\nprint()",
+        "output": "",
+        "explain": "a, b = b, a + b tuple unpacking ek saath hota hai, isliye values overwrite nahi hoti."
+      },
+      {
+        "q": "Factorial nikalo loop se (recursion ke bina).",
+        "a": "range(n, 0, -1) par product; 0! = 1 isliye identity 1 se shuru.",
+        "code": "num = 4\nfact = 1\nfor i in range(num, 0, -1):\n    fact *= i\nprint(fact)",
+        "output": ""
+      },
+      {
+        "q": "Alphanumeric string me digits aur letters ki ginti karo.",
+        "a": "Per-character isdigit()/isalpha() se do counters.",
+        "code": "text = 'salman1234'\ndigits = letters = 0\nfor ch in text:\n    if ch.isdigit():\n        digits += 1\n    elif ch.isalpha():\n        letters += 1\nprint(digits, letters)",
+        "output": ""
+      },
+      {
+        "q": "Numbers ki list ka average nikalo loop se (sum()/len() ke bina).",
+        "a": "Ek pass me count aur sum dono track karo — streaming data ke liye yehi tarika hai.",
+        "code": "nums = [2, 3, 4, 5, 6, 7]\ncount = total = 0\nfor n in nums:\n    count += 1\n    total += n\nprint(total / count)",
+        "output": "",
+        "tip": "Khali list par count 0 hoga → divide-by-zero. Guard lagao."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Armstrong number check karo (3-digit example: 407).",
+        "a": "Har digit ka cube sum karke original se compare karo; general version me digits ki ginti ka power use hota hai.",
+        "code": "def is_armstrong(num):\n    digits = str(num)\n    power = len(digits)\n    return num == sum(int(d) ** power for d in digits)\n\nprint(is_armstrong(407), is_armstrong(9474), is_armstrong(123))",
+        "output": "",
+        "explain": "len(digits) use karne se ye version 3-digit se aage bhi sahi chalta hai (9474 four digits ka Armstrong hai)."
+      },
+      {
+        "q": "Do lists ka difference nikalo aur common elements bhi — loop se.",
+        "a": "Set me convert karke ek pass me dono nikaalo; loop-with-membership O(n²) se bacho.",
+        "code": "l1 = [10, 20, 30, 40, 50]\nl2 = [5, 6, 7, 8, 9, 10]\ndiff = [x for x in l1 if x not in set(l2)]\ncommon = [x for x in l1 if x in set(l2)]\nprint(diff, common)",
+        "output": ""
+      },
+      {
+        "q": "Nested list me har sublist ko tabhi rakho jab uske saare elements 7 se divisible hon.",
+        "a": "all() predicate + comprehension; mutating while iterating se bacho.",
+        "code": "data = [[12, 21, 14], [35, 21, 56], [14, 63, 32], [70, 63, 56]]\nprint([row for row in data if all(n % 7 == 0 for n in row)])",
+        "output": "",
+        "commonMistake": "for loop me row.remove() karna — iteration skip ho jata hai aur result unpredictable hota hai."
+      },
+      {
+        "q": "Search karte waqt pehla match milte hi ruko, warna 'not found' report karo.",
+        "a": "for-else pattern: break mila to else nahi chalega, warna chalega.",
+        "code": "def find_user(users, name):\n    for user in users:\n        if user['name'] == name:\n            print('found', user['name'])\n            break\n    else:\n        print('not found:', name)\n\nfind_user([{'name': 'Neha'}, {'name': 'Ali'}], 'Ali')\nfind_user([{'name': 'Neha'}], 'Rahul')",
+        "output": ""
+      },
+      {
+        "q": "Retry loop likho: max 3 attempts, success par ruko, failure par attempt gino.",
+        "a": "while with guard counter — infinite loop se bachne ka standard shape.",
+        "code": "import random\n\nrandom.seed(7)\nattempts = 0\nwhile attempts < 3:\n    attempts += 1\n    ok = random.random() < 0.5\n    print(f'attempt {attempts}: {\"ok\" if ok else \"retry\"}')\n    if ok:\n        break\nelse:\n    print('gave up after 3 attempts')",
+        "output": ""
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview: 'do lists me se common elements nikalo' — loop approach aur uski complexity batao.",
+        "a": "Nested loop O(n·m) hai, set-based O(n + m) average. Sorted input par two-pointer O(n + m) bina extra memory. Interview me teenon batao aur trade-off (memory vs speed) explain karo.",
+        "code": "def common(a, b):\n    lookup = set(b)\n    return [x for x in a if x in lookup]\n\nprint(common([1, 2, 3, 40], [40, 5]))",
+        "output": "",
+        "tip": "set(b) ko loop ke bahar banate hain — andar banane se har iteration me O(m) waste hota hai."
+      },
+      {
+        "q": "Interview: 'kya ye number prime hai' — O(√n) version likho aur edge cases batao.",
+        "a": "2 se sqrt(n) tak divisibility; edge cases: n < 2 false, n == 2 true, even numbers skip. Loop ke andar break/return se early exit karo.",
+        "code": "def is_prime(n):\n    if n < 2:\n        return False\n    if n % 2 == 0:\n        return n == 2\n    d = 3\n    while d * d <= n:\n        if n % d == 0:\n            return False\n        d += 2\n    return True\n\nprint(is_prime(97), is_prime(1), is_prime(2))",
+        "output": "",
+        "tip": "d * d <= n floating point math se safer hai (n ** 0.5 me rounding issue aa sakta hai)."
+      },
+      {
+        "q": "Interview: while True loop ko production me kaise safe banate ho?",
+        "a": "Teen guard rakho: max iterations/timeout, explicit exit condition (break), aur failure par exponential backoff + logging. Infinite loop ke saath shared state update na karo warna deadlock/race ban sakti hai.",
+        "code": "import time\n\nmax_wait, start = 0.05, time.time()\nwhile True:\n    elapsed = time.time() - start\n    if elapsed >= max_wait:\n        print('timeout after', round(elapsed, 3), 's')\n        break\n    time.sleep(0.01)",
+        "output": "",
+        "explain": "Time-based guard deterministic banti hai (iteration count ki jagah), isliye slow environment me bhi loop rukta hai."
+      },
+      {
+        "q": "Interview: 'list me duplicate elements ki first occurrence nikaalo' loop se.",
+        "a": "Seen set + loop: element pehle dekh chuke ho to duplicate mil gaya — O(n). Index wapas chahiye to seen dict me index store karo.",
+        "code": "def first_duplicate(nums):\n    seen = set()\n    for i, n in enumerate(nums):\n        if n in seen:\n            return i, n\n        seen.add(n)\n    return None\n\nprint(first_duplicate([1, 3, 5, 3, 7]))",
+        "output": "",
+        "tip": "enumerate index deta hai bina manual counter ke — Pythonic baat hai."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "CSV rows ko chunks me process karo aur per-chunk summary do.",
+        "a": "Generator batches + loop; memory per chunk bounded rehti hai.",
+        "code": "def batches(rows, size):\n    for i in range(0, len(rows), size):\n        yield rows[i:i + size]\n\nfor n, chunk in enumerate(batches(list(range(1, 11)), 4), 1):\n    print(f'chunk {n}: {chunk}')",
+        "output": ""
+      },
+      {
+        "q": "Retry with backoff pattern likho (network call ke liye).",
+        "a": "while attempts < max: try, except par sleep double karo — bounded loop.",
+        "code": "import random\n\nrandom.seed(3)\ndelay = 0.1\nfor attempt in range(1, 4):\n    if random.random() < 0.5:\n        print(f'ok on attempt {attempt}')\n        break\n    print(f'retrying in {delay:.1f}s')\n    delay *= 2\nelse:\n    print('all attempts failed — alert')",
+        "output": ""
+      },
+      {
+        "q": "Log lines me se sirf ERROR level wale nikalo aur count report karo.",
+        "a": "Loop + startswith/in check; Counter se count.",
+        "code": "lines = [\n    '2026-09-24 10:31:02 INFO service up',\n    '2026-09-24 10:32:11 ERROR db timeout',\n    '2026-09-24 10:33:40 ERROR db timeout',\n]\nerrors = [l for l in lines if ' ERROR ' in l]\nprint(len(errors))\nprint(errors[-1].split(' ERROR ')[-1])",
+        "output": ""
+      },
+      {
+        "q": "Polling loop jo tab tak chale jab tak status 'ready' na ho (max 5 checks).",
+        "a": "while + status check + max guard; har check par state update karo taki loop terminate ho.",
+        "code": "statuses = ['pending', 'pending', 'ready']\nchecks = 0\nwhile checks < 5 and checks < len(statuses):\n    if statuses[checks] == 'ready':\n        print('ready after', checks + 1, 'checks')\n        break\n    checks += 1\nelse:\n    print('still pending after 5 checks')",
+        "output": "",
+        "explain": "Loop me do conditions hain: status aur guard. Guard ke bina, agar status kabhi 'ready' na ho, loop infinite ban jata."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Number ka factorial loop se nikalo, input validation ke saath.",
+      "build": "Function factorial(n) -> int; negative input par ValueError raise kare.",
+      "input": "5",
+      "expected": "120",
+      "hint": "Identity 1 se shuru karo aur range(n, 0, -1) par multiply karo.",
+      "concept": "Accumulator loops + input validation",
+      "solution": "def factorial(n):\n    if n < 0:\n        raise ValueError('negative input not allowed')\n    result = 1\n    for i in range(2, n + 1):\n        result *= i\n    return result\n\nprint(factorial(5), factorial(0))\ntry:\n    factorial(-3)\nexcept ValueError as e:\n    print('rejected:', e)",
+      "output": "",
+      "explanation": "range(2, n+1) se 1 se multiply karne ka kaam bach jata hai aur 0/1 dono par answer 1 milta hai. Negative input par explicit error — silently wrong answer dene se better hai.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "better": "math.factorial C me implement hai, isliye bade n par kaafi tez; iterative version memory bachata hai recursion ke comparison me.",
+      "followUp": "n = 1000 ke liye result kitna bada hoga aur Python ise kaise handle karta hai?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "String palindrome hai ya nahi — while loop (two pointer) se check karo.",
+      "build": "Function is_palindrome(s) -> bool using two pointers.",
+      "input": "'malayalam'",
+      "expected": "True",
+      "hint": "left=0, right=len-1; compare karo aur andar badhao.",
+      "concept": "while loop with two pointers",
+      "solution": "def is_palindrome(s):\n    left, right = 0, len(s) - 1\n    while left < right:\n        if s[left] != s[right]:\n            return False\n        left += 1\n        right -= 1\n    return True\n\nprint(is_palindrome('malayalam'), is_palindrome('python'))",
+      "output": "",
+      "explanation": "Do pointers se aadhi string hi compare hoti hai aur mismatch par turant return — worst case O(n) par average better. Reverse slicing se O(n) extra memory bachti hai.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "better": "Bade text me first/last skip karne ke rules add kar sakte ho (spaces/punctuation ignore) — wahi normalization idea.",
+      "followUp": "Number palindrome ke liye integer approach kyun better hai (string conversion se)?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "First n prime numbers print karo (range ke bina, count-based).",
+      "build": "Function first_primes(n) -> list of n primes.",
+      "input": "8",
+      "expected": "[2, 3, 5, 7, 11, 13, 17, 19]",
+      "hint": "while loop chalao jab tak count n na ho; candidate ko 2 se badhao.",
+      "concept": "while loop with unknown upper bound + primality test",
+      "solution": "def is_prime(n):\n    if n < 2:\n        return False\n    d = 2\n    while d * d <= n:\n        if n % d == 0:\n            return False\n        d += 1\n    return True\n\n\ndef first_primes(count):\n    found, candidate = [], 2\n    while len(found) < count:\n        if is_prime(candidate):\n            found.append(candidate)\n        candidate += 1\n    return found\n\nprint(first_primes(8))",
+      "output": "",
+      "explanation": "Yahan while loop zaroori hai kyunki nth prime kitna bada hoga ye pehle se pata nahi — terminate condition count par hai, range par nahi.",
+      "time": "O(count · √p)",
+      "space": "O(count)",
+      "better": "Sieve of Eratosthenes se O(limit log log limit) milta hai jab upper bound estimate ho; segmented sieve se memory bhi bounded rehti hai.",
+      "followUp": "1000th prime nikalne ke liye upper bound kaise estimate karoge?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Fibonacci ka n-th term loop se nikalo aur series bhi print karo.",
+      "build": "Function fib(n) -> n-th term (0-indexed), plus series list.",
+      "input": "10",
+      "expected": "term 55, series [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]",
+      "hint": "Do variables rakho aur tuple unpacking se update karo; memoization ki zaroorat nahi.",
+      "concept": "Iterative DP (bottom-up)",
+      "solution": "def fib_series(n):\n    series = []\n    a, b = 0, 1\n    for _ in range(n):\n        series.append(a)\n        a, b = b, a + b\n    return series\n\n\nseries = fib_series(10)\nprint(series[-1], series)",
+      "output": "",
+      "explanation": "Iterative version O(n) time aur O(1) space leta hai (series store na karein to), jabki naive recursion O(2^n) hai. Tuple assignment se ek saath update hota hai — order important hai.",
+      "time": "O(n)",
+      "space": "O(1) for the term, O(n) if series stored",
+      "better": "Bahut bade n par fast doubling O(log n) use hota hai; ya matrix exponentiation.",
+      "followUp": "n = 10^6 ke liye series list banane ke bajaye generator kyun behtar hai?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Collatz sequence ki length nikalo (while loop with unknown iterations).",
+      "build": "Function collatz_steps(n) -> steps to reach 1.",
+      "input": "27",
+      "expected": "111 steps",
+      "hint": "Even par /2, odd par 3n+1; loop tab tak jab tak n == 1 na ho.",
+      "concept": "while loop with condition-based termination",
+      "solution": "def collatz_steps(n):\n    steps = 0\n    while n != 1:\n        n = n // 2 if n % 2 == 0 else 3 * n + 1\n        steps += 1\n    return steps\n\nprint(collatz_steps(27))\nprint(max(range(1, 30), key=collatz_steps))",
+      "output": "",
+      "explanation": "Loop ka termination data-driven hai, isliye while natural choice hai. n // 2 integer division use karna zaroori hai warna float precision issue aa jayega.",
+      "time": "O(steps)",
+      "space": "O(1)",
+      "better": "Memoization (seen values ki length cache) se repeated sub-sequences skip hote hain — bahut se numbers par kaafi tez.",
+      "followUp": "Recursion se likhne par kya problem aayegi? (recursion limit)"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Multiplication table grid print karo 1..n tak, aur har row ka sum bhi do.",
+      "build": "Function table(n) -> list of rows plus row sums.",
+      "input": "5",
+      "expected": "5 rows with sums 15, 30, 45, 60, 75",
+      "hint": "Nested loop me inner row banao, phir sum() se row total.",
+      "concept": "Nested loops + aggregation",
+      "solution": "def table(n):\n    rows = []\n    for i in range(1, n + 1):\n        row = [i * j for j in range(1, n + 1)]\n        rows.append(row)\n    return rows, [sum(r) for r in rows]\n\nrows, sums = table(5)\nfor row, total in zip(rows, sums):\n    print(' '.join(f'{x:3}' for x in row), '| sum =', total)",
+      "output": "",
+      "explanation": "Inner comprehension se row banti hai (O(n)), aur outer loop n rows deta hai — total O(n²). Row sum ke liye alag loop likhne ki jagah sum() ek hi baar chalta hai.",
+      "time": "O(n²)",
+      "space": "O(n²)",
+      "better": "Output sirf print karna ho to rows store na karo — directly print karke space O(n) par le aao.",
+      "followUp": "1..n^2 ke numbers ko triangular pattern me print karne ka logic kya hoga?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Sliding window me k window ka maximum nikalo, nested loop aur deque dono se.",
+      "build": "Function window_max(nums, k) -> list of maximums.",
+      "input": "[1, 3, -1, -3, 5, 3, 6, 7], k=3",
+      "expected": "[3, 3, 5, 5, 6, 7]",
+      "hint": "Naive O(n·k) se shuru karo; deque me decreasing order maintain karo.",
+      "concept": "Nested loops vs monotonic deque optimization",
+      "solution": "from collections import deque\n\ndef window_max_naive(nums, k):\n    return [max(nums[i:i + k]) for i in range(len(nums) - k + 1)]\n\n\ndef window_max_fast(nums, k):\n    dq, out = deque(), []\n    for i, n in enumerate(nums):\n        while dq and nums[dq[-1]] < n:\n            dq.pop()\n        dq.append(i)\n        if dq[0] <= i - k:\n            dq.popleft()\n        if i >= k - 1:\n            out.append(nums[dq[0]])\n    return out\n\nnums = [1, 3, -1, -3, 5, 3, 6, 7]\nprint(window_max_naive(nums, 3))\nprint(window_max_fast(nums, 3))",
+      "output": "",
+      "explanation": "Naive version O(n·k) hai. Deque me indices decreasing value order me rehte hain, isliye front hamesha current window ka maximum hai; purane index window se bahar hote hi hat jaate hain — total O(n).",
+      "time": "O(n) with deque, O(n·k) naive",
+      "space": "O(k)",
+      "better": "Deque approach hi optimal hai; sparse table O(n log n) preprocessing se random queries handle kar sakte ho, par yahan sliding fixed window hai.",
+      "followUp": "Streaming data (infinite input) par kaunsa approach chalega aur kyun?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "for i in range('5'):\n    print(i)",
+      "error": "TypeError: 'str' object cannot be interpreted as an integer",
+      "why": "range() ko integer chahiye, string nahi. Input (user/file) hamesha string aata hai, isliye convert karna zaroori hai.",
+      "fix": "int() se convert karo aur invalid input par readable error do.",
+      "correct": "for i in range(int('5')):\n    print(i, end=' ')\nprint()\nprint('converted OK')",
+      "output": "",
+      "lesson": "Yahi bug CSV/JSON se aane wale data me sabse zyada hota hai — loop lagane se pehle type confirm karo."
+    },
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "for i in range(3):\n    count = count + 1\nprint(count)",
+      "error": "NameError: name 'count' is not defined",
+      "why": "Loop ke andar accumulator use karne se pehle usko initialize karna padta hai. Python me += bhi existing value mangta hai.",
+      "fix": "Loop se pehle count = 0 likho.",
+      "correct": "count = 0\nfor i in range(3):\n    count = count + 1\nprint(count)",
+      "output": "",
+      "lesson": "Har accumulator (sum, count, max_value) loop se pehle define karo — warna first iteration par hi crash."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "nums = [1, 2, 3, 4, 5, 6]\nevens = []\nfor n in nums:\n    if n % 2 == 0:\n        evens.append(n)\n    break\nprint(evens)",
+      "error": "Logic error: sirf ek even mila — break pehli iteration me hi loop band kar deta hai",
+      "why": "break loop ko turant band karta hai. Yahan break if ke andar nahi, balki loop ke bahar hai, isliye pehla number process hote hi loop khatam.",
+      "fix": "break hata do (ya yadi 'pehla even chahiye' to if ke andar rakho).",
+      "correct": "nums = [1, 2, 3, 4, 5, 6]\nevens = []\nfor n in nums:\n    if n % 2 == 0:\n        evens.append(n)\nprint(evens)",
+      "output": "",
+      "lesson": "break ka indentation check karo — loop-level break aur if-level break ka matlab bilkul alag hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "total = 0\ni = 1\nn = 5\nwhile i < n:\n    total += i\n    i += 1\nprint(total)",
+      "error": "Logic error: 1..5 ka sum 15 hona chahiye tha, 10 aaya (5 chhoot gaya)",
+      "why": "while i < n condition n ko include nahi karti, isliye last value miss hoti hai — yahi range() ka stop-exclusive behaviour hai.",
+      "fix": "Condition ko i <= n karo (ya n+1 tak range use karo).",
+      "correct": "total = 0\ni = 1\nn = 5\nwhile i <= n:\n    total += i\n    i += 1\nprint(total)",
+      "output": "",
+      "lesson": "Inclusive sum ke liye <= chahiye; off-by-one aksar 'one short' answer deta hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "nums = [4, 7, -2, 9, 3]\ntotal = 0\nfor n in nums:\n    if n < 0:\n        continue\n    total += n\nprint(total)",
+      "error": "Logic error: negative number ke baad bhi loop chalta raha (continue vs break)",
+      "why": "Requirement 'pehla negative milte hi ruk jao' thi, par continue sirf us element ko skip karta hai — loop aage ke numbers bhi jodta rehta hai, isliye answer galat aata hai. Exception nahi aata kyunki code vaid hai, sirf intent galat implement hua.",
+      "fix": "Yahan break chahiye; continue tab use karo jab sirf us element ko skip karke aage badhna ho.",
+      "correct": "nums = [4, 7, -2, 9, 3]\ntotal = 0\nfor n in nums:\n    if n < 0:\n        break\n    total += n\nprint(total)",
+      "output": "",
+      "lesson": "break aur continue ka farq requirement ki language me hota hai: 'ruko' vs 'skip karo' — code likhne se pehle ye word note karo."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "1 se 20 tak ke saare numbers ka square sirf un numbers ka print karo jo 3 se divisible hain — nested loop ke bina.",
+      "hint": "range me step 3 rakho aur comprehension/loop me square karo.",
+      "deliverable": "Ek loop ka snippet."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Diamond pattern print karo n rows ka (upper triangle + lower triangle).",
+      "hint": "Upper loop 1..n aur lower loop n-1..1; spaces aur stars ka count formula derive karo.",
+      "deliverable": "Function + output screenshot/text."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Ek number-series analyzer banao: Armstrong, perfect, prime, palindrome checks ek hi loop pass me.",
+      "hint": "Har number par ek baar pass karo aur predicates alag functions me rakho.",
+      "deliverable": "Script + sample report + complexity comments."
+    },
+    {
+      "kind": "interview",
+      "minutes": 35,
+      "prompt": "Interview: ek list me se wo numbers nikalo jo doosri list me nahi hain, aur O(n) me karo.",
+      "hint": "Set lookup; loop ke bahar set banao.",
+      "deliverable": "Solution + complexity + edge cases."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "CLI 'pattern generator' banao jo argument se pattern type, rows aur character le aur pattern print kare.",
+      "hint": "argparse + pattern functions registry (dict name → function).",
+      "deliverable": "Working script + README points."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Multiplication Tables & Patterns (Version 1)",
+      "problem": "Loops seekhne ke baad learners ke paas sirf dry syntax hota hai; unhe ek chhota visual output chahiye jo loop ke control flow ko confirm kare.",
+      "objective": "Ek program jo kisi number ka table aur 2-3 star patterns print kare, rows config se.",
+      "features": [
+        "Multiplication table 1..10 tak",
+        "Right triangle aur inverted triangle patterns",
+        "Rows count parameter se control",
+        "Input validation (positive integer)"
+      ],
+      "concepts": ["for loop with range", "Nested loop for patterns", "end='' printing", "Basic input validation"],
+      "structure": "loop_basics/\n└── patterns.py     # table + patterns",
+      "steps": [
+        "table(num, upto) function likho.",
+        "triangle(rows) aur inverted(rows) pattern functions likho.",
+        "main me rows validate karke dono print karo.",
+        "Galat input (0, negative, string) par clear message do."
+      ],
+      "code": "def table(num, upto=10):\n    lines = [f'{num} x {i} = {num * i}' for i in range(1, upto + 1)]\n    return '\\n'.join(lines)\n\n\ndef triangle(rows):\n    out = []\n    for i in range(1, rows + 1):\n        out.append('* ' * i)\n    return '\\n'.join(out)\n\n\ndef inverted(rows):\n    out = []\n    for i in range(rows, 0, -1):\n        out.append('* ' * i)\n    return '\\n'.join(out)\n\n\nrows = int(input_value) if (input_value := '5') and input_value.isdigit() else 5\nprint(table(4))\nprint(triangle(rows))\nprint(inverted(rows))",
+      "output": "",
+      "explanation": "Table comprehension se ek list me ban jati hai aur join se single string — loop ka output test karna aasan ho jata hai (text compare). Pattern functions ek hi loop shape se rows ko print karte hain; inverted me range step -1 hai.",
+      "testing": "rows=1, rows=0 (invalid) aur bada rows ka output check karo; table(0) par empty string aana chahiye.",
+      "errors": "Non-integer rows par int() ka ValueError aayega — is version me walrus-based simple guard hai, next version me proper validation.",
+      "improvements": [
+        "Patterns ko argument se choose karo (pattern name → function ka dict)",
+        "Center-aligned pyramid pattern add karo",
+        "Output ko text file me save karne ka option do",
+        "Input validation ko loop me rakho (valid input tak poocho)"
+      ],
+      "advanced": [
+        "argparse based CLI (--pattern, --rows, --out)",
+        "Unit tests se har pattern ka exact string verify karo",
+        "Config file se patterns aur characters load karo",
+        "Logging + friendly error messages production-style"
+      ],
+      "realWorld": "Report formatting (invoice tables), console dashboards, aur test fixtures me structured text generate karna — loop-based text rendering ka base.",
+      "interview": [
+        { "q": "Pattern printing ko nested loop kyun chahiye?", "a": "Outer loop rows deta hai aur inner loop us row ke andar characters — do independent counts hain, isliye do loops natural hain. Ek loop me bhi ho sakta hai ('* ' * i) kyunki Python string repetition dega, par algorithm samajhne ke liye nested version important hai." },
+        { "q": "Inverted pattern ke liye range(rows, 0, -1) kyun?", "a": "Step -1 se countdown hota hai aur stop 0 exclusive hai, isliye rows se 1 tak milta hai. range(rows, 0) bina negative step khaali hota." },
+        { "q": "Loop output ko test kaise karoge?", "a": "Output ko return value banao (string) aur assert karo — print ko capture karne ke liye capsys use karna padta hai, isliye pure function design better hai." }
+      ],
+      "resume": "Implemented loop-based text generation utilities (tables and star patterns) with parameterized rows and validated input.",
+      "readme": [
+        "Sample outputs for table and patterns",
+        "How to run + parameters",
+        "Concepts used: nested loops, range step, string repetition"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Number Analysis Toolkit (Version 2)",
+      "problem": "Version 1 sirf formatting hai. Real use me numbers par checks chahiye (prime, Armstrong, perfect, palindrome, factorial) aur ek report jo sab ek saath dikhaye — bina crash kiye.",
+      "objective": "Ek toolkit banao jo ek range/list ke numbers analyse kare, per-number classification de, aur summary statistics nikaale.",
+      "features": [
+        "Per-number classification (prime, perfect, Armstrong, palindrome, even/odd)",
+        "Range-based analysis with start/end validation",
+        "Summary statistics (counts per class, largest prime in range)",
+        "Factorial and Fibonacci helpers",
+        "Bad input handling (negative, non-numeric)",
+        "Module split: checks vs reporting"
+      ],
+      "concepts": ["Loop-based predicates", "while for digit extraction", "Aggregation with dict", "Defensive input handling"],
+      "structure": "number_toolkit/\n├── checks.py       # is_prime, is_armstrong, is_perfect, is_palindrome\n├── sequences.py    # factorial, fibonacci\n└── report.py       # summaries",
+      "steps": [
+        "checks.py me predicates likho (sab boolean functions, no printing).",
+        "sequences.py me factorial (loop) aur fibonacci (iterative) add karo.",
+        "report.py me range lo aur har number ke classes nikalo; summary dict return karo.",
+        "main me sample range chalao aur invalid input try/except se handle karo."
+      ],
+      "code": "def is_prime(n):\n    if n < 2:\n        return False\n    d = 2\n    while d * d <= n:\n        if n % d == 0:\n            return False\n        d += 1\n    return True\n\n\ndef is_palindrome(n):\n    nums = str(n)\n    left, right = 0, len(nums) - 1\n    while left < right:\n        if nums[left] != nums[right]:\n            return False\n        left, right = left + 1, right - 1\n    return True\n\n\ndef is_perfect(n):\n    if n < 2:\n        return False\n    total = 0\n    for d in range(1, n // 2 + 1):\n        if n % d == 0:\n            total += d\n    return total == n\n\n\ndef segment_report(start, end):\n    if start > end:\n        raise ValueError('start must be <= end')\n    classes = {'prime': 0, 'palindrome': 0, 'perfect': 0, 'even': 0, 'odd': 0}\n    largest_prime = None\n    for n in range(start, end + 1):\n        if is_prime(n):\n            classes['prime'] += 1\n            largest_prime = n\n        if is_palindrome(n):\n            classes['palindrome'] += 1\n        if is_perfect(n):\n            classes['perfect'] += 1\n        classes['even' if n % 2 == 0 else 'odd'] += 1\n    return {'range': (start, end), 'counts': classes, 'largest_prime': largest_prime}\n\n\nprint(segment_report(1, 30))\nprint(is_perfect(28), is_palindrome(121))\ntry:\n    segment_report(10, 1)\nexcept ValueError as e:\n    print('rejected:', e)",
+      "output": "",
+      "explanation": "Sab predicates pure functions hain (input → bool), isliye report loop unhe compose karta hai. is_perfect sirf n//2 tak checks karta hai kyunki uske aage koi proper divisor nahi hota. report ek hi pass me ginti karta hai aur largest_prime track karta hai, warna alag se max dhoondna padta.",
+      "testing": "Perfect numbers (6, 28), Armstrong (153, 370), palindrome (121, 1221), invalid range, aur range(1,1) ka test likho.",
+      "errors": "start > end par ValueError; non-int input par TypeError — dono callers ko explicit milte hain. Bade ranges par performance warning README me likho.",
+      "improvements": [
+        "Perfect/Armstrong checks ko sieve-style caching se tez karo",
+        "Report ko JSON/CSV export karo",
+        "CLI flags (--start, --end, --export) add karo",
+        "Property-based tests (hypothesis) se predicates verify karo"
+      ],
+      "advanced": [
+        "Sieve of Eratosthenes se poore range ka prime table ek baar me banao (O(n log log n))",
+        "Multiprocessing se bade ranges parallel analyse karo",
+        "Pytest suite + coverage aur CI workflow",
+        "Dockerized CLI with README (usage, architecture, limitations)"
+      ],
+      "realWorld": "Data quality checks (perfect/prime-style rules), interview preparation tools, aur number-theory based coding-round practice — yahi structure real analyzers me hota hai: predicates + aggregator + report.",
+      "interview": [
+        { "q": "is_prime me while d * d <= n kyun use kiya, range se kya farq?", "a": "Same complexity hai par while version early return ke saath clean rehta hai aur floating point sqrt se bachta hai. Interviewers yahan O(√n) reasoning sunna chahte hain." },
+        { "q": "Predicates ko alag file me kyun rakha?", "a": "Testability: har predicate ko alag se assert kar sakte ho print ke bina. Report function sirf composition karta hai, isliye bug isolate karna aasan ho jata hai." },
+        { "q": "Range 1 se 10 lakh ka ho to ye code kaise behave karega?", "a": "Har number par O(√n) prime check lagega — kuch seconds ya zyada lag sakte hain. Sieve se poora range ek pass me precompute karna better hai; isliye 'improvements' list me wahi first item hai." }
+      ],
+      "resume": "Built a number analysis toolkit with loop-based predicates (prime, perfect, Armstrong, palindrome) and an aggregated range report.",
+      "readme": [
+        "Functions list aur unka complexity",
+        "Sample report output",
+        "Known performance limits and next optimization (sieve)"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Batch Job Runner with Retry (Version 4)",
+      "problem": "Production me 'loop chalao' kaafi nahi hota: jobs fail hote hain, retry chahiye, timeout chahiye, progress log chahiye aur ek job ka failure poora run nahi rokna chahiye.",
+      "objective": "Ek modular batch runner banao jo task list par loop chale, retry with backoff kare, per-task timeout aur error isolation de, aur structured summary report kare.",
+      "features": [
+        "Task registry (name → callable) and ordered execution",
+        "Retry with exponential backoff and max attempts",
+        "Error isolation: ek task fail ho to baaki chalti rahein",
+        "Per-run summary (succeeded, failed, retried, durations)",
+        "Structured logging with task ids",
+        "Config-driven behaviour (attempts, base delay) without code change"
+      ],
+      "concepts": ["while loop for retry", "try/except/finally for isolation", "Dataclass config", "Timeouts and logging", "Pure functions + injectable clock for tests"],
+      "structure": "batch_runner/\n├── config.py     # RunConfig dataclass\n├── runner.py     # retry loop + isolation\n├── tasks.py      # sample tasks\n└── main.py       # wiring + report",
+      "steps": [
+        "RunConfig banao (max_attempts, base_delay, timeout_s, fail_fast).",
+        "run_task() likho: while loop me attempts, backoff sleep, exception capture.",
+        "run_batch() likho: har task ke liye run_task, results collect, fail_fast option.",
+        "main me sample tasks (kuch fail karti hui) wire karo aur summary print karo."
+      ],
+      "code": "import logging, time\nfrom dataclasses import dataclass\n\nlogging.basicConfig(level=logging.INFO, format='%(levelname)s %(message)s')\n\n@dataclass\nclass RunConfig:\n    max_attempts: int = 3\n    base_delay: float = 0.01\n    timeout_s: float = 1.0\n    fail_fast: bool = False\n\n\ndef run_task(name, fn, cfg, sleep=time.sleep, clock=time.monotonic):\n    attempts = 0\n    delay = cfg.base_delay\n    started = clock()\n    last_error = None\n    while attempts < cfg.max_attempts:\n        attempts += 1\n        try:\n            value = fn()\n            return {'task': name, 'status': 'ok', 'attempts': attempts, 'value': value, 'seconds': round(clock() - started, 3)}\n        except Exception as e:  # isolation: ek task ka failure poore run ko na rokta\n            last_error = f'{type(e).__name__}: {e}'\n            logging.warning('task %s attempt %d failed (%s)', name, attempts, last_error)\n            if attempts < cfg.max_attempts:\n                sleep(delay)\n                delay *= 2\n    return {'task': name, 'status': 'failed', 'attempts': attempts, 'error': last_error, 'seconds': round(clock() - started, 3)}\n\n\ndef run_batch(tasks, cfg, sleep=time.sleep, clock=time.monotonic):\n    results = []\n    for name, fn in tasks:\n        result = run_task(name, fn, cfg, sleep=sleep, clock=clock)\n        results.append(result)\n        if cfg.fail_fast and result['status'] == 'failed':\n            break\n    return results\n\n\ndef summary(results):\n    ok = sum(1 for r in results if r['status'] == 'ok')\n    retried = sum(1 for r in results if r['attempts'] > 1)\n    return {'ran': len(results), 'ok': ok, 'failed': len(results) - ok, 'retried': retried,\n            'total_seconds': round(sum(r['seconds'] for r in results), 3)}\n\n\nstate = {'calls': 0}\n\ndef flaky():\n    state['calls'] += 1\n    if state['calls'] < 3:\n        raise ConnectionError('temporary network error')\n    return 'payload'\n\n\ndef broken():\n    raise ValueError('bad input')\n\n\ncfg = RunConfig()\nresults = run_batch([('fetch', flaky), ('parse', broken), ('write', lambda: 'written')], cfg, sleep=lambda _s: None)\nprint([(r['task'], r['status'], r['attempts']) for r in results])\nprint(summary(results))",
+      "output": "",
+      "explanation": "run_task me while loop hi retry hai: attempts counter guard rakhta hai (infinite loop impossible), har failure par backoff double hota hai, aur last_error store hoti hai taki summary me reason mile. Exception catch broad hai kyunki batch runner ka kaam isolation hai — ek task ka failure doosri tasks ko nahi rokna chahiye. sleep aur clock injectable hain, isliye tests fast chalti hain (fake clock, no real sleeping). run_batch fail_fast se early exit de sakta hai, aur summary ki ginti retried tasks bhi dikhati hai.",
+      "testing": "Fake clock/sleep ke saath: pehli attempt success, teen attempts ke baad success, poora failure, aur fail_fast behaviour — sab assert karo. Summary keys bhi test karo.",
+      "errors": "Exception isolation deliberate hai; KeyboardInterrupt/SystemExit ko catch na karne ke liye except Exception (BaseException nahi) use kiya gaya — ye production detail hai.",
+      "improvements": [
+        "Timeout enforce karo per task (signal/thread future) aur slow task ko cancel karo",
+        "Results ko JSON me persist karo aur run-id do (audit trail)",
+        "Parallel execution with bounded worker pool (ThreadPoolExecutor)"
+      ],
+      "advanced": [
+        "Dead-letter queue: permanently failed tasks ko alag store karo aur retry endpoint do",
+        "Metrics/observability: counters aur durations Prometheus/CloudWatch me bhejo",
+        "pytest + CI, aur failure injection tests (flaky network simulation)",
+        "Docker image + README (runbook, config env vars, failure playbook)"
+      ],
+      "realWorld": "ETL pipelines, nightly data jobs aur API integration scripts me exactly yehi shape hoti hai: per-task retry, isolation, structured summary, aur logs jo on-call ko reason batate hain.",
+      "interview": [
+        { "q": "Retry loop me backoff kyun zaroori hai?", "a": "Bina backoff ke failure par turant dobara hit karne se downstream service overload hoti hai (retry storm). Exponential backoff + jitter se load phail jata hai aur recovery ka time milta hai." },
+        { "q": "sleep aur clock injectable kyun kiye?", "a": "Tests me real sleeping slow hoti hai aur flaky banti hai; inject karke fake clock/sleep use karte hain, isliye retry logic deterministic ho kar milliseconds me test ho jati hai." },
+        { "q": "except Exception kyun, bare except kyun nahi?", "a": "Bare except KeyboardInterrupt jaise control exceptions bhi pakad leta hai aur process ko Ctrl-C par rok paana mushkil hota hai. Exception specifc hierarchy ka base hai par BaseException nahi — isliye ye safe middle hai." },
+        { "q": "Is runner me consistency issue kahan hai?", "a": "Agar task ka side effect hua par response fail ho gaya, retry us effect ko dobara chala sakta hai (at-least-once). Solution: idempotency keys ya transaction/lock — ye honest limitation interview me bolo." }
+      ],
+      "resume": "Built a config-driven Python batch runner with per-task retry/backoff, error isolation, injectable clock for deterministic tests and structured run summaries.",
+      "readme": [
+        "Architecture: config → runner → summary",
+        "Config options (attempts, backoff, fail_fast) with defaults",
+        "Failure semantics: at-least-once execution aur iski limitation",
+        "Roadmap: timeout enforcement, persistence, parallel pool"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      "Pattern printing me nested loop ka outer aur inner role kya tha?",
+      "Number toolkit me predicates ko alag functions me kyun rakha?",
+      "Batch runner me while loop retry ke liye kaise use hua?",
+      "range() ka stop-exclusive behaviour kis bug se bachata hai?"
+    ],
+    "coding": [
+      "Pattern generator me pyramid (center-aligned) pattern add karo.",
+      "Number toolkit me sieve-based prime range add karo aur speed compare karo.",
+      "Batch runner me per-task timeout enforce karo.",
+      "Retry loop me jitter add karo aur tests update karo."
+    ],
+    "advanced": [
+      "Nested loops ko set/dict se O(n) me convert karne ka example implement karo.",
+      "Bade range analysis ko multiprocessing se parallelize karo.",
+      "Runner ke results ko JSON me persist karo aur resume feature do.",
+      "Failure injection tests likho (flaky task simulation)."
+    ],
+    "interview": [
+      "Is project ko production me kaise scale karoge?",
+      "Loop-based analysis ki time complexity kya hai?",
+      "Memory usage kaise reduce karoge jab input bahut bada ho?",
+      "Konsi error cases abhi handle nahi hoti?",
+      "Batch runner ko API/service me kaise convert karoge?"
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Live coding: 1..n ka sum bina formula ke, phir formula se — dono likho aur complexity compare karo.",
+      "a": "Loop O(n) hai, formula n*(n+1)//2 O(1) hai. Interview me ye dikhata hai ki tum optimization sochte ho; integer division // use karo warna float aa jayega.",
+      "deliverable": "Do functions + complexity table."
+    },
+    {
+      "q": "Interview: nested loop wale solution ko O(n) me convert karke dikhao (do lists ka common elements).",
+      "a": "Inner loop ka kaam lookup hai, isliye set bana kar membership O(1) karo — total O(n + m). Ye 'inner loop kis cheez ki talash me hai' analysis ka classic example hai.",
+      "deliverable": "Before/after code + complexity."
+    },
+    {
+      "q": "Practical: ek polling loop likho jo status check kare, max 5 attempts, aur har attempt ka log de.",
+      "a": "for attempt in range(1, 6) with early break; else me timeout handling; har attempt par attempt number aur time log karo. Guard na ho to production me hang ho jata hai.",
+      "deliverable": "Snippet + timeout behaviour test."
+    },
+    {
+      "q": "Interview: for-else ka ek real use case likho aur uske without-else version se compare karo.",
+      "a": "Search pattern: break par found, else par not-found. Without-else me flag variable maintain karna padta (found = False) — extra state aur bhoole jaane ka risk. for-else isme kam code aur kam bug deta hai.",
+      "deliverable": "Dono versions + comparison."
+    },
+    {
+      "q": "Coding round: digit-based problems (sum of digits, reverse, palindrome number) teenon ek hi function family me likho.",
+      "a": "Ek loop (num != 0, num //= 10, digit = num % 10) teenon ka base hai — sum me digits jodo, reverse me rev*10+digit, palindrome me reverse karke original se compare. Edge cases: 0 aur negative.",
+      "deliverable": "Teen functions + edge case tests."
+    }
+  ],
+  "revision": [
+    "for = known iterable; while = condition-driven unknown iterations.",
+    "range(start, stop, step): stop include nahi hota — off-by-one ka root cause.",
+    "break loop chhorta hai, continue iteration skip karta hai, pass no-op hai.",
+    "for-else/while-else tab chalta hai jab loop bina break complete ho.",
+    "Accumulator (sum/count/max) hamesha loop se pehle initialize karo.",
+    "Nested loops ki inner lookup ko set/dict me convert karke O(n²) → O(n) kar sakte ho.",
+    "Loop ke andar list modify karna silent bug hai; comprehension ya reverse-index loop use karo."
+  ]
+}

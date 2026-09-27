@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CodeLab } from '../components/CodeLab';
+import { JupyterNotebook } from '../components/JupyterNotebook';
 import { DATASETS } from '../data/datasets';
 import { codeSlot } from '../engine/keys';
 
@@ -97,7 +97,12 @@ export default function NumPyPandasLab() {
         <b className="small">INPUT:</b>
         <p className="small muted">{ex.title} — run it, then change one value and predict the new output first.</p>
       </div>
-      <CodeLab storageKey={tab === 'datasets' ? codeSlot.npLab('datasets', `${ds}-${sel}`) : codeSlot.npLab(tab, sel)} starter={ex.code} />
+      <JupyterNotebook
+        storageKey={tab === 'datasets' ? codeSlot.npLab('datasets', `${ds}-${sel}`) : codeSlot.npLab(tab, sel)}
+        starter={ex.code}
+        title={ex.title}
+        sectionId="s17"
+      />
     </div>
   );
 }

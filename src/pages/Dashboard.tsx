@@ -2,14 +2,19 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Star, Flame, Target, Trophy, Code2, BookOpen, Sparkles, Brain, Mic2,
-  Bug, FolderGit2, Flag, Play, ArrowRight, Zap,
+  Bug, FolderGit2, Flag, Play, ArrowRight, Zap, BarChart3, Percent,
 } from 'lucide-react';
 import { useCurriculum } from '../data/curriculum';
 import { useStore } from '../offline/store';
 import { sectionProgress, currentSection, isMastered, nextBestAction } from '../engine/progress';
+import { bankAccuracy, pctText } from '../engine/accuracy';
 import { dailyMission } from '../engine/mission';
 import { levelForXp, levelProgress } from '../engine/keys';
 import { ProgressRing, Bar } from '../components/ui';
+import { AssistantCard } from '../components/AssistantCard';
+import { earnedAchievements } from '../engine/achievements';
+import { useUi, setUi } from '../offline/ui';
+import { StickyNote, BookMarked, Moon, Repeat, Settings as SettingsIcon, Timer } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { TRACK_DEFS } from '../App';
 import type { LocaleKey } from '../i18n/locales';
@@ -21,7 +26,9 @@ const MISSION_ICONS: Record<string, typeof BookOpen> = {
 export default function Dashboard() {
   const { sections } = useCurriculum();
   const state = useStore();
+  const ui = useUi();
   const { t } = useI18n();
+  const ach = useMemo(() => earnedAchievements(state, sections), [state, sections]);
   const cur = currentSection(sections, state);
   const { masterPct } = sectionProgress(cur, state);
   const mission = useMemo(() => dailyMission(state, sections).slice(0, 6), [state, sections]);
@@ -30,6 +37,12 @@ export default function Dashboard() {
   const overall = useMemo(
     () => Math.round(sections.reduce((a, s) => a + sectionProgress(s, state).masterPct, 0) / Math.max(1, sections.length)),
     [sections, state],
+  );
+  /** How right the answers are, in percent — the figure the learner asks for most. */
+  const acc = useMemo(
+    () => bankAccuracy(state),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state.attempts],
   );
 
   const trackStats = useMemo(() => TRACK_DEFS.map((def) => {
@@ -105,6 +118,9 @@ export default function Dashboard() {
           { icon: Star, n: `${level}`, l: 'AI Engineer', c: 'var(--amber)' },
           { icon: Flame, n: `${state.streak.current}`, l: t('dash.levelStreak'), c: 'var(--pink)' },
           { icon: Target, n: `${overall}%`, l: t('dash.overall'), c: 'var(--cyan)' },
+          // The sample size travels with the percentage: "100%" off one graded answer is true but
+          // reads as a whole-bank score, and a bare dash needs to say WHICH of the two it is.
+          { icon: Percent, n: pctText(acc.pct), l: acc.graded ? `answer accuracy · ${acc.correct}/${acc.graded}` : 'answer accuracy · grade nahi kiya', c: 'var(--green)' },
           { icon: Code2, n: `${codingDone}`, l: t('dash.codingTasks'), c: 'var(--violet)' },
           { icon: Trophy, n: `${mastered.length}`, l: t('dash.achievements'), c: 'var(--green)' },
         ].map((s) => (
@@ -124,14 +140,20 @@ export default function Dashboard() {
           </div>
           <p className="muted small">{t('dash.missionSub')}</p>
           {!mission.length && <p className="muted small">All current tasks complete — open the Learning Path for review. ✓</p>}
-          {mission.map((m) => {
+          {mission.map((m, i) => {
             const Icon = MISSION_ICONS[m.kind] ?? BookOpen;
+            // The first open row is the actual next step — highlight it so "kya karun?" never
+            // needs thinking. It re-derives on every completion, so the plan rotates by itself.
+            const isNext = i === 0;
             return (
-              <div key={m.id} className="mission-row">
-                <span className="ic" style={{ color: 'var(--cyan)' }}><Icon size={16} /></span>
-                <span className="t"><b>{m.label}</b></span>
+              <div key={m.id} className={`mission-row${isNext ? ' next' : ''}`}>
+                <span className="ic" style={{ color: isNext ? 'var(--green)' : 'var(--cyan)' }}><Icon size={16} /></span>
+                <span className="t">
+                  {isNext && <span className="chip easy" style={{ marginRight: 6 }}>NEXT</span>}
+                  <b>{m.label}</b>
+                </span>
                 <span className="muted small">~{m.minutes} min</span>
-                <Link className="btn small" to={m.route}>{t('dash.start')}</Link>
+                <Link className={`btn small${isNext ? ' primary' : ''}`} to={m.route}>{t('dash.start')}</Link>
               </div>
             );
           })}
@@ -173,7 +195,7 @@ export default function Dashboard() {
             {trackStats.map(({ def, pct }) => {
               const Icon = def.icon;
               return (
-                <div key={def.id} className="track-card">
+                <div key={def.id} className={`track-card tone-${def.tone}`}>
                   <span className="num">{String(TRACK_DEFS.indexOf(def) + 1).padStart(2, '0')}</span>
                   <div className="head">
                     <span className="ic" style={{ color: def.color }}><Icon size={21} /></span>
@@ -238,6 +260,63 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* TOOLS ROW — every tile is a real destination, no dead links */}
+      <div className="sec-head"><h2>{t('dash.tools')}</h2><span className="line" /></div>
+      <div className="tile-grid">
+        {[
+          { to: '/notes', icon: StickyNote, label: t('nav.notes'), sub: t('dash.toolsNotes'), color: 'var(--amber)' },
+          { to: '/cheats', icon: BookMarked, label: t('nav.cheats'), sub: t('dash.toolsResources'), color: 'var(--violet)' },
+          { to: '/exam', icon: Timer, label: t('nav.exam'), sub: t('dash.toolsExam'), color: 'var(--cyan)', badge: 'NEW' },
+          { to: '/playground', icon: Sparkles, label: 'AI Tutor (Offline)', sub: t('dash.toolsTutor'), color: 'var(--cyan)' },
+          { to: '/progress', icon: BarChart3, label: 'Progress', sub: t('dash.toolsProgress'), color: 'var(--green)' },
+          { to: '/jobprep', icon: Target, label: t('nav.jobprep'), sub: t('dash.toolsGoals'), color: 'var(--pink)' },
+          { to: '/review', icon: Repeat, label: 'Review', sub: t('dash.toolsReview'), color: 'var(--blue)' },
+          { to: '/settings', icon: SettingsIcon, label: t('top.settings'), sub: t('dash.toolsSettings'), color: 'var(--muted)' },
+        ].map((tile) => (
+          <Link key={tile.to} to={tile.to} className="tile" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <span className="ic" style={{ color: tile.color }}><tile.icon size={16} /></span>
+            <span className="t" style={{ flex: 1 }}>
+              <b>{tile.label} {tile.badge && <span className="badge new">{tile.badge}</span>}</b>
+              <span>{tile.sub}</span>
+            </span>
+          </Link>
+        ))}
+        <button className="tile" onClick={() => { setUi({ focus: !ui.focus }); }} aria-pressed={ui.focus}>
+          <span className="ic" style={{ color: 'var(--cyan)' }}><Moon size={16} /></span>
+          <span className="t" style={{ flex: 1, textAlign: 'left' }}>
+            <b>{t('top.focus')}</b>
+            <span>{ui.focus ? 'On — band karne ke liye click' : t('top.focusSub')}</span>
+          </span>
+          <span className="badge" style={{ opacity: ui.focus ? 1 : .55 }}>{ui.focus ? 'ON' : 'OFF'}</span>
+        </button>
+      </div>
+
+      {/* AI ASSISTANT + ACHIEVEMENTS */}
+      <div className="grid2" style={{ gridTemplateColumns: '1.15fr 1fr', alignItems: 'start', marginTop: 14 }}>
+        <AssistantCard />
+        <div className="card">
+          <div className="row spread">
+            <h3 className="row" style={{ gap: 8, margin: 0 }}><Trophy size={16} color="var(--amber)" /> {t('dash.achievementsTitle')}</h3>
+            <span className="chip">{ach.filter((a) => a.earned).length} / {ach.length}</span>
+          </div>
+          <p className="muted small">Har badge tumhari real progress se banta hai — koi pre-seeded achievement nahi.</p>
+          <div className="ach-grid">
+            {ach.map((a) => (
+              <div key={a.id} className={`ach ${a.earned ? 'earned pop-in' : ''}`} title={a.hint}>
+                <span className="em" style={{ filter: a.earned ? 'none' : 'grayscale(1)', opacity: a.earned ? 1 : .45 }}>{a.icon}</span>
+                <b>{a.label}</b>
+                {a.earned
+                  ? <span style={{ color: 'var(--amber)' }}>✓ Unlocked</span>
+                  : <span>{a.got} / {a.need} — {a.hint.toLowerCase()}</span>}
+                {!a.earned && <div className="bar"><div style={{ width: `${(a.got / a.need) * 100}%` }} /></div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <p className="small muted" style={{ textAlign: 'center', marginTop: 18 }}>{t('dash.quote')} 🚀</p>
 
       {/* CURRENT GOAL BAR */}
       <div className="goalbar">
