@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AI ENGINEER MASTER LAB
 
 > Learn → Code → Practice → Build → Master
@@ -354,3 +355,6 @@ The stage rail and the hero stats read their numbers from `manifest.json` (`byTy
 and `miniProject`), never from a hard-coded list, so the count on a tile always matches the
 questions behind it. A stage outside a topic's mastery gates still shows its count — that case
 is exactly where a hidden count reads as "no content".
+=======
+# BroCode
+>>>>>>> bde52c44e638218a044eed23372061f6da886140
