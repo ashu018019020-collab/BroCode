@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * learn.cjs — rebuild `learn.concepts` (code / output / body / tip) in
- * public/curriculum/sections.json from a LAYOUT-preserving PDF extraction.
+ * public/generated/curriculum/sections.json from a LAYOUT-preserving PDF extraction.
  *
  * Root cause it fixes: tools/extract.mjs runs plain `pdftotext` (no -layout),
  * which linearises the PDF's code boxes and mashes statements, comments and
@@ -21,7 +21,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
-const SECTIONS_JSON = path.join(ROOT, 'public', 'curriculum', 'sections.json');
+const SECTIONS_JSON = path.join(ROOT, 'public', 'generated', 'curriculum', 'sections.json');
 const PDF = path.join(ROOT, 'public', 'pdf', 'guide.pdf');
 const CACHE = path.join(ROOT, '.freebuff', 'layout.txt');
 

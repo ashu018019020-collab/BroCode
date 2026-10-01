@@ -1,9 +1,9 @@
 /**
  * Flow tests — the gated course model and the "what happens after I finish this?" ladder.
  *
- * These run against the app's REAL engines (`src/engine/progress.ts`, `src/engine/advance.ts`)
+ * These run against the app's REAL engines (`src/core/learning/progress.ts`, `src/core/learning/advance.ts`)
  * loaded through `_ts-resolve.mjs`, and against the REAL curriculum in
- * `public/curriculum/sections.json`. Nothing here is a copy of the logic: a copy would keep
+ * `public/generated/curriculum/sections.json`. Nothing here is a copy of the logic: a copy would keep
  * passing while the app broke, which is exactly how three bugs survived until now —
  *
  *   · debug tasks were counted in the Coding Lab's denominator, so the Coding score could never
@@ -29,12 +29,12 @@ const load = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 // The app resolves `./progress` to `progress.ts` (bundler resolution); Node needs a nudge.
 register('./_ts-resolve.mjs', import.meta.url);
 
-const progress = await load('src/engine/progress.ts');
-const advance = await load('src/engine/advance.ts');
+const progress = await load('src/core/learning/progress.ts');
+const advance = await load('src/core/learning/advance.ts');
 const { STAGES, STAGE_PASS, codingTasks, debugTasks, stageApplies, stagePassed, sectionProgress, missingForMastery, isMastered } = progress;
 const { planNextStep, nextItemIndex, nextOpenStage, openItems, stageTileState } = advance;
 
-const sections = JSON.parse(read('public/curriculum/sections.json'));
+const sections = JSON.parse(read('public/generated/curriculum/sections.json'));
 const all = Array.isArray(sections) ? sections : sections.sections;
 const BY_ID = (id) => all.find((s) => s.id === id);
 
@@ -82,7 +82,7 @@ test('flow: the Coding Lab list is the only coding list (debug tasks have their 
     assert.ok(!coding.some((c) => c.difficulty === 'debug'), `${sec.id}: a debug task leaked into the coding list`);
   }
   // The lesson must not roll its own filter again — that is what made the keys drift.
-  const lesson = read('src/pages/Lesson.tsx');
+  const lesson = read('src/features/learning/Lesson.tsx');
   assert.ok(!/sec\.coding\.filter\(/.test(lesson), 'Lesson.tsx filters sec.coding inline; use codingTasks()/debugTasks()');
 });
 
@@ -230,7 +230,7 @@ test('flow: the lesson watches every stage a learner can finish (none can silent
   // Regression found in the browser: `interview` was missing from the advance watcher, so grading
   // your last answer did nothing; and defense/checkpoint advanced on the mere EXISTENCE of an
   // attempt, so a defense scored 40% still offered to move you on.
-  const lesson = read('src/pages/Lesson.tsx');
+  const lesson = read('src/features/learning/Lesson.tsx');
   const block = lesson.slice(lesson.indexOf('const scoredStage'), lesson.indexOf('const focusDone'));
   assert.ok(block.length > 0, 'Lesson.tsx must define focusKey before focusDone');
   for (const stage of ['interview', 'defense', 'checkpoint', 'coding', 'logic', 'learn', 'debug', 'mini', 'project']) {
@@ -328,7 +328,7 @@ test('flow: the in-stage selection is re-derived when the topic or the link chan
   // Seeded only once, the index is a position inside the PREVIOUS section's lists — so jumping to
   // the next topic dropped the learner halfway down a list they had never opened, or past the end
   // of a shorter one, and a fresh ?task= link on the page they were already on did nothing at all.
-  const lesson = read('src/pages/Lesson.tsx');
+  const lesson = read('src/features/learning/Lesson.tsx');
   assert.match(
     lesson,
     /useEffect\(\(\) => \{ setSel\(seed\(\)\); \}, \[sec\.id, taskParam, cardParam\]\)/,
@@ -350,4 +350,26 @@ test('flow: only stages with a real per-item gate offer "the next item"', () => 
     const items = advance.stageItems(sec, stage);
     return !!items && (items.count > 0 ? typeof items.name(0) === 'string' : true);
   }
+});
+
+/* --------------- the dashboard counts the tasks the Coding Lab actually shows --------------- */
+
+test('coding tally: the dashboard counts the Lab list, index for index', () => {
+  // `codingTasks` drops the debug tasks into their own stage, so the Lab list is shorter than the JSON
+  // one and its indices mean something else: for a section whose JSON is [easy, debug, medium] the Lab
+  // has two tasks and `st:<sid>:coding1` is the MEDIUM one. The dashboard counted `s.coding`, so the 18
+  // debug tasks sat inside its denominator (245 against the Lab's 227) and index i was compared against
+  // the wrong task's record — the same defect `sectionProgress` had already been fixed for, surviving in
+  // a second copy. Both halves of the fraction now come from the one owner, measured against the Lab.
+  const shown = all.reduce((a, s) => a + codingTasks(s).length, 0);
+  const declared = all.reduce((a, s) => a + s.coding.length, 0);
+  assert.equal(progress.codingTasksDone(all, blank()).total, shown, 'the denominator is what the Lab lists');
+  assert.ok(declared > shown, `and the JSON carries ${declared - shown} debug task(s) the Lab does not list`);
+
+  const section = { id: 's01', coding: [{ difficulty: 'easy' }, { difficulty: 'debug' }, { difficulty: 'medium' }] };
+  const tally = (attempts) => progress.codingTasksDone([section], { ...blank(), attempts });
+  assert.deepEqual(tally({ 'st:s01:coding1': { done: true } }), { done: 1, total: 2 });
+  assert.deepEqual(tally({ 'st:s01:coding0': { done: true }, 'st:s01:coding1': { done: true } }), { done: 2, total: 2 });
+  assert.deepEqual(tally({ 'st:s01:coding2': { done: true } }), { done: 0, total: 2 }, 'the Lab has no index 2 here');
+  assert.deepEqual(tally({ 'st:s01:debugdone': { done: true } }), { done: 0, total: 2 }, 'a debug fix is not a coding task');
 });

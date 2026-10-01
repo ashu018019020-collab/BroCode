@@ -24,14 +24,14 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const load = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 
 // Both engine modules are pure (type-only imports), which is what makes them loadable here.
-const pb = await load('src/engine/playbook.ts');
-const paths = await load('src/engine/paths.ts');
-const keys = await load('src/engine/keys.ts');
-const exam = await load('src/engine/exam.ts');
+const pb = await load('src/core/assessment/playbook.ts');
+const paths = await load('src/core/learning/paths.ts');
+const keys = await load('src/core/platform/keys.ts');
+const exam = await load('src/core/assessment/exam.ts');
 
-const manifest = JSON.parse(read('public/playbook/manifest.json'));
-const itemsView = JSON.parse(read('public/playbook/items.json'));
-const banks = JSON.parse(read('public/questions/manifest.json'));
+const manifest = JSON.parse(read('public/generated/playbook/manifest.json'));
+const itemsView = JSON.parse(read('public/generated/playbook/items.json'));
+const banks = JSON.parse(read('public/generated/questions/manifest.json'));
 
 /* ------------------------------- fixtures ------------------------------- */
 
@@ -157,7 +157,7 @@ test('playbook: every chapter points at a section that really exists in the bank
 });
 
 test('playbook: every imported item lands in exactly one of the 8 tracks', () => {
-  // Mirrors TRACK_DEFS' section ranges (src/App.tsx) — the same ranges the page passes in.
+  // Mirrors TRACK_DEFS' section ranges (src/app/App.tsx) — the same ranges the page passes in.
   const tracks = [
     { id: 'python', from: 1, to: 16 }, { id: 'data', from: 17, to: 18 }, { id: 'sql', from: 19, to: 19 },
     { id: 'ml', from: 20, to: 21 }, { id: 'genai', from: 22, to: 22 }, { id: 'agentic', from: 23, to: 23 },
@@ -192,12 +192,12 @@ test('paths: each card counts a key family that engine/keys.ts actually builds',
 });
 
 test('paths: the constants a card prints are pinned to their real source', () => {
-  const final = read('src/pages/FinalAssessment.tsx');
+  const final = read('src/features/interview/FinalAssessment.tsx');
   const partsBlock = final.slice(final.indexOf('const parts: Part[] = ['), final.indexOf('];', final.indexOf('const parts: Part[] = [')));
   const partIds = [...partsBlock.matchAll(/id: '([^']+)'/g)].map((m) => m[1]);
   assert.equal(partIds.length, paths.FINAL_PARTS, 'the final paper gained or lost a part');
 
-  const jobPrep = read('src/pages/JobPrep.tsx');
+  const jobPrep = read('src/features/career/JobPrep.tsx');
   assert.equal([...jobPrep.matchAll(/id: '[^']+'/g)].length, paths.JOB_PREP_ITEMS,
     'the job-prep checklist gained or lost an item');
 
@@ -299,7 +299,7 @@ test('paths: the Playbook card divides by the MERGED item count, so 100% stays r
 /* ------------------------- no hidden path rule -------------------------- */
 
 test('paths: every route in App.tsx is either a registered path or deliberately not one', () => {
-  const appSrc = read('src/App.tsx');
+  const appSrc = read('src/app/App.tsx');
   const routes = [...appSrc.matchAll(/<Route\s+path="([^"]+)"/g)].map((m) => m[1]);
   assert.ok(routes.length >= 25, `expected the full route table, saw ${routes.length}`);
 
@@ -311,7 +311,7 @@ test('paths: every route in App.tsx is either a registered path or deliberately 
 });
 
 test('paths: the registry points only at routes that exist, with no duplicates', () => {
-  const appSrc = read('src/App.tsx');
+  const appSrc = read('src/app/App.tsx');
   const routes = new Set([...appSrc.matchAll(/<Route\s+path="([^"]+)"/g)].map((m) => m[1]));
   const seen = new Set();
   for (const def of paths.EXTRA_PATHS) {
@@ -335,21 +335,32 @@ test('paths: the cards grid does not collide with the page layout class', () => 
   const css = read('src/styles.css');
   assert.match(css, /^\.path-grid \{ display: grid; grid-template-columns: 1fr 300px;/m,
     'the Learning Path must keep the two-column frame it had before this change');
-  assert.match(css, /^\.more-grid \{ display: grid;/m, 'the cards grid needs its own class');
-  const grid = read('src/components/PathGrid.tsx');
-  assert.match(grid, /<div className="more-grid">/);
+  assert.match(css, /^\.path-extra \{ margin-top: 16px; \}/m, 'the extra-path spine needs its own class');
+  const grid = read('src/components/learning/PathGrid.tsx');
+  assert.match(grid, /<div className="path-extra">/);
+  // The steps must be the shared spine, not a second grid: `.rmap-step` is what lines the numbering
+  // up with the eight track steps above them.
+  assert.match(grid, /className={`rmap-step tone-\$\{TONE\[group\]}`}/);
+  assert.ok(!/more-grid/.test(grid), 'the wrapped card grid is back — the extra paths are a line now');
   assert.ok(!/className="path-grid"/.test(grid), 'PathGrid must never re-declare the page frame');
 });
 
 /* --------------------- the page actually mounts them -------------------- */
 
 test('paths: the Learning Path mounts the V15 layer and the extra path grid', () => {
-  const page = read('src/pages/LearningPath.tsx');
+  const page = read('src/features/learning/LearningPath.tsx');
   assert.match(page, /<PlaybookLayer coverage=\{pb\} \/>/);
   assert.match(page, /<PathGrid \/>/);
-  // The layout contract that came before this change must survive it.
-  assert.match(page, /<NotebookShelf defaultOpen \/>/);
+  // The layout contract that came before this change must survive it: the shelf is still mounted
+  // OPEN on the path — it just draws its library as boxes now (`boxes`).
+  assert.match(page, /<NotebookShelf defaultOpen\b/);
   // …and the band must sit above the notebook shelf, not after the goal bar.
   assert.ok(page.indexOf('<PlaybookLayer') < page.indexOf('<NotebookShelf defaultOpen'));
+  // The V15 per-track grid is gone: one box per track, with the V15 share inside it.
+  assert.ok(!/pbCoverage/.test(page), 'the second copy of the track grid is back in the roadmap');
+  // …and the extra paths continue that line rather than interrupting it, so they come before the
+  // band: the eight track steps end at 08 and `PathGrid` picks the numbering up at 09.
+  assert.ok(page.indexOf('<PathGrid />') < page.indexOf('<PlaybookLayer'),
+    'the extra paths must continue the track spine, not start a second section after the V15 band');
   assert.ok(page.indexOf('<PathGrid />') < page.indexOf('<NotebookShelf defaultOpen'));
 });

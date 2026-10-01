@@ -18,9 +18,9 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
-const QUESTIONS_DIR = path.join(ROOT, 'public', 'questions');
+const QUESTIONS_DIR = path.join(ROOT, 'public', 'generated', 'questions');
 const TOPICS_DIR = path.join(ROOT, 'content', 'curriculum', 'topics');
-const SECTIONS_JSON = path.join(ROOT, 'public', 'curriculum', 'sections.json');
+const SECTIONS_JSON = path.join(ROOT, 'public', 'generated', 'curriculum', 'sections.json');
 
 const { TYPES, validateBank } = require('../lib/validate.cjs');
 

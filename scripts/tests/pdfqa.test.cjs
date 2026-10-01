@@ -28,7 +28,7 @@ const { norm, TYPES } = require('../lib/validate.cjs');
 const { mergeIntoBank } = require('../lib/banks.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');
-const QUESTIONS_DIR = path.join(ROOT, 'public', 'questions');
+const QUESTIONS_DIR = path.join(ROOT, 'public', 'generated', 'questions');
 
 /* ------------------------------ band parsing ------------------------------ */
 

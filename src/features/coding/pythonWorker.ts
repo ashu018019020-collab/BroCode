@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { DATASETS, datasetAsCSV } from '../../data/datasets';
+import { DATASETS, datasetAsCSV } from '../../core/data/datasets';
 /**
  * Offline Python worker. The main thread passes the absolute URL of
  * ./pyodide/pyodide.mjs (computed against document.baseURI), so this works in

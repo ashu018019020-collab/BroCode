@@ -72,7 +72,7 @@ function cmdSeed() {
 function cmdManifest() {
   const m = writeManifest();
   if (!m.sections.length) { warn('no banks yet — run: npm run questions:seed'); return; }
-  ok(`manifest: ${m.sections.length} banks · ${m.published} published / ${m.total} questions → public/questions/manifest.json`);
+  ok(`manifest: ${m.sections.length} banks · ${m.published} published / ${m.total} questions → public/generated/questions/manifest.json`);
 }
 
 function cmdValidate() {
@@ -760,7 +760,7 @@ function cmdPlaybook() {
     ok('nothing to do — every playbook item already lives in its section');
     // The derived view is still (re)written: it is a view of the BANKS, so re-running this command
     // must be able to repair it even when the merge itself has nothing left to add.
-    if (WRITE) ok(`playbook view → public/playbook/items.json (${writePlaybookView(version)} item(s), derived from the banks)`);
+    if (WRITE) ok(`playbook view → public/generated/playbook/items.json (${writePlaybookView(version)} item(s), derived from the banks)`);
     return;
   }
 
@@ -782,7 +782,7 @@ function cmdPlaybook() {
   const m = writeManifest();
   ok(`imported ${totals.added} playbook item(s) into ${rows.length} bank(s) · manifest: ${m.total} total / ${m.published} published`);
   const n = writePlaybookView(version);
-  ok(`playbook view → public/playbook/items.json (${n} item(s), derived from the banks)`);
+  ok(`playbook view → public/generated/playbook/items.json (${n} item(s), derived from the banks)`);
 }
 
 /**
@@ -814,7 +814,7 @@ function writePlaybookView(version) {
       });
     }
   }
-  const file = path.join('public', 'playbook', 'items.json');
+  const file = path.join('public', 'generated', 'playbook', 'items.json');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify({ generatedAt: new Date().toISOString(), sourceVersion: version, count: items.length, items }, null, 1));
   return items.length;
@@ -836,6 +836,6 @@ if (commands[cmd]) {
   commands[cmd]();
   if (WRITES_BANKS.has(cmd) && process.argv.includes('--write') && !process.exitCode) {
     const index = writeSearchIndex();
-    ok(`search index → public/search/index.json (${index.counts.items} questions searchable)`);
+    ok(`search index → public/generated/search/index.json (${index.counts.items} questions searchable)`);
   }
 } else {  console.error('usage: node scripts/questions.cjs seed|validate|report|coverage|duplicates|expand|expand-track|quota|import|export|manifest|absorb|playbook [--options]'); process.exit(2); }

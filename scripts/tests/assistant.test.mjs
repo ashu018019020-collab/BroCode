@@ -30,9 +30,9 @@ const load = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 
 register('./_ts-resolve.mjs', import.meta.url);
 
-const { askLocal, quickFix, quickHint } = await load('src/engine/assistant.ts');
+const { askLocal, quickFix, quickHint } = await load('src/core/ai/assistant.ts');
 
-const raw = JSON.parse(read('public/curriculum/sections.json'));
+const raw = JSON.parse(read('public/generated/curriculum/sections.json'));
 const all = Array.isArray(raw) ? raw : raw.sections;
 
 /** A fresh learner: nothing attempted, nothing broken. */
@@ -198,7 +198,7 @@ test('the Dashboard instance is unchanged — no context means the old behaviour
 /* ----------------------- it is actually mounted everywhere ------------------ */
 
 test('the assistant renders under the notebook engine, so every notebook surface gets it', () => {
-  const nb = read('src/components/NotebookCells.tsx');
+  const nb = read('src/components/code/NotebookCells.tsx');
   // Mounted in the ONE shared engine that all notebook surfaces render through
   // (lesson stages, NotebookShelf, NumPy+Pandas Lab, Final Assessment, Notebook Lab).
   assert.match(nb, /<AssistantCard embedded context=\{assistantContext\}/);
@@ -209,7 +209,7 @@ test('the assistant renders under the notebook engine, so every notebook surface
 });
 
 test('all ten lesson stages show the assistant — including the five with no notebook', () => {
-  const lesson = read('src/pages/Lesson.tsx');
+  const lesson = read('src/features/learning/Lesson.tsx');
   for (const stage of ['Interview', 'Logic', 'Practice', 'Defense', 'Checkpoint']) {
     assert.match(lesson, new RegExp(`<AssistantCard context=\\{\\{ sectionId: sec\\.id, where: \`\\$\\{sec\\.id\\} · ${stage}\``), `stage ${stage} has no assistant`);
   }
@@ -221,7 +221,7 @@ test('all ten lesson stages show the assistant — including the five with no no
 });
 
 test('JupyterNotebook forwards the section and a human label down to the engine', () => {
-  const jn = read('src/components/JupyterNotebook.tsx');
+  const jn = read('src/components/code/JupyterNotebook.tsx');
   assert.match(jn, /sectionId=\{sectionId\}/);
   assert.match(jn, /const where = \[sectionId, asLabel\(title\)\]\.filter\(Boolean\)\.join\(' · '\)/);
   assert.match(jn, /where=\{where\}/);
@@ -234,7 +234,7 @@ test('the context label is clipped — a strip, not a paragraph', () => {
   // The idea/practice labs pass whole prompts as their title. Unclipped, the strip rendered
   // `📍 s02 · BMI calculator likho jo weight (kg) aur height (m) se BMI nikaale…` — a sentence
   // inside a one-line affordance. Live, that loop produced 12 of them on the topic workspace.
-  const jn = read('src/components/JupyterNotebook.tsx');
+  const jn = read('src/components/code/JupyterNotebook.tsx');
   assert.match(jn, /const asLabel = \(t\?: string\) => \(t && t\.length > \d+ \?/);
   assert.match(jn, /const where = \[sectionId, asLabel\(title\)\]\.filter\(Boolean\)/);
   assert.doesNotMatch(jn, /where=\{\[sectionId, title\]/, 'an unclipped title still feeds the strip');
@@ -285,10 +285,10 @@ test('with a traceback on screen the hint names the real line, then the fix', ()
 test('the hint reads no counter that nothing writes', () => {
   // The old `st:<sid>:hint`.tries read had no writer anywhere in src/, so the ladder was stuck on
   // rung one forever. The surface owns that count now, so the engine must stay a pure read.
-  const ast = read('src/engine/assistant.ts');
+  const ast = read('src/core/ai/assistant.ts');
   assert.doesNotMatch(ast, /:hint`\]/, 'the unwritten tries key is back in the engine');
   assert.match(ast, /quickHint\(state, sections, context, asked\)/, 'the typed-hint route drops the context');
-  const card = read('src/components/AssistantCard.tsx');
+  const card = read('src/components/shared/AssistantCard.tsx');
   assert.match(card, /quickHint\(state, sections, context, askedHints\)/, 'the card drops the surface or the count');
   assert.match(card, /askLocal\(question, sections, state, context, askedHints\)/, 'typed questions lose the rung');
 });

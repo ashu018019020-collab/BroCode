@@ -11,13 +11,13 @@
  * This script writes a single compact index of every bank question, which the palette fetches once,
  * lazily, and searches locally:
  *
- *   public/search/index.json
+ *   public/generated/search/index.json
  *   { v, counts, sections: [...], items: [[id, sectionId, type, info, text], ...] }
  *
  * Design decisions that keep it honest and small:
  *
  *  · DERIVED ONLY. Built from the banks on disk (the same files the learner practises) and from
- *    `public/playbook/items.json` for chapter provenance — never from an expansion file or the PDF.
+ *    `public/generated/playbook/items.json` for chapter provenance — never from an expansion file or the PDF.
  *    A question added to a bank appears here; a question removed disappears. `npm test` re-derives
  *    the counts from the banks and fails if they disagree.
  *  · TUPLE ROWS, NOT OBJECTS. `["s19:theory:20","s19","theory","medium","CTE kya hai…"]` is ~155
@@ -31,17 +31,17 @@
  *
  * Usage:
  *   node scripts/searchindex.cjs            # report only (dry run)
- *   node scripts/searchindex.cjs --write    # write public/search/index.json
+ *   node scripts/searchindex.cjs --write    # write public/generated/search/index.json
  *   npm run search:index
  */
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const QUESTIONS_DIR = path.join(ROOT, 'public', 'questions');
-const SECTIONS_JSON = path.join(ROOT, 'public', 'curriculum', 'sections.json');
-const PLAYBOOK_VIEW = path.join(ROOT, 'public', 'playbook', 'items.json');
-const OUT_DIR = path.join(ROOT, 'public', 'search');
+const QUESTIONS_DIR = path.join(ROOT, 'public', 'generated', 'questions');
+const SECTIONS_JSON = path.join(ROOT, 'public', 'generated', 'curriculum', 'sections.json');
+const PLAYBOOK_VIEW = path.join(ROOT, 'public', 'generated', 'playbook', 'items.json');
+const OUT_DIR = path.join(ROOT, 'public', 'generated', 'search');
 const OUT_PATH = path.join(OUT_DIR, 'index.json');
 
 /** How much of a question the index keeps. Enough for a result row, not the whole essay. */
@@ -107,7 +107,7 @@ function buildSearchIndex() {
     // the palette prints ("Playbook V15 · ch.18") instead of a bare number. The manifest names the
     // number `no` (`chapter` is the key in items.json) — reading the wrong one produced a table
     // keyed "undefined" whose lookups always missed, i.e. silent empty titles.
-    chapters: (readJson(path.join(ROOT, 'public', 'playbook', 'manifest.json'), { chapters: [] }).chapters ?? [])
+    chapters: (readJson(path.join(ROOT, 'public', 'generated', 'playbook', 'manifest.json'), { chapters: [] }).chapters ?? [])
       .map((c) => [String(c.no ?? ''), c.title ?? '', c.sectionId ?? ''])
       .filter(([n, title]) => /^\d+$/.test(n) && String(title).trim().length > 0),
     playbookTotal: (playbook.items ?? []).length,
@@ -127,7 +127,7 @@ function writeSearchIndex() {
 function report(index, written) {
   const bytes = Buffer.byteLength(JSON.stringify(index));
   const kb = (bytes / 1024).toFixed(0);
-  console.log(`\n${written ? 'wrote' : 'dry run —'} public/search/index.json`);
+  console.log(`\n${written ? 'wrote' : 'dry run —'} public/generated/search/index.json`);
   console.log(`  ${index.counts.items} questions · ${index.counts.sections} sections · ${index.counts.playbook} Playbook V15 items · ${index.counts.chapters ?? index.chapters.length} chapters`);
   if (index.counts.skipped) console.log(`  skipped ${index.counts.skipped} unpublished/too-short record(s)`);
   console.log(`  index size: ${kb} KB (${(bytes / Math.max(1, index.counts.items)).toFixed(0)} bytes per question)${written ? '' : ' — run with --write to save'}`);

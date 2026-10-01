@@ -8,7 +8,7 @@
  *   · every authored pack in content/curriculum/packs must pass the shape check — a pack that
  *     is missing coding practice, debug tasks, challenges, projects or the revision checklist
  *     cannot ship;
- *   · what is applied in public/curriculum/sections.json must match its source pack, so the
+ *   · what is applied in public/generated/curriculum/sections.json must match its source pack, so the
  *     file the UI renders is never a stale or hand-edited copy;
  *   · an applied topic must satisfy all 16 parts, and one "broken" snippet may never be
  *     identical to its "fix" (that would teach nothing);
@@ -29,7 +29,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
 const PACKS_DIR = path.join(ROOT, 'content', 'curriculum', 'packs');
-const SECTIONS_JSON = path.join(ROOT, 'public', 'curriculum', 'sections.json');
+const SECTIONS_JSON = path.join(ROOT, 'public', 'generated', 'curriculum', 'sections.json');
 
 const { validatePack, partCoverage, PARTS, PRACTICE_LEVELS, CHALLENGE_KINDS, PROJECT_LEVELS } = require('../lib/packs.cjs');
 

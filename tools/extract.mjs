@@ -2,7 +2,7 @@
 /**
  * PDF → curriculum extraction pipeline (final).
  * Requires: pdftotext (xpdf). Run: node tools/extract.mjs "<path-to-pdf>"
- * Output: public/curriculum/{sections,meta}.json
+ * Output: public/generated/curriculum/{sections,meta}.json
  *
  * Attribution strategy (the PDF has 3 layout passes with overlapping/renumbered content):
  *  1. Every spread page is classified by explicit markers (PROJECT NN/SECTION, PROJECT LAB NN,
@@ -19,7 +19,7 @@ import path from 'node:path';
 
 const PDF = process.argv[2];
 if (!PDF) { console.error('usage: node tools/extract.mjs <pdf>'); process.exit(1); }
-const OUT = path.resolve('public/curriculum');
+const OUT = path.resolve('public/generated/curriculum');
 fs.mkdirSync(OUT, { recursive: true });
 
 const raw = execFileSync('pdftotext', [PDF, '-'], { maxBuffer: 256 * 1024 * 1024 }).toString();

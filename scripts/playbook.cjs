@@ -39,7 +39,7 @@ const { loadSections } = require('./lib/banks.cjs');
 const ROOT = path.join(__dirname, '..');
 const CACHE = path.join(ROOT, '.freebuff', 'playbook-layout.txt');
 const OUT = path.join(ROOT, 'content', 'questions', 'expansion', 'playbook-v15.json');
-const INDEX = path.join(ROOT, 'public', 'playbook', 'manifest.json');
+const INDEX = path.join(ROOT, 'public', 'generated', 'playbook', 'manifest.json');
 
 const arg = (name) => { const a = process.argv.find((x) => x.startsWith(`--${name}=`)); return a ? a.split('=').slice(1).join('=') : undefined; };
 const WRITE = process.argv.includes('--write');
@@ -429,7 +429,7 @@ function main() {
     seen.set(key, true);
     records.push({
       // The `mini-project` tag is what routes a `coding` item to the MINI PROJECT stage rather than
-      // the Coding Lab (see STAGE_QNA in src/data/questions.ts) — the item type alone cannot say it.
+      // the Coding Lab (see STAGE_QNA in src/core/data/questions.ts) — the item type alone cannot say it.
       sectionId: 's29',
       type: 'coding',
       difficulty: 'hard',
@@ -570,7 +570,7 @@ function main() {
   fs.writeFileSync(OUT, JSON.stringify({ source: index.source, generatedAt: index.generatedAt, items: records }, null, 1));
   fs.writeFileSync(INDEX, JSON.stringify(index, null, 1));
   ok(`wrote ${records.length} item(s) → content/questions/expansion/playbook-v15.json`);
-  ok(`chapter index → public/playbook/manifest.json (${index.chapters.length} chapters, ${index.chapters.filter((c) => c.items).length} of them with imported items)`);
+  ok(`chapter index → public/generated/playbook/manifest.json (${index.chapters.length} chapters, ${index.chapters.filter((c) => c.items).length} of them with imported items)`);
 }
 
 main();

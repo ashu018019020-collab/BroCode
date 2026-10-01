@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * pdf-questions.cjs — import the V10 "Senior Visual Answer Edition" Q&A PDF into the
- * per-section question banks (public/questions/sNN.json).
+ * per-section question banks (public/generated/questions/sNN.json).
  *
  *   node scripts/pdf-questions.cjs --pdf="<path-to.pdf>"          # dry run: report only
  *   node scripts/pdf-questions.cjs --pdf="<path>" --write         # merge + rewrite manifest
@@ -103,7 +103,7 @@ function main() {
   /* ---------------------------- size estimate --------------------------- */
   const payload = [...records.values()].flat();
   const bytes = Buffer.byteLength(JSON.stringify(payload));
-  const before = sections.reduce((n, s) => n + (bankExists(s.id) ? fs.statSync(path.join(ROOT, 'public', 'questions', `${s.id}.json`)).size : 0), 0);
+  const before = sections.reduce((n, s) => n + (bankExists(s.id) ? fs.statSync(path.join(ROOT, 'public', 'generated', 'questions', `${s.id}.json`)).size : 0), 0);
   console.log(`\n  curated       : ${num(payload.length, 6)} records across ${records.size} section(s) · ${mb(bytes)} of JSON ${dim(`(pack on disk now: ${mb(before)})`)}`);
 
   /* --------------------------- per-section table ------------------------- */
@@ -182,7 +182,7 @@ function main() {
   }
 
   if (!WRITE) {
-    console.log(dim('\n  dry run — re-run with --write to merge into public/questions/*.json'));
+    console.log(dim('\n  dry run — re-run with --write to merge into public/generated/questions/*.json'));
     return;
   }
 

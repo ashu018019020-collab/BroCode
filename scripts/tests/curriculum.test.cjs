@@ -14,7 +14,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..', '..');
-const SECTIONS = JSON.parse(fs.readFileSync(path.join(ROOT, 'public', 'curriculum', 'sections.json'), 'utf8'));
+const SECTIONS = JSON.parse(fs.readFileSync(path.join(ROOT, 'public', 'generated', 'curriculum', 'sections.json'), 'utf8'));
 const OVERRIDES = JSON.parse(fs.readFileSync(path.join(ROOT, 'content', 'curriculum', 'learn-overrides.json'), 'utf8'));
 const STAGE_OVERRIDES = JSON.parse(fs.readFileSync(path.join(ROOT, 'content', 'curriculum', 'stage-overrides.json'), 'utf8'));
 

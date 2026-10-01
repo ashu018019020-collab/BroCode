@@ -19,9 +19,9 @@ try {
 
 section('Project files');
 const must = [
-  'package.json', 'vite.config.ts', 'index.html', 'src/App.tsx', 'src/main.tsx',
-  'src/i18n/locales.ts', 'src/i18n/index.tsx', 'src/pages/Playground.tsx',
-  'src/components/MonacoIDE.tsx', 'src/engine/traceback.ts', 'src/data/packages.ts',
+  'package.json', 'vite.config.ts', 'index.html', 'src/app/App.tsx', 'src/app/main.tsx',
+  'src/app/i18n/locales.ts', 'src/app/i18n/index.tsx', 'src/features/labs/Playground.tsx',
+  'src/components/code/MonacoIDE.tsx', 'src/core/platform/traceback.ts', 'src/core/data/packages.ts',
 ];
 for (const f of must) {
   if (fs.existsSync(path.join(__dirname, '..', f))) ok(f);
@@ -33,7 +33,7 @@ const assets = [
   ['public/pyodide/pyodide.mjs', 'Python (Pyodide) runtime'],
   ['public/pyodide/python_stdlib.zip', 'Python stdlib'],
   ['public/sqljs/sql-wasm-browser.wasm', 'SQL engine (SQLite WASM)'],
-  ['public/curriculum/sections.json', 'Curriculum (29 sections)'],
+  ['public/generated/curriculum/sections.json', 'Curriculum (29 sections)'],
   ['public/pdf/guide.pdf', 'PDF reader source'],
 ];
 for (const [f, why] of assets) {
@@ -55,7 +55,7 @@ else ok('no cloud/online dependencies');
 section('Topic workspaces (16-part structure)');
 try {
   const { partCoverage, PARTS } = require('./lib/packs.cjs');
-  const sections = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'curriculum', 'sections.json'), 'utf8'));
+  const sections = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'generated', 'curriculum', 'sections.json'), 'utf8'));
   const complete = sections.filter((s) => s.topic && partCoverage(s).complete);
   const partial = sections.filter((s) => s.topic && !partCoverage(s).complete);
   ok(`${complete.length}/${sections.length} sections carry a complete authored workspace (${PARTS.length} parts)`);

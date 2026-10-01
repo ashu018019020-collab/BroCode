@@ -169,7 +169,7 @@ test('notebooks: the old code editor is gone and every coding surface is a noteb
   assert.deepEqual(importers, [], 'these files still import the deleted code editor');
 
   // Every place a learner writes code in a lesson must render the notebook engine.
-  for (const f of ['pages/Lesson.tsx', 'components/TopicWorkspace.tsx', 'pages/NumPyPandasLab.tsx', 'pages/FinalAssessment.tsx']) {
+  for (const f of ['features/learning/Lesson.tsx', 'components/learning/TopicWorkspace.tsx', 'features/labs/NumPyPandasLab.tsx', 'features/interview/FinalAssessment.tsx']) {
     const src = fs.readFileSync(path.join(UI, f), 'utf8');
     assert.match(src, /JupyterNotebook/, `${f} no longer renders the notebook`);
     assert.ok(!/<CodeLab/.test(src), `${f} still renders the deleted <CodeLab>`);
@@ -179,9 +179,9 @@ test('notebooks: the old code editor is gone and every coding surface is a noteb
 test('notebooks: the library shelf only offers wheels the app really bundles', () => {
   // `NOTEBOOK_LIBS` drives the one-click library cells. If it ever listed a package without a
   // bundled wheel, the learner would click it and hit ModuleNotFoundError in an offline app.
-  const src = fs.readFileSync(path.join(ROOT, 'src', 'data', 'notebooks.ts'), 'utf8');
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'core', 'data', 'notebooks.ts'), 'utf8');
   const ids = [...src.matchAll(/\{\s*id:\s*'([^']+)'/g)].map((m) => m[1]);
-  assert.ok(ids.length > 0, 'src/data/notebooks.ts declares no libraries');
+  assert.ok(ids.length > 0, 'src/core/data/notebooks.ts declares no libraries');
   const wheels = fs.readdirSync(PYODIDE_DIR);
   for (const id of ids) {
     assert.ok(BUNDLED.includes(id), `${id} is offered in the shelf but is not a bundled library`);

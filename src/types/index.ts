@@ -173,7 +173,8 @@ export interface AppNotification {
 }
 export interface AppState {
   version: number;
-  profile: { name: string; goal: string; level: string; dailyMinutes: number; onboarded: boolean };
+  /** `avatar` is a DOWNSCALED data URL (a 128px JPEG, ~6 KB), never the file the learner picked. */
+  profile: { name: string; goal: string; level: string; dailyMinutes: number; onboarded: boolean; avatar?: string };
   xp: number;
   streak: { current: number; last: string };
   attempts: Record<string, Attempt>;
@@ -189,6 +190,13 @@ export interface AppState {
    */
   settings: { reduceMotion: boolean; autoAdvance?: boolean };
   activity: Record<string, number>;
+  /**
+   * Study time per day: 'YYYY-MM-DD' → SECONDS. Sparse on purpose — a day with no entry IS a day
+   * with no study, and writing zeros for every day of the year would bloat a state that is
+   * re-serialised whole on every write. `engine/study.ts` owns every rule about it (the zero-fill,
+   * the streak, the heat grid); this field is storage.
+   */
+  study: Record<string, number>;
   notes: Note[];
   jobPrep: Record<string, boolean>;
   readNotifs: string[];

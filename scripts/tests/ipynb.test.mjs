@@ -7,7 +7,7 @@
  * session full of errors, would teach the wrong lesson in the learner's own Jupyter — and nobody
  * would see it fail here.
  *
- * Runs against the REAL bundled notebooks in `public/notebooks` plus the REAL `src/engine/ipynb.ts`.
+ * Runs against the REAL bundled notebooks in `public/notebooks` plus the REAL `src/core/platform/ipynb.ts`.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -21,7 +21,7 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const load = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 
 register('./_ts-resolve.mjs', import.meta.url);
-const { buildIpynb, ipynbFileName, toLines, outputsFor } = await load('src/engine/ipynb.ts');
+const { buildIpynb, ipynbFileName, toLines, outputsFor } = await load('src/core/platform/ipynb.ts');
 
 const NOTEBOOK_DIR = path.join(ROOT, 'public', 'notebooks');
 const files = fs.readdirSync(NOTEBOOK_DIR).filter((f) => f.endsWith('.ipynb')).sort();

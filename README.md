@@ -10,6 +10,12 @@ extracted from it and transformed into an interactive curriculum — nothing is 
 
 ## What's inside
 
+- **8-pillar learning navigation** — the sidebar *is* the learning journey: Dashboard, Learning,
+  Practice, Labs, Projects, Interview, Career, Progress — then a labelled Tools group (Notes, Cheat
+  Sheets, PDF Reader, Settings). Each pillar is a hub page that indexes the real screens behind it
+  (Question Bank, Playbook V15, Timed Exam, Mock Interviews, Notebook/SQL/AI labs, Resume Labs, Job
+  Prep, …) and every card shows a figure taken from the engine or manifest that owns it — no
+  marketing numbers, ever.
 - **Jupyter notebooks everywhere** — coding practice in every lesson stage (Learn, Coding
   Lab, Debug, Mini Project, Project Lab, Final Assessment) and in the authored 16-part topic
   workspace happens in a notebook panel, not a single code box: cells share one kernel session
@@ -54,6 +60,23 @@ npm run preview    # http://localhost:4173
 
 For a plain static host (nginx/IIS/USB stick), serve the `dist/` folder after `npm run build`.
 
+## Project structure
+
+| Path | What it is |
+|---|---|
+| `src/app/` | The shell: `App.tsx` (routes + the sidebar `NAV`, which is also the label/icon source for every card), `main.tsx`, `i18n/` |
+| `src/core/learning/` | Pure logic: mastery gates, the roadmap, spaced review, coverage counts, the study log, the Learning Path card registry |
+| `src/core/assessment/` | Pure logic: keyword rubrics & output checks, exam papers, interview scoring, accuracy, the Learning Path card registry |
+| `src/core/ai/` | The offline "AI": tutor hints, daily mission queue, mistake coach, offline explanations, RAG/project helpers |
+| `src/core/platform/` | `keys.ts` (the only owner of persisted-key shapes), command-palette search, notifications, achievements, count-up maths |
+| `src/core/storage/` | `store.ts` — the single owner of `AppState` and the only module that touches `localStorage` — plus UI/exam prefs |
+| `src/core/data/` | Data access: loaders/adapters for curriculum, questions, playbook, notebooks, tracks — fetches `public/generated/`. No JSON lives under `src/`; the authored source is `content/` |
+| `src/features/` | The screens, grouped by pillar: `dashboard`, `learning`, `practice`, `labs`, `projects`, `interview`, `career`, `progress`, `tools` |
+| `src/components/` | Shared UI, the editors (`MonacoIDE`, `JupyterNotebook`) and the card grids (`PathGrid`, `HubGrid`) |
+| `content/` | **Authored source**: curriculum sections, guides/packs/topics, question banks, playbook source, notebooks |
+| `public/generated/` | **Build output** published by the scripts — never hand-edited |
+| `scripts/`, `tools/` | The generators (dry-run by default, `--write` publishes) and the test suite that holds them to it |
+
 ## Offline mode
 
 Everything executes locally — no CDN, no fonts, no external APIs:
@@ -63,10 +86,10 @@ Everything executes locally — no CDN, no fonts, no external APIs:
 | Python 3.12 + numpy + pandas | `public/pyodide` (Pyodide WASM + filtered wheel set, ~48 MB) |
 | SQL (SQLite) | sql.js WASM in `public/sqljs` |
 | PDF reader | pdf.js + worker in `public/pdf`, source PDF in `public/pdf/` |
-| Curriculum + search | `public/curriculum/*.json` (extracted from the PDF) |
+| Curriculum + search | `public/generated/curriculum/*.json` (extracted from the PDF) |
 | Datasets | students, sales, customers, employees, expenses, chat_logs (in-app) |
 
-A service worker (`public/sw.js`, cache `aiml-v2`) caches the app shell and assets at
+A service worker (`public/sw.js`, cache `aiml-v6`) caches the app shell and assets at
 runtime. After the first full load, disconnect the internet and reload — the app works
 completely offline. Install as a PWA from the browser menu for a standalone window.
 
@@ -99,20 +122,21 @@ Every line reports ✓ ready, ⚠ warning, or ✕ missing.
 
 ## Language system
 
-`src/i18n/` holds the packs: `locales.ts` (English + Hinglish dictionaries, keyed) and
+`src/app/i18n/` holds the packs: `locales.ts` (English + Hinglish dictionaries, keyed) and
 `index.tsx` (`I18nProvider`, `useI18n().t`, instant switch, `localStorage` persistence,
 English fallback for missing keys). Adding strings: add the key to `en`, then translate
 in `hinglish`. UI labels only — lesson content is PDF-authored.
 
 ## Adding offline packages
 
-Edit `src/data/packages.ts`. `availableOffline: true` may only be used for packages
+Edit `src/core/data/packages.ts`. `availableOffline: true` may only be used for packages
 actually bundled with the runtime (numpy, pandas, stdlib). Anything else must stay
 `false` — the UI then honestly says the package is not available offline.
 
 ## Adding lessons / tasks
 
-The curriculum lives in `public/curriculum/sections.json` (generated from the PDF by
+The curriculum lives in `content/curriculum/` (source) and is published to
+`public/generated/curriculum/sections.json` (generated from the PDF by
 `tools/extract.mjs`). See "Regenerating the curriculum" below for the maintainer flow;
 the app renders whatever the schema contains — no page changes needed for content.
 The bundled datasets seed fresh tables on every query run.
@@ -147,7 +171,7 @@ The "CODE KAISE KARTE HAIN" guide layer lives in `content/curriculum/guides/<tra
 
 ```bash
 npm run curriculum:guides         # dry run: validate guides, execute every example
-npm run curriculum:guides:write   # apply into public/curriculum/sections.json
+npm run curriculum:guides:write   # apply into public/generated/curriculum/sections.json
 npm run curriculum:topics         # required-topic coverage matrix
 ```
 
@@ -200,7 +224,7 @@ be authored and reviewed alone):
 
 ```bash
 npm run packs -- --section=s08   # dry run: shape check + execute every snippet
-npm run packs:write              # apply into public/curriculum/sections.json
+npm run packs:write              # apply into public/generated/curriculum/sections.json
 npm run packs:check              # per-section 16-part quality matrix
 ```
 
@@ -255,7 +279,7 @@ treat it like any other coupon and decide for yourself whether the paid tier is 
 ## Regenerating the curriculum from the PDF (optional, maintainer)
 
 ```bash
-node tools/extract.mjs "<path-to-pdf.pdf>"   # writes public/curriculum/*.json
+node tools/extract.mjs "<path-to-pdf.pdf>"   # writes public/generated/curriculum/*.json
 ```
 
 Extraction summary: 163 concepts · 179 interview Q&A · 245 coding tasks · 172 logic cards ·
@@ -320,8 +344,8 @@ DEBUG → `debug`, Practice Solutions → `solved`, MINI PROJECT → the `mini-p
 DEFENSE → `defense`, CHECKPOINT → `checkpoint`. Project Lab has no slice, because the PDF has
 no project band — that stage stays built from the section's own project tiers.
 
-The mapping lives once, in `STAGE_QNA` in `src/data/questions.ts`, and both the panel and the
-counts read it. `src/components/StageQnA.tsx` renders the questions with reveal-answer,
+The mapping lives once, in `STAGE_QNA` in `src/core/data/questions.ts`, and both the panel and
+the counts read it. `src/components/learning/StageQnA.tsx` renders the questions with reveal-answer,
 self-grading and paging, and writes the **same `qb:<id>` attempt keys as the Question Bank** —
 so a question graded in a lesson is graded everywhere, and nothing is counted twice. It does
 not touch the mastery gates: practice is not a gate, and the thresholds are unchanged.

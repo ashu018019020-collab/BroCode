@@ -3,7 +3,7 @@
  * guides.cjs — the authored "CODE KAISE KARTE HAIN" layer.
  *
  *   node scripts/guides.cjs            # dry run: apply authored guides in memory
- *   node scripts/guides.cjs --write    # apply and save public/curriculum/sections.json
+ *   node scripts/guides.cjs --write    # apply and save public/generated/curriculum/sections.json
  *   node scripts/guides.cjs topics     # required-topic coverage matrix (read-only)
  *
  * Why it exists: sections.json is regenerated from the PDF by tools/extract.mjs, and the
@@ -32,7 +32,7 @@ const path = require('path');
 const { execFileSync, execFile } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
-const SECTIONS_JSON = path.join(ROOT, 'public', 'curriculum', 'sections.json');
+const SECTIONS_JSON = path.join(ROOT, 'public', 'generated', 'curriculum', 'sections.json');
 const TOPICS_DIR = path.join(ROOT, 'content', 'curriculum', 'topics');
 const GUIDES_DIR = path.join(ROOT, 'content', 'curriculum', 'guides');
 const TRACKS_DIR = path.join(ROOT, 'content', 'tracks');

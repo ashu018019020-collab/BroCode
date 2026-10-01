@@ -27,21 +27,21 @@ const load = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 
 register('./_ts-resolve.mjs', import.meta.url);
 
-const eng = await load('src/engine/searchindex.ts');
+const eng = await load('src/core/platform/searchindex.ts');
 const { buildSearchIndex, TEXT_LIMIT } = await import(pathToFileURL(path.join(ROOT, 'scripts/searchindex.cjs')).href);
 
-const raw = JSON.parse(read('public/search/index.json'));
+const raw = JSON.parse(read('public/generated/search/index.json'));
 const index = eng.decodeIndex(raw);
-const sections = JSON.parse(read('public/curriculum/sections.json'));
-const playbook = JSON.parse(read('public/playbook/items.json'));
-const bankIds = fs.readdirSync(path.join(ROOT, 'public', 'questions')).filter((f) => f.endsWith('.json') && f !== 'manifest.json');
+const sections = JSON.parse(read('public/generated/curriculum/sections.json'));
+const playbook = JSON.parse(read('public/generated/playbook/items.json'));
+const bankIds = fs.readdirSync(path.join(ROOT, 'public', 'generated', 'questions')).filter((f) => f.endsWith('.json') && f !== 'manifest.json');
 
 /** Every published bank question on disk, in the order the index promises to use. */
 const bankRows = () => {
   const order = new Map(sections.map((s, i) => [s.id, i]));
   const out = [];
   for (const sid of bankIds.map((f) => f.replace(/\.json$/, '')).sort((a, b) => (order.get(a) ?? 999) - (order.get(b) ?? 999) || a.localeCompare(b))) {
-    const bank = JSON.parse(read(`public/questions/${sid}.json`));
+    const bank = JSON.parse(read(`public/generated/questions/${sid}.json`));
     for (const q of bank.questions) {
       if (q.status && q.status !== 'PUBLISHED') continue;
       if (String(q.question ?? '').trim().length < 8) continue;
@@ -84,11 +84,11 @@ test('index: the committed file IS the build output, byte for byte', () => {
   // No timestamp and no map iteration order: regenerating over unchanged banks must reproduce the
   // file, or the artifact's diff stops being reviewable and staleness becomes invisible.
   const rebuilt = JSON.stringify(buildSearchIndex());
-  assert.equal(rebuilt, JSON.stringify(raw), 'public/search/index.json is stale — run npm run search:index:write');
+  assert.equal(rebuilt, JSON.stringify(raw), 'public/generated/search/index.json is stale — run npm run search:index:write');
 });
 
 test('index: chapters ride along so a hit can name where it came from', () => {
-  const manifest = JSON.parse(read('public/playbook/manifest.json'));
+  const manifest = JSON.parse(read('public/generated/playbook/manifest.json'));
   assert.deepEqual(
     index.chapters.map(([n]) => n),
     manifest.chapters.map((c) => String(c.no)),
@@ -109,8 +109,8 @@ test('index: the palette pays about a tenth of a section bank for the whole set'
   const bytes = Buffer.byteLength(JSON.stringify(raw));
   assert.ok(bytes < 2_000_000, `index is ${(bytes / 1024).toFixed(0)} KB — over the 2 MB budget`);
   assert.ok(bytes / index.items.length < 160, 'tuple rows must stay under 160 bytes each');
-  assert.match(read('src/data/searchindex.ts'), /enabled/, 'the loader must be lazy — it is 1.6 MB');
-  assert.match(read('public/sw.js'), /url\.pathname\.includes\('\/search'\)/, 'and offline-cached');
+  assert.match(read('src/core/data/searchindex.ts'), /enabled/, 'the loader must be lazy — it is 1.6 MB');
+  assert.match(read('public/sw.js'), /url\.pathname\.includes\('\/generated\/'\)/, 'and offline-cached');
 });
 
 /* ------------------------------- the ranking ------------------------------- */
@@ -168,13 +168,13 @@ test('search: a hit routes to the question, not just to its section', () => {
   assert.ok(route.length < 220, 'the URL must stay short enough to share');
 
   // …and the bank really reads those params — the contract has two ends.
-  const bank = read('src/pages/QuestionBank.tsx');
+  const bank = read('src/features/practice/QuestionBank.tsx');
   assert.match(bank, /params\.get\('find'\)/, 'the bank seeds its search box from ?find=');
   assert.match(bank, /search: urlParams\(\)\.get\('find'\) \?\? ''/, 'and a section change keeps it');
 });
 
 test('search: the palette shows bank hits, and never calls a loading index "no results"', () => {
-  const palette = read('src/components/CommandPalette.tsx');
+  const palette = read('src/components/shared/CommandPalette.tsx');
   assert.match(palette, /searchBankIndex\(bank, q, BANK_LIMIT\)/, 'the palette must search the bank');
   assert.match(palette, /bankLoading/, 'and it must know whether the index has arrived');
   assert.ok(
@@ -183,6 +183,6 @@ test('search: the palette shows bank hits, and never calls a loading index "no r
     'an empty result list while the index loads must not read as "nothing found"',
   );
   // The index must not load until the palette is open.
-  const app = read('src/App.tsx');
+  const app = read('src/app/App.tsx');
   assert.match(app, /useQuestionIndex\(paletteOpen\)/, 'App must pass the palette-open flag, not `true`');
 });

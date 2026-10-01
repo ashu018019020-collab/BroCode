@@ -3,7 +3,7 @@
  * packs.cjs — the 16-part topic workspace pipeline.
  *
  *   node scripts/packs.cjs               # dry run: validate every pack, execute every snippet
- *   node scripts/packs.cjs --write       # apply into public/curriculum/sections.json
+ *   node scripts/packs.cjs --write       # apply into public/generated/curriculum/sections.json
  *   node scripts/packs.cjs check         # per-section quality matrix (the final checklist)
  *   node scripts/packs.cjs --section=s08 # limit the pass to one section
  *
@@ -21,7 +21,7 @@ const { validatePack, verifyPack, partCoverage, PARTS } = require('./lib/packs.c
 const { pythonAvailable } = require('./lib/runpy.cjs');
 
 const ROOT = path.join(__dirname, '..');
-const SECTIONS_JSON = path.join(ROOT, 'public', 'curriculum', 'sections.json');
+const SECTIONS_JSON = path.join(ROOT, 'public', 'generated', 'curriculum', 'sections.json');
 const PACKS_DIR = path.join(ROOT, 'content', 'curriculum', 'packs');
 
 const argv = process.argv.slice(2);

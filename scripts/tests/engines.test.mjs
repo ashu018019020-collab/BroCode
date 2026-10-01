@@ -20,9 +20,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 // Windows needs a file:// URL for dynamic ESM imports of absolute paths.
-const rag = await import(pathToFileURL(path.join(ROOT, 'src/engine/rag.ts')).href);
-const exam = await import(pathToFileURL(path.join(ROOT, 'src/engine/exam.ts')).href);
-const coach = await import(pathToFileURL(path.join(ROOT, 'src/engine/coach.ts')).href);
+const rag = await import(pathToFileURL(path.join(ROOT, 'src/core/ai/rag.ts')).href);
+const exam = await import(pathToFileURL(path.join(ROOT, 'src/core/assessment/exam.ts')).href);
+const coach = await import(pathToFileURL(path.join(ROOT, 'src/core/ai/coach.ts')).href);
 
 /* ----------------------------- RAG engine ----------------------------- */
 
@@ -104,7 +104,7 @@ test('answerFrom only ever quotes retrieved text', () => {
 
 /* ----------------------- structural invariants ----------------------- */
 
-const appSrc = read('src/App.tsx');
+const appSrc = read('src/app/App.tsx');
 
 test('every sidebar destination resolves to a real route', () => {
   const navTargets = [...appSrc.matchAll(/\{\s*to:\s*'([^']+)'/g)].map((m) => m[1]);
@@ -116,35 +116,38 @@ test('every sidebar destination resolves to a real route', () => {
 });
 
 test('every page component referenced by a route exists on disk', () => {
-  // Handles both the eager `import X from './pages/X'` form and the
-  // code-split `const X = lazy(() => import('./pages/X'))` form.
+  // Handles both the eager `import X from '../features/<pillar>/X'` form and the
+  // code-split `const X = lazy(() => import('../features/<pillar>/X'))` form.
   const imports = [
-    ...[...appSrc.matchAll(/^import\s+\w+\s+from\s+'\.\/pages\/([^']+)';/gm)].map(([, p]) => p),
-    ...[...appSrc.matchAll(/lazy\(\(\)\s*=>\s*import\('\.\/pages\/([^']+)'\)\)/g)].map(([, p]) => p),
+    ...[...appSrc.matchAll(/^import\s+\w+\s+from\s+'\.\.\/features\/([^']+)';/gm)].map(([, p]) => p),
+    ...[...appSrc.matchAll(/lazy\(\(\)\s*=>\s*import\('\.\.\/features\/([^']+)'\)\)/g)].map(([, p]) => p),
   ];
   assert.ok(imports.length >= 20, `expected 20+ page imports, saw ${imports.length}`);
   for (const p of imports) {
-    const file = path.join(ROOT, 'src/pages', p.endsWith('.tsx') ? p : `${p}.tsx`);
+    const file = path.join(ROOT, 'src/features', p.endsWith('.tsx') ? p : `${p}.tsx`);
     assert.ok(fs.existsSync(file), `missing page file for route import: ${p}`);
   }
 });
 
 test('no page ships a placeholder or lorem ipsum', () => {
-  const dir = path.join(ROOT, 'src/pages');
-  for (const f of fs.readdirSync(dir)) {
-    if (!f.endsWith('.tsx')) continue;
-    const src = fs.readFileSync(path.join(dir, f), 'utf8').toLowerCase();
+  const dir = path.join(ROOT, 'src/features');
+  const pages = fs.readdirSync(dir, { withFileTypes: true }).flatMap(function walk(e) {
+    const full = path.join(e.parentPath ?? dir, e.name);
+    return e.isDirectory() ? fs.readdirSync(full, { withFileTypes: true }).flatMap(walk) : e.name.endsWith('.tsx') ? [full] : [];
+  });
+  for (const file of pages) {
+    const src = fs.readFileSync(file, 'utf8').toLowerCase();
     for (const bad of ['coming soon', 'lorem ipsum', 'placeholder text', 'todo:', 'fixme']) {
-      assert.ok(!src.includes(bad), `${f} contains a placeholder marker: "${bad}"`);
+      assert.ok(!src.includes(bad), `${path.relative(ROOT, file)} contains a placeholder marker: "${bad}"`);
     }
   }
 });
 
 test('every i18n key used by the shell and dashboard exists in the English pack', () => {
-  const locales = read('src/i18n/locales.ts');
+  const locales = read('src/app/i18n/locales.ts');
   const enBlock = locales.slice(locales.indexOf('export const en ='), locales.indexOf('export type LocaleKey'));
   const defined = new Set([...enBlock.matchAll(/'([a-z][\w.]*)':/g)].map((m) => m[1]));
-  for (const file of ['src/App.tsx', 'src/pages/Dashboard.tsx', 'src/pages/LearningPath.tsx', 'src/pages/Playground.tsx', 'src/pages/Lesson.tsx']) {
+  for (const file of ['src/app/App.tsx', 'src/features/dashboard/Dashboard.tsx', 'src/features/learning/LearningPath.tsx', 'src/features/labs/Playground.tsx', 'src/features/learning/Lesson.tsx']) {
     const src = read(file);
     for (const m of src.matchAll(/\bt\('([^']+)'\)/g)) {
       const key = m[1];
@@ -155,7 +158,7 @@ test('every i18n key used by the shell and dashboard exists in the English pack'
 });
 
 test('the offline assistant never claims to be network-backed', () => {
-  const src = read('src/engine/assistant.ts');
+  const src = read('src/core/ai/assistant.ts');
   assert.ok(/no network/i.test(src) || /Offline/i.test(src), 'assistant must document that it is offline');
   // It must be built on the deterministic retrieval engine, not a fetch call.
   assert.ok(!/fetch\(/.test(src), 'offline assistant must not perform network requests');
@@ -390,6 +393,128 @@ test('coach: legacy records without a source are still classified honestly', () 
   assert.equal(coach.sourceOf(mistake('5', { section: 's07', source: undefined })), 'lesson');
 });
 
+test('coach: the redo tally counts graded-question failures, and splits them from the fixed ones', () => {
+  // The Question Bank's fourth KPI card reads this. A traceback and a mock answer are real mistakes,
+  // but they are not "a question was marked wrong", so they must not inflate a figure sitting next to
+  // the bank's own answer counts. An EXAM failure IS a bank question under pressure, so it belongs.
+  const state = stateWith([
+    mistake('a', { source: 'bank' }),               // open
+    mistake('b', { source: 'exam' }),               // open
+    mistake('c', { source: 'bank', fixed: true }),  // fixed -> the rail's denominator
+    mistake('d', { source: 'lab' }),
+    mistake('e', { source: 'lesson' }),
+    mistake('f', { source: 'mock' }),
+    mistake('g', { source: 'interview' }),
+    mistake('h', { source: 'final' }),
+  ]);
+  assert.deepEqual(coach.bankRedo(state.mistakes), { open: 2, fixed: 1 });
+  assert.deepEqual(coach.bankRedo([]), { open: 0, fixed: 0 }, 'an empty history is 0, not undefined');
+  // A record written before `source` existed falls back to its section, which is not a bank surface.
+  assert.deepEqual(coach.bankRedo([mistake('i', { source: undefined, section: 's07' })]), { open: 0, fixed: 0 });
+});
+
+test('question bank: every KPI figure comes from its engine owner, never from a page-side scan', () => {
+  // The architecture rule this pins (ARCHITECTURE.md): a persisted-key shape belongs to
+  // `engine/keys.ts`, and a family count to the engine module that owns the question. The page used
+  // to spell the family itself — `Object.keys(state.attempts).filter((k) => k.startsWith('qb:'))` —
+  // which is a key shape inline in a renderer, and the second `tally` in the same file was the same
+  // duplication one level up.
+  const src = read('src/features/practice/QuestionBank.tsx');
+  assert.ok(!/startsWith\('qb:'\)/.test(src), 'the page must not scan the attempt keys itself');
+  assert.ok(!/bankStats/.test(src), 'nor hand-roll a second tally beside the engine one');
+  assert.match(src, /const gradedCount = bankPractised\(state\.attempts\)/, 'recorded answers come from coverage.ts');
+  assert.match(src, /const redo = bankRedo\(state\.mistakes\)/, 'the redo pile comes from coach.ts');
+  assert.match(src, /bankAccuracyBySection\(state\)/, 'per-section accuracy stays owned by accuracy.ts');
+  assert.match(read('src/core/learning/coverage.ts'), /export function bankPractised/, 'the owner the page reads must exist');
+  assert.match(read('src/core/ai/coach.ts'), /export function bankRedo/, 'and so must the redo tally');
+});
+
+test('question bank: the frozen baseline-target ratio cannot come back', () => {
+  // The fourth card used to be `min(100, published / (baseline * sections))`. The pack published
+  // 13,865 questions against a 50-per-section baseline — 9.6x over — so the ratio was capped at 100%
+  // from the day the content outgrew it, and the card read a frozen "100%" forever. A metric that
+  // cannot move is worse than no metric: it claims progress nobody measured.
+  const manifest = JSON.parse(read('public/generated/questions/manifest.json'));
+  const target = manifest.baseline * manifest.sections.length;
+  assert.ok(manifest.published > target, `the pack (${manifest.published}) has outgrown its ${target} baseline`);
+  assert.equal(Math.min(100, Math.round((manifest.published / target) * 100)), 100, 'which is why the old card was pinned');
+  assert.ok(!/targetPct/.test(read('src/features/practice/QuestionBank.tsx')), 'so the pinned ratio must not be reinstated');
+});
+
+test('key families: only keys.ts spells a persisted key shape, and no engine reaches the store', () => {
+  // The layer rule from ARCHITECTURE.md, enforced instead of trusted. It was broken one family at a
+  // time: `notify.ts` imported `today` from the store, `achievements.ts` and `tutor.ts` spelled `qb:`,
+  // and five surfaces counted `lab:mock:` / `nb:` / `st:` / `lab:interview:` themselves — three copies
+  // of the mock tally, two of the coding tally, not one of them reachable by a test.
+  //
+  // Only CODE is swept: comments may name a family (several do, to explain why they no longer spell
+  // it), because a doc that has to stay vague to satisfy its own guard documents nothing.
+  const strip = (src) =>
+    src
+      .replace(/\r\n?/g, '\n') // two engine files are CRLF; `$` never matches before a trailing '\r'
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .split('\n')
+      .map((line) => line.replace(/(^|[^:'"`])\/\/.*$/, '$1'))
+      .join('\n');
+  const walk = (dir) =>
+    fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.tsx?$/.test(e.name) ? [`${dir}/${e.name}`] : [],
+    );
+
+  // Every persisted family. Adding one to keys.ts means adding it here; the assertions at the end fail
+  // if this list and the owner drift apart.
+  const FAMILIES = ['st:', 'view:', 'ia:', 'df:', 'final:', 'qb:', 'tp:', 'nb:', 'lab:', 'code:', 'nbc:', 'nplab:', 'pg:', 'sql:', 'resume:'];
+  // The quote anchor matters: without it `last:`/`first:` inside any identifier would read as a family,
+  // and the alternation group matters: a character class here would fire on `'http:'` and the like.
+  const shape = new RegExp("(['\"`])(" + FAMILIES.map((f) => f.slice(0, -1)).join('|') + '):');
+  assert.ok(shape.test("const k = 'qb:' + id;") && shape.test('attempts[`nb:x:y`]'), 'the sweep must fire on a family literal');
+  assert.ok(!shape.test("const url = 'http://x';"), 'and must not fire on an ordinary quoted string');
+
+  // Files that may contain a family literal, each with the reason. Every entry is verified below, so
+  // this cannot quietly rot into a dumping ground.
+  const ALLOWED = {
+    'src/core/platform/keys.ts': 'the owner',
+    'src/core/learning/paths.ts': 'loaded by explicit path in playbook.test.mjs, so it cannot take a value import; pinned against keys.ts below',
+    'src/core/assessment/exam.ts': 'loaded by explicit path here and in playbook.test.mjs, so it cannot take a value import',
+    'src/core/ai/mission.ts': '`code:${sec.id}:${at}` is a mission-task id, not a persisted key',
+    'src/core/platform/search.ts': '`pg:${p.route}` is a search-item id, not a persisted key',
+  };
+
+  // The engine layer: everything under core/ EXCEPT storage (the store owns localStorage and is
+  // allowed React) and data (loaders may render). The same rule the pre-restructure src/engine/ enforced.
+  const ENGINE_DIRS = ['src/core/learning', 'src/core/assessment', 'src/core/ai', 'src/core/platform'];
+  const files = [...ENGINE_DIRS.flatMap((d) => walk(d)), ...walk('src/core/data'), ...walk('src/features'), ...walk('src/components')];
+  const offenders = [];
+  for (const f of files) {
+    const src = strip(read(f));
+    if (ENGINE_DIRS.some((d) => f.startsWith(`${d}/`))) {
+      if (/from '[^']*storage\/store'/.test(src)) offenders.push(`${f} imports the store`);
+      if (/from 'react'/.test(src)) offenders.push(`${f} imports React`);
+    }
+    if (!ALLOWED[f] && shape.test(src)) offenders.push(`${f} spells a key family`);
+  }
+  assert.deepEqual(offenders, [], `key shapes belong to keys.ts: ${offenders.join(' | ')}`);
+
+  for (const [f, why] of Object.entries(ALLOWED)) {
+    assert.ok(files.includes(f), `${f} is allowlisted but no longer exists (${why})`);
+    assert.ok(shape.test(strip(read(f))), `${f} is allowlisted but no longer spells a family — drop it (${why})`);
+  }
+  for (const f of FAMILIES) assert.ok(read('src/core/platform/keys.ts').includes(f), `keys.ts no longer declares ${f}`);
+  assert.match(read('src/core/platform/keys.ts'), /BANK_ATTEMPT_PREFIX = 'qb:'/, 'the owner still defines the shape');
+  assert.match(read('src/core/learning/paths.ts'), /prefix: 'qb:'/, 'paths.ts keeps its literal...');
+  assert.match(read('scripts/tests/playbook.test.mjs'), /byPrefix\('qb:'\)\.prefix, keys\.BANK_ATTEMPT_PREFIX/,
+    '...only because a test pins it against the owner');
+});
+
+test('engine: the date key has one owner, and an engine asks the engine', () => {
+  assert.match(read('src/core/learning/study.ts'), /export const today = \(\): string => dateKey\(new Date\(\)\)/,
+    'study.ts owns "what day is it"');
+  assert.match(read('src/core/platform/notify.ts'), /import \{ today \} from '\.\.\/learning\/study'/,
+    'notify asks the engine, never the store');
+  assert.ok(!/from '[^']*storage\/store'/.test(read('src/core/platform/notify.ts')), 'and never reaches back');
+  assert.match(read('src/core/storage/store.ts'), /export \{ today \}/, 'pages keep importing it from the store');
+});
+
 test('coach: an overdue section with no mistakes still gets re-taught', () => {
   const opts = { scheduleOf: () => schedule(1, { due: true, overdueDays: 4, daysLeft: 0 }) };
   const ranked = coach.rankCandidates(stateWith([], { s07: { level: 1, last: '2026-08-01' } }), SECTION_POOL, opts);
@@ -482,16 +607,16 @@ test('coach: the chosen section always comes with a reason from real state', () 
 
 test('every mistake writer records where the failure came from', () => {
   const writers = {
-    'src/pages/QuestionBank.tsx': /source: 'bank'/,
-    'src/pages/Playground.tsx': /mistakeFromDiagnostic/,
-    'src/pages/Lesson.tsx': /source: 'lesson'/,
-    'src/pages/MockInterviews.tsx': /source: 'mock'/,
-    'src/pages/InterviewMode.tsx': /source: 'interview'/,
-    'src/pages/FinalAssessment.tsx': /source: 'final'/,
+    'src/features/practice/QuestionBank.tsx': /source: 'bank'/,
+    'src/features/labs/Playground.tsx': /mistakeFromDiagnostic/,
+    'src/features/learning/Lesson.tsx': /source: 'lesson'/,
+    'src/features/interview/MockInterviews.tsx': /source: 'mock'/,
+    'src/features/interview/InterviewMode.tsx': /source: 'interview'/,
+    'src/features/interview/FinalAssessment.tsx': /source: 'final'/,
     // The notebook cell files through the tutor's factory, which tags `source: 'lab'`.
-    'src/components/NotebookCells.tsx': /mistakeFromDiagnostic/,
-    'src/engine/exam.ts': /source: 'exam'/,
-    'src/engine/tutor.ts': /source: 'lab'/,
+    'src/components/code/NotebookCells.tsx': /mistakeFromDiagnostic/,
+    'src/core/assessment/exam.ts': /source: 'exam'/,
+    'src/core/ai/tutor.ts': /source: 'lab'/,
   };
   for (const [file, pattern] of Object.entries(writers)) {
     assert.match(read(file), pattern, `${file} must tag the source of a mistake it files`);
@@ -499,11 +624,11 @@ test('every mistake writer records where the failure came from', () => {
 });
 
 test('the coach teaches from the bank and states its schedule truthfully', () => {
-  const src = read('src/engine/tutor.ts');
+  const src = read('src/core/ai/tutor.ts');
   assert.match(src, /buildRetakes/, 'mistakes must lead the coach session');
   assert.match(src, /coachSchedule/, 'the review schedule must be part of the session');
   assert.ok(!/fetch\(|XMLHttpRequest/.test(src), 'the coach must stay offline');
-  const review = read('src/engine/review.ts');
+  const review = read('src/core/learning/review.ts');
   assert.match(review, /export const INTERVALS = \[1, 3, 7, 14, 30\]/, 'review.ts stays the single owner of the interval ladder');
   // The ladder must not be duplicated anywhere else in the app source.
   const dir = path.join(ROOT, 'src');
@@ -517,7 +642,7 @@ test('the coach teaches from the bank and states its schedule truthfully', () =>
 });
 
 test('the exam page scores from self-grades, never from typed text', () => {
-  const src = read('src/pages/ExamMode.tsx');
+  const src = read('src/features/practice/ExamMode.tsx');
   assert.match(src, /buildExamWrites/, 'state writes must go through the pure exam engine');
   assert.match(src, /applyExamWrites/, 'attempts, mistakes and review must land in one atomic write');
   assert.ok(!/keywordScore|questionRubric/.test(src), 'exam marks must never be derived by matching words');

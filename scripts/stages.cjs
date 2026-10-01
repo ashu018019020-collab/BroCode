@@ -2,7 +2,7 @@
 /**
  * npm run curriculum:stages | curriculum:stages:write
  *
- * Applies content/curriculum/stage-overrides.json to public/curriculum/sections.json.
+ * Applies content/curriculum/stage-overrides.json to public/generated/curriculum/sections.json.
  *
  * Why this exists: tools/extract.mjs regenerates sections.json from the PDF, and that
  * extraction boilerplates the same generic stage prompts into every module ("What
@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const SECTIONS_JSON = path.join(ROOT, 'public', 'curriculum', 'sections.json');
+const SECTIONS_JSON = path.join(ROOT, 'public', 'generated', 'curriculum', 'sections.json');
 const OVERRIDES_FILE = path.join(ROOT, 'content', 'curriculum', 'stage-overrides.json');
 
 const ok = (m) => console.log(`\x1b[32m✓\x1b[0m ${m}`);

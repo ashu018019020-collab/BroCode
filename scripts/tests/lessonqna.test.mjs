@@ -24,10 +24,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
-const lesson = read('src/pages/Lesson.tsx');
-const chrome = read('src/components/SectionChrome.tsx');
-const qna = read('src/components/StageQnA.tsx');
-const data = read('src/data/questions.ts');
+const lesson = read('src/features/learning/Lesson.tsx');
+const chrome = read('src/components/learning/SectionChrome.tsx');
+const qna = read('src/components/learning/StageQnA.tsx');
+const data = read('src/core/data/questions.ts');
 
 /** The nine stages the PDF actually has; `project` is not one of them. */
 const STAGES_WITH_QNA = ['checkpoint', 'coding', 'debug', 'defense', 'interview', 'learn', 'logic', 'mini', 'solved'];
@@ -101,7 +101,7 @@ test('lessonqna: the stage ↔ type mapping has exactly one owner', () => {
   assert.deepEqual(withTable, [], 'TYPE_STAGE is a second copy of the mapping — derive it from STAGE_QNA');
 
   // Both bank surfaces reach a lesson through that one function, and neither builds its own id.
-  for (const f of ['src/pages/QuestionBank.tsx', 'src/pages/ExamMode.tsx']) {
+  for (const f of ['src/features/practice/QuestionBank.tsx', 'src/features/practice/ExamMode.tsx']) {
     const src = read(f);
     assert.match(src, /stageForQuestion\(q\)/, `${f} must route through stageForQuestion`);
     assert.match(src, /\/lesson\/\$\{[^}]+\}\/\$\{stageForQuestion\(q\)\}/, `${f} must not invent its own stage id`);
@@ -116,13 +116,13 @@ test('lessonqna: the stage ↔ type mapping has exactly one owner', () => {
 test('lessonqna: every question links to the stage that really renders it', async (t) => {
   if (!process.features.typescript) return t.skip('needs a Node that strips TypeScript types (22.18+ / 24)');
   const load = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
-  const { STAGE_QNA, QUESTION_TYPES, stageQuestions, stageForQuestion } = await load('src/data/questions.ts');
+  const { STAGE_QNA, QUESTION_TYPES, stageQuestions, stageForQuestion } = await load('src/core/data/questions.ts');
   assert.equal(typeof stageForQuestion, 'function', 'the mapping must be derived in code, not by hand');
 
-  // The lesson's own stage list, read from its single owner (`src/engine/progress.ts`): that file
+  // The lesson's own stage list, read from its single owner (`src/core/learning/progress.ts`): that file
   // imports extensionless './keys', which Node's type stripping cannot resolve, so the declaration
   // is parsed rather than imported — still the one source, never a copy kept in the test.
-  const stageList = (read('src/engine/progress.ts').match(/export const STAGES = \[([^\]]+)\]/) ?? [])[1] ?? '';
+  const stageList = (read('src/core/learning/progress.ts').match(/export const STAGES = \[([^\]]+)\]/) ?? [])[1] ?? '';
   const LESSON_STAGES = [...stageList.matchAll(/'([^']+)'/g)].map((m) => m[1]);
   assert.ok(LESSON_STAGES.length >= 9, 'the lesson stage list must be readable from its own declaration');
 
@@ -155,14 +155,14 @@ test('lessonqna: every question links to the stage that really renders it', asyn
  */
 test('lessonqna: a written answer has one home, and every box writes to it', () => {
   // One reader and one writer, and they live with the store that persists them.
-  assert.match(read('src/offline/store.ts'), /export function savedAnswer\(state: AppState, key: string\)/);
-  assert.match(read('src/offline/store.ts'), /export function saveAnswer\(key: string, text: string\)/);
-  assert.match(read('src/offline/store.ts'), /export function useSavedAnswer\(key: string\)/);
+  assert.match(read('src/core/storage/store.ts'), /export function savedAnswer\(state: AppState, key: string\)/);
+  assert.match(read('src/core/storage/store.ts'), /export function saveAnswer\(key: string, text: string\)/);
+  assert.match(read('src/core/storage/store.ts'), /export function useSavedAnswer\(key: string\)/);
 
   // The surfaces that ask a question all go through it, keyed by the same key their grade uses.
   for (const [file, key] of [
-    ['src/components/StageQnA.tsx', 'bankAttempt(q.id)'],
-    ['src/pages/QuestionBank.tsx', 'bankAttempt(q.id)'],
+    ['src/components/learning/StageQnA.tsx', 'bankAttempt(q.id)'],
+    ['src/features/practice/QuestionBank.tsx', 'bankAttempt(q.id)'],
   ]) {
     assert.match(read(file), new RegExp(`useSavedAnswer\\(${key.replace(/[.()]/g, '\\$&')}\\)`), `${file} must persist the typed answer`);
   }
@@ -170,7 +170,7 @@ test('lessonqna: a written answer has one home, and every box writes to it', () 
   assert.match(lesson, /useSavedAnswer\(debugDone\(sec\.id\)\)/, 'the debug explanation must keep its text');
 
   // The placeholder that proved the text was never captured is gone from the bank surfaces.
-  assert.ok(!/\(self-grade: galat\)/.test(read('src/pages/QuestionBank.tsx')), 'the bank must file the learner\'s own words');
+  assert.ok(!/\(self-grade: galat\)/.test(read('src/features/practice/QuestionBank.tsx')), 'the bank must file the learner\'s own words');
   assert.ok(!/\(stage Q&A: galat\)/.test(qna), 'the stage panel must file the learner\'s own words');
 });
 
@@ -182,7 +182,7 @@ test('lessonqna: a written answer has one home, and every box writes to it', () 
 test('lessonqna: the question-bank notebook saves code under its own key family', async (t) => {
   if (!process.features.typescript) return t.skip('needs a Node that strips TypeScript types (22.18+ / 24)');
   const { bankAttempt, codeSlot, BANK_CODE_PREFIX, BANK_ATTEMPT_PREFIX } = await import(
-    pathToFileURL(path.join(ROOT, 'src/engine/keys.ts')).href);
+    pathToFileURL(path.join(ROOT, 'src/core/platform/keys.ts')).href);
   const id = 's17:coding:3';
   assert.equal(codeSlot.bank(id), `code:qb:${id}`);
   assert.notEqual(codeSlot.bank(id), bankAttempt(id), 'saved code and the attempt record are different things');
@@ -191,7 +191,7 @@ test('lessonqna: the question-bank notebook saves code under its own key family'
   assert.ok(!codeSlot.bank(id).startsWith(BANK_ATTEMPT_PREFIX), 'saved code must not look like a graded question');
 
   // Mounted only when the learner asks for it — a kernel per question would sink the page.
-  for (const file of ['src/components/StageQnA.tsx', 'src/pages/QuestionBank.tsx']) {
+  for (const file of ['src/components/learning/StageQnA.tsx', 'src/features/practice/QuestionBank.tsx']) {
     const src = read(file);
     assert.match(src, /storageKey=\{codeSlot\.bank\(q\.id\)\}/, `${file} must key the notebook per question`);
     assert.match(src, /\{notebook && \(/, `${file} must build the notebook lazily`);
@@ -204,15 +204,15 @@ test('lessonqna: the question-bank notebook saves code under its own key family'
  *
  * The tile reads the manifest and the panel filters the bank, and those are two different files
  * written by two different programs (the build mirror in `scripts/lib/banks.cjs` and the runtime in
- * `src/data/questions.ts`). They can only import each other in one direction, so this is the lock
+ * `src/core/data/questions.ts`). They can only import each other in one direction, so this is the lock
  * that keeps them one number: if either the dedupe or the stage filter drifts, this fails.
  */
 test('lessonqna: every stage tile count equals what that stage really shows', async (t) => {
   if (!process.features.typescript) return t.skip('needs a Node that strips TypeScript types (22.18+ / 24)');
   const { STAGE_QNA, stageQuestions, stageOwnTexts } = await import(
-    pathToFileURL(path.join(ROOT, 'src/data/questions.ts')).href);
-  const manifest = JSON.parse(read('public/questions/manifest.json'));
-  const sections = JSON.parse(read('public/curriculum/sections.json'));
+    pathToFileURL(path.join(ROOT, 'src/core/data/questions.ts')).href);
+  const manifest = JSON.parse(read('public/generated/questions/manifest.json'));
+  const sections = JSON.parse(read('public/generated/curriculum/sections.json'));
   const sectionById = new Map(sections.map((s) => [s.id, s]));
   const stages = Object.keys(STAGE_QNA);
 
@@ -220,7 +220,7 @@ test('lessonqna: every stage tile count equals what that stage really shows', as
   for (const entry of manifest.sections) {
     const section = sectionById.get(entry.sectionId);
     assert.ok(section, `${entry.sectionId}: bank without a curriculum section`);
-    const bank = JSON.parse(read(`public/questions/${entry.sectionId}.json`));
+    const bank = JSON.parse(read(`public/generated/questions/${entry.sectionId}.json`));
     for (const stage of stages) {
       const shown = stageQuestions(bank, stage, stageOwnTexts(stage, section));
       assert.equal(entry.byStage[stage], shown.length,

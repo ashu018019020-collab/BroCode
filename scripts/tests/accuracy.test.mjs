@@ -28,10 +28,10 @@ const load = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 
 register('./_ts-resolve.mjs', import.meta.url);
 
-const acc = await load('src/engine/accuracy.ts');
-const { quickAnswer, quickScoreAnswer, quickHint, quickAccuracy, askLocal } = await load('src/engine/assistant.ts');
+const acc = await load('src/core/assessment/accuracy.ts');
+const { quickAnswer, quickScoreAnswer, quickHint, quickAccuracy, askLocal } = await load('src/core/ai/assistant.ts');
 
-const raw = JSON.parse(read('public/curriculum/sections.json'));
+const raw = JSON.parse(read('public/generated/curriculum/sections.json'));
 const sections = Array.isArray(raw) ? raw : raw.sections;
 
 /** A learner with a few graded answers — the shape every surface really writes. */
@@ -207,7 +207,7 @@ test('assistant: typed questions route to the item actions', () => {
 /* ------------------- the line under every notebook ------------------- */
 
 test('notebook nav: previous/next sits under every notebook, from the shared engine', () => {
-  const cells = read('src/components/NotebookCells.tsx');
+  const cells = read('src/components/code/NotebookCells.tsx');
   // One row, in the engine, so a lesson task, the lab and question-bank practice all get it.
   assert.match(cells, /className="nb-nav"/, 'the navigation line must be part of the notebook engine');
   assert.match(cells, /Pichla cell/, 'cell-step back');
@@ -220,9 +220,9 @@ test('notebook nav: previous/next sits under every notebook, from the shared eng
   assert.ok(cells.indexOf('className="nb-nav"') < cells.indexOf('{showStdin && ('), 'above the program input');
 
   // The surfaces that own a notebook list must pass the steps in, or the right-hand buttons vanish.
-  assert.match(read('src/components/JupyterNotebook.tsx'), /nav=\{\{ prev: step\(-1\), next: step\(1\) \}\}/, 'the in-lesson shelf wires it');
-  assert.match(read('src/pages/NotebookLab.tsx'), /nav=\{\{ prev: step\(-1\), next: step\(1\) \}\}/, 'the Notebook Lab wires it');
-  assert.match(read('src/pages/NotebookLab.tsx'), /const step = \(d: -1 \| 1\)/, 'from its own ordered list');
+  assert.match(read('src/components/code/JupyterNotebook.tsx'), /nav=\{\{ prev: step\(-1\), next: step\(1\) \}\}/, 'the in-lesson shelf wires it');
+  assert.match(read('src/features/labs/NotebookLab.tsx'), /nav=\{\{ prev: step\(-1\), next: step\(1\) \}\}/, 'the Notebook Lab wires it');
+  assert.match(read('src/features/labs/NotebookLab.tsx'), /const step = \(d: -1 \| 1\)/, 'from its own ordered list');
   assert.match(read('src/styles.css'), /^\.nb-nav \{/m, 'and the row has real styles');
 });
 
@@ -230,11 +230,11 @@ test('surfaces: a ring with nothing measured says so instead of drawing 0%', () 
   // `ProgressRing` prints `${pct}%` in its centre, so the accuracy block had to pass `pct ?? 0` to
   // keep the ring's arc empty — and the ring then stated a literal "0%" over zero graded answers,
   // which reads as a verdict. The optional `text` lets a caller draw an empty ring and print a dash.
-  const ui = read('src/components/ui.tsx');
+  const ui = read('src/components/ui/ui.tsx');
   assert.match(ui, /text\?: string \}/, 'ProgressRing must accept a text override');
   assert.match(ui, /\{text \?\? `\$\{pct\}%`\}/, 'and must still default to the real percentage');
 
-  const progress = read('src/pages/Progress.tsx');
+  const progress = read('src/features/progress/Progress.tsx');
   const ring = progress.match(/<ProgressRing pct=\{bank\.pct[^/]*\/>/s)?.[0] ?? '';
   assert.match(ring, /text=\{pctText\(bank\.pct\)\}/, 'the accuracy ring prints a dash when unmeasured');
 });
@@ -244,13 +244,13 @@ test('surfaces: a stage panel reports the accuracy of ITS OWN questions', () => 
   // numbers must come from the same set. Using the section-wide figure there printed, live,
   // "tumne 0/123 grade kiye · answer accuracy 100% (1/1 sahi)" on /lesson/s19/interview, because
   // an s19 theory answer graded in another stage counted.
-  const src = read('src/components/StageQnA.tsx');
+  const src = read('src/components/learning/StageQnA.tsx');
   assert.match(src, /tally\(items\.map\(\(q\) => attemptOf\(q\.id\)\)/, 'accuracy over this stage items');
   assert.ok(!/bankAccuracy\(state, sectionId\)/.test(src), 'never the whole section behind a stage line');
 });
 
 test('surfaces: track accuracy ranks only tracks with GRADED answers', () => {
-  const progress = read('src/pages/Progress.tsx');
+  const progress = read('src/features/progress/Progress.tsx');
   // A track where answers were written but none graded has no percentage; ranking it would print
   // "SQL (0/0 sahi) —" as the weakest track, which is what the live page showed before this.
   assert.match(progress, /\.filter\(\(r\) => r\.graded > 0\)/, 'ungraded tracks are not ranked');
@@ -259,7 +259,7 @@ test('surfaces: track accuracy ranks only tracks with GRADED answers', () => {
 });
 
 test('notebook nav: each cell shows the percentage of its last run', () => {
-  const cells = read('src/components/NotebookCells.tsx');
+  const cells = read('src/components/code/NotebookCells.tsx');
   assert.match(cells, /score=\{attemptPct\(state\.attempts\[notebookCell\(slug, cell\.id\)\]\)\}/,
     'the cell reads its own stored score');
   assert.match(cells, /\{score\}%/, 'and prints it as a percentage');

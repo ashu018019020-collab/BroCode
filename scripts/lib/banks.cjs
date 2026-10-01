@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const { validateBank, coverageGate, norm } = require('./validate.cjs');
 
-const QUESTIONS_DIR = path.join(__dirname, '..', '..', 'public', 'questions');
-const SECTIONS_JSON = path.join(__dirname, '..', '..', 'public', 'curriculum', 'sections.json');
+const QUESTIONS_DIR = path.join(__dirname, '..', '..', 'public', 'generated', 'questions');
+const SECTIONS_JSON = path.join(__dirname, '..', '..', 'public', 'generated', 'curriculum', 'sections.json');
 
 const loadSections = () => JSON.parse(fs.readFileSync(SECTIONS_JSON, 'utf8'));
 
@@ -146,7 +146,7 @@ function mergeIntoBank(bank, items, sid) {
 }
 
 /**
- * The lesson's stage → bank-type map, mirrored from `src/data/questions.ts` (`STAGE_QNA` +
+ * The lesson's stage → bank-type map, mirrored from `src/core/data/questions.ts` (`STAGE_QNA` +
  * `STAGE_OWN_ARRAY`) for the build step.
  *
  * It exists in two languages because the pipeline is CommonJS and the app is TypeScript, so
@@ -167,7 +167,7 @@ const STAGE_QNA_BUILD = {
   checkpoint: { types: ['checkpoint'], own: (s) => (s.checkpoint ?? []).map((x) => x.q) },
 };
 
-/** Whitespace/case-insensitive text key — MUST stay identical to `normText` in src/data/questions.ts. */
+/** Whitespace/case-insensitive text key — MUST stay identical to `normText` in src/core/data/questions.ts. */
 const textKey = (s) => String(s ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
 
 /** How many questions a lesson stage's panel shows for this section (published, after dedupe). */
@@ -188,7 +188,7 @@ function stageCounts(bank, section) {
   return byStage;
 }
 
-/** Write public/questions/manifest.json — the UI's index of banks (no 29-file fetch). */
+/** Write public/generated/questions/manifest.json — the UI's index of banks (no 29-file fetch). */
 function writeManifest() {
   const entries = [];
   let total = 0, published = 0;

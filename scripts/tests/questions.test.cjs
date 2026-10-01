@@ -30,10 +30,10 @@ const q = (question, answer, type = 'interview', more = {}) => ({ difficulty: 'm
 
 /**
  * The lesson stages that carry bank content, read from the single owner — `STAGE_QNA` in
- * src/data/questions.ts — rather than typed out here. `project` is deliberately absent: the PDF
+ * src/core/data/questions.ts — rather than typed out here. `project` is deliberately absent: the PDF
  * has no project band, so Project Lab has no bank stage and the manifest must not grow one.
  */
-const LESSON_STAGES = [...fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'data', 'questions.ts'), 'utf8')
+const LESSON_STAGES = [...fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'core', 'data', 'questions.ts'), 'utf8')
   .matchAll(/^ {2}(\w+): \{ types: \[[^\]]+\](?:, tag: '[^']+')?, label:/gm)].map((m) => m[1]);
 assert.ok(LESSON_STAGES.length >= 9, 'the lesson stage list must be readable from its own declaration');
 
@@ -313,7 +313,7 @@ test('manifest: matches the banks on disk and never overstates coverage', () => 
   for (const c of claims) assert.equal(c.published >= manifest.baseline, true, `${c.sectionId} claims complete below baseline`);
 });
 
-test('pipeline files live inside public/questions', () => {
+test('pipeline files live inside public/generated/questions', () => {
   assert.ok(fs.existsSync(QUESTIONS_DIR), 'questions directory must exist');
   assert.equal(fs.existsSync(`${QUESTIONS_DIR}/manifest.json`), true);
 });

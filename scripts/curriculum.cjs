@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const TRACKS_DIR = path.join(__dirname, '..', 'content', 'tracks');
-const SECTIONS = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'curriculum', 'sections.json'), 'utf8'));
+const SECTIONS = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'generated', 'curriculum', 'sections.json'), 'utf8'));
 
 const ok = (m) => console.log(`\x1b[32m✓\x1b[0m ${m}`);
 const bad = (m) => console.log(`\x1b[31m✕\x1b[0m ${m}`);

@@ -20,8 +20,8 @@ const ROOT = path.join(__dirname, '..', '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 const SW = read(path.join('public', 'sw.js'));
-const MAIN = read(path.join('src', 'main.tsx'));
-const CURRICULUM_LOADER = read(path.join('src', 'data', 'curriculum.tsx'));
+const MAIN = read(path.join('src', 'app', 'main.tsx'));
+const CURRICULUM_LOADER = read(path.join('src', 'core', 'data', 'curriculum.tsx'));
 
 test('service worker: registers only in production', () => {
   assert.match(MAIN, /if\s*\(import\.meta\.env\.PROD\)/, 'main.tsx must gate registration on PROD');
@@ -45,8 +45,8 @@ test('service worker: content packs are network-first, not cache-first', () => {
     branch.indexOf('fetch(req)') < branch.indexOf('caches.match(req)'),
     'fetch must be attempted before the cache lookup',
   );
-  assert.match(SW, /\/curriculum/, 'curriculum must be covered by the content rule');
-  assert.match(SW, /\/questions/, 'question banks must be covered by the content rule');
+  assert.match(SW, /\/generated\//, 'curriculum + question banks (under generated/) must be covered by the content rule');
+  assert.match(SW, /\/notebooks/, 'notebook packs must be covered by the content rule');
 });
 
 test('service worker: cache name is versioned so a bump discards stale entries', () => {
