@@ -141,9 +141,9 @@ export function mistakeRoute(m: Mistake): { route: string; label: string } {
   if (src === 'bank') return { route: '/questions', label: 'Question Bank me dobara' };
   if (src === 'exam') return { route: '/exam', label: 'Timed Exam dobara' };
   if (src === 'lab') return { route: '/playground', label: 'Playground me fix karo' };
-  if (src === 'mock') return { route: '/mock', label: 'Mock round dobara' };
-  if (src === 'interview') return { route: '/interview', label: 'Interview Mode dobara' };
-  if (src === 'final') return { route: '/final', label: 'Final Assessment' };
+  if (src === 'mock') return { route: '/mock-interviews', label: 'Mock round dobara' };
+  if (src === 'interview') return { route: '/interview-mode', label: 'Interview Mode dobara' };
+  if (src === 'final') return { route: '/final-assessment', label: 'Final Assessment' };
   const stage = stageForMistakeType(m.type);
   return { route: `/lesson/${m.section}/${stage}`, label: `${String(m.section).toUpperCase()} ${stage} stage` };
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { JupyterNotebook } from '../../components/code/JupyterNotebook';
 import { DATASETS } from '../../core/data/datasets';
 import { codeSlot } from '../../core/platform/keys';
@@ -58,8 +59,9 @@ export default function NumPyPandasLab() {
 
   return (
     <div>
+      <HubCrumb hub="/labs" hubLabel="Labs" page="NumPy + Pandas" />
       <h1>🔢 NumPy + Pandas Mode</h1>
-      <p className="muted small">INPUT → CODE → TABLE/OUTPUT → EXPLANATION. Examples run in the bundled local Python runtime (numpy + pandas included — no internet). The bundled datasets are loaded as CSV files, so pd.read_csv works everywhere Python runs.</p>
+      <p className="muted small">INPUT → CODE → TABLE/OUTPUT → EXPLANATION. Examples run in the bundled local Python runtime (numpy + pandas included). The bundled datasets are loaded as CSV files, so pd.read_csv works everywhere Python runs.</p>
 
       <div className="row" style={{ margin: '12px 0' }}>
         <button className={`stagepill ${tab === 'numpy' ? 'active' : ''}`} onClick={() => { setTab('numpy'); setSel(0); }}>NumPy</button>

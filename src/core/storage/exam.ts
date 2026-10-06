@@ -13,6 +13,7 @@ import {
   EXAM_VERSION, DEFAULT_BLUEPRINT, makeSeed, remainingMs,
   type ExamBlueprint, type ExamQuestion, type ExamSession,
 } from '../assessment/exam';
+import { accountStorageKey, subscribeStorageAccount } from './account';
 
 const KEY = 'aiml:exam:v1';
 const DEFAULT_BLUEPRINT_FALLBACK: ExamBlueprint = DEFAULT_BLUEPRINT;
@@ -32,9 +33,9 @@ function sanitize(s: ExamSession): ExamSession {
   return s;
 }
 
-function load(): ExamSession | null {
+function load(key = accountStorageKey(KEY)): ExamSession | null {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.questions)) return null;
@@ -49,12 +50,19 @@ const listeners = new Set<() => void>();
 
 function persist() {
   try {
-    if (session) localStorage.setItem(KEY, JSON.stringify(session));
-    else localStorage.removeItem(KEY);
+    const key = accountStorageKey(KEY);
+    if (session) localStorage.setItem(key, JSON.stringify(session));
+    else localStorage.removeItem(key);
   } catch { /* quota — keep in memory */ }
 }
 
-function emit() { persist(); for (const l of listeners) l(); }
+function notify() { for (const l of listeners) l(); }
+function emit() { persist(); notify(); }
+
+subscribeStorageAccount(() => {
+  session = load();
+  notify();
+});
 
 export function getExam(): ExamSession | null { return session; }
 

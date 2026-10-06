@@ -44,7 +44,7 @@ export const GROUP_KEY: Record<PathGroup, 'path.morePractice' | 'path.moreLab' |
  */
 export const FINAL_PARTS = 14;
 /** JobPrep.tsx checklist items. Pinned by the test, which counts them in the page. */
-export const JOB_PREP_ITEMS = 17;
+export const JOB_PREP_ITEMS = 16;
 /** src/core/assessment/exam.ts EXAM_FOCUS_ORDER.length / EXAM_SIZES.length — pinned by the test. */
 export const EXAM_FOCI = 5;
 export const EXAM_SIZES = 4;
@@ -150,7 +150,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
     progress: (c) => (c.published ? { done: c.counts.bankPractised, total: c.published.total } : null),
   },
   {
-    route: '/interview',
+    route: '/interview-mode',
     group: 'practice',
     prefix: 'ia:',
     facts: (c) => [
@@ -162,7 +162,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
     progress: null,
   },
   {
-    route: '/mock',
+    route: '/mock-interviews',
     group: 'practice',
     prefix: 'lab:mock:',
     facts: (c) => [`${c.mockTotal} questions`, `${c.counts.mockDone} attempted`],
@@ -177,7 +177,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
     progress: null,
   },
   {
-    route: '/final',
+    route: '/final-assessment',
     group: 'practice',
     prefix: 'final:part:',
     facts: (c) => [`${FINAL_PARTS}-part paper`, `${c.counts.finalParts} parts scored`],
@@ -226,7 +226,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
     progress: null,
   },
   {
-    route: '/ai',
+    route: '/ai-lab',
     group: 'lab',
     facts: () => ['prompt + embedding labs', 'local runtime'],
     // A guided lab: it writes no per-step record, so there is no figure to print. Facts only.
@@ -239,7 +239,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
     progress: null,
   },
   {
-    route: '/rag',
+    route: '/rag-lab',
     group: 'lab',
     prefix: 'lab:rag:',
     facts: (c) => [`${c.counts.ragRounds} retrieval rounds run`, 'chunking + vector search'],
@@ -255,14 +255,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
 
   /* -------------------------------- career -------------------------------- */
   {
-    route: '/resume',
-    group: 'career',
-    prefix: 'resume:',
-    facts: (c) => [`${c.counts.resumeAnswers} defense answers`, 'bullets + 60-second pitch'],
-    progress: null,
-  },
-  {
-    route: '/jobprep',
+    route: '/job-prep',
     group: 'career',
     prefix: 'jobPrep',
     facts: (c) => [`${c.counts.jobPrepDone} / ${JOB_PREP_ITEMS} checklist items`],
@@ -297,7 +290,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
     progress: null,
   },
   {
-    route: '/cheats',
+    route: '/cheat-sheets',
     group: 'reference',
     facts: () => ['syntax reference', 'local run'],
     progress: null,
@@ -330,18 +323,22 @@ export const EXTRA_PATHS: ExtraPath[] = [
 export const PATH_ROUTE_ALLOWLIST: string[] = [
   '/',                    // dashboard — the landing surface itself
   '/start',               // the front door: a landing page, not a path
-  '/path',                // the Learning Path: this page
   '/practice',            // pillar hub — its cards (/questions, /exam, /review, …) are the paths
   '/labs',                // pillar hub — the lab cards are the paths
-  '/interviews',          // pillar hub — /interview, /mock, /defense are the paths
-  '/career',              // pillar hub — /resume, /jobprep, /progress are the paths
+  '/interviews',          // pillar hub — /interview-mode, /mock-interviews, /defense are the paths
+  '/career',              // pillar hub — /job-prep, /defense, /progress are the paths
   '/track/:trackSlug',    // owned by the 8 TRACK_DEFS cards
   '/lesson/:sid/:stage',  // owned by the 8 TRACK_DEFS cards
   '/lesson/:sid',
+  '/courses',             // the 11-course hub: a list of courses, not a path card
+  '/course/:slug',        // one course's step index — owned by the /courses grid
+  '/course/:slug/:step',  // one step, 7 tabs — owned by its course
   '/pdf/:page',           // the guide's page-deep-link form of /pdf
   '/pdf/playbook/:page',  // …and the playbook's page-deep-link form of /pdf/playbook
   '/settings',            // setup, not a path
   '/onboarding',          // first-run gate
+  '/login',               // Supabase-backed account entry
+  '/admin',               // server-authorized account management
   '*',                    // fallback route
 ];
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { ArchitectureDiagram } from '../../components/ui/ui';
 
 interface Step { thought: string; tool: string; observation: string; next: string }
@@ -39,6 +40,7 @@ export default function AgenticLab() {
 
   return (
     <div>
+      <HubCrumb hub="/labs" hubLabel="Labs" page="Agentic AI Lab" />
       <h1>🕸️ Agentic AI Lab</h1>
       <p className="muted small">Step through agent decision loops — thought summaries, tool calls, observations and next actions. Fully local simulation; concise decision summaries, no hidden chain-of-thought.</p>
 
@@ -51,7 +53,7 @@ export default function AgenticLab() {
       </div>
 
       <div className="card">
-        <h3>TASK: {scenario}</h3>
+        <h2>TASK: {scenario}</h2>
         <p className="small muted">{sc.goal}</p>
         <ArchitectureDiagram nodes={['Trigger', 'Agent', 'Context', 'Decision', 'Tool', 'Observation', 'Next Action', 'Final Response']} note="The agent loop: decide → act → observe → repeat until done or stop-condition." />
       </div>

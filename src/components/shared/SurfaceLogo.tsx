@@ -1,9 +1,9 @@
 import type { GlyphId } from '../../core/learning/surfaces';
 
 /**
- * The BroCode mark family — 37 marks, one grid, one stroke weight.
+ * The BroCode mark family — 36 marks, one grid, one stroke weight.
  *
- * The spec this implements asks for 61 logos. 61 drawings is the wrong answer: a platform where
+ * The spec this implements asks for 60 logos. 60 drawings is the wrong answer: a platform where
  * every surface has its own hand-drawn art looks like a clip-art folder, and the learner has to
  * relearn a mark for every page. So the system is three families — DOMAIN (the ten technology
  * identities), STAGE (the ten stages of the master path) and FEATURE (the 25 support surfaces) —
@@ -264,16 +264,6 @@ const GLYPHS: Record<GlyphId, JSX.Element> = {
     <>
       <circle cx="10.6" cy="10.6" r="5.8" />
       <path d="M15 15l4.6 4.6" />
-    </>
-  ),
-  resume: (
-    <>
-      <rect x="5.2" y="3.4" width="13.6" height="17.2" rx="2.4" />
-      <circle cx="10.4" cy="9.4" r="1.8" />
-      <path d="M8 13.4a2.6 2.6 0 0 1 4.8 0" />
-      <path d="M14.6 9h1.8" />
-      <path d="M14.6 12.2h1.8" />
-      <path d="M8.4 17h8" />
     </>
   ),
   briefcase: (

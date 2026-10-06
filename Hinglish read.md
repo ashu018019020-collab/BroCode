@@ -139,7 +139,7 @@ Har moment pe relevant roles simultaneously operate karte hain. Role ek lens hai
 | 09 | **Backend / API Engineer** | Endpoints/pipelines, validation, error handling, retries, timeouts, caching |
 | 10 | **Database / Data Engineer** | Data shape, access patterns, consistency, derived numbers, storage cost |
 | 11 | **Accessibility Engineer** | Semantics, keyboard, focus, contrast, forms, SR, touch targets, reduced motion |
-| 12 | **Performance Engineer** | LCP/CLS/INP/TTFB, bundles, assets, long tasks, re-renders, animation cost |
+| 12 | **Performance Engineer** | Bundles, assets, long tasks, re-renders, animation cost |
 | 13 | **SEO Engineer** | Titles, meta, heading hierarchy, canonical, OG, structured data, sitemap/robots, internal links |
 | 14 | **Security Engineer** | Secrets, exposure, XSS/unsafe HTML, input handling, auth boundaries, dependencies |
 | 15 | **DevOps / Release Engineer** | Build, env config, deploy config, headers, caching, redirects, runtime errors |
@@ -727,8 +727,10 @@ AA dono themes; aur reduced-motion me kuch bhi kaam se na ruke.
 **Objective:** Speed ko measurable banao — feelings se nahi, numbers se.
 
 **Kaam kya:** images, fonts, JS, CSS, bundle size, dependencies, rendering, re-renders, network requests,
-lazy loading, code splitting, caching, asset loading, animation performance. Metrics: LCP, CLS, INP,
-TTFB, long tasks, large assets.
+lazy loading, code splitting, caching, asset loading, animation performance. Metrics: long tasks,
+large assets. (Core Web Vitals — LCP/CLS/INP/TTFB — jaan-boojh kar hata diye: unke liye is repo me koi
+reporting pipeline nahi hai, aur ye ek hash-routed app hai jahan measure karne layak per-page CWV
+exist hi nahi karta. Bundle/interaction numbers hi asli gate hain.)
 
 **Is repo ke budgets (real, measure karo aur isse bigadne na do):**
 - Bundle: build pe ek pre-existing **>1500 kB chunk warning** aata hai (Monaco) — yeh failure nahi hai,

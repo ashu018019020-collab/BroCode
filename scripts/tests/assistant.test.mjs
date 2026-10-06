@@ -289,6 +289,6 @@ test('the hint reads no counter that nothing writes', () => {
   assert.doesNotMatch(ast, /:hint`\]/, 'the unwritten tries key is back in the engine');
   assert.match(ast, /quickHint\(state, sections, context, asked\)/, 'the typed-hint route drops the context');
   const card = read('src/components/shared/AssistantCard.tsx');
-  assert.match(card, /quickHint\(state, sections, context, askedHints\)/, 'the card drops the surface or the count');
-  assert.match(card, /askLocal\(question, sections, state, context, askedHints\)/, 'typed questions lose the rung');
+  assert.match(card, /quickHint\(state, sections, activeContext, askedHints\)/, 'the card drops page context or the count');
+  assert.match(card, /askLocal\(question, sections, state, contextForIndex\(index\), askedHints, index\)/, 'typed questions lose resolved page context or the rung');
 });

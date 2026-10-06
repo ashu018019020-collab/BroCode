@@ -1,14 +1,22 @@
 {
-  "name": "ai-engineer-master-lab",
+  "name": "BroCode",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node server/index.mjs",
+    "bootstrap:admin": "node server/bootstrap-admin.mjs",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:setup": "node scripts/db-setup.cjs",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"scripts/tests/*.test.cjs\" \"scripts/tests/*.test.mjs\"",
+    "test:auth": "node --test scripts/tests/auth.test.mjs",
     "doctor": "node scripts/doctor.cjs",
     "curriculum:validate": "node scripts/curriculum.cjs validate",
     "curriculum:report": "node scripts/curriculum.cjs report",
@@ -16,6 +24,9 @@
     "curriculum:learn:write": "node scripts/learn.cjs --write",
     "curriculum:stages": "node scripts/stages.cjs",
     "curriculum:stages:write": "node scripts/stages.cjs --write",
+    "courses": "node scripts/courses.cjs",
+    "courses:write": "node scripts/courses.cjs --write",
+    "course:audit": "node scripts/course-audit.cjs",
     "questions:seed": "node scripts/questions.cjs seed",
     "questions:validate": "node scripts/questions.cjs validate",
     "questions:report": "node scripts/questions.cjs report",
@@ -29,6 +40,12 @@
     "questions:playbook": "node scripts/questions.cjs playbook",
     "search:index": "node scripts/searchindex.cjs",
     "search:index:write": "node scripts/searchindex.cjs --write",
+    "ai:index": "node scripts/ai-index.cjs",
+    "ai:index:write": "node scripts/ai-index.cjs --write",
+    "sitemap": "node scripts/sitemap.cjs",
+    "sitemap:write": "node scripts/sitemap.cjs --write",
+    "og": "node scripts/og.cjs",
+    "og:write": "node scripts/og.cjs --write",
     "curriculum:guides": "node scripts/guides.cjs",
     "curriculum:guides:write": "node scripts/guides.cjs --write",
     "curriculum:topics": "node scripts/guides.cjs topics",
@@ -44,6 +61,9 @@
     "questions:export": "node scripts/questions.cjs export"
   },
   "dependencies": {
+    "@prisma/client": "6.19.3",
+    "@supabase/supabase-js": "2.75.0",
+    "dotenv": "16.6.1",
     "lucide-react": "^1.47.0",
     "monaco-editor": "^0.56.0",
     "pdfjs-dist": "3.11.174",
@@ -56,7 +76,13 @@
     "@types/react": "^18.3.10",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.2",
+    "prisma": "^6.19.3",
     "typescript": "^5.5.4",
     "vite": "^5.4.8"
+  },
+  "overrides": {
+    "@mapbox/node-pre-gyp": {
+      "tar": "^7.5.21"
+    }
   }
 }

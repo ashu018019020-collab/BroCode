@@ -13,15 +13,15 @@ export interface SearchItem {
 export const PAGES: { title: string; detail: string; route: string }[] = [
   { title: 'Dashboard', detail: 'Mission, next best action, progress', route: '/' },
   { title: 'Start', detail: 'The front door — what this app is and where to begin', route: '/start' },
-  { title: 'Learning Path', detail: '8-track AI Engineer roadmap', route: '/path' },
+  { title: 'Courses', detail: '11 courses over the 36 roadmap steps, each with its own index', route: '/courses' },
   { title: 'Practice', detail: 'Question Bank, exams, review queue and mistakes', route: '/practice' },
   { title: 'Labs', detail: 'Every runnable lab: Python, SQL, NumPy + Pandas, AI, RAG, Agentic', route: '/labs' },
   { title: 'Interview', detail: 'Interview mode, mock rounds and project defense', route: '/interviews' },
-  { title: 'Career', detail: 'Resume, job prep and the progress record', route: '/career' },
+  { title: 'Career', detail: 'Job prep, defense and the progress record', route: '/career' },
   { title: 'Concepts', detail: 'Browse every concept in the curriculum', route: '/concepts' },
   { title: 'Review Queue', detail: 'Spaced repetition — due today', route: '/review' },
   { title: 'Mistake Tracker', detail: 'Your repeated mistakes and weak topics', route: '/mistakes' },
-  { title: 'Interview Mode', detail: 'Answer aloud with structured feedback', route: '/interview' },
+  { title: 'Interview Mode', detail: 'Answer aloud with structured feedback', route: '/interview-mode' },
   { title: 'Project Defense', detail: 'Explain your projects like an interview', route: '/defense' },
   { title: 'Code Playground', detail: 'Python IDE + AI tutor', route: '/playground' },
   { title: 'Project Lab', detail: 'Mini and real projects with build steps', route: '/projects' },
@@ -31,16 +31,15 @@ export const PAGES: { title: string; detail: string; route: string }[] = [
   { title: 'NumPy + Pandas Lab', detail: 'Arrays, DataFrames, analysis', route: '/numpy-pandas' },
   { title: 'Notebook Lab', detail: 'Jupyter notebooks: run cells here, NumPy + Pandas included', route: '/notebooks' },
   { title: 'SQL Lab', detail: 'Queries, joins, real-world data', route: '/sql' },
-  { title: 'AI / GenAI Lab', detail: 'LLMs, prompt engineering, RAG basics', route: '/ai' },
+  { title: 'AI / GenAI Lab', detail: 'LLMs, prompt engineering, RAG basics', route: '/ai-lab' },
   { title: 'Agentic AI Lab', detail: 'Agents, tool use, workflows', route: '/agentic' },
-  { title: 'RAG Lab', detail: 'Chunk, embed, retrieve, answer — in the browser', route: '/rag' },
-  { title: 'Final Assessment', detail: 'Everything, in one final gate', route: '/final' },
-  { title: 'Resume Labs', detail: 'Project bullets, defense and portfolio', route: '/resume' },
-  { title: 'Mock Interviews', detail: 'Timed mock rounds with scoring', route: '/mock' },
-  { title: 'Job Prep', detail: 'Application checklist and prep tracker', route: '/jobprep' },
+  { title: 'RAG Lab', detail: 'Chunk, embed, retrieve, answer — in the browser', route: '/rag-lab' },
+  { title: 'Final Assessment', detail: 'Everything, in one final gate', route: '/final-assessment' },
+  { title: 'Mock Interviews', detail: 'Timed mock rounds with scoring', route: '/mock-interviews' },
+  { title: 'Job Prep', detail: 'Application checklist and prep tracker', route: '/job-prep' },
   { title: 'Progress', detail: 'Detailed analytics of your mastery', route: '/progress' },
   { title: 'Notes', detail: 'Your own notes, tags and favourites', route: '/notes' },
-  { title: 'Cheat Sheets', detail: 'Printable prompts built from the curriculum', route: '/cheats' },
+  { title: 'Cheat Sheets', detail: 'Printable prompts built from the curriculum', route: '/cheat-sheets' },
   { title: 'PDF Reader', detail: 'The source book, bundled in the app', route: '/pdf' },
   { title: 'Settings', detail: 'Language, motion, data export and import', route: '/settings' },
 ];
@@ -70,8 +69,8 @@ export function searchAll(sections: Section[], extras: Extras, state?: AppState)
     s.projectLab.forEach((p, i) => items.push({ id: `p:${s.id}:${i}`, kind: 'ProjectLab', title: `${p.tier}: ${p.name}`, detail: p.what.slice(0, 90), route: `/lesson/${s.id}/project`, page: s.pages.project[0] }));
     s.checkpoint.forEach((c, i) => items.push({ id: `cp:${s.id}:${i}`, kind: 'Checkpoint', title: c.q.slice(0, 80), detail: c.key.slice(0, 90), route: `/lesson/${s.id}/checkpoint`, page: s.pages.checkpoint[0] }));
   }
-  extras.mockInterview.forEach((r) => r.questions.forEach((q, i) => items.push({ id: `mk:${r.round}:${i}`, kind: 'Mock', title: q.q.slice(0, 80), detail: q.a.slice(0, 90), route: `/final` })));
-  extras.intensive.forEach((q, i) => items.push({ id: `in:${i}`, kind: 'Mock', title: q.q.slice(0, 80), detail: q.a.slice(0, 90), route: `/final` }));
+  extras.mockInterview.forEach((r) => r.questions.forEach((q, i) => items.push({ id: `mk:${r.round}:${i}`, kind: 'Mock', title: q.q.slice(0, 80), detail: q.a.slice(0, 90), route: `/final-assessment` })));
+  extras.intensive.forEach((q, i) => items.push({ id: `in:${i}`, kind: 'Mock', title: q.q.slice(0, 80), detail: q.a.slice(0, 90), route: `/final-assessment` }));
   return items;
 }
 

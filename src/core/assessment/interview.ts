@@ -64,7 +64,7 @@ export const SKILL_GROUPS: SkillGroup[] = [
   { id: 'genai', label: 'GenAI + LLMs', icon: 'Sparkles', tone: 'amber', hint: 'RAG, prompting, model behaviour' },
   { id: 'agentic', label: 'Agentic AI', icon: 'Bot', tone: 'cyan', hint: 'Agents, LangChain, n8n' },
   { id: 'apis', label: 'APIs + Production', icon: 'Server', tone: 'orange', hint: 'FastAPI, Docker, monitoring, system design' },
-  { id: 'career', label: 'Interview + Projects', icon: 'Briefcase', tone: 'gold', hint: 'Resume, behaviour, coding rounds' },
+  { id: 'career', label: 'Interview + Projects', icon: 'Briefcase', tone: 'gold', hint: 'Projects, behaviour, coding rounds' },
 ];
 
 /** Where a label goes when nothing claims it. Rendered like any other section, so an unmapped skill is noticed. */
@@ -83,7 +83,7 @@ const RULES: [string, RegExp][] = [
   ['ml', /(^|\W)(ml|nlp)(\W|$)|machine learning|scikit|transformer/i],
   ['sql', /sql|database/i],
   // Before `data`: "AI Engineer + Data Scientist Interview Mastery" is an interview section.
-  ['career', /interview|resume|\bcareer\b|behavior|coding|pattern/i],
+  ['career', /interview|resume|\bcareer\b|behavior|coding|pattern|\bproject\b/i],
   // `^data$` is the mock round's bare label; "Data Science" is named explicitly so that the far more
   // common "Data Types" is never swept up by the word alone.
   ['data', /numpy|pandas|analytic|power bi|data science|^data$/i],

@@ -1,8 +1,10 @@
 # Architecture — AI Engineer Master Lab
 
-One-directional flow: **authored content (`content/`) → generator scripts → build artifacts
+Learning flow: **authored content (`content/`) → generator scripts → build artifacts
 (`public/generated/`) → core logic (`src/core/*`, pure) → store (`src/core/storage/store.ts`, single
-owner) → features (`src/features/*`, render only)**.
+owner) → features (`src/features/*`, render only)**. Optional account access is separate:
+**browser auth client (`src/core/auth/`) → Node API (`server/`) → Supabase Auth sessions and
+Postgres profiles/roles through Prisma (`prisma/`)**.
 
 ## The golden rule: `content/` is source, `public/generated/` is output
 
@@ -21,17 +23,23 @@ cached by that rule and must be added deliberately.
 
 | Layer | Location | Rule |
 |---|---|---|
-| Data access | `src/core/data/` — `curriculum.tsx` (the React context + JSON load), `questions`, `playbook` (loader), `tracks`, `paths` (the only place that knows stored-key shapes for cards), `notebooks`, `datasets`, `packages`, `schema`, `searchindex` | **Loaders/adapters only** — there is no JSON under `src/`; the authored source is `content/` and this layer fetches the published `./generated/…` and exposes it typed. No maths, no gates. `curriculum.tsx` is the one `.tsx` here — a provider, not a page. |
-| Core — learning | `src/core/learning/` — `progress` (mastery gates, section %), `roadmap` (the learning spine), `review` (spaced repetition), `advance` (stage unlock), `paths` (the Learning Path card registry + `PATH_ROUTE_ALLOWLIST` + `pathStat`), `coverage` (the family predicates **and** every family tally), `study` (the study-day timeline, the year heat grid + its month labels, `today()`) | Pure functions over `AppState` + curriculum. `paths.ts` is here, not in `assessment/`: its subject is the learning journey (which card, at what step), while `assessment/` is only about grading — rubrics, exam papers, accuracy. |
+| Data access | `src/core/data/` — `curriculum.tsx` (the React context + JSON load), `questions`, `playbook` (loader), `tracks`, `paths` (the only place that knows stored-key shapes for cards), `notebooks`, `datasets`, `packages`, `schema`, `searchindex`, `knowledge` (lazy AI index loader) | **Loaders/adapters only** — there is no JSON under `src/`; the authored source is `content/` and this layer fetches the published `./generated/…` and exposes it typed. No maths, no gates. `curriculum.tsx` is the one `.tsx` here — a provider, not a page. |
+| Core — learning | `src/core/learning/` — `progress` (mastery gates, section %), `roadmap` (the learning spine), `review` (spaced repetition), `advance` (stage unlock), `paths` (the support-path card registry + `PATH_ROUTE_ALLOWLIST` + `pathStat`), `coverage` (the family predicates **and** every family tally), `study` (the study-day timeline, the year heat grid + its month labels, `today()`) | Pure functions over `AppState` + curriculum. `paths.ts` is here, not in `assessment/`: its subject is the learning journey (which card, at what step), while `assessment/` is only about grading — rubrics, exam papers, accuracy. |
 | Core — assessment | `src/core/assessment/` — `evaluate` (keyword rubrics, output checks, defense scoring), `exam` (focus types, paper sizes), `interview`, `accuracy` (what was done / how right it was), `playbook` (the pure item contract + `nextPlaybookTarget`) | Pure, and **grading-only**. `learning/paths.ts` and `assessment/exam.ts` are loaded by explicit path by two test files that do not register the `.ts` hook, so those two stay value-import-free (see below). Two modules are named `playbook.ts` on purpose and must not be merged: this one holds the rule, `core/data/playbook.ts` holds the loader. |
-| Core — AI | `src/core/ai/` — `assistant`, `tutor` (hints, `nextTask`), `rag`, `project` (offline explanations), `mission` (daily queue), `coach` (mistake classification, the redo pile) | Deterministic and offline. No model calls; the "AI" is rules over the curriculum. |
+| Core — AI | `src/core/ai/` — `assistant`, `context` (current route/course/lesson/progress), `knowledge` (typed inverted-index retrieval), `tutor` (hints, `nextTask`), `rag`, `project` (strict app facts), `mission` (daily queue), `coach` (mistake classification, the redo pile) | Deterministic and offline. No model calls: the assistant retrieves only relevant local passages and answers with source links. `npm run ai:index` reports; `npm run ai:index:write` regenerates compressed `public/generated/ai/knowledge.json.gz` from published sources. |
 | Core — platform | `src/core/platform/` — `keys` (**persisted-key shapes + gamification policy**), `search` + `searchindex` (the Ctrl+K index), `notify`, `achievements`, `anim` (count-up maths), `ipynb`, `traceback` | Pure utilities. `keys.ts` is the only owner of stored shapes. |
-| Storage | `src/core/storage/` — `store.ts` (**single owner** of `AppState`, the only module that touches `localStorage`), `ui.ts` (theme/panel prefs), `exam.ts`, `study.ts` | Exposes `useStore()`, `setState()` and the mutation helpers (`addXp`, `recordAttempt`, `addMistake`, `bumpStreak`, `exportProgress`, `importProgress`). |
+| Storage | `src/core/storage/` — `store.ts` (**single owner** of `AppState`), `account.ts` (the per-account localStorage namespace), `ui.ts` (theme/panel prefs), `exam.ts`, `study.ts` | Exposes `useStore()`, `setState()` and the mutation helpers (`addXp`, `recordAttempt`, `addMistake`, `bumpStreak`, `exportProgress`, `importProgress`). Private state is keyed per signed-in account; on sign-in/out the store re-reads the matching namespace. |
 | Runners | `src/features/coding/` — `runners` (main thread), `pythonWorker` (Pyodide in a Web Worker) | Execution only; no app state. The worker seeds the bundled datasets into the Pyodide FS at boot, so `pd.read_csv('<dataset>.csv')` works in every Python surface. |
 | Features (pages) | `src/features/<pillar>/` — `dashboard`, `learning`, `practice`, `labs`, `projects`, `interview`, `career`, `progress`, `tools` | Rendering + intent; all state mutations go through store helpers. No key shapes, no level maths, no gate logic inline. |
 | Components | `src/components/{ui,code,learning,shared}/` | Presentational building blocks. `learning/PathGrid` and `shared/HubGrid` render card grids; `code/MonacoIDE` and `code/JupyterNotebook` own the editor surfaces. |
 | App shell | `src/app/` — `App.tsx` (routes, sidebar, `NAV`), `main.tsx`, `i18n/{index.tsx,locales.ts}` | `App.tsx` doubles as the shared **label/icon module**: 8 files import `NAV`/`TRACK_DEFS` *from* `../app/App`. |
 | Types | `src/types/` — `index.ts` (`AppState` and friends), `sql.d.ts` | Shared shapes; storage and features both import from here. |
+| Optional account service | `src/core/auth/` (browser Supabase client + session provider), `server/` (Node API, Supabase adapter, Prisma store, first-admin bootstrap), `prisma/` (schema and migration) | Supabase Auth owns credentials and sessions (email, GitHub, Google; PKCE). Postgres stores profiles, roles and summary-only progress snapshots behind RLS; the server checks the database-backed role on every admin request. Private learning data stays in per-account browser storage and remains available to guests offline. |
+
+The account service is an intentional online exception to the offline-first learning app. Only the
+Supabase publishable key may reach the browser; the secret key is server-only. Production must
+terminate HTTPS and proxy `/api` to the Node service; local setup, schema, and bootstrap
+instructions live in `server/README.md`.
 
 ## The pillar model (why there are two kinds of sidebar entry)
 
@@ -41,20 +49,20 @@ PDF Reader, Settings). The five pillar hubs — `/practice`, `/labs`, `/intervie
 `/start` landing — are *indexes*, not merges: every underlying page still exists, still owns its
 route, and still reads the same engine data. `NAV` carries a `group`
 (`'nav.pillars' | 'nav.tools' | 'hidden'`) and 19 registered-but-hidden entries, because a page's
-label and icon for the Learning Path cards, the hub grids and the command palette all come from
+label and icon for the support-path cards, the hub grids and the command palette all come from
 `NAV` — deleting an entry prints a raw URL on a card.
 
 ## Route knowledge is duplicated on purpose — and one test holds it together
 
 | Registry | File | Count |
 |---|---|---|
-| `<Route path>` table | `src/app/App.tsx` | 40 |
-| `NAV` entries | `src/app/App.tsx` | 31 (12 visible + 19 hidden) |
+| `<Route path>` table | `src/app/App.tsx` | 44 |
+| `NAV` entries | `src/app/App.tsx` | 31 (13 visible + 18 hidden) |
 | `PAGES` (command palette) | `src/core/platform/search.ts` | 32 |
-| `EXTRA_PATHS` (Learning Path cards) | `src/core/learning/paths.ts` | 25 |
-| `PATH_ROUTE_ALLOWLIST` (routes deliberately *not* path cards) | `src/core/learning/paths.ts` | 15 |
+| `EXTRA_PATHS` (support-path cards, drawn by `PathGrid` on the courses home) | `src/core/learning/paths.ts` | 24 |
+| `PATH_ROUTE_ALLOWLIST` (routes deliberately *not* path cards) | `src/core/learning/paths.ts` | 19 |
 
-25 + 15 = the 40 routes. `scripts/tests/playbook.test.mjs` regex-reads `App.tsx` as **text** and
+24 + 20 = the 44 routes. `scripts/tests/playbook.test.mjs` regex-reads `App.tsx` as **text** and
 diffs every route against `EXTRA_PATHS` + the allowlist, so a new route must be registered in one of
 the two or deliberately allowlisted. A path card with no `NAV` entry needs a `labelKey` override
 (`/pdf/playbook`).

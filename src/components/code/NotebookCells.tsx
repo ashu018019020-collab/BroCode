@@ -370,7 +370,7 @@ export function LibraryShelf({ onInsert, open: openProp }: { onInsert?: (code: s
             ))}
           </div>
           <p className="small muted" style={{ margin: '6px 0 0' }}>
-            Datasets pehle se filesystem me hain — `pd.read_csv(&quot;students.csv&quot;)` bina internet chalega.
+            Datasets pehle se filesystem me hain — `pd.read_csv(&quot;students.csv&quot;)` seedha chalega.
           </p>
         </div>
       )}

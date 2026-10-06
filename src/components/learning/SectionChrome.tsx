@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, BarChart3, BookMarked, BookOpen, Bot, Brain, Bug, CheckSquare,
   Code2, FileText, Flame, FolderGit2, Mic2, Moon, Package, Play, Repeat, Settings as SettingsIcon,
@@ -59,7 +59,7 @@ export function SectionHero({
       <button className="back-tile" onClick={onBack} aria-label={`Back to ${backLabel}`}>
         <span className="arrow"><ArrowLeft size={15} /></span>
         <span>
-          <b>Back to Path</b>
+          <b>Back to course</b>
           <span>{backLabel}</span>
         </span>
       </button>
@@ -175,13 +175,12 @@ export function StageGrid({
 /** Small always-available tool row — the same destinations as the sidebar, one tap away. */
 export function UtilityStrip() {
   const ui = useUi();
-  const nav = useNavigate();
   const tools: { to: string; Icon: IconCmp; label: string; sub: string; tone: Tone }[] = [
     { to: '/notes', Icon: StickyNote, label: 'Notes', sub: 'Write & Organize', tone: 'amber' },
-    { to: '/cheats', Icon: BookMarked, label: 'Resources', sub: 'Code, Docs, Links', tone: 'violet' },
+    { to: '/cheat-sheets', Icon: BookMarked, label: 'Resources', sub: 'Code, Docs, Links', tone: 'violet' },
     { to: '/playground', Icon: Sparkles, label: 'AI Tutor', sub: 'Explain, Hint, Debug', tone: 'cyan' },
     { to: '/progress', Icon: BarChart3, label: 'Progress', sub: 'Detailed Analytics', tone: 'green' },
-    { to: '/jobprep', Icon: Target, label: 'Goals', sub: 'Set & Track', tone: 'fuchsia' },
+    { to: '/job-prep', Icon: Target, label: 'Goals', sub: 'Set & Track', tone: 'fuchsia' },
     { to: '/review', Icon: Repeat, label: 'Review', sub: 'Spaced Repetition', tone: 'blue' },
     { to: '/settings', Icon: SettingsIcon, label: 'Settings', sub: 'Customize', tone: 'purple' },
   ];
@@ -205,10 +204,10 @@ export function UtilityStrip() {
         <span className={`switch ${ui.focus ? 'on' : ''}`}><i /></span>
       </button>
       <span className="util-sep" />
-      <button className="util-tile tone-gold" onClick={() => nav('/exam')}>
+      <Link className="util-tile tone-gold" to="/exam">
         <span className="ic"><Flame size={15} /></span>
         <span><b>Timed Test</b><span>Exam Mode</span></span>
-      </button>
+      </Link>
     </div>
   );
 }
@@ -243,7 +242,7 @@ export function LessonCoach({
     <div className="coach-grid">
       <div className="card coach-card tone-blue">
         <div className="row spread">
-          <h3 className="row" style={{ gap: 8, margin: 0 }}><Zap size={16} color="var(--blue)" /> Next Best Action</h3>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}><Zap size={16} color="var(--blue)" /> Next Best Action</h2>
           <span className="chip">{sectionTitle}</span>
         </div>
         <p className="small" style={{ margin: '8px 0 4px' }}><b>{nba.label}</b></p>
@@ -255,7 +254,7 @@ export function LessonCoach({
 
       <div className="card coach-card tone-cyan">
         <div className="row spread">
-          <h3 className="row" style={{ gap: 8, margin: 0 }}><Target size={16} color="var(--cyan)" /> Today's Goal</h3>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}><Target size={16} color="var(--cyan)" /> Today's Goal</h2>
           <span className="chip">{todayTasks}/{goal} tasks</span>
         </div>
         <p className="muted small" style={{ margin: '8px 0 6px' }}>
@@ -270,7 +269,7 @@ export function LessonCoach({
 
       <div className="card coach-card tone-red">
         <div className="row spread">
-          <h3 className="row" style={{ gap: 8, margin: 0 }}><Bug size={16} color="var(--red)" /> Mistakes to Review</h3>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}><Bug size={16} color="var(--red)" /> Mistakes to Review</h2>
           <span className="count-pill" style={{ background: open.length ? 'var(--red)' : 'var(--panel2)' }}>{open.length}</span>
         </div>
         {!rows.length && (
@@ -293,7 +292,7 @@ export function LessonCoach({
 
       <div className="card coach-card tone-cyan">
         <div className="row spread">
-          <h3 className="row" style={{ gap: 8, margin: 0 }}><Bot size={16} color="var(--cyan)" /> AI Assistant</h3>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}><Bot size={16} color="var(--cyan)" /> AI Assistant</h2>
           <span className="chip easy">● Ready</span>
         </div>
         <p className="muted small" style={{ margin: '8px 0 6px' }}>Tutor: explain, hint, debug — bundled curriculum se.</p>
@@ -312,6 +311,23 @@ export function BackChip({ label, to }: { label: string; to: string }) {
       <span className="arrow"><ArrowLeft size={15} /></span>
       <span><b>Back</b><span>{label}</span></span>
     </Link>
+  );
+}
+
+/**
+ * The pillar breadcrumb: the hub this page belongs to, then the page's own name.
+ *
+ * Every surface a pillar hub indexes wears one, so a learner who arrived from a search result, a
+ * notebook deep link or the browser's back button can always walk up to the hub that owns the
+ * page. The four pillars (Practice, Labs, Interview, Career) share this so their crumbs cannot
+ * drift into four different shapes, and the layout test reads it to prove the wiring is intact.
+ */
+export function HubCrumb({ hub, hubLabel, page }: { hub: string; hubLabel: string; page: string }) {
+  return (
+    <div className="row small muted" style={{ gap: 6, marginBottom: 6 }}>
+      <Link to={hub} className="row" style={{ gap: 4 }}><ArrowLeft size={13} /> {hubLabel}</Link>
+      <span>›</span><span className="chip">{page}</span>
+    </div>
   );
 }
 

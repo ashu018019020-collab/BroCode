@@ -20,12 +20,13 @@ import { reviewInfo, reviewLabel } from '../learning/review';
 import { questionRubric } from '../assessment/evaluate';
 import { bankAccuracy, bankAccuracyBySection, isAnswer, pctText, rubricFor } from '../assessment/accuracy';
 import { askProject } from './project';
+import { retrieveKnowledge, type KnowledgeIndex } from './knowledge';
 
 export interface Answer {
   /** Hinglish answer text. Always sourced from real content or real state. */
   text: string;
   /** Where the answer came from, so the learner can read the full lesson. */
-  sources: { title: string; route: string }[];
+  sources: { title: string; route: string; reference?: string }[];
   /** 0–1 lexical similarity of the best hit (0 when nothing matched). */
   confidence: number;
   /**
@@ -46,6 +47,17 @@ export interface Answer {
 export interface AssistantContext {
   /** The section the learner is inside right now — used to bias retrieval toward this lesson. */
   sectionId?: string;
+  route?: string;
+  pageTitle?: string;
+  courseSlug?: string;
+  courseTitle?: string;
+  chapterTitle?: string;
+  lessonTitle?: string;
+  topic?: string;
+  questionType?: string;
+  learningLevel?: string;
+  learningGoal?: string;
+  progressSummary?: string;
   /** Human label of the embedding surface, e.g. "Task 4 · coding". */
   where?: string;
   /** The code of the cell that produced the error below. */
@@ -110,7 +122,7 @@ function getIndex(sections: Section[]) {
   if (cached && cached.key === sections) return cached;
   const docs = buildDocs(sections);
   const chunks = buildChunks(docs, 45, 8);
-  const meta = chunks.map((c) => ({ route: docs.find((d) => c.source.startsWith(d.source))?.route ?? '/path', title: c.source }));
+  const meta = chunks.map((c) => ({ route: docs.find((d) => c.source.startsWith(d.source))?.route ?? '/courses', title: c.source }));
   cached = { key: sections, index: buildIndex(chunks), meta };
   return cached;
 }
@@ -196,12 +208,21 @@ function rankForSection(
 }
 
 /** Free-text question → best retrieved curriculum passage, biased to the lesson in view. */
-export function askLocal(question: string, sections: Section[], state: AppState, context?: AssistantContext, asked = 0): Answer {
+export function askLocal(
+  question: string,
+  sections: Section[],
+  state: AppState,
+  context?: AssistantContext,
+  asked = 0,
+  knowledge?: KnowledgeIndex,
+): Answer {
   const q = question.trim();
   if (!q) return { text: '', sources: [], confidence: 0, kind: 'fallback' };
 
   // "next task" style requests are answered from real progress state, not retrieval.
-  if (/\b(next|agla|aage|kya karun|what should i)/i.test(q)) return quickNext(state, sections);
+  if (/\b(next|agla|aage|kya karun|what should i|what should i learn)\b/i.test(q)) {
+    return quickNext(state, sections, context, q, knowledge);
+  }
   // A typed "hint" is the same request as the Give Hint button, so it gets the same context and
   // the same rung — otherwise the two routes answer differently about the same page.
   if (/\b(hint|hint do|clue|madad)\b/i.test(q)) return quickHint(state, sections, context, asked);
@@ -221,6 +242,11 @@ export function askLocal(question: string, sections: Section[], state: AppState,
   // what keeps curriculum retrieval unchanged for every lesson question.
   const project = askProject(q);
   if (project) return project;
+
+  if (knowledge) {
+    const indexed = answerFromKnowledge(q, knowledge, context);
+    if (indexed) return indexed;
+  }
 
   // Retrieve wide, then apply the preference rule — it can only promote a passage that is actually
   // a candidate, so the pool must be big enough to contain the section's own content.
@@ -245,7 +271,63 @@ export function askLocal(question: string, sections: Section[], state: AppState,
     };
   }
 
-  const sources = hits.map((h, i) => ({ title: meta[h.id]?.title ?? h.source, route: meta[h.id]?.route ?? '/path' })).slice(0, 3);
+  function answerFromKnowledge(
+    question: string,
+    index: KnowledgeIndex,
+    context?: AssistantContext,
+  ): Answer | null {
+    const hits = retrieveKnowledge(index, question, {
+      sectionId: context?.sectionId,
+      course: context?.courseSlug,
+      type: context?.questionType,
+      topic: context?.topic,
+      learningLevel: context?.learningLevel,
+      learningGoal: context?.learningGoal,
+    });
+    if (!hits.length) {
+      if (/\b(interview|project|portfolio|build idea)\b/i.test(question)) {
+        return {
+          text: 'Is category me matching published content nahi mila — main project ya interview material invent nahi karunga. Sawaal ko kisi specific topic, course ya section ke saath poochho.',
+          sources: context?.route ? [{ title: context.pageTitle ?? 'Current page', route: context.route.split('?')[0] }] : [],
+          confidence: 0,
+          kind: 'fallback',
+        };
+      }
+      return null;
+    }
+
+    const { document, score } = hits[0];
+    const answer = document.answer?.trim();
+    const explanation = document.explanation?.trim();
+    const body = document.body?.trim();
+    let text: string;
+    if (document.kind === 'interview' || document.kind === 'question' || document.kind === 'defense-question') {
+      text = `Question: **${document.title}**`;
+      if (answer) text += `\n\nAnswer: ${answer}`;
+      if (explanation) text += `\n\nWhy: ${explanation}`;
+    } else if (document.kind === 'project') {
+      text = `**${document.title}**${body ? `\n\n${body}` : answer ? `\n\n${answer}` : ''}`;
+    } else {
+      text = `**${document.title}**${body ? `\n\n${body}` : answer ? `\n\n${answer}` : ''}`;
+      if (explanation) text += `\n\n${explanation}`;
+    }
+    if (context?.progressSummary) text += `\n\nCurrent section progress: ${context.progressSummary}.`;
+    if (context?.learningLevel) text += ` Learner level: ${context.learningLevel}.`;
+
+    const sources = hits.slice(0, 3).map(({ document: hit }) => ({
+      title: [hit.sectionTitle ?? hit.courseTitle ?? hit.source, hit.title].filter(Boolean).join(' · '),
+      route: hit.route,
+      reference: `${hit.source} — ${hit.sourceRef}`,
+    }));
+    return {
+      text,
+      sources,
+      confidence: Math.min(1, Number((score / 3).toFixed(3))),
+      kind: document.kind === 'project' ? 'project' : 'curriculum',
+    };
+  }
+
+  const sources = hits.map((h, i) => ({ title: meta[h.id]?.title ?? h.source, route: meta[h.id]?.route ?? '/courses' })).slice(0, 3);
   const extra = top.score < 0.12
     ? '\n\n(Ye match thoda weak hai — neeche source khol ke confirm kar lo.)'
     : '';
@@ -253,8 +335,11 @@ export function askLocal(question: string, sections: Section[], state: AppState,
 }
 
 /** Quick action: explain the concept the coach would teach right now. */
-export function quickExplain(state: AppState, sections: Section[]): Answer {
-  const { section, why, schedule } = coachSectionFor(state, sections);
+export function quickExplain(state: AppState, sections: Section[], context?: AssistantContext): Answer {
+  const activeSection = context?.sectionId ? sections.find((item) => item.id === context.sectionId) : null;
+  const { section: coachedSection, why: coachWhy, schedule } = coachSectionFor(state, sections);
+  const section = activeSection ?? coachedSection;
+  const why = activeSection ? `Current lesson: ${activeSection.title}.` : coachWhy;
   const coach = coachFor(section, state, why);
   if (!coach?.concept) return { text: 'Abhi explain karne ke liye koi concept ready nahi hai.', sources: [], confidence: 0, kind: 'fallback' };
   const c = coach.concept;
@@ -271,7 +356,7 @@ export function quickExplain(state: AppState, sections: Section[]): Answer {
       `${why}\n\n**${c.title}**\n${c.body.slice(0, 420)}${c.body.length > 420 ? '…' : ''}` +
       `${c.code ? `\n\nExample:\n${c.code.slice(0, 240)}` : ''}${retakeBlock}${schedBlock}`,
     sources: [
-      { title: `${section?.title} → ${c.title}`, route: section ? `/lesson/${section.id}/learn` : '/path' },
+      { title: `${section?.title} → ${c.title}`, route: section ? `/lesson/${section.id}/learn` : '/courses' },
       ...(retake ? [{ title: retake.routeLabel, route: retake.route }] : []),
     ],
     confidence: 1,
@@ -530,7 +615,7 @@ export function quickAnswer(state: AppState, sections: Section[], context?: Assi
   if (!q) {
     return {
       text: 'Kis question ka answer chahiye? Question Bank ya lesson stage me kisi question ke saath 🤖 AI se hint kholo — phir main usi item ka answer, hint aur percentage dunga.',
-      sources: [{ title: 'Question Bank', route: '/questions' }, { title: 'Interview Mode', route: '/interview' }],
+      sources: [{ title: 'Question Bank', route: '/questions' }, { title: 'Interview Mode', route: '/interview-mode' }],
       confidence: 1,
       kind: 'state',
     };
@@ -655,7 +740,25 @@ export function quickAccuracy(state: AppState, sections: Section[]): Answer {
 }
 
 /** Quick action: the single best next thing to do, with the reason. */
-export function quickNext(state: AppState, sections: Section[]): Answer {
+export function quickNext(
+  state: AppState,
+  sections: Section[],
+  context?: AssistantContext,
+  question = '',
+  knowledge?: KnowledgeIndex,
+): Answer {
+  const contextual = recommendNextTopic(question || context?.topic || '', sections, context, knowledge);
+  if (contextual) return contextual;
+  const active = context?.sectionId ? sections.find((section) => section.id === context.sectionId) : undefined;
+  if (active) {
+    const action = nextBestAction(active, state);
+    return {
+      text: `Tum abhi **${active.title}** me ho.\n\nIs section me next: **${action.label}** — ${action.reason}`,
+      sources: [{ title: `${active.title} · ${action.label}`, route: action.route }],
+      confidence: 1,
+      kind: 'next',
+    };
+  }
   const t = nextTask(state, sections);
   const cur = currentSection(sections, state);
   const nba = nextBestAction(cur, state);
@@ -665,6 +768,60 @@ export function quickNext(state: AppState, sections: Section[]): Answer {
     confidence: 1,
     kind: 'next',
   };
+}
+
+function recommendNextTopic(
+  question: string,
+  sections: Section[],
+  context?: AssistantContext,
+  knowledge?: KnowledgeIndex,
+): Answer | null {
+  const section = context?.sectionId ? sections.find((item) => item.id === context.sectionId) : undefined;
+  if (!section) return null;
+  const after = question.match(/(?:after|baad(?:\s+me)?|ke baad)\s+(.+?)(?:[?.!]|$)/i)?.[1]?.trim();
+  const concepts = section.learn?.concepts ?? [];
+  let currentIndex = -1;
+  if (after) {
+    const needle = after.toLowerCase().replace(/[^\w\s]/g, ' ').trim();
+    currentIndex = concepts.findIndex((concept) => concept.title.toLowerCase().includes(needle));
+  }
+  if (currentIndex < 0 && context?.topic) {
+    currentIndex = concepts.findIndex((concept) => concept.title.toLowerCase().includes(context.topic!.toLowerCase()));
+  }
+  if (currentIndex >= 0 && concepts[currentIndex + 1]) {
+    const next = concepts[currentIndex + 1];
+    return {
+      text: `After **${concepts[currentIndex].title}**, continue with **${next.title}**.\n\n${next.body}` +
+        (next.code ? `\n\nExample:\n${next.code.slice(0, 500)}` : ''),
+      sources: [{
+        title: `${section.title} · ${next.title}`,
+        route: `/lesson/${section.id}/learn`,
+        reference: `public/generated/curriculum/sections.json#${section.id}.learn.concepts[${currentIndex + 1}]`,
+      }],
+      confidence: 1,
+      kind: 'next',
+    };
+  }
+
+  const course = knowledge?.courses.find((item) => item.sections[section.id] !== undefined);
+  const sameCourseSections = course
+    ? sections.filter((candidate) => course.sections[candidate.id] !== undefined)
+    : sections;
+  const nextSection = sameCourseSections[sameCourseSections.indexOf(section) + 1];
+  if (nextSection?.learn?.concepts?.length) {
+    const next = nextSection.learn.concepts[0];
+    return {
+      text: `The next section in ${course?.title ?? 'the curriculum'} is **${nextSection.title}**.\n\nStart with **${next.title}**: ${next.body}`,
+      sources: [{
+        title: `${nextSection.title} · ${next.title}`,
+        route: `/lesson/${nextSection.id}/learn`,
+        reference: `public/generated/curriculum/sections.json#${nextSection.id}.learn.concepts[0]`,
+      }],
+      confidence: 1,
+      kind: 'next',
+    };
+  }
+  return null;
 }
 
 /** Quick action: a debug plan built from the learner's most recent real mistake. */

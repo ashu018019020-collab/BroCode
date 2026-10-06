@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { Link } from 'react-router-dom';
-import { Mic2, Play, Pause, RotateCcw, CheckCircle2, AlertTriangle, ArrowRight, Timer, ListChecks } from 'lucide-react';
+import { Mic2, Play, Pause, RotateCcw, CheckCircle2, AlertTriangle, ArrowRight, Timer, ListChecks, ArrowLeft } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore, recordAttempt, addXp, addMistake, setState, today } from '../../core/storage/store';
 import { labAttempt } from '../../core/platform/keys';
@@ -95,6 +96,7 @@ export default function MockInterviews() {
 
   return (
     <div>
+      <HubCrumb hub="/interviews" hubLabel="Interview" page="Mock Interviews" />
       <div className="row spread" style={{ flexWrap: 'wrap' }}>
         <div>
           <h1 className="row" style={{ gap: 10 }}><Mic2 size={24} color="var(--pink)" /> MOCK INTERVIEWS</h1>
@@ -114,7 +116,7 @@ export default function MockInterviews() {
         <div>
           <div className="card">
             <div className="row spread" style={{ flexWrap: 'wrap' }}>
-              <h3 style={{ margin: 0 }}>Round {round.round}</h3>
+              <h2 style={{ margin: 0 }}>Round {round.round}</h2>
               <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                 {rounds.map((r, ri) => (
                   <button key={r.round} className={`tabbtn ${ri === roundIdx ? 'active' : ''}`} onClick={() => { setRoundIdx(ri); setI(0); }}>
@@ -196,7 +198,7 @@ export default function MockInterviews() {
         {/* right rail */}
         <div className="path-rail">
           <div className="card">
-            <h3 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} color="var(--cyan)" /> Round {round.round} progress</h3>
+            <h2 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} color="var(--cyan)" /> Round {round.round} progress</h2>
             <div style={{ marginTop: 8 }}>
               {round.questions.map((qq, qi) => {
                 const a = state.attempts[labAttempt('mock', `${round.round}:${qi}`)];
@@ -222,7 +224,7 @@ export default function MockInterviews() {
           </div>
 
           <div className="card">
-            <h3>Interview readiness</h3>
+            <h2>Interview readiness</h2>
             <p className="muted small">
               Attempted {rounds.reduce((a, r) => a + r.questions.filter((_, qi) => state.attempts[labAttempt('mock', `${r.round}:${qi}`)]?.done).length, 0)} questions
               out of {rounds.reduce((a, r) => a + r.questions.length, 0)}.

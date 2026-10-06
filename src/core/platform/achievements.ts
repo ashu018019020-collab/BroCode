@@ -7,8 +7,10 @@
  */
 import type { AppState, Section } from '../../types';
 import { isMastered, sectionProgress, codingTasksDone } from '../learning/progress';
-import { levelForXp } from './keys';
+import { levelForXp, resumeDefenseAnswer, stageAttempt } from './keys';
 import { bankPractised, doneRecords, mockPassed } from '../learning/coverage';
+import { CAREER_CHECKLIST } from '../learning/career';
+import { RESUME_ANSWER_TOTAL } from '../assessment/defense';
 
 export interface Achievement {
   id: string;
@@ -29,6 +31,14 @@ interface Ctx {
   graded: number;
   mastered: number;
   reviewsDone: number;
+  /** Sections with a completed Project Lab build. */
+  projectGates: number;
+  /** Sections defended. */
+  defenseGates: number;
+  /** `resume:<projId>:<i>` answers stored. */
+  resumeAnswers: number;
+  /** Job-prep checklist ticks. */
+  checklistTicks: number;
 }
 
 export function context(state: AppState, sections: Section[]): Ctx {
@@ -46,8 +56,20 @@ export function context(state: AppState, sections: Section[]): Ctx {
     graded: bankPractised(state.attempts),
     mastered: sections.filter((s) => isMastered(s, state)).length,
     reviewsDone: Object.keys(state.review).length,
+    // The career gates — the same records the Career hub reads (project/defense stage attempts and
+    // the `resume:` answer family), so a badge and a readiness row can never disagree. The
+    // predicate is the curriculum's own (`stagePassed` in learning/progress.ts): the GATE RECORD
+    // EXISTS. A defense is `{done, score}` and a project gate is `{done, answer}`, so asking for
+    // `.done` would be a second, narrower rule that silently drops a scored record.
+    projectGates: sections.filter((s) => !!state.attempts[stageAttempt(s.id, 'project')]).length,
+    defenseGates: sections.filter((s) => !!state.attempts[stageAttempt(s.id, 'defense')]).length,
+    resumeAnswers: Object.keys(state.defenseAnswers).filter((k) => k.startsWith(RESUME_FAMILY)).length,
+    checklistTicks: Object.values(state.jobPrep).filter(Boolean).length,
   };
 }
+
+/** The `resume:` family, derived from the key builder — the family is never re-typed here. */
+const RESUME_FAMILY = `${resumeDefenseAnswer('', 0).split(':')[0]}:`;
 
 const need = (got: number, want: number) => ({ got: Math.min(got, want), need: want });
 
@@ -70,7 +92,21 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'master-10', icon: '🏆', label: 'Ten Sections', hint: '10 sections master karo', progress: (c) => need(c.mastered, 10) },
   { id: 'review-5', icon: '🔁', label: 'Spaced Repetition', hint: '5 sections review queue me daalo', progress: (c) => need(c.reviewsDone, 5) },
   { id: 'notes-5', icon: '📝', label: 'Note Taker', hint: '5 notes likho', progress: (c) => need(c.state.notes.length, 5) },
+  // The career badges — the same engine, so the Dashboard's panel earns them too. Their counts
+  // come from the records the project/defense stages and the job-prep checklist write.
+  { id: 'first-project', icon: '🚀', label: 'First Ship', hint: 'Pehla Project Lab build complete karo', progress: (c) => need(c.projectGates, 1) },
+  { id: 'defended', icon: '🛡️', label: 'Defended', hint: 'Ek build ko interviewer ke sawalon me defend karo', progress: (c) => need(c.defenseGates, 1) },
+  { id: 'resume-ready', icon: '📄', label: 'Resume Ready', hint: 'Har defense project ke pitch answers likho', progress: (c) => need(c.resumeAnswers, RESUME_ANSWER_TOTAL) },
+  { id: 'checklist-half', icon: '💼', label: 'Halfway There', hint: 'Job-prep checklist ke aadhe ticks', progress: (c) => need(c.checklistTicks, Math.ceil(CAREER_CHECKLIST.length / 2)) },
 ];
+
+/** The badge ids the Career pillar shows — the pure-learning badges stay the Dashboard's story. */
+const CAREER_BADGE_IDS = new Set(['first-project', 'defended', 'resume-ready', 'checklist-half', 'mock-1', 'code-10']);
+
+/** The career subset of the ONE achievements list — no second badge registry anywhere. */
+export function careerAchievements(state: AppState, sections: Section[]): EarnedAchievement[] {
+  return earnedAchievements(state, sections).filter((a) => CAREER_BADGE_IDS.has(a.id));
+}
 
 export interface EarnedAchievement extends Achievement { earned: boolean; got: number; need: number }
 

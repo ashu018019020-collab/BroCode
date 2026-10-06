@@ -22,6 +22,8 @@ const must = [
   'package.json', 'vite.config.ts', 'index.html', 'src/app/App.tsx', 'src/app/main.tsx',
   'src/app/i18n/locales.ts', 'src/app/i18n/index.tsx', 'src/features/labs/Playground.tsx',
   'src/components/code/MonacoIDE.tsx', 'src/core/platform/traceback.ts', 'src/core/data/packages.ts',
+  'server/app.mjs', 'server/store.mjs', 'server/supabase.mjs', 'prisma/schema.prisma',
+  'prisma/migrations/20261002120000_supabase_accounts/migration.sql',
 ];
 for (const f of must) {
   if (fs.existsSync(path.join(__dirname, '..', f))) ok(f);
@@ -41,16 +43,22 @@ for (const [f, why] of assets) {
   else { warn(`${f} absent — ${why} will not load`); }
 }
 
-section('Dependencies (all local — no CDN)');
+section('Dependencies (offline learning + optional Supabase accounts)');
 const pkg = require(path.join(__dirname, '..', 'package.json'));
 const needed = ['react', 'react-dom', 'react-router-dom', 'monaco-editor', 'lucide-react', 'pdfjs-dist', 'sql.js'];
 for (const d of needed) {
   if (pkg.dependencies?.[d]) ok(`${d} ${pkg.dependencies[d]}`);
   else { bad(`missing dependency: ${d}`); failures++; }
 }
-const forbidden = Object.keys(pkg.dependencies ?? {}).filter((d) => /openai|anthropic|gemini|firebase|supabase|googleapis/i.test(d));
+const forbidden = Object.keys(pkg.dependencies ?? {}).filter((d) => /openai|anthropic|gemini|firebase|googleapis/i.test(d));
 if (forbidden.length) { bad(`forbidden online deps: ${forbidden.join(', ')}`); failures++; }
-else ok('no cloud/online dependencies');
+else ok('no unrelated hosted-service SDKs');
+if (pkg.dependencies?.['@supabase/supabase-js']) {
+  ok(`${pkg.dependencies['@supabase/supabase-js']} (Supabase Auth; guest learning remains available offline)`);
+} else { bad('missing Supabase Auth client: @supabase/supabase-js'); failures++; }
+if (pkg.dependencies?.['@prisma/client'] && pkg.devDependencies?.prisma) {
+  ok(`Prisma ${pkg.devDependencies.prisma} with generated client ${pkg.dependencies['@prisma/client']}`);
+} else { bad('missing Prisma CLI or client dependency'); failures++; }
 
 section('Topic workspaces (16-part structure)');
 try {
@@ -92,5 +100,5 @@ try {
 section('Storage');
 for (const s of ['localStorage (progress, workspace, language)', 'IndexedDB-ready (large assets via runtime)']) ok(s);
 
-console.log(`\n${failures ? '\x1b[31m✕ ' + failures + ' problem(s) found\x1b[0m' : '\x1b[32m✓ Environment ready — fully offline capable\x1b[0m'}`);
+console.log(`\n${failures ? '\x1b[31m✕ ' + failures + ' problem(s) found\x1b[0m' : '\x1b[32m✓ Environment ready — offline learning with optional online accounts\x1b[0m'}`);
 process.exit(failures ? 1 : 0);

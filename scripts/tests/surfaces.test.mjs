@@ -1,5 +1,5 @@
 /**
- * The 61 surfaces and the mark that identifies each one.
+ * The 60 surfaces and the mark that identifies each one.
  *
  * Two failure modes here are silent, which is why this file exists:
  *
@@ -36,7 +36,7 @@ const DRAWN = new Set([...GLYPH_BLOCK.matchAll(/^ {2}(\w+):/gm)].map((m) => m[1]
 
 /* ------------------------------- the families ---------------------------- */
 
-test('surfaces: the five families tile 1…61 with no gap and no overlap', () => {
+test('surfaces: the five families tile 1…60 with no gap and no overlap', () => {
   const fams = sf.SURFACE_FAMILIES;
   assert.equal(fams.length, 5, 'the product has exactly five top-level families');
   assert.equal(fams[0].id, 'master', 'the master learning path is the first family, not one of five peers');
@@ -106,8 +106,30 @@ test('surfaces: the ten domains cover every track, and every domain is drawn', (
   assert.equal(sf.DOMAINS.length, 10, 'ten technology identities');
 });
 
+test('surfaces: every track links through its generated slug, and that file exists', () => {
+  // `/track/python` is a link that LOOKS right: the route matches, the page mounts, and then the
+  // loader asks for a file nobody generated — so the page never leaves its loading line. No error,
+  // no 404, just a dead end that looks like progress. Six of the eight slug pairs differ from
+  // their TRACK_DEFS id, which is why the pairing is pinned here rather than trusted at each link.
+  const defsBlock = appSrc.slice(appSrc.indexOf('export const TRACK_DEFS'), appSrc.indexOf('];', appSrc.indexOf('export const TRACK_DEFS')));
+  const trackIds = [...defsBlock.matchAll(/id: '([^']+)'/g)].map((m) => m[1]).sort();
+  assert.deepEqual(Object.keys(sf.TRACK_SLUG).sort(), trackIds, 'every track needs the slug its page is generated under');
+  const values = Object.values(sf.TRACK_SLUG);
+  assert.equal(new Set(values).size, values.length, 'two tracks would fetch the same file');
+
+  for (const [id, slug] of Object.entries(sf.TRACK_SLUG)) {
+    assert.equal(sf.trackHref(id), `/track/${slug}`, 'trackHref is the one place a track link is spelled');
+    assert.ok(fs.existsSync(path.join(ROOT, 'public', 'generated', 'tracks', `${slug}.json`)),
+      `TRACK_SLUG['${id}'] = '${slug}' but public/generated/tracks/${slug}.json does not exist — /track/${slug} would load forever`);
+    assert.equal(sf.trackKeyOf(slug), id, 'the slug resolves back to its track id');
+  }
+  // The registry the app fetches at runtime is the same list, so the map cannot drift from it.
+  const index = JSON.parse(read('public/generated/tracks/index.json')).map((t) => t.slug).sort();
+  assert.deepEqual([...values].sort(), index, 'the map must match the generated track registry');
+});
+
 test('surfaces: the mark family is drawn once and named once, without emoji', () => {
-  // One glyph registry is the whole point: 61 hand-drawn logos is a clip-art folder. Several marks
+  // One glyph registry is the whole point: 60 hand-drawn logos is a clip-art folder. Several marks
   // are SHARED across families on purpose (the ML domain and the ML/NLP stage are the same brain),
   // so the drawn set may be smaller than the sum of the three families — never larger.
   const used = new Set([
@@ -116,7 +138,7 @@ test('surfaces: the mark family is drawn once and named once, without emoji', ()
     ...Object.values(sf.SURFACE_GLYPH),
   ]);
   for (const glyph of used) assert.ok(DRAWN.has(glyph), `"${glyph}" is referenced but not drawn`);
-  assert.ok(DRAWN.size >= 30, 'the family is too small to identify 61 surfaces distinctly');
+  assert.ok(DRAWN.size >= 30, 'the family is too small to identify 60 surfaces distinctly');
   // …and every mark has a drawing, not a placeholder.
   for (const key of DRAWN) assert.ok(used.has(key), `SurfaceLogo draws "${key}", which no surface uses`);
   // No emoji anywhere in the identity layer: an emoji is a font's opinion, it cannot inherit
@@ -145,14 +167,17 @@ test('surfaces: the imported practice set is a Practice Archive, not a product',
 
 /* ------------------------------ the pages mount it ----------------------- */
 
-test('surfaces: the Learning Path shows the five families and marks its stages', () => {
-  const page = read('src/features/learning/LearningPath.tsx');
+test('surfaces: the family band is drawn from the registry, not hand-listed', () => {
+  const home = read('src/features/courses/CoursesHome.tsx');
   const grid = read('src/components/learning/PathGrid.tsx');
+  assert.ok(!/<PathGrid/.test(home), 'the courses home no longer mounts the band — its first page is the cards');
   assert.match(grid, /SURFACE_FAMILIES\.map/, 'the family band is drawn from the registry, not hand-listed');
   assert.match(grid, /SURFACE_GLYPH\[def\.route\]/, 'a path card takes its mark from the registry');
   assert.match(grid, /from '\.\.\/\.\.\/core\/learning\/surfaces'/, 'the registry is the source of the marks');
-  assert.match(page, /STAGE_GLYPH\[phase\.id\]/, 'each stage divider carries its stage mark');
-  // The spec's headline: 01–36 on the master heading, 37–61 on the support band.
-  assert.match(page, /MASTER_STEPS/, 'the master heading states its own span');
-  assert.match(grid, /family\('practice'\)\.first/, 'the support band states its span from the registry');
+  // The spec's headline used to be "01–36 on the master rail, 37–60 on the support band". The band is
+  // not numbered any more, because those numbers claimed a place in the course index: every item
+  // inside a capability is tagged to a course chapter (`npm run course:audit`), so the index is the
+  // 36 steps and a family states how many surfaces it holds instead of where they sit in a sequence.
+  assert.ok(!/family\('practice'\)\.first/.test(grid), 'the support band must not claim an index span');
+  assert.match(grid, /familySize\(f\.id\)/, 'a family states its surface count instead');
 });

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Bot, ListChecks, Search, ExternalLink, Database, Check, X, RotateCcw, FileText, NotebookPen, Percent, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
@@ -105,7 +106,13 @@ export default function QuestionBank() {
   const state = useStore();
   const [selected, setSelected] = useState<string | null>(() => urlParams().get('section'));
   const [sectionSearch, setSectionSearch] = useState('');
-  const [filter, setFilter] = useState<BankFilter>(EMPTY_FILTER);
+  const [filter, setFilter] = useState<BankFilter>(() => {
+    // `?type=interview` — the Interview hub's "interview questions" card deep-links here with the
+    // type filter pre-set. Only a REAL question type is honoured: a garbage param would otherwise
+    // filter the whole bank down to zero rows with the chips showing nothing selected.
+    const t = urlParams().get('type');
+    return { ...EMPTY_FILTER, type: (t && (QUESTION_TYPES as string[]).includes(t) ? t : 'all') as BankFilter['type'] };
+  });
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [shown, setShown] = useState(STAGE_PAGE_SIZE);
   const [onlyWrong, setOnlyWrong] = useState(false);
@@ -130,6 +137,8 @@ export default function QuestionBank() {
     if (s) setSelected(s);
     if (params.get('playbook') === '1') setOnlyPlaybook(true);
     setChapterOnly(params.get('chapter'));
+    const t = params.get('type');
+    if (t && (QUESTION_TYPES as string[]).includes(t)) setFilter((x) => ({ ...x, type: t as BankFilter['type'] }));
     // `?find=<text>` — a command-palette hit lands here. The palette searches all 13,865 bank
     // questions, so a hit that only opened the section would leave the learner scrolling a
     // 644-question list to find the one they clicked; this seeds the bank's own search box.
@@ -152,7 +161,7 @@ export default function QuestionBank() {
     // A reset that blindly clears everything also erases what the URL ASKED FOR: arriving from the
     // palette (`?section=s28&find=Dijkstra`) changes the section in the same tick that seeds the
     // search box, and the reset would immediately wipe the query the learner clicked on.
-    setFilter({ ...EMPTY_FILTER, search: urlParams().get('find') ?? '' });
+    setFilter({ ...EMPTY_FILTER, type: ((QUESTION_TYPES as string[]).includes(urlParams().get('type') ?? '') ? urlParams().get('type') as string : 'all') as BankFilter['type'], search: urlParams().get('find') ?? '' });
     setRevealed({});
     setShown(STAGE_PAGE_SIZE);
     setOnlyWrong(false);
@@ -326,7 +335,7 @@ export default function QuestionBank() {
   if (!manifest) {
     return (
       <div>
-        <h1 className="row" style={{ gap: 10 }}><ListChecks size={22} /> Question Bank</h1>
+        <h2 className="h1-look row" style={{ gap: 10 }}><ListChecks size={22} /> Question Bank</h2>
         <div className="card">
           <p className="muted small">Content pack load ho raha hai…</p>
           <p className="muted small">
@@ -340,6 +349,7 @@ export default function QuestionBank() {
 
   return (
     <div>
+      <HubCrumb hub="/practice" hubLabel="Practice" page="Question Bank" />
       <h1 className="row" style={{ gap: 10 }}><Database size={22} /> Question Bank</h1>
       <p className="muted small">
         Local content pack — <b>{manifest.published}</b> questions across <b>{manifest.sections.length}</b> sections.
@@ -418,7 +428,7 @@ export default function QuestionBank() {
         {/* Section index */}
         <div className="card">
           <div className="row spread">
-            <h3 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} /> Sections</h3>
+            <h2 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} /> Sections</h2>
             <span className="small muted">{sectionList.length}</span>
           </div>
           <div className="row" style={{ margin: '10px 0', border: '1px solid var(--border)', borderRadius: 10, padding: '2px 8px', background: 'rgba(0,0,0,.3)' }}>
@@ -445,7 +455,9 @@ export default function QuestionBank() {
                   style={{ width: '100%', textAlign: 'left', background: s.sectionId === selected ? undefined : 'transparent' }}
                 >
                   <span className="mono small muted" style={{ flex: 'none' }}>{String(s.no).padStart(2, '0')}</span>
-                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.title}</span>
+                  {/* The name is a class, not an inline style, so the phone rule in styles.css can
+                      let it wrap — an inline `white-space` cannot be overridden by a media query. */}
+                  <span className="sec-name">{s.title}</span>
                   <span className={`chip ${incomplete ? 'medium' : 'easy'}`} title={incomplete ? 'CONTENT_INCOMPLETE — baseline not authored yet' : 'complete'}>
                     {pct}%
                   </span>

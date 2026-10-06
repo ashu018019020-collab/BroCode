@@ -1,21 +1,25 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Bot, Send, Sparkles, Lightbulb, Bug, SkipForward, Eraser, Loader2, Target, Wrench, BookOpenCheck, Percent } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Bot, Send, Sparkles, Lightbulb, Bug, Eraser, Loader2, Target, Wrench, BookOpenCheck, Percent, CircleHelp, ArrowRight } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore } from '../../core/storage/store';
+import { loadKnowledgeIndex } from '../../core/data/knowledge';
+import { assistantContextForPage } from '../../core/ai/context';
+import type { KnowledgeIndex } from '../../core/ai/knowledge';
 import {
   askLocal, quickAccuracy, quickAnswer, quickDebug, quickExplain, quickFix, quickHint, quickMistakes,
   quickNext, quickScoreAnswer, quickStatus, type Answer, type AssistantContext,
 } from '../../core/ai/assistant';
 import { toast } from '../ui/Toast';
+import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 
 interface Turn { role: 'you' | 'bot'; text: string; answer?: Answer }
 
 const ASK_KEY = 'aiml:assistant:log';
 
-function loadLog(): Turn[] {
+function loadLog(key: string): Turn[] {
   try {
-    const raw = localStorage.getItem(ASK_KEY);
+    const raw = localStorage.getItem(key);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.slice(-12) : [];
   } catch { return []; }
@@ -49,17 +53,68 @@ export function AssistantCard({
    */
   suggestions?: { label: string; ask: string }[];
 }) {
+  const logKey = useSyncExternalStore(
+    subscribeStorageAccount,
+    () => accountStorageKey(ASK_KEY),
+    () => ASK_KEY,
+  );
+  return (
+    <AssistantCardSession
+      key={logKey}
+      logKey={logKey}
+      compact={compact}
+      embedded={embedded}
+      context={context}
+      suggestions={suggestions}
+    />
+  );
+}
+
+function AssistantCardSession({
+  compact = false, embedded = false, context, suggestions, logKey,
+}: {
+  compact?: boolean;
+  embedded?: boolean;
+  context?: AssistantContext;
+  suggestions?: { label: string; ask: string }[];
+  logKey: string;
+}) {
   const { sections } = useCurriculum();
   const state = useStore();
-  const [log, setLog] = useState<Turn[]>(loadLog);
+  const location = useLocation();
+  const [knowledge, setKnowledge] = useState<KnowledgeIndex | null>(null);
+  const [log, setLog] = useState<Turn[]>(() => loadLog(logKey));
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
+  const contextForIndex = (index?: KnowledgeIndex | null): AssistantContext => {
+    const pageContext = assistantContextForPage(location.pathname, location.search, sections, state, index);
+    return {
+      ...pageContext,
+      ...context,
+      sectionId: context?.sectionId ?? context?.question?.sectionId ?? pageContext.sectionId,
+      questionType: context?.questionType ?? context?.question?.type ?? pageContext.questionType,
+      where: context?.where ?? pageContext.where,
+      route: pageContext.route,
+      pageTitle: pageContext.pageTitle,
+      courseSlug: pageContext.courseSlug,
+      courseTitle: pageContext.courseTitle,
+      chapterTitle: pageContext.chapterTitle,
+      lessonTitle: pageContext.lessonTitle,
+      learningLevel: pageContext.learningLevel,
+      learningGoal: pageContext.learningGoal,
+      progressSummary: pageContext.progressSummary,
+    };
+  };
+  const activeContext = useMemo(
+    () => contextForIndex(knowledge),
+    [location.pathname, location.search, sections, state, knowledge, context],
+  );
 
   useEffect(() => {
-    try { localStorage.setItem(ASK_KEY, JSON.stringify(log.slice(-12))); } catch { /* quota */ }
+    try { localStorage.setItem(logKey, JSON.stringify(log.slice(-12))); } catch { /* quota */ }
     if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
-  }, [log]);
+  }, [log, logKey]);
 
   /**
    * How many hints this surface has already been asked for.
@@ -75,21 +130,29 @@ export function AssistantCard({
     setLog((l) => [...l, { role: 'you', text: label }, { role: 'bot', text: a.text, answer: a }]);
   };
 
-  const ask = (text: string) => {
+  const ask = async (text: string) => {
     const question = text.trim();
-    if (!question) return;
+    if (!question || busy) return;
     setBusy(true);
-    // Retrieval is local and instant; the short delay only avoids a jarring flash.
-    window.setTimeout(() => {
-      try {
-        reply(askLocal(question, sections, state, context, askedHints), question);
-      } catch {
-        reply({ text: 'Assistant me kuch gadbad hui — question chhota karke dobara try karo.', sources: [], confidence: 0, kind: 'fallback' }, question);
-      } finally {
-        setBusy(false);
-        setQ('');
+    try {
+      let index = knowledge;
+      if (!index) {
+        try {
+          index = await loadKnowledgeIndex();
+          setKnowledge(index);
+        } catch (error) {
+          console.error('BroCode AI knowledge index could not be loaded:', error);
+          toast('Knowledge pack load nahi hua — bundled lesson se answer de raha hoon.', 'warning');
+          reply(askLocal(question, sections, state, contextForIndex(), askedHints), question);
+          return;
+        }
       }
-    }, 160);
+      await new Promise((resolve) => window.setTimeout(resolve, 160));
+      reply(askLocal(question, sections, state, contextForIndex(index), askedHints, index), question);
+    } finally {
+      setBusy(false);
+      setQ('');
+    }
   };
 
   return (
@@ -97,58 +160,75 @@ export function AssistantCard({
       <div className="head">
         <span className="bot"><Bot size={18} color="var(--cyan)" /></span>
         <div style={{ flex: 1 }}>
-          <b className="small">AI Assistant</b>
-          <div className="small muted">{busy ? 'Curriculum me dhoond raha hoon…' : 'Local learning assistant — app ke sawaal bhi.'}</div>
+          <b className="assistant-title"><span>AI</span> Assistant</b>
+          <div className="assistant-subtitle">{busy ? 'Local knowledge me dhoond raha hoon…' : 'Offline learning assistant · current page aware'}</div>
         </div>
-        {context?.error && <span className="chip hard">● error</span>}
-        <span className={`chip ${busy ? '' : 'easy'}`}>{busy ? <Loader2 size={11} className="spin" /> : '●'} {busy ? 'Thinking' : 'Ready'}</span>
+        {activeContext.error && <span className="chip hard">● error</span>}
+        <span className={`assistant-status${busy ? ' busy' : ''}`}><i />{busy ? <><Loader2 size={11} className="spin" /> Thinking</> : 'Ready'}</span>
       </div>
 
-      {(context?.where || context?.error || context?.question) && (
+      {(activeContext.where || activeContext.error || activeContext.question) && (
         <div className="assistant-ctx small muted">
-          {context?.where && <span>📍 {context.where}</span>}
-          {context?.question && (
-            <span title={context.question.text}>📄 {context.question.text.length > 70 ? `${context.question.text.slice(0, 70)}…` : context.question.text}</span>
+          {activeContext.where && <span>📍 {activeContext.where}</span>}
+          {activeContext.progressSummary && <span>📈 {activeContext.progressSummary}</span>}
+          {activeContext.question && (
+            <span title={activeContext.question.text}>📄 {activeContext.question.text.length > 70 ? `${activeContext.question.text.slice(0, 70)}…` : activeContext.question.text}</span>
           )}
-          {context?.error && (
+          {activeContext.error && (
             <span className="ctx-err">🔴 Is cell ka error upar screen par hai — "Is galti ko fix karo" dabao, main usi line par fix bataunga.</span>
           )}
         </div>
       )}
 
       {suggestions && suggestions.length > 0 && (
-        <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+        <div className="row assistant-suggestions" style={{ gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
           {suggestions.map((s) => (
             <button key={s.label} className="btn small" onClick={() => ask(s.ask)}>{s.label}</button>
           ))}
         </div>
       )}
 
-      <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+      <div className="assistant-actions">
+        <button className="assistant-action explain" onClick={() => reply(quickExplain(state, sections, activeContext), 'Explain')}>
+          <span className="assistant-action-icon"><Sparkles size={18} /></span>
+          <b>Explain</b><small>Concepts ko simple samjho</small>
+        </button>
+        <button className="assistant-action hint" onClick={() => reply(quickHint(state, sections, activeContext, askedHints), 'Hint')}>
+          <span className="assistant-action-icon"><Lightbulb size={18} /></span>
+          <b>Give Hint</b><small>Ek useful clue pao</small>
+        </button>
+        <button className="assistant-action doubt" onClick={() => ask('Mujhe is topic me doubt hai. Kripya concept samjha kar mera doubt solve karo.')}>
+          <span className="assistant-action-icon"><CircleHelp size={18} /></span>
+          <b>Solve Doubt</b><small>Apna question poochho</small>
+        </button>
+        <button className="assistant-action next" onClick={() => reply(quickNext(state, sections, activeContext, '', knowledge ?? undefined), 'Next Topic')}>
+          <span className="assistant-action-icon"><ArrowRight size={18} /></span>
+          <b>Next Topic</b><small>Aage kya seekhna hai</small>
+        </button>
+      </div>
+
+      <div className="assistant-tools">
         {/* Armed, not pushy: the error pane already explains a failure on its own, so this action
             waits to be asked — but it is the first button whenever something is actually broken. */}
-        {context?.error && (
-          <button className="btn small primary" onClick={() => reply(quickFix(state, sections, context), 'Is galti ko fix karo')}>
+        {activeContext.error && (
+          <button className="btn small primary" onClick={() => reply(quickFix(state, sections, activeContext), 'Is galti ko fix karo')}>
             <Wrench size={12} /> Is galti ko fix karo
           </button>
         )}
         {/* With a question in context, the item's own actions lead: its answer, the percentage of
             what the learner wrote, and a hint about THIS item rather than the topic. */}
-        {context?.question && (
+        {activeContext.question && (
           <>
-            <button className="btn small primary" onClick={() => reply(quickAnswer(state, sections, context), 'Poora answer')}>
+            <button className="btn small primary" onClick={() => reply(quickAnswer(state, sections, activeContext), 'Poora answer')}>
               <BookOpenCheck size={12} /> Poora answer
             </button>
-            <button className="btn small" onClick={() => reply(quickScoreAnswer(state, sections, context), 'Mera answer kitna sahi?')}>
+            <button className="btn small" onClick={() => reply(quickScoreAnswer(state, sections, activeContext), 'Mera answer kitna sahi?')}>
               <Percent size={12} /> Mera answer kitna sahi?
             </button>
           </>
         )}
-        <button className="btn small" onClick={() => reply(quickExplain(state, sections), 'Explain')}><Sparkles size={12} /> Explain</button>
-        <button className="btn small" onClick={() => reply(quickHint(state, sections, context, askedHints), 'Hint')}><Lightbulb size={12} /> Give Hint</button>
         <button className="btn small" onClick={() => reply(quickMistakes(state, sections), 'Meri galtiyan')}><Target size={12} /> Meri galtiyan</button>
         <button className="btn small" onClick={() => reply(quickDebug(state, sections), 'Debug')}><Bug size={12} /> Debug</button>
-        <button className="btn small" onClick={() => reply(quickNext(state, sections), 'Next Task')}><SkipForward size={12} /> Next Task</button>
         {!compact && <button className="btn small" onClick={() => reply(quickAccuracy(state, sections), 'Meri accuracy')}><Percent size={12} /> Meri accuracy</button>}
         {!compact && <button className="btn small" onClick={() => reply(quickStatus(state, sections), 'Status')}>Meri progress</button>}
       </div>
@@ -171,20 +251,16 @@ export function AssistantCard({
           {log.map((t, i) => (
             <div
               key={i}
-              className="bubble"
+              className={`bubble assistant-bubble ${t.role === 'you' ? 'from-user' : 'from-assistant'}`}
               style={{
-                marginTop: 0,
                 alignSelf: t.role === 'you' ? 'flex-end' : 'flex-start',
-                maxWidth: '92%',
-                background: t.role === 'you' ? 'var(--panel2)' : 'var(--sunken)',
-                fontSize: '.78rem',
               }}
             >
               {t.text}
               {t.answer?.sources?.length ? (
                 <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
                   {t.answer.sources.slice(0, 2).map((s, si) => (
-                    <Link key={si} className="chip" to={s.route} style={{ textDecoration: 'none' }}>
+                    <Link key={si} className="chip" to={s.route} title={s.reference ?? s.title} style={{ textDecoration: 'none' }}>
                       {s.title.slice(0, 42)}{s.title.length > 42 ? '…' : ''} →
                     </Link>
                   ))}
@@ -197,18 +273,21 @@ export function AssistantCard({
       )}
 
       <div className="ask">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') ask(q); }}
-          placeholder={context?.question ? 'Is question ke baare me poocho…' : 'Ask anything about Python…'}
-          aria-label="Ask the AI assistant"
-        />
-        <button className="btn primary" onClick={() => ask(q)} disabled={busy || !q.trim()} aria-label="Send question">
-          {busy ? <Loader2 size={14} className="spin" /> : <Send size={14} />}
-        </button>
+        <div className="assistant-input">
+          <Sparkles className="assistant-input-sparkle" size={17} aria-hidden="true" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') ask(q); }}
+            placeholder={activeContext.question ? 'Is question ke baare me poocho…' : 'Ask BroCode AI anything…'}
+            aria-label="Ask the AI assistant"
+          />
+          <button className="assistant-send" onClick={() => ask(q)} disabled={busy || !q.trim()} aria-label="Send question">
+            {busy ? <Loader2 size={16} className="spin" /> : <Send size={16} />}
+          </button>
+        </div>
         {log.length > 0 && (
-          <button className="btn small ghost" onClick={() => { setLog([]); toast('Conversation clear ho gayi.', 'info', 1600); }} aria-label="Clear conversation">
+          <button className="assistant-clear btn small ghost" onClick={() => { setLog([]); toast('Conversation clear ho gayi.', 'info', 1600); }} aria-label="Clear conversation">
             <Eraser size={13} />
           </button>
         )}

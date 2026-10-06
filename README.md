@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # AI ENGINEER MASTER LAB
 
 > Learn → Code → Practice → Build → Master
@@ -68,14 +67,14 @@ For a plain static host (nginx/IIS/USB stick), serve the `dist/` folder after `n
 | `src/app/` | The shell: `App.tsx` (routes + the sidebar `NAV`, which is also the label/icon source for every card), `main.tsx`, `i18n/` |
 | `src/core/learning/` | Pure logic: mastery gates, the roadmap, spaced review, coverage counts, the study log, the Learning Path card registry |
 | `src/core/assessment/` | Pure logic: keyword rubrics & output checks, exam papers, interview scoring, accuracy, the Learning Path card registry |
-| `src/core/ai/` | The offline "AI": tutor hints, daily mission queue, mistake coach, offline explanations, RAG/project helpers |
+| `src/core/ai/` | The offline assistant: page-aware retrieval over the generated lesson/question/project index, tutor hints, progress coaching, and strict app facts |
 | `src/core/platform/` | `keys.ts` (the only owner of persisted-key shapes), command-palette search, notifications, achievements, count-up maths |
 | `src/core/storage/` | `store.ts` — the single owner of `AppState` and the only module that touches `localStorage` — plus UI/exam prefs |
-| `src/core/data/` | Data access: loaders/adapters for curriculum, questions, playbook, notebooks, tracks — fetches `public/generated/`. No JSON lives under `src/`; the authored source is `content/` |
+| `src/core/data/` | Data access: loaders/adapters for curriculum, questions, playbook, notebooks, tracks and the lazy AI knowledge index — fetches `public/generated/`. No JSON lives under `src/`; the authored source is `content/` |
 | `src/features/` | The screens, grouped by pillar: `dashboard`, `learning`, `practice`, `labs`, `projects`, `interview`, `career`, `progress`, `tools` |
 | `src/components/` | Shared UI, the editors (`MonacoIDE`, `JupyterNotebook`) and the card grids (`PathGrid`, `HubGrid`) |
 | `content/` | **Authored source**: curriculum sections, guides/packs/topics, question banks, playbook source, notebooks |
-| `public/generated/` | **Build output** published by the scripts — never hand-edited |
+| `public/generated/` | **Build output** published by the scripts, including compressed `ai/knowledge.json.gz` — never hand-edited |
 | `scripts/`, `tools/` | The generators (dry-run by default, `--write` publishes) and the test suite that holds them to it |
 
 ## Offline mode
@@ -88,6 +87,7 @@ Everything executes locally — no CDN, no fonts, no external APIs:
 | SQL (SQLite) | sql.js WASM in `public/sqljs` |
 | PDF reader | pdf.js + worker in `public/pdf`, source PDF in `public/pdf/` |
 | Curriculum + search | `public/generated/curriculum/*.json` (extracted from the PDF) |
+| BroCode AI knowledge | `public/generated/ai/knowledge.json.gz` (2.5 MB compressed, loaded on first question; local retrieval only) |
 | Datasets | students, sales, customers, employees, expenses, chat_logs (in-app) |
 
 A service worker (`public/sw.js`, cache `aiml-v6`) caches the app shell and assets at
@@ -95,6 +95,7 @@ runtime. After the first full load, disconnect the internet and reload — the a
 completely offline. Install as a PWA from the browser menu for a standalone window.
 
 Notes:
+- Refresh the assistant corpus with `npm run ai:index` (dry run) or `npm run ai:index:write` (publish). It is derived from the published curriculum, question banks, playbook, tracks, courses, notebooks and career registries; it does not call a hosted model or include learner records.
 - The service worker never caches HTML responses under asset paths (prevents a poisoned
   cache if a file is temporarily missing).
 - GenAI/Agentic labs are **simulations** (deterministic, offline). Any optional online
@@ -355,6 +356,3 @@ The stage rail and the hero stats read their numbers from `manifest.json` (`byTy
 and `miniProject`), never from a hard-coded list, so the count on a tile always matches the
 questions behind it. A stage outside a topic's mastery gates still shows its count — that case
 is exactly where a hidden count reads as "no content".
-=======
-# BroCode
->>>>>>> bde52c44e638218a044eed23372061f6da886140

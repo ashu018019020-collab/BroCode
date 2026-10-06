@@ -298,8 +298,8 @@ export const STEPS: RoadmapStep[] = [
     project: 'Production AI system design + security',
   },
   {
-    no: 35, title: 'Interview + project defense + resume', kind: 'career', chapters: ['18', '25', '19'],
-    topics: ['Interview bank: Python → SQL → stats → ML → LLM → RAG → agents → MCP → system design', 'Role-wise rounds: AI, GenAI, Agentic, DS, DA, DE', 'Project defense: problem → architecture → challenges → fixes', 'Resume story: problem + action + technology + result'],
+    no: 35, title: 'Interview + project defense + portfolio', kind: 'career', chapters: ['18', '25', '19'],
+    topics: ['Interview bank: Python → SQL → stats → ML → LLM → RAG → agents → MCP → system design', 'Role-wise rounds: AI, GenAI, Agentic, DS, DA, DE', 'Project defense: problem → architecture → challenges → fixes', 'Portfolio story: problem + action + technology + result'],
     goal: 'Apne project ko 5–10 minute me professionally defend kar sako',
   },
   {
@@ -433,6 +433,41 @@ export function stepStat(step: RoadmapStep, stats: Map<string, ChapterStat>): St
   out.pdfPage = page;
   out.topSection = Object.entries(out.sections).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? null;
   return out;
+}
+
+/**
+ * What one step's node on the master rail prints.
+ *
+ * Three different truths share one node, and collapsing them into a percentage is how a rail starts
+ * lying — so the figure says WHICH truth it is:
+ *
+ *   · a step the curriculum teaches sections for reports their MASTERY, the same figure its lesson
+ *     tiles and its own course page print;
+ *   · a step with no sections of its own reports the COUNT of practice items the document carries
+ *     for it. Deliberately not a share: the denominator a course page divides by is the step's own
+ *     items in that course, and two screens printing two percentages for one step is the drift this
+ *     project keeps out of every other measure;
+ *   · a step the document only reads through says so, and a step the document never reached says
+ *     that instead of borrowing the first line.
+ *
+ * `mastery` is the caller's average over the step's own course sections (null when it has none), so
+ * this module still reads no store, no course file and no React.
+ */
+export interface StepFigure {
+  /** A real percentage, or null when the honest answer is a fact rather than a share. */
+  pct: number | null;
+  kind: 'mastery' | 'questions' | 'reading' | 'undelivered';
+  /** Practice items the document carries for this step (0 when it carries none). */
+  items: number;
+}
+
+export function stepFigure(mastery: number | null, stat: StepStat): StepFigure {
+  if (mastery !== null) {
+    return { pct: Math.max(0, Math.min(100, Math.round(mastery))), kind: 'mastery', items: stat.items };
+  }
+  if (stat.items > 0) return { pct: null, kind: 'questions', items: stat.items };
+  if (stat.chapters + stat.concepts > 0) return { pct: null, kind: 'reading', items: 0 };
+  return { pct: null, kind: 'undelivered', items: 0 };
 }
 
 /* ------------------------------ curriculum side -------------------------- */

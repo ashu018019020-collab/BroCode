@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore, setState, addXp } from '../../core/storage/store';
 import { dueReview, INTERVALS } from '../../core/learning/review';
@@ -20,6 +21,7 @@ export default function ReviewPage() {
 
   return (
     <div>
+      <HubCrumb hub="/practice" hubLabel="Practice" page="Review Queue" />
       <h1>🔁 Review Queue</h1>
       <p className="muted small">Spaced repetition: 1 → 3 → 7 → 14 → 30 days. Mastered sections stay sharp without deleting them from the path.</p>
 
@@ -27,7 +29,7 @@ export default function ReviewPage() {
         <button className="btn" onClick={enroll}>Enroll {mastered.length} mastered section(s)</button>
       )}
 
-      <h3 style={{ marginTop: 14 }}>Due now ({due.length})</h3>
+      <h2 style={{ marginTop: 14 }}>Due now ({due.length})</h2>
       {!due.length && <p className="muted small">Nothing due. Next interval: {INTERVALS.join('/')} days.</p>}
       {due.map((r) => {
         const s = sections.find((x) => x.id === r.id);

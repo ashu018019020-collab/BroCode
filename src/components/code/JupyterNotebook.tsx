@@ -154,7 +154,12 @@ export function NotebookShelf({ sectionId, compact, defaultOpen = false, boxes =
         >
           <ChevronRight size={13} className={`shelf-caret${open ? ' open' : ''}`} />
           <BookOpen size={13} />
-          <span className="shelf-label">Notebook Lab — {own.length ? 'is section ke liye' : 'poori library'} ({list.length} notebooks)</span>
+          {/* The shelf's own name is a separate node from what it reports, because they do not have
+              the same value on a phone: the count and the scope are what the learner picks with, and
+              the name is repeated by every notebook card above. Below ~460px of CARD (a container
+              query, not a viewport one — the lesson column is narrow on a wide window too) the name
+              is dropped and the rest is allowed a second line. */}
+          <span className="shelf-label"><span className="shelf-brand">Notebook Lab — </span>{own.length ? 'is section ke liye' : 'poori library'} ({list.length} notebooks)</span>
           {!open && <span className="shelf-hint">{openFile ? 'notebook open hai' : 'click karke kholo'}</span>}
         </button>
         <span className="row">

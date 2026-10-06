@@ -1,4 +1,5 @@
 import { useStore, setState } from '../../core/storage/store';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { openMistakes } from '../../core/learning/review';
 
 export default function MistakesPage() {
@@ -8,10 +9,11 @@ export default function MistakesPage() {
 
   return (
     <div>
+      <HubCrumb hub="/practice" hubLabel="Practice" page="Mistake Tracker" />
       <h1>🐞 Mistake Tracker</h1>
       <p className="muted small">Every failed interview answer, logic check and debugging explanation lands here. Retry until fixed — that is where mastery comes from.</p>
 
-      <h3 style={{ marginTop: 14 }}>Open ({open.length})</h3>
+      <h2 style={{ marginTop: 14 }}>Open ({open.length})</h2>
       {!open.length && <p className="muted small">No open mistakes. 🎉</p>}
       {open.map((m) => (
         <div key={m.id} className="mistake-item card">
@@ -33,7 +35,7 @@ export default function MistakesPage() {
         </div>
       ))}
 
-      {fixed.length > 0 && <h3 style={{ marginTop: 18 }}>Fixed ({fixed.length})</h3>}
+      {fixed.length > 0 && <h2 style={{ marginTop: 18 }}>Fixed ({fixed.length})</h2>}
       {fixed.map((m) => (
         <div key={m.id} className="mistake-item fixed card">
           <b className="small">{m.topic}</b>

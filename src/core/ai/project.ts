@@ -58,7 +58,7 @@ export const PROJECT_FACTS: ProjectFact[] = [
       'Iski poori content ek 457-page PDF se extract hui hai: 29 sections, 8 tracks (Python Core se\n' +
       'Interview + Projects tak), har section me lesson stages, questions, notebooks aur projects.\n' +
       'Python, SQL, PDF reading — sab browser ke andar chalta hai: Pyodide (Python 3.12 + numpy/pandas),\n' +
-      'sql.js aur pdf.js is app ke saath bundled hain, isliye internet ki zaroorat nahi padti.',
+      'sql.js aur pdf.js is app ke saath bundled hain.',
   },
   {
     id: 'runtime',
@@ -117,8 +117,8 @@ export const PROJECT_FACTS: ProjectFact[] = [
   },
   {
     id: 'content-add-lesson',
-    where: 'Learning Path',
-    route: '/path',
+    where: 'Courses',
+    route: '/courses',
     keys: ['lesson', 'topic', 'concept', 'guide', 'pack', 'packs', 'curriculum', 'section', 'sections', 'badlo', 'content'],
     phrases: ['lesson add', 'topic add', 'naya lesson', 'curriculum kaise', 'content kaha'],
     body:
@@ -193,7 +193,7 @@ export const PROJECT_FACTS: ProjectFact[] = [
       '  · Practice — Question Bank, Playbook V15, Timed Exam, Notebook Lab, SQL Lab, NumPy+Pandas Lab,\n' +
       '    Interview Mode, Project Defense, Project Lab, Code Playground.\n' +
       '  · AI — AI/GenAI Lab, Agentic Lab, RAG Lab, Final Assessment.\n' +
-      '  · Career — Resume Labs, Mock Interviews, Job Prep, Progress (study time + mastery).\n' +
+      '  · Career — Project Defense, Mock Interviews, Job Prep, Progress (study time + mastery).\n' +
       '  · Tools — Notes, Cheat Sheets, PDF Reader, Settings.',
   },
   {

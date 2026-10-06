@@ -92,9 +92,8 @@ export function usePathCtx(): PathCtx {
       },
       published,
       // Item counts come from items.json (the banks — what a learner can really open). The
-      // manifest's own tally is the document's OFFER, one higher: the import refused a question
-      // whose text another bank already owned, and a denominator of 477 would make 100%
-      // unreachable for a learner who finished all 476.
+      // manifest's own tallies are re-derived from the same banks when items.json is written, so
+      // the fallback below can never print a denominator the learner cannot fill.
       playbook: pbIndex
         ? {
           pages: pbIndex.pages,

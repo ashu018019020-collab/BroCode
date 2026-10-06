@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { ArchitectureDiagram } from '../../components/ui/ui';
 
 /** Tiny deterministic local "embedding" for the visual demo — hashing n-grams into a vector. */
@@ -55,17 +56,18 @@ export default function AILab() {
 
   return (
     <div>
+      <HubCrumb hub="/labs" hubLabel="Labs" page="AI / GenAI Lab" />
       <h1>🤖 AI / GenAI Lab</h1>
-      <p className="muted small">Deterministic local simulations — no API keys, no internet. Concepts behave like the real pipelines so you can reason about them.</p>
+      <p className="muted small">Deterministic local simulations — no API keys. Concepts behave like the real pipelines so you can reason about them.</p>
 
       <div className="card">
-        <h3>RAG pipeline (simulated)</h3>
+        <h2>RAG pipeline (simulated)</h2>
         <ArchitectureDiagram nodes={['Query', 'Embed', 'Vector similarity', 'Top-k docs', 'Grounded prompt', 'LLM (answer span)', 'Answer + sources']} note="Click any stage. In production, 'LLM' is a model call — here the retrieval logic is fully local." />
       </div>
 
       <div className="grid2">
         <div className="card">
-          <h3>1. Retrieval demo (toy embeddings)</h3>
+          <h2>1. Retrieval demo (toy embeddings)</h2>
           <label className="small">Query</label>
           <input value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: '100%' }} />
           <div style={{ margin: '10px 0' }}>
@@ -80,7 +82,7 @@ export default function AILab() {
         </div>
 
         <div className="card">
-          <h3>2. Grounded prompt builder</h3>
+          <h2>2. Grounded prompt builder</h2>
           <textarea className="console" rows={6} value={promptTpl} onChange={(e) => setPromptTpl(e.target.value)} />
           <p className="small muted">Rendered ({tokens} words ≈ {Math.ceil(tokens * 1.3)} tokens):</p>
           <pre className="codeblock" style={{ maxHeight: 160 }}><code>{groundedPrompt}</code></pre>
@@ -88,7 +90,7 @@ export default function AILab() {
       </div>
 
       <div className="card">
-        <h3>3. JSON structured-output validator</h3>
+        <h2>3. JSON structured-output validator</h2>
         <textarea className="console" rows={4} value={jsonOut} onChange={(e) => setJsonOut(e.target.value)} />
         <div className="row" style={{ marginTop: 6 }}>
           <span className="chip" style={{ color: jsonStatus.ok ? 'var(--green)' : 'var(--red)' }}>

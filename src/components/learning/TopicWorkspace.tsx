@@ -439,7 +439,7 @@ export function TopicWorkspace({ sec }: { sec: Section }) {
                   </div>
                 ))}
               </Reveal>
-              <p className="small" style={{ marginTop: 6 }}><strong>Resume line:</strong> {p.resume}</p>
+              <p className="small" style={{ marginTop: 6 }}><strong>Portfolio line:</strong> {p.resume}</p>
               <p className="small muted">README points</p>
               <ul className="pack-list small">{p.readme.map((x, j) => <li key={j}>{x}</li>)}</ul>
             </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { Link } from 'react-router-dom';
 import { Network, Play, RotateCcw, FileText, Search, Sparkles, Info, ArrowRight } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
@@ -69,6 +70,7 @@ export default function RagLab() {
 
   return (
     <div>
+      <HubCrumb hub="/labs" hubLabel="Labs" page="RAG Lab" />
       <div className="row spread" style={{ flexWrap: 'wrap' }}>
         <div>
           <h1 className="row" style={{ gap: 10 }}><Network size={24} color="var(--cyan)" /> RAG LAB</h1>
@@ -84,7 +86,7 @@ export default function RagLab() {
       <div className="grid2" style={{ gridTemplateColumns: '340px 1fr', alignItems: 'start', marginTop: 12 }}>
         {/* ---------- LEFT: pipeline controls ---------- */}
         <div className="card">
-          <h3 className="row" style={{ gap: 8, margin: 0 }}><FileText size={16} color="var(--violet)" /> Corpus</h3>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}><FileText size={16} color="var(--violet)" /> Corpus</h2>
           <p className="muted small">Document set chuno jo index hoga.</p>
           <select value={corpusKey} onChange={(e) => setCorpusKey(e.target.value)} style={{ width: '100%' }}>
             <option value="all">Poora curriculum ({sections.length} sections)</option>
@@ -135,7 +137,7 @@ export default function RagLab() {
         {/* ---------- RIGHT: query + results ---------- */}
         <div>
           <div className="card">
-            <h3 className="row" style={{ gap: 8, margin: 0 }}><Search size={16} color="var(--cyan)" /> Query</h3>
+            <h2 className="row" style={{ gap: 8, margin: 0 }}><Search size={16} color="var(--cyan)" /> Query</h2>
             <div className="assistant" style={{ marginTop: 10 }}>
               <div className="ask">
                 <input
@@ -156,7 +158,7 @@ export default function RagLab() {
           </div>
 
           <div className="card" style={{ marginTop: 12 }}>
-            <h3 className="row" style={{ gap: 8, margin: 0 }}><Info size={16} color="var(--green)" /> Extracted answer</h3>
+            <h2 className="row" style={{ gap: 8, margin: 0 }}><Info size={16} color="var(--green)" /> Extracted answer</h2>
             {!asked && <p className="muted small">“Retrieve karo” dabao — answer sirf retrieved text se banega, koi generation nahi.</p>}
             {asked && !answer.text && (
               <div className="empty-state">
@@ -174,7 +176,7 @@ export default function RagLab() {
           </div>
 
           <div className="card" style={{ marginTop: 12 }}>
-            <h3 className="row" style={{ gap: 8, margin: 0 }}>Retrieved chunks <span className="chip">{hits.length} / {chunks.length}</span></h3>
+            <h2 className="row" style={{ gap: 8, margin: 0 }}>Retrieved chunks <span className="chip">{hits.length} / {chunks.length}</span></h2>
             {!asked && <p className="muted small">Chunking se cosine ranking tak — sab yahin dikhega.</p>}
             {asked && !hits.length && <p className="muted small">Is query ke liye koi chunk match nahi hua (saare scores 0 hain).</p>}
             <div style={{ marginTop: 8 }}>
@@ -201,7 +203,7 @@ export default function RagLab() {
           </div>
 
           <div className="card" style={{ marginTop: 12 }}>
-            <h3 className="row" style={{ gap: 8, margin: 0 }}>Pipeline — stage by stage</h3>
+            <h2 className="row" style={{ gap: 8, margin: 0 }}>Pipeline — stage by stage</h2>
             <div className="timeline" style={{ marginTop: 10 }}>
               {[
                 ['1. Ingest', `${docs.length} documents load hue — pick kiya gaya corpus + tumhara text.`],
@@ -221,7 +223,7 @@ export default function RagLab() {
               Real systems me sentence-transformers use hote hain; yahan poora mechanism samajhne ke liye sab kuch visible rakha gaya hai.
             </p>
             <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-              <Link className="btn small" to="/ai">AI / GenAI Lab <ArrowRight size={12} /></Link>
+              <Link className="btn small" to="/ai-lab">AI / GenAI Lab <ArrowRight size={12} /></Link>
               <Link className="btn small" to="/agentic">Agentic AI Lab <ArrowRight size={12} /></Link>
               <Link className="btn small" to="/questions">RAG ke questions practice karo <ArrowRight size={12} /></Link>
             </div>

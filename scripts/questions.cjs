@@ -649,6 +649,9 @@ function cmdAbsorb() {
  *
  *   node scripts/questions.cjs playbook             # dry run
  *   node scripts/questions.cjs playbook --write      # apply + rewrite the manifest
+ *
+ * The manifest's count fields (totals and per-chapter) are re-derived from the banks in the write
+ * pass, so a question this import refuses can never leave a count the learner cannot fill.
  */
 function cmdPlaybook() {
   const WRITE = process.argv.includes('--write');
@@ -793,6 +796,9 @@ function cmdPlaybook() {
  * disagree with what the learner can actually practise, and rewritten by the same command that
  * writes those banks. `selfGrade` marks the document's own method lines ("answer verbally first…"):
  * those are rubrics, not model answers, so a keyword score against them would be noise.
+ *
+ * The manifest's own count fields are re-derived from this list in the same pass
+ * (syncPlaybookManifest), so the parse and the banks cannot drift apart either.
  */
 function writePlaybookView(version) {
   const items = [];
@@ -817,7 +823,52 @@ function writePlaybookView(version) {
   const file = path.join('public', 'generated', 'playbook', 'items.json');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify({ generatedAt: new Date().toISOString(), sourceVersion: version, count: items.length, items }, null, 1));
+  if (syncPlaybookManifest(items)) ok('playbook manifest → public/generated/playbook/manifest.json (counts re-derived from the banks, so both artifacts agree)');
   return items.length;
+}
+
+/**
+ * The manifest's count fields were parsed from the DOCUMENT (`scripts/playbook.cjs`); the view is
+ * the BANKS' truth. The import refuses a question whose text another bank already owns, so the two
+ * can legitimately disagree — and when they do, everything that subtracts or divides them prints a
+ * target the learner can never reach (`npm run courses` warns about exactly this). Re-derive every
+ * count from the items just written, keeping the manifest's own key order and the fields only the
+ * parse knows (generatedAt, source, pages, labs, mini projects, method answers). Returns true only
+ * when a count really changed, so the file's bytes survive untouched otherwise.
+ */
+function syncPlaybookManifest(items) {
+  const file = path.join('public', 'generated', 'playbook', 'manifest.json');
+  if (!fs.existsSync(file)) return false;
+  const manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const before = JSON.stringify(manifest, null, 1);
+
+  /** Tally `rows` by `key`, keeping the manifest's own key order; a key that falls to zero is dropped. */
+  const retally = (prev, rows, key) => {
+    const counts = new Map();
+    for (const r of rows) counts.set(r[key], (counts.get(r[key]) ?? 0) + 1);
+    const out = {};
+    for (const k of Object.keys(prev ?? {})) if (counts.has(k)) out[k] = counts.get(k);
+    for (const [k, n] of counts) if (!(k in out)) out[k] = n;
+    return out;
+  };
+
+  manifest.totals.items = items.length;
+  manifest.totals.byType = retally(manifest.totals.byType, items, 'type');
+  manifest.totals.bySection = retally(manifest.totals.bySection, items, 'sectionId');
+  for (const ch of manifest.chapters ?? []) {
+    const own = items.filter((it) => it.chapter === ch.no);
+    ch.sections = retally(ch.sections, own, 'sectionId');
+    ch.byType = retally(ch.byType, own, 'type');
+    ch.items = own.length;
+    // Same rule as the parse: the chapter's own section is its biggest recipient.
+    const [top] = Object.entries(ch.sections).sort((a, b) => b[1] - a[1])[0] ?? [];
+    if (top) ch.sectionId = top;
+  }
+
+  const after = JSON.stringify(manifest, null, 1);
+  if (after === before) return false;
+  fs.writeFileSync(file, after);
+  return true;
 }
 
 const cmd = process.argv[2];

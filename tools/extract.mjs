@@ -55,7 +55,7 @@ const CANON = [
   'NLP + Transformers', 'Generative AI, LLMs & RAG', 'Agentic AI + LangChain + n8n',
   'APIs, Flask/FastAPI & Production Python', 'Data Analytics + Power BI',
   'MLOps + Docker + Git + AWS', 'AI Engineer + Data Scientist Interview Mastery',
-  'Coding Patterns, Projects & Final Practice', 'Resume Project Interview Labs',
+  'Coding Patterns, Projects & Final Practice', 'Project Interview Labs',
 ];
 const ALIASES = {
   4: ['strings and methods'],
@@ -72,7 +72,7 @@ const ALIASES = {
   26: ['mlops docker git aws'],
   27: ['ai engineer data scientist interview mastery'],
   28: ['coding patterns projects final practice'],
-  29: ['resume project interview labs'],
+  29: ['project interview labs'],
 };
 function matchSection(text) {
   const t = norm(text);

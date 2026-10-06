@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore } from '../../core/storage/store';
 import { itemAttempt, learnView } from '../../core/platform/keys';
@@ -11,11 +11,14 @@ export default function ConceptHub() {
   const { sections } = useCurriculum();
   const state = useStore();
   const { t } = useI18n();
+  const [searchParams] = useSearchParams();
+  const sectionFilter = searchParams.get('section');
   const [q, setQ] = useState('');
 
   const rows = useMemo(() => {
     const out: { sid: string; sec: string; title: string; level: string; done: boolean }[] = [];
     for (const s of sections) {
+      if (sectionFilter && s.id !== sectionFilter) continue;
       s.learn.concepts.forEach((c, i) => {
         out.push({
           sid: s.id, sec: s.title, title: c.title, level: c.level,
@@ -25,7 +28,7 @@ export default function ConceptHub() {
     }
     const needle = q.trim().toLowerCase();
     return needle ? out.filter((r) => `${r.title} ${r.sec}`.toLowerCase().includes(needle)) : out;
-  }, [sections, q, state.attempts]);
+  }, [sections, q, sectionFilter, state.attempts]);
 
   return (
     <div>

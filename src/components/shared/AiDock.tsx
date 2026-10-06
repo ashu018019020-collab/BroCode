@@ -21,10 +21,12 @@ import { AssistantCard } from './AssistantCard';
 export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  // Focus the ask box on open, so the keyboard is ready — this is the one thing a dock can do that
-  // a page-embedded card cannot.
+  // Focus on desktop so typing is immediate. On phones this both opens the software keyboard and
+  // scrolls the compact dock past its header/actions, so the learner taps the composer explicitly.
   useEffect(() => {
-    if (open) ref.current?.querySelector('input')?.focus();
+    if (open && !window.matchMedia('(max-width: 780px)').matches) {
+      ref.current?.querySelector('input')?.focus();
+    }
   }, [open]);
 
   if (!open) return null;

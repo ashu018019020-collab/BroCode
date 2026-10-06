@@ -47,7 +47,7 @@ test('authored: defense is a first-class question type', () => {
     verifiedAt: '2026-09-24', createdAt: '2026-09-24T00:00:00.000Z', updatedAt: '2026-09-24T00:00:00.000Z',
     ...over,
   });
-  const bank = (questions) => ({ sectionId: 's29', title: 'Resume Project Interview Labs', questions });
+  const bank = (questions) => ({ sectionId: 's29', title: 'Project Interview Labs', questions });
   const problems = validateBank(bank([rec()])).problems;
   assert.deepEqual(problems, [], `defense record must validate cleanly: ${problems.join('; ')}`);
   assert.ok(validateBank(bank([rec({ type: 'nonsense' })])).problems.length > 0,

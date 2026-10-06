@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { runSQL } from '../coding/runners';
 import { DATASETS, seedForSQL } from '../../core/data/datasets';
 import { useStore, setState } from '../../core/storage/store';
@@ -43,8 +44,9 @@ export default function SQLLab() {
 
   return (
     <div>
+      <HubCrumb hub="/labs" hubLabel="Labs" page="SQL Lab" />
       <h1>🗄️ SQL Lab</h1>
-      <p className="muted small">SQLite (WASM) running locally — SELECT, WHERE, GROUP BY, JOIN, HAVING, subqueries, CTEs and window functions, no internet.</p>
+      <p className="muted small">SQLite (WASM) running locally — SELECT, WHERE, GROUP BY, JOIN, HAVING, subqueries, CTEs and window functions.</p>
 
       <div className="grid2" style={{ margin: '12px 0' }}>
         {DATASETS.map((d) => (

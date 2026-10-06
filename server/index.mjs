@@ -1,0 +1,64 @@
+import 'dotenv/config';
+import { createAuthServer } from './app.mjs';
+import { createSupabaseServices } from './supabase.mjs';
+import { createSupabaseStore } from './store.mjs';
+
+const port = Number(process.env.API_PORT ?? 8787);
+const allowedOrigin = process.env.WEB_ORIGIN
+  ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5173');
+
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error('API_PORT must be a valid TCP port.');
+}
+if (!allowedOrigin) {
+  throw new Error('Set WEB_ORIGIN to the exact production web-app origin.');
+}
+const webUrl = new URL(allowedOrigin);
+if (webUrl.origin !== allowedOrigin || webUrl.pathname !== '/') {
+  throw new Error('WEB_ORIGIN must contain only the scheme, hostname, and optional port.');
+}
+if (process.env.NODE_ENV === 'production' && webUrl.protocol !== 'https:') {
+  throw new Error('WEB_ORIGIN must use HTTPS in production.');
+}
+
+// Enforcement follows NODE_ENV: production requires TLS. Set ENFORCE_HTTPS=off when a trusted proxy
+// terminates TLS without forwarding X-Forwarded-Proto.
+const enforceHttps = (process.env.ENFORCE_HTTPS ?? (process.env.NODE_ENV === 'production' ? 'on' : 'off')) !== 'off';
+
+const supabase = createSupabaseServices();
+const store = createSupabaseStore();
+const server = createAuthServer({
+  store,
+  supabaseAuth: supabase.auth,
+  supabaseAdmin: supabase.admin,
+  allowedOrigin,
+  enforceHttps,
+});
+
+await new Promise((resolve, reject) => {
+  server.once('error', reject);
+  server.listen(port, () => {
+    server.removeListener('error', reject);
+    console.log(`BroCode Supabase account API listening on port ${port}.`);
+    if (enforceHttps) console.log('Plain-HTTP requests are redirected to HTTPS and HSTS is sent.');
+    resolve();
+  });
+});
+
+async function shutdown() {
+  server.close(async (error) => {
+    try {
+      await store.close();
+      if (error) {
+        console.error('Failed to close the account API cleanly.', error.code ?? error.name);
+        process.exitCode = 1;
+      }
+    } catch (closeError) {
+      console.error('Failed to close the Supabase database pool cleanly.', closeError.code ?? closeError.name);
+      process.exitCode = 1;
+    }
+  });
+}
+
+process.once('SIGINT', shutdown);
+process.once('SIGTERM', shutdown);

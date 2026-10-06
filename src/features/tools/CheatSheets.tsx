@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { BookMarked, Copy, Printer, Search, ArrowRight } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
 import { TRACK_DEFS } from '../../app/App';
@@ -63,6 +63,8 @@ const SYNTAX: { group: string; rows: [string, string][] }[] = [
 export default function CheatSheets() {
   const { sections } = useCurriculum();
   const { t } = useI18n();
+  const [searchParams] = useSearchParams();
+  const sectionFilter = searchParams.get('section');
   const [q, setQ] = useState('');
   const [track, setTrack] = useState<string>('all');
   // Rendered in pages: 120 cards at once is a lot of DOM for no benefit.
@@ -70,7 +72,9 @@ export default function CheatSheets() {
 
   /** Cards are built from the verified curriculum snippets — never re-typed. */
   const cards = useMemo(() => {
-    const pick = track === 'all' ? sections : sections.filter((s) => {
+    const pick = sections.filter((s) => {
+      if (sectionFilter && s.id !== sectionFilter) return false;
+      if (track === 'all') return true;
       const def = TRACK_DEFS.find((d) => d.id === track)!;
       return s.no >= def.from && s.no <= def.to;
     });
@@ -79,7 +83,7 @@ export default function CheatSheets() {
       .flatMap((s) => s.learn.concepts.map((c) => ({ sid: s.id, no: s.no, section: s.title, ...c })))
       .filter((c) => c.code)
       .filter((c) => !needle || `${c.title} ${c.tip} ${c.code}`.toLowerCase().includes(needle));
-  }, [sections, q, track]);
+  }, [sections, q, track, sectionFilter]);
 
   const visible = cards.slice(0, limit);
 
@@ -126,23 +130,27 @@ export default function CheatSheets() {
         </div>
       </div>
 
-      <h2 style={{ marginTop: 18 }}>Python syntax quick reference</h2>
-      <div className="grid2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', alignItems: 'start' }}>
-        {SYNTAX.map((g) => (
-          <div key={g.group} className="card">
-            <h3 style={{ marginTop: 0 }}>{g.group}</h3>
-            {g.rows.map(([label, code]) => (
-              <div key={label} style={{ marginBottom: 8 }}>
-                <div className="row spread">
-                  <span className="small muted">{label}</span>
-                  <button className="btn small ghost no-print" onClick={() => copy(code, label)} aria-label={`Copy ${label}`}><Copy size={11} /></button>
-                </div>
-                <pre className="codeblock">{code}</pre>
+      {!sectionFilter && (
+        <>
+          <h2 style={{ marginTop: 18 }}>Python syntax quick reference</h2>
+          <div className="grid2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', alignItems: 'start' }}>
+            {SYNTAX.map((g) => (
+              <div key={g.group} className="card">
+                <h3 style={{ marginTop: 0 }}>{g.group}</h3>
+                {g.rows.map(([label, code]) => (
+                  <div key={label} style={{ marginBottom: 8 }}>
+                    <div className="row spread">
+                      <span className="small muted">{label}</span>
+                      <button className="btn small ghost no-print" onClick={() => copy(code, label)} aria-label={`Copy ${label}`}><Copy size={11} /></button>
+                    </div>
+                    <pre className="codeblock">{code}</pre>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
       <h2 style={{ marginTop: 20 }}>From the curriculum</h2>
       {!cards.length && (

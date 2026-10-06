@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Profile {
+  id          String        @id @db.Uuid
+  displayName String        @default("") @map("display_name")
+  role        String        @default("user") @db.VarChar(16)
+  status      String        @default("active") @db.VarChar(16)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastSeenAt  DateTime?     @map("last_seen_at") @db.Timestamptz(6)
+  progress    ProgressSnapshot?
+
+  @@index([lastSeenAt])
+  @@map("profiles")
+}
+
+model ProgressSnapshot {
+  userId           String   @id @map("user_id") @db.Uuid
+  xp               Int      @default(0)
+  streakCurrent    Int      @default(0) @map("streak_current")
+  practicedCount   Int      @default(0) @map("practiced_count")
+  doneRecords      Int      @default(0) @map("done_records")
+  studyMinutes     Int      @default(0) @map("study_minutes")
+  studyDays        Int      @default(0) @map("study_days")
+  openMistakes     Int      @default(0) @map("open_mistakes")
+  updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  user             Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("progress_snapshots")
+}

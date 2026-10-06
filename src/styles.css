@@ -140,6 +140,26 @@
   --chrome-strong: rgba(2, 4, 10, .86);
   --popover-blur: rgba(6, 9, 18, .96);
 
+  /*
+   * GLASS CHROME — the shell's three fixed surfaces (header, footer, rail) and the phone's bottom
+   * bar. Same material recipe for all four: a dark translucent surface, a white hairline for the
+   * edge light, a soft shadow to lift it off the page, and cyan/violet used only as an accent.
+   *
+   * These are deliberately NOT theme tokens: the chrome does not invert with the page. In light
+   * mode the surfaces get MORE opaque (see the light-theme scope below) rather than white, exactly
+   * the way the rail and the console already work in this file.
+   */
+  --glass-1: rgba(10, 18, 35, .72);
+  --glass-2: rgba(7, 13, 27, .84);
+  --glass-line: rgba(255, 255, 255, .10);
+  --glass-hi: rgba(255, 255, 255, .07);
+  --glass-ink: #eaf2ff;
+  --glass-muted: #9fb2d0;
+  --glass-shadow: 0 14px 40px rgba(0, 0, 0, .42);
+  --glass-radius: 18px;
+  /* The rail's own wash: a cool navy at the top of the panel fading into the near-black base. */
+  --sidebar-grad: linear-gradient(180deg, rgba(28, 44, 78, .50), rgba(6, 10, 22, .06) 62%);
+
   /* legacy aliases — every component still reads these names */
   --bg: var(--background);
   --bg2: var(--background-2);
@@ -147,6 +167,12 @@
   --panel2: rgba(255, 255, 255, 0.07);
   --text: var(--foreground);
   --muted: var(--muted-foreground);
+}
+
+@property --chrome-glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
 }
 
 /*
@@ -245,6 +271,40 @@
   --chrome: rgba(255, 255, 255, .78);
   --chrome-strong: rgba(255, 255, 255, .90);
   --popover-blur: rgba(255, 255, 255, .97);
+}
+
+/*
+ * THE HEADER, THE FOOTER AND THE PHONE BAR DO NOT INVERT EITHER — light theme only.
+ *
+ * Same trick as the rail below and the console above: the dark token set is re-declared ON the
+ * surfaces. A white bar on a light page dissolves into it, and the glass stops reading as glass —
+ * the whole point of the material is the contrast between a light content area and dark navigation
+ * chrome. The surfaces go MORE opaque than the dark theme's values (a .72 black wash over
+ * `#f2f4fa` composites to a mid grey, not a dark panel) and keep the dark ink, so every control
+ * that already reads `--text` / `--muted` / `--secondary` / `--border` by name keeps working
+ * unchanged — the crumbs, the icon buttons, the search box, the avatar and the footer's XP cell.
+ */
+:root[data-theme='light'] .topbar,
+:root[data-theme='light'] .statusbar,
+:root[data-theme='light'] .bottomnav {
+  color: var(--glass-ink);
+  --glass-1: rgba(10, 18, 35, .88);
+  --glass-2: rgba(7, 13, 27, .94);
+  --foreground: #e8eefc;
+  --text: #e8eefc;
+  --muted: #93a2c4;
+  --card: #0a0d16;
+  --secondary: rgba(255, 255, 255, .06);
+  --panel: rgba(255, 255, 255, .05);
+  --panel2: rgba(255, 255, 255, .09);
+  --border: rgba(140, 170, 255, .16);
+  --input: rgba(165, 195, 255, .24);
+  --input-bg: rgba(255, 255, 255, .05);
+  --hover: rgba(255, 255, 255, .08);
+  --hover-border: rgba(34, 211, 238, .45);
+  --placeholder: rgba(147, 162, 196, .7);
+  --lift: inset 0 1px 0 rgba(255, 255, 255, .06);
+  --scroll: rgba(140, 170, 255, .22);
 }
 
 /*
@@ -395,6 +455,9 @@ body {
 
 h1, h2, h3, h4 { margin: 0 0 .4rem; font-weight: 650; letter-spacing: -.018em; }
 h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; } h3 { font-size: .97rem; }
+/* The h1's exact look for non-title headings (loading/error branches, big stats) — see the
+   one-H1-per-page rule pinned in scripts/tests/layout.test.mjs. */
+.h1-look { margin: 0 0 .4rem; font-weight: 650; letter-spacing: -.018em; font-size: 1.4rem; }
 p { margin: .35rem 0; }
 a { color: var(--cyan); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -438,9 +501,14 @@ button:not(:disabled), [role='button']:not(:disabled), label[for] { cursor: poin
   position: sticky; top: 10px;
   height: calc(100vh - 20px); height: calc(100dvh - 20px);
   display: flex; flex-direction: column; overflow: hidden;
-  border: 1px solid var(--sidebar-ring); border-radius: var(--radius-xl); background: var(--sidebar);
-  backdrop-filter: blur(18px) saturate(1.35); -webkit-backdrop-filter: blur(18px) saturate(1.35);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .04);
+  border: 1px solid var(--sidebar-ring); border-radius: 20px;
+  background-color: var(--sidebar);
+  background-image:
+    radial-gradient(320px 190px at 8% 4%, rgba(34, 211, 238, .10), transparent 70%),
+    radial-gradient(300px 210px at 96% 96%, rgba(139, 92, 246, .10), transparent 72%),
+    var(--sidebar-grad);
+  backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .55), 0 0 34px rgba(34, 211, 238, .07), inset 0 1px 0 rgba(255, 255, 255, .05);
   transition: width .18s ease;
 }
 /* Only the destinations scroll; the brand and the level card stay put. */
@@ -489,6 +557,13 @@ button:not(:disabled), [role='button']:not(:disabled), label[for] { cursor: poin
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .brand .sub { font-size: .68rem; color: var(--muted); display: block; line-height: 1.35; margin-top: 3px; }
+/* The brand line reads as a stepper: the four verbs with a drawn dot between them instead of a
+   text arrow, so the journey scans at a glance. `.brand .brand-tag` outranks `.brand .sub`. */
+/* One line even in the narrow rail: the four verbs are short, so the stepper tightens rather than
+   wrapping "Master" onto a line of its own. */
+.brand .brand-tag { display: flex; align-items: center; flex-wrap: nowrap; gap: 0 4px; font-size: .63rem; letter-spacing: .01em; }
+.brand .brand-tag em { font-style: normal; }
+.brand .brand-tag i { width: 3px; height: 3px; border-radius: 99px; background: currentColor; opacity: .45; flex: none; }
 /* The fold control lives in the brand's top-right corner: the panel owns the control that folds it. */
 .side-fold {
   position: absolute; top: 0; right: 0; width: 26px; height: 26px; flex: none;
@@ -499,19 +574,27 @@ button:not(:disabled), [role='button']:not(:disabled), label[for] { cursor: poin
 .side-fold:hover { color: var(--text); border-color: var(--hover-border); background: var(--hover); }
 
 .navlink {
-  display: flex; gap: 11px; align-items: center; padding: 8px 11px; border-radius: 11px; position: relative;
+  display: flex; gap: 11px; align-items: center; padding: 8px 11px; border-radius: 12px; position: relative;
   color: var(--muted); font-size: .88rem; font-weight: 500; margin: 1px 0; border: 1px solid transparent;
-  transition: background .14s ease, color .14s ease, border-color .14s ease, box-shadow .18s ease;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .22s ease, transform .2s ease;
 }
-.navlink:hover { background: var(--panel); color: var(--text); text-decoration: none; }
+/* Hover is a brighter pane of the same glass, tinted toward the accent — not a filled row. */
+.navlink:hover {
+  background-color: rgba(255, 255, 255, .06);
+  background-image: linear-gradient(90deg, rgba(34, 211, 238, .10), rgba(139, 92, 246, .04));
+  border-color: rgba(34, 211, 238, .20);
+  color: var(--text); text-decoration: none; transform: translateX(1px);
+}
 /*
  * The active row is lit from its left edge — one inset bar, no extra element, no layout shift —
  * and the bar takes the row's OWN hue, so the lit row matches the icon that opened it.
  */
 .navlink.active {
-  background: var(--sidebar-accent); color: var(--text);
-  border-color: rgba(34, 211, 238, .26);
-  box-shadow: inset 3px 0 0 0 var(--tone, var(--cyan)), 0 10px 24px rgba(34, 211, 238, .10);
+  background-color: rgba(34, 211, 238, .10); background-image: var(--sidebar-accent); color: var(--text);
+  border-color: rgba(34, 211, 238, .30);
+  box-shadow: inset 3px 0 0 0 var(--tone, var(--cyan)), inset 0 1px 0 rgba(255, 255, 255, .07),
+    0 12px 26px rgba(34, 211, 238, .14);
+  transform: none;
 }
 /*
  * Each destination's icon carries its hue plus a soft glow of the same colour, while the row text
@@ -522,7 +605,11 @@ button:not(:disabled), [role='button']:not(:disabled), label[for] { cursor: poin
 .navlink .ico {
   width: 22px; height: 22px; flex: none; display: grid; place-items: center;
   color: var(--tone, var(--cyan)); filter: drop-shadow(0 0 7px var(--tone-glow, transparent));
+  transition: transform .2s ease, filter .22s ease;
 }
+/* The icon leans in with the row — a 6–8% scale, enough to feel responsive, never a bounce. */
+.navlink:hover .ico { transform: scale(1.08); }
+.navlink.active .ico { transform: scale(1.06); filter: drop-shadow(0 0 10px var(--tone-glow, transparent)); }
 .navlink .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .navlink .navchev { flex: none; display: grid; place-items: center; color: var(--muted); opacity: .5; transition: opacity .14s ease, transform .14s ease; }
 .navlink:hover .navchev { opacity: 1; transform: translateX(2px); }
@@ -566,7 +653,7 @@ button:not(:disabled), [role='button']:not(:disabled), label[for] { cursor: poin
  * Grid items default to `min-width: auto` (min-content), so ONE long line inside a card — a
  * notebook output, a cheat-sheet snippet, a rendered prompt — stretched its `1fr` track and gave
  * the whole page a horizontal scrollbar, instead of scrolling inside the block that already has
- * `overflow-x: auto`. Measured on the real app: /ai carried 144px of sideways overflow, /cheats
+ * `overflow-x: auto`. Measured on the real app: /ai-lab carried 144px of sideways overflow, /cheat-sheets
  * 120px (290px at 400px wide), /notebooks 189px. Letting the track child shrink hands the overflow
  * to the scroller it already contains.
  *
@@ -616,7 +703,14 @@ button:not(:disabled), [role='button']:not(:disabled), label[for] { cursor: poin
 .btn.small { padding: 4px 9px; font-size: .76rem; border-radius: var(--radius-sm); }
 .btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 
+/*
+ * `max-width` belongs on the base rule, not on one screen's card: a `<select>` is as wide as its
+ * longest option, so `Goal`'s "Programming & Software Development" made the control 324px inside a
+ * 299px label and hung 25px past the card's edge on /settings (measured at 320 and 360). This caps
+ * every field, including one a future screen drops into a narrow column.
+ */
 input, textarea, select {
+  max-width: 100%;
   background-color: var(--input-bg); color: var(--text); border: 1px solid var(--input);
   border-radius: var(--radius-md); padding: 8px 10px; font: inherit;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03), inset 0 1px 3px rgba(0, 0, 0, .35);
@@ -721,7 +815,113 @@ textarea { width: 100%; }
   border-bottom-width: 2px; border-radius: var(--radius-sm); padding: 1px 6px;
   background-color: var(--input-bg); color: var(--muted); box-shadow: var(--lift);
 }
-.loading { display: grid; place-items: center; height: 60vh; color: var(--muted); }
+.curriculum-loader {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; overflow: auto;
+  padding: clamp(14px, 3vw, 32px);
+  background: radial-gradient(ellipse at 50% 42%, rgba(34, 211, 238, .08), transparent 62%);
+  opacity: 1; transition: opacity .52s ease;
+}
+.curriculum-loader.exiting { opacity: 0; pointer-events: none; }
+.curriculum-loader-panel {
+  width: min(100%, 620px); padding: clamp(14px, 2.6vw, 26px);
+  border: 1px solid color-mix(in srgb, var(--cyan) 22%, var(--border));
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .12),
+    0 0 36px rgba(34, 211, 238, .07);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+}
+.loader-art-frame {
+  position: relative; isolation: isolate; width: min(100%, 460px); aspect-ratio: 791 / 768; margin: 0 auto;
+}
+.loader-art {
+  position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: contain;
+  image-rendering: pixelated; filter: drop-shadow(0 12px 26px rgba(2, 12, 36, .2));
+  animation: loader-scene-float 4.8s ease-in-out infinite;
+}
+.loader-logo-aura {
+  position: absolute; z-index: 0; top: 6%; left: 27%; width: 46%; height: 30%; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(34, 211, 238, .3), rgba(79, 124, 255, .13) 42%, transparent 72%);
+  filter: blur(16px); animation: loader-logo-pulse 3.2s ease-in-out infinite;
+}
+.loader-progress-sweep {
+  position: absolute; z-index: 2; top: 33.5%; left: 28%; width: 44%; height: 11%;
+  overflow: hidden; border-radius: 999px; pointer-events: none;
+}
+.loader-progress-sweep::after {
+  content: ''; position: absolute; inset: -20% auto -20% -42%; width: 28%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .78), rgba(34, 211, 238, .45), transparent);
+  filter: blur(3px); transform: skewX(-18deg); animation: loader-bar-sweep 2.4s ease-in-out infinite;
+}
+.loader-particle {
+  position: absolute; z-index: 2; color: #9df6ff; font-size: clamp(11px, 2vw, 19px);
+  text-shadow: 0 0 10px rgba(34, 211, 238, .9), 0 0 20px rgba(79, 124, 255, .7);
+  pointer-events: none; animation: loader-sparkle 2.8s ease-in-out infinite;
+}
+.loader-particle.p1 { left: 12%; top: 38%; animation-delay: -.4s; }
+.loader-particle.p2 { left: 22%; top: 60%; font-size: 25px; animation-delay: -1.1s; }
+.loader-particle.p3 { right: 13%; top: 30%; animation-delay: -1.8s; }
+.loader-particle.p4 { right: 19%; top: 54%; font-size: 28px; animation-delay: -.8s; }
+.loader-particle.p5 { left: 40%; bottom: 10%; animation-delay: -2.2s; }
+.loader-particle.p6 { right: 36%; bottom: 20%; animation-delay: -1.4s; }
+.loader-copy {
+  display: flex; min-height: 42px; align-items: center; justify-content: center; gap: 10px;
+  margin-top: 5px; color: var(--foreground); font-size: clamp(.9rem, 2.5vw, 1.05rem); font-weight: 650;
+}
+.loader-status-light {
+  width: 8px; height: 8px; flex: none; border-radius: 50%; background: #34d399;
+  box-shadow: 0 0 12px rgba(52, 211, 153, .8); animation: loader-status-breathe 1.4s ease-in-out infinite;
+}
+.loader-message { animation: loader-copy-in .28s ease both; }
+.loader-stage-track {
+  position: absolute; width: min(100% - 48px, 340px); height: 2px; margin-top: 44px;
+  overflow: hidden; border-radius: 99px; background: var(--border);
+}
+.loader-stage-track i {
+  display: block; height: 100%; border-radius: inherit; background: var(--accent-grad);
+  box-shadow: 0 0 12px rgba(34, 211, 238, .55); transition: width .5s ease;
+}
+.loader-error { flex-direction: column; gap: 8px; text-align: center; }
+.loader-error span { max-width: 48ch; color: var(--muted-foreground); font-size: .8rem; font-weight: 400; }
+.loader-error .btn { margin-top: 4px; }
+@keyframes loader-scene-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(3px, -7px, 0); }
+}
+@keyframes loader-logo-pulse {
+  0%, 100% { opacity: .62; transform: scale(.94); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+@keyframes loader-bar-sweep {
+  0% { transform: translateX(0) skewX(-18deg); opacity: 0; }
+  16% { opacity: .9; }
+  76% { opacity: .8; }
+  100% { transform: translateX(520%) skewX(-18deg); opacity: 0; }
+}
+@keyframes loader-sparkle {
+  0%, 100% { transform: translate3d(0, 4px, 0) scale(.72) rotate(-12deg); opacity: .32; }
+  50% { transform: translate3d(3px, -9px, 0) scale(1.12) rotate(12deg); opacity: .95; }
+}
+@keyframes loader-status-breathe { 50% { opacity: .48; transform: scale(.82); } }
+@keyframes loader-copy-in { from { opacity: 0; transform: translateY(4px); } }
+@media (max-width: 560px) {
+  .curriculum-loader-panel { width: min(100%, 460px); padding: 12px; border-radius: 18px; }
+  .loader-art-frame { width: min(100%, 420px); }
+  .loader-progress-sweep { top: 33%; height: 12%; }
+  .loader-stage-track { width: min(100% - 36px, 280px); }
+}
+@media (max-height: 680px) {
+  .curriculum-loader-panel { width: min(100%, 440px); padding: 10px 18px; }
+  .loader-art-frame { width: min(100%, 330px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader-art, .loader-logo-aura, .loader-progress-sweep::after, .loader-particle, .loader-status-light, .loader-message {
+    animation: none;
+  }
+  .loader-stage-track i { transition: none; }
+  .curriculum-loader { transition-duration: .01ms; }
+}
 .hidden { display: none; }
 .modal-back {
   position: fixed; inset: 0; background: rgba(0, 0, 0, .7); backdrop-filter: blur(4px);
@@ -792,16 +992,28 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
   .content { padding: 14px 12px 50px; }
 }
 
-/* ---------- premium chrome (topbar, statusbar, offline pill, lang toggle) ---------- */
+/* ---------- premium chrome (topbar, statusbar, lang toggle) ---------- */
 /* (--pink / --violet live with every other accent in the token block at the top.) */
+/*
+ * The command bar: a floating pane of glass, not a full-bleed strip.
+ *
+ * Margins on all four sides (plus the radius) are what separate it from the page; the surface is
+ * the dark glass token, the light comes from a hairline along the top edge and a cyan→violet line
+ * drawn by `::before`, and the shadow is deep and soft rather than hard. It stays `sticky` at a
+ * 10px offset, so it reads as detached even while it is pinned under a scroll.
+ */
 .topbar {
   display: flex; gap: 14px; align-items: center; justify-content: space-between;
   /* Left padding is tighter than the right so the sidebar toggle reads as attached to the
      sidebar's edge rather than floating in the header. */
-  padding: 10px 22px 10px 12px; border-bottom: 1px solid var(--border);
-  background: var(--chrome); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03), 0 10px 30px rgba(0, 0, 0, .45);
-  position: sticky; top: 0; z-index: 30; flex-wrap: wrap;
+  margin: 10px 12px 0; padding: 9px 14px 9px 10px;
+  border: 1px solid var(--glass-line); border-radius: var(--glass-radius);
+  background-color: var(--glass-1);
+  background-image: linear-gradient(180deg, var(--glass-hi), rgba(255, 255, 255, 0) 46%);
+  backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+  position: sticky; top: 10px; z-index: 30; flex-wrap: wrap;
+  transition: background-color .22s ease, border-color .22s ease, box-shadow .25s ease;
 }
 .searchbox {
   display: flex; gap: 8px; align-items: center; flex: 1; min-width: 220px; max-width: 460px;
@@ -828,13 +1040,20 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
   flex: 1 1 0; min-width: 0; padding: 7px 6px; font-size: .72rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.offline-pill {
-  display: flex; gap: 8px; align-items: center; border: 1px solid rgba(52, 211, 153, .32);
-  background-color: rgba(52, 211, 153, .10); color: var(--green); border-radius: var(--radius-md); padding: 6px 12px;
-  box-shadow: var(--lift), 0 0 20px rgba(52, 211, 153, .12);
+/*
+ * Equal fifths only work while the widest label fits one of them. Measured at 360px: five tabs in a
+ * 299px strip gave each 59px, so "Next Task" (74px) ellipsised to "Next Ta…" next to a full "Coach".
+ * Sizing each tab to its own label instead of to an equal share — and letting the strip wrap when
+ * even that is too narrow (320px) — keeps every label whole. A scroller was rejected: a tab strip
+ * whose job is to show the five destinations at once must not put one of them off-screen.
+ * The ellipsis stays as the safety net for a longer i18n label.
+ */
+@media (max-width: 560px) {
+  .tutor-tabs { flex-wrap: wrap; }
+  /* Two classes on purpose: `.lang-toggle button` sets the padding later in this file and would win
+     the tie at one class each, leaving the tabs 20px wider than the labels need. */
+  .lang-toggle.tutor-tabs button { flex: 1 1 auto; padding: 7px 8px; }
 }
-.offline-pill b { font-size: .76rem; display: block; }
-.offline-pill span { font-size: .64rem; opacity: .8; }
 /* Icon button — a lit square. Every header control (theme, focus, quick actions, notifications,
    settings) uses this one look, so the cluster reads as a row of equal switches. */
 .icon-btn {
@@ -849,6 +1068,153 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
   background-image: var(--accent-grad-soft); border-color: rgba(34, 211, 238, .35); color: var(--text);
   box-shadow: var(--glow), inset 0 1px 0 rgba(255, 255, 255, .10);
 }
+/*
+ * The header's controls are cut from the same glass as the bar they sit on: a lighter pane, the
+ * same hairline border, and on hover a 1px lift with a cyan glow. Scoped to `.topbar` so the same
+ * `.icon-btn` used on a page keeps the page's own values — this is the chrome's material, not a
+ * global restyle. The `:hover` rules are longer selectors on purpose: `.topbar .icon-btn` and
+ * `.icon-btn:hover` tie on specificity, so the lift has to be stated on the hover selector itself.
+ */
+.topbar .icon-btn,
+.topbar .topbar-signin,
+.topbar .side-btn,
+.topbar .side-btn-desk,
+.topbar .crumb-back {
+  background-color: rgba(255, 255, 255, .05);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .02));
+  border-color: var(--glass-line); color: var(--glass-ink);
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .22s ease, transform .2s ease;
+}
+.topbar .icon-btn:hover,
+.topbar .topbar-signin:hover,
+.topbar .side-btn:hover,
+.topbar .side-btn-desk:hover,
+.topbar .crumb-back:hover {
+  background-color: rgba(255, 255, 255, .10); border-color: rgba(34, 211, 238, .45);
+  box-shadow: var(--lift), 0 0 18px rgba(34, 211, 238, .20); transform: translateY(-1px);
+}
+.topbar .icon-btn[aria-pressed='true'] {
+  border-color: rgba(34, 211, 238, .45);
+  box-shadow: 0 0 18px rgba(34, 211, 238, .22), inset 0 1px 0 rgba(255, 255, 255, .10);
+}
+.topbar .searchbox {
+  background-color: rgba(255, 255, 255, .05);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .01));
+  border-color: var(--glass-line); color: var(--glass-muted);
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .22s ease;
+}
+.topbar .searchbox:hover { background-color: rgba(255, 255, 255, .09); border-color: rgba(34, 211, 238, .42); box-shadow: 0 0 20px rgba(34, 211, 238, .18); }
+.topbar .crumb-txt b { color: var(--glass-ink); }
+.topbar .crumb-txt span { color: var(--glass-muted); }
+/*
+ * The page title in the crumb is the bar's one piece of INFORMATION; everything else up here is a
+ * control. On a wide screen it therefore wins its space from the search box rather than being
+ * ellipsised to "Dash…" — the squeeze is opt-in per width, because below 1200px the row is already
+ * tight and shrinking is what keeps it from scrolling sideways.
+ */
+@media (min-width: 1200px) {
+  .topbar .crumbs { flex: 0 0 auto; }
+  .topbar .searchbox { flex: 1 1 260px; }
+}
+/*
+ * The header's progress cluster: three glass pills — the streak, the review queue and the open
+ * mistakes — each a link into the page that owns its number. They wear the bar's own material (a
+ * lighter pane, the glass hairline, a tone-tinted icon) and lift 1px with a matching glow, exactly
+ * like the icon buttons beside them, so the whole cluster reads as one system rather than as chips.
+ * The tone comes from the shared `.tone-*` set, so a pill's accent is the same hue its page uses.
+ */
+.hd-stats { display: flex; align-items: center; gap: 6px; flex: none; }
+.hd-stat {
+  display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; border-radius: 12px;
+  border: 1px solid var(--glass-line); background-color: rgba(255, 255, 255, .05);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .01));
+  color: var(--glass-ink); text-decoration: none; font-size: .74rem; font-weight: 650; line-height: 1;
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .22s ease, transform .2s ease;
+}
+.hd-stat > svg { color: var(--accent, var(--cyan)); flex: none; }
+.hd-stat b { font-variant-numeric: tabular-nums; }
+.hd-stat:hover {
+  background-color: rgba(255, 255, 255, .10);
+  border-color: rgba(var(--accent-rgb, 34 211 238), .45);
+  box-shadow: var(--lift), 0 0 16px rgba(var(--accent-rgb, 34 211 238), .28);
+  transform: translateY(-1px);
+}
+/*
+ * The footer's version of the same shortcut: text-shaped rather than a pill, because the bar is a
+ * line of status text and a row of pills there would out-shout the page. Tone tint on the icon and
+ * a cyan lift on hover keep it in the same family as the header cluster.
+ */
+.statusbar .sb-stat {
+  flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 3px 9px; border-radius: 99px; text-decoration: none; color: var(--glass-muted);
+  border: 1px solid transparent;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.statusbar .sb-stat > svg { color: var(--accent, var(--cyan)); flex: none; }
+.statusbar .sb-stat:hover {
+  color: var(--glass-ink); background-color: rgba(255, 255, 255, .07);
+  border-color: var(--glass-line); transform: translateY(-1px);
+}
+/* The mini level meter inside the profile chip — the sidebar card's bar, in miniature. */
+.profile-chip .pf-bar {
+  display: block; width: 100%; height: 3px; margin-top: 5px; border-radius: 99px;
+  background-color: rgba(255, 255, 255, .14); overflow: hidden;
+}
+.profile-chip .pf-bar > span {
+  display: block; height: 100%; border-radius: 99px;
+  background-image: linear-gradient(90deg, #22d3ee, #8b5cf6); transition: width .4s ease;
+}
+/*
+ * The bar's outer halo and its sheen. Two extra layers, both static: a whisper of cyan under the
+ * deep shadow so the pane reads as lit on a dark page, and one soft diagonal highlight across the
+ * upper half — the reflection that separates real glass from a flat grey rectangle. No animation is
+ * involved, so this costs nothing per frame.
+ */
+.topbar {
+  box-shadow: var(--glass-shadow), 0 0 28px rgba(34, 211, 238, .08), inset 0 1px 0 var(--glass-hi);
+}
+.topbar::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 44%),
+    radial-gradient(420px 120px at 88% -30%, rgba(139, 92, 246, .16), transparent 70%);
+}
+/*
+ * One moving multicolour rim, reused on exactly the three pieces of app chrome. The existing
+ * pseudo-elements are masked to their border so the light never washes over controls or content.
+ */
+.topbar::before,
+.sidebar::after,
+.statusbar::before,
+.bottomnav::before {
+  content: ''; position: absolute; inset: 0; padding: 1px; pointer-events: none;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--chrome-glow-angle),
+    transparent 0deg,
+    rgba(34, 211, 238, .95) 48deg,
+    rgba(79, 124, 255, .95) 95deg,
+    rgba(139, 92, 246, .95) 135deg,
+    rgba(244, 114, 182, .8) 165deg,
+    transparent 205deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 3px rgba(34, 211, 238, .75)) drop-shadow(0 0 6px rgba(139, 92, 246, .4));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .topbar::before,
+  .sidebar::after,
+  .statusbar::before {
+    animation: chrome-border-flow 8s linear infinite;
+  }
+}
+@media (max-width: 780px) and (prefers-reduced-motion: no-preference) {
+  .bottomnav::before { animation: chrome-border-flow 8s linear infinite; }
+}
+@keyframes chrome-border-flow { to { --chrome-glow-angle: 360deg; } }
 .avatar {
   width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 650; font-size: .8rem;
   background-image: var(--accent-grad-soft); background-color: var(--card); color: var(--text);
@@ -868,15 +1234,20 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
  * half cut off — while every short page drew the full bar. One footer, one height, every page.
  */
 .statusbar {
-  position: sticky; bottom: 0; flex: none; display: flex; gap: 16px; align-items: center; padding: 5px 16px;
-  border-top: 1px solid var(--border); background: var(--chrome-strong); backdrop-filter: blur(14px);
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, .4);
-  font-size: .72rem; color: var(--muted); z-index: 25;
-  /* Belt and braces: whatever a future cell adds, the bar can never widen the page it sits in. */
-  overflow: hidden;
+  position: sticky; bottom: 8px; flex: none; display: flex; gap: 9px; align-items: center; padding: 6px 12px;
+  margin: 0 12px 8px; border: 1px solid var(--glass-line); border-radius: var(--glass-radius);
+  background-color: var(--glass-2);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--glass-hi));
+  backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+  font-size: .72rem; color: var(--glass-muted); z-index: 25;
+  overflow: visible;
+  transition: border-color .22s ease, box-shadow .25s ease;
 }
-.statusbar .spacer { flex: 1; }
-.statusbar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.sb-status-group {
+  display: flex; flex: 1 1 auto; align-items: center; gap: 9px; min-width: 0;
+}
+.sb-actions { display: flex; flex: none; align-items: center; gap: 10px; }
 /*
  * One line, never two.
  *
@@ -895,30 +1266,117 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
  */
 .statusbar .sb-item { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .statusbar .sb-item > svg, .statusbar .sb-item > .dot { flex: none; }
-/* The assistant's entry point on every screen. Lit in the accent, because on a line of status text
-   it must read as the one thing you can press. */
-.statusbar .sb-ai {
-  flex: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer;
-  font: inherit; font-size: .68rem; font-weight: 700; letter-spacing: .02em;
-  padding: 3px 10px; border-radius: 99px;
-  color: var(--cyan); border: 1px solid rgba(34, 211, 238, .38);
-  background-color: rgba(34, 211, 238, .10);
-  background-image: var(--edge-light); background-size: 100% 1px; background-repeat: no-repeat;
-  box-shadow: var(--lift);
-  transition: background-color .14s ease, border-color .14s ease, color .14s ease, box-shadow .18s ease;
+.sb-last-seen, .sb-sync-block {
+  display: inline-flex; align-items: center; gap: 7px; min-width: 0; flex: 0 1 auto;
+  white-space: nowrap; color: var(--glass-ink);
 }
-.statusbar .sb-ai:hover { border-color: rgba(34, 211, 238, .68); background-color: rgba(34, 211, 238, .2); box-shadow: var(--lift), var(--glow); }
-.statusbar .sb-ai.on { color: var(--ink-on-accent); border-color: transparent; background-color: transparent; background-image: var(--accent-grad); box-shadow: 0 0 18px rgba(34, 211, 238, .45); }
-.statusbar .sb-ai:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-/* Density ladder: the least useful cell goes first, so the one that matters (online state) and the
-   one that is a control (AI) survive every width. The thresholds are where the row stops FITTING,
-   measured with the 224px sidebar present (781-1200px is the tight band — below 781 the sidebar
-   becomes a drawer and hands the bar 224px back). */
-@media (max-width: 1200px) { .statusbar .sb-kbd { display: none; } }
-@media (max-width: 860px) { .statusbar .sb-py { display: none; } }
+.sb-sync-block > span, .sb-xp-block > span:last-of-type {
+  display: grid; gap: 2px; min-width: 0;
+}
+.sb-last-seen b, .sb-sync-block b, .sb-xp-block b { font-size: .66rem; line-height: 1.05; }
+.sb-last-seen > span { font-size: .65rem; }
+.sb-last-seen small, .sb-sync-block small, .sb-xp-block small {
+  overflow: hidden; color: var(--glass-muted); font-size: .58rem; line-height: 1.05; text-overflow: ellipsis;
+}
+.sb-last-seen {
+  position: relative; padding: 3px 2px; cursor: help; outline: none;
+}
+.sb-last-seen::after {
+  content: attr(data-tooltip); position: absolute; z-index: 30; left: 0; bottom: calc(100% + 10px);
+  width: max-content; max-width: min(280px, 80vw); padding: 8px 10px; border: 1px solid var(--glass-line);
+  border-radius: 9px; background: var(--glass-2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--glass-shadow), 0 0 16px rgba(34, 211, 238, .16); color: var(--glass-ink);
+  font-size: .68rem; line-height: 1.3; white-space: normal; opacity: 0; pointer-events: none;
+  transform: translateY(4px); transition: opacity .16s ease, transform .16s ease;
+}
+.sb-last-seen:hover::after, .sb-last-seen:focus-visible::after { opacity: 1; transform: translateY(0); }
+.sb-last-seen:focus-visible { border-radius: 5px; box-shadow: 0 0 0 2px rgba(34, 211, 238, .55); }
+.sb-last-seen small { font-size: inherit; }
+.sb-last-seen > svg { flex: none; color: #a78bfa; filter: drop-shadow(0 0 6px rgba(139, 92, 246, .5)); }
+.sb-sync-block > svg { flex: none; color: #c084fc; }
+.sb-sync-block.syncing > svg { color: #22d3ee; animation: spin .9s linear infinite; }
+.sb-sync-block.offline > svg, .sb-sync-block.error > svg { color: #fbbf24; }
+.sb-divider { flex: none; width: 1px; height: 24px; background: var(--glass-line); }
+.statusbar .sb-stat { flex: none; gap: 5px; color: var(--glass-ink); font-size: .66rem; }
+.sb-xp-block {
+  display: inline-flex; align-items: center; gap: 6px; flex: none; color: var(--glass-ink);
+  text-decoration: none; font-variant-numeric: tabular-nums;
+}
+.sb-xp-block > span:first-child { font-size: 15px; }
+.sb-xp-block > i {
+  display: block; width: 46px; height: 6px; overflow: hidden; border-radius: 99px;
+  background: rgba(255, 255, 255, .18);
+}
+.sb-xp-block > i > i {
+  display: block; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, #22d3ee, #8b5cf6); transition: width .3s ease;
+}
+.sb-continue {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: none;
+  padding: 7px 11px; border-radius: 9px; background: var(--accent-grad);
+  box-shadow: 0 0 16px rgba(79, 124, 255, .32); color: #fff; font-size: .65rem; font-weight: 700;
+  text-decoration: none; white-space: nowrap; transition: box-shadow .18s ease, transform .18s ease;
+}
+.sb-continue:hover { box-shadow: 0 0 22px rgba(139, 92, 246, .52); transform: translateY(-1px); }
+.sb-ai {
+  position: relative; z-index: 2; align-self: stretch; display: flex; flex: 0 0 70px;
+  flex-direction: column; align-items: center; justify-content: flex-end; gap: 1px;
+  margin: 0 2px; padding: 23px 0 3px; border: 0; background: transparent;
+  color: #eef4ff; cursor: pointer; font: inherit; font-size: .72rem; font-weight: 800;
+  letter-spacing: .08em; text-shadow: 0 0 10px rgba(34, 211, 238, .8);
+}
+.sb-ai-orb {
+  position: absolute; top: -23px; left: 50%; display: grid; width: 49px; height: 49px;
+  place-items: center; border: 1px solid rgba(115, 205, 255, .9); border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 25%, rgba(255, 255, 255, .48), transparent 29%),
+    linear-gradient(145deg, rgba(34, 211, 238, .9), rgba(79, 70, 229, .96) 52%, rgba(147, 51, 234, .92));
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, .12), 0 0 17px rgba(34, 211, 238, .72),
+    0 0 30px rgba(139, 92, 246, .62), inset 0 1px 4px rgba(255, 255, 255, .64);
+  color: white; transform: translateX(-50%);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.sb-ai-orb::before {
+  content: ''; position: absolute; inset: 5px; border: 1px solid rgba(255, 255, 255, .42);
+  border-radius: inherit; pointer-events: none;
+}
+.sb-ai:hover .sb-ai-orb, .sb-ai.on .sb-ai-orb {
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, .18), 0 0 22px rgba(34, 211, 238, .92),
+    0 0 38px rgba(139, 92, 246, .82), inset 0 1px 5px rgba(255, 255, 255, .75);
+  transform: translateX(-50%) scale(1.06);
+}
+.sb-settings {
+  display: grid; width: 34px; height: 34px; flex: none; place-items: center;
+  border: 1px solid var(--glass-line); border-radius: 50%; background: rgba(255, 255, 255, .04);
+  color: var(--glass-muted); transition: color .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.sb-settings:hover { color: var(--glass-ink); border-color: rgba(34, 211, 238, .5); box-shadow: 0 0 13px rgba(34, 211, 238, .22); }
+/* Keep every destination available while compacting only supporting labels on smaller desktops. */
 @media (max-width: 780px) { .statusbar { gap: 10px; padding: 5px 10px; } }
-@media (max-width: 470px) { .statusbar .sb-xp { display: none; } }
-@media (max-width: 400px) { .statusbar .sb-brand { display: none; } }
+@media (max-width: 1220px) {
+  .statusbar { gap: 6px; padding-inline: 9px; }
+  .sb-sync-block small, .sb-xp-block small { display: none; }
+  .sb-xp-block > i { display: none; }
+  .sb-divider.hide-sm { display: none; }
+}
+@media (max-width: 980px) {
+  .statusbar { gap: 6px; }
+  .sb-continue { padding: 7px; }
+  .sb-continue > span, .sb-continue > svg { display: none; }
+  .sb-ai { flex-basis: 56px; }
+}
+@media (max-width: 1100px) and (min-width: 781px) {
+  .statusbar { gap: 5px; padding: 5px 8px; }
+  .sb-status-group { gap: 5px; }
+  .sb-last-seen b, .sb-last-seen i { display: none; }
+  .sb-sync-block > span, .sb-xp-block small, .sb-xp-block > i { display: none; }
+  .sb-stat > span:last-child { display: none; }
+  .sb-xp-block { gap: 3px; }
+  .sb-actions { gap: 6px; }
+  .sb-ai { flex-basis: 48px; }
+  .sb-continue { padding: 6px 8px; font-size: .62rem; }
+  .sb-continue > span, .sb-continue > svg { display: inline; }
+}
 
 /* ---------- dashboard hero + stats ---------- */
 /* The hero is the one place a colour wash is allowed — it sets the mood for the whole page. */
@@ -1137,7 +1595,6 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
 @media (max-width: 780px) {
   .topbar { padding: 8px 12px; }
   .searchbox { max-width: none; }
-  .offline-pill span { display: none; }
 }
 
 /* ---------- IDE layout (playground) ---------- */
@@ -1148,6 +1605,17 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
   display: flex; gap: 8px; align-items: center; padding: 6px 9px; border-radius: var(--radius-sm); font-size: .82rem;
   cursor: pointer; color: var(--muted); border: 1px solid transparent;
 }
+/*
+ * The Question Bank's section rows (29 of them) put the number, the NAME and the completeness chip
+ * on one line. The name is the information; the chip repeats a figure the selected section prints
+ * in full one panel over. On a phone the row is 299px and the number and the chip take 100px of it,
+ * so the longest name ("AI Engineer + Data Scientist Interview Mastery", 271px) rendered 199px —
+ * "AI Engineer + Data Scientist Interv…", 72px of it gone. Below 560px the name wraps instead, which
+ * costs a second line on 4 of the 29 rows and nothing on the other 25. Scoped to `.sec-name` rather
+ * than `.file-row`: the Playground's file list wears that class too, and its names are short.
+ */
+.file-row .sec-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) { .file-row .sec-name { white-space: normal; overflow-wrap: anywhere; } }
 .file-row:hover { background: var(--hover-soft); color: var(--text); }
 .file-row.on { background: var(--panel2); color: var(--text); border-color: var(--border); }
 .mini-btn { background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 2px; border-radius: 5px; display: grid; place-items: center; }
@@ -1196,6 +1664,17 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
 .tile .ic svg { filter: drop-shadow(0 0 6px currentColor); }
 .tile .t b { display: block; font-size: .84rem; }
 .tile .t span { font-size: .7rem; color: var(--muted); }
+/* A tile that is the CURRENT selection (the practice subjects). The tone is the accent, not a
+   quality judgement: it says "this is the one open below", the same job `.chip.on` does for a
+   filter. Both are LINK classes — they mark state, they do not disable anything. */
+.tile.on { border-color: rgb(var(--accent-rgb) / .6); background-image: var(--edge-light), var(--panel-grad-hi); }
+.chip.on { color: var(--accent); border-color: rgb(var(--accent-rgb) / .55); background-color: rgb(var(--accent-rgb) / .12); }
+/* The subject panel's leading mark, at the tile's icon size so the panel reads as that tile opened. */
+.suj-ic {
+  flex: none; width: 34px; height: 34px; border-radius: var(--radius-md); display: grid; place-items: center;
+  background-color: var(--panel2); border: 1px solid var(--border); color: var(--accent);
+}
+.suj-ic svg { filter: drop-shadow(0 0 6px currentColor); }
 
 /* --- section heading --- */
 /* A section heading opens with a 3px lit bar — the cheapest way to give a long page rhythm. */
@@ -1365,6 +1844,184 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
 .assistant.embedded .bot svg { width: 15px; height: 15px; }
 .assistant.embedded .bubble { font-size: .78rem; padding: 9px 11px; }
 
+/* The assistant stays a dark glass island in either global theme. */
+.assistant {
+  --ai-muted: #9aaccb;
+  position: relative; isolation: isolate; min-width: 0; overflow: hidden;
+  border: 1px solid transparent; border-radius: var(--radius-xl); padding: 16px;
+  color: #edf5ff;
+  background:
+    linear-gradient(145deg, rgba(13, 29, 53, .98), rgba(7, 15, 30, .98)) padding-box,
+    linear-gradient(120deg, rgba(34, 211, 238, .45), rgba(79, 124, 255, .34) 52%, rgba(139, 92, 246, .42)) border-box;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, .25), 0 0 24px rgba(34, 211, 238, .055),
+    inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.assistant::before {
+  content: ''; position: absolute; inset: 0; z-index: 0; padding: 1px; pointer-events: none;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--chrome-glow-angle),
+    transparent 0deg, rgba(34, 211, 238, .62) 52deg, rgba(79, 124, 255, .5) 98deg,
+    rgba(139, 92, 246, .55) 142deg, transparent 195deg, transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude; filter: drop-shadow(0 0 3px rgba(34, 211, 238, .38));
+}
+.assistant::after {
+  content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; border-radius: inherit;
+  background: radial-gradient(460px 180px at 8% 0, rgba(34, 211, 238, .09), transparent 72%),
+    radial-gradient(400px 200px at 100% 100%, rgba(124, 58, 237, .08), transparent 76%);
+}
+.assistant > * { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .assistant::before { animation: chrome-border-flow 12s linear infinite; }
+}
+.assistant .head { gap: 12px; }
+.assistant-title {
+  display: block; color: #f5f8ff; font-size: 1rem; font-weight: 700;
+  letter-spacing: -.02em; line-height: 1.25;
+}
+.assistant-title > span {
+  color: #54d8ff; background: linear-gradient(100deg, #40baff, #61e8ff 70%, #a5a7ff);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.assistant-subtitle { margin-top: 3px; color: var(--ai-muted); font-size: .75rem; line-height: 1.45; }
+.assistant-status {
+  display: inline-flex; flex: none; align-items: center; gap: 6px; padding: 6px 9px;
+  border: 1px solid rgba(52, 211, 153, .20); border-radius: 99px;
+  background: rgba(16, 185, 129, .07); color: #9ceec9; font-size: .67rem; font-weight: 650;
+}
+.assistant-status > i {
+  width: 7px; height: 7px; border-radius: 50%; background: #45dfa0;
+  box-shadow: 0 0 8px rgba(52, 211, 153, .48);
+}
+.assistant-status.busy { color: #a6dfff; border-color: rgba(56, 189, 248, .24); background: rgba(56, 189, 248, .08); }
+.assistant-status.busy > i { display: none; }
+.assistant .bot {
+  width: 42px; height: 42px; border-radius: 14px;
+  color: #7eeaff; background: linear-gradient(145deg, rgba(34, 211, 238, .16), rgba(79, 124, 255, .16) 58%, rgba(139, 92, 246, .12));
+  border: 1px solid rgba(102, 193, 255, .32);
+  box-shadow: 0 0 22px rgba(34, 211, 238, .12), inset 0 1px 0 rgba(255, 255, 255, .14);
+}
+.assistant .bot svg { filter: drop-shadow(0 0 5px rgba(34, 211, 238, .35)); }
+.assistant-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-top: 15px; }
+.assistant-action {
+  --action-rgb: 34, 211, 238;
+  display: flex; min-width: 0; min-height: 108px; flex-direction: column; align-items: flex-start;
+  justify-content: center; gap: 5px; padding: 11px 12px;
+  border: 1px solid rgba(118, 158, 208, .16); border-radius: 16px;
+  color: #eaf2ff; text-align: left; cursor: pointer;
+  background: linear-gradient(145deg, rgba(18, 34, 57, .82), rgba(9, 18, 34, .76));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .045);
+  transition: transform .18s ease, border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+.assistant-action:hover {
+  transform: translateY(-2px); border-color: rgba(var(--action-rgb), .48);
+  background: linear-gradient(145deg, rgba(21, 42, 68, .96), rgba(10, 21, 40, .9));
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .20), 0 0 16px rgba(var(--action-rgb), .09),
+    inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.assistant-action:focus-visible { outline: 2px solid rgba(83, 213, 255, .8); outline-offset: 2px; }
+.assistant-action-icon {
+  width: 32px; height: 32px; display: grid; place-items: center; margin-bottom: 2px;
+  border: 1px solid rgba(var(--action-rgb), .20); border-radius: 11px;
+  color: rgb(var(--action-rgb)); background: rgba(var(--action-rgb), .10);
+  filter: drop-shadow(0 0 7px rgba(var(--action-rgb), .16));
+}
+.assistant-action.explain { --action-rgb: 174, 115, 255; }
+.assistant-action.hint { --action-rgb: 255, 190, 77; }
+.assistant-action.doubt { --action-rgb: 73, 166, 255; }
+.assistant-action.next { --action-rgb: 52, 211, 153; }
+.assistant-action b { font-size: .8rem; font-weight: 650; line-height: 1.25; }
+.assistant-action small { color: var(--ai-muted); font-size: .66rem; line-height: 1.35; }
+.assistant .ask { align-items: center; gap: 8px; margin-top: 14px; min-width: 0; }
+.assistant-input {
+  display: flex; flex: 1 1 auto; align-items: center; gap: 10px; min-width: 0; min-height: 52px;
+  padding: 5px 6px 5px 13px; border: 1px solid rgba(77, 161, 255, .38); border-radius: 16px;
+  background: linear-gradient(145deg, rgba(15, 31, 53, .96), rgba(9, 19, 36, .96));
+  box-shadow: 0 0 16px rgba(34, 211, 238, .045), inset 0 1px 0 rgba(255, 255, 255, .06);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.assistant-input:focus-within {
+  border-color: rgba(66, 211, 255, .76);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, .08), 0 0 20px rgba(34, 211, 238, .12),
+    inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+.assistant-input-sparkle { flex: none; color: #59ceff; filter: drop-shadow(0 0 6px rgba(34, 211, 238, .38)); }
+.assistant .ask input {
+  flex: 1 1 auto; width: 100%; min-width: 0; padding: 8px 0; border: 0; outline: 0;
+  color: #edf5ff; background: transparent; box-shadow: none; font-size: .84rem;
+}
+.assistant .ask input::placeholder { color: #91a5c5; opacity: 1; }
+.assistant .ask input:focus { border: 0; outline: 0; box-shadow: none; }
+.assistant-send {
+  width: 40px; height: 40px; display: grid; place-items: center; flex: none;
+  border: 1px solid rgba(125, 182, 255, .34); border-radius: 12px;
+  color: #f1f8ff; cursor: pointer;
+  background: linear-gradient(140deg, #168eea, #4268ef 62%, #8251e8);
+  box-shadow: 0 5px 13px rgba(37, 99, 235, .24), inset 0 1px 0 rgba(255, 255, 255, .28);
+  transition: transform .16s ease, box-shadow .18s ease, filter .18s ease;
+}
+.assistant-send:hover:not(:disabled) {
+  transform: translateY(-1px); filter: brightness(1.08);
+  box-shadow: 0 7px 17px rgba(37, 99, 235, .32), 0 0 13px rgba(34, 211, 238, .16),
+    inset 0 1px 0 rgba(255, 255, 255, .32);
+}
+.assistant-send:active:not(:disabled) { transform: translateY(0) scale(.97); }
+.assistant-send:disabled { opacity: .48; cursor: not-allowed; }
+.assistant-clear { flex: none; color: #b7c6de !important; border-color: rgba(118, 158, 208, .14) !important; background: rgba(255, 255, 255, .035) !important; }
+.assistant-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+.assistant .assistant-tools .btn {
+  border-color: rgba(118, 158, 208, .17); color: #b9c9e3; background: rgba(255, 255, 255, .035);
+}
+.assistant .assistant-tools .btn:hover { color: #f2f7ff; border-color: rgba(75, 204, 255, .34); background: rgba(56, 189, 248, .075); }
+.assistant-suggestions .btn {
+  color: #bdd0eb; border-color: rgba(118, 158, 208, .17); background: rgba(255, 255, 255, .035);
+}
+.assistant-suggestions .btn:hover { color: #f2f7ff; border-color: rgba(75, 204, 255, .34); background: rgba(56, 189, 248, .075); }
+.assistant .chip { color: #b9c9e3; border-color: rgba(118, 158, 208, .18); background: rgba(255, 255, 255, .045); }
+.assistant .chip.hard { color: #ffacb9; border-color: rgba(251, 93, 131, .28); background: rgba(251, 93, 131, .08); }
+.assistant .bubble {
+  color: #dce9fb; background: rgba(14, 27, 47, .94); border-color: rgba(118, 158, 208, .17);
+}
+.assistant .assistant-bubble { margin-top: 0; max-width: 92%; font-size: .78rem; }
+.assistant .assistant-bubble.from-user { background: rgba(28, 62, 105, .68); border-color: rgba(87, 165, 255, .25); }
+.assistant .assistant-bubble.from-assistant { background: rgba(13, 27, 47, .94); }
+.assistant > p.small { color: var(--ai-muted); }
+.assistant a.chip { color: #9bdfff; border-color: rgba(75, 204, 255, .22); background: rgba(56, 189, 248, .07); }
+.assistant-ctx {
+  color: var(--ai-muted); background: rgba(9, 21, 39, .78); border-color: rgba(118, 158, 208, .22);
+}
+.assistant-status, .assistant-action, .assistant-input, .assistant-bubble {
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.assistant.embedded {
+  padding: 13px 12px;
+  background:
+    linear-gradient(145deg, rgba(13, 29, 53, .98), rgba(7, 15, 30, .98)) padding-box,
+    linear-gradient(120deg, rgba(34, 211, 238, .45), rgba(79, 124, 255, .34) 52%, rgba(139, 92, 246, .42)) border-box;
+}
+.assistant.embedded .bot { width: 32px; height: 32px; border-radius: 11px; }
+.assistant.embedded .bubble { font-size: .78rem; padding: 9px 11px; }
+@media (max-width: 700px) {
+  .assistant-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+}
+@media (max-width: 430px) {
+  .assistant { padding: 12px; }
+  .assistant-actions { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+  .assistant-action {
+    min-height: 64px; display: grid; grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-rows: auto auto; align-content: center; column-gap: 10px; padding: 8px 10px;
+  }
+  .assistant-action-icon { grid-row: 1 / span 2; margin: 0; }
+  .assistant-action b, .assistant-action small { grid-column: 2; }
+  .assistant .ask { align-items: stretch; }
+  .assistant-input { min-height: 48px; gap: 7px; padding-left: 10px; }
+  .assistant-send { width: 36px; height: 36px; }
+}
+
 /* --- timeline (activity / roadmap) --- */
 .timeline { position: relative; padding-left: 18px; }
 .timeline::before { content: ''; position: absolute; left: 5px; top: 4px; bottom: 4px; width: 2px; background: linear-gradient(var(--border), transparent); }
@@ -1395,6 +2052,13 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
 
 /* --- profile chip --- */
 .profile-chip { display: flex; gap: 9px; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 4px 10px 4px 4px; background: var(--panel); }
+/* Toolbar controls that are LINKS (settings, the profile chip, sign in): the global `a` rule would
+   colour them cyan and underline them on hover — a button's look, a link's behaviour (middle-click,
+   hover URL, crawlable href). The hover rule is repeated at the same specificity so order decides. */
+a.icon-btn, a.profile-chip { text-decoration: none; }
+a.icon-btn:hover, a.profile-chip:hover { text-decoration: none; }
+/* `inherit`, not `var(--text)`: the chip had no colour of its own and took the header's. */
+a.profile-chip { color: inherit; }
 .profile-chip .meta b { display: block; font-size: .78rem; line-height: 1.15; }
 .profile-chip .meta span { font-size: .66rem; color: var(--muted); }
 
@@ -1563,8 +2227,17 @@ body.reduce-motion * { animation: none !important; transition: none !important; 
  * leftover) instead of the count being cut off the end of the label. This is the state that
  * actually happens — the lesson column is ~502px wide even at 1440px, so there is no viewport
  * breakpoint that could tell the two cases apart.
+ *
+ * On a phone there is no room to truncate usefully, so the same principle is applied one step
+ * further: measured at 360px the row is 299px and the head gets 155px of it ("Open Notebook Lab"
+ * and its row are `flex: none`), so the 51-character label rendered 109px wide — "Notebook L…",
+ * with the count invisible, which is the one thing the collapsed line exists to say. The name is
+ * dropped (`.shelf-brand`) and what remains is allowed a second line, at the cost of ~10px of
+ * height under a notebook instead of the whole label.
  */
 .shelf-label { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shelf-brand { display: inline; }
+@container (max-width: 460px) { .shelf-brand { display: none; } .shelf-label { white-space: normal; overflow-wrap: anywhere; } }
 .shelf-hint { display: none; flex: none; }
 /*
  * "click karke kholo" only once the card is wide enough to lend it ~95px without cutting the count
@@ -1742,6 +2415,23 @@ body.reduce-motion * { animation: none !important; transition: none !important; 
    the row never wraps into a second line of chrome. */
 @media (max-width: 900px) { .ch-share { display: none; } }
 @media (max-width: 640px) { .ch-ic { display: none; } .ch-sub { display: none; } .ch-head { padding: 10px 10px 10px 13px; } }
+/* …but those two rules only keep the row ONE LINE by clipping the name, which at phone width is the
+   wrong trade. Measured at 360px: the head is 259px, the "p.3" chip takes 53px and the chevron 22px,
+   so the 325px chapter name rendered 141px wide — "ROLE MAP + AI ENGINEER SO…" — and the row that
+   said the least about which chapter it was was the row that looked the busiest.
+
+   The name is the only thing on the row that identifies the chapter, so on a phone it WRAPS. Two
+   details are load-bearing and both were measured: the head has to be allowed to wrap at all (on a
+   `nowrap` row the `flex-basis` just shrinks back to whatever is left beside the chip — the first
+   pass of this fix measured the title still at 141px), and the title keeps its base `flex: 1`
+   (basis 0) rather than being given `100%`, because a basis of 100% makes the row break BEFORE the
+   chevron and costs every one of the 36 chapters a line of chrome. */
+@media (max-width: 640px) { .ch-head { flex-wrap: wrap; } .ch-title { white-space: normal; overflow-wrap: anywhere; } }
+/* Last thing to go, and the same trade `.ch-step` already makes at 560px: the page chip is a deep
+   link the OPENED chapter repeats (the panel prints its own "PDF p.N" button), while the name is not
+   repeated anywhere. Below 430px the chip takes 63px of a 236px content box and pushed the longest
+   names to a third line; without it they read in two. */
+@media (max-width: 430px) { .ch-head > .chip { display: none; } }
 
 /* The page's own title, lit like the roadmap hero. `--hero-ink` is a token, so light mode gets its
    own gradient instead of a white-on-white headline. */
@@ -1781,7 +2471,7 @@ body.reduce-motion * { animation: none !important; transition: none !important; 
     height: 100%; margin: 0; padding: 14px 10px; overflow: hidden; border: none;
     border-right: 1px solid var(--border); border-radius: 0; box-shadow: none;
     transform: translateX(-100%); transition: transform .2s ease;
-    background: var(--sidebar);
+    background-color: var(--sidebar); background-image: var(--sidebar-grad);
   }
   .side-fold { display: none; }
   .shell.nav-open .sidebar { transform: none; }
@@ -1880,54 +2570,72 @@ img, iframe, canvas, pre { max-width: 100%; }
 
 /* mobile bottom navigation */
 .bottomnav {
-  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
-  background-color: var(--chrome-strong); background-image: var(--edge-light);
-  background-size: 100% 1px; background-repeat: no-repeat;
-  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 -12px 30px rgba(0, 0, 0, .5);
-  border-top: 1px solid var(--border); padding: 5px 4px calc(5px + env(safe-area-inset-bottom));
+  display: none; position: fixed; bottom: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
+  left: 12px; right: 12px; z-index: 40; isolation: isolate; overflow: visible;
+  border: 1px solid var(--glass-line); border-radius: 20px;
+  background-color: rgba(5, 10, 22, .9);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .018) 58%);
+  backdrop-filter: blur(22px) saturate(155%); -webkit-backdrop-filter: blur(22px) saturate(155%);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, .42), 0 0 24px rgba(34, 211, 238, .10),
+    inset 0 1px 0 rgba(255, 255, 255, .12);
+  padding: 6px 7px;
+}
+.bottomnav::after {
+  content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .07), transparent 42%),
+    radial-gradient(300px 80px at 50% 0, rgba(79, 124, 255, .12), transparent 75%);
+}
+.bn-item, .bn-ai { z-index: 1; }
+.bn-icon {
+  display: grid; width: 30px; height: 27px; place-items: center; border: 1px solid transparent;
+  border-radius: 9px; color: rgba(202, 217, 244, .76);
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .22s ease, transform .2s ease;
 }
 .bn-item {
-  position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  text-decoration: none; color: var(--muted); font-size: .6rem; padding: 5px 2px; border-radius: var(--radius-md);
+  position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  text-decoration: none; color: rgba(183, 199, 227, .78); font-size: .64rem; font-weight: 550;
+  padding: 2px; border-radius: 12px;
 }
 .bn-item.active {
-  color: var(--text); background-color: var(--secondary); background-image: var(--accent-grad-soft);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  color: #eff7ff; background: transparent; box-shadow: none; text-decoration: none;
+}
+.bn-item.active .bn-icon {
+  border-color: rgba(34, 211, 238, .40);
+  background: linear-gradient(135deg, rgba(34, 211, 238, .17), rgba(79, 124, 255, .18));
+  color: #86eaff; box-shadow: 0 0 14px rgba(34, 211, 238, .14), inset 0 1px 0 rgba(255, 255, 255, .09);
+}
+.bn-item:hover .bn-icon {
+  transform: translateY(-2px); border-color: rgba(129, 177, 255, .25);
+  color: #f1f7ff; background: rgba(255, 255, 255, .06);
 }
 .bn-dot { position: absolute; top: 3px; right: 22%; width: 6px; height: 6px; border-radius: 50%; background: var(--pink); }
 /*
  * The assistant, as a nav item — the one entry here that is a CONTROL and not a route.
  *
- * It sits between Learning and Review, and it is the only lit thing on the row: an accent-gradient
- * icon well with a breathing halo, so on a bar of four quiet grey tabs it reads as the thing you
- * press. `.on` is the open state — the well fills in and the halo brightens, matching the footer's
- * own `.sb-ai` pill (the same control, desktop-sized).
+ * It sits between Courses and Practice with a distinct glass icon well, so it reads as the one
+ * assistant control among route links. `.on` is the open state — the well fills in and brightens,
+ * matching the desktop footer's `.sb-ai` action.
  */
 .bn-ai {
-  position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 5px 2px; border: none; background: transparent; cursor: pointer;
-  font: inherit; font-size: .6rem; font-weight: 650; letter-spacing: .02em; color: var(--cyan);
-  border-radius: var(--radius-md);
+  position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 2px; border: none; background: transparent; cursor: pointer;
+  font: inherit; font-size: .64rem; font-weight: 700; letter-spacing: .02em; color: #82eaff;
+  border-radius: 12px;
 }
 .bn-ai-ic {
-  display: grid; place-items: center; width: 32px; height: 24px; border-radius: 8px;
-  color: var(--cyan); border: 1px solid rgba(34, 211, 238, .45);
-  background-color: rgba(34, 211, 238, .14); background-image: var(--accent-grad-soft);
-  animation: bn-glow 3s ease-in-out infinite;
-  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+  position: relative; display: grid; place-items: center; width: 30px; height: 27px; border-radius: 9px;
+  color: #8cecff; border: 1px solid rgba(34, 211, 238, .46);
+  background: linear-gradient(145deg, rgba(34, 211, 238, .18), rgba(79, 124, 255, .22) 58%, rgba(139, 92, 246, .18));
+  box-shadow: 0 0 13px rgba(34, 211, 238, .16), inset 0 1px 0 rgba(255, 255, 255, .14);
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .22s ease, transform .2s ease;
 }
 .bn-ai.on .bn-ai-ic {
-  color: var(--ink-on-accent); border-color: transparent;
-  background-color: transparent; background-image: var(--accent-grad);
-  animation: none; box-shadow: 0 0 22px rgba(34, 211, 238, .62), inset 0 1px 0 rgba(255, 255, 255, .12);
+  color: #f5fbff; border-color: rgba(125, 224, 255, .85);
+  background: linear-gradient(145deg, rgba(34, 211, 238, .72), rgba(79, 124, 255, .85) 58%, rgba(139, 92, 246, .78));
+  box-shadow: 0 0 18px rgba(34, 211, 238, .42), inset 0 1px 0 rgba(255, 255, 255, .35);
 }
+.bn-ai:hover .bn-ai-ic { transform: translateY(-2px); }
 .bn-ai:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-/* The halo is the whole point — a static ring would read as just another icon. */
-@keyframes bn-glow {
-  0%, 100% { box-shadow: 0 0 10px rgba(34, 211, 238, .30), inset 0 1px 0 rgba(255, 255, 255, .10); }
-  50% { box-shadow: 0 0 22px rgba(34, 211, 238, .62), inset 0 1px 0 rgba(255, 255, 255, .10); }
-}
 
 @media (max-width: 780px) {
   .mobile-only { display: grid; place-items: center; }
@@ -1941,7 +2649,7 @@ img, iframe, canvas, pre { max-width: 100%; }
    * the hairline goes with the row — the drop shadow is what separates the bar from the page.
    */
   .statusbar { display: none; }
-  .bottomnav { border-top: none; background-image: none; box-shadow: 0 -14px 34px rgba(0, 0, 0, .55); }
+  .bottomnav { border-top: 1px solid var(--glass-line); }
   .sidebar, .sidebar.collapsed { width: 258px; }
   .sidebar.collapsed .brand-txt, .sidebar.collapsed .brand b, .sidebar.collapsed .brand .sub { display: block; }
   .sidebar.collapsed .navlink { justify-content: flex-start; padding: 9px 12px; }
@@ -1951,7 +2659,6 @@ img, iframe, canvas, pre { max-width: 100%; }
   .sidebar .side-toggle:not(.mobile-only) { display: none; }
 }
 @media (max-width: 980px) { .hide-sm { display: none; } }
-@media (max-width: 1200px) { .topbar-right .offline-pill div { display: none; } }
 
 /* ---------- utilities ---------- */
 .spin { animation: spin .8s linear infinite; }
@@ -1992,7 +2699,7 @@ img, iframe, canvas, pre { max-width: 100%; }
    SMART HEADER — breadcrumb, contextual action, quick actions
    ============================================================ */
 /* One row, always: the search box absorbs the slack, the action cluster never wraps. */
-.topbar { flex-wrap: nowrap; transition: padding .16s ease, background .16s ease; }
+.topbar { flex-wrap: nowrap; transition: padding .16s ease, background-color .22s ease, border-color .22s ease, box-shadow .25s ease; }
 .topbar .searchbox { flex: 1 1 340px; min-width: 120px; max-width: 680px; flex-wrap: nowrap; }
 .searchbox span:first-of-type { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .searchbox .kbd { flex: none; }
@@ -2002,7 +2709,7 @@ img, iframe, canvas, pre { max-width: 100%; }
 .profile-chip .meta { min-width: 0; }
 .profile-chip .meta b,
 .profile-chip .meta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.topbar.compact { padding: 6px 22px; background: var(--chrome-strong); }
+.topbar.compact { padding: 6px 16px; background-color: var(--glass-2); }
 .topbar.compact .crumb-txt span { display: none; }
 .topbar.compact .searchbox { max-width: 320px; }
 
@@ -2072,12 +2779,22 @@ img, iframe, canvas, pre { max-width: 100%; }
 @media (max-width: 1400px) { .profile-chip .meta { display: none; } }
 @media (max-width: 1000px) { .crumbs .crumb-txt span { display: none; } }
 @media (max-width: 900px) { .crumbs { display: none; } }
+/* The progress cluster is the next thing to go: the sidebar's level card still carries the streak. */
+@media (max-width: 980px) { .hd-stats { display: none; } }
 @media (max-width: 430px) {
   .topbar .searchbox span:not(.kbd) { display: none; }
   /* min-width must be released too — it wins over max-width in CSS. */
   .topbar .searchbox { flex: none; min-width: 0; max-width: 46px; justify-content: center; }
   .topbar .kbd { display: none; }
   .topbar .hide-xs { display: none; }
+  /*
+   * The standalone theme button is a duplicate of the theme row in the quick-actions menu (App.tsx),
+   * so it leaves the header here — and the language switch left the bar entirely, to the same
+   * menu. Measured at 320px: the
+   * row is `flex-wrap: nowrap` and its min-content is ~348px, so the header pushed `.main` 38px
+   * sideways on EVERY route; without this button the row needs ~306px and fits with room to spare.
+   */
+  .topbar .theme-toggle { display: none; }
 }
 
 /* ---------- small-screen hard stop ----------
@@ -2319,7 +3036,7 @@ img, iframe, canvas, pre { max-width: 100%; }
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
   background: linear-gradient(180deg, var(--accent), rgb(var(--accent-rgb) / .15));
 }
-.coach-card h3 { font-size: .92rem; }
+.coach-card h2 { font-size: .92rem; }
 .count-pill {
   display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 7px;
   border-radius: 99px; font-size: .68rem; font-weight: 700; color: #fff; border: 1px solid var(--border);
@@ -2347,12 +3064,25 @@ img, iframe, canvas, pre { max-width: 100%; }
    inside that track's own roadmap step now (`.rmap-pb`, in the TRACK ROADMAP block at the end of
    this file), so the roadmap has one box per track instead of a link out to a second copy of it. */
 
-/* The extra paths: the same spine as the tracks. 25 cards of equal weight beside 8 track cards
-   said the two groups were the same kind of thing and left the reading order of a wrapped grid
-   zig-zagging; one numbered line each says the order IS the layout, and the page grows by nothing.
+/* The capabilities band — everything the course USES, not steps of it.
+
+   These rows used to be drawn as numbered steps on the master rail (37 … 60), which said the
+   Question Bank and the labs were the 37th-to-60th steps of the same course. They are not: every
+   one of their 14,551 items is tagged to a course chapter (`npm run course:audit`), so the chapter
+   page is where the practice, the lab and the interview question are met. This band is the global
+   door to each capability — grouped by family, with real figures, and deliberately unnumbered.
+
    NOT `.path-grid`: that name already means the Learning Path's own 1fr/300px two-column frame
    (above), and re-declaring it here silently widened the right rail to fill the row. */
 .path-extra { margin-top: 16px; }
+.cap-grid { display: grid; gap: 12px; }
+.cap-group { display: flex; flex-direction: column; gap: 7px; }
+.cap-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cap-head .chip { color: var(--accent); border-color: rgb(var(--accent-rgb) / .35); }
+/* Whole rows, so a capability is one line of reading; the family decides the columns, and the tone
+   on `.path-card` is what makes four families read as four families. */
+.cap-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 8px; }
+.cap-rows .path-card { margin-bottom: 0; }
 /* A family is a phase of one road, not a new list: the divider is a ROW of the spine (the line runs
    through it), so the numbering continues instead of restarting per group. */
 .rmap-group { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; }
@@ -2849,7 +3579,7 @@ the skill's share of the selected source, and how many of its questions are alre
    ============================================================ */
 
 .rmap-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 0 10px; }
-.rmap-head h3 { font-size: .95rem; }
+.rmap-head h2 { font-size: .95rem; }
 .rmap-legend { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-left: auto; font-size: .68rem; color: var(--muted); }
 .rmap-key { display: inline-flex; gap: 5px; align-items: center; }
 .rmap-key i { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--border); }
@@ -3094,6 +3824,34 @@ the skill's share of the selected source, and how many of its questions are alre
 .dash-plan { align-items: stretch; }
 .dash-plan > .card { display: flex; flex-direction: column; }
 .dash-plan > .card > h3:first-child { margin-top: 0; }
+
+.auth-page { display: flex; justify-content: center; padding: 18px 0; }
+.auth-card { width: min(100%, 520px); padding: clamp(18px, 4vw, 30px); }
+.auth-card h1, .auth-admin-heading h1 { margin-top: 0; }
+.auth-form { display: grid; gap: 14px; margin-top: 20px; }
+.auth-form label { display: grid; gap: 6px; font-size: .88rem; }
+.auth-form .btn { justify-content: center; margin-top: 3px; }
+.auth-switch { justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+.auth-providers { display: grid; gap: 10px; margin-top: 20px; }
+.auth-provider { align-items: center; display: flex; gap: 10px; justify-content: center; font-weight: 600; }
+.auth-provider svg { flex: none; }
+.auth-divider { align-items: center; display: flex; gap: 12px; margin-top: 18px; color: var(--muted); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+.auth-divider::before, .auth-divider::after { background: var(--line); content: ''; flex: 1; height: 1px; }
+.auth-divider + .auth-form { margin-top: 12px; }
+.auth-guest { display: flex; justify-content: center; margin-top: 8px; }
+.auth-error, .auth-message { padding: 10px 12px; border-radius: var(--radius-md); font-size: .88rem; }
+.auth-error { color: var(--red); background: rgba(248, 113, 113, .09); border: 1px solid rgba(248, 113, 113, .25); }
+.auth-message { color: var(--amber); background: rgba(251, 191, 36, .08); border: 1px solid rgba(251, 191, 36, .2); }
+.auth-admin-heading { align-items: flex-start; margin-bottom: 12px; }
+.auth-admin-stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 14px; }
+.auth-admin-stats .card { display: grid; gap: 8px; }
+.auth-admin-stats strong { font-size: 1.55rem; }
+.auth-table-wrap { overflow-x: auto; }
+.auth-table { width: 100%; min-width: 980px; border-collapse: collapse; text-align: left; }
+.auth-table th, .auth-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.auth-table th { color: var(--muted); font-size: .78rem; font-weight: 600; }
+.auth-table td { font-size: .88rem; }
+.auth-table select { min-width: 110px; }
 .dash-plan .mission-row .chip { flex: none; }
 /* The recommendation PANEL absorbs the row's leftover height rather than a `margin-top: auto`
    pushing the tail down: a stretch of bordered panel reads as part of the card, while a stretch of
@@ -3107,16 +3865,8 @@ the skill's share of the selected source, and how many of its questions are alre
 .btn-block { width: 100%; justify-content: center; }
 .dash-plan .btn-block { margin-top: 10px; }
 
-/* ---------- tracks + rail ---------- */
+/* ---------- rail ---------- */
 .dash-main { margin-top: 14px; }
-/* 8 cards, 4 × 2 at full width. The old `minmax(280px, 1fr)` settled on three columns and left
-   TWO EMPTY SLOTS in the last row — the dead space this pass was about. */
-.dash-tracks { grid-template-columns: repeat(auto-fit, minmax(238px, 1fr)); gap: 12px; }
-.dash-tracks .track-card { padding: 14px 15px; gap: 8px; }
-.dash-tracks .track-card h3 { font-size: .92rem; }
-.dash-tracks .track-card .desc { font-size: .74rem; line-height: 1.35; }
-.track-foot { gap: 6px; flex-wrap: wrap; }
-.track-foot .chip { font-size: .66rem; padding: 2px 8px; }
 
 .study-row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
 .sr3 { position: relative; min-width: 0; padding: 8px 9px 8px 11px; border-radius: var(--radius-md); border: 1px solid rgb(var(--accent-rgb) / .24); background-color: rgb(var(--accent-rgb) / .07); }
@@ -3162,7 +3912,11 @@ the skill's share of the selected source, and how many of its questions are alre
 .achv.earned { border-color: rgba(251, 191, 36, .42); background-image: linear-gradient(150deg, rgba(251, 191, 36, .14), rgba(139, 92, 246, .07) 60%, transparent), var(--panel-grad); box-shadow: var(--lift), 0 0 22px rgba(251, 191, 36, .14); }
 .achv.earned .achv-em { filter: none; opacity: 1; border-color: rgba(251, 191, 36, .45); background-color: rgba(251, 191, 36, .12); box-shadow: 0 0 18px rgba(251, 191, 36, .22); }
 .achv-top { display: flex; gap: 6px; align-items: center; min-width: 0; }
-.achv-top b { font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The badge name IS the tile, so it wraps to a second line when it does not fit its card instead of
+   losing its tail — measured on the real app at 320px ("Question Bank Runner" cut 25px short at one
+   column) and at 768px ("Warming Up", three columns). Where it fits, this renders exactly as the
+   single line it was: the ellipsis stays for a name with no space left to break at. */
+.achv-top b { font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: normal; overflow-wrap: break-word; }
 .achv-tag { flex: none; margin-left: auto; display: inline-flex; gap: 4px; align-items: center; font-size: .62rem; padding: 1px 7px; border-radius: 99px; color: var(--muted); border: 1px solid var(--border); background: var(--panel); }
 .achv-tag.earned { color: var(--amber); border-color: rgba(251, 191, 36, .4); background: rgba(251, 191, 36, .12); }
 .achv-hint { font-size: .68rem; color: var(--muted); overflow-wrap: anywhere; }
@@ -3230,27 +3984,63 @@ the skill's share of the selected source, and how many of its questions are alre
   position: fixed; right: 14px; bottom: 46px; z-index: 70;
   width: min(440px, calc(100vw - 28px)); max-height: min(72vh, 580px); overflow-y: auto;
   padding: 12px 12px 10px;
-  border: 1px solid var(--border-strong); border-radius: var(--radius-xl);
-  background-color: var(--popover); background-image: var(--edge-light), var(--panel-grad-hi);
-  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat, repeat;
-  box-shadow: var(--shadow), var(--glow-blue);
+  border: 1px solid rgba(102, 158, 224, .28); border-radius: var(--radius-xl);
+  color: #edf5ff; background-color: rgba(7, 15, 30, .97);
+  background-image: linear-gradient(155deg, rgba(16, 31, 53, .98), rgba(7, 15, 30, .98));
+  box-shadow: 0 20px 54px rgba(0, 0, 0, .48), 0 0 25px rgba(34, 211, 238, .10),
+    inset 0 1px 0 rgba(255, 255, 255, .08);
+  backdrop-filter: blur(20px) saturate(145%); -webkit-backdrop-filter: blur(20px) saturate(145%);
 }
-.aidock-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.aidock-head b { color: #f2f7ff; }
+.aidock .muted { color: #9aaccb; }
+.aidock .icon-btn { color: #c1d0e7; border-color: rgba(118, 158, 208, .18); background: rgba(255, 255, 255, .045); }
+/*
+ * A quick action is a fixed label in a wrapping row, so it must not be the item that shrinks: at
+ * 360px the row squeezed "Next Task" to 59px of its 74px content and the label was cut mid-word.
+ */
+.aidock .btn { flex: none; }
+.aidock-head {
+  position: sticky; top: -12px; z-index: 5;
+  display: flex; align-items: center; gap: 8px; margin: -12px -12px 8px; padding: 12px;
+  border-bottom: 1px solid rgba(118, 158, 208, .12);
+  background: linear-gradient(155deg, rgba(16, 31, 53, .99), rgba(7, 15, 30, .99));
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
 .aidock-ic {
   flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--radius-sm);
   color: var(--cyan); background: rgba(34, 211, 238, .12); border: 1px solid rgba(34, 211, 238, .3);
 }
 .aidock-head b { flex: none; }
+.aidock-head .icon-btn { flex: none; margin-left: auto; }
 .aidock-sub { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Phone: a sheet across the bottom, above the bottom navigation, with the safe-area inset kept. */
 @media (max-width: 780px) {
   .aidock {
     left: 8px; right: 8px; width: auto;
-    /* Clears the 56-61px bottom navigation (the AI item lives there now) plus the home-bar inset. */
-    bottom: calc(68px + env(safe-area-inset-bottom));
-    max-height: 64vh; padding: 11px 11px 9px;
+    /* The nav is a compact 29px capsule now; keep the dock just above it, inside the safe area. */
+    bottom: calc(32px + env(safe-area-inset-bottom));
+    max-height: min(52dvh, 430px); padding: 8px;
   }
   .aidock-sub { display: none; }
+  .aidock-head { top: -8px; margin: -8px -8px 7px; padding: 8px; }
+  .aidock .assistant { padding: 10px; }
+  .aidock .assistant-subtitle { display: none; }
+  .aidock .assistant-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 9px;
+  }
+  .aidock .assistant-action {
+    min-height: 48px; flex-direction: row; align-items: center; justify-content: flex-start;
+    gap: 7px; padding: 6px 8px; border-radius: 12px;
+  }
+  .aidock .assistant-action-icon { width: 26px; height: 26px; flex: none; margin: 0; border-radius: 9px; }
+  .aidock .assistant-action b { font-size: .72rem; }
+  .aidock .assistant-action small, .aidock .assistant > p.small { display: none; }
+  .aidock .assistant-suggestions { gap: 4px !important; margin-top: 7px !important; }
+  .aidock .assistant-suggestions .btn { padding: 3px 6px; font-size: .62rem; }
+  .aidock .assistant-tools { gap: 4px; margin-top: 6px; }
+  .aidock .assistant .ask { margin-top: 9px; }
+  .aidock .assistant-input { min-height: 44px; }
+  .aidock .assistant-send { width: 34px; height: 34px; }
 }
 
 @media (pointer: coarse) {
@@ -3261,4 +4051,480 @@ the skill's share of the selected source, and how many of its questions are alre
   /* `.btn.small` is a 29px row action (the Question Bank's "Check answer / Pichla / Agla"), which
      is a comfortable mouse target and a fiddly thumb one. Height only, so no row can re-wrap. */
   .btn.small { min-height: 34px; }
+}
+
+/* ============================================================
+   COURSES
+   The 11-course hub (/courses), a course's step index
+   (/course/:slug) and the 7-tab step page (/course/:slug/:step).
+   Cards and rows take their hue from the existing `.tone-*`
+   family, so a course and its stage read the same everywhere.
+   ============================================================ */
+
+.course-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px; margin-top: 12px;
+}
+.course-grid > * { min-width: 0; }
+
+/* The card is a real tile: logo on top, name under it, and the ring pinned to the bottom edge so
+   every card's foot lines up whatever the name's length. */
+.course-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
+  padding: 14px 14px 12px; text-decoration: none; color: inherit;
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background-color: var(--card); background-image: var(--edge-light), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat, repeat;
+  box-shadow: var(--lift);
+  transition: border-color .16s ease, box-shadow .18s ease, transform .14s ease;
+}
+.course-card:hover {
+  border-color: rgb(var(--accent-rgb) / .42); transform: translateY(-2px);
+  box-shadow: var(--lift-strong), 0 0 20px rgb(var(--accent-rgb) / .16);
+}
+.cc-logo { display: grid; place-items: center; width: 64px; height: 64px; }
+.course-logo { display: block; border-radius: 14px; }
+/* A broken/missing file falls back to the inline mark family — same box, no broken-image icon. */
+.course-logo.fallback {
+  display: grid; place-items: center; color: var(--accent);
+  background: rgb(var(--accent-rgb) / .12); border: 1px solid rgb(var(--accent-rgb) / .3);
+}
+.cc-name { font-size: .95rem; line-height: 1.25; }
+.cc-meta { font-variant-numeric: tabular-nums; }
+.cc-foot { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: auto; padding-top: 6px; }
+.cc-go { margin-left: auto; color: var(--muted); }
+.course-card:hover .cc-go { color: var(--accent); }
+
+/* --- one course: header + its own step index --- */
+.course-head { border-left: 3px solid var(--accent); }
+.course-steps { display: flex; flex-direction: column; gap: 8px; }
+.course-step {
+  display: grid; grid-template-columns: 46px minmax(0, 1fr) auto auto auto auto;
+  gap: 10px; align-items: center; padding: 10px 12px;
+  text-decoration: none; color: inherit;
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background-color: var(--card); background-image: var(--edge-light), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat, repeat;
+  box-shadow: var(--lift);
+  transition: border-color .16s ease, box-shadow .18s ease, transform .14s ease;
+}
+.course-step:hover {
+  border-color: rgb(var(--accent-rgb) / .42); transform: translateY(-1px);
+  box-shadow: var(--lift-strong), 0 0 18px rgb(var(--accent-rgb) / .14);
+}
+.course-step.active { border-color: rgb(var(--accent-rgb) / .38); }
+.course-step.clear { border-color: rgba(52, 211, 153, .38); }
+.cs-no {
+  font-family: var(--mono); font-size: .95rem; font-weight: 650; text-align: center;
+  color: var(--accent); background: rgb(var(--accent-rgb) / .1);
+  border: 1px solid rgb(var(--accent-rgb) / .3); border-radius: 10px; padding: 6px 0;
+}
+.cs-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cs-main b { font-size: .88rem; }
+.cs-status { display: flex; align-items: center; gap: 6px; }
+.cs-state.new { color: var(--muted); }
+.cs-state.active { color: var(--accent); border-color: rgb(var(--accent-rgb) / .35); }
+.cs-state.clear { color: var(--green); border-color: rgba(52, 211, 153, .35); background-color: rgba(52, 211, 153, .08); }
+
+/* --- the step page's seven tabs --- */
+.course-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.ctab { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.ctab-n { font-size: .68rem; opacity: .72; font-variant-numeric: tabular-nums; }
+.course-topics { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: .82rem; }
+.course-topics li { margin: 3px 0; }
+
+/* Phone: the row keeps its number, title and measure; the stage tag, state chip and chevron give
+   way so the numbers never wrap. The card grid drops to one column under 420px. */
+@media (max-width: 780px) {
+  .course-step { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .course-step .cs-tag, .course-step .cs-state, .course-step > svg { display: none; }
+  .course-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+}
+@media (max-width: 420px) {
+  .course-grid { grid-template-columns: 1fr; }
+}
+
+/* --- Dashboard: the continue-across-courses strip -------------------------
+   One hero card for the course the learner is in (or the first one to start) and the
+   other ten as chips. Figures come from `generated/courses/index.json` + section mastery
+   only — the strip never fetches a course file, so a course without sections shows its
+   counts instead of a ring. Horizontally scrollable: eleven chips never fit at once.
+   ============================================================ */
+
+.dash-courses {
+  display: flex; gap: 10px; align-items: stretch; margin-top: 10px;
+  padding-bottom: 6px; overflow-x: auto; overscroll-behavior-x: contain;
+}
+.dash-courses > * { flex: none; }
+.course-continue {
+  display: flex; align-items: center; gap: 12px; min-width: 320px; max-width: 430px;
+  padding: 12px 14px; text-decoration: none; color: inherit;
+  border: 1px solid rgb(var(--accent-rgb) / .34); border-radius: var(--radius-lg);
+  background-color: var(--card); background-image: var(--edge-light), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat, repeat;
+  box-shadow: var(--lift);
+  transition: border-color .16s ease, box-shadow .18s ease, transform .14s ease;
+}
+.course-continue:hover {
+  border-color: rgb(var(--accent-rgb) / .55); transform: translateY(-1px);
+  box-shadow: var(--lift-strong), 0 0 20px rgb(var(--accent-rgb) / .16);
+}
+.course-chip {
+  display: flex; align-items: center; gap: 8px; min-width: 170px; max-width: 210px;
+  padding: 10px 12px; text-decoration: none; color: inherit;
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background-color: var(--card); background-image: var(--edge-light), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat, repeat;
+  transition: border-color .16s ease, transform .14s ease;
+}
+.course-chip:hover { border-color: rgb(var(--accent-rgb) / .42); transform: translateY(-1px); }
+.course-chip-all { min-width: 140px; color: var(--muted); }
+.dc-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.dc-body b { display: flex; align-items: center; gap: 6px; font-size: .84rem; line-height: 1.2; }
+.dc-body .chip { font-size: .58rem; padding: 1px 6px; }
+.dc-next {
+  font-size: .76rem; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dc-meta { font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 780px) {
+  .course-continue { min-width: 0; max-width: 100%; width: 100%; }
+  /* The ring repeats what the meta line already says ("0/16 sections"), so dropping it here
+     hands its 56px back to the body — the Continue button stays on screen instead of sitting
+     half a swipe past the edge. The step title wraps instead of ellipsizing: a title a learner
+     cannot finish reading is not a title. Chips keep scrolling: eleven of them never fit. */
+  .course-continue .ring { display: none; }
+  .course-continue .dc-next { white-space: normal; }
+  .course-chip { min-width: 150px; }
+}
+
+/* ---------- BroCode learning header ---------- */
+.topbar {
+  flex-wrap: nowrap; gap: clamp(7px, 1vw, 14px); min-height: 68px;
+  padding: 8px 12px; border-radius: 22px;
+  background-color: rgba(5, 10, 22, .88);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .012) 48%);
+  border-color: rgba(129, 167, 255, .22);
+  backdrop-filter: blur(22px) saturate(150%); -webkit-backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, .36), 0 0 22px rgba(34, 211, 238, .09),
+    inset 0 1px 0 rgba(255, 255, 255, .13);
+}
+.topbar-nav {
+  display: flex; flex: none; align-items: center; gap: 4px; min-width: 0;
+}
+.topbar-nav-link {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 9px 11px; border: 1px solid transparent; border-radius: 11px;
+  color: rgba(220, 230, 248, .83); font-size: .79rem; font-weight: 600; white-space: nowrap;
+  text-decoration: none;
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .22s ease, transform .2s ease;
+}
+.topbar-nav-link > svg { flex: none; color: rgba(213, 226, 249, .88); }
+.topbar-nav-link:hover {
+  transform: translateY(-2px); border-color: rgba(128, 171, 255, .18);
+  background: rgba(255, 255, 255, .055); color: #fff; text-decoration: none;
+}
+.topbar-nav-link.active {
+  border-color: rgba(34, 211, 238, .52);
+  background: linear-gradient(135deg, rgba(34, 211, 238, .16), rgba(79, 124, 255, .18));
+  box-shadow: 0 0 17px rgba(34, 211, 238, .14), inset 0 1px 0 rgba(255, 255, 255, .10);
+  color: #f4f8ff;
+}
+.topbar-nav-link.active > svg { color: #79e8ff; filter: drop-shadow(0 0 6px rgba(34, 211, 238, .45)); }
+.topbar .searchbox {
+  flex: 1 1 250px; width: auto; min-width: 150px; max-width: none; height: 46px;
+  padding: 7px 10px 7px 14px; gap: 10px; border-radius: 999px;
+  border-color: rgba(91, 154, 255, .52);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .025));
+  color: rgba(227, 236, 251, .91);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 0 12px rgba(34, 211, 238, .04);
+}
+.topbar .searchbox > svg { flex: none; color: #d7e8ff; }
+.topbar .searchbox span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar .searchbox .kbd {
+  flex: none; padding: 4px 8px; border: 1px solid rgba(145, 177, 238, .14);
+  border-radius: 8px; background: rgba(67, 103, 169, .24); color: #e0ebff;
+  font-size: .66rem; font-weight: 600;
+}
+.topbar .searchbox:focus-visible,
+.topbar .searchbox:focus {
+  outline: none; border-color: rgba(34, 211, 238, .72);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, .10), 0 0 20px rgba(34, 211, 238, .18),
+    inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.topbar-right { flex: none; flex-wrap: nowrap; gap: 8px !important; }
+.topbar .icon-btn, .topbar .side-btn, .topbar .side-btn-desk {
+  width: 40px; height: 40px; flex: none; border-radius: 12px;
+}
+.topbar .focus-toggle { border-color: rgba(87, 157, 255, .35); color: #dceaff; }
+.topbar .focus-toggle:hover, .topbar .focus-toggle[aria-pressed='true'] {
+  border-color: rgba(34, 211, 238, .62); color: #8deaff;
+  box-shadow: 0 0 17px rgba(34, 211, 238, .19), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+.topbar .notif-dot {
+  top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 4px;
+  border: 1px solid rgba(5, 10, 22, .9); background: #fb5d83; color: #fff; font-size: .59rem;
+}
+.topbar .profile-chip {
+  position: relative; display: grid; width: 42px; height: 42px; flex: none; place-items: center;
+  padding: 0; border: 0; background: transparent; text-decoration: none;
+}
+.topbar .profile-chip:hover { transform: translateY(-2px); }
+.topbar .profile-chip .avatar {
+  width: 40px; height: 40px; border-color: rgba(132, 186, 255, .72);
+  box-shadow: 0 0 0 2px rgba(79, 124, 255, .13), 0 0 16px rgba(34, 211, 238, .14);
+  color: #f2f6ff; background: linear-gradient(145deg, rgba(34, 211, 238, .24), rgba(79, 124, 255, .24));
+}
+.profile-online {
+  position: absolute; right: 0; bottom: 1px; width: 10px; height: 10px;
+  border: 2px solid #080e1b; border-radius: 50%; background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, .55);
+}
+.profile-online.offline { background: #94a3b8; box-shadow: none; }
+.topbar .side-btn-desk { display: grid; place-items: center; }
+.topbar .side-btn { display: none; }
+.shell.focus .topbar-brand, .shell.focus .topbar-nav, .shell.focus .searchbox { display: none; }
+.shell.focus .topbar { min-height: 58px; }
+
+@media (max-width: 1250px) {
+  .topbar { gap: 8px; }
+  .topbar-nav-link { gap: 5px; padding-inline: 8px; }
+  .topbar .searchbox { flex-basis: 190px; }
+}
+@media (max-width: 1080px) {
+  .topbar-nav-link { padding-inline: 7px; }
+  .topbar-nav-link > svg { display: none; }
+  .topbar-right { gap: 6px !important; }
+  .topbar .icon-btn, .topbar .side-btn, .topbar .side-btn-desk { width: 36px; height: 36px; }
+  .topbar .profile-chip, .topbar .profile-chip .avatar { width: 36px; height: 36px; }
+}
+@media (max-width: 1180px) and (min-width: 781px) {
+  .topbar-nav-link:nth-child(n + 3) { display: none; }
+}
+@media (max-width: 900px) {
+  .topbar { gap: 7px; min-height: 62px; padding: 7px 9px; }
+  .topbar-nav { display: none; }
+  .topbar-nav-link { padding: 8px 7px; font-size: .72rem; }
+  .topbar .searchbox { flex-basis: 120px; height: 38px; padding-inline: 10px; gap: 7px; }
+  .topbar .searchbox .kbd { display: none; }
+  .topbar-right { gap: 4px !important; }
+  .topbar .icon-btn, .topbar .side-btn, .topbar .side-btn-desk,
+  .topbar .profile-chip, .topbar .profile-chip .avatar { width: 32px; height: 32px; }
+}
+@media (max-width: 900px) and (min-width: 781px) {
+  .topbar { gap: 4px; padding-inline: 7px; }
+  .topbar .searchbox { min-width: 120px; flex-basis: 120px; padding-inline: 8px; }
+  .topbar .icon-btn, .topbar .side-btn-desk, .topbar .profile-chip, .topbar .profile-chip .avatar {
+    width: 30px; height: 30px;
+  }
+  .topbar-right { gap: 3px !important; }
+}
+@media (max-width: 780px) {
+  .topbar {
+    position: sticky; top: 0; justify-content: flex-start;
+    margin: 0 8px; gap: 5px; min-height: 44px; padding: 3px 7px;
+  }
+  .topbar .side-btn-desk { display: none; }
+  .topbar .side-btn { display: grid; }
+  .topbar-nav, .topbar-right .quickmenu, .topbar-right > .icon-btn:not(.focus-toggle) { display: none; }
+  .topbar .searchbox {
+    flex: none; width: 30px; min-width: 30px; height: 30px; justify-content: center;
+    padding: 0; border-radius: 11px;
+  }
+  .topbar .searchbox span { display: none; }
+  .topbar .searchbox > svg { width: 17px; height: 17px; }
+  .topbar-right { gap: 4px !important; margin-left: auto; }
+  .topbar .icon-btn, .topbar .side-btn,
+  .topbar .topbar-right > .theme-toggle { width: 30px; height: 30px; }
+  .topbar .topbar-right > .theme-toggle { display: grid; }
+  .topbar .focus-toggle { display: grid !important; }
+  .topbar .profile-chip, .topbar .profile-chip .avatar { width: 30px; height: 30px; }
+  .bottomnav {
+    bottom: env(safe-area-inset-bottom); padding: 2px 4px;
+  }
+  .bn-item, .bn-ai { gap: 0; padding: 1px; }
+  .bn-item > span:not(.bn-icon), .bn-ai > span:not(.bn-ai-ic) { display: none; }
+  .bn-icon, .bn-ai-ic { width: 22px; height: 22px; }
+  .shell.focus .topbar { justify-content: flex-end; }
+}
+@media (max-width: 360px) {
+  .topbar { gap: 3px; margin-inline: 6px; padding-inline: 5px; }
+  .topbar-right { gap: 1px !important; }
+  .topbar .icon-btn, .topbar .side-btn, .topbar .profile-chip, .topbar .profile-chip .avatar,
+  .topbar .searchbox, .topbar .topbar-right > .theme-toggle { width: 28px; min-width: 28px; height: 28px; }
+  .topbar .searchbox { flex-basis: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar, .topbar *, .topbar::before, .bottomnav, .bottomnav *, .bottomnav::before {
+    animation: none !important; scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ---------- Header + navigation dock: dark glass chrome ---------- */
+.topbar {
+  isolation: isolate;
+  min-height: 56px;
+  margin: 8px 12px 0;
+  padding: 5px 12px;
+  border: 1px solid rgba(113, 170, 255, .28);
+  border-radius: 22px;
+  background-color: rgba(5, 10, 22, .92);
+  background-image:
+    linear-gradient(115deg, rgba(34, 211, 238, .055), transparent 35%, rgba(139, 92, 246, .06)),
+    linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .015) 58%);
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .34), 0 0 24px rgba(34, 211, 238, .09),
+    inset 0 1px 0 rgba(255, 255, 255, .13);
+  transition: border-color .22s ease, box-shadow .22s ease;
+}
+.topbar:hover { border-color: rgba(113, 190, 255, .4); }
+.topbar .side-btn, .topbar .icon-btn, .topbar .theme-toggle, .topbar .focus-toggle {
+  border: 1px solid rgba(153, 183, 230, .18);
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, .045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  transition: transform .2s ease, color .2s ease, border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+.topbar .side-btn:hover, .topbar .icon-btn:hover, .topbar .theme-toggle:hover,
+.topbar .focus-toggle:hover {
+  transform: translateY(-2px);
+  border-color: rgba(91, 210, 255, .52);
+  background-color: rgba(34, 211, 238, .09);
+  box-shadow: 0 0 16px rgba(34, 211, 238, .14), inset 0 1px 0 rgba(255, 255, 255, .1);
+}
+.topbar .side-btn:active, .topbar .icon-btn:active, .topbar .theme-toggle:active,
+.topbar .focus-toggle:active, .topbar .profile-chip:active { transform: scale(.96); }
+.topbar .topbar-nav-link { border-radius: 11px; transition: background-color .2s ease, color .2s ease, box-shadow .2s ease; }
+.topbar .topbar-nav-link.active {
+  background: linear-gradient(125deg, rgba(34, 211, 238, .12), rgba(79, 124, 255, .13));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 0 15px rgba(34, 211, 238, .08);
+}
+.topbar .searchbox {
+  border-color: rgba(132, 169, 224, .2);
+  border-radius: 14px;
+  background-color: rgba(255, 255, 255, .045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .055);
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+.topbar .searchbox:focus-within {
+  border-color: rgba(34, 211, 238, .62);
+  background-color: rgba(34, 211, 238, .055);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, .08), 0 0 18px rgba(34, 211, 238, .13);
+}
+.topbar .profile-chip { border-radius: 999px; transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.topbar .profile-chip:hover { border-color: rgba(34, 211, 238, .48); box-shadow: 0 0 16px rgba(34, 211, 238, .12); }
+.topbar .focus-toggle.active, .topbar .focus-toggle[aria-pressed="true"] {
+  border-color: rgba(34, 211, 238, .62);
+  box-shadow: 0 0 15px rgba(34, 211, 238, .2), inset 0 0 10px rgba(34, 211, 238, .07);
+}
+
+.statusbar {
+  position: sticky;
+  bottom: 0;
+  width: min(1120px, calc(100% - 24px));
+  max-width: 1120px;
+  min-height: 34px;
+  margin: 0 auto 0;
+  padding: 1px 14px;
+  border: 1px solid rgba(113, 170, 255, .25);
+  border-radius: 22px;
+  background-color: rgba(5, 10, 22, .94);
+  background-image: linear-gradient(145deg, rgba(34, 211, 238, .045), transparent 40%, rgba(139, 92, 246, .045)),
+    linear-gradient(180deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .012) 58%);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .32), 0 0 22px rgba(34, 211, 238, .075),
+    inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+.statusbar .sb-status-group { flex: 1 1 50%; min-width: 0; padding-right: 54px; }
+.statusbar .sb-actions { flex: 1 1 50%; min-width: 0; justify-content: flex-end; padding-left: 54px; }
+.statusbar .sb-ai {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 58px;
+  flex: none;
+  margin: 0;
+  padding-top: 12px;
+  padding-bottom: 1px;
+  transform: translateX(-50%);
+}
+.statusbar .sb-ai:hover { transform: translateX(-50%); }
+.statusbar .sb-ai-orb {
+  top: -9px;
+  width: 36px;
+  height: 36px;
+  border-color: rgba(137, 219, 255, .88);
+  background:
+    radial-gradient(circle at 32% 22%, rgba(255, 255, 255, .5), transparent 30%),
+    linear-gradient(145deg, rgba(34, 211, 238, .92), rgba(79, 70, 229, .97) 56%, rgba(139, 92, 246, .94));
+  box-shadow: 0 0 0 4px rgba(5, 10, 22, .96), 0 0 17px rgba(34, 211, 238, .5),
+    0 0 27px rgba(139, 92, 246, .36), inset 0 1px 4px rgba(255, 255, 255, .6);
+}
+.statusbar .sb-ai:hover .sb-ai-orb, .statusbar .sb-ai.on .sb-ai-orb {
+  transform: translateX(-50%) scale(1.045);
+  box-shadow: 0 0 0 4px rgba(5, 10, 22, .96), 0 0 21px rgba(34, 211, 238, .68),
+    0 0 33px rgba(139, 92, 246, .48), inset 0 1px 5px rgba(255, 255, 255, .7);
+}
+.statusbar .sb-settings, .statusbar .sb-continue { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.statusbar .sb-settings:active, .statusbar .sb-continue:active { transform: scale(.96); }
+
+@media (max-width: 1100px) and (min-width: 781px) {
+  .statusbar .sb-status-group { padding-right: 42px; }
+  .statusbar .sb-actions { padding-left: 42px; }
+  .statusbar .sb-ai { width: 48px; }
+}
+@media (max-width: 780px) {
+  .topbar {
+    min-height: 38px;
+    margin: 4px 8px 0;
+    padding: 2px 7px;
+    border-radius: 16px;
+  }
+  .topbar .searchbox { border-radius: 50%; }
+  .bottomnav {
+    left: 50%;
+    right: auto;
+    bottom: 0;
+    width: min(600px, calc(100% - 24px));
+    min-height: 32px;
+    padding: 1px 8px;
+    border: 1px solid rgba(113, 170, 255, .3);
+    border-radius: 21px;
+    background-color: rgba(5, 10, 22, .95);
+    background-image: linear-gradient(145deg, rgba(34, 211, 238, .055), transparent 42%, rgba(139, 92, 246, .06)),
+      linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .015) 58%);
+    box-shadow: 0 14px 38px rgba(0, 0, 0, .44), 0 0 25px rgba(34, 211, 238, .11),
+      inset 0 1px 0 rgba(255, 255, 255, .13);
+    transform: translateX(-50%);
+  }
+  .bn-item, .bn-ai { min-height: 24px; justify-content: center; }
+  .bn-icon { width: 26px; height: 22px; border-radius: 9px; }
+  .bn-ai { padding-top: 5px; }
+  .bn-ai-ic {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border-color: rgba(137, 219, 255, .86);
+    color: #f5fbff;
+    background:
+      radial-gradient(circle at 32% 22%, rgba(255, 255, 255, .48), transparent 30%),
+      linear-gradient(145deg, rgba(34, 211, 238, .94), rgba(79, 70, 229, .97) 56%, rgba(139, 92, 246, .94));
+    box-shadow: 0 0 0 4px rgba(5, 10, 22, .96), 0 0 18px rgba(34, 211, 238, .48),
+      0 0 27px rgba(139, 92, 246, .34), inset 0 1px 4px rgba(255, 255, 255, .6);
+    transform: translateX(-50%);
+  }
+  .bn-ai:hover .bn-ai-ic, .bn-ai.on .bn-ai-ic {
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 0 0 4px rgba(5, 10, 22, .96), 0 0 22px rgba(34, 211, 238, .68),
+      0 0 32px rgba(139, 92, 246, .46), inset 0 1px 5px rgba(255, 255, 255, .7);
+  }
+}
+@media (max-width: 360px) {
+  .topbar { margin: 4px 6px 0; }
+  .bottomnav { width: calc(100% - 16px); padding-inline: 5px; }
 }

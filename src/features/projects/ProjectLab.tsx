@@ -5,6 +5,7 @@ import { useCurriculum } from '../../core/data/curriculum';
 import { useStore, recordAttempt, addXp, setState, today } from '../../core/storage/store';
 import { stageAttempt, codeSlot, labAttempt } from '../../core/platform/keys';
 import { sectionProgress } from '../../core/learning/progress';
+import { portfolioTrio } from '../../core/learning/career';
 import { Bar, ProgressRing } from '../../components/ui/ui';
 import { toast } from '../../components/ui/Toast';
 
@@ -74,12 +75,15 @@ export default function ProjectLab() {
   const done = projects.filter((p) => p.done).length;
   const pct = Math.round((done / Math.max(1, total)) * 100);
 
-  /** Only 3 projects can be "portfolio ready" at a time — pick the most advanced ones. */
+  /** Only 3 projects can be "portfolio ready" at a time. The rule lives in the career engine and
+      is shared with the Career hub, so both screens can only ever name the SAME three builds. */
   const portfolio = useMemo(
-    () => projects
-      .map((p) => ({ p, s: sectionProgress(sections.find((x) => x.id === p.sid)!, state).masterPct }))
-      .sort((a, b) => (b.p.done ? 1 : 0) - (a.p.done ? 1 : 0) || b.s - a.s)
-      .slice(0, 3),
+    () => portfolioTrio(projects.map((p) => ({
+      key: p.key,
+      name: p.name,
+      done: p.done,
+      pct: sectionProgress(sections.find((x) => x.id === p.sid)!, state).masterPct,
+    }))),
     [projects, sections, state],
   );
 
@@ -139,7 +143,7 @@ export default function ProjectLab() {
                     <span className="chip">s{String(p.no).padStart(2, '0')} · {p.tier}</span>
                     {p.done && <span className="chip easy"><Check size={11} /> Complete</span>}
                   </div>
-                  <h3 style={{ margin: '8px 0 4px' }}>{p.name}</h3>
+                  <h2 style={{ margin: '8px 0 4px' }}>{p.name}</h2>
                   <p className="muted small" style={{ minHeight: 34 }}>{p.what}</p>
                   <div className="row small muted" style={{ gap: 10, flexWrap: 'wrap' }}>
                     <span><Boxes size={12} /> {p.files || 'files not listed'}</span>
@@ -176,7 +180,7 @@ export default function ProjectLab() {
                     <button className="btn small" onClick={() => setOpen(isOpen ? null : p.key)}>{isOpen ? 'Band karo' : 'Details kholo'}</button>
                     <Link className="btn small" to={p.route}><Hammer size={12} /> Lesson stage</Link>
                     {!p.done && <button className="btn small primary" onClick={() => complete(p)}><Check size={12} /> Complete mark karo</button>}
-                    {p.done && <Link className="btn small" to="/resume">Resume me daalo <ArrowRight size={12} /></Link>}
+                    {p.done && <Link className="btn small" to="/defense">Defense me daalo <ArrowRight size={12} /></Link>}
                   </div>
                 </div>
               );
@@ -193,19 +197,19 @@ export default function ProjectLab() {
 
         <div className="path-rail">
           <div className="card">
-            <h3 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} color="var(--cyan)" /> Portfolio ready</h3>
-            <p className="muted small">Sabse aage wale 3 projects — inhe resume me daalo.</p>
-            {portfolio.map(({ p, s }) => (
+            <h2 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} color="var(--cyan)" /> Portfolio ready</h2>
+            <p className="muted small">Sabse aage wale 3 projects — inhe portfolio me daalo.</p>
+            {portfolio.map((p) => (
               <div key={p.key} className="row spread small" style={{ padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
                 <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {p.done ? '✓ ' : '○ '}{p.name}
                 </span>
-                <span className="chip">{s}%</span>
+                <span className="chip">{p.pct}%</span>
               </div>
             ))}
           </div>
           <div className="card">
-            <h3>Project progression</h3>
+            <h2>Project progression</h2>
             <div className="timeline">
               {['Idea', 'Planning', 'Building', 'Testing', 'Debugging', 'Completed', 'Defense', 'Portfolio Ready'].map((step, i) => (
                 <div key={step} className={`tl-item ${done > 0 && i <= Math.min(5, Math.floor(pct / 17)) ? 'on' : ''}`}>

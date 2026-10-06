@@ -147,7 +147,7 @@ test('every i18n key used by the shell and dashboard exists in the English pack'
   const locales = read('src/app/i18n/locales.ts');
   const enBlock = locales.slice(locales.indexOf('export const en ='), locales.indexOf('export type LocaleKey'));
   const defined = new Set([...enBlock.matchAll(/'([a-z][\w.]*)':/g)].map((m) => m[1]));
-  for (const file of ['src/app/App.tsx', 'src/features/dashboard/Dashboard.tsx', 'src/features/learning/LearningPath.tsx', 'src/features/labs/Playground.tsx', 'src/features/learning/Lesson.tsx']) {
+  for (const file of ['src/app/App.tsx', 'src/features/dashboard/Dashboard.tsx', 'src/features/courses/CoursesHome.tsx', 'src/features/labs/Playground.tsx', 'src/features/learning/Lesson.tsx']) {
     const src = read(file);
     for (const m of src.matchAll(/\bt\('([^']+)'\)/g)) {
       const key = m[1];
@@ -553,8 +553,8 @@ test('coach: retakes quote the learner’s own failure and route back to its sur
 
   // Each surface sends the learner back to where the failure actually happened.
   const routes = {
-    exam: ['/exam', 's02'], lab: ['/playground', 'playground'], mock: ['/mock', 'mock'],
-    interview: ['/interview', 'interview-mode'], final: ['/final', 'final'], bank: ['/questions', 's02'],
+    exam: ['/exam', 's02'], lab: ['/playground', 'playground'], mock: ['/mock-interviews', 'mock'],
+    interview: ['/interview-mode', 'interview-mode'], final: ['/final-assessment', 'final'], bank: ['/questions', 's02'],
   };
   for (const [source, [route, sid]] of Object.entries(routes)) {
     assert.equal(coach.mistakeRoute(mistake('x', { source, section: sid })).route, route, `${source} → ${route}`);

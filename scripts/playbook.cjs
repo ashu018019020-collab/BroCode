@@ -113,7 +113,7 @@ const SECTION_KEYWORDS = {
   s26: ['mlops', 'llmops', 'docker', 'kubernetes', 'ci/cd', 'observability', 'monitor', 'rollback', 'drift', 'tracing', 'eval suite', 'evaluation set', 'aws', 'logging'],
   s27: ['interview', 'cross-role', 'behavioral', 'star', 'salary', 'career', 'hiring'],
   s28: ['big-o', 'complexity', 'algorithm', 'dynamic programming', 'graph', 'tree', 'sorting', 'hash map'],
-  s29: ['capstone', 'portfolio', 'resume story'],
+  s29: ['capstone', 'portfolio', 'project story'],
 };
 
 /** `Level:` band → difficulty, and → bank type when the band is not a plain interview answer. */
@@ -545,9 +545,11 @@ function main() {
     chapters: chs.filter((c) => isChapter(c.no)).sort((a, b) => a.no.localeCompare(b.no)).map((c) => {
       const own = records.filter((r) => r.chapter === c.no);
       const bySection = own.reduce((a, r) => { a[r.sectionId] = (a[r.sectionId] ?? 0) + 1; return a; }, {});
-      // A chapter's items are spread over several sections (chapter 18's 205 answers land in 11 of
-      // them), so the chapter keeps the whole distribution and names the biggest recipient as its
-      // own section — a single first-item guess would send the reader to the wrong lesson.
+      // A chapter's items are spread over several sections, so the chapter keeps the whole
+      // distribution and names the biggest recipient as its own section — a single first-item
+      // guess would send the reader to the wrong lesson. These counts are re-derived from the
+      // BANKS by `questions.cjs playbook --write` (a question refused as a cross-bank duplicate
+      // changes them), which is what keeps this manifest and items.json in agreement.
       const [topSection] = Object.entries(bySection).sort((a, b) => b[1] - a[1])[0] ?? [];
       return {
         no: c.no,

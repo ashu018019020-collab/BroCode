@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowRight, BookOpen, Code2, FileText, ListChecks, Mic2, Package } from 'lucide-react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowRight, BookOpen, Code2, FileText, ListChecks, Mic2, Package, Link2 } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
+import { useCourseIndex } from '../../core/data/courses';
+import { courseOfSection } from '../../core/learning/courses';
 import { useBankManifest, manifestStageCount } from '../../core/data/questions';
 import { StageQnA } from '../../components/learning/StageQnA';
 import { useStore, setState, addXp, recordAttempt, addMistake, useSavedAnswer } from '../../core/storage/store';
@@ -49,6 +51,11 @@ const difficultyCode = (d: string | undefined, i: number) => {
 
 export default function Lesson() {
   const { sid, stage } = useParams();
+  // Back goes to the course step that teaches this section: the standalone Learning Path is
+  // gone, and `content/courses/courses.json` is what says which step teaches which section.
+  const courseIndex = useCourseIndex();
+  const owner = courseOfSection(courseIndex?.courses ?? [], sid ?? '');
+  const backTo = owner ? `/course/${owner.card.slug}/${owner.step}` : '/courses';
   const { sections } = useCurriculum();
   const state = useStore();
   const nav = useNavigate();
@@ -207,8 +214,8 @@ export default function Lesson() {
         minutes={45 + sec.coding.length * 4}
         status={heroStatus}
         stats={heroStats}
-        backLabel={trackLabel}
-        onBack={() => nav('/path')}
+        backLabel={owner?.card.name ?? trackLabel}
+        onBack={() => nav(backTo)}
         glyph={track?.icon ?? BookOpen}
       />
 
@@ -390,7 +397,7 @@ function LearnStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i:
           <div className="card">
             <div className="row spread">
               <div>
-                <h3 style={{ margin: 0 }}>📚 {sec.title} — complete topic workspace</h3>
+                <h2 style={{ margin: 0 }}>📚 {sec.title} — complete topic workspace</h2>
                 <p className="small muted" style={{ margin: '4px 0 0' }}>
                   16 parts: intro → theory → syntax → examples → real-world → interview → practice → coding →
                   debugging → challenges → projects → improvements → interview tasks → revision.
@@ -406,7 +413,7 @@ function LearnStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i:
         {concepts.map((c: Concept, i: number) => (
           <div key={i} className={`card fadeup ${i === sel ? 'wb-active' : ''}`}>
             <div className="row spread">
-              <h3>{i + 1}. {c.title}</h3>
+              <h2>{i + 1}. {c.title}</h2>
               <span className="row">
                 {state.attempts[triedKey(i)] && (
                   <span className="chip" style={{ color: 'var(--green)', borderColor: 'rgba(52,211,153,.4)' }}>✓ ran</span>
@@ -435,7 +442,7 @@ function LearnStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i:
         {!concepts.length && <div className="card muted">Is section me PDF concepts nahi mile — upar ka authored workspace hi topic hai.</div>}
         {sec.learn.recap && (
           <div className="card">
-            <h3>🧾 Quick Recap</h3>
+            <h2>🧾 Quick Recap</h2>
             <p className="small" style={{ whiteSpace: 'pre-wrap' }}>{sec.learn.recap}</p>
           </div>
         )}
@@ -446,7 +453,7 @@ function LearnStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i:
         ))}
         {sec.learn.practice.length > 0 && (
           <div className="card">
-            <h3>✍️ Practice Time</h3>
+            <h2>✍️ Practice Time</h2>
             {sec.learn.practice.map((p, i) => (
               <p key={i} className="small">{chipFor(p.difficulty)} {p.text}</p>
             ))}
@@ -545,6 +552,12 @@ function InterviewStage({ sec }: { sec: Section }) {
       <AssistantCard context={{ sectionId: sec.id, where: `${sec.id} · Interview` }} />
     </div>
     <StageQnA section={sec} stage="interview" />
+    {/* The bank holds the same questions with their rubric answers; the hub is the pillar these
+        panels belong to. Without a way out, the lesson stage was a leaf for both. */}
+    <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+      <Link className="btn small" to={`/questions?section=${sec.id}&type=interview`}><ListChecks size={13} /> Interview questions in the bank</Link>
+      <Link className="btn small" to="/interviews"><Mic2 size={13} /> Interview hub <Link2 size={12} /></Link>
+    </div>
     </>
   );
 }
@@ -573,7 +586,7 @@ function CodingStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i
       </div>
       <div className="card">
         <div className="row spread">
-          <h3>{chipFor(t.difficulty)} Task {sel + 1}</h3>
+          <h2>{chipFor(t.difficulty)} Task {sel + 1}</h2>
           {done && <span className="chip" style={{ color: 'var(--green)', borderColor: 'rgba(52,211,153,.4)' }}>✓ COMPLETE</span>}
         </div>
         <p className="small">{t.text}</p>
@@ -631,7 +644,7 @@ function LogicStage({ sec, idx, onIdx }: { sec: Section; idx: number; onIdx: (i:
       </div>
       <div className="card">
         <span className="chip">{c.kind.toUpperCase()}</span>
-        <h3 style={{ marginTop: 8 }}>{c.text}</h3>
+        <h2 style={{ marginTop: 8 }}>{c.text}</h2>
         <p className="small muted">Predict the output / decide your answer BEFORE revealing.</p>
         <textarea className="console" rows={3} value={ans} placeholder="My answer…" onChange={(e) => setAns(e.target.value)} />
         <div className="row" style={{ marginTop: 8 }}>
@@ -671,7 +684,7 @@ function DebugStage({ sec }: { sec: Section }) {
   return (
     <div>
       <div className="card" style={{ borderColor: 'rgba(248,113,113,.4)' }}>
-        <div className="row spread"><h3>🐞 Broken code</h3>{chipFor('hard')}</div>
+        <div className="row spread"><h2>🐞 Broken code</h2>{chipFor('hard')}</div>
         <p className="small">{b.text}</p>
         <p className="small muted"><b>1. RUN it</b> in the lab below. <b>2. Explain the problem</b>. <b>3. Fix it</b>.</p>
         <textarea className="console" rows={3} placeholder="What is the problem? Why?" value={explanation} onChange={(e) => setExplanation(e.target.value)} />
@@ -738,7 +751,7 @@ function MiniStage({ sec }: { sec: Section }) {
     <div>
       <div className="card glow">
         <div className="row spread">
-          <h3>🏗️ Mini Project — {m.name || sec.title}</h3>
+          <h2>🏗️ Mini Project — {m.name || sec.title}</h2>
           {done && <span className="chip" style={{ color: 'var(--green)', borderColor: 'rgba(52,211,153,.4)' }}>✓ COMPLETE</span>}
         </div>
         <div className="grid2">
@@ -791,7 +804,7 @@ function ProjectStage({ sec }: { sec: Section }) {
       </div>
       <div className="card">
         <div className="row spread">
-          <h3>🚀 {p.name}</h3>
+          <h2>🚀 {p.name}</h2>
           {done && <span className="chip" style={{ color: 'var(--green)', borderColor: 'rgba(52,211,153,.4)' }}>✓ COMPLETE</span>}
         </div>
         <div className="grid2">
@@ -840,7 +853,7 @@ function DefenseStage({ sec }: { sec: Section }) {
   return (
     <>
     <div className="card">
-      <h3>🛡️ Project Defense — {sec.mini.name || sec.title}</h3>
+      <h2>🛡️ Project Defense — {sec.mini.name || sec.title}</h2>
       <p className="small muted">Answer all 10. Keyword-rubric scoring — deterministic, local, no fake AI.</p>
       {DEFENSE_QUESTIONS.map((dq, i) => (
         <div key={i} style={{ margin: '10px 0' }}>
@@ -877,7 +890,7 @@ function CheckpointStage({ sec }: { sec: Section }) {
   return (
     <>
     <div className="card">
-      <h3>🏆 Checkpoint — Section {String(sec.no).padStart(2, '0')}</h3>
+      <h2>🏆 Checkpoint — Section {String(sec.no).padStart(2, '0')}</h2>
       <p className="small muted">"Mastered" unlocks only when every gate below passes.</p>
       {([
         ['Theory viewed', tasks.learn],

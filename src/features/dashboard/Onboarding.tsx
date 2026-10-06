@@ -26,14 +26,15 @@ export default function Onboarding() {
 
   return (
     <div className="card" style={{ maxWidth: 640, margin: '40px auto', padding: 26 }}>
-      <h1 style={{ fontSize: '1.5rem' }}>Let's build your AI Engineer foundation.</h1>
+      <h1 style={{ fontSize: '1.5rem' }}>Let's build your learning foundation.</h1>
       <p className="muted small">Step {step + 1} of 4</p>
 
       {step === 0 && (
         <>
           <p className="small">Your name:</p>
           <input value={name} onChange={(e) => setName(e.target.value)} />
-          <Choice options={['AI Engineer / GenAI / Agentic AI', 'GenAI Engineer', 'Data Scientist', 'Agentic AI Engineer']} value={goal} onPick={setGoal} />
+          {/* Fields of study, broadest first — AI/ML is one path among several. */}
+          <Choice options={['Programming & Software Development', 'AI & Machine Learning', 'Data Science & Analytics', 'Web Development', 'GenAI Engineering']} value={goal} onPick={setGoal} />
         </>
       )}
       {step === 1 && <Choice options={['Beginner', 'Intermediate', 'Advanced']} value={level} onPick={setLevel} />}

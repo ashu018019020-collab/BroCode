@@ -3,12 +3,13 @@ import type { AppState, Note } from '../../types';
 import type { ExamWriteEntry } from '../assessment/exam';
 import { bankAttempt } from '../platform/keys';
 import { addStudy, today } from '../learning/study';
+import { accountStorageKey, subscribeStorageAccount } from './account';
 
 const KEY = 'aiml:state:v1';
 
 export const defaultState = (): AppState => ({
   version: 1,
-  profile: { name: 'Ahetesham', goal: 'AI Engineer / GenAI / Agentic AI', level: 'Beginner', dailyMinutes: 60, onboarded: false },
+  profile: { name: 'Ahetesham', goal: 'Programming & Software Development', level: 'Beginner', dailyMinutes: 60, onboarded: false },
   xp: 0,
   streak: { current: 0, last: '' },
   attempts: {},
@@ -33,12 +34,16 @@ function sanitize(s: AppState): AppState {
   if (!Array.isArray(s.notes)) s.notes = [];
   if (!Array.isArray(s.readNotifs)) s.readNotifs = [];
   if (!s.profile || typeof s.profile !== 'object') s.profile = defaultState().profile;
+  // One-time rename: the old goal named ROLES ("AI Engineer / GenAI / Agentic AI"); the profile
+  // now carries a FIELD OF STUDY (Onboarding/Settings' pickers). Existing states migrate so no
+  // chip keeps printing the retired string.
+  if (s.profile.goal === 'AI Engineer / GenAI / Agentic AI') s.profile.goal = 'Programming & Software Development';
   return s;
 }
 
-function load(): AppState {
+function load(key = accountStorageKey(KEY)): AppState {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
     return sanitize({ ...defaultState(), ...parsed });
@@ -52,9 +57,14 @@ const listeners = new Set<() => void>();
 
 function getState(): AppState { return state; }
 
+subscribeStorageAccount(() => {
+  state = load();
+  listeners.forEach((listener) => listener());
+});
+
 export function setState(patch: (s: AppState) => AppState) {
   state = patch(state);
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* quota — keep in-memory */ }
+  try { localStorage.setItem(accountStorageKey(KEY), JSON.stringify(state)); } catch { /* quota — keep in-memory */ }
   listeners.forEach((l) => l());
 }
 

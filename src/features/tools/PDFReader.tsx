@@ -137,7 +137,7 @@ export default function PDFReader() {
 
       <div className="card pdfbox" style={{ overflow: 'auto', textAlign: 'center' }}>
         <canvas ref={canvasRef} style={{ border: '1px solid var(--border)', borderRadius: 8 }} />
-        {!numPages && <p className="muted small">Loading PDF (local file, no internet)…</p>}
+        {!numPages && <p className="muted small">Loading PDF…</p>}
       </div>
     </div>
   );

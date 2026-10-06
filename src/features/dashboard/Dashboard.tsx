@@ -4,7 +4,7 @@ import {
   Star, Flame, Target, Trophy, Code2, BookOpen, Sparkles, Brain, Mic2,
   Bug, FolderGit2, Flag, Play, ArrowRight, Zap, BarChart3, Percent, Clock,
   TrendingUp, ChevronRight, Award, NotebookPen, ListChecks, Layers,
-  CalendarCheck, Timer, Check,
+  CalendarCheck, Timer, Check, GraduationCap,
 } from 'lucide-react';
 import { StickyNote, BookMarked, Moon, Repeat, Settings as SettingsIcon } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
@@ -15,14 +15,16 @@ import { bankAccuracy, pctText } from '../../core/assessment/accuracy';
 import { mockPassed, notebookCellsRun } from '../../core/learning/coverage';
 import { dailyMission } from '../../core/ai/mission';
 import { levelForXp, levelProgress, XP_PER_LEVEL } from '../../core/platform/keys';
-import { dateKey, daySeries, formatDuration, studyTotals, weekTotals } from '../../core/learning/study';
+import { dateKey, daySeries, formatDuration, studyStreak, studyTotals, weekTotals } from '../../core/learning/study';
 import { ProgressRing, Bar } from '../../components/ui/ui';
 import { AssistantCard } from '../../components/shared/AssistantCard';
 import { earnedAchievements } from '../../core/platform/achievements';
 import { useUi, setUi } from '../../core/storage/ui';
 import { useI18n } from '../../app/i18n';
-import { TRACK_DEFS } from '../../app/App';
-import type { LocaleKey } from '../../app/i18n/locales';
+import { useCourseIndex, useSectionPct } from '../../core/data/courses';
+import { activeCourse, cardMeasures, nextStep, sectionAvg, sectionsClear, type StepMeasure } from '../../core/learning/courses';
+import { STEPS } from '../../core/learning/roadmap';
+import { CourseLogo } from '../../components/shared/CourseLogo';
 
 /**
  * Dashboard — the "what do I do now" surface.
@@ -42,14 +44,18 @@ import type { LocaleKey } from '../../app/i18n/locales';
  *   2. KPI ROW         six figures the hero does NOT print: XP this week, study time this week
  *                      (with a delta against last week), answer accuracy with its sample size,
  *                      coding tasks, sections mastered, badges.
- *   3. MISSION + NBA   what to do next, and why it is next — kept, but denser, and both cards are
+ *   3. COURSES         the continue-across-courses strip: the course the learner is actually in
+ *                      (started, unfinished, most section mastery) and its next incomplete step,
+ *                      then the other ten as chips. Index.json + section mastery only — the
+ *                      Dashboard never parses a 1.5 MB course file to draw eleven rings.
+ *   4. MISSION + NBA   what to do next, and why it is next — kept, but denser, and both cards are
  *                      the same height so the row has no ragged hole under the shorter one.
- *   4. TRACKS + RAIL   8 track cards in a grid sized to fill in whole rows, and a rail of things
- *                      the cards cannot say: study time, the queue (due cards, open mistakes,
- *                      mocks, notebook cells), and real recent activity — which is hidden while
- *                      there is none instead of drawn empty.
- *   5. ACHIEVEMENTS    bigger tiles, earned-first, each with honest progress and an unlock line.
- *   6. TOOLS           every destination, quieter than the mission because it is not the plan.
+ *   5. RAIL            study time, the queue (due cards, open mistakes, mocks, notebook cells),
+ *                      and real recent activity — which is hidden while there is none instead of
+ *                      drawn empty. The Learning-Tracks card grid came OFF this page (the courses
+ *                      strip above is the "what next" surface; the tracks live on their own pages).
+ *   6. ACHIEVEMENTS    bigger tiles, earned-first, each with honest progress and an unlock line.
+ *   7. TOOLS           every destination, quieter than the mission because it is not the plan.
  *
  * Every number on this page is derived from persisted learner state or from a content manifest —
  * there is no seeded, estimated or decorative figure anywhere on it.
@@ -99,12 +105,10 @@ export default function Dashboard() {
       peak: Math.max(1, ...days.map((d) => d.seconds)),
     };
   }, [state.study]);
-
-  const trackStats = useMemo(() => TRACK_DEFS.map((def) => {
-    const secs = sections.filter((s) => s.no >= def.from && s.no <= def.to);
-    const pct = Math.round(secs.reduce((a, s) => a + sectionProgress(s, state).masterPct, 0) / Math.max(1, secs.length));
-    return { def, pct, secs };
-  }), [sections, state]);
+  const streak = useMemo(
+    () => studyStreak(state.study ?? {}, study.todayKey),
+    [state.study, study.todayKey],
+  );
 
   const coding = codingTasksDone(sections, state);
   const mastered = sections.filter((s) => isMastered(s, state));
@@ -164,9 +168,39 @@ export default function Dashboard() {
   const queue = [
     { icon: Repeat, n: due, l: t('dash.reviewDue'), to: '/review', tone: 'blue' },
     { icon: Bug, n: openMistakesList, l: t('dash.mistakesOpen'), to: '/mistakes', tone: 'red' },
-    { icon: Mic2, n: mocksPassed, l: t('dash.mocks'), to: '/mock', tone: 'violet' },
+    { icon: Mic2, n: mocksPassed, l: t('dash.mocks'), to: '/mock-interviews', tone: 'violet' },
     { icon: NotebookPen, n: nbCellsRun, l: t('dash.notebookCells'), to: '/notebooks', tone: 'green' },
   ];
+
+  /**
+   * The continue-across-courses strip (section 3). `index.json` is 3 KB and section mastery is
+   * already in the store; a `<slug>.json` is up to 1.5 MB and is NEVER fetched here. So the hero
+   * names the course the learner is in (`activeCourse`: started, unfinished, most mastery) and
+   * reads its next step from card-only measures — a step whose denominator lives in the course
+   * file reports none on the card, and the hero then offers the course page instead of guessing.
+   */
+  const courseIndex = useCourseIndex();
+  const sectionPct = useSectionPct();
+  const courseCards = courseIndex?.courses ?? [];
+  const activeCard = useMemo(() => activeCourse(courseCards, sectionPct), [courseCards, sectionPct]);
+  const courseTarget = activeCard ?? courseCards[0] ?? null;
+  const targetMeasures = useMemo(
+    () => (courseTarget ? cardMeasures(courseTarget, sectionPct) : new Map<number, StepMeasure>()),
+    [courseTarget, sectionPct],
+  );
+  const targetStepNo = courseTarget ? nextStep(courseTarget, targetMeasures) : 1;
+  const targetMeasure = targetMeasures.get(targetStepNo);
+  /** True when the card itself can name the next incomplete step (a section-backed one). */
+  const targetCertain = !!activeCard && !!targetMeasure && targetMeasure.pct !== null && targetMeasure.status !== 'clear';
+  const targetAvg = courseTarget ? sectionAvg(courseTarget, sectionPct) : null;
+  const targetSections = courseTarget ? Object.keys(courseTarget.sections ?? {}).length : 0;
+  const targetClear = courseTarget ? sectionsClear(courseTarget, sectionPct) : 0;
+  const targetStep = STEPS.find((s) => s.no === targetStepNo) ?? null;
+  const targetHref = !courseTarget
+    ? '/courses'
+    : targetCertain
+      ? `/course/${courseTarget.slug}/${targetStepNo}?tab=lesson`
+      : `/course/${courseTarget.slug}`;
 
   return (
     <div className="dash-page">
@@ -177,7 +211,6 @@ export default function Dashboard() {
             <h1>{t('dash.welcome')} <span>{state.profile.name}.</span></h1>
             <p className="muted small">{t('dash.journey')}</p>
             <div className="row dash-tags">
-              <span className="dash-tag tone-cyan"><Target size={13} /> {state.profile.goal}</span>
               <span className="dash-tag tone-violet"><Sparkles size={13} /> {t('dash.chip')}</span>
             </div>
           </div>
@@ -197,8 +230,8 @@ export default function Dashboard() {
               </div>
               <div className="snap tone-amber">
                 <span className="l">{t('dash.levelStreak')}</span>
-                <b>{state.streak.current}<small> {t('dash.days')}</small></b>
-                <span className="sub"><Flame size={11} /> {t('dash.lastStudied')} {state.streak.last || '—'}</span>
+                <b>{streak}<small> {t('dash.days')}</small></b>
+                <span className="sub"><Flame size={11} /> Study streak</span>
               </div>
               <div className="snap tone-green">
                 <span className="l">{t('top.level')} {level}</span>
@@ -240,7 +273,7 @@ export default function Dashboard() {
           { to: '/projects', icon: FolderGit2, label: 'Build a Project', sub: 'Project Lab', tag: 'Project', tone: 'violet' },
           { to: '/labs', icon: Sparkles, label: 'Run a Lab', sub: 'Python · SQL · AI', tag: 'Lab', tone: 'cyan' },
           { to: '/interviews', icon: Mic2, label: 'Mock Interview', sub: 'Answer, then defend', tag: 'Interview', tone: 'amber' },
-          { to: '/career', icon: Award, label: 'Sharpen the Resume', sub: 'Bullets + pitch', tag: 'Career', tone: 'green' },
+          { to: '/career', icon: Award, label: 'Sharpen the Portfolio', sub: 'Bullets + pitch', tag: 'Career', tone: 'green' },
         ].map((r) => (
           <Link key={r.to} to={r.to} className="tile">
             <span className="ic"><r.icon size={17} /></span>
@@ -253,7 +286,67 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* 3 — TODAY'S PLAN: the mission, and why the next best action is next. `stretch` so the two
+      {/* 3 — COURSES: continue where you left off. One hero card for the course the learner is
+             actually in (started, unfinished, most section mastery) and the other ten as chips.
+             Every figure comes from index.json + section mastery — a course file is never fetched
+             here, so a course with no sections shows its counts, never a ring. */}
+      {courseTarget && (
+        <>
+          <div className="sec-head"><h2><GraduationCap size={17} color="var(--cyan)" /> {t('dash.courses')}</h2><span className="line" /></div>
+          <div className="dash-courses">
+            <Link className={`course-continue tone-${courseTarget.tone}`} to={targetHref}>
+              <CourseLogo logo={courseTarget.logo} name={courseTarget.name} size={44} />
+              <span className="dc-body">
+                <b>
+                  {courseTarget.name}
+                  {activeCard && <span className="chip easy">{t('dash.coursesIn')}</span>}
+                </b>
+                <span className="dc-next">
+                  {targetCertain
+                    ? `${t('courses.step')} ${String(targetStepNo).padStart(2, '0')} · ${targetStep?.title ?? ''}`
+                    : `${courseTarget.steps.length} ${t('courses.stepsUnit')} · ${courseTarget.counts.total} ${t('courses.itemsUnit')}`}
+                </span>
+                <span className="dc-meta">
+                  {targetCertain
+                    ? `${targetClear}/${targetSections} ${t('courses.sectionsUnit')}`
+                    : t('courses.noSections')}
+                </span>
+              </span>
+              {targetAvg !== null && <ProgressRing pct={targetAvg} size={44} />}
+              <span className="btn small primary">
+                <Play size={13} /> {activeCard ? (targetCertain ? t('dash.continue') : t('dash.coursesOpen')) : t('dash.coursesStart')}
+              </span>
+            </Link>
+
+            {courseCards.filter((c) => c.slug !== courseTarget.slug).map((c) => {
+              const pct = sectionAvg(c, sectionPct);
+              const total = Object.keys(c.sections ?? {}).length;
+              return (
+                <Link key={c.slug} to={`/course/${c.slug}`} className={`course-chip tone-${c.tone}`}>
+                  <CourseLogo logo={c.logo} name={c.name} size={28} />
+                  <span className="dc-body">
+                    <b>{c.name}</b>
+                    <span className="dc-meta">
+                      {pct !== null
+                        ? `${sectionsClear(c, sectionPct)}/${total} ${t('courses.sectionsUnit')}`
+                        : `${c.counts.total} ${t('courses.itemsUnit')}`}
+                    </span>
+                  </span>
+                  {pct !== null && <ProgressRing pct={pct} size={30} />}
+                </Link>
+              );
+            })}
+
+            <Link to="/courses" className="course-chip course-chip-all">
+              <GraduationCap size={16} />
+              <span className="dc-body"><b>{t('dash.coursesAll')}</b></span>
+              <ChevronRight size={15} />
+            </Link>
+          </div>
+        </>
+      )}
+
+      {/* 4 — TODAY'S PLAN: the mission, and why the next best action is next. `stretch` so the two
              cards share a height instead of leaving a hole under the shorter one. */}
       <div className="grid2 dash-plan">
         <div className="card fadeup">
@@ -312,48 +405,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 4 — TRACKS + RAIL */}
-      <div className="path-grid dash-main">
-        <div>
-          <h2 className="row" style={{ gap: 8 }}><Sparkles size={17} color="var(--violet)" /> {t('dash.tracks')}</h2>
-          {/* Sized so 8 cards fill whole rows: at this width the grid is 4×2 — the old 3-column
-              layout left two empty slots in the second row, which is where the dead space was. */}
-          <div className="track-grid dash-tracks">
-            {trackStats.map(({ def, pct, secs }) => {
-              const Icon = def.icon;
-              return (
-                <div key={def.id} className={`track-card tone-${def.tone}`}>
-                  <span className="num">{String(TRACK_DEFS.indexOf(def) + 1).padStart(2, '0')}</span>
-                  <div className="head">
-                    <span className="ic" style={{ color: def.color }}><Icon size={19} /></span>
-                    <h3>{t(def.nameKey as LocaleKey)}</h3>
-                    <span className="ringwrap"><ProgressRing pct={pct} size={42} /></span>
-                  </div>
-                  <p className="desc">{def.desc}</p>
-                  <div className="meta">
-                    <span>⏱ ~{def.hours} {t('track.hours')}</span>
-                    <span>{secs.length} {t('track.lessons')}</span>
-                  </div>
-                  <Bar pct={pct} />
-                  <div className="row spread track-foot">
-                    <Link className="btn small primary" to="/path">
-                      {TRACK_DEFS.indexOf(def) === 0 || pct > 0 ? t('track.continueBtn') : t('track.startLesson')}
-                    </Link>
-                    <span className={`chip${def.prereq ? '' : ' easy'}`}>
-                      {def.prereq
-                        ? <>{t('track.requires')} {def.prereq.map((p) => t(TRACK_DEFS.find((d) => d.id === p)!.nameKey as LocaleKey)).join(', ')}</>
-                        : <><Check size={11} /> {t('track.noPrereq')}</>}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* RIGHT RAIL — what the 8 cards cannot say. The per-track bars that used to sit here were
-            the cards beside them, printed twice. */}
-        <div className="path-rail">
+      {/* 5 — RAIL. The Learning-Tracks card grid came off the dashboard — the courses strip above
+          is the "what next" surface now. What stays is what those cards could not say: study time,
+          the queue and real recent activity. Three across when activity exists, two when the
+          activity card is (correctly) hidden for having nothing to show. */}
+      <div className={activity.length ? 'grid3 dash-main' : 'grid2 dash-main'}>
           <div className="card">
             <div className="row spread">
               <h3 className="row" style={{ gap: 8, margin: 0 }}><Clock size={16} color="var(--cyan)" /> {t('dash.studyPanel')}</h3>
@@ -403,10 +459,9 @@ export default function Dashboard() {
               ))}
             </div>
           )}
-        </div>
       </div>
 
-      {/* 5 — ACHIEVEMENTS: bigger tiles, earned first, honest progress on every locked one. */}
+      {/* 6 — ACHIEVEMENTS: bigger tiles, earned first, honest progress on every locked one. */}
       <div className="sec-head"><h2>{t('dash.achievementsTitle')}</h2><span className="line" /></div>
       <div className="grid2 dash-achrow">
         <div className="card">
@@ -438,7 +493,7 @@ export default function Dashboard() {
             <h3 className="row" style={{ gap: 8, margin: 0 }}><Award size={16} color="var(--gold)" /> {t('dash.badgeRow')}</h3>
             <div className="statgrid" style={{ marginTop: 10 }}>
               <div className="stat"><div className="n">{mastered.length}</div><div className="l">{t('dash.topicsDone')}</div></div>
-              <div className="stat"><div className="n">{state.streak.current}d</div><div className="l">{t('dash.levelStreak')}</div></div>
+              <div className="stat"><div className="n">{streak}d</div><div className="l">{t('dash.levelStreak')}</div></div>
               <div className="stat"><div className="n">{weekXp}</div><div className="l">XP · 7 {t('dash.days')}</div></div>
               <div className="stat"><div className="n">{formatDuration(study.totals.seconds)}</div><div className="l">{t('dash.allTime')}</div></div>
             </div>
@@ -454,16 +509,16 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 6 — TOOLS: every destination, one size down from the plan. */}
+      {/* 7 — TOOLS: every destination, one size down from the plan. */}
       <div className="sec-head"><h2>{t('dash.tools')}</h2><span className="line" /></div>
       <div className="tile-grid dash-tools">
         {[
           { to: '/notes', icon: StickyNote, label: t('nav.notes'), sub: t('dash.toolsNotes'), tone: 'amber' },
-          { to: '/cheats', icon: BookMarked, label: t('nav.cheats'), sub: t('dash.toolsResources'), tone: 'violet' },
+          { to: '/cheat-sheets', icon: BookMarked, label: t('nav.cheats'), sub: t('dash.toolsResources'), tone: 'violet' },
           { to: '/exam', icon: Timer, label: t('nav.exam'), sub: t('dash.toolsExam'), tone: 'cyan', badge: 'NEW' },
           { to: '/playground', icon: Sparkles, label: 'AI Tutor', sub: t('dash.toolsTutor'), tone: 'cyan' },
           { to: '/progress', icon: BarChart3, label: 'Progress', sub: t('dash.toolsProgress'), tone: 'green' },
-          { to: '/jobprep', icon: Target, label: t('nav.jobprep'), sub: t('dash.toolsGoals'), tone: 'pink' },
+          { to: '/job-prep', icon: Target, label: t('nav.jobprep'), sub: t('dash.toolsGoals'), tone: 'pink' },
           { to: '/review', icon: Repeat, label: 'Review Queue', sub: t('dash.toolsReview'), tone: 'blue' },
           { to: '/settings', icon: SettingsIcon, label: t('top.settings'), sub: t('dash.toolsSettings'), tone: 'muted' },
         ].map((tile) => (

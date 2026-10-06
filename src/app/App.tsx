@@ -1,25 +1,27 @@
 import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { HashRouter, Routes, Route, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, NavLink, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Map, Layers, Repeat, Bug, Mic2, Shield, FlaskConical,
+  LayoutDashboard, Layers, Repeat, Bug, Mic2, Shield, FlaskConical,
   Sigma, Database, Sparkles, Bot, Briefcase, BarChart3, FileText, Settings as SettingsIcon,
   Search, Star, Flame, Target, Trophy, Code2, GraduationCap, ListChecks,
   Bell, FolderGit2, Network, ClipboardList, StickyNote, BookMarked, Moon, Sun, Focus, Library,
-  Menu, PanelLeftClose, PanelLeftOpen, X, LogOut, ChevronRight, ChevronLeft, Award,
-  Plus, Download, Languages, Timer, BookOpen, Zap,
+  Menu, PanelLeftClose, X, ChevronRight, ChevronLeft, Award,
+  Plus, Download, Languages, Timer, BookOpen, Zap, Cloud, UserRound,
 } from 'lucide-react';
 import { CurriculumProvider, useCurriculum } from '../core/data/curriculum';
 import { useStore, bumpStreak, markNotifsRead, clearNotifs, exportProgress } from '../core/storage/store';
 import { toast } from '../components/ui/Toast';
 import { levelForXp, levelProgress, XP_PER_LEVEL } from '../core/platform/keys';
+import { routeMeta } from '../core/platform/meta';
 import { I18nProvider, useI18n, setLang } from './i18n';
 import { buildNotifications, unreadCount } from '../core/platform/notify';
 import { dueReview, openMistakes } from '../core/learning/review';
+import { studyStreak, today } from '../core/learning/study';
+import { formatLastSeen } from '../core/platform/last-seen';
 // Eager: the landing route, so the first paint has real content.
 import Dashboard from '../features/dashboard/Dashboard';
 // Lazy: every other route is code-split, keeping the initial bundle small.
 const ConceptHub = lazy(() => import('../features/learning/ConceptHub'));
-const LearningPath = lazy(() => import('../features/learning/LearningPath'));
 const Lesson = lazy(() => import('../features/learning/Lesson'));
 const Playground = lazy(() => import('../features/labs/Playground'));
 const SQLLab = lazy(() => import('../features/labs/SQLLab'));
@@ -36,7 +38,6 @@ const AILab = lazy(() => import('../features/labs/AILab'));
 const AgenticLab = lazy(() => import('../features/labs/AgenticLab'));
 const NumPyPandasLab = lazy(() => import('../features/labs/NumPyPandasLab'));
 const DefensePage = lazy(() => import('../features/interview/DefensePage'));
-const ResumeLabs = lazy(() => import('../features/career/ResumeLabs'));
 const PlaybookPage = lazy(() => import('../features/practice/Playbook'));
 const TrackOverview = lazy(() => import('../features/learning/TrackOverview'));
 const QuestionBank = lazy(() => import('../features/practice/QuestionBank'));
@@ -62,6 +63,13 @@ import { PAGES } from '../core/platform/search';
 import { ErrorBoundary } from '../components/ui/ErrorBoundary';
 import { AiDock } from '../components/shared/AiDock';
 import { ToastHost } from '../components/ui/Toast';
+import { useAuth } from '../core/auth/AuthProvider';
+
+const LoginPage = lazy(() => import('../features/auth/LoginPage'));
+const AdminUsersPage = lazy(() => import('../features/auth/AdminUsersPage'));
+const CoursesHome = lazy(() => import('../features/courses/CoursesHome'));
+const CoursePage = lazy(() => import('../features/courses/CoursePage'));
+const StepPage = lazy(() => import('../features/courses/StepPage'));
 
 type GroupKey = 'nav.pillars' | 'nav.tools' | 'hidden';
 
@@ -80,7 +88,7 @@ interface NavItem {
   tone?: NavTone;
   badge?: 'review' | 'mistakes';
   /**
-   * Registered but NOT a sidebar link. The Playground is still a Learning Path card and the label/icon
+   * Registered but NOT a sidebar link. The Playground is still a support-path card and the label/icon
    * for that card comes from here (`PathGrid` looks the route up in NAV), so deleting the entry would
    * leave the card showing a raw URL — `scripts/tests/playbook.test.mjs` fails on exactly that.
    */
@@ -95,14 +103,17 @@ interface NavItem {
 const GROUPS: ('nav.pillars' | 'nav.tools')[] = ['nav.pillars', 'nav.tools'];
 
 /**
- * The sidebar is also the label/icon owner for the Learning Path's extra path cards
+ * The sidebar is also the label/icon owner for the support-path cards
  * (see engine/paths.ts + components/PathGrid.tsx), so it is exported on purpose: a page cannot be
  * described two different ways if both surfaces read the same list.
  */
 export const NAV: NavItem[] = [
   // The eight pillars — the sidebar IS the learning journey, not a filing system.
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', group: 'nav.pillars', tone: 'cyan' },
-  { to: '/path', icon: Map, label: 'Learning', group: 'nav.pillars', tone: 'blue' },
+  // Courses sits next to the Dashboard because it is the way IN: eleven courses over the same 36
+  // steps the Path orders. (The 8-section navbar restructure is a later phase; this is the one
+  // entry that makes the new surface reachable without moving anything else.)
+  { to: '/courses', icon: GraduationCap, label: 'Courses', group: 'nav.pillars', tone: 'blue' },
   { to: '/practice', icon: ListChecks, label: 'Practice', group: 'nav.pillars', tone: 'cyan' },
   { to: '/labs', icon: FlaskConical, label: 'Labs', group: 'nav.pillars', tone: 'cyan' },
   { to: '/projects', icon: FolderGit2, label: 'Projects', group: 'nav.pillars', tone: 'blue' },
@@ -112,20 +123,20 @@ export const NAV: NavItem[] = [
 
   // Tools — reference material, one step below the plan.
   { to: '/notes', icon: StickyNote, label: 'Notes', group: 'nav.tools', tone: 'blue' },
-  { to: '/cheats', icon: BookMarked, label: 'Cheat Sheets', group: 'nav.tools', tone: 'blue' },
+  { to: '/cheat-sheets', icon: BookMarked, label: 'Cheat Sheets', group: 'nav.tools', tone: 'blue' },
   { to: '/pdf', icon: FileText, label: 'PDF Reader', group: 'nav.tools', tone: 'rose' },
   { to: '/settings', icon: SettingsIcon, label: 'Settings', group: 'nav.tools', tone: 'slate' },
 
   //
   // Registered, deliberately NOT sidebar links. Each of these is now reached through the pillar
-  // hub that owns it, but the entry has to stay: the Learning Path's cards, the hub grids and the
+  // hub that owns it, but the entry has to stay: the support-path cards, the hub grids and the
   // command palette all take a page's LABEL and ICON from this list, and the route-registry test
   // diffs it against the <Route> table — dropping an entry here prints a raw URL on a card.
   //
   { to: '/concepts', icon: Layers, label: 'Concepts', group: 'hidden', sidebar: false },
   { to: '/review', icon: Repeat, label: 'Review Queue', group: 'hidden', badge: 'review', sidebar: false },
   { to: '/mistakes', icon: Bug, label: 'Mistake Tracker', group: 'hidden', badge: 'mistakes', sidebar: false },
-  { to: '/interview', icon: Mic2, label: 'Interview Mode', group: 'hidden', sidebar: false },
+  { to: '/interview-mode', icon: Mic2, label: 'Interview Mode', group: 'hidden', sidebar: false },
   { to: '/defense', icon: Shield, label: 'Project Defense', group: 'hidden', sidebar: false },
   { to: '/playground', icon: FlaskConical, label: 'Code Playground', group: 'hidden', sidebar: false },
   { to: '/questions', icon: ListChecks, label: 'Question Bank', group: 'hidden', sidebar: false },
@@ -137,17 +148,16 @@ export const NAV: NavItem[] = [
   { to: '/numpy-pandas', icon: Sigma, label: 'NumPy + Pandas Lab', group: 'hidden', sidebar: false },
   { to: '/notebooks', icon: BookOpen, label: 'Notebook Lab', group: 'hidden', sidebar: false },
   { to: '/sql', icon: Database, label: 'SQL Lab', group: 'hidden', sidebar: false },
-  { to: '/ai', icon: Sparkles, label: 'AI / GenAI Lab', group: 'hidden', sidebar: false },
+  { to: '/ai-lab', icon: Sparkles, label: 'AI / GenAI Lab', group: 'hidden', sidebar: false },
   { to: '/agentic', icon: Bot, label: 'Agentic AI Lab', group: 'hidden', sidebar: false },
-  { to: '/rag', icon: Network, label: 'RAG Lab', group: 'hidden', sidebar: false },
-  { to: '/final', icon: Target, label: 'Final Assessment', group: 'hidden', sidebar: false },
-  { to: '/resume', icon: Briefcase, label: 'Resume Labs', group: 'hidden', sidebar: false },
-  { to: '/mock', icon: Mic2, label: 'Mock Interviews', group: 'hidden', sidebar: false },
-  { to: '/jobprep', icon: ClipboardList, label: 'Job Prep', group: 'hidden', sidebar: false },
+  { to: '/rag-lab', icon: Network, label: 'RAG Lab', group: 'hidden', sidebar: false },
+  { to: '/final-assessment', icon: Target, label: 'Final Assessment', group: 'hidden', sidebar: false },
+  { to: '/mock-interviews', icon: Mic2, label: 'Mock Interviews', group: 'hidden', sidebar: false },
+  { to: '/job-prep', icon: ClipboardList, label: 'Job Prep', group: 'hidden', sidebar: false },
 ];
 
 /** Mobile bottom navigation — the four highest-frequency destinations. */
-const BOTTOM = ['/', '/path', '/practice', '/notes'];
+const BOTTOM = ['/', '/courses', '/practice', '/notes'];
 
 /** The 8 reference tracks mapped onto the 29 PDF-derived sections (1-indexed). */
 export const TRACK_DEFS = [
@@ -159,6 +169,27 @@ export const TRACK_DEFS = [
   { id: 'agentic', icon: Bot, color: 'var(--cyan)', tone: 'cyan' as const, from: 23, to: 23, hours: 12, desc: 'AI Agents, Tool Use, Workflows, n8n, LangChain', nameKey: 'track.agentic' as const, prereq: ['genai'] },
   { id: 'apis', icon: ServerIcon, color: 'var(--green)', tone: 'green' as const, from: 24, to: 26, hours: 10, desc: 'FastAPI, REST APIs, Deployment, Docker, CI/CD', nameKey: 'track.apis' as const, prereq: ['agentic'] },
   { id: 'interview', icon: Briefcase, color: 'var(--amber)', tone: 'gold' as const, from: 27, to: 29, hours: 10, desc: 'Mock Interviews, System Design, Real Projects', nameKey: 'track.interview' as const, prereq: ['apis'] },
+];
+
+/**
+ * Old slugs that must keep resolving. Seven destinations were renamed to descriptive kebab-case
+ * (`/jobprep` → `/job-prep`), and a link, bookmark or search result shared before the rename is
+ * still something a learner can click.
+ *
+ * This is DATA rather than seven literal route elements on purpose: the sitemap generator and
+ * every route reader in the test suite regex-read this file as TEXT (so even this comment must
+ * never spell the route tag out), and an alias is not a page —
+ * it must not enter the sitemap, claim a path card or count as a surface. `layout.test.mjs` holds
+ * the alias contract instead: no alias may shadow a live route, and every target must exist.
+ */
+const LEGACY_ROUTES: [string, string][] = [
+  ['/jobprep', '/job-prep'],          // the only glued compound slug
+  ['/cheats', '/cheat-sheets'],       // the page is "Cheat Sheets"
+  ['/mock', '/mock-interviews'],      // the page is "Mock Interviews"
+  ['/final', '/final-assessment'],    // the page is "Final Assessment"
+  ['/rag', '/rag-lab'],               // the page is "RAG Lab"
+  ['/ai', '/ai-lab'],                 // the page is "AI / GenAI Lab"
+  ['/interview', '/interview-mode'],  // the MODE — /interviews is the pillar hub over it
 ];
 
 function BrainIcon({ size = 16 }: { size?: string | number }) { return <GraduationCap size={size} />; }
@@ -182,10 +213,11 @@ export default function App() {
 function Shell() {
   const { sections, extras } = useCurriculum();
   const state = useStore();
+  const { user, loading: authLoading, progressSync, redirectError } = useAuth();
   bumpStreak();
   const nav = useNavigate();
   const loc = useLocation();
-  const { t, lang, locales } = useI18n();
+  const { t, lang } = useI18n();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const bankIndex = useQuestionIndex(paletteOpen);
   const prefs = useUi();
@@ -194,16 +226,70 @@ function Shell() {
   const [quickOpen, setQuickOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [online, setOnline] = useState(() => navigator.onLine);
+  const [syncClock, setSyncClock] = useState(Date.now());
+  const [lastSeenAt, setLastSeenAt] = useState(Date.now());
+  const [lastSeenClock, setLastSeenClock] = useState(Date.now());
+  const lastSeenKey = `brocode:last-seen:v1:${user?.id ? encodeURIComponent(user.id) : 'guest'}`;
   const mainRef = useRef<HTMLElement>(null);
+  const handledRedirectError = useRef<string | null>(null);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaletteOpen(true); }
+      if (e.key === '/' && !(e.target instanceof HTMLElement && (
+        e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)
+      ))) { e.preventDefault(); setQuickOpen((open) => !open); }
       if (e.key === 'Escape') { setPaletteOpen(false); setDrawer(false); setNotifOpen(false); setAiOpen(false); }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, []);
+
+  useEffect(() => {
+    const updateOnline = () => setOnline(navigator.onLine);
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
+    return () => {
+      window.removeEventListener('online', updateOnline);
+      window.removeEventListener('offline', updateOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!progressSync.lastSyncedAt) return;
+    const timer = window.setInterval(() => setSyncClock(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, [progressSync.lastSyncedAt]);
+
+  useEffect(() => {
+    const recordVisit = () => {
+      const now = Date.now();
+      try {
+        const previous = Number(window.localStorage.getItem(lastSeenKey));
+        if (Number.isFinite(previous) && previous > 0) setLastSeenAt(previous);
+        window.localStorage.setItem(lastSeenKey, String(now));
+      } catch (error) {
+        console.error('[BroCode] Could not persist the last-seen timestamp.', error);
+      }
+      setLastSeenAt(now);
+      setLastSeenClock(now);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') recordVisit();
+    };
+    recordVisit();
+    const clock = window.setInterval(() => setLastSeenClock(Date.now()), 30_000);
+    window.addEventListener('focus', recordVisit);
+    window.addEventListener('pageshow', recordVisit);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearInterval(clock);
+      window.removeEventListener('focus', recordVisit);
+      window.removeEventListener('pageshow', recordVisit);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [lastSeenKey]);
 
   useEffect(() => {
     document.body.classList.toggle('reduce-motion', state.settings.reduceMotion);
@@ -214,12 +300,23 @@ function Shell() {
 
   // First-run gate: the landing page is the front door, onboarding is one click behind it.
   useEffect(() => {
-    if (!state.profile.onboarded && loc.pathname !== '/onboarding' && loc.pathname !== '/start') nav('/start');
+    if (!state.profile.onboarded
+        && !['/onboarding', '/start', '/login', '/admin'].includes(loc.pathname)) nav('/start');
   }, [state.profile.onboarded, loc.pathname]);
+
+  // A cancelled or failed provider return lands back on the redirect origin with its reason in
+  // the query string (AuthProvider reads and cleans it). That reason belongs on the sign-in page,
+  // so send the learner there — once per message, or every later navigation would be hijacked.
+  useEffect(() => {
+    if (!redirectError || handledRedirectError.current === redirectError) return;
+    handledRedirectError.current = redirectError;
+    if (loc.pathname !== '/login') nav('/login', { replace: true });
+  }, [redirectError, loc.pathname, nav]);
 
   const xp = state.xp;
   const level = levelForXp(xp);
   const toNext = XP_PER_LEVEL - (xp % XP_PER_LEVEL);
+  const streakDays = studyStreak(state.study ?? {}, today());
 
   // Badge counts — always real numbers derived from learner state.
   const badges = useMemo(() => ({ review: dueReview(state).length, mistakes: openMistakes(state).length }), [state]);
@@ -234,11 +331,21 @@ function Shell() {
       const st = (p.split('/')[3] ?? 'learn') as Stage;
       const sec = sections.find((s) => s.id === sid);
       const meta = STAGE_META[st] ?? STAGE_META.learn;
-      return { icon: meta.icon, title: sec ? `${String(sec.no).padStart(2, '0')} · ${sec.title}` : 'Lesson', sub: meta.label, back: '/path' };
+      return { icon: meta.icon, title: sec ? `${String(sec.no).padStart(2, '0')} · ${sec.title}` : 'Lesson', sub: meta.label, back: '/courses' };
     }
     if (p.startsWith('/track/')) {
       const slug = p.split('/')[2] ?? '';
-      return { icon: '🗂️', title: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), sub: 'Track overview', back: '/path' };
+      return { icon: '🗂️', title: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), sub: 'Track overview', back: '/courses' };
+    }
+    if (p.startsWith('/course/')) {
+      // The course pages are parameterised, so PAGES cannot hold them: without this branch the
+      // breadcrumb fell through to the Dashboard title on every course and step page.
+      const slug = p.split('/')[2] ?? '';
+      const step = p.split('/')[3] ?? '';
+      const name = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      return step
+        ? { icon: <GraduationCap size={18} />, title: `Step ${step} · ${name}`, sub: 'Course step', back: `/course/${slug}` }
+        : { icon: <GraduationCap size={18} />, title: name, sub: 'Course', back: '/courses' };
     }
     const page = PAGES.find((x) => x.route === p) ?? PAGES.find((x) => x.route !== '/' && p.startsWith(x.route));
     const navItem = NAV.find((n) => n.to === (page?.route ?? '/'));
@@ -249,6 +356,28 @@ function Shell() {
       back: undefined as string | undefined,
     };
   }, [loc.pathname, sections]);
+
+  /**
+   * Per-route document metadata (title + description).
+   *
+   * The rule is `core/platform/meta.ts` (pure, so the suite can test it); this effect only applies
+   * it. It reads the shell's own strings ONCE, before overriding anything, and restores them when
+   * the resolver has nothing better to say — so index.html stays the single source for the home
+   * page's pinned title/description instead of a second copy living in this component.
+   */
+  const shellMeta = useRef<{ title: string; description: string } | null>(null);
+  useEffect(() => {
+    shellMeta.current ??= {
+      title: document.title,
+      description: document.querySelector('meta[name="description"]')?.getAttribute('content') ?? '',
+    };
+    const next = routeMeta(loc.pathname, { sectionTitle: crumb.title }) ?? shellMeta.current;
+    if (next.title && document.title !== next.title) document.title = next.title;
+    const tag = document.querySelector('meta[name="description"]');
+    if (tag && next.description && tag.getAttribute('content') !== next.description) {
+      tag.setAttribute('content', next.description);
+    }
+  }, [loc.pathname, crumb.title]);
 
   /**
    * The single most useful next thing, computed live: overdue reviews win,
@@ -283,11 +412,23 @@ function Shell() {
         <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`} aria-label="Primary">
           <div className="brand">
             <div className="logo pic">
-              <img src="./brocode.png" alt="" width={44} height={44} />
+              {/* The wordmark text beside the tile names the brand while it is visible; a collapsed
+                  rail hides that text (`display: none`), so the tile itself must carry the name. */}
+              <img src="./brocode.png" alt={collapsed ? 'BroCode' : ''} width={44} height={44} />
             </div>
             <div className="brand-txt">
               <b>Bro<span className="grad">Code</span></b>
-              <span className="sub">{t('app.tagline')} {t('app.offlineNote')}</span>
+              {/* The brand line as a stepper: the four verbs, a drawn dot between them instead of a
+                  text arrow, so the journey scans at a glance instead of reading as one run-on
+                  string — and it no longer claims a scope ("Local") the shell does not need to state. */}
+              <span className="sub brand-tag">
+                {t('app.tagline').split('→').map((word, i) => (
+                  <Fragment key={word.trim()}>
+                    {i > 0 && <i aria-hidden="true" />}
+                    <em>{word.trim()}</em>
+                  </Fragment>
+                ))}
+              </span>
             </div>
             {/*
               * Collapse sits at the panel's own top-right: the control belongs to the thing it
@@ -346,7 +487,7 @@ function Shell() {
               </div>
               <div className="bar xp-bar"><div style={{ width: `${Math.min(100, levelProgress(xp) * 100)}%` }} /></div>
               <div className="row spread xp-streak">
-                <span className="row" style={{ gap: 6 }}><Zap size={15} className="xp-zap" /> {state.streak.current} {t('top.streak')}</span>
+                <span className="row" style={{ gap: 6 }}><Zap size={15} className="xp-zap" /> {streakDays} {t('top.streak')}</span>
                 <ChevronRight size={16} className="navchev" />
               </div>
             </Link2>
@@ -372,66 +513,49 @@ function Shell() {
            * any scroll position. On phones the sidebar is an off-canvas drawer, so the menu button
            * below takes over and this one is hidden by CSS.
            */}
-          {/* Only while the rail is collapsed: expanded, the fold control lives in the panel's own
-              brand block, and two buttons for one panel would be a trap. */}
-          {!onFocus && collapsed && (
+          {!onFocus && (
             <button
               className="side-btn-desk"
-              onClick={() => setUi({ navCollapsed: false })}
-              title={t('nav.expand')}
-              aria-label={t('nav.expand')}
-              aria-expanded={false}
+              onClick={() => setUi({ navCollapsed: !collapsed })}
+              title={collapsed ? t('nav.expand') : t('nav.collapse')}
+              aria-label={collapsed ? t('nav.expand') : t('nav.collapse')}
+              aria-expanded={!collapsed}
             >
-              <PanelLeftOpen size={16} />
+              <Menu size={17} />
             </button>
           )}
           <button className="side-btn" onClick={() => setDrawer(true)} aria-label={t('nav.menu')}><Menu size={17} /></button>
 
-          {/* Where am I? — derived from the route, not hardcoded. */}
-          <div className="crumbs" title={crumb.sub}>
-            {crumb.back && (
-              <button className="crumb-back" onClick={() => nav(crumb.back!)} aria-label="Back">←</button>
-            )}
-            <span className="crumb-ico">{crumb.icon}</span>
-            <div className="crumb-txt">
-              <b>{crumb.title}</b>
-              <span>{crumb.sub}</span>
-            </div>
-          </div>
+          <nav className="topbar-nav" aria-label="Main navigation">
+            {[
+              { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+              { to: '/courses', label: 'Courses', icon: BookOpen },
+              { to: '/projects', label: 'Projects', icon: FolderGit2 },
+              { to: '/questions', label: 'Quizzes', icon: ClipboardList },
+            ].map(({ to, label, icon: Icon, end }) => (
+              <NavLink key={to} to={to} end={end} className={({ isActive }) => `topbar-nav-link${isActive ? ' active' : ''}`}>
+                <Icon size={17} />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </nav>
 
           <button className="searchbox" onClick={() => setPaletteOpen(true)} aria-label={t('top.search')}>
             <Search size={15} />
-            <span>{t('top.search')}</span>
+            <span>Search courses, lessons, skills...</span>
             <span className="kbd">Ctrl + K</span>
           </button>
 
-          <div className="row topbar-right" style={{ gap: 8 }}>
+          <div className="row topbar-right">
             {onFocus ? (
               <>
                 <ThemeToggle />
-                <button className="btn small" onClick={() => setUi({ focus: false })}>
-                  <LogOut size={13} /> {t('top.focus')} band karo
+                <button className="icon-btn focus-toggle active" onClick={() => setUi({ focus: false })} title="Focus Mode" aria-label="Exit Focus Mode">
+                  <Focus size={17} />
                 </button>
               </>
             ) : (
               <>
-                {/* The single most useful next thing, one click away. */}
-                {smart && (
-                  <Link className={`smart-chip ${smart.kind}`} to={smart.route} title={smart.why}>
-                    <span className="sc-ico">{smart.icon}</span>
-                    <span className="sc-txt"><b>{smart.label}</b><span>{smart.why}</span></span>
-                    <ChevronRight size={13} />
-                  </Link>
-                )}
-
-                <div className="lang-toggle" role="group" aria-label="Language">
-                  {locales.map((l) => (
-                    <button key={l.code} className={lang === l.code ? 'on' : ''} onClick={() => setLang(l.code)} title={l.name}>
-                      {l.code === 'hinglish' ? 'HI' : 'EN'}
-                    </button>
-                  ))}
-                </div>
-
                 <div className="quickmenu">
                   <button
                     className="icon-btn"
@@ -468,10 +592,11 @@ function Shell() {
                 <ThemeToggle />
 
                 <button
-                  className="icon-btn hide-xs"
+                  className={`icon-btn focus-toggle${prefs.focus ? ' active' : ''}`}
                   onClick={() => setUi({ focus: true })}
-                  title={t('top.focus')}
-                  aria-label={t('top.focus')}
+                  title="Focus Mode"
+                  aria-label="Focus Mode"
+                  aria-pressed={prefs.focus}
                 >
                   <Focus size={16} />
                 </button>
@@ -519,23 +644,15 @@ function Shell() {
                   )}
                 </div>
 
-                <button className="icon-btn hide-xs" onClick={() => nav('/settings')} title={t('top.settings')} aria-label={t('top.settings')}>
-                  <SettingsIcon size={16} />
-                </button>
               </>
             )}
 
-            <button className="profile-chip" onClick={() => nav('/progress')} title={`${state.xp} XP · ${t('top.level')} ${level}`}>
-              {/* The same photo the Progress page uploads — the header is where a profile picture
-                  earns its keep, and it is one field, not a second copy of the state. */}
+            <Link className="profile-chip" to="/progress" title="Open profile" aria-label={`Open ${state.profile.name || 'learner'} profile`}>
               <span className="avatar">
-                {state.profile.avatar ? <img src={state.profile.avatar} alt="" /> : initials(state.profile.name)}
+                {state.profile.avatar ? <img src={state.profile.avatar} alt={`${state.profile.name || 'Learner'} profile photo`} /> : initials(state.profile.name)}
               </span>
-              <span className="meta">
-                <b>{state.profile.name}</b>
-                <span>{t('top.level')} {level} · {state.xp} XP</span>
-              </span>
-            </button>
+              <i className={`profile-online ${online ? 'online' : 'offline'}`} aria-hidden="true" />
+            </Link>
           </div>
         </header>
 
@@ -545,11 +662,13 @@ function Shell() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/start" element={<Landing />} />
+              <Route path="/courses" element={<CoursesHome />} />
+              <Route path="/course/:slug" element={<CoursePage />} />
+              <Route path="/course/:slug/:step" element={<StepPage />} />
               <Route path="/practice" element={<PracticeHub />} />
               <Route path="/labs" element={<LabsHub />} />
               <Route path="/interviews" element={<InterviewsHub />} />
               <Route path="/career" element={<CareerHub />} />
-              <Route path="/path" element={<LearningPath />} />
               <Route path="/track/:trackSlug" element={<TrackOverview />} />
               <Route path="/concepts" element={<ConceptHub />} />
               <Route path="/lesson/:sid/:stage" element={<Lesson />} />
@@ -560,15 +679,15 @@ function Shell() {
               <Route path="/projects" element={<ProjectLab />} />
               <Route path="/sql" element={<SQLLab />} />
               <Route path="/notebooks" element={<NotebookLab />} />
-              <Route path="/interview" element={<InterviewMode />} />
+              <Route path="/interview-mode" element={<InterviewMode />} />
               <Route path="/defense" element={<DefensePage />} />
-              <Route path="/mock" element={<MockInterviews />} />
+              <Route path="/mock-interviews" element={<MockInterviews />} />
               <Route path="/mistakes" element={<MistakesPage />} />
               <Route path="/review" element={<ReviewPage />} />
               <Route path="/progress" element={<ProgressPage />} />
-              <Route path="/jobprep" element={<JobPrep />} />
+              <Route path="/job-prep" element={<JobPrep />} />
               <Route path="/notes" element={<NotesPage />} />
-              <Route path="/cheats" element={<CheatSheets />} />
+              <Route path="/cheat-sheets" element={<CheatSheets />} />
               <Route path="/pdf" element={<PDFReader />} />
               {/* Deep link straight to a page: the reader reads :page, so this
                   route must exist or "PDF Reference p.8" tiles land on the dashboard. */}
@@ -580,12 +699,19 @@ function Shell() {
               <Route path="/playbook" element={<PlaybookPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/final" element={<FinalAssessment />} />
-              <Route path="/ai" element={<AILab />} />
-              <Route path="/rag" element={<RagLab />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/admin" element={<AdminUsersPage />} />
+              <Route path="/final-assessment" element={<FinalAssessment />} />
+              <Route path="/ai-lab" element={<AILab />} />
+              <Route path="/rag-lab" element={<RagLab />} />
               <Route path="/agentic" element={<AgenticLab />} />
               <Route path="/numpy-pandas" element={<NumPyPandasLab />} />
-              <Route path="/resume" element={<ResumeLabs />} />
+              {/* The pre-cleanup slugs, redirected in place so nothing shared before the rename
+                  dead-ends on the Dashboard. Rendered from LEGACY_ROUTES above because a literal
+                  path here would be read as a real page by the sitemap and the route tests. */}
+              {LEGACY_ROUTES.map(([from, to]) => (
+                <Route key={from} path={from} element={<Navigate to={to} replace />} />
+              ))}
               <Route path="*" element={<Dashboard />} />
             </Routes>
             </Suspense>
@@ -593,30 +719,78 @@ function Shell() {
         </ErrorBoundary>
 
         {!onFocus && (
-          /*
-           * The status bar — desktop only (it is hidden where the bottom navigation exists, see
-           * the 780px block in styles.css). Every cell is `nowrap` (`.sb-item`) and the least
-           * useful ones drop out at a width, in order.
-           *
-           * There is no connectivity cell any more: it was the widest thing on the row and it said
-           * the same thing on every screen, while the app itself never needs the network. On a phone
-           * the whole bar is replaced by the bottom navigation, where the assistant is a nav item.
-           */
-          <footer className="statusbar">
-            <span className="sb-item sb-py">Python 3.12 (Pyodide)</span>
-            <span className="spacer" />
-            <span className="sb-item sb-kbd small muted">{scrolled ? '' : `Ctrl + K — ${t('top.search')}`}</span>
-            <span className="sb-item sb-xp small muted" title="Level progress"><Star size={12} style={{ verticalAlign: -2 }} /> {xp} XP · Lv {level}</span>
-            <button
-              className={`sb-ai${aiOpen ? ' on' : ''}`}
-              onClick={() => setAiOpen((v) => !v)}
-              aria-expanded={aiOpen}
-              aria-label={aiOpen ? 'AI assistant band karo' : 'AI assistant kholo'}
-              title="AI — is app ke bare me poocho"
-            >
-              <Bot size={12} /> AI
-            </button>
-            <span className="sb-item sb-brand">BroCode</span>
+          <footer className="statusbar" aria-label="Learning progress and quick actions">
+            <div className="sb-status-group">
+              <div
+                className="sb-last-seen"
+                data-tooltip={`Last seen: ${new Date(lastSeenAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`}
+                aria-label={`Last seen ${formatLastSeen(lastSeenAt, lastSeenClock)}. Exact time ${new Date(lastSeenAt).toLocaleString()}`}
+                tabIndex={0}
+              >
+                <UserRound size={16} />
+                <span><b>Last Seen</b><i aria-hidden="true"> · </i><small>{formatLastSeen(lastSeenAt, lastSeenClock)}</small></span>
+              </div>
+              <span className="sb-divider" aria-hidden="true" />
+              <Link className="sb-stat tone-amber" to="/progress" title={`${streakDays} study days in a row`}>
+                <span aria-hidden="true">🔥</span><span>{streakDays} Day Streak</span>
+              </Link>
+              <span className="sb-divider hide-sm" aria-hidden="true" />
+              <Link className="sb-xp-block" to="/progress" title="Open profile and progress">
+                <span aria-hidden="true">🏆</span>
+                <span><b>{xp} / {level * XP_PER_LEVEL} XP</b><small>Level {level}</small></span>
+                <i aria-hidden="true"><i style={{ width: `${Math.min(100, levelProgress(xp) * 100)}%` }} /></i>
+              </Link>
+              <span className="sb-divider hide-sm" aria-hidden="true" />
+              <div
+                className={`sb-sync-block ${progressSync.status}`}
+                title={!user
+                  ? 'Signed-out progress is stored on this device; sign in to sync a private progress summary.'
+                  : progressSync.status === 'synced' && progressSync.lastSyncedAt
+                    ? `Progress summary synced at ${new Date(progressSync.lastSyncedAt).toLocaleTimeString()}`
+                    : progressSync.status === 'error'
+                      ? 'Cloud sync failed. Your local progress is still available.'
+                      : progressSync.status === 'offline'
+                        ? 'Waiting for an internet connection to sync.'
+                        : 'Syncing your private progress summary to your account.'}
+              >
+                <Cloud size={15} />
+                <span>
+                  <b>{!user
+                    ? 'Local save'
+                    : progressSync.status === 'synced' ? 'Last synced'
+                      : progressSync.status === 'error' ? 'Sync issue'
+                        : progressSync.status === 'offline' || !online ? 'Waiting to sync'
+                          : progressSync.status === 'syncing' || authLoading ? 'Syncing…' : 'Account sync'}</b>
+                  <small>{!user
+                    ? 'This device'
+                    : progressSync.lastSyncedAt
+                      ? formatSyncAge(progressSync.lastSyncedAt, syncClock)
+                      : progressSync.status === 'error' ? 'Saved on device'
+                        : progressSync.status === 'offline' || !online ? 'Offline'
+                          : 'Progress summary only'}</small>
+                </span>
+              </div>
+              <span className="sb-divider hide-sm" aria-hidden="true" />
+              <Link className="sb-settings" to="/settings" title="Settings" aria-label="Settings">
+                <SettingsIcon size={17} />
+              </Link>
+            </div>
+            <div className="sb-actions">
+              <button
+                className={`sb-ai${aiOpen ? ' on' : ''}`}
+                onClick={() => setAiOpen((open) => !open)}
+                aria-expanded={aiOpen}
+                aria-label={aiOpen ? 'AI assistant band karo' : 'AI assistant kholo'}
+                title="AI — is app ke bare me poocho"
+              >
+                <span className="sb-ai-orb"><Bot size={25} /></span>
+                <b>AI</b>
+              </button>
+              <Link className="sb-continue" to={smart.route} title={smart.why}>
+                <span aria-hidden="true">▶</span>
+                Continue Learning <ChevronRight size={14} />
+              </Link>
+            </div>
           </footer>
         )}
 
@@ -633,8 +807,8 @@ function Shell() {
           <nav className="bottomnav" aria-label="Quick navigation">
             {NAV.filter((n) => BOTTOM.includes(n.to)).map((n, i) => (
               <Fragment key={n.to}>
-                <NavLink to={n.to} end={n.to === '/'} className={({ isActive }) => `bn-item ${isActive ? 'active' : ''}`}>
-                  <n.icon size={18} />
+                <NavLink to={n.to} end={n.to === '/'} aria-label={n.label} className={({ isActive }) => `bn-item ${isActive ? 'active' : ''}`}>
+                  <span className="bn-icon"><n.icon size={18} /></span>
                   <span>{n.label.split(' ')[0]}</span>
                   {n.badge && badges[n.badge] > 0 && <i className="bn-dot" />}
                 </NavLink>
@@ -684,7 +858,9 @@ function ThemeToggle() {
   const to = prefs.theme === 'dark' ? 'light' : 'dark';
   return (
     <button
-      className="icon-btn"
+      // `theme-toggle` is a phone-width hook: the same action lives in the quick-actions menu, so
+      // styles.css drops this duplicate from the header when the row cannot hold it any more.
+      className="icon-btn theme-toggle"
       onClick={() => setUi({ theme: to })}
       title={to === 'light' ? t('top.themeLight') : t('top.themeDark')}
       aria-label={to === 'light' ? t('top.themeLight') : t('top.themeDark')}
@@ -705,6 +881,16 @@ const NOTIF_COLOR: Record<string, string> = {
 
 const initials = (name: string) =>
   name.trim().split(/\s+/).map((p) => p[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'AI';
+
+function formatSyncAge(timestamp: number, now: number): string {
+  const seconds = Math.max(0, Math.floor((now - timestamp) / 1000));
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  return new Date(timestamp).toLocaleDateString();
+}
 
 /** Skeleton shown while a lazily-loaded route chunk arrives — never a blank screen. */
 function RouteSkeleton() {

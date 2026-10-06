@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, lazy, Suspense } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import {
   Play, Square, RotateCcw, Copy, Save, FolderPlus, FilePlus2, Trash2, Bot,
   Package, Folder, File as FileIcon, FileText, Lightbulb, Wrench, ChevronRight, ChevronDown,
@@ -17,7 +18,8 @@ import { toast } from '../../components/ui/Toast';
 import { OFFLINE_PACKAGES, findPkg } from '../../core/data/packages';
 import { useI18n } from '../../app/i18n';
 import { useCurriculum } from '../../core/data/curriculum';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 
 interface WsFile { name: string; content: string }
 const WS_KEY = 'aiml:workspace:v1';
@@ -51,9 +53,9 @@ print("Mean:", mean(arr))
   },
 ];
 
-function loadWorkspace(): WsFile[] {
+function loadWorkspace(key: string): WsFile[] {
   try {
-    const raw = localStorage.getItem(WS_KEY);
+    const raw = localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed.files) && parsed.files.every((f: any) => typeof f?.name === 'string' && typeof f?.content === 'string')) {
@@ -65,11 +67,19 @@ function loadWorkspace(): WsFile[] {
 }
 
 export default function Playground() {
+  const workspaceKey = useSyncExternalStore(
+    subscribeStorageAccount,
+    () => accountStorageKey(WS_KEY),
+    () => WS_KEY,
+  );
+  return <PlaygroundWorkspace key={workspaceKey} workspaceKey={workspaceKey} />;
+}
+
+function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
   const { t } = useI18n();
   const state = useStore();
   const { sections } = useCurriculum();
-  const nav = useNavigate();
-  const [files, setFiles] = useState<WsFile[]>(loadWorkspace);
+  const [files, setFiles] = useState<WsFile[]>(() => loadWorkspace(workspaceKey));
   const [openName, setOpenName] = useState('main.py');
   const [stdin, setStdin] = useState('');
   const [busy, setBusy] = useState(false);
@@ -98,8 +108,8 @@ export default function Playground() {
   const saved = state.savedCode[codeSlot.playgroundPython];
 
   useEffect(() => {
-    try { localStorage.setItem(WS_KEY, JSON.stringify({ files })); } catch { /* quota */ }
-  }, [files]);
+    try { localStorage.setItem(workspaceKey, JSON.stringify({ files })); } catch { /* quota */ }
+  }, [files, workspaceKey]);
 
   const open = (name: string) => {
     setOpenName(name);
@@ -261,10 +271,13 @@ export default function Playground() {
 
   return (
     <div className="ide-grid">
+      {/* The page is a full IDE with no banner; it still owns the route's one h1 (outline/SEO). */}
+      <h1 className="sr-only">Code Playground</h1>
       {/* LEFT: EXPLORER */}
       <div className="card ide-left">
+      <HubCrumb hub="/labs" hubLabel="Labs" page="Code Playground" />
         <div className="row spread">
-          <h3 className="row" style={{ gap: 8, margin: 0 }}><Folder size={16} /> {t('pg.explorer')}</h3>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}><Folder size={16} /> {t('pg.explorer')}</h2>
           <span className="small muted">AI-Engineer-Lab</span>
         </div>
         <div style={{ marginTop: 10 }}>
@@ -337,7 +350,7 @@ export default function Playground() {
         {/* PROGRAM INPUT */}
         <div className="card">
           <div className="row spread">
-            <h3 className="row small" style={{ gap: 8, margin: 0 }}><ChevronRight size={14} /> {t('pg.input')}</h3>
+            <h2 className="row small" style={{ gap: 8, margin: 0 }}><ChevronRight size={14} /> {t('pg.input')}</h2>
             <span className="muted small">{t('pg.inputHint')}</span>
             <button className="btn small" onClick={() => { setStdin(''); taRef.current?.focus(); }}>{t('pg.clear')}</button>
           </div>
@@ -356,7 +369,7 @@ export default function Playground() {
         {/* OUTPUT CONSOLE */}
         <div className="card">
           <div className="row spread">
-            <h3 className="row small" style={{ gap: 8, margin: 0 }}><ChevronDown size={14} /> {t('pg.output')}</h3>
+            <h2 className="row small" style={{ gap: 8, margin: 0 }}><ChevronDown size={14} /> {t('pg.output')}</h2>
             <span className="row" style={{ gap: 8 }}>
               {out && <span className={`chip ${out.ok ? 'easy' : 'hard'}`}>{out.ok ? `✓ ${t('pg.success')}` : `✕ ${t('pg.failed')}`}</span>}
               {out?.ms != null && <span className="muted small">Run completed • {out.ms}ms</span>}
@@ -371,13 +384,15 @@ export default function Playground() {
       <div className="ide-right">
         <div className="card">
           <div className="row spread">
-            <h3 className="row small" style={{ gap: 8, margin: 0 }}><Bot size={16} color="var(--cyan)" /> {t('pg.tutor')}</h3>
+            <h2 className="row small" style={{ gap: 8, margin: 0 }}><Bot size={16} color="var(--cyan)" /> {t('pg.tutor')}</h2>
             <button className="mini-btn" title={t('pg.packages')} onClick={() => setShowPackages((v) => !v)}><Package size={13} /></button>
           </div>
           <p className="muted small" style={{ margin: '4px 0 8px' }}>{t('pg.tutorSub')}</p>
           <div className="lang-toggle tutor-tabs">
+            {/* No inline `flex` on these buttons: the strip's own rules size them — an equal share
+                on desktop, each label's own width on a phone (see `.tutor-tabs` in styles.css). */}
             {TUTOR_TABS.map((k) => (
-              <button key={k} className={tutorTab === k ? 'on' : ''} style={{ flex: 1 }} onClick={() => setTutorTab(k)}>
+              <button key={k} className={tutorTab === k ? 'on' : ''} onClick={() => setTutorTab(k)}>
                 {tabLabel(k)}
                 {k === 'debug' && !!errText && <span style={{ color: 'var(--red)', marginLeft: 4 }}>●</span>}
               </button>
@@ -460,7 +475,7 @@ export default function Playground() {
             <div className="stat" style={{ marginTop: 10 }}>
               <b className="small">{task.label}</b>
               <p className="small muted" style={{ margin: '4px 0 8px' }}>{task.reason}</p>
-              <button className="btn small primary" onClick={() => nav(task.route)}>Start →</button>
+              <Link className="btn small primary" to={task.route}>Start →</Link>
               <p className="small muted" style={{ marginTop: 8 }}>Playground runs so far: {runCount} stage activities</p>
             </div>
           )}
@@ -554,7 +569,7 @@ export default function Playground() {
                       {coach.drill.solution && (
                         <button className="btn small" onClick={() => setDrillShown((v) => !v)}>{drillShown ? 'Solution chhupao' : 'Solution dekho'}</button>
                       )}
-                      <button className="btn small primary" onClick={() => nav(coach.drill!.route)}>Abhi practice karo →</button>
+                      <Link className="btn small primary" to={coach.drill!.route}>Abhi practice karo →</Link>
                     </div>
                   </div>
                 )}
@@ -582,7 +597,7 @@ export default function Playground() {
 
         {showPackages && (
           <div className="card">
-            <h3 className="row small" style={{ gap: 8, margin: 0 }}><Package size={15} /> {t('pg.packages')}</h3>
+            <h2 className="row small" style={{ gap: 8, margin: 0 }}><Package size={15} /> {t('pg.packages')}</h2>
             <div style={{ marginTop: 8 }}>
               {OFFLINE_PACKAGES.map((p) => (
                 <div key={p.name} className="row spread" style={{ padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
@@ -597,7 +612,7 @@ export default function Playground() {
 
         {/* LEARNING PROGRESS mini */}
         <div className="card">
-          <h3 className="row small" style={{ gap: 8, margin: 0 }}>🎯 Learning Progress</h3>
+          <h2 className="row small" style={{ gap: 8, margin: 0 }}>🎯 Learning Progress</h2>
           <div className="row spread small" style={{ marginTop: 8 }}>
             <span>{state.xp} XP · Level {Math.floor(Math.sqrt(state.xp / 50)) + 1}</span>
             <span>🔥 {state.streak.current}d</span>

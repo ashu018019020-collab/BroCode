@@ -9,4 +9,9 @@ export default defineConfig({
   plugins: [react()],
   build: { chunkSizeWarningLimit: 1500 },
   worker: { format: 'es' },
+  server: {
+    proxy: {
+      '/api': { target: 'http://localhost:8787', changeOrigin: true },
+    },
+  },
 });

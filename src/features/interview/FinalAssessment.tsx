@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore, addXp, addMistake, recordAttempt, savedAnswer, useSavedAnswer } from '../../core/storage/store';
 import { keywordScore, questionRubric, DEFENSE_QUESTIONS, defenseScore } from '../../core/assessment/evaluate';
@@ -110,6 +112,7 @@ export default function FinalAssessment() {
 
   return (
     <div>
+      <HubCrumb hub="/interviews" hubLabel="Interview" page="Final Assessment" />
       <h1>🏁 Final AI Engineer Assessment</h1>
       <p className="muted small">14 parts built from the PDF's final material — theory, coding, NumPy, Pandas, SQL, ML, GenAI, RAG, Agentic, APIs, debugging, project defense, system design, capstone. Deterministic keyword rubrics; no fake AI.</p>
 
@@ -214,7 +217,7 @@ export default function FinalAssessment() {
       <div className="row" style={{ marginTop: 10 }}>
         <Link className="btn" to="/lesson/s28/project">Open Project Lab</Link>
         <Link className="btn" to="/lesson/s28/defense">Defend it</Link>
-        <Link className="btn" to="/resume">Resume labs</Link>
+        <Link className="btn" to="/defense">Project Defense</Link>
       </div>
       <p className="small muted" style={{ marginTop: 8 }}>The Part 12 defense and your Section 28 defense use the same rubric — one standard, everywhere.</p>
     </div>

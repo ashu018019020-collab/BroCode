@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { Link } from 'react-router-dom';
 import {
   Timer, Play, Flag, ChevronLeft, ChevronRight, Check, X, AlertTriangle,
@@ -159,24 +160,32 @@ export default function ExamMode() {
     setNow(Date.now());
   };
 
+  /** The pillar breadcrumb travels with every phase: mid-exam is when the way out matters most. */
+  const crumb = <HubCrumb hub="/practice" hubLabel="Practice" page="Timed Exam" />;
+
   if (session && session.phase === 'running') {
-    return <RunningScreen session={session} now={now} />;
+    return <>{crumb}<RunningScreen session={session} now={now} /></>;
   }
   if (session && session.phase === 'grading') {
-    return <GradingScreen session={session} onSave={doSave} />;
+    return <>{crumb}<GradingScreen session={session} onSave={doSave} /></>;
   }
   if (session) {
     return (
+      <>
+      {crumb}
       <ReportScreen
         session={session}
         onRetake={() => { retakeExam(session.questions); setNow(Date.now()); toast('Same paper, naya clock — ab dikhao.', 'info'); }}
         onNew={(patch) => resetTo(patch ?? {})}
       />
+      </>
     );
   }
 
   return (
-    <SetupScreen
+    <>
+      {crumb}
+      <SetupScreen
       bp={bp}
       setBp={setBp}
       pools={pools}
@@ -187,6 +196,7 @@ export default function ExamMode() {
       manifestSections={manifest?.sections ?? []}
       begin={begin}
     />
+    </>
   );
 }
 
@@ -209,7 +219,7 @@ function SetupScreen(props: SetupProps) {
       </p>
 
       <div className="card glow">
-        <h3 style={{ marginTop: 0 }}>Paper banao</h3>
+        <h2 style={{ marginTop: 0 }}>Paper banao</h2>
 
         <div className="row small muted" style={{ margin: '6px 0 12px' }}>
           <span className="chip"><Layers size={12} /> {EXAM_FOCUS_LABEL[bp.focus]}</span>
@@ -338,9 +348,9 @@ function SetupScreen(props: SetupProps) {
       </div>
 
       <div className="card">
-        <h3 style={{ marginTop: 0 }}>Rules</h3>
+        <h2 style={{ marginTop: 0 }}>Rules</h2>
         <ul className="small muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
-          <li>Timer chalta hai — session save rehta hai, reload ya tab band karne par wahin se resume hoga.</li>
+          <li>Timer chalta hai — session save rehta hai, reload ya tab band karne par wahin se continue hoga.</li>
           <li>Simple text likho; coding questions me code paste karo (formatting ka score nahi milta).</li>
           <li>End me model answer dikhega — tum khud <b>Sahi</b> ya <b>Galat</b> mark karo. Blank chhoda question neutral rehta hai, galat nahi gina jata.</li>
           <li>Galat mark karne par mistake entry banti hai aur us section ka review level reset hota hai.</li>
@@ -580,7 +590,7 @@ function ReportScreen({
         <div className="row spread">
           <div>
             <div className="chip" style={{ marginBottom: 6 }}>EXAM REPORT</div>
-            <h1 style={{ margin: 0 }}>{summary.pct === null ? '—' : `${summary.pct}%`}</h1>
+            <div className="h1-look" style={{ margin: 0 }}>{summary.pct === null ? '—' : `${summary.pct}%`}</div>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
               {summary.correct} sahi / {summary.graded} graded · {summary.ungraded} neutral (bina grade){' '}
               · {used} min of {s.blueprint.minutes} min
@@ -599,7 +609,7 @@ function ReportScreen({
       </div>
 
       <div className="card">
-        <h3 style={{ marginTop: 0 }}><Trophy size={16} /> Kya file hua</h3>
+        <h2 style={{ marginTop: 0 }}><Trophy size={16} /> Kya file hua</h2>
         <ul className="small muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
           <li>
             {summary.graded} attempt likhe gaye (bank ki same keys par — Question Bank me bhi dikhenge)
@@ -614,7 +624,7 @@ function ReportScreen({
 
       {summary.bySection.length > 0 && (
         <div className="card">
-          <h3 style={{ marginTop: 0 }}><Layers size={16} /> Section-wise</h3>
+          <h2 style={{ marginTop: 0 }}><Layers size={16} /> Section-wise</h2>
           {summary.bySection.map((sec) => (
             <div key={sec.sectionId} className="row spread" style={{ padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
               <Link className="small" to={`/lesson/${sec.sectionId}/learn`}>{String(sec.sectionId).toUpperCase()} — {sec.title}</Link>
@@ -634,7 +644,7 @@ function ReportScreen({
 
       {typeKeys.length > 0 && (
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Type-wise accuracy</h3>
+          <h2 style={{ marginTop: 0 }}>Type-wise accuracy</h2>
           {typeKeys.map((t) => {
             const row = summary.byType[t];
             const graded = row.correct + row.wrong;
@@ -654,7 +664,7 @@ function ReportScreen({
 
       <div className="card">
         <div className="row spread">
-          <h3 style={{ marginTop: 0 }}><AlertTriangle size={16} /> Galat answers ({wrong.length})</h3>
+          <h2 style={{ marginTop: 0 }}><AlertTriangle size={16} /> Galat answers ({wrong.length})</h2>
           {wrong.length > 6 && (
             <button className="btn small" onClick={() => setShowAll((v) => !v)}>
               {showAll ? 'Kam dikhao' : `Sab ${wrong.length} dikhao`}

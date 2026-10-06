@@ -19,6 +19,7 @@
  * Learning Path hand a learner over from "practice here" to "open the full notebook".
  */
 import { useEffect, useMemo, useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import { useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronLeft, FileCode2 } from 'lucide-react';
 import { Chip } from '../../components/ui/ui';
@@ -100,10 +101,11 @@ export default function NotebookLab() {
 
   return (
     <div className="nb-page">
+      <HubCrumb hub="/labs" hubLabel="Labs" page="Notebook Lab" />
       <div className="card">
         <div className="row spread">
           <div>
-            <h2 style={{ margin: 0 }}><BookOpen size={18} /> Notebook Lab</h2>
+            <h1 style={{ margin: 0 }}><BookOpen size={18} /> Notebook Lab</h1>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
               Jupyter notebooks jo poori tarah isi app me chalte hain. Author time par har cell execute hua hai;
               &quot;app runtime&quot; wale cells yahin NumPy/Pandas ke bundled wheels se chalte hain.
@@ -140,7 +142,7 @@ export default function NotebookLab() {
               <div className="card">
                 <div className="row spread">
                   <div>
-                    <h3 style={{ margin: 0 }}>{meta?.title}</h3>
+                    <h2 style={{ margin: 0 }}>{meta?.title}</h2>
                     <p className="small muted" style={{ margin: '4px 0 0' }}>{meta?.intro}</p>
                   </div>
                   <span className="row">

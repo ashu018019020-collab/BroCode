@@ -125,13 +125,13 @@ test('playbook: the imported manifest and the derived item view agree with each 
   for (const it of itemsView.items) fromView[it.sectionId] = (fromView[it.sectionId] ?? 0) + 1;
   assert.equal(itemsView.items.length, itemsView.count, 'count must describe the list it ships');
 
-  // The manifest records what the DOCUMENT offered per section; items.json records what the banks
-  // actually took. The import refuses a question whose text another bank already owns, so the
-  // banks can only ever hold the same or fewer — never more, and never a section the manifest
-  // does not know about. The learner's figures come from items.json (neither page prints the
-  // parsed count any more), so this relationship is what keeps the two honest.
+  // The import refuses a question whose text another bank already owns, and the manifest's counts
+  // are re-derived from the banks by the same write pass that produces items.json
+  // (syncPlaybookManifest in scripts/questions.cjs) — so the two must not merely be close, they
+  // must be the same numbers. A drift here is the old bug that had `npm run courses` warn
+  // "manifest says 205 items, items.json holds 204".
   for (const [sid, n] of Object.entries(bySection)) {
-    assert.ok(fromView[sid] <= n, `${sid}: items.json holds more items than the manifest parsed`);
+    assert.equal(fromView[sid], n, `${sid}: manifest and items.json disagree`);
   }
   for (const sid of Object.keys(fromView)) {
     assert.ok(bySection[sid] !== undefined, `items.json has a section the manifest does not know: ${sid}`);
@@ -139,8 +139,27 @@ test('playbook: the imported manifest and the derived item view agree with each 
   const parsed = manifest.totals.items;
   const merged = itemsView.items.length;
   assert.equal(Object.values(bySection).reduce((a, b) => a + b, 0), parsed, 'the manifest must add up');
-  assert.ok(merged <= parsed, `the banks hold ${merged} of the ${parsed} items the document offered`);
-  assert.ok(parsed - merged <= 5, `manifest and banks have drifted apart by ${parsed - merged} items`);
+  assert.equal(merged, parsed, `the banks hold ${merged} of the ${parsed} items the manifest counts`);
+});
+
+test('playbook: every manifest count is the banks’ own, chapter by chapter', () => {
+  // The rule behind `npm run courses`' chapter warning, asserted here so a stale manifest can
+  // never ship again: the totals and the per-chapter tables are re-derived when items.json is
+  // written (syncPlaybookManifest in scripts/questions.cjs).
+  const byChapter = {};
+  const byType = {};
+  const bySection = {};
+  for (const it of itemsView.items) {
+    byChapter[it.chapter] = (byChapter[it.chapter] ?? 0) + 1;
+    byType[it.type] = (byType[it.type] ?? 0) + 1;
+    bySection[it.sectionId] = (bySection[it.sectionId] ?? 0) + 1;
+  }
+  for (const ch of manifest.chapters) {
+    assert.equal(ch.items, byChapter[ch.no] ?? 0, `chapter ${ch.no}: manifest and items.json disagree`);
+    assert.equal(Object.values(ch.sections).reduce((a, b) => a + b, 0), ch.items, `chapter ${ch.no}: its sections must add up to its items`);
+  }
+  assert.deepEqual(manifest.totals.byType, byType, 'totals byType must mirror the banks');
+  assert.deepEqual(manifest.totals.bySection, bySection, 'totals bySection must mirror the banks');
 });
 
 test('playbook: every chapter points at a section that really exists in the banks', () => {
@@ -197,8 +216,11 @@ test('paths: the constants a card prints are pinned to their real source', () =>
   const partIds = [...partsBlock.matchAll(/id: '([^']+)'/g)].map((m) => m[1]);
   assert.equal(partIds.length, paths.FINAL_PARTS, 'the final paper gained or lost a part');
 
-  const jobPrep = read('src/features/career/JobPrep.tsx');
-  assert.equal([...jobPrep.matchAll(/id: '[^']+'/g)].length, paths.JOB_PREP_ITEMS,
+  // The checklist lives in the career engine now (JobPrep.tsx renders it, the Career hub
+  // aggregates it), so the count follows the ONE owner: every id inside the CAREER_CHECKLIST block.
+  const career = read('src/core/learning/career.ts');
+  const checklist = career.slice(career.indexOf('export const CAREER_CHECKLIST'), career.indexOf('\n];', career.indexOf('export const CAREER_CHECKLIST')));
+  assert.equal([...checklist.matchAll(/id: '[^']+'/g)].length, paths.JOB_PREP_ITEMS,
     'the job-prep checklist gained or lost an item');
 
   assert.equal(exam.EXAM_FOCUS_ORDER.length, paths.EXAM_FOCI);
@@ -229,11 +251,11 @@ const coldCtx = (over = {}) => ({
 test('paths: a manuscript-less context never produces a percentage for a manifest-backed card', () => {
   const ctx = coldCtx();
   const pctOf = (route) => paths.pathStat(paths.EXTRA_PATHS.find((d) => d.route === route), ctx).pct;
-  for (const route of ['/playbook', '/questions', '/notebooks', '/mock']) {
+  for (const route of ['/playbook', '/questions', '/notebooks', '/mock-interviews']) {
     assert.equal(pctOf(route), null, `${route} must show facts only until its manifest arrives`);
   }
   // …while cards whose denominator is the curriculum itself honestly report 0%.
-  for (const route of ['/final', '/projects', '/concepts', '/jobprep', '/defense']) {
+  for (const route of ['/final-assessment', '/projects', '/concepts', '/job-prep', '/defense']) {
     assert.equal(pctOf(route), 0, `${route} has a real denominator and must report it`);
   }
 });
@@ -241,7 +263,7 @@ test('paths: a manuscript-less context never produces a percentage for a manifes
 test('paths: every card states at least one fact, in every state of the app', () => {
   const full = coldCtx({
     published: { total: 13865, sections: 29, interview: 1936 },
-    playbook: { pages: 94, chapters: 36, items: 477, interview: 385, labs: 12, miniProjects: 15, methodAnswers: 91 },
+    playbook: { pages: 94, chapters: 36, items: 476, interview: 384, labs: 12, miniProjects: 15, methodAnswers: 91 },
     notebooks: { notebooks: 5, cells: 131 },
     mockTotal: 40,
   });
@@ -269,14 +291,16 @@ test('paths: every card states at least one fact, in every state of the app', ()
     playbook: full.playbook,
   });
   assert.equal(paths.pathStat(paths.EXTRA_PATHS.find((d) => d.route === '/questions'), half).pct, 10);
-  assert.equal(paths.pathStat(paths.EXTRA_PATHS.find((d) => d.route === '/playbook'), half).note, '5/477');
+  assert.equal(paths.pathStat(paths.EXTRA_PATHS.find((d) => d.route === '/playbook'), half).note, '5/476');
 });
 
-test('paths: the Playbook card divides by the MERGED item count, so 100% stays reachable', () => {
-  // The manifest counts what the document offered — one item more than the banks took, because a
-  // question whose text another bank already owned was refused on import. Using that parsed count
-  // as the denominator would leave a learner who finished every imported item at 99% forever.
+test('paths: the Playbook card divides by the count the manifest now agrees with', () => {
+  // The manifest's count is re-derived from the banks on every `questions.cjs playbook --write`
+  // (syncPlaybookManifest), so the number the card divides by is the number the learner can
+  // actually open: 100% stays reachable, and an unfillable denominator is impossible by
+  // construction rather than worked around at read time.
   const merged = itemsView.items.length;
+  assert.equal(manifest.totals.items, merged, 'the manifest must carry the banks’ own count');
   const def = paths.EXTRA_PATHS.find((d) => d.route === '/playbook');
   const stat = paths.pathStat(def, coldCtx({
     playbook: { pages: 94, chapters: 36, items: merged, interview: 384, labs: 12, miniProjects: 15, methodAnswers: 91 },
@@ -285,15 +309,6 @@ test('paths: the Playbook card divides by the MERGED item count, so 100% stays r
   assert.equal(stat.total, merged);
   assert.equal(stat.pct, 100, 'every merged item practised must read as 100%');
   assert.equal(stat.note, `${merged}/${merged}`, 'the card must never print a denominator it cannot fill');
-  assert.ok(merged < manifest.totals.items, 'the merged count really is lower than the parsed one');
-
-  // The parsed denominator is one higher, so the card would read 476/477 — a target that cannot
-  // be reached. Asserted on the printed figure, because the rounded percentage hides it.
-  const stale = paths.pathStat(def, coldCtx({
-    playbook: { pages: 94, chapters: 36, items: manifest.totals.items, interview: 385, labs: 12, miniProjects: 15, methodAnswers: 91 },
-    counts: { playbookPractised: merged },
-  }));
-  assert.equal(stale.note, `${merged}/${manifest.totals.items}`, 'the parsed count is the wrong denominator');
 });
 
 /* ------------------------- no hidden path rule -------------------------- */
@@ -338,29 +353,27 @@ test('paths: the cards grid does not collide with the page layout class', () => 
   assert.match(css, /^\.path-extra \{ margin-top: 16px; \}/m, 'the extra-path spine needs its own class');
   const grid = read('src/components/learning/PathGrid.tsx');
   assert.match(grid, /<div className="path-extra">/);
-  // The steps must be the shared spine, not a second grid: `.rmap-step` is what lines the numbering
-  // up with the eight track steps above them.
-  assert.match(grid, /className={`rmap-step tone-\$\{TONE\[group\]}`}/);
+  // The rows are CAPABILITIES now, not steps: they take their family's tone and sit in their own
+  // grid. The numbering that made them read as steps 37–60 is gone on purpose (`roadmap.test.mjs`
+  // owns that contract), so there is no `.rmap-step` here to line up with the rail above.
+  assert.match(grid, /className={`path-card tone-\$\{TONE\[group\]}`}/, 'a capability row takes its family tone');
+  assert.match(css, /^\.cap-rows \{/m, 'the capability rows need their own grid');
+  assert.ok(!/rmap-step|rmap-dot/.test(grid), 'a capability must not be drawn as a step on the rail');
   assert.ok(!/more-grid/.test(grid), 'the wrapped card grid is back — the extra paths are a line now');
   assert.ok(!/className="path-grid"/.test(grid), 'PathGrid must never re-declare the page frame');
 });
 
-/* --------------------- the page actually mounts them -------------------- */
+/* ------------------ the page does NOT mount them ------------------------ */
 
-test('paths: the Learning Path mounts the V15 layer and the extra path grid', () => {
-  const page = read('src/features/learning/LearningPath.tsx');
-  assert.match(page, /<PlaybookLayer coverage=\{pb\} \/>/);
-  assert.match(page, /<PathGrid \/>/);
-  // The layout contract that came before this change must survive it: the shelf is still mounted
-  // OPEN on the path — it just draws its library as boxes now (`boxes`).
-  assert.match(page, /<NotebookShelf defaultOpen\b/);
-  // …and the band must sit above the notebook shelf, not after the goal bar.
-  assert.ok(page.indexOf('<PlaybookLayer') < page.indexOf('<NotebookShelf defaultOpen'));
+test('paths: the courses home carries the eleven cards and neither band', () => {
+  // Both bands came off the retired Learning page onto the courses home, and have since come off
+  // the home as well: the first page is the eleven cards, and what sits under a course is on the
+  // course's own page. The components are kept, so the contract this test holds is the MOUNT — a
+  // first page that renders the support paths or the practice archive’s coverage again is the
+  // change it exists to catch.
+  const page = read('src/features/courses/CoursesHome.tsx');
+  assert.ok(!/<PathGrid/.test(page), 'the support-path band is back on the first page');
+  assert.ok(!/<PlaybookLayer/.test(page), 'the practice-archive layer is back on the first page');
   // The V15 per-track grid is gone: one box per track, with the V15 share inside it.
-  assert.ok(!/pbCoverage/.test(page), 'the second copy of the track grid is back in the roadmap');
-  // …and the extra paths continue that line rather than interrupting it, so they come before the
-  // band: the eight track steps end at 08 and `PathGrid` picks the numbering up at 09.
-  assert.ok(page.indexOf('<PathGrid />') < page.indexOf('<PlaybookLayer'),
-    'the extra paths must continue the track spine, not start a second section after the V15 band');
-  assert.ok(page.indexOf('<PathGrid />') < page.indexOf('<NotebookShelf defaultOpen'));
+  assert.ok(!/pbCoverage/.test(page), 'a second copy of the track grid is back');
 });

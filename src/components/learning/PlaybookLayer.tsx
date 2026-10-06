@@ -15,8 +15,9 @@ import type { PlaybookCoverage } from '../../core/data/playbook';
  * silently dropped from the list and never gets a 0% ring it did not earn.
  *
  * Coverage comes from `core/assessment/playbook.ts` (pure, tested) reading `public/generated/playbook/*.json` plus
- * real learner state, and is handed down by LearningPath — which needs the same rows for its
- * track cards and its rail.
+ * real learner state, and is handed down by whoever mounts it. NOT MOUNTED right now: the courses
+ * home carried it under the course grid and is the eleven cards alone; the component is kept for a
+ * hub of its own (`scripts/tests/layout.test.mjs` guards the first page, not the file).
  */
 export default function PlaybookLayer({ coverage }: { coverage: PlaybookCoverage }) {
   const { t } = useI18n();
@@ -27,9 +28,9 @@ export default function PlaybookLayer({ coverage }: { coverage: PlaybookCoverage
     return (
       <div className="card pb-band">
         <div className="row spread">
-          <h3 className="row" style={{ gap: 8, margin: 0 }}>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}>
             <BookMarked size={16} color="var(--cyan)" /> {t('path.pbTitle')}
-          </h3>
+          </h2>
           <span className="small muted">{t('path.pbLoading')}</span>
         </div>
       </div>
@@ -68,9 +69,9 @@ export default function PlaybookLayer({ coverage }: { coverage: PlaybookCoverage
             <span className="chip">{tot.complexityRows} {t('path.pbComplexity')}</span>
             <span className="chip">{tot.logicSteps} {t('path.pbLogic')}</span>
           </div>
-          <h3 className="row" style={{ gap: 8, margin: '4px 0' }}>
+          <h2 className="row" style={{ gap: 8, margin: '4px 0' }}>
             <BookMarked size={17} color="var(--cyan)" /> {t('path.pbTitle')}
-          </h3>
+          </h2>
           <p className="muted small" style={{ maxWidth: 760, margin: 0 }}>{t('path.pbSub')}</p>
         </div>
         <div className="row" style={{ gap: 8 }}>
@@ -114,7 +115,7 @@ export default function PlaybookLayer({ coverage }: { coverage: PlaybookCoverage
         )}
         <Link className="btn small" to="/questions?playbook=1"><BookMarked size={13} /> {t('path.pbPractice')}</Link>
         <Link className="btn small" to="/pdf/playbook"><FileText size={13} /> {t('path.pbRead')}</Link>
-        <Link className="btn small" to="/interview"><Mic2 size={13} /> {t('path.pbInterviewMode')}</Link>
+        <Link className="btn small" to="/interview-mode"><Mic2 size={13} /> {t('path.pbInterviewMode')}</Link>
       </div>
 
       <p className="small muted" style={{ margin: '10px 0 0' }}>{t('path.pbMethodNote')}</p>

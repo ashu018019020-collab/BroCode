@@ -35,10 +35,10 @@ const SECTIONS = [
   'Generative AI, LLMs & RAG', 'Agentic AI + LangChain + n8n', 'APIs, Flask/FastAPI & Production Python',
   'Data Analytics + Power BI', 'MLOps + Docker + Git + AWS',
   'AI Engineer + Data Scientist Interview Mastery', 'Coding Patterns, Projects & Final Practice',
-  'Resume Project Interview Labs',
+  'Project Interview Labs',
 ];
 /** Mock-interview round and intensive-drill labels. */
-const SHORT = ['PYTHON', 'DATA', 'SQL', 'ML', 'NLP', 'GENAI', 'AGENTS', 'APIS', 'RESUME', 'BEHAVIOR', 'CODING', 'SYSTEM', 'CAREER', 'AI API', 'Agentic AI', 'Power BI'];
+const SHORT = ['PYTHON', 'DATA', 'SQL', 'ML', 'NLP', 'GENAI', 'AGENTS', 'APIS', 'PROJECT', 'BEHAVIOR', 'CODING', 'SYSTEM', 'CAREER', 'AI API', 'Agentic AI', 'Power BI'];
 
 const EXPECTED = {
   python: [...SECTIONS.slice(0, 16), 'PYTHON'],
@@ -50,7 +50,7 @@ const EXPECTED = {
   apis: ['APIs, Flask/FastAPI & Production Python', 'MLOps + Docker + Git + AWS', 'APIS', 'AI API', 'SYSTEM'],
   career: [
     'AI Engineer + Data Scientist Interview Mastery', 'Coding Patterns, Projects & Final Practice',
-    'Resume Project Interview Labs', 'RESUME', 'BEHAVIOR', 'CODING', 'CAREER',
+    'Project Interview Labs', 'PROJECT', 'BEHAVIOR', 'CODING', 'CAREER',
   ],
 };
 

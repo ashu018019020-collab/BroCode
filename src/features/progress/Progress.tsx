@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { HubCrumb } from '../../components/learning/SectionChrome';
 import {
   Percent, Clock, Flame, Trophy, Camera, Trash2, Plus, BookOpenCheck, CalendarRange, Activity,
 } from 'lucide-react';
@@ -199,6 +200,7 @@ export default function ProgressPage() {
 
   return (
     <div>
+      <HubCrumb hub="/career" hubLabel="Career" page="Progress" />
       {/* ---------- profile ---------- */}
       <div className="card dash-hero">
         <div className="dash-id">
@@ -208,6 +210,8 @@ export default function ProgressPage() {
             title={state.profile.avatar ? 'Photo badlo' : 'Photo lagao'}
             aria-label={state.profile.avatar ? 'Change profile photo' : 'Add a profile photo'}
           >
+            {/* `alt=""` on purpose: the button's own `aria-label` is the control's name, so
+                describing the photo here would make a screen reader announce it twice. */}
             {state.profile.avatar
               ? <img src={state.profile.avatar} alt="" width={72} height={72} />
               : <span className="init">{(state.profile.name || '?').slice(0, 1).toUpperCase()}</span>}
@@ -278,7 +282,7 @@ export default function ProgressPage() {
       {/* ---------- study time ---------- */}
       <div className="card">
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 10 }}>
-          <h3 className="row" style={{ gap: 8, margin: 0 }}><Clock size={16} color="var(--cyan)" /> Study time (last {SPAN_DAYS} days)</h3>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}><Clock size={16} color="var(--cyan)" /> Study time (last {SPAN_DAYS} days)</h2>
           <span className="row" style={{ gap: 8 }}>
             <span className="chip easy">{formatDuration(week.thisWeek)} is hafte</span>
             {
@@ -311,7 +315,7 @@ export default function ProgressPage() {
       {/* ---------- consistency: the heat grid + which days actually get used ---------- */}
       <div className="card">
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 10 }}>
-          <h3 className="row" style={{ gap: 8, margin: 0 }}><Activity size={16} color="var(--green)" /> Consistency (1 saal)</h3>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}><Activity size={16} color="var(--green)" /> Consistency (1 saal)</h2>
           <span className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
             <span className={`chip${year.activeDays > 0 ? ' easy' : ''}`}>{year.activeDays} / {year.days} din active</span>
             <span className="chip">{year.longestRun} din ki sabse lambi streak</span>
@@ -375,7 +379,7 @@ export default function ProgressPage() {
       {/* ---------- mastery + accuracy, side by side ---------- */}
       <div className="grid2 dash-bottom">
         <div className="card" style={{ margin: 0 }}>
-          <h3 className="row" style={{ gap: 8, margin: 0 }}><Trophy size={16} color="var(--violet)" /> Mastery by track</h3>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}><Trophy size={16} color="var(--violet)" /> Mastery by track</h2>
           <div className="row" style={{ gap: 14, marginTop: 10 }}>
             <ProgressRing pct={overall} size={78} label="Overall mastery" />
             <div className="small muted" style={{ flex: 1, minWidth: 0 }}>
@@ -393,7 +397,7 @@ export default function ProgressPage() {
 
         <div className="card" style={{ margin: 0 }}>
           <div className="row spread">
-            <h3 className="row" style={{ gap: 8, margin: 0 }}><Percent size={16} color="var(--green)" /> Answer accuracy</h3>
+            <h2 className="row" style={{ gap: 8, margin: 0 }}><Percent size={16} color="var(--green)" /> Answer accuracy</h2>
             <span className="chip">{accuracyLine(bank)}</span>
           </div>
           <p className="muted small" style={{ marginTop: 4 }}>
@@ -435,7 +439,7 @@ export default function ProgressPage() {
       </div>
 
       <div className="card">
-        <h3>Data</h3>
+        <h2>Data</h2>
         <p className="small muted">
           Sab kuch browser me hai (localStorage) — study log bhi. Export se backup ya device badal sakte ho;
           import purana data wapas laata hai (naye din jud jaate hain, mitaaye nahi jaate).

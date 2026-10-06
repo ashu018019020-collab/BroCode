@@ -1,29 +1,46 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Section, Extras } from '../../types';
+import { CurriculumLoader } from '../../components/ui/CurriculumLoader';
 
 export const useCurriculumData = () => {
   const [sections, setSections] = useState<Section[] | null>(null);
   const [extras, setExtras] = useState<Extras | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let alive = true;
-    // `no-cache` = always revalidate the content pack with the server, so an
-    // updated sections.json can never be shadowed by a stale local cache.
-    const load = (file: string) =>
-      fetch(`./generated/curriculum/${file}`, { cache: 'no-cache' }).then((r) => r.json());
-    Promise.all([load('sections.json'), load('extras.json')])
-      .then(([s, e]) => { if (alive) { setSections(s); setExtras(e); } })
-      .catch(() => { /* offline with no cache yet — the loader stays on screen */ });
+    setError(null);
+    const load = async <T,>(file: string): Promise<T> => {
+      const response = await fetch(`./generated/curriculum/${file}`, { cache: 'no-cache' });
+      if (!response.ok) throw new Error(`${file} returned HTTP ${response.status}`);
+      return response.json() as Promise<T>;
+    };
+    Promise.all([load<Section[]>('sections.json'), load<Extras>('extras.json')])
+      .then(([s, e]) => {
+        if (alive) { setSections(s); setExtras(e); }
+      })
+      .catch((cause: unknown) => {
+        if (alive) setError(cause instanceof Error ? cause.message : 'Unknown curriculum loading error.');
+      });
     return () => { alive = false; };
-  }, []);
-  return { sections, extras };
+  }, [attempt]);
+  return { sections, extras, error, retry: () => setAttempt((value) => value + 1) };
 };
 
 const Ctx = createContext<{ sections: Section[]; extras: Extras } | null>(null);
 
 export function CurriculumProvider({ children }: { children: ReactNode }) {
-  const { sections, extras } = useCurriculumData();
-  if (!sections || !extras) return <div className="loading">Loading curriculum…</div>;
-  return <Ctx.Provider value={{ sections, extras }}>{children}</Ctx.Provider>;
+  const { sections, extras, error, retry } = useCurriculumData();
+  const [showLoader, setShowLoader] = useState(true);
+  if (!sections || !extras) {
+    return <CurriculumLoader error={error} onRetry={retry} />;
+  }
+  return (
+    <Ctx.Provider value={{ sections, extras }}>
+      {children}
+      {showLoader && <CurriculumLoader ready onComplete={() => setShowLoader(false)} />}
+    </Ctx.Provider>
+  );
 }
 
 export function useCurriculum() {

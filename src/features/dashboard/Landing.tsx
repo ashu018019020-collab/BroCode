@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, FlaskConical, ListChecks, Play, Sparkles, WifiOff } from 'lucide-react';
+import { ArrowRight, BookOpen, FlaskConical, ListChecks, Play, Sparkles } from 'lucide-react';
 import { TRACK_DEFS } from '../../app/App';
+import { trackHref } from '../../core/learning/surfaces';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore } from '../../core/storage/store';
 import { usePathCtx } from '../../core/data/paths';
@@ -12,22 +13,49 @@ import { usePathCtx } from '../../core/data/paths';
  * ARE the app's own (8 tracks, 29 modules, the published question count, the Playbook's item count).
  * No seeded, rounded-up or invented figure appears on this page: an offline study app that lies
  * about its size on the first screen has spent its only first impression.
+ *
+ * Positioning: BroCode is a COMPLETE technology learning platform — Learn → Practice → Build →
+ * Prepare → Grow — and AI/ML is one major domain among several, never the umbrella identity.
+ * DOMAINS below and the ItemList in index.html's JSON-LD are the same list on purpose; change
+ * the two together (scripts/tests/sitemap.test.mjs pins the pair).
  */
 const PILLARS: { to: string; label: string; sub: string }[] = [
-  { to: '/path', label: 'Learning', sub: 'The 36-step roadmap' },
+  { to: '/courses', label: 'Courses', sub: '11 courses · the 36-step roadmap' },
   { to: '/practice', label: 'Practice', sub: 'Bank, exams, review' },
-  { to: '/labs', label: 'Labs', sub: 'Python, SQL, AI' },
+  { to: '/labs', label: 'Labs', sub: 'Python, SQL, data' },
   { to: '/projects', label: 'Projects', sub: 'Real builds' },
   { to: '/interviews', label: 'Interview', sub: 'Mock + defense' },
-  { to: '/career', label: 'Career', sub: 'Resume + job prep' },
+  { to: '/career', label: 'Career', sub: 'Defense + job prep' },
   { to: '/progress', label: 'Progress', sub: 'Mastery analytics' },
+];
+
+/**
+ * The learning domains, in homepage order — mirrored by the schema ItemList in index.html.
+ * Each chip is a real internal link into the surface that teaches the domain (not a dead span):
+ * crawlable `<a href>`s from the front door are how a hash-routed SPA gets its pages discovered,
+ * and they give the first-impression list a click path. Track targets are built with `trackHref`
+ * and NOT from the track id — `/track/python` loads a file that does not exist (see surfaces.ts),
+ * and a hash URL that matches a route but never resolves does not 404, it just sits there loading.
+ * `scripts/tests/layout.test.mjs` re-resolves every target below against the real registries.
+ */
+const DOMAINS: { name: string; to: string }[] = [
+  { name: 'Programming', to: trackHref('python') },
+  { name: 'Web Development', to: '/projects' },
+  { name: 'Data & Analytics', to: trackHref('data') },
+  { name: 'AI & Machine Learning', to: trackHref('ml') },
+  { name: 'Generative AI', to: trackHref('genai') },
+  { name: 'Backend & APIs', to: trackHref('apis') },
+  { name: 'Databases', to: trackHref('sql') },
+  { name: 'Cloud & DevOps', to: '/course/build-production' },
+  { name: 'DSA & Problem Solving', to: '/concepts' },
+  { name: 'Career & Interview', to: '/interviews' },
 ];
 
 export default function Landing() {
   const state = useStore();
   const { sections } = useCurriculum();
   const ctx = usePathCtx();
-  const start = state.profile.onboarded ? '/path' : '/onboarding';
+  const start = state.profile.onboarded ? '/courses' : '/onboarding';
 
   const stats = [
     { icon: Sparkles, n: `${TRACK_DEFS.length}`, l: 'Learning Tracks' },
@@ -39,30 +67,24 @@ export default function Landing() {
   return (
     <div className="fadeup">
       <section className="card glow" style={{ padding: '26px 22px' }}>
-        <div className="chip" style={{ marginBottom: 10 }}>BROCODE · AI ENGINEER MASTER LAB</div>
+        <div className="chip" style={{ marginBottom: 10 }}>BROCODE · COMPLETE TECHNOLOGY LEARNING PLATFORM</div>
         <h1 style={{ margin: '0 0 8px', fontSize: '1.9rem', lineHeight: 1.15 }}>
-          Learn Python. Build real-world skills.
+          Learn Skills. Build Projects. Grow Your Career.
         </h1>
         <p className="muted small" style={{ margin: '0 0 16px', maxWidth: 640 }}>
-          Interactive courses, hands-on coding, real projects, interview prep and AI-powered practice —
-          sab ek jagah, aur poora app bina internet chalega.
+          Interactive courses, hands-on practice, coding labs, real-world projects, interview
+          preparation aur career-focused learning — sab ek jagah.
         </p>
         <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
           <Link className="btn primary" to={start}>
             <Play size={14} /> {state.profile.onboarded ? 'Continue Learning' : 'Start Learning Free'}
           </Link>
-          <Link className="btn" to="/path">
-            View Learning Path <ArrowRight size={14} />
+          <Link className="btn" to="/courses">
+            Browse Courses <ArrowRight size={14} />
           </Link>
           <Link className="btn" to="/practice">
             Practice Questions
           </Link>
-        </div>
-        <div className="row" style={{ gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-          <span className="chip"><WifiOff size={12} /> Works offline</span>
-          <span className="chip">Python 3.12 (Pyodide)</span>
-          <span className="chip">SQLite in the browser</span>
-          <span className="chip">Progress stays on this device</span>
         </div>
       </section>
 
@@ -76,6 +98,11 @@ export default function Landing() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="sec-head"><h2>Explore learning domains</h2><span className="line" /></div>
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+        {DOMAINS.map((d) => <Link key={d.name} to={d.to} className="chip">{d.name}</Link>)}
       </div>
 
       <div className="sec-head"><h2>Pick a pillar</h2><span className="line" /></div>

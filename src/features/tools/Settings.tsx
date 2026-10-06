@@ -8,14 +8,14 @@ export default function SettingsPage() {
     <div>
       <h1>⚙️ Settings</h1>
       <div className="card">
-        <h3>Profile</h3>
+        <h2>Profile</h2>
         <div className="grid2">
           <label className="small">Name
             <input value={p.name} onChange={(e) => setState((s) => ({ ...s, profile: { ...s.profile, name: e.target.value } }))} />
           </label>
           <label className="small">Goal
             <select value={p.goal} onChange={(e) => setState((s) => ({ ...s, profile: { ...s.profile, goal: e.target.value } }))}>
-              {['AI Engineer / GenAI / Agentic AI', 'GenAI Engineer', 'Data Scientist', 'Agentic AI Engineer'].map((g) => <option key={g}>{g}</option>)}
+              {['Programming & Software Development', 'AI & Machine Learning', 'Data Science & Analytics', 'Web Development', 'GenAI Engineering'].map((g) => <option key={g}>{g}</option>)}
             </select>
           </label>
           <label className="small">Level
@@ -32,7 +32,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="card">
-        <h3>Study flow</h3>
+        <h2>Study flow</h2>
         <label className="row small">
           <input
             type="checkbox"
@@ -48,7 +48,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="card">
-        <h3>Accessibility & motion</h3>
+        <h2>Accessibility & motion</h2>
         <label className="row small">
           <input
             type="checkbox"
@@ -60,7 +60,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="card">
-        <h3>Data & backup</h3>
+        <h2>Data & backup</h2>
         <div className="row">
           <button className="btn" onClick={exportProgress}>⬇ Export progress</button>
           <label className="btn" style={{ cursor: 'pointer' }}>
@@ -82,7 +82,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="card">
-        <h3>Optional online services</h3>
+        <h2>Optional online services</h2>
         <p className="small muted">
           This app runs fully on your device. No API keys are needed for any core learning feature. If you later want a real
           LLM-backed answer evaluator, it would run <b>online and optional</b> — clearly labeled, never required.

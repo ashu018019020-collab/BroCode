@@ -1,9 +1,9 @@
 /**
- * The 61 surfaces, and the icons that identify them.
+ * The 60 surfaces, and the icons that identify them.
  *
- * BroCode exposes 61 numbered things a learner can open. They are NOT 61 competing journeys: they
+ * BroCode exposes 60 numbered things a learner can open. They are NOT 60 competing journeys: they
  * are ONE master learning path (01–36) and four support families around it — practice (37–44),
- * labs & build (45–52), career (53–56) and reference (57–61). This module owns that numbering and
+ * labs & build (45–52), career (53–55) and reference (56–60). This module owns that numbering and
  * the icon key every surface is drawn with, so no page can invent a number or a look of its own.
  *
  * Why the numbers are not decoration: `PathGrid` prints them on the rail, the Learning Path prints
@@ -19,7 +19,7 @@
  *     Production, Projects). A domain logo is not decoration: it identifies a whole knowledge
  *     ecosystem, and the same mark follows that technology everywhere it is taught.
  *   · STAGE — the ten stages of the master path, in the roadmap's own order.
- *   · FEATURE — the 25 support surfaces: one functional meaning each (timer, refresh, warning…).
+ *   · FEATURE — the 24 support surfaces: one functional meaning each (timer, refresh, warning…).
  *
  * All three draw from ONE glyph registry on ONE 24×24 grid with one stroke weight, which is what
  * keeps 42 marks looking like a family instead of a clip-art folder. Several glyphs are shared
@@ -48,7 +48,7 @@ export interface SurfaceFamily {
 }
 
 /**
- * The spans tile 1…61 with no gap and no overlap — the test asserts exactly that, because a hole
+ * The spans tile 1…60 with no gap and no overlap — the test asserts exactly that, because a hole
  * between two families is a surface nobody can find and a doubled number is two surfaces sharing a
  * node on the rail.
  */
@@ -56,12 +56,12 @@ export const SURFACE_FAMILIES: SurfaceFamily[] = [
   { id: 'master', key: 'path.famMaster', first: 1, last: 36, tone: 'cyan' },
   { id: 'practice', key: 'path.famPractice', first: 37, last: 44, tone: 'violet' },
   { id: 'lab', key: 'path.famLab', first: 45, last: 52, tone: 'blue' },
-  { id: 'career', key: 'path.famCareer', first: 53, last: 56, tone: 'amber' },
-  { id: 'reference', key: 'path.famReference', first: 57, last: 61, tone: 'green' },
+  { id: 'career', key: 'path.famCareer', first: 53, last: 55, tone: 'amber' },
+  { id: 'reference', key: 'path.famReference', first: 56, last: 60, tone: 'green' },
 ];
 
 /** Every openable surface in the product. */
-export const SURFACE_COUNT = 61;
+export const SURFACE_COUNT = 60;
 /** Where the master learning path ends and the support families begin. */
 export const MASTER_STEPS = 36;
 
@@ -97,7 +97,7 @@ export type GlyphId =
   | 'numpy' | 'pandas' | 'sql' | 'network' | 'language' | 'cube'
   /* feature family */
   | 'archive' | 'questions' | 'interview' | 'mic' | 'timer' | 'clipboard' | 'refresh' | 'warning'
-  | 'code' | 'notebook' | 'table' | 'search' | 'resume' | 'briefcase' | 'shield' | 'chart'
+  | 'code' | 'notebook' | 'table' | 'search' | 'briefcase' | 'shield' | 'chart'
   | 'bulb' | 'sticky' | 'layers' | 'pdf' | 'book';
 
 /** The technology ecosystems a domain mark stands for. */
@@ -155,6 +155,37 @@ export const TRACK_DOMAINS: Record<string, DomainId[]> = {
 };
 
 /**
+ * Track id → the slug its PAGE lives at, i.e. the name of its file under `generated/tracks/`.
+ *
+ * They are NOT the same string, and that is the trap: `/track/python` is a route that matches, a
+ * page that mounts, and a loader that fetches `python.json` — a file that does not exist, so the
+ * page sits on its loading line forever. The generated slugs are `python-core`, `numpy-pandas`,
+ * `ml-nlp`, `agentic-ai`, `apis-production`, `interview-projects` (six of eight differ). Every
+ * link, sitemap entry and JSON-LD target must be built through `trackHref` rather than from the
+ * short id, and `scripts/tests/surfaces.test.mjs` asserts each slug here has a real JSON file.
+ */
+export const TRACK_SLUG: Record<string, string> = {
+  python: 'python-core',
+  data: 'numpy-pandas',
+  sql: 'sql',
+  ml: 'ml-nlp',
+  genai: 'genai',
+  agentic: 'agentic-ai',
+  apis: 'apis-production',
+  interview: 'interview-projects',
+};
+
+/** The one place a track link is spelled: `/track/<generated slug>`. */
+export function trackHref(id: string): string {
+  return `/track/${TRACK_SLUG[id] ?? id}`;
+}
+
+/** The inverse — a slug back to its track id, for a page that was handed a URL. */
+export function trackKeyOf(slug: string): string | null {
+  return Object.keys(TRACK_SLUG).find((k) => TRACK_SLUG[k] === slug) ?? null;
+}
+
+/**
  * The ten stages of the master path, keyed by the roadmap's phase ids. Literals rather than a type
  * import, the same way `paths.ts` declares its key families: `surfaces.test.mjs` asserts these keys
  * ARE the roadmap's `PHASES.map(p => p.id)`, so the value can only drift if both files change.
@@ -172,10 +203,10 @@ export const STAGE_GLYPH: Record<string, GlyphId> = {
   career: 'target',
 };
 
-/* ------------------------- the 25 support surfaces ---------------------- */
+/* ------------------------- the 24 support surfaces ---------------------- */
 
 /**
- * Route → mark, for the surfaces numbered 37–61. Keyed by ROUTE and not by position because the
+ * Route → mark, for the surfaces numbered 37–60. Keyed by ROUTE and not by position because the
  * route is the stable identity (`EXTRA_PATHS` may be reordered) — `surfaces.test.mjs` diffs this
  * against `EXTRA_PATHS`, so a new support surface cannot ship without a mark.
  */
@@ -183,10 +214,10 @@ export const SURFACE_GLYPH: Record<string, GlyphId> = {
   /* 37–44 · practice */
   '/playbook': 'archive',
   '/questions': 'questions',
-  '/interview': 'interview',
-  '/mock': 'mic',
+  '/interview-mode': 'interview',
+  '/mock-interviews': 'mic',
   '/exam': 'timer',
-  '/final': 'clipboard',
+  '/final-assessment': 'clipboard',
   '/review': 'refresh',
   '/mistakes': 'warning',
   /* 45–52 · labs & build */
@@ -194,19 +225,18 @@ export const SURFACE_GLYPH: Record<string, GlyphId> = {
   '/notebooks': 'notebook',
   '/sql': 'sql',
   '/numpy-pandas': 'table',
-  '/ai': 'spark',
+  '/ai-lab': 'spark',
   '/agentic': 'robot',
-  '/rag': 'search',
+  '/rag-lab': 'search',
   '/projects': 'cube',
-  /* 53–56 · career */
-  '/resume': 'resume',
-  '/jobprep': 'briefcase',
+  /* 53–55 · career */
+  '/job-prep': 'briefcase',
   '/defense': 'shield',
   '/progress': 'chart',
-  /* 57–61 · reference */
+  /* 56–60 · reference */
   '/concepts': 'bulb',
   '/notes': 'sticky',
-  '/cheats': 'layers',
+  '/cheat-sheets': 'layers',
   '/pdf': 'pdf',
   '/pdf/playbook': 'book',
 };

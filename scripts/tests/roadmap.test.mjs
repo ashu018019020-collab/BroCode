@@ -237,24 +237,96 @@ test('roadmap: masteryOf distinguishes "nothing measured" from "nothing done"', 
 
 /* --------------------------- the pages mount it -------------------------- */
 
-test('roadmap: the Learning Path renders the master spine, not a second track grid', () => {
-  const page = read('src/features/learning/LearningPath.tsx');
-  assert.match(page, /from '\.\.\/\.\.\/core\/learning\/roadmap'/, 'the page must read the canonical order from the engine');
-  assert.match(page, /STEPS\.map\(/, 'the 36 steps are what the page draws');
-  assert.match(page, /PHASES\.map\(/, 'the phases are drawn as dividers on the same spine');
-  // The chapter index of the document is not duplicated here: each step links to it.
-  assert.ok(!/chapterIndex/.test(page), 'the document’s chapter list is being re-implemented on the path');
+test('roadmap: the master order outlives the Learning page, in the course step page', () => {
+  // The /path page is gone; the order it drew is the engine's and is still ONE sequence — the
+  // course step page is what numbers itself against it ("Step 04 / 36"). A second consumer of
+  // that order is exactly how two views of the roadmap would drift apart.
+  assert.ok(!/path="\/path"/.test(appSrc), 'the standalone Learning route is back in the router');
+  assert.ok(!fs.existsSync(path.join(ROOT, 'src/features/learning/LearningPath.tsx')),
+    'a deleted surface must not come back as a second consumer of the master order');
+  const stepPage = read('src/features/courses/StepPage.tsx');
+  assert.match(stepPage, /STEPS\.length/, 'the course step page must number itself against the master order');
 });
 
-test('roadmap: the extra paths continue the 36 steps instead of restarting at 09', () => {
+test('roadmap: the capabilities band is NOT numbered as steps of the course', () => {
+  // What this replaces: `FIRST_EXTRA_NO = STEP_COUNT + 1`, which drew the Question Bank, the labs, the
+  // career tools and the reference books as steps 37 … 60 on the same rail as the roadmap. The
+  // numbering was the defect, not the layout around it — it told a learner that a capability is a step
+  // they can be taught, and it made the app's index 60 entries when the course has 36.
+  //
+  // The data never agreed with that claim: `scripts/courses.cjs` files every one of the 14,551 items
+  // under a course chapter, `npm run courses` refuses to write if any item is unsorted, and
+  // `npm run course:audit` resolves all 14,551 refs. So the index is 1…36, and a capability gets no
+  // index number at all.
   const grid = read('src/components/learning/PathGrid.tsx');
-  assert.match(grid, /STEP_COUNT/, 'PathGrid must number on from the last roadmap step');
-  assert.match(grid, /FIRST_EXTRA_NO = STEP_COUNT \+ 1/, 'the extra paths restart their own numbering');
-  assert.ok(!/FIRST_EXTRA_NO = 9\b/.test(grid), 'the old first-extra number is back — two steps would share a node');
+  assert.match(grid, /EXTRA_PATHS/, 'the band still renders the real registry — the routes cannot go missing');
+  assert.ok(!/FIRST_EXTRA_NO/.test(grid), 'the continuation numbering is back');
+  assert.ok(!/STEP_COUNT/.test(grid), 'the band must not measure itself against the course index');
+  assert.ok(!/rmap-dot|\.rmap-line|rmap-arrow/.test(grid), 'a capability must not be drawn as a numbered step');
+});
+
+test('roadmap: a step node prints a real figure, and never a 0% it cannot measure', () => {
+  const stat = (over = {}) => ({
+    chapters: 0, concepts: 0, items: 0, practised: 0, sections: {}, pdfPage: null, topSection: null, ...over,
+  });
+
+  const taught = rm.stepFigure(42, stat({ chapters: 1, items: 30, practised: 5 }));
+  assert.equal(taught.kind, 'mastery');
+  assert.equal(taught.pct, 42, 'a step the curriculum teaches sections for divides by their mastery');
+  assert.equal(taught.items, 30, 'and still reports what the document holds for it');
+
+  // The average can round to 101 or dip below zero; a node may never print either.
+  assert.equal(rm.stepFigure(101, stat()).pct, 100);
+  assert.equal(rm.stepFigure(-5, stat()).pct, 0);
+  assert.equal(rm.stepFigure(33.4, stat()).pct, 33, 'rounded, like every other percentage in the app');
+
+  // 0% mastery and "no denominator" are different answers, and this is the line between them.
+  assert.equal(rm.stepFigure(0, stat()).kind, 'mastery', '0 mastery IS measured — zero is an answer');
+  assert.equal(rm.stepFigure(0, stat()).pct, 0);
+
+  const doc = rm.stepFigure(null, stat({ chapters: 2, items: 40, practised: 9 }));
+  assert.equal(doc.kind, 'questions');
+  assert.equal(doc.items, 40);
+  assert.equal(doc.pct, null, 'a step with no sections of its own gets a count, never a share of a guessed denominator');
+
+  const reading = rm.stepFigure(null, stat({ concepts: 3 }));
+  assert.equal(reading.kind, 'reading');
+  assert.equal(reading.pct, null);
+
+  const unreached = rm.stepFigure(null, stat());
+  assert.equal(unreached.kind, 'undelivered');
+  assert.equal(unreached.pct, null);
+
+  // A step with sections and no document items still shows its ring.
+  assert.equal(rm.stepFigure(100, stat({ items: 0 })).kind, 'mastery');
+});
+
+test('roadmap: the courses home draws no numbered rail of its own', () => {
+  // A 36-node master strip used to sit on /courses, drawn by `components/learning/RoadmapRail.tsx`.
+  // It was taken off the page: the order it rendered is still the engine's (STEPS/PHASES, asserted
+  // above), and the course page and the step page are what consume it. Two things must not happen
+  // now — the strip creeping back as an unmounted component, and its stylesheet outliving it, which
+  // is how the next rail gets rebuilt from the old one instead of from the engine.
+  assert.ok(!fs.existsSync(path.join(ROOT, 'src/components/learning/RoadmapRail.tsx')),
+    'the removed rail must not come back as a component nobody mounts');
+  assert.ok(!/RoadmapRail/.test(read('src/features/courses/CoursesHome.tsx')),
+    'the courses home must not mount it again');
+  assert.ok(!/rrail/.test(read('src/styles.css')), 'and no `.rrail*` rule may outlive it');
+
+  // What the rail was for is not lost with it: every step still resolves to the one course that
+  // teaches it, and the link it drew is the registered /course/:slug/:step route.
+  const courses = JSON.parse(read('public/generated/courses/index.json')).courses;
+  for (const step of rm.STEPS) {
+    const card = courses.find((c) => c.steps.includes(step.no));
+    assert.ok(card, `step ${step.no} has no course to open`);
+    assert.match(`/course/${card.slug}/${step.no}`, /^\/course\/[a-z0-9-]+\/\d{1,2}$/,
+      'the link must match the registered /course/:slug/:step route');
+  }
 });
 
 test('roadmap: the Playbook chapter index points back at the step it is read at', () => {
   const pb = read('src/features/practice/Playbook.tsx');
   assert.match(pb, /stepOfChapter/, 'the document view must name the step each chapter belongs to');
-  assert.match(pb, /\/path#s/, 'a chapter must link to its step on the roadmap');
+  assert.match(pb, /courseOfStep/, 'a chapter must resolve the course step that reads it');
+  assert.match(pb, /course\/\$\{card\.slug\}\/\$\{step\}/, 'a chapter must link to that course step');
 });

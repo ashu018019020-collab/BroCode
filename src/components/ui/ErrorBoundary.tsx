@@ -24,7 +24,14 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('[BroCode] render error:', error);
   }
 
-  private retry = () => this.setState({ error: null, info: '' });
+  private retry = () => {
+    const message = this.state.error?.message ?? '';
+    if (/failed to fetch dynamically imported module|importing a module script failed|loading (?:css )?chunk .+ failed/i.test(message)) {
+      window.location.reload();
+      return;
+    }
+    this.setState({ error: null, info: '' });
+  };
 
   render() {
     const { error } = this.state;
