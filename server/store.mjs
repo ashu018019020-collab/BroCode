@@ -30,6 +30,27 @@ export function createSupabaseStore(prisma = new PrismaClient()) {
       });
     },
 
+    async recordSignInEvent(userId, provider, signedInAt = new Date()) {
+      return prisma.signInEvent.create({
+        data: { userId, provider, signedInAt },
+      });
+    },
+
+    async listRecentSignIns(limit = 50) {
+      const events = await prisma.signInEvent.findMany({
+        take: limit,
+        orderBy: { signedInAt: 'desc' },
+        include: { user: { select: { displayName: true } } },
+      });
+      return events.map((event) => ({
+        id: event.id,
+        userId: event.userId,
+        name: event.user.displayName,
+        provider: event.provider,
+        signedInAt: event.signedInAt,
+      }));
+    },
+
     async saveProgress(userId, progress, now = new Date()) {
       return prisma.progressSnapshot.upsert({
         where: { userId },

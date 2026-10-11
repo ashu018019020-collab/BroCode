@@ -10,8 +10,8 @@ const ids = {
   learner: '22222222-2222-4222-8222-222222222222',
 };
 const authUsers = [
-  { id: ids.admin, email: 'admin@example.test', last_sign_in_at: '2026-10-01T00:00:00.000Z' },
-  { id: ids.learner, email: 'learner@example.test', last_sign_in_at: '2026-09-20T00:00:00.000Z' },
+  { id: ids.admin, email: 'admin@example.test', last_sign_in_at: '2026-10-01T00:00:00.000Z', app_metadata: { provider: 'email' } },
+  { id: ids.learner, email: 'learner@example.test', last_sign_in_at: '2026-09-20T00:00:00.000Z', app_metadata: { provider: 'google' } },
 ];
 const profiles = new Map([
   [ids.admin, {
@@ -35,21 +35,39 @@ const profiles = new Map([
 ]);
 const tokens = new Map([
   ['owner-token', { id: ids.admin, email: 'admin@example.test' }],
-  ['learner-token', { id: ids.learner, email: 'learner@example.test' }],
+  ['learner-token', {
+    id: ids.learner,
+    email: 'learner@example.test',
+    app_metadata: { provider: 'email' },
+    identities: [{ provider: 'email' }, { provider: 'google' }],
+  }],
 ]);
 let lastProgress;
+const signInEvents = [];
 let server;
 let baseUrl;
 let secureServer;
 let securePort;
 
 const store = {
+  // The API reports WHICH store answered (/api/health.store), so the fake store names itself like
+  // the real ones do: 'prisma' or 'supabase-auth'.
+  name: 'test-store',
   async health() {},
   async getProfile(id) {
     return profiles.get(id) ?? null;
   },
   async touchProfile(id, at) {
     profiles.get(id).lastSeenAt = at;
+  },
+  async recordSignInEvent(userId, provider, signedInAt) {
+    signInEvents.push({ id: signInEvents.length + 1, userId, provider, signedInAt });
+  },
+  async listRecentSignIns(limit) {
+    return signInEvents.slice(-limit).reverse().map((event) => ({
+      ...event,
+      name: profiles.get(event.userId).name,
+    }));
   },
   async saveProgress(id, progress) {
     lastProgress = { id, ...progress };
@@ -108,6 +126,46 @@ before(async () => {
   securePort = secureServer.address().port;
 });
 
+test('sign-in events require same-origin authentication and a provider linked to the verified user', async () => {
+  assert.equal((await call('/api/auth/sign-in-event', { method: 'POST' })).status, 401);
+  assert.equal((await call('/api/auth/sign-in-event', {
+    method: 'POST',
+    token: 'learner-token',
+    origin: 'https://attacker.example',
+  })).status, 403);
+  assert.equal((await call('/api/auth/sign-in-event', {
+    method: 'POST',
+    token: 'learner-token',
+    body: { provider: 'github' },
+  })).status, 400);
+
+  const response = await call('/api/auth/sign-in-event', {
+    method: 'POST',
+    token: 'learner-token',
+    body: { provider: 'google' },
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(signInEvents.at(-1), {
+    id: 1,
+    userId: ids.learner,
+    provider: 'google',
+    signedInAt: new Date(now),
+  });
+});
+
+test('admin dashboard lists recent sign-in identities and authentication methods', async () => {
+  const response = await call('/api/admin/users', { token: 'owner-token' });
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.deepEqual(result.recentSignIns[0], {
+    id: 1,
+    email: 'learner@example.test',
+    name: 'Learner',
+    provider: 'google',
+    signedInAt: new Date(now).toISOString(),
+  });
+});
+
 after(async () => {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   await new Promise((resolve, reject) => secureServer.close((error) => error ? reject(error) : resolve()));
@@ -128,7 +186,7 @@ function call(path, { method = 'GET', body, token, origin = ORIGIN } = {}) {
 test('health endpoint confirms API and database health', async () => {
   const response = await call('/api/health');
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { api: 'ok', database: 'ok' });
+  assert.deepEqual(await response.json(), { api: 'ok', database: 'ok', store: 'test-store' });
 });
 
 test('session requires a valid Supabase access token and returns database-backed access state', async () => {
@@ -243,7 +301,7 @@ test('a TLS-terminated request is served and carries strict transport security',
     headers: { Origin: ORIGIN, 'X-Forwarded-Proto': 'https' },
   });
   assert.equal(response.status, 200);
-  assert.deepEqual(JSON.parse(response.text), { api: 'ok', database: 'ok' });
+  assert.deepEqual(JSON.parse(response.text), { api: 'ok', database: 'ok', store: 'test-store' });
   assert.equal(response.headers['strict-transport-security'], 'max-age=15552000');
 });
 

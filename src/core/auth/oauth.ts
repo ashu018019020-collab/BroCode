@@ -19,6 +19,26 @@ export interface OAuthCallback {
 /** One-shot parameters added by Supabase or the provider; a reload must not replay them. */
 const OAUTH_PARAMS = ['code', 'state', 'error', 'error_code', 'error_description'];
 
+/** Which of the two provider buttons this Supabase project can actually complete. */
+export type ProviderAvailability = Record<OAuthProvider, boolean>;
+
+/**
+ * Read `GET /auth/v1/settings` — the project's own answer for which external providers are ON.
+ *
+ * A provider the project has not configured is a button that can only fail (this project ships
+ * email-only, so both are off), and offering it is worse than not offering it. The caller is told
+ * the difference between "no providers" and "could not find out": an unreadable or unexpected
+ * payload returns `null`, i.e. UNKNOWN, and the form then keeps its buttons rather than hiding a
+ * provider that works.
+ */
+export function enabledProviders(settings: unknown): ProviderAvailability | null {
+  if (!settings || typeof settings !== 'object') return null;
+  const external = (settings as { external?: unknown }).external;
+  if (!external || typeof external !== 'object') return null;
+  const record = external as Record<string, unknown>;
+  return { github: record.github === true, google: record.google === true };
+}
+
 function param(search: string, key: string): string | null {
   const value = new URLSearchParams(search).get(key);
   return value && value.trim() ? value : null;

@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { authApi, getSupabaseClient, type AuthUser, type RegistrationResult } from './client';
+import { authApi, getSupabaseClient, takePendingOAuthProvider, type AuthUser, type RegistrationResult } from './client';
 import { oauthErrorMessage, readOAuthCallback, withoutOAuthParams, type OAuthProvider } from './oauth';
+import { announcePresence, broadcastSignIn } from './realtime';
 import { summarizeProgress } from './progress';
 import { stateSnapshot, useStore } from '../storage/store';
 import { setStorageAccount } from '../storage/account';
@@ -101,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let subscription: { unsubscribe: () => void } | undefined;
     /** The provider return, read before supabase-js consumes the `code` out of the URL. */
     const callback = readOAuthCallback(window.location.search);
+    if (callback.error) takePendingOAuthProvider();
 
     const applySession = async (session: Session | null, version: number) => {
       if (!active || version !== sessionVersion) return;
@@ -139,9 +141,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const supabase = getSupabaseClient();
       const initialVersion = ++sessionVersion;
-      subscription = supabase.auth.onAuthStateChange((_event, session) => {
+      subscription = supabase.auth.onAuthStateChange((event, session) => {
         const version = ++sessionVersion;
-        window.setTimeout(() => { void applySession(session, version); }, 0);
+        window.setTimeout(() => {
+          void applySession(session, version);
+          const provider = event === 'SIGNED_IN' && session ? takePendingOAuthProvider() : null;
+          if (event === 'SIGNED_IN') {
+            // One small broadcast on the shared realtime channel: the owner dashboard answers with
+            // a single refetch instead of polling for sign-ins that already happened.
+            void broadcastSignIn();
+          }
+          if (session && provider) {
+            void authApi.recordSignIn(session, provider).catch((error: unknown) => {
+              console.error(`Could not record ${provider} sign-in activity.`, error);
+            });
+          }
+        }, 0);
       }).data.subscription;
       void supabase.auth.getSession()
         .then(async ({ data, error }) => {
@@ -185,6 +200,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
     let active = true;
+    // This session's half of the live dashboard: while it is open, every watcher sees this
+    // account as Online — instantly, and gone the moment the tab or socket is.
+    const releasePresence = announcePresence({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    });
     const refreshPresence = async () => {
       if (!navigator.onLine) return;
       try {
@@ -204,6 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     document.addEventListener('visibilitychange', refreshPresence);
     return () => {
       active = false;
+      releasePresence();
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', refreshPresence);
     };

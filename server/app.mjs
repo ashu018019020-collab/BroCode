@@ -103,6 +103,21 @@ function toPublicUser(profile, email) {
   };
 }
 
+function signInProvider(input, authUser) {
+  const provider = input?.provider;
+  if (!['email', 'google', 'github'].includes(provider)) {
+    throw new HttpError(400, 'Choose a supported sign-in provider.');
+  }
+  const linkedProviders = new Set([
+    authUser.app_metadata?.provider,
+    ...(authUser.identities ?? []).map((identity) => identity.provider),
+  ]);
+  if (!linkedProviders.has(provider)) {
+    throw new HttpError(400, 'The sign-in provider is not linked to this account.');
+  }
+  return provider;
+}
+
 function validateProgress(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new HttpError(400, 'Progress data must be an object.');
@@ -126,6 +141,7 @@ export function createAuthServer({
   now = () => Date.now(),
   logger = console,
   enforceHttps = false,
+  storeLabel = store?.name ?? 'unknown',
 }) {
   if (!store) throw new TypeError('A Supabase account store is required.');
   if (!supabaseAuth) throw new TypeError('A Supabase Auth client is required.');
@@ -186,7 +202,10 @@ export function createAuthServer({
       const url = new URL(request.url ?? '/', 'http://localhost');
       if (request.method === 'GET' && url.pathname === '/api/health') {
         await store.health();
-        json(response, 200, { api: 'ok', database: 'ok' }, headers);
+        // `database` is the account backend this process depends on: Postgres when DATABASE_URL is
+        // real, Supabase Auth otherwise. `store` names which one answered, so an operator never has
+        // to guess which path is live.
+        json(response, 200, { api: 'ok', database: 'ok', store: storeLabel }, headers);
         return;
       }
 
@@ -205,6 +224,15 @@ export function createAuthServer({
         return;
       }
 
+      if (request.method === 'POST' && url.pathname === '/api/auth/sign-in-event') {
+        ensureSameOrigin(request, allowedOrigin);
+        const user = await requireUser(request);
+        const input = await readJson(request);
+        await store.recordSignInEvent(user.profile.id, signInProvider(input, user.authUser), new Date(now()));
+        json(response, 200, { ok: true }, headers);
+        return;
+      }
+
       if (request.method === 'POST' && url.pathname === '/api/progress/snapshot') {
         ensureSameOrigin(request, allowedOrigin);
         const user = await requireUser(request);
@@ -216,9 +244,10 @@ export function createAuthServer({
 
       if (request.method === 'GET' && url.pathname === '/api/admin/users') {
         await requireAdmin(request);
-        const [authUsers, profiles] = await Promise.all([
+        const [authUsers, profiles, recentSignIns] = await Promise.all([
           listAllAuthUsers(supabaseAdmin),
           store.listAdminUsers(),
+          store.listRecentSignIns(50),
         ]);
         const authById = new Map(authUsers.map((user) => [user.id, user]));
         const users = profiles.map((profile) => {
@@ -250,6 +279,13 @@ export function createAuthServer({
         const cutoff = now() - 30 * 24 * 60 * 60 * 1000;
         json(response, 200, {
           users,
+          recentSignIns: recentSignIns.map((signIn) => ({
+            id: signIn.id,
+            email: authById.get(signIn.userId)?.email ?? '',
+            name: signIn.name,
+            provider: signIn.provider,
+            signedInAt: signIn.signedInAt.toISOString(),
+          })),
           summary: {
             total: users.length,
             online: users.filter((user) => user.online).length,

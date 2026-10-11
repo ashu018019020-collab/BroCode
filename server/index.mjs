@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { createAuthServer } from './app.mjs';
 import { createSupabaseServices } from './supabase.mjs';
-import { createSupabaseStore } from './store.mjs';
+import { createStore } from './db-config.mjs';
 
 const port = Number(process.env.API_PORT ?? 8787);
 const allowedOrigin = process.env.WEB_ORIGIN
@@ -26,20 +26,23 @@ if (process.env.NODE_ENV === 'production' && webUrl.protocol !== 'https:') {
 const enforceHttps = (process.env.ENFORCE_HTTPS ?? (process.env.NODE_ENV === 'production' ? 'on' : 'off')) !== 'off';
 
 const supabase = createSupabaseServices();
-const store = createSupabaseStore();
+// Postgres when DATABASE_URL is real, otherwise the Supabase-Auth store — the account system must
+// start and work with the keys that are configured, not fail because a database is missing.
+const { store, label } = await createStore({ admin: supabase.admin });
 const server = createAuthServer({
   store,
   supabaseAuth: supabase.auth,
   supabaseAdmin: supabase.admin,
   allowedOrigin,
   enforceHttps,
+  storeLabel: label,
 });
 
 await new Promise((resolve, reject) => {
   server.once('error', reject);
   server.listen(port, () => {
     server.removeListener('error', reject);
-    console.log(`BroCode Supabase account API listening on port ${port}.`);
+    console.log(`BroCode Supabase account API listening on port ${port} (account store: ${label}).`);
     if (enforceHttps) console.log('Plain-HTTP requests are redirected to HTTPS and HSTS is sent.');
     resolve();
   });

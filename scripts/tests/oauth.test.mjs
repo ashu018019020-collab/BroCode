@@ -9,7 +9,22 @@ const load = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 
 register('./_ts-resolve.mjs', import.meta.url);
 
-const { oauthErrorMessage, readOAuthCallback, withoutOAuthParams } = await load('src/core/auth/oauth.ts');
+const { enabledProviders, oauthErrorMessage, readOAuthCallback, withoutOAuthParams } = await load('src/core/auth/oauth.ts');
+
+test('oauth: the sign-in form offers only the providers the project has enabled', () => {
+  // This project is email-only, so both provider buttons must go — a button that can only fail is
+  // worse than no button.
+  assert.deepEqual(enabledProviders({ external: { email: true, github: false, google: false } }),
+    { github: false, google: false });
+  assert.deepEqual(enabledProviders({ external: { email: true, github: true, google: false } }),
+    { github: true, google: false });
+  assert.deepEqual(enabledProviders({ external: { email: true } }), { github: false, google: false });
+  // "Could not find out" is NOT "none": an unreadable payload must not hide a working provider.
+  assert.equal(enabledProviders(null), null);
+  assert.equal(enabledProviders('nope'), null);
+  assert.equal(enabledProviders({}), null);
+  assert.equal(enabledProviders({ external: 'yes' }), null);
+});
 
 test('oauth: a provider return is read from the redirect query, and nothing else is', () => {
   assert.deepEqual(readOAuthCallback(''), { code: null, error: null, errorDescription: null });

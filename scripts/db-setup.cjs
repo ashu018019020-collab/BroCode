@@ -242,7 +242,7 @@ async function main() {
     return;
   }
   const statusClass = classifyPrismaFailure(status.output);
-  if (statusClass.kind === 'up-to-date') ok(`Migration ${MIGRATION} is already applied — nothing to do`);
+  if (statusClass.kind === 'up-to-date') ok('All migrations are already applied — nothing to do');
   else ok('Migration status read; pending work will be applied next');
 
   if (!check) {
@@ -265,7 +265,7 @@ async function main() {
       return;
     }
     if (deployClass.kind === 'up-to-date') ok('No pending migrations to apply');
-    else ok(`Migration applied (${MIGRATION})`);
+    else ok('Pending migrations applied');
 
     section('5/6  Generated Prisma client (prisma generate)');
     const generate = runPrisma(['generate']);

@@ -1,4 +1,4 @@
-import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { HashRouter, Routes, Route, NavLink, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Layers, Repeat, Bug, Mic2, Shield, FlaskConical,
@@ -6,7 +6,7 @@ import {
   Search, Star, Flame, Target, Trophy, Code2, GraduationCap, ListChecks,
   Bell, FolderGit2, Network, ClipboardList, StickyNote, BookMarked, Moon, Sun, Focus, Library,
   Menu, PanelLeftClose, X, ChevronRight, ChevronLeft, Award,
-  Plus, Download, Languages, Timer, BookOpen, Zap, Cloud, UserRound,
+  Plus, Download, Languages, Timer, BookOpen, Cloud, UserRound, LogIn, LogOut,
 } from 'lucide-react';
 import { CurriculumProvider, useCurriculum } from '../core/data/curriculum';
 import { useStore, bumpStreak, markNotifsRead, clearNotifs, exportProgress } from '../core/storage/store';
@@ -67,6 +67,7 @@ import { useAuth } from '../core/auth/AuthProvider';
 
 const LoginPage = lazy(() => import('../features/auth/LoginPage'));
 const AdminUsersPage = lazy(() => import('../features/auth/AdminUsersPage'));
+const AuthDialog = lazy(() => import('../features/auth/AuthDialog'));
 const CoursesHome = lazy(() => import('../features/courses/CoursesHome'));
 const CoursePage = lazy(() => import('../features/courses/CoursePage'));
 const StepPage = lazy(() => import('../features/courses/StepPage'));
@@ -213,7 +214,7 @@ export default function App() {
 function Shell() {
   const { sections, extras } = useCurriculum();
   const state = useStore();
-  const { user, loading: authLoading, progressSync, redirectError } = useAuth();
+  const { user, loading: authLoading, progressSync, redirectError, logout } = useAuth();
   bumpStreak();
   const nav = useNavigate();
   const loc = useLocation();
@@ -230,9 +231,26 @@ function Shell() {
   const [syncClock, setSyncClock] = useState(Date.now());
   const [lastSeenAt, setLastSeenAt] = useState(Date.now());
   const [lastSeenClock, setLastSeenClock] = useState(Date.now());
+  const [signingOut, setSigningOut] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const lastSeenKey = `brocode:last-seen:v1:${user?.id ? encodeURIComponent(user.id) : 'guest'}`;
   const mainRef = useRef<HTMLElement>(null);
   const handledRedirectError = useRef<string | null>(null);
+
+  const signOut = async () => {
+    setSigningOut(true);
+    try {
+      await logout();
+      // Signing out of a page that needs an account (the owner dashboard) would bounce straight
+      // back to /login, so the guest lands on the Dashboard instead.
+      nav('/', { replace: true });
+    } catch (error) {
+      console.error('[BroCode] Could not sign out.', error);
+      toast(error instanceof Error ? `Sign out failed: ${error.message}` : 'Sign out failed. Please try again.', 'error');
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -315,7 +333,6 @@ function Shell() {
 
   const xp = state.xp;
   const level = levelForXp(xp);
-  const toNext = XP_PER_LEVEL - (xp % XP_PER_LEVEL);
   const streakDays = studyStreak(state.study ?? {}, today());
 
   // Badge counts — always real numbers derived from learner state.
@@ -478,28 +495,44 @@ function Shell() {
           </nav>
 
           <div className="side-foot">
-            {/* Level, XP and streak in one card — the same three real numbers the header shows.
-                "XP to next level" moved into the card's tooltip: the bar already shows the gap. */}
-            <Link2 to="/progress" className="side-xp" title={`${toNext} ${t('top.xpTo')}`}>
-              <div className="row spread xp-top">
-                <span className="row" style={{ gap: 6 }}><BarChart3 size={15} className="xp-ico" /> {t('top.level')} {level}</span>
-                <span className="xp-num">{xp} / {level * XP_PER_LEVEL} XP</span>
-              </div>
-              <div className="bar xp-bar"><div style={{ width: `${Math.min(100, levelProgress(xp) * 100)}%` }} /></div>
-              <div className="row spread xp-streak">
-                <span className="row" style={{ gap: 6 }}><Zap size={15} className="xp-zap" /> {streakDays} {t('top.streak')}</span>
-                <ChevronRight size={16} className="navchev" />
-              </div>
-            </Link2>
-
-            {/* The one line of encouragement. Its bar is the same real level progress — nothing
-                invented, just a second, quieter read of it under the words. */}
-            <Link2 to="/settings" className="side-keep">
-              <span className="keep-badge"><Star size={17} /></span>
-              <span className="keep-txt">{t('side.keep')}</span>
-              <ChevronRight size={16} className="keep-go" />
-              <span className="keep-bar" aria-hidden="true"><span style={{ width: `${Math.min(100, levelProgress(xp) * 100)}%` }} /></span>
-            </Link2>
+            {/*
+             * The rail's account block. BroCode is guest-first — every lesson, lab and bank is
+             * usable with no account — so this is an OFFER, never a wall: signed out it names the
+             * guest and offers sign in / sign up; signed in it identifies the account, links the
+             * owner dashboard for an administrator, and is the way out.
+             */}
+            <div className="side-account">
+              <span className="side-account-avatar" aria-hidden="true">
+                {user ? initials(user.name || user.email) : <UserRound size={17} />}
+              </span>
+              <span className="side-account-copy" title={user?.email || undefined}>
+                <b>{user ? user.name || user.email : t('acct.guest')}</b>
+                {user
+                  ? user.name
+                    ? <small>{user.email}</small>
+                    : user.role === 'admin' ? <small>{t('acct.admin')}</small> : null
+                  : null}
+              </span>
+            </div>
+            {user ? (
+              <>
+                {user.role === 'admin' && (
+                  <Link className="btn side-act" to="/admin">
+                    <Shield size={15} />
+                    <span>{t('acct.dashboard')}</span>
+                  </Link>
+                )}
+                <button className="btn side-act" disabled={signingOut} onClick={() => void signOut()} type="button">
+                  <LogOut size={15} />
+                  <span>{signingOut ? t('acct.signingOut') : t('acct.signOut')}</span>
+                </button>
+              </>
+            ) : (
+              <button className="btn primary side-act" onClick={() => setAuthOpen(true)} type="button">
+                <LogIn size={15} />
+                <span>{t('acct.signUp')}</span>
+              </button>
+            )}
           </div>
         </aside>
       )}
@@ -839,6 +872,12 @@ function Shell() {
           onClose={() => setPaletteOpen(false)}
         />
       )}
+      {authOpen && (
+        <Suspense fallback={null}>
+          {/* The rail's button is "Sign up", so the dialog opens on that tab. */}
+          <AuthDialog initialMode="register" open onClose={() => setAuthOpen(false)} />
+        </Suspense>
+      )}
       <ToastHost />
     </div>
   );
@@ -879,8 +918,16 @@ const NOTIF_COLOR: Record<string, string> = {
   review: 'var(--violet)', streak: 'var(--pink)', achievement: 'var(--amber)',
 };
 
+/**
+ * The letters an avatar shows. A supplied name is not always one word per letter — "Ashu (owner)"
+ * would otherwise print "A(" — so a token contributes only its first LETTER or digit.
+ */
 const initials = (name: string) =>
-  name.trim().split(/\s+/).map((p) => p[0]?.toUpperCase() ?? '').slice(0, 2).join('') || 'AI';
+  name.trim().split(/\s+/)
+    .map((part) => part.replace(/[^\p{L}\p{N}]/gu, '')[0]?.toUpperCase() ?? '')
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('') || 'AI';
 
 function formatSyncAge(timestamp: number, now: number): string {
   const seconds = Math.max(0, Math.floor((now - timestamp) / 1000));
@@ -905,10 +952,4 @@ function RouteSkeleton() {
       <span className="sr-only">Loading screen…</span>
     </div>
   );
-}
-
-/** Tiny local Link alias so the sidebar footer button doesn't collide with imports. */
-function Link2({ to, className, children, title }: { to: string; className?: string; children: ReactNode; title?: string }) {
-  const nav = useNavigate();
-  return <button type="button" className={className} onClick={() => nav(to)} title={title}>{children}</button>;
 }

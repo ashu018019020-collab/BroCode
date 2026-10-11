@@ -22,6 +22,7 @@ model Profile {
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   lastSeenAt  DateTime?     @map("last_seen_at") @db.Timestamptz(6)
   progress    ProgressSnapshot?
+  signInEvents SignInEvent[]
 
   @@index([lastSeenAt])
   @@map("profiles")
@@ -40,4 +41,16 @@ model ProgressSnapshot {
   user             Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("progress_snapshots")
+}
+
+model SignInEvent {
+  id         Int      @id @default(autoincrement())
+  userId     String   @map("user_id") @db.Uuid
+  provider   String   @db.VarChar(16)
+  signedInAt DateTime @default(now()) @map("signed_in_at") @db.Timestamptz(6)
+  user       Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, signedInAt(sort: Desc)])
+  @@index([signedInAt(sort: Desc)])
+  @@map("sign_in_events")
 }

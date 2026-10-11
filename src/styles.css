@@ -360,14 +360,13 @@
 /*
  * THE RAIL DOES NOT INVERT — light theme only.
  *
- * The sidebar is the app's one piece of chrome with a palette of its own: a near-black glass panel,
- * a neon hue on every row's icon, a purple "Keep Going" card. On a light page a white rail loses all
- * three readings at once — the panel dissolves into the page it sits on, the per-row glow has no dark
- * to glow against, and the motivational card turns into a grey rectangle. So the rail keeps its dark
- * token set in BOTH themes, the same way the console above does: the values are re-declared ON
- * `.sidebar`, custom properties inherit, and every rule that already draws the rail by name — the
- * neon rim, the active row's accent wash and lit left bar, the fold button, the level card, the rule
- * above Tools — keeps working unchanged.
+ * The sidebar is the app's one piece of chrome with a palette of its own: a near-black glass panel
+ * and a neon hue on every row's icon. On a light page a white rail loses both readings at once —
+ * the panel dissolves into the page it sits on and the per-row glow has no dark to glow against. So
+ * the rail keeps its dark token set in BOTH themes, the same way the console above does: the values
+ * are re-declared ON `.sidebar`, custom properties inherit, and every rule that already draws the
+ * rail by name — the neon rim, the active row's accent wash and lit left bar, the fold button, the
+ * account block, the rule above Tools — keeps working unchanged.
  *
  * `--sidebar` itself is restated MORE opaque than the dark theme's `.72`: a black wash at `.72` over
  * the light page's `#f2f4fa` composites to about `#464a4d`, a mid grey that stops reading as dark at
@@ -2040,7 +2039,11 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
 .sidebar.collapsed .navsep { text-align: center; font-size: .55rem; letter-spacing: 0; }
 .sidebar.collapsed .navlink { justify-content: center; padding: 9px 0; position: relative; }
 .sidebar.collapsed .navlink .lbl, .sidebar.collapsed .navlink .navchev { display: none; }
-.sidebar.collapsed .side-foot { display: none; }
+/* The account block stays in the collapsed rail — it is where a guest signs in, and the rail is
+   exactly where a learner looks for it. The avatar alone carries it; the labels go. */
+.sidebar.collapsed .side-account { justify-content: center; padding: 0; }
+.sidebar.collapsed .side-account-copy, .sidebar.collapsed .side-act span { display: none; }
+.sidebar.collapsed .side-act { padding: 7px 0; gap: 0; }
 .sidebar.collapsed .navlink[data-tip]:hover::after {
   content: attr(data-tip); position: absolute; left: 56px; top: 50%; transform: translateY(-50%);
   background: var(--popover); border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -2524,46 +2527,39 @@ img, iframe, canvas, pre { max-width: 100%; }
   background: var(--pink); color: var(--primary-foreground);
   font-size: .62rem; font-weight: 700; display: grid; place-items: center; flex: none;
 }
-/* ---------- the rail's foot: the level card, then the one line of encouragement ---------- */
-.side-foot { flex: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: grid; gap: 8px; }
-/* A button, not a div: the card IS the link to Progress, so the chevron in its streak row is honest. */
-.side-xp {
-  width: 100%; display: block; text-align: left; cursor: pointer; color: var(--text);
-  border: 1px solid var(--border); border-radius: 12px; padding: 9px 11px;
-  background-color: var(--card); background-image: var(--panel-grad);
-  transition: border-color .14s ease, box-shadow .2s ease;
-}
-.side-xp:hover { border-color: var(--hover-border); box-shadow: var(--lift); }
-.side-xp .xp-top { font-size: .8rem; font-weight: 650; }
-.side-xp .xp-num { color: var(--muted); font-size: .74rem; font-weight: 600; }
-.side-xp .xp-ico { color: #7c8cf8; }
-.side-xp .xp-zap { color: var(--amber); }
-/* The bar sits between the two rows: one real number, read at a glance. */
-.side-xp .xp-bar { display: block; height: 8px; margin: 8px 0; }
-.side-xp .xp-streak { font-size: .76rem; font-weight: 600; color: var(--muted); }
-.side-xp .navchev { color: var(--muted); }
 /*
- * "Keep Going" is the one purple surface in the app — it is the motivational card, so it is allowed
- * to be the loudest thing in the rail. `position: relative` anchors the progress filament that runs
- * along its bottom edge; that filament is the learner's real level progress, not decoration.
+ * ---------- the rail's foot: the account block ----------
+ *
+ * BroCode is guest-first — the whole platform works with no account — so the rail does not carry a
+ * trophy case of the learner's own numbers. It carries identity: who is signed in, and, for a
+ * guest, the one deliberate call to action in the chrome. Signed in, the same block is the way to
+ * the owner dashboard and the way out.
  */
-.side-keep {
-  position: relative; width: 100%; display: flex; gap: 9px; align-items: center; cursor: pointer;
-  border: 1px solid rgba(139, 92, 246, .38); border-radius: 12px; padding: 10px 11px 15px;
-  color: #fff; font-size: .78rem; font-weight: 600; text-align: left; overflow: hidden;
-  background-image: linear-gradient(135deg, rgba(124, 58, 237, .9), rgba(79, 70, 229, .6) 62%, rgba(190, 60, 220, .38));
-  box-shadow: 0 14px 30px rgba(88, 40, 190, .35), inset 0 1px 0 rgba(255, 255, 255, .18);
-  transition: box-shadow .2s ease, transform .14s ease;
+.side-foot { flex: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: grid; gap: 9px; }
+/* The account card: who is signed in on top, the one action below. It is a card rather than a bare
+   row because it is the rail's only surface that is about the LEARNER, not a destination. */
+.side-account {
+  display: flex; align-items: center; gap: 10px; min-width: 0; padding: 9px 10px;
+  border: 1px solid var(--border); border-radius: 14px;
+  background-color: var(--card); background-image: var(--panel-grad);
 }
-.side-keep:hover { box-shadow: 0 18px 36px rgba(88, 40, 190, .45), inset 0 1px 0 rgba(255, 255, 255, .22); transform: translateY(-1px); }
-.side-keep .keep-badge {
-  width: 30px; height: 30px; flex: none; border-radius: 9px; display: grid; place-items: center;
-  background: rgba(255, 255, 255, .16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25);
+.side-account-avatar {
+  width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 12px;
+  color: #eaf7ff; font-size: .78rem; font-weight: 700; letter-spacing: .03em;
+  border: 1px solid rgba(120, 200, 255, .28);
+  background-image: linear-gradient(135deg, rgba(34, 211, 238, .32), rgba(99, 102, 241, .38));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 6px 14px rgba(0, 0, 0, .28);
 }
-.side-keep .keep-txt { flex: 1; min-width: 0; line-height: 1.3; }
-.side-keep .keep-go { flex: none; opacity: .85; }
-.side-keep .keep-bar { position: absolute; left: 11px; right: 11px; bottom: 6px; height: 3px; border-radius: 99px; background: rgba(255, 255, 255, .18); overflow: hidden; }
-.side-keep .keep-bar > span { display: block; height: 100%; border-radius: 99px; background-image: linear-gradient(90deg, #22d3ee, #a5f3fc); transition: width .4s ease; }
+.side-account-copy { display: grid; flex: 1; min-width: 0; color: var(--text); }
+.side-account-copy b, .side-account-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-account-copy b { font-size: .8rem; }
+.side-account-copy small { color: var(--muted); font-size: .68rem; }
+/* The block's rows are real buttons/links (`.btn` supplies the look); this only makes them full-width. */
+.side-act { width: 100%; justify-content: center; font-size: .78rem; }
+/* The owner dashboard is a LINK that must read as a button — the platform `a` rule would colour it
+   cyan and underline it on hover. Repeated at the same specificity so order decides, like the
+   profile chip's. */
+a.side-act, a.side-act:hover { text-decoration: none; }
 .mobile-only { display: none; }
 .shell.focus .content { padding-top: 18px; }
 .shell.focus .topbar { justify-content: flex-end; }
@@ -2655,7 +2651,6 @@ img, iframe, canvas, pre { max-width: 100%; }
   .sidebar.collapsed .navlink { justify-content: flex-start; padding: 9px 12px; }
   .sidebar.collapsed .navlink .lbl { display: inline; }
   .sidebar.collapsed .navlink .navchev { display: grid; }
-  .sidebar.collapsed .side-foot { display: grid; }
   .sidebar .side-toggle:not(.mobile-only) { display: none; }
 }
 @media (max-width: 980px) { .hide-sm { display: none; } }
@@ -3827,7 +3822,49 @@ the skill's share of the selected source, and how many of its questions are alre
 
 .auth-page { display: flex; justify-content: center; padding: 18px 0; }
 .auth-card { width: min(100%, 520px); padding: clamp(18px, 4vw, 30px); }
+/* The dialog is the same card, lifted over the page a guest was reading — never a second form. */
+.auth-overlay {
+  position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 18px;
+  background: rgba(2, 4, 10, .68); backdrop-filter: blur(3px);
+  animation: fadeUp .18s ease both; overflow-y: auto; overscroll-behavior: contain;
+}
+.auth-dialog { position: relative; margin: auto; }
+.auth-dialog-close {
+  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 9px; color: var(--muted); background: var(--secondary);
+  font-size: 1.05rem; line-height: 1; cursor: pointer;
+}
+.auth-dialog-close:hover { color: var(--text); border-color: var(--hover-border); background: var(--hover); }
 .auth-card h1, .auth-admin-heading h1 { margin-top: 0; }
+/*
+ * ---------- the account form ----------
+ * Sign in and sign up are two TABS of one form, not two pages: the difference is which fields are
+ * shown, and everything else — providers, errors, the pending button — is shared.
+ */
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 18px; padding: 4px; border: 1px solid var(--border); border-radius: 13px; background: var(--secondary); }
+.auth-tab { padding: 8px 10px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: .83rem; font-weight: 600; cursor: pointer; transition: color .14s ease, background-color .14s ease, box-shadow .18s ease; }
+.auth-tab:hover { color: var(--text); }
+.auth-tab.active { color: var(--text); background-color: var(--card); background-image: var(--panel-grad); box-shadow: var(--lift); }
+.auth-tabs + .auth-form { margin-top: 14px; }
+.auth-field { display: grid; gap: 6px; }
+/* The caption above a field is a label, not body copy: quieter, smaller, consistent. */
+.auth-field > span:first-child { color: var(--muted); font-size: .78rem; font-weight: 600; }
+.auth-input-row { position: relative; display: block; }
+.auth-input-row input { padding-right: 42px; }
+.auth-reveal { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 9px; color: var(--muted); background: transparent; cursor: pointer; }
+.auth-reveal:hover { color: var(--text); background: var(--hover); }
+/* A rule, not an error: it says what the field wants before anything is wrong. */
+.auth-hint { color: var(--muted); font-size: .72rem; font-style: normal; }
+.auth-hint.ok { color: var(--green); }
+.auth-hint.error { color: var(--red); }
+.auth-form input.invalid { border-color: rgba(248, 113, 113, .5); }
+.auth-wide { width: 100%; justify-content: center; }
+.auth-foot { margin: 14px 0 0; text-align: center; }
+/* Waiting for a confirmation link is a state of the form, not a toast over it. */
+.auth-sent { display: grid; gap: 10px; justify-items: center; text-align: center; padding: 4px 0 2px; }
+.auth-sent-icon { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 17px; color: var(--cyan); border: 1px solid rgba(34, 211, 238, .3); background-color: rgba(34, 211, 238, .1); }
+.auth-sent h2 { margin: 2px 0 0; font-size: 1.06rem; }
+.auth-sent-email { color: var(--text); word-break: break-all; }
 .auth-form { display: grid; gap: 14px; margin-top: 20px; }
 .auth-form label { display: grid; gap: 6px; font-size: .88rem; }
 .auth-form .btn { justify-content: center; margin-top: 3px; }
@@ -3843,9 +3880,27 @@ the skill's share of the selected source, and how many of its questions are alre
 .auth-error { color: var(--red); background: rgba(248, 113, 113, .09); border: 1px solid rgba(248, 113, 113, .25); }
 .auth-message { color: var(--amber); background: rgba(251, 191, 36, .08); border: 1px solid rgba(251, 191, 36, .2); }
 .auth-admin-heading { align-items: flex-start; margin-bottom: 12px; }
+/* The heading's status line: one row of muted sentence + realtime chip, free to wrap. */
+.auth-admin-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.auth-live { flex: none; }
+.auth-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.auth-live.wait i { background: var(--amber); box-shadow: 0 0 7px rgba(251, 191, 36, .6); }
+.auth-live.on { color: var(--green); border-color: rgba(52, 211, 153, .34); background-color: rgba(52, 211, 153, .10); }
+.auth-live.on i { background: var(--green); box-shadow: 0 0 7px rgba(52, 211, 153, .7); animation: authLivePulse 1.6s ease-in-out infinite; }
+@keyframes authLivePulse { 50% { opacity: .4; } }
+/* Live reads lit, offline reads quiet — the roster's Online/Offline cell at a glance. */
+.auth-online { color: var(--green); font-weight: 650; }
+.auth-offline { color: var(--muted); }
 .auth-admin-stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 14px; }
 .auth-admin-stats .card { display: grid; gap: 8px; }
 .auth-admin-stats strong { font-size: 1.55rem; }
+.auth-recent-signins { margin-bottom: 14px; }
+.auth-recent-signins h2 { margin-top: 0; }
+/* The roster's own toolbar: a search on the left, the actions on the right, one line on a desktop
+   and a stack on a phone — the same shape as the heading row above it. */
+.auth-admin-tools { align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.auth-admin-search { flex: 1 1 240px; min-width: 0; }
+.auth-admin-search input { width: 100%; }
 .auth-table-wrap { overflow-x: auto; }
 .auth-table { width: 100%; min-width: 980px; border-collapse: collapse; text-align: left; }
 .auth-table th, .auth-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); }

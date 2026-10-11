@@ -480,6 +480,54 @@ test('layout: the footer shows truthful sync state and working learning actions'
   assert.match(dashboard, /studyStreak\(state\.study \?\? \{\}, study\.todayKey\)/, 'the dashboard streak must match the profile\'s measured study streak');
 });
 
+test('layout: a guest browses the whole app — signing in is offered, never required', () => {
+  const app = read('src/app/App.tsx');
+  const login = read('src/features/auth/LoginPage.tsx');
+  const form = read('src/features/auth/AuthForm.tsx');
+  const dialog = read('src/features/auth/AuthDialog.tsx');
+  // Nothing walls the shell off behind a session: no auth redirect and no early `return` of the
+  // whole app, which is what makes the rail's own profile block reachable at all.
+  assert.doesNotMatch(app, /!authLoading && !user[\s\S]{0,120}nav\('\/login'/, 'a signed-out visitor must not be redirected away from the page they asked for');
+  assert.doesNotMatch(app, /if \(!user \|\| loc\.pathname === '\/login'\)/, 'the shell must render the app for a guest, not the sign-in page');
+  // The rail opens the form in place; /login stays a real route for a pasted link.
+  assert.match(app, /className="btn primary side-act" onClick=\{\(\) => setAuthOpen\(true\)\}/, 'the rail must be the sign-up entry point');
+  assert.match(app, /<AuthDialog initialMode="register" open onClose=\{\(\) => setAuthOpen\(false\)\} \/>/,
+    'the rail\'s Sign up button must open the dialog on the create-account tab');
+  assert.match(dialog, /<AuthForm initialMode=\{initialMode\} onSuccess=\{onClose\} \/>/);
+  assert.match(login, /<AuthForm onSuccess=/, 'the page and the dialog must share ONE form');
+  // Signing in from the rail must not throw the learner off the page they were reading.
+  assert.doesNotMatch(dialog, /useNavigate/, 'the dialog closes instead of navigating');
+  assert.doesNotMatch(login, /Continue as guest/);
+  assert.doesNotMatch(form, /Continue as guest/);
+});
+
+test('layout: the sidebar account block is the way in, the way out, and the route to /admin', () => {
+  const app = read('src/app/App.tsx');
+  const styles = read('src/styles.css');
+  const footerStart = app.indexOf('<div className="side-foot">');
+  const footerEnd = app.indexOf('</div>\n        </aside>', footerStart);
+  assert.ok(footerStart >= 0 && footerEnd > footerStart, 'the sidebar footer must exist');
+  const footer = app.slice(footerStart, footerEnd);
+  assert.match(footer, /side-account-copy[\s\S]*user\.name \|\| user\.email/, 'the rail must name the signed-in account');
+  assert.match(footer, /onClick=\{\(\) => void signOut\(\)\}[\s\S]{0,170}t\('acct\.signOut'\)/, 'the block must offer sign-out');
+  assert.match(footer, /user\.role === 'admin'[\s\S]{0,120}to="\/admin"/, 'an administrator gets a route to the owner dashboard');
+  assert.match(footer, /t\('acct\.guest'\)/, 'a guest must be named as a guest');
+  assert.match(footer, /t\('acct\.signUp'\)/, 'the rail\'s one account action is Sign up');
+  assert.doesNotMatch(footer, /acct\.signIn|acct\.guestNote/, 'the rail must not bring back the old two-job button or the guest note');
+  assert.match(footer, /setAuthOpen\(true\)/, 'the rail must open the account dialog');
+  assert.match(app, /await logout\(\);[\s\S]{0,200}nav\('\/', \{ replace: true \}\)/, 'sign-out must end the session');
+  // The cards this block replaced are gone from the markup AND from the stylesheet.
+  assert.doesNotMatch(app, /side-xp|side-keep|keep-badge/, 'the replaced rail cards must not remain in the shell');
+  assert.doesNotMatch(styles, /\.side-xp|\.side-keep/, 'the replaced rail cards must not leave a rule behind');
+  const locales = read('src/app/i18n/locales.ts');
+  const enBlock = locales.slice(locales.indexOf('export const en ='), locales.indexOf('export type LocaleKey'));
+  const hiBlock = locales.slice(locales.indexOf('export const hinglish'));
+  for (const key of ['acct.guest', 'acct.signUp', 'acct.signOut']) {
+    assert.ok(enBlock.includes(`'${key}':`), `${key} is missing from the English pack`);
+    assert.ok(hiBlock.includes(`'${key}':`), `${key} is missing from the Hinglish pack`);
+  }
+});
+
 test('layout: the footer replaces the brand with a live local Last Seen and floating AI button', () => {
   const app = read('src/app/App.tsx');
   const start = app.indexOf('<footer className="statusbar"');

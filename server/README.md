@@ -1,8 +1,8 @@
 # Supabase account service
 
-The app keeps guest learning available offline. Supabase Auth handles email/password accounts;
-PostgreSQL stores protected account profiles, activity summaries, and summary-only progress
-snapshots. Private answers, notes, and saved code stay in the browser and are not synced.
+Visitors must sign in before entering the learning app. Supabase Auth handles email/password and
+OAuth accounts; PostgreSQL stores protected account profiles, sign-in activity, and summary-only
+progress snapshots. Private answers, notes, and saved code stay in the browser and are not synced.
 
 ## Configure Supabase
 
@@ -83,8 +83,8 @@ npm run db:setup -- --admin      # bootstrap the owner account after a healthy c
 If the shared pooler host reports `P1001`, switch to the project's direct host
 (`db.<project-ref>.supabase.co:5432`); remove `?pgbouncer=true` when you leave the pooler.
 
-The migration creates profiles for existing Supabase Auth users and new sign-ups, plus
-summary-only progress snapshots. Each public table has RLS enabled and no
+The migrations create profiles for existing Supabase Auth users and new sign-ups, plus
+summary-only progress snapshots and sign-in events. Each public table has RLS enabled and no
 `anon`/`authenticated` table grants. The API uses the server-side Prisma connection; browser
 clients cannot read other users' records.
 
@@ -115,14 +115,16 @@ Vite proxies `/api` to `http://localhost:8787`. Check the API and database conne
 ## Owner dashboard
 
 Sign in through the same page as learners. The owner role unlocks `/#/admin`; the server checks the
-database-backed role on every admin request. The dashboard shows account identity, last sign-in,
-online presence (last seen within two minutes), last-30-day sign-ins, and privacy-limited learning
-metrics, and it can disable or re-enable a learner account. It cannot grant admin privileges.
+database-backed role on every admin request. The dashboard shows account identity, recent sign-in
+events and their method (email/password, Google, or GitHub), last sign-in, online presence (last
+seen within two minutes), last-30-day sign-ins, and privacy-limited learning metrics. It can disable
+or re-enable a learner account but cannot grant admin privileges.
+The recent-event list begins after the sign-in-events migration is deployed; Supabase's existing
+last-sign-in timestamp remains available for earlier accounts.
 
-Signing in never restricts learning: accounts and guests reach the same pages. Progress metrics are
-sent after a quiet period while online and include XP, streak, practice/completion counts, study
-time/days, and open mistakes. Answer text, notes, saved code, bookmarks, and detailed records remain
-local.
+Sign-in is required to use learning pages. Progress metrics are sent after a quiet period while
+online and include XP, streak, practice/completion counts, study time/days, and open mistakes.
+Answer text, notes, saved code, bookmarks, and detailed records remain local.
 
 Accounts and passwords from the old Oracle-backed account service are not migrated. Learners must
 create Supabase Auth accounts. Existing guest data stays under the original browser-local keys;

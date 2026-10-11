@@ -5,7 +5,13 @@
 export const en = {
   'app.name': 'BROCODE',
   'app.tagline': 'Learn → Code → Build → Master',
-  'side.keep': "Keep Going, You're Building Your Future!",
+  // account (the rail's profile card — a learner can browse as a guest)
+  'acct.guest': 'Guest learner',
+  'acct.signUp': 'Sign up',
+  'acct.admin': 'Administrator',
+  'acct.dashboard': 'Owner dashboard',
+  'acct.signOut': 'Sign out',
+  'acct.signingOut': 'Signing out…',
   'top.search': 'Search lessons, topics, projects…',
   'top.level': 'Level',
   'nav.pillars': 'PLATFORM',
@@ -409,7 +415,12 @@ export type LocaleKey = keyof typeof en;
 /** Natural Hinglish — human phrasing, not literal translation. */
 export const hinglish: Partial<Record<LocaleKey, string>> = {
   'app.tagline': 'Learn → Code → Build → Master',
-  'side.keep': 'Keep Going — apna future khud bana rahe ho!',
+  'acct.guest': 'Guest learner',
+  'acct.signUp': 'Sign up',
+  'acct.admin': 'Administrator',
+  'acct.dashboard': 'Owner dashboard',
+  'acct.signOut': 'Sign out karo',
+  'acct.signingOut': 'Sign out ho raha hai…',
   'top.search': 'Lessons, topics, projects search karo…',
   'dash.journey': 'Har step tumhe aage le jata hai — Learn → Code → Build → Master.',
   'dash.chip': '“Aaj ka practice, kal ki mastery.”',

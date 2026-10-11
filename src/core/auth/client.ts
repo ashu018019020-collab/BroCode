@@ -1,9 +1,10 @@
 import { createClient, type Session } from '@supabase/supabase-js';
-import type { OAuthProvider } from './oauth';
+import { enabledProviders, type OAuthProvider, type ProviderAvailability } from './oauth';
 import type { ProgressSummary } from './progress';
 
 export type AccountRole = 'user' | 'admin';
 export type AccountStatus = 'active' | 'disabled';
+export type SignInProvider = 'email' | 'google' | 'github' | 'other';
 
 export interface AuthUser {
   id: string;
@@ -27,6 +28,13 @@ export interface ManagedUser extends AuthUser {
 
 export interface AdminUserResult {
   users: ManagedUser[];
+  recentSignIns: {
+    id: number;
+    email: string;
+    name: string;
+    provider: SignInProvider;
+    signedInAt: string;
+  }[];
   summary: {
     total: number;
     online: number;
@@ -40,6 +48,7 @@ export interface RegistrationResult {
 }
 
 let client: ReturnType<typeof createClient> | undefined;
+const PENDING_OAUTH_KEY = 'brocode:pending-oauth-provider';
 
 export function getSupabaseClient() {
   if (client) return client;
@@ -98,6 +107,56 @@ async function fetchCurrentUser(session: Session): Promise<AuthUser> {
   return result.user;
 }
 
+/**
+ * The project's enabled providers, asked for once per session (the settings endpoint is public and
+ * takes the publishable key). Cached at module level so opening the dialog twice is one request.
+ * `null` means "could not find out" — see `enabledProviders` for why that is not "none".
+ */
+let providerAvailability: Promise<ProviderAvailability | null> | undefined;
+
+export function loadProviderAvailability(): Promise<ProviderAvailability | null> {
+  if (!providerAvailability) {
+    providerAvailability = (async () => {
+      try {
+        const url = import.meta.env.VITE_SUPABASE_URL;
+        const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        if (!url || !key) return null;
+        const response = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } });
+        if (!response.ok) return null;
+        return enabledProviders(await response.json());
+      } catch (error) {
+        console.error('Could not read the Supabase provider settings.', error);
+        return null;
+      }
+    })();
+  }
+  return providerAvailability;
+}
+
+export function takePendingOAuthProvider(): OAuthProvider | null {
+  let pending: string | null;
+  try {
+    pending = window.sessionStorage.getItem(PENDING_OAUTH_KEY);
+    window.sessionStorage.removeItem(PENDING_OAUTH_KEY);
+  } catch (error) {
+    console.error('Could not read the pending OAuth provider.', error);
+    return null;
+  }
+  if (!pending) return null;
+  try {
+    const value = JSON.parse(pending) as { provider?: unknown; startedAt?: unknown };
+    const age = typeof value.startedAt === 'number' ? Date.now() - value.startedAt : -1;
+    if (
+      (value.provider === 'google' || value.provider === 'github')
+      && age >= 0
+      && age <= 15 * 60_000
+    ) return value.provider;
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export const authApi = {
   async session(session: Session | null): Promise<AuthUser | null> {
     if (!session) return null;
@@ -105,21 +164,41 @@ export const authApi = {
   },
 
   async login(email: string, password: string): Promise<AuthUser> {
+    takePendingOAuthProvider();
     const { data, error } = await getSupabaseClient().auth.signInWithPassword({ email, password });
     if (error) throw authError(error);
     if (!data.session) throw new Error('Supabase sign-in did not return an active session.');
-    return fetchCurrentUser(data.session);
+    const user = await fetchCurrentUser(data.session);
+    await authApi.recordSignIn(data.session, 'email').catch((cause: unknown) => {
+      console.error('Could not record email sign-in activity.', cause);
+    });
+    return user;
   },
 
   async signInWithProvider(provider: OAuthProvider): Promise<void> {
-    const { error } = await getSupabaseClient().auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}` },
-    });
-    if (error) throw authError(error);
+    try {
+      window.sessionStorage.setItem(PENDING_OAUTH_KEY, JSON.stringify({ provider, startedAt: Date.now() }));
+    } catch (error) {
+      console.error('Could not persist the pending OAuth provider.', error);
+    }
+    try {
+      const { error } = await getSupabaseClient().auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}` },
+      });
+      if (error) throw authError(error);
+    } catch (error) {
+      try {
+        window.sessionStorage.removeItem(PENDING_OAUTH_KEY);
+      } catch (storageError) {
+        console.error('Could not clear the pending OAuth provider.', storageError);
+      }
+      throw error;
+    }
   },
 
   async register(name: string, email: string, password: string): Promise<RegistrationResult> {
+    takePendingOAuthProvider();
     const { data, error } = await getSupabaseClient().auth.signUp({
       email,
       password,
@@ -130,7 +209,21 @@ export const authApi = {
     });
     if (error) throw authError(error);
     if (!data.session) return { user: null, emailConfirmationRequired: true };
-    return { user: await fetchCurrentUser(data.session), emailConfirmationRequired: false };
+    const user = await fetchCurrentUser(data.session);
+    await authApi.recordSignIn(data.session, 'email').catch((cause: unknown) => {
+      console.error('Could not record account creation sign-in activity.', cause);
+    });
+    return { user, emailConfirmationRequired: false };
+  },
+
+  /** Re-send the signup confirmation link — the one screen a waiting learner actually needs. */
+  async resendConfirmation(email: string): Promise<void> {
+    const { error } = await getSupabaseClient().auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    if (error) throw authError(error);
   },
 
   async logout(): Promise<void> {
@@ -139,6 +232,12 @@ export const authApi = {
   },
 
   presence: () => request<{ user: AuthUser }>('/api/auth/presence', { method: 'POST' }),
+
+  recordSignIn: (session: Session, provider: SignInProvider) => request<{ ok: true }>(
+    '/api/auth/sign-in-event',
+    { method: 'POST', body: JSON.stringify({ provider }) },
+    session,
+  ),
 
   users: () => request<AdminUserResult>('/api/admin/users'),
 
