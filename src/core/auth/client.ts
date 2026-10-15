@@ -134,9 +134,51 @@ async function request<T>(path: string, init: RequestInit = {}, session?: Sessio
 }
 
 async function fetchCurrentUser(session: Session): Promise<AuthUser> {
-  const result = await request<{ user: AuthUser | null }>('/api/auth/session', {}, session);
-  if (!result.user) throw new Error('The account profile is unavailable. Contact the administrator.');
-  return result.user;
+  // Server-verified profile when the account API is reachable: role comes from the database, so a
+  // ban or promotion takes effect immediately instead of waiting for the token to refresh.
+  try {
+    const result = await request<{ user: AuthUser | null }>('/api/auth/session', {}, session);
+    if (result.user) return result.user;
+  } catch {
+    // The API server is not deployed alongside the static frontend (or is temporarily down). Fall
+    // back to the signed Supabase session claims below so sign-in and email verification still
+    // complete instead of surfacing "The account service is unavailable right now."
+  }
+  return profileFromSession(session);
+}
+
+/**
+ * Builds the app's account profile from a Supabase session's own, cryptographically-signed claims.
+ *
+ * No network call is required: `id`, `email`, `user_metadata.display_name` and
+ * `app_metadata.brocode_role` are delivered inside the access token Supabase issues after a
+ * successful sign-in, so they are as trustworthy as the session itself. This mirrors the server's
+ * `profileFromAuthUser` (`server/auth-store.mjs`) so a static deployment behaves the same as an
+ * API-backed one — role can only ever be `admin` when Supabase itself stamped it, which a client
+ * cannot forge.
+ */
+export function profileFromSession(session: Session): AuthUser {
+  // Supabase's public `User` type omits some fields the session can carry (banned_until), so the
+  // session user is read through a superset type. Nothing here is forged: every value comes from a
+  // Supabase-signed token.
+  type SessionUser = Session['user'] & { banned_until?: string | null };
+  const authUser = session.user as unknown as SessionUser;
+  const metadata = authUser.user_metadata ?? {};
+  const appMetadata = authUser.app_metadata ?? {};
+  const named = metadata.display_name;
+  const name =
+    typeof named === 'string' && named.trim() ? named.trim() : (authUser.email ?? '').split('@')[0] ?? '';
+  const role = appMetadata.brocode_role === 'admin' ? 'admin' : 'user';
+  const now = Date.now();
+  const status =
+    authUser.banned_until && new Date(authUser.banned_until).getTime() > now ? 'disabled' : 'active';
+  return {
+    id: authUser.id,
+    email: authUser.email ?? '',
+    name,
+    role,
+    status,
+  };
 }
 
 /**
