@@ -5,15 +5,22 @@
 export const en = {
   'app.name': 'BROCODE',
   'app.tagline': 'Learn → Code → Build → Master',
-  // account (the rail's profile card — a learner can browse as a guest)
-  'acct.guest': 'Guest learner',
-  'acct.signUp': 'Sign up',
+  // account (the rail's profile card — an account is REQUIRED to learn, so signed out this block
+  // offers the two doors instead of naming a "guest" who could browse anyway)
+  'acct.signedOut': 'Not signed in',
+  'acct.signInHint': 'Sign in to start learning',
+  'acct.signIn': 'Sign in',
+  'acct.signUp': 'Create account',
   'acct.admin': 'Administrator',
   'acct.dashboard': 'Owner dashboard',
   'acct.signOut': 'Sign out',
   'acct.signingOut': 'Signing out…',
   'top.search': 'Search lessons, topics, projects…',
   'top.level': 'Level',
+  // The language selector: one label, one pair of options (the option names are NOT translated —
+  // "Hinglish" has to read as "Hinglish" to someone who does not speak English yet).
+  'lang.label': 'Language',
+  'lang.hint': 'Switch the interface and learning content between English and Hinglish.',
   'nav.pillars': 'PLATFORM',
   'nav.learn': 'LEARN',
   'nav.practice': 'PRACTICE',
@@ -408,6 +415,21 @@ export const en = {
   'courses.next': 'Next',
   'courses.lastStep': 'Last step of this course',
   'courses.bySections': 'by section mastery',
+  // The recovery screen — the error boundary's branded fallback (components/ui/ErrorBoundary).
+  'error.badge': 'BROCODE · RECOVERY MODE',
+  'error.title': 'Something',
+  'error.titleAccent': 'Went Off Track',
+  'error.sub': "We hit an unexpected issue while loading this page. Your learning experience matters to us — we're helping you get back on track.",
+  'error.safe': 'Your learning progress is preserved',
+  'error.safeSub': 'wherever it has been successfully saved.',
+  'error.retry': 'Try Again',
+  'error.retrySub': 'Reload this page safely',
+  'error.home': 'Back to Dashboard',
+  'error.homeSub': 'Go to your learning home',
+  'error.reload': 'Reload Application',
+  'error.reloadSub': 'Restart the app',
+  'error.diagnostics': 'Advanced Diagnostics',
+  'error.diagnosticsSub': 'Technical details are hidden below — open them only to troubleshoot.',
 };
 
 export type LocaleKey = keyof typeof en;
@@ -415,13 +437,17 @@ export type LocaleKey = keyof typeof en;
 /** Natural Hinglish — human phrasing, not literal translation. */
 export const hinglish: Partial<Record<LocaleKey, string>> = {
   'app.tagline': 'Learn → Code → Build → Master',
-  'acct.guest': 'Guest learner',
-  'acct.signUp': 'Sign up',
+  'acct.signedOut': 'Sign in nahi kiya',
+  'acct.signInHint': 'Seekhne ke liye sign in karo',
+  'acct.signIn': 'Sign in karo',
+  'acct.signUp': 'Account banao',
   'acct.admin': 'Administrator',
   'acct.dashboard': 'Owner dashboard',
   'acct.signOut': 'Sign out karo',
   'acct.signingOut': 'Sign out ho raha hai…',
   'top.search': 'Lessons, topics, projects search karo…',
+  'lang.label': 'Bhasha',
+  'lang.hint': 'Interface aur learning content ko English aur Hinglish ke beech switch karo.',
   'dash.journey': 'Har step tumhe aage le jata hai — Learn → Code → Build → Master.',
   'dash.chip': '“Aaj ka practice, kal ki mastery.”',
   'dash.motivation': '“Chhote Kadam = Bade Progress.”',
@@ -773,16 +799,133 @@ export const hinglish: Partial<Record<LocaleKey, string>> = {
   'courses.next': 'Agla',
   'courses.lastStep': 'Is course ka last step',
   'courses.bySections': 'sections ka mastery',
+  //
+  // Filled to parity with `en`: the pack used to fall back to English for these 30 keys, which
+  // looked like a missing translation in the middle of a Hinglish screen. Brand words ('BROCODE'),
+  // product words that ARE the English term ('Projects', 'SQL', 'Lessons') and section labels whose
+  // uppercase form is a design token stay identical on purpose — `npm run i18n:check` counts a key
+  // as translated when it exists, not when it differs.
+  'app.name': 'BROCODE',
+  'top.level': 'Level',
+  'nav.build': 'BUILD',
+  'nav.you': 'YOU',
+  'dash.welcome': 'Wapas swagat,',
+  'dash.quick': 'Quick Stats',
+  'dash.projects': 'Projects',
+  'dash.assessments': 'Assessments',
+  'dash.achievements': 'Achievements',
+  'dash.recommended': 'Tumhare liye recommended',
+  'track.python': 'Python Core',
+  'track.data': 'NumPy + Pandas',
+  'track.sql': 'SQL',
+  'track.ml': 'ML + NLP',
+  'track.genai': 'GenAI',
+  'track.agentic': 'Agentic AI',
+  'track.apis': 'APIs + Production',
+  'track.interview': 'Interview + Projects',
+  'track.hours': 'ghante',
+  'track.lessons': 'Lessons',
+  'track.tasks': 'Tasks',
+  'status.spaces': 'Spaces',
+  'pg.copy': 'Copy karo',
+  'pg.save': 'Save karo',
+  'pg.clear': 'Clear karo',
+  'pg.expand': 'Bada karo',
+  'pg.success': 'Program chal gaya',
+  'pg.failed': 'Program fail ho gaya',
+  'pg.install': 'Install karo',
+  'pg.mainPy': 'main.py',
+  'error.badge': 'BROCODE · RECOVERY MODE',
+  'error.title': 'Kuch Galat',
+  'error.titleAccent': 'Ho Gaya',
+  'error.sub': 'Is page ko load karte waqt ek unexpected issue aa gaya. Tumhari learning journey important hai — hum wapas track par la rahe hain.',
+  'error.safe': 'Tumhari learning progress safe hai',
+  'error.safeSub': 'jahan-jahan successfully save hui hai, wahi par rakhi hai.',
+  'error.retry': 'Dobara Try Karo',
+  'error.retrySub': 'Page ko safely reload karo',
+  'error.home': 'Dashboard par jao',
+  'error.homeSub': 'Apne learning home par wapas jao',
+  'error.reload': 'App Reload Karo',
+  'error.reloadSub': 'App ko restart karo',
+  'error.diagnostics': 'Advanced Diagnostics',
+  'error.diagnosticsSub': 'Technical details neeche chhipe hain — sirf troubleshooting ke liye kholo.',
 };
 
-export interface LocaleMeta { code: string; name: string; nativeName: string; dir: 'ltr' | 'rtl' }
+/* ------------------------------- the locales ------------------------------ */
+
+/**
+ * The two locale ids, and the reason there are only two.
+ *
+ * `hi` is this product's Hinglish — Roman-script Hindi mixed with the English technical vocabulary a
+ * learner already reads in code. It is NOT Devanagari Hindi, so there is no `hi-IN` script variant
+ * to add here: a second id would only be a second way to spell the same experience.
+ */
+export type LocaleId = 'en' | 'hi';
+
+export interface LocaleMeta {
+  code: LocaleId;
+  /** What the language selector prints. Full names, never codes: "HI" reads as a country. */
+  name: string;
+  nativeName: string;
+  dir: 'ltr' | 'rtl';
+}
+
 export const LOCALES: LocaleMeta[] = [
-  { code: 'hinglish', name: 'Hinglish', nativeName: 'Hinglish', dir: 'ltr' },
   { code: 'en', name: 'English', nativeName: 'English', dir: 'ltr' },
+  { code: 'hi', name: 'Hinglish', nativeName: 'Hinglish', dir: 'ltr' },
 ];
 
-const PACKS: Record<string, Partial<Record<LocaleKey, string>>> = { en, hinglish };
+/**
+ * Locales this build used to store under a different id. `hinglish` was the id before the pair was
+ * named for BCP-47; a learner who chose it then must keep that choice now, so the old spelling is
+ * READ (and rewritten) rather than dropped.
+ */
+const LEGACY_LOCALE_IDS: Record<string, LocaleId> = { hinglish: 'hi', 'hi-in': 'hi', english: 'en', 'en-us': 'en', 'en-gb': 'en' };
 
-export function getPack(code: string): Partial<Record<LocaleKey, string>> {
-  return PACKS[code] ?? {};
+/**
+ * The fallback for a visitor who has never chosen: their own browser, when that browser asks for
+ * Hindi/Hinglish; otherwise the product's own default. A stored choice ALWAYS wins over this, so a
+ * learner is never re-detected out of the language they picked.
+ */
+export const DEFAULT_LOCALE: LocaleId = 'hi';
+
+export function isLocaleId(value: unknown): value is LocaleId {
+  return value === 'en' || value === 'hi';
 }
+
+/**
+ * Anything → a real locale id. Unknown, empty and the pre-`hi` spellings all resolve, so a corrupt
+ * or outdated stored value can never leave the app with no pack at all.
+ */
+export function normalizeLocale(value: unknown): LocaleId | null {
+  if (typeof value !== 'string') return null;
+  const lower = value.trim().toLowerCase();
+  if (isLocaleId(lower)) return lower;
+  return LEGACY_LOCALE_IDS[lower] ?? null;
+}
+
+/** The best locale for a device that has never chosen, from `navigator.language`-style input. */
+export function localeFromLanguageTag(tag: string | null | undefined): LocaleId {
+  const primary = (tag ?? '').trim().toLowerCase().split(/[-_]/)[0];
+  if (primary === 'hi') return 'hi';
+  if (primary === 'en') return 'en';
+  return DEFAULT_LOCALE;
+}
+
+const PACKS: Record<LocaleId, Partial<Record<LocaleKey, string>>> = { en, hi: hinglish };
+
+/** The raw pack for a code — normalised first, so 'hinglish' still finds the Hinglish strings. */
+export function getPack(code: string): Partial<Record<LocaleKey, string>> {
+  return PACKS[normalizeLocale(code) ?? DEFAULT_LOCALE];
+}
+
+/** Every key the English pack defines — the pack that defines the contract. */
+export const LOCALE_KEYS = Object.keys(en) as LocaleKey[];
+
+/** Keys a pack has not translated yet. Used by the dev warning and `npm run i18n:check`. */
+export function missingLocaleKeys(code: string): LocaleKey[] {
+  const pack = getPack(code);
+  return LOCALE_KEYS.filter((key) => !String(pack[key] ?? '').trim());
+}
+
+export { hinglish as hi };

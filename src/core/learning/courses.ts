@@ -110,6 +110,24 @@ export interface CourseIndex {
   totals: { courses: number; items: number };
 }
 
+/* --------------------------- bilingual shape ------------------------------- */
+
+/**
+ * The authored shape of the text a course publishes, before the loader resolves it.
+ *
+ * A translatable field is EITHER a plain string (a term that is the same in both languages, like
+ * "Python") or an `{ en, hi }` map. Both are legal at once so the corpus can be translated one
+ * batch at a time — see `core/data/localize.ts`, which owns the resolver and the fallback rule.
+ * These aliases are structural on purpose: `core/learning` stays free of runtime imports, and the
+ * published card a component sees is still a plain `CourseCard` with a plain string `name`.
+ */
+interface LocalizedText { en: string; hi: string }
+type CardText = string | LocalizedText;
+
+export type CourseCardRecord = Omit<CourseCard, 'name'> & { name: CardText };
+export type CourseIndexRecord = Omit<CourseIndex, 'courses'> & { courses: CourseCardRecord[] };
+export type CourseFileRecord = Omit<CourseFile, 'name'> & { name: CardText };
+
 /** A course's full file: its card plus every tagged item. Fetched only on the course's own page. */
 export interface CourseFile extends CourseCard {
   /** Step number → curriculum-aware lab routes, derived from the authored course map. */

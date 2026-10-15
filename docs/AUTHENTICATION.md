@@ -1,0 +1,201 @@
+# Authentication
+
+How an account gates BroCode: the flow, the rules, the Supabase configuration it depends on, and the
+exact dashboard steps a deployment must complete. Verified against the implementation; anything that
+requires dashboard access is marked as such.
+
+## The rule
+
+**An account is required to learn.** There is no guest mode, no anonymous sign-in, and no local-only
+fallback that unlocks protected content. A visitor can read the public landing page and nothing else.
+
+Three layers enforce it, and none of them is sufficient alone:
+
+| Layer | Where | What it stops |
+|---|---|---|
+| Route guard | `src/features/auth/RequireAuth.tsx`, wrapping every protected `<Route>` in `src/app/App.tsx` | A visitor *rendering* a protected page, and losing the page they asked for |
+| Server authorization | `server/app.mjs` `requireUser` / `requireAdmin`, verifying the bearer token with Supabase on every request | A caller reaching protected data by bypassing the UI entirely |
+| Row Level Security | `prisma/migrations/*` | The publishable key reading or writing a row directly, bypassing the API |
+
+Hiding a link is not protection, so the guard is convenience and flow; the server and the database are
+the security boundary.
+
+## The user journey
+
+1. A visitor opens the app at `/`.
+2. `PublicHome` sees no session and renders the **Landing** page — public, no personal data, with
+   Sign in and Create account.
+3. Clicking any protected feature (or a bookmarked deep link) hits `RequireAuth`.
+4. While the session is still being restored, the guard renders a **skeleton** and does NOT redirect.
+   This is the single most important line in the guard: redirecting here would sign out a
+   legitimately signed-in learner on every page refresh.
+5. Unauthenticated → redirect to `/login` with the requested path in **router state** (never a query
+   string, so a crafted `?next=` cannot steer anyone).
+6. Create account or sign in through Supabase Auth.
+7. On success, redirect to the requested page — or `/admin` for an administrator, `/` otherwise.
+8. If Supabase is unreachable, the session resolves to null and the learner stays on `/login` with a
+   recoverable message. **Nothing unlocks.** There is no cached-demo or guest fallback.
+
+## Session states
+
+| State | What the app does |
+|---|---|
+| First visit | Landing page. No session, no data fetched. |
+| Registered, signed out | Landing or `/login`. |
+| Signup, confirmation required | "Check your inbox" state with a resend button. No session is granted. |
+| Signup, confirmation disabled | Session established immediately; dashboard. |
+| Signed in | Protected pages render. |
+| Refresh | `getSession()` restores from local storage; the guard shows the skeleton, never a redirect. |
+| Expired / revoked | `getUser()` returns 401 → treated as signed out → the guard redirects. |
+| Sign out | `auth.signOut()`, storage namespace cleared, redirect to `/`. |
+| Password reset | `/reset-password`, two halves — request by email, then set a new one. |
+| Invalid recovery link | The provider's own sentence, plus a link to request a new one. |
+| Supabase outage | Session resolves to null; `/login` shows `SERVICE_UNAVAILABLE_COPY`. |
+| Disabled account | `getProfile().status !== 'active'` → no session at all → 401 on every endpoint. |
+| Multiple tabs | `onAuthStateChange` fires in each tab; each re-applies the session. |
+
+## Password recovery
+
+`src/core/auth/reset.ts` owns the link parsing (pure, unit-tested). A recovery link returns to the
+app root, not to a separate route, because Supabase appends its own parameters:
+
+- **PKCE** (this app's configured flow): `?code=…` in the query, which supabase-js exchanges.
+- **Implicit fallback**: `#access_token=…&type=recovery` in the fragment.
+
+That second shape matters twice over: this app uses a **HashRouter**, so its routes live in the same
+fragment. `passwordResetRequested()` therefore treats a fragment as a recovery credential only when it
+looks like `k=v&k=v`, so `#/lesson/s01/learn` is never mistaken for one. Once read, the credential is
+stripped from the address bar — a refresh must not replay a spent link, and a screenshot must not
+capture a live one.
+
+## Required Supabase Dashboard configuration
+
+These are **dashboard actions, not code**, and the flow is incomplete without them. I could not verify
+them: they need your project's credentials, which are deliberately not in the repository.
+
+**Authentication → URL Configuration**
+
+- **Site URL**: your deployed origin, e.g. `https://<user>.github.io/BroCode/`
+- **Redirect URLs** — add every origin you sign in from:
+  - `http://localhost:5173/**` (dev)
+  - `https://<your-origin>/BroCode/**` (production)
+
+  A redirect target that is not on this list is silently rewritten to the Site URL, which is the usual
+  cause of "the recovery link goes to the dashboard" or "the confirmation link does nothing".
+
+**Authentication → Providers → Email**
+
+- Decide **Confirm email**. Both modes are supported:
+  - **ON** — `register()` returns `{ user: null, emailConfirmationRequired: true }` and the form shows
+    the inbox state with resend. No session is issued until the link is followed.
+  - **OFF** — `signUp` returns a session immediately and the learner goes straight to the dashboard.
+- **Minimum password length** must be ≤ 8, or `MIN_PASSWORD` in `src/core/auth/messages.ts` will
+  accept a password the server rejects, and the learner sees an error the form said was fine.
+
+**Authentication → Providers → Google / GitHub** (optional)
+
+The form probes `/auth/v1/settings` and only renders providers that are enabled, so leaving them off
+is safe. If you enable one, add the callback URL Supabase prints to that provider's own console.
+
+**Authentication → Rate limits**
+
+Supabase rate-limits confirmation and recovery emails per hour by default. If you raise the custom
+SMTP limits, keep a limit on `resend` — the resend button is the one place a learner can send mail
+repeatedly.
+
+## Environment variables
+
+Browser (publishable, safe to ship — RLS is what makes it safe):
+
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
+```
+
+Server only (never `VITE_`-prefixed):
+
+```
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
+SUPABASE_SECRET_KEY=your-supabase-secret-key
+DATABASE_URL=postgresql://...          # optional; enables the Prisma store
+DIRECT_URL=postgresql://...
+WEB_ORIGIN=http://localhost:5173
+API_PORT=8787
+```
+
+A build without the `VITE_` pair is treated as **unconfigured**, not broken: `browserSupabaseConfig()`
+returns null, the app logs one actionable line to the console, and sign-in is impossible — which is the
+correct degradation now that an account is mandatory. There is no fallback that grants access.
+
+## Database
+
+`profiles` is keyed by the Supabase user id and is the row every authenticated request resolves
+through. `email` is a **display mirror**, never a relationship key: an address can change or be
+re-verified in Auth, and a schema keyed on it would detach a learner's history.
+
+Profile creation is idempotent in two independent places, so a failure in either does not lock anyone
+out:
+
+1. A `SECURITY DEFINER` trigger on `auth.users` (`private.create_profile_for_auth_user`) with
+   `ON CONFLICT (id) DO NOTHING`.
+2. `server/store.mjs` `getProfile` **upserts** on read. If the trigger never ran — a migration applied
+   without it, or a signup that raced it — the row is created for the token's own user id. `update: {}`
+   means an existing row is never modified, and `role`/`status` are not written, so this path can
+   neither clobber a profile, mint an administrator, nor un-ban an account.
+
+## Applying the migration
+
+```bash
+npm run db:validate      # schema parses
+npm run db:check         # can this machine actually REACH the database, and are the credentials right?
+npm run db:deploy        # prisma migrate deploy — the ONLY production path
+```
+
+`prisma/migrations/20261007120000_profile_completeness_rls/migration.sql` is **additive**: three
+nullable/defaulted columns, an `updated_at` trigger, a restatement of RLS + `REVOKE ALL` on all three
+tables, deny-by-default policies, and an email backfill that only fills NULLs. It drops nothing and
+rewrites no learner data. A commented rollback block is at the bottom of the file.
+
+**Never** `prisma migrate reset`, `migrate dev` against production, or `db push`.
+
+### `db:deploy` fails with P1001 "Can't reach database server"
+
+Run `npm run db:check` first. `P1001` covers four unrelated faults that need opposite fixes, and the
+checker separates them:
+
+| What the checker reports | What it means | Fix |
+|---|---|---|
+| `socket open` then `NOT POSTGRES — answered the TLS handshake with a non-TLS record` | The hostname resolves and the **port accepts the connection**, but the service behind it is not Postgres. A **retired Supabase pooler** behaves exactly like this — which is why plain TCP reachability proves nothing. | Re-copy the connection strings from **Project Settings → Database → Connection string → URI**. Use **Session pooler** for `DATABASE_URL` and **Direct connection** for `DIRECT_URL`. The hostname format is `aws-<N>-<region>.pooler.supabase.com`; both `N` and the region can be stale. |
+| `credentials REJECTED (P1000)` | The host is fine and Postgres answered — only the **password** (or the username form) is wrong. | Reset it at **Project Settings → Database → Reset database password**, then re-copy the URI. The pooler wants `postgres.<project-ref>`; the direct host wants plain `postgres`. |
+| `socket timeout` / `DNS` | Nothing is listening, or the network blocks it. Note that `db.<ref>.supabase.co` is **IPv6-only**, so an IPv4-only network must use the pooler hostname. | Use the pooler, or enable IPv6. |
+| `password contains a URL-special character with no %XX escape` | A password pasted unencoded: `@ : / ? #` inside it ends the URL early and the client sends a truncated credential. | Percent-encode those characters in the URI. |
+
+### Sign-in works independently of the database
+
+Supabase **Auth** and the Postgres **pooler** are separate services, and the app's mandatory sign-in
+needs only Auth plus the Node API — both driven by keys, not by `DATABASE_URL`. So a broken database
+connection does **not** break sign-in, and it must not be reported as if it did.
+
+`npm run db:check` reports the two verdicts separately. The database is only required for
+`npm run db:deploy` and for the **Prisma store** (server-side progress history and the sign-in log).
+Without it, `server/db-config.mjs` selects the Supabase-Auth store and the product still works.
+
+A build with `VITE_` config but a broken `DATABASE_URL` therefore behaves like this:
+
+| Feature | Without a working database |
+|---|---|
+| Sign up / sign in / sign out | **Works** (Supabase Auth) |
+| Password reset | **Works** |
+| Courses, lessons, practice, labs | **Works** (content is bundled, progress is in the browser) |
+| Owner dashboard | **Works** (read from Auth) |
+| Server-side progress history + sign-in log | **Not stored** |
+| `db:deploy` | **Blocked** — needs the connection strings fixed |
+
+## What is not implemented
+
+- **MFA / 2FA.** Not configured and not in the UI.
+- **Account deletion.** Not implemented; there is no self-service delete.
+- **Server-side session storage.** supabase-js persists the session in browser storage; the server
+  verifies the token on each request rather than holding a session of its own.
+- **Email change.** Supabase Auth supports it, but no UI calls it.

@@ -117,7 +117,22 @@ async function build() {
   const sectionOwner = new Map();
 
   for (const course of courses) {
-    if (!course.slug || !course.name) problems.push(`course ${course.number}: slug and name are required`);
+    if (!course.slug) problems.push(`course ${course.number}: slug is required`);
+    // The name is bilingual: a plain string is still legal ("Python" is the same in both
+    // languages), but an `{ en, hi }` map has to carry BOTH — an empty side is not a translation,
+    // and the reader would fall back to English while the author believed the course was done.
+    const name = course.name;
+    if (typeof name === 'string') {
+      if (!name.trim()) problems.push(`course ${course.number}: name is required`);
+    } else if (!name || typeof name !== 'object') {
+      problems.push(`course ${course.number}: name must be a string or an { en, hi } map`);
+    } else {
+      for (const lang of ['en', 'hi']) {
+        if (typeof name[lang] !== 'string' || !name[lang].trim()) {
+          problems.push(`course ${course.number}: name.${lang} is missing`);
+        }
+      }
+    }
     for (const step of course.steps ?? []) {
       if (stepOwner.has(step)) problems.push(`step ${step} belongs to both ${stepOwner.get(step).slug} and ${course.slug}`);
       else stepOwner.set(step, course);

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { authApi, type AccountStatus, type AdminUserResult, type ManagedUser, type SignInProvider } from '../../core/auth/client';
+import { authErrorCopy } from '../../core/auth/messages';
 import { onlineOf, watchLive, type LiveStatus } from '../../core/auth/realtime';
 
 /**
@@ -86,7 +87,9 @@ export default function AdminUsersPage() {
       setResult(await authApi.users());
       setError('');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not load accounts.');
+      // Through the same funnel as the form: this page is the one place an operator could otherwise
+      // read a raw HTTP status or "verify the API server is running" straight off the screen.
+      setError(cause instanceof Error ? authErrorCopy(cause.message) : 'Could not load accounts.');
     } finally {
       setLoadingUsers(false);
     }
@@ -164,7 +167,7 @@ export default function AdminUsersPage() {
       await authApi.updateStatus(account.id, status);
       await loadUsers();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not update account status.');
+      setError(cause instanceof Error ? authErrorCopy(cause.message) : 'Could not update account status.');
     } finally {
       setBusyId(null);
     }

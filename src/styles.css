@@ -9,6 +9,12 @@
    Two rules keep this maintainable:
      · no rule below contains a colour literal — everything resolves from a token here, and
      · the light theme overrides the SAME token names, so one edit can never fix one theme only.
+
+   LIGHT IS THE SHIPPED DEFAULT. The preference is `theme: 'light'`, and the attribute that selects
+   this block is written by the inline boot script in `index.html` BEFORE the first paint (see
+   `src/core/storage/ui.ts` for the rule it mirrors). The dark tokens still live here at `:root`
+   because the always-dark scopes — the rail, the console, the header, the assistant — resolve them,
+   and because a learner who picks dark re-declares only the handful that differ.
    ============================================================ */
 :root {
   /* `color-scheme` drives the native pieces (scrollbars, textarea resize handle, form controls)
@@ -206,27 +212,36 @@
   --panel-grad: linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(248, 250, 255, .65));
   --panel-grad-hi: linear-gradient(180deg, #ffffff, #f6f9ff);
 
-  --cyan: #0891b2;
+  /* ACCENTS ARE TEXT COLOURS, so they are measured, not chosen by eye.
+     `--cyan`, `--green`, `--amber`, `--red` and `--pink` are used for small bold labels, pills and
+     inline emphasis on the PAGE (`#f2f4fa`) as well as on a card (`#ffffff`). The previous values
+     cleared 4.5:1 on white but not on the page, and `--amber` cleared neither (3.19:1) — amber is
+     the "this needs attention" colour, so it was the worst possible one to leave unreadable.
+     Restating them a shade deeper keeps the hue and puts every accent at >= 4.6:1 on BOTH surfaces
+     (verified with the WCAG relative-luminance formula; `scripts/tests/theme.test.mjs` pins the
+     floor so a later "brighter looks nicer" edit cannot silently undo it).
+     `--violet`, `--purple` and `--blue` already passed and are deliberately untouched. */
+  --cyan: #077894;
   --blue: #2563eb;
   --purple: #7c3aed;
   --violet: #6d28d9;
-  --pink: #db2777;
-  --green: #059669;
-  --amber: #d97706;
-  --red: #dc2626;
+  --pink: #ce2570;
+  --green: #047e58;
+  --amber: #a55a05;
+  --red: #d52525;
   --accent-grad: linear-gradient(135deg, #38bdf8, #4f7cff);
   --accent-grad-hi: linear-gradient(135deg, #22d3ee, #3b82f6);
   --accent-grad-soft: linear-gradient(135deg, rgba(56, 189, 248, .22), rgba(79, 124, 255, .18));
-  --destructive: #dc2626;
-  --primary: #0891b2;
-  --accent-rgb: 2 132 199;
+  --destructive: #d52525;
+  --primary: #077894;
+  --accent-rgb: 7 120 148;
   --edge-light: linear-gradient(90deg,
-    rgba(2, 132, 199, .55), rgba(37, 99, 235, .36) 34%, rgba(124, 58, 237, .24) 62%,
-    rgba(2, 132, 199, 0));
-  --edge-soft: linear-gradient(180deg, rgba(2, 132, 199, .05), transparent 58%);
+    rgba(7, 120, 148, .55), rgba(37, 99, 235, .36) 34%, rgba(124, 58, 237, .24) 62%,
+    rgba(7, 120, 148, 0));
+  --edge-soft: linear-gradient(180deg, rgba(7, 120, 148, .05), transparent 58%);
   --hero-ink: linear-gradient(92deg, #0b1220 18%, #1d4ed8 62%, #6d28d9 92%);
 
-  --spot-rgb: 2 132 199;
+  --spot-rgb: 7 120 148;
   --spot-a: .13;
   --spot-a-mid: .045;
   --spot-blend: multiply;
@@ -1344,12 +1359,6 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
     0 0 38px rgba(139, 92, 246, .82), inset 0 1px 5px rgba(255, 255, 255, .75);
   transform: translateX(-50%) scale(1.06);
 }
-.sb-settings {
-  display: grid; width: 34px; height: 34px; flex: none; place-items: center;
-  border: 1px solid var(--glass-line); border-radius: 50%; background: rgba(255, 255, 255, .04);
-  color: var(--glass-muted); transition: color .16s ease, box-shadow .16s ease, border-color .16s ease;
-}
-.sb-settings:hover { color: var(--glass-ink); border-color: rgba(34, 211, 238, .5); box-shadow: 0 0 13px rgba(34, 211, 238, .22); }
 /* Keep every destination available while compacting only supporting labels on smaller desktops. */
 @media (max-width: 780px) { .statusbar { gap: 10px; padding: 5px 10px; } }
 @media (max-width: 1220px) {
@@ -2839,18 +2848,23 @@ a.side-act, a.side-act:hover { text-decoration: none; }
    the list needed one more tone than the nine the rest of the app uses — `.tone-pink` is that tone,
    not a new semantic. Red stays what it has always been on these pages: an error, never a stage. */
 .tone-pink { --accent: #f472b6; --accent-rgb: 244 114 182; }
-/* Light: the same ten tones one step darker — here they are text and stripes on white, not on black. */
+/* Light: the same ten tones one step deeper — here they are text, icons and stripes on a light page,
+   not on black. Every value below clears 4.6:1 on BOTH the page (#f2f4fa) and a card (#ffffff), which
+   the previous set did not: cyan/red/green/pink/orange/gold/fuchsia all sat between 3.2 and 4.6 on
+   white, and lower still on the page. Blue, violet and purple already passed and are unchanged.
+   These are read as TEXT in the path cards and the stage tiles, so "it is only a stripe" is not true
+   of them. `scripts/tests/theme.test.mjs` pins the floor. */
 :root[data-theme='light'] .tone-blue { --accent: #2563eb; --accent-rgb: 37 99 235; }
-:root[data-theme='light'] .tone-cyan { --accent: #0284c7; --accent-rgb: 2 132 199; }
+:root[data-theme='light'] .tone-cyan { --accent: #0274af; --accent-rgb: 2 116 175; }
 :root[data-theme='light'] .tone-violet { --accent: #7c3aed; --accent-rgb: 124 58 237; }
-:root[data-theme='light'] .tone-fuchsia { --accent: #c026d3; --accent-rgb: 192 38 211; }
-:root[data-theme='light'] .tone-red { --accent: #dc2626; --accent-rgb: 220 38 38; }
-:root[data-theme='light'] .tone-green { --accent: #059669; --accent-rgb: 5 150 105; }
-:root[data-theme='light'] .tone-amber { --accent: #d97706; --accent-rgb: 217 119 6; }
-:root[data-theme='light'] .tone-orange { --accent: #ea580c; --accent-rgb: 234 88 12; }
+:root[data-theme='light'] .tone-fuchsia { --accent: #b624c8; --accent-rgb: 182 36 200; }
+:root[data-theme='light'] .tone-red { --accent: #d52525; --accent-rgb: 213 37 37; }
+:root[data-theme='light'] .tone-green { --accent: #047e58; --accent-rgb: 4 126 88; }
+:root[data-theme='light'] .tone-amber { --accent: #a55a05; --accent-rgb: 165 90 5; }
+:root[data-theme='light'] .tone-orange { --accent: #be470a; --accent-rgb: 190 71 10; }
 :root[data-theme='light'] .tone-purple { --accent: #9333ea; --accent-rgb: 147 51 234; }
-:root[data-theme='light'] .tone-gold { --accent: #ca8a04; --accent-rgb: 202 138 4; }
-:root[data-theme='light'] .tone-pink { --accent: #db2777; --accent-rgb: 219 39 119; }
+:root[data-theme='light'] .tone-gold { --accent: #936503; --accent-rgb: 147 101 3; }
+:root[data-theme='light'] .tone-pink { --accent: #ce2570; --accent-rgb: 206 37 112; }
 
 /* --- section hero --- */
 .hero-wrap { display: grid; grid-template-columns: 162px 1fr; gap: 12px; align-items: stretch; margin: 14px 0 4px; }
@@ -3875,7 +3889,29 @@ the skill's share of the selected source, and how many of its questions are alre
 .auth-divider { align-items: center; display: flex; gap: 12px; margin-top: 18px; color: var(--muted); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
 .auth-divider::before, .auth-divider::after { background: var(--line); content: ''; flex: 1; height: 1px; }
 .auth-divider + .auth-form { margin-top: 12px; }
-.auth-guest { display: flex; justify-content: center; margin-top: 8px; }
+/* Forgot-password: a quiet link under the submit button, where a learner looks when sign-in fails. */
+.auth-forgot { display: block; margin-top: 12px; text-align: center; font-size: .86rem; color: var(--cyan); text-decoration: none; }
+.auth-forgot:hover { text-decoration: underline; }
+.auth-privacy { margin: 14px 0 0; text-align: center; }
+/* What an account is FOR, said once next to the form rather than as a wall of small print. */
+.auth-required { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 16px; padding: 10px 12px; border-radius: var(--radius-md);
+  color: var(--cyan); background: rgba(34, 211, 238, .08); border: 1px solid rgba(34, 211, 238, .22); font-size: .86rem; }
+.auth-required svg { flex: none; margin-top: 2px; }
+
+/* ---------------------------------------------------------------------------
+   THE ROUTE GATE — the "checking your session" screen.
+
+   Visible for one session round-trip while `RequireAuth` decides, and the reason it is a skeleton
+   rather than a spinner: it stands in for the SHAPE of the page that is coming, so the layout does
+   not jump when the real content arrives. It reuses `.skeleton`, so it follows the theme.
+   --------------------------------------------------------------------------- */
+.route-gate { display: grid; gap: 12px; }
+.route-gate-note { color: var(--muted); font-size: .82rem; }
+.route-gate-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); height: 120px;
+  animation: pulse 1.6s ease-in-out infinite; }
+.route-gate-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.route-gate-kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); height: 76px;
+  animation: pulse 1.6s ease-in-out infinite; }
 .auth-error, .auth-message { padding: 10px 12px; border-radius: var(--radius-md); font-size: .88rem; }
 .auth-error { color: var(--red); background: rgba(248, 113, 113, .09); border: 1px solid rgba(248, 113, 113, .25); }
 .auth-message { color: var(--amber); background: rgba(251, 191, 36, .08); border: 1px solid rgba(251, 191, 36, .2); }
@@ -4522,8 +4558,8 @@ the skill's share of the selected source, and how many of its questions are alre
   box-shadow: 0 0 0 4px rgba(5, 10, 22, .96), 0 0 21px rgba(34, 211, 238, .68),
     0 0 33px rgba(139, 92, 246, .48), inset 0 1px 5px rgba(255, 255, 255, .7);
 }
-.statusbar .sb-settings, .statusbar .sb-continue { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
-.statusbar .sb-settings:active, .statusbar .sb-continue:active { transform: scale(.96); }
+.statusbar .sb-continue { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.statusbar .sb-continue:active { transform: scale(.96); }
 
 @media (max-width: 1100px) and (min-width: 781px) {
   .statusbar .sb-status-group { padding-right: 42px; }
@@ -4582,4 +4618,111 @@ the skill's share of the selected source, and how many of its questions are alre
 @media (max-width: 360px) {
   .topbar { margin: 4px 6px 0; }
   .bottomnav { width: calc(100% - 16px); padding-inline: 5px; }
+}
+
+/* ---------- the language switch (English | Hinglish) ----------
+ * ONE control, ONE home: the Settings page. The two options are NAMED IN THEIR OWN LANGUAGE:
+ * someone who cannot read English still has to recognise "Hinglish". The active option is lit
+ * AND announced (`aria-pressed`), never colour-only.
+ */
+.lang-switch {
+  display: inline-flex; flex: none; align-items: center; gap: 3px;
+  padding: 3px; border-radius: 999px;
+  border: 1px solid rgba(153, 183, 230, .2);
+  background-color: rgba(255, 255, 255, .045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+.lang-switch-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 6px 12px; border: 1px solid transparent; border-radius: 999px;
+  background: transparent; color: rgba(220, 230, 248, .8);
+  font: inherit; font-size: .74rem; font-weight: 650; line-height: 1; white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .2s ease;
+}
+.lang-switch-btn:hover { color: #fff; background-color: rgba(255, 255, 255, .07); }
+.lang-switch-btn:active { transform: scale(.97); }
+.lang-switch-btn.on {
+  border-color: rgba(34, 211, 238, .55);
+  background-image: linear-gradient(135deg, rgba(34, 211, 238, .22), rgba(79, 124, 255, .24));
+  color: #f4f8ff;
+  box-shadow: 0 0 14px rgba(34, 211, 238, .18), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+.lang-switch-btn:focus-visible { outline: 2px solid #22d3ee; outline-offset: 2px; }
+
+/* ---------- the recovery screen (the error boundary's branded fallback) ----------
+ * A render error is the app's worst moment, so it gets the product's best face: the BroCode
+ * badge, a plain-language title, a promise that progress is safe, and three labelled exits.
+ * The raw error lives inside <details> — visible to whoever wants to troubleshoot, never
+ * shouted at a learner who just wants the page back.
+ */
+.recovery {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100%; padding: 40px 16px;
+}
+.recovery-card {
+  width: min(720px, 100%); padding: 30px 30px 26px;
+  border: 1px solid rgba(34, 211, 238, .38); border-radius: 22px;
+  background-color: rgba(6, 12, 26, .92);
+  background-image: linear-gradient(160deg, rgba(34, 211, 238, .08), transparent 42%, rgba(139, 92, 246, .08));
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, .12), 0 0 44px rgba(34, 211, 238, .16),
+    0 0 90px rgba(139, 92, 246, .12), inset 0 1px 0 rgba(255, 255, 255, .08);
+  text-align: center;
+}
+.recovery-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 999px;
+  border: 1px solid rgba(34, 211, 238, .45);
+  background: rgba(34, 211, 238, .09);
+  color: #9beaf9; font-size: .7rem; font-weight: 800; letter-spacing: .14em;
+}
+.recovery-badge img { width: 20px; height: 20px; border-radius: 5px; }
+.recovery-title {
+  margin: 16px 0 10px; font-size: clamp(1.5rem, 4.2vw, 2.2rem); font-weight: 850; letter-spacing: -.01em;
+  color: #f4f9ff;
+}
+.recovery-title em {
+  font-style: normal;
+  background: linear-gradient(120deg, #22d3ee, #818cf8);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.recovery-sub { margin: 0 auto; max-width: 54ch; color: rgba(210, 226, 248, .8); font-size: .92rem; line-height: 1.6; }
+.recovery-safe {
+  display: inline-flex; align-items: center; gap: 10px; margin: 18px auto 0;
+  padding: 10px 16px; border-radius: 14px; text-align: left;
+  border: 1px solid rgba(52, 211, 153, .4); background: rgba(52, 211, 153, .08);
+}
+.recovery-safe svg { color: #34d399; flex: none; }
+.recovery-safe b { display: block; color: #6ee7b7; font-size: .88rem; }
+.recovery-safe small { color: rgba(210, 226, 248, .75); font-size: .76rem; }
+.recovery-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
+.recovery-exit {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 180px; padding: 12px 18px; border-radius: 14px;
+  border: 1px solid rgba(153, 183, 230, .28); background: rgba(255, 255, 255, .04);
+  color: #e8f1ff; font: inherit; font-weight: 750; cursor: pointer;
+  transition: transform .16s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.recovery-exit small { color: rgba(210, 226, 248, .68); font-size: .72rem; font-weight: 500; }
+.recovery-exit:hover { border-color: rgba(34, 211, 238, .55); box-shadow: 0 0 18px rgba(34, 211, 238, .18); }
+.recovery-exit:active { transform: scale(.97); }
+.recovery-exit.primary {
+  border-color: rgba(34, 211, 238, .6);
+  background-image: linear-gradient(135deg, rgba(34, 211, 238, .26), rgba(79, 124, 255, .28));
+  box-shadow: 0 0 20px rgba(34, 211, 238, .2);
+}
+.recovery-exit.danger:hover { border-color: rgba(248, 113, 113, .55); box-shadow: 0 0 18px rgba(248, 113, 113, .16); }
+.recovery-diag {
+  margin-top: 18px; padding: 12px 14px; border-radius: 14px; text-align: left;
+  border: 1px solid rgba(153, 183, 230, .18); background: rgba(0, 0, 0, .3);
+}
+.recovery-diag summary { cursor: pointer; color: rgba(210, 226, 248, .85); font-size: .82rem; font-weight: 700; }
+.recovery-diag summary small { display: block; color: rgba(210, 226, 248, .55); font-weight: 500; }
+.recovery-diag pre {
+  margin: 10px 0 0; padding: 10px; border-radius: 10px; overflow-x: auto;
+  background: rgba(0, 0, 0, .45); color: #cbd8ef; font-size: .72rem; white-space: pre-wrap; word-break: break-word;
+}
+@media (max-width: 560px) {
+  .recovery-card { padding: 22px 16px 20px; }
+  .recovery-exit { min-width: 100%; }
 }

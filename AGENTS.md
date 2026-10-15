@@ -8,17 +8,62 @@ one way and behaves another.
 ## The gate (there is no CI)
 
 - `npm run typecheck` (`tsc --noEmit`, strict) + `npm test` (`node --test scripts/tests/*.test.{cjs,mjs}`,
-  410 tests, ~6 s) + `npm run build` (vite, ~1 min). No `.github/`, no linter, no formatter — these
+  484 tests, ~25 s) + `npm run build` (vite, ~1.5 min). No `.github/`, no linter, no formatter — these
   commands are the only enforcement. Do not add eslint/prettier/.editorconfig.
 - `typecheck` and `test` leave the working tree untouched (verified with `git status`); `build` writes
   the gitignored `dist/`. Iterate with one file: `node --test scripts/tests/accuracy.test.mjs`.
 - `npm run build` always prints a >1500 kB chunk warning (Monaco) — pre-existing, not a failure.
-- Undocumented but useful: `npm run doctor`, `npm run curriculum:validate`, `npm run questions:manifest`
-  (manifest may not overstate coverage), `npm run questions:duplicates`, `npm run og` (renders the
-  social card to a temp file and prints the path — needs a local Chrome/Edge),
-  `npm run course:audit` (read-only: re-runs the courses generator in dry mode and then checks its
-  output — unmapped items, unresolved refs, true duplicates, orphans, index gaps; exits 1 if anything
-  is open). `npm run courses` is the write path and already refuses to write when an item is unsorted.
+- **AN ACCOUNT IS REQUIRED TO LEARN — there is no guest mode.** `docs/AUTHENTICATION.md` is the full
+  contract; the three things that bite:
+  · Every protected `<Route>` is wrapped in `<Protect>` (`features/auth/RequireAuth.tsx`). The route
+    table is literally scanned by `auth-gate.test.mjs`, so a NEW page added without `Protect` fails the
+    suite instead of quietly shipping public. `/`, `/start`, `/login`, `/reset-password` are the only
+    public paths, and `/` renders `PublicHome` (Landing for a visitor, Dashboard for a learner) —
+    never add `Protect` there, it would bounce a visitor into a sign-in wall on the front door.
+  · The guard must render its SKELETON while `loading`. Redirecting during session restore signs a
+    signed-in learner out on every refresh; that one line is the difference between working and not.
+  · The destination travels in ROUTER STATE, never `?next=`. Comments in these files MENTION `?next=`
+    and `guest` while explaining what was removed, which is why several tests strip comments before
+    grepping — do not "fix" a passing test by deleting the explanation.
+- Do not re-add a way in without a session. No anonymous sign-in, no demo user, no cached-data
+  fallback when Supabase is unreachable: a failed lookup must leave the learner signed out. That is
+  asserted by `auth-gate.test.mjs`.
+- **`npm run db:deploy` failing with P1001 is almost never the migration.** Run `npm run db:check`
+  first — it separates "the hostname is dead", "the port opens but the service is not Postgres"
+  (a retired Supabase pooler does exactly this, which is why raw TCP reachability proves nothing),
+  "the password is rejected", and "the password was pasted unencoded". Supabase **Auth** and the
+  Postgres **pooler** are independent services: a broken `DATABASE_URL` does not break sign-in, and
+  `server/db-config.mjs` falls back to the Auth-only store so the product still works without it.
+  Only `db:deploy` and the server-side progress history need the database. Details in
+  `docs/AUTHENTICATION.md`.
+- **The app ships LIGHT, and the theme is decided in THREE places that must agree**: the product
+  default in `src/core/storage/ui.ts`, the inline boot script in `index.html` (`<head>`, writes
+  `data-theme` before the first paint so a light learner never sees a dark frame), and the CSS scope in
+  `styles.css`. They are kept in step by `scripts/tests/theme.test.mjs`, which also computes the WCAG
+  contrast of every light accent from the real stylesheet and fails below 4.6:1 — those accents are
+  small bold text, so "it is only a stripe" is not true of them. A stored `{theme:'dark'}` with no
+  `aiml:theme:choice` marker is the OLD default and resolves to light; a marked one is a real choice
+  and is honoured. The rail, the console, the header and the assistant deliberately stay dark in both
+  themes — that is pinned by `layout.test.mjs`, so do not "fix" them.
+- Undocumented but useful: `npm run doctor`, `npm run i18n:check` (locale pack parity — every key in
+  both packs, every `{placeholder}` surviving), `npm run i18n:report` (content coverage per authored
+  source, plus the section-name overlay ledger), `npm run i18n:sections` / `i18n:sections:write`
+  (publish the Hinglish section-name overlay), `npm run curriculum:validate`,
+  `npm run questions:manifest` (manifest may not overstate coverage), `npm run questions:duplicates`,
+  `npm run og` (renders the social card to a temp file and prints the path — needs a local
+  Chrome/Edge), `npm run course:audit` (read-only: re-runs the courses generator in dry mode and then
+  checks its output — unmapped items, unresolved refs, true duplicates, orphans, index gaps; exits 1
+  if anything is open). `npm run courses` is the write path and already refuses to write when an item
+  is unsorted. **Before regenerating anything downstream of `sections.json`, read
+  `docs/CONTENT-PIPELINE.md`** — that file is not built by one script but accumulated by five, in
+  order, and `courses:write` / `ai:index:write` must run last or they publish stale counts.
+- **Do not compare large Buffers with `assert.deepEqual`.** On Node 24 a failing comparison builds an
+  assertion diff that renders BOTH buffers — measured at ~450 bytes of ArrayBuffers per input byte, so
+  the two 2.5 MB `knowledge.json.gz` buffers cost ~20 GB and the run died with `RangeError: Array
+  buffer allocation failed`. That is why `ai-index.test.mjs` uses `Buffer.compare` and reports the
+  sizes plus the first differing byte instead: a stale-artifact failure must say "run
+  `npm run ai:index:write`", not exhaust the heap. The same trap applies to any multi-MB buffer
+  comparison.
 - **The index is the COURSE**: 1…36 across the 11 courses, numbered by `core/learning/courses.ts` +
   `roadmap.ts` and shown on each course page and step page (`StepPage` numbers itself against
   `STEPS.length`). No surface draws a numbered rail of its own any more: the 36-node strip that briefly
@@ -98,6 +143,15 @@ one way and behaves another.
   no JSON under `src/` at all), `src/features/*` are the screens, `src/app/App.tsx` is the shell. A
   write tool that forgets the `generated/` prefix leaves the app offline-broken: `public/sw.js` caches
   `/generated/` and `/notebooks` only.
+- **A bilingual authored field breaks every consumer that assumed a string.** `content/courses/*.json`
+  now carries `{ en, hi }` course names, and `src/core/data/localize.ts` resolves them **once, at the
+  data boundary** (`src/core/data/courses.ts`) so no component sees a map. Generators are NOT
+  renderers and must resolve at the point they read: `scripts/ai-index.cjs` converts at the single
+  authored→plain boundary and stores course SLUGS rather than course records, so no call site can read
+  `.name` and forget. Two guards exist because a leak is silent — it stringifies to `"[object Object]"`
+  instead of throwing: `assertPlainStrings` (generator, fails the build) and `validateKnowledgeIndex`
+  (`src/core/ai/knowledge.ts`, rejects the artifact at load). Adding a localized field to any published
+  JSON means checking its consumers the same way; `npm run i18n:report` is the coverage ledger.
 
 ## Test-loader ceiling (why some modules can't be tested)
 

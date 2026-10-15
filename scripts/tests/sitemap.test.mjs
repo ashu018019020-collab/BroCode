@@ -29,7 +29,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
-const { buildSitemap, buildRobots, DEFAULT_BASE, SKIPPED } = await import(pathToFileURL(path.join(ROOT, 'scripts/sitemap.cjs')).href);
+const { buildSitemap, buildRobots, DEFAULT_BASE, SKIPPED, PRIVATE } = await import(pathToFileURL(path.join(ROOT, 'scripts/sitemap.cjs')).href);
 
 const xml = read('public/sitemap.xml');
 const robots = read('public/robots.txt');
@@ -53,6 +53,8 @@ test('sitemap: the committed file IS the build output, byte for byte', () => {
 test('sitemap: every registered route is represented — expanded, or deliberately skipped', () => {
   const urls = new Set(locs);
   for (const route of staticRoutes) {
+    // PRIVATE routes are deliberately not advertised (production-readiness gate E).
+    if (PRIVATE[route]) continue;
     const url = route === '/' ? `${DEFAULT_BASE}/` : `${DEFAULT_BASE}/#${route}`;
     assert.ok(urls.has(url), `route ${route} is missing from the sitemap`);
   }
@@ -68,7 +70,7 @@ test('sitemap: every registered route is represented — expanded, or deliberate
   // And every route is accounted for: static, expanded, or skipped with a stated reason.
   const expanded = new Set(['/track/:trackSlug', '/lesson/:sid', '/course/:slug', '/course/:slug/:step']);
   for (const route of routes) {
-    assert.ok(!route.includes(':') || expanded.has(route) || SKIPPED[route] !== undefined,
+    assert.ok(!route.includes(':') || expanded.has(route) || SKIPPED[route] !== undefined || PRIVATE[route] !== undefined,
       `route ${route} is neither expanded nor skipped — teach scripts/sitemap.cjs about it`);
   }
 });
@@ -103,7 +105,8 @@ test('sitemap: no duplicates, no placeholders, no within-document positions', ()
       `${loc} is not a slug URL — a route reader may have matched prose instead of a route`,
     );
   }
-  const expected = staticRoutes.length + trackSlugs.length + sections.length + courses.length
+  const privateStaticRoutes = staticRoutes.filter((r) => PRIVATE[r]);
+  const expected = staticRoutes.length - privateStaticRoutes.length + trackSlugs.length + sections.length + courses.length
     + courses.reduce((a, c) => a + c.steps.length, 0);
   assert.equal(locs.length, expected, 'the sitemap must hold exactly the route table’s real pages');
 });

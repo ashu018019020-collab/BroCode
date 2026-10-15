@@ -53,6 +53,8 @@ const LabsHub = lazy(() => import('../features/labs/LabsHub'));
 const InterviewsHub = lazy(() => import('../features/interview/InterviewsHub'));
 const CareerHub = lazy(() => import('../features/career/CareerHub'));
 const Landing = lazy(() => import('../features/dashboard/Landing'));
+const RequireAuth = lazy(() => import('../features/auth/RequireAuth'));
+const ResetPassword = lazy(() => import('../features/auth/ResetPassword'));
 import { searchAll } from '../core/platform/search';
 import { CommandPalette } from '../components/shared/CommandPalette';
 import { useQuestionIndex } from '../core/data/searchindex';
@@ -64,6 +66,9 @@ import { ErrorBoundary } from '../components/ui/ErrorBoundary';
 import { AiDock } from '../components/shared/AiDock';
 import { ToastHost } from '../components/ui/Toast';
 import { useAuth } from '../core/auth/AuthProvider';
+import { authErrorCopy } from '../core/auth/messages';
+// Type-only: erased at compile time, so it cannot pull the form into the shell's chunk.
+import type { AuthMode } from '../features/auth/AuthForm';
 
 const LoginPage = lazy(() => import('../features/auth/LoginPage'));
 const AdminUsersPage = lazy(() => import('../features/auth/AdminUsersPage'));
@@ -73,6 +78,27 @@ const CoursePage = lazy(() => import('../features/courses/CoursePage'));
 const StepPage = lazy(() => import('../features/courses/StepPage'));
 
 type GroupKey = 'nav.pillars' | 'nav.tools' | 'hidden';
+
+/**
+ * Wraps a route in the one authorization boundary. A thin alias so the route table below reads as
+ * "this page needs an account" instead of a wall of imported JSX.
+ */
+const Protect = ({ children }: { children: React.ReactNode }) => <RequireAuth>{children}</RequireAuth>;
+
+/**
+ * `/` — the front door, for both audiences.
+ *
+ * A signed-in learner gets the Dashboard (their own XP, streak, next action). A visitor gets the
+ * public Landing page. The split exists because the Dashboard prints private learning data: showing
+ * it to a visitor would either leak that data or render a page of zeroes that lies about what the
+ * product is. `RequireAuth` is NOT used here — this is a choice between two public-safe outcomes, and
+ * a redirect on `/` would bounce a visitor into a sign-in wall they never asked for.
+ */
+function PublicHome() {
+  const { user, loading } = useAuth();
+  if (loading) return <RouteSkeleton />;
+  return user ? <Dashboard /> : <Suspense fallback={<RouteSkeleton />}><Landing /></Suspense>;
+}
 
 /**
  * A row's accent hue. Each destination owns one colour, so the rail reads as a map of the product
@@ -218,7 +244,7 @@ function Shell() {
   bumpStreak();
   const nav = useNavigate();
   const loc = useLocation();
-  const { t, lang } = useI18n();
+  const { t, locale } = useI18n();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const bankIndex = useQuestionIndex(paletteOpen);
   const prefs = useUi();
@@ -233,7 +259,15 @@ function Shell() {
   const [lastSeenClock, setLastSeenClock] = useState(Date.now());
   const [signingOut, setSigningOut] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
-  const lastSeenKey = `brocode:last-seen:v1:${user?.id ? encodeURIComponent(user.id) : 'guest'}`;
+  /** Which tab the shared AuthForm opens on: the entry point that opened it names the tab. */
+  const [authMode, setAuthMode] = useState<AuthMode>('register');
+  /**
+   * The last-seen timestamp is per ACCOUNT, and there is no account to be anonymous under any more:
+   * a signed-out visitor never reaches a page that records a visit, because every page that does is
+   * behind the guard. The signed-out fallback key is therefore kept only so a stored value from an
+   * older release cannot collide with a real account's namespace.
+   */
+  const lastSeenKey = `brocode:last-seen:v1:${user ? encodeURIComponent(user.id) : 'signed-out'}`;
   const mainRef = useRef<HTMLElement>(null);
   const handledRedirectError = useRef<string | null>(null);
 
@@ -246,11 +280,33 @@ function Shell() {
       nav('/', { replace: true });
     } catch (error) {
       console.error('[BroCode] Could not sign out.', error);
-      toast(error instanceof Error ? `Sign out failed: ${error.message}` : 'Sign out failed. Please try again.', 'error');
+      // Through the shared mapping: a toast is as public as a form banner, so it must not carry a
+      // raw HTTP status either.
+      toast(error instanceof Error ? authErrorCopy(error.message) : 'Sign out failed. Please try again.', 'error');
     } finally {
       setSigningOut(false);
     }
   };
+
+  /**
+   * Every entry point into the account flow — the rail's block, the greeting below, a deep link
+   * into a page that needs an account — opens the SAME dialog. This only remembers which tab it
+   * should land on, so "Sign in" and "Create account" are one click each instead of two.
+   */
+  const openAuth = (mode: AuthMode) => {
+    setAuthMode(mode);
+    setAuthOpen(true);
+  };
+
+  /**
+   * The account dialog is now opened EXPLICITLY and only from a control that asks for it (the rail's
+   * account block, the Landing page's buttons, the quick-actions menu).
+   *
+   * It used to auto-open once per browser session as a "greeting" for a signed-out visitor, because
+   * the app was guest-first and that dialog was the only sign-up prompt a visitor would see. With
+   * learning gated behind sign-in, the `/login` page IS that prompt, and an uninvited modal on top of
+   * it (or over a deep link the guard is already redirecting) is a second, competing front door.
+   */
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -496,22 +552,22 @@ function Shell() {
 
           <div className="side-foot">
             {/*
-             * The rail's account block. BroCode is guest-first — every lesson, lab and bank is
-             * usable with no account — so this is an OFFER, never a wall: signed out it names the
-             * guest and offers sign in / sign up; signed in it identifies the account, links the
-             * owner dashboard for an administrator, and is the way out.
+             * The rail's account block. BroCode now REQUIRES an account for learning, so a signed-out
+             * visitor is not a "Guest learner" with partial access — they are simply not signed in,
+             * and the only useful thing this block can do is offer the two doors. Signed in it
+             * identifies the account, links the owner dashboard for an administrator, and is the way out.
              */}
             <div className="side-account">
               <span className="side-account-avatar" aria-hidden="true">
                 {user ? initials(user.name || user.email) : <UserRound size={17} />}
               </span>
               <span className="side-account-copy" title={user?.email || undefined}>
-                <b>{user ? user.name || user.email : t('acct.guest')}</b>
+                <b>{user ? user.name || user.email : t('acct.signedOut')}</b>
                 {user
                   ? user.name
                     ? <small>{user.email}</small>
                     : user.role === 'admin' ? <small>{t('acct.admin')}</small> : null
-                  : null}
+                  : <small>{t('acct.signInHint')}</small>}
               </span>
             </div>
             {user ? (
@@ -528,10 +584,15 @@ function Shell() {
                 </button>
               </>
             ) : (
-              <button className="btn primary side-act" onClick={() => setAuthOpen(true)} type="button">
-                <LogIn size={15} />
-                <span>{t('acct.signUp')}</span>
-              </button>
+              <>
+                <Link className="btn primary side-act" to="/login">
+                  <LogIn size={15} />
+                  <span>{t('acct.signUp')}</span>
+                </Link>
+                <Link className="btn side-act" to="/login">
+                  <span>{t('acct.signIn')}</span>
+                </Link>
+              </>
             )}
           </div>
         </aside>
@@ -608,7 +669,7 @@ function Shell() {
                         { icon: prefs.theme === 'dark' ? Sun : Moon, label: prefs.theme === 'dark' ? t('top.themeLight') : t('top.themeDark'), sub: t('top.theme'), run: () => setUi({ theme: prefs.theme === 'dark' ? 'light' : 'dark' }) },
                         { icon: Focus, label: prefs.focus ? 'Focus Mode band karo' : 'Focus Mode chalao', sub: 'Distraction free', run: () => setUi({ focus: !prefs.focus }) },
                         { icon: Download, label: 'Progress export karo', sub: 'JSON backup', run: () => { exportProgress(); toast('Progress file download ho gayi.', 'success'); } },
-                        { icon: Languages, label: lang === 'hinglish' ? 'Switch to English' : 'Hinglish me switch karo', sub: 'Interface language', run: () => setLang(lang === 'hinglish' ? 'en' : 'hinglish') },
+                        { icon: Languages, label: locale === 'hi' ? 'Switch to English' : 'Hinglish me switch karo', sub: t('lang.label'), run: () => setLang(locale === 'hi' ? 'en' : 'hi') },
                       ].map((a) => (
                         <button key={a.label} className="quickmenu-item" role="menuitem" onClick={() => { a.run(); setQuickOpen(false); }}>
                           <span className="ico"><a.icon size={15} /></span>
@@ -693,59 +754,78 @@ function Shell() {
           <div className="content">
             <Suspense fallback={<RouteSkeleton />}>
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              {/* ---------- PUBLIC ----------
+                  `/` is the front door for BOTH audiences and decides which one it is: a signed-in
+                  learner gets the Dashboard, a visitor gets the Landing page. It is NOT the Dashboard
+                  itself any more — that page prints the learner's own progress, which a visitor has
+                  no business seeing. */}
+              <Route path="/" element={<PublicHome />} />
               <Route path="/start" element={<Landing />} />
-              <Route path="/courses" element={<CoursesHome />} />
-              <Route path="/course/:slug" element={<CoursePage />} />
-              <Route path="/course/:slug/:step" element={<StepPage />} />
-              <Route path="/practice" element={<PracticeHub />} />
-              <Route path="/labs" element={<LabsHub />} />
-              <Route path="/interviews" element={<InterviewsHub />} />
-              <Route path="/career" element={<CareerHub />} />
-              <Route path="/track/:trackSlug" element={<TrackOverview />} />
-              <Route path="/concepts" element={<ConceptHub />} />
-              <Route path="/lesson/:sid/:stage" element={<Lesson />} />
-              <Route path="/lesson/:sid" element={<Lesson />} />
-              <Route path="/playground" element={<Playground />} />
-              <Route path="/questions" element={<QuestionBank />} />
-              <Route path="/exam" element={<ExamMode />} />
-              <Route path="/projects" element={<ProjectLab />} />
-              <Route path="/sql" element={<SQLLab />} />
-              <Route path="/notebooks" element={<NotebookLab />} />
-              <Route path="/interview-mode" element={<InterviewMode />} />
-              <Route path="/defense" element={<DefensePage />} />
-              <Route path="/mock-interviews" element={<MockInterviews />} />
-              <Route path="/mistakes" element={<MistakesPage />} />
-              <Route path="/review" element={<ReviewPage />} />
-              <Route path="/progress" element={<ProgressPage />} />
-              <Route path="/job-prep" element={<JobPrep />} />
-              <Route path="/notes" element={<NotesPage />} />
-              <Route path="/cheat-sheets" element={<CheatSheets />} />
-              <Route path="/pdf" element={<PDFReader />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              {/* `/onboarding` asks for a display name and a daily goal. It exposes no private data,
+                  but there is nobody to onboard without an account, so it is gated. */}
+              <Route path="/onboarding" element={<Protect><Onboarding /></Protect>} />
+
+              {/* ---------- PROTECTED ----------
+                  One wrapper, one decision (`features/auth/RequireAuth.tsx`). Adding a page here
+                  without `Protect` is the ONLY way to re-open a door, which makes the omission
+                  reviewable instead of invisible. */}
+              <Route path="/courses" element={<Protect><CoursesHome /></Protect>} />
+              <Route path="/course/:slug" element={<Protect><CoursePage /></Protect>} />
+              <Route path="/course/:slug/:step" element={<Protect><StepPage /></Protect>} />
+              <Route path="/practice" element={<Protect><PracticeHub /></Protect>} />
+              <Route path="/labs" element={<Protect><LabsHub /></Protect>} />
+              <Route path="/interviews" element={<Protect><InterviewsHub /></Protect>} />
+              <Route path="/career" element={<Protect><CareerHub /></Protect>} />
+              <Route path="/track/:trackSlug" element={<Protect><TrackOverview /></Protect>} />
+              <Route path="/concepts" element={<Protect><ConceptHub /></Protect>} />
+              <Route path="/lesson/:sid/:stage" element={<Protect><Lesson /></Protect>} />
+              <Route path="/lesson/:sid" element={<Protect><Lesson /></Protect>} />
+              <Route path="/playground" element={<Protect><Playground /></Protect>} />
+              <Route path="/questions" element={<Protect><QuestionBank /></Protect>} />
+              <Route path="/exam" element={<Protect><ExamMode /></Protect>} />
+              <Route path="/projects" element={<Protect><ProjectLab /></Protect>} />
+              <Route path="/sql" element={<Protect><SQLLab /></Protect>} />
+              <Route path="/notebooks" element={<Protect><NotebookLab /></Protect>} />
+              <Route path="/interview-mode" element={<Protect><InterviewMode /></Protect>} />
+              <Route path="/defense" element={<Protect><DefensePage /></Protect>} />
+              <Route path="/mock-interviews" element={<Protect><MockInterviews /></Protect>} />
+              <Route path="/mistakes" element={<Protect><MistakesPage /></Protect>} />
+              <Route path="/review" element={<Protect><ReviewPage /></Protect>} />
+              <Route path="/progress" element={<Protect><ProgressPage /></Protect>} />
+              <Route path="/job-prep" element={<Protect><JobPrep /></Protect>} />
+              <Route path="/notes" element={<Protect><NotesPage /></Protect>} />
+              <Route path="/cheat-sheets" element={<Protect><CheatSheets /></Protect>} />
+              <Route path="/pdf" element={<Protect><PDFReader /></Protect>} />
               {/* Deep link straight to a page: the reader reads :page, so this
                   route must exist or "PDF Reference p.8" tiles land on the dashboard. */}
-              <Route path="/pdf/:page" element={<PDFReader />} />
+              <Route path="/pdf/:page" element={<Protect><PDFReader /></Protect>} />
               {/* The same reader, second source. `/pdf/playbook/:page` is a DIFFERENT page space
                   (the V15 book), so it must never be reachable as `/pdf/:page`. */}
-              <Route path="/pdf/playbook" element={<PDFReader />} />
-              <Route path="/pdf/playbook/:page" element={<PDFReader />} />
-              <Route path="/playbook" element={<PlaybookPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/admin" element={<AdminUsersPage />} />
-              <Route path="/final-assessment" element={<FinalAssessment />} />
-              <Route path="/ai-lab" element={<AILab />} />
-              <Route path="/rag-lab" element={<RagLab />} />
-              <Route path="/agentic" element={<AgenticLab />} />
-              <Route path="/numpy-pandas" element={<NumPyPandasLab />} />
+              <Route path="/pdf/playbook" element={<Protect><PDFReader /></Protect>} />
+              <Route path="/pdf/playbook/:page" element={<Protect><PDFReader /></Protect>} />
+              <Route path="/playbook" element={<Protect><PlaybookPage /></Protect>} />
+              <Route path="/settings" element={<Protect><SettingsPage /></Protect>} />
+              {/* The owner dashboard gates itself on the server-issued role; `Protect` only ensures
+                  there IS a session to check. The role is never read from the client. */}
+              <Route path="/admin" element={<Protect><AdminUsersPage /></Protect>} />
+              <Route path="/final-assessment" element={<Protect><FinalAssessment /></Protect>} />
+              <Route path="/ai-lab" element={<Protect><AILab /></Protect>} />
+              <Route path="/rag-lab" element={<Protect><RagLab /></Protect>} />
+              <Route path="/agentic" element={<Protect><AgenticLab /></Protect>} />
+              <Route path="/numpy-pandas" element={<Protect><NumPyPandasLab /></Protect>} />
               {/* The pre-cleanup slugs, redirected in place so nothing shared before the rename
                   dead-ends on the Dashboard. Rendered from LEGACY_ROUTES above because a literal
-                  path here would be read as a real page by the sitemap and the route tests. */}
+                  path here would be read as a real page by the sitemap and the route tests.
+                  Deliberately NOT wrapped: a redirect decides nothing, and its target is protected. */}
               {LEGACY_ROUTES.map(([from, to]) => (
                 <Route key={from} path={from} element={<Navigate to={to} replace />} />
               ))}
-              <Route path="*" element={<Dashboard />} />
+              {/* An unknown path is not a page. It resolves through `PublicHome`, so a typo shows
+                  the SAME thing the front door does to that audience — the Dashboard to a signed-in
+                  learner, the Landing page to a visitor — instead of leaking a protected page. */}
+              <Route path="*" element={<PublicHome />} />
             </Routes>
             </Suspense>
           </div>
@@ -803,10 +883,6 @@ function Shell() {
                           : 'Progress summary only'}</small>
                 </span>
               </div>
-              <span className="sb-divider hide-sm" aria-hidden="true" />
-              <Link className="sb-settings" to="/settings" title="Settings" aria-label="Settings">
-                <SettingsIcon size={17} />
-              </Link>
             </div>
             <div className="sb-actions">
               <button
@@ -874,8 +950,8 @@ function Shell() {
       )}
       {authOpen && (
         <Suspense fallback={null}>
-          {/* The rail's button is "Sign up", so the dialog opens on that tab. */}
-          <AuthDialog initialMode="register" open onClose={() => setAuthOpen(false)} />
+          {/* The tab comes from whichever control opened it: the rail's button is "Sign up". */}
+          <AuthDialog initialMode={authMode} open onClose={() => setAuthOpen(false)} />
         </Suspense>
       )}
       <ToastHost />
@@ -903,7 +979,11 @@ function ThemeToggle() {
       onClick={() => setUi({ theme: to })}
       title={to === 'light' ? t('top.themeLight') : t('top.themeDark')}
       aria-label={to === 'light' ? t('top.themeLight') : t('top.themeDark')}
-      aria-pressed={prefs.theme === 'light'}
+      // Deliberately NO `aria-pressed`. This is a two-state toggle whose icon shows the theme you
+      // would GET, while its label announces that same action — so "pressed" has no honest meaning
+      // here. The previous `aria-pressed={prefs.theme === 'light'}` was worse than absent: it read
+      // the current theme as a pressed state, announcing "pressed" in one theme and "not pressed" in
+      // the other for the same action, which is exactly backwards for a screen reader.
     >
       {to === 'light' ? <Sun size={16} /> : <Moon size={16} />}
     </button>

@@ -4,7 +4,7 @@ import {
   Percent, Clock, Flame, Trophy, Camera, Trash2, Plus, BookOpenCheck, CalendarRange, Activity,
 } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
-import { useStore, exportProgress, importProgress, addStudySeconds, setAvatar, today } from '../../core/storage/store';
+import { useStore, addStudySeconds, setAvatar, today, takeAvatarNotice } from '../../core/storage/store';
 import { sectionProgress, isMastered } from '../../core/learning/progress';
 import { accuracyLine, bankAccuracy, bankAccuracyBySection, interviewAccuracy, pctText } from '../../core/assessment/accuracy';
 import { levelForXp, levelProgress, XP_PER_LEVEL } from '../../core/platform/keys';
@@ -193,6 +193,9 @@ export default function ProgressPage() {
     setAvatarError(null);
     try {
       setAvatar(await toAvatar(file));
+      // `setAvatar` owns the acceptance rule, so a photo it refuses reports HERE rather than
+      // silently leaving the previous one in place with no explanation.
+      setAvatarError(takeAvatarNotice());
     } catch (e) {
       setAvatarError(e instanceof Error ? e.message : 'photo load nahi hui');
     }
@@ -438,24 +441,6 @@ export default function ProgressPage() {
         </div>
       </div>
 
-      <div className="card">
-        <h2>Data</h2>
-        <p className="small muted">
-          Sab kuch browser me hai (localStorage) — study log bhi. Export se backup ya device badal sakte ho;
-          import purana data wapas laata hai (naye din jud jaate hain, mitaaye nahi jaate).
-        </p>
-        <div className="row">
-          <button className="btn" onClick={exportProgress}>⬇ Export progress (JSON)</button>
-          <label className="btn" style={{ cursor: 'pointer' }}>
-            ⬆ Import progress
-            <input type="file" accept="application/json" style={{ display: 'none' }} onChange={(e) => {
-              e.target.value = '';
-              const f = e.target.files?.[0];
-              if (f) importProgress(f).then(() => alert('Progress imported.')).catch((err) => alert('Import failed: progress NOT changed. ' + err.message));
-            }} />
-          </label>
-        </div>
-      </div>
     </div>
   );
 }

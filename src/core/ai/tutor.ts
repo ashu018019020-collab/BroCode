@@ -105,7 +105,7 @@ const ERRORS: Record<string, ErrMeta> = {
     topic: 'OSError (input)', what: 'Runtime ko input/output error mila.',
     cause: 'Is lab me sabse common: input() — Program Input box me values do.',
     fix: 'Program Input box me har value ek line me likho, phir Run karo. Errors test karne ke liye khaali chhodo.',
-    example: 'name = input("Name: ")  # Program Input: Ahetesham',
+    example: 'name = input("Name: ")  # Program Input: Ashu',
   },
   EOFError: {
     topic: 'EOFError', what: 'input() ko padhne ko kuch nahi mila — input khatam ho gaya.',

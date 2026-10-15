@@ -48,7 +48,23 @@ const blankState = () => ({
 test('AI index regeneration exactly matches the published artifact and current source counts', async () => {
   const index = await buildAiIndex();
   const packed = fs.readFileSync(OUT_PATH);
-  assert.deepEqual(packed, zlib.gzipSync(Buffer.from(JSON.stringify(index)), { level: 9 }));
+  const expected = zlib.gzipSync(Buffer.from(JSON.stringify(index)), { level: 9 });
+  // NOT `assert.deepEqual(packed, expected)`: when the two 2.5 MB gzip buffers differ, Node builds an
+  // assertion diff that renders BOTH buffers, which allocates ~450 bytes per input byte — measured at
+  // ~20 GB of ArrayBuffers for this pair, so the run died with "Array buffer allocation failed"
+  // instead of reporting the mismatch. `Buffer.compare` answers the same question in constant space,
+  // and the failure path prints the actionable facts (sizes plus the first differing byte) rather
+  // than megabytes of byte values.
+  if (Buffer.compare(packed, expected) !== 0) {
+    const limit = Math.min(packed.length, expected.length);
+    let at = -1;
+    for (let i = 0; i < limit; i += 1) if (packed[i] !== expected[i]) { at = i; break; }
+    assert.fail(
+      `public/generated/ai/knowledge.json.gz is stale: it is ${packed.length} bytes, a fresh build is `
+      + `${expected.length} bytes (first difference at byte ${at === -1 ? 'end-of-shorter-buffer' : at}). `
+      + 'Regenerate it with `npm run ai:index:write`.',
+    );
+  }
   assert.deepEqual(JSON.parse(zlib.gunzipSync(packed).toString('utf8')), index);
   assert.equal(index.counts.bankQuestions, bankManifest.total);
   assert.equal(index.counts.sections, sections.length);
@@ -61,6 +77,58 @@ test('AI index regeneration exactly matches the published artifact and current s
   assert.equal(new Set(index.documents.map((item) => item.id)).size, index.documents.length);
   assert.equal(index.sourceHash.length, 64);
   assert.equal(OUT_PATH, path.join(ROOT, 'public', 'generated', 'ai', 'knowledge.json.gz'));
+});
+
+test('the AI index corpus is plain strings everywhere — a localized { en, hi } field must never leak in', async () => {
+  const index = await buildAiIndex();
+  // The corpus is declared as plain strings and retrieval tokenizes title/courseTitle/body. An
+  // authored { en, hi } map that reaches a document does not throw: it stringifies to
+  // "[object Object]" on a learner's screen and poisons the inverted index. This is the regression
+  // that shipped 15,265 documents with an object in `courseTitle`.
+  for (const document of index.documents) {
+    for (const [field, value] of Object.entries(document)) {
+      if (value === undefined || value === null) continue;
+      if (typeof value === 'string' || typeof value === 'number') continue;
+      assert.ok(Array.isArray(value) && value.every((item) => typeof item === 'string'),
+        `${document.id}.${field} is not a plain string: ${JSON.stringify(value)}`);
+    }
+  }
+  const titled = index.documents.filter((document) => 'courseTitle' in document);
+  assert.ok(titled.length > 15000, 'expected the corpus to be course-tagged as before');
+  assert.ok(titled.every((document) => typeof document.courseTitle === 'string'));
+  assert.deepEqual([...new Set(titled.map((document) => document.courseTitle))].sort(), [
+    'AI Career Foundations', 'Agentic AI', 'Build, Production & System Design', 'Data Engineering',
+    'Generative AI', 'Interview & Career', 'Machine Learning & NLP', 'NumPy & Pandas', 'Python',
+    'SQL', 'Statistics & Data Analysis',
+  ]);
+  // `KnowledgeCourse.title` is rendered by the assistant's course list, so it is plain too.
+  assert.ok(index.courses.every((course) => typeof course.title === 'string' && course.title.trim()));
+});
+
+test('validateKnowledgeIndex rejects the shapes that would render as [object Object]', async () => {
+  const { validateKnowledgeIndex } = await import(
+    pathToFileURL(path.join(ROOT, 'src', 'core', 'ai', 'knowledge.ts')).href
+  );
+  const index = await buildAiIndex();
+  assert.equal(validateKnowledgeIndex(index), true, 'the published index must validate');
+
+  const withLocalizedTitle = {
+    ...index,
+    documents: [{ ...index.documents[0], courseTitle: { en: 'SQL', hi: 'SQL' } }, ...index.documents.slice(1)],
+  };
+  assert.equal(validateKnowledgeIndex(withLocalizedTitle), false, 'a localized courseTitle must be rejected');
+
+  const withLocalizedCourse = {
+    ...index,
+    courses: [{ ...index.courses[0], title: { en: 'Python', hi: 'Python' } }, ...index.courses.slice(1)],
+  };
+  assert.equal(validateKnowledgeIndex(withLocalizedCourse), false, 'a localized course title must be rejected');
+
+  const withBadTags = {
+    ...index,
+    documents: [{ ...index.documents[0], tags: [{ en: 'a' }] }, ...index.documents.slice(1)],
+  };
+  assert.equal(validateKnowledgeIndex(withBadTags), false, 'non-string tags must be rejected');
 });
 
 test('the data loader transparently decompresses the lazy published asset', async () => {

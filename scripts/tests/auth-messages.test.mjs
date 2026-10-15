@@ -9,7 +9,8 @@ const load = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 
 register('./_ts-resolve.mjs', import.meta.url);
 
-const { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem } = await load('src/core/auth/messages.ts');
+const { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem, SERVICE_UNAVAILABLE_COPY } =
+  await load('src/core/auth/messages.ts');
 
 test('auth messages: an address is judged like one, not like a regex exercise', () => {
   for (const good of ['a@b.co', 'moin.khan+study@example.co.in', '  spaced@example.com  ']) {
@@ -41,4 +42,27 @@ test('auth messages: a developer error becomes an instruction, in the product vo
 test('auth messages: an error nobody has seen yet is passed through, never swallowed', () => {
   assert.equal(authErrorCopy('Database error saving new user'), 'Database error saving new user');
   assert.equal(authErrorCopy('Account service is unavailable.'), 'Account service is unavailable.');
+});
+
+/**
+ * The one thing that must never reach a learner is how the deployment is wired. A missing variable,
+ * a secret key name, an HTTP status, the local API not being up yet: all of it is the operator's
+ * business (it goes to the console), and every one of these strings was, at some point, rendered
+ * inside the account dialog.
+ */
+test('auth messages: deployment detail and infrastructure are never shown, whatever the wording', () => {
+  for (const leaked of [
+    'Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in the root .env file.',
+    'Set SUPABASE_SECRET_KEY before starting the account API.',
+    'process.env.DATABASE_URL is not set.',
+    'Account API returned HTTP 503 without JSON; verify the API server is running.',
+    'The account service returned an invalid response.',
+    'Account request failed (500).',
+  ]) {
+    assert.equal(authErrorCopy(leaked), SERVICE_UNAVAILABLE_COPY,
+      `a learner must never be shown deployment detail: ${leaked}`);
+  }
+  // …and the sentence itself says what to DO, without naming a subsystem, a key or a host.
+  assert.match(SERVICE_UNAVAILABLE_COPY, /try again/i);
+  assert.doesNotMatch(SERVICE_UNAVAILABLE_COPY, /VITE_|\.env|supabase|key|http/i);
 });

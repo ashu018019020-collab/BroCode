@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { authApi, loadProviderAvailability, type AuthUser } from '../../core/auth/client';
 import { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem } from '../../core/auth/messages';
@@ -215,11 +216,12 @@ export default function AuthForm({
         ))}
       </div>
 
-      {serviceError && (
-        <p className="auth-message" role="status">
-          The account service is unavailable: {serviceError} Try again in a little while.
-        </p>
-      )}
+      {/*
+        * `serviceError` is already a finished sentence (see `AuthProvider.serviceFailure`): it is
+        * never a raw `error.message`, so this banner cannot become a deployment manual. It is a
+        * STATUS, not an alert — the form below still works, and a guest can keep using the app.
+        */}
+      {serviceError && <p className="auth-message" role="status">{serviceError}</p>}
       {(error || redirectError) && <p className="auth-error" role="alert">{error || redirectError}</p>}
       {notice && <p className="auth-message" role="status">{notice}</p>}
 
@@ -250,6 +252,7 @@ export default function AuthForm({
             <input
               autoComplete="name"
               className={fieldError.name ? 'invalid' : ''}
+              aria-invalid={Boolean(fieldError.name)}
               maxLength={100}
               onBlur={() => setTouched((t) => ({ ...t, name: true }))}
               onChange={(event) => setName(event.target.value)}
@@ -265,6 +268,7 @@ export default function AuthForm({
           <input
             autoComplete="email"
             className={fieldError.email ? 'invalid' : ''}
+            aria-invalid={Boolean(fieldError.email)}
             maxLength={320}
             onBlur={() => setTouched((t) => ({ ...t, email: true }))}
             onChange={(event) => setEmail(event.target.value)}
@@ -282,6 +286,7 @@ export default function AuthForm({
             <input
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               className={fieldError.password ? 'invalid' : ''}
+              aria-invalid={Boolean(fieldError.password)}
               onBlur={() => setTouched((t) => ({ ...t, password: true }))}
               onChange={(event) => setPassword(event.target.value)}
               placeholder={mode === 'login' ? 'Your password' : `At least ${MIN_PASSWORD} characters`}
@@ -312,6 +317,7 @@ export default function AuthForm({
             <input
               autoComplete="new-password"
               className={fieldError.confirm ? 'invalid' : ''}
+              aria-invalid={Boolean(fieldError.confirm)}
               onBlur={() => setTouched((t) => ({ ...t, confirm: true }))}
               onChange={(event) => setConfirm(event.target.value)}
               placeholder="Type the password again"
@@ -327,10 +333,17 @@ export default function AuthForm({
         </button>
       </form>
 
+      {/* Forgot-password sits under the submit button, where a learner looks the moment a sign-in
+          fails — the alternative is a support email saying "I cannot get in". It is a link, not a
+          third tab: recovery is a different journey (an email round-trip), not a mode of this form. */}
+      {mode === 'login' && (
+        <Link className="auth-forgot" to="/reset-password">Forgot your password?</Link>
+      )}
+
       <p className="auth-foot muted small">
         {mode === 'login'
           ? 'New here? Choose the "Create account" tab above.'
-          : 'Create an account to take your progress with you on any device.'}
+          : 'An account is required to open courses, lessons, practice and labs.'}
       </p>
     </>
   );

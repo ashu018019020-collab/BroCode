@@ -3,7 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="theme-color" content="#f2f4fa" />
+    <!-- The boot theme, applied BEFORE the bundle is fetched and before the first paint.
+         Two bugs this prevents, both visible:
+
+           · A LIGHT-mode learner saw the dark surface for a beat. The token block lives in the
+             stylesheet and `applyTheme()` runs when the module graph loads, which is after this
+             document has already painted — so the first frame was the dark default.
+           · A phone's status bar stayed dark on a light page, because `theme-color` was a static
+             dark hex. It is now set from the same value the app resolves, so it follows the theme.
+
+         It reads the same keys as `src/core/storage/ui.ts` (`aiml:ui:v1` for the preference,
+         `aiml:theme:choice` for "the learner actually chose one") and repeats only the SHAPE of the
+         state. That duplication is deliberate and one-directional: this must run with zero imports,
+         zero network and zero React. `scripts/tests/theme.test.mjs` pins the two keys and the
+         default against the module, so they cannot drift apart silently.
+         A blocked localStorage (private mode, locked-down profile) is not an error — light is the
+         product default, so the catch below IS the default path. -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('aiml:ui:v1');
+          var chosen = localStorage.getItem('aiml:theme:choice') === '1';
+          var stored = raw ? JSON.parse(raw) : null;
+          var theme = stored && (stored.theme === 'light' || stored.theme === 'dark') ? stored.theme : null;
+          // A stored value with no explicit-choice marker is the old dark implication, not a decision.
+          var resolved = stored && theme && (chosen || theme === 'light') ? theme : 'light';
+          var el = document.documentElement;
+          el.setAttribute('data-theme', resolved);
+          el.style.colorScheme = resolved;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0a0a0a' : '#f2f4fa');
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
     <!-- Meta description: what it is + the real differentiators (36 steps, 11 courses, 13,000+
          questions are the packs' own counts), ≤160 chars when rendered —
          scripts/tests/sitemap.test.mjs pins the shape. BroCode is a complete technology learning

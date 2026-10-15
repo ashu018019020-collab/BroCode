@@ -6,7 +6,7 @@ export const DATASETS: Dataset[] = [
     name: 'students', desc: 'Student roster with marks for joins and groupby.',
     columns: ['id', 'name', 'age', 'city', 'marks'],
     rows: [
-      [1, 'Ahetesham', 22, 'Pune', 88], [2, 'Sara', 21, 'Delhi', 92], [3, 'Ravi', 23, 'Mumbai', 75],
+      [1, 'Ashu', 22, 'Pune', 88], [2, 'Sara', 21, 'Delhi', 92], [3, 'Ravi', 23, 'Mumbai', 75],
       [4, 'Neha', 22, 'Pune', 81], [5, 'Omar', 24, 'Delhi', 67], [6, 'Priya', 21, 'Mumbai', 95],
       [7, 'John', 23, 'Pune', 58], [8, 'Aisha', 22, 'Delhi', 79],
     ],
@@ -25,7 +25,7 @@ export const DATASETS: Dataset[] = [
     columns: ['id', 'name', 'city', 'joined'],
     rows: [
       [1, 'Ravi', 'Mumbai', '2023-01-15'], [2, 'Sara', 'Delhi', '2023-02-20'],
-      [3, 'Ahetesham', 'Pune', '2023-03-05'], [4, 'Neha', 'Pune', '2023-04-12'],
+      [3, 'Ashu', 'Pune', '2023-03-05'], [4, 'Neha', 'Pune', '2023-04-12'],
       [5, 'Omar', 'Delhi', '2023-05-30'],
     ],
   },

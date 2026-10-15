@@ -54,8 +54,27 @@ const store = {
   // the real ones do: 'prisma' or 'supabase-auth'.
   name: 'test-store',
   async health() {},
-  async getProfile(id) {
-    return profiles.get(id) ?? null;
+  async getProfile(id, authUser) {
+    const existing = profiles.get(id);
+    if (existing) return existing;
+    // Mirrors `server/store.mjs`: a missing row is provisioned for the VERIFIED identity, and the
+    // role/status come from the database defaults — this path may never grant a role or re-enable a
+    // banned account. A fake that returned `null` here could not exercise that behaviour at all.
+    const named = authUser?.user_metadata?.display_name;
+    const provisioned = {
+      id,
+      name: typeof named === 'string' && named.trim()
+        ? named.trim()
+        : (authUser?.email ?? '').split('@')[0] ?? '',
+      email: authUser?.email ?? '',
+      role: 'user',
+      status: 'active',
+      createdAt: new Date(now),
+      lastSeenAt: null,
+      progress: null,
+    };
+    profiles.set(id, provisioned);
+    return provisioned;
   },
   async touchProfile(id, at) {
     profiles.get(id).lastSeenAt = at;
@@ -259,6 +278,87 @@ test('progress endpoint accepts aggregate counters without accepting private rec
     body: { ...progress, xp: -1 },
   });
   assert.equal(invalid.status, 400);
+});
+
+test('an authenticated account whose profile row is missing is provisioned, not locked out', async () => {
+  // The profile is created by a database trigger. When that trigger did not run — a migration applied
+  // without it, or a signup that raced it — the API used to answer "profile unavailable" and, now
+  // that an account is required for every learning surface, that locked a legitimately authenticated
+  // learner out of the entire product over something they cannot see or fix.
+  profiles.delete(ids.learner);
+  try {
+    const response = await call('/api/auth/session', { token: 'learner-token' });
+    assert.equal(response.status, 200);
+    const { user } = await response.json();
+    assert.equal(user.id, ids.learner, 'the verify-token identity is the one provisioned');
+    // The same fallback the database trigger uses: the display name from signup metadata when it
+    // exists, otherwise the email's local part. This fixture's auth user carries no `display_name`,
+    // so the derived name is asserted — which also proves the email actually reached the store.
+    assert.equal(user.name, 'learner', 'the name falls back to the email local part');
+    assert.equal(user.email, 'learner@example.test', 'the auth address is mirrored onto the profile');
+    // A provisioned profile is an ORDINARY account. Nothing on this path may mint an administrator or
+    // re-enable a banned account — `role`/`status` come from the database defaults and are asserted.
+    assert.equal(user.role, 'user', 'the on-demand path must never grant a role');
+    assert.equal(user.status, 'active');
+    // It must also have been created FOR the token holder and nobody else.
+    assert.equal(profiles.get(ids.learner).email, 'learner@example.test');
+  } finally {
+    profiles.set(ids.learner, {
+      id: ids.learner,
+      name: 'Learner',
+      email: 'learner@example.test',
+      role: 'user',
+      status: 'active',
+      createdAt: new Date(now),
+      lastSeenAt: null,
+      progress: null,
+    });
+  }
+});
+
+test('the caller\'s identity comes from the token, never from the request body', async () => {
+  // The impersonation attempt: a valid learner token that tries to speak for someone else. Every
+  // protected mutation derives the subject from the VERIFIED token, so the body's `userId` is inert.
+  const response = await call('/api/progress/snapshot', {
+    method: 'POST',
+    token: 'learner-token',
+    body: {
+      userId: ids.owner,
+      id: ids.owner,
+      xp: 1,
+      streakCurrent: 1,
+      practicedCount: 1,
+      doneRecords: 1,
+      studyMinutes: 1,
+      studyDays: 1,
+      openMistakes: 0,
+    },
+  });
+  assert.equal(response.status, 200);
+  assert.equal(lastProgress.id, ids.learner, 'the record must belong to the token holder');
+
+  // And an admin action cannot be reached by claiming a role in the body either.
+  const escalate = await call('/api/admin/users', {
+    method: 'GET',
+    token: 'learner-token',
+    headers: { 'x-brocode-role': 'admin' },
+  });
+  assert.equal(escalate.status, 403, 'a header cannot promote a caller');
+});
+
+test('a disabled account is refused on every authenticated endpoint', async () => {
+  const learner = profiles.get(ids.learner);
+  const previous = learner.status;
+  learner.status = 'disabled';
+  try {
+    assert.equal((await call('/api/auth/session', { token: 'learner-token' })).status, 200);
+    assert.deepEqual(await (await call('/api/auth/session', { token: 'learner-token' })).json(), { user: null },
+      'a disabled account must resolve to no session at all');
+    assert.equal((await call('/api/auth/presence', { method: 'POST', token: 'learner-token' })).status, 401);
+    assert.equal((await call('/api/admin/users', { token: 'learner-token' })).status, 401);
+  } finally {
+    learner.status = previous;
+  }
 });
 
 function send(port, path, { method = 'GET', headers = {}, body } = {}) {

@@ -29,11 +29,33 @@ const sf = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/surface
 const lp = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/paths.ts')).href);
 const LAB_FAMILY = lp.EXTRA_PATHS.filter((p) => p.group === 'lab').map((p) => p.route);
 
-/** Every `<h1…>` opening in a .tsx file under src/, with the file+line so a failure names the offender. */
+/**
+ * Every `<h1…>` opening in a .tsx file under src/, with the file+line so a failure names the offender.
+ *
+ * A JSDoc block comment is stripped first. Documentation legitimately QUOTES markup — the reset page's
+ * header comment explains which element it uses — and counting a backticked example as a real heading
+ * made the check fire on prose rather than on code. Only `/** … *&#47;` blocks are removed: a JSX
+ * `{/* … *&#47;}` comment is left alone, because a real (if commented-out) heading there is still a
+ * heading someone will uncomment, and the line numbers below stay truthful either way.
+ */
+const stripBlockComments = (source) => source.replace(/\/\*\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '));
+
+/**
+ * Code with every comment removed — for assertions that grep for a literal string.
+ *
+ * A test that searches a source file for `token` will also find that token inside the paragraph
+ * explaining why the token is NOT used, which turns a correct implementation into a failure. That
+ * happened twice in this file (the guard's own note about `?next=`, and the reset page's note about
+ * which heading element it uses), so the stripping lives here once and both callers share it.
+ * Blank-line-preserving on purpose: it keeps `indexOf` and slice-based neighbours meaningful.
+ */
+const stripComments = (source) => stripBlockComments(source)
+  .replace(/(^|[^:])\/\/[^\n]*/g, (m, lead) => lead + ' '.repeat(m.length - lead.length));
+
 const h1s = [];
 for (const dir of ['src/features', 'src/components', 'src/app']) {
   for (const rel of fs.readdirSync(path.join(ROOT, dir), { recursive: true }).map((f) => `${dir}/${f}`.replace(/\\/g, '/')).filter((f) => /\.tsx$/.test(f))) {
-    const src = read(rel);
+    const src = stripBlockComments(read(rel));
     [...src.matchAll(/<h1[\s>]/g)].forEach((m) => {
       const line = src.slice(0, m.index).split('\n').length;
       h1s.push({ file: rel, line });
@@ -361,8 +383,11 @@ test('layout: the redesigned header keeps search, focus, notifications and profi
   const header = app.slice(headerStart, headerEnd);
   assert.doesNotMatch(header, /topbar-brand|BroCode home|Learn <i \/> Practice/,
     'the BroCode logo and wordmark must not appear in the top header');
-  assert.doesNotMatch(app, /topbar-signin|>Sign in<\/Link>/,
-    'the header must not render a Sign In control');
+  // The account flow is NOT a row of header buttons. It is the greeting dialog that opens over
+  // whatever page the visitor landed on (see the guest test below), plus the rail's own block —
+  // the header keeps only navigation and utilities, and never a link that navigates to /login.
+  assert.doesNotMatch(header, /topbar-account|topbar-signin|acct\.signIn|acct\.signOut/,
+    'the header must not render account controls');
   for (const [route, label] of [['/', 'Dashboard'], ['/courses', 'Courses'], ['/projects', 'Projects'], ['/questions', 'Quizzes']]) {
     assert.match(app, new RegExp(`to: '${route.replace('/', '\\/')}', label: '${label}'`),
       `the primary navigation must expose ${label} at ${route}`);
@@ -444,7 +469,7 @@ test('layout: the AI assistant is a dark glass island with four responsive quick
 
 test('layout: removed header progress shortcuts remain available at their destinations', () => {
   const app = read('src/app/App.tsx');
-  assert.doesNotMatch(app.slice(app.indexOf('<header className={`topbar'), app.indexOf('</header>')), /hd-stat|smart-chip|topbar-signin|Sign out/,
+  assert.doesNotMatch(app.slice(app.indexOf('<header className={`topbar'), app.indexOf('</header>')), /hd-stat|smart-chip|topbar-account|Sign out/,
     'progress chips, the interview/next-step card and auth controls must be absent from the header');
   for (const [className, route] of [['profile-chip', '/progress']]) {
     assert.match(app, new RegExp(`<Link className="${className.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}" to="${route.replace('/', '\\/')}"`),
@@ -480,25 +505,67 @@ test('layout: the footer shows truthful sync state and working learning actions'
   assert.match(dashboard, /studyStreak\(state\.study \?\? \{\}, study\.todayKey\)/, 'the dashboard streak must match the profile\'s measured study streak');
 });
 
-test('layout: a guest browses the whole app — signing in is offered, never required', () => {
+test('layout: an account is REQUIRED to learn — every private route is guarded, and the guard is one component', () => {
   const app = read('src/app/App.tsx');
+  const guard = read('src/features/auth/RequireAuth.tsx');
   const login = read('src/features/auth/LoginPage.tsx');
+  const landing = read('src/features/dashboard/Landing.tsx');
   const form = read('src/features/auth/AuthForm.tsx');
-  const dialog = read('src/features/auth/AuthDialog.tsx');
-  // Nothing walls the shell off behind a session: no auth redirect and no early `return` of the
-  // whole app, which is what makes the rail's own profile block reachable at all.
-  assert.doesNotMatch(app, /!authLoading && !user[\s\S]{0,120}nav\('\/login'/, 'a signed-out visitor must not be redirected away from the page they asked for');
-  assert.doesNotMatch(app, /if \(!user \|\| loc\.pathname === '\/login'\)/, 'the shell must render the app for a guest, not the sign-in page');
-  // The rail opens the form in place; /login stays a real route for a pasted link.
-  assert.match(app, /className="btn primary side-act" onClick=\{\(\) => setAuthOpen\(true\)\}/, 'the rail must be the sign-up entry point');
-  assert.match(app, /<AuthDialog initialMode="register" open onClose=\{\(\) => setAuthOpen\(false\)\} \/>/,
-    'the rail\'s Sign up button must open the dialog on the create-account tab');
-  assert.match(dialog, /<AuthForm initialMode=\{initialMode\} onSuccess=\{onClose\} \/>/);
-  assert.match(login, /<AuthForm onSuccess=/, 'the page and the dialog must share ONE form');
-  // Signing in from the rail must not throw the learner off the page they were reading.
-  assert.doesNotMatch(dialog, /useNavigate/, 'the dialog closes instead of navigating');
+
+  // The guard exists and is the SINGLE place the decision is made.
+  assert.match(guard, /export function RequireAuth/, 'the app must own one authorization boundary');
+  assert.match(guard, /if \(loading\) return <RouteGateSkeleton \/>/,
+    'a session still being restored must NOT redirect, or every refresh bounces a signed-in learner');
+  assert.match(guard, /state=\{\{ from: `\$\{location\.pathname\}\$\{location\.search\}` \}\}/,
+    'the requested destination must be preserved so the learner returns to it after signing in');
+  assert.doesNotMatch(stripComments(guard), /\?next=|\?from=|searchParams\.set\('(from|next)'/,
+    'the destination must travel in router state, never in a query string a caller could craft');
+
+  // The public pages, and NOTHING else, sit outside `Protect`.
+  const routes = app.slice(app.indexOf('<Routes>'), app.indexOf('</Routes>'));
+  const publicRoutes = ['/', '/start', '/login', '/reset-password'];
+  for (const path of publicRoutes) {
+    assert.match(routes, new RegExp(`<Route path="${path.replace('/', '\\/')}" element=\\{<[A-Z]`),
+      `${path} must stay reachable without a session`);
+  }
+  // Every remaining literal route must be wrapped. This is the assertion that makes a NEW page
+  // memorable to guard: an unprotected one fails here instead of quietly shipping.
+  const literals = [...routes.matchAll(/<Route path="(\/[^"]*)" element=\{<(\w+)/g)];
+  assert.ok(literals.length > 0, 'the route table must be literal enough for this test to read');
+  for (const [, path, component] of literals) {
+    if (publicRoutes.includes(path)) continue;
+    assert.equal(component, 'Protect', `${path} is not wrapped in Protect — it would be readable without a session`);
+  }
+  // The learning surfaces a visitor must not reach, spelled out so the intent is visible.
+  for (const path of ['/courses', '/lesson/:sid/:stage', '/questions', '/practice', '/labs', '/progress', '/notes', '/pdf']) {
+    assert.match(routes, new RegExp(`path="${path.replace(/[/:]/g, (c) => `\\${c}`)}" element=\\{<Protect>`),
+      `${path} must require an account`);
+  }
+
+  // The Dashboard prints the learner's own numbers, so `/` may not hand it to a visitor.
+  assert.match(app, /function PublicHome\(\)[\s\S]{0,260}return user \? <Dashboard \/>/,
+    'the front door must choose the Landing page for a visitor and the Dashboard for a learner');
+
+  // The old guest affordances are gone, and nothing offers a way in without a session.
+  assert.doesNotMatch(app, /acct\.guest/, 'the rail must not name a guest');
+  assert.doesNotMatch(app, /ACCOUNT_GREETING_KEY|greeted\.current/, 'the auto-open greeting is gone; /login is the prompt');
   assert.doesNotMatch(login, /Continue as guest/);
   assert.doesNotMatch(form, /Continue as guest/);
+  // The public page may not offer a way INTO learning without an account. "Continue Learning" is
+  // fine — it is the signed-in branch's label on the same page — so only the free-start phrasing is
+  // rejected, together with the old direct route into onboarding. Comments are stripped because the
+  // file EXPLAINS what it removed ("Start Learning Free" went straight to onboarding), and that
+  // explanation must not read as a regression.
+  const landingCode = stripComments(landing);
+  assert.doesNotMatch(landingCode, /Start Learning Free|to=\{start\}/,
+    'the public page must not promise learning without an account');
+  assert.doesNotMatch(landingCode, /state\.profile\.onboarded/, 'the public page must not gate on local profile state');
+  assert.match(landingCode, /An account is required/, 'the public page must say an account is required');
+  assert.match(landingCode, /to="\/login"/, 'the public page must link to the account entry');
+
+  // Password recovery is part of the flow, not an afterthought.
+  assert.match(app, /path="\/reset-password"/, 'the recovery page must be routable');
+  assert.match(form, /to="\/reset-password"/, 'the form must offer a way to recover a forgotten password');
 });
 
 test('layout: the sidebar account block is the way in, the way out, and the route to /admin', () => {
@@ -511,21 +578,24 @@ test('layout: the sidebar account block is the way in, the way out, and the rout
   assert.match(footer, /side-account-copy[\s\S]*user\.name \|\| user\.email/, 'the rail must name the signed-in account');
   assert.match(footer, /onClick=\{\(\) => void signOut\(\)\}[\s\S]{0,170}t\('acct\.signOut'\)/, 'the block must offer sign-out');
   assert.match(footer, /user\.role === 'admin'[\s\S]{0,120}to="\/admin"/, 'an administrator gets a route to the owner dashboard');
-  assert.match(footer, /t\('acct\.guest'\)/, 'a guest must be named as a guest');
-  assert.match(footer, /t\('acct\.signUp'\)/, 'the rail\'s one account action is Sign up');
-  assert.doesNotMatch(footer, /acct\.signIn|acct\.guestNote/, 'the rail must not bring back the old two-job button or the guest note');
-  assert.match(footer, /setAuthOpen\(true\)/, 'the rail must open the account dialog');
-  assert.match(app, /await logout\(\);[\s\S]{0,200}nav\('\/', \{ replace: true \}\)/, 'sign-out must end the session');
+  // Signed out: a state, not an identity. Two real doors, and the second one is a LINK to `/login`
+  // because navigation to a fixed page is a link (see the dedicated test below).
+  assert.match(footer, /t\('acct\.signedOut'\)/, 'a signed-out visitor must be described as signed out, not as a guest');
+  assert.match(footer, /t\('acct\.signInHint'\)/, 'the block must say an account is needed');
+  assert.match(footer, /to="\/login"[\s\S]{0,160}t\('acct\.signUp'\)/, 'the block must offer account creation');
+  assert.doesNotMatch(footer, /acct\.guest/, 'no guest identity may remain in the rail');
+  assert.match(app, /await logout\(\);[\s\S]{0,260}nav\('\/', \{ replace: true \}\)/, 'sign-out must end the session');
   // The cards this block replaced are gone from the markup AND from the stylesheet.
   assert.doesNotMatch(app, /side-xp|side-keep|keep-badge/, 'the replaced rail cards must not remain in the shell');
   assert.doesNotMatch(styles, /\.side-xp|\.side-keep/, 'the replaced rail cards must not leave a rule behind');
   const locales = read('src/app/i18n/locales.ts');
   const enBlock = locales.slice(locales.indexOf('export const en ='), locales.indexOf('export type LocaleKey'));
   const hiBlock = locales.slice(locales.indexOf('export const hinglish'));
-  for (const key of ['acct.guest', 'acct.signUp', 'acct.signOut']) {
+  for (const key of ['acct.signedOut', 'acct.signInHint', 'acct.signIn', 'acct.signUp', 'acct.signOut']) {
     assert.ok(enBlock.includes(`'${key}':`), `${key} is missing from the English pack`);
     assert.ok(hiBlock.includes(`'${key}':`), `${key} is missing from the Hinglish pack`);
   }
+  assert.ok(!enBlock.includes("'acct.guest':"), 'the guest identity must be gone from the English pack');
 });
 
 test('layout: the footer replaces the brand with a live local Last Seen and floating AI button', () => {
@@ -546,13 +616,14 @@ test('layout: the footer replaces the brand with a live local Last Seen and floa
     'the prominent AI control must retain its assistant toggle action');
   assert.match(footer, /className=\{`sb-sync-block/, 'the actual local/account save status must remain');
   assert.match(footer, /className="sb-continue" to=\{smart\.route\}/, 'Continue Learning must retain its existing destination');
-  assert.match(footer, /className="sb-settings" to="\/settings"/, 'the settings shortcut must use its real route');
+  assert.doesNotMatch(footer, /sb-settings|to="\/settings"/,
+    'the footer must stay a progress+learning surface — Settings lives in the sidebar, not here');
   const statusGroupIndex = footer.indexOf('className="sb-status-group"');
   const actionsGroupIndex = footer.indexOf('className="sb-actions"');
   assert.ok(statusGroupIndex >= 0 && actionsGroupIndex > statusGroupIndex,
-    'status and settings must share a left group, with actions grouped on the right');
-  assert.match(footer.slice(statusGroupIndex, actionsGroupIndex), /className=\{`sb-sync-block[\s\S]*?className="sb-settings"/,
-    'local/account save status and settings must stay in the left group');
+    'status must share a left group, with actions grouped on the right');
+  assert.match(footer.slice(statusGroupIndex, actionsGroupIndex), /className=\{`sb-sync-block/,
+    'the local/account save status must stay in the left group');
   assert.match(footer.slice(actionsGroupIndex), /className=\{`sb-ai[\s\S]*?className="sb-continue"/,
     'AI and Continue Learning must stay adjacent in the right group');
   assert.match(css, /\.sb-status-group \{[\s\S]*?flex: 1 1 auto;[\s\S]*?min-width: 0;/,

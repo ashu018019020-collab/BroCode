@@ -3,21 +3,25 @@ import { ArrowRight, BookOpen, FlaskConical, ListChecks, Play, Sparkles } from '
 import { TRACK_DEFS } from '../../app/App';
 import { trackHref } from '../../core/learning/surfaces';
 import { useCurriculum } from '../../core/data/curriculum';
-import { useStore } from '../../core/storage/store';
+import { useAuth } from '../../core/auth/AuthProvider';
 import { usePathCtx } from '../../core/data/paths';
 
 /**
- * The front door: what the app is, how much of it there is, and where to start.
+ * The front door — the PUBLIC page an unauthenticated visitor sees at `/`.
  *
  * Every figure is read from a real content manifest or from the path context — the headline numbers
  * ARE the app's own (8 tracks, 29 modules, the published question count, the Playbook's item count).
- * No seeded, rounded-up or invented figure appears on this page: an offline study app that lies
- * about its size on the first screen has spent its only first impression.
+ * No seeded, rounded-up or invented figure appears on this page: a study app that lies about its size
+ * on the first screen has spent its only first impression.
  *
- * Positioning: BroCode is a COMPLETE technology learning platform — Learn → Practice → Build →
- * Prepare → Grow — and AI/ML is one major domain among several, never the umbrella identity.
- * DOMAINS below and the ItemList in index.html's JSON-LD are the same list on purpose; change
- * the two together (scripts/tests/sitemap.test.mjs pins the pair).
+ * WHAT CHANGED WHEN ACCOUNTS BECAME MANDATORY: this page used to be an entry point INTO the app
+ * ("Start Learning Free" went straight to onboarding, and the pillar tiles walked a visitor in). It
+ * is now a public OVERVIEW: the two buttons that lead anywhere are Sign in and Create account, and
+ * the pillar/domain links still name where each subject lives (they are honest previews — the guard
+ * sends a visitor to sign-in and brings them back to that exact page afterwards).
+ *
+ * Everything private is gone from it: no progress, no streak, no XP, no "continue learning". A
+ * visitor must not be able to read another learner's data from the marketing page.
  */
 const PILLARS: { to: string; label: string; sub: string }[] = [
   { to: '/courses', label: 'Courses', sub: '11 courses · the 36-step roadmap' },
@@ -52,10 +56,9 @@ const DOMAINS: { name: string; to: string }[] = [
 ];
 
 export default function Landing() {
-  const state = useStore();
+  const { user } = useAuth();
   const { sections } = useCurriculum();
   const ctx = usePathCtx();
-  const start = state.profile.onboarded ? '/courses' : '/onboarding';
 
   const stats = [
     { icon: Sparkles, n: `${TRACK_DEFS.length}`, l: 'Learning Tracks' },
@@ -63,6 +66,14 @@ export default function Landing() {
     { icon: ListChecks, n: ctx.published ? `${ctx.published.total}` : '—', l: 'Practice Questions' },
     { icon: FlaskConical, n: ctx.playbook ? `${ctx.playbook.items}` : '—', l: 'Playbook Items' },
   ];
+
+  /*
+   * The call to action depends on who is looking, and a SIGNED-IN learner can still reach this page
+   * (they are redirected to `/` after signing in, but a bookmark or the footer can bring them back).
+   * They get a way into the app; a visitor gets the two doors, and nothing that leads into protected
+   * content without one.
+   */
+  const signedIn = !!user;
 
   return (
     <div className="fadeup">
@@ -76,16 +87,28 @@ export default function Landing() {
           preparation aur career-focused learning — sab ek jagah.
         </p>
         <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-          <Link className="btn primary" to={start}>
-            <Play size={14} /> {state.profile.onboarded ? 'Continue Learning' : 'Start Learning Free'}
-          </Link>
+          {signedIn ? (
+            <Link className="btn primary" to="/">
+              <Play size={14} /> Continue Learning
+            </Link>
+          ) : (
+            <>
+              <Link className="btn primary" to="/login" state={{ from: '/courses' }}>
+                <Play size={14} /> Create account &amp; start
+              </Link>
+              <Link className="btn" to="/login">Sign in</Link>
+            </>
+          )}
           <Link className="btn" to="/courses">
             Browse Courses <ArrowRight size={14} />
           </Link>
-          <Link className="btn" to="/practice">
-            Practice Questions
-          </Link>
         </div>
+        {!signedIn && (
+          <p className="muted small" style={{ margin: '12px 0 0' }}>
+            An account is required to open courses, lessons, practice questions, labs and your
+            progress. Creating one takes a minute.
+          </p>
+        )}
       </section>
 
       <div className="kpi-row">
@@ -119,9 +142,9 @@ export default function Landing() {
       </div>
 
       <p className="small muted" style={{ marginTop: 14 }}>
-        {state.profile.onboarded
-          ? 'Sab kuch local hai — progress tumhare browser me hi rehta hai.'
-          : 'Pehla step 30 second ka onboarding hai, uske baad tumhara personal dashboard ban jayega.'}
+        {signedIn
+          ? 'Progress, notes and code are saved to your account.'
+          : 'Sign in to open any of these — your progress is saved to your account.'}
       </p>
     </div>
   );

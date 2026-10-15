@@ -1,5 +1,6 @@
 import { createClient, type Session } from '@supabase/supabase-js';
 import { enabledProviders, type OAuthProvider, type ProviderAvailability } from './oauth';
+import { SERVICE_UNAVAILABLE_COPY } from './messages';
 import type { ProgressSummary } from './progress';
 
 export type AccountRole = 'user' | 'admin';
@@ -50,13 +51,44 @@ export interface RegistrationResult {
 let client: ReturnType<typeof createClient> | undefined;
 const PENDING_OAUTH_KEY = 'brocode:pending-oauth-provider';
 
+/**
+ * A template value, not a credential: `.env.example` uses `https://your-project.supabase.co` and
+ * `your-supabase-publishable-key`, and a deployment that copied the file without editing it must be
+ * treated as UNCONFIGURED rather than handed to `createClient`, which would fail on every request
+ * with a confusing network error instead.
+ */
+const PLACEHOLDER_RE = /your-project|your-supabase|changeme|replace-me|<[^>]+>/i;
+
+/**
+ * The browser-side Supabase config, or `null` when this build has none. Pure and exported so the
+ * one place that decides "is the account service configured" is testable and shared by the client
+ * and the provider-availability probe.
+ */
+export function browserSupabaseConfig(): { url: string; key: string } | null {
+  const url = import.meta.env.VITE_SUPABASE_URL?.trim();
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  if (!url || !key || PLACEHOLDER_RE.test(url) || PLACEHOLDER_RE.test(key)) return null;
+  return { url, key };
+}
+
+/**
+ * The account service is optional: the whole platform works without it. This throws the SAME
+ * sentence a learner would see for any other service outage — the missing variable names are a note
+ * for whoever built the app (in the console), never a message for whoever is using it.
+ */
+function unavailable(): Error {
+  console.error(
+    '[BroCode] The account service is not configured for this build. Set VITE_SUPABASE_URL and '
+    + 'VITE_SUPABASE_PUBLISHABLE_KEY in the root .env file and restart the dev server or rebuild.',
+  );
+  return new Error(SERVICE_UNAVAILABLE_COPY);
+}
+
 export function getSupabaseClient() {
   if (client) return client;
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key || url.includes('your-project-ref') || key.includes('your-supabase-')) {
-    throw new Error('Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in the root .env file.');
-  }
+  const config = browserSupabaseConfig();
+  if (!config) throw unavailable();
+  const { url, key } = config;
   client = createClient(url, key, {
     auth: {
       autoRefreshToken: true,
@@ -118,10 +150,9 @@ export function loadProviderAvailability(): Promise<ProviderAvailability | null>
   if (!providerAvailability) {
     providerAvailability = (async () => {
       try {
-        const url = import.meta.env.VITE_SUPABASE_URL;
-        const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-        if (!url || !key) return null;
-        const response = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } });
+        const config = browserSupabaseConfig();
+        if (!config) return null;
+        const response = await fetch(`${config.url}/auth/v1/settings`, { headers: { apikey: config.key } });
         if (!response.ok) return null;
         return enabledProviders(await response.json());
       } catch (error) {
@@ -223,6 +254,33 @@ export const authApi = {
       email,
       options: { emailRedirectTo: window.location.origin },
     });
+    if (error) throw authError(error);
+  },
+
+  /**
+   * Send the password-recovery email.
+   *
+   * `redirectTo` carries the app's base path plus a marker, because the recovery link has to come
+   * back to the RESET screen rather than the shell: supabase-js reads the recovery token out of the
+   * URL and establishes a short-lived session, and the learner is then asked for a new password.
+   * Which screen handles it is decided from the URL by `passwordResetRequested()` in `reset.ts`, so
+   * the marker is data, not a second router.
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    const { error } = await getSupabaseClient().auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}?reset=1`,
+    });
+    if (error) throw authError(error);
+  },
+
+  /**
+   * Set the new password for the session the recovery link established.
+   *
+   * There is no old password here on purpose: the learner arrived through the emailed recovery link,
+   * and that link is the proof of ownership. `updateUser` is the supported SDK call for exactly this.
+   */
+  async updatePassword(password: string): Promise<void> {
+    const { error } = await getSupabaseClient().auth.updateUser({ password });
     if (error) throw authError(error);
   },
 

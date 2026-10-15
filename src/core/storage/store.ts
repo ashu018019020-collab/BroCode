@@ -2,14 +2,30 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import type { AppState, Note } from '../../types';
 import type { ExamWriteEntry } from '../assessment/exam';
 import { bankAttempt } from '../platform/keys';
+import { checkAvatar, avatarRejection } from '../platform/avatar';
 import { addStudy, today } from '../learning/study';
 import { accountStorageKey, subscribeStorageAccount } from './account';
 
 const KEY = 'aiml:state:v1';
 
+/**
+ * A brand-new learner's state.
+ *
+ * `profile.name` is deliberately EMPTY, and that is a privacy rule rather than an oversight.
+ *
+ * This field used to ship as a real person's name (the project owner's). Because `defaultState()`
+ * seeds every new account and every form that reads it, that produced two defects at once: a new
+ * learner's dashboard greeted them by a stranger's name, and the onboarding form was PRE-FILLED with
+ * it — application-controlled personal data leaking into a fresh account, which is exactly what a
+ * production auth flow must never do. Signup collects the real name and the Supabase-backed store
+ * returns it as `user.name`; onboarding asks for it again only when it is still blank.
+ *
+ * The rest of the profile is a neutral starting point (a goal, a level, a daily target), not personal
+ * data: those are product defaults the learner then edits.
+ */
 export const defaultState = (): AppState => ({
   version: 1,
-  profile: { name: 'Ahetesham', goal: 'Programming & Software Development', level: 'Beginner', dailyMinutes: 60, onboarded: false },
+  profile: { name: '', goal: 'Programming & Software Development', level: 'Beginner', dailyMinutes: 60, onboarded: false },
   xp: 0,
   streak: { current: 0, last: '' },
   attempts: {},
@@ -117,9 +133,16 @@ export function addStudySeconds(seconds: number, key = today()) {
  * A data URL, and only ever a small one: the caller `Progress.tsx` draws the picked image onto a
  * 128×128 canvas first, because the original file would be re-serialised on every single store
  * write (a phone photo would turn this state into megabytes).
+ *
+ * The canvas is a good-faith guarantee, not a check — this function is also reachable from an
+ * imported progress file, so it applies `checkAvatar` (see `core/platform/avatar.ts`) rather than
+ * assuming its caller. A refused value clears the photo instead of storing something unusable.
  */
 export function setAvatar(dataUrl: string) {
-  setState((s) => ({ ...s, profile: { ...s.profile, avatar: dataUrl } }));
+  const avatar = dataUrl ? checkAvatar(dataUrl) : null;
+  if (avatar && !avatar.ok) avatarNotice = avatarRejection(avatar.reason);
+  const value = avatar?.ok ? avatar.value : '';
+  setState((s) => ({ ...s, profile: { ...s.profile, avatar: value } }));
 }
 
 export function addXp(n: number, type?: string, label?: string) {
@@ -311,6 +334,18 @@ export function exportProgress() {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Why an imported photo was dropped, for the page to show once. Cleared on read, so a stale sentence
+ * cannot reappear on the next import that had nothing wrong with it.
+ */
+let avatarNotice: string | null = null;
+
+export function takeAvatarNotice(): string | null {
+  const notice = avatarNotice;
+  avatarNotice = null;
+  return notice;
+}
+
 export async function importProgress(file: File) {
   const text = await file.text();
   const parsed = JSON.parse(text);
@@ -320,5 +355,19 @@ export async function importProgress(file: File) {
   for (const k of ['mistakes', 'bookmarks']) if (!Array.isArray(clean[k])) clean[k] = [];
   for (const k of ['attempts', 'review', 'interviewAnswers', 'defenseAnswers', 'savedCode', 'activity', 'study']) if (!clean[k] || typeof clean[k] !== 'object') clean[k] = {};
   if (!clean.profile || typeof clean.profile !== 'object') clean.profile = defaultState().profile;
+  /**
+   * The avatar is the ONE field in an imported file that is interpolated into markup rather than
+   * counted, so it is the one field that has to be CHECKED instead of trusted. `checkAvatar` owns the
+   * rule (an allow-list of raster image data URLs, plus a size cap that protects the whole-state
+   * localStorage write). An unusable photo is dropped and named — never smuggled into `<img src>`,
+   * and never a reason to reject an otherwise valid progress file.
+   */
+  const avatar = checkAvatar(clean.profile.avatar);
+  clean.profile = { ...clean.profile };
+  if (avatar.ok) clean.profile.avatar = avatar.value;
+  else {
+    delete clean.profile.avatar;
+    if (avatar.reason !== 'empty') avatarNotice = avatarRejection(avatar.reason);
+  }
   setState(() => clean);
 }

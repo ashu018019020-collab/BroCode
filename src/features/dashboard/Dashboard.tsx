@@ -9,6 +9,7 @@ import {
 import { StickyNote, BookMarked, Moon, Repeat, Settings as SettingsIcon } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore } from '../../core/storage/store';
+import { useAuth } from '../../core/auth/AuthProvider';
 import { sectionProgress, currentSection, isMastered, nextBestAction, codingTasksDone, recentStageEvents } from '../../core/learning/progress';
 import { dueReview, openMistakes } from '../../core/learning/review';
 import { bankAccuracy, pctText } from '../../core/assessment/accuracy';
@@ -70,6 +71,9 @@ export default function Dashboard() {
   const state = useStore();
   const ui = useUi();
   const { t } = useI18n();
+  // The local profile name, else the verified account's — never a seed value. See the hero heading.
+  const { user } = useAuth();
+  const greetingName = (state.profile.name || user?.name || '').trim();
   const ach = useMemo(() => earnedAchievements(state, sections), [state, sections]);
   const cur = currentSection(sections, state);
   const { masterPct } = sectionProgress(cur, state);
@@ -208,7 +212,17 @@ export default function Dashboard() {
       <section className="hero-band fadeup">
         <div className="hero-grid">
           <div className="hero-id">
-            <h1>{t('dash.welcome')} <span>{state.profile.name}.</span></h1>
+            {/*
+              * The greeting must survive a blank name.
+              *
+              * `profile.name` is empty until the learner gives one (onboarding, or the name typed at
+              * signup). Rendering `{name}.` unconditionally produced "Welcome back, ." for a fresh
+              * account — the old hardcoded seed name was hiding that. The signed-in account is a
+              * legitimate fallback, and with neither the greeting simply drops the name clause.
+              */}
+            <h1>
+              {t('dash.welcome')}{greetingName ? <> <span>{greetingName}.</span></> : null}
+            </h1>
             <p className="muted small">{t('dash.journey')}</p>
             <div className="row dash-tags">
               <span className="dash-tag tone-violet"><Sparkles size={13} /> {t('dash.chip')}</span>

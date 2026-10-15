@@ -1,7 +1,26 @@
 import { PrismaClient } from '@prisma/client';
 
+/** The name to show for an account whose profile row is missing, or has no display name yet. */
+function fallbackName(authUser) {
+  const named = authUser?.user_metadata?.display_name;
+  if (typeof named === 'string' && named.trim()) return named.trim();
+  return (authUser?.email ?? '').split('@')[0] ?? '';
+}
+
 export function createSupabaseStore(prisma = new PrismaClient()) {
+  const shape = (profile) => ({
+    id: profile.id,
+    name: profile.displayName,
+    role: profile.role,
+    status: profile.status,
+    createdAt: profile.createdAt,
+    lastSeenAt: profile.lastSeenAt,
+    email: profile.email ?? '',
+  });
+
   return {
+    name: 'prisma',
+
     async close() {
       await prisma.$disconnect();
     },
@@ -10,17 +29,35 @@ export function createSupabaseStore(prisma = new PrismaClient()) {
       await prisma.$queryRaw`SELECT 1`;
     },
 
-    async getProfile(userId) {
-      const profile = await prisma.profile.findUnique({ where: { id: userId } });
-      if (!profile) return null;
-      return {
-        id: profile.id,
-        name: profile.displayName,
-        role: profile.role,
-        status: profile.status,
-        createdAt: profile.createdAt,
-        lastSeenAt: profile.lastSeenAt,
-      };
+    /**
+     * The profile, CREATED ON DEMAND if the database trigger never ran.
+     *
+     * Why this is not `findUnique`: a missing row made the API answer "profile unavailable", which —
+     * now that an account is required for every learning surface — locks a legitimately authenticated
+     * learner out of the whole product because of a database trigger they cannot see. The two
+     * reliable ways a row goes missing are a migration applied without its trigger and a signup that
+     * raced it, and neither is the learner's fault.
+     *
+     * `upsert` is safe in every direction that matters:
+     *   · IDEMPOTENT — `id` is the primary key, and `update` touches nothing at all, so concurrent
+     *     calls cannot produce a duplicate row or clobber an existing one;
+     *   · a learner can only create a row FOR THEMSELVES, because `id` comes from the verified bearer
+     *     token, never from a request body;
+     *   · `role` and `status` are NOT written, so the database defaults (`user`, `active`) apply and
+     *     this path can never mint an administrator or silently re-enable a banned account — the
+     *     caller still checks `status` afterwards and rejects a disabled one.
+     */
+    async getProfile(userId, authUser) {
+      const profile = await prisma.profile.upsert({
+        where: { id: userId },
+        update: {},
+        create: {
+          id: userId,
+          displayName: fallbackName(authUser),
+          email: authUser?.email ?? null,
+        },
+      });
+      return shape(profile);
     },
 
     async touchProfile(userId, now = new Date()) {
@@ -67,6 +104,7 @@ export function createSupabaseStore(prisma = new PrismaClient()) {
       return profiles.map((profile) => ({
         id: profile.id,
         name: profile.displayName,
+        email: profile.email ?? '',
         role: profile.role,
         status: profile.status,
         createdAt: profile.createdAt,

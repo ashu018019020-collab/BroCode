@@ -66,7 +66,9 @@ export function withoutOAuthParams(search: string): string {
 /** The sentence the login page shows for a provider return that did not produce a session. */
 export function oauthErrorMessage(callback: OAuthCallback): string {
   if (callback.error === 'access_denied') {
-    return 'Sign-in was cancelled. Try again, or continue as guest.';
+    // No "continue as guest" any more: there is nothing to continue TO without a session, and
+    // offering it would point at a door that no longer opens.
+    return 'Sign-in was cancelled. Try again, or use your email and password.';
   }
   const description = callback.errorDescription?.trim();
   return description

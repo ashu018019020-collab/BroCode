@@ -4,6 +4,7 @@ import { authApi, getSupabaseClient, takePendingOAuthProvider, type AuthUser, ty
 import { oauthErrorMessage, readOAuthCallback, withoutOAuthParams, type OAuthProvider } from './oauth';
 import { announcePresence, broadcastSignIn } from './realtime';
 import { summarizeProgress } from './progress';
+import { SERVICE_UNAVAILABLE_COPY } from './messages';
 import { stateSnapshot, useStore } from '../storage/store';
 import { setStorageAccount } from '../storage/account';
 
@@ -26,6 +27,19 @@ interface ProgressSyncState {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+/**
+ * What the UI gets when the account service fails.
+ *
+ * The thrown error is the OPERATOR's: it can carry a status code, a provider payload or the name of
+ * a variable this build was opened without. A learner can act on none of it, so the message is not
+ * forwarded — it goes to the console, where the person who deployed the app can read it, and the
+ * UI gets one sentence that is true whatever the cause was.
+ */
+function serviceFailure(error: unknown): string {
+  console.error('[BroCode] The account service request failed.', error);
+  return SERVICE_UNAVAILABLE_COPY;
+}
 
 function ProgressSync({
   userId,
@@ -131,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!active || version !== sessionVersion) return;
         setStorageAccount(null);
         setUser(null);
-        setServiceError(error instanceof Error ? error.message : 'Account service is unavailable.');
+        setServiceError(serviceFailure(error));
         setProgressSync({ status: 'idle', lastSyncedAt: null });
       } finally {
         if (active && version === sessionVersion) setLoading(false);
@@ -179,7 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!active || initialVersion !== sessionVersion) return;
           setStorageAccount(null);
           setUser(null);
-          setServiceError(error instanceof Error ? error.message : 'Account service is unavailable.');
+          setServiceError(serviceFailure(error));
           setProgressSync({ status: 'idle', lastSyncedAt: null });
           setLoading(false);
         });
@@ -187,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionVersion += 1;
       setStorageAccount(null);
       setUser(null);
-      setServiceError(error instanceof Error ? error.message : 'Account service is unavailable.');
+      setServiceError(serviceFailure(error));
       setLoading(false);
     }
 
@@ -217,8 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setServiceError(null);
         }
       } catch (error) {
-        if (active) setServiceError(error instanceof Error ? error.message : 'Account service is unavailable.');
-        console.error('Could not refresh account presence.', error);
+        if (active) setServiceError(serviceFailure(error));
       }
     };
 

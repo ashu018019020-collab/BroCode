@@ -359,7 +359,7 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
             value={stdin}
             onChange={(e) => setStdin(e.target.value)}
             rows={2}
-            placeholder={'Ahetesham\n25\nPython'}
+            placeholder={'Ashu\n25\nPython'}
             aria-label={t('pg.input')}
             className="editor"
             style={{ marginTop: 8, minHeight: 56 }}

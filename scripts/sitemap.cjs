@@ -60,6 +60,40 @@ const SKIPPED = {
   '/pdf/playbook/:page': 'a page flip inside the bundled reader',
 };
 
+/**
+ * Routes that must NEVER appear in a public sitemap, and the reason each one is excluded.
+ *
+ * This list became necessary when learning moved behind an account. Before that, every page really
+ * was public and listing all of them was correct; now a sitemap is a PUBLIC declaration of where a
+ * crawler should go, and advertising a signed-in learner's private surfaces to a search engine is a
+ * disclosure even though the page itself renders nothing without a session.
+ *
+ * Two different problems, one list:
+ *
+ *   · PRIVATE USER SURFACES (`/progress`, `/notes`, `/settings`) — per-account data. Nothing about
+ *     them is useful to a crawler and their titles alone describe a person's study activity.
+ *   · OPERATIONAL SURFACES (`/admin`, `/onboarding`, and the two auth pages) — the owner console,
+ *     a first-run wizard, and pages whose only content is a form.
+ *
+ * `/login` and `/reset-password` are a judgement call: they are legitimately reachable by a visitor,
+ * but a crawlable sign-in page invites password-spraying traffic and a recovery page carries a
+ * one-time credential in its URL. Neither earns a place in an index.
+ *
+ * `/`, `/start` and the COURSE CATALOGUE stay public — that is the discoverable product.
+ *
+ * The test asserts every entry here is a real route (a typo would silently exclude a page nobody
+ * meant to hide) AND that none of them reaches the sitemap.
+ */
+const PRIVATE = {
+  '/admin': 'the owner console — server-authorized, never advertised',
+  '/progress': 'the learner\'s own analytics — per-account data',
+  '/notes': 'the learner\'s private notes',
+  '/settings': 'per-account preferences, no public content',
+  '/onboarding': 'a first-run wizard with nothing to read',
+  '/login': 'a form, and a crawlable sign-in page invites credential attacks',
+  '/reset-password': 'carries a one-time recovery credential in its URL',
+};
+
 const ok = (m) => console.log(`\x1b[32m✓\x1b[0m ${m}`);
 const bad = (m) => console.log(`\x1b[31m✕\x1b[0m ${m}`);
 const arg = (name) => {
@@ -96,9 +130,23 @@ function buildSitemap(base = DEFAULT_BASE) {
   const appSrc = fs.readFileSync(APP_TSX, 'utf8');
   const expanded = expansions(readTrackSlugs(), readJson(SECTIONS_JSON).map((s) => s.id), readJson(COURSES_INDEX).courses);
 
+  // A typo in PRIVATE would hide nothing while looking deliberate, so every entry must be a real
+  // route. Failing here is the difference between "excluded on purpose" and "excluded by mistake".
+  const routes = readRoutes(appSrc);
+  const registered = new Set(routes);
+  const strays = Object.keys(PRIVATE).filter((route) => !registered.has(route));
+  if (strays.length) {
+    throw new Error(`PRIVATE names route(s) that do not exist in App.tsx: ${strays.join(', ')}`);
+  }
+  // A route can be skipped (no page of its own) or private (a real page, not advertised) — never
+  // both, because the two mean different things and the overlap hides a mistake.
+  const overlap = Object.keys(PRIVATE).filter((route) => SKIPPED[route]);
+  if (overlap.length) throw new Error(`route(s) are in both SKIPPED and PRIVATE: ${overlap.join(', ')}`);
+
   const urls = [];
-  for (const route of readRoutes(appSrc)) {
+  for (const route of routes) {
     if (SKIPPED[route]) continue;
+    if (PRIVATE[route]) continue;
     if (route.includes(':')) {
       const list = expanded[route];
       if (!list) throw new Error(`route ${route} has no expansion rule — add one to scripts/sitemap.cjs or to SKIPPED`);
@@ -156,4 +204,4 @@ if (require.main === module) {
   } else console.log('\nDry run — nothing written. Apply with: npm run sitemap:write');
 }
 
-module.exports = { buildSitemap, writeSitemap, buildRobots, writeRobots, DEFAULT_BASE, SKIPPED, ROBOTS_PATH };
+module.exports = { buildSitemap, writeSitemap, buildRobots, writeRobots, DEFAULT_BASE, SKIPPED, PRIVATE, ROBOTS_PATH };

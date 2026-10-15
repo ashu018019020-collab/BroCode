@@ -21,14 +21,29 @@ class HttpError extends Error {
   }
 }
 
+/**
+ * The API answers one thing only — JSON — and these headers say so to the browser.
+ *
+ * Nothing here is origin-dependent: a response that can never be framed (`X-Frame-Options` +
+ * `frame-ancestors`), never be treated as another type, never leak a referrer, and never load a
+ * subresource. `Permissions-Policy` denies the device APIs an account API has no business reading,
+ * and `Cross-Origin-Resource-Policy: same-origin` stops another site embedding a token-bearing
+ * response. The policy is stated per RESPONSE rather than per origin so a proxy or a host that
+ * strips headers cannot leave the API less protected than it looks.
+ */
+const SECURITY_HEADERS = {
+  'Cache-Control': 'no-store',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Cross-Origin-Resource-Policy': 'same-origin',
+  'Referrer-Policy': 'no-referrer',
+  'Permissions-Policy': 'accelerometer=(), camera=(), geolocation=(), microphone=(), payment=(), usb=()',
+  'Content-Security-Policy': "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+};
+
 function json(response, status, body, headers = {}) {
   response.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store',
-    'X-Content-Type-Options': 'nosniff',
-    'Referrer-Policy': 'no-referrer',
-    'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
-    ...headers,
+    ...SECURITY_HEADERS, 'Content-Type': 'application/json; charset=utf-8', ...headers,
   });
   response.end(JSON.stringify(body));
 }
@@ -152,13 +167,21 @@ export function createAuthServer({
   async function getUser(request) {
     const token = bearerToken(request);
     if (!token) return null;
+    // The token is verified BY SUPABASE, never decoded and trusted here. `data.user` is therefore the
+    // only source of the caller's identity: a `user_id` in a body or a query string is data, not
+    // proof, and no endpoint below reads one.
     const { data, error } = await supabaseAuth.auth.getUser(token);
     if (error) {
       if (error.status === 401 || error.status === 403) return null;
       throw error;
     }
     if (!data.user) return null;
-    const profile = await store.getProfile(data.user.id);
+    // The profile resolves the ROLE, which is why it is read from the database on EVERY request
+    // rather than carried in the token: a promotion or a ban takes effect immediately instead of
+    // whenever the learner's token happens to expire. `data.user` is passed so a missing profile row
+    // can be created on the spot (see `store.getProfile`) rather than locking an authenticated
+    // learner out of the product over a database trigger they cannot see.
+    const profile = await store.getProfile(data.user.id, data.user);
     if (!profile || profile.status !== 'active') return null;
     return { authUser: data.user, profile };
   }
@@ -187,14 +210,18 @@ export function createAuthServer({
         } else {
           const location = httpsLocation(request);
           if (!location) throw new HttpError(403, 'HTTPS is required.');
-          response.writeHead(308, { ...headers, Location: location, 'Cache-Control': 'no-store' });
+          response.writeHead(308, {
+            ...SECURITY_HEADERS, ...headers, Location: location, 'Cache-Control': 'no-store',
+          });
           response.end();
           return;
         }
       }
       if (request.method === 'OPTIONS') {
         if (!request.headers.origin) throw new HttpError(403, 'Request origin is required.');
-        response.writeHead(204, { ...headers, 'Access-Control-Max-Age': '600', 'Cache-Control': 'no-store' });
+        response.writeHead(204, {
+          ...SECURITY_HEADERS, ...headers, 'Access-Control-Max-Age': '600', 'Cache-Control': 'no-store',
+        });
         response.end();
         return;
       }

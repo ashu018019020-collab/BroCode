@@ -2,17 +2,24 @@ import { useCallback, useMemo } from 'react';
 import { useCurriculum } from './curriculum';
 import { useStore } from '../storage/store';
 import { useAsync } from './playbook';
+import { useI18n } from '../../app/i18n';
+import { localize, type Localized } from './localize';
 import { labAttempt, learnView, NOTEBOOK_PREFIX, stageAttempt } from '../platform/keys';
 import { bankTouched } from '../learning/coverage';
 import { sectionProgress } from '../learning/progress';
 import {
   measureSteps,
   anyItemRefTouched,
+  type CourseCard,
+  type CourseCardRecord,
   type CourseFile,
+  type CourseFileRecord,
   type CourseIndex,
+  type CourseIndexRecord,
   type CourseItem,
   type StepMeasure,
 } from '../learning/courses';
+import type { LocaleId } from '../../app/i18n/locales';
 import type { Attempt } from '../../types';
 
 export type {
@@ -30,24 +37,45 @@ export type {
  * are part of the offline pack (`public/generated/`), so the service worker serves them with no
  * network once visited.
  */
-let indexPromise: Promise<CourseIndex | null> | null = null;
-const coursePromises = new Map<string, Promise<CourseFile | null>>();
+let indexPromise: Promise<CourseIndexRecord | null> | null = null;
+const coursePromises = new Map<string, Promise<CourseFileRecord | null>>();
 
 const loadJson = <T,>(url: string, fail: () => T): Promise<T> =>
   fetch(url).then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status))))).then((d: T) => d).catch(fail);
 
-export const loadCourseIndex = () => (indexPromise ??= loadJson<CourseIndex | null>('./generated/courses/index.json', () => null));
+export const loadCourseIndex = () => (indexPromise ??= loadJson<CourseIndexRecord | null>('./generated/courses/index.json', () => null));
 
 /** One course file, cached per slug. The slug is validated: this string lands in a fetch URL. */
-export const loadCourse = (slug: string): Promise<CourseFile | null> => {
+export const loadCourse = (slug: string): Promise<CourseFileRecord | null> => {
   if (!/^[a-z0-9-]+$/.test(slug)) return Promise.resolve(null);
   let p = coursePromises.get(slug);
   if (!p) {
-    p = loadJson<CourseFile | null>(`./generated/courses/${slug}.json`, () => null);
+    p = loadJson<CourseFileRecord | null>(`./generated/courses/${slug}.json`, () => null);
     coursePromises.set(slug, p);
   }
   return p;
 };
+
+/* ------------------------- content localization --------------------------- */
+
+/**
+ * WHERE the language is applied: once, at the data boundary.
+ *
+ * The authored JSON keeps its `{ en, hi }` maps and is cached per slug — the fetch does not depend on
+ * the language, so switching back and forth never re-downloads a 1.5 MB course file. Only the
+ * RESOLVED card changes, and every component downstream keeps seeing a plain `CourseCard` with plain
+ * strings: no page compares language codes, and no render site can forget to translate a title.
+ */
+function resolveCard(card: CourseCardRecord, locale: LocaleId): CourseCard {
+  return { ...card, name: localize(card.name as Localized<string>, locale) ?? '' };
+}
+
+function resolveFile(file: CourseFileRecord, locale: LocaleId): CourseFile {
+  const authored = file.name as Localized<string>;
+  const name = localize(authored, locale)
+    ?? (typeof authored === 'string' ? authored : authored.en);
+  return { ...file, name };
+}
 
 /* ------------------------------ the touch map ----------------------------- */
 
@@ -113,13 +141,20 @@ export function isItemTouched(attempts: Record<string, Attempt>, item: CourseIte
 /* ------------------------------- the hooks -------------------------------- */
 
 export function useCourseIndex(): CourseIndex | null {
-  return useAsync(loadCourseIndex);
+  const raw = useAsync(loadCourseIndex);
+  const { locale } = useI18n();
+  return useMemo(
+    () => (raw ? { ...raw, courses: raw.courses.map((card) => resolveCard(card, locale)) } : null),
+    [raw, locale],
+  );
 }
 
 /** One course file (fetch once per slug). `load` is memoised so the effect does not re-run per render. */
 export function useCourse(slug: string): CourseFile | null {
   const load = useCallback(() => loadCourse(slug), [slug]);
-  return useAsync(load);
+  const raw = useAsync(load);
+  const { locale } = useI18n();
+  return useMemo(() => (raw ? resolveFile(raw, locale) : null), [raw, locale]);
 }
 
 /** Real mastery per section, from the gate engine the lesson and the Learning Path share. */

@@ -136,12 +136,45 @@ export function retrieveKnowledge(
 export function validateKnowledgeIndex(value: unknown): value is KnowledgeIndex {
   if (!value || typeof value !== 'object') return false;
   const index = value as Partial<KnowledgeIndex>;
+
+  /**
+   * Every field the corpus PRINTS or TOKENIZES has to be a plain string. The previous check asked
+   * only about the six required fields, so a bilingual `{ en, hi }` map that reached `courseTitle`
+   * passed validation and then surfaced as "[object Object]" on a learner's screen (and poisoned the
+   * inverted index, which tokenizes `courseTitle`). The document schema is the contract; validating
+   * it here means a bad artifact is rejected at load instead of being rendered.
+   */
+  const optionalStrings = [
+    'sectionId', 'sectionTitle', 'type', 'difficulty', 'course', 'courseTitle',
+    'chapterTitle', 'answer', 'explanation', 'body',
+  ] as const;
   const validDocument = (document: unknown): document is KnowledgeDocument => {
     if (!document || typeof document !== 'object') return false;
-    const item = document as Partial<KnowledgeDocument>;
-    return typeof item.id === 'string' && typeof item.kind === 'string'
-      && typeof item.title === 'string' && typeof item.route === 'string'
-      && typeof item.source === 'string' && typeof item.sourceRef === 'string';
+    const item = document as Record<string, unknown>;
+    if (typeof item.id !== 'string' || typeof item.kind !== 'string' || typeof item.title !== 'string'
+      || typeof item.route !== 'string' || typeof item.source !== 'string' || typeof item.sourceRef !== 'string') {
+      return false;
+    }
+    for (const field of optionalStrings) {
+      const fieldValue = item[field];
+      if (fieldValue !== undefined && typeof fieldValue !== 'string') return false;
+    }
+    if (item.chapter !== undefined && typeof item.chapter !== 'number') return false;
+    const tags = item.tags;
+    if (tags !== undefined && (!Array.isArray(tags) || !tags.every((tag) => typeof tag === 'string'))) return false;
+    return true;
+  };
+  const validCourse = (course: unknown): course is KnowledgeCourse => {
+    if (!course || typeof course !== 'object') return false;
+    const item = course as Record<string, unknown>;
+    if (typeof item.slug !== 'string' || typeof item.title !== 'string' || typeof item.route !== 'string') return false;
+    if (!item.sections || typeof item.sections !== 'object' || Array.isArray(item.sections)) return false;
+    if (!Object.values(item.sections as Record<string, unknown>).every((step) => typeof step === 'number')) return false;
+    return Array.isArray(item.steps) && item.steps.every((step) => {
+      if (!step || typeof step !== 'object') return false;
+      const entry = step as Record<string, unknown>;
+      return typeof entry.number === 'number' && typeof entry.title === 'string' && typeof entry.route === 'string';
+    });
   };
   return index.version === 1
     && typeof index.sourceHash === 'string'
@@ -149,6 +182,7 @@ export function validateKnowledgeIndex(value: unknown): value is KnowledgeIndex 
     && Array.isArray(index.courses)
     && Array.isArray(index.trackRoutes)
     && index.documents.every(validDocument)
+    && index.courses.every(validCourse)
     && !!index.postings
     && typeof index.postings === 'object'
     && Object.values(index.postings).every((posting) =>

@@ -1,4 +1,5 @@
 import { useStore, setState, exportProgress, importProgress, defaultState } from '../../core/storage/store';
+import { LanguageToggle } from '../../components/ui/LanguageToggle';
 
 export default function SettingsPage() {
   const state = useStore();
@@ -7,6 +8,13 @@ export default function SettingsPage() {
   return (
     <div>
       <h1>⚙️ Settings</h1>
+      <div className="card">
+        <h2>Language</h2>
+        <p className="small muted" style={{ margin: '0 0 10px' }}>
+          Interface aur learning content English ya Hinglish me padho — choice isi page par save hoti hai.
+        </p>
+        <LanguageToggle />
+      </div>
       <div className="card">
         <h2>Profile</h2>
         <div className="grid2">

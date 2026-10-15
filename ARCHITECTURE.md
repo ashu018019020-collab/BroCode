@@ -6,6 +6,15 @@ owner) → features (`src/features/*`, render only)**. Optional account access i
 **browser auth client (`src/core/auth/`) → Node API (`server/`) → Supabase Auth sessions and
 Postgres profiles/roles through Prisma (`prisma/`)**.
 
+Companion documents, each verified against the source rather than aspirational:
+
+| Document | Covers |
+|---|---|
+| `docs/ARCHITECTURE-AUDIT.md` | What was inspected, the confirmed defects and their evidence, and the design choices investigated and deliberately left alone. |
+| `docs/CONTENT-PIPELINE.md` | The real generator dependency graph, the five-step `sections.json` accumulation, published-artifact contracts, cross-reference validation. |
+| `docs/SECURITY.md` | The verified security model: the `VITE_` boundary, server-side authorization, request hardening, RLS and migration safety. No secret values. |
+| `docs/LOCALIZATION-GUIDE.md` | The bilingual model, where language is applied, authoring rules, and **measured** coverage. |
+
 ## The golden rule: `content/` is source, `public/generated/` is output
 
 | Direction | Path | Rule |
@@ -145,3 +154,59 @@ that own the questions.
   labelled.
 - Hinglish/English i18n: a new user-visible string goes into **both** packs in
   `src/app/i18n/locales.ts`.
+
+## Bilingual content: one model, resolved at the data boundary
+
+Content is authored, not generated, so translation is a **batch migration measured in coverage**, not
+a flag day. A translatable authored field is either a plain value (not translated yet, or genuinely
+language-neutral — `"Python"`, a code sample, an id) or an `{ en, hi }` map (both languages written).
+**Both forms are legal at once, forever.** `hi` is Hinglish (Roman-script Hindi with the English
+technical vocabulary), never Devanagari.
+
+`src/core/data/localize.ts` owns the resolver and the states: `full` / `partial` (a map with one side
+empty — an empty string counts as MISSING, so `hi: ''` shows English rather than a blank line) /
+`plain` / `missing`.
+
+**Where the language is applied is the load-bearing decision: once, at the data boundary.**
+`src/core/data/courses.ts` keeps the authored `{ en, hi }` maps in the per-slug fetch cache and
+resolves only the value it hands to a component, so a 1.5 MB course file is never re-downloaded on a
+language switch and **no render site can forget to translate** — every component downstream gets a
+plain `CourseCard` with a plain string. A page must never compare language codes to choose copy.
+
+The rule generalizes past the browser: **any derived artifact that declares a plain string must
+resolve the authored field where it reads it.** The AI retrieval corpus is the other consumer, and it
+is not a renderer — it stores ONE canonical plain string per field (the English side) because
+retrieval tokenizes `title`/`courseTitle`/`body`. `scripts/ai-index.cjs` therefore converts at the
+single authored→plain boundary and **stores course slugs instead of course records**, so a call site
+cannot read `.name` and forget the conversion. A generator that leaks an `{ en, hi }` map does not
+throw: it stringifies to `"[object Object]"` on a learner's screen and poisons the inverted index.
+Two guards make that impossible: `assertPlainStrings` in the generator fails the build, and
+`validateKnowledgeIndex` (`src/core/ai/knowledge.ts`) validates every printed field as a string so a
+bad artifact is rejected at load.
+
+| Concern | Owner |
+|---|---|
+| Locale ids, message packs, `t()`, `document.lang`/`dir` | `src/app/i18n/{locales.ts,index.tsx}` |
+| The bilingual value model + fallback + states | `src/core/data/localize.ts` |
+| Which content fields are resolved per language | `src/core/data/courses.ts` (the boundary) |
+| The section-name rule (precedence, blank handling, no-op identity) | `src/core/learning/section-names.ts` |
+| Fetching the section-name overlay | `src/core/data/curriculum-i18n.ts` |
+| Which sections/fields are translated, measured | `npm run i18n:report` → `scripts/lib/i18n-coverage.cjs` |
+| UI pack parity + `{placeholder}` survival | `npm run i18n:check` |
+| Publishing the section-name overlay | `npm run i18n:sections:write` → `scripts/lib/i18n-sections.cjs` |
+
+**Section names are the one content field that is NOT authored inside its record.** Their English
+title lives in `sections.json`, which is extracted from the PDF and then repaired in place by four
+scripts, so a translation written there survives only until the next extraction. The reviewed Hinglish
+name therefore lives in `content/curriculum/i18n/sections.json` and is merged into
+`public/generated/curriculum/i18n.json` — the same reasoning as
+`content/curriculum/stage-overrides.json`. Everything else about a section keeps its single generated
+source. The full pipeline is in `docs/CONTENT-PIPELINE.md`; the authoring workflow and the measured
+coverage (402/402 UI keys, 11/11 course names, 29/29 section names, and everything still outstanding)
+are in `docs/LOCALIZATION-GUIDE.md`.
+
+`scripts/lib/i18n-coverage.cjs` owns the coverage numbers so a test can hold them (a report that can
+be wrong about its own denominator is worse than no report — the reader it replaced opened the tracks
+INDEX with a FILE reader, dropping eight files while still printing a confident total). The overlay is
+reported on its **own** line rather than folded into the inline `{ en, hi }` counts, because the two
+are different shapes of evidence and combining them would make one percentage flatter the other.

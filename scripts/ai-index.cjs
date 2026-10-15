@@ -32,12 +32,41 @@ const textOf = (...values) => values
   .map(String)
   .filter((value) => value.trim())
   .join('\n');
+/**
+ * Bilingual fields are `{ en, hi }` records; the retrieval corpus stores ONE plain string per
+ * document so answer composition never prints "[object Object]". The English side is the
+ * canonical identity — the assistant's per-language display layer resolves it again at render.
+ */
+const plain = (value) => (value && typeof value === 'object' && 'en' in value
+  ? String(value.en ?? '')
+  : String(value ?? ''));
 const limit = (value, size) => {
-  const text = String(value ?? '').trim();
+  const text = plain(value).trim();
   return text.length > size ? `${text.slice(0, size - 1).trimEnd()}…` : text;
 };
 const tokens = (text) => (String(text ?? '').toLowerCase().match(/[a-z0-9_]+/g) ?? [])
   .filter((token) => token.length > 1 && !STOP.has(token));
+
+/**
+ * A document field is a string, an array of strings, a number or absent — NOTHING else.
+ *
+ * The corpus is declared that way (`KnowledgeDocument`), retrieval tokenizes `title`, `courseTitle`
+ * and `body` as strings, and answer composition prints them. An `{ en, hi }` map that reaches here
+ * therefore does not throw: it either stringifies to "[object Object]" on a learner's screen or
+ * silently poisons the inverted index. Failing the BUILD is the only safe place to catch it, because
+ * a type error here cannot be seen by `tsc` — `scripts/*.cjs` is plain JavaScript reading JSON.
+ */
+function assertPlainStrings(doc) {
+  for (const [field, value] of Object.entries(doc)) {
+    if (value === undefined || value === null) continue;
+    if (typeof value === 'string' || typeof value === 'number') continue;
+    if (Array.isArray(value) && value.every((item) => typeof item === 'string')) continue;
+    throw new Error(
+      `AI document ${doc.id}: "${field}" must be a plain string, got ${JSON.stringify(value)}. `
+      + 'Resolve the authored { en, hi } field with plain() where the source is read.',
+    );
+  }
+}
 
 async function buildAiIndex() {
   const sectionsPath = path.join(GENERATED, 'curriculum', 'sections.json');
@@ -67,6 +96,20 @@ async function buildAiIndex() {
   ]);
 
   const sectionMap = new Map(sections.map((section) => [section.id, section]));
+
+  /**
+   * THE authored→plain boundary. `content/courses/courses.json` carries an `{ en, hi }` map for a
+   * course name; `plain()` is applied HERE, once, and every relation below stores a SLUG rather than
+   * the raw course record. That is deliberate: passing the record around let five call sites read
+   * `.name` directly and only one of them wrap it, so 15,265 documents carried an `{ en, hi }` object
+   * in a field the corpus declares as a plain string (`KnowledgeDocument.courseTitle`) — which then
+   * stringified as "[object Object]" in the assistant's context line. One boundary, no per-caller
+   * memory: a caller cannot forget a conversion it was never asked to perform.
+   */
+  const courseTitleBySlug = new Map();
+  for (const course of courseIndex.courses ?? []) courseTitleBySlug.set(course.slug, plain(course.name));
+  const nameOfCourse = (slug) => courseTitleBySlug.get(slug) ?? '';
+
   const courseBySection = new Map();
   const courseByStep = new Map();
   const courseSteps = [];
@@ -74,13 +117,13 @@ async function buildAiIndex() {
     const steps = (course.steps ?? []).map((number) => {
       const step = roadmap.STEPS.find((entry) => entry.no === number);
       const info = { number, title: step?.title ?? `Step ${number}`, route: `/course/${course.slug}/${number}` };
-      courseByStep.set(number, { ...info, course });
+      courseByStep.set(number, { ...info, course: course.slug });
       courseSteps.push({ ...info, course: course.slug });
       return info;
     });
     for (const [sectionId, chapter] of Object.entries(course.sections ?? {})) {
       if (courseBySection.has(sectionId)) throw new Error(`Section ${sectionId} is assigned to multiple courses`);
-      courseBySection.set(sectionId, { course, chapter });
+      courseBySection.set(sectionId, { course: course.slug, chapter });
     }
     course.steps = steps;
   }
@@ -102,16 +145,21 @@ async function buildAiIndex() {
       ...(record.sectionTitle ? { sectionTitle: limit(record.sectionTitle, 180) } : {}),
       ...(record.type ? { type: record.type } : {}),
       ...(record.difficulty ? { difficulty: record.difficulty } : {}),
+      // `courseTitle` is DERIVED from the slug, never copied from the caller, so every document that
+      // names a course names it with the same canonical string. `chapterTitle`/`sectionTitle` come
+      // from the roadmap and the section list, which are plain English today — a bilingual one would
+      // have to pass `plain()` at ITS reading site, and `assertPlainStrings` below fails the build if
+      // that is ever forgotten rather than letting "[object Object]" reach a learner.
       ...(relation ? {
-        course: relation.course.slug,
-        courseTitle: relation.course.name,
+        course: relation.course,
+        courseTitle: nameOfCourse(relation.course),
         chapter: relation.chapter,
         chapterTitle: courseByStep.get(relation.chapter)?.title ?? '',
       } : record.course ? {
         course: record.course,
-        ...(record.courseTitle ? { courseTitle: record.courseTitle } : {}),
+        ...(nameOfCourse(record.course) ? { courseTitle: nameOfCourse(record.course) } : {}),
         ...(record.chapter ? { chapter: record.chapter } : {}),
-        ...(record.chapterTitle ? { chapterTitle: record.chapterTitle } : {}),
+        ...(record.chapterTitle ? { chapterTitle: limit(record.chapterTitle, 180) } : {}),
       } : {}),
       route,
       source: limit(record.source, 220),
@@ -121,6 +169,7 @@ async function buildAiIndex() {
       ...(record.explanation ? { explanation: limit(record.explanation, 1200) } : {}),
       ...(record.body ? { body: limit(record.body, 5000) } : {}),
     };
+    assertPlainStrings(doc);
     docIds.add(doc.id);
     docs.push(doc);
   };
@@ -280,8 +329,7 @@ async function buildAiIndex() {
         type: question.type, difficulty: question.difficulty, title: question.question,
         answer: question.answer, explanation: question.explanation,
         tags: question.tags,
-        course: course?.course.slug,
-        courseTitle: course?.course.name,
+        course: course?.course,
         chapter: course?.chapter,
         chapterTitle: courseByStep.get(course?.chapter)?.title,
         route: `/questions?section=${encodeURIComponent(question.sectionId ?? sectionId)}&type=${encodeURIComponent(question.type ?? '')}`,
@@ -312,8 +360,7 @@ async function buildAiIndex() {
       id: `playbook:${item.id}`, kind: 'playbook', sectionId,
       sectionTitle: item.sectionTitle ?? sectionMap.get(sectionId)?.title,
       type: item.type, difficulty: item.difficulty, title: item.question,
-      answer: item.answer, course: courseBySection.get(sectionId)?.course.slug,
-      courseTitle: courseBySection.get(sectionId)?.course.name,
+      answer: item.answer, course: courseBySection.get(sectionId)?.course,
       chapter: courseBySection.get(sectionId)?.chapter ?? (Number.isFinite(chapter) ? chapter : undefined),
       route: `/playbook`,
       source: `Playbook V15 · chapter ${item.chapter ?? 'unassigned'}${chapters.get(String(item.chapter))?.title ? `: ${chapters.get(String(item.chapter)).title}` : ''}`,
@@ -331,7 +378,7 @@ async function buildAiIndex() {
           const ref = chapters.get(String(no));
           return ref ? `Playbook chapter ${no}: ${ref.title}` : '';
         })),
-      ...(courseInfo ? { course: courseInfo.course.slug, courseTitle: courseInfo.course.name, chapter: chapter.no, chapterTitle: chapter.title } : {}),
+      ...(courseInfo ? { course: courseInfo.course, chapter: chapter.no, chapterTitle: chapter.title } : {}),
       route: courseInfo?.route ?? '/courses', source: 'Canonical 36-step roadmap',
       sourceRef: `src/core/learning/roadmap.ts#STEPS[${chapter.no}]`,
     });
@@ -347,8 +394,7 @@ async function buildAiIndex() {
         id: `track:${track.slug}:${topic.id}`, kind: 'track-topic',
         sectionId: topic.sectionId, sectionTitle: sectionMap.get(topic.sectionId)?.title,
         title: topic.title, body: textOf(trackDoc.description, chapter.title, topic.importance, topic.level),
-        course: courseBySection.get(topic.sectionId)?.course.slug,
-        courseTitle: courseBySection.get(topic.sectionId)?.course.name,
+        course: courseBySection.get(topic.sectionId)?.course,
         chapter: courseBySection.get(topic.sectionId)?.chapter,
         route: `/track/${track.slug}`, source: `Track · ${trackDoc.title}`,
         sourceRef: `public/generated/tracks/${track.slug}.json#${topic.id}`,
@@ -357,11 +403,11 @@ async function buildAiIndex() {
     }
     const firstSectionId = trackDoc.chapters?.flatMap((chapter) => chapter.topics ?? [])[0]?.sectionId;
     const trackCourse = firstSectionId ? courseBySection.get(firstSectionId) : undefined;
-    if (trackCourse) trackCourses.set(track.slug, trackCourse.course.slug);
+    if (trackCourse) trackCourses.set(track.slug, trackCourse.course);
   }
 
   const courseItems = courseIndex.courses.map((course) => ({
-    slug: course.slug, title: course.name,
+    slug: course.slug, title: nameOfCourse(course.slug),
     route: `/course/${course.slug}/${course.steps[0]?.number ?? course.steps[0] ?? 1}`,
     steps: course.steps, sections: course.sections,
   }));
@@ -379,8 +425,7 @@ async function buildAiIndex() {
         sectionId, sectionTitle: sectionMap.get(sectionId)?.title,
         title: `${notebook.title} · ${cell.cell_type === 'code' ? 'code example' : 'lesson note'}`,
         body: cellText,
-        course: courseBySection.get(sectionId)?.course.slug,
-        courseTitle: courseBySection.get(sectionId)?.course.name,
+        course: courseBySection.get(sectionId)?.course,
         chapter: courseBySection.get(sectionId)?.chapter,
         route: `/notebooks`, source: `Notebook · ${notebook.title}`,
         sourceRef: `public/notebooks/${notebook.file}#${cell.id ?? index}`,
