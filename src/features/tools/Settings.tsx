@@ -11,7 +11,7 @@ export default function SettingsPage() {
       <div className="card">
         <h2>Language</h2>
         <p className="small muted" style={{ margin: '0 0 10px' }}>
-          Interface aur learning content English ya Hinglish me padho — choice isi page par save hoti hai.
+          English is the default. You can switch the interface and supported learning content to Hinglish at any time — the choice is saved on this device.
         </p>
         <LanguageToggle />
       </div>
@@ -47,11 +47,11 @@ export default function SettingsPage() {
             checked={state.settings.autoAdvance !== false}
             onChange={(e) => setState((s) => ({ ...s, settings: { ...s.settings, autoAdvance: e.target.checked } }))}
           />
-          Auto-advance: task complete hote hi agla task / stage / topic kholo
+          Auto-advance: open the next task, stage, or topic as soon as one is complete
         </label>
         <p className="small muted" style={{ margin: '6px 0 0' }}>
-          On hone par ek 7-second countdown wala card aata hai — &quot;Yahin ruko&quot; dabao to wahi ruk
-          jaoge. Off hone par bhi card batata hai ki agla kya hai, bas apne aap nahi khulta.
+          When enabled, a card with a 7-second countdown appears — choose &quot;Stay here&quot; to remain on the
+          current item. When disabled, the card still says what comes next, but nothing opens automatically.
         </p>
       </div>
 

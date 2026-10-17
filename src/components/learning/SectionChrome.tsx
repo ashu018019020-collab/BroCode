@@ -142,14 +142,14 @@ export function StageGrid({
         const count = countOf ? countOf(st) : null;
         const Icon = STAGE_ICON[st];
         const state = na
-          ? count ? `${count} Q&A practice — mastery gate nahi` : 'not applicable to this topic'
+          ? count ? `${count} Q&A practice — not a mastery gate` : 'not applicable to this topic'
           : done ? 'completed' : current ? 'current stage' : `${pct}%`;
         return (
           <button
             key={st}
             className={`stage-tile tone-${STAGE_META[st].tone} ${done ? 'done' : ''} ${current ? 'current' : ''} ${ahead ? 'ahead' : ''} ${na ? 'na' : ''}`}
             onClick={() => onPick(st)}
-            title={na && !count ? 'Is topic me yeh stage nahi hai' : STAGE_META[st].blurb}
+            title={na && !count ? 'This stage does not exist for this topic' : STAGE_META[st].blurb}
             aria-current={current ? 'step' : undefined}
             aria-label={`${STAGE_META[st].label} — ${state}`}
           >
@@ -160,7 +160,7 @@ export function StageGrid({
             <b>{STAGE_META[st].label}</b>
             <span className="sub">{stageTagline(st)}</span>
             {count != null && count > 0 && (
-            <span className="chip" style={{ marginTop: 6 }} title={`${count} questions is stage ke Q&A panel me — stage ke apne questions uske andar alag count hote hain`}>
+            <span className="chip" style={{ marginTop: 6 }} title={`${count} questions in this stage's Q&A panel — the stage's own questions are counted separately`}>
               {count} Q&A
             </span>
           )}
@@ -197,7 +197,7 @@ export function UtilityStrip() {
         className="util-tile tone-cyan"
         onClick={() => setUi({ focus: !ui.focus })}
         aria-pressed={ui.focus}
-        title="Focus Mode — sidebar aur chrome chhupa do"
+        title="Focus Mode — hide the sidebar and chrome"
       >
         <span className="ic"><Moon size={15} /></span>
         <span><b>Focus Mode</b><span>Distraction Free</span></span>
@@ -258,7 +258,7 @@ export function LessonCoach({
           <span className="chip">{todayTasks}/{goal} tasks</span>
         </div>
         <p className="muted small" style={{ margin: '8px 0 6px' }}>
-          {todayTasks >= goal ? 'Aaj ka target pura — consistency hi asli edge hai. 🔥' : 'Stay consistent! 💪'}
+          {todayTasks >= goal ? 'Today\'s goal is done — consistency is the real edge. 🔥' : 'Stay consistent! 💪'}
         </p>
         <div className="bar"><div style={{ width: `${Math.round((todayTasks / goal) * 100)}%` }} /></div>
         <div className="row small muted" style={{ marginTop: 8, gap: 10 }}>
@@ -274,7 +274,7 @@ export function LessonCoach({
         </div>
         {!rows.length && (
           <p className="muted small" style={{ margin: '10px 0 0' }}>
-            Is section me koi open mistake nahi — jo aayegi wahi yahan dikhegi.
+            No open mistakes in this section — any new one will show up here.
           </p>
         )}
         {rows.map(([type, n]) => (
@@ -295,7 +295,7 @@ export function LessonCoach({
           <h2 className="row" style={{ gap: 8, margin: 0 }}><Bot size={16} color="var(--cyan)" /> AI Assistant</h2>
           <span className="chip easy">● Ready</span>
         </div>
-        <p className="muted small" style={{ margin: '8px 0 6px' }}>Tutor: explain, hint, debug — bundled curriculum se.</p>
+        <p className="muted small" style={{ margin: '8px 0 6px' }}>Tutor: explain, hint, debug — from the bundled curriculum.</p>
         <button className="btn small" style={{ width: '100%', justifyContent: 'center' }} onClick={() => onStart('/playground')}>
           <Play size={12} /> Open tutor
         </button>

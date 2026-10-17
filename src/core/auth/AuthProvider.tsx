@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { authApi, getSupabaseClient, takePendingOAuthProvider, type AuthUser, type RegistrationResult } from './client';
+import { authApi, getSupabaseClient, takePendingOAuthProvider, takeRemoteResume, type AuthUser, type RegistrationResult } from './client';
 import { oauthErrorMessage, readOAuthCallback, withoutOAuthParams, type OAuthProvider } from './oauth';
 import { announcePresence, broadcastSignIn } from './realtime';
 import { summarizeProgress } from './progress';
 import { SERVICE_UNAVAILABLE_COPY } from './messages';
-import { stateSnapshot, useStore } from '../storage/store';
+import { stateSnapshot, useStore, adoptRemoteResume } from '../storage/store';
 import { setStorageAccount } from '../storage/account';
 
 interface AuthContextValue {
@@ -82,6 +82,15 @@ function ProgressSync({
         return;
       }
       const summary = summarizeProgress(stateSnapshot());
+      /**
+       * The lesson position travels WITH the counters, so a device that has never opened a lesson
+       * can still resume the one this account last read. It is two short strings — a section id and
+       * a stage name — never an answer, a note or any content.
+       */
+      const current = stateSnapshot().learning ?? {};
+      if (current.lastSectionId && current.lastStage) {
+        Object.assign(summary, { lastSectionId: current.lastSectionId, lastStage: current.lastStage });
+      }
       const serialized = JSON.stringify(summary);
       if (serialized === lastSent.current) return;
       if (active) onStatusChange({ status: 'syncing', lastSyncedAt: lastSyncedAt.current });
@@ -129,17 +138,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       try {
-        const currentUser = await authApi.session(session);
+        const resolution = await authApi.session(session);
         if (!active || version !== sessionVersion) return;
-        if (!currentUser) {
+        if (!resolution?.user) {
           setStorageAccount(null);
           setUser(null);
           setServiceError(null);
           setProgressSync({ status: 'idle', lastSyncedAt: null });
           return;
         }
-        setStorageAccount(currentUser.id);
-        setUser(currentUser);
+        setStorageAccount(resolution.user.id);
+        // AFTER the namespace switch: the position belongs to this account's state.
+        adoptRemoteResume(resolution.resume);
+        setUser(resolution.user);
         setServiceError(null);
       } catch (error) {
         if (!active || version !== sessionVersion) return;
@@ -231,7 +242,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setServiceError(null);
         }
       } catch (error) {
-        if (active) setServiceError(serviceFailure(error));
+        /**
+         * Presence is OPTIONAL — it only marks this account "Online" on the owner dashboard.
+         *
+         * This used to call `serviceFailure`, which meant a static deployment without the optional
+         * API showed "The account service is unavailable right now" on the sign-in form every
+         * minute, even though Supabase sign-in, the session and the whole learning platform were
+         * working. A failed heartbeat must never be reported as a failed account service; it is
+         * logged for the operator and the session continues unchanged.
+         */
+        if (active) console.warn('[BroCode] Presence heartbeat failed; the session is unaffected.', error);
       }
     };
 
@@ -250,6 +270,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRedirectError(null);
     const currentUser = await authApi.login(email, password);
     setStorageAccount(currentUser.id);
+    // The client stashed the position returned by the session endpoint; adopt it into the account
+    // namespace only if this device has no newer local position.
+    adoptRemoteResume(takeRemoteResume());
     setUser(currentUser);
     setServiceError(null);
     return currentUser;
@@ -267,6 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await authApi.register(name, email, password);
     if (result.user) {
       setStorageAccount(result.user.id);
+      adoptRemoteResume(takeRemoteResume());
       setUser(result.user);
       setServiceError(null);
     }

@@ -19,7 +19,7 @@
  */
 
 export interface ProjectAnswer {
-  /** Hinglish answer text. */
+  /** Plain-English answer text. */
   text: string;
   /** The page(s) this answer is about, so the UI can link them. */
   sources: { title: string; route: string }[];
@@ -33,7 +33,7 @@ export interface ProjectFact {
   /** Where the fact is about, used as the answer's source chip. */
   where: string;
   route: string;
-  /** What the learner would type. Single words, lowercase, Hinglish and English. */
+  /** What the learner would type. Single words, lowercase, English (Hinglish aliases kept for matching). */
   keys: string[];
   /** Multi-word signals — worth more than a single key, because they are unambiguous. */
   phrases?: string[];
@@ -51,143 +51,143 @@ export const PROJECT_FACTS: ProjectFact[] = [
     id: 'what',
     where: 'Dashboard',
     route: '/',
-    keys: ['app', 'project', 'brocode', 'website', 'site', 'built', 'bana', 'banaya'],
-    phrases: ['ye app', 'this app', 'ye project', 'ye website', 'kya hai ye', 'what is this'],
+    keys: ['app', 'project', 'brocode', 'website', 'site', 'built', 'made', 'bana', 'banaya'],
+    phrases: ['ye app', 'this app', 'ye project', 'ye website', 'kya hai ye', 'what is this', 'what is this app', 'about this app'],
     body:
-      'BroCode (AI Engineer Master Lab) — ek AI/Data learning lab jo poori tarah is device par chalta hai.\n' +
-      'Iski poori content ek 457-page PDF se extract hui hai: 29 sections, 8 tracks (Python Core se\n' +
-      'Interview + Projects tak), har section me lesson stages, questions, notebooks aur projects.\n' +
-      'Python, SQL, PDF reading — sab browser ke andar chalta hai: Pyodide (Python 3.12 + numpy/pandas),\n' +
-      'sql.js aur pdf.js is app ke saath bundled hain.',
+      'BroCode (AI Engineer Master Lab) — an AI/Data learning lab that runs entirely on this device.\n' +
+      'All of its content is extracted from a 457-page PDF: 29 sections, 8 tracks (from Python Core to\n' +
+      'Interview + Projects), with lesson stages, questions, notebooks, and projects in every section.\n' +
+      'Python, SQL, and PDF reading — all run inside the browser: Pyodide (Python 3.12 + numpy/pandas),\n' +
+      'sql.js, and pdf.js are bundled with this app.',
   },
   {
     id: 'runtime',
     where: 'Code Playground',
     route: '/playground',
-    keys: ['python', 'pyodide', 'runtime', 'worker', 'numpy', 'pandas', 'run', 'chalao', 'chalta', 'engine', 'wasm'],
-    phrases: ['python kaise', 'numpy kaha', 'python kaha', 'runtime kaise'],
+    keys: ['python', 'pyodide', 'runtime', 'worker', 'numpy', 'pandas', 'run', 'chalao', 'chalta', 'engine', 'wasm', 'start', 'cache'],
+    phrases: ['python kaise', 'numpy kaha', 'python kaha', 'runtime kaise', 'how does python', 'where is numpy', 'how does the runtime', 'python runtime'],
     body:
-      'Python asli me chal raha hota hai, simulate nahi: Pyodide (CPython 3.12 WASM) ek web worker me\n' +
-      'load hota hai, numpy aur pandas ke wheels `public/pyodide` me bundled hain. First run me runtime\n' +
-      'unpack hone me 30-60s lagte hain, uske baad cache se turant uthta hai.\n' +
-      '`input()` Notebook ke "Program input" box se padhta hai — ek value per line.\n' +
-      'SQL (sql.js) aur PDF (pdf.js) bhi isi tarah local files se load hote hain.',
+      'Python actually runs, it is not simulated: Pyodide (CPython 3.12 WASM) loads in a web worker,\n' +
+      'and the numpy and pandas wheels are bundled in `public/pyodide`. On the first run the runtime\n' +
+      'takes 30-60s to unpack; after that it starts instantly from cache.\n' +
+      '`input()` reads from the Notebook\'s "Program input" box — one value per line.\n' +
+      'SQL (sql.js) and PDF (pdf.js) load from local files in the same way.',
   },
   {
     id: 'storage',
     where: 'Settings',
     route: '/settings',
-    keys: ['storage', 'save', 'saved', 'saving', 'data', 'progress', 'localstorage', 'backup', 'export', 'import', 'reset'],
-    phrases: ['progress kaha', 'data kaha', 'backup kaise', 'export kaise'],
+    keys: ['storage', 'save', 'saved', 'saving', 'data', 'progress', 'localstorage', 'backup', 'export', 'import', 'reset', 'persist', 'stored'],
+    phrases: ['progress kaha', 'data kaha', 'backup kaise', 'export kaise', 'where is progress', 'where is data', 'how to backup', 'how to export'],
     body:
-      'Tumhara progress browser me hi rehta hai — localStorage key `aiml:state:v1` (XP, streak,\n' +
-      'attempts, mistakes, notes, bookmarks, saved code). Kuch bhi device se bahar nahi jata.\n' +
-      'Settings → Export/Import se pura progress JSON file me nikal ya wapas load kar sakte ho.\n' +
-      'Hard reset chahiye to Settings → reset, ya wahi localStorage key delete kar do.',
+      'Your progress stays in the browser — localStorage key `aiml:state:v1` (XP, streak,\n' +
+      'attempts, mistakes, notes, bookmarks, saved code). Nothing leaves the device.\n' +
+      'Use Settings → Export/Import to export all progress to a JSON file or load it back.\n' +
+      'If you want a hard reset, use Settings → reset, or delete that same localStorage key.',
   },
   {
     id: 'assistant',
     where: 'AI Assistant',
     route: '/',
-    keys: ['assistant', 'tutor', 'ai', 'bot', 'answer', 'jawab', 'hint', 'explain', 'samjhao', 'doubt', 'model'],
-    phrases: ['ai kaise', 'assistant kaise', 'tum kaise', 'ai kaise kaam'],
+    keys: ['assistant', 'tutor', 'ai', 'bot', 'answer', 'jawab', 'hint', 'explain', 'samjhao', 'doubt', 'model', 'help', 'chat'],
+    phrases: ['ai kaise', 'assistant kaise', 'tum kaise', 'ai kaise kaam', 'how does ai', 'how does the assistant', 'how do you work', 'how does ai work'],
     body:
-      'Main is app ka apna assistant hoon, aur koi hosted model nahi hoon: tumhara sawaal bundled\n' +
-      'curriculum par retrieve hota hai (`src/core/ai/assistant.ts` + `src/core/ai/rag.ts`), aur\n' +
-      'hint / debug / next-task ke jawab deterministic core dete hain (`src/core/ai/tutor.ts`,\n' +
+      'I am this app\'s own assistant, not a hosted model: your question is retrieved against the bundled\n' +
+      'curriculum (`src/core/ai/assistant.ts` + `src/core/ai/rag.ts`), and\n' +
+      'hint / debug / next-task answers come from the deterministic core (`src/core/ai/tutor.ts`,\n' +
       '`src/core/ai/coach.ts`).\n' +
-      'Isi liye main galat jawab invent nahi karta: jo match nahi hota uske liye saaf "curriculum me\n' +
-      'nahi mila" bolta hoon. Project ke sawaal (setup, content kaha add karein, kaise test karein)\n' +
-      'alag knowledge layer se aate hain — wahi ye jawab de raha hai.',
+      'That is why I do not invent wrong answers: when nothing matches, I say plainly "not found in the\n' +
+      'curriculum". Project questions (setup, where to add content, how to test) come from a separate\n' +
+      'knowledge layer — that is what this answer is using.',
   },
   {
     id: 'content-add-question',
     where: 'Question Bank',
     route: '/questions',
-    keys: ['question', 'questions', 'bank', 'sawaal', 'add', 'jodo', 'naya', 'naye', 'expand', 'quota', 'authoring'],
-    phrases: ['naya question', 'question add', 'question jodo', 'questions add', 'bank me'],
+    keys: ['question', 'questions', 'bank', 'sawaal', 'add', 'jodo', 'naya', 'naye', 'expand', 'quota', 'authoring', 'create', 'insert'],
+    phrases: ['naya question', 'question add', 'question jodo', 'questions add', 'bank me', 'add a question', 'where to add a question', 'new question'],
     body:
-      'Naya question add karne ka rasta:\n' +
-      '  1. `content/questions/expansion/<track>.json` me item likho (short keys s/t/d/i/q/a/x).\n' +
+      'To add a new question:\n' +
+      '  1. Write an item in `content/questions/expansion/<track>.json` (short keys s/t/d/i/q/a/x).\n' +
       '  2. `npm run questions:expand-track -- --track=<track> --file=content/questions/expansion/<track>.json`\n' +
-      '  3. `npm run questions:quota` — per-track × per-type quota gate (short ho to exit 1 ke saath batata hai).\n' +
-      'Import append-only aur idempotent hai: duplicate id aur duplicate text skip ho jate hain, aur\n' +
-      'item par `source: "authored"`, `sourceVersion` aur `verifiedAt` provenance chadh jati hai —\n' +
-      'PDF se aaya content kabhi hand-written content jaisa nahi dikhta.',
+      '  3. `npm run questions:quota` — per-track × per-type quota gate (if short, it exits 1 with an explanation).\n' +
+      'The import is append-only and idempotent: duplicate ids and duplicate text are skipped, and\n' +
+      'each item gains `source: "authored"`, `sourceVersion`, and `verifiedAt` provenance —\n' +
+      'PDF-derived content never looks like hand-written content.',
   },
   {
     id: 'content-add-lesson',
     where: 'Courses',
     route: '/courses',
-    keys: ['lesson', 'topic', 'concept', 'guide', 'pack', 'packs', 'curriculum', 'section', 'sections', 'badlo', 'content'],
-    phrases: ['lesson add', 'topic add', 'naya lesson', 'curriculum kaise', 'content kaha'],
+    keys: ['lesson', 'topic', 'concept', 'guide', 'pack', 'packs', 'curriculum', 'section', 'sections', 'badlo', 'content', 'author', 'edit'],
+    phrases: ['lesson add', 'topic add', 'naya lesson', 'curriculum kaise', 'content kaha', 'add a lesson', 'where to add content', 'how does curriculum'],
     body:
-      'Content three layers me hai, aur teenon ka source alag file hai:\n' +
-      '  · extracted — `tools/extract.mjs` PDF se `public/generated/curriculum/*.json` banata hai (regeneration\n' +
-      '    ke liye source PDF chahiye).\n' +
+      'Content has three layers, and each layer has its own source file:\n' +
+      '  · extracted — `tools/extract.mjs` builds `public/generated/curriculum/*.json` from the PDF (regeneration\n' +
+      '    needs the source PDF).\n' +
       '  · authored packs — `content/curriculum/packs/<sectionId>.json` (16-part topic workspace) →\n' +
       '    `npm run packs:write`; guides — `content/curriculum/guides/<track>.json` → `npm run curriculum:guides:write`.\n' +
       '  · notebooks — `content/notebooks/*.ipynb` → `npm run notebooks:write`.\n' +
-      'Har pass apne snippets asli Python se execute karke output stamp karta hai, aur jo sach nahi\n' +
-      'ban sakta use `verified: false` mark karta hai — invented output kabhi store nahi hota.',
+      'Every pass executes its snippets against real Python to stamp the output, and marks anything that\n' +
+      'cannot be true as `verified: false` — invented output is never stored.',
   },
   {
     id: 'dev-check',
     where: 'Settings',
     route: '/settings',
-    keys: ['test', 'tests', 'typecheck', 'build', 'commands', 'run', 'install', 'setup', 'dev', 'npm', 'doctor', 'gate'],
-    phrases: ['test kaise', 'build kaise', 'kaise chalaun', 'kaise chalaye', 'how to run', 'commands kya'],
+    keys: ['test', 'tests', 'typecheck', 'build', 'commands', 'run', 'install', 'setup', 'dev', 'npm', 'doctor', 'gate', 'ci', 'check'],
+    phrases: ['test kaise', 'build kaise', 'kaise chalaun', 'kaise chalaye', 'how to run', 'commands kya', 'how to test', 'how to build'],
     body:
-      'Is repo me CI nahi hai — ye teen commands hi gate hain:\n' +
+      'There is no CI in this repo — these are the gate commands:\n' +
       '  · `npm run dev` — local app (http://localhost:5173)\n' +
       '  · `npm run typecheck` — `tsc --noEmit`, strict\n' +
       '  · `npm test` — `node --test scripts/tests/*.test.{cjs,mjs}` (281 tests, ~4s)\n' +
-      '  · `npm run build` — production bundle (~1 min; Monaco ka >1500 kB chunk warning normal hai)\n' +
+      '  · `npm run build` — production bundle (~1 min; Monaco\'s >1500 kB chunk warning is normal)\n' +
       'Extra checks: `npm run doctor` (assets + deps), `npm run curriculum:validate`, `npm run questions:manifest`,\n' +
-      '`npm run questions:quota`. Ek file par kaam karte waqt: `node --test scripts/tests/accuracy.test.mjs`.',
+      '`npm run questions:quota`. When working on one file: `node --test scripts/tests/accuracy.test.mjs`.',
   },
   {
     id: 'code-map',
     where: 'Dashboard',
     route: '/',
-    keys: ['code', 'structure', 'engine', 'file', 'files', 'folder', 'src', 'component', 'components', 'architecture'],
-    phrases: ['code kaha', 'file kaha', 'code kaise', 'kaun si file', 'kitni files', 'architecture'],
+    keys: ['code', 'structure', 'engine', 'file', 'files', 'folder', 'src', 'component', 'components', 'architecture', 'repo', 'repository'],
+    phrases: ['code kaha', 'file kaha', 'code kaise', 'kaun si file', 'kitni files', 'architecture', 'where is the code', 'which file'],
     body:
-      'Code ka naksha:\n' +
-      '  · `src/core/*` — saara logic, chaar pure layer me: `learning` (progress, coverage, roadmap,\n' +
+      'Code map:\n' +
+      '  · `src/core/*` — all the logic, in four pure layers: `learning` (progress, coverage, roadmap,\n' +
       '    review), `assessment` (accuracy, evaluate, exam, playbook, paths), `ai` (tutor, coach,\n' +
-      '    mission, assistant, rag) aur `platform` (keys, search, anim, notify). Ye React se azaad\n' +
-      '    hain, isliye yahi testable hain.\n' +
-      '  · `src/features/*` aur `src/components/*` — screens aur UI; route table `src/app/App.tsx` me.\n' +
+      '    mission, assistant, rag), and `platform` (keys, search, anim, notify). These are free of React,\n' +
+      '    which is why they are testable.\n' +
+      '  · `src/features/*` and `src/components/*` — screens and UI; the route table is in `src/app/App.tsx`.\n' +
       '  · `src/core/storage/*` — store (localStorage), theme/UI prefs, exam writes.\n' +
-      '  · `src/core/data/*` — curriculum / questions / notebooks / tracks loaders (`public/generated/` se).\n' +
-      '  · `scripts/tests/*.test.mjs` — node:test suite, jo asli curriculum par chalti hai.\n' +
-      '  · `content/**` source hai, `public/**` GENERATED ya bundled runtime — use haath se edit nahi karte,\n' +
-      '    pipeline (`scripts/*.cjs`) edit karte hain.\n' +
-      'Rule: jo rule test karna ho use `src/core/*` (learning/assessment/ai/platform) me rakho, kyunki\n' +
-      '`.tsx` ko test import nahi kar sakta.',
+      '  · `src/core/data/*` — curriculum / questions / notebooks / tracks loaders (from `public/generated/`).\n' +
+      '  · `scripts/tests/*.test.mjs` — node:test suite that runs against the real curriculum.\n' +
+      '  · `content/**` is source; `public/**` is GENERATED or bundled runtime — do not edit it by hand,\n' +
+      '    edit the pipeline (`scripts/*.cjs`).\n' +
+      'Rule: put any rule you want to test in `src/core/*` (learning/assessment/ai/platform), because\n' +
+      '`.tsx` cannot be imported by tests.',
   },
   {
     id: 'publish',
     where: 'Settings',
     route: '/settings',
-    keys: ['deploy', 'deployment', 'publish', 'host', 'live', 'url', 'specific', 'static', 'production', 'online'],
-    phrases: ['deploy kaise', 'publish kaise', 'live kaise', 'host kaise'],
+    keys: ['deploy', 'deployment', 'publish', 'host', 'live', 'url', 'specific', 'static', 'production', 'online', 'serve'],
+    phrases: ['deploy kaise', 'publish kaise', 'live kaise', 'host kaise', 'how to deploy', 'how to publish', 'how to host'],
     body:
-      'App ek static SPA hai: `npm run build` se `dist/` banta hai, aur wahi folder kisi bhi static\n' +
-      'host (nginx/IIS/USB/Netlify/Specific) par chal jata hai. Is repo me `specific.hcl` bhi hai\n' +
-      '(`specific dev` local, `specific deploy` production) — build `npm run build` aur service\n' +
+      'The app is a static SPA: `npm run build` produces `dist/`, and that folder runs on any static\n' +
+      'host (nginx/IIS/USB/Netlify/Specific). This repo also includes `specific.hcl`\n' +
+      '(`specific dev` local, `specific deploy` production) — build with `npm run build` and serve with\n' +
       '`npx serve -s dist -l $PORT`.\n' +
-      'Deploy ke baad bhi app waise hi chalta hai: sab runtime assets usi bundle ke saath jaate hain.',
+      'The app works the same after deployment: all runtime assets ship with the same bundle.',
   },
   {
     id: 'pages',
     where: 'Dashboard',
     route: '/',
-    keys: ['page', 'pages', 'screen', 'screens', 'route', 'routes', 'features', 'feature'],
-    phrases: ['kitne pages', 'kaunse pages', 'kya kya hai', 'features kya', 'pages kitne'],
+    keys: ['page', 'pages', 'screen', 'screens', 'route', 'routes', 'features', 'feature', 'navigation', 'nav'],
+    phrases: ['kitne pages', 'kaunse pages', 'kya kya hai', 'features kya', 'pages kitne', 'how many pages', 'which pages', 'what features'],
     body:
-      'Screen-wise kya kya hai:\n' +
+      'Screens at a glance:\n' +
       '  · Learn — Dashboard, Learning Path (8 tracks), Concepts, Lesson (Learn/Coding/Debug/Project…),\n' +
       '    Review Queue, Mistake Tracker.\n' +
       '  · Practice — Question Bank, Playbook V15, Timed Exam, Notebook Lab, SQL Lab, NumPy+Pandas Lab,\n' +
@@ -200,13 +200,13 @@ export const PROJECT_FACTS: ProjectFact[] = [
     id: 'language',
     where: 'Settings',
     route: '/settings',
-    keys: ['language', 'lang', 'hinglish', 'english', 'hindi', 'bhasha', 'locale'],
-    phrases: ['language kaise', 'hinglish kaise', 'english me'],
+    keys: ['language', 'lang', 'hinglish', 'english', 'hindi', 'bhasha', 'locale', 'switch', 'translate'],
+    phrases: ['language kaise', 'hinglish kaise', 'english me', 'how to change language', 'how does language', 'switch to english'],
     body:
-      'UI do bhasha me hai: Hinglish aur English. Toggle header me (chhoti screens par quick-actions\n' +
-      'menu me) hai, aur choice localStorage me save hoti hai. Packs `src/i18n/locales.ts` me hain,\n' +
-      'aur missing key English par fall back karti hai — isliye naya key add karte waqt pehle English\n' +
-      'me daalo, phir Hinglish.',
+      'The UI is available in two languages: Hinglish and English. The toggle is in the header (on small\n' +
+      'screens, in the quick-actions menu), and the choice is saved in localStorage. Packs are in\n' +
+      '`src/i18n/locales.ts`, and a missing key falls back to English — so when adding a new key, put\n' +
+      'English first, then Hinglish.',
   },
 ];
 

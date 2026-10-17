@@ -10,7 +10,7 @@ import { useStore, setState } from '../../core/storage/store';
  */
 const SOURCES = {
   guide: { file: 'guide.pdf', label: 'Curriculum book', note: 'secondary reference — the interactive curriculum is primary' },
-  playbook: { file: 'playbook.pdf', label: 'Playbook V15', note: 'second source — iske items har section ke Question Bank me import ho chuke hain' },
+  playbook: { file: 'playbook.pdf', label: 'Playbook V15', note: 'second source — its items are already imported into each section\'s Question Bank' },
 } as const;
 type SourceKey = keyof typeof SOURCES;
 

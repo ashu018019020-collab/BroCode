@@ -6,7 +6,6 @@ import {
   LOCALES,
   missingLocaleKeys,
   normalizeLocale,
-  localeFromLanguageTag,
   type LocaleId,
   type LocaleKey,
   type LocaleMeta,
@@ -24,16 +23,21 @@ import {
 /** The stored choice. Unchanged since the first release, so a saved preference survives the rename. */
 const KEY = 'aiml:lang';
 
-/** A stored value, the browser's own preference, or the product default — in that order. */
+/**
+ * A stored EXPLICIT choice, or English.
+ *
+ * Browser-language detection is deliberately absent: English is the official default, so a first
+ * visit must be English even when the browser itself is configured for Hindi. Only `setLang` writes
+ * the key, which means a stored value is always a real user decision and is safe to restore later.
+ */
 function initialLocale(): LocaleId {
   let stored: string | null = null;
   try {
     stored = localStorage.getItem(KEY);
   } catch {
-    // Storage can be blocked (private mode, a locked-down profile): detection still works.
+    // Storage can be blocked (private mode, a locked-down profile): the default still applies.
   }
-  return normalizeLocale(stored)
-    ?? localeFromLanguageTag(typeof navigator === 'undefined' ? null : navigator.language);
+  return normalizeLocale(stored) ?? DEFAULT_LOCALE;
 }
 
 function applyDocument(next: LocaleId) {

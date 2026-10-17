@@ -59,7 +59,7 @@ export function TopicGuide({ concept, compact = false }: { concept: Concept; com
           {ex.output && (
             <p className="small">
               <b>{t('guide.output')}:</b> <code>{ex.output}</code>{' '}
-              {ex.verified === false && <span className="muted small">(documented — bundled runtime me chalega)</span>}
+              {ex.verified === false && <span className="muted small">(documented — runs with the bundled runtime)</span>}
             </p>
           )}
           <div className="small">

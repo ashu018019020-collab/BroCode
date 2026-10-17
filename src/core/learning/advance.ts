@@ -169,7 +169,7 @@ export function planAhead(
       kind: 'item',
       icon: STAGE_META[stage].icon,
       label: `${items.name(nextItem)} / ${items.count}`,
-      hint: `${openItems(sec, state, stage)} item baaki — pehle yahi, phir agla khud khulega (${stageMinutes(stage)}).`,
+      hint: `${openItems(sec, state, stage)} item${openItems(sec, state, stage) === 1 ? '' : 's'} left — do this first, then the next one unlocks (${stageMinutes(stage)}).`,
       route: '',
       index: nextItem,
       minutes: stageMinutes(stage),
@@ -182,7 +182,7 @@ export function planAhead(
       kind: 'stage',
       icon: m.icon,
       label: m.label,
-      hint: `${m.blurb} — isi page par, abhi (${stageMinutes(stage)}).`,
+      hint: `${m.blurb} — on this page, right now (${stageMinutes(stage)}).`,
       route: `/lesson/${sec.id}/${stage}`,
       minutes: stageMinutes(stage),
       now: true,
@@ -225,10 +225,10 @@ export function planAhead(
       icon: STAGE_META.learn.icon,
       label: nextSec.title,
       hint: empty
-        ? `Yeh section clear hai ✓ — ${left} section bache hain, agla topic khol do.`
+        ? `This section is clear ✓ — ${left} section${left === 1 ? '' : 's'} left, open the next topic.`
         : hidden
-          ? `Pehle is section ke ${hidden} stage baaki, phir yeh topic — ${left} section bache hain.`
-          : `Yeh section clear hone par agla topic — ${left} section bache hain.`,
+          ? `First finish ${hidden} stage${hidden === 1 ? '' : 's'} in this section, then this topic — ${left} section${left === 1 ? '' : 's'} left.`
+          : `The next topic once this section is clear — ${left} section${left === 1 ? '' : 's'} left.`,
       route: `/lesson/${nextSec.id}/learn`,
       minutes: `~${45 + nextSec.coding.length * 4} min`,
       now: empty,
@@ -239,7 +239,7 @@ export function planAhead(
       kind: 'review',
       icon: '🔁',
       label: 'Review Queue',
-      hint: 'Poora course mastered hai — ab spaced repetition se sharp rakho. 🏆',
+      hint: 'The whole course is mastered — keep it sharp with spaced repetition. 🏆',
       route: '/review',
       minutes: '~10 min',
       now: empty,
@@ -272,7 +272,7 @@ export function planNextStep(
         kind: 'item',
         index: next,
         label: `${items.name(next)} / ${items.count}`,
-        hint: `${STAGE_META[stage].label} me abhi ${openItems(sec, state, stage)} item baaki hain — agla wahin khul raha hai (${stageMinutes(stage)}).`,
+        hint: `${STAGE_META[stage].label}: ${openItems(sec, state, stage)} item${openItems(sec, state, stage) === 1 ? '' : 's'} still open — the next one unlocks there (${stageMinutes(stage)}).`,
         route: '',
       };
     }
@@ -286,8 +286,8 @@ export function planNextStep(
       kind: 'stage',
       label: `${STAGE_META[nextStage].icon} ${STAGE_META[nextStage].label}`,
       hint: cleared
-        ? `${STAGE_META[stage].label} clear — ab ${STAGE_META[nextStage].label}. ${STAGE_META[nextStage].blurb}.`
-        : `${STAGE_META[stage].label} ka gate abhi poora nahi hua (${Math.max(0, (STAGE_PASS[stage] ?? 70) - (sectionProgress(sec, state).tasks[stage] as number))}% kam). ${STAGE_META[nextStage].label} bhi khol sakte ho.`,
+        ? `${STAGE_META[stage].label} clear — now ${STAGE_META[nextStage].label}. ${STAGE_META[nextStage].blurb}.`
+        : `${STAGE_META[stage].label} gate is not complete yet (${Math.max(0, (STAGE_PASS[stage] ?? 70) - (sectionProgress(sec, state).tasks[stage] as number))}% short). You can also open ${STAGE_META[nextStage].label}.`,
       route: `/lesson/${sec.id}/${nextStage}`,
     };
   }
@@ -299,7 +299,7 @@ export function planNextStep(
     return {
       kind: 'section',
       label: `${STAGE_META.learn.icon} ${nextSec.title}`,
-      hint: `Section ${String(sec.no).padStart(2, '0')} MASTERED 🎉 ${remaining} section${remaining === 1 ? '' : 's'} baaki — agla topic khol raha hoon.`,
+      hint: `Section ${String(sec.no).padStart(2, '0')} MASTERED 🎉 ${remaining} section${remaining === 1 ? '' : 's'} left — opening the next topic.`,
       route: `/lesson/${nextSec.id}/learn`,
     };
   }
@@ -309,7 +309,7 @@ export function planNextStep(
     return {
       kind: 'review',
       label: '🔁 Review Queue',
-      hint: 'Poora course mastered hai — ab spaced repetition se sharp rakho. 🏆',
+      hint: 'The whole course is mastered — keep it sharp with spaced repetition. 🏆',
       route: '/review',
     };
   }

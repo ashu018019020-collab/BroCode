@@ -48,7 +48,7 @@ export function AssistantCard({
    * One-tap questions, drawn as buttons above the ask box.
    *
    * The footer dock uses these for PROJECT questions (`engine/project.ts`): those facts are only
-   * reachable if the learner knows they exist, and nobody types "test kaise chalaun" into a chat box
+   * reachable if the learner knows they exist, and nobody types "how do I run the tests" into a chat box
    * that looks like a Python tutor.
    */
   suggestions?: { label: string; ask: string }[];
@@ -126,7 +126,7 @@ function AssistantCardSession({
   const askedHints = log.filter((t) => t.role === 'you' && /hint|clue|madad/i.test(t.text)).length;
 
   const reply = (a: Answer, label: string) => {
-    if (!a.text) { toast('Kuch samajh nahi aaya — dobara try karo.', 'warning'); return; }
+    if (!a.text) { toast('That did not come through — try again.', 'warning'); return; }
     setLog((l) => [...l, { role: 'you', text: label }, { role: 'bot', text: a.text, answer: a }]);
   };
 
@@ -142,7 +142,7 @@ function AssistantCardSession({
           setKnowledge(index);
         } catch (error) {
           console.error('BroCode AI knowledge index could not be loaded:', error);
-          toast('Knowledge pack load nahi hua — bundled lesson se answer de raha hoon.', 'warning');
+          toast('Knowledge pack failed to load — answering from the bundled lessons.', 'warning');
           reply(askLocal(question, sections, state, contextForIndex(), askedHints), question);
           return;
         }
@@ -161,7 +161,7 @@ function AssistantCardSession({
         <span className="bot"><Bot size={18} color="var(--cyan)" /></span>
         <div style={{ flex: 1 }}>
           <b className="assistant-title"><span>AI</span> Assistant</b>
-          <div className="assistant-subtitle">{busy ? 'Local knowledge me dhoond raha hoon…' : 'Offline learning assistant · current page aware'}</div>
+          <div className="assistant-subtitle">{busy ? 'Searching local knowledge…' : 'Offline learning assistant · current page aware'}</div>
         </div>
         {activeContext.error && <span className="chip hard">● error</span>}
         <span className={`assistant-status${busy ? ' busy' : ''}`}><i />{busy ? <><Loader2 size={11} className="spin" /> Thinking</> : 'Ready'}</span>
@@ -175,7 +175,7 @@ function AssistantCardSession({
             <span title={activeContext.question.text}>📄 {activeContext.question.text.length > 70 ? `${activeContext.question.text.slice(0, 70)}…` : activeContext.question.text}</span>
           )}
           {activeContext.error && (
-            <span className="ctx-err">🔴 Is cell ka error upar screen par hai — "Is galti ko fix karo" dabao, main usi line par fix bataunga.</span>
+            <span className="ctx-err">🔴 This cell's error is on screen above — press "Fix this mistake" and I will point at the exact line to fix.</span>
           )}
         </div>
       )}
@@ -191,19 +191,19 @@ function AssistantCardSession({
       <div className="assistant-actions">
         <button className="assistant-action explain" onClick={() => reply(quickExplain(state, sections, activeContext), 'Explain')}>
           <span className="assistant-action-icon"><Sparkles size={18} /></span>
-          <b>Explain</b><small>Concepts ko simple samjho</small>
+          <b>Explain</b><small>Concepts made simple</small>
         </button>
         <button className="assistant-action hint" onClick={() => reply(quickHint(state, sections, activeContext, askedHints), 'Hint')}>
           <span className="assistant-action-icon"><Lightbulb size={18} /></span>
-          <b>Give Hint</b><small>Ek useful clue pao</small>
+          <b>Give Hint</b><small>Get a useful clue</small>
         </button>
-        <button className="assistant-action doubt" onClick={() => ask('Mujhe is topic me doubt hai. Kripya concept samjha kar mera doubt solve karo.')}>
+        <button className="assistant-action doubt" onClick={() => ask('I have a doubt about this topic. Please explain the concept and resolve my doubt.')}>
           <span className="assistant-action-icon"><CircleHelp size={18} /></span>
-          <b>Solve Doubt</b><small>Apna question poochho</small>
+          <b>Solve Doubt</b><small>Ask your own question</small>
         </button>
         <button className="assistant-action next" onClick={() => reply(quickNext(state, sections, activeContext, '', knowledge ?? undefined), 'Next Topic')}>
           <span className="assistant-action-icon"><ArrowRight size={18} /></span>
-          <b>Next Topic</b><small>Aage kya seekhna hai</small>
+          <b>Next Topic</b><small>What to learn next</small>
         </button>
       </div>
 
@@ -211,26 +211,26 @@ function AssistantCardSession({
         {/* Armed, not pushy: the error pane already explains a failure on its own, so this action
             waits to be asked — but it is the first button whenever something is actually broken. */}
         {activeContext.error && (
-          <button className="btn small primary" onClick={() => reply(quickFix(state, sections, activeContext), 'Is galti ko fix karo')}>
-            <Wrench size={12} /> Is galti ko fix karo
+          <button className="btn small primary" onClick={() => reply(quickFix(state, sections, activeContext), 'Fix this mistake')}>
+            <Wrench size={12} /> Fix this mistake
           </button>
         )}
         {/* With a question in context, the item's own actions lead: its answer, the percentage of
             what the learner wrote, and a hint about THIS item rather than the topic. */}
         {activeContext.question && (
           <>
-            <button className="btn small primary" onClick={() => reply(quickAnswer(state, sections, activeContext), 'Poora answer')}>
-              <BookOpenCheck size={12} /> Poora answer
+            <button className="btn small primary" onClick={() => reply(quickAnswer(state, sections, activeContext), 'Full answer')}>
+              <BookOpenCheck size={12} /> Full answer
             </button>
-            <button className="btn small" onClick={() => reply(quickScoreAnswer(state, sections, activeContext), 'Mera answer kitna sahi?')}>
-              <Percent size={12} /> Mera answer kitna sahi?
+            <button className="btn small" onClick={() => reply(quickScoreAnswer(state, sections, activeContext), 'How accurate is my answer?')}>
+              <Percent size={12} /> How accurate is my answer?
             </button>
           </>
         )}
-        <button className="btn small" onClick={() => reply(quickMistakes(state, sections), 'Meri galtiyan')}><Target size={12} /> Meri galtiyan</button>
+        <button className="btn small" onClick={() => reply(quickMistakes(state, sections), 'My mistakes')}><Target size={12} /> My mistakes</button>
         <button className="btn small" onClick={() => reply(quickDebug(state, sections), 'Debug')}><Bug size={12} /> Debug</button>
-        {!compact && <button className="btn small" onClick={() => reply(quickAccuracy(state, sections), 'Meri accuracy')}><Percent size={12} /> Meri accuracy</button>}
-        {!compact && <button className="btn small" onClick={() => reply(quickStatus(state, sections), 'Status')}>Meri progress</button>}
+        {!compact && <button className="btn small" onClick={() => reply(quickAccuracy(state, sections), 'My accuracy')}><Percent size={12} /> My accuracy</button>}
+        {!compact && <button className="btn small" onClick={() => reply(quickStatus(state, sections), 'Status')}>My progress</button>}
       </div>
 
       {(log.length > 0 || busy) && (
@@ -279,7 +279,7 @@ function AssistantCardSession({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') ask(q); }}
-            placeholder={activeContext.question ? 'Is question ke baare me poocho…' : 'Ask BroCode AI anything…'}
+            placeholder={activeContext.question ? 'Ask about this question…' : 'Ask BroCode AI anything…'}
             aria-label="Ask the AI assistant"
           />
           <button className="assistant-send" onClick={() => ask(q)} disabled={busy || !q.trim()} aria-label="Send question">
@@ -287,13 +287,13 @@ function AssistantCardSession({
           </button>
         </div>
         {log.length > 0 && (
-          <button className="assistant-clear btn small ghost" onClick={() => { setLog([]); toast('Conversation clear ho gayi.', 'info', 1600); }} aria-label="Clear conversation">
+          <button className="assistant-clear btn small ghost" onClick={() => { setLog([]); toast('Conversation cleared.', 'info', 1600); }} aria-label="Clear conversation">
             <Eraser size={13} />
           </button>
         )}
       </div>
       <p className="small muted" style={{ margin: '6px 0 0' }}>
-        Answers bundled curriculum se retrieve hote hain — internet ki zaroorat nahi, aur galat answer invent nahi karta.
+        Answers are retrieved from the bundled curriculum — no internet needed, and it never invents a wrong answer.
       </p>
     </div>
   );

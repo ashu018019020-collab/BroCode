@@ -206,7 +206,7 @@ test('unmatched questions still receive the honest local-curriculum fallback', a
   const index = await buildAiIndex();
   const answer = askLocal('zzqvortex blarghmantic qwxjellophone', sections, blankState(), undefined, 0, index);
   assert.equal(answer.kind, 'fallback');
-  assert.match(answer.text, /bundled curriculum me nahi mila/);
+  assert.match(answer.text, /not found in the bundled curriculum/i);
   assert.doesNotMatch(answer.text, /zzqvortex.*is defined as/i);
 });
 

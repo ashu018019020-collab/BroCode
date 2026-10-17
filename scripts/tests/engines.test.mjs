@@ -522,7 +522,7 @@ test('coach: an overdue section with no mistakes still gets re-taught', () => {
   assert.equal(ranked.length, 1);
   assert.equal(ranked[0].sectionId, 's07');
   assert.equal(ranked[0].openMistakes, 0);
-  assert.ok(ranked[0].reasons.some((r) => /4 din late/.test(r)), `reason must state the lateness: ${ranked[0].reasons}`);
+  assert.ok(ranked[0].reasons.some((r) => /4 days late/.test(r)), `reason must state the lateness: ${ranked[0].reasons}`);
 });
 
 test('coach: a level-0 section outranks one on a comfortable interval', () => {
@@ -588,14 +588,14 @@ test('coach: the drill follows the type the learner keeps failing', () => {
 
 test('coach: the chosen section always comes with a reason from real state', () => {
   const state = stateWith([mistake('a', { section: 's01', source: 'bank', type: 'interview', attempts: 2 })]);
-  const opts = { scheduleOf: (id) => (id === 's01' ? schedule(0, { due: true, overdueDays: 1, daysLeft: 0, text: 'level 0 · 1 din late' }) : null) };
+  const opts = { scheduleOf: (id) => (id === 's01' ? schedule(0, { due: true, overdueDays: 1, daysLeft: 0, text: 'level 0 · 1 day late' }) : null) };
   const picked = coach.coachSectionFor(state, SECTION_POOL, section('s07'), 'frontier fallback', opts);
 
   assert.equal(picked.section.id, 's01');
   assert.match(picked.why, /Variables/);
   assert.match(picked.why, /open mistake/);
   assert.match(picked.why, /Question Bank/);
-  assert.match(picked.why, /1 din late/, 'the schedule is part of the reasoning');
+  assert.match(picked.why, /1 day late/, 'the schedule is part of the reasoning');
   assert.equal(picked.schedule.level, 0);
 
   // With nothing to re-teach it falls back to the frontier section.

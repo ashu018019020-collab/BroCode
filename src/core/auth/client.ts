@@ -15,6 +15,23 @@ export interface AuthUser {
   status: AccountStatus;
 }
 
+/**
+ * The lesson position the account service remembers for this learner.
+ *
+ * It is a POSITION, not content: the section id and the stage name, validated on the server and
+ * resolved against the live curriculum on the client before it can become a route.
+ */
+export interface ResumePosition {
+  sectionId: string;
+  stage: string;
+}
+
+/** A session restore always resolves BOTH halves: the account, and where to resume. */
+export interface SessionResolution {
+  user: AuthUser;
+  resume: ResumePosition | null;
+}
+
 export interface UserProgress extends ProgressSummary {
   updatedAt: string;
 }
@@ -107,6 +124,62 @@ function authError(error: { message: string }): Error {
   return new Error(error.message || 'Supabase authentication failed.');
 }
 
+/**
+ * The URL this deployment is actually served from, WITH its path.
+ *
+ * `window.location.origin` alone is wrong for a project-path deployment (this repository's own
+ * sitemap targets `https://<owner>.github.io/BroCode/`): a confirmation or recovery link sent back
+ * to the origin root lands on a 404, and — because the app is a hash-routed SPA — looks like a
+ * broken email verification. Resolving `.` against `document.baseURI` keeps the `/BroCode/` part
+ * without having to hardcode it, and works unchanged at a domain root.
+ */
+export function appBaseUrl(): string {
+  try {
+    if (typeof document !== 'undefined' && document.baseURI) {
+      const base = new URL('.', document.baseURI);
+      if (base.protocol === 'https:' || base.protocol === 'http:') return base.href;
+    }
+  } catch (error) {
+    console.error('[BroCode] Could not resolve the application base URL.', error);
+  }
+  return `${window.location.origin}${import.meta.env.BASE_URL ?? '/'}`;
+}
+
+/**
+ * Normalize a resume position from the account API. Nothing here is trusted into a route: the
+ * resume engine checks the section against the curriculum and the stage against `STAGES`.
+ */
+function resumePosition(value: unknown): ResumePosition | null {
+  if (!value || typeof value !== 'object') return null;
+  const { sectionId, stage } = value as { sectionId?: unknown; stage?: unknown };
+  if (typeof sectionId !== 'string' || !sectionId || typeof stage !== 'string' || !stage) return null;
+  return { sectionId, stage };
+}
+
+/**
+ * The resume position returned by the last successful sign-in/session restore.
+ *
+ * It is handed to `AuthProvider` AFTER the store has switched to the account's namespace — the
+ * position belongs in that account's state, not in whatever namespace was active during the
+ * network call. A module-level hand-off keeps that ordering explicit instead of racing a state
+ * update inside the client.
+ */
+let pendingResume: ResumePosition | null = null;
+
+export function takeRemoteResume(): ResumePosition | null {
+  const resume = pendingResume;
+  pendingResume = null;
+  return resume;
+}
+
+/**
+ * One account request, with a deadline.
+ *
+ * Without a timeout a stalled `fetch` left `applySession` awaiting forever: `loading` never became
+ * false, `RequireAuth` rendered its skeleton indefinitely, and every protected page looked blank.
+ * Ten seconds is long enough for a cold API and short enough that a broken one resolves to the
+ * session-claims fallback instead of an infinite spinner.
+ */
 async function request<T>(path: string, init: RequestInit = {}, session?: Session | null): Promise<T> {
   let token = session?.access_token;
   if (!token) {
@@ -119,7 +192,11 @@ async function request<T>(path: string, init: RequestInit = {}, session?: Sessio
   const headers = new Headers(init.headers);
   headers.set('Authorization', `Bearer ${token}`);
   if (init.body) headers.set('Content-Type', 'application/json');
-  const response = await fetch(path, { ...init, headers });
+  const signal = init.signal
+    ?? (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+      ? AbortSignal.timeout(10_000)
+      : undefined);
+  const response = await fetch(path, { ...init, headers, ...(signal ? { signal } : {}) });
   if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
     throw new Error(`Account API returned HTTP ${response.status} without JSON; verify the API server is running.`);
   }
@@ -133,18 +210,24 @@ async function request<T>(path: string, init: RequestInit = {}, session?: Sessio
   return body;
 }
 
-async function fetchCurrentUser(session: Session): Promise<AuthUser> {
+async function fetchCurrentUser(session: Session): Promise<SessionResolution> {
   // Server-verified profile when the account API is reachable: role comes from the database, so a
-  // ban or promotion takes effect immediately instead of waiting for the token to refresh.
+  // ban or promotion takes effect immediately instead of waiting for the token to refresh. The same
+  // response carries the last lesson the account synced, which is how a new device resumes.
   try {
-    const result = await request<{ user: AuthUser | null }>('/api/auth/session', {}, session);
-    if (result.user) return result.user;
-  } catch {
+    const result = await request<{ user: AuthUser | null; resume?: ResumePosition | null }>(
+      '/api/auth/session',
+      {},
+      session,
+    );
+    if (result.user) return { user: result.user, resume: resumePosition(result.resume) };
+  } catch (error) {
     // The API server is not deployed alongside the static frontend (or is temporarily down). Fall
     // back to the signed Supabase session claims below so sign-in and email verification still
     // complete instead of surfacing "The account service is unavailable right now."
+    console.warn('[BroCode] The account API was unreachable; using the signed session claims.', error);
   }
-  return profileFromSession(session);
+  return { user: profileFromSession(session), resume: null };
 }
 
 /**
@@ -231,7 +314,7 @@ export function takePendingOAuthProvider(): OAuthProvider | null {
 }
 
 export const authApi = {
-  async session(session: Session | null): Promise<AuthUser | null> {
+  async session(session: Session | null): Promise<SessionResolution | null> {
     if (!session) return null;
     return fetchCurrentUser(session);
   },
@@ -241,11 +324,12 @@ export const authApi = {
     const { data, error } = await getSupabaseClient().auth.signInWithPassword({ email, password });
     if (error) throw authError(error);
     if (!data.session) throw new Error('Supabase sign-in did not return an active session.');
-    const user = await fetchCurrentUser(data.session);
+    const resolution = await fetchCurrentUser(data.session);
+    pendingResume = resolution.resume;
     await authApi.recordSignIn(data.session, 'email').catch((cause: unknown) => {
       console.error('Could not record email sign-in activity.', cause);
     });
-    return user;
+    return resolution.user;
   },
 
   async signInWithProvider(provider: OAuthProvider): Promise<void> {
@@ -257,7 +341,8 @@ export const authApi = {
     try {
       const { error } = await getSupabaseClient().auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}` },
+        // Base path included: the provider must return to the deployment, not to the domain root.
+        options: { redirectTo: appBaseUrl() },
       });
       if (error) throw authError(error);
     } catch (error) {
@@ -277,16 +362,20 @@ export const authApi = {
       password,
       options: {
         data: { display_name: name.trim() },
-        emailRedirectTo: window.location.origin,
+        // The deployment's real base path, not a bare origin: on a project-path deployment the
+        // confirmation link must come back to `/BroCode/`, or it 404s and looks like a failed
+        // verification. `appBaseUrl()` keeps a trailing slash for exactly this.
+        emailRedirectTo: appBaseUrl(),
       },
     });
     if (error) throw authError(error);
     if (!data.session) return { user: null, emailConfirmationRequired: true };
-    const user = await fetchCurrentUser(data.session);
+    const resolution = await fetchCurrentUser(data.session);
+    pendingResume = resolution.resume;
     await authApi.recordSignIn(data.session, 'email').catch((cause: unknown) => {
       console.error('Could not record account creation sign-in activity.', cause);
     });
-    return { user, emailConfirmationRequired: false };
+    return { user: resolution.user, emailConfirmationRequired: false };
   },
 
   /** Re-send the signup confirmation link — the one screen a waiting learner actually needs. */
@@ -294,7 +383,7 @@ export const authApi = {
     const { error } = await getSupabaseClient().auth.resend({
       type: 'signup',
       email,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: appBaseUrl() },
     });
     if (error) throw authError(error);
   },
@@ -310,7 +399,8 @@ export const authApi = {
    */
   async requestPasswordReset(email: string): Promise<void> {
     const { error } = await getSupabaseClient().auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}?reset=1`,
+      // Same base-path rule as the confirmation link; `appBaseUrl()` already ends in `/`.
+      redirectTo: `${appBaseUrl()}?reset=1`,
     });
     if (error) throw authError(error);
   },
@@ -346,7 +436,7 @@ export const authApi = {
     { method: 'PATCH', body: JSON.stringify({ status }) },
   ),
 
-  saveProgress: (progress: ProgressSummary) => request<{ ok: true }>('/api/progress/snapshot', {
+  saveProgress: (progress: ProgressSummary & { lastSectionId?: string; lastStage?: string }) => request<{ ok: true }>('/api/progress/snapshot', {
     method: 'POST',
     body: JSON.stringify(progress),
   }),

@@ -124,10 +124,10 @@ export const en = {
   'path.viewRoadmap': 'Roadmap View',
   'path.viewList': 'List View',
   'path.mission': 'Current Mission',
-  'path.missionDesc': 'Concept clear karo, example dekho aur ek chhota sa practice task complete karo.',
+  'path.missionDesc': 'Understand the concept, review an example, and complete one short practice task.',
   'path.openLesson': 'Open Lesson',
   'path.weak': 'Weak Topics',
-  'path.weakNone': 'Great! Abhi koi weak topic detect nahi hua.',
+  'path.weakNone': 'Great! No weak topic detected right now.',
   'path.weakEmpty': 'Not started',
   'path.weakPractice': 'Practice needed',
   'path.recommended': 'Recommended Next',
@@ -246,7 +246,7 @@ export const en = {
   'pg.available': 'Available',
   'pg.install': 'Install',
   'pg.installedAlready': 'Installed',
-  'pg.notOffline': 'Ye package is environment me available nahi hai.',
+  'pg.notOffline': 'This package is not available in this environment.',
   'pg.tutor': 'AI Coding Tutor',
   'pg.tutorSub': 'Always here to help you learn',
   'pg.explain': 'Explain',
@@ -275,8 +275,8 @@ export const en = {
   'nav.exam': 'Timed Exam',
   // top bar / chrome
   'top.notif': 'Notifications',
-  'top.notifEmpty': 'Abhi koi notification nahi — sab clear hai.',
-  'top.notifClear': 'Sab read mark karo',
+  'top.notifEmpty': 'No notifications right now — you are all caught up.',
+  'top.notifClear': 'Mark all as read',
   'top.focus': 'Focus Mode',
   'top.focusSub': 'Distraction free',
   'top.theme': 'Theme',
@@ -301,7 +301,7 @@ export const en = {
   'dash.toolsSettings': 'Customize',
   'dash.achievementsTitle': 'Achievements',
   'dash.quote': '“Small Steps Today, Big Progress Tomorrow.”',
-  // authored content + topic guides ("CODE KAISE KARTE HAIN")
+  // authored content + topic guides ("how to write the code" layer)
   'badge.authored': 'Authored practice',
   'badge.authoredHint': 'Hand-written practice pack, not extracted from the PDF.',
   'guide.badge': 'Authored lesson',
@@ -315,7 +315,7 @@ export const en = {
   'guide.level.basic': 'Basic',
   'guide.level.intermediate': 'Intermediate',
   'guide.level.advanced': 'Advanced',
-  'guide.howToCode': 'Code kaise karte hain',
+  'guide.howToCode': 'How to write the code',
   'guide.step': 'Step',
   'guide.lineByLine': 'Line by line',
   'guide.output': 'Output',
@@ -883,11 +883,13 @@ export const LOCALES: LocaleMeta[] = [
 const LEGACY_LOCALE_IDS: Record<string, LocaleId> = { hinglish: 'hi', 'hi-in': 'hi', english: 'en', 'en-us': 'en', 'en-gb': 'en' };
 
 /**
- * The fallback for a visitor who has never chosen: their own browser, when that browser asks for
- * Hindi/Hinglish; otherwise the product's own default. A stored choice ALWAYS wins over this, so a
- * learner is never re-detected out of the language they picked.
+ * English is the product's official, permanent default.
+ *
+ * A stored choice ALWAYS wins over this, so a returning learner keeps the language they explicitly
+ * picked. A device with no stored choice gets English even when the browser itself asks for Hindi:
+ * the product is English-first, and Hinglish is an opt-in alternative rather than a guess.
  */
-export const DEFAULT_LOCALE: LocaleId = 'hi';
+export const DEFAULT_LOCALE: LocaleId = 'en';
 
 export function isLocaleId(value: unknown): value is LocaleId {
   return value === 'en' || value === 'hi';
@@ -902,14 +904,6 @@ export function normalizeLocale(value: unknown): LocaleId | null {
   const lower = value.trim().toLowerCase();
   if (isLocaleId(lower)) return lower;
   return LEGACY_LOCALE_IDS[lower] ?? null;
-}
-
-/** The best locale for a device that has never chosen, from `navigator.language`-style input. */
-export function localeFromLanguageTag(tag: string | null | undefined): LocaleId {
-  const primary = (tag ?? '').trim().toLowerCase().split(/[-_]/)[0];
-  if (primary === 'hi') return 'hi';
-  if (primary === 'en') return 'en';
-  return DEFAULT_LOCALE;
 }
 
 const PACKS: Record<LocaleId, Partial<Record<LocaleKey, string>>> = { en, hi: hinglish };

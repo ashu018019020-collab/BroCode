@@ -50,16 +50,16 @@ import {
  * likhun". One line per type, not a rubric.
  */
 const WRITE_HINT: Record<string, string> = {
-  theory: '2-4 line: concept kya hai, phir ek chhota example.',
-  interview: 'Pehle definition, phir ek real use case — jaise interview me bolte.',
-  logic: 'Steps ya pseudo-code likho, phir expected output.',
-  coding: 'Poora code likho; approach ek line me.',
-  solved: 'Solution code + ek line me approach.',
-  debug: 'Kya galat tha aur kaise fix kiya — dono likho.',
-  defense: 'Decision, uska reason, aur tumne kya measure kiya.',
-  checkpoint: 'Document ka method follow karke apne shabdon me likho.',
+  theory: '2-4 lines: what the concept is, then a short example.',
+  interview: 'Definition first, then a real use case — the way you would say it in an interview.',
+  logic: 'Write the steps or pseudo-code, then the expected output.',
+  coding: 'Write the full code; put the approach in one line.',
+  solved: 'Solution code plus the approach in one line.',
+  debug: 'Write both what was wrong and how you fixed it.',
+  defense: 'The decision, the reason behind it, and what you measured.',
+  checkpoint: 'Follow the method in the document and write it in your own words.',
 };
-const DEFAULT_HINT = 'Apne shabdon me likho — 2-4 line kaafi hai.';
+const DEFAULT_HINT = 'Write it in your own words — 2-4 lines is enough.';
 
 interface SetupProps {
   bp: ExamBlueprint;
@@ -125,18 +125,18 @@ export default function ExamMode() {
     if (left <= 0 && !expired.current) {
       expired.current = true;
       submitExam(true);
-      toast('Time up — paper submit ho gaya. Ab self-grade karo.', 'warning');
+      toast('Time is up — the paper has been submitted. Now self-grade it.', 'warning');
     } else if (left <= 60000 && left > 0 && !warned.current) {
       warned.current = true;
-      toast('Last 1 minute — answers final karo.', 'warning');
+      toast('One minute left — finalise your answers.', 'warning');
     }
   }, [session, now]);
 
   /* -------------------------------- actions ------------------------------- */
   const begin = () => {
-    if (!paperSize) { toast('In filters me koi question nahi mila.', 'warning'); return; }
+    if (!paperSize) { toast('No questions match these filters.', 'warning'); return; }
     const paper = selectExamQuestions(scoped, { ...bp, size: paperSize }, state.attempts, Date.now() >>> 0);
-    if (!paper.length) { toast('Paper assemble nahi ho paya.', 'warning'); return; }
+    if (!paper.length) { toast('The paper could not be assembled.', 'warning'); return; }
     startExam({ ...bp, size: paper.length }, paper);
     setNow(Date.now());
   };
@@ -144,12 +144,12 @@ export default function ExamMode() {
   const doSave = () => {
     if (!session) return;
     const writes = buildExamWrites(session, state.attempts);
-    if (!writes.entries.length) { toast('Pehle kuch questions grade karo.', 'warning'); return; }
+    if (!writes.entries.length) { toast('Grade a few questions first.', 'warning'); return; }
     applyExamWrites(writes.entries, writes.xp);
     bumpStreak();
     markSaved(writes.xp, writes.wrong);
     toast(
-      `${writes.correct} sahi · ${writes.wrong} galat filed${writes.xp ? ` · +${writes.xp} XP` : ''}`,
+      `${writes.correct} correct · ${writes.wrong} wrong filed${writes.xp ? ` · +${writes.xp} XP` : ''}`,
       writes.wrong ? 'info' : 'success',
     );
   };
@@ -175,7 +175,7 @@ export default function ExamMode() {
       {crumb}
       <ReportScreen
         session={session}
-        onRetake={() => { retakeExam(session.questions); setNow(Date.now()); toast('Same paper, naya clock — ab dikhao.', 'info'); }}
+        onRetake={() => { retakeExam(session.questions); setNow(Date.now()); toast('Same paper, new clock — show what you can do.', 'info'); }}
         onNew={(patch) => resetTo(patch ?? {})}
       />
       </>
@@ -213,13 +213,13 @@ function SetupScreen(props: SetupProps) {
         {banksReady && <span className="chip">{published} published questions in the pool</span>}
       </div>
       <p className="muted small" style={{ maxWidth: 780 }}>
-        Ek asli interview jaisa timed paper — poore question bank se assemble hota hai. App tumhara score
-        guess <b>nahi</b> karega: clock rukne ke baad tum khud sahi/galat mark karo, aur wahi tumhara score hai.
-        Galat question seedha Mistake Tracker aur Review Queue me chala jata hai.
+        A timed paper built like a real interview, assembled from the whole question bank. The app will
+        <b> not</b> guess your score: once the clock stops you mark each answer correct or wrong yourself, and
+        that is your score. A wrong question goes straight to the Mistake Tracker and the Review Queue.
       </p>
 
       <div className="card glow">
-        <h2 style={{ marginTop: 0 }}>Paper banao</h2>
+        <h2 style={{ marginTop: 0 }}>Build your paper</h2>
 
         <div className="row small muted" style={{ margin: '6px 0 12px' }}>
           <span className="chip"><Layers size={12} /> {EXAM_FOCUS_LABEL[bp.focus]}</span>
@@ -289,7 +289,7 @@ function SetupScreen(props: SetupProps) {
           <div>
             <div className="small muted" style={{ marginBottom: 4 }}>Syllabus scope</div>
             <div className="row" style={{ marginBottom: 12 }}>
-              {([['all', 'Poora syllabus'], ['complete', 'Sirf complete sections'], ['one', 'Ek section']] as [ExamScope, string][]).map(([v, label]) => (
+              {([['all', 'Whole syllabus'], ['complete', 'Complete sections only'], ['one', 'One section']] as [ExamScope, string][]).map(([v, label]) => (
                 <button
                   key={v}
                   className={`stagepill ${bp.scope === v ? 'active' : ''}`}
@@ -325,7 +325,7 @@ function SetupScreen(props: SetupProps) {
                 checked={bp.unseenFirst}
                 onChange={(e) => setBp((b) => ({ ...b, unseenFirst: e.target.checked }))}
               />
-              Pehle wo questions jo maine pehle nahi dekhe (asli measure, guess nahi)
+              Unseen questions first (a real measure, not a guess)
             </label>
           </div>
         </div>
@@ -333,15 +333,15 @@ function SetupScreen(props: SetupProps) {
         <div className="row spread" style={{ marginTop: 16 }}>
           <div className="small muted">
             {!manifestReady || !banksReady
-              ? 'Banks load ho rahe hain…'
+              ? 'Loading banks…'
               : avail === 0
-                ? <span style={{ color: 'var(--red)' }}>In filters me ek bhi eligible question nahi hai.</span>
-                : <>Pool me <b>{avail}</b> eligible questions hain{avail < bp.size ? <> — itne hi milenge, paper chhota rahega (duplicate banane ke bajaye)</> : null}.</>}
+                ? <span style={{ color: 'var(--red)' }}>No eligible question matches these filters.</span>
+                : <><b>{avail}</b> eligible questions in the pool{avail < bp.size ? <> — the paper will use all of them and stay short rather than add duplicates</> : null}.</>}
           </div>
           <div className="row">
             <Link className="btn" to="/questions"><ListChecks size={14} /> Question Bank</Link>
             <button className="btn primary" disabled={!paperSize} onClick={begin}>
-              <Play size={14} /> Exam shuru karo
+              <Play size={14} /> Start exam
             </button>
           </div>
         </div>
@@ -350,11 +350,11 @@ function SetupScreen(props: SetupProps) {
       <div className="card">
         <h2 style={{ marginTop: 0 }}>Rules</h2>
         <ul className="small muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
-          <li>Timer chalta hai — session save rehta hai, reload ya tab band karne par wahin se continue hoga.</li>
-          <li>Simple text likho; coding questions me code paste karo (formatting ka score nahi milta).</li>
-          <li>End me model answer dikhega — tum khud <b>Sahi</b> ya <b>Galat</b> mark karo. Blank chhoda question neutral rehta hai, galat nahi gina jata.</li>
-          <li>Galat mark karne par mistake entry banti hai aur us section ka review level reset hota hai.</li>
-          <li>XP sirf pehli baar sahi karne par milta hai — Question Bank ke saath double pay nahi hota.</li>
+          <li>The timer runs — the session is saved, so reloading or closing the tab resumes where you left off.</li>
+          <li>Write plain text; paste code for coding questions (formatting is not scored).</li>
+          <li>At the end the model answer is shown — you mark <b>Correct</b> or <b>Wrong</b> yourself. A question left blank stays neutral and is not counted as wrong.</li>
+          <li>Marking an answer wrong creates a mistake entry and resets that section's review level.</li>
+          <li>XP is awarded only the first time you get a question right — it is never paid twice alongside the Question Bank.</li>
         </ul>
       </div>
     </div>
@@ -389,7 +389,7 @@ function RunningScreen({ session, now }: { session: ExamSession; now: number }) 
             </span>
             <span className="chip">Q {s.index + 1} / {s.questions.length}</span>
             <span className="chip">{answered} answered</span>
-            <span className="chip" title="Har question par itna hi time — ek sawaal par atakna hi paper ka sabse bada time sink hai">
+            <span className="chip" title="An even share of time per question — getting stuck on one question is the biggest time sink in a paper">
               <Clock size={12} /> ~{pace} min / question
             </span>
             {s.flags.length > 0 && (
@@ -400,7 +400,7 @@ function RunningScreen({ session, now }: { session: ExamSession; now: number }) 
           </div>
           <div className="row">
             <button className="btn small" onClick={() => toggleFlag(q.id)}>
-              <Flag size={13} /> {s.flags.includes(q.id) ? 'Flag hatao' : 'Review ke liye flag'}
+              <Flag size={13} /> {s.flags.includes(q.id) ? 'Remove flag' : 'Flag for review'}
             </button>
             <button className="btn primary small" onClick={() => submitExam(false)}>
               <Check size={13} /> Submit + self-grade
@@ -431,8 +431,8 @@ function RunningScreen({ session, now }: { session: ExamSession; now: number }) 
           })}
         </div>
         <div className="small muted" style={{ marginTop: 6 }}>
-          Filled = abhi ka question · <span style={{ color: 'var(--cyan)' }}>cyan = answered</span> ·{' '}
-          <span style={{ color: 'var(--amber)' }}>amber = flagged</span> · baaki blank
+          Filled = current question · <span style={{ color: 'var(--cyan)' }}>cyan = answered</span> ·{' '}
+          <span style={{ color: 'var(--amber)' }}>amber = flagged</span> · the rest are blank
         </div>
       </div>
 
@@ -450,7 +450,7 @@ function RunningScreen({ session, now }: { session: ExamSession; now: number }) 
           className={isCode ? 'editor console' : 'console'}
           rows={isCode ? 18 : 12}
           style={{ minHeight: isCode ? 340 : 240, resize: 'vertical' }}
-          placeholder={isCode ? '# yahan code likho / paste karo' : 'Answer yahan likho… (wording ka score nahi milta, apne shabdon me likho)'}
+          placeholder={isCode ? '# write or paste your code here' : 'Write your answer here… (wording is not scored, use your own words)'}
           value={s.answers[q.id] ?? ''}
           onChange={(e) => setAnswer(q.id, e.target.value)}
           spellCheck={false}
@@ -459,13 +459,13 @@ function RunningScreen({ session, now }: { session: ExamSession; now: number }) 
         <div className="row spread" style={{ marginTop: 10 }}>
           <div className="row">
             <button className="btn small" disabled={s.index === 0} onClick={() => gotoIndex(s.index - 1)}>
-              <ChevronLeft size={13} /> Pichla
+              <ChevronLeft size={13} /> Previous
             </button>
             <button className="btn small" disabled={s.index >= s.questions.length - 1} onClick={() => gotoIndex(s.index + 1)}>
-              Agla <ChevronRight size={13} />
+              Next <ChevronRight size={13} />
             </button>
           </div>
-          <span className="small muted">{typed.trim() ? `${words} words` : 'khaali chhoda'}</span>
+          <span className="small muted">{typed.trim() ? `${words} words` : 'left blank'}</span>
         </div>
       </div>
 
@@ -485,15 +485,15 @@ function GradingScreen({ session, onSave }: { session: ExamSession; onSave: () =
       <div className="card glow">
         <h2 className="row" style={{ gap: 10, marginTop: 0 }}><Check size={20} /> Self-grade</h2>
         <p className="small muted" style={{ maxWidth: 780, marginBottom: 8 }}>
-          {s.timedOut ? 'Time up tha — clock ne paper submit kar diya. ' : ''}
-          Neeche model answer hai. Apna answer padho, phir <b>Sahi</b> ya <b>Galat</b> mark karo.
-          App khud se score nahi banata, aur jo tum grade nahi karte wo neutral rehta hai.
+          {s.timedOut ? 'Time ran out — the clock submitted the paper. ' : ''}
+          The model answer is below. Read your answer, then mark it <b>Correct</b> or <b>Wrong</b>.
+          The app does not compute a score on its own, and anything you do not grade stays neutral.
         </p>
         <div className="row spread">
           <div className="row small">
-            <span className="chip" style={{ color: 'var(--green)' }}><Check size={12} /> {summary.correct} sahi</span>
-            <span className="chip" style={{ color: 'var(--red)' }}><X size={12} /> {summary.wrong} galat</span>
-            <span className="chip">{summary.ungraded} bina grade</span>
+            <span className="chip" style={{ color: 'var(--green)' }}><Check size={12} /> {summary.correct} correct</span>
+            <span className="chip" style={{ color: 'var(--red)' }}><X size={12} /> {summary.wrong} wrong</span>
+            <span className="chip">{summary.ungraded} ungraded</span>
           </div>
           <span className="small muted">{ready.label}</span>
         </div>
@@ -518,7 +518,7 @@ function GradingScreen({ session, onSave }: { session: ExamSession; onSave: () =
                   aria-pressed={grade === true}
                   onClick={() => gradeQuestion(q.id, grade === true ? undefined : true)}
                 >
-                  <Check size={13} /> Sahi
+                  <Check size={13} /> Correct
                 </button>
                 <button
                   className={`btn small ${grade === false ? 'primary' : ''}`}
@@ -526,20 +526,20 @@ function GradingScreen({ session, onSave }: { session: ExamSession; onSave: () =
                   onClick={() => gradeQuestion(q.id, grade === false ? undefined : false)}
                   style={grade === false ? { borderColor: 'rgba(248,113,113,.6)' } : undefined}
                 >
-                  <X size={13} /> Galat
+                  <X size={13} /> Wrong
                 </button>
               </div>
             </div>
 
             <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, marginBottom: 10 }}>{q.question}</div>
 
-            <div className="small muted" style={{ marginBottom: 4 }}>Tumhara answer</div>
+            <div className="small muted" style={{ marginBottom: 4 }}>Your answer</div>
             {my
               ? <pre className="codeblock" style={{ marginBottom: 10 }}>{my}</pre>
-              : <div className="small muted" style={{ marginBottom: 10 }}>— khaali chhoda (neutral rahega, galat nahi gina jayega)</div>}
+              : <div className="small muted" style={{ marginBottom: 10 }}>— left blank (stays neutral, not counted as wrong)</div>}
 
             <details>
-              <summary className="small" style={{ cursor: 'pointer', color: 'var(--cyan)' }}>Model answer dekho</summary>
+              <summary className="small" style={{ cursor: 'pointer', color: 'var(--cyan)' }}>Show model answer</summary>
               <pre className="codeblock" style={{ marginTop: 8 }}>{q.answer}</pre>
               {q.explanation && <p className="small muted" style={{ whiteSpace: 'pre-wrap' }}>{q.explanation}</p>}
             </details>
@@ -553,11 +553,11 @@ function GradingScreen({ session, onSave }: { session: ExamSession; onSave: () =
             {summary.graded} / {summary.total} graded · {summary.ungraded} neutral
           </span>
           <div className="row">
-            <button className="btn" onClick={() => { if (confirm('Paper discard karna hai? Answers chale jayenge.')) clearExam(); }}>
+            <button className="btn" onClick={() => { if (confirm('Discard this paper? Your answers will be lost.')) clearExam(); }}>
               Discard
             </button>
             <button className="btn primary" disabled={!ready.ready} onClick={onSave}>
-              <Save size={14} /> Results file karo
+              <Save size={14} /> Save results
             </button>
           </div>
         </div>
@@ -592,13 +592,13 @@ function ReportScreen({
             <div className="chip" style={{ marginBottom: 6 }}>EXAM REPORT</div>
             <div className="h1-look" style={{ margin: 0 }}>{summary.pct === null ? '—' : `${summary.pct}%`}</div>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
-              {summary.correct} sahi / {summary.graded} graded · {summary.ungraded} neutral (bina grade){' '}
+              {summary.correct} correct / {summary.graded} graded · {summary.ungraded} neutral (ungraded){' '}
               · {used} min of {s.blueprint.minutes} min
             </p>
           </div>
           <div className="row" style={{ gap: 18 }}>
-            <div className="stat"><div className="n" style={{ color: 'var(--green)' }}>{summary.correct}</div><div className="l">sahi</div></div>
-            <div className="stat"><div className="n" style={{ color: 'var(--red)' }}>{summary.wrong}</div><div className="l">galat</div></div>
+            <div className="stat"><div className="n" style={{ color: 'var(--green)' }}>{summary.correct}</div><div className="l">correct</div></div>
+            <div className="stat"><div className="n" style={{ color: 'var(--red)' }}>{summary.wrong}</div><div className="l">wrong</div></div>
             <div className="stat"><div className="n">{summary.answered}</div><div className="l">attempted</div></div>
             <div className="stat"><div className="n">{summary.flagged}</div><div className="l">flagged</div></div>
           </div>
@@ -609,16 +609,16 @@ function ReportScreen({
       </div>
 
       <div className="card">
-        <h2 style={{ marginTop: 0 }}><Trophy size={16} /> Kya file hua</h2>
+        <h2 style={{ marginTop: 0 }}><Trophy size={16} /> What was saved</h2>
         <ul className="small muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7 }}>
           <li>
-            {summary.graded} attempt likhe gaye (bank ki same keys par — Question Bank me bhi dikhenge)
-            {summary.ungraded > 0 ? `; ${summary.ungraded} neutral question ka koi record nahi bana.` : '.'}
+            {summary.graded} attempts written (under the bank's own keys — they also show up in the Question Bank)
+            {summary.ungraded > 0 ? `; no record was created for ${summary.ungraded} neutral questions.` : '.'}
           </li>
-          <li>{s.savedMistakes ?? 0} galat answer Mistake Tracker me gaye aur {wrongSections} section(s) ka review level reset hua.</li>
-          <li>{s.savedXp ? `${s.savedXp} XP mila (sirf pehli baar sahi karne par).` : 'Naya XP nahi mila — ye questions pehle bhi sahi ho chuke the.'}</li>
-          <li>{summary.ungraded > 0 ? `${summary.ungraded} question neutral rahe — un par koi attempt ya mistake nahi bani.` : 'Saare questions grade ho gaye the.'}</li>
-          <li className="muted">Seed <code>{s.seed}</code> — isi seed se same paper dobara mil sakta hai.</li>
+          <li>{s.savedMistakes ?? 0} wrong answers went to the Mistake Tracker and the review level of {wrongSections} section(s) was reset.</li>
+          <li>{s.savedXp ? `${s.savedXp} XP earned (only for answers correct the first time).` : 'No new XP — these questions had already been answered correctly.'}</li>
+          <li>{summary.ungraded > 0 ? `${summary.ungraded} questions stayed neutral — no attempt or mistake was created for them.` : 'Every question was graded.'}</li>
+          <li className="muted">Seed <code>{s.seed}</code> — the same seed can reproduce this paper.</li>
         </ul>
       </div>
 
@@ -634,7 +634,7 @@ function ReportScreen({
                 <span style={{ color: 'var(--red)' }}>{sec.wrong} ✗</span>
                 {sec.ungraded > 0 && <span className="muted">{sec.ungraded} neutral</span>}
                 <button className="btn small" onClick={() => onNew({ scope: 'one', sectionId: sec.sectionId })}>
-                  <RotateCcw size={12} /> Isi section ki nayi exam
+                  <RotateCcw size={12} /> New exam on this section
                 </button>
               </div>
             </div>
@@ -653,7 +653,7 @@ function ReportScreen({
               <div key={t} style={{ marginBottom: 10 }}>
                 <div className="row spread small">
                   <span>{TYPE_LABEL[t as QuestionType] ?? t}</span>
-                  <span className="muted">{graded ? `${pct}% (${row.correct}/${graded})` : 'bina grade'}</span>
+                  <span className="muted">{graded ? `${pct}% (${row.correct}/${graded})` : 'ungraded'}</span>
                 </div>
                 <Bar pct={pct} />
               </div>
@@ -664,22 +664,22 @@ function ReportScreen({
 
       <div className="card">
         <div className="row spread">
-          <h2 style={{ marginTop: 0 }}><AlertTriangle size={16} /> Galat answers ({wrong.length})</h2>
+          <h2 style={{ marginTop: 0 }}><AlertTriangle size={16} /> Wrong answers ({wrong.length})</h2>
           {wrong.length > 6 && (
             <button className="btn small" onClick={() => setShowAll((v) => !v)}>
-              {showAll ? 'Kam dikhao' : `Sab ${wrong.length} dikhao`}
+              {showAll ? 'Show less' : `Show all ${wrong.length}`}
             </button>
           )}
         </div>
         {wrong.length === 0 ? (
-          <p className="small muted" style={{ margin: 0 }}>Koi galat answer nahi — clean paper. 🎯</p>
+          <p className="small muted" style={{ margin: 0 }}>No wrong answers — a clean paper. 🎯</p>
         ) : (
           shown.map((q, i) => (
             <div key={q.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
               <div className="row small" style={{ marginBottom: 4 }}>
                 <span className="chip">{String(q.sectionId).toUpperCase()}</span>
                 <span className="chip">{TYPE_LABEL[q.type]}</span>
-                <Link className="small" to={`/lesson/${q.sectionId}/${stageForQuestion(q)}`}>Lesson kholo →</Link>
+                <Link className="small" to={`/lesson/${q.sectionId}/${stageForQuestion(q)}`}>Open lesson →</Link>
               </div>
               <div className="small" style={{ whiteSpace: 'pre-wrap' }}>{i + 1}. {q.question.slice(0, 200)}</div>
             </div>
@@ -690,10 +690,10 @@ function ReportScreen({
       <div className="card">
         <div className="row">
           <button className="btn primary" onClick={onRetake}>
-            <RotateCcw size={14} /> Same paper dobara (same seed)
+            <RotateCcw size={14} /> Retake same paper (same seed)
           </button>
           <button className="btn" onClick={() => onNew()}>
-            <Shuffle size={14} /> Nayi exam banao
+            <Shuffle size={14} /> New exam
           </button>
           <Link className="btn" to="/mistakes"><Bug size={14} /> Mistake Tracker</Link>
           <Link className="btn" to="/review"><BookOpen size={14} /> Review Queue</Link>

@@ -92,7 +92,7 @@ export default function CheatSheets() {
       await navigator.clipboard.writeText(text);
       toast(`Copied: ${label}`, 'success', 1600);
     } catch {
-      toast('Clipboard blocked — text select karke manually copy karo.', 'warning');
+      toast('Clipboard blocked — select the text and copy it manually.', 'warning');
     }
   };
 
@@ -102,8 +102,8 @@ export default function CheatSheets() {
         <div>
           <h1 className="row" style={{ gap: 10 }}><BookMarked size={24} color="var(--violet)" /> CHEAT SHEETS</h1>
           <p className="muted small" style={{ maxWidth: 720 }}>
-            Revision ke liye ready reference. Neeche wale cards seedhe curriculum ke
-            <b> execute-verified</b> code se bane hain — koi copy-paste typo nahi.
+            A ready reference for revision. The cards below are built directly from the curriculum's
+            <b> execute-verified</b> code — no copy-paste typos.
           </p>
         </div>
         <div className="row" style={{ gap: 8 }}>
@@ -119,12 +119,12 @@ export default function CheatSheets() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Concept, keyword ya code search karo…"
+              placeholder="Search concepts, keywords or code…"
               style={{ border: 'none', background: 'transparent', outline: 'none', flex: 1, color: 'inherit' }}
             />
           </div>
           <select value={track} onChange={(e) => setTrack(e.target.value)} aria-label="Filter by track">
-            <option value="all">Saare tracks</option>
+            <option value="all">All tracks</option>
             {TRACK_DEFS.map((d) => <option key={d.id} value={d.id}>{t(d.nameKey as LocaleKey)}</option>)}
           </select>
         </div>
@@ -156,8 +156,8 @@ export default function CheatSheets() {
       {!cards.length && (
         <div className="empty-state">
           <span className="big">🔎</span>
-          <b>Koi snippet match nahi hua</b>
-          <span className="small">Search clear karo ya doosra track chuno.</span>
+          <b>No snippet matched</b>
+          <span className="small">Clear the search or choose another track.</span>
         </div>
       )}
       <div className="grid2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', alignItems: 'start' }}>
@@ -173,14 +173,14 @@ export default function CheatSheets() {
             <pre className="codeblock">{c.code}</pre>
             {c.output && <div className="small muted"><b>Output:</b> <code className="inline-code">{c.output.split('\n')[0].slice(0, 90)}</code></div>}
             {c.tip && <p className="small muted" style={{ marginBottom: 0 }}>{c.tip}</p>}
-            <Link className="btn small no-print" style={{ marginTop: 8 }} to={`/lesson/${c.sid}/learn`}>Lesson kholo <ArrowRight size={12} /></Link>
+            <Link className="btn small no-print" style={{ marginTop: 8 }} to={`/lesson/${c.sid}/learn`}>Open lesson <ArrowRight size={12} /></Link>
           </div>
         ))}
       </div>
       {cards.length > limit && (
         <div style={{ textAlign: 'center', marginTop: 14 }} className="no-print">
           <button className="btn" onClick={() => setLimit((l) => l + 48)}>
-            Aur {Math.min(48, cards.length - limit)} dikhao ({cards.length - limit} baaki)
+            Show {Math.min(48, cards.length - limit)} more ({cards.length - limit} left)
           </button>
         </div>
       )}

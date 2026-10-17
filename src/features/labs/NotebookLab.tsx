@@ -87,7 +87,7 @@ export default function NotebookLab() {
 
   if (!manifest) return <div className="loading">Loading notebooks…</div>;
   if (!manifest.length) {
-    return <div className="card muted">Koi notebook publish nahi hua — <code>npm run notebooks:write</code> chalao.</div>;
+    return <div className="card muted">No notebooks have been published yet — run <code>npm run notebooks:write</code>.</div>;
   }
 
   const meta = manifest.find((m) => m.file === active);
@@ -107,8 +107,8 @@ export default function NotebookLab() {
           <div>
             <h1 style={{ margin: 0 }}><BookOpen size={18} /> Notebook Lab</h1>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
-              Jupyter notebooks jo poori tarah isi app me chalte hain. Author time par har cell execute hua hai;
-              &quot;app runtime&quot; wale cells yahin NumPy/Pandas ke bundled wheels se chalte hain.
+              Jupyter notebooks that run entirely inside this app. Every cell was executed at author time;
+              &quot;app runtime&quot; cells run here from the bundled NumPy/Pandas wheels.
             </p>
           </div>
           <span className="row">
@@ -135,8 +135,8 @@ export default function NotebookLab() {
         </aside>
 
         <main className="nb-main">
-          {failed && <div className="card" style={{ color: 'var(--red)' }}>Notebook load nahi hua — `public/notebooks/{active}` check karo.</div>}
-          {!nb && !failed && <div className="card muted">Notebook load ho raha hai…</div>}
+          {failed && <div className="card" style={{ color: 'var(--red)' }}>The notebook failed to load — check `public/notebooks/{active}`.</div>}
+          {!nb && !failed && <div className="card muted">Loading notebook…</div>}
           {nb && (
             <>
               <div className="card">
@@ -168,8 +168,8 @@ export default function NotebookLab() {
       </div>
 
       <div className="row" style={{ marginTop: 12 }}>
-        <button className="btn ghost" onClick={() => pick(manifest[0].file)}><ChevronLeft size={14} /> Pehla notebook</button>
-        <span className="small muted">Notebooks `content/notebooks` me edit hote hain, phir `npm run notebooks:write` se publish.</span>
+        <button className="btn ghost" onClick={() => pick(manifest[0].file)}><ChevronLeft size={14} /> First notebook</button>
+        <span className="small muted">Notebooks are edited in `content/notebooks`, then published with `npm run notebooks:write`.</span>
       </div>
     </div>
   );

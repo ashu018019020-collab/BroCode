@@ -11,6 +11,7 @@ import { useCurriculum } from '../../core/data/curriculum';
 import { useStore } from '../../core/storage/store';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { sectionProgress, currentSection, isMastered, nextBestAction, codingTasksDone, recentStageEvents } from '../../core/learning/progress';
+import { resumeTarget } from '../../core/learning/resume';
 import { dueReview, openMistakes } from '../../core/learning/review';
 import { bankAccuracy, pctText } from '../../core/assessment/accuracy';
 import { mockPassed, notebookCellsRun } from '../../core/learning/coverage';
@@ -185,6 +186,12 @@ export default function Dashboard() {
    */
   const courseIndex = useCourseIndex();
   const sectionPct = useSectionPct();
+  /**
+   * The dashboard's own "Continue" control uses the same resume resolver as the footer and the
+   * landing page, so the three buttons cannot disagree — and a brand-new learner is sent to the
+   * first real lesson rather than to a generic section page.
+   */
+  const resume = resumeTarget(state, sections);
   const courseCards = courseIndex?.courses ?? [];
   const activeCard = useMemo(() => activeCourse(courseCards, sectionPct), [courseCards, sectionPct]);
   const courseTarget = activeCard ?? courseCards[0] ?? null;
@@ -412,7 +419,7 @@ export default function Dashboard() {
               <span>{masterPct}%</span>
             </div>
             <Bar pct={masterPct} />
-            <Link className="btn small btn-block" to={`/lesson/${cur.id}/learn`}>
+            <Link className="btn small btn-block" to={resume.route} title={resume.reason}>
               {t('dash.continue')} <ArrowRight size={13} />
             </Link>
           </div>

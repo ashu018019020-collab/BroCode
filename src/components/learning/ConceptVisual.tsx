@@ -98,7 +98,7 @@ export function ConceptVisual({ kind, concept, section, activeIndex }: { kind: V
               <span className="cvtype">{r.type}</span>
             </div>
           ))}
-          <div className="small muted" style={{ marginTop: 4 }}>Har naam memory me apni value hold karta hai — type Python khud detect karta hai.</div>
+          <div className="small muted" style={{ marginTop: 4 }}>Each name holds its value in memory — Python detects the type itself.</div>
         </div>
       );
     }
@@ -115,7 +115,7 @@ export function ConceptVisual({ kind, concept, section, activeIndex }: { kind: V
               <span key={i} className="cvbox"><b>{i}</b><span>{ch === ' ' ? '␣' : ch}</span></span>
             ))}
           </div>
-          <div className="small muted">Pehla element index 0 par hai — yahi sabse common counting mistake hai.</div>
+          <div className="small muted">The first element is at index 0 — this is the most common counting mistake.</div>
         </div>
       );
     }
@@ -133,7 +133,7 @@ export function ConceptVisual({ kind, concept, section, activeIndex }: { kind: V
               <span className="cvval">{s}</span>
             </div>
           ))}
-          <div className="small muted" style={{ marginTop: 4 }}>Loop har iteration me ek-ek item uthata hai.</div>
+          <div className="small muted" style={{ marginTop: 4 }}>The loop takes one item per iteration.</div>
         </div>
       );
     }
@@ -151,7 +151,7 @@ export function ConceptVisual({ kind, concept, section, activeIndex }: { kind: V
               <span className="cvval">{clip(p.v)}</span>
             </div>
           ))}
-          <div className="small muted" style={{ marginTop: 4 }}>Key se value turant milti hai — isliye dictionary lookup fast hota hai.</div>
+          <div className="small muted" style={{ marginTop: 4 }}>A key gives its value instantly — that is why dictionary lookup is fast.</div>
         </div>
       );
     }

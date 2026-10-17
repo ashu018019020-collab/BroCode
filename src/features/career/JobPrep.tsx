@@ -41,8 +41,8 @@ export default function JobPrep() {
         <div>
           <h1 className="row" style={{ gap: 10 }}><ClipboardList size={24} color="var(--cyan)" /> JOB PREP</h1>
           <p className="muted small" style={{ maxWidth: 720 }}>
-            Job-ready banne ka tracker. Har tick tumhare browser me save hota hai, aur readiness
-            score real signals (<b>{signals.mastered} mastered sections</b>, mock rounds, open mistakes) se banta hai.
+            A tracker for becoming job-ready. Every tick is saved in your browser, and the readiness
+            score is built from real signals (<b>{signals.mastered} mastered sections</b>, mock rounds, open mistakes).
           </p>
         </div>
         <div className="row" style={{ gap: 10 }}>
@@ -84,7 +84,7 @@ export default function JobPrep() {
                           style={{ padding: 4, width: 26, height: 26, justifyContent: 'center', flex: 'none' }}
                           aria-pressed={on}
                           aria-label={it.label}
-                          onClick={() => { toggleJobPrep(it.id); toast(on ? 'Unticked — dobara kar lo.' : '✓ Tick ho gaya!', on ? 'info' : 'success', 1800); }}
+                          onClick={() => { toggleJobPrep(it.id); toast(on ? 'Unticked — do it again.' : '✓ Ticked!', on ? 'info' : 'success', 1800); }}
                         >
                           {/* The (hidden) icon keeps the button a real 26px tap target when unticked. */}
                           <Check size={13} style={{ opacity: on ? 1 : 0 }} />
@@ -119,12 +119,12 @@ export default function JobPrep() {
             <h2>Next best career step</h2>
             {(() => {
               const next = all.filter((it) => !done(it.id)).sort((a, b) => b.weight - a.weight)[0];
-              if (!next) return <p className="muted small">Sab tick ho gaya — applications bhejo aur interviews crack karo. 🚀</p>;
+              if (!next) return <p className="muted small">Everything is ticked — send applications and crack interviews. 🚀</p>;
               return (
                 <>
                   <b className="small">{next.label}</b>
                   <p className="muted small" style={{ margin: '4px 0 8px' }}>{next.hint}</p>
-                  <Link className="btn small primary" to={next.to}>Abhi karo <ArrowRight size={12} /></Link>
+                  <Link className="btn small primary" to={next.to}>Do it now <ArrowRight size={12} /></Link>
                 </>
               );
             })()}
@@ -132,7 +132,7 @@ export default function JobPrep() {
 
           <div className="card" style={{ borderLeft: '3px solid var(--pink)' }}>
             <p className="small" style={{ margin: 0, fontStyle: 'italic' }}>
-              “Portfolio &gt; certificate. Ek deployed project, 10 certifications se zyada bolta hai.”
+              “Portfolio &gt; certificate. One deployed project says more than ten certifications.”
             </p>
           </div>
         </div>

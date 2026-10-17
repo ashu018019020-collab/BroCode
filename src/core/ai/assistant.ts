@@ -23,7 +23,7 @@ import { askProject } from './project';
 import { retrieveKnowledge, type KnowledgeIndex } from './knowledge';
 
 export interface Answer {
-  /** Hinglish answer text. Always sourced from real content or real state. */
+  /** Plain-English answer text. Always sourced from real content or real state. */
   text: string;
   /** Where the answer came from, so the learner can read the full lesson. */
   sources: { title: string; route: string; reference?: string }[];
@@ -229,10 +229,10 @@ export function askLocal(
   // The two things a learner asks about ONE item: "give me the answer" and "how right was mine?".
   // Both are answered from the question in context plus the same keyword rubric every other surface
   // scores with — never from retrieval, which can only talk about the subject.
-  if (/\b(poora (answer|jawab)|answer (do|dedo|batao|chahiye|kya hai)|jawab (do|batao)|solution (do|batao))/i.test(q)) {
+  if (/\b(poora (answer|jawab)|answer (do|dedo|batao|chahiye|kya hai)|jawab (do|batao)|solution (do|batao)|full answer|model answer|show (the )?answer|give (me )?(the )?answer|what is the answer)\b/i.test(q)) {
     return quickAnswer(state, sections, context);
   }
-  if (/\b(kitna sahi|kitne sahi|kitna score|score (karo|do|kitna)|mera answer|accuracy)\b/i.test(q)) {
+  if (/\b(kitna sahi|kitne sahi|kitna score|score (karo|do|kitna)|mera answer|accuracy|how (correct|right|wrong|good) is my answer|score my answer|grade my answer)\b/i.test(q)) {
     return quickScoreAnswer(state, sections, context);
   }
 
@@ -262,9 +262,9 @@ export function askLocal(
     const cur = currentSection(sections, state);
     return {
       text:
-        `Is sawaal ka jawab bundled curriculum me nahi mila — main galat answer invent nahi karunga. ` +
-        `Try karo: "${cur.title}" lesson kholo, ya sawaal ko concept ke naam se poocho ` +
-        `(jaise "list vs tuple", "lambda", "try except").`,
+        `This question was not found in the bundled curriculum — I will not invent a wrong answer. ` +
+        `Try: open the "${cur.title}" lesson, or ask using the concept name ` +
+        `(for example "list vs tuple", "lambda", "try except").`,
       sources: [{ title: `${cur.title} lesson`, route: `/lesson/${cur.id}/learn` }],
       confidence: 0,
       kind: 'fallback',
@@ -287,7 +287,7 @@ export function askLocal(
     if (!hits.length) {
       if (/\b(interview|project|portfolio|build idea)\b/i.test(question)) {
         return {
-          text: 'Is category me matching published content nahi mila — main project ya interview material invent nahi karunga. Sawaal ko kisi specific topic, course ya section ke saath poochho.',
+          text: 'No matching published content was found in this category — I will not invent project or interview material. Ask the question with a specific topic, course, or section.',
           sources: context?.route ? [{ title: context.pageTitle ?? 'Current page', route: context.route.split('?')[0] }] : [],
           confidence: 0,
           kind: 'fallback',
@@ -329,7 +329,7 @@ export function askLocal(
 
   const sources = hits.map((h, i) => ({ title: meta[h.id]?.title ?? h.source, route: meta[h.id]?.route ?? '/courses' })).slice(0, 3);
   const extra = top.score < 0.12
-    ? '\n\n(Ye match thoda weak hai — neeche source khol ke confirm kar lo.)'
+    ? '\n\n(This match is a little weak — open the source below to confirm.)'
     : '';
   return { text: text + extra, sources, confidence: Number(top.score.toFixed(3)), kind: 'curriculum' };
 }
@@ -341,14 +341,14 @@ export function quickExplain(state: AppState, sections: Section[], context?: Ass
   const section = activeSection ?? coachedSection;
   const why = activeSection ? `Current lesson: ${activeSection.title}.` : coachWhy;
   const coach = coachFor(section, state, why);
-  if (!coach?.concept) return { text: 'Abhi explain karne ke liye koi concept ready nahi hai.', sources: [], confidence: 0, kind: 'fallback' };
+  if (!coach?.concept) return { text: 'There is no concept ready to explain right now.', sources: [], confidence: 0, kind: 'fallback' };
   const c = coach.concept;
   // Reasoning comes from EVERY surface the learner failed on, not just the lab.
   const retake = coach.mistakes[0];
   const retakeBlock = retake
-    ? `\n\nDobara karo (${retake.label}):\n${retake.question.slice(0, 220)}` +
-      (retake.myAnswer ? `\nTumne likha tha: ${retake.myAnswer.slice(0, 160)}` : '') +
-      `\nSahi jawab: ${retake.correct.slice(0, 200)}`
+    ? `\n\nRetry (${retake.label}):\n${retake.question.slice(0, 220)}` +
+      (retake.myAnswer ? `\nYou wrote: ${retake.myAnswer.slice(0, 160)}` : '') +
+      `\nCorrect answer: ${retake.correct.slice(0, 200)}`
     : '';
   const schedBlock = schedule ? `\n\nSchedule: ${schedule.text}` : '';
   return {
@@ -373,7 +373,7 @@ export function quickMistakes(state: AppState, sections: Section[]): Answer {
   const open = state.mistakes.filter((m) => !m.fixed);
   if (!open.length) {
     return {
-      text: 'Abhi koi open mistake nahi hai — Mistake Tracker saaf hai. Agla step: Timed Exam ya Question Bank me khud ko test karo.',
+      text: 'There are no open mistakes right now — the Mistake Tracker is clear. Next step: test yourself in the Timed Exam or Question Bank.',
       sources: [{ title: 'Question Bank', route: '/questions' }, { title: 'Timed Exam', route: '/exam' }],
       confidence: 0,
       kind: 'state',
@@ -410,9 +410,9 @@ export function quickMistakes(state: AppState, sections: Section[]): Answer {
   return {
     text:
       `Open mistakes: ${open.length}` +
-      (bankish.length ? ` (${bankish.length} Question Bank / Timed Exam se — coding lab ke alawa bhi)` : '') +
+      (bankish.length ? ` (${bankish.length} from the Question Bank / Timed Exam — beyond the coding lab)` : '') +
       `\n${[...bySource.entries()].map(([k, v]) => `${k}: ${v}`).join(' · ')}` +
-      `\n\nSabse zaroori:\n${lines.join('\n')}` +
+      `\n\nMost important:\n${lines.join('\n')}` +
       (schedLines.length ? `\n\nRe-teach schedule (spaced repetition):\n${schedLines.join('\n')}` : ''),
     sources: [
       { title: 'Mistake Tracker', route: '/mistakes' },
@@ -445,9 +445,9 @@ export function quickFix(state: AppState, sections: Section[], context?: Assista
     const ladder = hintLadder(explainTraceback(''), 1, false);
     return {
       text:
-        'Abhi is cell me koi error nahi hai — main ek error invent nahi karunga.\n\n' +
-        'Cell ko Run karo (Ctrl+↵). Galti hui to poora traceback aayega, aur main usi line par fix bataunga.\n\n' +
-        `Tab tak **${t.label}** ke liye hint:\n${ladder.map((h, i) => `${i + 1}. ${h}`).join('\n')}`,
+        'There is no error in this cell right now — I will not invent one.\n\n' +
+        'Run the cell (Ctrl+↵). If it fails, the full traceback will appear and I will explain the fix at that line.\n\n' +
+        `Meanwhile, a hint for **${t.label}**:\n${ladder.map((h, i) => `${i + 1}. ${h}`).join('\n')}`,
       sources: [{ title: t.label, route: t.route }],
       confidence: 1,
       kind: 'hint',
@@ -462,21 +462,21 @@ export function quickFix(state: AppState, sections: Section[], context?: Assista
 
   const body = expl
     ? `**${expl.kind}** — ${expl.headline}\n` +
-      `Kya hua: ${expl.what}\n` +
-      `Kyun: ${expl.cause}\n` +
+      `What happened: ${expl.what}\n` +
+      `Why: ${expl.cause}\n` +
       `Fix: ${expl.fix}` +
-      (lineText ? `\n\nTumhari line ${expl.line}:  ${lineText}` : '') +
+      (lineText ? `\n\nYour line ${expl.line}:  ${lineText}` : '') +
       (expl.example ? `\nExample: ${expl.example}` : '')
-    : `Traceback ka aakhri line: ${lastLine}`;
+    : `Last line of the traceback: ${lastLine}`;
 
   const steps = debugSteps(expl, inputCalls > 0).slice(0, 5);
   const inputNote = inputCalls > 0
-    ? `\n\nIs cell me input() ${inputCalls}× hai — PROGRAM INPUT box me ${inputCalls} line do (ek value per line), phir dobara Run karo.`
+    ? `\n\nThis cell has input() ${inputCalls}× — provide ${inputCalls} lines in the PROGRAM INPUT box (one value per line), then Run again.`
     : '';
 
   return {
     text:
-      `Is cell ki galti${context?.where ? ` (${context.where})` : ''}:\n\n${body}` +
+      `Error in this cell${context?.where ? ` (${context.where})` : ''}:\n\n${body}` +
       `\n\nDebug plan:\n${steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}${inputNote}`,
     sources: [
       { title: `${cur.title} → ${expl?.topic ?? 'debug'}`, route: `/lesson/${cur.id}/debug` },
@@ -519,7 +519,7 @@ export function quickHint(state: AppState, sections: Section[], context?: Assist
     const qRungs = questionRungs(qc, rung);
     return {
       text:
-        `**${context?.where ?? qc.source ?? 'Is question'}**\n${qRungs.map((h, i) => `${i + 1}. ${h}`).join('\n')}` +
+        `**${context?.where ?? qc.source ?? 'This question'}**\n${qRungs.map((h, i) => `${i + 1}. ${h}`).join('\n')}` +
         (rung > 1 ? '' : `\n\nQ: ${clip(qc.text, 180)}`),
       sources: [{
         title: qc.source ?? 'Question Bank',
@@ -547,10 +547,10 @@ export function quickHint(state: AppState, sections: Section[], context?: Assist
  */
 function sectionRungs(sec: Section, state: AppState): string[] {
   const nba = nextBestAction(sec, state);
-  const rungs = [`Is section me abhi: ${nba.label} — ${nba.reason}`];
+  const rungs = [`Right now in this section: ${nba.label} — ${nba.reason}`];
   const coach = coachFor(sec, state, nba.reason);
   if (coach?.concept) rungs.push(`${coach.concept.title}: ${coach.concept.body.slice(0, 170)}`);
-  rungs.push('Pehle dimaag me output predict karo, phir Run — jo farak aaye wahi asli signal hai.');
+  rungs.push('Predict the output in your head first, then Run — the difference is the real signal.');
   return rungs;
 }
 
@@ -567,10 +567,10 @@ const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n).trimEnd(
 /** How each type wants its answer shaped. */
 function structureFor(type?: string): string {
   switch (type) {
-    case 'coding': case 'solved': case 'debug': return 'input → step-by-step logic → output → ek edge case';
-    case 'logic': return 'predict → kyun (reason) → verify karne ka tarika';
-    case 'checkpoint': case 'theory': return 'chhota definition → ek example → kyun important hai';
-    default: return 'definition → chhota example → practical use → edge case';
+    case 'coding': case 'solved': case 'debug': return 'input → step-by-step logic → output → one edge case';
+    case 'logic': return 'predict → why (reason) → how to verify';
+    case 'checkpoint': case 'theory': return 'short definition → one example → why it matters';
+    default: return 'definition → short example → practical use → edge case';
   }
 }
 
@@ -587,11 +587,11 @@ function questionRungs(q: QuestionContext, rung: number): string[] {
   const mine = (q.mine ?? '').trim();
   const all = [
     mine
-      ? `Tumne likha: "${clip(mine, 120)}" — isi ko 2 line me tight karo.`
-      : 'Pehle apne shabdon me 2 line likho: kya hai + ek chhota example.',
-    keys.length ? `In key points ko chhuo: ${keys.slice(0, 3).join(' · ')}` : 'Model answer ke keywords note karo aur apne answer me use karo.',
+      ? `You wrote: "${clip(mine, 120)}" — tighten this to 2 lines.`
+      : 'First write 2 lines in your own words: what it is + one short example.',
+    keys.length ? `Cover these key points: ${keys.slice(0, 3).join(' · ')}` : "Note the model answer's keywords and use them in your answer.",
     `Structure: ${structureFor(q.type)}`,
-    keys.length > 3 ? `Baaki points: ${keys.slice(3).join(' · ')}` : 'Stuck ho to "Poora answer" dabao — main model answer dikha dunga.',
+    keys.length > 3 ? `Other points: ${keys.slice(3).join(' · ')}` : 'If you are stuck, press "Full answer" — I will show the model answer.',
   ];
   return all.slice(0, Math.max(1, Math.min(all.length, rung)));
 }
@@ -614,7 +614,7 @@ export function quickAnswer(state: AppState, sections: Section[], context?: Assi
   const q = context?.question;
   if (!q) {
     return {
-      text: 'Kis question ka answer chahiye? Question Bank ya lesson stage me kisi question ke saath 🤖 AI se hint kholo — phir main usi item ka answer, hint aur percentage dunga.',
+      text: 'Which question do you want the answer to? Open the AI hint from any question in the Question Bank or a lesson stage — then I will give the answer, hints, and percentage for that exact item.',
       sources: [{ title: 'Question Bank', route: '/questions' }, { title: 'Interview Mode', route: '/interview-mode' }],
       confidence: 1,
       kind: 'state',
@@ -625,9 +625,9 @@ export function quickAnswer(state: AppState, sections: Section[], context?: Assi
   if (q.methodOnly) {
     return {
       text:
-        `Is item ke paas model answer nahi hai — V15 document ne yahan apna METHOD diya hai (checkpoint / production-scenario prompt):\n\n` +
+        `This item has no model answer — the V15 document provides its METHOD here (checkpoint / production-scenario prompt):\n\n` +
         `${clip(q.model, 600)}\n\n` +
-        'Is method ko follow karke apna answer likho; percentage tab dunga jab tumne likha ho.',
+        'Follow this method to write your answer; I will give a percentage once you have written one.',
       sources: [
         { title: q.source ?? 'Playbook V15', route: '/playbook' },
         { title: q.sectionId ? `${q.sectionId.toUpperCase()} checkpoint` : 'Question Bank', route: q.sectionId ? `/lesson/${q.sectionId}/checkpoint` : '/questions' },
@@ -641,8 +641,8 @@ export function quickAnswer(state: AppState, sections: Section[], context?: Assi
   return {
     text:
       `**Q:** ${clip(q.text, 220)}\n\n**Answer:**\n${clip(q.model, 700)}` +
-      (keys.length ? `\n\nRubric ke key points: ${keys.join(' · ')}` : '') +
-      '\n\nPehle khud likho, phir compare karo — "Mera answer kitna sahi" dabao to percentage bata dunga.',
+      (keys.length ? `\n\nRubric key points: ${keys.join(' · ')}` : '') +
+      '\n\nWrite your own answer first, then compare — press "How correct is my answer" to get a percentage.',
     sources: [{ title, route }],
     confidence: 1,
     kind: 'curriculum',
@@ -666,8 +666,8 @@ export function quickScoreAnswer(state: AppState, sections: Section[], context?:
     return {
       text:
         (q.methodOnly
-          ? 'Is item ka koi model answer nahi hai (document ne method diya hai), isliye main rubric percentage nahi banaunga.'
-          : 'Is question par tumne abhi kuch likha nahi hai, to percentage kaise dun? Pehle apna answer likho (wo save ho jata hai), phir ye button dabao.') +
+          ? 'This item has no model answer (the document provides a method), so I will not generate a rubric percentage.'
+          : 'You have not written anything for this question yet, so how can I give a percentage? Write your answer first (it is saved), then press this button.') +
         `\n\nQ: ${clip(q.text, 180)}`,
       sources: [{ title, route }],
       confidence: 1,
@@ -684,8 +684,8 @@ export function quickScoreAnswer(state: AppState, sections: Section[], context?:
     return {
       text:
         (stub
-          ? `Tumne abhi itna likha hai ki measure hi nahi kar sakta ("${clip(mine, 60)}") — 1-2 line me apne shabdon me likho: kya hai + ek example. Tab percentage ka matlab banega.`
-          : 'Is model answer se rubric nahi ban paya (wo bahut chhota hai) — main koi percentage invent nahi karunga. Model answer khud padho aur "Sahi tha / Galti hui" se grade karo.') +
+          ? `You have written too little to measure ("${clip(mine, 60)}") — write 1-2 lines in your own words: what it is + one example. Then a percentage will mean something.`
+          : 'A rubric could not be built from this model answer (it is too short) — I will not invent a percentage. Read the model answer yourself and grade with "Correct / Mistake".') +
         `\n\nQ: ${clip(q.text, 180)}`,
       sources: [{ title, route }],
       confidence: 1,
@@ -693,14 +693,14 @@ export function quickScoreAnswer(state: AppState, sections: Section[], context?:
     };
   }
 
-  const verdict = r.pct >= 80 ? '✅ bahut sahi' : r.pct >= 50 ? '⚠️ aadha-adhura' : '🔴 kamzor — dobara likho';
+  const verdict = r.pct >= 80 ? '✅ very correct' : r.pct >= 50 ? '⚠️ half-done' : '🔴 weak — write it again';
   return {
     text:
-      `Tumhare answer ka rubric score: **${r.pct}%** ${verdict}\n` +
+      `Rubric score for your answer: **${r.pct}%** ${verdict}\n` +
       (r.missing.length
-        ? `\nYe key points chhoot gaye:\n${r.missing.map((m) => `• ${m.split('|').join(' / ')}`).join('\n')}`
-        : '\nSaare rubric points cover ho gaye — ab bas structure tighten karo.') +
-      '\n\nModel answer se compare karna ho to "Poora answer" dabao. Self-grade (sahi/galat) tumhara hai — mastery usi par chalta hai, ye percentage feedback hai.',
+        ? `\nThese key points were missed:\n${r.missing.map((m) => `• ${m.split('|').join(' / ')}`).join('\n')}`
+        : '\nAll rubric points are covered — now just tighten the structure.') +
+      '\n\nTo compare with the model answer, press "Full answer". The self-grade (correct/wrong) is yours — mastery depends on it; this percentage is feedback.',
     sources: [{ title, route }, { title: 'Mistake Tracker', route: '/mistakes' }],
     confidence: 1,
     kind: 'state',
@@ -716,7 +716,7 @@ export function quickAccuracy(state: AppState, sections: Section[]): Answer {
 
   if (!overall.answered) {
     return {
-      text: 'Abhi tak koi answer record nahi hua — Question Bank ya kisi lesson stage me answers do, phir main percentage ke hisaab se bataunga ki kahan kamzor ho.',
+      text: 'No answers have been recorded yet — answer questions in the Question Bank or any lesson stage, then I will tell you where you are weak based on the percentage.',
       sources: [{ title: 'Question Bank', route: '/questions' }],
       confidence: 1,
       kind: 'state',
@@ -728,11 +728,11 @@ export function quickAccuracy(state: AppState, sections: Section[]): Answer {
   const strong = ranked.slice(-1)[0];
   return {
     text:
-      `Answer accuracy: **${pctText(overall.pct)}** (${overall.correct}/${overall.graded} sahi, ${overall.answered} answers likhe).\n` +
-      (overall.avg !== null ? `Rubric average: ${pctText(overall.avg)} — likhe hue answers ka model answer se match.\n` : '') +
-      (weak.length ? `\nSabse kamzor:\n${weak.map(([sid, a]) => `• ${name(sid)} — ${pctText(a.pct)} (${a.correct}/${a.graded})`).join('\n')}` : '') +
-      (strong ? `\nSabse strong: ${name(strong[0])} — ${pctText(strong[1].pct)}` : '') +
-      '\n\nPercentage self-graded answers se banti hai (sahi/galat tum batate ho), aur rubric average tumhare likhe answers ka hai. Koi number estimate nahi hai.',
+      `Answer accuracy: **${pctText(overall.pct)}** (${overall.correct}/${overall.graded} correct, ${overall.answered} answers written).\n` +
+      (overall.avg !== null ? `Rubric average: ${pctText(overall.avg)} — match of written answers with the model answer.\n` : '') +
+      (weak.length ? `\nWeakest:\n${weak.map(([sid, a]) => `• ${name(sid)} — ${pctText(a.pct)} (${a.correct}/${a.graded})`).join('\n')}` : '') +
+      (strong ? `\nStrongest: ${name(strong[0])} — ${pctText(strong[1].pct)}` : '') +
+      '\n\nThe percentage comes from self-graded answers (you mark correct/wrong), and the rubric average is for the answers you wrote. No number is estimated.',
     sources: [{ title: 'Progress', route: '/progress' }, { title: 'Mistake Tracker', route: '/mistakes' }],
     confidence: 1,
     kind: 'state',
@@ -753,7 +753,7 @@ export function quickNext(
   if (active) {
     const action = nextBestAction(active, state);
     return {
-      text: `Tum abhi **${active.title}** me ho.\n\nIs section me next: **${action.label}** — ${action.reason}`,
+      text: `You are currently in **${active.title}**.\n\nNext in this section: **${action.label}** — ${action.reason}`,
       sources: [{ title: `${active.title} · ${action.label}`, route: action.route }],
       confidence: 1,
       kind: 'next',
@@ -763,7 +763,7 @@ export function quickNext(
   const cur = currentSection(sections, state);
   const nba = nextBestAction(cur, state);
   return {
-    text: `Next: **${t.label}**\n${t.reason}\n\nIs section me abhi: ${nba.label} — ${nba.reason}`,
+    text: `Next: **${t.label}**\n${t.reason}\n\nRight now in this section: ${nba.label} — ${nba.reason}`,
     sources: [{ title: t.label, route: t.route }],
     confidence: 1,
     kind: 'next',
@@ -829,7 +829,7 @@ export function quickDebug(state: AppState, sections: Section[]): Answer {
   const last = [...state.mistakes].sort((a, b) => b.attempts - a.attempts)[0];
   if (!last) {
     return {
-      text: 'Abhi koi mistake record nahi hai. Playground me kuch galat chalao — main us traceback se step-by-step debug plan banaunga.',
+      text: 'There is no recorded mistake yet. Break something in the Playground — I will build a step-by-step debug plan from that traceback.',
       sources: [{ title: 'Code Playground', route: '/playground' }],
       confidence: 0,
       kind: 'debug',
@@ -839,7 +839,7 @@ export function quickDebug(state: AppState, sections: Section[]): Answer {
   const steps = debugSteps(null, false);
   return {
     text:
-      `Sabse zyada repeat hui mistake: **${last.topic}** (${last.attempts}×)\n` +
+      `Most repeated mistake: **${last.topic}** (${last.attempts}×)\n` +
       `Question: ${last.question.slice(0, 160)}\n\nFix plan:\n${steps.slice(0, 5).map((s, i) => `${i + 1}. ${s}`).join('\n')}`,
     sources: [{ title: sec ? `${sec.title} lesson` : 'Mistake Tracker', route: sec ? `/lesson/${sec.id}/debug` : '/mistakes' }],
     confidence: 1,
@@ -869,13 +869,13 @@ export function quickStatus(state: AppState, sections: Section[]): Answer {
   const all = bankAccuracy(state);
   return {
     text:
-      `Tum "${cur.title}" par ho — mastery ${p.masterPct}%.\n` +
-      `Answer accuracy: is section me ${pctText(acc.pct)} (${acc.correct}/${acc.graded} sahi)` +
-      ` · poore app me ${pctText(all.pct)} (${all.correct}/${all.graded}).\n` +
-      `Open mistakes: ${open}${bankish ? ` (${bankish} Question Bank / Exam se)` : ''} · ` +
-      `Review due: ${due} of ${tracked.length} tracked · Streak: ${state.streak.current} din.\n` +
+      `You are on "${cur.title}" — mastery ${p.masterPct}%.\n` +
+      `Answer accuracy: ${pctText(acc.pct)} in this section (${acc.correct}/${acc.graded} correct)` +
+      ` · ${pctText(all.pct)} across the app (${all.correct}/${all.graded}).\n` +
+      `Open mistakes: ${open}${bankish ? ` (${bankish} from the Question Bank / Exam)` : ''} · ` +
+      `Review due: ${due} of ${tracked.length} tracked · Streak: ${state.streak.current} days.\n` +
       (next ? `Next re-teach: ${next.id.toUpperCase()} — ${reviewLabel(next)}.\n` : '') +
-      (w ? `Weak topic: ${w.topic} (${w.count}×).` : 'Koi weak topic detect nahi hua.'),
+      (w ? `Weak topic: ${w.topic} (${w.count}×).` : 'No weak topic detected.'),
     sources: [{ title: cur.title, route: `/lesson/${cur.id}/learn` }, { title: 'Progress', route: '/progress' }],
     confidence: 1,
     kind: 'state',

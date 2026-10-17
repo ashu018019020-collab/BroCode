@@ -29,13 +29,15 @@ extracted from it and transformed into an interactive curriculum — nothing is 
   in-browser Python (bundled Pyodide, NumPy + pandas wheels included).
 - **Error intelligence** — tracebacks are parsed to file/line/column, the exact line is
   highlighted in the editor (and named in the notebook's Errors tab), and a teaching card
-  explains the mistake in Hinglish or English with hints and a one-click Fix It where
-  derivable. A notebook cell can file the failure straight into the Mistake Tracker.
+  explains the mistake in clear English, with optional Hinglish when that language is selected,
+  plus hints and a one-click Fix It where derivable. A notebook cell can file the failure straight
+  into the Mistake Tracker.
 - **Learning dashboard + roadmap** — 8 tracks (Python Core → Interview + Projects) mapped
   onto the 29 PDF sections, with prerequisite gates, real XP/levels, streaks, daily
   mission, mistake tracker and spaced review.
-- **Hinglish-first i18n** — instant Hinglish/English toggle, persisted locally; missing
-  keys fall back to English.
+- **English-first i18n** — English is the permanent default for every new visitor; Hinglish is an
+  optional, explicitly selected alternative. The choice is persisted locally and missing translations
+  always fall back to English.
 - **100% offline** — Monaco, icons, fonts, Python runtime, SQL engine, datasets and the
   PDF are all bundled. No CDN, no cloud APIs, no telemetry.
 
@@ -124,10 +126,16 @@ Every line reports ✓ ready, ⚠ warning, or ✕ missing.
 
 ## Language system
 
+**English is the official default.** A visitor with no saved choice gets English immediately — the
+app never guesses from the browser language. The `English | Hinglish` switch on Settings (also in the
+quick-actions menu) changes the interface in place and stores the explicit choice;
+returning users get the language they picked, and every missing translation falls back to English.
+
 `src/app/i18n/` holds the packs: `locales.ts` (English + Hinglish dictionaries, keyed) and
-`index.tsx` (`I18nProvider`, `useI18n().t`, instant switch, `localStorage` persistence,
-English fallback for missing keys). Adding strings: add the key to `en`, then translate
-in `hinglish`. UI labels only — lesson content is PDF-authored.
+`index.tsx` (`I18nProvider`, `useI18n().t`, instant switch, `localStorage` persistence, English
+fallback for missing keys). Adding strings: add the key to `en` first, then translate in `hinglish`.
+UI labels and app-generated copy live in the packs/source; lesson prose is PDF-authored and is being
+translated in reviewed batches (see `docs/LOCALIZATION-GUIDE.md`).
 
 ## Adding offline packages
 

@@ -323,7 +323,7 @@ export default function QuestionBank() {
       question: q.question.slice(0, 140),
       // The learner's own words — the tracker used to file a fixed placeholder here, so a review
       // never showed what was actually written.
-      myAnswer: written.trim() ? written.slice(0, 220) : '(self-grade: bina likhe galat)',
+      myAnswer: written.trim() ? written.slice(0, 220) : '(self-grade: marked wrong with no answer)',
       correct: q.answer.slice(0, 220),
       type: mistakeTypeFor(q.type),
       source: 'bank',
@@ -337,9 +337,9 @@ export default function QuestionBank() {
       <div>
         <h2 className="h1-look row" style={{ gap: 10 }}><ListChecks size={22} /> Question Bank</h2>
         <div className="card">
-          <p className="muted small">Content pack load ho raha hai…</p>
+          <p className="muted small">Loading the content pack…</p>
           <p className="muted small">
-            Agar banks missing hain to pipeline chalao: <code>npm run questions:seed</code> — phir
+            If the banks are missing, run the pipeline: <code>npm run questions:seed</code> — then
             {' '}<code>npm run questions:validate</code>.
           </p>
         </div>
@@ -353,8 +353,8 @@ export default function QuestionBank() {
       <h1 className="row" style={{ gap: 10 }}><Database size={22} /> Question Bank</h1>
       <p className="muted small">
         Local content pack — <b>{manifest.published}</b> questions across <b>{manifest.sections.length}</b> sections.
-        Har question apne section aur apne stage me rehta hai. Answer likho (save ho jata hai) ya code ke liye
-        notebook kholo, phir khud grade karo: sahi/galat tum batate ho, app koi score nahi banata.
+        Every question lives in its section and its stage. Write an answer (it saves automatically) or open the
+        notebook for code, then grade yourself: you decide correct or wrong, and the app computes no score.
       </p>
 
       {/* Four figures, four tones: each card publishes its own `--accent`, so the row reads as four
@@ -378,8 +378,8 @@ export default function QuestionBank() {
                 true ratio, but a bare 100% over one answer reads as if the whole bank were aced. */}
             <div className="l">
               {bankAcc.graded > 0
-                ? `answer accuracy · ${bankAcc.correct}/${bankAcc.graded} sahi`
-                : `answer accuracy · ${bankAcc.answered} likhe, grade nahi kiya`}
+                ? `answer accuracy · ${bankAcc.correct}/${bankAcc.graded} correct`
+                : `answer accuracy · ${bankAcc.answered} written, not graded`}
             </div>
           </div>
           <i className="qb-meter" aria-hidden="true"><b style={{ width: `${Math.min(100, bankAcc.pct ?? 0)}%` }} /></i>
@@ -400,11 +400,11 @@ export default function QuestionBank() {
             pack had already overshot 9.6x, so it read a frozen 100% forever — a figure that cannot
             move claims progress nobody measured. Now: the wrong answers still waiting to be redone,
             which climbs on every galat self-grade and falls as they are fixed. */}
-        <div className="stat-card tone-amber" title={`${redo.fixed} fix ho chuke · baaki galat answers dobara karne hain`}>
+        <div className="stat-card tone-amber" title={`${redo.fixed} fixed · wrong answers still to redo`}>
           <div className="ic"><RotateCcw size={18} /></div>
           <div>
             <div className="n">{shownRedo}</div>
-            <div className="l">galat answers to redo</div>
+            <div className="l">wrong answers to redo</div>
           </div>
           {/* The card's own number over its own history: the share of every wrong answer the learner
               has not cleared yet, so the rail falls as the pile is worked through. */}
@@ -413,11 +413,11 @@ export default function QuestionBank() {
       </div>
 
       <p className="muted small" style={{ marginTop: -4 }}>
-        Section rows {manifest.baseline}/section baseline (PDF ke hisaab se) dikhati hain — jo sections
-        kam hain unme honestly <i> CONTENT_INCOMPLETE</i> flag laga hai, aur wahi gaps authoring ke liye
-        listed hain. Upar wala amber card content nahi, tumhara kaam batata hai: kitne galat answers abhi
-        dobara karne baaki hain.
-        Galat answer dene par mistake tracker entry banti hai aur us section ka review 1 din baad due ho jata hai.
+        Section rows show the {manifest.baseline}/section baseline (as the PDF defines it) — sections that fall
+        short carry an honest <i> CONTENT_INCOMPLETE</i> flag, and those gaps are listed for authoring. The amber
+        card above does not describe content, it describes your work: how many wrong answers are still waiting to
+        be redone.
+        A wrong answer creates a mistake tracker entry and makes that section's review due one day later.
       </p>
 
       {/* Sections first, full width; the questions come UNDER them. The bank used to sit in a 300px
@@ -436,7 +436,7 @@ export default function QuestionBank() {
             <input
               value={sectionSearch}
               onChange={(e) => setSectionSearch(e.target.value)}
-              placeholder="Section dhoondo…"
+              placeholder="Search sections…"
               aria-label="Search sections"
               style={{ border: 'none', background: 'transparent', flex: 1, padding: '6px 4px', minWidth: 0 }}
             />
@@ -464,14 +464,14 @@ export default function QuestionBank() {
                 </button>
               );
             })}
-            {!sectionList.length && <p className="muted small">“{sectionSearch}” se koi section match nahi hua.</p>}
+            {!sectionList.length && <p className="muted small">No section matches “{sectionSearch}”.</p>}
           </div>
         </div>
 
         {/* The bank itself — now the full width of the page. */}
         <div className="card">
           {!entry ? (
-            <p className="muted small">Upar wali list se ek section choose karo.</p>
+            <p className="muted small">Choose a section from the list above.</p>
           ) : (
             <>
               <div className="row spread">
@@ -483,7 +483,7 @@ export default function QuestionBank() {
               <p className="muted small" style={{ marginTop: 4 }}>
                 {bank ? `${bank.questions.length} questions` : 'loading bank…'}
                 {secAcc && secAcc.graded > 0
-                  ? ` · tumne ${secAcc.graded} grade kiye: ${secAcc.correct} sahi, ${secAcc.graded - secAcc.correct} galat`
+                  ? ` · you graded ${secAcc.graded}: ${secAcc.correct} correct, ${secAcc.graded - secAcc.correct} wrong`
                   : ''}
                 {' · '}answer accuracy <b>{pctText(secAcc?.pct ?? null)}</b>
                 {secAcc?.avg !== null && secAcc?.avg !== undefined
@@ -522,22 +522,22 @@ export default function QuestionBank() {
                   <input
                     value={filter.search}
                     onChange={(e) => { setFilter((f) => ({ ...f, search: e.target.value })); setShown(STAGE_PAGE_SIZE); }}
-                    placeholder="Question me dhoondo…"
+                    placeholder="Search questions…"
                     aria-label="Search questions"
                     style={{ border: 'none', background: 'transparent', flex: 1, padding: '6px 4px', minWidth: 0 }}
                   />
                 </div>
                 <label className="small row" style={{ gap: 6 }}>
                   <input type="checkbox" checked={onlyMustKnow} onChange={(e) => { setOnlyMustKnow(e.target.checked); setShown(STAGE_PAGE_SIZE); }} />
-                  sirf MUST-KNOW
+                  MUST-KNOW only
                 </label>
-                <label className="small row" style={{ gap: 6 }} title="Playbook V15 (doosra source) ke items">
+                <label className="small row" style={{ gap: 6 }} title="Items from Playbook V15 (second source)">
                   <input type="checkbox" checked={onlyPlaybook} onChange={(e) => { setOnlyPlaybook(e.target.checked); setShown(STAGE_PAGE_SIZE); }} />
-                  📘 sirf Playbook V15
+                  📘 Playbook V15 only
                 </label>
                 <label className="small row" style={{ gap: 6 }}>
                   <input type="checkbox" checked={onlyWrong} onChange={(e) => { setOnlyWrong(e.target.checked); setShown(STAGE_PAGE_SIZE); }} />
-                  sirf jo galat kiye (repeat)
+                  Wrong only (repeat)
                 </label>
                 {hasDrafts && (
                   <label className="small row" style={{ gap: 6 }}>
@@ -546,7 +546,7 @@ export default function QuestionBank() {
                       checked={filter.includeDrafts}
                       onChange={(e) => setFilter((f) => ({ ...f, includeDrafts: e.target.checked }))}
                     />
-                    drafts dikhao
+                    Show drafts
                   </label>
                 )}
                 <button className="btn small" onClick={() => { setRevealed({}); setOnlyWrong(false); setOnlyMustKnow(false); setOnlyPlaybook(false); }}>Reset view</button>
@@ -562,7 +562,7 @@ export default function QuestionBank() {
                           <span className="small muted">{group.items.length} of {group.total}</span>
                         </h4>
                         <Link className="btn small" to={`/lesson/${entry.sectionId}/${group.stage}`}>
-                          Stage kholo <ExternalLink size={12} />
+                          Open stage <ExternalLink size={12} />
                         </Link>
                       </div>
                     )}
@@ -599,7 +599,7 @@ export default function QuestionBank() {
                         style={{ marginBottom: 8 }}
                         onClick={() => setGroupShown((g) => ({ ...g, [group.stage!]: (g[group.stage!] ?? PER_GROUP) + PER_GROUP }))}
                       >
-                        Aur dikhao ({group.total - group.items.length} baaki)
+                        Show more ({group.total - group.items.length} left)
                       </button>
                     )}
                   </div>
@@ -607,23 +607,23 @@ export default function QuestionBank() {
                 {!rows.length && (
                   <p className="muted small">
                     {onlyWrong
-                      ? 'Is section me abhi koi galat-kiya question nahi hai — pehle grade karo.'
+                      ? 'No wrong-answer questions in this section yet — grade some answers first.'
                       : onlyPlaybook
-                        ? 'Is section me Playbook V15 ka koi item nahi mila — playbook chapter index kholo.'
+                        ? 'No Playbook V15 item in this section — open the playbook chapter index.'
                       : onlyMustKnow
-                        ? 'Is filter me koi MUST-KNOW question nahi mila.'
-                        : 'Is filter me koi question nahi mila — filter badlo.'}
+                        ? 'No MUST-KNOW question matches this filter.'
+                        : 'No question matches this filter — change the filters.'}
                   </p>
                 )}
               </div>
 
               {filter.type !== 'all' && rows.length > shown && (
                 <button className="btn small" style={{ marginTop: 8 }} onClick={() => setShown((n) => n + STAGE_PAGE_SIZE)}>
-                  Aur dikhao ({rows.length - shown} baaki)
+                  Show more ({rows.length - shown} left)
                 </button>
               )}
               <p className="muted small" style={{ marginTop: 8 }}>
-                {rows.length} of {bank?.questions.length ?? 0} match · galat par +1 mistake tracker entry, sahi par +{XP_PER_CORRECT} XP (pehli baar).
+                {rows.length} of {bank?.questions.length ?? 0} match · a wrong answer adds +1 mistake tracker entry, a correct one adds +{XP_PER_CORRECT} XP (first time).
               </p>
             </>
           )}
@@ -679,10 +679,10 @@ function QuestionCard({
             <span
               className={`chip ${graded.done === true ? 'easy' : graded.done === false ? 'hard' : 'medium'}`}
               title={graded.done === undefined
-                ? 'Answer save ho gaya hai — sahi/galat khud grade karo, mastery usi se badhti hai'
-                : 'Percentage = model answer ke keyword rubric se match'}
+                ? 'Your answer is saved — grade it correct or wrong yourself; that is what raises mastery'
+                : 'Percentage = keyword match against the model answer'}
             >
-              {graded.done === true ? '✓ sahi' : graded.done === false ? '✗ galat' : '✍ likha'}
+              {graded.done === true ? '✓ correct' : graded.done === false ? '✗ wrong' : '✍ written'}
               {attemptPct(graded) !== null ? ` ${pctText(attemptPct(graded))}` : ''}
               {graded.tries && graded.tries > 1 ? ` ×${graded.tries}` : ''}
             </span>
@@ -690,7 +690,7 @@ function QuestionCard({
           {/* Playbook provenance, read from the import's own `pb:<chapter>` tag. It is kept out of
               the generic tag list below, which would otherwise show "playbook" and "pb:18". */}
           {playbookChapter(q) && (
-            <Link className="chip" to={`/questions?section=${q.sectionId}&chapter=${playbookChapter(q)}`} title="Is chapter ke saare items yahin filter karo">
+            <Link className="chip" to={`/questions?section=${q.sectionId}&chapter=${playbookChapter(q)}`} title="Filter every item in this chapter here">
               📘 ch.{playbookChapter(q)}
             </Link>
           )}
@@ -707,10 +707,10 @@ function QuestionCard({
           </Link>
           {/* The offline assistant, scoped to this item: its answer, a hint, and the percentage of
               whatever is written below. Lazy — built only for the row the learner opened. */}
-          <button className={`btn small${ai ? ' primary' : ''}`} onClick={() => setAi((v) => !v)} aria-expanded={ai} title="Is question ka answer, hint aur tumhare answer ka percentage">
+          <button className={`btn small${ai ? ' primary' : ''}`} onClick={() => setAi((v) => !v)} aria-expanded={ai} title="This question's answer, a hint, and the percentage of your answer">
             <Bot size={12} /> AI
           </button>
-          <button className="btn small primary" onClick={onToggle}>{open ? 'Answer chhupao' : 'Answer dekho'}</button>
+          <button className="btn small primary" onClick={onToggle}>{open ? 'Hide answer' : 'Show answer'}</button>
         </span>
       </div>
       <p style={{ margin: '8px 0 0' }} className="small">{q.question}</p>
@@ -723,7 +723,7 @@ function QuestionCard({
         className="console"
         rows={3}
         value={written}
-        placeholder="My answer… (save ho jata hai)"
+        placeholder="My answer… (it saves automatically)"
         aria-label="My answer"
         onChange={(e) => setWritten(e.target.value)}
         style={{ marginTop: 8 }}
@@ -735,13 +735,13 @@ function QuestionCard({
           method instead of a model answer) — the silence there was the confusing part. */}
       <div className="row" style={{ marginTop: 8 }}>
         <button className={`btn small${checked ? '' : ' primary'}`} onClick={onCheck} aria-expanded={checked}>
-          {checked ? <RotateCcw size={12} /> : <Check size={12} />} {checked ? 'Dobara check' : 'Check answer'}
+          {checked ? <RotateCcw size={12} /> : <Check size={12} />} {checked ? 'Check again' : 'Check answer'}
         </button>
-        <button className="btn small" disabled={index <= 0} onClick={() => onNav(-1)} title="Pichla question">
-          <ChevronLeft size={12} /> Pichla
+        <button className="btn small" disabled={index <= 0} onClick={() => onNav(-1)} title="Previous question">
+          <ChevronLeft size={12} /> Previous
         </button>
-        <button className="btn small" disabled={index >= total - 1} onClick={() => onNav(1)} title="Agla question">
-          Agla <ChevronRight size={12} />
+        <button className="btn small" disabled={index >= total - 1} onClick={() => onNav(1)} title="Next question">
+          Next <ChevronRight size={12} />
         </button>
         <span className="small muted">Q {index + 1} / {total}{words ? ` · ${words} words` : ''}</span>
       </div>
@@ -750,21 +750,21 @@ function QuestionCard({
         <p className="small" style={{ marginTop: 6 }}>
           <span
             className={`chip ${rubric.pct >= 70 ? 'easy' : rubric.pct >= 40 ? 'medium' : 'hard'}`}
-            title="Percentage = model answer ke keyword rubric se match"
+            title="Percentage = keyword match against the model answer"
           >
-            {rubric.pct >= 80 ? '✅ bahut sahi' : rubric.pct >= 50 ? '⚠️ aadha-adhura' : '🔴 kamzor'} · {rubric.pct}% match
+            {rubric.pct >= 80 ? '✅ excellent' : rubric.pct >= 50 ? '⚠️ partial' : '🔴 weak'} · {rubric.pct}% match
           </span>{' '}
           {rubric.missing.length > 0
-            ? <span className="muted">Hint: ye key points chhoot rahe hain — {rubric.missing.map((m) => m.split('|')[0]).join(', ')}</span>
-            : <span className="muted">Saare rubric points cover ho gaye — ab structure tighten karo.</span>}
+            ? <span className="muted">Hint: these key points are missing — {rubric.missing.map((m) => m.split('|')[0]).join(', ')}</span>
+            : <span className="muted">All rubric points are covered — now tighten the structure.</span>}
         </p>
       ) : (
         <p className="small muted" style={{ marginTop: 6 }}>
           {!written.trim()
-            ? 'Pehle apna answer likho, phir Check answer dabao.'
+            ? 'Write your answer first, then press Check answer.'
             : !isAnswer(written)
-              ? 'Itna chhota likha hai ki measure nahi ho sakta — 1-2 line me apne shabdon me likho.'
-              : 'Is item ka model answer nahi hai (document ne method diya hai), to match percentage banta hi nahi — "Answer dekho" se model padho aur khud grade karo.'}
+              ? 'This is too short to measure — write 1-2 lines in your own words.'
+              : 'This item has no model answer (the document gives a method), so no match percentage can be computed — read the method under "Show answer" and grade yourself.'}
         </p>
       ))}
 
@@ -774,11 +774,11 @@ function QuestionCard({
               horizontally scrolling box — you had to drag sideways to read a sentence. It wraps
               down the card now, like every other paragraph in the app. */}
           <pre className="codeblock" style={{ fontSize: '.78rem', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{q.answer || '(no answer)'}</pre>
-          {q.explanation && <p className="small muted" style={{ marginTop: 6 }}><b>Kyun:</b> {q.explanation}</p>}
+          {q.explanation && <p className="small muted" style={{ marginTop: 6 }}><b>Why:</b> {q.explanation}</p>}
           <div className="row" style={{ marginTop: 8 }}>
-            <span className="small muted">Khud grade karo:</span>
-            <button className="btn small" onClick={() => onGrade(q, true, written)}><Check size={12} /> Sahi tha</button>
-            <button className="btn small" onClick={() => onGrade(q, false, written)}><X size={12} /> Galti hui</button>
+            <span className="small muted">Grade yourself:</span>
+            <button className="btn small" onClick={() => onGrade(q, true, written)}><Check size={12} /> Correct</button>
+            <button className="btn small" onClick={() => onGrade(q, false, written)}><X size={12} /> Wrong</button>
           </div>
           <p className="small muted" style={{ marginTop: 4 }}>
             source: {q.source}

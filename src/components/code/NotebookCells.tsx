@@ -205,16 +205,16 @@ function CodeCell({ cell, value, run, execCount, cellIndex, busy, locked, score,
         <span className="row">
           <span className="nb-label">In [{execCount ?? cell.executionCount ?? ' '}]</span>
           {badge && <Chip kind={badge.kind}>{badge.text}</Chip>}
-          {/* The cell's own percentage: the stored run score, so "kitna sahi chala" is visible on
+          {/* The cell's own percentage: the stored run score, so the pass rate is visible on
               the cell itself and not only in the toolbar total. */}
           {typeof score === 'number' && <Chip kind={score >= 100 ? 'easy' : 'hard'}>{score}%</Chip>}
           {cell.label && <span className="small muted">{cell.label}</span>}
         </span>
         <span className="row">
-          <button className="btn small" onClick={onRun} disabled={busy || locked} aria-label="Run this cell" title="Ctrl+↵ chalao · Shift+↵ chalao aur agle cell par jao">
+          <button className="btn small" onClick={onRun} disabled={busy || locked} aria-label="Run this cell" title="Ctrl+↵ to run · Shift+↵ to run and move to the next cell">
             {busy ? <Loader size={12} /> : <Play size={12} />} Run
           </button>
-          <button className="btn small" onClick={onReset} title="Cell ko original code par wapas"><RotateCcw size={12} /> Reset</button>
+          <button className="btn small" onClick={onReset} title="Restore the cell to its original code"><RotateCcw size={12} /> Reset</button>
           <button className="btn small" onClick={() => void navigator.clipboard?.writeText(value).catch(() => {})}><Copy size={12} /> Copy</button>
           <button className="btn small" onClick={onSave}><Save size={12} /> Save</button>
         </span>
@@ -265,7 +265,7 @@ function CodeCell({ cell, value, run, execCount, cellIndex, busy, locked, score,
           )}
         </div>
       ) : (
-        <p className="small muted" style={{ margin: 0 }}>Abhi chalaya nahi — ▶ Run dabao (ya Ctrl+↵).</p>
+        <p className="small muted" style={{ margin: 0 }}>Not run yet — press ▶ Run (or Ctrl+↵).</p>
       )}
     </div>
   );
@@ -287,7 +287,7 @@ function ExplainPane({
   const steps = debugSteps(expl, hasInput);
   const hints = hintLadder(expl, hint, hasInput);
   if (!expl && !simple) {
-    return <div className="card small muted">Is error ka pattern tutor me nahi mila — traceback ki sabse neeche wali line padho.</div>;
+    return <div className="card small muted">The tutor has no pattern for this error — read the last line of the traceback.</div>;
   }
   return (
     <div className="card jup-explain">
@@ -308,7 +308,7 @@ function ExplainPane({
       )}
 
       <div className="row" style={{ marginTop: 8 }}>
-        {hints.length > 0 && <button className="btn small" onClick={onHint}>💡 Naya hint ({hint})</button>}
+        {hints.length > 0 && <button className="btn small" onClick={onHint}>💡 New hint ({hint})</button>}
         {expl && (
           <button
             className="btn small"
@@ -370,7 +370,7 @@ export function LibraryShelf({ onInsert, open: openProp }: { onInsert?: (code: s
             ))}
           </div>
           <p className="small muted" style={{ margin: '6px 0 0' }}>
-            Datasets pehle se filesystem me hain — `pd.read_csv(&quot;students.csv&quot;)` seedha chalega.
+            The datasets are already on the filesystem — `pd.read_csv(&quot;students.csv&quot;)` works as-is.
           </p>
         </div>
       )}
@@ -676,13 +676,13 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
           <button className="btn" onClick={stop} disabled={!runningAll && !busy}>
             <Square size={12} /> Stop
           </button>
-          <button className="btn" onClick={restart} title="Saare naam clear karo, code rehne do"><RotateCcw size={13} /> Restart kernel</button>
-          <button className="btn" onClick={resetCells} title="Edits hatakar original cells wapas lao"><Trash2 size={13} /> Reset cells</button>
-          <button className="btn" onClick={() => addCell('# naya cell\n', 'blank')}><Plus size={13} /> Cell</button>
+          <button className="btn" onClick={restart} title="Clear all names but keep the code"><RotateCcw size={13} /> Restart kernel</button>
+          <button className="btn" onClick={resetCells} title="Discard edits and restore the original cells"><Trash2 size={13} /> Reset cells</button>
+          <button className="btn" onClick={() => addCell('# new cell\n', 'blank')}><Plus size={13} /> Cell</button>
           <button
             className="btn"
             onClick={downloadIpynb}
-            title="Poora notebook .ipynb file me download karo — tumhare edits aur run outputs ke saath (real Jupyter me khulega)"
+            title="Download the whole notebook as an .ipynb file — with your edits and run outputs (opens in real Jupyter)"
             aria-label="Download this notebook as a .ipynb file"
           >
             <Download size={13} /> .ipynb
@@ -695,14 +695,14 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
             {/* Run = attempted, passing = the runs that succeeded. Two numbers because a cell that
                 raised is still a cell the learner worked through. */}
             {acc.answered > 0 && (
-              <span className="small muted" title="Chale hue cells me se kitne pass hue (score 100)">
+              <span className="small muted" title="How many run cells passed (score 100)">
                 pass {pctText(acc.pct)}
               </span>
             )}
             {busy && <span className="small muted">{runningAll ? 'run all…' : 'running…'}</span>}
           </span>
           <Chip kind={pyReady ? 'easy' : 'medium'}>
-            {pyReady ? '✓ Python ready' : 'Python boot ho raha hai… 5–15s'}
+            {pyReady ? '✓ Python ready' : 'Starting Python… 5–15s'}
           </Chip>
         </div>
       )}
@@ -710,10 +710,10 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
       {showVars && (
         <div className="card jup-vars">
           <div className="row spread">
-            <b className="small">🧠 Kernel variables — isi notebook ka session</b>
-            <span className="small muted">Import ek baar, neeche ke har cell me available</span>
+            <b className="small">🧠 Kernel variables — this notebook's session</b>
+            <span className="small muted">Import once, available in every cell below</span>
           </div>
-          {!vars.length && <p className="small muted" style={{ margin: '6px 0 0' }}>Abhi khaali — pehla cell Run karo.</p>}
+          {!vars.length && <p className="small muted" style={{ margin: '6px 0 0' }}>Empty for now — run the first cell.</p>}
           {vars.map(([n, t, v]) => (
             <div className="jup-var" key={n}>
               <code className="jup-var-n">{n}</code>
@@ -754,23 +754,23 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
        */}
       <div className="nb-nav" role="group" aria-label="Notebook navigation" data-nb-nav={slug}>
         <span className="row">
-          <button className="btn small" onClick={() => moveCell(-1)} title="Pichla code cell (Alt+↑)">
-            <ChevronUp size={12} /> Pichla cell
+          <button className="btn small" onClick={() => moveCell(-1)} title="Previous code cell (Alt+↑)">
+            <ChevronUp size={12} /> Previous cell
           </button>
-          <button className="btn small" onClick={() => moveCell(1)} title="Agla code cell (Alt+↓)">
-            <ChevronDown size={12} /> Agla cell
+          <button className="btn small" onClick={() => moveCell(1)} title="Next code cell (Alt+↓)">
+            <ChevronDown size={12} /> Next cell
           </button>
           <span className="small muted">{codeCells.length} cells</span>
         </span>
         {(nav?.prev || nav?.next) && (
           <span className="row">
             {nav?.prev && (
-              <button className="btn small" onClick={nav.prev.run} title={`Pichla notebook: ${nav.prev.label}`}>
+              <button className="btn small" onClick={nav.prev.run} title={`Previous notebook: ${nav.prev.label}`}>
                 ← {nav.prev.label}
               </button>
             )}
             {nav?.next && (
-              <button className="btn small primary" onClick={nav.next.run} title={`Agla notebook: ${nav.next.label}`}>
+              <button className="btn small primary" onClick={nav.next.run} title={`Next notebook: ${nav.next.label}`}>
                 {nav.next.label} →
               </button>
             )}
@@ -793,7 +793,7 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
             rows={2}
           />
           <p className="small muted" style={{ margin: '4px 0 0' }}>
-            Program input() maange to yahan values do (ek per line) — phir us cell ko dobara Run karo.
+            If the program calls input(), provide values here (one per line) — then run that cell again.
           </p>
         </div>
       )}

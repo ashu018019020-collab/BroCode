@@ -58,13 +58,16 @@ export function reviewInfo(state: AppState, id: string, now = Date.now()): Revie
   };
 }
 
-/** Hinglish one-liner for the schedule, e.g. "Level 1 · 3-din interval · 2 din baaki". */
+/** One-line schedule summary, e.g. "Review level 1 · 3-day interval · 2 days left". */
 export function reviewLabel(info: ReviewInfo): string {
-  const base = `Review level ${info.level} · ${info.intervalDays}-din interval`;
-  if (info.due && info.overdueDays > 0) return `${base} · ${info.overdueDays} din late — abhi due`;
-  if (info.due) return `${base} · aaj due`;
-  if (info.daysLeft === 1) return `${base} · kal due`;
-  return `${base} · ${info.daysLeft} din baaki`;
+  const base = `Review level ${info.level} · ${info.intervalDays}-day interval`;
+  if (info.due && info.overdueDays > 0) {
+    const late = info.overdueDays === 1 ? '1 day late' : `${info.overdueDays} days late`;
+    return `${base} · ${late} — due now`;
+  }
+  if (info.due) return `${base} · due today`;
+  if (info.daysLeft === 1) return `${base} · due tomorrow`;
+  return `${base} · ${info.daysLeft} days left`;
 }
 
 /** The next record after the learner marks a section reviewed (mirrors the Review page). */

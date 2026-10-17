@@ -28,9 +28,9 @@ export interface CoachScheduleInput {
   due: boolean;
   daysLeft: number;
   overdueDays: number;
-  /** Human line, e.g. "Review level 1 · 3-din interval · kal due". */
+  /** Human line, e.g. "Review level 1 · 3-day interval · due tomorrow". */
   text: string;
-  /** What happens after coaching, e.g. "Coach ke baad → level 2 (7-din interval)". */
+  /** What happens after coaching, e.g. "After coaching → level 2 (7-day interval)". */
   nextText: string;
 }
 
@@ -138,11 +138,11 @@ export const stageForMistakeType = (type: string) => STAGE_FOR_TYPE[type] ?? 'co
  */
 export function mistakeRoute(m: Mistake): { route: string; label: string } {
   const src = sourceOf(m);
-  if (src === 'bank') return { route: '/questions', label: 'Question Bank me dobara' };
-  if (src === 'exam') return { route: '/exam', label: 'Timed Exam dobara' };
-  if (src === 'lab') return { route: '/playground', label: 'Playground me fix karo' };
-  if (src === 'mock') return { route: '/mock-interviews', label: 'Mock round dobara' };
-  if (src === 'interview') return { route: '/interview-mode', label: 'Interview Mode dobara' };
+  if (src === 'bank') return { route: '/questions', label: 'Retry in Question Bank' };
+  if (src === 'exam') return { route: '/exam', label: 'Retry Timed Exam' };
+  if (src === 'lab') return { route: '/playground', label: 'Fix it in the Playground' };
+  if (src === 'mock') return { route: '/mock-interviews', label: 'Retry mock round' };
+  if (src === 'interview') return { route: '/interview-mode', label: 'Retry Interview Mode' };
   if (src === 'final') return { route: '/final-assessment', label: 'Final Assessment' };
   const stage = stageForMistakeType(m.type);
   return { route: `/lesson/${m.section}/${stage}`, label: `${String(m.section).toUpperCase()} ${stage} stage` };
@@ -166,9 +166,12 @@ export function scheduleUrgency(info: CoachScheduleInput | null): number {
 }
 
 export function scheduleReason(info: CoachScheduleInput): string {
-  if (info.due && info.overdueDays > 0) return `spaced repetition: ${info.overdueDays} din late (level ${info.level})`;
-  if (info.due) return `spaced repetition: aaj due (level ${info.level})`;
-  return `spaced repetition: ${info.daysLeft} din me due (level ${info.level})`;
+  if (info.due && info.overdueDays > 0) {
+    const late = info.overdueDays === 1 ? '1 day late' : `${info.overdueDays} days late`;
+    return `spaced repetition: ${late} (level ${info.level})`;
+  }
+  if (info.due) return `spaced repetition: due today (level ${info.level})`;
+  return `spaced repetition: due in ${info.daysLeft} days (level ${info.level})`;
 }
 
 /* ------------------------------- ranking -------------------------------- */
@@ -230,8 +233,8 @@ export function rankCandidates(
       scheduleUrgency(schedule);
 
     const reasons: string[] = [`${list.length} open mistake${list.length === 1 ? '' : 's'}`];
-    if (bank > 0) reasons.push(`${bank} Question Bank / Timed Exam se (model answer ke against galat)`);
-    if (repeat) reasons.push('ek mistake dobara hui — pattern ban raha hai');
+    if (bank > 0) reasons.push(`${bank} from the Question Bank / Timed Exam (wrong against the model answer)`);
+    if (repeat) reasons.push('a mistake repeated — a pattern is forming');
     if (schedule) reasons.push(scheduleReason(schedule));
     out.push({
       sectionId, title: section.title, score, reasons,

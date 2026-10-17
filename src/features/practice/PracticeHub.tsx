@@ -108,10 +108,11 @@ export default function PracticeHub() {
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 14, alignItems: 'flex-start' }}>
           <div style={{ minWidth: 260 }}>
             <div className="chip" style={{ marginBottom: 6 }}>PRACTICE</div>
-            <h1 style={{ margin: 0 }}>Chuno kya master karna hai.</h1>
+            <h1 style={{ margin: 0 }}>Choose what to master.</h1>
             <p className="muted small" style={{ margin: '8px 0 0', maxWidth: 620 }}>
-              Subject chuno → uske chapters chuno → us chapter ke questions kholo. Question Bank, Playbook ke
-              coding labs, timed papers aur spaced-repetition — sab ek jagah, sab asli numbers ke saath.
+              Pick a subject → pick its chapters → open that chapter's questions. Question Bank, coding
+              labs from the Playbook, timed papers and spaced repetition — all in one place, all with
+              real numbers.
             </p>
           </div>
           <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
@@ -126,7 +127,7 @@ export default function PracticeHub() {
       <div className="card fadeup">
         {!weak.length && (
           <p className="muted small" style={{ margin: 0 }}>
-            Abhi koi weak area nahi — jab koi jawab galat hoga, coach yahan us section ko dikhayega.
+            No weak area yet — when an answer goes wrong, the coach will show that section here.
           </p>
         )}
         {weak.map((w) => (
@@ -145,7 +146,7 @@ export default function PracticeHub() {
         {due > 0 && (
           <Link className="q-row tone-blue" to="/review">
             <span className="ic"><Repeat size={14} /></span>
-            <span className="t">Spaced repetition — aaj due</span>
+            <span className="t">Spaced repetition — due today</span>
             <b>{due}</b>
             <ChevronRight size={14} />
           </Link>
@@ -208,8 +209,8 @@ export default function PracticeHub() {
       </div>
 
       <p className="small muted" style={{ marginTop: 12 }}>
-        Interview ke sawaalon ke liye <Link to="/interviews">Interview pillar</Link> kholo — wahan mock,
-        defense aur final assessment hain.
+        For interview questions, open the <Link to="/interviews">Interview pillar</Link> — it holds the mock,
+        defense and final assessment rounds.
       </p>
     </div>
   );
@@ -248,7 +249,7 @@ function SubjectPanel({ subject, rows, counts, loaded, type }: {
           </span>
         </div>
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <Link className="btn small ghost" to="/practice"><ArrowLeft size={13} /> Saare subjects</Link>
+          <Link className="btn small ghost" to="/practice"><ArrowLeft size={13} /> All subjects</Link>
           {start && (
             <Link className="btn primary" to={bankHref(start.id, type)}>
               <Play size={14} /> Start practice
@@ -270,10 +271,10 @@ function SubjectPanel({ subject, rows, counts, loaded, type }: {
         })}
       </div>
 
-      {!loaded && <p className="muted small">Chapters load ho rahe hain…</p>}
+      {!loaded && <p className="muted small">Loading chapters…</p>}
       {loaded && !rows.length && (
         <p className="muted small" style={{ margin: 0 }}>
-          Is subject ke liye koi published chapter nahi mila — manifest me {String(subject.from).padStart(2, '0')}–{String(subject.to).padStart(2, '0')} ka kuch nahi hai.
+          No published chapter found for this subject — the manifest has nothing in the {String(subject.from).padStart(2, '0')}–{String(subject.to).padStart(2, '0')} range.
         </p>
       )}
       {rows.map((c) => {
@@ -294,8 +295,8 @@ function SubjectPanel({ subject, rows, counts, loaded, type }: {
         );
       })}
       <p className="small muted" style={{ margin: '10px 0 0' }}>
-        Chapter kholne par Question Bank usi section aur usi type par filter hokar khulta hai — wahin likh kar
-        save karo, wahin se mistake tracker aur review banega.
+        Opening a chapter opens the Question Bank filtered to that section and type — write and save there;
+        the mistake tracker and review are built from it.
       </p>
     </div>
   );

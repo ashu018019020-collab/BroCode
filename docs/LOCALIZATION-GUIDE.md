@@ -4,6 +4,23 @@ How English and Hinglish work in BroCode: the model, the authoring rules, where 
 applied, and the exact coverage that exists today. Every number below was produced by
 `npm run i18n:report` and `npm run i18n:sections` against the current repository.
 
+## English is the official default
+
+English is the permanent, authoritative language of the product:
+
+- a first visit with no saved choice is **English**, even when the browser itself is configured for
+  Hindi; the app never auto-detects a language;
+- new registrations, signed-in sessions, refreshes, redirects and deployments all start in English
+  unless the learner explicitly chose Hinglish before;
+- Hinglish is an **optional** alternative, selected with the `English | Hinglish` switch on
+  Settings (the same switch is in the quick-actions menu); the explicit choice is persisted in
+  `localStorage` under `aiml:lang`;
+- a missing translation falls back to **English**, never to Hinglish.
+
+The one count that is deliberately *not* a language default is restoring an older saved preference:
+`normalizeLocale` still reads the legacy `hinglish` id as `hi`, so a learner who chose Hinglish before
+the rename keeps that choice. That is an explicit choice, not detection.
+
 ## The two languages
 
 - **English** — simple, correct, beginner-friendly.

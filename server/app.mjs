@@ -13,6 +13,10 @@ const PROGRESS_FIELDS = [
   'studyDays',
   'openMistakes',
 ];
+const LESSON_STAGES = [
+  'learn', 'interview', 'coding', 'logic', 'debug',
+  'solved', 'mini', 'project', 'defense', 'checkpoint',
+];
 
 class HttpError extends Error {
   constructor(status, message) {
@@ -145,7 +149,37 @@ function validateProgress(input) {
     }
     progress[field] = value;
   }
+  /**
+   * The lesson position is OPTIONAL and additive: an older client sends only the counters and keeps
+   * working. It is still validated — a section id is a short opaque token and a stage must be one
+   * of the real lesson stages — so a crafted body cannot store a route or a script in the profile.
+   */
+  if (input.lastSectionId !== undefined || input.lastStage !== undefined) {
+    if (typeof input.lastSectionId !== 'string' || !/^[A-Za-z0-9_-]{1,32}$/.test(input.lastSectionId)) {
+      throw new HttpError(400, 'lastSectionId must be a short section identifier.');
+    }
+    if (typeof input.lastStage !== 'string' || !LESSON_STAGES.includes(input.lastStage)) {
+      throw new HttpError(400, 'lastStage must be a real lesson stage.');
+    }
+    progress.lastSectionId = input.lastSectionId;
+    progress.lastStage = input.lastStage;
+  }
   return progress;
+}
+
+/**
+ * The lesson position stored on a profile, or null.
+ *
+ * Defensive on read as well as on write: rows written by an older release, a manual SQL update or a
+ * future stage name must never become a broken `/lesson/...` URL. The client re-validates against
+ * the live curriculum, but the server does not hand out anything it cannot name.
+ */
+function resumePosition(progress) {
+  if (!progress || typeof progress !== 'object') return null;
+  const { lastSectionId, lastStage } = progress;
+  if (typeof lastSectionId !== 'string' || !/^[A-Za-z0-9_-]{1,32}$/.test(lastSectionId)) return null;
+  if (typeof lastStage !== 'string' || !LESSON_STAGES.includes(lastStage)) return null;
+  return { sectionId: lastSectionId, stage: lastStage };
 }
 
 export function createAuthServer({
@@ -238,7 +272,17 @@ export function createAuthServer({
 
       if (request.method === 'GET' && url.pathname === '/api/auth/session') {
         const user = await getUser(request);
-        json(response, 200, { user: user ? toPublicUser(user.profile, user.authUser.email ?? '') : null }, headers);
+        if (!user) {
+          // Exactly the shape the tests and older clients expect: no account, nothing else.
+          json(response, 200, { user: null }, headers);
+          return;
+        }
+        const resume = resumePosition(user.profile.progress);
+        json(response, 200, {
+          user: toPublicUser(user.profile, user.authUser.email ?? ''),
+          // Omitted when the account has no saved position, so the response stays additive.
+          ...(resume ? { resume } : {}),
+        }, headers);
         return;
       }
 

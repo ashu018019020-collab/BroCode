@@ -210,7 +210,7 @@ export function nextBestAction(s: Section, state: AppState): NextAction {
   if (weak) {
     return {
       label: `Targeted practice: ${weak.topic}`,
-      reason: `"${weak.topic}" me ${weak.count} baar galti hui hai — pehle isko fix karo, phir aage badho.`,
+      reason: `"${weak.topic}" has been missed ${weak.count} times — fix it first, then move on.`,
       route: weak.route,
     };
   }

@@ -185,8 +185,8 @@ export function TopicWorkspace({ sec }: { sec: Section }) {
             <h2 style={{ margin: 0 }}>{sec.title} — complete topic workspace</h2>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
               Learn → Understand → Practice → Code → Debug → Challenge → Build → Improve → Interview.
-              Everything below belongs to this topic only. Ek baar me ek part khula hai — neeche ke
-              part button se switch karo, ya active part dobara dabao poora workspace dekhne ke liye.
+              Everything below belongs to this topic only. One part is open at a time — switch with the
+              part buttons below, or press the active part again to see the whole workspace.
             </p>
           </div>
           <div className="row">
@@ -201,7 +201,7 @@ export function TopicWorkspace({ sec }: { sec: Section }) {
               key={p.key}
               className={`btn small${openPart === p.key ? ' primary' : ''}`}
               aria-pressed={openPart === p.key}
-              title={openPart === p.key ? 'Poora workspace dikhao' : `Sirf yeh part kholo`}
+              title={openPart === p.key ? 'Show the whole workspace' : `Open only this part`}
               onClick={() => setOpenPart((cur) => (cur === p.key ? null : p.key))}
             >
               {i + 1}. {p.label}
@@ -369,7 +369,7 @@ export function TopicWorkspace({ sec }: { sec: Section }) {
                 starter={d.broken}
                 solution={d.correct}
                 title={`Debug: ${d.error}`}
-                taskText="Broken cell ko waise hi Run karo — jo error aaye wahi asli seekhne wali cheez hai. Phir fix karke dobara chalao."
+                taskText="Run the broken cell as-is — the error it raises is the real lesson. Then fix it and run it again."
                 label={d.difficulty}
                 sectionId={sec.id}
                 onComplete={() => toggle(key)}

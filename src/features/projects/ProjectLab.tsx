@@ -88,7 +88,7 @@ export default function ProjectLab() {
   );
 
   const complete = (p: Proj) => {
-    if (p.done) { toast('Ye project pehle complete mark hai.', 'info'); return; }
+    if (p.done) { toast('This project is already marked complete.', 'info'); return; }
     recordAttempt(p.stageKey, { done: true, tries: (state.attempts[p.stageKey]?.tries ?? 0) + 1 });
     if (p.code) setState((s) => ({ ...s, savedCode: { ...s.savedCode, [codeSlot.lesson(p.sid, 'project', 0)]: p.code } }));
     addXp(50, 'project', p.name.slice(0, 40));
@@ -102,9 +102,9 @@ export default function ProjectLab() {
         <div>
           <h1 className="row" style={{ gap: 10 }}><FolderGit2 size={24} color="var(--green)" /> PROJECT LAB</h1>
           <p className="muted small" style={{ maxWidth: 720 }}>
-            Curriculum ke saare <b>{total} project briefs</b> — mini projects aur real builds. Har card
-            me problem, architecture, files, build target aur defense questions hain. Complete karke
-            portfolio-ready banao.
+            All <b>{total} project briefs</b> in the curriculum — mini projects and real builds. Every card
+            has the problem, architecture, files, build target and defense questions. Complete them to
+            make them portfolio-ready.
           </p>
         </div>
         <div className="row" style={{ gap: 12 }}>
@@ -118,7 +118,7 @@ export default function ProjectLab() {
       </div>
 
       <div className="row" style={{ gap: 6, margin: '14px 0', flexWrap: 'wrap' }}>
-        <button className={`tabbtn ${tier === 'all' ? 'active' : ''}`} onClick={() => setTier('all')}>Sab ({projects.length})</button>
+        <button className={`tabbtn ${tier === 'all' ? 'active' : ''}`} onClick={() => setTier('all')}>All ({projects.length})</button>
         <button className={`tabbtn ${tier === 'mini' ? 'active' : ''}`} onClick={() => setTier('mini')}>Mini Projects ({projects.filter((p) => p.tier === 'Mini Project').length})</button>
         <button className={`tabbtn ${tier === 'real' ? 'active' : ''}`} onClick={() => setTier('real')}>Real / AI Projects ({projects.filter((p) => p.tier !== 'Mini Project').length})</button>
       </div>
@@ -128,8 +128,8 @@ export default function ProjectLab() {
           {!filtered.length && (
             <div className="empty-state">
               <span className="big">📦</span>
-              <b>Is filter me koi project nahi</b>
-              <span className="small">Doosra category chuno.</span>
+              <b>No projects in this filter</b>
+              <span className="small">Choose another category.</span>
             </div>
           )}
           <div className="grid2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', alignItems: 'start' }}>
@@ -157,9 +157,9 @@ export default function ProjectLab() {
                     <div className="fadeup" style={{ marginTop: 10 }}>
                       <div className="card" style={{ backgroundImage: 'none', backgroundColor: 'var(--panel)' }}>
                         <b className="small">Architecture</b>
-                        <p className="small muted">{p.architecture || 'Curriculum me architecture notes nahi hain — apna design likho.'}</p>
+                        <p className="small muted">{p.architecture || 'The curriculum has no architecture notes — write your own design.'}</p>
                         <b className="small">Build target</b>
-                        <p className="small muted">{p.buildTarget || 'Build target lesson stage me diya gaya hai.'}</p>
+                        <p className="small muted">{p.buildTarget || 'The build target is given in the lesson stage.'}</p>
                         {p.edgeCases.length > 0 && (
                           <>
                             <b className="small">Edge cases / debug cue</b>
@@ -177,10 +177,10 @@ export default function ProjectLab() {
                   )}
 
                   <div className="row" style={{ gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-                    <button className="btn small" onClick={() => setOpen(isOpen ? null : p.key)}>{isOpen ? 'Band karo' : 'Details kholo'}</button>
+                    <button className="btn small" onClick={() => setOpen(isOpen ? null : p.key)}>{isOpen ? 'Close' : 'Open details'}</button>
                     <Link className="btn small" to={p.route}><Hammer size={12} /> Lesson stage</Link>
-                    {!p.done && <button className="btn small primary" onClick={() => complete(p)}><Check size={12} /> Complete mark karo</button>}
-                    {p.done && <Link className="btn small" to="/defense">Defense me daalo <ArrowRight size={12} /></Link>}
+                    {!p.done && <button className="btn small primary" onClick={() => complete(p)}><Check size={12} /> Mark complete</button>}
+                    {p.done && <Link className="btn small" to="/defense">Practice defense <ArrowRight size={12} /></Link>}
                   </div>
                 </div>
               );
@@ -189,7 +189,7 @@ export default function ProjectLab() {
           {filtered.length > limit && (
             <div style={{ textAlign: 'center', marginTop: 14 }}>
               <button className="btn" onClick={() => setLimit((l) => l + 36)}>
-                Aur {Math.min(36, filtered.length - limit)} dikhao ({filtered.length - limit} baaki)
+                Show {Math.min(36, filtered.length - limit)} more ({filtered.length - limit} left)
               </button>
             </div>
           )}
@@ -198,7 +198,7 @@ export default function ProjectLab() {
         <div className="path-rail">
           <div className="card">
             <h2 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} color="var(--cyan)" /> Portfolio ready</h2>
-            <p className="muted small">Sabse aage wale 3 projects — inhe portfolio me daalo.</p>
+            <p className="muted small">The three strongest projects — put these in your portfolio.</p>
             {portfolio.map((p) => (
               <div key={p.key} className="row spread small" style={{ padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
                 <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -218,12 +218,12 @@ export default function ProjectLab() {
               ))}
             </div>
             <Link className="btn small" to="/defense" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}>
-              Defense practice karo <ArrowRight size={12} />
+              Practice defense <ArrowRight size={12} />
             </Link>
           </div>
           <div className="card" style={{ borderLeft: '3px solid var(--green)' }}>
             <p className="small" style={{ margin: 0, fontStyle: 'italic' }}>
-              “Ek project jo deploy hua, 5 projects se better hai jo local me pade hain.”
+              “One deployed project beats five that sit on your laptop.”
             </p>
           </div>
         </div>

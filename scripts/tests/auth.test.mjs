@@ -280,6 +280,58 @@ test('progress endpoint accepts aggregate counters without accepting private rec
   assert.equal(invalid.status, 400);
 });
 
+test('the resume position is validated, stored with the snapshot, and returned by the session', async () => {
+  const counters = {
+    xp: 10,
+    streakCurrent: 1,
+    practicedCount: 2,
+    doneRecords: 1,
+    studyMinutes: 5,
+    studyDays: 1,
+    openMistakes: 0,
+  };
+  const saved = await call('/api/progress/snapshot', {
+    method: 'POST',
+    token: 'learner-token',
+    body: { ...counters, lastSectionId: 's07', lastStage: 'coding' },
+  });
+  assert.equal(saved.status, 200);
+  assert.deepEqual(lastProgress, { id: ids.learner, ...counters, lastSectionId: 's07', lastStage: 'coding' },
+    'the position travels with the counters, not as free text');
+
+  // The real stores persist the snapshot on the profile; mirror that here so the session endpoint
+  // is exercised against the same shape it will read in production.
+  const learner = profiles.get(ids.learner);
+  const previous = learner.progress;
+  learner.progress = { ...lastProgress, updatedAt: new Date(now) };
+  try {
+    assert.deepEqual(
+      await (await call('/api/auth/session', { token: 'learner-token' })).json(),
+      {
+        user: {
+          id: ids.learner,
+          email: 'learner@example.test',
+          name: 'Learner',
+          role: 'user',
+          status: 'active',
+        },
+        resume: { sectionId: 's07', stage: 'coding' },
+      },
+    );
+  } finally {
+    learner.progress = previous;
+  }
+
+  // A crafted stage or section id is refused rather than stored and later turned into a route.
+  for (const body of [
+    { ...counters, lastSectionId: 's07', lastStage: 'javascript:' },
+    { ...counters, lastSectionId: '../../etc/passwd', lastStage: 'learn' },
+    { ...counters, lastSectionId: 's07' },
+  ]) {
+    assert.equal((await call('/api/progress/snapshot', { method: 'POST', token: 'learner-token', body })).status, 400);
+  }
+});
+
 test('an authenticated account whose profile row is missing is provisioned, not locked out', async () => {
   // The profile is created by a database trigger. When that trigger did not run — a migration applied
   // without it, or a signup that raced it — the API used to answer "profile unavailable" and, now

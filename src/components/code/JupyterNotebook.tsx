@@ -82,7 +82,7 @@ export function NotebookShelf({ sectionId, compact, defaultOpen = false, boxes =
   if (!list.length) {
     return (
       <p className="small muted" style={{ margin: '8px 0 0' }}>
-        Koi published notebook nahi mila — <code>npm run notebooks:write</code> chalao.
+        No published notebooks found — run <code>npm run notebooks:write</code>.
       </p>
     );
   }
@@ -150,7 +150,7 @@ export function NotebookShelf({ sectionId, compact, defaultOpen = false, boxes =
           className="jup-shelf-head small muted"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          title={open ? 'Notebook list band karo' : 'Notebook list kholo'}
+          title={open ? 'Collapse the notebook list' : 'Expand the notebook list'}
         >
           <ChevronRight size={13} className={`shelf-caret${open ? ' open' : ''}`} />
           <BookOpen size={13} />
@@ -159,8 +159,8 @@ export function NotebookShelf({ sectionId, compact, defaultOpen = false, boxes =
               the name is repeated by every notebook card above. Below ~460px of CARD (a container
               query, not a viewport one — the lesson column is narrow on a wide window too) the name
               is dropped and the rest is allowed a second line. */}
-          <span className="shelf-label"><span className="shelf-brand">Notebook Lab — </span>{own.length ? 'is section ke liye' : 'poori library'} ({list.length} notebooks)</span>
-          {!open && <span className="shelf-hint">{openFile ? 'notebook open hai' : 'click karke kholo'}</span>}
+          <span className="shelf-label"><span className="shelf-brand">Notebook Lab — </span>{own.length ? 'for this section' : 'the full library'} ({list.length} notebooks)</span>
+          {!open && <span className="shelf-hint">{openFile ? 'notebook is open' : 'click to open'}</span>}
         </button>
         <span className="row">
           {open && openFile && <button className="btn small" onClick={() => { setOpenFile(null); setNb(null); }}>Close notebook</button>}
@@ -178,7 +178,7 @@ export function NotebookShelf({ sectionId, compact, defaultOpen = false, boxes =
         ) : (
           <div className="row" style={{ marginTop: 6, flexWrap: 'wrap' }}>
             {own.map(pick)}
-            {own.length > 0 && rest.length > 0 && <span className="small muted" style={{ alignSelf: 'center' }}>· baaki:</span>}
+            {own.length > 0 && rest.length > 0 && <span className="small muted" style={{ alignSelf: 'center' }}>· more:</span>}
             {rest.slice(0, compact ? 3 : rest.length).map(pick)}
           </div>
         ))}
@@ -192,8 +192,8 @@ export function NotebookShelf({ sectionId, compact, defaultOpen = false, boxes =
               </span>
               <span className="small muted">{activeMeta?.intro}</span>
             </div>
-            {err && <p className="small" style={{ color: 'var(--red)' }}>Notebook load nahi hua — file `public/notebooks/` me hai?</p>}
-            {!nb && !err && <p className="small muted"><Loader size={12} /> Notebook load ho raha hai…</p>}
+            {err && <p className="small" style={{ color: 'var(--red)' }}>Notebook failed to load — is the file in `public/notebooks/`?</p>}
+            {!nb && !err && <p className="small muted"><Loader size={12} /> Loading notebook…</p>}
             {nb && (
               <NotebookCells
                 cells={nb.cells}
@@ -207,7 +207,7 @@ export function NotebookShelf({ sectionId, compact, defaultOpen = false, boxes =
               />
             )}
             <div className="row" style={{ marginTop: 6, flexWrap: 'wrap' }}>
-              <span className="small muted">Doosra notebook:</span>
+              <span className="small muted">Another notebook:</span>
               {list.filter((m) => m.file !== openFile).map((m) => (
                 <button key={m.file} className="btn small" onClick={() => void openNotebook(m)}>{m.title.split('—')[0].trim()}</button>
               ))}
@@ -276,7 +276,7 @@ export function JupyterNotebook({
     list.push({
       id: 'task',
       kind: 'code',
-      source: starter ?? '# Yahan apna code likho\nprint("Hello World")\n',
+      source: starter ?? '# Write your code here\nprint("Hello World")\n',
       primary: true,
       label,
     });
@@ -289,7 +289,7 @@ export function JupyterNotebook({
       <div className="row spread" style={{ marginBottom: 8 }}>
         <span className="row">
           <b className="small">📓 JUPYTER NOTEBOOK</b>
-          <Chip kind="easy">cells ek hi session me chalte hain</Chip>
+          <Chip kind="easy">cells run in the same session</Chip>
         </span>
         {solution && (
           <button className="btn small" onClick={() => setShowSol((v) => !v)}>

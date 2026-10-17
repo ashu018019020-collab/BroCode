@@ -44,6 +44,10 @@ model ProgressSnapshot {
   studyMinutes     Int      @default(0) @map("study_minutes")
   studyDays        Int      @default(0) @map("study_days")
   openMistakes     Int      @default(0) @map("open_mistakes")
+  /// The last lesson this account opened, so "Continue Learning" resumes it on any device.
+  /// Optional and additive: existing rows simply have NULL and the app falls back to history.
+  lastSectionId    String?  @map("last_section_id") @db.VarChar(32)
+  lastStage        String?  @map("last_stage") @db.VarChar(16)
   updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
   user             Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 

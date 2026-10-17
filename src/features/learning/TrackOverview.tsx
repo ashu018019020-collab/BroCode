@@ -48,7 +48,7 @@ export default function TrackOverview() {
     return map;
   }, [doc, sections, state]);
 
-  if (!doc) return <div className="loading">{trackSlug ? 'Track load ho raha hai…' : 'Track not found.'}</div>;
+  if (!doc) return <div className="loading">{trackSlug ? 'Loading track…' : 'Track not found.'}</div>;
 
   const def = TRACK_DEFS.find((d) => d.id === doc.key);
   const overall = doc.chapters.length
@@ -129,8 +129,8 @@ export default function TrackOverview() {
           <div className="row spread" style={{ flexWrap: 'wrap', gap: 8 }}>
             <div>
               <div className="small muted row" style={{ gap: 6 }}><Compass size={13} /> RECOMMENDED FOUNDATION (guidance, not a lock)</div>
-              <b className="small">{prereqTitles.join(', ')} — recommended 60%+ pehle complete karna.</b>
-              <p className="small muted" style={{ margin: '2px 0 0' }}>Recommended: NumPy basics clear hone se ye track easier hoga. Par explorer tum ho — kahin bhi jao.</p>
+              <b className="small">{prereqTitles.join(', ')} — recommended: complete 60%+ first.</b>
+              <p className="small muted" style={{ margin: '2px 0 0' }}>Recommended: with NumPy basics clear, this track will be easier. But you are the explorer — go anywhere.</p>
             </div>
             <div className="row">
               <Link className="btn small" to="/courses">View Recommended Tracks</Link>
@@ -144,7 +144,7 @@ export default function TrackOverview() {
       <div className="card" style={{ marginTop: 12 }}>
         <div className="row spread">
           <h2 style={{ margin: 0 }}>📚 Complete Curriculum Index</h2>
-          <span className="small muted">Chapter expand karo → topic kholo</span>
+          <span className="small muted">Expand a chapter → open a topic</span>
         </div>
         <div className="tree" role="tree" aria-label={`${doc.title} curriculum`}>
           {doc.chapters.map((ch) => {

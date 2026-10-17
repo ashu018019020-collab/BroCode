@@ -47,7 +47,7 @@ const stateClass: Record<ReadinessState, string> = {
   ready: 'chip easy', building: 'chip medium', started: 'chip', empty: 'chip hard',
 };
 const stateLabel: Record<ReadinessState, string> = {
-  ready: 'ready', building: 'building', started: 'started', empty: 'khaali',
+  ready: 'ready', building: 'building', started: 'started', empty: 'empty',
 };
 
 export default function CareerHub() {
@@ -174,15 +174,15 @@ export default function CareerHub() {
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 14, alignItems: 'flex-start' }}>
           <div style={{ minWidth: 260 }}>
             <div className="chip" style={{ marginBottom: 6 }}>🎯 CAREER</div>
-            <h1 style={{ margin: 0 }}>Learn karo. Build karo. Job-ready bano.</h1>
+            <h1 style={{ margin: 0 }}>Learn. Build. Get job-ready.</h1>
             <p className="muted small" style={{ margin: '8px 0 0', maxWidth: 620 }}>
-              Ek hi system: kya aage padhna hai, kya build karna hai, kaise present karna hai — har
-              number tumhare apne records se, koi andaza nahi.
+              One system: what to learn next, what to build, how to present it — every
+              number comes from your own records, no guesswork.
             </p>
           </div>
           <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
             <span className="chip"><Rocket size={12} /> {ready.pct}% job-prep readiness</span>
-            <span className="chip">Agla step: {next.phase}</span>
+            <span className="chip">Next step: {next.phase}</span>
             <span className="chip">Level {ctx.counts.level} · {ctx.counts.xp} XP</span>
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function CareerHub() {
           <div style={{ minWidth: 260, flex: 1 }}>
             <b style={{ fontSize: '1.05rem' }}>{next.title}</b>
             <p className="muted small" style={{ margin: '4px 0 10px' }}>{next.reason}</p>
-            <Link className="btn small primary" to={next.to}>Abhi karo <ArrowRight size={13} /></Link>
+            <Link className="btn small primary" to={next.to}>Do it now <ArrowRight size={13} /></Link>
           </div>
           {/* The flow strip: green = walked, lit = where you stand, dim = ahead. */}
           <div className="row" style={{ gap: 5, flexWrap: 'wrap', maxWidth: 420 }}>
@@ -203,7 +203,7 @@ export default function CareerHub() {
               <span
                 key={f.phase}
                 className={`chip${f.state === 'current' ? ' on' : f.state === 'done' ? ' easy' : ''}`}
-                title={f.state === 'done' ? 'ho gaya' : f.state === 'current' ? 'yahin ho' : 'aage'}
+                title={f.state === 'done' ? 'done' : f.state === 'current' ? 'you are here' : 'ahead'}
               >
                 {f.state === 'done' ? '✓ ' : ''}{f.phase}
               </span>
@@ -281,14 +281,14 @@ export default function CareerHub() {
                 {s.status === 'ready' ? '✅' : s.status === 'building' ? '⚠️' : '✗'} {s.label}
                 <span className="muted" style={{ marginLeft: 6 }}>{s.pct}% mastery</span>
               </span>
-              <span className="small muted">{s.status === 'ready' ? 'interview-ready' : s.status === 'building' ? 'building' : 'shuru karo'}</span>
+              <span className="small muted">{s.status === 'ready' ? 'interview-ready' : s.status === 'building' ? 'building' : 'get started'}</span>
             </div>
             <Bar pct={s.pct} />
           </div>
         ))}
         <p className="small muted" style={{ margin: '8px 0 0' }}>
-          Ready = mastery ≥ 75% · building = 40–74%. Mastery wahi lesson gates ka number hai jo har
-          section tile print karta hai — role sirf unhe ek target me jodta hai.
+          Ready = mastery ≥ 75% · building = 40–74%. Mastery is the same lesson-gate number every
+          section tile prints — the role simply combines them into one target.
         </p>
       </div>
 
@@ -297,8 +297,8 @@ export default function CareerHub() {
       <div className="card">
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
           <span className="small muted">
-            {ctx.playbook ? `${ctx.playbook.miniProjects} mini projects + real builds` : '…'} — jo teen
-            abhi portfolio me jaane chahiye:
+            {ctx.playbook ? `${ctx.playbook.miniProjects} mini projects + real builds` : '…'} — the three
+            that should go into your portfolio now:
           </span>
           <Link to="/projects" className="btn small primary"><FolderGit2 size={13} /> View projects</Link>
         </div>
@@ -315,8 +315,8 @@ export default function CareerHub() {
           </div>
         ))}
         <p className="small muted" style={{ margin: '8px 0 0' }}>
-          Resume pitches iske neeche hain — {Object.keys(resumeByProject).length} / {DEFENSE_PROJECTS.length} projects ke
-          pitch answers likhe hain ({counts.resumeAnswers} / {counts.resumeTotal} total).
+          Resume pitches are below — pitch answers are written for {Object.keys(resumeByProject).length} / {DEFENSE_PROJECTS.length} projects
+          ({counts.resumeAnswers} / {counts.resumeTotal} total).
         </p>
       </div>
 
@@ -339,9 +339,9 @@ export default function CareerHub() {
       <div className="sec-head"><h2>Achievements</h2><span className="line" /></div>
       <div className="card">
         <div className="row spread" style={{ marginBottom: 8 }}>
-          <span className="small muted">{badgesEarned} / {badges.length} unlocked — har badge kisi asli record se banta hai.</span>
+          <span className="small muted">{badgesEarned} / {badges.length} unlocked — every badge is built from a real record.</span>
           {/* The full 18-badge panel lives on the Dashboard — this card is the career slice. */}
-          <Link className="btn small ghost" to="/">Saari badges <ArrowRight size={12} /></Link>
+          <Link className="btn small ghost" to="/">All badges <ArrowRight size={12} /></Link>
         </div>
         <div className="achv-grid">
           {badges.map((a) => (

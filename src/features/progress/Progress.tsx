@@ -197,7 +197,7 @@ export default function ProgressPage() {
       // silently leaving the previous one in place with no explanation.
       setAvatarError(takeAvatarNotice());
     } catch (e) {
-      setAvatarError(e instanceof Error ? e.message : 'photo load nahi hui');
+      setAvatarError(e instanceof Error ? e.message : 'the photo could not be loaded');
     }
   }
 
@@ -210,7 +210,7 @@ export default function ProgressPage() {
           <button
             className="dash-avatar"
             onClick={() => avatarFile.current?.click()}
-            title={state.profile.avatar ? 'Photo badlo' : 'Photo lagao'}
+            title={state.profile.avatar ? 'Change photo' : 'Add a photo'}
             aria-label={state.profile.avatar ? 'Change profile photo' : 'Add a profile photo'}
           >
             {/* `alt=""` on purpose: the button's own `aria-label` is the control's name, so
@@ -219,7 +219,7 @@ export default function ProgressPage() {
               ? <img src={state.profile.avatar} alt="" width={72} height={72} />
               : <span className="init">{(state.profile.name || '?').slice(0, 1).toUpperCase()}</span>}
             {state.profile.avatar
-              ? <span className="pick pick-x" title="Photo hatao" onClick={(e) => { e.stopPropagation(); setAvatar(''); }}>
+              ? <span className="pick pick-x" title="Remove photo" onClick={(e) => { e.stopPropagation(); setAvatar(''); }}>
                   <Trash2 size={13} />
                 </span>
               : <span className="pick"><Camera size={13} /></span>}
@@ -247,12 +247,12 @@ export default function ProgressPage() {
         </div>
 
         <div className="dash-target">
-          <ProgressRing pct={targetPct} size={104} label={`Aaj ${formatDuration(todaySeconds)} / target ${target}m`} />
+          <ProgressRing pct={targetPct} size={104} label={`Today ${formatDuration(todaySeconds)} / ${target}m target`} />
           <div className="small muted" style={{ textAlign: 'center', marginTop: 4 }}>
-            Aaj {formatDuration(todaySeconds)} / {target}m target
+            Today {formatDuration(todaySeconds)} / {target}m target
           </div>
           <div className="row small muted" style={{ gap: 6, justifyContent: 'center', marginTop: 6, flexWrap: 'wrap' }}>
-            <span className="chip"><Flame size={11} /> {streak} din streak</span>
+            <span className="chip"><Flame size={11} /> {streak}-day streak</span>
             <span className="chip">Next level: {toNextLevel} XP</span>
           </div>
         </div>
@@ -262,15 +262,15 @@ export default function ProgressPage() {
       <div className="kpi-row">
         <div className="kpi tone-cyan">
           <span className="ic"><Clock size={15} /></span>
-          <div><div className="n">{formatDuration(todaySeconds)}</div><div className="l">aaj padha</div></div>
+          <div><div className="n">{formatDuration(todaySeconds)}</div><div className="l">studied today</div></div>
         </div>
         <div className="kpi tone-blue">
           <span className="ic"><CalendarRange size={15} /></span>
-          <div><div className="n">{formatDuration(week.thisWeek)}</div><div className="l">pichhle 7 din</div></div>
+          <div><div className="n">{formatDuration(week.thisWeek)}</div><div className="l">last 7 days</div></div>
         </div>
         <div className="kpi tone-amber">
           <span className="ic"><Flame size={15} /></span>
-          <div><div className="n">{streak} din</div><div className="l">study streak</div></div>
+          <div><div className="n">{streak} days</div><div className="l">study streak</div></div>
         </div>
         <div className="kpi tone-green">
           <span className="ic"><BookOpenCheck size={15} /></span>
@@ -287,19 +287,19 @@ export default function ProgressPage() {
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 10 }}>
           <h2 className="row" style={{ gap: 8, margin: 0 }}><Clock size={16} color="var(--cyan)" /> Study time (last {SPAN_DAYS} days)</h2>
           <span className="row" style={{ gap: 8 }}>
-            <span className="chip easy">{formatDuration(week.thisWeek)} is hafte</span>
+            <span className="chip easy">{formatDuration(week.thisWeek)} this week</span>
             {
               /* No percentage against a week of zero: `deltaPct` is null there, and "+100%" would be
                  a number the learner never earned. */
               week.deltaPct !== null
-                ? <span className={`chip ${week.deltaPct >= 0 ? 'easy' : 'hard'}`}>{week.deltaPct >= 0 ? '+' : ''}{week.deltaPct}% vs pichhla hafta</span>
-                : <span className="chip">pehla hafta</span>
+                ? <span className={`chip ${week.deltaPct >= 0 ? 'easy' : 'hard'}`}>{week.deltaPct >= 0 ? '+' : ''}{week.deltaPct}% vs last week</span>
+                : <span className="chip">first week</span>
             }
           </span>
         </div>
         <p className="muted small" style={{ marginTop: 4 }}>
-          Bars = us din kitna padha. <b className="muted">Patli amber strip</b> = us din ka XP.
-          Sirf wahi time ginta hai jab app khula ho aur aap chaalu ho — idle ya background tab add nahi hota.
+          Bars = how long you studied that day. The thin <b className="muted">amber strip</b> = that day's XP.
+          Only time with the app open and in use is counted — idle or background tabs add nothing.
         </p>
 
         <StudyChart series={series} xp={state.activity} />
@@ -307,9 +307,9 @@ export default function ProgressPage() {
         <div className="row spread" style={{ marginTop: 10, flexWrap: 'wrap', gap: 10 }}>
           <div className="row small muted" style={{ gap: 14, flexWrap: 'wrap' }}>
             <span>Total: <b>{formatDuration(totals.seconds)}</b></span>
-            <span>Active din: <b>{totals.activeDays}</b></span>
+            <span>Active days: <b>{totals.activeDays}</b></span>
             <span>Best: <b>{best ? `${formatDuration(best.seconds)} · ${best.key}` : '—'}</b></span>
-            <span>Avg (active din): <b>{formatDuration(totals.avgActiveSeconds)}</b></span>
+            <span>Avg (active days): <b>{formatDuration(totals.avgActiveSeconds)}</b></span>
           </div>
           <ManualLog />
         </div>
@@ -318,16 +318,16 @@ export default function ProgressPage() {
       {/* ---------- consistency: the heat grid + which days actually get used ---------- */}
       <div className="card">
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 10 }}>
-          <h2 className="row" style={{ gap: 8, margin: 0 }}><Activity size={16} color="var(--green)" /> Consistency (1 saal)</h2>
+          <h2 className="row" style={{ gap: 8, margin: 0 }}><Activity size={16} color="var(--green)" /> Consistency (1 year)</h2>
           <span className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <span className={`chip${year.activeDays > 0 ? ' easy' : ''}`}>{year.activeDays} / {year.days} din active</span>
-            <span className="chip">{year.longestRun} din ki sabse lambi streak</span>
+            <span className={`chip${year.activeDays > 0 ? ' easy' : ''}`}>{year.activeDays} / {year.days} days active</span>
+            <span className="chip">longest streak: {year.longestRun} days</span>
           </span>
         </div>
         <p className="muted small" style={{ marginTop: 4 }}>
-          Ek cell = ek din, ek column = ek hafta (Som se Som). Kaunsa din kitna padha, pura saal ek nazar me —
-          <b> {formatDuration(year.totalSeconds)}</b> {year.from} se {year.to} tak
-          {year.busiest && <> · best din <b>{year.busiest.key}</b> ({formatDuration(year.busiest.seconds)})</>}.
+          One cell = one day, one column = one week (Mon to Mon). The whole year at a glance, so you can see
+          which days you actually studied — <b> {formatDuration(year.totalSeconds)}</b> from {year.from} to {year.to}
+          {year.busiest && <> · busiest day <b>{year.busiest.key}</b> ({formatDuration(year.busiest.seconds)})</>}.
         </p>
 
         {/* One grid for the whole year: the weekday letters are a real first column and the month row a
@@ -350,28 +350,28 @@ export default function ProgressPage() {
                 key={c.key}
                 className={`heat-cell l${c.level}${c.past ? '' : ' future'}`}
                 style={{ gridColumn: col + 2, gridRow: row + 2 }}
-                title={c.past ? `${c.key} — ${formatDuration(c.seconds)}` : `${c.key} — abhi aaya nahi`}
+                title={c.past ? `${c.key} — ${formatDuration(c.seconds)}` : `${c.key} — not yet`}
               />
             )))}
           </div>
         </div>
         <div className="row spread small muted" style={{ marginTop: 8, flexWrap: 'wrap', gap: 8 }}>
           <span className="row" style={{ gap: 6 }}>
-            <span>kam</span>
+            <span>less</span>
             {[0, 1, 2, 3, 4].map((l) => <span key={l} className={`heat-cell l${l}`} />)}
-            <span>zyada</span>
+            <span>more</span>
           </span>
-          <span>1 cell = 1 din · level 15m / 45m / 1.5h+ · bhare hue din hi padhe hue din hain</span>
+          <span>1 cell = 1 day · levels 15m / 45m / 1.5h+ · only filled days are days you studied</span>
         </div>
 
         <div className="sec-line" />
         <div className="row spread small" style={{ marginBottom: 6 }}>
-          <b>Kis din padhte ho</b>
-          <span className="muted">average per din</span>
+          <b>When you study</b>
+          <span className="muted">average per day</span>
         </div>
         <div className="weekday-row">
           {weekdays.map((w, i) => (
-            <div className="weekday" key={i} title={`${DAY_LABEL[i]} — avg ${formatDuration(w.avgSeconds)} (${w.days} din)`}>
+            <div className="weekday" key={i} title={`${DAY_LABEL[i]} — avg ${formatDuration(w.avgSeconds)} (${w.days} days)`}>
               <div className="bar-v"><i style={{ height: `${Math.round((w.avgSeconds / weekdayPeak) * 100)}%` }} /></div>
               <span>{DAY_SHORT[i]}</span>
             </div>
@@ -386,8 +386,8 @@ export default function ProgressPage() {
           <div className="row" style={{ gap: 14, marginTop: 10 }}>
             <ProgressRing pct={overall} size={78} label="Overall mastery" />
             <div className="small muted" style={{ flex: 1, minWidth: 0 }}>
-              Overall {overall}% · {mastered} mastered sections. Ye mastery hai (padha + practice + sach me pass),
-              upar wale hours sirf time ginte hain.
+              Overall {overall}% · {mastered} mastered sections. This is mastery (studied + practised + genuinely
+              passed); the hours above only count time.
             </div>
           </div>
           {trackRows.map((t) => (
@@ -404,15 +404,16 @@ export default function ProgressPage() {
             <span className="chip">{accuracyLine(bank)}</span>
           </div>
           <p className="muted small" style={{ marginTop: 4 }}>
-            Percentage = tumhare <b>khud grade kiye</b> answers me se kitne sahi. Rubric average = likhe
-            answers ka model answer se keyword match (wahi rubric jo Interview Mode aur mock rounds use karte hain).
+            Percentage = how many of your <b>self-graded</b> answers were correct. Rubric average = the keyword
+            match between your written answers and the model answer (the same rubric Interview Mode and mock
+            rounds use).
           </p>
           <div className="row" style={{ gap: 12, margin: '10px 0' }}>
             {/* Empty ring until something is graded, and it says so: `text` keeps it from printing
                 "0%", which would be a verdict on answers the learner never graded. */}
             <ProgressRing pct={bank.pct ?? 0} size={84} label={accuracyLine(bank)} text={pctText(bank.pct)} />
             <div className="statgrid" style={{ flex: 1 }}>
-              <div className="stat"><div className="n">{pctText(bank.pct)}</div><div className="l">accuracy ({bank.correct}/{bank.graded} sahi)</div></div>
+              <div className="stat"><div className="n">{pctText(bank.pct)}</div><div className="l">accuracy ({bank.correct}/{bank.graded} correct)</div></div>
               <div className="stat"><div className="n">{pctText(bank.avg)}</div><div className="l">rubric avg</div></div>
               <div className="stat"><div className="n">{pctText(interview.pct)}</div><div className="l">interview ({interview.answered})</div></div>
               <div className="stat"><div className="n">{bank.answered}</div><div className="l">total answers</div></div>
@@ -425,7 +426,7 @@ export default function ProgressPage() {
             if (!rows.length) return null;
             return (
               <>
-                <div className="small muted">Track wise (sabse kamzor pehle)</div>
+                <div className="small muted">By track (weakest first)</div>
                 {rows.map((r) => (
                   <div key={r.name} style={{ margin: '8px 0' }}>
                     <div className="row spread small">
@@ -467,7 +468,7 @@ function ManualLog() {
 
   return (
     <div className="row manual-log" style={{ gap: 6 }}>
-      <input type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} aria-label="Din" />
+      <input type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} aria-label="Date" />
       <input
         type="number"
         min={1}
@@ -479,9 +480,9 @@ function ManualLog() {
         style={{ width: 78 }}
         aria-label="Minutes"
       />
-      <button className="btn small" disabled={!valid} onClick={add}><Plus size={13} /> Log karo</button>
-      {date !== today() && <span className="small muted">purane din me add hoga</span>}
-      {date === today() && <span className="small muted">aaj ke log me judega</span>}
+      <button className="btn small" disabled={!valid} onClick={add}><Plus size={13} /> Log time</button>
+      {date !== today() && <span className="small muted">will be added to that past day</span>}
+      {date === today() && <span className="small muted">will be added to today's total</span>}
     </div>
   );
 }

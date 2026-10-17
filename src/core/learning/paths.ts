@@ -156,7 +156,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
     facts: (c) => [
       c.published ? `${c.published.interview} interview Qs` : 'interview banks pending',
       `${c.counts.interviewAnswers} answers recorded`,
-      typeof c.counts.interviewPct === 'number' ? `${c.counts.interviewPct}% average` : 'koi answer abhi nahi',
+      typeof c.counts.interviewPct === 'number' ? `${c.counts.interviewPct}% average` : 'no answers yet',
     ],
     // No denominator: the pool a learner sees depends on the section they are in.
     progress: null,
@@ -215,7 +215,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
     route: '/sql',
     group: 'lab',
     prefix: 'sql:lab',
-    facts: (c) => ['Monaco SQL editor', `${c.counts.sqlSlots} saved query`],
+    facts: (c) => ['Monaco SQL editor', `${c.counts.sqlSlots} saved queries`],
     progress: null,
   },
   {

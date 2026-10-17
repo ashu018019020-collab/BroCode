@@ -200,4 +200,12 @@ export interface AppState {
   notes: Note[];
   jobPrep: Record<string, boolean>;
   readNotifs: string[];
+  /**
+   * The lesson the learner last opened, so "Continue Learning" can resume it instead of starting
+   * from the top. Optional: states written before this existed simply have no position, and the
+   * resume engine falls back to the newest stage record in `attempts` (and then to the first
+   * section). `lastStage` is stored as a plain string for the same reason every migrated field is
+   * tolerant — a typo or an older build must never make the whole state unreadable.
+   */
+  learning?: { lastSectionId?: string; lastStage?: string };
 }

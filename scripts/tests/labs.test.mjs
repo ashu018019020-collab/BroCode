@@ -223,5 +223,5 @@ test('labs: the hub derives its labs, subjects and counts from published data', 
   assert.match(hub, /const notebookHref = \(file: string\) => `\/notebooks\?nb=\$\{file\}`/, 'the notebook link is built once');
   assert.ok(!/to=\{`\/notebooks\?nb=/.test(hub), 'and never spelled by hand');
   assert.match(hub, /no hands-on lab yet/, 'a topic with no notebook and no runtime must say so');
-  assert.match(hub, /Is subject ka koi hands-on lab abhi nahi hai/, 'and a subject with none must say it too');
+  assert.match(hub, /This subject has no hands-on lab yet/, 'and a subject with none must say it too');
 });

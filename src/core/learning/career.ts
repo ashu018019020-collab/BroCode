@@ -91,25 +91,25 @@ export const CHECKLIST_PHASES: { id: ChecklistPhase; label: string; icon: string
  * unticks every learner who ticked it. Do not rename.
  */
 export const CAREER_CHECKLIST: ChecklistItem[] = [
-  { id: 'resume-defense', label: 'Har project ka 60-second pitch ready', hint: 'Project Defense lab me practice karo.', to: '/defense', weight: 3, phase: 'profile', icon: 'Briefcase' },
-  { id: 'github', label: 'GitHub profile me pinned projects', hint: 'README me problem, stack, run steps.', to: '/projects', weight: 2, phase: 'profile', icon: 'Briefcase' },
-  { id: 'linkedin', label: 'LinkedIn headline + skills update', hint: 'Python, SQL, ML, GenAI, FastAPI keywords.', to: '/progress', weight: 1, phase: 'profile', icon: 'Briefcase' },
+  { id: 'resume-defense', label: '60-second pitch ready for every project', hint: 'Practise in the Project Defense lab.', to: '/defense', weight: 3, phase: 'profile', icon: 'Briefcase' },
+  { id: 'github', label: 'Projects pinned on your GitHub profile', hint: 'README covers the problem, stack, and run steps.', to: '/projects', weight: 2, phase: 'profile', icon: 'Briefcase' },
+  { id: 'linkedin', label: 'LinkedIn headline + skills updated', hint: 'Python, SQL, ML, GenAI, FastAPI keywords.', to: '/progress', weight: 1, phase: 'profile', icon: 'Briefcase' },
 
-  { id: 'python-core', label: 'Python Core 100% mastered', hint: 's01–s16 ka mastery pura karo.', to: '/course/python', weight: 4, phase: 'depth', icon: 'Target' },
-  { id: 'data-stack', label: 'NumPy + Pandas + SQL comfortable', hint: 'Data track ke saare labs complete karo.', to: '/numpy-pandas', weight: 3, phase: 'depth', icon: 'Target' },
-  { id: 'ml-nlp', label: 'ML + NLP ke core concepts clear', hint: 'Model evaluation aur NLP basics.', to: '/course/ml-nlp', weight: 3, phase: 'depth', icon: 'Target' },
-  { id: 'genai-agentic', label: 'GenAI + RAG + Agentic hands-on', hint: 'RAG Lab me retrieval khud build karo.', to: '/rag-lab', weight: 4, phase: 'depth', icon: 'Target' },
-  { id: 'apis', label: 'Ek API deploy kiya hua', hint: 'FastAPI + Docker + CI/CD.', to: '/course/build-production', weight: 3, phase: 'depth', icon: 'Target' },
+  { id: 'python-core', label: 'Python Core 100% mastered', hint: 'Complete mastery across s01–s16.', to: '/course/python', weight: 4, phase: 'depth', icon: 'Target' },
+  { id: 'data-stack', label: 'NumPy + Pandas + SQL comfortable', hint: 'Complete every lab in the Data track.', to: '/numpy-pandas', weight: 3, phase: 'depth', icon: 'Target' },
+  { id: 'ml-nlp', label: 'ML + NLP core concepts clear', hint: 'Model evaluation and NLP basics.', to: '/course/ml-nlp', weight: 3, phase: 'depth', icon: 'Target' },
+  { id: 'genai-agentic', label: 'GenAI + RAG + Agentic hands-on', hint: 'Build retrieval yourself in the RAG Lab.', to: '/rag-lab', weight: 4, phase: 'depth', icon: 'Target' },
+  { id: 'apis', label: 'One API deployed', hint: 'FastAPI + Docker + CI/CD.', to: '/course/build-production', weight: 3, phase: 'depth', icon: 'Target' },
 
-  { id: 'mock-round-1', label: 'Kam se kam 2 mock rounds complete', hint: '60%+ score ke saath.', to: '/mock-interviews', weight: 3, phase: 'interview', icon: 'TrendingUp' },
-  { id: 'aloud', label: '20 questions zor se bolke practice', hint: 'Aloud bolna fluency build karta hai.', to: '/interview-mode', weight: 2, phase: 'interview', icon: 'TrendingUp' },
-  { id: 'mistakes-clear', label: 'Saare open mistakes close', hint: 'Mistake Tracker me fix mark karo.', to: '/mistakes', weight: 3, phase: 'interview', icon: 'TrendingUp' },
-  { id: 'final', label: 'Final Assessment pass', hint: 'Poora curriculum ka final gate.', to: '/final-assessment', weight: 4, phase: 'interview', icon: 'TrendingUp' },
+  { id: 'mock-round-1', label: 'At least 2 mock rounds complete', hint: 'With a score of 60%+.', to: '/mock-interviews', weight: 3, phase: 'interview', icon: 'TrendingUp' },
+  { id: 'aloud', label: 'Practise 20 questions out loud', hint: 'Speaking aloud builds fluency.', to: '/interview-mode', weight: 2, phase: 'interview', icon: 'TrendingUp' },
+  { id: 'mistakes-clear', label: 'Close every open mistake', hint: 'Mark them fixed in the Mistake Tracker.', to: '/mistakes', weight: 3, phase: 'interview', icon: 'TrendingUp' },
+  { id: 'final', label: 'Pass the Final Assessment', hint: 'The final gate for the whole curriculum.', to: '/final-assessment', weight: 4, phase: 'interview', icon: 'TrendingUp' },
 
-  { id: 'target-list', label: '20 target companies ki list', hint: 'Role, stack aur referral track karo.', to: '/job-prep', weight: 2, phase: 'apply', icon: 'ClipboardList' },
-  { id: 'apply-5', label: 'Is hafte 5 applications bheje', hint: 'Tailored CV ke saath.', to: '/job-prep', weight: 3, phase: 'apply', icon: 'ClipboardList' },
-  { id: 'referral', label: '2 referral ya cold DM', hint: 'Short, specific message likho.', to: '/job-prep', weight: 2, phase: 'apply', icon: 'ClipboardList' },
-  { id: 'portfolio', label: 'Portfolio me 3 projects live', hint: 'Deployed link ke saath.', to: '/projects', weight: 3, phase: 'apply', icon: 'ClipboardList' },
+  { id: 'target-list', label: 'List of 20 target companies', hint: 'Track role, stack, and referral.', to: '/job-prep', weight: 2, phase: 'apply', icon: 'ClipboardList' },
+  { id: 'apply-5', label: 'Send 5 applications this week', hint: 'With a tailored CV.', to: '/job-prep', weight: 3, phase: 'apply', icon: 'ClipboardList' },
+  { id: 'referral', label: '2 referrals or cold DMs', hint: 'Write a short, specific message.', to: '/job-prep', weight: 2, phase: 'apply', icon: 'ClipboardList' },
+  { id: 'portfolio', label: '3 live projects in your portfolio', hint: 'With deployed links.', to: '/projects', weight: 3, phase: 'apply', icon: 'ClipboardList' },
 ];
 
 /** The two ticks the "GitHub / LinkedIn" readiness row and the Profile tile read. */
@@ -187,30 +187,30 @@ export interface FlowStep { phase: CareerFlowPhase; state: 'done' | 'current' | 
 export function nextCareerAction(c: CareerCounts): NextCareerAction {
   const has = (id: string) => !!c.checklist[id];
   if (c.learningPct < 25) {
-    return { phase: 'LEARN', title: 'Curriculum continue karo', reason: `Learning ${c.learningPct}% hai — pehle 25% fundamentals, project uske baad.`, to: '/courses' };
+    return { phase: 'LEARN', title: 'Continue the curriculum', reason: `Learning is at ${c.learningPct}% — cover the first 25% of fundamentals, then start a project.`, to: '/courses' };
   }
   if (c.buildsDone === 0) {
-    return { phase: 'BUILD', title: 'Pehla project build karo', reason: 'Ek bhi build complete nahi hui — portfolio ka pehla project yahin se banta hai.', to: '/projects' };
+    return { phase: 'BUILD', title: 'Build your first project', reason: 'Not a single build is complete — your first portfolio project starts here.', to: '/projects' };
   }
   if (c.defenseGates === 0) {
-    return { phase: 'PROVE', title: 'Project defend karo', reason: `${c.buildsDone === 1 ? 'Build' : 'Builds'} ready hain — ab interviewer ke sawalon me defend karo.`, to: '/defense' };
+    return { phase: 'PROVE', title: 'Defend a project', reason: `${c.buildsDone === 1 ? 'One build is' : 'Your builds are'} ready — now defend ${c.buildsDone === 1 ? 'it' : 'them'} against interviewer questions.`, to: '/defense' };
   }
   if (c.resumeAnswers === 0) {
-    return { phase: 'PRESENT', title: 'Resume pitches likho', reason: 'Defense ke answers hi resume ke bullets hain — pehla pitch abhi tak likha nahi.', to: '/defense' };
+    return { phase: 'PRESENT', title: 'Write resume pitches', reason: 'Defense answers are the resume bullets — the first pitch has not been written yet.', to: '/defense' };
   }
   if (c.mockDone < 2) {
-    return { phase: 'PREPARE', title: 'Mock rounds do', reason: `${c.mockDone} / 2 mock rounds — interview pressure ki practice yahin hoti hai.`, to: '/mock-interviews' };
+    return { phase: 'PREPARE', title: 'Do mock rounds', reason: `${c.mockDone} / 2 mock rounds — this is where you practise interview pressure.`, to: '/mock-interviews' };
   }
   if (!has('github') || !has('linkedin')) {
-    return { phase: 'APPLY', title: 'GitHub + LinkedIn set karo', reason: 'Applications se pehle profile recruiter-ready honi chahiye — checklist me 2 ticks bache hain.', to: '/job-prep' };
+    return { phase: 'APPLY', title: 'Set up GitHub + LinkedIn', reason: 'Before applying, your profile must be recruiter-ready — 2 checklist items are still unticked.', to: '/job-prep' };
   }
   if (!CAREER_CHECKLIST.filter((it) => it.phase === 'apply').every((it) => has(it.id))) {
-    return { phase: 'APPLY', title: 'Applications bhejo', reason: 'Target list, applications, referral — apply engine chalao.', to: '/job-prep' };
+    return { phase: 'APPLY', title: 'Send applications', reason: 'Target list, applications, referrals — run the application engine.', to: '/job-prep' };
   }
   if (c.interviewAnswers === 0) {
-    return { phase: 'INTERVIEW', title: 'Bolkar interview practice', reason: 'Written answers hain — Interview Mode me zor se bolke fluency banao.', to: '/interview-mode' };
+    return { phase: 'INTERVIEW', title: 'Practise interviews out loud', reason: 'You have written answers — build fluency by speaking aloud in Interview Mode.', to: '/interview-mode' };
   }
-  return { phase: 'GET HIRED', title: 'Sab systems ready — apply karo', reason: 'Learn, build, prove, present, prepare, apply: sab green. Ab interviews crack karo.', to: '/job-prep' };
+  return { phase: 'GET HIRED', title: 'All systems ready — start applying', reason: 'Learn, build, prove, present, prepare, apply: all green. Now go crack interviews.', to: '/job-prep' };
 }
 
 /** The flow strip's state: every phase before the NBA's is done, the NBA's is current. */
@@ -279,7 +279,7 @@ export function jobReadiness(c: CareerCounts): ReadinessRow[] {
   const ck = c.checklist;
   const profileDone = PROFILE_IDS.filter((id) => ck[id]).length;
   const rows: Omit<ReadinessRow, 'state'>[] = [
-    { id: 'resume', label: 'Resume', emoji: '📄', to: '/defense', hint: 'har project ke pitch answers', done: c.resumeAnswers, total: c.resumeTotal, pct: c.resumeTotal > 0 ? Math.round((c.resumeAnswers / c.resumeTotal) * 100) : null },
+    { id: 'resume', label: 'Resume', emoji: '📄', to: '/defense', hint: 'pitch answers for every project', done: c.resumeAnswers, total: c.resumeTotal, pct: c.resumeTotal > 0 ? Math.round((c.resumeAnswers / c.resumeTotal) * 100) : null },
     { id: 'portfolio', label: 'Portfolio', emoji: '🌐', to: '/projects', hint: '3 live projects', done: Math.min(c.buildsDone, 3), total: 3, pct: Math.round((Math.min(c.buildsDone, 3) / 3) * 100) },
     { id: 'projects', label: 'Projects', emoji: '💻', to: '/projects', hint: 'sections with a shipped build', done: c.projectGates, total: c.sections, pct: c.sections > 0 ? Math.round((c.projectGates / c.sections) * 100) : null },
     { id: 'interview', label: 'Interview', emoji: '🎤', to: '/mock-interviews', hint: 'mock questions passed', done: c.mockDone, total: c.mockTotal, pct: c.mockTotal > 0 ? Math.round((c.mockDone / c.mockTotal) * 100) : null },
@@ -359,10 +359,10 @@ export interface TargetRole {
  * and a future track extends the roles by being added to a role's list — no new mechanism.
  */
 export const TARGET_ROLES: TargetRole[] = [
-  { id: 'ai-engineer', label: 'AI Engineer', emoji: '🤖', blurb: 'LLM apps, RAG aur agents ship karne wala end-to-end role.', tracks: ['python', 'data', 'sql', 'ml', 'genai', 'agentic', 'apis'] },
-  { id: 'data-analyst', label: 'Data Analyst', emoji: '📊', blurb: 'Data se sawalon ke jawab — SQL, pandas, dashboards.', tracks: ['python', 'data', 'sql'] },
-  { id: 'ml-engineer', label: 'ML Engineer', emoji: '🧠', blurb: 'Models train, evaluate aur production me deploy karna.', tracks: ['python', 'data', 'sql', 'ml', 'apis'] },
-  { id: 'genai-engineer', label: 'GenAI Engineer', emoji: '✨', blurb: 'Prompting, RAG pipelines aur LLM products.', tracks: ['python', 'genai', 'agentic', 'apis'] },
+  { id: 'ai-engineer', label: 'AI Engineer', emoji: '🤖', blurb: 'An end-to-end role shipping LLM apps, RAG, and agents.', tracks: ['python', 'data', 'sql', 'ml', 'genai', 'agentic', 'apis'] },
+  { id: 'data-analyst', label: 'Data Analyst', emoji: '📊', blurb: 'Answering questions with data — SQL, pandas, dashboards.', tracks: ['python', 'data', 'sql'] },
+  { id: 'ml-engineer', label: 'ML Engineer', emoji: '🧠', blurb: 'Training, evaluating, and deploying models to production.', tracks: ['python', 'data', 'sql', 'ml', 'apis'] },
+  { id: 'genai-engineer', label: 'GenAI Engineer', emoji: '✨', blurb: 'Prompting, RAG pipelines, and LLM products.', tracks: ['python', 'genai', 'agentic', 'apis'] },
   { id: 'backend-engineer', label: 'Backend (API) Engineer', emoji: '🔌', blurb: 'FastAPI services, databases, deployment.', tracks: ['python', 'sql', 'apis'] },
 ];
 

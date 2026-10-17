@@ -22,7 +22,7 @@ import type { SubjectRange } from '../../core/learning/subjects';
  * The Labs pillar: every surface where the learner RUNS something.
  *
  * Practice answers questions; a lab executes. So this page is deliberately NOT the practice page
- * with a different word on it: it opens on a SUBJECT ("kya build/run karna hai?"), and each subject
+ * with a different word on it: it opens on a SUBJECT ("what do I want to build/run?"), and each subject
  * shows the topics its course files hands-on content under — the notebook authored for that section,
  * the runtime the course assigns to that section's step, and the section's coding exercises. A topic
  * with none of the three says so instead of showing a zero.
@@ -87,10 +87,10 @@ export default function LabsHub() {
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 14, alignItems: 'flex-start' }}>
           <div style={{ minWidth: 260 }}>
             <div className="chip" style={{ marginBottom: 6 }}>LABS</div>
-            <h1 style={{ margin: 0 }}>Code likho. Run karo. Build karo.</h1>
+            <h1 style={{ margin: 0 }}>Write code. Run it. Build it.</h1>
             <p className="muted small" style={{ margin: '8px 0 0', maxWidth: 640 }}>
-              Hands-on labs usi course structure se juda hai: subject chuno, uske topic kholo, aur wahan
-              notebook ya runtime me likh kar chalao. Sab kuch browser me, internet ke bina.
+              Hands-on labs follow the same course structure: pick a subject, open its topics, then
+              write and run code there in the notebook or runtime. Everything runs in the browser, without internet.
             </p>
           </div>
           {/* Secondary on purpose: the numbers are here to orient, not to lead the page. */}
@@ -113,7 +113,7 @@ export default function LabsHub() {
               <span className="t">
                 {cont.notebook.title}
                 <span className="small muted" style={{ display: 'block' }}>
-                  {cont.notebook.topic} · {cont.done}/{cont.total} code cells chale
+                  {cont.notebook.topic} · {cont.done}/{cont.total} code cells run
                 </span>
               </span>
               <b>{pct(cont.done, cont.total)}%</b>
@@ -125,8 +125,8 @@ export default function LabsHub() {
 
       <div className="sec-head"><h2><FlaskConical size={16} color="var(--cyan)" /> Choose your lab</h2><span className="line" /></div>
       <p className="small muted" style={{ margin: '0 0 8px' }}>
-        Jis technology ko haath se chalana hai, wahi subject kholo — har card ke numbers uske apne course,
-        notebooks aur exercises se aate hain.
+        Open the subject for the technology you want to try hands-on — each card's numbers come from its own course,
+        notebooks and exercises.
       </p>
       <div className="tile-grid">
         {TRACK_DEFS.map((d) => {
@@ -161,9 +161,9 @@ export default function LabsHub() {
               </span>
             </div>
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-              <Link className="btn small ghost" to="/labs"><ArrowLeft size={13} /> Saare subjects</Link>
+              <Link className="btn small ghost" to="/labs"><ArrowLeft size={13} /> All subjects</Link>
               {summary.notebooks > 0 && (
-                <span className="chip">{summary.cellsRun} / {summary.codeCells} notebook cells chale</span>
+                <span className="chip">{summary.cellsRun} / {summary.codeCells} notebook cells run</span>
               )}
             </div>
           </div>
@@ -180,8 +180,8 @@ export default function LabsHub() {
 
           {!summary.hasContent && (
             <p className="muted small" style={{ margin: '10px 0 0' }}>
-              🧪 Is subject ka koi hands-on lab abhi nahi hai — topic course me padho, coding exercises neeche
-              se karo, aur lab yahan aate hi dikh jayega.
+              🧪 This subject has no hands-on lab yet — study the topic in the course, do the coding exercises
+              below, and the lab will appear here as soon as it is available.
             </p>
           )}
 
@@ -229,15 +229,15 @@ export default function LabsHub() {
             );
           })}
           <p className="small muted" style={{ margin: '10px 0 0' }}>
-            Har topic apne course step ke lab par khulta hai: notebook usi section ka hai jo usse sikhata hai,
-            aur runtime wahi jo course us step ke liye file karta hai.
+            Each topic opens the lab for its course step: the notebook belongs to the section that teaches it,
+            and the runtime is the one the course assigns to that step.
           </p>
         </div>
       )}
 
       <div className="sec-head"><h2>Global tools</h2><span className="line" /></div>
       <p className="small muted" style={{ margin: '0 0 8px' }}>
-        Ye workspaces kisi ek subject ke nahi hain — jab bhi kuch chalana ho, seedha yahan aao.
+        These workspaces are not tied to a single subject — whenever you want to run something, come straight here.
       </p>
       <HubGrid routes={LAB_ROUTES} />
 

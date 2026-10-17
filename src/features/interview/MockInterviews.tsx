@@ -39,7 +39,7 @@ export default function MockInterviews() {
     if (!running) return;
     timer.current = window.setInterval(() => {
       setSeconds((s) => {
-        if (s <= 1) { setRunning(false); toast('Time up — answer submit karo.', 'warning'); return 0; }
+        if (s <= 1) { setRunning(false); toast('Time is up — submit your answer.', 'warning'); return 0; }
         return s - 1;
       });
     }, 1000);
@@ -56,7 +56,7 @@ export default function MockInterviews() {
   const grade = () => {
     if (!question) return;
     const text = answer.trim();
-    if (text.length < 15) { toast('Thoda detail me likho (15+ characters).', 'warning'); return; }
+    if (text.length < 15) { toast('Write a little more detail (15+ characters).', 'warning'); return; }
     const keywords = questionRubric(question.a);
     const { pct, missing } = keywordScore(text, keywords);
     const words = text.split(/\s+/).filter(Boolean);
@@ -71,9 +71,9 @@ export default function MockInterviews() {
     recordAttempt(doneKey, { done: pct >= 60, score: pct, tries: (state.attempts[doneKey]?.tries ?? 0) + 1, answer: text.slice(0, 400) });
     if (pct >= 60) {
       if (!wasDone) addXp(5, 'interview', `Mock round ${round.round} · Q${i + 1}`);
-      toast(`Achha jawab — ${pct}% match. +${wasDone ? 0 : 5} XP`, 'success');
+      toast(`Good answer — ${pct}% match. +${wasDone ? 0 : 5} XP`, 'success');
     } else {
-      toast(`Sirf ${pct}% match. Missing points dekho.`, 'warning');
+      toast(`Only ${pct}% match. Check the missing points.`, 'warning');
       addMistake({
         section: 'mock',
         topic: question.cat || 'Mock Interview',
@@ -92,7 +92,7 @@ export default function MockInterviews() {
     return Math.round(scored.reduce((a, b) => a + b, 0) / Math.max(1, round.questions.length));
   }, [round, state.attempts]);
 
-  if (!round || !question) return <div className="loading">Mock question bank load ho raha hai…</div>;
+  if (!round || !question) return <div className="loading">Loading the mock question bank…</div>;
 
   return (
     <div>
@@ -101,9 +101,9 @@ export default function MockInterviews() {
         <div>
           <h1 className="row" style={{ gap: 10 }}><Mic2 size={24} color="var(--pink)" /> MOCK INTERVIEWS</h1>
           <p className="muted small" style={{ maxWidth: 700 }}>
-            Timed interview simulation — <b>zor se bolke</b> answer karo, phir yahan likho. Feedback
-            real curriculum answer ke keywords se calculate hota hai: concept accuracy, technical
-            depth, communication aur missing points.
+            Timed interview simulation — answer <b>out loud</b> first, then write it here. Feedback is
+            computed from the keywords in the real curriculum answer: concept accuracy, technical
+            depth, communication and missing points.
           </p>
         </div>
         <div className="row" style={{ gap: 8 }}>
@@ -126,7 +126,7 @@ export default function MockInterviews() {
               </div>
             </div>
             <Bar pct={roundScore} />
-            <p className="muted small" style={{ marginTop: 6 }}>Round score {roundScore}% — 60%+ wale answers pass count hote hain.</p>
+            <p className="muted small" style={{ marginTop: 6 }}>Round score {roundScore}% — answers at 60% or above count as a pass.</p>
           </div>
 
           <div className="card" style={{ marginTop: 12 }}>
@@ -145,18 +145,18 @@ export default function MockInterviews() {
 
             <p className="small muted" style={{ marginTop: 4 }}>{question.cat}</p>
             <h3 style={{ marginTop: 2 }}>{question.q}</h3>
-            {wasDone && <span className="chip easy">Pehle attempt kiya — dobara practice</span>}
+            {wasDone && <span className="chip easy">Attempted before — practise again</span>}
 
             <textarea
               className="console"
               rows={6}
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
-              placeholder="Aloud bolke yeh apna answer likho… Jitna specific (nouns, methods, edge cases) utna better score."
+              placeholder="Say your answer out loud, then write it here… The more specific you are (nouns, methods, edge cases), the better the score."
               style={{ width: '100%', marginTop: 10 }}
             />
             <div className="row" style={{ gap: 8, marginTop: 8 }}>
-              <button className="btn primary" onClick={grade}><CheckCircle2 size={14} /> Answer submit karo</button>
+              <button className="btn primary" onClick={grade}><CheckCircle2 size={14} /> Submit answer</button>
               <button className="btn small" onClick={() => setI((v) => Math.min(v + 1, round.questions.length - 1))}>Skip / Next <ArrowRight size={13} /></button>
               <button className="btn small ghost" onClick={() => setI((v) => Math.max(0, v - 1))}>← Previous</button>
             </div>
@@ -175,18 +175,18 @@ export default function MockInterviews() {
               </div>
               {graded.missing.length > 0 && (
                 <>
-                  <p className="small" style={{ marginTop: 12, marginBottom: 4 }}><b>Missing points</b> — ye terms answer me aane chahiye the:</p>
+                  <p className="small" style={{ marginTop: 12, marginBottom: 4 }}><b>Missing points</b> — these terms should have appeared in your answer:</p>
                   <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                     {graded.missing.slice(0, 10).map((m) => <span key={m} className="chip hard">{m}</span>)}
                   </div>
                 </>
               )}
               <details style={{ marginTop: 10 }}>
-                <summary className="small muted" style={{ cursor: 'pointer' }}>Model answer dekho</summary>
+                <summary className="small muted" style={{ cursor: 'pointer' }}>Show model answer</summary>
                 <div className="bubble">{question.a}</div>
               </details>
               <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                {graded.pct < 60 && <Link className="btn small" to="/mistakes">Mistake Tracker me gaye <ArrowRight size={12} /></Link>}
+                {graded.pct < 60 && <Link className="btn small" to="/mistakes">Go to the Mistake Tracker <ArrowRight size={12} /></Link>}
                 <button className="btn small primary" onClick={() => { setAnswer(''); setGraded(null); setI((v) => Math.min(v + 1, round.questions.length - 1)); }}>
                   Next question <ArrowRight size={13} />
                 </button>
@@ -229,12 +229,13 @@ export default function MockInterviews() {
               Attempted {rounds.reduce((a, r) => a + r.questions.filter((_, qi) => state.attempts[labAttempt('mock', `${r.round}:${qi}`)]?.done).length, 0)} questions
               out of {rounds.reduce((a, r) => a + r.questions.length, 0)}.
             </p>
-            <Link className="btn small" to="/progress" style={{ width: '100%', justifyContent: 'center' }}>Progress dekho <ArrowRight size={12} /></Link>
+            <Link className="btn small" to="/progress" style={{ width: '100%', justifyContent: 'center' }}>View progress <ArrowRight size={12} /></Link>
           </div>
 
           <div className="card" style={{ borderLeft: '3px solid var(--violet)' }}>
             <p className="small" style={{ margin: 0, fontStyle: 'italic' }}>
-              “Pehle 30 second me structure bolo — definition, example, phir edge case. Isse interviewer ko clarity milti hai.”
+              “Open with structure in the first 30 seconds — definition, example, then the edge case.
+              That is what gives the interviewer clarity.”
             </p>
           </div>
         </div>

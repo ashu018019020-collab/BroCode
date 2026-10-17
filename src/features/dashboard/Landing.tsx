@@ -5,6 +5,8 @@ import { trackHref } from '../../core/learning/surfaces';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { usePathCtx } from '../../core/data/paths';
+import { useStore } from '../../core/storage/store';
+import { resumeTarget } from '../../core/learning/resume';
 
 /**
  * The front door — the PUBLIC page an unauthenticated visitor sees at `/`.
@@ -59,6 +61,13 @@ export default function Landing() {
   const { user } = useAuth();
   const { sections } = useCurriculum();
   const ctx = usePathCtx();
+  const state = useStore();
+  /**
+   * A signed-in learner's "Continue Learning" is not a link to `/` — that was a self-link that
+   * looked like a dead button. It resolves the same resume position the dashboard and the footer
+   * use, so all three controls land on the same real lesson.
+   */
+  const resume = resumeTarget(state, sections);
 
   const stats = [
     { icon: Sparkles, n: `${TRACK_DEFS.length}`, l: 'Learning Tracks' },
@@ -88,7 +97,7 @@ export default function Landing() {
         </p>
         <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
           {signedIn ? (
-            <Link className="btn primary" to="/">
+            <Link className="btn primary" to={resume.route} title={resume.reason}>
               <Play size={14} /> Continue Learning
             </Link>
           ) : (

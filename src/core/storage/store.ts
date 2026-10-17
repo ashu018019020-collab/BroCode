@@ -41,6 +41,7 @@ export const defaultState = (): AppState => ({
   notes: [],
   jobPrep: {},
   readNotifs: [],
+  learning: {},
 });
 
 function sanitize(s: AppState): AppState {
@@ -50,6 +51,12 @@ function sanitize(s: AppState): AppState {
   if (!Array.isArray(s.notes)) s.notes = [];
   if (!Array.isArray(s.readNotifs)) s.readNotifs = [];
   if (!s.profile || typeof s.profile !== 'object') s.profile = defaultState().profile;
+  // The resume position is optional and may come from an older build, a hand-edited progress file
+  // or the account API. Only two strings are ever kept; anything else is discarded rather than being
+  // passed to the route builder.
+  if (!s.learning || typeof s.learning !== 'object' || Array.isArray(s.learning)) s.learning = {};
+  if (typeof s.learning.lastSectionId !== 'string') delete s.learning.lastSectionId;
+  if (typeof s.learning.lastStage !== 'string') delete s.learning.lastStage;
   // One-time rename: the old goal named ROLES ("AI Engineer / GenAI / Agentic AI"); the profile
   // now carries a FIELD OF STUDY (Onboarding/Settings' pickers). Existing states migrate so no
   // chip keeps printing the retired string.
@@ -98,6 +105,38 @@ export function useStore(): AppState {
  */
 export function stateSnapshot(): AppState {
   return state;
+}
+
+/**
+ * Remember the lesson the learner is actually looking at.
+ *
+ * Written by the lesson page on every section/stage change. It is a plain assignment, not a
+ * timestamped log: the only consumer is "Continue Learning", which needs ONE answer, and rewriting
+ * the whole state on every render would be a write for no new information. The identity check also
+ * keeps a `setState` loop out of the lesson page.
+ */
+export function recordLessonVisit(sectionId: string, stage: string) {
+  if (!sectionId || !stage) return;
+  const current = stateSnapshot().learning ?? {};
+  if (current.lastSectionId === sectionId && current.lastStage === stage) return;
+  setState((s) => ({ ...s, learning: { lastSectionId: sectionId, lastStage: stage } }));
+}
+
+/**
+ * Adopt the resume position the account service reported, WITHOUT overwriting this device's own.
+ *
+ * A learner who read lesson 12 on their laptop and then opens the app on a phone has no local
+ * position on the phone, so the synced one is the correct answer. The reverse is also true: a
+ * device that already knows where the learner stopped is newer than the last successful sync, and
+ * must not be dragged backwards by a snapshot taken before that lesson was opened.
+ */
+export function adoptRemoteResume(position: { sectionId?: string; stage?: string } | null | undefined) {
+  const sectionId = position?.sectionId;
+  const stage = position?.stage;
+  if (typeof sectionId !== 'string' || !sectionId || typeof stage !== 'string' || !stage) return;
+  const current = stateSnapshot().learning ?? {};
+  if (current.lastSectionId) return;
+  setState((s) => ({ ...s, learning: { lastSectionId: sectionId, lastStage: stage } }));
 }
 
 // ---- helpers ----

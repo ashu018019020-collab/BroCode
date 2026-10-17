@@ -25,11 +25,11 @@ export type ExamScope = 'all' | 'complete' | 'one';
 export const EXAM_VERSION = 1;
 
 export const EXAM_FOCUS_LABEL: Record<ExamFocus, string> = {
-  mixed: 'Mixed (sab types)',
+  mixed: 'Mixed (all types)',
   interview: 'Interview + Checkpoint',
   coding: 'Coding + Solved',
   logic: 'Logic (predict/trace/why…)',
-  debug: 'Debug (bug fix karo)',
+  debug: 'Debug (fix the bug)',
 };
 
 /** Which bank question types a focus draws from. `theory` is never examined. */
@@ -378,7 +378,7 @@ export function buildExamWrites(
         section: q.sectionId,
         topic: q.tags[0] ?? q.type,
         question: q.question.slice(0, 140),
-        myAnswer: typed ? typed.slice(0, 220) : '(exam me khaali chhoda)',
+        myAnswer: typed ? typed.slice(0, 220) : '(left blank in the exam)',
         correct: q.answer.slice(0, 220),
         type: mistakeTypeForType(q.type),
         // Provenance so the offline coach knows this failure came from a bank
@@ -404,10 +404,10 @@ export function mistakeTypeForType(t: QuestionType): 'code' | 'debug' | 'logic' 
 
 /** Share of the paper that must be graded before results can be filed. */
 export function readiness(summary: ExamSummary): { ready: boolean; label: string } {
-  if (summary.total === 0) return { ready: false, label: 'Koi question nahi mila — filters badlo.' };
-  if (summary.graded === 0) return { ready: false, label: 'Abhi kuch grade nahi hua.' };
-  if (summary.ungraded > 0) return { ready: true, label: `${summary.ungraded} question bina grade — wo neutral rahenge.` };
-  return { ready: true, label: 'Saare questions grade ho gaye.' };
+  if (summary.total === 0) return { ready: false, label: 'No questions found — change the filters.' };
+  if (summary.graded === 0) return { ready: false, label: 'Nothing has been graded yet.' };
+  if (summary.ungraded > 0) return { ready: true, label: `${summary.ungraded} question${summary.ungraded > 1 ? 's' : ''} not graded — they will stay neutral.` };
+  return { ready: true, label: 'All questions have been graded.' };
 }
 
 export function describeBlueprint(bp: ExamBlueprint, sectionTitle?: string): string {

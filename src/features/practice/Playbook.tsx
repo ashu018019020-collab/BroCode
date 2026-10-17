@@ -115,7 +115,7 @@ export default function Playbook() {
     return source.sort((a, b) => b[1] - a[1]);
   }, [items, index]);
 
-  if (!index) return <><HubCrumb hub="/practice" hubLabel="Practice" page="Practice Archive" /><div className="loading">Playbook index load ho raha hai…</div></>;
+  if (!index) return <><HubCrumb hub="/practice" hubLabel="Practice" page="Practice Archive" /><div className="loading">Loading the Playbook index…</div></>;
 
   const t = index.totals;
   /** Denominators for the header chips, and for a chapter's share of the whole document. */
@@ -144,8 +144,8 @@ export default function Playbook() {
                 otherwise repaint it as a gradient silhouette instead of an emoji. */}
             <h1 style={{ margin: '4px 0' }}><span aria-hidden>📘</span> <span className="pb-title">AI Engineer Master Playbook V15</span></h1>
             <p className="muted small" style={{ maxWidth: 720, margin: 0 }}>
-              {index.source.replace(/\.pdf$/, '').replace(/_/g, ' ')} — pichhle guide ke saath ye doosra source hai.
-              Har item section ke apne bank me gaya hai (duplicate text skip karke), to practise ek hi jagah hota hai.
+              {index.source.replace(/\.pdf$/, '').replace(/_/g, ' ')} — the second source alongside the curriculum guide.
+              Every item has been imported into its section's own bank (duplicate text is skipped), so practice happens in one place.
             </p>
           </div>
         </div>
@@ -159,16 +159,16 @@ export default function Playbook() {
         </div>
 
         <div className="row" style={{ marginTop: 10, flexWrap: 'wrap' }}>
-          <Link className="btn small primary" to="/interview-mode"><Mic2 size={13} /> Interview Mode me “Playbook V15” source</Link>
-          <Link className="btn small" to="/questions"><ListChecks size={13} /> Question Bank (sab questions)</Link>
-          <Link className="btn small" to="/pdf/playbook"><FileText size={13} /> Playbook PDF padho</Link>
+          <Link className="btn small primary" to="/interview-mode"><Mic2 size={13} /> Interview Mode with the “Playbook V15” source</Link>
+          <Link className="btn small" to="/questions"><ListChecks size={13} /> Question Bank (all questions)</Link>
+          <Link className="btn small" to="/pdf/playbook"><FileText size={13} /> Read the Playbook PDF</Link>
           {labChapter && <Link className="btn small" to={`/lesson/${labChapter.sectionId}/coding`}>💻 {t.labs} coding labs</Link>}
           {projectChapter && <Link className="btn small" to={`/lesson/${projectChapter.sectionId}/mini`}>🏗️ {t.miniProjectBlueprints + t.miniProjectCapstones} mini projects</Link>}
         </div>
 
         <p className="small muted" style={{ marginBottom: 0 }}>
-          {t.methodAnswers} prompts (checkpoint + production scenario) ke aage document ne model answer ki jagah apna method diya hai —
-          wahi verbatim rakha gaya hai aur <span className="chip">method-answer</span> tag lagaya gaya hai. Koi answer invent nahi kiya gaya.
+          {t.methodAnswers} prompts (checkpoint + production scenario) carry the document's own method instead of a model answer —
+          it is kept verbatim and labelled with the <span className="chip">method-answer</span> tag. No answer was invented.
         </p>
       </div>
 
@@ -177,8 +177,8 @@ export default function Playbook() {
         <div className="row spread">
           <h2 className="row" style={{ gap: 8, margin: 0 }}><BookMarked size={16} color="var(--cyan)" /> Chapter index</h2>
           <span className="small muted">
-            Chapter kholo → uske items, unka section aur PDF page ·
-            {' '}<Link to="/courses">apne course ke steps me dekho →</Link>
+            Open a chapter → its items, their section and PDF page ·
+            {' '}<Link to="/courses">see it in your course steps →</Link>
           </span>
         </div>
 
@@ -248,7 +248,7 @@ export default function Playbook() {
                           className="chip ch-step"
                           to={card ? `/course/${card.slug}/${step}` : '/courses'}
                           onClick={(e) => e.stopPropagation()}
-                          title={`Course step ${step} — yahan ye chapter padha jata hai`}
+                          title={`Course step ${step} — this chapter is taught there`}
                         >
                           <MapIcon size={11} /> Step {String(step).padStart(2, '0')}
                         </Link>
@@ -265,11 +265,11 @@ export default function Playbook() {
                       {ch.items === 0 ? (
                         <div className="tree-footer">
                           <p className="small muted" style={{ margin: '0 0 6px' }}>
-                            Is chapter me practice items nahi hain — ye concept/playbook chapter hai.
-                            {sec ? ` Iska lesson section ${String(sec.no).padStart(2, '0')} · ${sec.title} hai.` : ''}
+                            This chapter has no practice items — it is a concept/playbook chapter.
+                            {sec ? ` Its lesson is section ${String(sec.no).padStart(2, '0')} · ${sec.title}.` : ''}
                           </p>
                           <div className="row" style={{ flexWrap: 'wrap' }}>
-                            {sec && <Link className="btn small primary" to={`/lesson/${sec.id}/learn`}>Lesson kholo → {sec.title}</Link>}
+                            {sec && <Link className="btn small primary" to={`/lesson/${sec.id}/learn`}>Open lesson → {sec.title}</Link>}
                             <Link className="btn small" to={`/pdf/playbook/${ch.pdfPage}`}>PDF p.{ch.pdfPage}</Link>
                           </div>
                         </div>
@@ -284,18 +284,18 @@ export default function Playbook() {
                               // `playbook=1` pre-ticks the bank's "sirf Playbook V15" filter, so the link
                               // opens the playbook items of that section rather than 500 curriculum ones.
                               to={`/questions?section=${it.sectionId}&playbook=1`}
-                              title={`${it.question} — ${it.sectionTitle} ke bank me practice karo`}
+                              title={`${it.question} — practise this in the ${it.sectionTitle} bank`}
                             >
                               <span className="mark">{it.type === 'coding' ? '💻' : it.type === 'checkpoint' ? '✅' : '🎤'}</span>
                               <span style={{ flex: 1, textAlign: 'left' }}>{it.question}</span>
                               <span className="chip">{ACTION_OF_TYPE[it.type] ?? it.type}</span>
-                              {it.selfGrade && <span className="chip" title="Document ne method diya hai, model answer nahi">method</span>}
+                              {it.selfGrade && <span className="chip" title="The document gives a method, not a model answer">method</span>}
                             </Link>
                           ))}
                           {own.length > 6 && (
                             <div className="tree-row topic" style={{ cursor: 'default' }}>
                               <span className="mark">＋</span>
-                              <span className="muted" style={{ flex: 1 }}>… aur {own.length - 6} items us section ke bank me</span>
+                              <span className="muted" style={{ flex: 1 }}>… and {own.length - 6} more items in that section's bank</span>
                             </div>
                           )}
 
@@ -307,7 +307,7 @@ export default function Playbook() {
                               {targets.map(([sid, n]) => {
                                 const s = sections.find((x) => x.id === sid);
                                 return (
-                                  <span key={sid} className="chip" title={`${n} item(s) yahan gaye`}>
+                                  <span key={sid} className="chip" title={`${n} item(s) placed here`}>
                                     <Users size={11} /> {s ? `${String(s.no).padStart(2, '0')} ${s.title.split(' ')[0]}` : sid}: {n}
                                   </span>
                                 );
@@ -324,7 +324,7 @@ export default function Playbook() {
                                 );
                               })()}
                               <Link className="btn small primary" to={`/lesson/${ch.sectionId}/${STAGE_OF_TYPE[Object.keys(ch.byType)[0] ?? 'interview'] ?? 'interview'}`}>
-                                Practice shuru karo →
+                                Start practice →
                               </Link>
                               <Link className="btn small" to={`/questions?section=${ch.sectionId}&playbook=1`}>Question Bank (playbook items)</Link>
                               {targets.slice(0, 3).map(([sid]) => {
@@ -345,8 +345,8 @@ export default function Playbook() {
       </div>
 
       <p className="small muted" style={{ marginTop: 10 }}>
-        Index pipeline se banta hai: <code>npm run questions:playbook</code> (banks + is page ka index + items view, teeno ek saath).
-        Playbook PDF ka page number is page ke apne PDF ka hai — guide.pdf ke deep links waise hi kaam karte hain.
+        The index is built by the pipeline: <code>npm run questions:playbook</code> (banks + this page's index + items view, all together).
+        This Playbook's PDF page numbers belong to its own PDF — the guide.pdf deep links work the same way.
       </p>
     </div>
   );

@@ -60,7 +60,7 @@ import { CommandPalette } from '../components/shared/CommandPalette';
 import { useQuestionIndex } from '../core/data/searchindex';
 import { useUi, setUi } from '../core/storage/ui';
 import { STAGE_META, type Stage } from '../core/learning/progress';
-import { nextTask } from '../core/ai/tutor';
+import { resumeTarget } from '../core/learning/resume';
 import { PAGES } from '../core/platform/search';
 import { ErrorBoundary } from '../components/ui/ErrorBoundary';
 import { AiDock } from '../components/shared/AiDock';
@@ -98,6 +98,22 @@ function PublicHome() {
   const { user, loading } = useAuth();
   if (loading) return <RouteSkeleton />;
   return user ? <Dashboard /> : <Suspense fallback={<RouteSkeleton />}><Landing /></Suspense>;
+}
+
+/**
+ * `/start` — the public landing page, but NEVER for a signed-in learner.
+ *
+ * The old first-run gate sent an authenticated learner here, and this page has no way forward for
+ * them: it is a marketing overview, not their dashboard. That produced the reported loop — sign in,
+ * land on the landing page, and every further click appears to do nothing. The gate is gone, but a
+ * bookmark, an old `/start` link or a stale deployment can still put a signed-in learner here, so
+ * the route itself resolves them to the Dashboard. A visitor still gets the public page.
+ */
+function StartPage() {
+  const { user, loading } = useAuth();
+  if (loading) return <RouteSkeleton />;
+  if (user) return <Navigate to="/" replace />;
+  return <Suspense fallback={<RouteSkeleton />}><Landing /></Suspense>;
 }
 
 /**
@@ -372,11 +388,21 @@ function Shell() {
   // Close transient panels whenever the route changes.
   useEffect(() => { setDrawer(false); setNotifOpen(false); setQuickOpen(false); }, [loc.pathname]);
 
-  // First-run gate: the landing page is the front door, onboarding is one click behind it.
-  useEffect(() => {
-    if (!state.profile.onboarded
-        && !['/onboarding', '/start', '/login', '/admin'].includes(loc.pathname)) nav('/start');
-  }, [state.profile.onboarded, loc.pathname]);
+  /**
+   * FIRST-RUN GATE — deliberately REMOVED.
+   *
+   * This used to send every route except a four-entry allow-list to `/start` while
+   * `profile.onboarded` was false. Onboarding is the only writer of that flag, and a sign-in
+   * switches the store to the account's namespace, whose fresh state is `onboarded: false`. The
+   * result was a signed-in learner being bounced from `/`, `/courses` and every lesson straight
+   * back to the public landing page: the sidebar rendered, but no destination could be reached and
+   * both "Continue Learning" buttons appeared dead. That is the exact Dashboard trap this fix is
+   * for, so the redirect is gone rather than being re-ordered into another way to get stuck.
+   *
+   * Nothing is lost: `/onboarding` is still a real, guarded route a learner can open, the dashboard
+   * already tolerates a blank profile name, and signup collects the name. Authorization was never
+   * decided here (`RequireAuth` and the server do that), so removing this effect opens no door.
+   */
 
   // A cancelled or failed provider return lands back on the redirect origin with its reason in
   // the query string (AuthProvider reads and cleans it). That reason belongs on the sign-in page,
@@ -453,28 +479,23 @@ function Shell() {
   }, [loc.pathname, crumb.title]);
 
   /**
-   * The single most useful next thing, computed live: overdue reviews win,
-   * otherwise the tutor engine's own next-task recommendation.
+   * The single most useful next thing — and the ONE destination both "Continue Learning" controls
+   * share. `resumeTarget` resolves the last lesson this account actually opened (or the newest
+   * stage record, or the first lesson of the roadmap), validates the section against the live
+   * curriculum and builds a real `/lesson/:sid/:stage` URL. It is never a hand-written link, so a
+   * renamed section cannot leave the button pointing at a page that does not exist.
    */
   const smart = useMemo(() => {
-    if (badges.review > 0) {
-      return {
-        kind: 'warn' as const,
-        icon: <Repeat size={14} />,
-        label: `${badges.review} review due`,
-        why: 'Spaced repetition',
-        route: '/review',
-      };
-    }
-    const nt = nextTask(state, sections);
+    const target = resumeTarget(state, sections);
+    const short = target.label.length > 34 ? `${target.label.slice(0, 32)}…` : target.label;
     return {
       kind: 'go' as const,
       icon: <Target size={14} />,
-      label: nt.label.length > 30 ? `${nt.label.slice(0, 28)}…` : nt.label,
-      why: nt.reason.length > 42 ? `${nt.reason.slice(0, 40)}…` : nt.reason,
-      route: nt.route,
+      label: short,
+      why: target.reason,
+      route: target.route,
     };
-  }, [badges.review, state, sections]);
+  }, [state, sections]);
 
   const onFocus = prefs.focus;
   const collapsed = prefs.navCollapsed && !onFocus;
@@ -663,13 +684,13 @@ function Shell() {
                   {quickOpen && (
                     <div className="quickmenu-panel" role="menu">
                       {[
-                        { icon: StickyNote, label: 'Nayi note', sub: 'Notes me likho', run: () => nav('/notes') },
-                        { icon: FlaskConical, label: 'Playground', sub: 'Python chalao', run: () => nav('/playground') },
-                        { icon: Sparkles, label: 'AI Tutor se poocho', sub: 'Explain, hint, debug', run: () => nav('/playground') },
+                        { icon: StickyNote, label: 'New note', sub: 'Write in Notes', run: () => nav('/notes') },
+                        { icon: FlaskConical, label: 'Playground', sub: 'Run Python', run: () => nav('/playground') },
+                        { icon: Sparkles, label: 'Ask the AI Tutor', sub: 'Explain, hint, debug', run: () => nav('/playground') },
                         { icon: prefs.theme === 'dark' ? Sun : Moon, label: prefs.theme === 'dark' ? t('top.themeLight') : t('top.themeDark'), sub: t('top.theme'), run: () => setUi({ theme: prefs.theme === 'dark' ? 'light' : 'dark' }) },
-                        { icon: Focus, label: prefs.focus ? 'Focus Mode band karo' : 'Focus Mode chalao', sub: 'Distraction free', run: () => setUi({ focus: !prefs.focus }) },
-                        { icon: Download, label: 'Progress export karo', sub: 'JSON backup', run: () => { exportProgress(); toast('Progress file download ho gayi.', 'success'); } },
-                        { icon: Languages, label: locale === 'hi' ? 'Switch to English' : 'Hinglish me switch karo', sub: t('lang.label'), run: () => setLang(locale === 'hi' ? 'en' : 'hi') },
+                        { icon: Focus, label: prefs.focus ? 'Turn off Focus Mode' : 'Turn on Focus Mode', sub: 'Distraction free', run: () => setUi({ focus: !prefs.focus }) },
+                        { icon: Download, label: 'Export progress', sub: 'JSON backup', run: () => { exportProgress(); toast('Progress file downloaded.', 'success'); } },
+                        { icon: Languages, label: locale === 'hi' ? 'Switch to English' : 'Switch to Hinglish', sub: t('lang.label'), run: () => setLang(locale === 'hi' ? 'en' : 'hi') },
                       ].map((a) => (
                         <button key={a.label} className="quickmenu-item" role="menuitem" onClick={() => { a.run(); setQuickOpen(false); }}>
                           <span className="ico"><a.icon size={15} /></span>
@@ -760,7 +781,7 @@ function Shell() {
                   itself any more — that page prints the learner's own progress, which a visitor has
                   no business seeing. */}
               <Route path="/" element={<PublicHome />} />
-              <Route path="/start" element={<Landing />} />
+              <Route path="/start" element={<StartPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               {/* `/onboarding` asks for a display name and a daily goal. It exposes no private data,
@@ -889,8 +910,8 @@ function Shell() {
                 className={`sb-ai${aiOpen ? ' on' : ''}`}
                 onClick={() => setAiOpen((open) => !open)}
                 aria-expanded={aiOpen}
-                aria-label={aiOpen ? 'AI assistant band karo' : 'AI assistant kholo'}
-                title="AI — is app ke bare me poocho"
+                aria-label={aiOpen ? 'Close AI assistant' : 'Open AI assistant'}
+                title="AI — ask about this app"
               >
                 <span className="sb-ai-orb"><Bot size={25} /></span>
                 <b>AI</b>
@@ -926,7 +947,7 @@ function Shell() {
                     className={`bn-ai${aiOpen ? ' on' : ''}`}
                     onClick={() => setAiOpen((v) => !v)}
                     aria-expanded={aiOpen}
-                    aria-label={aiOpen ? 'AI assistant band karo' : 'AI assistant kholo'}
+                    aria-label={aiOpen ? 'Close AI assistant' : 'Open AI assistant'}
                   >
                     <span className="bn-ai-ic"><Bot size={16} /></span>
                     <span>AI</span>

@@ -81,7 +81,7 @@ export function StageQnA({ section, stage }: { section: Section; stage: string }
   if (!bank) {
     return (
       <div className="card" style={{ marginTop: 12 }}>
-        <b className="small">📚 {spec.label} — question bank load ho raha hai…</b>
+        <b className="small">📚 {spec.label} — loading the question bank…</b>
       </div>
     );
   }
@@ -111,7 +111,7 @@ export function StageQnA({ section, stage }: { section: Section; stage: string }
       section: q.sectionId,
       topic: (q.tags ?? [])[0] ?? spec.label,
       question: q.question.slice(0, 140),
-      myAnswer: written.trim() ? written.slice(0, 220) : '(stage Q&A: bina likhe galat)',
+      myAnswer: written.trim() ? written.slice(0, 220) : '(stage Q&A: graded without a written answer)',
       correct: q.answer.slice(0, 220),
       type: q.type === 'debug' ? 'debug' : q.type === 'logic' ? 'logic' : q.type === 'coding' || q.type === 'solved' ? 'code' : 'interview',
       source: 'bank',
@@ -132,22 +132,22 @@ export function StageQnA({ section, stage }: { section: Section; stage: string }
             <button
               className={`btn small ${onlyPlaybook ? 'primary' : ''}`}
               aria-pressed={onlyPlaybook}
-              title="Playbook V15 (doosra source) ke items — document ke apne `playbook` tag se"
+              title="Items from Playbook V15 (the second source), taken from the document's own `playbook` tag"
               onClick={() => { setOnlyPlaybook((v) => !v); setShown(STAGE_PAGE_SIZE); }}
             >
-              {onlyPlaybook ? '📘 Playbook filter hatao' : `📘 sirf Playbook (${playbookCount})`}
+              {onlyPlaybook ? '📘 Clear Playbook filter' : `📘 Playbook only (${playbookCount})`}
             </button>
           )}
-          <Link className="btn small" to={`/questions?section=${sectionId}&playbook=1`}>Poora bank <ListChecks size={12} /></Link>
+          <Link className="btn small" to={`/questions?section=${sectionId}&playbook=1`}>Full bank <ListChecks size={12} /></Link>
         </span>
       </div>
 
       <p className="muted small" style={{ margin: '6px 0 0' }}>
-        <b>{items.length}</b> questions is stage ke liye
+        <b>{items.length}</b> questions for this stage
         {mustKnow > 0 && <> · <b>{mustKnow}</b> MUST-KNOW highlighted</>}
-        {onlyPlaybook && <> · playbook filter: <b>{pool.length}</b> dikh rahe hain</>}
-        {' · '}tumne {graded}/{items.length} grade kiye · answer accuracy <b>{pctText(acc.pct)}</b> ({acc.correct}/{acc.graded} sahi).
-        Apna answer likho — wo save rehta hai — phir reveal karke apne aap ko grade karo.
+        {onlyPlaybook && <> · playbook filter: showing <b>{pool.length}</b></>}
+        {' · '}you have graded {graded}/{items.length} · answer accuracy <b>{pctText(acc.pct)}</b> ({acc.correct}/{acc.graded} correct).
+        Write your answer — it is saved — then reveal and grade yourself.
       </p>
 
       <div style={{ marginTop: 10 }}>
@@ -232,7 +232,7 @@ function BankItem({
           {/* The playbook's `pb:<chapter>` tag is machine shorthand — show the book and the chapter,
               and keep it out of the generic list (same treatment as the Question Bank page). */}
           {pbChapter && (
-            <span className="chip" title="Is sawaal ka source chapter — items bank me us chapter ke saath filter ho sakte hain">
+            <span className="chip" title="The source chapter for this question — the bank can be filtered by that chapter">
               📘 ch.{pbChapter}
             </span>
           )}
@@ -247,10 +247,10 @@ function BankItem({
             <span
               className={`chip ${attempt.done === true ? 'easy' : attempt.done === false ? 'hard' : 'medium'}`}
               title={attempt.done === undefined
-                ? 'Answer save ho gaya hai — sahi/galat khud grade karo, mastery usi se badhti hai'
-                : 'Percentage = model answer ke keyword rubric se match'}
+                ? 'Your answer is saved — grade it yourself; mastery follows that grade'
+                : 'Percentage = keyword match against the model answer'}
             >
-              {attempt.done === true ? '✓ sahi' : attempt.done === false ? '✗ galat' : '✍ likha'}
+              {attempt.done === true ? '✓ correct' : attempt.done === false ? '✗ incorrect' : '✍ written'}
               {attemptPct(attempt) !== null ? ` ${pctText(attemptPct(attempt))}` : ''}
               {attempt.tries && attempt.tries > 1 ? ` ×${attempt.tries}` : ''}
             </span>
@@ -259,16 +259,16 @@ function BankItem({
         <span className="row" style={{ gap: 6 }}>
           {CODE_TYPES.has(q.type) && (
             <button className="btn small" onClick={() => setNotebook((v) => !v)} aria-expanded={notebook}>
-              <NotebookPen size={12} /> {notebook ? 'Notebook band karo' : 'Notebook'}
+              <NotebookPen size={12} /> {notebook ? 'Close notebook' : 'Notebook'}
             </button>
           )}
           {/* The offline assistant, scoped to THIS question: answer, hint and a rubric percentage of
               whatever is written above. Lazy — one instance per opened item, never per row. */}
-          <button className={`btn small${ai ? ' primary' : ''}`} onClick={() => setAi((v) => !v)} aria-expanded={ai} title="Is question ka answer, hint aur tumhare answer ka percentage">
+          <button className={`btn small${ai ? ' primary' : ''}`} onClick={() => setAi((v) => !v)} aria-expanded={ai} title="The answer, a hint, and a percentage for your written answer">
             <Bot size={12} /> AI
           </button>
           <button className="btn small" onClick={() => setOpen((v) => !v)}>
-            {open ? 'Answer chhupao' : 'Answer dekho'}
+            {open ? 'Hide answer' : 'Show answer'}
           </button>
         </span>
       </div>
@@ -280,7 +280,7 @@ function BankItem({
         className="console"
         rows={3}
         value={answer}
-        placeholder="My answer… (save ho jata hai)"
+        placeholder="My answer… (saved automatically)"
         aria-label="My answer"
         onChange={(e) => setAnswer(e.target.value)}
         style={{ marginTop: 8 }}
@@ -290,13 +290,13 @@ function BankItem({
           why a check measured nothing (a stub, or an item with a method instead of a model answer). */}
       <div className="row" style={{ marginTop: 8 }}>
         <button className={`btn small${checked ? '' : ' primary'}`} onClick={onCheck} aria-expanded={checked}>
-          {checked ? <RotateCcw size={12} /> : <Check size={12} />} {checked ? 'Dobara check' : 'Check answer'}
+          {checked ? <RotateCcw size={12} /> : <Check size={12} />} {checked ? 'Check again' : 'Check answer'}
         </button>
-        <button className="btn small" disabled={index <= 0} onClick={() => onNav(-1)} title="Pichla question">
-          <ChevronLeft size={12} /> Pichla
+        <button className="btn small" disabled={index <= 0} onClick={() => onNav(-1)} title="Previous question">
+          <ChevronLeft size={12} /> Previous
         </button>
-        <button className="btn small" disabled={index >= total - 1} onClick={() => onNav(1)} title="Agla question">
-          Agla <ChevronRight size={12} />
+        <button className="btn small" disabled={index >= total - 1} onClick={() => onNav(1)} title="Next question">
+          Next <ChevronRight size={12} />
         </button>
         <span className="small muted">Q {index + 1} / {total}{words ? ` · ${words} words` : ''}</span>
       </div>
@@ -305,21 +305,21 @@ function BankItem({
         <p className="small" style={{ marginTop: 6 }}>
           <span
             className={`chip ${rubric.pct >= 70 ? 'easy' : rubric.pct >= 40 ? 'medium' : 'hard'}`}
-            title="Percentage = model answer ke keyword rubric se match"
+            title="Percentage = keyword match against the model answer"
           >
-            {rubric.pct >= 80 ? '✅ bahut sahi' : rubric.pct >= 50 ? '⚠️ aadha-adhura' : '🔴 kamzor'} · {rubric.pct}% match
+            {rubric.pct >= 80 ? '✅ very good' : rubric.pct >= 50 ? '⚠️ incomplete' : '🔴 weak'} · {rubric.pct}% match
           </span>{' '}
           {rubric.missing.length > 0
-            ? <span className="muted">Hint: ye key points chhoot rahe hain — {rubric.missing.map((m) => m.split('|')[0]).join(', ')}</span>
-            : <span className="muted">Saare rubric points cover ho gaye — ab structure tighten karo.</span>}
+            ? <span className="muted">Hint: these key points are missing — {rubric.missing.map((m) => m.split('|')[0]).join(', ')}</span>
+            : <span className="muted">All rubric points are covered — now tighten the structure.</span>}
         </p>
       ) : (
         <p className="small muted" style={{ marginTop: 6 }}>
           {!answer.trim()
-            ? 'Pehle apna answer likho, phir Check answer dabao.'
+            ? 'Write your answer first, then press Check answer.'
             : !isAnswer(answer)
-              ? 'Itna chhota likha hai ki measure nahi ho sakta — 1-2 line me apne shabdon me likho.'
-              : 'Is item ka model answer nahi hai (document ne method diya hai), to match percentage banta hi nahi — "Answer dekho" se model padho aur khud grade karo.'}
+              ? 'This is too short to measure — write one or two lines in your own words.'
+              : 'This item has no model answer (the document gives a method instead), so a match percentage cannot exist — open "Show answer" to read the model and grade yourself.'}
         </p>
       ))}
 
@@ -328,8 +328,8 @@ function BankItem({
           <p className="small" style={{ marginTop: 8 }}>{q.answer}</p>
           {q.explanation && <p className="small muted" style={{ marginTop: 4 }}>{q.explanation}</p>}
           <div className="row" style={{ marginTop: 8 }}>
-            <button className="btn small primary" onClick={() => onGrade(q, true, answer)}>✓ Sahi tha</button>
-            <button className="btn small" onClick={() => onGrade(q, false, answer)}>✗ Galat tha</button>
+            <button className="btn small primary" onClick={() => onGrade(q, true, answer)}>✓ That was correct</button>
+            <button className="btn small" onClick={() => onGrade(q, false, answer)}>✗ That was incorrect</button>
           </div>
         </div>
       )}

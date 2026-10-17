@@ -26,7 +26,7 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
       id: id('review', String(due.length)),
       kind: 'review',
       title: `${due.length} review${due.length > 1 ? 's' : ''} due`,
-      body: first ? `Spaced repetition: "${first.title}" pehle dohrao.` : 'Spaced repetition queue ready hai.',
+      body: first ? `Spaced repetition: review "${first.title}" first.` : 'The spaced-repetition queue is ready.',
       to: '/review',
     });
   }
@@ -40,7 +40,7 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
       id: id('weak', worst.topic),
       kind: 'warning',
       title: `Weak topic: ${worst.topic}`,
-      body: `${worst.attempts} baar galti hui hai — targeted practice karo.`,
+      body: `Missed ${worst.attempts} times — do targeted practice.`,
       to: '/mistakes',
     });
   } else if (open.length) {
@@ -48,7 +48,7 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
       id: id('open-mistakes', String(open.length)),
       kind: 'info',
       title: `${open.length} open mistake${open.length > 1 ? 's' : ''}`,
-      body: 'Mistake Tracker me review karke fix mark karo.',
+      body: 'Review them in the Mistake Tracker and mark them fixed.',
       to: '/mistakes',
     });
   }
@@ -59,10 +59,10 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     out.push({
       id: id('streak', t),
       kind: 'streak',
-      title: 'Aaj ka mission baaki hai',
+      title: "Today's mission is still pending",
       body: state.streak.current > 0
-        ? `${state.streak.current}-day streak zinda rakho — ek task complete karo.`
-        : 'Ek chhota task complete karke streak shuru karo.',
+        ? `Keep your ${state.streak.current}-day streak alive — complete one task.`
+        : 'Complete one small task to start a streak.',
       to: '/',
     });
   }
@@ -74,7 +74,7 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
       id: id('achievement', String(mastered.length)),
       kind: 'achievement',
       title: `${mastered.length} section${mastered.length > 1 ? 's' : ''} mastered`,
-      body: `Sabse recent: "${mastered[mastered.length - 1].title}". Shabash!`,
+      body: `Most recent: "${mastered[mastered.length - 1].title}". Well done!`,
       to: '/progress',
     });
   }
@@ -83,8 +83,8 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     out.push({
       id: id('level', String(level)),
       kind: 'success',
-      title: `Level ${level} tak pahunch gaye`,
-      body: `${state.xp} XP — next level ke liye consistent raho.`,
+      title: `Reached Level ${level}`,
+      body: `${state.xp} XP — stay consistent to reach the next level.`,
       to: '/progress',
     });
   }
@@ -95,7 +95,7 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     .slice(0, 1);
   for (const [sid] of recent) {
     const s = byId.get(sid);
-    if (s) out.push({ id: id('reviewed', sid), kind: 'success', title: `Reviewed: ${s.title}`, body: 'Recap ho gaya — aage badho.', to: `/lesson/${sid}/learn` });
+    if (s) out.push({ id: id('reviewed', sid), kind: 'success', title: `Reviewed: ${s.title}`, body: 'Recap done — keep going.', to: `/lesson/${sid}/learn` });
   }
 
   // 6. Next unfinished step in the frontier section (a real "what's next" nudge).
@@ -106,7 +106,7 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
       id: id('next', `${cur.id}:${p.masterPct}`),
       kind: 'info',
       title: `Next: ${cur.title}`,
-      body: `${p.masterPct}% complete — agla step khol ke aage badho.`,
+      body: `${p.masterPct}% complete — open the next step and keep going.`,
       to: `/lesson/${cur.id}/learn`,
     });
   }

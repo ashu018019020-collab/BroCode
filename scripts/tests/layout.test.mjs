@@ -112,7 +112,7 @@ test('layout: the shelf header is one line — never a wrapped, stray button', (
   assert.match(css, /\.shelf-hint \{ display: none;/, 'the hint must start hidden');
   // …and it says something the collapsed line cannot otherwise show: that a notebook is open in a
   // body the learner has folded away.
-  assert.match(jn, /\{!open && <span className="shelf-hint">\{openFile \? 'notebook open hai' : 'click karke kholo'\}/);
+  assert.match(jn, /\{!open && <span className="shelf-hint">\{openFile \? 'notebook is open' : 'click to open'\}/);
 });
 
 test('layout: on a phone the three clipping rows wrap instead of eating their own label', () => {
@@ -435,9 +435,9 @@ test('layout: the AI assistant is a dark glass island with four responsive quick
   assert.match(assistantCard, /quickNext\(state, sections, activeContext/, 'Next Topic must use the measured, current-page context');
   assert.match(assistantCard, /loadKnowledgeIndex\(\)/, 'the published retrieval index must load only when needed');
   assert.match(assistantCard, /contextForIndex\(index\)/, 'retrieval must resolve the current route against loaded course metadata');
-  assert.match(assistantCard, /ask\('Mujhe is topic me doubt hai\./, 'Solve Doubt must use the existing local ask flow');
+  assert.match(assistantCard, /ask\('I have a doubt about this topic\./, 'Solve Doubt must use the existing local ask flow');
   assert.match(assistantCard, /aria-label="Ask the AI assistant"/, 'the redesigned composer must retain its accessible label');
-  assert.match(assistantCard, /placeholder=\{activeContext\.question \? 'Is question ke baare me poocho…' : 'Ask BroCode AI anything…'\}/,
+  assert.match(assistantCard, /placeholder=\{activeContext\.question \? 'Ask about this question…' : 'Ask BroCode AI anything…'\}/,
     'the assistant composer must use the requested placeholder outside question context');
   assert.match(css, /\.assistant \{[\s\S]*?linear-gradient\(145deg, rgba\(13, 29, 53, \.98\), rgba\(7, 15, 30, \.98\)\) padding-box/,
     'the assistant surface must keep its dark navy background independent of theme tokens');
@@ -463,7 +463,7 @@ test('layout: the AI assistant is a dark glass island with four responsive quick
     'the close button must stay at the right side of the dock header');
   assert.match(aiDock, /open && !window\.matchMedia\('\(max-width: 780px\)'\)\.matches/,
     'mobile dock opening must not auto-scroll its header and actions offscreen');
-  assert.match(aiDock, /onClick=\{onClose\} aria-label="AI panel band karo"/,
+  assert.match(aiDock, /onClick=\{onClose\} aria-label="Close the AI panel"/,
     'the sticky X button must still close the AI dock');
 });
 

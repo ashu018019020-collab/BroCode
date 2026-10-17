@@ -6,7 +6,7 @@ import { useCourseIndex } from '../../core/data/courses';
 import { courseOfSection } from '../../core/learning/courses';
 import { useBankManifest, manifestStageCount } from '../../core/data/questions';
 import { StageQnA } from '../../components/learning/StageQnA';
-import { useStore, setState, addXp, recordAttempt, addMistake, useSavedAnswer } from '../../core/storage/store';
+import { useStore, setState, addXp, recordAttempt, addMistake, useSavedAnswer, recordLessonVisit } from '../../core/storage/store';
 import { STAGES, STAGE_META, sectionProgress, missingForMastery, nextBestAction, stagePassed, stageApplies, codingTasks, debugTasks, type Stage } from '../../core/learning/progress';
 import { planNextStep, planAhead, nextItemIndex, type NextStep, type RoadmapStep } from '../../core/learning/advance';
 import { stageAttempt, itemAttempt, debugDone, learnView, lessonDefenseAnswer, interviewAnswer, codeSlot } from '../../core/platform/keys';
@@ -67,6 +67,12 @@ export default function Lesson() {
   const sec = sections.find((s) => s.id === sid);
   if (!sec) return <div className="loading">Section not found.</div>;
   const active: Stage = (STAGES.includes(stage as Stage) ? stage : 'learn') as Stage;
+  /**
+   * This is the only write that makes "Continue Learning" mean the lesson the learner was actually
+   * reading. It is keyed on the section and stage, not on every render, and the store itself refuses
+   * an identical position — so opening a lesson costs one small write, not one per keystroke.
+   */
+  useEffect(() => { recordLessonVisit(sec.id, active); }, [sec.id, active]);
   const { masterPct, scores, tasks } = sectionProgress(sec, state);
   const nba = nextBestAction(sec, state);
   const idx = STAGES.indexOf(active);
@@ -177,7 +183,7 @@ export default function Lesson() {
    * curriculum count is the fallback until the manifest arrives.
    */
   const bankCount = (st: Stage) => manifestStageCount(bankManifest, sec.id, st);
-  const panelHint = 'Is stage ke Q&A panel me dikhne wale questions';
+  const panelHint = 'Questions shown in this stage\'s Q&A panel';
   const heroStats: HeroStat[] = [
     { n: bankCount('learn') ?? sec.learn.concepts.length, l: 'Learn Q&A', tone: 'cyan', Icon: BookOpen, hint: panelHint },
     { n: bankCount('interview') ?? sec.interview.length, l: 'Interview Qs', tone: 'green', Icon: Mic2, hint: panelHint },
@@ -192,7 +198,7 @@ export default function Lesson() {
     // rather than leaving a learner to distrust both numbers.
     heroStats.push({
       n: bankTotal, l: 'Q&A Total', tone: 'blue', Icon: ListChecks,
-      hint: 'Section ke saare published questions — stage ke apne questions bhi isme hain, isliye ye stage tiles ke jod se zyada ho sakta hai',
+      hint: 'All published questions in this section — each stage\'s own questions are included too, so this can exceed the sum of the stage tiles',
     });
   }
   if (pdfPage) heroStats.push({ n: `p.${pdfPage}`, l: 'PDF Reference', tone: 'fuchsia', Icon: FileText, to: `/pdf/${pdfPage}` });
@@ -207,8 +213,8 @@ export default function Lesson() {
         title={sec.title}
         subtitle={
           sec.learn.concepts.some((c) => c.level === 'advanced')
-            ? 'Foundation se advanced tak — theory, practice, build aur defend.'
-            : 'Yeh topic confidently use karna seekho: theory, practice, build, defend.'
+            ? 'From foundation to advanced — theory, practice, build and defend.'
+            : 'Learn to use this topic with confidence: theory, practice, build, defend.'
         }
         pct={masterPct}
         minutes={45 + sec.coding.length * 4}
@@ -269,7 +275,7 @@ export default function Lesson() {
 /* ============================ ROAD AHEAD ============================ */
 
 /**
- * "Aage ka plan" — the next few steps laid out in advance, so the ladder reads as a plan instead
+ * "Plan ahead" — the next few steps laid out in advance, so the ladder reads as a plan instead
  * of arriving as a surprise after every completion. Row 0 is what to do right now and is clickable
  * where it stands; the rows after it are the stages that still block this section, and the last
  * row hands over to the next topic. Every row comes from `planAhead`, which reads the same gates
@@ -279,13 +285,13 @@ function PlanAhead({ rows, onGo }: { rows: RoadmapStep[]; onGo: (r: RoadmapStep)
   if (!rows.length) return null;
   const last = rows.length - 1;
   return (
-    <div className="plan" role="region" aria-label="Aage ka plan">
+    <div className="plan" role="region" aria-label="Plan ahead">
       <div className="row spread">
         <span className="row" style={{ gap: 7 }}>
-          <b className="small">🧭 Aage ka plan</b>
-          <span className="small muted">— agla kadam dhoondhna nahi padega</span>
+          <b className="small">🧭 Plan ahead</b>
+          <span className="small muted">— no need to hunt for the next step</span>
         </span>
-        <span className="small muted">{rows.length} kadam</span>
+        <span className="small muted">{rows.length} steps</span>
       </div>
       <div className="plan-rows">
         {rows.map((r, i) => (
@@ -294,7 +300,7 @@ function PlanAhead({ rows, onGo }: { rows: RoadmapStep[]; onGo: (r: RoadmapStep)
             className={`plan-row${r.now ? ' now' : ''}${r.kind === 'section' || r.kind === 'review' ? ' exit' : ''}`}
             onClick={() => onGo(r)}
             title={`${r.label} — ${r.hint}`}
-            aria-label={`${r.now ? 'Abhi' : i + 1}: ${r.label}. ${r.hint}`}
+            aria-label={`${r.now ? 'Now' : i + 1}: ${r.label}. ${r.hint}`}
           >
             <span className="plan-no">{r.kind === 'section' || r.kind === 'review' ? '➜' : r.now ? 'NOW' : i + 1}</span>
             <span className="plan-glyph" aria-hidden="true">{r.icon}</span>
@@ -334,7 +340,7 @@ function AdvanceCard({ step, auto, seconds = 7, onGo, onStay }: {
     return () => clearInterval(t);
   }, [auto, seconds, step.label, step.index]);
 
-  // Move on exactly once when the countdown runs out. "Yahin ruko" unmounts this card,
+  // Move on exactly once when the countdown runs out. "Stay here" unmounts this card,
   // which cancels the pending timer with it.
   useEffect(() => {
     if (!auto || left > 0) return;
@@ -343,7 +349,7 @@ function AdvanceCard({ step, auto, seconds = 7, onGo, onStay }: {
     goRef.current();
   }, [auto, left]);
 
-  const kindWord = step.kind === 'item' ? 'Agla item' : step.kind === 'stage' ? 'Agla stage' : step.kind === 'section' ? 'Agla topic' : 'Review';
+  const kindWord = step.kind === 'item' ? 'Next item' : step.kind === 'stage' ? 'Next stage' : step.kind === 'section' ? 'Next topic' : 'Review';
 
   return (
     <div className="adv-card fadeup" role="status" aria-live="polite">
@@ -356,9 +362,9 @@ function AdvanceCard({ step, auto, seconds = 7, onGo, onStay }: {
         <span className="row">
           {auto && left > 0 && <span className="small muted">auto {left}s</span>}
           <button className="btn small primary" onClick={onGo}>
-            {step.kind === 'item' ? 'Kholo' : 'Chalo'} <ArrowRight size={12} />
+            {step.kind === 'item' ? 'Open' : 'Go'} <ArrowRight size={12} />
           </button>
-          <button className="btn small" onClick={onStay}>Yahin ruko</button>
+          <button className="btn small" onClick={onStay}>Stay here</button>
         </span>
       </div>
       <p className="small muted" style={{ margin: '6px 0 0' }}>{step.hint}</p>
@@ -387,7 +393,7 @@ function LearnStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i:
 
   useEffect(() => { if (!viewed) { recordAttempt(learnView(sec.id), { done: true }); addXp(2, 'read', 'Concept read'); } }, [sec.id]);
 
-  if (!concepts.length && !sec.topic) return <div className="card muted">Is section me concepts nahi mile.</div>;
+  if (!concepts.length && !sec.topic) return <div className="card muted">No concepts found for this section.</div>;
   const cur = concepts[Math.min(sel, concepts.length - 1)];
 
   return (
@@ -439,7 +445,7 @@ function LearnStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i:
             )}
           </div>
         ))}
-        {!concepts.length && <div className="card muted">Is section me PDF concepts nahi mile — upar ka authored workspace hi topic hai.</div>}
+        {!concepts.length && <div className="card muted">No PDF concepts found for this section — the authored workspace above is the topic.</div>}
         {sec.learn.recap && (
           <div className="card">
             <h2>🧾 Quick Recap</h2>
@@ -448,7 +454,7 @@ function LearnStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i:
         )}
         {sec.learn.remember.map((r, i) => r && (
           <div key={i} className="card" style={{ borderLeft: '3px solid var(--purple)' }}>
-            <b className="small">YAAD RAKHO:</b> <span className="small">{r}</span>
+            <b className="small">REMEMBER:</b> <span className="small">{r}</span>
           </div>
         ))}
         {sec.learn.practice.length > 0 && (
@@ -479,7 +485,7 @@ function LearnStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i:
             onComplete={() => recordAttempt(triedKey(sel), { done: true })}
           />
           <p className="small muted" style={{ marginTop: 8 }}>
-            Padho → cell chalao → output dekho. Error aaye to Errors / AI Explanation tab me reason milega.
+            Read → run the cell → check the output. If an error appears, the reason is in the Errors / AI Explanation tab.
           </p>
         </div>
       </aside>
@@ -578,7 +584,7 @@ function CodingStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i
             key={i}
             className={`stagepill ${i === sel ? 'active' : ''} ${state.attempts[itemAttempt(sec.id, 'coding', i)] ? 'done' : ''}`}
             onClick={() => setSel(i)}
-            title={tt.difficulty ? `${tt.difficulty} difficulty` : 'difficulty recorded nahi hai'}
+            title={tt.difficulty ? `${tt.difficulty} difficulty` : 'no difficulty recorded'}
           >
             {difficultyCode(tt.difficulty, i)}{state.attempts[itemAttempt(sec.id, 'coding', i)] ? ' ✓' : ''}
           </button>
@@ -698,7 +704,7 @@ function DebugStage({ sec }: { sec: Section }) {
         starter={`# Broken code — run it and watch it fail:\n# ${b.text}\n\n# Fix it below:\n\n`}
         solution={b.solution || undefined}
         title="Debug lab"
-        taskText={`**Broken code:** ${b.text}\n\nPehle cell ko jaisa hai waisa Run karo — error ka poora traceback dekho, phir fix karo.`}
+        taskText={`**Broken code:** ${b.text}\n\nRun the cell as-is first — read the full traceback, then fix it.`}
         label="debug"
         sectionId={sec.id}
         onComplete={() => recordAttempt(debugDone(sec.id), { done: true })}

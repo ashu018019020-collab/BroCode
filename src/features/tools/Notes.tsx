@@ -81,7 +81,7 @@ export default function NotesPage() {
     upsertNote(n);
     setSel(n.id);
     setPreview(false);
-    toast('Nayi note ban gayi — likhna shuru karo.', 'success', 1800);
+    toast('New note created — start writing.', 'success', 1800);
   };
 
   const patch = (p: Partial<Note>) => {
@@ -97,7 +97,7 @@ export default function NotesPage() {
     a.download = 'ai-master-lab-notes.md';
     a.click();
     URL.revokeObjectURL(a.href);
-    toast(`${state.notes.length} notes export ho gayi.`, 'success');
+    toast(`Exported ${state.notes.length} note${state.notes.length === 1 ? '' : 's'}.`, 'success');
   };
 
   return (
@@ -105,13 +105,13 @@ export default function NotesPage() {
       <div className="row spread" style={{ flexWrap: 'wrap' }}>
         <div>
           <h1 className="row" style={{ gap: 10 }}><StickyNote size={24} color="var(--amber)" /> NOTES</h1>
-          <p className="muted small">Concept notes, debugging learnings aur interview lines — sab yahan, sab device par.</p>
+          <p className="muted small">Concept notes, debugging lessons and interview lines — all here, all on your device.</p>
         </div>
         <div className="row" style={{ gap: 8 }}>
           <span className="chip">{state.notes.length} notes</span>
           <span className="chip">{allTags.length} tags</span>
           <button className="btn small" onClick={exportAll} disabled={!state.notes.length}><Download size={13} /> Markdown export</button>
-          <button className="btn small primary" onClick={() => create()}><Plus size={13} /> Nayi note</button>
+          <button className="btn small primary" onClick={() => create()}><Plus size={13} /> New note</button>
         </div>
       </div>
 
@@ -121,7 +121,7 @@ export default function NotesPage() {
           <div className="card">
             <div className="searchbox" style={{ cursor: 'text', maxWidth: 'none' }}>
               <Search size={14} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Notes search karo…" style={{ border: 'none', background: 'transparent', outline: 'none', flex: 1, color: 'inherit' }} />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search notes…" style={{ border: 'none', background: 'transparent', outline: 'none', flex: 1, color: 'inherit' }} />
             </div>
             <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
               <button className={`tabbtn ${favOnly ? 'active' : ''}`} onClick={() => setFavOnly((v) => !v)}><Star size={11} /> Favourites</button>
@@ -140,9 +140,9 @@ export default function NotesPage() {
             {!list.length && (
               <div className="empty-state">
                 <span className="big">📝</span>
-                <b>{state.notes.length ? 'Filter se koi note match nahi hua' : 'Abhi koi note nahi'}</b>
-                <span className="small">Pehli note banao — jo padha usse apne shabdon me likhna best revision hai.</span>
-                <button className="btn small primary" onClick={() => create()}><Plus size={12} /> Nayi note</button>
+                <b>{state.notes.length ? 'No note matches the filter' : 'No notes yet'}</b>
+                <span className="small">Create your first note — rewriting what you learned in your own words is the best revision.</span>
+                <button className="btn small primary" onClick={() => create()}><Plus size={12} /> New note</button>
               </div>
             )}
             {list.map((n) => (
@@ -156,7 +156,7 @@ export default function NotesPage() {
                   <b className="small" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.title || '(untitled note)'}</b>
                   {n.fav && <Star size={12} color="var(--amber)" fill="currentColor" />}
                 </div>
-                <div className="small muted" style={{ margin: '4px 0' }}>{n.body.slice(0, 70) || 'Khaali note'}{n.body.length > 70 ? '…' : ''}</div>
+                <div className="small muted" style={{ margin: '4px 0' }}>{n.body.slice(0, 70) || 'Empty note'}{n.body.length > 70 ? '…' : ''}</div>
                 <div className="row" style={{ gap: 4, flexWrap: 'wrap' }}>
                   {n.tags.slice(0, 3).map((t) => <span key={t} className="chip">#{t}</span>)}
                   <span className="chip">{new Date(n.updated).toLocaleDateString()}</span>
@@ -171,8 +171,8 @@ export default function NotesPage() {
           {!current ? (
             <div className="card empty-state">
               <span className="big">✍️</span>
-              <b>Note select karo ya nayi banao</b>
-              <span className="small">Markdown chalta hai: # heading, **bold**, `code`, ```code block```.</span>
+              <b>Select a note or create a new one</b>
+              <span className="small">Markdown is supported: # heading, **bold**, `code`, ```code block```.</span>
             </div>
           ) : (
             <div className="card">
@@ -180,7 +180,7 @@ export default function NotesPage() {
                 <input
                   value={current.title}
                   onChange={(e) => patch({ title: e.target.value })}
-                  placeholder="Note ka title…"
+                  placeholder="Note title…"
                   style={{ flex: 1, minWidth: 200, fontSize: '1rem', fontWeight: 650 }}
                   aria-label="Note title"
                 />
@@ -188,14 +188,14 @@ export default function NotesPage() {
                   <button className={`btn small ${preview ? '' : 'primary'}`} onClick={() => setPreview(false)}><Pencil size={12} /> Edit</button>
                   <button className={`btn small ${preview ? 'primary' : ''}`} onClick={() => setPreview(true)}><Eye size={12} /> Preview</button>
                   <button className={`btn small ${current.fav ? 'primary' : ''}`} onClick={() => toggleNoteFav(current.id)} aria-pressed={current.fav}>
-                    <Star size={12} /> {current.fav ? 'Favourite' : 'Favourite karo'}
+                    <Star size={12} /> {current.fav ? 'Favourite' : 'Add to favourites'}
                   </button>
-                  <button className="btn small danger" onClick={() => { deleteNote(current.id); setSel(null); toast('Note delete ho gayi.', 'info'); }}><Trash2 size={12} /> Delete</button>
+                  <button className="btn small danger" onClick={() => { deleteNote(current.id); setSel(null); toast('Note deleted.', 'info'); }}><Trash2 size={12} /> Delete</button>
                 </div>
               </div>
 
               <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                <span className="row small muted" style={{ gap: 5 }}><Tag size={12} /> Tags (comma se separate)</span>
+                <span className="row small muted" style={{ gap: 5 }}><Tag size={12} /> Tags (comma-separated)</span>
                 <input
                   value={current.tags.join(', ')}
                   onChange={(e) => patch({ tags: e.target.value.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean) })}
@@ -208,10 +208,10 @@ export default function NotesPage() {
                   onChange={(e) => patch({ section: e.target.value || undefined })}
                   aria-label="Link to a lesson"
                 >
-                  <option value="">Lesson se link nahi</option>
+                  <option value="">Not linked to a lesson</option>
                   {sections.map((s) => <option key={s.id} value={s.id}>{String(s.no).padStart(2, '0')} — {s.title}</option>)}
                 </select>
-                {current.section && <Link className="btn small" to={`/lesson/${current.section}/learn`}>Lesson kholo →</Link>}
+                {current.section && <Link className="btn small" to={`/lesson/${current.section}/learn`}>Open lesson →</Link>}
               </div>
 
               {preview ? (
@@ -221,14 +221,14 @@ export default function NotesPage() {
                   rows={16}
                   value={current.body}
                   onChange={(e) => patch({ body: e.target.value })}
-                  placeholder={'# Key idea\n- point ek\n- point do\n\n```python\nprint("example")\n```'}
+                  placeholder={'# Key idea\n- first point\n- second point\n\n```python\nprint("example")\n```'}
                   style={{ width: '100%', marginTop: 12, fontFamily: 'var(--mono)', fontSize: '.84rem' }}
                   aria-label="Note body"
                 />
               )}
 
               <div className="row spread small muted" style={{ marginTop: 8 }}>
-                <span><Save size={12} /> Auto-save on — har keystroke localStorage me jaata hai.</span>
+                <span><Save size={12} /> Auto-save on — every keystroke is saved to localStorage.</span>
                 <span>{current.body.split(/\s+/).filter(Boolean).length} words</span>
               </div>
             </div>

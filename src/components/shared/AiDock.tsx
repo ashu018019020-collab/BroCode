@@ -6,7 +6,7 @@ import { AssistantCard } from './AssistantCard';
  * The footer AI dock — the assistant, reachable from every screen.
  *
  * The same `AssistantCard` already sits on the Dashboard and under every notebook, and that is
- * exactly the problem this solves: on the 30-odd pages that render neither, "poocho" meant leaving
+ * exactly the problem this solves: on the 30-odd pages that render neither, "just ask" meant leaving
  * the page you were reading. The dock hangs off the status bar, so the assistant is one tap away
  * wherever you are.
  *
@@ -16,7 +16,7 @@ import { AssistantCard } from './AssistantCard';
  * navigate, because "explain this screen" usually means reading two screens.
  *
  * `suggestions` are one-tap project questions: the facts in `engine/project.ts` are only useful if
- * the learner knows they exist, and "test kaise chalaun" is not a question anyone types cold.
+ * the learner knows they exist, and "how do I run the tests" is not a question anyone types cold.
  */
 export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -36,8 +36,8 @@ export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }
       <div className="aidock-head">
         <span className="aidock-ic"><Bot size={14} /></span>
         <b className="small">AI</b>
-        <span className="aidock-sub small muted">App ke bare me poocho — setup, content, commands, code</span>
-        <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={onClose} aria-label="AI panel band karo">
+        <span className="aidock-sub small muted">Ask about this app — setup, content, commands, code</span>
+        <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={onClose} aria-label="Close the AI panel">
           <X size={14} />
         </button>
       </div>
@@ -45,10 +45,10 @@ export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }
         compact
         embedded
         suggestions={[
-          { label: 'Ye app kya hai?', ask: 'ye app kya hai' },
-          { label: 'Commands / test', ask: 'test kaise chalaun' },
-          { label: 'Content kaha add karun?', ask: 'naya question kaha add karun' },
-          { label: 'Code kaha hai?', ask: 'code kaun si file me hai' },
+          { label: 'What is this app?', ask: 'what is this app' },
+          { label: 'Commands / test', ask: 'how to run the tests' },
+          { label: 'Where do I add content?', ask: 'where do I add a new question' },
+          { label: 'Where is the code?', ask: 'which file contains the code' },
         ]}
       />
     </div>

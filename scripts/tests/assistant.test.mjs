@@ -137,7 +137,7 @@ test('quickFix quotes the real error kind and the real offending line', () => {
   const ans = quickFix(blank(), all, { sectionId: 's01', where: 's01 · Task 1', code: BROKEN, error: NAME_ERROR });
   assert.equal(ans.kind, 'debug');
   assert.match(ans.text, /NameError/);                 // the kind from the traceback
-  assert.match(ans.text, /Tumhari line 3/);            // the line number the traceback named
+  assert.match(ans.text, /line 3/i);            // the line number the traceback named
   assert.match(ans.text, /print\(a \+ c\)/);            // sliced out of the learner's own code
   assert.match(ans.text, /s01 · Task 1/);              // it knows which surface this is
   // The citation must be the lesson the learner is in, not a global best guess.
@@ -166,8 +166,8 @@ test('quickFix works on a syntax error too — no traceback line is required', (
 
 test('with nothing broken it refuses to invent an error', () => {
   const ans = quickFix(blank(), all, { sectionId: 's01', code: 'print("ok")' });
-  assert.match(ans.text, /koi error nahi/i);
-  assert.match(ans.text, /Run karo/i);                 // and tells you how to get a real one
+  assert.match(ans.text, /no error/i);
+  assert.match(ans.text, /Run/i);                 // and tells you how to get a real one
   // It may NAME error kinds as teaching examples ("Error ka type (NameError, TypeError…) batata
   // hai…"), so the assertion is on the shape of an error REPORT, not on the words: the error path
   // always emits a bolded kind header, a "Kya hua:" line and the learner's offending line. None of
@@ -274,7 +274,7 @@ test('with a traceback on screen the hint names the real line, then the fix', ()
   const state = blank();
   const ctx = { sectionId: 's01', where: 's01 · Task 1', code: BROKEN, error: NAME_ERROR };
   const first = quickHint(state, all, ctx, 0).text;
-  assert.match(first, /Line 3/, 'the hint did not name the failing line');
+  assert.match(first, /line 3/i, 'the hint did not name the failing line');
   assert.doesNotMatch(first, /Output\/Errors tab me poora traceback padho/, 'the generic ladder leaked through');
   // `hintLadder` only reveals the fix from the third attempt on — so the third ask differs.
   const third = quickHint(state, all, ctx, 2).text;

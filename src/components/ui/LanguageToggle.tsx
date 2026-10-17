@@ -2,7 +2,9 @@ import { useI18n } from '../../app/i18n';
 import { LOCALES } from '../../app/i18n/locales';
 
 /**
- * English | Hinglish — ONE control, in the header, in the rail/drawer and on the Settings page.
+ * English | Hinglish — ONE control, on the Settings page and in the quick-actions menu. It is
+ * deliberately NOT in the header or the sidebar: both are reserved for navigation and page actions,
+ * and the language choice belongs with the rest of the account preferences.
  *
  * Three rules it exists to enforce, so no screen invents its own version:
  *

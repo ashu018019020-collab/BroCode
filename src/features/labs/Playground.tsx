@@ -254,14 +254,14 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
     if (!coach) return;
     const next = nextReviewRecord(coach.schedule?.level ?? 0);
     setState((s) => ({ ...s, review: { ...s.review, [coach.sectionId]: next } }));
-    toast(`Review level ${next.level} set — next re-teach us interval par.`, 'success');
+    toast(`Review level ${next.level} set — next review scheduled for this interval.`, 'success');
   };
 
   /** Put a section with no schedule yet into the ladder, starting at level 0. */
   const enrollReview = () => {
     if (!coach) return;
     setState((s) => ({ ...s, review: { ...s.review, [coach.sectionId]: resetReviewRecord() } }));
-    toast('Review schedule me daal diya — level 0 se shuru.', 'info');
+    toast('Added to the review schedule — starting at level 0.', 'info');
   };
   const saveMistake = () => {
     if (!tutor || !file || mistakeSaved) return;
@@ -344,7 +344,7 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
           <button className="btn" onClick={save}><Save size={14} /> {t('pg.save')}</button>
           {isPy && (pyReady
             ? <span className="chip easy">✓ Python ready</span>
-            : <span className="chip">Python runtime boot ho raha hai… pehli baar 5–15s</span>)}
+            : <span className="chip">Starting the Python runtime… 5–15s the first time</span>)}
         </div>
 
         {/* PROGRAM INPUT */}
@@ -408,7 +408,7 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
                 <p className="small"><b>WHY:</b> {tutor.cause}</p>
                 <p className="small"><b>HOW TO FIX:</b> {tutor.fix}</p>
                 <pre className="codeblock" style={{ fontSize: '.72rem', margin: '6px 0' }}><code>{tutor.example}</code></pre>
-                <p className="small muted" style={{ marginTop: 8 }}>Line-by-line debug plan + Fix button <b>Debug</b> tab me hai →</p>
+                <p className="small muted" style={{ marginTop: 8 }}>Line-by-line debug plan + Fix button are in the <b>Debug</b> tab →</p>
               </div>
             ) : errText && runnerExpl ? (
               <div className="stat" style={{ marginTop: 10, borderColor: 'rgba(248,113,113,.4)' }}>
@@ -416,15 +416,15 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
                 <p className="small mono" style={{ margin: '4px 0' }}>{diag?.kind}: {diag?.message}</p>
                 <p className="small">{runnerExpl.what}</p>
                 <p className="small muted">{runnerExpl.cause}</p>
-                <p className="small muted" style={{ marginTop: 8 }}>Debug tab me line-by-line plan dekho →</p>
+                <p className="small muted" style={{ marginTop: 8 }}>See the line-by-line plan in the Debug tab →</p>
               </div>
             ) : (
               <div className="stat" style={{ marginTop: 10 }}>
                 <b className="small">{file?.name}</b>
                 <p className="small muted" style={{ marginTop: 4 }}>
                   {isPy
-                    ? 'Run karo — main.py me numpy version, greeting aur array mean print hoga. Error aaye to yahan explanation milegi.'
-                    : 'Ye ek text file hai — .py files run hoti hain.'}
+                    ? 'Run it — main.py prints the NumPy version, a greeting and the array mean. If something fails, the explanation appears here.'
+                    : 'This is a text file — only .py files can run.'}
                 </p>
               </div>
             )
@@ -438,9 +438,9 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
                 ))}
               </div>
               {hintLevel < hints.length && (
-                <button className="btn small" style={{ marginTop: 6 }} onClick={() => setHintLevel((v) => v + 1)}>Aur hint chahiye →</button>
+                <button className="btn small" style={{ marginTop: 6 }} onClick={() => setHintLevel((v) => v + 1)}>Need another hint →</button>
               )}
-              {!errText && <p className="small muted" style={{ marginTop: 6 }}>Tip: input() values Program Input box me ek-per-line do. np.mean(arr) — function ko call karna mat bhoolo.</p>}
+              {!errText && <p className="small muted" style={{ marginTop: 6 }}>Tip: put input() values in the Program Input box, one per line. np.mean(arr) — remember to call the function.</p>}
             </div>
           )}
           {tutorTab === 'debug' && (
@@ -463,11 +463,11 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
                 <div className="row" style={{ marginTop: 8, flexWrap: 'wrap' }}>
                   {fixSuggestion && <button className="btn small primary" onClick={applyFix}><Wrench size={12} /> {t('pg.fixIt')}</button>}
                   <button className="btn small" onClick={saveMistake} disabled={mistakeSaved}>
-                    {mistakeSaved ? '✓ Mistake Tracker me save ho gaya' : 'Save to Mistake Tracker'}
+                    {mistakeSaved ? '✓ Saved to Mistake Tracker' : 'Save to Mistake Tracker'}
                   </button>
                 </div>
               ) : (
-                <p className="small muted" style={{ marginTop: 8 }}>Ye poori checklist local hai — koi cloud AI call nahi.</p>
+                <p className="small muted" style={{ marginTop: 8 }}>This whole checklist runs locally — no cloud AI call.</p>
               )}
             </div>
           )}
@@ -483,7 +483,7 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
             !coach ? (
               <div className="stat" style={{ marginTop: 10 }}>
                 <b className="small">Coach</b>
-                <p className="small muted" style={{ marginTop: 4 }}>Curriculum load hone ke baad coaching yahan aayegi.</p>
+                <p className="small muted" style={{ marginTop: 4 }}>Coaching appears here once the curriculum loads.</p>
               </div>
             ) : (
               <div className="stat" style={{ marginTop: 10 }}>
@@ -494,7 +494,7 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
                 <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                   {coach.schedule
                     ? <span className="chip">{coach.schedule.text}</span>
-                    : <span className="chip">abhi review schedule me nahi</span>}
+                    : <span className="chip">not in the review schedule yet</span>}
                   {coach.mistakes.length > 0 && <span className="chip">{coach.mistakes.length} open mistake</span>}
                   {coach.drill && <span className="chip">{coach.drill.label}</span>}
                 </div>
@@ -503,12 +503,12 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
                   <>
                     <p className="small muted" style={{ margin: '6px 0 4px' }}>{coach.schedule.nextText}</p>
                     <button className="btn small" onClick={advanceReview}>
-                      Coaching ho gayi — review level aage badhao
+                      Coaching done — advance the review level
                     </button>
                   </>
                 ) : (
                   <button className="btn small" style={{ marginTop: 6 }} onClick={enrollReview}>
-                    Review schedule me daalo (level 0)
+                    Add to review schedule (level 0)
                   </button>
                 )}
 
@@ -527,7 +527,7 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
                     {coachOpen && coach.concept.tip && <p className="small" style={{ margin: '4px 0' }}>💡 {coach.concept.tip}</p>}
                     {coach.concept.body.length > 220 && (
                       <button className="btn small" style={{ marginTop: 4 }} onClick={() => setCoachOpen((v) => !v)}>
-                        {coachOpen ? 'Chhota karo' : 'Poora padho'}
+                        {coachOpen ? 'Show less' : 'Read more'}
                       </button>
                     )}
                   </div>
@@ -550,7 +550,7 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
                       ? <pre className="codeblock" style={{ fontSize: '.72rem' }}><code>{s.answer}</code></pre>
                       : (
                         <button className="btn small" style={{ marginTop: 6 }} onClick={() => setCoachRevealed((r) => ({ ...r, [i]: true }))}>
-                          Jawab dekho
+                          Show answer
                         </button>
                       )}
                   </div>
@@ -567,16 +567,16 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
                     <p className="small muted" style={{ margin: '4px 0 0' }}>source: {coach.drill.source}</p>
                     <div className="row" style={{ marginTop: 6 }}>
                       {coach.drill.solution && (
-                        <button className="btn small" onClick={() => setDrillShown((v) => !v)}>{drillShown ? 'Solution chhupao' : 'Solution dekho'}</button>
+                        <button className="btn small" onClick={() => setDrillShown((v) => !v)}>{drillShown ? 'Hide solution' : 'Show solution'}</button>
                       )}
-                      <Link className="btn small primary" to={coach.drill!.route}>Abhi practice karo →</Link>
+                      <Link className="btn small primary" to={coach.drill!.route}>Practice now →</Link>
                     </div>
                   </div>
                 )}
 
                 {coachPick.candidates.length > 1 && (
                   <div style={{ marginTop: 10 }}>
-                    <b className="small">Aage ki queue</b>
+                    <b className="small">Next in queue</b>
                     {coachPick.candidates.slice(1, 4).map((c) => (
                       <div key={c.sectionId} className="row spread" style={{ marginTop: 4 }}>
                         <span className="small">{c.sectionId.toUpperCase()} — {c.title}</span>
@@ -587,8 +587,8 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
                 )}
 
                 <p className="small muted" style={{ marginTop: 8 }}>
-                  Ye poora content PDF curriculum, question banks aur tumhari apni mistake history se hai —
-                  koi cloud AI call nahi, sab device par.
+                  This content comes from the PDF curriculum, the question banks and your own mistake history —
+                  no cloud AI call, everything on this device.
                 </p>
               </div>
             )

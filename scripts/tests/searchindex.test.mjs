@@ -178,8 +178,8 @@ test('search: the palette shows bank hits, and never calls a loading index "no r
   assert.match(palette, /searchBankIndex\(bank, q, BANK_LIMIT\)/, 'the palette must search the bank');
   assert.match(palette, /bankLoading/, 'and it must know whether the index has arrived');
   assert.ok(
-    palette.indexOf('No results for') < palette.indexOf('ko raha hai') ||
-      /bankLoading && <div className="muted small" style=\{?\{? padding: 10 \}?\}?>Curriculum me kuch nahi mila/.test(palette),
+    palette.indexOf('No results for') < palette.indexOf('loading the full question bank') ||
+      /bankLoading && <div className="muted small" style=\{?\{? padding: 10 \}?\}?>Nothing found in the curriculum — loading the full question bank/.test(palette),
     'an empty result list while the index loads must not read as "nothing found"',
   );
   // The index must not load until the palette is open.

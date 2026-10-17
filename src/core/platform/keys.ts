@@ -20,7 +20,8 @@ export const STAGE_ATTEMPT_PREFIX = 'st:';
 /** Debug stage: a single "fixed the bug" record per section. */
 export const debugDone = (sid: string) => `st:${sid}:debugdone`;
 /** Learn stage: theory-viewed marker. */
-export const learnView = (sid: string) => `view:${sid}:learn`;
+export const LEARN_VIEW_PREFIX = 'view:';
+export const learnView = (sid: string) => `${LEARN_VIEW_PREFIX}${sid}:learn`;
 /** Final assessment coding tasks. */
 export const finalTaskAttempt = (i: number) => `final:task${i}`;
 /**

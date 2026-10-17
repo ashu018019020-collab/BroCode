@@ -181,11 +181,11 @@ export function interviewAccuracy(state: AppState): Accuracy {
 export const pctText = (p: number | null): string => (p === null ? '—' : `${p}%`);
 
 /**
- * One line for a surface's header: "32/41 sahi · 78%" — the counts, then the percentage.
+ * One line for a surface's header: "32/41 correct · 78%" — the counts, then the percentage.
  * Kept here so every surface phrases the same number the same way.
  */
 export function accuracyLine(a: Accuracy): string {
-  if (!a.answered) return 'Abhi tak koi answer nahi';
-  if (a.pct === null) return `${a.answered} answer likhe — grade abhi nahi kiya`;
-  return `${a.correct}/${a.graded} sahi · ${a.pct}%`;
+  if (!a.answered) return 'No answers yet';
+  if (a.pct === null) return `${a.answered} answers written — not graded yet`;
+  return `${a.correct}/${a.graded} correct · ${a.pct}%`;
 }

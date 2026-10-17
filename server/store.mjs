@@ -16,6 +16,9 @@ export function createSupabaseStore(prisma = new PrismaClient()) {
     createdAt: profile.createdAt,
     lastSeenAt: profile.lastSeenAt,
     email: profile.email ?? '',
+    // The account's resume position lives on the progress row. It is exposed here so the session
+    // endpoint can answer "where was this learner?" without a second query.
+    progress: profile.progress ?? null,
   });
 
   return {

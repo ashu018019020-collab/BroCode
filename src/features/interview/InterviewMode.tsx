@@ -116,7 +116,7 @@ export default function InterviewMode() {
         section: q.sectionId,
         topic: (q.tags ?? [])[0] ?? TYPE_LABEL[q.type] ?? q.type,
         question: q.question.slice(0, 140),
-        myAnswer: written.trim() ? written.slice(0, 220) : '(self-grade: bina likhe galat)',
+        myAnswer: written.trim() ? written.slice(0, 220) : '(self-grade: marked wrong with no answer)',
         correct: q.answer.slice(0, 220),
         type: 'interview',
         source: 'interview',
@@ -156,7 +156,7 @@ export default function InterviewMode() {
       <div>
         <HubCrumb hub="/interviews" hubLabel="Interview" page="Interview Room" />
         <h1>🎤 Interview Room</h1>
-        <p className="muted small">Subject chuno — phir uske kisi bhi round me utro.</p>
+        <p className="muted small">Pick a subject — then start any of its rounds.</p>
         <div className="tile-grid">
           {TRACK_DEFS.map((d) => {
             const r = ranges.find((x) => x.id === d.id)!;
@@ -196,13 +196,13 @@ export default function InterviewMode() {
           {/* The page has ONE h1 (the picker above); the round's title is a heading, not the page. */}
           <h2 style={{ margin: 0 }}>{kind.emoji} {t(trackDef.nameKey as LocaleKey)} — {kind.label} Interview</h2>
           <p className="muted small" style={{ margin: '4px 0 0' }}>
-            {kind.blurb} · {sectionChips.reduce((a, x) => a + x.n, 0)} questions is subject me.
+            {kind.blurb} · {sectionChips.reduce((a, x) => a + x.n, 0)} questions in this subject.
           </p>
         </div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-          <span className="chip">{asked}/{plan.length || size} is sitting me</span>
-          {sessionPct !== null && <span className={`chip ${sessionPct >= 70 ? 'easy' : 'hard'}`}>{sessionPct}% sahi</span>}
-          <button className="btn small" onClick={reroll}><RefreshCw size={12} /> Naya round</button>
+          <span className="chip">{asked}/{plan.length || size} in this sitting</span>
+          {sessionPct !== null && <span className={`chip ${sessionPct >= 70 ? 'easy' : 'hard'}`}>{sessionPct}% correct</span>}
+          <button className="btn small" onClick={reroll}><RefreshCw size={12} /> New round</button>
           {last && (
             <Link className="btn small ghost" to={`/interview-mode?subject=${trackDef.id}&type=${last.kind}`}>
               Continue: {KIND_BY_ID[last.kind].label} <ArrowRight size={12} />
@@ -234,9 +234,9 @@ export default function InterviewMode() {
       </div>
       {/* Topic pin — the subject's own sections, only the ones this round has questions in. */}
       <details style={{ marginBottom: 10 }}>
-        <summary className="small muted" style={{ cursor: 'pointer' }}>Topic pin: {pinned ? sectionChips.find((x) => x.e.sectionId === pinned)?.e.title ?? pinned : 'poora subject'}</summary>
+        <summary className="small muted" style={{ cursor: 'pointer' }}>Topic pin: {pinned ? sectionChips.find((x) => x.e.sectionId === pinned)?.e.title ?? pinned : 'whole subject'}</summary>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-          <button className={`chip${!pinned ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setParam({ section: null })}>Poora subject</button>
+          <button className={`chip${!pinned ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setParam({ section: null })}>Whole subject</button>
           {sectionChips.map(({ e, n }) => (
             <button key={e.sectionId} className={`chip${pinned === e.sectionId ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setParam({ section: e.sectionId })}>
               {e.sectionId.toUpperCase()} · {e.title} · {n}
@@ -249,24 +249,24 @@ export default function InterviewMode() {
       {answered && !q && (
         <div className="card">
           <h2>✅ Round complete</h2>
-          <p className="small muted">{asked} answers · {right} sahi · {pctText(sessionPct)} — ye sab <b>qb:</b> records me save hue, wahi jo Question Bank likhta hai.</p>
+          <p className="small muted">{asked} answers · {right} correct · {pctText(sessionPct)} — all saved under <b>qb:</b> records, the same ones the Question Bank writes.</p>
           {failed.length > 0 && (
             <>
-              <b className="small">Weak areas is round me:</b>
+              <b className="small">Weak areas in this round:</b>
               <ul className="small muted" style={{ margin: '4px 0 8px 18px' }}>{failed.map((f, i) => <li key={i}>{f}</li>)}</ul>
-              <Link className="btn small primary" to="/mistakes">Mistake tracker me fix karo <ArrowRight size={12} /></Link>
+              <Link className="btn small primary" to="/mistakes">Fix them in the Mistake Tracker <ArrowRight size={12} /></Link>
             </>
           )}
           <div className="row" style={{ marginTop: 8 }}>
-            <button className="btn small" onClick={reroll}><Dice5 size={12} /> Naya round (fresh questions)</button>
-            <Link className="btn small ghost" to={`/interview-mode?subject=${trackDef.id}`}>Doosra round <ChevronLeft size={12} /></Link>
+            <button className="btn small" onClick={reroll}><Dice5 size={12} /> New round (fresh questions)</button>
+            <Link className="btn small ghost" to={`/interview-mode?subject=${trackDef.id}`}>Another round <ChevronLeft size={12} /></Link>
           </div>
         </div>
       )}
 
       {!q && !answered && (
         <div className="card muted small">
-          {bank === null ? 'Bank load ho raha hai…' : 'Is round me is filter par question nahi mila — doosra type ya level chuno.'}
+          {bank === null ? 'Loading bank…' : 'No question matched this filter in this round — pick another type or level.'}
         </div>
       )}
 
@@ -277,7 +277,7 @@ export default function InterviewMode() {
               {current?.sectionId.toUpperCase()} · {current?.title} · {TYPE_LABEL[q.type]} · {q.difficulty}
             </span>
             <div className="row" style={{ gap: 6 }}>
-              {doneCount && <span className="chip easy">pehle answer kiya tha</span>}
+              {doneCount && <span className="chip easy">answered before</span>}
               <span className="chip">{step + 1} / {plan.length}</span>
             </div>
           </div>
@@ -285,21 +285,21 @@ export default function InterviewMode() {
           {q.type === 'coding' || q.type === 'debug' ? (
             <>
               <p className="small muted" style={{ marginTop: 0 }}>
-                Code likhna hai? <Link to="/playground">Playground me likho</Link> (ya yahan likh do), phir answer key se compare karo.
+                Writing code? Do it in the <Link to="/playground">Playground</Link> (or right here), then compare with the answer key.
               </p>
-              <textarea className="console" rows={6} placeholder="Apna code / approach yahan likho…" value={written} onChange={(e) => setWritten(e.target.value)} />
+              <textarea className="console" rows={6} placeholder="Write your code / approach here…" value={written} onChange={(e) => setWritten(e.target.value)} />
             </>
           ) : (
             <textarea
               className="console"
               rows={4}
-              placeholder="Pehle zor se bolo, phir yahan likho…"
+              placeholder="Say it out loud first, then write it here…"
               value={written}
               onChange={(e) => setWritten(e.target.value)}
             />
           )}
           <div className="row" style={{ marginTop: 8 }}>
-            <button className="btn" onClick={() => setRevealed((v) => !v)}>{revealed ? 'Hide' : 'Model answer dekho'}</button>
+            <button className="btn" onClick={() => setRevealed((v) => !v)}>{revealed ? 'Hide' : 'Show model answer'}</button>
           </div>
           {revealed && (
             <div className="fadeup" style={{ marginTop: 10 }}>
@@ -309,9 +309,9 @@ export default function InterviewMode() {
             </div>
           )}
           <div className="row" style={{ marginTop: 10 }}>
-            <span className="small muted">Apni answer grade karo:</span>
-            <button className="btn small primary" onClick={() => grade(true)}>✅ Sahi tha</button>
-            <button className="btn small" onClick={() => grade(false)}>❌ Galat tha</button>
+            <span className="small muted">Grade your answer:</span>
+            <button className="btn small primary" onClick={() => grade(true)}>✅ Correct</button>
+            <button className="btn small" onClick={() => grade(false)}>❌ Wrong</button>
           </div>
           <Bar pct={plan.length ? ((step + 1) / plan.length) * 100 : 0} />
         </div>

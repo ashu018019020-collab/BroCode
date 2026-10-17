@@ -22,7 +22,7 @@ function DefenseField({ i }: { i: number }) {
       className="console"
       rows={2}
       value={text}
-      placeholder="Answer aloud, phir yahan likho (save ho jata hai)"
+      placeholder="Answer aloud, then write it here (it saves automatically)"
       aria-label={`Defense answer ${i + 1}`}
       onChange={(e) => setText(e.target.value)}
     />
@@ -137,7 +137,7 @@ export default function FinalAssessment() {
           <textarea
             className="console"
             rows={4}
-            placeholder="Answer aloud first… (save ho jata hai)"
+            placeholder="Answer aloud first… (it saves automatically)"
             aria-label="My answer"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}

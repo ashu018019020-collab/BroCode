@@ -30,99 +30,99 @@ interface ErrMeta { topic: string; what: string; cause: string; fix: string; exa
 
 const ERRORS: Record<string, ErrMeta> = {
   SyntaxError: {
-    topic: 'Syntax', what: 'Python code padh hi nahi paya — syntax valid nahi hai.',
-    cause: 'Zyada tar: colon (:) missing, bracket ya quote adhoora, ya `if x = 5` jaisa invalid assignment.',
-    fix: 'Line number dekho, uske pehle wala character check karo, brackets/quotes gino. `=` ki jagah `==` comparison me.',
-    example: '# Galat:  if x = 5:\n# Sahi:   if x == 5:',
+    topic: 'Syntax', what: 'Python could not even read the code — the syntax is not valid.',
+    cause: 'Most often: a missing colon (:), an unclosed bracket or quote, or an invalid assignment like `if x = 5`.',
+    fix: 'Check the line number, inspect the character just before it, and count brackets/quotes. Use `==` instead of `=` when comparing.',
+    example: '# Wrong:   if x = 5:\n# Correct: if x == 5:',
   },
   IndentationError: {
-    topic: 'Indentation', what: 'Indentation consistent nahi hai ya block indent hi nahi hua.',
-    cause: 'Tabs aur spaces mix ho gaye, ya `:` ke baad wali line indent nahi ki.',
-    fix: 'Har level par exactly 4 spaces use karo — editor me Tab ko spaces me set karo.',
+    topic: 'Indentation', what: 'Indentation is inconsistent, or the block was never indented.',
+    cause: 'Tabs and spaces are mixed, or the line after `:` was not indented.',
+    fix: 'Use exactly 4 spaces per level — configure your editor to insert spaces for Tab.',
     example: 'if True:\n    print("4 spaces")',
   },
   NameError: {
-    topic: 'NameError', what: 'Ek naam use hua jo abhi exist nahi karta.',
-    cause: 'Variable/function ka spelling galat, ya assign hone se pehle use kar liya.',
-    fix: 'Failing line se pehle `print(<naam>)` laga ke check karo ki naam defined hai. Spelling milaan karo.',
-    example: 'total = 0\nprint(totl)  # NameError — spelling dekho',
+    topic: 'NameError', what: 'A name was used that does not exist yet.',
+    cause: 'The variable/function is misspelled, or it was used before being assigned.',
+    fix: 'Add `print(<name>)` before the failing line to confirm the name is defined. Compare the spelling.',
+    example: 'total = 0\nprint(totl)  # NameError — check the spelling',
   },
   TypeError: {
-    topic: 'TypeError', what: 'Operation ko galat type ka value mila.',
-    cause: 'Classic: "abc" + 5 (str + int), ya aisi cheez call ki jo callable nahi hai.',
-    fix: 'Failing line se pehle har operand ka `print(type(x))` karo, phir explicitly convert karo (str(), int()).',
-    example: 'age = "22"\nprint(age + 1)        # TypeError\nprint(int(age) + 1)   # sahi',
+    topic: 'TypeError', what: 'The operation received a value of the wrong type.',
+    cause: 'Classic: "abc" + 5 (str + int), or calling something that is not callable.',
+    fix: 'Before the failing line, print `print(type(x))` for every operand, then convert explicitly (str(), int()).',
+    example: 'age = "22"\nprint(age + 1)        # TypeError\nprint(int(age) + 1)   # correct',
   },
   ValueError: {
-    topic: 'ValueError', what: 'Type sahi hai par value invalid hai.',
-    cause: 'Jaise int("3.5") — int() decimal string parse nahi kar sakta.',
-    fix: 'Jo value convert ho rahi hai use print karo. float() try karo ya input validate karo.',
+    topic: 'ValueError', what: 'The type is correct but the value is invalid.',
+    cause: 'For example int("3.5") — int() cannot parse a decimal string.',
+    fix: 'Print the value being converted. Try float(), or validate the input.',
     example: 'int("3.5")         # ValueError\nint(float("3.5"))  # 3',
   },
   IndexError: {
-    topic: 'IndexError', what: 'Sequence ka index range se bahar chala gaya.',
-    cause: 'len(seq)-1 se bada index, ya khaali list par indexing.',
-    fix: 'Failing line se pehle `print(len(seq))` aur index print karo. Last valid index = len-1.',
+    topic: 'IndexError', what: 'A sequence index went out of range.',
+    cause: 'An index greater than len(seq)-1, or indexing an empty list.',
+    fix: 'Before the failing line, print `print(len(seq))` and the index. The last valid index is len-1.',
     example: 'nums = [1, 2]\nprint(nums[2])   # IndexError\nprint(nums[-1])  # 2 — last item',
   },
   KeyError: {
-    topic: 'KeyError', what: 'Dictionary me wo key mila hi nahi.',
-    cause: 'Key kabhi insert nahi hui, ya key string me typo hai.',
-    fix: 'Failing line se pehle `print(d.keys())` dekho. Safe access ke liye `d.get(key, default)` use karo.',
-    example: 'd = {"name": "A"}\nprint(d.get("age", 0))  # 0, crash nahi',
+    topic: 'KeyError', what: 'That key was not found in the dictionary.',
+    cause: 'The key was never inserted, or there is a typo in the key string.',
+    fix: 'Before the failing line, inspect `print(d.keys())`. For safe access use `d.get(key, default)`.',
+    example: 'd = {"name": "A"}\nprint(d.get("age", 0))  # 0, no crash',
   },
   AttributeError: {
-    topic: 'AttributeError', what: 'Is object me wo attribute/method hai hi nahi.',
-    cause: 'Galat type par method call — jaise tuple par .append(), ya function ko () ke bina reference kiya aur phir call kiya.',
-    fix: '`print(type(obj))` karo aur confirm karo ki wo method us type par exist karta hai. Function reference ko call karne ke liye () lagao.',
-    example: 't = (1, 2)\n# t.append(3)  # AttributeError — tuple immutable hai',
+    topic: 'AttributeError', what: 'This object has no such attribute/method.',
+    cause: 'A method was called on the wrong type — for example .append() on a tuple, or a function was referenced without () and then called.',
+    fix: 'Run `print(type(obj))` and confirm that the method exists on that type. Add () to call a function reference.',
+    example: 't = (1, 2)\n# t.append(3)  # AttributeError — tuples are immutable',
   },
   ZeroDivisionError: {
-    topic: 'ZeroDivisionError', what: 'Zero se divide (ya modulo) kiya gaya.',
-    cause: 'Denominator 0 evaluate hua — aksar user input se.',
-    fix: 'Operation se pehle denominator print karo; guard lagao: `if denom:`.',
+    topic: 'ZeroDivisionError', what: 'Division (or modulo) by zero.',
+    cause: 'The denominator evaluated to 0 — often from user input.',
+    fix: 'Print the denominator before the operation; add a guard: `if denom:`.',
     example: 'avg = total / n if n else 0',
   },
   ModuleNotFoundError: {
-    topic: 'ModuleNotFoundError', what: 'Module is runtime me available nahi hai.',
-    cause: 'Sirf numpy, pandas aur poora Python stdlib bundled hai — baaki packages yahan install nahi ho sakte.',
-    fix: 'Packages panel me list dekho; example ko stdlib/numpy/pandas ke equivalent me rewrite karo.',
-    example: '# matplotlib bundled nahi hai — text-based chart banao:\nfor v in [3, 7, 5]: print("*" * v)',
+    topic: 'ModuleNotFoundError', what: 'The module is not available in this runtime.',
+    cause: 'Only numpy, pandas, and the full Python standard library are bundled — other packages cannot be installed here.',
+    fix: 'Check the list in the Packages panel; rewrite the example using stdlib/numpy/pandas equivalents.',
+    example: '# matplotlib is not bundled — build a text-based chart:\nfor v in [3, 7, 5]: print("*" * v)',
   },
   ImportError: {
-    topic: 'ImportError', what: 'Module mila par usme wo naam nahi hai.',
-    cause: 'Galat submodule/naam import kiya, ya version me API badal gayi.',
-    fix: 'Module ke available names `dir(module)` se dekho; spelling aur path check karo.',
+    topic: 'ImportError', what: 'The module was found but does not contain that name.',
+    cause: 'A wrong submodule/name was imported, or the API changed between versions.',
+    fix: "List the module's available names with `dir(module)`; check the spelling and path.",
     example: 'import numpy as np\nprint(hasattr(np, "mean"))  # True',
   },
   FileNotFoundError: {
-    topic: 'FileNotFoundError', what: 'File mili hi nahi.',
-    cause: 'Path galat hai ya file bani hi nahi. Is lab me sirf bundled datasets safe hain.',
-    fix: 'Jo directory expect kar rahe ho use list karo; bundled dataset naam use karo (e.g. students.csv).',
+    topic: 'FileNotFoundError', what: 'The file was not found.',
+    cause: 'The path is wrong or the file was never created. In this lab only bundled datasets are safe.',
+    fix: 'List the directory you expect; use a bundled dataset name (e.g. students.csv).',
     example: "import pandas as pd\ndf = pd.read_csv('students.csv')  # bundled dataset",
   },
   OSError: {
-    topic: 'OSError (input)', what: 'Runtime ko input/output error mila.',
-    cause: 'Is lab me sabse common: input() — Program Input box me values do.',
-    fix: 'Program Input box me har value ek line me likho, phir Run karo. Errors test karne ke liye khaali chhodo.',
+    topic: 'OSError (input)', what: 'The runtime hit an input/output error.',
+    cause: 'Most common in this lab: input() — provide values in the Program Input box.',
+    fix: 'Type each value on its own line in the Program Input box, then Run. Leave it empty to test error handling.',
     example: 'name = input("Name: ")  # Program Input: Ashu',
   },
   EOFError: {
-    topic: 'EOFError', what: 'input() ko padhne ko kuch nahi mila — input khatam ho gaya.',
-    cause: 'Program ne input() zyada baar call kiya jitni lines Program Input me hain.',
-    fix: 'Code ke input() calls gino aur utni hi lines do — ek value per line.',
-    example: '# 2 input() calls => Program Input me 2 lines',
+    topic: 'EOFError', what: 'input() had nothing to read — the input ran out.',
+    cause: 'The program called input() more times than there are lines in Program Input.',
+    fix: 'Count the input() calls in the code and provide that many lines — one value per line.',
+    example: '# 2 input() calls => 2 lines in Program Input',
   },
   RuntimeError: {
-    topic: 'RuntimeError', what: 'Runtime ne operation refuse kiya.',
-    cause: 'Zyada tar recursion depth ya invalid runtime state.',
-    fix: 'Recursion ka base case check karo; loop ka termination condition dekho.',
-    example: 'def f(n):\n    if n <= 0: return 0   # base case zaroori\n    return f(n - 1)',
+    topic: 'RuntimeError', what: 'The runtime refused the operation.',
+    cause: 'Usually recursion depth or an invalid runtime state.',
+    fix: "Check the recursion base case; inspect the loop's termination condition.",
+    example: 'def f(n):\n    if n <= 0: return 0   # base case required\n    return f(n - 1)',
   },
   RecursionError: {
-    topic: 'RecursionError', what: 'Recursion bahut deep chali gayi.',
-    cause: 'Base case missing hai ya kabhi hit nahi hota.',
-    fix: 'Base case pehle likho aur confirm karo ki har call uski taraf badhta hai.',
+    topic: 'RecursionError', what: 'Recursion went too deep.',
+    cause: 'The base case is missing or never reached.',
+    fix: 'Write the base case first and confirm that every call moves toward it.',
     example: 'def fact(n):\n    if n <= 1: return 1\n    return n * fact(n - 1)',
   },
 };
@@ -132,7 +132,7 @@ function messageDetail(kind: string, message: string): string {
   if (!message) return '';
   if (kind === 'NameError') {
     const m = message.match(/name '([^']+)'/);
-    if (m) return `Naam: "${m[1]}"`;
+    if (m) return `Name: "${m[1]}"`;
   }
   if (kind === 'TypeError' || kind === 'ValueError') {
     if (message.length > 10) return `Message: ${message.slice(0, 90)}`;
@@ -172,15 +172,15 @@ export function explainTraceback(err: string): TutorExplanation | null {
 export function hintLadder(expl: TutorExplanation | null, attempt: number, hasInput: boolean): string[] {
   if (!expl) {
     return [
-      'Output/Errors tab me poora traceback padho — line number sabse pehle dekho.',
-      'Error ka type (NameError, TypeError…) batata hai kis CATEGORY ki galti hui.',
-      'Failing line se pehle values print karke state check karo.',
+      'Read the full traceback in the Output/Errors tab — check the line number first.',
+      'The error type (NameError, TypeError…) tells you which CATEGORY of mistake it is.',
+      'Print values before the failing line to inspect the state.',
     ];
   }
   const base: string[] = [];
-  if (expl.line) base.push(`Line ${expl.line} par dhyaan do — wahi se execution ruk gayi.`);
+  if (expl.line) base.push(`Focus on line ${expl.line} — that is where execution stopped.`);
   if (expl.kind === 'OSError' || expl.kind === 'EOFError') {
-    base.push(hasInput ? 'Program Input box ki lines aur input() calls gino — count match karna chahiye.' : 'input() use kiya hai? Neeche Program Input box me values do (ek per line).');
+    base.push(hasInput ? 'Count the lines in the Program Input box and the input() calls — the counts should match.' : 'Using input()? Provide values in the Program Input box below (one per line).');
   }
   base.push(expl.cause);
   if (attempt >= 3) base.push(expl.fix);
@@ -195,46 +195,46 @@ export function hintLadder(expl: TutorExplanation | null, attempt: number, hasIn
  * line, isolate, print, re-run) is shared; these sharpen it for the error kind.
  */
 const DEBUG_STEPS: Record<string, string[]> = {
-  SyntaxError: ['Python ne code padha hi nahi — isliye line number "jahan tak samajh paya" wahan tak ka ho sakta hai.', 'Us line ke PEHLE wala character dekho: koi bracket `( [ {`, quote `" \'` ya colon `:` adhoora chhoot gaya?', 'Brackets ko jodiyan banao aur gino: ( ) [ ] { } sab barabar hone chahiye.'],
-  IndentationError: ['Colon `:` ke baad wali line 4 spaces andar honi chahiye.', 'Tabs aur spaces mix mat karo — editor me har level par sirf 4 spaces rakho.', '`if`/`for`/`def` ke block ko dekhkar indent ka level milaan karo.'],
-  NameError: ['Failing line se pehle `print(dir())` chalao — dekh lo ki naam list me hai ya nahi.', 'Spelling milaan karo: `total` vs `totl`.', 'Naam banaya hai ya nahi — assignment failing line se PEHLE chalna chahiye.'],
-  TypeError: ['Failing line se pehle har operand ka `print(type(x))` karo.', '`"22"` string hai, `22` int — `int()`/`str()` se explicitly convert karo.', 'Jo call kar rahe ho wo function hai? `f` vs `f()` ka farak dekho.'],
-  ValueError: ['Jo value convert ho rahi hai use `print(repr(value))` karo — hidden space ya khaali string pakdo.', '`int("3.5")` fail hota hai — `float()` ya validation try karo.', '`input()` se aayi value pehle `.strip()` karo.'],
-  AttributeError: ['`print(type(obj))` karo — pehle confirm karo object kis type ka hai.', 'Us type par wo method exist karta hai? `.append()` sirf list par, `.mean()` numpy array par.', 'Function reference ko call karna bhool gaye? `np.mean` ki jagah `np.mean(arr)`.'],
-  IndexError: ['`print(len(seq))` aur index print karo.', 'Last valid index `len(seq) - 1` hota hai — off-by-one check karo.', 'Khaali sequence par indexing bhi IndexError deti hai.'],
-  KeyError: ['`print(d.keys())` karke dekho key asli me kaunsi hai.', 'String key me typo common hai — quotes ke andar spelling milao.', 'Safe access: `d.get(key, default)`, ya `if key in d:` guard lagao.'],
-  ZeroDivisionError: ['Operation se pehle denominator `print(denom)` karo.', 'Guard lagao: `avg = total / n if n else 0`.', 'Denominator user input se aa raha hai? Khaali/zero check karo.'],
-  ModuleNotFoundError: ['Iss lab me sirf numpy, pandas aur Python stdlib hai.', 'Packages panel kholo aur available naam dekho.', 'Example ko stdlib/numpy/pandas ke equivalent me likho.'],
-  ImportError: ['`import module` ke baad `print(dir(module))` se available naam dekho.', 'Purani API ki jagah nayi API ka naam check karo.'],
-  OSError: ['Ye lab me 90% baar `input()` ki wajah se hota hai — neeche Program Input box me values do.', 'Har input() ke liye ek line (ek value per line) do.', 'input() calls gino, utni hi lines daalo.'],
-  EOFError: ['Code me `input()` kitni baar hai, gino.', 'Program Input box me bilkul utni hi lines do — ek value per line.'],
-  RecursionError: ['Function ka base case pehle likho (`if n <= 1: return ...`).', 'Har recursive call base case ki taraf badh rahi hai ya nahi check karo.'],
-  RuntimeError: ['Loop ka termination condition check karo — infinite loop ho sakta hai.', 'Recursion ka base case dobara dekho.'],
+  SyntaxError: ['Python could not read the code at all — so the reported line number is only "as far as it could parse".', 'Look at the character just BEFORE that line: is a bracket `( [ {`, quote `" \'`, or colon `:` left unclosed?', 'Pair up the brackets and count them: ( ) [ ] { } must all balance.'],
+  IndentationError: ['The line after a colon `:` must be indented 4 spaces.', 'Do not mix tabs and spaces — use only 4 spaces per level in the editor.', 'Inspect the `if`/`for`/`def` block and compare the indentation level.'],
+  NameError: ['Run `print(dir())` before the failing line — check whether the name is in the list.', 'Compare spellings: `total` vs `totl`.', 'Was the name created at all — the assignment must run BEFORE the failing line.'],
+  TypeError: ['Before the failing line, run `print(type(x))` for every operand.', '`"22"` is a string, `22` is an int — convert explicitly with `int()`/`str()`.', 'Is what you are calling actually a function? Note the difference between `f` and `f()`.'],
+  ValueError: ['Print the value being converted with `print(repr(value))` — catch hidden spaces or empty strings.', '`int("3.5")` fails — try `float()` or validate first.', 'Call `.strip()` on values that come from `input()`.'],
+  AttributeError: ['Run `print(type(obj))` — first confirm the object\'s type.', 'Does that method exist on the type? `.append()` only on lists, `.mean()` on numpy arrays.', 'Forgot to call the function reference? Use `np.mean(arr)` instead of `np.mean`.'],
+  IndexError: ['Print `print(len(seq))` and the index.', 'The last valid index is `len(seq) - 1` — check for off-by-one.', 'Indexing an empty sequence also raises IndexError.'],
+  KeyError: ['Run `print(d.keys())` to see which keys actually exist.', 'Typos in string keys are common — compare the spelling inside the quotes.', 'Safe access: `d.get(key, default)`, or add a guard with `if key in d:`.'],
+  ZeroDivisionError: ['Print the denominator with `print(denom)` before the operation.', 'Add a guard: `avg = total / n if n else 0`.', 'Is the denominator coming from user input? Check for empty/zero values.'],
+  ModuleNotFoundError: ['This lab only has numpy, pandas, and the Python standard library.', 'Open the Packages panel and check the available names.', 'Rewrite the example using stdlib/numpy/pandas equivalents.'],
+  ImportError: ['After `import module`, inspect the available names with `print(dir(module))`.', 'Check the new API name instead of the old API.'],
+  OSError: ['In this lab this is caused by `input()` 90% of the time — provide values in the Program Input box below.', 'Give one line per input() (one value per line).', 'Count the input() calls and provide exactly that many lines.'],
+  EOFError: ['Count how many times `input()` appears in the code.', 'Provide exactly that many lines in the Program Input box — one value per line.'],
+  RecursionError: ['Write the function\'s base case first (`if n <= 1: return ...`).', 'Check whether every recursive call moves toward the base case.'],
+  RuntimeError: ['Check the loop\'s termination condition — it may be an infinite loop.', 'Re-examine the recursion base case.'],
 };
 
 /**
- * Step-by-step debugging checklist for the current error (Hinglish, offline).
+ * Step-by-step debugging checklist for the current error (offline).
  * With no error yet it returns how to get a usable traceback in the first place.
  */
 export function debugSteps(expl: TutorExplanation | null, hasInput: boolean): string[] {
   if (!expl) {
     return [
-      'Pehle Run karo (Ctrl+Enter) — error aane par yahan asli line-by-line debug plan milegi.',
-      'Program Input box me `input()` ke liye values ek-per-line do, warna OSError/EOFError aayega.',
-      'Console me SABSE NEECHE wali line hi asli error hoti hai — upar ki lines sirf call path hain.',
+      'Run first (Ctrl+Enter) — once an error appears, you will get a real line-by-line debug plan here.',
+      'Provide one value per line in the Program Input box for `input()`, otherwise you will get OSError/EOFError.',
+      'The BOTTOM line in the console is the actual error — the lines above are just the call path.',
     ];
   }
-  const steps: string[] = ['Errors tab me SABSE NEECHE wali line padho — wahi asli error hai (upar ki lines call path hain).'];
-  if (expl.line) steps.push(`Line ${expl.line} par jaao — editor me wahi line red highlight ki hui hai.`);
-  steps.push(`Root cause bataya gaya: ${expl.cause}`);
+  const steps: string[] = ['Read the BOTTOM line in the Errors tab — that is the actual error (the lines above are the call path).'];
+  if (expl.line) steps.push(`Go to line ${expl.line} — the editor highlights that line in red.`);
+  steps.push(`Root cause: ${expl.cause}`);
   const kindSteps = DEBUG_STEPS[expl.kind];
   if (kindSteps) steps.push(...kindSteps);
-  else steps.push('Failing line se PEHLE har variable ka value aur type print karo.');
+  else steps.push('Print the value and type of every variable BEFORE the failing line.');
   if (expl.kind === 'OSError' || expl.kind === 'EOFError') {
-    steps.push(hasInput ? 'Input box ki lines aur input() calls ka count match karo.' : 'Program Input box me values daalo (ek value per line).');
+    steps.push(hasInput ? 'Match the lines in the Input box with the input() calls.' : 'Provide values in the Program Input box (one value per line).');
   }
-  steps.push('Chhota test karo: failing line se pehle `print()` lagao, phir Run — value confirm hone par fix karo.');
-  steps.push('Fix karke dobara Run karo (Ctrl+Enter); clean chala to Mistake Tracker me save karke aage badho.');
+  steps.push('Run a small test: add `print()` before the failing line, then Run — fix once the value is confirmed.');
+  steps.push('Run again after the fix (Ctrl+Enter); if it runs clean, save it to the Mistake Tracker and move on.');
   return steps;
 }
 
@@ -261,7 +261,7 @@ export function coachSchedule(sectionId: string, state: AppState): CoachSchedule
     daysLeft: info.daysLeft,
     overdueDays: info.overdueDays,
     text: reviewLabel(info),
-    nextText: `Coach ke baad → level ${next.level} (${intervalDays(next.level)}-din interval me next re-teach)`,
+    nextText: `After coaching → level ${next.level} (next re-teach in ${intervalDays(next.level)} days)`,
   };
 }
 
@@ -283,14 +283,14 @@ export function nextTask(state: AppState, sections: Section[]): NextTask {
       // Name the actual question rather than a generic tag — that is what has to be retried.
       const what = (worst?.question || worst?.topic || top.title).replace(/\s+/g, ' ').trim();
       return {
-        label: `Dobara: ${what.slice(0, 48)}${what.length > 48 ? '…' : ''}`,
+        label: `Retry: ${what.slice(0, 48)}${what.length > 48 ? '…' : ''}`,
         reason: `${top.reasons.join(' · ')}.`,
         route: where?.route ?? `/lesson/${top.sectionId}/learn`,
       };
     }
     return {
       label: `Review: ${top.title}`.slice(0, 60),
-      reason: `${top.reasons.join(' · ')} — re-teach ke liye coach kholo.`,
+      reason: `${top.reasons.join(' · ')} — open the coach to re-teach this.`,
       route: `/lesson/${top.sectionId}/learn`,
     };
   }
@@ -348,7 +348,7 @@ export function coachSectionFor(
   const fallback = sections.length ? currentSection(sections, state) : null;
   return rankCoachSection(
     state, sections, fallback,
-    'Frontier section — yahi tumhari next best progress hai.',
+    'Frontier section — this is your next best progress.',
     coachOptions(state),
   );
 }
@@ -378,10 +378,10 @@ function buildDrill(
     if (pick) {
       return {
         kind: 'bank',
-        label: `Bank se naya ${pick.bankType} question (${pick.question.difficulty})`,
+        label: `New ${pick.bankType} question from the bank (${pick.question.difficulty})`,
         text: pick.question.question,
         solution: pick.question.answer,
-        check: pick.question.explanation || 'Model answer se milao, phir Question Bank me self-grade karo.',
+        check: pick.question.explanation || 'Compare with the model answer, then self-grade in the Question Bank.',
         route: '/questions',
         source: `public/generated/questions/${section.id}.json · ${why}`,
       };
@@ -396,7 +396,7 @@ function buildDrill(
       return {
         kind: 'interview', label: 'Interview drill (curriculum)', text: iv.q,
         solution: [iv.a, iv.tip && `TIP: ${iv.tip}`, iv.fu && `FOLLOW-UP: ${iv.fu}`].filter(Boolean).join('\n\n'),
-        check: 'Bolkar jawab do, phir apne shabdon me likho — interview me jo bola wo yaad rehta hai.',
+        check: 'Answer aloud, then write it in your own words — what you say in an interview sticks.',
         route: `/lesson/${section.id}/interview`, source: `${section.title} → interview Q${idx + 1}`,
       };
     }
@@ -406,8 +406,8 @@ function buildDrill(
     const lg = idx >= 0 ? section.logic[idx] : null;
     if (lg) {
       return {
-        kind: 'logic', label: `Pehle predict karo (${lg.kind})`, text: lg.text, solution: lg.answer,
-        check: 'Pehle apna output likho, phir answer kholo.',
+        kind: 'logic', label: `Predict first (${lg.kind})`, text: lg.text, solution: lg.answer,
+        check: 'Write your output first, then reveal the answer.',
         route: `/lesson/${section.id}/logic`, source: `${section.title} → logic card ${idx + 1}`,
       };
     }
@@ -470,11 +470,11 @@ export function coachFor(
 
   // Mistakes come FIRST: they are the reason the coach picked this section.
   const socratic: CoachStep[] = retakes.map((m) => ({
-    label: `Dobara — ${m.label}`,
+    label: `Retry — ${m.label}`,
     question: m.question,
     answer: [
-      m.myAnswer ? `Tumne likha tha: ${m.myAnswer}` : '',
-      `Sahi jawab: ${m.correct}`,
+      m.myAnswer ? `You wrote: ${m.myAnswer}` : '',
+      `Correct answer: ${m.correct}`,
       `Retry: ${m.routeLabel}`,
     ].filter(Boolean).join('\n\n'),
   }));
@@ -496,7 +496,7 @@ export function coachFor(
     });
   }
   const lg = (section.logic ?? []).find((l) => l.text?.trim() && l.answer?.trim());
-  if (lg) pushOnce({ label: `Pehle predict karo (${lg.kind})`, question: lg.text, answer: lg.answer });
+  if (lg) pushOnce({ label: `Predict first (${lg.kind})`, question: lg.text, answer: lg.answer });
   const cp = (section.checkpoint ?? []).find((c) => c.q?.trim() && (c.key ?? '').trim().length > 1);
   if (cp) pushOnce({ label: 'Self-check', question: cp.q, answer: cp.key });
 

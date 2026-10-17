@@ -81,11 +81,11 @@ export default function InterviewsHub() {
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 14, alignItems: 'flex-start' }}>
           <div style={{ minWidth: 260 }}>
             <div className="chip" style={{ marginBottom: 6 }}>🎤 INTERVIEW</div>
-            <h1 style={{ margin: 0 }}>Bolkar practice karo. Phir defend karo.</h1>
+            <h1 style={{ margin: 0 }}>Practise out loud. Then defend it.</h1>
             <p className="muted small" style={{ margin: '8px 0 0', maxWidth: 620 }}>
-              Subject chuno, round chuno, aur real questions se practice karo — concept, coding,
-              debugging, logic, project. Har jawab usi canonical question par save hota hai jo
-              Question Bank dikhata hai.
+              Pick a subject, pick a round, and practise with real questions — concept, coding,
+              debugging, logic, project. Every answer is saved against the same canonical question the
+              Question Bank shows.
             </p>
           </div>
           <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
@@ -105,24 +105,24 @@ export default function InterviewsHub() {
           {last ? (
             <>
               <p className="small muted" style={{ marginTop: 0 }}>
-                Pichhla answer: <b>{last.sectionId.toUpperCase()}</b> · {KIND_BY_ID[last.kind].label} round ·{' '}
+                Last answer: <b>{last.sectionId.toUpperCase()}</b> · {KIND_BY_ID[last.kind].label} round ·{' '}
                 {new Date(last.ts).toLocaleDateString()}
               </p>
               <Link className="btn small primary" to={`/interview-mode?subject=${last.subjectId}&type=${last.kind}`}>
-                Wahin se aage <ArrowRight size={12} />
+                Continue from here <ArrowRight size={12} />
               </Link>
             </>
           ) : (
             <p className="small muted" style={{ margin: '0 0 8px' }}>
-              Abhi tak koi interview answer nahi — neeche se subject chuno aur pehla round shuru karo.
+              No interview answer yet — pick a subject below and start your first round.
             </p>
           )}
         </div>
         <div className="card" style={{ margin: 0 }}>
           <h2 className="row" style={{ gap: 8, marginTop: 0 }}><Dice5 size={15} color="var(--violet)" /> Random interview</h2>
           <p className="small muted" style={{ marginTop: 0 }}>
-            {manifest ? `${interviewQs} interview-eligible questions me se fresh questions` : '…'} — unseen pehle,
-            phir weak topics, phir review-due. Ek round me koi question repeat nahi hota.
+            {manifest ? `Fresh questions from ${interviewQs} interview-eligible questions` : '…'} — unseen first,
+            then weak topics, then review-due. No question repeats within a round.
           </p>
           <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
             {SESSION_SIZES.map((n) => (
@@ -141,7 +141,7 @@ export default function InterviewsHub() {
             ))}
           </div>
           <Link className="btn small primary" to={`/interview-mode?subject=${randomSubject}&type=${randomKind}&size=${randomSize}`}>
-            {last ? 'Random round' : 'Pehla round'} shuru karo <ArrowRight size={12} />
+            Start {last ? 'a random round' : 'your first round'} <ArrowRight size={12} />
           </Link>
         </div>
       </div>
@@ -178,7 +178,7 @@ export default function InterviewsHub() {
               <b>{t(TRACK_DEFS.find((x) => x.id === subjectView.range.id)!.nameKey as LocaleKey)} — interview rounds</b>
               <div className="small muted">{subjectView.total} eligible questions · {subjectView.done} answered</div>
             </div>
-            <Link className="btn small ghost" to="/interviews">Saare subjects</Link>
+            <Link className="btn small ghost" to="/interviews">All subjects</Link>
           </div>
           {subjectView.kinds.map((k) => {
             const meta = KIND_BY_ID[k.id];
@@ -214,8 +214,8 @@ export default function InterviewsHub() {
           </div>
         ))}
         <p className="small muted" style={{ margin: '8px 0 0' }}>
-          Meter = interview-eligible questions jinpar answer save hua hai (wahi <b>qb:</b> records jo
-          Question Bank likhta hai). Coding rounds me mini-project builds alag rehte hain.
+          Meter = interview-eligible questions with a saved answer (the same <b>qb:</b> records the
+          Question Bank writes). Mini-project builds in coding rounds are tracked separately.
         </p>
       </div>
 
@@ -241,7 +241,7 @@ export default function InterviewsHub() {
         </Link>
       </div>
       <p className="small muted" style={{ marginTop: 8 }}>
-        Rounds yahin se chalao — ya {ctx.playbook?.items ?? '…'} archive items me method answers padho.
+        Run rounds from here — or read method answers in the {ctx.playbook?.items ?? '…'} archive items.
       </p>
     </div>
   );

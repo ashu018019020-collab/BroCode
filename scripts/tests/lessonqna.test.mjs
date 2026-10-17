@@ -83,7 +83,7 @@ test('lessonqna: the stage tile badge shows a real count and survives a not-appl
   // Checkpoint is outside several topics' mastery gates yet still carries ~56 questions, so the
   // badge cannot be suppressed by `na` — that is exactly the case that looked like failed content.
   assert.ok(!/na \|\| !countOf/.test(chrome), 'the badge must not be hidden just because the stage is not applicable');
-  assert.match(chrome, /mastery gate nahi/, 'a not-applicable stage with questions must say so honestly');
+  assert.match(chrome, /not a mastery gate/, 'a not-applicable stage with questions must say so honestly');
 });
 
 test('lessonqna: the stage ↔ type mapping has exactly one owner', () => {

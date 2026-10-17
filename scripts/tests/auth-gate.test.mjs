@@ -184,3 +184,16 @@ test('auth gate: no guest affordance survives anywhere in the app', () => {
     assert.equal(locales.split(`'${key}':`).length - 1, 2, `${key} must exist in the English AND Hinglish packs`);
   }
 });
+
+test('auth gate: a signed-in learner can never be parked on the public landing page', () => {
+  const app = read('src/app/App.tsx');
+  const start = app.slice(app.indexOf('function StartPage()'), app.indexOf('/**', app.indexOf('function StartPage()')));
+  assert.ok(start, 'the /start route must own a component that knows about the session');
+  assert.match(start, /if \(user\) return <Navigate to="\/" replace \/>/,
+    'a signed-in learner on /start must be sent to the Dashboard, not shown the landing page');
+  assert.match(app, /<Route path="\/start" element=\{<StartPage \/>\}/,
+    'the /start route must use that guard');
+  // The old first-run redirect is what produced the loop; it must stay gone.
+  assert.doesNotMatch(app, /!state\.profile\.onboarded[\s\S]{0,120}nav\('\/start'\)/,
+    'no first-run effect may bounce an authenticated learner back to /start');
+});

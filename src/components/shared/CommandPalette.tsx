@@ -82,14 +82,14 @@ export function CommandPalette({
           {/* "No results" and "still loading the index" are different facts: the first is a verdict,
               the second is a wait, and telling them apart is why the empty state is split in two. */}
           {q && !rows.length && !bankLoading && <div className="muted small" style={{ padding: 10 }}>No results for “{q}”.</div>}
-          {q && !rows.length && bankLoading && <div className="muted small" style={{ padding: 10 }}>Curriculum me kuch nahi mila — poora question bank load ho raha hai…</div>}
+          {q && !rows.length && bankLoading && <div className="muted small" style={{ padding: 10 }}>Nothing found in the curriculum — loading the full question bank…</div>}
           {q && rows.length > 0 && bankLoading && (
-            <div className="muted small" style={{ padding: '4px 10px' }}>Question bank ke 13,865 items index ho rahe hain…</div>
+            <div className="muted small" style={{ padding: '4px 10px' }}>Indexing 13,865 question-bank items…</div>
           )}
           {q && rows.length > 0 && !bankLoading && (
             <div className="muted small" style={{ padding: '4px 10px' }}>
               {results.length} curriculum hit(s)
-              {bank ? <> · {bankHits.length} of {bank.counts.items} bank questions (Playbook V15 ke saare items included)</> : ''}
+              {bank ? <> · {bankHits.length} of {bank.counts.items} bank questions (all Playbook V15 items included)</> : ''}
             </div>
           )}
         </div>

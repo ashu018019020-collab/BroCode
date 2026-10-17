@@ -73,6 +73,13 @@ function progressFromAuthUser(authUser) {
     progress[field] = value;
   }
   progress.updatedAt = typeof stored.updatedAt === 'string' ? new Date(stored.updatedAt) : new Date(0);
+  // The optional lesson position. A malformed pair is dropped rather than rejecting the whole
+  // snapshot: the counters are still real progress, and a missing resume point only means the
+  // dashboard falls back to its history.
+  if (typeof stored.lastSectionId === 'string' && typeof stored.lastStage === 'string') {
+    progress.lastSectionId = stored.lastSectionId;
+    progress.lastStage = stored.lastStage;
+  }
   return progress;
 }
 

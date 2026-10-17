@@ -218,12 +218,12 @@ test('flow: a stage is only ever left alone when its real gate is satisfied', ()
   const fromInterview = planNextStep(all, sec, state, 'interview');
   assert.equal(fromInterview.kind, 'stage');
   assert.notEqual(fromInterview.route, `/lesson/${sec.id}/interview`, 'never re-offer the page you are on');
-  assert.match(fromInterview.hint, /poora nahi hua|% kam/i, 'the reason must say the gate is not satisfied yet');
+  assert.match(fromInterview.hint, /not complete yet|% short/i, 'the reason must say the gate is not satisfied yet');
 
   // And once it is satisfied, the wording flips to a clean hand-off.
   state.attempts[`st:${sec.id}:interview`] = { done: true, score: 82 };
   const after = planNextStep(all, sec, state, 'interview');
-  assert.match(after.hint, /clear — ab/i, 'a satisfied gate reads as clear');
+  assert.match(after.hint, /clear — now/i, 'a satisfied gate reads as clear');
 });
 
 test('flow: the lesson watches every stage a learner can finish (none can silently stall)', () => {
@@ -306,7 +306,7 @@ test('flow: the road ahead ends at the next topic, and admits what it left out',
   const blocking = STAGES.filter((s) => s !== 'learn' && stageApplies(sec, s) && !stagePassed(sec, state, s));
   assert.ok(blocking.length > 2, 's01 should have more than two stages left to exercise the cap');
   assert.equal(rows.filter((r) => r.kind === 'stage' && !r.now).length, 2, 'the middle is capped at two');
-  assert.match(last.hint, new RegExp(`Pehle is section ke ${blocking.length - 2} stage`), 'the exit must not overstate how short the list is');
+  assert.match(last.hint, new RegExp(`First finish ${blocking.length - 2} stage`), 'the exit must not overstate how short the list is');
 });
 
 test('flow: the preview describes the item on screen, not the one after it', () => {

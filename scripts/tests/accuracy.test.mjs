@@ -67,8 +67,8 @@ test('accuracy: an unmeasured answer is null, never a fabricated 0%', () => {
   assert.equal(acc.attemptPct({ score: 250 }), 100, 'clamped, so a bad write cannot print 250%');
   assert.equal(acc.pctText(null), '—');
   assert.equal(acc.pctText(0), '0%');
-  assert.equal(acc.accuracyLine({ answered: 0, graded: 0, correct: 0, pct: null, avg: null }), 'Abhi tak koi answer nahi');
-  assert.equal(acc.accuracyLine({ answered: 4, graded: 0, correct: 0, pct: null, avg: 40 }), '4 answer likhe — grade abhi nahi kiya');
+  assert.equal(acc.accuracyLine({ answered: 0, graded: 0, correct: 0, pct: null, avg: null }), 'No answers yet');
+  assert.equal(acc.accuracyLine({ answered: 4, graded: 0, correct: 0, pct: null, avg: 40 }), '4 answers written — not graded yet');
 });
 
 test('accuracy: the rubric refuses to score what it cannot measure', () => {
@@ -148,7 +148,7 @@ test('assistant: "poora answer" answers the item, and never dresses a method up 
   assert.match(method.text, /pehle metrics dekho/, 'and its text is reproduced, not paraphrased');
 
   const nothing = quickAnswer(learner(), sections);   // no question in context
-  assert.match(nothing.text, /Kis question ka answer/, 'it asks which item instead of guessing');
+  assert.match(nothing.text, /Which question do you want the answer to/, 'it asks which item instead of guessing');
 });
 
 test('assistant: "kitna sahi" scores the learner\'s own words with the same rubric as the page', () => {
@@ -159,14 +159,14 @@ test('assistant: "kitna sahi" scores the learner\'s own words with the same rubr
   const answer = quickScoreAnswer(learner(), sections, scoped);
   assert.ok(expected, 'the rubric has something to measure');
   assert.match(answer.text, new RegExp(`${expected.pct}%`), 'the percentage the assistant prints is the rubric score');
-  if (expected.missing.length) assert.match(answer.text, /chhoot gaye/, 'missing points are named');
+  if (expected.missing.length) assert.match(answer.text, /missed/, 'missing points are named');
 
   const empty = quickScoreAnswer(learner(), sections, { question: { ...Q, mine: '   ' } });
-  assert.match(empty.text, /likha nahi/, 'with nothing written it says so rather than scoring nothing');
+  assert.match(empty.text, /not written anything/, 'with nothing written it says so rather than scoring nothing');
   assert.doesNotMatch(empty.text, /\b\d+%\b/, 'and invents no percentage');
 
   const method = quickScoreAnswer(learner(), sections, { question: { ...Q, mine, methodOnly: true } });
-  assert.doesNotMatch(method.text, /rubric score/, 'a method-only item is never rubric-scored');
+  assert.doesNotMatch(method.text, /rubric score/i, 'a method-only item is never rubric-scored');
 });
 
 test('assistant: a hint with a question in context is about THAT item, and escalates', () => {
@@ -180,7 +180,7 @@ test('assistant: a hint with a question in context is about THAT item, and escal
 
 test('assistant: accuracy reports the real numbers, and admits when there are none', () => {
   const blank = quickAccuracy(learner(), sections);
-  assert.match(blank.text, /koi answer record nahi/);
+  assert.match(blank.text, /No answers have been recorded yet/);
 
   const state = learner({
     'qb:s19:interview:0': { done: true, score: 90 },
@@ -190,17 +190,17 @@ test('assistant: accuracy reports the real numbers, and admits when there are no
   const report = quickAccuracy(state, sections);
   assert.match(report.text, /67%/, '2 of 3 correct, as a percentage');
   assert.match(report.text, /73%/, 'and the rubric average of what was written');
-  assert.match(report.text, /kamzor/i, 'weak sections are ranked, weakest first');
+  assert.match(report.text, /Weakest/i, 'weak sections are ranked, weakest first');
 });
 
 test('assistant: typed questions route to the item actions', () => {
   const ctx = { question: { ...Q, mine: 'ETL me transform pehle' } };
-  const answered = askLocal('poora answer do', sections, learner(), ctx);
-  assert.match(answered.text, /ETL me transform load se pehle/, '"poora answer do" answers the item');
-  const scored = askLocal('mera answer kitna sahi hai', sections, learner(), ctx);
-  assert.match(scored.text, /rubric score/, '"kitna sahi" scores it');
+  const answered = askLocal('give me the full answer', sections, learner(), ctx);
+  assert.match(answered.text, /ETL me transform load se pehle/, 'the English answer request answers the item');
+  const scored = askLocal('how correct is my answer', sections, learner(), ctx);
+  assert.match(scored.text, /rubric score/i, 'the English request scores it');
   // Without a question in context the same request must still say something true, not crash.
-  const solo = askLocal('mera answer kitna sahi hai', sections, learner());
+  const solo = askLocal('how correct is my answer', sections, learner());
   assert.ok(solo.text.length > 10);
 });
 
@@ -210,8 +210,8 @@ test('notebook nav: previous/next sits under every notebook, from the shared eng
   const cells = read('src/components/code/NotebookCells.tsx');
   // One row, in the engine, so a lesson task, the lab and question-bank practice all get it.
   assert.match(cells, /className="nb-nav"/, 'the navigation line must be part of the notebook engine');
-  assert.match(cells, /Pichla cell/, 'cell-step back');
-  assert.match(cells, /Agla cell/, 'cell-step forward');
+  assert.match(cells, /Previous cell/, 'cell-step back');
+  assert.match(cells, /Next cell/, 'cell-step forward');
   assert.match(cells, /const moveCell = useCallback\(\(dir: -1 \| 1\)/, 'both directions share one walker');
   assert.match(cells, /export interface NbNav/, 'the notebook-step contract is exported');
   assert.match(cells, /nav\?\.prev && /, 'a previous notebook renders only when the caller has one');
