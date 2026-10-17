@@ -170,7 +170,7 @@ export function StageQnA({ section, stage }: { section: Section; stage: string }
 
       {pool.length > shown && (
         <button className="btn small" onClick={() => setShown((n) => n + STAGE_PAGE_SIZE)}>
-          Aur dikhao ({pool.length - shown} baaki)
+          Show more ({pool.length - shown} left)
         </button>
       )}
       {pool.length > STAGE_PAGE_SIZE && shown > STAGE_PAGE_SIZE && (
