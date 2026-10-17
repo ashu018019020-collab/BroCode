@@ -1,6 +1,7 @@
 import { createClient, type Session } from '@supabase/supabase-js';
 import { enabledProviders, type OAuthProvider, type ProviderAvailability } from './oauth';
 import { SERVICE_UNAVAILABLE_COPY } from './messages';
+import { PUBLIC_SUPABASE_CONFIG } from './public-config';
 import type { ProgressSummary } from './progress';
 
 export type AccountRole = 'user' | 'admin';
@@ -80,12 +81,26 @@ const PLACEHOLDER_RE = /your-project|your-supabase|changeme|replace-me|<[^>]+>/i
  * The browser-side Supabase config, or `null` when this build has none. Pure and exported so the
  * one place that decides "is the account service configured" is testable and shared by the client
  * and the provider-availability probe.
+ *
+ * Precedence: a real environment value first, then the committed PUBLIC fallback in production.
+ * A placeholder copied from `.env.example` is treated as UNCONFIGURED in development rather than
+ * silently connecting a developer to the production project; in production the public fallback is
+ * exactly what keeps a missing hosting-dashboard variable from breaking every sign-in.
  */
 export function browserSupabaseConfig(): { url: string; key: string } | null {
+  const isUsable = (value: string | undefined): value is string =>
+    typeof value === 'string' && value.trim().length > 0 && !PLACEHOLDER_RE.test(value);
+
   const url = import.meta.env.VITE_SUPABASE_URL?.trim();
   const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
-  if (!url || !key || PLACEHOLDER_RE.test(url) || PLACEHOLDER_RE.test(key)) return null;
-  return { url, key };
+  if (isUsable(url) && isUsable(key)) return { url, key };
+
+  if (import.meta.env.PROD
+    && isUsable(PUBLIC_SUPABASE_CONFIG.url)
+    && isUsable(PUBLIC_SUPABASE_CONFIG.publishableKey)) {
+    return { url: PUBLIC_SUPABASE_CONFIG.url, key: PUBLIC_SUPABASE_CONFIG.publishableKey };
+  }
+  return null;
 }
 
 /**

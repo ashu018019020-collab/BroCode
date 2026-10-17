@@ -110,6 +110,16 @@ export default function AuthForm({
   const canSubmit = validEmail
     && validPassword
     && (mode === 'login' || (validName && validConfirm));
+  /**
+   * ONE banner for one failure.
+   *
+   * A failed sign-in can arrive from three places at once: the submit handler's `error`, a
+   * provider-return `redirectError`, and the provider's session-restore `serviceError`. They used to
+   * render as two identical boxes (the reported screenshot), which looks like two separate outages.
+   * Resolve them to the first real sentence and render exactly once.
+   */
+  const authFailure = error || redirectError || serviceError;
+  const authFailureIsAlert = Boolean(error || redirectError);
 
   const switchMode = (next: AuthMode) => {
     setMode(next);
@@ -216,13 +226,11 @@ export default function AuthForm({
         ))}
       </div>
 
-      {/*
-        * `serviceError` is already a finished sentence (see `AuthProvider.serviceFailure`): it is
-        * never a raw `error.message`, so this banner cannot become a deployment manual. It is a
-        * STATUS, not an alert — the form below still works, and a guest can keep using the app.
-        */}
-      {serviceError && <p className="auth-message" role="status">{serviceError}</p>}
-      {(error || redirectError) && <p className="auth-error" role="alert">{error || redirectError}</p>}
+      {authFailure && (
+        <p className={authFailureIsAlert ? 'auth-error' : 'auth-message'} role={authFailureIsAlert ? 'alert' : 'status'}>
+          {authFailure}
+        </p>
+      )}
       {notice && <p className="auth-message" role="status">{notice}</p>}
 
       {providers.length > 0 && (

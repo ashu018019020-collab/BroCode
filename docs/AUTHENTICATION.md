@@ -124,9 +124,28 @@ WEB_ORIGIN=http://localhost:5173
 API_PORT=8787
 ```
 
-A build without the `VITE_` pair is treated as **unconfigured**, not broken: `browserSupabaseConfig()`
-returns null, the app logs one actionable line to the console, and sign-in is impossible — which is the
-correct degradation now that an account is mandatory. There is no fallback that grants access.
+`VITE_SUPABASE_*` takes precedence when it is a real value. If the hosting build has neither variable
+(or still has the `.env.example` placeholder), a **production** build falls back to
+`src/core/auth/public-config.ts` — the project URL and the **publishable** key only. That key is
+designed to be shipped to the browser and is protected by RLS; it is not a secret. The fallback exists
+because a static host that was built without its environment variables used to fail every sign-in with
+the generic "account service is unavailable" sentence, even though Supabase was healthy. A development
+build never uses the fallback for a placeholder value, so a developer is not silently pointed at the
+production project.
+
+The **secret/service-role** key must never appear in `public-config.ts`, `.env.example`, the browser
+bundle, or Git. Use it only in the optional server (`server/*.mjs`).
+
+### Vercel
+
+Set the browser pair in **Project → Settings → Environment Variables** for **Production** and
+**Preview** (and Development for local `vercel dev`), then redeploy. Do not commit `.env`; it is
+gitignored. The public fallback keeps sign-in working, but the env pair remains the recommended source
+of truth so a key rotation is one dashboard change.
+
+A build without any usable config is treated as **unconfigured**, not broken: the app logs one
+actionable line to the console and sign-in is impossible — the correct degradation now that an account
+is mandatory. There is no fallback that grants access.
 
 ## Database
 
