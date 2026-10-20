@@ -31,7 +31,10 @@ the security boundary.
    legitimately signed-in learner on every page refresh.
 5. Unauthenticated → redirect to `/login` with the requested path in **router state** (never a query
    string, so a crafted `?next=` cannot steer anyone).
-6. Create account or sign in through Supabase Auth.
+6. Create account (email + password — that is the whole form) or sign in through Supabase Auth.
+   The display name is derived from the address's local part, exactly like the database trigger's
+   fallback, so there is no name field and no confirm-password field; Supabase enforces the password
+   rule server-side.
 7. On success, redirect to the requested page — or `/admin` for an administrator, `/` otherwise.
 8. If Supabase is unreachable, the session resolves to null and the learner stays on `/login` with a
    recoverable message. **Nothing unlocks.** There is no cached-demo or guest fallback.
@@ -92,10 +95,12 @@ them: they need your project's credentials, which are deliberately not in the re
 - **Minimum password length** must be ≤ 8, or `MIN_PASSWORD` in `src/core/auth/messages.ts` will
   accept a password the server rejects, and the learner sees an error the form said was fine.
 
-**Authentication → Providers → Google / GitHub** (optional)
+**Authentication → Providers → Google / GitHub** (not offered)
 
-The form probes `/auth/v1/settings` and only renders providers that are enabled, so leaving them off
-is safe. If you enable one, add the callback URL Supabase prints to that provider's own console.
+The sign-in form is EMAIL ONLY: the social provider buttons, the `/auth/v1/settings` probe and the
+OAuth return plumbing were removed so the sign-up path is two fields. Providers enabled in the
+dashboard are harmless — no UI calls them — but turning them off keeps the project's surface honest.
+If one is ever re-enabled, it needs its callback URL registered here and in the provider's console.
 
 **Authentication → Rate limits**
 
@@ -171,6 +176,11 @@ npm run db:check         # can this machine actually REACH the database, and are
 npm run db:deploy        # prisma migrate deploy — the ONLY production path
 ```
 
+`prisma/migrations/20261020120000_progress_direct_sync/migration.sql` adds the direct progress-sync
+path described below: one SECURITY DEFINER function (`save_my_progress`), one EXECUTE grant to
+`authenticated`, and one SELECT policy limited to the caller's own row. It is additive — nothing is
+dropped and no learner row is rewritten.
+
 `prisma/migrations/20261007120000_profile_completeness_rls/migration.sql` is **additive**: three
 nullable/defaulted columns, an `updated_at` trigger, a restatement of RLS + `REVOKE ALL` on all three
 tables, deny-by-default policies, and an email backfill that only fills NULLs. It drops nothing and
@@ -200,6 +210,25 @@ connection does **not** break sign-in, and it must not be reported as if it did.
 `npm run db:deploy` and for the **Prisma store** (server-side progress history and the sign-in log).
 Without it, `server/db-config.mjs` selects the Supabase-Auth store and the product still works.
 
+### Progress is collected in Supabase on EVERY deployment
+
+The aggregate progress snapshot has TWO write paths that land in the SAME table
+(`public.progress_snapshots`):
+
+1. **The account API** (`/api/progress/snapshot`) when a deployment runs `server/index.mjs` — the
+   server verifies the bearer token with Supabase and writes with the service key. Preferred when
+   present; the owner dashboard and the sign-in log come from the same process.
+2. **`save_my_progress`** (migration `20261020120000_progress_direct_sync`) when there is no API —
+   a static host serves no `/api`. The client calls it through PostgREST after the API attempt
+   fails. The function reads the caller from the signed JWT (`auth.uid()`), never from an argument,
+   re-validates every counter and the lesson position exactly like `server/app.mjs`, and upserts ONE
+   row: the caller's own. Table INSERT/UPDATE/DELETE stay revoked for clients; EXECUTE is granted to
+   `authenticated` only. A SELECT policy on the same row lets a NEW device read its saved lesson
+   position for "Continue Learning" without the API.
+
+Both paths send only the aggregate counters plus the two-letter lesson position — never answers,
+notes or code (see `scripts/tests/auth-progress.test.mjs`).
+
 A build with `VITE_` config but a broken `DATABASE_URL` therefore behaves like this:
 
 | Feature | Without a working database |
@@ -208,6 +237,7 @@ A build with `VITE_` config but a broken `DATABASE_URL` therefore behaves like t
 | Password reset | **Works** |
 | Courses, lessons, practice, labs | **Works** (content is bundled, progress is in the browser) |
 | Owner dashboard | **Works** (read from Auth) |
+| Progress snapshot → Supabase | **Works** once the migrations are applied (direct path) |
 | Server-side progress history + sign-in log | **Not stored** |
 | `db:deploy` | **Blocked** — needs the connection strings fixed |
 

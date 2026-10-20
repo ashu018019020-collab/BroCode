@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { authApi, getSupabaseClient, takePendingOAuthProvider, takeRemoteResume, type AuthUser, type RegistrationResult } from './client';
-import { oauthErrorMessage, readOAuthCallback, withoutOAuthParams, type OAuthProvider } from './oauth';
+import { authApi, getSupabaseClient, takeRemoteResume, type AuthUser, type RegistrationResult } from './client';
+import { oauthErrorMessage, readOAuthCallback, withoutOAuthParams } from './oauth';
 import { announcePresence, broadcastSignIn } from './realtime';
 import { summarizeProgress } from './progress';
 import { SERVICE_UNAVAILABLE_COPY } from './messages';
@@ -16,8 +16,7 @@ interface AuthContextValue {
   /** A provider return that failed, read from the redirect URL before it is cleaned. */
   redirectError: string | null;
   login: (email: string, password: string) => Promise<AuthUser>;
-  loginWithProvider: (provider: OAuthProvider) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<RegistrationResult>;
+  register: (email: string, password: string) => Promise<RegistrationResult>;
   logout: () => Promise<void>;
 }
 
@@ -125,7 +124,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let subscription: { unsubscribe: () => void } | undefined;
     /** The provider return, read before supabase-js consumes the `code` out of the URL. */
     const callback = readOAuthCallback(window.location.search);
-    if (callback.error) takePendingOAuthProvider();
 
     const applySession = async (session: Session | null, version: number) => {
       if (!active || version !== sessionVersion) return;
@@ -170,16 +168,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const version = ++sessionVersion;
         window.setTimeout(() => {
           void applySession(session, version);
-          const provider = event === 'SIGNED_IN' && session ? takePendingOAuthProvider() : null;
           if (event === 'SIGNED_IN') {
             // One small broadcast on the shared realtime channel: the owner dashboard answers with
-            // a single refetch instead of polling for sign-ins that already happened.
+            // a single refetch instead of polling for sign-ins that already happened. The sign-in
+            // EVENT itself is recorded by `authApi.login` / `authApi.register` (email is the only
+            // method), so nothing is written twice here.
             void broadcastSignIn();
-          }
-          if (session && provider) {
-            void authApi.recordSignIn(session, provider).catch((error: unknown) => {
-              console.error(`Could not record ${provider} sign-in activity.`, error);
-            });
           }
         }, 0);
       }).data.subscription;
@@ -278,16 +272,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return currentUser;
   };
 
-  /** Hands the browser to the provider; the session arrives on the redirect back into the app. */
-  const loginWithProvider = async (provider: OAuthProvider) => {
+  const register = async (email: string, password: string) => {
     setRedirectError(null);
-    setServiceError(null);
-    await authApi.signInWithProvider(provider);
-  };
-
-  const register = async (name: string, email: string, password: string) => {
-    setRedirectError(null);
-    const result = await authApi.register(name, email, password);
+    const result = await authApi.register(email, password);
     if (result.user) {
       setStorageAccount(result.user.id);
       adoptRemoteResume(takeRemoteResume());
@@ -305,7 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, serviceError, progressSync, redirectError, login, loginWithProvider, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, serviceError, progressSync, redirectError, login, register, logout }}>
       {user && <ProgressSync key={user.id} userId={user.id} onStatusChange={setProgressSync} />}
       {children}
     </AuthContext.Provider>

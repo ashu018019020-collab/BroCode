@@ -1,5 +1,4 @@
-import { createClient, type Session } from '@supabase/supabase-js';
-import { enabledProviders, type OAuthProvider, type ProviderAvailability } from './oauth';
+import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import { SERVICE_UNAVAILABLE_COPY } from './messages';
 import { PUBLIC_SUPABASE_CONFIG } from './public-config';
 import type { ProgressSummary } from './progress';
@@ -66,8 +65,13 @@ export interface RegistrationResult {
   emailConfirmationRequired: boolean;
 }
 
-let client: ReturnType<typeof createClient> | undefined;
-const PENDING_OAUTH_KEY = 'brocode:pending-oauth-provider';
+/*
+ * Typed as `SupabaseClient` (the SDK's default generics), NOT `ReturnType<typeof createClient>`:
+ * the latter instantiates the Database parameter with `unknown`, which turns PostgREST calls
+ * (`.from(...)`, `.rpc(...)`) into `never`. No Database types are generated for this project, so the
+ * SDK default — an untyped schema — is exactly right.
+ */
+let client: SupabaseClient | undefined;
 
 /**
  * A template value, not a credential: `.env.example` uses `https://your-project.supabase.co` and
@@ -116,7 +120,7 @@ function unavailable(): Error {
   return new Error(SERVICE_UNAVAILABLE_COPY);
 }
 
-export function getSupabaseClient() {
+export function getSupabaseClient(): SupabaseClient {
   if (client) return client;
   const config = browserSupabaseConfig();
   if (!config) throw unavailable();
@@ -242,7 +246,9 @@ async function fetchCurrentUser(session: Session): Promise<SessionResolution> {
     // complete instead of surfacing "The account service is unavailable right now."
     console.warn('[BroCode] The account API was unreachable; using the signed session claims.', error);
   }
-  return { user: profileFromSession(session), resume: null };
+  // The profile comes from the signed claims; the resume position comes from the learner's OWN
+  // Supabase row (RLS-limited), so a new device can still continue where it left off.
+  return { user: profileFromSession(session), resume: await fetchOwnResumePosition(session.user.id) };
 }
 
 /**
@@ -280,52 +286,58 @@ export function profileFromSession(session: Session): AuthUser {
 }
 
 /**
- * The project's enabled providers, asked for once per session (the settings endpoint is public and
- * takes the publishable key). Cached at module level so opening the dialog twice is one request.
- * `null` means "could not find out" — see `enabledProviders` for why that is not "none".
+ * The learner's own progress snapshot, written STRAIGHT to Supabase when the optional account API
+ * is not deployed (a static host has no `/api`).
+ *
+ * The browser never names a user id: `save_my_progress` (migration 20261020120000) reads the caller
+ * from the signed JWT (`auth.uid()`), re-validates every counter and the lesson position the same
+ * way `server/app.mjs` does, and upserts ONE row — the caller's own. Table writes stay revoked for
+ * clients; this RPC is the only direct-write path, so a forged body can never touch another
+ * account's row. Returns true when the snapshot reached the database.
  */
-let providerAvailability: Promise<ProviderAvailability | null> | undefined;
-
-export function loadProviderAvailability(): Promise<ProviderAvailability | null> {
-  if (!providerAvailability) {
-    providerAvailability = (async () => {
-      try {
-        const config = browserSupabaseConfig();
-        if (!config) return null;
-        const response = await fetch(`${config.url}/auth/v1/settings`, { headers: { apikey: config.key } });
-        if (!response.ok) return null;
-        return enabledProviders(await response.json());
-      } catch (error) {
-        console.error('Could not read the Supabase provider settings.', error);
-        return null;
-      }
-    })();
+async function saveProgressDirectly(
+  progress: ProgressSummary & { lastSectionId?: string; lastStage?: string },
+): Promise<boolean> {
+  try {
+    const { error } = await getSupabaseClient().rpc('save_my_progress', {
+      xp: progress.xp,
+      streak_current: progress.streakCurrent,
+      practiced_count: progress.practicedCount,
+      done_records: progress.doneRecords,
+      study_minutes: progress.studyMinutes,
+      study_days: progress.studyDays,
+      open_mistakes: progress.openMistakes,
+      last_section_id: progress.lastSectionId ?? null,
+      last_stage: progress.lastStage ?? null,
+    });
+    if (error) throw authError(error);
+    return true;
+  } catch (error) {
+    console.warn('[BroCode] Could not save the progress snapshot directly to Supabase.', error);
+    return false;
   }
-  return providerAvailability;
 }
 
-export function takePendingOAuthProvider(): OAuthProvider | null {
-  let pending: string | null;
+/**
+ * The lesson position this account last synced, read from the learner's OWN snapshot row so a new
+ * device can resume without the account API. Any failure — no row, no grant, no network — resolves
+ * to null and the app falls back to its local history, exactly as before.
+ */
+async function fetchOwnResumePosition(userId: string): Promise<ResumePosition | null> {
   try {
-    pending = window.sessionStorage.getItem(PENDING_OAUTH_KEY);
-    window.sessionStorage.removeItem(PENDING_OAUTH_KEY);
+    const { data, error } = await getSupabaseClient()
+      .from('progress_snapshots')
+      .select('last_section_id, last_stage')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) throw authError(error);
+    return resumePosition(
+      data ? { sectionId: data.last_section_id, stage: data.last_stage } : null,
+    );
   } catch (error) {
-    console.error('Could not read the pending OAuth provider.', error);
+    console.warn('[BroCode] Could not read the saved lesson position from Supabase.', error);
     return null;
   }
-  if (!pending) return null;
-  try {
-    const value = JSON.parse(pending) as { provider?: unknown; startedAt?: unknown };
-    const age = typeof value.startedAt === 'number' ? Date.now() - value.startedAt : -1;
-    if (
-      (value.provider === 'google' || value.provider === 'github')
-      && age >= 0
-      && age <= 15 * 60_000
-    ) return value.provider;
-  } catch {
-    return null;
-  }
-  return null;
 }
 
 export const authApi = {
@@ -335,7 +347,6 @@ export const authApi = {
   },
 
   async login(email: string, password: string): Promise<AuthUser> {
-    takePendingOAuthProvider();
     const { data, error } = await getSupabaseClient().auth.signInWithPassword({ email, password });
     if (error) throw authError(error);
     if (!data.session) throw new Error('Supabase sign-in did not return an active session.');
@@ -347,36 +358,19 @@ export const authApi = {
     return resolution.user;
   },
 
-  async signInWithProvider(provider: OAuthProvider): Promise<void> {
-    try {
-      window.sessionStorage.setItem(PENDING_OAUTH_KEY, JSON.stringify({ provider, startedAt: Date.now() }));
-    } catch (error) {
-      console.error('Could not persist the pending OAuth provider.', error);
-    }
-    try {
-      const { error } = await getSupabaseClient().auth.signInWithOAuth({
-        provider,
-        // Base path included: the provider must return to the deployment, not to the domain root.
-        options: { redirectTo: appBaseUrl() },
-      });
-      if (error) throw authError(error);
-    } catch (error) {
-      try {
-        window.sessionStorage.removeItem(PENDING_OAUTH_KEY);
-      } catch (storageError) {
-        console.error('Could not clear the pending OAuth provider.', storageError);
-      }
-      throw error;
-    }
-  },
-
-  async register(name: string, email: string, password: string): Promise<RegistrationResult> {
-    takePendingOAuthProvider();
+  /**
+   * Create the account with EMAIL and PASSWORD — the whole sign-up form. The display name the
+   * profile and dashboard show is derived from the address's own local part, exactly like the
+   * database trigger's fallback, so a learner types two fields and is done.
+   */
+  async register(email: string, password: string): Promise<RegistrationResult> {
+    const trimmed = email.trim();
+    const displayName = trimmed.split('@')[0] || 'Learner';
     const { data, error } = await getSupabaseClient().auth.signUp({
-      email,
+      email: trimmed,
       password,
       options: {
-        data: { display_name: name.trim() },
+        data: { display_name: displayName },
         // The deployment's real base path, not a bare origin: on a project-path deployment the
         // confirmation link must come back to `/BroCode/`, or it 404s and looks like a failed
         // verification. `appBaseUrl()` keeps a trailing slash for exactly this.
@@ -451,8 +445,20 @@ export const authApi = {
     { method: 'PATCH', body: JSON.stringify({ status }) },
   ),
 
-  saveProgress: (progress: ProgressSummary & { lastSectionId?: string; lastStage?: string }) => request<{ ok: true }>('/api/progress/snapshot', {
-    method: 'POST',
-    body: JSON.stringify(progress),
-  }),
+  /**
+   * Store the aggregate snapshot — the account API when this deployment runs one, and Supabase
+   * directly when it does not (a static host has no `/api`). Both paths land in the SAME table, so
+   * "progress is collected in Supabase" is true on every deployment.
+   */
+  async saveProgress(progress: ProgressSummary & { lastSectionId?: string; lastStage?: string }): Promise<{ ok: true }> {
+    try {
+      return await request<{ ok: true }>('/api/progress/snapshot', {
+        method: 'POST',
+        body: JSON.stringify(progress),
+      });
+    } catch (error) {
+      if (await saveProgressDirectly(progress)) return { ok: true };
+      throw error;
+    }
+  },
 };

@@ -28,6 +28,13 @@ one way and behaves another.
 - Do not re-add a way in without a session. No anonymous sign-in, no demo user, no cached-data
   fallback when Supabase is unreachable: a failed lookup must leave the learner signed out. That is
   asserted by `auth-gate.test.mjs`.
+- **Sign-up is EMAIL + PASSWORD and nothing else** (no social buttons, no name field, no
+  confirm-password — they cost sign-ups; the display name is the email local part, like the DB
+  trigger fallback). Progress is collected in Supabase on EVERY deployment: the account API first,
+  then the identity-bound `save_my_progress` function (migration
+  `20261020120000_progress_direct_sync`, `auth.uid()`-scoped, same validation as `server/app.mjs`).
+  Both halves are pinned by `scripts/tests/auth-supabase.test.mjs`; details in
+  `docs/AUTHENTICATION.md`.
 - **`npm run db:deploy` failing with P1001 is almost never the migration.** Run `npm run db:check`
   first — it separates "the hostname is dead", "the port opens but the service is not Postgres"
   (a retired Supabase pooler does exactly this, which is why raw TCP reachability proves nothing),
