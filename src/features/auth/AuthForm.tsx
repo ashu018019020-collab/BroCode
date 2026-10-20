@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { authApi, type AuthUser } from '../../core/auth/client';
-import { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem } from '../../core/auth/messages';
+import { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem, resendWaitSeconds } from '../../core/auth/messages';
 
 /**
  * The ONE sign-in/sign-up form. Two screens render it: the `/login` page (a deep link a shared URL
@@ -19,6 +19,11 @@ import { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem } from '../../cor
  * returns no session: the form is replaced by a "Check your inbox" panel that names the address and
  * offers a resend. The account exists from that moment; the learner gets a session when the link
  * comes back to the deployment and supabase-js exchanges the confirmation for one.
+ *
+ * The resend button is COOLED DOWN for a minute after every message. Supabase refuses a repeat for
+ * the same address inside 60 seconds and the project's sender allows only a couple of emails per
+ * hour in total, so a button that can be pressed freely spends that hour in three clicks — which is
+ * exactly how a learner reached "this project has used up its hourly confirmation emails".
  *
  * Password rules live here, once: 8 characters minimum, matching confirmation, an email that is
  * actually an address. Nothing is validated on the FIRST keystroke of an untouched field — a field
@@ -63,8 +68,21 @@ export default function AuthForm({
   /** The address a confirmation link was just sent to — the whole form is replaced while it is set. */
   const [awaitingConfirmation, setAwaitingConfirmation] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
+  /** When the last confirmation message was sent — the resend button counts down from here. */
+  const [sentAt, setSentAt] = useState(0);
+  const [clock, setClock] = useState(() => Date.now());
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+
+  /** Seconds left on the resend wait; `0` means the button may send. */
+  const resendWait = awaitingConfirmation ? resendWaitSeconds(sentAt, clock) : 0;
+
+  // A second-by-second clock only while it matters: the countdown ends the interval on its own.
+  useEffect(() => {
+    if (!resendWait) return;
+    const ticker = window.setInterval(() => setClock(Date.now()), 1000);
+    return () => window.clearInterval(ticker);
+  }, [resendWait]);
 
   // The first field of the active tab holds focus: a keyboard learner starts typing immediately, and
   // switching to "Create account" moves the cursor to the field that tab actually starts with — the
@@ -104,7 +122,6 @@ export default function AuthForm({
     setConfirm('');
     setTouched({});
   };
-
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setTouched({ name: true, email: true, password: true, confirm: true });
@@ -117,7 +134,12 @@ export default function AuthForm({
       } else {
         const result = await register(name.trim(), email.trim(), password);
         if (result.user) onSuccess?.(result.user);
-        else setAwaitingConfirmation(email.trim());
+        else {
+          setAwaitingConfirmation(email.trim());
+          // The sign-up itself just sent the first message, so the resend starts locked too.
+          setSentAt(Date.now());
+          setClock(Date.now());
+        }
       }
     } catch (cause) {
       setError(authErrorCopy(cause instanceof Error ? cause.message : 'Sign-in failed. Please try again.'));
@@ -127,11 +149,13 @@ export default function AuthForm({
   };
 
   const resend = async () => {
-    if (!awaitingConfirmation) return;
+    if (!awaitingConfirmation || resending || resendWait > 0) return;
     setResending(true);
     setError('');
     try {
       await authApi.resendConfirmation(awaitingConfirmation);
+      setSentAt(Date.now());
+      setClock(Date.now());
       setNotice(`Confirmation email sent again — check ${awaitingConfirmation}.`);
     } catch (cause) {
       setError(authErrorCopy(cause instanceof Error ? cause.message : 'Could not resend the confirmation email.'));
@@ -158,12 +182,21 @@ export default function AuthForm({
         </p>
         {error && <p className="auth-error" role="alert">{error}</p>}
         {notice && <p className="auth-message" role="status">{notice}</p>}
-        <button className="btn auth-wide" disabled={resending} onClick={() => void resend()} type="button">
-          {resending ? 'Sending…' : 'Resend email'}
+        <button
+          className="btn auth-wide"
+          disabled={resending || resendWait > 0}
+          onClick={() => void resend()}
+          type="button"
+        >
+          {resending ? 'Sending…' : resendWait > 0 ? `Resend in ${resendWait}s` : 'Resend email'}
         </button>
+        <p className="auth-foot muted small">
+          The sender allows only a couple of confirmation emails per hour, so a resend waits a
+          minute before it can send again.
+        </p>
         <button
           className="btn ghost auth-wide"
-          onClick={() => { setAwaitingConfirmation(null); switchMode('login'); }}
+          onClick={() => { setAwaitingConfirmation(null); setSentAt(0); switchMode('login'); }}
           type="button"
         >
           Back to sign in

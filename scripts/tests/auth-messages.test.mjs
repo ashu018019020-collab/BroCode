@@ -9,7 +9,7 @@ const load = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 
 register('./_ts-resolve.mjs', import.meta.url);
 
-const { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem, SERVICE_UNAVAILABLE_COPY } =
+const { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem, RESEND_COOLDOWN_SECONDS, resendWaitSeconds, SERVICE_UNAVAILABLE_COPY } =
   await load('src/core/auth/messages.ts');
 
 test('auth messages: an address is judged like one, not like a regex exercise', () => {
@@ -34,15 +34,30 @@ test('auth messages: a developer error becomes an instruction, in the product vo
   assert.match(authErrorCopy('Email not confirmed'), /not confirmed yet/);
   assert.match(authErrorCopy('User already registered'), /already registered/);
   // The sign-up mail quota and the login throttle are different waits, so they are different
-  // sentences: Supabase's built-in sender allows only a handful of confirmation emails per hour,
-  // and "wait a minute or two" sent a learner retrying into the same wall (this is the message
-  // that prompted the split).
-  assert.match(authErrorCopy('Email rate limit exceeded'), /Too many confirmation emails/);
-  assert.doesNotMatch(authErrorCopy('Email rate limit exceeded'), /minute or two/);
+  // sentences: Supabase's built-in sender allows only TWO confirmation emails per project per hour
+  // (docs/guides/auth/rate-limits — not customizable without custom SMTP or a send-email hook),
+  // so "wait a minute or two" — and even "a few minutes" — sent a learner retrying into the same
+  // wall. The sentence names the real window and the way out that costs no email at all.
+  const quota = authErrorCopy('Email rate limit exceeded');
+  assert.match(quota, /hourly confirmation emails/);
+  assert.match(quota, /about an hour/);
+  assert.match(quota, /sign in if you already created this account/);
+  assert.doesNotMatch(quota, /minute or two/);
   assert.match(authErrorCopy('Too many requests'), /Too many attempts/);
   assert.match(authErrorCopy('Password should be at least 6 characters'), /at least 8 characters/);
   assert.match(authErrorCopy('Unable to validate email address: invalid format'), /look valid/);
   assert.match(authErrorCopy('Signups not allowed for this instance'), /sign-ups are disabled/);
+});
+
+test('auth messages: the resend button waits a minute, like the server does', () => {
+  assert.equal(RESEND_COOLDOWN_SECONDS, 60);
+  const sent = 1_700_000_000_000;
+  assert.equal(resendWaitSeconds(sent, sent), 60, 'a fresh message locks the button');
+  assert.equal(resendWaitSeconds(sent, sent + 30_500), 30, 'and it counts down in whole seconds');
+  assert.equal(resendWaitSeconds(sent, sent + 60_000), 0, 'the button reopens after a minute');
+  assert.equal(resendWaitSeconds(sent, sent + 3_600_000), 0, 'and never re-locks itself');
+  assert.equal(resendWaitSeconds(0, sent), 0, 'nothing sent yet means nothing to wait for');
+  assert.equal(resendWaitSeconds(sent, sent - 5_000), 60, 'a clock that moved backwards is clamped, not endless');
 });
 
 test('auth messages: an error nobody has seen yet is passed through, never swallowed', () => {

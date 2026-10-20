@@ -52,6 +52,11 @@ test('sign-up collects name, email, password and confirm password — and no pro
   // The confirmation round-trip (the project has Confirm email ON) must keep its state + resend.
   assert.match(form, /awaitingConfirmation/, 'the inbox state is what a waiting learner sees');
   assert.match(form, /authApi\.resendConfirmation/, 'and must be able to ask for the email again');
+  // The project's sender allows two emails per hour, so the resend cannot be free: it counts down.
+  assert.match(form, /resendWaitSeconds\(sentAt, clock\)/, 'the resend is cooled down, not unlimited');
+  assert.match(form, /disabled=\{resending \|\| resendWait > 0\}/, 'and the button is actually disabled');
+  assert.match(form, /if \(result\.user\) onSuccess\?\.\(result\.user\)/,
+    'with Confirm email OFF a session comes back — that branch must sign the learner in');
 });
 
 test('the typed name is the display name, with the address as the documented fallback', () => {
@@ -73,10 +78,10 @@ test('the typed name is the display name, with the address as the documented fal
 
 test('an exhausted sign-up mail quota is not reported as a one-minute throttle', () => {
   const emailLimit = authErrorCopy('email rate limit exceeded');
-  assert.match(emailLimit, /Too many confirmation emails/,
-    'the sign-up mail limit is its own sentence, because its window is not "a minute or two"');
+  assert.match(emailLimit, /hourly confirmation emails/,
+    'the sign-up mail limit is its own sentence, and says the wait is an hour, not a minute');
   assert.doesNotMatch(emailLimit, /minute or two/);
-  assert.match(authErrorCopy('over_email_send_rate_limit'), /Too many confirmation emails/,
+  assert.match(authErrorCopy('over_email_send_rate_limit'), /hourly confirmation emails/,
     'the structured error code maps the same way');
   // The login throttle keeps the shorter wording — it really does clear in a minute.
   assert.match(authErrorCopy('Too many requests'), /Too many attempts\. Wait a minute or two/);

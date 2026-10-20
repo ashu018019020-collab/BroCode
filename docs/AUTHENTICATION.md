@@ -106,11 +106,22 @@ ever re-enabled, it needs its callback URL registered here and in the provider's
 
 **Authentication → Rate limits / SMTP**
 
-Supabase rate-limits confirmation and recovery emails per hour. On the **built-in sender** that
-window is tiny (a handful of messages per project per hour), so real sign-ups start failing with
-`email rate limit exceeded` — the form maps that to "Too many confirmation emails were just sent
-from this project", which is true but is not something a learner can wait out on a busy day. The
-operator fix is one of:
+The number is not a rule of thumb. Supabase's own rate-limit table (`/docs/guides/auth/rate-limits`)
+says **all email-sending Auth endpoints are limited to 2 emails per hour, per PROJECT**, on the
+built-in provider — and that limit is **not customizable** until you configure custom SMTP or a
+send-email hook. It is shared by sign-up confirmations, resends and password recoveries, so two
+sign-ups can exhaust the hour for everybody. Verified against this project on 2026-10-20:
+`POST /auth/v1/signup` with the publishable key and a throwaway address answered
+`429 { "error_code": "over_email_send_rate_limit", "msg": "email rate limit exceeded" }`.
+
+That is why the form now says *"This project has used up its hourly confirmation emails. Wait about
+an hour, then try again — or sign in if you already created this account."* — the window really is an
+hour, and an account created before the quota ran out may already be confirmed and waiting for a
+sign-in that costs no email at all. `RESEND_COOLDOWN_SECONDS` (60) in
+`src/core/auth/messages.ts` holds the inbox screen's resend button for the same reason: a button
+that can be pressed freely spends the whole hour in three clicks.
+
+The operator fix is one of:
 
 - **Authentication → Emails → SMTP Settings →** add your own SMTP host (Postmark, Resend, SES, a
   Gmail app password). The project limit becomes your provider's, not Supabase's.
@@ -121,6 +132,36 @@ the check that an address belongs to the person typing it.
 
 Keep a limit on `resend` whatever the sender: the resend button is the one place a learner can send
 mail repeatedly.
+
+## Testing sign-up while the mail quota is exhausted
+
+The quota lives in the Supabase project, not in this repository, so **no code change can lift it** —
+and a change that could (a bypass, a demo account, a session without a token) is exactly what
+`auth-gate.test.mjs` refuses. The three routes below are dashboard actions and are listed in the
+order to try them. None of them weakens the deployed app permanently.
+
+1. **The account probably already exists — confirm it, don't re-create it.** A sign-up that was
+   blocked by the quota usually left an unconfirmed user behind from an earlier attempt. Open
+   **Authentication → Users**, find the address, open the row's `⋯` menu and use **Confirm email**
+   (or "Confirm user"), then sign in from the **Sign in** tab with the password that was typed.
+   Costs no email.
+2. **Create the account with Confirm email OFF, then put it back ON.**
+   - **Authentication → Sign In / Providers → Email →** switch **Confirm email** off and save.
+   - Sign up in the app. `signUp` now returns a session, so the form signs the learner straight in —
+     `register()` already handles both shapes (`{ user }` when a session came back, `{ user: null,
+     emailConfirmationRequired: true }` when it did not) and no email is sent, so the quota is not
+     touched.
+   - Switch **Confirm email** back on and save. The account created in step 2 is already verified and
+     keeps working, so this test account becomes your normal test login.
+   - Temporary by design: while the toggle is OFF, any visitor can create an account with an address
+     they do not own. Do it on a test window, not overnight.
+3. **Make the limit go away properly.** Custom SMTP (**Authentication → Emails → SMTP Settings**, with
+   Resend/Postmark/SES) or a **send-email hook**, then raise **Authentication → Rate Limits →
+   "Emails per hour"**. Until one of those exists the project can send two emails an hour no matter
+   what the form does.
+
+`npm run doctor` reports which of these the current environment can support; `scripts/tests/auth-*`
+pin the code halves (the copy, the cooldown, both `register()` branches, and the redirect target).
 
 ## Environment variables
 

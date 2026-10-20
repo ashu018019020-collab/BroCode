@@ -9,6 +9,28 @@
 export const MIN_PASSWORD = 8;
 
 /**
+ * How long the "Resend email" button waits before it will send again.
+ *
+ * Supabase already refuses a second confirmation for the SAME address inside 60 seconds, and the
+ * project's sender allows only a couple of messages per hour in total — so a button that can be
+ * pressed repeatedly is a button that spends the hour's budget in three clicks. The wait mirrors the
+ * server's own window; it is a courtesy, not the limit (the server enforces that).
+ */
+export const RESEND_COOLDOWN_SECONDS = 60;
+
+/**
+ * Seconds left on that wait, given when the last message went out and the current clock.
+ *
+ * `0` means "send now"; it is also what an absent timestamp and a clock that moved backwards
+ * resolve to, so the button can never lock itself out forever.
+ */
+export function resendWaitSeconds(sentAt: number, now: number): number {
+  if (!sentAt) return 0;
+  const elapsed = Math.max(0, Math.floor((now - sentAt) / 1000));
+  return Math.max(0, Math.min(RESEND_COOLDOWN_SECONDS, RESEND_COOLDOWN_SECONDS - elapsed));
+}
+
+/**
  * The one sentence a learner sees when the account service itself cannot be reached.
  *
  * A missing environment variable, an unreachable API and a rejected key are the SAME problem to the
@@ -57,14 +79,16 @@ export function authErrorCopy(message: string): string {
     return 'This email is already registered — sign in from the "Sign in" tab.';
   }
   /*
-   * The sign-up mail has its own limit, and it is counted in minutes-to-an-hour rather than the
-   * "minute or two" a login throttle deserves: Supabase's built-in sender allows only a handful of
-   * confirmation emails per hour. Telling a learner to retry in a minute when the window is an hour
-   * is the difference between a pause and a support email, so it gets its own sentence. The
-   * operator-side fix (a custom SMTP server) belongs in docs/AUTHENTICATION.md, not on screen.
+   * The sign-up mail has its own limit, and the size of it is not a guess: Supabase's built-in
+   * sender allows TWO emails per PROJECT per hour (docs/guides/auth/rate-limits), and the quota is
+   * only raisable with custom SMTP or a send-email hook. "Wait a few minutes" was therefore a
+   * promise the project could not keep — the learner retried, failed again and reported the same
+   * screen. The sentence names the real wait and the way out that costs no email at all: signing in
+   * to the account whose confirmation is already sitting in an inbox. The operator-side fix belongs
+   * in docs/AUTHENTICATION.md, not on screen.
    */
   if (text.includes('email rate limit') || text.includes('over_email_send_rate_limit')) {
-    return 'Too many confirmation emails were just sent from this project. Wait a few minutes, then try again.';
+    return "This project has used up its hourly confirmation emails. Wait about an hour, then try again — or sign in if you already created this account.";
   }
   if (text.includes('rate limit') || text.includes('too many requests')) {
     return 'Too many attempts. Wait a minute or two, then try again.';

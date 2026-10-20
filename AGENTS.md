@@ -38,6 +38,17 @@ one way and behaves another.
   `20261020120000_progress_direct_sync`, `auth.uid()`-scoped, same validation as `server/app.mjs`).
   Both halves are pinned by `scripts/tests/auth-supabase.test.mjs`; details in
   `docs/AUTHENTICATION.md`.
+- **The confirmation email quota is TWO per project per hour, and it is not ours to change.**
+  Supabase's own rate-limit table caps every email-sending Auth endpoint at 2/hour on the built-in
+  sender, and the number is only configurable after custom SMTP or a send-email hook. So
+  `over_email_send_rate_limit` is an OPERATOR problem with no code fix — a bypass would be the
+  "way in without a session" the bullet above forbids — and the copy says the real window (about an
+  hour) plus the free way out (sign in to an account created before the quota ran out). The inbox
+  screen's resend button is held for `RESEND_COOLDOWN_SECONDS` (60) for the same reason. To test
+  sign-up while the quota is spent, follow "Testing sign-up while the mail quota is exhausted" in
+  `docs/AUTHENTICATION.md` — confirm the leftover user from **Users**, or create one with **Confirm
+  email** temporarily OFF (that account stays verified when the toggle goes back ON). Do not "fix" a
+  spent quota in the client.
 - **`npm run db:deploy` failing with P1001 is almost never the migration.** Run `npm run db:check`
   first — it separates "the hostname is dead", "the port opens but the service is not Postgres"
   (a retired Supabase pooler does exactly this, which is why raw TCP reachability proves nothing),
