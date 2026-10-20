@@ -8,11 +8,15 @@
  * show, and clean up.
  */
 
+import { EXPIRED_LINK_COPY } from './messages';
+
 export type OAuthProvider = 'github' | 'google';
 
 export interface OAuthCallback {
   code: string | null;
   error: string | null;
+  /** Supabase's structured reason: `otp_expired` is a spent/expired link, not a refusal. */
+  errorCode: string | null;
   errorDescription: string | null;
 }
 
@@ -48,6 +52,7 @@ export function readOAuthCallback(search: string): OAuthCallback {
   return {
     code: param(search, 'code'),
     error: param(search, 'error'),
+    errorCode: param(search, 'error_code'),
     errorDescription: param(search, 'error_description'),
   };
 }
@@ -63,15 +68,26 @@ export function withoutOAuthParams(search: string): string {
   return rest ? `?${rest}` : '';
 }
 
-/** The sentence the login page shows for a provider return that did not produce a session. */
+/**
+ * The sentence the login page shows for a redirect that did not produce a session.
+ *
+ * A spent confirmation link comes back as `error=access_denied&error_code=otp_expired`. Reading only
+ * `error` called that a cancelled sign-in — but nothing was cancelled: the learner clicked a real
+ * link that had expired, and what they need is a new one. The structured code is checked first, and
+ * the description is the fallback for the implicit flow, which carries no `error_code`.
+ */
 export function oauthErrorMessage(callback: OAuthCallback): string {
+  const description = callback.errorDescription ?? '';
+  if (callback.errorCode === 'otp_expired' || /expired/i.test(description) || /email link is invalid/i.test(description)) {
+    return EXPIRED_LINK_COPY;
+  }
   if (callback.error === 'access_denied') {
     // No "continue as guest" any more: there is nothing to continue TO without a session, and
     // offering it would point at a door that no longer opens.
     return 'Sign-in was cancelled. Try again, or use your email and password.';
   }
-  const description = callback.errorDescription?.trim();
-  return description
-    ? `Sign-in failed: ${description}`
+  const detail = callback.errorDescription?.trim();
+  return detail
+    ? `Sign-in failed: ${detail}`
     : 'The sign-in provider could not complete the request. Try again, or use email.';
 }

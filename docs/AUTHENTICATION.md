@@ -55,9 +55,31 @@ the security boundary.
 | Sign out | `auth.signOut()`, storage namespace cleared, redirect to `/`. |
 | Password reset | `/reset-password`, two halves — request by email, then set a new one. |
 | Invalid recovery link | The provider's own sentence, plus a link to request a new one. |
+| Confirmation link already used or expired | `?error=access_denied&error_code=otp_expired` → `EXPIRED_LINK_COPY`, and the form offers **Send me a new confirmation link** right under it. |
+| Unconfirmed address on sign-in | "not confirmed yet" + the same resend action, held for `RESEND_COOLDOWN_SECONDS` (60). |
 | Supabase outage | Session resolves to null; `/login` shows `SERVICE_UNAVAILABLE_COPY`. |
 | Disabled account | `getProfile().status !== 'active'` → no session at all → 401 on every endpoint. |
 | Multiple tabs | `onAuthStateChange` fires in each tab; each re-applies the session. |
+
+## A confirmation link that no longer works
+
+Supabase returns a spent or expired confirmation link as
+`?error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired`.
+`oauth.ts` used to read only `error`, so that arrived on screen as *"Sign-in was cancelled"* — the
+opposite of what happened, because nothing was cancelled and the account was still unconfirmed. It
+now reads `error_code` (with the description as the fallback for the implicit flow that carries none)
+and maps it to `EXPIRED_LINK_COPY`.
+
+Both failures a learner can only clear with a NEW link — a spent link, and "this email is not
+confirmed" from a sign-in attempt — hand them the button that sends one (`needsNewConfirmationLink`
+in `src/core/auth/messages.ts`, rendered by `AuthForm`). It is the same `resend` call the inbox screen
+makes, under the same 60-second cooldown, and a successful resend switches the form to the "Check
+your inbox" state instead of leaving a toast over a sign-in form that cannot succeed yet.
+
+One trap worth naming, because it is invisible: `onSuccess?.(await login(email, password))` never
+calls `login` when a caller omits `onSuccess` — an optional call short-circuits BEFORE evaluating its
+arguments. Both callers pass one today, which is why it went unnoticed; the sign-in is now awaited
+into a local first.
 
 ## Password recovery
 

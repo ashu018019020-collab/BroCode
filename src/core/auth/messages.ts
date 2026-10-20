@@ -42,6 +42,17 @@ export const SERVICE_UNAVAILABLE_COPY =
   'The account service is unavailable right now. Please try again in a little while.';
 
 /**
+ * A confirmation (or recovery) link that is spent, past its hour, or already used once.
+ *
+ * Supabase returns this shape as `error=access_denied&error_code=otp_expired`, and reading only
+ * `error` used to report it as "Sign-in was cancelled" — the opposite of what happened, because
+ * nothing was cancelled: the learner clicked a real link and it no longer worked. One sentence,
+ * exported, so the redirect reader and the error mapper cannot drift apart.
+ */
+export const EXPIRED_LINK_COPY =
+  'That link has expired or was already used. Send yourself a new one and try again.';
+
+/**
  * Deployment detail wearing the clothes of an error message: an environment variable name, a
  * `.env` path, an HTTP status, the API not being up yet. None of it belongs on screen. This is a
  * LAST line of defence because the first one is upstream — a service failure is never handed to the
@@ -55,6 +66,22 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export function isEmail(value: string): boolean {
   return EMAIL_RE.test(value.trim());
+}
+
+/**
+ * Does this failure mean the learner's only way forward is a NEW link?
+ *
+ * It reads the message the form is already showing — both the raw Supabase sentence and the copy
+ * `authErrorCopy` produces — because those are the two shapes a failure reaches the screen in (a
+ * thrown submit error, and a redirect that came back from an inbox link). When it is true the form
+ * offers the resend itself instead of leaving the learner to guess that it exists.
+ */
+export function needsNewConfirmationLink(message: string | null | undefined): boolean {
+  const text = (message ?? '').toLowerCase();
+  return text.includes('not confirmed')
+    || text.includes('otp_expired')
+    || text.includes('email link is invalid')
+    || text.includes('link has expired');
 }
 
 export function passwordProblem(value: string): string {
@@ -74,6 +101,9 @@ export function authErrorCopy(message: string): string {
   }
   if (text.includes('email not confirmed')) {
     return 'This email is not confirmed yet. Open the link we sent to your inbox, then sign in.';
+  }
+  if (text.includes('otp_expired') || text.includes('email link is invalid') || text.includes('link has expired')) {
+    return EXPIRED_LINK_COPY;
   }
   if (text.includes('already registered') || text.includes('already been registered')) {
     return 'This email is already registered — sign in from the "Sign in" tab.';

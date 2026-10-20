@@ -57,6 +57,11 @@ test('sign-up collects name, email, password and confirm password — and no pro
   assert.match(form, /disabled=\{resending \|\| resendWait > 0\}/, 'and the button is actually disabled');
   assert.match(form, /if \(result\.user\) onSuccess\?\.\(result\.user\)/,
     'with Confirm email OFF a session comes back — that branch must sign the learner in');
+  // An unconfirmed account or a spent link is a dead end without this: the failure names the
+  // problem, and the same screen offers the one action that clears it.
+  assert.match(form, /needsNewConfirmationLink\(authFailure\)/, 'the form detects a resend-only failure');
+  assert.match(form, /Send me a new confirmation link/, 'and offers the new link right there');
+  assert.match(form, /const resendTarget = awaitingConfirmation \?\?/, 'the sign-in tab can resend too');
 });
 
 test('the typed name is the display name, with the address as the documented fallback', () => {

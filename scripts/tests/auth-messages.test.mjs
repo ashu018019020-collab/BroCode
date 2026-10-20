@@ -9,7 +9,7 @@ const load = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 
 register('./_ts-resolve.mjs', import.meta.url);
 
-const { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem, RESEND_COOLDOWN_SECONDS, resendWaitSeconds, SERVICE_UNAVAILABLE_COPY } =
+const { authErrorCopy, EXPIRED_LINK_COPY, isEmail, MIN_PASSWORD, needsNewConfirmationLink, passwordProblem, RESEND_COOLDOWN_SECONDS, resendWaitSeconds, SERVICE_UNAVAILABLE_COPY } =
   await load('src/core/auth/messages.ts');
 
 test('auth messages: an address is judged like one, not like a regex exercise', () => {
@@ -47,6 +47,36 @@ test('auth messages: a developer error becomes an instruction, in the product vo
   assert.match(authErrorCopy('Password should be at least 6 characters'), /at least 8 characters/);
   assert.match(authErrorCopy('Unable to validate email address: invalid format'), /look valid/);
   assert.match(authErrorCopy('Signups not allowed for this instance'), /sign-ups are disabled/);
+});
+
+test('auth messages: a spent link is its own failure, and it asks for a new one', () => {
+  assert.equal(authErrorCopy('Email link is invalid or has expired'), EXPIRED_LINK_COPY);
+  assert.equal(authErrorCopy('otp_expired'), EXPIRED_LINK_COPY);
+  assert.match(EXPIRED_LINK_COPY, /expired or was already used/i);
+  assert.match(EXPIRED_LINK_COPY, /new one/i);
+
+  // The form offers the resend exactly when a new link is the only way forward — so both the RAW
+  // Supabase sentence and the copy `authErrorCopy` produces must be recognised.
+  for (const failure of [
+    'Email not confirmed',
+    authErrorCopy('Email not confirmed'),
+    'otp_expired',
+    'Email link is invalid or has expired',
+    EXPIRED_LINK_COPY,
+    'Email link is invalid or has expired (access_denied)',
+  ]) {
+    assert.equal(needsNewConfirmationLink(failure), true, `should offer a new link: ${failure}`);
+  }
+  for (const other of [
+    'Invalid login credentials',
+    'User already registered',
+    'Too many requests',
+    authErrorCopy('email rate limit exceeded'),
+    SERVICE_UNAVAILABLE_COPY,
+    '',
+  ]) {
+    assert.equal(needsNewConfirmationLink(other), false, `must not offer a new link: ${other}`);
+  }
 });
 
 test('auth messages: the resend button waits a minute, like the server does', () => {

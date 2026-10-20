@@ -2,7 +2,14 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { authApi, type AuthUser } from '../../core/auth/client';
-import { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem, resendWaitSeconds } from '../../core/auth/messages';
+import {
+  authErrorCopy,
+  isEmail,
+  MIN_PASSWORD,
+  needsNewConfirmationLink,
+  passwordProblem,
+  resendWaitSeconds,
+} from '../../core/auth/messages';
 
 /**
  * The ONE sign-in/sign-up form. Two screens render it: the `/login` page (a deep link a shared URL
@@ -75,7 +82,7 @@ export default function AuthForm({
   const emailRef = useRef<HTMLInputElement>(null);
 
   /** Seconds left on the resend wait; `0` means the button may send. */
-  const resendWait = awaitingConfirmation ? resendWaitSeconds(sentAt, clock) : 0;
+  const resendWait = resendWaitSeconds(sentAt, clock);
 
   // A second-by-second clock only while it matters: the countdown ends the interval on its own.
   useEffect(() => {
@@ -115,6 +122,17 @@ export default function AuthForm({
   const authFailure = error || redirectError || serviceError;
   const authFailureIsAlert = Boolean(error || redirectError);
 
+  /**
+   * The address a new link would go to.
+   *
+   * Two roads lead here: the inbox state (the address just typed) and a failure on the sign-in tab
+   * — "this email is not confirmed" or a link that came back expired. The second road used to be a
+   * dead end: the learner was told to open an email that no longer worked, with nothing to press.
+   */
+  const resendTarget = awaitingConfirmation ?? (validEmail ? email.trim() : null);
+  /** A failure the learner can only clear with a NEW link — so the form offers to send one. */
+  const needsLink = needsNewConfirmationLink(authFailure);
+
   const switchMode = (next: AuthMode) => {
     setMode(next);
     setError('');
@@ -122,6 +140,7 @@ export default function AuthForm({
     setConfirm('');
     setTouched({});
   };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setTouched({ name: true, email: true, password: true, confirm: true });
@@ -130,7 +149,14 @@ export default function AuthForm({
     setBusy(true);
     try {
       if (mode === 'login') {
-        onSuccess?.(await login(email.trim(), password));
+        /**
+         * The sign-in is awaited OUTSIDE the optional call on purpose. `onSuccess?.(await login(…))`
+         * short-circuits before evaluating its arguments when `onSuccess` is absent, so the account
+         * call never happened at all — a form that looks like it accepted the password and did
+         * nothing. Every current caller passes `onSuccess`, which is exactly why it went unnoticed.
+         */
+        const signedIn = await login(email.trim(), password);
+        onSuccess?.(signedIn);
       } else {
         const result = await register(name.trim(), email.trim(), password);
         if (result.user) onSuccess?.(result.user);
@@ -149,14 +175,18 @@ export default function AuthForm({
   };
 
   const resend = async () => {
-    if (!awaitingConfirmation || resending || resendWait > 0) return;
+    if (!resendTarget || resending || resendWait > 0) return;
+    const address = resendTarget;
     setResending(true);
     setError('');
     try {
-      await authApi.resendConfirmation(awaitingConfirmation);
+      await authApi.resendConfirmation(address);
+      // A resend IS the confirmation journey: show the inbox state, not a toast over a sign-in form
+      // that still expects a session it cannot get yet.
+      setAwaitingConfirmation(address);
       setSentAt(Date.now());
       setClock(Date.now());
-      setNotice(`Confirmation email sent again — check ${awaitingConfirmation}.`);
+      setNotice(`Confirmation email sent — check ${address}.`);
     } catch (cause) {
       setError(authErrorCopy(cause instanceof Error ? cause.message : 'Could not resend the confirmation email.'));
     } finally {
@@ -229,6 +259,24 @@ export default function AuthForm({
         </p>
       )}
       {notice && <p className="auth-message" role="status">{notice}</p>}
+
+      {/* The way out of an unconfirmed/expired account, offered where the failure is shown. */}
+      {needsLink && (
+        resendTarget ? (
+          <button
+            className="btn ghost auth-wide"
+            disabled={resending || resendWait > 0}
+            onClick={() => void resend()}
+            type="button"
+          >
+            {resending ? 'Sending…' : resendWait > 0 ? `New link in ${resendWait}s` : 'Send me a new confirmation link'}
+          </button>
+        ) : (
+          <p className="auth-foot muted small">
+            Type your email above and the form will send you a new confirmation link.
+          </p>
+        )
+      )}
 
       <form className="auth-form" noValidate onSubmit={submit}>
         {mode === 'register' && (
