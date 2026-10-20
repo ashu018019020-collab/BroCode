@@ -33,7 +33,13 @@ test('auth messages: a developer error becomes an instruction, in the product vo
   assert.match(authErrorCopy('Invalid login credentials'), /Email or password is incorrect/);
   assert.match(authErrorCopy('Email not confirmed'), /not confirmed yet/);
   assert.match(authErrorCopy('User already registered'), /already registered/);
-  assert.match(authErrorCopy('Email rate limit exceeded'), /Too many attempts/);
+  // The sign-up mail quota and the login throttle are different waits, so they are different
+  // sentences: Supabase's built-in sender allows only a handful of confirmation emails per hour,
+  // and "wait a minute or two" sent a learner retrying into the same wall (this is the message
+  // that prompted the split).
+  assert.match(authErrorCopy('Email rate limit exceeded'), /Too many confirmation emails/);
+  assert.doesNotMatch(authErrorCopy('Email rate limit exceeded'), /minute or two/);
+  assert.match(authErrorCopy('Too many requests'), /Too many attempts/);
   assert.match(authErrorCopy('Password should be at least 6 characters'), /at least 8 characters/);
   assert.match(authErrorCopy('Unable to validate email address: invalid format'), /look valid/);
   assert.match(authErrorCopy('Signups not allowed for this instance'), /sign-ups are disabled/);

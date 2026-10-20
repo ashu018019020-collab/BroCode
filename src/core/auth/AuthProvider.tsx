@@ -16,7 +16,7 @@ interface AuthContextValue {
   /** A provider return that failed, read from the redirect URL before it is cleaned. */
   redirectError: string | null;
   login: (email: string, password: string) => Promise<AuthUser>;
-  register: (email: string, password: string) => Promise<RegistrationResult>;
+  register: (name: string, email: string, password: string) => Promise<RegistrationResult>;
   logout: () => Promise<void>;
 }
 
@@ -272,9 +272,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return currentUser;
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (name: string, email: string, password: string) => {
     setRedirectError(null);
-    const result = await authApi.register(email, password);
+    const result = await authApi.register(name, email, password);
     if (result.user) {
       setStorageAccount(result.user.id);
       adoptRemoteResume(takeRemoteResume());

@@ -359,13 +359,15 @@ export const authApi = {
   },
 
   /**
-   * Create the account with EMAIL and PASSWORD — the whole sign-up form. The display name the
-   * profile and dashboard show is derived from the address's own local part, exactly like the
-   * database trigger's fallback, so a learner types two fields and is done.
+   * Create the account: NAME, email and password.
+   *
+   * The name is sent as `display_name` in the sign-up metadata, which is what the profile and the
+   * dashboard show. Only when it is blank (it cannot be, the form requires it) does the address's
+   * local part stand in — the same fallback the database trigger uses, so a row is never nameless.
    */
-  async register(email: string, password: string): Promise<RegistrationResult> {
+  async register(name: string, email: string, password: string): Promise<RegistrationResult> {
     const trimmed = email.trim();
-    const displayName = trimmed.split('@')[0] || 'Learner';
+    const displayName = name.trim() || trimmed.split('@')[0] || 'Learner';
     const { data, error } = await getSupabaseClient().auth.signUp({
       email: trimmed,
       password,

@@ -56,6 +56,16 @@ export function authErrorCopy(message: string): string {
   if (text.includes('already registered') || text.includes('already been registered')) {
     return 'This email is already registered — sign in from the "Sign in" tab.';
   }
+  /*
+   * The sign-up mail has its own limit, and it is counted in minutes-to-an-hour rather than the
+   * "minute or two" a login throttle deserves: Supabase's built-in sender allows only a handful of
+   * confirmation emails per hour. Telling a learner to retry in a minute when the window is an hour
+   * is the difference between a pause and a support email, so it gets its own sentence. The
+   * operator-side fix (a custom SMTP server) belongs in docs/AUTHENTICATION.md, not on screen.
+   */
+  if (text.includes('email rate limit') || text.includes('over_email_send_rate_limit')) {
+    return 'Too many confirmation emails were just sent from this project. Wait a few minutes, then try again.';
+  }
   if (text.includes('rate limit') || text.includes('too many requests')) {
     return 'Too many attempts. Wait a minute or two, then try again.';
   }

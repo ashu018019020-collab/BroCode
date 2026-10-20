@@ -60,8 +60,8 @@ export default function AuthDialog({
         <button className="auth-dialog-close" onClick={onClose} aria-label="Close sign-in dialog" type="button">×</button>
         <h1 id="auth-dialog-title">BroCode account</h1>
         <p className="muted small">
-          Create an account with your email — your progress is saved to it and syncs across
-          devices. An account is required to open courses, lessons, practice and labs.
+          Sign in or create an account to open courses, lessons, practice, labs and your progress —
+          it syncs across devices once you have one.
         </p>
         <AuthForm initialMode={initialMode} onSuccess={onClose} />
       </div>

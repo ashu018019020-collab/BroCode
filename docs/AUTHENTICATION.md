@@ -31,10 +31,12 @@ the security boundary.
    legitimately signed-in learner on every page refresh.
 5. Unauthenticated → redirect to `/login` with the requested path in **router state** (never a query
    string, so a crafted `?next=` cannot steer anyone).
-6. Create account (email + password — that is the whole form) or sign in through Supabase Auth.
-   The display name is derived from the address's local part, exactly like the database trigger's
-   fallback, so there is no name field and no confirm-password field; Supabase enforces the password
-   rule server-side.
+6. Create account (name, email, password, confirm password) or sign in with email + password through
+   Supabase Auth. The typed name is the display name: `register()` sends it as `display_name` in the
+   sign-up metadata, and the address's local part is used only when that metadata is absent — the
+   same fallback as the database trigger, so a profile is never nameless. The client checks the
+   confirmation matches and that the password is at least 8 characters; Supabase enforces the real
+   password rule server-side.
 7. On success, redirect to the requested page — or `/admin` for an administrator, `/` otherwise.
 8. If Supabase is unreachable, the session resolves to null and the learner stays on `/login` with a
    recoverable message. **Nothing unlocks.** There is no cached-demo or guest fallback.
@@ -97,16 +99,28 @@ them: they need your project's credentials, which are deliberately not in the re
 
 **Authentication → Providers → Google / GitHub** (not offered)
 
-The sign-in form is EMAIL ONLY: the social provider buttons, the `/auth/v1/settings` probe and the
-OAuth return plumbing were removed so the sign-up path is two fields. Providers enabled in the
-dashboard are harmless — no UI calls them — but turning them off keeps the project's surface honest.
-If one is ever re-enabled, it needs its callback URL registered here and in the provider's console.
+Social sign-in is NOT offered: the provider buttons, the `/auth/v1/settings` probe and the OAuth
+return plumbing were removed, so email is the only method. Providers enabled in the dashboard are
+harmless — no UI calls them — but turning them off keeps the project's surface honest. If one is
+ever re-enabled, it needs its callback URL registered here and in the provider's console.
 
-**Authentication → Rate limits**
+**Authentication → Rate limits / SMTP**
 
-Supabase rate-limits confirmation and recovery emails per hour by default. If you raise the custom
-SMTP limits, keep a limit on `resend` — the resend button is the one place a learner can send mail
-repeatedly.
+Supabase rate-limits confirmation and recovery emails per hour. On the **built-in sender** that
+window is tiny (a handful of messages per project per hour), so real sign-ups start failing with
+`email rate limit exceeded` — the form maps that to "Too many confirmation emails were just sent
+from this project", which is true but is not something a learner can wait out on a busy day. The
+operator fix is one of:
+
+- **Authentication → Emails → SMTP Settings →** add your own SMTP host (Postmark, Resend, SES, a
+  Gmail app password). The project limit becomes your provider's, not Supabase's.
+- **Authentication → Rate Limits →** raise "Emails per hour" after the custom SMTP is in place.
+- Only as a last resort, turn **Confirm email** off — sign-up then returns a session immediately and
+the inbox state disappears. Do not do this to work around the limit on a live project; it removes
+the check that an address belongs to the person typing it.
+
+Keep a limit on `resend` whatever the sender: the resend button is the one place a learner can send
+mail repeatedly.
 
 ## Environment variables
 

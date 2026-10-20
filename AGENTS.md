@@ -28,9 +28,12 @@ one way and behaves another.
 - Do not re-add a way in without a session. No anonymous sign-in, no demo user, no cached-data
   fallback when Supabase is unreachable: a failed lookup must leave the learner signed out. That is
   asserted by `auth-gate.test.mjs`.
-- **Sign-up is EMAIL + PASSWORD and nothing else** (no social buttons, no name field, no
-  confirm-password — they cost sign-ups; the display name is the email local part, like the DB
-  trigger fallback). Progress is collected in Supabase on EVERY deployment: the account API first,
+- **Sign-up is NAME + EMAIL + PASSWORD + CONFIRM PASSWORD, and no social buttons.** The typed name
+  is the display name: it travels as `display_name` in the sign-up metadata, and only a blank one
+  falls back to the address's local part (the DB trigger's own fallback). "Confirm email" is ON in
+  the project, so a successful sign-up returns NO session — the form swaps to the "Check your inbox"
+  state and the learner gets a session when the link lands back on the deployment. Progress is
+  collected in Supabase on EVERY deployment: the account API first,
   then the identity-bound `save_my_progress` function (migration
   `20261020120000_progress_direct_sync`, `auth.uid()`-scoped, same validation as `server/app.mjs`).
   Both halves are pinned by `scripts/tests/auth-supabase.test.mjs`; details in

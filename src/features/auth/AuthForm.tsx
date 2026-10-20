@@ -11,14 +11,18 @@ import { authErrorCopy, isEmail, MIN_PASSWORD, passwordProblem } from '../../cor
  * fields, validation, pending/notice/error states — and reports success upward, so neither caller
  * duplicates logic or copy.
  *
- * SIGN-UP IS TWO FIELDS: email and password. There is no name field (the display name is derived
- * from the email address, exactly like the database trigger's fallback) and no confirm-password
- * field — every extra field on a signup form costs real sign-ups, and Supabase enforces the
- * password rule server-side anyway. Sign-in is the same two fields.
+ * SIGN-UP is four fields: name, email, password, confirm password. The name is the display name the
+ * profile and dashboard show, and it is sent to Supabase as `display_name` in the sign-up metadata
+ * (the database trigger falls back to the address's local part only when that metadata is missing).
  *
- * Password rules live here, once: 8 characters minimum, an email that is actually an address.
- * Nothing is validated on the FIRST keystroke of an untouched field — a field complains only after
- * it has been used and left.
+ * CONFIRMATION is a state, not a toast. The project has "Confirm email" ON, so a successful sign-up
+ * returns no session: the form is replaced by a "Check your inbox" panel that names the address and
+ * offers a resend. The account exists from that moment; the learner gets a session when the link
+ * comes back to the deployment and supabase-js exchanges the confirmation for one.
+ *
+ * Password rules live here, once: 8 characters minimum, matching confirmation, an email that is
+ * actually an address. Nothing is validated on the FIRST keystroke of an untouched field — a field
+ * complains only after it has been used and left.
  */
 
 export type AuthMode = 'login' | 'register';
@@ -36,6 +40,8 @@ function EyeMark({ off }: { off: boolean }) {
   );
 }
 
+type Field = 'name' | 'email' | 'password' | 'confirm';
+
 export default function AuthForm({
   initialMode = 'login',
   onSuccess,
@@ -45,30 +51,42 @@ export default function AuthForm({
 }) {
   const { login, redirectError, register, serviceError } = useAuth();
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean }>({});
+  const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   /** The address a confirmation link was just sent to — the whole form is replaced while it is set. */
   const [awaitingConfirmation, setAwaitingConfirmation] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
   // The first field of the active tab holds focus: a keyboard learner starts typing immediately, and
-  // switching to "Create account" moves the cursor to the field that tab actually starts with.
-  useEffect(() => { emailRef.current?.focus(); }, [mode]);
+  // switching to "Create account" moves the cursor to the field that tab actually starts with — the
+  // name, because that tab now begins with it.
+  useEffect(() => {
+    (mode === 'register' ? nameRef : emailRef).current?.focus();
+  }, [mode]);
 
   const validEmail = isEmail(email);
   const validPassword = !passwordProblem(password);
+  const validConfirm = confirm === password;
+  const validName = name.trim().length > 1;
   // Only a field the learner has already left may complain.
   const fieldError = {
+    name: mode === 'register' && touched.name && !validName ? 'Enter your name (at least 2 letters).' : '',
     email: touched.email && !validEmail ? 'Enter a valid email address, like name@example.com.' : '',
     password: touched.password ? passwordProblem(password) : '',
+    confirm: mode === 'register' && touched.confirm && !validConfirm ? "Passwords don't match." : '',
   };
-  const canSubmit = validEmail && validPassword;
+  const canSubmit = validEmail
+    && validPassword
+    && (mode === 'login' || (validName && validConfirm));
   /**
    * ONE banner for one failure.
    *
@@ -83,12 +101,13 @@ export default function AuthForm({
     setMode(next);
     setError('');
     setNotice('');
+    setConfirm('');
     setTouched({});
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setTouched({ email: true, password: true });
+    setTouched({ name: true, email: true, password: true, confirm: true });
     setError('');
     if (!canSubmit || busy) return;
     setBusy(true);
@@ -96,7 +115,7 @@ export default function AuthForm({
       if (mode === 'login') {
         onSuccess?.(await login(email.trim(), password));
       } else {
-        const result = await register(email.trim(), password);
+        const result = await register(name.trim(), email.trim(), password);
         if (result.user) onSuccess?.(result.user);
         else setAwaitingConfirmation(email.trim());
       }
@@ -179,6 +198,24 @@ export default function AuthForm({
       {notice && <p className="auth-message" role="status">{notice}</p>}
 
       <form className="auth-form" noValidate onSubmit={submit}>
+        {mode === 'register' && (
+          <label className="auth-field">
+            <span>Name</span>
+            <input
+              autoComplete="name"
+              className={fieldError.name ? 'invalid' : ''}
+              aria-invalid={Boolean(fieldError.name)}
+              maxLength={100}
+              onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Your name"
+              ref={nameRef}
+              required
+              value={name}
+            />
+            {fieldError.name && <em className="auth-hint error" role="alert">{fieldError.name}</em>}
+          </label>
+        )}
         <label className="auth-field">
           <span>Email</span>
           <input
@@ -227,6 +264,23 @@ export default function AuthForm({
           )}
           {fieldError.password && <em className="auth-hint error" role="alert">{fieldError.password}</em>}
         </label>
+        {mode === 'register' && (
+          <label className="auth-field">
+            <span>Confirm password</span>
+            <input
+              autoComplete="new-password"
+              className={fieldError.confirm ? 'invalid' : ''}
+              aria-invalid={Boolean(fieldError.confirm)}
+              onBlur={() => setTouched((t) => ({ ...t, confirm: true }))}
+              onChange={(event) => setConfirm(event.target.value)}
+              placeholder="Type the password again"
+              required
+              type={showPassword ? 'text' : 'password'}
+              value={confirm}
+            />
+            {fieldError.confirm && <em className="auth-hint error" role="alert">{fieldError.confirm}</em>}
+          </label>
+        )}
         <button className="btn primary auth-wide" disabled={busy} type="submit">
           {busy ? (mode === 'login' ? 'Signing in…' : 'Creating account…') : mode === 'login' ? 'Sign in' : 'Create account'}
         </button>
