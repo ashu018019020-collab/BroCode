@@ -95,6 +95,46 @@ looks like `k=v&k=v`, so `#/lesson/s01/learn` is never mistaken for one. Once re
 stripped from the address bar — a refresh must not replay a spent link, and a screenshot must not
 capture a live one.
 
+## Vercel hosts the app — Supabase is the only authentication provider
+
+BroCode is a static Vite SPA (plus the optional Node API in `server/`), so nothing Vercel-specific
+belongs in the authentication path, and nothing is:
+
+- **No second auth system exists to remove.** There is no `vercel.json`, no `api/` function
+directory, no `middleware.ts`, no Next.js app, and no other auth library (`@supabase/supabase-js` is
+  the only one in `package-lock.json`). In particular there is no `@supabase/ssr`: that package exists
+  to share a session between Next.js server and client components, and this app renders entirely in
+  the browser, where `supabase-js` with `persistSession` + PKCE is the correct pairing. Every session
+  is issued and verified by Supabase; `server/app.mjs` accepts only `Bearer <supabase-token>` requests
+  and re-verifies them against Supabase Auth before touching any account data.
+- **Vercel Deployment Protection must be None.** Settings → Deployment Protection → **None** for the
+  production domain (Password Protection, SSO Protection and any Firewall rule matching `/` likewise
+  off). When it is on, every visitor is stopped by a *Vercel* sign-in page before this app's own
+  `/login` renders — two login screens, and the wrong one is in front. BroCode's only wall is its own
+  `RequireAuth` guard (`src/features/auth/RequireAuth.tsx`, pinned by `scripts/tests/auth-gate.test.mjs`),
+  so keep Vercel's protection off whenever the public should reach the site.
+- **Checking it without the dashboard** (last verified 2026-10-21):
+
+  ```
+  curl -sI https://mybrocode.vercel.app/ | head -5
+  ```
+
+  A public deployment answers `HTTP/2 200` with `content-type: text/html` and the app's own
+  `index.html`, no `WWW-Authenticate` header and no hop to `_vercel/auth/login` — exactly what the
+  live host returned. A deployment behind Vercel Authentication instead answers `401` (or redirects)
+  with `_vercel/auth` and never reaches the bundle at all.
+
+**Vercel → Settings → Environment Variables** (Production and Preview):
+
+- `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` — recommended. The publishable key is public
+  by design (RLS is the protection), so it is safe in a client bundle. Without them a production
+  build still signs in through the `src/core/auth/public-config.ts` fallback.
+- Do **not** put `SUPABASE_SECRET_KEY`, `DATABASE_URL` or any other server-only value in Vercel: the
+  Node API is not deployed there (`/api/...` answers `404` on the live host, by design — the client
+  falls back to the signed session claims and the learner's own RLS-scoped row), and anything
+  `VITE_`-prefixed is inlined into the public bundle. `production-readiness.test.mjs` fails the build
+  if a secret key reaches `dist/`.
+
 ## Required Supabase Dashboard configuration
 
 These are **dashboard actions, not code**, and the flow is incomplete without them. I could not verify
@@ -102,10 +142,12 @@ them: they need your project's credentials, which are deliberately not in the re
 
 **Authentication → URL Configuration**
 
-- **Site URL**: your deployed origin, e.g. `https://<user>.github.io/BroCode/`
+- **Site URL**: the origin the app is really served from — `https://mybrocode.vercel.app/` for the
+  live deployment (localhost for a build you are testing locally).
 - **Redirect URLs** — add every origin you sign in from:
   - `http://localhost:5173/**` (dev)
-  - `https://<your-origin>/BroCode/**` (production)
+  - `https://mybrocode.vercel.app/**` (production)
+  - `https://<project>.vercel.app/**` (each preview deployment you actually use)
 
   A redirect target that is not on this list is silently rewritten to the Site URL, which is the usual
   cause of "the recovery link goes to the dashboard" or "the confirmation link does nothing".
