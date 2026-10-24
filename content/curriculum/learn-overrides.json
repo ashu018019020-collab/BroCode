@@ -1,0 +1,199 @@
+{
+  "$comment": "Curated repairs for learn concepts whose PDF code box is unrecoverable from the -layout text (two-column interleave, wrapped tokens, lost indentation). Applied by scripts/learn.cjs AFTER the automatic rebuild; every snippet is executed and its real stdout is stored, so code and output can never disagree. `output` is optional — omit it and the real run output is used.",
+  "version": 1,
+  "concepts": [
+    {
+      "section": "s01",
+      "title": "Mutable vs Immutable + id()",
+      "code": "a = \"hi\"\nprint(id(a) == id(a))\n\nnums = [1, 2]\nbefore = id(nums)\nnums.append(3)\nprint(id(nums) == before)   # same object, sirf andar change\n\ns = \"hi\"\ns = s + \"!\"                 # naya string object bana"
+    },
+    {
+      "section": "s03",
+      "title": "print()",
+      "code": "print(\"Hello, Python!\")\nprint(\"Age:\", 22)\nprint()              # khaali line\nprint(\"Bye\")"
+    },
+    {
+      "section": "s03",
+      "title": "f-string Formatting Tricks",
+      "body": "{value:.2f} decimal places, {value:>8} right align, {value:,} comma separator, {value:.1%} percentage.",
+      "code": "price = 1499.5\nprint(f\"Price: {price:.2f}\")\nprint(f\"Big: {1234567:,}\")\nprint(f\"|{42:>6}|{42:<6}|{42:^6}|\")\nprint(f\"Score: {0.856:.1%}\")"
+    },
+    {
+      "section": "s04",
+      "title": "Concatenation",
+      "body": "Do strings ko + operator se jodna.",
+      "code": "first = \"Hello\"\nsecond = \"World\"\nprint(first + \" \" + second)"
+    },
+    {
+      "section": "s04",
+      "title": "Strings are Immutable",
+      "code": "s = \"hello\"\ntry:\n    s[0] = \"J\"\nexcept TypeError as e:\n    print(\"Error:\", e)\n\ns = \"J\" + s[1:]\nprint(s)          # naya string"
+    },
+    {
+      "section": "s05",
+      "title": "format()",
+      "body": "String ke andar { } placeholders me values insert karta hai. Purana tarika hai; f-string usse better hai.",
+      "code": "name = \"Ashu\"\nage = 22\nprint(\"My name is {} and age is {}\".format(name, age))\nprint(\"{1} is {0}\".format(\"cool\", \"Python\"))"
+    },
+    {
+      "section": "s05",
+      "title": "startswith()",
+      "code": "text = \"hello world\"\nprint(text.startswith(\"hello\"))\nprint(\"report.pdf\".startswith((\"data\", \"report\")))   # tuple bhi chalta hai"
+    },
+    {
+      "section": "s06",
+      "title": "if statement",
+      "code": "age = 20\nif age >= 18:\n    print(\"You are an adult\")\nprint(\"Done\")     # ye hamesha chalega"
+    },
+    {
+      "section": "s06",
+      "title": "Ternary Operator",
+      "body": "if-else ko ek line me likhne ka tarika: value_if_true if condition else value_if_false.",
+      "code": "age = 20\nstatus = \"Adult\" if age >= 18 else \"Minor\"\nprint(status)"
+    },
+    {
+      "section": "s06",
+      "title": "Truthy & Falsy Values",
+      "code": "items = []\nif items:\n    print(\"Kuch hai\")\nelse:\n    print(\"List khaali hai\")\n\nname = \"Ashu\"\nif name:\n    print(\"Naam mila:\", name)\n\nprint(bool(0), bool(\"\"), bool(\"a\"), bool([0]))"
+    },
+    {
+      "section": "s06",
+      "title": "Combining Conditions & in",
+      "code": "day = \"Sat\"\nif day == \"Sat\" or day == \"Sun\":\n    print(\"Weekend\")\n\nif day in (\"Sat\", \"Sun\"):        # chhota tarika\n    print(\"Weekend again\")\n\nage, has_id = 20, True\nif age >= 18 and has_id:\n    print(\"Entry allowed\")"
+    },
+    {
+      "section": "s06",
+      "title": "pass Statement",
+      "code": "x = 10\nif x > 5:\n    pass            # TODO: baad me likhenge\nelse:\n    print(\"small\")\nprint(\"No error\")"
+    },
+    {
+      "section": "s07",
+      "title": "break",
+      "code": "for i in range(1, 10):\n    if i == 4:\n        break\n    print(i)\nprint(\"Loop se bahar\")"
+    },
+    {
+      "section": "s07",
+      "title": "else with loop",
+      "code": "for i in range(3):\n    print(i)\nelse:\n    print(\"Loop finished\")\n\nfor n in [1, 3, 5]:\n    if n % 2 == 0:\n        print(\"Even mila\")\n        break\nelse:\n    print(\"Koi even nahi mila\")"
+    },
+    {
+      "section": "s07",
+      "title": "enumerate()",
+      "body": "Loop me item ke saath uska index bhi deta hai. Ab i = 0; i += 1 likhne ki zarurat nahi.",
+      "code": "fruits = [\"apple\", \"banana\"]\nfor index, fruit in enumerate(fruits):\n    print(index, fruit)\n\nfor n, fruit in enumerate(fruits, start=1):\n    print(n, fruit)"
+    },
+    {
+      "section": "s07",
+      "title": "zip()",
+      "code": "names = [\"A\", \"B\"]\nages = [20, 25]\nfor n, a in zip(names, ages):\n    print(n, a)"
+    },
+    {
+      "section": "s07",
+      "title": "List Comprehension",
+      "code": "squares = [x * x for x in range(1, 5)]\nprint(squares)\n\n# Loop wala lamba tarika (same result):\nsquares2 = []\nfor x in range(1, 5):\n    squares2.append(x * x)\nprint(squares2)"
+    },
+    {
+      "section": "s08",
+      "title": "Alias vs Copy (Important!)",
+      "body": "b = a naya list nahi banata, ek hi list ke do naam ban jate hain. Ek me change karoge to dusre me bhi dikhega.",
+      "code": "a = [1, 2, 3]\nb = a               # alias (same list)\nc = a.copy()        # asli copy\n\nb.append(99)        # a bhi badal gaya!\nprint(a)\nprint(c)            # c safe hai"
+    },
+    {
+      "section": "s09",
+      "title": "append()",
+      "code": "fruits = [\"apple\", \"banana\"]\nfruits.append(\"mango\")\nprint(fruits)\n\nfruits.append([\"x\", \"y\"])     # poori list ek item ban gayi\nprint(fruits)"
+    },
+    {
+      "section": "s09",
+      "title": "pop()",
+      "code": "fruits = [\"apple\", \"banana\", \"mango\"]\nitem = fruits.pop()\nprint(item)\nprint(fruits)\nprint(fruits.pop(0))      # pehla item\nprint(fruits)"
+    },
+    {
+      "section": "s09",
+      "title": "clear()",
+      "body": "List ke saare items ek saath hata deta hai. List khaali reh jati hai.",
+      "code": "fruits = [\"apple\", \"banana\"]\nfruits.clear()\nprint(fruits)"
+    },
+    {
+      "section": "s09",
+      "title": "sorted() vs sort()",
+      "body": "sort() list ko badal deta hai aur None deta hai. sorted() original ko chhode bina nayi sorted list deta hai (kisi bhi iterable par).",
+      "code": "nums = [3, 1, 2]\nnew = sorted(nums)\nprint(new)\nprint(nums)\nprint(sorted(\"python\"))"
+    },
+    {
+      "section": "s09",
+      "title": "Stack (LIFO) using List",
+      "body": "Stack = last in, first out. Plates ki pile jaisa. append() se push, pop() se pop.",
+      "code": "stack = []\nstack.append(\"a\")\nstack.append(\"b\")\nstack.append(\"c\")\nprint(stack.pop())    # c pehle nikla\nprint(stack.pop())\nprint(stack)"
+    },
+    {
+      "section": "s10",
+      "title": "Creating Tuples",
+      "code": "point = (10, 20)\nprint(point)\nprint(type(point))\n\nrgb = 255, 128, 0      # bracket ke bina bhi tuple\nprint(rgb)"
+    },
+    {
+      "section": "s11",
+      "title": "discard() vs remove()",
+      "code": "s = {1, 2, 3}\ns.discard(99)          # koi error nahi\nprint(s)\n\ntry:\n    s.remove(99)\nexcept KeyError:\n    print(\"KeyError: 99 nahi mila\")"
+    },
+    {
+      "section": "s11",
+      "title": "issubset(), issuperset(), isdisjoint()",
+      "body": "Do sets ka relation check karte hain.",
+      "code": "a = {1, 2}\nb = {1, 2, 3, 4}\nprint(a.issubset(b))\nprint(b.issuperset(a))\nprint(a.isdisjoint({8, 9}))   # koi common nahi"
+    },
+    {
+      "section": "s12",
+      "title": "update() & Merging",
+      "code": "a = {\"x\": 1, \"y\": 2}\nb = {\"y\": 20, \"z\": 30}\na.update(b)             # y overwrite ho gaya\nprint(a)\n\nmerged = {\"p\": 1} | {\"q\": 2}\nprint(merged)"
+    },
+    {
+      "section": "s13",
+      "title": "class & object",
+      "code": "class Car:\n    pass\n\nmy_car = Car()\nother = Car()           # alag objects\n\nprint(type(my_car))\nprint(my_car is other)"
+    },
+    {
+      "section": "s13",
+      "title": "instance method",
+      "code": "class Car:\n    def __init__(self, brand):\n        self.brand = brand\n\n    def show(self):\n        print(f\"Brand: {self.brand}\")\n\nc = Car(\"Tesla\")\nc.show()\nCar(\"BMW\").show()"
+    },
+    {
+      "section": "s13",
+      "title": "class variable",
+      "code": "class Car:\n    wheels = 4                  # class variable\n\n    def __init__(self, brand):\n        self.brand = brand      # instance variable\n\nc1 = Car(\"Tesla\")\nc2 = Car(\"BMW\")\nprint(c1.wheels, c2.wheels)\nCar.wheels = 6                  # sabke liye badla\nprint(c1.wheels, c2.wheels)"
+    },
+    {
+      "section": "s13",
+      "title": "class method",
+      "code": "class Car:\n    wheels = 4\n\n    @classmethod\n    def info(cls):\n        print(f\"Wheels: {cls.wheels}\")\n\nCar.info()"
+    },
+    {
+      "section": "s15",
+      "title": "Core Concepts",
+      "tip": "Error handling should be specific, readable aur observable. Except Exception blindly mat use karo.",
+      "code": "import json\nfrom pathlib import Path\n\np = Path(\"profile.json\")\ndata = {\"name\": \"Ashu\", \"role\": \"AI Engineer\"}\np.write_text(json.dumps(data, indent=2), encoding=\"utf-8\")\n\nloaded = json.loads(p.read_text(encoding=\"utf-8\"))\nprint(loaded[\"role\"])"
+    },
+    {
+      "section": "s16",
+      "title": "Core Concepts",
+      "code": "def count_calls(fn):\n    calls = 0\n\n    def wrapper(*args, **kwargs):\n        nonlocal calls\n        calls += 1\n        result = fn(*args, **kwargs)\n        return result, calls\n\n    return wrapper\n\n@count_calls\ndef add(a, b):\n    return a + b\n\nprint(add(2, 3))"
+    },
+    {
+      "section": "s16",
+      "title": "Interview Depth",
+      "body": "Is page ka goal hai concept ko implementation decision tak le jana. Interviewer ko syntax se zyada reasoning, edge cases aur trade-offs dikhte hain. Har concept par 4 sawal tayyar rakho: WHAT (kya hai aur kab use karoge), WHY (kaunsi problem solve hoti hai), RISK (common bug / failure mode kya hai), TRADE-OFF (simple option aur scalable option me kya difference hai).",
+      "code": ""
+    },
+    {
+      "section": "s13",
+      "title": "Advanced topics (second pass)",
+      "body": "__str__ users ke liye readable text deta hai; __repr__ developers ke liye exact representation (debugging aur lists me). Is page ke baaki advanced topics: dataclass, isinstance() / issubclass() aur @property. Pehli reading me inhe skip karke dusre round me karo.",
+      "code": "from dataclasses import dataclass\n\n@dataclass\nclass Student:\n    name: str\n    marks: int = 0\n\ns = Student(\"Ashu\", 95)\nprint(s)\nprint(s == Student(\"Ashu\", 95))"
+    },
+    {
+      "section": "s27",
+      "title": "Core Concepts",
+      "code": "def project_answer(problem, approach, result):\n    return (f\"Problem: {problem}. \"\n            f\"Approach: {approach}. \"\n            f\"Result: {result}.\")\n\nprint(project_answer(\"manual support workflow\",\n                     \"API + webhook + validation\",\n                     \"less manual repetition and better traceability\"))"
+    }
+  ]
+}

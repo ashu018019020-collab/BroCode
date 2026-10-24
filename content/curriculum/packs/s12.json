@@ -1,0 +1,674 @@
+{
+  "section": "s12",
+  "topic": "Python Dictionaries",
+  "authored": true,
+  "intro": "Dictionary key-value pairs ka collection hai: ek key se seedha value milta hai, O(1) average. Ye Python ka sabse practical data structure hai — JSON, API responses, records, counts, config sab dictionaries hain. Is topic me do cheezein master karni hain: (1) lookup safe karna (d[key] vs d.get(key)) aur (2) dictionary ko aggregate/structure ki tarah use karna (frequency counting, grouping, nested records) — kyunki real code me dictionary aksar yahi kaam karti hai.",
+  "theory": [
+    "Dictionary mutable hai, keys unique hain, aur insertion order preserve karti hai (Python 3.7+). Key hashable hona chahiye: int, str, tuple chalti hai; list/dict/set keys nahi ban sakti (TypeError).",
+    "Lookup d[key] O(1) average hai par missing key par KeyError deta hai; d.get(key, default) missing par default (None) deta hai. Safe read ke liye get, aur 'key chahiye hi' wale code me direct [] — dono ka apna use case hai.",
+    "Iteration: for k in d → keys, d.values() → values, d.items() → (key, value) pairs. Iteration ke dauraan dict ka size badalna RuntimeError: dictionary changed size during iteration deta hai — isliye pehle list(d.items()) banao ya nayi dict compose karo.",
+    "Counting aur grouping ke liye collections.Counter aur defaultdict(list) dict ke upar built hain; defaultdict missing key par factory call karta hai, isliye 'if key not in d' boilerplate hat jata hai.",
+    "Dict comprehension {k: v for ...} ek line me transform/filter deti hai. Merge ke liye d | other (Python 3.9+) nayi dict deta hai, aur d.update(other) in-place hai — update me right side ki value jeet ti hai."
+  ],
+  "syntax": [
+    "d = {'name': 'Ahetesham', 'role': 'AI Engineer'}\nempty = {}\npairs = dict([('a', 1), ('b', 2)])\nfrom_keys = dict.fromkeys(['a', 'b'], 0)   # {'a': 0, 'b': 0}",
+    "d['role']              # KeyError if missing\nd.get('city', 'unknown')   # safe read\nd['level'] = 'beginner'     # upsert\ndel d['level']; d.pop('level', None); d.popitem()",
+    "for k, v in d.items():\n    print(k, v)\n\n{k: v * 2 for k, v in d.items() if isinstance(v, int)}\n{**d, 'extra': 1}          # copy with override\nd | {'extra': 1}           # same, Python 3.9+"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "student = {'name': 'Neha', 'marks': 88, 'course': 'AI'}\nprint(student['name'], student.get('city', 'unknown'))\nstudent['marks'] = 92\nstudent['city'] = 'Pune'\nprint(list(student.keys()))\nprint(list(student.values()))\nprint('city' in student, 'phone' in student)",
+      "output": "",
+      "explain": [
+        "student['name'] direct lookup hai — key guaranteed hai isliye KeyError ka risk nahi.",
+        "get('city', 'unknown') missing key par fallback deta hai; direct access hota to KeyError aata.",
+        "Assignment naya key add karta hai aur existing key ki value update karta hai (upsert) — dictionary mutable hai isliye ye in-place hota hai.",
+        "keys()/values() view objects dete hain jo live hain: dict badalne par view bhi badal jata hai. in operator average O(1) mein membership check karta hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "from collections import Counter, defaultdict\n\ntext = 'data is data science and data is powerful'\nfreq = Counter(text.split())\nprint(freq.most_common(3))\n\nby_len = defaultdict(list)\nfor word in set(text.split()):\n    by_len[len(word)].append(word)\nprint(dict(sorted(by_len.items())))\n\nprices = {'apple': 90, 'banana': 80, 'mango': 120}\nprint(sorted(prices.items(), key=lambda kv: kv[1]))\nprint({k: v for k, v in prices.items() if v > 85})",
+      "output": "",
+      "explain": [
+        "Counter missing key par 0 deta hai (dict me KeyError aata), isliye frequency counting one-liner ban jati hai.",
+        "defaultdict(list) me naye key par automatically empty list banti hai — 'if key not in d: d[key] = []' pattern ki zaroorat nahi.",
+        "sorted(prices.items(), key=kv[1]) value par sort karta hai; items() tuples deta hai isliye index 1 value hai.",
+        "Comprehension me filter lagakar nayi dict banti hai — original prices unchanged rehti hai."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "import json\nfrom collections import defaultdict\n\ndef deep_get(data, path, default=None):\n    current = data\n    for part in path.split('.'):\n        if not isinstance(current, dict) or part not in current:\n            return default\n        current = current[part]\n    return current\n\ndef group_by(rows, key):\n    grouped = defaultdict(list)\n    for row in rows:\n        grouped[row[key]].append(row)\n    return dict(grouped)\n\nconfig = {'db': {'host': 'localhost', 'ports': [5432, 5433]}, 'feature_flags': {'rag': True}}\nprint(deep_get(config, 'db.host'))\nprint(deep_get(config, 'db.timeout', 30))\n\nrows = [{'team': 'nlp', 'name': 'a'}, {'team': 'cv', 'name': 'b'}, {'team': 'nlp', 'name': 'c'}]\ngroups = group_by(rows, 'team')\nprint({k: len(v) for k, v in groups.items()})\nprint(json.dumps({'nlp': [r['name'] for r in groups['nlp']]}))",
+      "output": "",
+      "explain": [
+        "deep_get har level par isinstance + membership check karta hai, isliye missing path par KeyError nahi aata — config/API data ke liye yahi pattern chahiye.",
+        "Path string ko split('.') se todte hain, isliye caller ko khud nested dict banane ki zaroorat nahi padti.",
+        "group_by defaultdict(list) se ek pass me grouping karti hai; akhir me dict() me wrap karke normal dict return karte hain taaki caller ko defaultdict ki semantics na thop jayein.",
+        "json.dumps ko sirf serialisable structures do — dict/list/str/int/float; isliye yahan grouped rows se sirf names nikaal kar bhej rahe hain."
+      ]
+    }
+  ],
+  "realWorld": [
+    "API/JSON data: response parse karke keys se value nikalna, missing fields par default dena — deep_get wala pattern har integration me use hota hai.",
+    "Grouping aur reporting: SQL jaise GROUP BY ka Python version defaultdict(list) hai — team-wise, category-wise summaries yahi se banti hain.",
+    "Config management: layered config (defaults + env + file) dict merge (| ya update) se banati hai, aur environment-specific overrides asaan ho jate hain.",
+    "Frequency/counting: logs me error codes, NLP me word counts, analytics me event counts — Counter dict ka hi built-in version hai."
+  ],
+  "interview": [
+    {
+      "q": "Dictionary ki average lookup complexity kitni hai aur worst case kya hai?",
+      "a": "Average O(1) — key ka hash compute hota hai aur hash table bucket me jaata hai. Worst case O(n) hai jab bahut saare keys ka hash collide kare (adversarial input), isliye Python hash randomization use karta hai. Memory overhead O(n) hi hai.",
+      "tip": "Hash randomization ka zikr karo — ye security angle dikhata hai."
+    },
+    {
+      "q": "d[key] aur d.get(key) me kya choose karte ho?",
+      "a": "d[key] tab jab key ka hona contract ka hissa ho — missing key ek real bug hai aur turant KeyError se pata chalna chahiye (fail fast). d.get tab jab default sensible ho (optional field, counter increment, config fallback). Interview me bolna: 'get se bug chhup bhi sakta hai', isliye choice intent ke hisaab se karo.",
+      "tip": "Fail-fast vs default ka framing strong answer hai."
+    },
+    {
+      "q": "Iteration ke dauraan dict se key delete karna kyun error deta hai?",
+      "a": "Python RuntimeError: dictionary changed size during iteration raise karta hai kyunki iterator table ke size par walk kar raha hota hai aur size badalne se behaviour undefined ho jata. Solution: list(d.keys()) ka copy par iterate karo, ya comprehension se nayi dict banao.",
+      "tip": "Ye Python ka deliberate choice hai (silent corruption se better) — ye point bolna acchha lagta hai."
+    },
+    {
+      "q": "Two dictionaries merge karne ke kitne tarike hain?",
+      "a": "d1.update(d2) in-place (d2 jeetta hai), {**d1, **d2} nayi dict (same precedence), aur d1 | d2 (3.9+) nayi dict. Deep merge ke liye recursive function chahiye kyunki teenon shallow hain — nested dicts replace ho jati hain, merge nahi hoti.",
+      "tip": "Deep merge ka limitation volunteer karo — bahut se candidates yahan fasste hain."
+    },
+    {
+      "q": "Counter defaultdict aur normal dict ka relation samjhao.",
+      "a": "Dono collections module me dict ke subclasses hain. Counter missing key par 0 deta hai aur most_common/arithmetic deta hai — counting ke liye. defaultdict missing key par factory call karta hai (list/set/int) — grouping ke liye. Dono 'missing key boilerplate' hatate hain, isliye code chhota aur bug-free hota hai.",
+      "tip": "Subclass hone ka matlab: ye normal dict ki tarah har jagah chalte hain (isinstance dict True)."
+    },
+    {
+      "q": "Dictionary order par bharosa kar sakte ho?",
+      "a": "Python 3.7+ me insertion order language guarantee hai (CPython 3.6 me implementation detail thi), isliye dict iteration deterministic hai aur JSON output stable rehta hai. Par ordering ke liye sort par bharosa karo jab business rule ho — order change se output na badle.",
+      "tip": "Version history ka precision dikhao: 3.6 implementation, 3.7 guarantee."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "Dictionary se kisi key ki value safely nikaalo.",
+        "a": "get() use karo default ke saath; direct access sirf tab jab key guaranteed ho.",
+        "code": "user = {'name': 'Ali'}\nprint(user.get('city', 'not provided'))\nprint('name' in user)",
+        "output": "",
+        "commonMistake": "try/except KeyError se simple get() ko replace karna — dono run karte hain, par get intent saaf karta hai."
+      },
+      {
+        "q": "Dictionary me naya key add karo aur existing update karo.",
+        "a": "Assignment hi upsert hai: d['k'] = v naya key banata hai ya purani value badalta hai.",
+        "code": "marks = {'math': 80}\nmarks['science'] = 85\nmarks['math'] = 90\nprint(marks, len(marks))",
+        "output": ""
+      },
+      {
+        "q": "Dictionary se key delete karo aur delete ke baad check karo.",
+        "a": "pop(key, default) safe delete deta hai; del KeyError raise karta hai agar key na ho.",
+        "code": "d = {'a': 1, 'b': 2}\nprint(d.pop('a', None), d.pop('zzz', 'missing'))\nprint(d)",
+        "output": ""
+      },
+      {
+        "q": "Dictionary ke saare keys aur values ki list banao.",
+        "a": "list(d.keys()) / list(d.values()) ya list(d) — views ko list me convert karta hai.",
+        "code": "stock = {'pen': 12, 'book': 5}\nprint(list(stock), list(stock.values()))",
+        "output": "",
+        "explain": "keys()/values() view hain — list me convert na karo to print par bhi theek dikhta hai par indexing/slicing nahi milegi."
+      },
+      {
+        "q": "Dictionary se list of tuples banao aur wapas dictionary.",
+        "a": "d.items() tuples deta hai; dict(pairs) wapas dictionary banata hai.",
+        "code": "d = {'a': 1, 'b': 2}\npairs = list(d.items())\nprint(pairs, dict(pairs))",
+        "output": ""
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Text me har word ki frequency nikalo.",
+        "a": "Counter split ke result par — O(n) aur missing-key handling automatic.",
+        "code": "from collections import Counter\n\ntext = 'machine learning is a field of study and machine learning needs data'\nfreq = Counter(w.lower() for w in text.split())\nprint(freq.most_common(3))",
+        "output": ""
+      },
+      {
+        "q": "Do dictionaries merge karo jisme conflict par second jeete.",
+        "a": "d1 | d2 ya {**d1, **d2} — dono me right side ki value jeet ti hai.",
+        "code": "defaults = {'timeout': 30, 'retries': 2}\noverrides = {'timeout': 60}\nprint(defaults | overrides)\nprint({**defaults, **overrides})",
+        "output": ""
+      },
+      {
+        "q": "Dictionary ko value ke hisaab se sort karo.",
+        "a": "sorted(d.items(), key=lambda kv: kv[1]) — list of tuples sorted milti hai; dict(sorted(...)) se ordered dict.",
+        "code": "prices = {'OnePlus': 20000, 'Redmi': 12000, 'Poco': 11500, 'Samsung': 14500}\nprint(dict(sorted(prices.items(), key=lambda kv: kv[1])))",
+        "output": ""
+      },
+      {
+        "q": "List of tuples ko dictionary me convert karo (duplicate keys ke saath).",
+        "a": "Loop me assign karo — duplicate key par last value jeet ti hai; pehla rakhna ho to setdefault use karo.",
+        "code": "rows = [('OnePlus', 20000), ('Redmi', 12000), ('OnePlus', 21000)]\nlast_wins = {}\nfirst_wins = {}\nfor k, v in rows:\n    last_wins[k] = v\n    first_wins.setdefault(k, v)\nprint(last_wins, first_wins)",
+        "output": "",
+        "explain": "setdefault(key, default) sirf tab set karta hai jab key na ho — 'first wins' semantics ke liye."
+      },
+      {
+        "q": "Dictionary ki values ka sum nikalo (mixed nested values ko ignore karke).",
+        "a": "Values par filter lagao: sirf int/float (aur bool nahi) jodo.",
+        "code": "d = {'a': 120, 'b': 100, 'meta': {'x': 1}, 'flag': True, 'c': 90}\nnums = [v for v in d.values() if isinstance(v, (int, float)) and not isinstance(v, bool)]\nprint(sum(nums), len(nums))",
+        "output": "",
+        "commonMistake": "isinstance(v, bool) ko int me count karna — True == 1 hota hai, isliye bool alag se exclude karna padta hai."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Dictionary ko invert karo (values ko keys banao) aur duplicate values ko group karo.",
+        "a": "defaultdict(list) me value → [keys] mapping banao — warna duplicate values ek doosre ko overwrite kar deti hain.",
+        "code": "from collections import defaultdict\n\nmarks = {'math': 80, 'science': 80, 'english': 70}\ngrouped = defaultdict(list)\nfor subject, score in marks.items():\n    grouped[score].append(subject)\nprint(dict(sorted(grouped.items())))",
+        "output": "",
+        "tip": "Simple inversion {v: k for k, v in d.items()} duplicate values par data loss karta hai — yehi follow-up question hota hai."
+      },
+      {
+        "q": "Nested dictionary se deep value nikaalo missing path par safe rehte hue.",
+        "a": "Loop me har level par isinstance + membership check; fail hone par default return.",
+        "code": "def deep_get(data, path, default=None):\n    current = data\n    for part in path.split('.'):\n        if not isinstance(current, dict) or part not in current:\n            return default\n        current = current[part]\n    return current\n\ncfg = {'db': {'host': 'localhost'}}\nprint(deep_get(cfg, 'db.host'), deep_get(cfg, 'db.port', 5432), deep_get(cfg, 'cache.ttl'))",
+        "output": ""
+      },
+      {
+        "q": "Nested dictionary ko flatten karo (dot-path keys ke saath).",
+        "a": "Recursion ya explicit stack: dict mile to path badha kar andar jao, warna leaf set karo.",
+        "code": "def flatten(data, prefix='', out=None):\n    out = {} if out is None else out\n    for key, value in data.items():\n        path = f'{prefix}{key}'\n        if isinstance(value, dict):\n            flatten(value, path + '.', out)\n        else:\n            out[path] = value\n    return out\n\nprint(flatten({'a': 1, 'b': {'c': 2, 'd': {'e': 3}}}))",
+        "output": "",
+        "explain": "out parameter default None rakha gaya hai (mutable default argument trap se bachne ke liye) — ye classic Python gotcha hai."
+      },
+      {
+        "q": "Records ko ek key par group karo aur per-group count do.",
+        "a": "defaultdict(list) ya single pass me Counter for counts (memory kam).",
+        "code": "from collections import Counter, defaultdict\n\nrows = [{'team': 'nlp', 'name': 'a'}, {'team': 'cv', 'name': 'b'}, {'team': 'nlp', 'name': 'c'}]\ngroups = defaultdict(list)\nfor r in rows:\n    groups[r['team']].append(r['name'])\nprint(dict(groups))\nprint(Counter(r['team'] for r in rows))",
+        "output": ""
+      },
+      {
+        "q": "Dictionary ki keys ko ek naye key par rename karo bina value kho ke.",
+        "a": "pop(old, sentinel) se value nikaalo aur naye key par daalo; sentinel se pata chalta hai key thi ya nahi.",
+        "code": "d = {'user_name': 'ahetesham', 'age': 25}\nSENTINEL = object()\nvalue = d.pop('user_name', SENTINEL)\nif value is not SENTINEL:\n    d['username'] = value\nprint(d)",
+        "output": "",
+        "explain": "Sentinel object isliye ki None bhi valid value ho sakti hai — 'key thi par value None thi' case safe rahe."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview: 1 crore log lines me se top-10 error codes nikalo (memory limited).",
+        "a": "Streaming loop + Counter (ya dict) — per line code nikaalo aur count badhao. Memory unique codes ke proportional hai, total lines ke nahi. Agar unique keys bahut zyada hon to Count-Min Sketch/heavy-hitters approach bolna depth dikhata hai.",
+        "code": "from collections import Counter\n\nlines = ['E500 db timeout', 'E500 db timeout', 'E404 not found', 'E500 pool exhausted']\ncounts = Counter(line.split()[0] for line in lines)\nprint(counts.most_common(2))",
+        "output": "",
+        "tip": "'Unique keys ki ginti' par memory depend karti hai — ye clarification interviewer ko impress karta hai."
+      },
+      {
+        "q": "Interview: ek dictionary me duplicate keys aa jayein to kaunsa rakhoge?",
+        "a": "Ye data semantics ka decision hai: 'last write wins' (loop assignment, reverse iteration) ya 'first wins' (setdefault) ya 'collect all' (defaultdict(list)). Interview me pehle clarify karo, phir implementation bolna — warna galat assumption par poora answer galat ho jata hai.",
+        "tip": "Literal me duplicate key likhna silently last-wins karta hai — ye example bolo."
+      },
+      {
+        "q": "Interview: do dictionaries ka difference nikalo (keys jo pehli me hain par doosri me nahi).",
+        "a": "d1.keys() - d2.keys() set difference O(n) hai; values bhi compare karni hon to items() par comprehension. Symmetric difference ke liye ^ use karo.",
+        "code": "d1 = {'a': 1, 'b': 2, 'c': 3}\nd2 = {'b': 2, 'c': 99}\nprint(d1.keys() - d2.keys())\nprint({k: (d1[k], d2[k]) for k in d1.keys() & d2.keys() if d1[k] != d2[k]})",
+        "output": "",
+        "tip": "Keys par set operations free milti hain kyunki views set-like hain — ye Python ka strong point hai."
+      },
+      {
+        "q": "Interview: cache/rate-limit ke liye dictionary kaise use karoge?",
+        "a": "Key → value mapping with TTL timestamp: cache[key] = {'value': v, 'expires': now + ttl}; read par expiry check karke pop. Bounded size ke liye OrderedDict/dict + popitem(last=False) se LRU banao, ya simply size check karke oldest remove karo.",
+        "code": "import time\n\ncache = {}\ndef get(key, compute, ttl=60):\n    entry = cache.get(key)\n    if entry and entry['expires'] > time.time():\n        return entry['value']\n    value = compute()\n    cache[key] = {'value': value, 'expires': time.time() + ttl}\n    return value\n\ncalls = {'n': 0}\ndef compute():\n    calls['n'] += 1\n    return 'result'\nget('k', compute); get('k', compute)\nprint(calls['n'], cache['k']['value'])",
+        "output": "",
+        "tip": "Thread safety ka point add karo — plain dict concurrent writes par safe nahi hota."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "API response ko database row jaisa record banao aur missing fields default kar do.",
+        "a": "Required keys ke liye direct access, optional ke liye get — aur defaults ek schema dict me rakho.",
+        "code": "SCHEMA = {'id': None, 'name': 'unknown', 'roles': ()}\n\npayload = {'id': 7, 'name': 'Ahetesham'}\nrecord = {k: payload.get(k, default) for k, default in SCHEMA.items()}\nprint(record)",
+        "output": ""
+      },
+      {
+        "q": "Layered configuration banao (defaults < file < env).",
+        "a": "Merge precedence ke saath: defaults | file_config | env_overrides — rightmost jeetta hai.",
+        "code": "import os\n\ndef load_config(env=None):\n    env = env or {}\n    return {'retries': 2, 'timeout': 30} | {'timeout': 45} | env\n\nprint(load_config())\nprint(load_config({'timeout': 5, 'debug': True}))",
+        "output": ""
+      },
+      {
+        "q": "CSV rows ko category-wise summarize karo (count, total, average).",
+        "a": "defaultdict me rows collect karo, phir per-group aggregates nikalo — ek pass grouping.",
+        "code": "from collections import defaultdict\n\nrows = [('nlp', 120), ('cv', 80), ('nlp', 90), ('cv', 100)]\ngroups = defaultdict(list)\nfor cat, val in rows:\n    groups[cat].append(val)\nsummary = {cat: {'n': len(v), 'total': sum(v), 'avg': round(sum(v) / len(v), 1)} for cat, v in groups.items()}\nprint(summary)",
+        "output": ""
+      },
+      {
+        "q": "User input/event data me PII keys hata kar clean payload banao (allowlist approach).",
+        "a": "Allowlist se nayi dict banao — blacklist/denylist se safer kyunki naye sensitive fields automatically block ho jate hain.",
+        "code": "ALLOWED = ('event', 'user_id', 'ts')\n\ndef scrub(payload):\n    return {k: payload[k] for k in ALLOWED if k in payload}\n\nevent = {'event': 'login', 'user_id': 42, 'ts': '2026-09-24', 'password': 'secret', 'email': 'a@b.com'}\nprint(scrub(event))\nprint('password' in scrub(event))",
+        "output": "",
+        "tip": "Allowlist vs blacklist ka reasoning interview me strong signal hai."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Text me har word ki frequency nikalo aur top-3 dikhao.",
+      "build": "Function top_words(text, n) -> [(word, count)] frequency order me.",
+      "input": "'data is data science and data is powerful'",
+      "expected": "[('data', 3), ('is', 2), ('science', 1)]",
+      "hint": "Counter(text.split()) aur most_common(n); case normalize karna na bhoolo.",
+      "concept": "Counter for frequency counting",
+      "solution": "from collections import Counter\n\ndef top_words(text, n=3):\n    return Counter(w.lower() for w in text.split()).most_common(n)\n\nprint(top_words('data is data science and data is powerful'))",
+      "output": "",
+      "explanation": "Counter missing keys par 0 deta hai, isliye counting loop ki zaroorat nahi. Generator expression se lower-case conversion ek hi pass me hoti hai.",
+      "time": "O(n)",
+      "space": "O(k), k = unique words",
+      "better": "Bahut bade corpus me heapq.nlargest(n, counts.items(), key=...) se poora sort avoid karte hain.",
+      "followUp": "Agar 10 lakh unique words hon to memory kaise bachaoge? (heavy hitters / sampling)"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Dictionary me missing keys ko default value se bharo.",
+      "build": "Function with_defaults(d, schema) -> dict, sab keys guaranteed.",
+      "input": "{'name': 'Neha'}, schema={'name': '', 'age': 0, 'city': 'unknown'}",
+      "expected": "all schema keys present",
+      "hint": "Schema ke keys par iterate karo aur get(default) se value lo.",
+      "concept": "get() with defaults + schema-driven records",
+      "solution": "def with_defaults(d, schema):\n    return {key: d.get(key, default) for key, default in schema.items()}\n\nschema = {'name': '', 'age': 0, 'city': 'unknown'}\nprint(with_defaults({'name': 'Neha'}, schema))\nprint(with_defaults({}, schema))",
+      "output": "",
+      "explanation": "Schema hi single source of truth ban jati hai — API/DB records ko normalize karne ka yahi pattern hai. Extra keys ignore hote hain (allowlist behaviour).",
+      "time": "O(s), s = schema size",
+      "space": "O(s)",
+      "better": "Validation ke saath chahiye to same loop me type check add karo, ya dataclasses/Pydantic jaisa schema object banao.",
+      "followUp": "Extra keys ko bhi rakhna ho to code kaise badalega?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Invert a dictionary so values become keys, grouping duplicates.",
+      "build": "Function invert_grouped(d) -> dict value -> sorted list of keys.",
+      "input": "{'math': 80, 'science': 80, 'english': 70}",
+      "expected": "{70: ['english'], 80: ['math', 'science']}",
+      "hint": "defaultdict(list); phir lists sort karo taki output deterministic rahe.",
+      "concept": "defaultdict grouping",
+      "solution": "from collections import defaultdict\n\ndef invert_grouped(d):\n    grouped = defaultdict(list)\n    for key, value in d.items():\n        grouped[value].append(key)\n    return {value: sorted(keys) for value, keys in sorted(grouped.items())}\n\nprint(invert_grouped({'math': 80, 'science': 80, 'english': 70}))",
+      "output": "",
+      "explanation": "Simple inversion duplicate values par data loss karta hai; defaultdict grouping se sab keys bachti hain. Sorting se output deterministic hota hai — tests stable rahte hain.",
+      "time": "O(n log n) worst case (sorting groups)",
+      "space": "O(n)",
+      "better": "Order matter na kare to group sort chhod do — O(n) ho jata hai.",
+      "followUp": "Values unhashable hon (list) to kaise invert karoge?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Two-level nested dictionary ko dot-path keys me flatten karo.",
+      "build": "Function flatten(data, prefix='') -> {'a.b.c': value} mapping.",
+      "input": "{'a': 1, 'b': {'c': 2, 'd': {'e': 3}}}",
+      "expected": "{'a': 1, 'b.c': 2, 'b.d.e': 3}",
+      "hint": "Recursion with prefix string; mutable default argument se bacho.",
+      "concept": "Recursion over dicts + defensive default handling",
+      "solution": "def flatten(data, prefix='', out=None):\n    out = {} if out is None else out\n    for key, value in data.items():\n        path = f'{prefix}{key}'\n        if isinstance(value, dict):\n            flatten(value, path + '.', out)\n        else:\n            out[path] = value\n    return out\n\nprint(flatten({'a': 1, 'b': {'c': 2, 'd': {'e': 3}}}))\nprint(flatten({}))",
+      "output": "",
+      "explanation": "out=None default isliye ki mutable default (out={}) sab calls me share ho jata — classic Python trap. isinstance check recursion ka base case banata hai. Empty dict par khaali dict return hoti hai, crash nahi.",
+      "time": "O(total keys)",
+      "space": "O(depth) recursion + O(total keys) output",
+      "better": "Bahut deep data par explicit stack use karo taki recursion limit na toote.",
+      "followUp": "Flatten ka ulta (unflatten) kaise likhoge? (path.split('.'))"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Dictionary ka diff nikalo: added, removed aur changed keys.",
+      "build": "Function diff(a, b) -> {'added': {...}, 'removed': {...}, 'changed': {...}}.",
+      "input": "{'x': 1, 'y': 2} aur {'x': 1, 'y': 5, 'z': 3}",
+      "expected": "added {'z': 3}, removed {}, changed {'y': (2, 5)}",
+      "hint": "Set operations on .keys() — donon taraf ka difference aur common keys ka value compare.",
+      "concept": "Dict views as sets + value comparison",
+      "solution": "def diff(a, b):\n    return {\n        'added': {k: b[k] for k in b.keys() - a.keys()},\n        'removed': {k: a[k] for k in a.keys() - b.keys()},\n        'changed': {k: (a[k], b[k]) for k in a.keys() & b.keys() if a[k] != b[k]},\n    }\n\nprint(diff({'x': 1, 'y': 2}, {'x': 1, 'y': 5, 'z': 3}))",
+      "output": "",
+      "explanation": "keys() views set-like hain, isliye - aur & operators bina list conversion ke chalte hain — O(n) total. Changed me tuple (old, new) return karte hain taki direction clear rahe.",
+      "time": "O(n + m)",
+      "space": "O(differences)",
+      "better": "Config drift detection me nested diff chahiye to recurse karo jab dono values dict hon.",
+      "followUp": "Ye diff deployment/rollback me kaise use hoga?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Bounded LRU cache dictionary se implement karo (capacity ke saath).",
+      "build": "Class LRUCache(capacity) with get(key) and put(key, value) in O(1).",
+      "input": "capacity=2, put(1,1), put(2,2), get(1), put(3,3) → 2 evicted",
+      "expected": "get(2) → -1 (evicted), get(3) → 3",
+      "hint": "OrderedDict ya plain dict (insertion ordered) + move_to_end / pop + re-insert.",
+      "concept": "Dict ordering as LRU mechanism",
+      "solution": "from collections import OrderedDict\n\nclass LRUCache:\n    def __init__(self, capacity):\n        self.cap = capacity\n        self.data = OrderedDict()\n\n    def get(self, key):\n        if key not in self.data:\n            return -1\n        self.data.move_to_end(key)\n        return self.data[key]\n\n    def put(self, key, value):\n        if key in self.data:\n            self.data.move_to_end(key)\n        self.data[key] = value\n        if len(self.data) > self.cap:\n            self.data.popitem(last=False)\n\n\ncache = LRUCache(2)\ncache.put(1, 1)\ncache.put(2, 2)\nprint(cache.get(1))\ncache.put(3, 3)\nprint(cache.get(2), cache.get(3), list(cache.data.items()))",
+      "output": "",
+      "explanation": "Python 3.7+ me dict insertion-ordered hai, isliye OrderedDict.move_to_end se 'recently used' order maintain karna aasan hai: access par key ko end me le jao aur capacity cross hone par sabse purani (first) key hata do. Dono operations O(1).",
+      "time": "O(1) amortised per operation",
+      "space": "O(capacity)",
+      "better": "Production me functools.lru_cache use karo (C implementation, thread-safe lock ke saath); interview me implementation likhwana common hai.",
+      "followUp": "TTL ke saath LRU kaise combine karoge, aur expiry check lazy kyun rakhte hain?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Nested records ko ek path se safely update karo (immutable style).",
+      "build": "Function set_path(data, path, value) -> nayi dict (original unchanged).",
+      "input": "set_path({'db': {'host': 'a'}}, 'db.port', 5432)",
+      "expected": "{'db': {'host': 'a', 'port': 5432}} with original unchanged",
+      "hint": "Recursion me dict copy karo; list me nahi badalna hai.",
+      "concept": "Immutable update patterns + recursion",
+      "solution": "def set_path(data, path, value):\n    key, *rest = path.split('.')\n    if not rest:\n        return {**data, key: value}\n    child = data.get(key)\n    if not isinstance(child, dict):\n        child = {}\n    return {**data, key: set_path(child, '.'.join(rest), value)}\n\noriginal = {'db': {'host': 'a'}, 'debug': False}\nupdated = set_path(original, 'db.port', 5432)\nupdated2 = set_path(updated, 'cache.ttl', 60)\nprint(updated, updated2)\nprint(original)",
+      "output": "",
+      "explanation": "Har level par {**data, key: ...} se nayi dict banti hai, isliye original structure untouched rehta hai — ye functional-update style hai (Redux/immutable config libraries isi tarah kaam karti hain). Missing intermediate keys automatically banti hain.",
+      "time": "O(depth)",
+      "space": "O(depth) new dicts",
+      "better": "Deep structures par struct copy path ko cache karo; ya flat dot-path storage rakho aur ek hi dict copy karo.",
+      "followUp": "Kya isse concurrent readers ke liye safe config update milta hai?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "user = {'name': 'Ali'}\nprint(user['city'])",
+      "error": "KeyError: 'city'",
+      "why": "Direct [] access missing key par KeyError raise karta hai — ye fail-fast behaviour hai, None return karne se bug chhup jate.",
+      "fix": "Optional key ke liye get(key, default) use karo; ya key ka hona contract hai to explicit check + clear error do.",
+      "correct": "user = {'name': 'Ali'}\nprint(user.get('city', 'unknown'))\nif 'name' not in user:\n    raise ValueError('user record me name zaroori hai')\nprint(user['name'])",
+      "output": "",
+      "lesson": "Default kab dena hai aur crash kab karna hai — ye code ki intent decide karti hai, habit nahi."
+    },
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "matrix = {}\nkey = [1, 2]\nmatrix[key] = 'value'\nprint(matrix)",
+      "error": "TypeError: unhashable type: 'list'",
+      "why": "Dictionary key ko hashable hona chahiye. List mutable hai isliye hash nahi hoti — warna key badalne se lookup table corrupt ho jati.",
+      "fix": "List ki jagah tuple use karo (immutable), ya key string me convert karo.",
+      "correct": "matrix = {}\nmatrix[(1, 2)] = 'value'\nmatrix['1,2'] = 'string-key value'\nprint(matrix)",
+      "output": "",
+      "lesson": "\"Unhashable\" ka matlab hai mutable type key ki tarah use ho raha hai — tuple/str/frozenset keys safe hain."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "counts = {'a': 1, 'b': 2, 'c': 3}\nfor key in counts:\n    if counts[key] < 2:\n        del counts[key]\nprint(counts)",
+      "error": "RuntimeError: dictionary changed size during iteration",
+      "why": "Iterator table ke size par chalta hai; iteration ke beech key delete karne se size badal jata hai, isliye Python turant error deta hai (silently corrupt karne ki jagah).",
+      "fix": "Pehle keys ki list banao (list(counts)) ya nayi dict comprehension se rebuild karo.",
+      "correct": "counts = {'a': 1, 'b': 2, 'c': 3}\nfor key in list(counts):\n    if counts[key] < 2:\n        del counts[key]\nprint(counts)\nprint({k: v for k, v in {'a': 1, 'b': 2}.items() if v >= 2})",
+      "output": "",
+      "lesson": "Mutate-while-iterate har collection me khatarnak hai; dict me Python error deta hai jabki list me silently skip hota hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "scores = {'pen': 100, 'book': 99, 'bag': 150}\nfor name, score in scores.items():\n    if score >= 100:\n        print('above target:', name)",
+      "error": "Logic error: inclusive/eksclusive threshold galat — 100 wala item bhi aa gaya",
+      "why": "Requirement 'target se upar' thi (strictly above), par code me >= likha gaya. Koi exception nahi aata — output galat hota hai, isliye ye silent logic bug hai.",
+      "fix": "Boundary ki language check karo: 'se upar' = >, 'se upar ya barabar' = >=. Requirement ke words se operator likho.",
+      "correct": "scores = {'pen': 100, 'book': 99, 'bag': 150}\nabove = {name: score for name, score in scores.items() if score > 100}\nprint(above)\nprint('at target:', [n for n, s in scores.items() if s == 100])",
+      "output": "",
+      "lesson": "Threshold bugs silently galat report dete hain; boundary values (99/100/101) ke saath test likhna hi inhe pakadta hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "rows = [('a', 1), ('b', 2), ('a', 3)]\nregistry = {}\nfor key, value in rows:\n    registry[key] = value\nprint(registry)",
+      "error": "Logic error: 'a' ki pehli value gum ho gayi (last-write-wins chup-chaap hua)",
+      "why": "Duplicate keys hone par assignment purani value ko overwrite kar deta hai — koi error nahi aata, data loss silent hota hai. 'Pehli value valid hai' wale business rule me ye galat hai.",
+      "fix": "Semantics pehle decide karo: first-wins ke liye setdefault, all-values ke liye defaultdict(list), ya duplicate detect karke report karo.",
+      "correct": "from collections import defaultdict\n\nrows = [('a', 1), ('b', 2), ('a', 3)]\nfirst_wins, all_values = {}, defaultdict(list)\nfor key, value in rows:\n    first_wins.setdefault(key, value)\n    all_values[key].append(value)\nprint(first_wins)\nprint(dict(all_values))\nprint(sorted(set(k for k, _ in rows) - set(first_wins.keys())))",
+      "output": "",
+      "lesson": "Duplicate keys ka handling business rule hai — code likhne se pehle 'first, last, ya sab' decide karo aur uske hisaab se structure chuno."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Ek dictionary se sirf woh entries print karo jinki value 100 se badi hai — comprehension se.",
+      "hint": "{k: v for k, v in d.items() if v > 100}",
+      "deliverable": "Ek line ka snippet."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Word frequency counter banao jo stop words hata kar top-5 de aur total unique words count kare.",
+      "hint": "Counter + stop-word set; unique count len(freq) se.",
+      "deliverable": "Function + sample output."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Do nested configs ka deep diff tool banao (added/removed/changed dot-paths ke saath).",
+      "hint": "flatten() se dot-path dict banao, phir keys par set operations.",
+      "deliverable": "Script + nested example output."
+    },
+    {
+      "kind": "interview",
+      "minutes": 35,
+      "prompt": "Interview: 1 crore events me per-user last-seen timestamp nikaalo, memory limit ke saath.",
+      "hint": "Streaming loop + dict user → timestamp; memory unique users par depend karti hai.",
+      "deliverable": "Design answer + working snippet + memory reasoning."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Ek mini 'config manager' banao jo defaults, JSON file aur environment se layered config build kare aur validate kare.",
+      "hint": "Merge precedence right-to-left; unknown keys par warning.",
+      "deliverable": "Working script + README points (precedence, validation rules)."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Grade Calculator (Version 1)",
+      "problem": "Learners ko dictionary ka pehla practical use chahiye: subject → marks ka record, aur usse aggregate report.",
+      "objective": "Ek program jo subjects ke marks dictionary se total, average, grade aur topper subject nikaale.",
+      "features": [
+        "Subject-wise marks record",
+        "Total, average aur grade calculation",
+        "Highest aur lowest subject",
+        "Empty dictionary par friendly message"
+      ],
+      "concepts": ["Dictionary as record", "items() iteration", "max/min with key", "Aggregates with sum/len"],
+      "structure": "grade_calculator/\n└── grades.py        # marks + report",
+      "steps": [
+        "Marks ko dict me store karo (subject → score).",
+        "total/average nikalo aur grade function se letter grade do.",
+        "Topper subject max(d.items(), key=lambda kv: kv[1]) se nikaalo.",
+        "Khali dict aur single subject cases test karo."
+      ],
+      "code": "def grade_for(avg):\n    if avg >= 90:\n        return 'A'\n    if avg >= 75:\n        return 'B'\n    if avg >= 60:\n        return 'C'\n    if avg >= 40:\n        return 'D'\n    return 'F'\n\n\ndef report(marks):\n    if not marks:\n        return 'Koi marks nahi diye gaye.'\n    total = sum(marks.values())\n    avg = total / len(marks)\n    top = max(marks.items(), key=lambda kv: kv[1])\n    low = min(marks.items(), key=lambda kv: kv[1])\n    return (f'total={total} avg={avg:.1f} grade={grade_for(avg)}\\n'\n            f'best: {top[0]} ({top[1]}) · weakest: {low[0]} ({low[1]})')\n\n\nprint(report({'math': 92, 'science': 88, 'english': 95}))\nprint(report({}))",
+      "output": "",
+      "explanation": "marks.values() par sum chalana ek line me total deta hai bina loop ke. max/min me key function items() tuple ka second element (score) leta hai, isliye subject + score dono mil jate hain — sirf score nahi, jo debugging me helpful hai. Khaali dict ka guard division-by-zero se bachata hai.",
+      "testing": "Khali dict, ek subject, aur equal marks (tie par min/max deterministic hona chahiye) — teenon test karo.",
+      "errors": "Non-numeric marks par sum() TypeError dega; report me type check add karna next version ka task rakho.",
+      "improvements": [
+        "Marks ko file ya input se lo aur validation add karo (0–100 range)",
+        "Subject weights (credits) support karo, weighted average se",
+        "Report ko CSV/JSON export karo"
+      ],
+      "advanced": [
+        "JSON persistence (save/load marks) with atomic write",
+        "argparse CLI (--file, --format json)",
+        "pytest tests covering grade boundaries (89.9 vs 90)",
+        "Logging + error handling for corrupt files"
+      ],
+      "realWorld": "Result processing sheets aur performance scorecards — subject/category wise marks ka aggregation exactly yahi shape hai.",
+      "interview": [
+        { "q": "Topper nikalne ke liye max(marks, key=marks.get) se kya farq padta hai?", "a": "max(d.items(), key=lambda kv: kv[1]) subject aur score dono deta hai, jabki max(d, key=d.get) sirf key (subject) deta hai aur value dobara lookup karni padti hai. Dono O(n) hain." },
+        { "q": "Grade boundaries ko function me kyun rakha?", "a": "Boundaries ek jagah collect rehti hain, isliye rule change par ek hi jagah edit karna padta hai — aur boundary tests (89.9 vs 90) likhna aasan hota hai." },
+        { "q": "Empty dictionary par kya hota hai?", "a": "Early return se friendly message milta hai; warna average me ZeroDivisionError aata." }
+      ],
+      "resume": "Built a Python grade calculator using dictionary records with aggregate reporting and boundary-tested grade logic.",
+      "readme": [
+        "Sample output",
+        "Grade boundary table",
+        "How to extend with subject weights"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Log Analyzer (Version 2)",
+      "problem": "Version 1 ek record ka report deta hai. Real logs me hazaaron lines hoti hain aur unse per-level counts, top error codes aur slowest endpoints nikalne padte hain — dict-based aggregation ka asli use case.",
+      "objective": "Ek analyzer banao jo log lines parse kare, level-wise aur endpoint-wise group kare, error rates nikale aur invalid lines report kare.",
+      "features": [
+        "Log line parsing with tolerance for malformed lines",
+        "Level-wise counts (INFO/WARN/ERROR)",
+        "Endpoint-wise latency aggregation (count, avg, max)",
+        "Top error messages",
+        "Bad-line reporting with line numbers",
+        "Reusable module split: parse vs aggregate"
+      ],
+      "concepts": ["String parsing into dicts", "defaultdict grouping", "Counter for frequency", "Aggregation math with dicts"],
+      "structure": "log_analyzer/\n├── parser.py      # line → record\n├── aggregate.py   # counts, latency stats\n└── main.py        # sample run",
+      "steps": [
+        "parse_line() likho jo 'ts LEVEL endpoint ms' se dict banaye; invalid par None.",
+        "aggregate me per-level Counter aur per-endpoint latency list banao.",
+        "Invalid lines ko line number ke saath collect karo.",
+        "main.py se sample logs chalao aur summary print karo."
+      ],
+      "code": "from collections import Counter, defaultdict\n\ndef parse_line(line):\n    parts = line.split()\n    if len(parts) != 4:\n        return None\n    ts, level, endpoint, ms = parts\n    if level not in ('INFO', 'WARN', 'ERROR'):\n        return None\n    try:\n        return {'ts': ts, 'level': level, 'endpoint': endpoint, 'ms': float(ms)}\n    except ValueError:\n        return None\n\n\ndef analyze(lines):\n    levels = Counter()\n    latency = defaultdict(list)\n    errors = Counter()\n    bad = []\n    for i, line in enumerate(lines, 1):\n        record = parse_line(line)\n        if record is None:\n            bad.append(i)\n            continue\n        levels[record['level']] += 1\n        latency[record['endpoint']].append(record['ms'])\n        if record['level'] == 'ERROR':\n            errors[record['endpoint']] += 1\n    stats = {\n        endpoint: {\n            'n': len(values),\n            'avg_ms': round(sum(values) / len(values), 1),\n            'max_ms': max(values),\n        } for endpoint, values in latency.items()\n    }\n    return {'levels': dict(levels), 'endpoints': stats, 'error_codes': errors.most_common(2), 'bad_lines': bad}\n\n\nlines = [\n    '2026-09-24 INFO /health 12',\n    '2026-09-24 ERROR /predict 850',\n    'garbage-line',\n    '2026-09-24 ERROR /predict 920',\n    '2026-09-24 INFO /predict 140',\n]\nresult = analyze(lines)\nprint(result['levels'], result['bad_lines'])\nprint(result['endpoints']['/predict'])\nprint(result['error_codes'])\nprint(analyze([])['levels'])",
+      "output": "",
+      "explanation": "parse_line ek hi jagah validation karta hai aur None deta hai (silent skip nahi, caller decide karta hai) — isliye malformed lines line numbers ke saath report hoti hain. defaultdict(list) se endpoint grouping ke liye 'if key not in' boilerplate nahi likhna padta. Endpoint stats ek comprehension me banti hain (count/avg/max), isliye ek hi pass me sab aggregates mil jate hain. Empty input par khali structures return hote hain, crash nahi.",
+      "testing": "Malformed line, non-numeric latency, unknown level, empty input, aur single-endpoint input ke tests likho. avg rounding ka bhi test rakho.",
+      "errors": "float conversion ValueError pakadta hai; extra/missing columns par None; unknown level reject hota hai — teenon deliberate hain aur bad-lines list me report hote hain.",
+      "improvements": [
+        "Streaming file reader (line by line) add karo, poori file memory me na lo",
+        "Percentiles (p95/p99) calculate karo sorted latency se",
+        "JSON export + alerting threshold (error rate > X%) add karo"
+      ],
+      "advanced": [
+        "Time-bucketed aggregation (per-minute rates) for dashboards",
+        "Config-driven parsing (regex/format string) taki dusre log formats support hon",
+        "Structured logging + CI with pytest coverage gate",
+        "CLI tool (argparse) with --file, --top, --json flags"
+      ],
+      "realWorld": "API observability: latency percentiles aur error-rate by endpoint wahi metrics hain jo production dashboards/on-call playbooks me use hote hain.",
+      "interview": [
+        { "q": "Poora file memory me load karna kyun problem hai?", "a": "Production logs GB me hote hain — isliye line-by-line streaming chahiye; aggregation state (counts, sums, max) chhota hota hai, raw lines nahi rakhni padti." },
+        { "q": "Average latency enough kyun nahi hai?", "a": "Average outliers se distort hota hai; p95/p99 tail latency batate hain jo users ko actually feel hoti hai — isliye percentiles 'improvements' me hain." },
+        { "q": "Malformed lines handle karne ka sahi tarika kya hai?", "a": "Reject karo par count/record karo (line number ke saath) — silently ignore karna data quality issue chhupata hai, aur crash karna ek kharab line se poora analysis rok deta hai." }
+      ],
+      "resume": "Built a streaming log analyzer that groups by level and endpoint, reports latency stats and error frequency, and surfaces malformed lines with line numbers.",
+      "readme": [
+        "Log format specification + example",
+        "Sample summary output",
+        "Extension points: percentiles, streaming, config-driven parsing"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "JSON-Backed Config Service (Version 4)",
+      "problem": "Application config production me layered hoti hai aur galti se corrupt likhne par service down ho jati hai. Dictionary-based config ko deep-merge, validate, version aur audit karna padta hai.",
+      "objective": "Ek config service banao jo defaults + file + env se layered config build kare, deep merge kare, schema validate kare, atomic JSON persist kare aur drift diff report kare.",
+      "features": [
+        "Layered merge with explicit precedence (defaults < file < env)",
+        "Deep merge for nested dicts (shallow replace nahi)",
+        "Schema validation with clear dotted-path errors",
+        "Atomic JSON persistence + corrupt-file recovery",
+        "Diff between two config versions (added/removed/changed)",
+        "Sanitized snapshot for logging (secrets masked)"
+      ],
+      "concepts": ["Recursive deep merge", "dot-path validation and diff", "Atomic file write", "Allowlist-based masking", "Pure functions for testability"],
+      "structure": "config_service/\n├── merge.py      # deep_merge + flatten/diff\n├── schema.py     # validation rules\n├── store.py      # atomic save/load\n└── main.py       # demonstration run",
+      "steps": [
+        "deep_merge(base, override) recursive likho (dict me recurse, warna override jeete).",
+        "flatten() aur diff() add karo dot-path comparison ke liye.",
+        "schema validate likho jo missing/typed fields par dotted path error de.",
+        "store save/load atomic banao; main me layering + drift diff dikhao."
+      ],
+      "code": "import json, os, tempfile\nfrom collections import defaultdict\n\ndef deep_merge(base, override):\n    merged = dict(base)\n    for key, value in override.items():\n        if isinstance(value, dict) and isinstance(merged.get(key), dict):\n            merged[key] = deep_merge(merged[key], value)\n        else:\n            merged[key] = value\n    return merged\n\n\ndef flatten(data, prefix=''):\n    out = {}\n    for key, value in data.items():\n        path = f'{prefix}{key}'\n        if isinstance(value, dict):\n            out.update(flatten(value, path + '.'))\n        else:\n            out[path] = value\n    return out\n\n\ndef diff(a, b):\n    fa, fb = flatten(a), flatten(b)\n    return {\n        'added': {k: fb[k] for k in fb.keys() - fa.keys()},\n        'removed': {k: fa[k] for k in fa.keys() - fb.keys()},\n        'changed': {k: (fa[k], fb[k]) for k in fa.keys() & fb.keys() if fa[k] != fb[k]},\n    }\n\n\ndef validate(config, required):\n    problems = []\n    for path, type_name in required.items():\n        node = config\n        for part in path.split('.'):\n            if not isinstance(node, dict) or part not in node:\n                problems.append(f'missing: {path}')\n                node = None\n                break\n            node = node[part]\n        if node is not None and type(node).__name__ != type_name:\n            problems.append(f'{path} should be {type_name}, got {type(node).__name__}')\n    return problems\n\n\ndef mask(config, secret_keys=('password', 'token', 'secret')):\n    def walk(node):\n        if isinstance(node, dict):\n            return {k: ('***' if any(s in k.lower() for s in secret_keys) else walk(v)) for k, v in node.items()}\n        return node\n    return walk(config)\n\n\ndef save(config, path):\n    directory = os.path.dirname(path) or '.'\n    fd, tmp = tempfile.mkstemp(dir=directory, suffix='.tmp')\n    try:\n        with os.fdopen(fd, 'w') as f:\n            json.dump(config, f, indent=2, sort_keys=True)\n        os.replace(tmp, path)\n    finally:\n        if os.path.exists(tmp):\n            os.remove(tmp)\n    return path\n\n\ndef load(path):\n    if not os.path.exists(path):\n        return {}\n    try:\n        with open(path) as f:\n            return json.load(f)\n    except json.JSONDecodeError:\n        os.replace(path, path + '.corrupt')\n        return {}\n\n\ndefs = {'db': {'host': 'localhost', 'port': 5432}, 'cache': {'ttl': 60}, 'api': {'password': 's3cr3t'}}\nfile_layer = {'db': {'port': 5433}, 'cache': {'ttl': 120, 'size': 500}}\nenv_layer = {'db': {'host': 'db.internal'}}\n\nconfig = deep_merge(deep_merge(defs, file_layer), env_layer)\nprint(json.dumps(config['db']))\nprint(validate(config, {'db.host': 'str', 'db.port': 'int', 'cache.ttl': 'int'}))\nprint(mask(config)['api'])\nprint(diff(defs, config)['changed'])\npath = os.path.join(tempfile.gettempdir(), 'config_demo.json')\nprint(save(config, path))\nprint(load(path)['cache'])",
+      "output": "",
+      "explanation": "deep_merge recursion sirf tab recurse karta hai jab dono taraf dict ho — warna override replace karta hai, isliye nested partial overrides sahi kaam karte hain (shallow {**a, **b} nested keys ko poora replace kar deta hai). flatten + diff dot-path comparison dete hain, jisse config drift log/PR me readable hota hai. validate dotted paths par type report karta hai — errors machine-readable hain. mask allowlist-style secret detection se logging-safe snapshot deta hai. save atomic hai (temp + replace) aur load corrupt JSON par backup rakh kar empty deta hai, isliye ek kharab file service ko down nahi karti.",
+      "testing": "deep_merge ke nested override cases, diff ka changed/added/removed, validation ke missing + wrong-type paths, masking (nested secret), aur corrupt file recovery — sab pytest me cover karo.",
+      "errors": "JsonDecodeError recovery (backup + empty), validation problems list (caller decide kare fail karna hai ya warning), aur atomic write failures clean-up ke saath — sab explicit hain.",
+      "improvements": [
+        "Environment variable expansion inside config values (${VAR})",
+        "Schema version field + migration function for old configs",
+        "Watch/reload on file change with debounce"
+      ],
+      "advanced": [
+        "Secrets via secret manager/encrypted file, not plain JSON",
+        "Structured audit log of config changes (who/when/diff)",
+        "pytest + CI, plus property-based tests for deep_merge idempotency",
+        "Dockerised service with README (config precedence, failure playbook)"
+      ],
+      "realWorld": "Application config layering (defaults → file → env → secrets), feature-flag management aur deployment drift detection — yehi design har production service me hota hai.",
+      "interview": [
+        { "q": "Shallow merge se nested config kaise toot jati hai?", "a": "Shallow merge {**a, **b} me nested dict poora replace hoti hai, isliye b me sirf ek key dena bhi a ke baaki keys hata deta hai. Deep merge se sirf wahi keys override hoti hain jo caller ne di." },
+        { "q": "Config ko validate kyu karna zaroori hai, defaults kaafi nahi?", "a": "Env/file se aaya data untrusted hai: 'port': '5432' (string) ya missing key runtime crash karta hai. Startup par validate karke fail karna cheap hai, baad me request ke beech crash karna mehnga." },
+        { "q": "Logging ke liye masking kaise karo aur kyun?", "a": "Keys ke naam par allowlist/denylist match se '***' lagao — plaintext secrets logs me chale jayein to compliance breach hota hai aur log aggregation systems unhe permanently store kar lete hain." },
+        { "q": "Atomic write aur reload race ka solution kya hai?", "a": "os.replace atomic hai isliye readers ko poora file dikhta hai; reader ko bhi ek hi baar load karke immutable object use karna chahiye. Multi-process consistency chahiye to file lock ya central config service (etcd/Consul) le lo." }
+      ],
+      "resume": "Engineered a layered configuration service in Python with recursive deep merge, dotted-path validation and diffing, secret masking and atomic JSON persistence with corrupt-file recovery.",
+      "readme": [
+        "Precedence order diagram (defaults → file → env)",
+        "Validation error examples",
+        "Failure semantics: corrupt file recovery + atomic write",
+        "Roadmap: env expansion, schema migration, secret store"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      "Grade Calculator me items() par max/min kyun use kiya, keys ya values par kyun nahi?",
+      "Log analyzer me defaultdict(list) ne kaunsa boilerplate bachaya?",
+      "Config service me deep merge shallow merge se kaise alag hai?",
+      "Masking ke liye allowlist approach kyun safer hai?"
+    ],
+    "coding": [
+      "Grade calculator me subject-wise rank add karo.",
+      "Log analyzer me p95 latency calculate karo.",
+      "Config service me ${VAR} environment expansion add karo.",
+      "Config diff ko CLI command banao jo do files compare kare."
+    ],
+    "advanced": [
+      "Log analyzer ko streaming mode me convert karo (line-by-line file read).",
+      "Config validation ko dataclass/Pydantic schema se replace karo aur compare karo.",
+      "Bade configs ke liye diff ko path-wise sort karke deterministic output do.",
+      "Memory profile karo: 10 lakh log lines par analyzer ka peak memory measure karo."
+    ],
+    "interview": [
+      "Is project ko production me kaise scale karoge?",
+      "Aggregation ki time complexity kya hai?",
+      "Memory usage kaise reduce karoge jab input bahut bada ho?",
+      "Konsi error cases abhi handle nahi hoti?",
+      "Config service ko API me kaise convert karoge?"
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Live coding: text me duplicate words nikalo aur unki count report karo.",
+      "a": "Counter(words) se counts lo aur {w: n for w, n in counts.items() if n > 1} se filter karo — O(n). Order matter kare to first-seen order preserve karne ke liye dict comprehension ki jagah iteration order use karo.",
+      "deliverable": "Function + 2 test cases."
+    },
+    {
+      "q": "Interview: kya dictionary ka iteration order deterministic hai? Production me isse kaise use karoge?",
+      "a": "Python 3.7+ me insertion order guaranteed hai, isliye JSON/config output deterministic likha ja sakta hai. Par business ordering chahiye to explicit sort karo — order guarantee language ka hai, business rule ka nahi.",
+      "deliverable": "Explanation + snippet jisme explicit sort dikhe."
+    },
+    {
+      "q": "Practical: API payload se PII hata kar logging-safe dict banao.",
+      "a": "Allowlist approach: sirf allowed keys copy karo; secrets ke liye masking ('***'). Nested payload me recursive walk karo. Denylist avoid karo kyunki naye sensitive fields silently leak ho jate hain.",
+      "deliverable": "Scrub function + nested example."
+    },
+    {
+      "q": "Interview: ek dictionary me d1 | d2 vs d1.update(d2) — kya farq hai aur kaunsa kab?",
+      "a": "| nayi dict deta hai (originals untouched), update in-place mutate karta hai aur None return karta hai. Functional/immutable flow me |, hot-path me update (allocation bachti hai). Dono me right side ki value jeet ti hai.",
+      "deliverable": "Dono versions + precedence test."
+    },
+    {
+      "q": "Design task: per-user request count rate limiter dictionary se banao (window ke saath).",
+      "a": "dict user → deque of timestamps; request par purane timestamps window se bahar hatado, phir len check karo. Memory bounded rakhne ke liye stale keys periodic cleanup se hatao (ya OrderedDict-based LRU).",
+      "deliverable": "Step-by-step design + complexity + cleanup strategy."
+    }
+  ],
+  "revision": [
+    "Dictionary mutable, keys unique aur hashable — insertion order 3.7+ me guaranteed.",
+    "d[key] KeyError deta hai (fail fast), get(key, default) safe read; choice intent ke hisaab se.",
+    "Iteration me keys/values/items views; size badalna iteration ke dauraan RuntimeError deta hai.",
+    "Counter counting ke liye, defaultdict grouping ke liye — missing-key boilerplate dono hatate hain.",
+    "Merge: update in-place, {**a, **b} / a | b nayi dict; teenon shallow hain (deep merge recursion chahiye).",
+    "0 falsy hai — numeric threshold par truthiness check kabhi mat likho.",
+    "Duplicate keys par semantics (first/last/all) pehle decide karo, phir setdefault/defaultdict chuno."
+  ]
+}

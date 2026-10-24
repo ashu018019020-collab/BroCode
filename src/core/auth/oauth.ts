@@ -1,0 +1,93 @@
+/**
+ * Supabase OAuth return path — pure parsing only, so the redirect contract is testable without a
+ * browser or a provider. The browser half lives in `client.ts`/`AuthProvider.tsx`.
+ *
+ * A PKCE sign-in returns `?code=…`, which `@supabase/supabase-js` exchanges for a session and
+ * removes from the URL itself. A provider that fails or is cancelled returns
+ * `?error=…&error_description=…` instead, which the library ignores — that one is ours to read,
+ * show, and clean up.
+ */
+
+import { EXPIRED_LINK_COPY } from './messages';
+
+export type OAuthProvider = 'github' | 'google';
+
+export interface OAuthCallback {
+  code: string | null;
+  error: string | null;
+  /** Supabase's structured reason: `otp_expired` is a spent/expired link, not a refusal. */
+  errorCode: string | null;
+  errorDescription: string | null;
+}
+
+/** One-shot parameters added by Supabase or the provider; a reload must not replay them. */
+const OAUTH_PARAMS = ['code', 'state', 'error', 'error_code', 'error_description'];
+
+/** Which of the two provider buttons this Supabase project can actually complete. */
+export type ProviderAvailability = Record<OAuthProvider, boolean>;
+
+/**
+ * Read `GET /auth/v1/settings` — the project's own answer for which external providers are ON.
+ *
+ * A provider the project has not configured is a button that can only fail (this project ships
+ * email-only, so both are off), and offering it is worse than not offering it. The caller is told
+ * the difference between "no providers" and "could not find out": an unreadable or unexpected
+ * payload returns `null`, i.e. UNKNOWN, and the form then keeps its buttons rather than hiding a
+ * provider that works.
+ */
+export function enabledProviders(settings: unknown): ProviderAvailability | null {
+  if (!settings || typeof settings !== 'object') return null;
+  const external = (settings as { external?: unknown }).external;
+  if (!external || typeof external !== 'object') return null;
+  const record = external as Record<string, unknown>;
+  return { github: record.github === true, google: record.google === true };
+}
+
+function param(search: string, key: string): string | null {
+  const value = new URLSearchParams(search).get(key);
+  return value && value.trim() ? value : null;
+}
+
+export function readOAuthCallback(search: string): OAuthCallback {
+  return {
+    code: param(search, 'code'),
+    error: param(search, 'error'),
+    errorCode: param(search, 'error_code'),
+    errorDescription: param(search, 'error_description'),
+  };
+}
+
+/**
+ * Drops the OAuth parameters from a search string while keeping anything else. Returns `''` when
+ * nothing is left, otherwise a `?a=b` string, so callers can rebuild the URL as-is.
+ */
+export function withoutOAuthParams(search: string): string {
+  const params = new URLSearchParams(search);
+  for (const key of OAUTH_PARAMS) params.delete(key);
+  const rest = params.toString();
+  return rest ? `?${rest}` : '';
+}
+
+/**
+ * The sentence the login page shows for a redirect that did not produce a session.
+ *
+ * A spent confirmation link comes back as `error=access_denied&error_code=otp_expired`. Reading only
+ * `error` called that a cancelled sign-in — but nothing was cancelled: the learner clicked a real
+ * link that had expired, and what they need is a new one. The structured code is checked first, and
+ * the description is the fallback for the implicit flow, which carries no `error_code`.
+ */
+export function oauthErrorMessage(callback: OAuthCallback): string {
+  const description = callback.errorDescription ?? '';
+  if (callback.errorCode === 'otp_expired' || /expired/i.test(description) || /email link is invalid/i.test(description)) {
+    return EXPIRED_LINK_COPY;
+  }
+  if (callback.error === 'access_denied') {
+    // No "continue as guest" any more: there is nothing to continue TO without a session, and
+    // offering it would point at a door that no longer opens.
+    return 'Sign-in was cancelled. Try again, or use your email and password.';
+  }
+  const detail = callback.errorDescription?.trim();
+  return detail
+    ? `Sign-in failed: ${detail}`
+    : 'The sign-in provider could not complete the request. Try again, or use email.';
+}

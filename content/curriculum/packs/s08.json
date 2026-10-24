@@ -1,0 +1,690 @@
+{
+  "section": "s08",
+  "topic": "Python Lists",
+  "authored": true,
+  "intro": "List ek ordered, mutable collection hai — square brackets me comma-separated elements. Interview aur daily coding, dono me list sabse zyada use hoti hai kyunki isse data ka sequence hold karna, sort karna, filter karna aur aggregate karna sab possible hai. Important baat: list ko badalna 'in place' hota hai ya nayi list banani padti hai — ye fark (sort vs sorted, reverse vs reversed, = vs copy) wahi jagah hai jahan beginners ke bugs aate hain.",
+  "theory": [
+    "List ordered hoti hai (index 0 se), mutable hoti hai, aur duplicate elements allow karti hai. Ek hi list me mixed types rakh sakte ho, par comparison/sorting ke waqt ye TypeError de sakta hai — isliye data clean rakho.",
+    "Indexing O(1) hai, append/end par push-pop O(1) amortised, par insert/delete beech me O(n) hai kyunki baaki elements shift hote hain. Membership (x in lst) O(n) hai — agar baar-baar lookup chahiye to set/dict use karo.",
+    "Mutation vs new object: append/extend/insert/remove/pop/sort/reverse in-place chalte hain aur None return karte hain; sorted/reversed/slicing naya object dete hain. x = sorted(lst) kabhi None nahi hoga, par x = lst.sort() hamesha None hai.",
+    "Aliasing vs copy: b = a karne se dono naam ek hi list ko point karte hain, isliye b me change karne par a bhi badalta hai. Copy ke liye a.copy(), a[:], ya deepcopy (nested lists ke liye) use karo.",
+    "List comprehension ek line me map+filter deti hai: [expr for x in it if cond]. Ye Pythonic hai aur C-level loop ki wajah se explicit for-loop se usually tez — par readability ke liye complex logic function me nikal do."
+  ],
+  "syntax": [
+    "lst = [1, 2, 3]\nempty = []\nmixed = [1, 'two', 3.0, True, [4, 5]]\nlst2 = list('abc')      # ['a', 'b', 'c']\nzeros = [0] * 5         # [0, 0, 0, 0, 0]",
+    "lst[0]; lst[-1]; lst[1:3]; lst[::-1]\nlst.append(x); lst.extend(other); lst.insert(2, x)\nlst.remove(value); lst.pop(); lst.pop(0); lst.clear()",
+    "lst.sort(); lst.sort(reverse=True); lst.sort(key=len)\nsorted(lst); reversed(lst); len(lst); sum(lst); min(lst); max(lst)\n[x ** 2 for x in lst if x % 2 == 0]"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "fruits = ['apple', 'banana', 'kiwi']\nprint(fruits[0], fruits[-1])\nprint(fruits[1:3])\nfruits.append('mango')\nfruits.insert(1, 'orange')\nprint(len(fruits), fruits)\nprint(fruits.count('kiwi'), fruits.index('kiwi'))",
+      "output": "",
+      "explain": [
+        "Index 0 pehla element deta hai aur -1 last; Python index ko directly compute karta hai, isliye dono O(1) hain.",
+        "Slicing nayi list banati hai — original fruits safe rehta hai, isliye slice copy ki tarah bhi kaam karta hai.",
+        "append end me O(1) hota hai (amortised) jabki insert(1, ...) O(n) hai kyunki uske baad ke sab elements ek position shift hote hain.",
+        "count() linear scan hai aur index() bhi; dono O(n) — baar-baar index chahiye ho to dictionary better hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "marks = [78, 92, 45, 88, 61]\nprint(sorted(marks))\nprint(marks)                     # original waise hi\nmarks.sort(reverse=True)\nprint(marks)\nprint('---')\nstudents = [('Ali', 88), ('Neha', 92), ('Raj', 75)]\nstudents.sort(key=lambda s: s[1])\nprint(students)\nstudents.sort(key=lambda s: s[1], reverse=True)\nprint(students[:2])",
+      "output": "",
+      "explain": [
+        "sorted() nayi list deta hai aur original ko chhoota nahi — isliye pehle print ke baad marks unchanged hai.",
+        "sort() in-place hai aur None return karta hai; isliye print(marks.sort()) se None print hota, marks nahi.",
+        "key= ek function leta hai jo har element ka comparison value de — yahan tuple ka second item (score).",
+        "reverse=True descending order deta hai; slicing se top-2 nikaalna O(k) hai kyunki sorted list pe indices direct hain."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "from copy import deepcopy\n\na = [[1, 2], [3, 4]]\nshallow = a.copy()\ndeep = deepcopy(a)\nshallow[0].append(99)\nprint(a, deep)\n\ngrid = [1, 2, 3, 4, 5, 6]\nk = 2\nrot = grid[-k:] + grid[:-k]\nprint(rot)\n\nflat = [x for row in [[1, 2], [3, 4]] for x in row]\nprint(flat)\nprint([x * x for x in range(1, 11) if x % 2 == 0])",
+      "output": "",
+      "explain": [
+        "Shallow copy sirf outer list banati hai — andar ki list wahi object rehti hai, isliye shallow[0].append(99) se a bhi badal jata hai.",
+        "deepcopy recursive copy banata hai, isliye nested structures me independent change hota hai — bhaari operation hai, so jahan zaroorat ho wahan hi use karo.",
+        "Rotation right by k: last k elements pehle aur baaki baad me — grid[-k:] + grid[:-k] ek hi line me O(n).",
+        "Nested comprehension row-by-row flatten karti hai; order of for-clauses wahi hai jo nested loops me hota hai.",
+        "Comprehension ke andar if-condition filter hai, isliye sirf even numbers ka square aata hai."
+      ]
+    }
+  ],
+  "realWorld": [
+    "ETL me rows ki list par filter/map chalta hai; batch processing (chunking) bhi lists me hoti hai — 10k rows ka batch, phir insert.",
+    "Recommendation/ranking pipelines me candidate list ko score ke hisaab se sort karke top-N lena standard hai (top-K retrieval ka base).",
+    "Data validation: duplicate detection set + list order preserve karne ke liye seen-set pattern, aur outliers ['min','max'] ke through nikalna.",
+    "Caching/task queues: deque list se better hai jab dono ends par operation chahiye, par FIFO banane ke liye list + index cursor kaafi hota hai."
+  ],
+  "interview": [
+    {
+      "q": "List aur tuple me kya choose karna chahiye?",
+      "a": "Jab data badalna hai (append, sort, update) to list; jab fixed record hai (coordinates, row of data, dict key banana hai) to tuple, kyunki tuple immutable aur hashable hai, memory kam leta hai aur accidentally mutate nahi hota. Practical rule: 'ye record hai' → tuple, 'ye collection hai jisme add/remove hoga' → list.",
+      "tip": "Hashable ka point zaroor bolo — tuple dictionary key ban sakta hai, list nahi."
+    },
+    {
+      "q": "Shallow copy aur deep copy me kya antar hai?",
+      "a": "copy()/[:] sirf outer container ki nayi list banati hai; andar ke mutable objects share hote hain. Isliye nested list me change propagate ho jata hai. deepcopy() poore tree ki copy banata hai. Interview me bolna: immutables (int, str, tuple of immutables) me yahi copy safe hai, nested mutable me deepcopy.",
+      "tip": "Ek chhota example bolkar dikhao — is topic me example batana answer se zyada strong lagta hai."
+    },
+    {
+      "q": "List me insert aur delete ki complexity kya hai?",
+      "a": "End me append/pop O(1) amortised hai. Beech me insert/remove O(n) hai kyunki elements shift hote hain. Index se access O(1), value se search O(n). Interview me bolna: agar beech me frequent inserts chahiye to list galat tool hai — linked structure ya different algorithm sochna chahiye.",
+      "tip": "Amortised word use karo append ke liye — amortized O(1) expected answer hai."
+    },
+    {
+      "q": "List comprehension ke nuksan kya hain?",
+      "a": "Bahut nested comprehension readability tod deti hai aur debug karna mushkil hota hai (breakpoint lagana hard). Bahut bade data par generator expression (parentheses) memory bachata hai kyunki lazy hai. Multiple conditions/side effects ho to explicit loop + function better hai.",
+      "tip": "Generator version ka zikr karo — ye scale thinking dikhata hai."
+    },
+    {
+      "q": "List ko iterate karte waqt element remove karne par kya hota hai?",
+      "a": "Iterator index badhata rehta hai, par list chhoti hoti jaati hai, isliye kuch elements check hi nahi hote (silent skip). Sahi tarike: nayi list banao ([x for x in lst if not cond]) ya ulta iterate karo (for i in range(len(lst) - 1, -1, -1)) ya remove ke liye index collect karke baad me delete karo.",
+      "tip": "Ye classic silent bug hai — interviewer yehi sunna chahta hai ki tum output-based test se pakadoge."
+    },
+    {
+      "q": "Sorting stable hoti hai — iska practical matlab kya hai?",
+      "a": "Python ka sort stable hai: equal keys ka relative order nahi badalta. Isliye multi-key sorting aasan ho jati hai — pehle secondary key par sort karo, phir primary key par; ya key=(primary, secondary) tuple do. Stable sorting se ek hi pass me multiple criteria handle ho jate hain.",
+      "tip": "Multi-key sort ka example batao: department-wise then salary-wise."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "List ka smallest aur largest number nikalo (min/max ke bina bhi).",
+        "a": "min()/max() built-in hain; manual version ek loop me do variables update karta hai — O(n) same, par logic samajhne ke liye important hai.",
+        "code": "nums = [1, 12, 3, 14, 25]\nprint(max(nums), min(nums))\n\nbest, worst = nums[0], nums[0]\nfor n in nums[1:]:\n    if n > best:\n        best = n\n    if n < worst:\n        worst = n\nprint(best, worst)",
+        "output": "",
+        "commonMistake": "min_value ke liye if/elif chain likhna jisme ek branch skip ho jati hai — do alag if safe hain."
+      },
+      {
+        "q": "List me first aur last element interchange karo.",
+        "a": "Tuple unpacking se ek line me swap: lst[0], lst[-1] = lst[-1], lst[0].",
+        "code": "lst = [10, 20, 30, 40, 50, 60]\nlst[0], lst[-1] = lst[-1], lst[0]\nprint(lst)",
+        "output": ""
+      },
+      {
+        "q": "List ko reverse karo — reverse() aur slicing dono se.",
+        "a": "lst.reverse() in-place hai (None return karta hai), lst[::-1] nayi list deti hai.",
+        "code": "order = ['apple', 'orange', 'banana', 'kiwi']\nprint(order[::-1])\norder.reverse()\nprint(order)",
+        "output": "",
+        "commonMistake": "reversed(lst) list nahi deta — iterator deta hai; print karne ke liye list() me wrap karo."
+      },
+      {
+        "q": "List ke elements ka sum aur product nikalo.",
+        "a": "sum() built-in hai; product ke liye loop ya math.prod (Python 3.8+) use karo — shuruat 1 se.",
+        "code": "import math\n\nnums = [1, 2, 3, 4, 5, 6, 7]\nprint(sum(nums))\nprod = 1\nfor n in nums:\n    prod *= n\nprint(prod, math.prod(nums))",
+        "output": "",
+        "explain": "Product ka identity element 1 hai (sum ka 0) — warna sab kuch 0 ho jata."
+      },
+      {
+        "q": "List me even aur odd numbers ki ginti karo.",
+        "a": "sum(1 for n in nums if n % 2 == 0) idiomatic hai; total - even se odd mil jata hai.",
+        "code": "nums = [1, 2, 13, 15, 68]\neven = sum(1 for n in nums if n % 2 == 0)\nprint(even, len(nums) - even)",
+        "output": ""
+      },
+      {
+        "q": "List empty hai ya nahi — bina len() ke check karo.",
+        "a": "`if not lst:` — empty list falsy hoti hai. Ye len(lst) == 0 se readable hai aur same speed par chalta hai.",
+        "code": "lst = []\nprint('empty' if not lst else 'has items')",
+        "output": ""
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "List me duplicates remove karo order preserve karte hue.",
+        "a": "set() se order toot jata hai; isliye seen set + list ya dict.fromkeys() use karo (Python 3.7+ me dict insertion order preserve karta hai).",
+        "code": "nums = [1, 2, 3, 4, 45, 55, 6, 7, 3, 4]\nuniq = list(dict.fromkeys(nums))\nprint(uniq)\nprint(sorted(set(nums)))",
+        "output": ""
+      },
+      {
+        "q": "Nested list ko flatten karo (mixed list + scalars).",
+        "a": "Har element par type check karo: list/tuple ho to extend, warna append. Ek level ke liye recursion optional hai.",
+        "code": "data = [[1, 2, 3], 4, 5, [6, [7, 8]], ('a', 'b')]\nout = []\nfor item in data:\n    if isinstance(item, (list, tuple)):\n        out.extend(x for x in item if not isinstance(x, (list, tuple)))\n    else:\n        out.append(item)\nprint(out)",
+        "output": "",
+        "commonMistake": "item.extend ke liye isinstance check bhoolna — string par extend karne se characters alag ho jate hain."
+      },
+      {
+        "q": "Do lists ke corresponding elements ka product nikalo.",
+        "a": "zip() pairs banata hai aur list comprehension ek line me product deti hai; length mismatch par zip chhote wale par ruk jata hai.",
+        "code": "a = [2, 3, 4, 5, 6]\nb = [10, 20, 30, 40, 50]\nprint([x * y for x, y in zip(a, b)])",
+        "output": "",
+        "explain": "zip extra elements ko silently drop karta hai — strict behaviour chahiye to zip(a, b, strict=True) (Python 3.10+)."
+      },
+      {
+        "q": "Do lists ke common (duplicate) elements nikalo.",
+        "a": "set intersection O(n+m) hai; order preserve karna ho to list comprehension + set lookup use karo.",
+        "code": "l1 = [1, 2, 3, 40, 50, 69]\nl2 = [10, 20, 30, 40, 50, 69]\nprint(sorted(set(l1) & set(l2)))\nprint([x for x in l1 if x in set(l2)])",
+        "output": ""
+      },
+      {
+        "q": "List ko ascending aur descending sort karo bina sort()/sorted() ke.",
+        "a": "Selection-sort style double loop: har i par baaki me se minimum dhoondo aur swap karo — O(n²) par concept clear.",
+        "code": "lst = [10, 12, 123, 45, 34]\nfor i in range(len(lst)):\n    for j in range(i + 1, len(lst)):\n        if lst[i] > lst[j]:\n            lst[i], lst[j] = lst[j], lst[i]\nprint(lst)",
+        "output": "",
+        "tip": "Interview me bolo ki real code me Timsort (built-in) use karna chahiye; ye sirf algorithm samajhne ke liye hai."
+      },
+      {
+        "q": "List me se sirf 5 se lambi words nikalo.",
+        "a": "Comprehension with len() filter — ek hi pass, O(n).",
+        "code": "sentence = 'We are working on the jupyter notebook'\nprint([w for w in sentence.split() if len(w) > 5])",
+        "output": ""
+      }
+    ],
+    "advanced": [
+      {
+        "q": "List ko right me k steps rotate karo (in-place).",
+        "a": "Teen reverse trick se extra memory O(1): poora reverse, phir first k aur baaki alag reverse karo. Slice method O(k) extra leta hai par readable hai.",
+        "code": "def rotate_right(lst, k):\n    n = len(lst)\n    k %= n\n    lst.reverse()\n    lst[:k] = reversed(lst[:k])\n    lst[k:] = reversed(lst[k:])\n    return lst\n\nprint(rotate_right([1, 2, 3, 4, 5, 6], 2))\nprint([1, 2, 3, 4, 5, 6][-2:] + [1, 2, 3, 4, 5, 6][:-2])",
+        "output": ""
+      },
+      {
+        "q": "List me second-largest (aur third-largest) element nikalo duplicate handling ke saath.",
+        "a": "set se duplicates hatao, sort karke index lo; O(n log n). Linear solution ke liye do variables track karo — O(n), par duplicates par careful rehna.",
+        "code": "nums = [12, 41, 45, 45, 23, 15]\nuniq = sorted(set(nums), reverse=True)\nprint(uniq[1], uniq[2])\n\ndef kth_largest(nums, k):\n    best = []\n    for n in nums:\n        if n not in best:\n            best.append(n)\n            best.sort(reverse=True)\n            best = best[:k]\n    return best[k - 1]\n\nprint(kth_largest(nums, 2))",
+        "output": ""
+      },
+      {
+        "q": "List of tuples ko second element par sort karo, ties ko first element se todo.",
+        "a": "key=lambda t: (t[1], t[0]) — tuple key me Python lexicographic compare karta hai, isliye secondary ordering free milti hai.",
+        "code": "rows = [('Nawaz', 35), ('Anjali', 28), ('Salman', 29), ('Umesh', 28)]\nprint(sorted(rows, key=lambda r: (r[1], r[0])))",
+        "output": "",
+        "explain": "Stable sort ki wajah se same age par original order bachta, par explicit secondary key se ordering deterministic ho jati hai."
+      },
+      {
+        "q": "List of dicts me se kuch rows ko key ke hisaab se filter karo aur ek field nikaalo.",
+        "a": "Comprehension + dict access; missing key possibility ho to .get() use karo warna KeyError.",
+        "code": "users = [\n    {'name': 'Ahetesham', 'plan': 'pro', 'spend': 999},\n    {'name': 'Neha', 'plan': 'free', 'spend': 0},\n    {'name': 'Rahul', 'plan': 'pro', 'spend': 1499},\n]\npaid = [(u['name'], u['spend']) for u in users if u.get('plan') == 'pro']\nprint(paid)\nprint(sum(s for _, s in paid))",
+        "output": ""
+      },
+      {
+        "q": "List ko chunk (batch) me todo, last chunk chhoti ho sakti hai.",
+        "a": "range step slicing se: lst[i:i + size]. Loop ke andar slicing nayi list deti hai, isliye memory O(size) per chunk.",
+        "code": "items = list(range(1, 26))\nsize = 10\nchunks = [items[i:i + size] for i in range(0, len(items), size)]\nprint(len(chunks), chunks[-1])",
+        "output": ""
+      }
+    ],
+    "interview": [
+      {
+        "q": "Interview: 'list me se top-3 largest kisi library ke bina nikalo' — live likho.",
+        "a": "heapq.nlargest(3, nums) O(n log k) hai aur sabse saaf; manual ke liye min-heap maintain karo. Puri list sort karna O(n log n) hai jo bade data par waste hai.",
+        "code": "import heapq\n\nnums = [5, 1, 9, 3, 7, 2, 8]\nprint(heapq.nlargest(3, nums))\nprint(heapq.nsmallest(2, nums))",
+        "output": "",
+        "tip": "Agar data stream aa raha hai to heap approach hi bachta hai — sort nahi kar sakte kyunki data infinite hai."
+      },
+      {
+        "q": "Interview: do lists ints ka intersection dedo, sorted aur unique.",
+        "a": "set(l1) & set(l2) average O(n + m) hai, phir sorted. Agar dono sorted hain to two-pointer O(n + m) bina extra set memory ke.",
+        "code": "def intersect(a, b):\n    i = j = 0\n    out = []\n    while i < len(a) and j < len(b):\n        if a[i] == b[j]:\n            if not out or out[-1] != a[i]:\n                out.append(a[i])\n            i, j = i + 1, j + 1\n        elif a[i] < b[j]:\n            i += 1\n        else:\n            j += 1\n    return out\n\nprint(intersect([1, 2, 2, 4, 9], [2, 2, 4, 5, 9]))",
+        "output": "",
+        "tip": "Sorted input me two-pointer ka zikr karna memory optimization dikhata hai."
+      },
+      {
+        "q": "Interview: list ko in-place dedupe karo bina extra set ke (sorted list).",
+        "a": "Two-pointer write index: ek pointer padhta hai, doosra likhta hai. O(n) time, O(1) extra space — par sorted hona zaroori hai.",
+        "code": "def dedupe_sorted(lst):\n    if not lst:\n        return 0\n    write = 1\n    for read in range(1, len(lst)):\n        if lst[read] != lst[write - 1]:\n            lst[write] = lst[read]\n            write += 1\n    return write\n\nnums = [1, 1, 2, 2, 3, 4, 4, 4]\nn = dedupe_sorted(nums)\nprint(n, nums[:n])",
+        "output": "",
+        "tip": "Ye algorithm 'remove duplicates from sorted array' ka classic hai — return length dena mat bhoolo."
+      },
+      {
+        "q": "Interview: ek list me missing number find karo (1..n me se ek missing).",
+        "a": "Expected sum n*(n+1)/2 se actual sum ghatao — O(n), O(1). XOR trick bhi same complexity deta hai par overflow ka darr nahi hota (Python me overflow nahi, par fixed-width languages me important hai).",
+        "code": "def missing(nums, n):\n    return n * (n + 1) // 2 - sum(nums)\n\nprint(missing([1, 2, 3, 5, 6], 6))",
+        "output": "",
+        "tip": "XOR version ka zikr karo — ye overflow-safe answer hai, interviewer ko depth dikhti hai."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Batch me 50,000 rows ko process karo taki memory bounded rahe.",
+        "a": "Generator se rows chunk me lo aur har chunk par kaam karo; ek hi baar poori list memory me na bharo.",
+        "code": "def batches(items, size=3):\n    for i in range(0, len(items), size):\n        yield items[i:i + size]\n\nrows = list(range(1, 12))\nfor i, chunk in enumerate(batches(rows), 1):\n    print(f'batch {i}: {len(chunk)} rows -> {chunk[0]}..{chunk[-1]}')",
+        "output": ""
+      },
+      {
+        "q": "Duplicate customers detect karo aur sirf ek per email rakho (latest entry jeete).",
+        "a": "Seen-set wala first-wins pattern ya dict-by-key wala last-wins pattern — dono O(n).",
+        "code": "rows = [('a@x.com', 'old'), ('b@x.com', 'only'), ('a@x.com', 'new')]\nseen, out = set(), []\nfor email, val in rows:\n    if email not in seen:\n        seen.add(email)\n        out.append((email, val))\nprint(out)\n\nlatest = {}\nfor email, val in rows:\n    latest[email] = val\nprint(list(latest.items()))",
+        "output": ""
+      },
+      {
+        "q": "Outliers nikaalo (mean se 2 standard deviation door) — bina numpy ke.",
+        "a": "Mean nikalo, phir variance (sum of squared diffs / n), phir threshold se filter — sab list operations se.",
+        "code": "import math\n\nvalues = [10, 12, 11, 13, 12, 90, 11, 10]\nmean = sum(values) / len(values)\nvar = sum((v - mean) ** 2 for v in values) / len(values)\nsd = math.sqrt(var)\noutliers = [v for v in values if abs(v - mean) > 2 * sd]\nprint(round(mean, 2), round(sd, 2), outliers)",
+        "output": "",
+        "explain": "Population standard deviation use kiya (divide by n); sample ke liye n-1 hota hai — interview me ye distinction bolna achha lagta hai."
+      },
+      {
+        "q": "Task queue banao jisme naya task end me jaye aur process pehle se ho (FIFO).",
+        "a": "collections.deque O(1) popleft deta hai; list se popleft karna O(n) hai kyunki sab shift hote hain.",
+        "code": "from collections import deque\n\nqueue = deque(['build', 'test'])\nqueue.append('deploy')\nprint(queue.popleft(), queue.popleft(), list(queue))",
+        "output": "",
+        "tip": "Interview me 'list.pop(0) kyun bura hai' ka jawab: O(n) shift, isliye deque use karo."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "List ka sum, average, min aur max ek function me nikalo, empty list handle karte hue.",
+      "build": "Function stats(nums) -> dict; empty list par zeros return kare, crash na kare.",
+      "input": "[2, 3, 4, 5, 6, 7]",
+      "expected": "dict with count/sum/avg/min/max",
+      "hint": "Empty check pehle karo, warna min() ValueError dega aur average zero-division.",
+      "concept": "List aggregates + defensive programming",
+      "solution": "def stats(nums):\n    if not nums:\n        return {'count': 0, 'sum': 0, 'avg': 0, 'min': None, 'max': None}\n    total = sum(nums)\n    return {'count': len(nums), 'sum': total, 'avg': round(total / len(nums), 2), 'min': min(nums), 'max': max(nums)}\n\nprint(stats([2, 3, 4, 5, 6, 7]))\nprint(stats([]))",
+      "output": "",
+      "explanation": "Pehle empty case return karna early-guard hai — isse baaki function ka logic simple rehta hai aur division-safe hota hai.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "better": "Streaming data ke liye single pass me sum, count, min, max track karo; list do baar iterate karne se bach jate ho.",
+      "followUp": "Million numbers ka average nikalna ho aur memory 10 MB ho to kya karoge?"
+    },
+    {
+      "difficulty": "easy",
+      "question": "List me se duplicates hatao, original order preserve karke.",
+      "build": "Function dedupe(items) -> list, order same rahe.",
+      "input": "[3, 1, 3, 2, 1, 4]",
+      "expected": "[3, 1, 2, 4]",
+      "hint": "Seen set rakho; naya element mile to hi append karo.",
+      "concept": "Set for O(1) membership + list for order",
+      "solution": "def dedupe(items):\n    seen, out = set(), []\n    for x in items:\n        if x not in seen:\n            seen.add(x)\n            out.append(x)\n    return out\n\nprint(dedupe([3, 1, 3, 2, 1, 4]))",
+      "output": "",
+      "explanation": "Set membership average O(1) hai, isliye total O(n). set() alone order tod deta hai, aur list.count() based approach O(n²) hota.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "better": "Hashable types ke liye list(dict.fromkeys(items)) ek hi line me same kaam karta hai.",
+      "followUp": "Unhashable items (dicts/lists) ke liye kaise karoge? (tuple key ya JSON dumps)"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Nested list ko poore depth tak flatten karo (recursive).",
+      "build": "Function flatten(data) -> flat list, kitni bhi nesting ho.",
+      "input": "[1, [2, [3, [4]], 5], 6]",
+      "expected": "[1, 2, 3, 4, 5, 6]",
+      "hint": "isinstance(x, (list, tuple)) se check karo aur recursion se andar jao.",
+      "concept": "Recursion + isinstance type dispatch",
+      "solution": "def flatten(data):\n    out = []\n    for item in data:\n        if isinstance(item, (list, tuple)):\n            out.extend(flatten(item))\n        else:\n            out.append(item)\n    return out\n\nprint(flatten([1, [2, [3, [4]], 5], 6]))",
+      "output": "",
+      "explanation": "Recursion depth nesting ke barabar hoti hai; extend recursive result ko merge karta hai. isinstance tuple leta hai (list, tuple) — isliye dono handle hote hain.",
+      "time": "O(n)",
+      "space": "O(d), d = nesting depth",
+      "better": "Bahut deep data par recursion stack overflow kar sakta hai — explicit stack (list of iterators) se iterative version likho.",
+      "followUp": "Strings ko sequence samajh kar flatten karna ho to kya change karoge?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "List ko right me k steps rotate karo, extra list ke bina (in-place).",
+      "build": "Function rotate(lst, k) -> same list rotated, O(1) extra space.",
+      "input": "[1, 2, 3, 4, 5, 6], k=2",
+      "expected": "[5, 6, 1, 2, 3, 4]",
+      "hint": "Teen reverse: poora, phir k prefix, phir baaki.",
+      "concept": "In-place array manipulation via reversing",
+      "solution": "def rotate(lst, k):\n    n = len(lst)\n    if n == 0:\n        return lst\n    k %= n\n    lst.reverse()\n    lst[:k] = reversed(lst[:k])\n    lst[k:] = reversed(lst[k:])\n    return lst\n\nprint(rotate([1, 2, 3, 4, 5, 6], 2))\nprint(rotate([1, 2], 5))",
+      "output": "",
+      "explanation": "k %= n pehle karte hain taki k > n ho to bhi sahi kaam ho. Reversal trick se extra list nahi banani padti — har element do baar move hota hai.",
+      "time": "O(n)",
+      "space": "O(1)",
+      "better": "Juggling algorithm (GCD-based) bhi O(1) space deta hai par code complex hai; production me slicing version readable hota hai.",
+      "followUp": "Character array rotate karna ho (string) to kaise karoge, kyunki string immutable hai?"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Given marks list, pass/fail split karo aur grade distribution nikalo.",
+      "build": "Function classify(marks) -> (passed, failed, grade_counts).",
+      "input": "[78, 92, 45, 88, 61, 33]",
+      "expected": "passed 4, failed 2, grade dictionary",
+      "hint": "Ek hi pass me grade nikaalo, phir pass/fail lists me daalo.",
+      "concept": "Single-pass partition + dict counting",
+      "solution": "def classify(marks):\n    def grade(m):\n        if m >= 90:\n            return 'A'\n        if m >= 75:\n            return 'B'\n        if m >= 60:\n            return 'C'\n        if m >= 40:\n            return 'D'\n        return 'F'\n\n    passed, failed, counts = [], [], {}\n    for m in marks:\n        (passed if m >= 40 else failed).append(m)\n        g = grade(m)\n        counts[g] = counts.get(g, 0) + 1\n    return passed, failed, counts\n\np, f, c = classify([78, 92, 45, 88, 61, 33])\nprint(len(p), len(f), dict(sorted(c.items())))",
+      "output": "",
+      "explanation": "Grade function alag rakhi taki thresholds ek jagah hon; loop single pass me partition aur counting dono kar leta hai. dict.get(g, 0) + 1 missing-key pattern hai.",
+      "time": "O(n)",
+      "space": "O(n)",
+      "better": "Bade data par counts ke liye collections.Counter use karo; partition chahiye hi nahi ho to generator + Counter kaafi hai.",
+      "followUp": "Thresholds config se aane chahiye to code kaise badalega?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "List me se 'k sabse bade elements' nikalo bina poora sort kiye.",
+      "build": "Function top_k(nums, k) -> descending list, O(n log k).",
+      "input": "[5, 1, 9, 3, 7], k=3",
+      "expected": "[9, 7, 5]",
+      "hint": "Min-heap me sirf k elements rakho; naya bada element aaye to sabse chhota nikaal do.",
+      "concept": "Heapq based selection vs full sort",
+      "solution": "import heapq\n\ndef top_k(nums, k):\n    if k <= 0:\n        return []\n    return heapq.nlargest(k, nums)\n\nprint(top_k([5, 1, 9, 3, 7], 3))\nprint(top_k([5, 1, 9, 3, 7], 10))",
+      "output": "",
+      "explanation": "nlargest k-size heap maintain karta hai, isliye n bade aur k chhote hone par full sort O(n log n) se kaafi sasta padta hai. k >= n hone par ye internally sort kar deta hai.",
+      "time": "O(n log k)",
+      "space": "O(k)",
+      "better": "Streaming/infinite input ke liye khud ka min-heap maintain karo taki memory k par bounded rahe.",
+      "followUp": "Duplicate elements count karke top-k frequency wale elements nikalne ho to kaise karoge?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Do sorted lists ka merge karo (bina sort() ke) aur duplicates count batao.",
+      "build": "Function merge_sorted(a, b) -> (merged list, duplicate count).",
+      "input": "[1, 3, 5, 7] aur [2, 3, 5, 8]",
+      "expected": "[1, 2, 3, 3, 5, 5, 7, 8] with 2 duplicates",
+      "hint": "Two-pointer merge; equal milne par count badhao aur index aage badhao.",
+      "concept": "Two-pointer merge (merge-sort ka core step)",
+      "solution": "def merge_sorted(a, b):\n    i = j = dupes = 0\n    out = []\n    while i < len(a) and j < len(b):\n        if a[i] < b[j]:\n            out.append(a[i]); i += 1\n        elif a[i] > b[j]:\n            out.append(b[j]); j += 1\n        else:\n            out.append(a[i]); out.append(b[j])\n            dupes += 1\n            i += 1; j += 1\n    out.extend(a[i:])\n    out.extend(b[j:])\n    return out, dupes\n\nprint(merge_sorted([1, 3, 5, 7], [2, 3, 5, 8]))",
+      "output": "",
+      "explanation": "Sorted input ka faayda uthati hai — O(n + m), jabki sort karne par O((n+m) log(n+m)) lagta hai. Duplicates tab ginte hain jab dono pointers par same value ho.",
+      "time": "O(n + m)",
+      "space": "O(n + m)",
+      "better": "Output zaroorat na ho to generator banao — memory O(1) ho jati hai (sirf yield karo).",
+      "followUp": "10 sorted files ko merge karna ho to kya badlega? (heap of iterators)"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "nums = []\nprint(nums.pop())",
+      "error": "IndexError: pop from empty list",
+      "why": "pop() empty list par IndexError deta hai. Ye fail-fast behaviour hai — silently None return karna bugs chhupata.",
+      "fix": "Pehle existence check karo, ya default do: pop() ke liye guard, aur safe access ke liye if nums: ...",
+      "correct": "nums = []\nif nums:\n    print(nums.pop())\nelse:\n    print('nothing to pop')",
+      "output": "",
+      "lesson": "destructive operations (pop, remove, index) se pehle state validate karo — empty state sabse zyada aata hai."
+    },
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "marks = [78, 92, 88]\nprint(marks.remove(100))",
+      "error": "ValueError: list.remove(x): x not in list",
+      "why": "remove() value ko dhoondta hai aur na milne par ValueError deta hai. Ye return value nahi deta, isliye print(marks.remove(...)) bhi galat hai.",
+      "fix": "Membership check karo ya try/except lagao; aur remove() ka result print na karo.",
+      "correct": "marks = [78, 92, 88]\nif 100 in marks:\n    marks.remove(100)\nprint(marks)",
+      "output": "",
+      "lesson": "remove() in-place hai aur None return karta hai — assignment ya print me use karna do bugs ek saath banata hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "values = [3, '7', 5]\nprint(sorted(values))",
+      "error": "TypeError: '<' not supported between instances of 'str' and 'int'",
+      "why": "List ka mixed types allowed hai, par comparison ke waqt Python int aur str ko compare nahi kar sakta — isliye sorting crash karti hai.",
+      "fix": "Data ko one type me normalize karo (int(...) conversion) ya key function do jo consistent value de.",
+      "correct": "values = [3, '7', 5]\nprint(sorted(int(v) for v in values))\nprint(sorted(values, key=str))",
+      "output": "",
+      "lesson": "Real data (CSV/JSON) me numbers string ki tarah aate hain — compare/sort se pehle convert karna zaroori hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "nums = [1, 2, 3]\nalias = nums\nalias.append(99)\nprint('nums:', nums)",
+      "error": "Logic error: nums me 99 aa gaya, jabki sirf alias badalna tha",
+      "why": "= assignment object ka reference copy karta hai, nayi list nahi banata. Dono names ek hi list ko point karte hain, isliye ek me change dono me dikhta hai.",
+      "fix": "Explicit copy banao: nums.copy() ya nums[:]; nested lists ke liye deepcopy.",
+      "correct": "from copy import deepcopy\n\nnums = [1, 2, 3]\nalias = nums.copy()\nnested = [[1], [2]]\ndeep = deepcopy(nested)\nalias.append(99)\nnested[0].append(7)\nprint('nums:', nums, 'alias:', alias)\nprint('nested:', nested, 'deep:', deep)",
+      "output": "",
+      "lesson": "Assignment aliasing hai, copy nahi — nested structures me shallow copy kaafi nahi hoti."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "nums = [1, 2, 3, 4, 5, 6]\nfor n in nums:\n    if n % 2 == 0:\n        nums.remove(n)\nprint(nums)",
+      "error": "Logic error: 4 sahi se remove nahi hota (skip ho jata hai)",
+      "why": "Iteration ke waqt list chhoti hoti hai, par iterator index aage badhta rehta hai — isliye remove ke turant baad ka element check hi nahi hota.",
+      "fix": "Nayi list banao (comprehension) ya ulta iterate karo.",
+      "correct": "nums = [1, 2, 3, 4, 5, 6]\nfiltered = [n for n in nums if n % 2 != 0]\ndeleteme = 3\nfor i in range(len(nums) - 1, -1, -1):\n    if nums[i] == deleteme:\n        del nums[i]\nprint(filtered, nums)",
+      "output": "",
+      "lesson": "Mutate-while-iterate silent bug hai — output galat hota hai par error nahi aata, isliye test likhna hi pakadta hai."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Ek line me list ke saare elements ka square nikalo aur sirf woh rakho jo 50 se bade hain.",
+      "hint": "Comprehension me condition lagao.",
+      "deliverable": "Ek line ka snippet."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Sliding-window maximum nikaalo: har window size k ka maximum return karo.",
+      "hint": "Naive O(nk) se shuru karo, phir deque se O(n) optimize karo.",
+      "deliverable": "Do functions + complexity comment."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "CSV-style rows ki list par ek mini ETL likho: header validate, numeric column convert, invalid rows alag karo, summary report do.",
+      "hint": "rows[0] header hai; try/except ValueError per row rakho aur bad rows list me collect karo.",
+      "deliverable": "Script + summary (good rows, bad rows with reasons)."
+    },
+    {
+      "kind": "interview",
+      "minutes": 35,
+      "prompt": "Interview round: 1 crore integers me se 100 sabse bade nikalo, memory limit 200 MB.",
+      "hint": "Heap of size 100 maintain karo; full sort ya full read memory me nahi.",
+      "deliverable": "Design answer + complexity + working heap snippet."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Ek CLI 'taskboard' banao jo list-based tasks add/complete/delete kare aur JSON file me persist kare.",
+      "hint": "Tasks list of dicts; file read/write JSON me; invalid input par friendly error.",
+      "deliverable": "Working script + README ke 3 points."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Shopping List Manager (Version 1)",
+      "problem": "Naye learner ko list ke basic operations (add, remove, count, total) ek real use case me chahiye — sirf syntax nahi, ek chalta hua chhota tool.",
+      "objective": "Ek program jo items aur prices ki list manage kare: item add/remove kare, total nikaale aur list print kare.",
+      "features": [
+        "Item add aur remove (duplicate-aware)",
+        "Total price aur average price",
+        "Sorted view (price aur name dono se)",
+        "List empty hone par friendly message"
+      ],
+      "concepts": ["List mutation (append/remove)", "Tuples for records", "Sorting with key", "Aggregates (sum/len)"],
+      "structure": "shopping_list/\n└── shopping.py      # data + operations ek file me",
+      "steps": [
+        "Items ko list of tuples ('milk', 60) ki tarah store karo.",
+        "add_item aur remove_item functions likho, duplicate name par update karo.",
+        "total() aur report() likho jo sorted output de.",
+        "Empty aur unknown item cases test karo."
+      ],
+      "code": "def add_item(items, name, price):\n    for i, (n, _) in enumerate(items):\n        if n == name:\n            items[i] = (name, price)\n            return items\n    items.append((name, price))\n    return items\n\n\ndef remove_item(items, name):\n    return [it for it in items if it[0] != name]\n\n\ndef report(items):\n    if not items:\n        return 'List khali hai.'\n    total = sum(p for _, p in items)\n    rows = '\\n'.join(f'{n:12} Rs {p:>6}' for n, p in sorted(items, key=lambda t: -t[1]))\n    return f'{rows}\\n{len(items)} items · total Rs {total} · avg Rs {total / len(items):.1f}'\n\n\nitems = []\nadd_item(items, 'milk', 60)\nadd_item(items, 'bread', 45)\nadd_item(items, 'milk', 65)\nitems = remove_item(items, 'bread')\nprint(report(items))\nprint(report([]))",
+      "output": "",
+      "explanation": "Record ke liye tuple use kiya (naam + price ek unit), operation ke liye list of tuples. add_item duplicate name par replace karta hai, isliye list me duplicate items nahi bante. report() sorted(key=-price) se sabse mehnga item upar dikhata hai.",
+      "testing": "Empty list ka report, duplicate add (update hona chahiye), aur missing item remove (silently no-op) teenon test karo.",
+      "errors": "Negative price ya empty name aane par reject karna chahiye — is version me guard add karne ki jagah comment me TODO rakho, next version me implement karo.",
+      "improvements": [
+        "Input validation add karo (price numeric, name non-empty)",
+        "Quantity field add karo aur total qty*price se nikaalo",
+        "Items ko file me save/load karo (JSON)",
+        "Interactive menu (while loop) se add/remove/report chalao"
+      ],
+      "advanced": [
+        "JSON persistence + atomic write (temp file + rename) production-style",
+        "Unit tests (pytest) with edge cases aur invalid input",
+        "Logging + error handling: corrupt file par recover karo",
+        "CLI arguments (argparse) se non-interactive mode"
+      ],
+      "realWorld": "Grocery/expense tracker ka core logic, aur invoice line items ka basic shape — same list-of-records par sorting aur aggregation.",
+      "interview": [
+        { "q": "Items ke liye list kyun choose ki, dict kyun nahi?", "a": "Dictionary naam se lookup O(1) deta, par is version me ordering aur duplicate price history simple rakhni thi. Dict hota to add_item O(1) ho jata, par sort karne ke liye phir bhi items() ko list banana padta." },
+        { "q": "remove_item me comprehension kyun use kiya?", "a": "Ek pass me nayi list banti hai aur original iteration safe rehti hai — mutate-while-iterate wala silent bug avoid hota hai." },
+        { "q": "Ye code galat input par kaise behave karega?", "a": "Abhi galat price bhi accept ho jayega aur total string/int mix par crash kar sakta hai; isliye validation next version ka pehla task hai." }
+      ],
+      "resume": "Built a Python shopping-list manager using list-of-tuple records with update-in-place semantics and sorted reporting.",
+      "readme": [
+        "Purpose + sample output",
+        "Functions list (add_item, remove_item, report) aur unka behaviour",
+        "Known limitations aur next version plan"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Student Marks Analyzer (Version 2)",
+      "problem": "Version 1 ka tool ek list manage karta hai. Real academic data me grouping, ranking, normalization aur validation chahiye hoti hai — aur wrong rows ko chup-chaap skip nahi karna.",
+      "objective": "Ek analyzer banao jo students ke marks validate kare, per-student average nikaale, ranking de, subject-wise stats de aur bad rows report kare.",
+      "features": [
+        "Per-student average with subject count validation",
+        "Ranking (dense rank, ties handle)",
+        "Subject-wise min/max/average",
+        "Bad row detection with reasons",
+        "Top-N students with grade labels",
+        "Reusable module + summary report"
+      ],
+      "concepts": ["List of dicts validation", "Dict aggregation", "Sorting with tuple keys", "Functions/module split"],
+      "structure": "marks_analyzer/\n├── students.py     # sample + validation\n├── analytics.py    # averages, ranking, stats\n└── main.py         # report",
+      "steps": [
+        "Sample data ko list of dicts me rakho (extra/missing subjects bhi include karo).",
+        "validate() likho jo bad rows aur reasons return kare.",
+        "analytics me average, ranking (dense) aur subject stats likho.",
+        "main.py se report print karo aur bad rows bhi dikhao."
+      ],
+      "code": "SUBJECTS = ('math', 'science', 'english')\n\ndef validate(rows):\n    good, bad = [], []\n    for r in rows:\n        missing = [s for s in SUBJECTS if s not in r.get('marks', {})]\n        marks = r.get('marks', {})\n        if missing:\n            bad.append((r.get('name', '?'), 'missing: ' + ', '.join(missing)))\n            continue\n        if any(not isinstance(v, (int, float)) or not 0 <= v <= 100 for v in marks.values()):\n            bad.append((r.get('name', '?'), 'invalid score range/type'))\n            continue\n        good.append(r)\n    return good, bad\n\n\ndef analyse(rows):\n    out = []\n    for r in rows:\n        avg = sum(r['marks'][s] for s in SUBJECTS) / len(SUBJECTS)\n        out.append({'name': r['name'], 'avg': round(avg, 2)})\n    out.sort(key=lambda s: (-s['avg'], s['name']))\n    rank = 0\n    prev = None\n    for row in out:\n        if row['avg'] != prev:\n            rank += 1\n            prev = row['avg']\n        row['rank'] = rank\n    return out\n\n\ndef subject_stats(rows):\n    return {\n        s: {\n            'min': min(r['marks'][s] for r in rows),\n            'max': max(r['marks'][s] for r in rows),\n            'avg': round(sum(r['marks'][s] for r in rows) / len(rows), 1),\n        } for s in SUBJECTS\n    }\n\n\nrows = [\n    {'name': 'Neha', 'marks': {'math': 92, 'science': 88, 'english': 95}},\n    {'name': 'Ali', 'marks': {'math': 78, 'science': 81, 'english': 70}},\n    {'name': 'Raj', 'marks': {'math': 78, 'science': 81, 'english': 70}},\n    {'name': 'Maya', 'marks': {'math': 105, 'science': 60, 'english': 66}},\n    {'name': 'Dev', 'marks': {'math': 55, 'science': 60}},\n]\ngood, bad = validate(rows)\nranking = analyse(good)\nprint([(s['rank'], s['name'], s['avg']) for s in ranking])\nprint(subject_stats(good)['math'])\nprint(bad)",
+      "output": "",
+      "explanation": "validate() pehle missing subjects check karta hai, phir range/type — is order se error message zyada specific hota hai. Ranking me dense rank use kiya (same average par same rank). Sorting key (-avg, name) se deterministic order milta hai. subject_stats comprehension se ek hi jagah sab aggregates deta hai.",
+      "testing": "Missing subject wala row, out-of-range mark, tied averages (dense rank), aur single-student case test karo.",
+      "errors": "Khali rows list par division by zero — subject_stats me guard chahiye. Non-dict row par .get crash — type check add karo.",
+      "improvements": [
+        "Report ko CSV/JSON me export karo aur CLI flag se choose karo",
+        "Weighted average (subject credits) support karo",
+        "Per-student improvement trend add karo (previous exam se compare)"
+      ],
+      "advanced": [
+        "Pandas/Polars me same report implement karo aur performance compare karo",
+        "Config file se subjects aur grading rules load karo",
+        "Tests + CI: pytest suite jo validation aur ranking ke edge cases cover kare"
+      ],
+      "realWorld": "School/college result processing aur employee performance review sheets — same validation + ranking + aggregation pipeline.",
+      "interview": [
+        { "q": "Ranking ke liye dense rank kyun, aur simple index rank se kya fark?", "a": "Dense rank same score par same rank deta hai aur next rank skip nahi karta — real result sheets aisa hi dikhati hain. Index-based rank duplicates par unfair lagta hai." },
+        { "q": "Validation ko analysis se pehle kyun rakha?", "a": "Warna ek bhi galat row poori report ko corrupt kar deti (average galat, ranking galat). Validation alag function hone se bad rows count/report karna aasan ho jata hai." },
+        { "q": "Scale 1 lakh students tak kaise le jaoge?", "a": "Per-student loop theek hai par repeated sums O(n·subjects) hi rehta hai; column-major storage (subject → marks list) ya Pandas me vectorised sum se constant factor kaafi kam hota hai." }
+      ],
+      "resume": "Built a marks analytics module with row validation, dense ranking, subject-wise statistics and reusable pure functions.",
+      "readme": [
+        "Data format aur SUBJECTS constant ka explanation",
+        "Sample report output",
+        "Validation rules aur bad-row reporting"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Task Board Service (Version 4)",
+      "problem": "Production task tools ko persistence, validation, structured errors, logging aur tests chahiye — warna restart par data chala jata hai aur corrupt file poori service tod deti hai.",
+      "objective": "Ek modular task board banao jo JSON me persist kare, CRUD de, dependencies/priority ke hisaab se sort kare aur invalid input par clear error de.",
+      "features": [
+        "CRUD over list of dicts (add, update, complete, delete)",
+        "Atomic JSON persistence with recovery from corrupt file",
+        "Priority + due-date sorting with stable multi-key ordering",
+        "Filtering (open/done/tag) and summary statistics",
+        "Structured errors and logging",
+        "Unit-testable pure functions with a thin CLI layer"
+      ],
+      "concepts": ["List of dicts as records", "Atomic file write", "Multi-key stable sorting", "Error classes + logging", "Separation of storage/logic/UI"],
+      "structure": "taskboard/\n├── models.py     # record validation\n├── store.py      # JSON load/save with atomic write\n├── service.py    # CRUD + sorting/filtering\n└── cli.py        # argument parsing + run loop",
+      "steps": [
+        "Record validation likho (title non-empty, priority in set, due ISO date).",
+        "store.save ko temp file + rename se atomic banao; load me corrupt JSON catch karo.",
+        "service me add/update/complete/delete, filtering aur sorting implement karo.",
+        "CLI se wire karo aur corrupt-file + invalid-input cases manually test karo."
+      ],
+      "code": "import json, logging, os, tempfile\nfrom datetime import date\n\nlogging.basicConfig(level=logging.INFO, format='%(levelname)s %(message)s')\n\nPRIORITIES = ('low', 'medium', 'high')\n\n\ndef validate(task):\n    if not task.get('title', '').strip():\n        raise ValueError('title required')\n    if task.get('priority', 'medium') not in PRIORITIES:\n        raise ValueError(f'priority must be one of {PRIORITIES}')\n    if 'due' in task:\n        date.fromisoformat(task['due'])\n    return {**task, 'done': bool(task.get('done', False))}\n\n\ndef save(tasks, path):\n    d = os.path.dirname(path) or '.'\n    fd, tmp = tempfile.mkstemp(dir=d, suffix='.tmp')\n    try:\n        with os.fdopen(fd, 'w') as f:\n            json.dump(tasks, f)\n        os.replace(tmp, path)\n    finally:\n        if os.path.exists(tmp):\n            os.remove(tmp)\n    return path\n\n\ndef load(path):\n    if not os.path.exists(path):\n        return []\n    try:\n        with open(path) as f:\n            return json.load(f)\n    except json.JSONDecodeError:\n        logging.error('corrupt task file %s — starting empty (backup kept)', path)\n        os.replace(path, path + '.corrupt')\n        return []\n\n\ndef add(tasks, **fields):\n    tasks.append(validate(fields))\n    return tasks[-1]\n\n\ndef update(tasks, index, **fields):\n    tasks[index] = validate({**tasks[index], **fields})\n    return tasks[index]\n\n\ndef delete(tasks, index):\n    return tasks[:index] + tasks[index + 1:]\n\n\ndef visible(tasks, status='all', tag=None):\n    rows = [t for t in tasks if status == 'all' or t['done'] == (status == 'done')]\n    if tag:\n        rows = [t for t in rows if tag in t.get('tags', [])]\n    return sorted(rows, key=lambda t: (t['done'], -PRIORITIES.index(t['priority']), t.get('due', '9999-12-31'), t['title']))\n\n\ndef summary(tasks):\n    done = sum(1 for t in tasks if t['done'])\n    return {'total': len(tasks), 'done': done, 'open': len(tasks) - done,\n            'high_open': sum(1 for t in tasks if t['priority'] == 'high' and not t['done'])}\n\n\npath = os.path.join(tempfile.gettempdir(), 'tasks_demo.json')\ntasks = load(path)\nadd(tasks, title='Fix retry logic', priority='high', due='2026-09-30', tags=['api'])\nadd(tasks, title='Write runbook', priority='medium', tags=['docs'])\nupdate(tasks, 1, done=True)\nprint(save(tasks, path))\nprint(visible(tasks, status='open'))\nprint(summary(tasks))\nprint(visible(tasks, tag='api')[0]['title'])\ntry:\n    add(tasks, title='   ', priority='urgent')\nexcept ValueError as e:\n    print('rejected:', e)",
+      "output": "",
+      "explanation": "validate() ek hi jagah sab rules rakhta hai aur normalized record return karta hai, isliye service ke baaki functions assume kar sakte hain ki data valid hai. save() temp file + os.replace se atomic hai — crash hone par bhi aadhi likhi file nahi bachti. load() corrupt JSON par backup rakh kar empty start karta hai, isliye ek kharab file poori service nahi todti. visible() ka key multi-key stable sort hai: pehle open tasks, phir priority, phir due date, phir title — isliye output deterministic hai. Unsupported priority par clear ValueError aata hai jo CLI dikha sakta hai.",
+      "testing": "validate ka har rule, corrupt file par load ka behaviour, atomic save ke baad valid JSON, aur visible() ka sorting order — sab tests me cover karo. Ties ke liye do same-priority tasks rakho.",
+      "errors": "ValueError role-based validation ke liye, json.JSONDecodeError recovery ke liye, aur invalid date ke liye ValueError date.fromisoformat se — teenon deliberate hain, isliye CLI inhe user-friendly message me convert kare.",
+      "improvements": [
+        "SQLite storage add karo taki concurrent access safe ho aur query possible ho",
+        "Tags/prority par CLI filters aur search add karo",
+        "Due-date reminders ke liye notification hook (email/webhook) add karo"
+      ],
+      "advanced": [
+        "Repository pattern ke saath SQLite repository + JSON repository dono support karo (interface ek rakho)",
+        "Pytest suite + GitHub Actions CI, coverage report ke saath",
+        "Structured JSON logging aur config via environment variables (12-factor)",
+        "Dockerfile + README (setup, usage, architecture, trade-offs)"
+      ],
+      "realWorld": "Internal team task trackers, on-call action items aur data-pipeline backlog tools ka core exactly yehi hota hai: validated records + persistent store + deterministic sorting + visible status.",
+      "interview": [
+        { "q": "Atomic write kyun zaroori hai?", "a": "Direct file likhne ke beech crash hone par file aadhi likhi ho sakti hai aur poora data unreadable ho jata hai. temp file + os.replace se readers ko sirf complete file dikhti hai — ye POSIX rename atomicity par based hai." },
+        { "q": "Corrupt file par load() kya karta hai aur kya better ho sakta hai?", "a": "Ye file ko .corrupt par move karke empty list return karta hai aur error log karta hai, taki service chalti rahe. Better: checksum/schema version rakho aur last-known-good backup se restore karo." },
+        { "q": "Sorting key kaise design ki?", "a": "Tuple key (done, -priority_index, due, title) — booleans int ki tarah compare hote hain, negative index se high priority pehle aata hai, aur last me title tie-breaker hai taki order deterministic rahe (tests stable rahenge)." },
+        { "q": "Is design me race condition kahan aayegi?", "a": "Do processes same JSON file par likhein to last-write-wins hota hai aur ek ki changes kho jati hain; isliye production me SQLite/Postgres + transaction ya file lock chahiye. Interview me yehi limitation bolna honesty hai." }
+      ],
+      "resume": "Engineered a modular Python task board service with atomic JSON persistence, corrupt-file recovery, multi-key stable sorting, validation errors and logging.",
+      "readme": [
+        "Architecture: models → store → service → cli",
+        "Usage examples with sample output",
+        "Design decisions: atomic write, corrupt recovery, sorting order rationale",
+        "Roadmap: SQLite, filters, CI"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      "Shopping List Manager me tuples use kiye — list of lists kyun nahi?",
+      "Dedupe ke liye set + list dono kyun chahiye, sirf set kyun nahi?",
+      "Sorting me key function ka role kya hai?",
+      "Marks Analyzer me validation analysis se alag module me kyun rakhi?"
+    ],
+    "coding": [
+      "Shopping list me quantity support add karo aur total qty*price se nikaalo.",
+      "Marks analyzer me weighted average (subject credits) add karo.",
+      "Task board me tag filter aur search add karo.",
+      "Report ko JSON export karne ka option add karo."
+    ],
+    "advanced": [
+      "JSON persistence ko atomic banao (temp file + replace) aur crash behaviour test karo.",
+      "1 lakh records par sorting aur filtering ka performance measure karo aur optimize karo.",
+      "Stable multi-key sort ko custom comparator se replace karke compare karo.",
+      "Memory-bounded processing (generators/chunking) implement karo."
+    ],
+    "interview": [
+      "Is project ko production me kaise scale karoge?",
+      "Sorting aur filtering ki complexity kya hai?",
+      "Memory usage kaise reduce karoge jab 10 lakh tasks hon?",
+      "Konsi error cases abhi handle nahi hoti?",
+      "Is task board ko API me kaise convert karoge?"
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Live coding: do sorted lists ko merge karke ek sorted list banao aur duplicate count do.",
+      "a": "Two-pointer merge O(n+m) me; equal elements par dono pointers aage badhao aur counter badhao. Ye merge-sort ka core step hai, isliye interviewers isse algorithm knowledge bhi test karte hain.",
+      "deliverable": "Function + complexity + 2 test cases."
+    },
+    {
+      "q": "Interview: 'list me se duplicate elements remove karo order preserve karte hue' — pehle brute force complexity batao, phir optimal do.",
+      "a": "Brute force: nested loop ya lst.count() O(n²). Optimal: seen-set + output list O(n) time / O(n) space; ya dict.fromkeys(items) one-liner. Sorted input ho to in-place two-pointer O(1) space.",
+      "deliverable": "Do solutions + complexity table."
+    },
+    {
+      "q": "Practical: ek list of dicts diya gaya hai — top-3 customers by spend nikaalo aur total revenue batao.",
+      "a": "sorted(rows, key=lambda r: r['spend'], reverse=True) ya heapq.nlargest(3, rows, key=...) for O(n log k). Total ke liye sum(...) — ek hi pass me dono ho sakte hain. Missing 'spend' par .get('spend', 0) use karo.",
+      "deliverable": "Snippet + missing-key handling."
+    },
+    {
+      "q": "Interview: 'mutate while iterating' bug ka example do aur do safe alternatives batao.",
+      "a": "Example: for n in nums: nums.remove(n) — list chhoti hoti hai par iterator skip karta hai. Safe: (1) nayi list comprehension, (2) reverse index loop (range(len-1, -1, -1)), (3) delete, ya collect indices then delete.",
+      "deliverable": "Buggy + fixed snippet aur test jo farq dikhaye."
+    },
+    {
+      "q": "Design task: 1 GB ke CSV se unique user IDs ki list banao, memory limited.",
+      "a": "Line-by-line read karo, ID set me daalo (dedupe) — agar IDs bahut zyada hon to disk-backed set (sqlite temp table) ya Bloom filter + second pass use karo. Poore CSV ko list me load karna galat hai; streaming hi solution hai, aur output ko file me write karo.",
+      "deliverable": "Step-by-step design + data structure justification."
+    }
+  ],
+  "revision": [
+    "List mutable aur ordered hai; indexing O(1), append O(1) amortised, insert/remove O(n), membership O(n).",
+    "In-place methods (append, sort, reverse, remove, pop) None return karte hain; sorted/reversed naya object dete hain.",
+    "Aliasing vs copy: = reference copy karta hai; copy()/[:] shallow, deepcopy nested ke liye.",
+    "Comprehension map+filter ek line me deti hai; generator expression memory bachata hai.",
+    "Sorting stable hai — multi-key ordering key=(primary, secondary) se milti hai.",
+    "Mutate-while-iterate silent bug hai; comprehension ya reverse-index loop use karo.",
+    "FIFO ke liye list par deque better hai (popleft O(1) vs list pop(0) O(n))."
+  ]
+}

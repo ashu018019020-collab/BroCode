@@ -1,0 +1,673 @@
+{
+  "section": "s01",
+  "topic": "Variables & Data Types",
+  "authored": true,
+  "intro": "Variable Python me dabba nahi, ek naam hai jo kisi object ko point karta hai. Isi wajah se ek hi value ke do naam ho sakte hain, aur type naam se bandha nahi hota: x = 10 ke baad x = 'das' bilkul valid hai. Ye section wahi foundation deta hai jispar poora baaki course khada hai — type, mutability aur assignment ka sahi mental model.",
+  "theory": [
+    "Assignment do step me hoti hai: pehle right side ka object banta hai, phir left side ka naam us par bind hota hai. Isliye type(x) object batata hai, x ka koi permanent type nahi hota.",
+    "Mutable (list, dict, set) aur immutable (int, str, tuple, frozenset) ka fark yahin se shuru hota hai. Immutable par 'change' ka matlab naya object + rebinding hai; mutable object ko in-place badla ja sakta hai — aur uske saare naam wahin dekh lete hain.",
+    "Multiple assignment ek hi statement me unpacking karti hai: a, b = b, a swap ke liye temp variable nahi chahiye. Star-unpacking (first, *rest = ...) bache hue elements ki list deti hai.",
+    "None ek singleton hai — iske liye 'is None' likho, '== None' nahi. 'is' identity compare karta hai (ek hi object?), '==' equality (barabar value?).",
+    "Truthiness: 0, 0.0, '', [], {}, set(), None, False falsy hain, baaki sab truthy. Naming convention: variables/function snake_case, constants UPPER_CASE, internal naam _underscore."
+  ],
+  "syntax": [
+    "name = 'Ahetesham'        # simple binding\ncount = 0\nPI = 3.14                 # convention: constant\n_internal = 'keep out'    # convention: internal use",
+    "a, b = 1, 2               # tuple unpacking\na, b = b, a               # swap without temp\nfirst, *rest = [1, 2, 3]  # first=1, rest=[2, 3]\nx = y = z = 0             # teenon ek hi int object par",
+    "type(x)                     # <class 'int'>\nisinstance(x, (int, float)) # True — preferred check\nvalue is None               # identity, not equality\ndel x                       # naam hatao (object garbage collect ho sakta hai)"
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "code": "name = 'Ahetesham'\nage = 31\nheight = 1.75\nis_engineer = True\nskills = ['python', 'sql', 'ml']\ndetails = {'city': 'Pune'}\nnothing = None\n\nfor v in (name, age, height, is_engineer, skills, details, nothing):\n    print(f'{type(v).__name__:9} -> {v!r}')",
+      "output": "",
+      "explain": [
+        "Har line ek object banati hai aur naam ko us par bind karti hai — isliye type() hamesha object se poochta hai, variable se 'declaration' nahi.",
+        "type(v).__name__ class ka naam string me deta hai, isliye f-string me alignment (:9) lagaya ja sakta hai.",
+        "{v!r} repr() use karta hai: string quotes ke saath dikhti hai (''), jo debugging me exact value batata hai."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "code": "numbers = [1, 2, 3]\nnumbers.append(4)        # in-place: wahi object badla\nprint('list   :', numbers)\n\ntext = 'py'\ntext = text + 'thon'     # naya object; purana 'py' waisa hi raha\nprint('string :', text)\n\na = [1, 2]\nb = a                    # do naam, ek hi object\na.append(3)\nprint('alias  :', b, '| same object?', a is b)",
+      "output": "",
+      "explain": [
+        "append() list ko in-place badalta hai aur None return karta hai — isliye result store karne ki galti (x = lst.append(4)) bahut common hai.",
+        "String immutable hai, isliye text + 'thon' ek nayi string banata hai; purani string ko koi chhoo nahi sakta.",
+        "b = a copy nahi banata. Dono naam ek hi list dekhte hain, isliye a.append(3) ke baad b bhi badla — isi ko aliasing kehte hain."
+      ]
+    },
+    {
+      "level": "advanced",
+      "code": "rows = [('Anjali', 122000), ('Rehan', 120000), ('Salman', 125000)]\n\nfor name, salary in rows:\n    print(f'{name:<8} {salary:>8,}')\n\nfirst, *others = rows\nprint('first :', first[0])\nprint('others:', [r[0] for r in others])\n\nprofile = {'name': 'Anjali', 'team': 'DB2'}\nkey, value = next(iter(profile.items()))\nprint('pair  :', key, '=', value)\n\ncopy_of = rows.copy()\ncopy_of[0] = ('Changed', 0)\nprint('original still:', rows[0][0])",
+      "output": "",
+      "explain": [
+        "for name, salary in rows har tuple ko unpack karta hai — isliye row[0]/row[1] likhne ki zaroorat nahi.",
+        "first, *others star-unpacking hai: pehla item alag, baaki list me. Bade records me header/records alag karne ka standard tarika.",
+        "copy() shallow hai: list ka naya dabba banta hai par andar ke tuple wahi hain — isliye ek item replace karne se original safe rehta hai (tuple immutable hai)."
+      ]
+    }
+  ],
+  "realWorld": [
+    "Config aur environment variables hamesha string me aate hain ('true', '8000', '3.5') — unhe sahi type me daalna ek real task hai, warna port number string ban jata hai aur comparison fail hoti hai.",
+    "Data cleaning me missing value ka faisla type se hota hai: NaN (float), None (object), '' (string). Teenon ka handling alag hota hai, aur galat copy semantics ETL job me chupke se data badal deti hai.",
+    "Production bugs ka bada hissa aliasing se aata hai: ek function ko list pass ki, usne sort laga diya, aur caller ka original data bhi sort ho gaya. Isliye API boundaries par copy ya immutable type (tuple) dena better hota hai."
+  ],
+  "interview": [
+    {
+      "q": "Python me variable declaration kyun nahi hota, aur ye practical me kya asar deta hai?",
+      "a": "Python me naam aur object alag cheez hain: x = 5 me pehle int object banta hai, phir naam us par bind hota hai. Isliye koi 'type declaration' nahi hoti, function kisi bhi tarah ka object accept kar sakta hai, aur wahi cheez bugs bhi laati hai (silent type change). Asar: type hints aur runtime validation (isinstance) par bharosa karna padta hai, compiler par nahi.",
+      "tip": "Naam ka 'label' wala model bolo, aur type hints ka zikr karo — isse pata chalta hai ki aap static checking samajhte hain."
+    },
+    {
+      "q": "'is' aur '==' ka fark kya hai aur kab galti hoti hai?",
+      "a": "'==' __eq__ call karta hai (value compare), 'is' identity compare karta hai (same object?). Galti None/True/False ke saath '==' likhne par hoti hai — aisi class jo custom __eq__ deti hai, wo None ke barabar 'barabar' ban sakti hai. Small integers (-5..256) interned hote hain isliye 100 is 100 True lagta hai, par 1000 is 1000 guarantee nahi. Rule: singletons ke liye 'is', values ke liye '=='.",
+      "tip": "Note: 'sahi jawab' ke saath ek chhota example do (1000 is 1000) — interviewer ko depth dikhta hai."
+    },
+    {
+      "q": "Mutable aur immutable types ka fark function arguments me kaise dikhta hai?",
+      "a": "Python pass-by-object-reference hai: function ko object ka reference milta hai. Mutable ke saath in-place change caller ko dikhta hai (side effect), immutable par rebinding sirf local naam badalti hai aur caller ko asar nahi hota. Isliye default argument me mutable value (def f(x, acc=[])) khatarnak hai — wo ek hi list har call me share hoti hai.",
+      "tip": "Mutable default argument ka example hamesha ready rakho; ye language design question ka best jawab hai."
+    },
+    {
+      "q": "Shallow copy aur deep copy me kab kaun chahiye?",
+      "a": "Shallow copy (list.copy(), dict.copy(), copy.copy) naya top-level container deta hai par andar ke objects share hote hain — nested structure me ek andar ka item badalne se dono badalte hain. Deep copy (copy.deepcopy) poora graph reproduce karta hai, par slow hai aur cycles/uncopyable objects handle karne padte hain. Rule: nested mutable data safely badalna ho to deepcopy, warna shallow kaafi hai.",
+      "tip": "Ek line me cost bhi bolo: deepcopy O(size) hai aur custom objects ke liye __deepcopy__ chahiye ho sakta hai."
+    },
+    {
+      "q": "None, False, 0, '' me fark batao aur None ko sahi kaise check karte hain?",
+      "a": "None ek singleton object hai jo 'koi value nahi' batata hai; False/0/'' falsy values hain par asli data hain. Sirf truthiness se check karne par valid 0 ya '' bhi reject ho jate hain. Sahi tarika: value is None (identity), aur 'null nahi hoga' wali default {'threshold': 0} pattern ke saath sentinel use karna.",
+      "tip": "Zero aur empty string valid data ho sakte hain — isi liye 'if value:' ko aankh band karke mat use karo."
+    }
+  ],
+  "practice": {
+    "beginner": [
+      {
+        "q": "x = 5 likhne ke baad x ka type bina chalaye batao, phir type() se verify karo.",
+        "a": "int. Python me 5 ek int object hai; 5.0 float, '5' str, True bool hota hai (aur bool int ka subclass hai).",
+        "explain": "Type variable ka nahi, us object ka hota hai jispar naam currently bind hai.",
+        "code": "x = 5\nprint(type(x).__name__)\nprint(isinstance(x, int), isinstance(True, int))",
+        "output": "",
+        "tip": "Interview me bool int ka subclass hone ka zikr karna bonus hai (isliye True + True == 2)."
+      },
+      {
+        "q": "Do variables ki values ek line me swap karo.",
+        "a": "a, b = b, a — right side pehle tuple ki tarah evaluate hota hai, phir unpack hota hai, isliye temp variable ki zaroorat nahi.",
+        "code": "a, b = 10, 20\na, b = b, a\nprint(a, b)",
+        "output": "",
+        "explain": "Python me RHS poora evaluate hota hai uske baad assignment hoti hai — isliye ye overwrite nahi hota.",
+        "tip": "Teen values rotate karne ka bhi batao: a, b, c = c, a, b."
+      },
+      {
+        "q": "Ek string ko int me convert karke uska type print karo.",
+        "a": "int('42') se 42 milega; '42.5' par ValueError aata hai, uske liye float() chahiye.",
+        "code": "raw = '42'\nvalue = int(raw)\nprint(value, type(value).__name__)\nprint(float('3.5'), int(float('3.5')))",
+        "output": "",
+        "explain": "int() string ko decimal me parse karta hai; float-string ke liye pehle float, phir int (truncate hota hai, round nahi).",
+        "tip": "Ye 'string to number' conversion production ETL ka pehla step hota hai."
+      },
+      {
+        "q": "print('10' + 5) kyu crash karta hai aur sahi tarika kya hai?",
+        "a": "TypeError: str aur int ko + se joda nahi ja sakta, kyunki Python implicit conversion nahi karta. Fix: f-string (f'10{5}') ya str(5) / int('10') se explicit conversion.",
+        "explain": "Python strongly typed hai: 'implicitly convert karke kaam chala lo' policy nahi hai.",
+        "code": "try:\n    print('10' + 5)\nexcept TypeError as e:\n    print('TypeError:', e)\nprint(f'{10}{5}')\nprint('10' + str(5))",
+        "output": "",
+        "tip": "Hamesha f-string prefer karo — concatenation se comparison aur logging dono clear rehte hain."
+      }
+    ],
+    "intermediate": [
+      {
+        "q": "Tuple unpacking se list ka first, middle saare aur last alag karo.",
+        "a": "first, *middle, last = [1, 2, 3, 4, 5] — pehla aur aakhri alag, bache hue middle list me.",
+        "explain": "Star ek hi baar use ho sakta hai aur wo hamesha list banata hai (khali bhi ho to []).",
+        "code": "data = [1, 2, 3, 4, 5]\nfirst, *middle, last = data\nprint(first, middle, last)\n\nhead, *rest = data\nprint(head, rest)",
+        "output": "",
+        "tip": "Records parse karne me header/records alag karne ka ye idiomatic tarika hai."
+      },
+      {
+        "q": "Mutable aur immutable ka fark ek example se dikhao jisme modification ka asar alag ho.",
+        "a": "List me append karne se uske saare naam badalte hain; string par += naya object banata hai aur purana naam waisa hi rehta hai.",
+        "explain": "Yehi fark security bug ka source hai: shared list ko ek function badal de to dusra client bhi badla hua data dekhta hai.",
+        "code": "lst = [1, 2]\nalias = lst\nlst.append(3)\nprint('list alias sees:', alias)\n\ns1 = 'py'\ns2 = s1\ns1 = s1 + 'thon'\nprint('s1:', s1, '| s2:', s2)",
+        "output": "",
+        "tip": "Interview me 'pass by object reference' term use karo."
+      },
+      {
+        "q": "None ko check karne ke liye '==' kyun nahi use karna chahiye?",
+        "a": "Kyunki '==' __eq__ call karta hai, aur kisi class ka __eq__ None ke barabar True return kar sakta hai (galti se ya jaan-bujhkar). None singleton hai, isliye 'is None' fast aur correct hai.",
+        "explain": "Isi logic se True/False ke liye bhi 'is' use karte hain.",
+        "code": "class Weird:\n    def __eq__(self, other):\n        return True\n\nw = Weird()\nprint('== says equal :', w == None)\nprint('is says same  :', w is None)",
+        "output": "",
+        "tip": "Ye ek classic interview trap hai — example ke saath jawab dena strong lagta hai."
+      },
+      {
+        "q": "Function ka signature likho jo config me se port ko int banae, value na ho to default 8000 de, aur galat value par None return kare (crash na ho).",
+        "a": "def as_port(raw, default=8000): ... — missing (None/'' ) par default, galat (non-numeric) par None, aur range check 1..65535.",
+        "explain": "Do alag failure modes ko alag treat karna hi robust config parsing hai.",
+        "code": "def as_port(raw, default=8000):\n    if raw is None or str(raw).strip() == '':\n        return default\n    try:\n        port = int(raw)\n    except (TypeError, ValueError):\n        return None\n    return port if 0 < port < 65536 else None\n\nfor raw in ['8000', None, '', 'http', '99999']:\n    print(repr(raw), '->', as_port(raw))",
+        "output": "",
+        "tip": "try/except me sirf conversion rakho — poora function wrap karna bad practice hai."
+      }
+    ],
+    "advanced": [
+      {
+        "q": "Shallow copy ka trap nested list se demonstrate karo.",
+        "a": "outer.copy() naye outer list deta hai, par andar ki lists share hoti hain — ek andar ki list me append karne se dono copies badalti hain. deepcopy se ye theek hota hai.",
+        "explain": "Ye bug tab milta hai jab naam alag hote hain par andar ka graph ek hi hai.",
+        "code": "import copy\n\noriginal = [[1, 2], [3, 4]]\nshallow = original.copy()\ndeep = copy.deepcopy(original)\n\nshallow[0].append(99)\nprint('after shallow append:', original)\nprint('after deep copy     :', deep)",
+        "output": "",
+        "tip": "deepcopy ka cost bhi batao: O(size) aur cycles ke liye memo dictionary."
+      },
+      {
+        "q": "Ek function likho jo kisi bhi value ka type, mutability aur 'aage kya dhyan rakho' bataye.",
+        "a": "isinstance() se category decide karo, immutable set se mutability, aur per-category ek line ka advice do.",
+        "explain": "Runtime introspection se readable report banti hai — debugging aur teaching dono me kaam aati hai.",
+        "code": "IMMUTABLE = (int, float, complex, bool, str, bytes, tuple, frozenset, type(None))\n\ndef describe(value):\n    kind = type(value).__name__\n    mutable = 'immutable' if isinstance(value, IMMUTABLE) else 'mutable'\n    size = len(value) if hasattr(value, '__len__') else '-'\n    return f'{kind:10} {mutable:10} len={size}'\n\nfor v in (42, 3.5, 'py', [1, 2], {'a': 1}, (1, 2), None, True):\n    print(describe(v))",
+        "output": "",
+        "tip": "hasattr check se len() ko safely call karna production code ka pattern hai."
+      },
+      {
+        "q": "Ek helper likho jo nested dict ko deep-merge kare, original dict ko mutate na kare, aur conflict par 'later wins' rule lagao.",
+        "a": "deepcopy se copy banao, phir key-by-key merge; dono side dict hone par recursion, warna naya value overwrite.",
+        "explain": "Config merge ka real use case: defaults + user overrides + environment overrides.",
+        "code": "import copy\n\ndef merge(base, override):\n    result = copy.deepcopy(base)\n    for key, value in override.items():\n        if isinstance(value, dict) and isinstance(result.get(key), dict):\n            result[key] = merge(result[key], value)\n        else:\n            result[key] = value\n    return result\n\ndefaults = {'db': {'host': 'localhost', 'port': 5432}, 'debug': False}\nuser = {'db': {'port': 6543}}\nmerged = merge(defaults, user)\nprint(merged)\nprint('defaults untouched:', defaults['db']['port'])",
+        "output": "",
+        "tip": "Deep-merge me 'None ko skip karo' wala rule bhi mention karo — production me wahi chahiye hota hai."
+      }
+    ],
+    "interview": [
+      {
+        "q": "Agar aapko 10 lakh records ka nested data memory me rakhkar badalna ho, to copy strategy kya hogi?",
+        "a": "Poora deepcopy lena 2x memory lega; instead structural sharing karo — sirf un branches ki copy banao jahan change ho rahi hai (immutable-style update). Ya bade datasets ko disk/parquet + column-wise processing par le jao.",
+        "explain": "Interviewer memory aur copy cost dono measure karna chahta hai.",
+        "code": "row = {'id': 1, 'tags': ['a', 'b'], 'meta': {'src': 'csv'}}\nupdated = {**row, 'tags': [*row['tags'], 'c']}\nprint(updated['tags'], '| original:', row['tags'])",
+        "output": "",
+        "tip": "Structural sharing aur immutability ka jodi me zikr karo — ye senior-level signal hai."
+      },
+      {
+        "q": "Type hints se runtime safety kitni milti hai?",
+        "a": "Zero — hints sirf tooling (mypy/pyright), IDE aur docs ke liye hote hain. Runtime par galat type pass karne se kuch nahi rokta. Safety chahiye to isinstance validation, pydantic jaise validator, ya dataclass + __post_init__ use karo.",
+        "explain": "Ye ek clarity test hai: log hints ko enforcement samajh lete hain.",
+        "code": "def add(a: int, b: int) -> int:\n    return a + b\n\nprint(add(2, 3))\nprint(add('2', '3'))  # hints ne kuch nahi roka",
+        "output": "",
+        "tip": "pydantic/FastAPI ka example de dena production context dikhata hai."
+      },
+      {
+        "q": "Kya int aur float me arithmetic mixing safe hai?",
+        "a": "Value range ke liye safe hai (int arbitrary precision, float 64-bit), par precision ka issue hai: 0.1 + 0.2 != 0.3. Paise ke liye decimal.Decimal ya paise ko integer (paise/cent) me rakho.",
+        "explain": "Interviewer floating point ke bare me aapki awareness check kar raha hai.",
+        "code": "print(0.1 + 0.2)\nprint(0.1 + 0.2 == 0.3)\nprint(1/3 + 1/3 + 1/3 == 1.0)",
+        "output": "",
+        "tip": "Decimal ya integer-cents ka solution batao, 'approximately compare karo' par mat ruk jao."
+      }
+    ],
+    "realworld": [
+      {
+        "q": "Environment variables se aaya '8080' string ko port me convert karo aur user ko clear error do.",
+        "a": "Helper function jo missing/garbage/out-of-range ko alag handle kare aur error message me variable ka naam de.",
+        "explain": "Ye wahi 12-Factor config pattern hai jo har production service me hota hai.",
+        "code": "def required_port(env, key, default=None):\n    raw = env.get(key)\n    if raw is None:\n        if default is None:\n            raise KeyError(f'{key} missing — set it before starting the app')\n        return default\n    try:\n        port = int(raw)\n    except ValueError:\n        raise ValueError(f'{key}={raw!r} is not a number') from None\n    if not 0 < port < 65536:\n        raise ValueError(f'{key}={port} out of range 1-65535')\n    return port\n\nprint(required_port({'PORT': '8000'}, 'PORT'))\nprint(required_port({}, 'PORT', default=8080))\ntry:\n    required_port({'PORT': 'eight-thousand'}, 'PORT')\nexcept ValueError as e:\n    print('error:', e)",
+        "output": "",
+        "tip": "raise ... from None se confusing chained traceback hat jata hai — production code me clean lagta hai."
+      },
+      {
+        "q": "CSV se aaya data hai: ['', 'none', 'NaT', 0] — kaun sa represent 'missing' hai?",
+        "a": "None se 'data hi nahi tha', 0 se 'value zero thi'. '' aur 'none' ko normalize karke None banao par 0 ko bachao. Ye distinction analysis ko galat hone se bachata hai.",
+        "explain": "Missing vs zero ka fark galat average deta hai — isliye normalize function me explicit sentinel rakhte hain.",
+        "code": "MISSING = {'', 'none', 'null', 'nan', 'nat'}\n\ndef normalize(values):\n    out = []\n    for v in values:\n        if isinstance(v, str) and v.strip().lower() in MISSING:\n            out.append(None)\n        else:\n            out.append(v)\n    return out\n\nclean = normalize(['', 'none', 'NaT', 0])\nactual = [v for v in clean if v is not None]\nprint(clean)\nprint('values present:', actual, '| mean of present:', sum(actual) / len(actual))",
+        "output": "",
+        "tip": "Missing-count aur mean kaise report karoge — ye data engineer interview me poochha jata hai."
+      },
+      {
+        "q": "API response ka JSON parse karke agar field missing ho to default key-value set karo, bina caller ko crash diye.",
+        "a": "dict.get + defaults ka merge, aur bool/None ko explicitly handle karo (False ko missing na samjho).",
+        "explain": "Ye 'defensive schema' pattern hai jo third-party API ke against robust banata hai.",
+        "code": "DEFAULTS = {'name': 'unknown', 'active': False, 'score': 0.0}\n\ndef parse(payload):\n    result = dict(DEFAULTS)\n    for key, default in DEFAULTS.items():\n        value = payload.get(key)\n        if value is None:\n            continue  # default hi rahega\n        try:\n            result[key] = type(default)(value) if default is not False else bool(value)\n        except (TypeError, ValueError):\n            result[key] = default\n    return result\n\nprint(parse({'name': 'Anjali', 'score': '91.5'}))\nprint(parse({}))",
+        "output": "",
+        "tip": "type(default)(value) casting trick kaam karti hai, par production me explicit per-field parsers safer hote hain — dono batao."
+      }
+    ]
+  },
+  "coding": [
+    {
+      "difficulty": "easy",
+      "question": "Unit converter likho jo km ko miles me aur celsius ko fahrenheit me badle.",
+      "build": "Do functions: km_to_miles() aur celsius_to_fahrenheit(), phir ek formatted table print karo.",
+      "input": "distances = [1, 5, 21.1]; temps = [0, 37, 100]",
+      "expected": "Har row me original value aur converted value, 2 decimal tak.",
+      "hint": "1 km = 0.621371 miles, F = C * 9/5 + 32. Table ke liye zip() use karo.",
+      "concept": "Functions, numeric conversion, f-string formatting",
+      "solution": "def km_to_miles(km):\n    return km * 0.621371\n\ndef celsius_to_fahrenheit(c):\n    return c * 9 / 5 + 32\n\nfor km in (1, 5, 21.1):\n    print(f'{km:>6.1f} km = {km_to_miles(km):>6.2f} miles')\n\nfor c in (0, 37, 100):\n    print(f'{c:>6.1f} C  = {celsius_to_fahrenheit(c):>6.2f} F')",
+      "output": "",
+      "explanation": "Conversion factors functions me chhupe hain, isliye test karna aasan hai aur magic numbers ek jagah rehte hain. Format spec :>6.2f se columns align hote hain.",
+      "time": "O(n) — har value par ek constant-time calculation",
+      "space": "O(1) — koi storage nahi, sirf print",
+      "better": "Bade batches ke liye generator expression + '\".join(...)' use karo, ya pandas me vectorized column operation — ek hi pass me laakh rows.",
+      "followUp": "Agar 5 crore rows convert karni ho to loop kyu chhod dena chahiye? (vectorization vs per-row Python overhead)"
+    },
+    {
+      "difficulty": "easy",
+      "question": "Type inspector likho jo values ki list par naam, type aur mutability print kare.",
+      "build": "Function describe(value) jo (type, mutable/immutable, length) return kare; caller table print kare.",
+      "input": "[42, 3.5, 'python', [1, 2], {'a': 1}, (1, 2), None, True]",
+      "expected": "Har value ke liye ek aligned row.",
+      "hint": "Immutable types ka tuple banao; length ke liye hasattr(value, '__len__') check karo.",
+      "concept": "isinstance, hasattr, tuple membership",
+      "solution": "IMMUTABLE = (int, float, complex, bool, str, bytes, tuple, frozenset, type(None))\n\ndef describe(value):\n    kind = type(value).__name__\n    mutability = 'immutable' if isinstance(value, IMMUTABLE) else 'mutable'\n    size = len(value) if hasattr(value, '__len__') else '-'\n    return kind, mutability, size, repr(value)\n\nvalues = [42, 3.5, 'python', [1, 2], {'a': 1}, (1, 2), None, True]\nfor v in values:\n    kind, mutability, size, shown = describe(v)\n    print(f'{kind:10} {mutability:10} len={str(size):>3}  {shown}')",
+      "output": "",
+      "explanation": "isinstance tuple ke saath poori family check karta hai (bool bhi int maana jata hai). hasattr guard se len() sirf sequence/collection par call hota hai — warna TypeError aata.",
+      "time": "O(1) per value",
+      "space": "O(1) per call",
+      "better": "Lakhs of values ke liye Counter() se type distribution nikaalo aur sirf summary print karo — output size O(k) rehta hai jahan k = distinct types.",
+      "followUp": "bool int ka subclass hai — iska kya practical nuksan hota hai? (True + True == 2, isinstance(True, int) == True)"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Records parser likho jo 'name:score' strings ko typed tuples me badle, invalid rows skip kare aur skipped count bataye.",
+      "build": "parse_rows(rows) -> (records, skipped) jisme record (name, float score) ho.",
+      "input": "['Anjali:91.5', 'Rehan:88', 'bad-row', 'Salman:not-a-number', ':77']",
+      "expected": "3 valid records, 2 skipped, aur valid records ka average.",
+      "hint": "split(':', 1) use karo, empty name reject karo, float() ko try/except me rakho.",
+      "concept": "String parsing, tuple unpacking, exception handling",
+      "solution": "def parse_rows(rows):\n    records, skipped = [], []\n    for row in rows:\n        if ':' not in row:\n            skipped.append((row, 'no separator'))\n            continue\n        name, raw_score = row.split(':', 1)\n        name = name.strip()\n        try:\n            score = float(raw_score)\n        except ValueError:\n            skipped.append((row, 'score is not numeric'))\n            continue\n        if not name:\n            skipped.append((row, 'empty name'))\n            continue\n        records.append((name, score))\n    return records, skipped\n\nrows = ['Anjali:91.5', 'Rehan:88', 'bad-row', 'Salman:not-a-number', ':77']\nrecords, skipped = parse_rows(rows)\nfor name, score in records:\n    print(f'{name:<8} {score:>6.1f}')\nprint('valid:', len(records), 'skipped:', len(skipped))\nprint('average:', round(sum(s for _, s in records) / len(records), 2))\nfor row, reason in skipped:\n    print('  skip:', repr(row), '->', reason)",
+      "output": "",
+      "explanation": "split(':', 1) maxsplit deta hai taaki value me ':' ho to bhi na toote. Failure reason record karna production habit hai — 'kuch rows skip ho gayi' ke bajaye exactly pata chalta hai kyu.",
+      "time": "O(n) rows, har row par O(len(row)) parse",
+      "space": "O(n) — records aur skipped dono store hote hain",
+      "better": "Streaming parse karo (generator) taaki 10 crore rows memory me na aayein, aur counters alag rakho; ya csv module/regex validators use karo.",
+      "followUp": "Ye code 5 lakh rows par kaise scale karoge aur failures kaise report karoge? (generator + error log file)"
+    },
+    {
+      "difficulty": "medium",
+      "question": "Safe type coercion helper likho jo default value ke type ke hisaab se convert kare, aur convert na ho to default de.",
+      "build": "coerce(value, default) — default ka type decide karega target type.",
+      "input": "('91.5', 0.0), ('88', 0), ('true', False), (None, 'unknown'), ('abc', 0)",
+      "expected": "Har input ke liye ek safe result, koi exception nahi.",
+      "hint": "bool ke liye special case lagao kyunki bool('false') True deta hai — ye classic trap hai.",
+      "concept": "Dynamic typing, type-driven conversion, truthiness traps",
+      "solution": "TRUE = {'true', '1', 'yes', 'y', 'on'}\nFALSE = {'false', '0', 'no', 'n', 'off'}\n\ndef coerce(value, default):\n    if value is None:\n        return default\n    target = type(default)\n    if target is bool:\n        if isinstance(value, str):\n            token = value.strip().lower()\n            if token in TRUE:\n                return True\n            if token in FALSE:\n                return False\n            return default\n        return bool(value)\n    try:\n        return target(value)\n    except (TypeError, ValueError):\n        return default\n\ncases = [('91.5', 0.0), ('88', 0), ('true', False), ('false', True), (None, 'unknown'), ('abc', 0)]\nfor value, default in cases:\n    result = coerce(value, default)\n    print(f'{repr(value):8} default={repr(default):9} -> {result!r} ({type(result).__name__})')",
+      "output": "",
+      "explanation": "bool ko alag handle karna zaroori hai: bool('false') True hota hai kyunki koi bhi non-empty string truthy hai. Sentinel sets se 'false'/'0'/'off' jaise sab common spellings cover ho jate hain.",
+      "time": "O(1) per value (string length ke hisaab se)",
+      "space": "O(1)",
+      "better": "Schema-driven approach: {'port': int, 'debug': bool} jaise mapping se converters build karo, ya pydantic model use karo — validation aur errors automatic milte hain.",
+      "followUp": "Bool ke truthiness trap ka ek aur example do jo production me aapne dekha ho."
+    },
+    {
+      "difficulty": "medium",
+      "question": "Mutable default argument ka bug demonstrate karo aur uska correct version likho.",
+      "build": "Do functions: broken_add(tag) aur fixed_add(tag, bucket=None) — dono me tag append hota hai.",
+      "input": "Teen calls: 'a', 'b', 'c' — dono versions par.",
+      "expected": "Broken version accumulate karta rahega, fixed har call par fresh list dega.",
+      "hint": "Default value function define hone ke waqt ek hi baar banti hai — isliye shared rehti hai.",
+      "concept": "Mutable defaults, object identity, function definition time vs call time",
+      "solution": "def broken_add(tag, bucket=[]):\n    bucket.append(tag)\n    return bucket\n\ndef fixed_add(tag, bucket=None):\n    if bucket is None:\n        bucket = []\n    bucket.append(tag)\n    return bucket\n\nprint('broken:')\nfor tag in ('a', 'b', 'c'):\n    print('  ', broken_add(tag))\n\nprint('fixed:')\nfor tag in ('a', 'b', 'c'):\n    print('  ', fixed_add(tag))\n\nprint('fixed with shared bucket:', fixed_add('x', ['start']))",
+      "output": "",
+      "explanation": "Default arguments define hone ke waqt evaluate hoti hain aur function object ke saath store hoti hain — isliye ek hi list har call me milti hai. None sentinel canonical fix hai; explicit bucket pass karne par wahi object use hota hai (mutate hota hai, ye documented behaviour hai).",
+      "time": "O(1) append (amortized)",
+      "space": "O(1) per call fixed version me",
+      "better": "Immutable default (tuple) + naya return karo: return (*bucket, tag) — caller ke data kabhi mutate nahi hota.",
+      "followUp": "Isi bug ka library-level example do (e.g., logging handler list) aur linters ise kaise pakadte hain (B006)."
+    },
+    {
+      "difficulty": "hard",
+      "question": "Ek chhota typed config store banao: dotted key se get/set, environment override, aur safe default.",
+      "build": "class Config with load(payload: dict), set('db.port', 6543), get('db.port', default), aur env override support.",
+      "input": "defaults = {'db': {'host': 'localhost', 'port': 5432}}; env = {'DB_PORT': '6543'}",
+      "expected": "get('db.port') == 6543, get('missing', 1) == 1, aur galti par clear error.",
+      "hint": "Dotted path ko split('.') karke nested dict me chalo; set me intermediate dicts banate jao (defaultdict ya setdefault).",
+      "concept": "Nested dict traversal, deep merge, environment overrides, immutability of source",
+      "solution": "import copy\n\nclass Config:\n    def __init__(self, payload=None):\n        self._data = copy.deepcopy(payload or {})\n\n    def _walk(self, path, create=False):\n        parts = path.split('.')\n        node = self._data\n        for part in parts[:-1]:\n            if part not in node:\n                if not create:\n                    return None, parts[-1]\n                node[part] = {}\n            if not isinstance(node[part], dict):\n                raise TypeError(f'{part!r} is not a section')\n            node = node[part]\n        return node, parts[-1]\n\n    def set(self, path, value):\n        parent, key = self._walk(path, create=True)\n        parent[key] = value\n        return self\n\n    def get(self, path, default=None):\n        parent, key = self._walk(path)\n        if parent is None or key not in parent:\n            return default\n        return parent[key]\n\n    def apply_env(self, env, mapping):\n        for env_key, path in mapping.items():\n            if env_key in env:\n                self.set(path, env[env_key])\n        return self\n\ncfg = Config({'db': {'host': 'localhost', 'port': 5432}})\ncfg.apply_env({'DB_PORT': '6543'}, {'DB_PORT': 'db.port'})\nprint('port      :', cfg.get('db.port'))\nprint('host      :', cfg.get('db.host'))\nprint('missing   :', cfg.get('db.timeout', 30))\ncfg.set('cache.ttl', 60)\nprint('nested new:', cfg.get('cache.ttl'))\nprint('whole db  :', cfg.get('db'))",
+      "output": "",
+      "explanation": "Ek _walk helper dono get/set ki duplication hata deta hai. deepcopy input isolation deta hai: caller ka dict badalne se config nahi badalta. get me default return karna callers ko try/except se bachata hai.",
+      "time": "O(d) per access jahan d = dotted path ki depth",
+      "space": "O(size of config) once",
+      "better": "Nested dict ke bajaye flat key store ('db.port' -> value) rakho to lookup O(1) ho jata hai, ya dataclasses + pydantic se schema-validated config banao.",
+      "followUp": "Config ko thread-safe kaise karoge, aur env override ko precedence order (defaults < file < env < cli) me kaise organize karoge?"
+    },
+    {
+      "difficulty": "hard",
+      "question": "Structural sharing wala immutable update helper likho jo nested dict me ek path ki value badle bina baaki branches copy kiye.",
+      "build": "update_path(data, path, value) — naya dict return kare, original untouched rahe.",
+      "input": "data = {'db': {'host': 'h', 'port': 5432}, 'tags': ['a']}; path 'db.port' -> 6543",
+      "expected": "Naya dict me port 6543, original 5432, aur jo branches na badlin wahi object share ho (identity same).",
+      "hint": "Recursive: pehla key nikalo, baaki ke liye recursive result lo, aur {**rest, key: updated} banao.",
+      "concept": "Immutable update, structural sharing, recursion, object identity",
+      "solution": "def update_path(data, path, value):\n    key, *rest = path\n    if not rest:\n        return {**data, key: value}\n    child = data.get(key)\n    if not isinstance(child, dict):\n        raise TypeError(f'{key!r} is not a nested mapping')\n    return {**data, key: update_path(child, rest, value)}\n\noriginal = {'db': {'host': 'h', 'port': 5432}, 'tags': ['a']}\nupdated = update_path(original, ['db', 'port'], 6543)\n\nprint('updated db.port :', updated['db']['port'])\nprint('original db.port:', original['db']['port'])\nprint('shared host key :', updated['db']['host'] is original['db']['host'])\nprint('shared tags     :', updated['tags'] is original['tags'])\nprint('new db section? :', updated['db'] is not original['db'])\n\ntry:\n    update_path(original, ['tags', 'x'], 1)\nexcept TypeError as e:\n    print('error:', e)",
+      "output": "",
+      "explanation": "Sirf path wale branches naye bante hain, bache hue references share hote hain — isliye memory bachti hai aur identity comparison se test likhna possible hota hai. Galat node par TypeError dena silent corruption se better hai.",
+      "time": "O(d) dict copies, jahan d path depth hai",
+      "space": "O(d) naye dict objects",
+      "better": "Production me persistent data structures (immutables.Map) ya dataclasses.replace() use karo — O(log n) update aur hashability bonus milti hai.",
+      "followUp": "React/Redux style state updates me ye pattern kaise use hota hai, aur thread safety par iska kya asar hai?"
+    }
+  ],
+  "debugging": [
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "total = 10\ncount = 4\nprint('Average:', totla / count)",
+      "error": "NameError: name 'totla' is not defined",
+      "why": "Naam ki spelling galat hai — Python naam ko namespace me dhundta hai aur na milne par NameError deta hai, 'blank value' nahi maanta.",
+      "fix": "Variable ka naam theek karo (total), aur long scripts me linters/IDE spelling catch kar lete hain.",
+      "correct": "total = 10\ncount = 4\nprint('Average:', total / count)",
+      "output": "",
+      "lesson": "NameError hamesha 'naam exist nahi karta' batata hai — typo ho ya variable ban hi nahi hua. Traceback ki last line sabse pehle padho."
+    },
+    {
+      "difficulty": "easy",
+      "mode": "raise",
+      "broken": "print('Total: ' + 10)",
+      "error": "TypeError: can only concatenate str (not \"int\") to str",
+      "why": "Python implicit conversion nahi karta: str aur int par + ka matlab concatenation hai, aur wahi doosre operand ke str hone ki demand karta hai.",
+      "fix": "f-string use karo — readable hai, kisi bhi type ke saath chalta hai, aur formatting control deta hai.",
+      "correct": "print(f'Total: {10}')\nprint('Total: ' + str(10))",
+      "output": "",
+      "lesson": "TypeError me 'kaun sa operation' aur 'kaun se types' likha hota hai — dono padho, tabhi fix pata chalta hai."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "logic",
+      "broken": "a, b = 1, 2\n\na = b\nb = a\n\nprint('a =', a, 'b =', b)",
+      "error": "Logic error — koi exception nahi, output galat",
+      "why": "Swap ke liye ek temp chahiye. Pehli line me a ki purani value kho gayi, isliye b ko wahi value milti hai jo a me pehle se hai — dono me 2 aa jata hai.",
+      "fix": "Tuple packing/unpacking se swap karo: a, b = b, a — right side pehle evaluate hoti hai, isliye kuch nahi khota.",
+      "correct": "a, b = 1, 2\n\na, b = b, a\n\nprint('a =', a, 'b =', b)",
+      "output": "",
+      "lesson": "Logic bugs exception nahi dete — isliye assertion/test zaroori hai. 'a = 2 b = 2' dekhkar turant samajh aata hai ki overwrite ho gaya."
+    },
+    {
+      "difficulty": "medium",
+      "mode": "raise",
+      "broken": "price = int('12.5')\nprint(price)",
+      "error": "ValueError: invalid literal for int() with base 10: '12.5'",
+      "why": "int() sirf poore number ka string parse karta hai. '12.5' decimal hai, isliye usse pehle float banana padta hai.",
+      "fix": "Two-step conversion: int(float(raw)) — chahiye to pehle Decimal use karo paise ke liye, aur try/except se invalid input handle karo.",
+      "correct": "raw = '12.5'\nprint(int(float(raw)))\n\nfrom decimal import Decimal\nprint(Decimal(raw))",
+      "output": "",
+      "lesson": "ValueError 'format sahi nahi hai' batata hai; TypeError 'type galat hai'. In dono ko alag treat karna hi sahi error handling hai."
+    },
+    {
+      "difficulty": "hard",
+      "mode": "logic",
+      "broken": "prices = [10, 20, 30]\ntotal = 0\nfor price in prices:\n    total = price\nprint('Total:', total)",
+      "error": "Logic error — total 30 aata hai, jabki sum 60 hona chahiye",
+      "why": "Assignment (=) purani value ko replace kar deti hai, isliye loop sirf aakhri value chhodta hai. Accumulator chahiye to jodna padega.",
+      "fix": "total += price (ya built-in sum(prices)) use karo — aur start value ka type sahi rakho (0.0 for floats).",
+      "correct": "prices = [10, 20, 30]\ntotal = 0\nfor price in prices:\n    total += price\nprint('Total:', total)\nprint('Built-in:', sum(prices))",
+      "output": "",
+      "lesson": "Off-by-nothing wale bugs sabse mehnge hote hain: code chalta hai aur plausible output deta hai. Chhote sample par haath se expected value nikalo, phir compare karo."
+    }
+  ],
+  "challenges": [
+    {
+      "kind": "quick",
+      "minutes": 8,
+      "prompt": "Teen variables ki values ek rotation kar do (a -> b -> c -> a) bina temp variable ke, aur print karke verify karo.",
+      "hint": "Right side me teenon ki purani values ek saath likho.",
+      "deliverable": "Ek snippet jo rotation dikhata hai."
+    },
+    {
+      "kind": "coding",
+      "minutes": 25,
+      "prompt": "Type-safe key-value parser likho: raw strings ka dict lo aur schema (name -> type) ke hisaab se typed dict banao; galat entries ko reason ke saath skip karo.",
+      "hint": "Schema-driven conversion + bool special case + skipped list.",
+      "deliverable": "Working parser + output jisme valid aur skipped dono dikhein."
+    },
+    {
+      "kind": "advanced",
+      "minutes": 50,
+      "prompt": "Ek 'immutable config' module likho: dotted path update, deep merge, env override, aur structural sharing — sab kuch source data ko mutate kiye bina.",
+      "hint": "update_path + merge recursion, aur identity checks se tests likho.",
+      "deliverable": "Module-level functions + 5 print-based tests jo sharing prove karein."
+    },
+    {
+      "kind": "interview",
+      "minutes": 40,
+      "prompt": "Whiteboard: 'immutability aur shared mutable state se production bugs kaise aate hain' — 3 concrete examples likho aur har ek ka fix batao.",
+      "hint": "Mutable default, aliasing in function args, aur global cache — teenon cover karo.",
+      "deliverable": "Teen chhote snippets (broken + fixed) aur ek line ka explanation."
+    },
+    {
+      "kind": "build",
+      "minutes": 60,
+      "prompt": "Ek mini 'profile store' banao: nested dict se user profiles, dotted-path read/update, aur validation — sab immutable updates ke saath. CLI se demo karo.",
+      "hint": "Sections: profiles, defaults, validation rules; output me before/after print karo.",
+      "deliverable": "Chalta hua demo + README-ready feature list."
+    }
+  ],
+  "projects": [
+    {
+      "level": "simple",
+      "name": "Unit Converter (Version 1)",
+      "problem": "Naye learner ko numbers, functions aur formatting ka ek concrete result chahiye — sirf theory se 'output ka feel' nahi aata.",
+      "objective": "Ek chhota program jo distance, temperature, weight aur speed convert kare aur table me print kare.",
+      "features": [
+        "Function-based converters (km/miles, C/F, kg/lb, kmph/mph)",
+        "Aligned formatted table output",
+        "Ye sab ek hi file me, zero dependencies"
+      ],
+      "concepts": [
+        "Functions aur return values",
+        "Numeric conversion factors",
+        "f-string formatting specs"
+      ],
+      "structure": "unit_converter/\n└── converter.py      # saara logic, ek file",
+      "steps": [
+        "Har conversion ke liye ek chhota pure function likho (input -> number -> output).",
+        "Sample values ki list banao aur zip/loop se rows print karo.",
+        "Alignment ke liye widths set karo aur round(2) use karo.",
+        "Kuch edge values (0, negative, bahut bada) print karke check karo."
+      ],
+      "code": "def km_to_miles(km):\n    return km * 0.621371\n\ndef c_to_f(c):\n    return c * 9 / 5 + 32\n\ndef kg_to_lb(kg):\n    return kg * 2.20462\n\ndef convert(values, fn, unit_in, unit_out, factor_width=6):\n    print(f'{\"input\":>{factor_width}} {unit_in:<6} -> {unit_out}')\n    for v in values:\n        print(f'{v:>{factor_width}.2f} {unit_in:<6} -> {fn(v):.2f} {unit_out}')\n\nconvert([1, 5, 21.1], km_to_miles, 'km', 'miles')\nprint()\nconvert([0, 37, 100], c_to_f, 'C', 'F')\nprint()\nconvert([1, 70.5], kg_to_lb, 'kg', 'lb')",
+      "output": "",
+      "explanation": "Har converter ek pure function hai (koi global state nahi), isliye test karna trivial hai. convert() sirf presentation karta hai — data aur display alag rakhna Version 2 me layout badalne ki azadi deta hai.",
+      "testing": "0 aur negative values pass karo; F conversion me 37 C = 98.6 F aana chahiye; bahut bade number par rounding check karo.",
+      "errors": "Galat type (string) aane par TypeError aayega — Version 2 me validation add hoti hai. Abhi assumption clear rakhi gayi hai.",
+      "improvements": [
+        "Input ko command line argument se lo taaki user apni value de sake",
+        "Ek registry dict banao jisme unit pairs aur factors centrally define hon",
+        "Output ko CSV/JSON me save karne ka option do"
+      ],
+      "advanced": [
+        "Unit registry me dimensional analysis add karo (length vs mass) taaki galat pair reject ho",
+        "Float precision ke liye Decimal based exact money-style conversion optional karo",
+        "Batch mode: CSV file input se rows padho aur converted file likho"
+      ],
+      "realWorld": "Har dashboard aur ETL job me unit normalization chahiye hoti hai — km vs miles ya C vs F ka mixing analysis ko galat kar deta hai.",
+      "interview": [
+        {
+          "q": "Conversion functions ko pure kyu rakha?",
+          "a": "Pure functions ka output sirf input par depend karta hai aur koi side effect nahi hota — isliye test aur parallel run dono safe hote hain. Display ka kaam alag rakha taaki badalna aasan ho."
+        },
+        {
+          "q": "Rounding kaha karni chahiye — data me ya display me?",
+          "a": "Data me full precision rakho, display par round karo. Rounding early karne se chhoti errors accumulate hoti hain (jaise sum of rounded values rounded sum ke barabar nahi hota)."
+        },
+        {
+          "q": "Float precision is project me kaise problem ban sakti hai?",
+          "a": "0.1 + 0.2 != 0.3 wali classic issue: comparison galat ho sakti hai. Solutions: tolerance se compare karo (abs(a-b) < 1e-9), ya paise/units ke liye Decimal/integer use karo."
+        }
+      ],
+      "resume": "Unit Converter CLI: Python functions, formatting aur edge-case testing ke saath multi-category converter (distance, temperature, weight).",
+      "readme": [
+        "Project ek line me: multi-category unit converter CLI",
+        "Supported conversions ka table",
+        "Usage example aur sample output"
+      ]
+    },
+    {
+      "level": "medium",
+      "name": "Type-Safe Config Loader (Version 2)",
+      "problem": "Environment variables, JSON file aur defaults teen jagah se config aata hai — sab string hota hai aur galti se app start hote hi crash kar jata hai.",
+      "objective": "Ek config loader jo schema ke hisaab se values ko type kare, precedence lagaye (defaults < file < env), aur galat value par actionable error de.",
+      "features": [
+        "Schema-driven types (int, float, bool, str, list)",
+        "Precedence: defaults, phir file, phir environment override",
+        "Har error me key, mili value aur expected type",
+        "Dry-run report: valid aur overridden keys ki list"
+      ],
+      "concepts": [
+        "Dynamic typing + explicit coercion",
+        "Nested dict merge aur precedence",
+        "Custom exceptions aur error messages"
+      ],
+      "structure": "config_loader/\n├── loader.py        # load() + coercion + precedence\n├── schema.py        # key -> type mapping\n└── demo.py          # sample run",
+      "steps": [
+        "Schema banao: key, type, default aur required flag.",
+        "File layer aur env layer ke dict banao aur precedence ke saath merge karo.",
+        "Har key ko schema ke type me coerce karo (bool ka special case).",
+        "Report print karo aur invalid entries par ConfigError raise karo."
+      ],
+      "code": "TRUE = {'1', 'true', 'yes', 'on'}\nFALSE = {'0', 'false', 'no', 'off'}\n\nclass ConfigError(ValueError):\n    def __init__(self, key, value, expected):\n        super().__init__(f'{key}={value!r} is not a valid {expected.__name__}')\n        self.key, self.value, self.expected = key, value, expected\n\nSCHEMA = {\n    'host': (str, 'localhost'),\n    'port': (int, 5432),\n    'timeout': (float, 5.0),\n    'debug': (bool, False),\n    'workers': (int, 4),\n}\n\ndef coerce(key, raw, target):\n    if isinstance(raw, target) and target is not bool:\n        return raw\n    if target is bool:\n        if isinstance(raw, str):\n            token = raw.strip().lower()\n            if token in TRUE:\n                return True\n            if token in FALSE:\n                return False\n            raise ConfigError(key, raw, bool)\n        return bool(raw)\n    try:\n        return target(raw)\n    except (TypeError, ValueError):\n        raise ConfigError(key, raw, target) from None\n\ndef load(file_values=None, env=None, schema=None):\n    schema = schema or SCHEMA\n    file_values, env = file_values or {}, env or {}\n    config, sources = {}, {}\n    for key, (target, default) in schema.items():\n        if key in env:\n            raw, source = env[key], 'env'\n        elif key in file_values:\n            raw, source = file_values[key], 'file'\n        else:\n            raw, source = default, 'default'\n        config[key] = coerce(key, raw, target)\n        sources[key] = source\n    return config, sources\n\nfile_cfg = {'port': '5432', 'debug': 'false', 'host': 'db.internal'}\nenv_cfg = {'DEBUG': '1'}\nconfig, sources = load(file_cfg, {'debug': env_cfg['DEBUG']})\n\nfor key in sorted(config):\n    print(f'{key:<8} = {config[key]!r:<12} ({sources[key]})')\n\nprint()\ntry:\n    load({'port': 'not-a-port'})\nexcept ConfigError as e:\n    print('ConfigError:', e)\n    print('  retry with 5432 instead?', e.key, e.expected.__name__, 'expected')",
+      "output": "",
+      "explanation": "Precedence ek if/elif chain me explicit hai, isliye behaviour padhkar samajh aata hai. Coerce() bool ko alag handle karta hai kyunki bool('false') True hota hai — wahi bug production me 'debug on in prod' banata hai.",
+      "testing": "Missing key par default aana chahiye, env ne file ko override karna chahiye, aur galat value par ConfigError with key name aana chahiye. Yahi teen tests minimum hain.",
+      "errors": "ConfigError custom exception hai jo key, mili value aur expected type carry karta hai — operator ko fix ka exact pata chal jata hai. 'from None' se confusing chained traceback hat jata hai.",
+      "improvements": [
+        "JSON/YAML file se load karo aur flat key ko dotted path (db.port) support do",
+        "Required keys ke liye missing-key error list do, app start hone se pehle poora report",
+        "Secrets ko redact karke config print karo taaki log me password na aaye"
+      ],
+      "advanced": [
+        "Schema ko dataclass/pydantic se declare karo taaki type hints aur validation ek jagah hon",
+        "CLI flags ko sabse upar precedence do (defaults < file < env < cli)",
+        "Config ka hash/fingerprint nikalo aur startup log me record karo — 'kaun sa config chal raha tha' ka jawaab"
+      ],
+      "realWorld": "Har Flask/FastAPI service yahi pattern use karti hai; 12-Factor App ka 'config environment me rakho' rule bhi isi ko kehta hai.",
+      "interview": [
+        {
+          "q": "Config precedence kaise test karoge?",
+          "a": "Table-driven tests: inputs (defaults only), (+file), (+env), (+cli) ke liye expected dict likho. Har layer alag test karo aur ek precedence test jo env ke file override ko prove kare."
+        },
+        {
+          "q": "Startup par fail karna better hai ya runtime par?",
+          "a": "Startup par — fail fast. Galat port ka pata tab chalna chahiye jab app start ho raha ho, pehle request par nahi. Isliye poora config ek saath validate karke ek report print karte hain."
+        },
+        {
+          "q": "Secrets ko config report me kaise handle karoge?",
+          "a": "Schema me sensitive flag rakho aur print karte waqt value ko '***' se replace karo; logs me bhi sirf key names aur 'set/unset' status jaaye, value nahi."
+        }
+      ],
+      "resume": "Type-Safe Config Loader: schema-driven coercion, layered precedence aur startup validation ke saath production-style config module.",
+      "readme": [
+        "Problem ek line me: string config ko typed config me badalna",
+        "Precedence order ka table aur error example",
+        "Test cases ki list (default/env/invalid)"
+      ]
+    },
+    {
+      "level": "advanced",
+      "name": "Immutable Data Layer for Expense Tracker (Version 3)",
+      "problem": "Expense data me har report (category total, monthly trend) ke liye mutable structure badalna chhod do — ek jagah mutation dusri report galat kar deti hai.",
+      "objective": "Ek immutable data layer banao: transactions add/update karo structural sharing se, aggregations nikalo, aur JSON import/export ke saath validation rakho.",
+      "features": [
+        "Add/update/delete transactions with immutable semantics",
+        "Category aur month-wise aggregation (totals, counts, average)",
+        "JSON import/export with schema validation aur error report",
+        "Typed money handling (Decimal) aur per-transaction validation"
+      ],
+      "concepts": [
+        "Immutability + structural sharing",
+        "Aggregation with dictionaries",
+        "Decimal money handling, validation, error reporting"
+      ],
+      "structure": "expense_layer/\n├── models.py        # Transaction dataclass + validation\n├── store.py         # immutable add/update/aggregate\n├── io_json.py       # import/export + validation report\n└── demo.py          # sample run",
+      "steps": [
+        "Transaction model banao: id, date, category, amount (Decimal), note.",
+        "Store ko tuple of transactions par rakho aur add/update me naya tuple return karo.",
+        "Aggregation functions likho: by_category, by_month, top_n.",
+        "JSON round-trip karo aur invalid rows ke liye report return karo."
+      ],
+      "code": "from decimal import Decimal\nfrom collections import defaultdict\nfrom dataclasses import dataclass, replace\n\n@dataclass(frozen=True)\nclass Transaction:\n    id: int\n    date: str\n    category: str\n    amount: Decimal\n\n    def validate(self):\n        if self.amount <= 0:\n            raise ValueError(f'{self.id}: amount must be positive')\n        if len(self.date) != 10 or self.date[4] != '-' or self.date[7] != '-':\n            raise ValueError(f'{self.id}: date must be YYYY-MM-DD')\n        return self\n\nclass Store:\n    def __init__(self, items=()):\n        self._items = tuple(items)\n\n    @property\n    def items(self):\n        return self._items\n\n    def add(self, txn):\n        return Store((*self._items, txn.validate()))\n\n    def update(self, txn_id, **changes):\n        new = tuple(\n            replace(t, **changes).validate() if t.id == txn_id else t\n            for t in self._items\n        )\n        if new == self._items:\n            raise KeyError(f'no transaction {txn_id}')\n        return Store(new)\n\n    def total(self):\n        return sum((t.amount for t in self._items), Decimal('0'))\n\n    def by_category(self):\n        out = defaultdict(lambda: Decimal('0'))\n        for t in self._items:\n            out[t.category] += t.amount\n        return dict(sorted(out.items(), key=lambda kv: kv[1], reverse=True))\n\n    def by_month(self):\n        out = defaultdict(lambda: Decimal('0'))\n        for t in self._items:\n            out[t.date[:7]] += t.amount\n        return dict(sorted(out.items()))\n\nstore = Store()\nstore = store.add(Transaction(1, '2026-08-03', 'food', Decimal('450.50')))\nstore = store.add(Transaction(2, '2026-08-11', 'travel', Decimal('1200')))\nstore = store.add(Transaction(3, '2026-09-02', 'food', Decimal('399.50')))\nstore = store.add(Transaction(4, '2026-09-14', 'books', Decimal('850')))\n\nbefore = store\nstore = store.update(3, amount=Decimal('359.50'))\n\nprint('total (new)   :', store.total())\nprint('total (before):', before.total())\nprint('items shared  :', before.items[0] is store.items[0])\nprint('by category   :', {k: str(v) for k, v in store.by_category().items()})\nprint('by month      :', {k: str(v) for k, v in store.by_month().items()})\ntry:\n    store.add(Transaction(9, '14-09-2026', 'misc', Decimal('0')))\nexcept ValueError as e:\n    print('validation   :', e)",
+      "output": "",
+      "explanation": "frozen dataclass se transaction khud immutable hai, aur Store add/update me naya tuple deta hai — purana store waisa hi rehta hai, isliye 'before/after' compare karna possible hota hai. Decimal use kiya taaki paise me float error na aaye. Aggregation defaultdict + sorted se single pass me ranked report deti hai.",
+      "testing": "Positive/negative amount, galat date format, duplicate id, unknown id update, empty store ka total (Decimal('0')), aur JSON round-trip — ye sab tests likho. Immutability test: update ke baad purane store ka total na badla ho.",
+      "errors": "Validation errors me transaction id include kiya gaya hai taaki bulk import me exact row pata chale. JSON import me 'valid + rejected' dono return karo, poori file reject karne ke bajaye.",
+      "improvements": [
+        "JSON/CSV import-export add karo with rejected-rows report",
+        "Filtering aur pagination add karo (date range, category, amount range)",
+        "Aggregation ko cache karo (store immutable hai, isliye cache invalidate karne ka jhanjhat nahi)"
+      ],
+      "advanced": [
+        "SQLite backend add karo: wahi interface, transactions/batching aur index-based queries",
+        "Reporting layer: monthly summary, budget vs actual, aur top-N categories ka text/JSON report",
+        "Testing: pytest suite with fixtures + property tests (kis bhi sequence me total add ho to same result)"
+      ],
+      "realWorld": "Finance dashboards, budgeting apps aur spend analytics pipelines sab is immutable-event style data layer par bane hote hain; audit ke liye 'before' state preserve karna mandatory hota hai.",
+      "interview": [
+        {
+          "q": "Immutability se performance penalty kyun nahi hoti, aur kab hoti hai?",
+          "a": "Structural sharing se sirf badle hue objects copy hote hain, so update O(d) hota hai. Penalty tab aati hai jab har update par poora structure copy karo (naive deepcopy) ya chhote updates bahut zyada hon — tab batching ya mutable buffer + immutable snapshot pattern use karo."
+        },
+        {
+          "q": "Paise ke liye Decimal kyun, float kyun nahi?",
+          "a": "float binary me represent hota hai, isliye 0.1 + 0.2 != 0.3 aur rounding errors accumulate hote hain. Decimal base-10 arithmetic deta hai, isliye money calculations exact rehti hain; alternative paise ko integer me rakhna hai."
+        },
+        {
+          "q": "JSON me Decimal serialise karne ka sahi tarika kya hai, aur ye bug kaha aata hai?",
+          "a": "json.dumps Decimal ko nahi samajhta — TypeError aata hai, ya log float me badal dete hain aur precision kho jati hai. Sahi tarika: json.dumps(..., default=str) with documented string contract, ya custom encoder, aur parse karte waqt Decimal(str_value)."
+        }
+      ],
+      "resume": "Immutable Expense Data Layer: frozen dataclasses, structural-sharing updates, Decimal money handling aur validated JSON import/export ke saath analytics-ready core.",
+      "readme": [
+        "Problem statement: mutation-free expense data layer",
+        "Data model aur immutability contract ka diagram",
+        "Import/export format und rejected-row report ka example"
+      ]
+    }
+  ],
+  "projectQuestions": {
+    "understanding": [
+      "Unit converter me data aur display ko alag kyun rakha — isse kya fayda mila?",
+      "Config loader me precedence ko if/elif chain se kyun likha, dictionary merge se kyun nahi?",
+      "Expense layer me frozen dataclass use karne se kaun se bugs apne aap khatam ho jate hain?"
+    ],
+    "coding": [
+      "Config schema me nested section (db.port) add karo aur loader ko dotted path ke liye update karo.",
+      "Expense layer me date-range filter aur category filter add karo, bina original store mutate kiye.",
+      "Unit converter me ek registry add karo taaki naya unit pair sirf data entry se kaam kare."
+    ],
+    "advanced": [
+      "Expense layer ka aggregation cache karo aur prove karo ki immutable store ki wajah se stale data kabhi nahi milta.",
+      "Config loader me sabse upar CLI flags ka layer add karo aur precedence tests likho.",
+      "Unit converter me dimensional analysis add karo taaki km -> kg jaisa galat pair reject ho."
+    ],
+    "interview": [
+      "Expense tracker ko production me scale karne ke liye kya badloge?",
+      "Config loader ka startup cost kam karne ke liye kya karoge?",
+      "Unit converter ko ek API me convert karoge to interface kya hoga?",
+      "Immutability ke saath bade datasets par memory kaise control karoge?"
+    ]
+  },
+  "interviewTasks": [
+    {
+      "q": "Whiteboard: ek function likho jo string ko safely number me badle aur caller ko bataye ki 'missing' tha ya 'invalid' — sirf ek return value se.",
+      "a": "Result type (dataclass/tuple) return karo: (ok, value, reason) ya sentinel-based API. Sirf None return karna ambiguous hai kyunki 0 aur None ka fark kho jata hai. Alternative: custom exception missing ke liye aur default invalid ke liye — par phir document karna padta hai.",
+      "deliverable": "Function + 4 cases ka output (missing, invalid, zero, valid)."
+    },
+    {
+      "q": "Interviewer bole: 'is program me variable ka type kaise pata karoge bina chalaye' — approach batao.",
+      "a": "Static sources se: type hints, annotations, aur call sites. Runtime se: type()/isinstance() aur debugger. Production mindset: hints + validation layer, aur critical paths par runtime assertions/tests. 'Bina chalae' ka jawab hai static analysis (mypy/pyright) + code reading.",
+      "deliverable": "Ek chhota annotated function aur uske hints ka walkthrough."
+    },
+    {
+      "q": "Live fix: ye code '0' ko missing maan raha hai — debug karo aur safe version likho.",
+      "a": "`if not value:` truthiness check falsy values (0, '', False) ko bhi reject karta hai. Fix: `if value is None:` (aur alag se empty-string check agar schema me '' ko missing maana gaya hai). Sentinel object use kar sakte hain eagerly-evaluated default ke liye.",
+      "deliverable": "Buggy aur fixed dono ka output, side by side."
+    },
+    {
+      "q": "Interview me poochha: 'aapke project me shared mutable state kaha tha aur usse kaise bache?' — apne expense layer ka jawab do.",
+      "a": "Jahan Store mutable hota to update ke baad 'before' snapshot bhi badal jata aur audit/rollback impossible ho jata. Solution: immutable store + structural sharing; reports purane snapshot se reproducible, aur tests me determinism.",
+      "deliverable": "Before/after snippet jo mutation ka fark dikhaye."
+    }
+  ],
+  "revision": [
+    "Variable = naam + object binding hai; type object ka hota hai, naam ka nahi.",
+    "Mutable (list/dict/set) in-place badalte hain; immutable (int/str/tuple) par har change naya object banata hai.",
+    "a, b = b, a swap ke liye; star-unpacking (first, *rest) bache hue items list me deti hai.",
+    "None ke liye 'is None'; values ke liye '=='. 0, '', [] ko missing mat samjho.",
+    "Mutable default argument (def f(x, acc=[])) shared ho jata hai — None sentinel ya immutable default use karo.",
+    "Shallow copy vs deepcopy: nested data badalna ho to deepcopy; warna sharing se performance milegi.",
+    "Aliasing hi recursion aur shared-state bugs ka root hai — API boundary par copy ya immutable type do."
+  ]
+}

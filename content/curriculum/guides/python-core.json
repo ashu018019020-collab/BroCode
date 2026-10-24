@@ -1,0 +1,425 @@
+{
+  "$comment": "Authored 'CODE KAISE KARTE HAIN' guides for the Python Core track (s12-s16). Every snippet is executed by scripts/guides.cjs and the stored `output` is the real stdout; unrunnable snippets are marked verified:false by the tool, never by hand. `section` on each guide targets the bank/inventory section it teaches.",
+  "version": 1,
+  "guides": [
+    {
+      "section": "s12",
+      "title": "Dictionary Patterns & Merging",
+      "level": "core",
+      "what": "Dictionary ek key se value ka mapping hai: average O(1) lookup, aur Python 3.7+ me insertion order ki guarantee. Values kuch bhi ho sakti hain, keys hashable honi chahiye.",
+      "why": "Real data ka shape hi dict hota hai — JSON payload, model config, counts, cache. Interview aur production code dono me sabse zyada yahi structure use hota hai, isliye iske safe patterns aane chahiye.",
+      "whereUsed": "Config aur JSON parsing, frequency counting, grouping, memoization/cache, API payloads aur response aggregation.",
+      "prereqs": ["Variables aur data types", "Conditions aur loops", "List basics"],
+      "howItWorks": "Dict andar ek hash table hai: key ko hash karke bucket me slot milta hai, isliye average lookup O(1) hai (collisions zyada hon to worst case O(n)). Python 3.7 se insertion order maintain hoti hai, aur iteration ke dauraan size badalna RuntimeError deta hai.",
+      "syntax": "d = {key: value}\nd[key] = value            # add/update\nd.get(key, default)       # safe read\nd.setdefault(key, default)\nfor k, v in d.items(): ...\nmerged = a | b            # 3.9+ (naya dict)\nfrom collections import Counter, defaultdict",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "counts = {}\nfor word in \"ai agents ai rag\".split():\n    counts[word] = counts.get(word, 0) + 1\nprint(counts)\nprint(max(counts, key=counts.get))",
+          "output": "",
+          "explain": [
+            "counts.get(word, 0) missing key par crash nahi karta — default 0 deta hai, isliye direct d[k] ki zaroorat nahi.",
+            "Loop ek hi pass me frequency bana deta hai (O(n)).",
+            "max(counts, key=counts.get) sabse zyada baar aane wali key deta hai — alag sort ki zaroorat nahi."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "base = {\"model\": \"gpt\", \"temp\": 0.7}\noverride = {\"temp\": 0.2, \"top_p\": 0.9}\nprint(base | override)\nprint(base)\ndefaults = {\"retries\": 3}\ndefaults.setdefault(\"retries\", 9)\ndefaults.setdefault(\"timeout\", 30)\nprint(defaults)\nprint(list(base.keys()), list(base.values()))",
+          "output": "",
+          "explain": [
+            "| dono dicts ka naya merged dict deta hai; right side ki value jeet ti hai (temp 0.2).",
+            "base mutate nahi hua — | shared config ko safe rakhta hai (update() in-place badalta hai).",
+            "setdefault() sirf missing key par likhta hai, isliye retries 3 hi raha aur timeout add ho gaya.",
+            "keys()/values() view dete hain; list() se snapshot milta hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "from collections import defaultdict, Counter\n\ngroups = defaultdict(list)\nfor name, team in [(\"a\", \"ml\"), (\"b\", \"ml\"), (\"c\", \"ops\")]:\n    groups[team].append(name)\nprint(dict(groups))\nprint(Counter(\"abracadabra\").most_common(2))\nprint({k: groups[k] for k in sorted(groups)})",
+          "output": "",
+          "explain": [
+            "defaultdict(list) missing key par khaali list banata hai — if-key check likhna hi nahi padta.",
+            "Counter ek pass me counts banata hai aur most_common(N) top-N pairs deta hai.",
+            "Dict comprehension se sorted copy banti hai (original ka order safe rehta hai)."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Requirement ka shape likho", "detail": "Key kya hogi, value kya hogi, aur missing key par behaviour kya chahiye (default ya error) — ye pehle decide karo, warna baad me silent None bugs aate hain." },
+        { "step": "Lookup-safe API chuno", "detail": "Padhne ke liye get()/setdefault(), counting ke liye Counter, grouping ke liye defaultdict. Direct d[k] sirf tab jab key guaranteed ho.", "code": "counts.get(w, 0)\ngroups.setdefault(team, []).append(name)" },
+        { "step": "Iteration me items() use karo", "detail": "for k in d ke saath d[k] se do lookup hote hain; items() ek hi baar me key aur value deta hai.", "code": "for k, v in d.items():\n    print(k, v)" },
+        { "step": "Merge aur copy ka farq samjho", "detail": "a | b naya dict deta hai, a.update(b) a ko badalta hai, aur dict(d) shallow copy hai — nested objects dono me share hote hain." }
+      ],
+      "commonMistakes": [
+        "d['missing'] direct access — KeyError; read ke liye get() chahiye.",
+        "Iteration ke dauraan key add ya delete karna — RuntimeError: dictionary changed size during iteration.",
+        "dict.copy() ko deep copy samajhna — nested list same object rehti hai.",
+        "Non-hashable key (list) daalna — TypeError: unhashable type."
+      ],
+      "bestPractices": [
+        "Missing key ka contract explicitly define karo: get(default) ya setdefault, silent None nahi.",
+        "Counting/grouping ke liye Counter aur defaultdict use karo — manual if-key boilerplate hata deta hai.",
+        "Config merge ke liye | (ya **) se naya dict banao; shared config ko mutate mat karo.",
+        "JSON ke saath kaam karte waqt keys string rakho — JSON me int keys chup-chaap string ban jaati hain."
+      ],
+      "realWorld": "RAG service ka config merge, per-endpoint request counts, aur newline-separated API response ka aggregation — teeno dict/Counter patterns hain. Interview me 'kis endpoint par kitne requests' ka jawab Counter se 30 second me likha jaa sakta hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek string me har character ki frequency Counter se nikaalo aur top-2 print karo." },
+        { "difficulty": "medium", "text": "Do config dicts ko nested keys ke saath merge karo — nested key par bhi override hona chahiye (shallow | kaafi nahi hai)." },
+        { "difficulty": "hard", "text": "defaultdict(list) se orders ko customer id par group karke har customer ka total amount nikalo." }
+      ],
+      "interview": [
+        { "q": "Dict lookup O(1) ka matlab kya hai, aur worst case kya hai?", "a": "Average O(1) hashing se milta hai; collision-heavy ya adversarial keys par worst case O(n) ho jata hai. Isliye 'average' aur 'worst case' dono bolna sahi hai." },
+        { "q": "dict | aur update() me kya farq hai?", "a": "| naya dict deta hai isliye original safe rehta hai; update() in-place mutate karta hai. Shared config ke saath | behtar hai." },
+        { "q": "setdefault() ya get() — kab kaunsa?", "a": "get() sirf padhta hai; setdefault() missing key ko ek default ke saath likh deta hai — grouping ya accumulator me setdefault/defaultdict chuno." }
+      ],
+      "miniChallenge": "Ek function likho jo list of records (dict) se per-category total nikale — bina kisi if-key check ke, sirf defaultdict ya Counter se.",
+      "debugTask": "`for k in d: if d[k] == 0: del d[k]` RuntimeError deta hai. Bug reproduce karo, fix likho, aur batao ki fix kyun safe hai.",
+      "related": ["Lists", "Sets", "JSON parsing", "Counter & defaultdict"],
+      "revision": [
+        "d[k] KeyError deta hai; d.get(k, default) safe hai",
+        "3.7+ me insertion order guarantee",
+        "| → naya dict, update() → in-place",
+        "Counter counting, defaultdict grouping",
+        "Iteration ke dauraan dict mutate na karo"
+      ],
+      "interviewTip": "Ye line bolo: 'counting ke liye Counter, grouping ke liye defaultdict, aur missing key ka behaviour main explicitly define karta hoon — silent None par nahi chhodta'."
+    },
+    {
+      "section": "s13",
+      "title": "Classes, Objects & Inheritance",
+      "level": "core",
+      "what": "Class ek blueprint hai (state + behaviour), aur object uska instance. Per-object data instance attributes me rehta hai, behaviour methods me — aur subclass parent ka code super() se reuse karta hai.",
+      "why": "OOP se related data aur logic ek jagah rehta hai: interface saaf, dependencies inject ho sakti hain, aur testing aasan hoti hai. Bade codebases me yahi Wrapper/Client/Fixture patterns ka base hai.",
+      "whereUsed": "Model wrappers (predict + counters), API clients (retry/timeout), dataclasses for records, test fixtures aur dependency injection.",
+      "prereqs": ["Functions aur arguments", "Dictionaries", "Modules aur import"],
+      "howItWorks": "class statement ek type object banata hai. Instance banate waqt __init__ chalta hai aur self par attributes set hote hain; attribute lookup instance dict → class dict → base classes (MRO) ke order me hota hai. Method call par self automatically bind hota hai, isliye self explicitly pass nahi karte.",
+      "syntax": "class Model:\n    def __init__(self, name: str) -> None:\n        self.name = name\n        self.calls = 0\n\n    def predict(self, x):\n        self.calls += 1\n        return x\n\nclass Cached(Model):\n    def predict(self, x):       # override\n        return super().predict(x)",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "class Model:\n    def __init__(self, name):\n        self.name = name\n        self.calls = 0\n\n    def predict(self, x):\n        self.calls += 1\n        return x * 2\n\nm = Model(\"toy\")\nprint(m.predict(3), m.calls)\nprint(type(m).__name__, isinstance(m, Model))",
+          "output": "",
+          "explain": [
+            "__init__ instance banate hi chalta hai, aur self.name per-object state hai (do objects ka naam alag ho sakta hai).",
+            "predict har call par self.calls badhata hai — behaviour aur state ek hi object me band rehte hain.",
+            "type(m).__name__ class ka naam deta hai aur isinstance() inheritance chain check karta hai."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "class Base:\n    kind = \"base\"            # class variable: sab objects share karte hain\n\n    def describe(self):\n        return f\"{self.kind}:{type(self).__name__}\"\n\nclass Cached(Base):\n    kind = \"cached\"\n\n    def describe(self):\n        return \"cached -> \" + super().describe()\n\nc = Cached()\nprint(c.describe())\nprint(Base().describe())\nprint(c.kind, Base.kind)",
+          "output": "",
+          "explain": [
+            "Subclass ne kind override kiya, aur super() parent ka describe() chalata hai — reuse without copy-paste.",
+            "c.describe() me 'cached -> ' prefix aur parent ka format dono milte hain (override + super ka combo).",
+            "Attribute lookup instance dict → class → base chalta hai, isliye class variable default value ki tarah kaam karti hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "from dataclasses import dataclass, field\n\n@dataclass\nclass Run:\n    name: str\n    tags: list = field(default_factory=list)\n\n    @property\n    def label(self) -> str:\n        return self.name.upper()\n\nr1, r2 = Run(\"eval\"), Run(\"eval\")\nprint(r1, r1.label)\nr2.tags.append(\"nightly\")\nprint(r1.tags, r2.tags)",
+          "output": "",
+          "explain": [
+            "@dataclass __init__, __repr__ aur __eq__ generate karta hai — value objects ka boilerplate hat jata hai.",
+            "@property se computed attribute milta hai jo method ki tarah call nahi hota (r1.label, r1.label() nahi).",
+            "default_factory har object ko alag list deta hai, isliye r1.tags khaali rehta hai — mutable default ka classic bug nahi hota."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Pehle data, phir behaviour", "detail": "Attributes list karo (kya state hai), uske baad methods (kaunse operations hai). Ek class ki ek responsibility rakho." },
+        { "step": "Dependencies constructor me lo", "detail": "Client/session/config ko __init__ ka argument banao, class ke andar hardcode na karo — testing aur reuse dono aasan ho jaate hain.", "code": "def __init__(self, client):\n    self.client = client" },
+        { "step": "Inheritance se pehle composition socho", "detail": "Sirf 'is-a' relation me extend karo; warna doosra object attribute ki tarah rakho (has-a).", "code": "class Service:\n    def __init__(self, repo):\n        self.repo = repo   # has-a" },
+        { "step": "__repr__ readable rakho", "detail": "Debug me print(object) se state dikhni chahiye; value-equality chahiye to __eq__ bhi add karo." }
+      ],
+      "commonMistakes": [
+        "Mutable default (def f(x, acc=[]) ya class attribute tags=[]) — sab objects ek hi object share karte hain.",
+        "Method definition me self bhool jana — TypeError: takes 0 positional arguments but 1 was given.",
+        "Parent ka __init__ call na karna — base state setup hi nahi hota.",
+        "Teen se zyada level deep inheritance — behaviour trace karna mushkil ho jata hai (composition behtar hai)."
+      ],
+      "bestPractices": [
+        "Value objects ke liye @dataclass use karo (__init__/__eq__/__repr__ free milte hain).",
+        "Sirf public API expose karo; internal helpers par _ prefix lagao.",
+        "Type hints likho — mypy integration bugs ko runtime se pehle pakadta hai.",
+        "Constructor me I/O na karo (network/disk) — object sasta banao, setup ke liye alag method rakho."
+      ],
+      "realWorld": "PyTorch nn.Module ka inheritance, FastAPI ke dependency classes, aur ek LLM client wrapper (retry + timeout + counters) — teeno isi pattern par bane hain. Interview me 'has-a vs is-a' ka decision justify karna strong signal hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek BankAccount class likho jisme deposit/withdraw balance maintain kare aur invalid amount par ValueError de." },
+        { "difficulty": "medium", "text": "dataclass se Chunk model banao (text, source_id, score) aur __lt__ define karo taaki list score par sort ho sake." },
+        { "difficulty": "hard", "text": "Ek CachedModel class likho jo predict() ko wrap kare aur hit/miss counts ko read-only property se expose kare." }
+      ],
+      "interview": [
+        { "q": "Instance attributes aur class variables me farq?", "a": "Instance attributes per-object hote hain (self.x), class variable class body me define hoti hai aur sab objects share karte hain — mutable class variable accidentally shared state ban jata hai." },
+        { "q": "super() kyun zaroori hai?", "a": "Parent ka implementation reuse karne ke liye, taaki MRO se sahi base method chale aur copy-paste na ho — multiple inheritance me ye critical hai." },
+        { "q": "@classmethod, @staticmethod aur instance method me farq?", "a": "Instance method self (object state) leta hai, classmethod cls (factory/alternate constructor) leta hai, staticmethod kuch nahi leta (namespace utility)." }
+      ],
+      "miniChallenge": "Ek ModelConfig class likho jo **kwargs accept kare, unknown keys reject kare, aur .merged(other) se naya config return kare (original mutate na ho).",
+      "debugTask": "`class A: items = []` me do objects items append karte hain aur ek doosre ka data dikhta hai. Reproduce karo, cause batao, fix likho.",
+      "related": ["Functions & arguments", "dataclasses", "Composition vs inheritance", "Type hints"],
+      "revision": [
+        "Class = blueprint, object = instance",
+        "self instance state, cls class state",
+        "super() se parent code reuse",
+        "@dataclass boilerplate kam karta hai",
+        "Mutable default/class attribute = shared state bug"
+      ],
+      "interviewTip": "'Inheritance se pehle composition dekhta hoon' bolna maturity dikhata hai — saath me ek concrete example do (Service holds repo)."
+    },
+    {
+      "section": "s14",
+      "title": "Function Arguments & Reusability",
+      "level": "core",
+      "what": "Function ek naam-wala block hai jo input leta hai aur output deta hai. Python me arguments positional, keyword, default, *args aur **kwargs — sab bind ho sakte hain.",
+      "why": "Reusable aur testable code ka base function hai. Chhote single-purpose functions hi unit tests, refactoring aur debugging possible banate hain.",
+      "whereUsed": "Har jagah: validation helpers, data cleaning, retry wrappers, prompt builders, feature calculations.",
+      "prereqs": ["Variables", "Conditions aur loops", "Lists aur dicts"],
+      "howItWorks": "Call par Python arguments ko parameters se bind karta hai (positional → keyword → default). Har call naya local scope banati hai. Default values function definition ke waqt sirf ek baar evaluate hoti hain — isliye mutable default do calls ke beech state leak karta hai.",
+      "syntax": "def f(a, b=10, *args, **kwargs) -> int:\n    return a + b\n\nf(5)             # b = 10 (default)\nf(5, 1)          # b = 1  (override)\nf(b=1, a=5)      # keywords order-free\nf(5, *[1], **{\"k\": 2})",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "def avg(nums):\n    if not nums:\n        return None\n    return sum(nums) / len(nums)\n\nprint(avg([2, 4, 6]))\nprint(avg([]))\nprint(avg([]) is None)",
+          "output": "",
+          "explain": [
+            "Guard clause khaali list par ZeroDivisionError rokta hai — edge case pehle handle hota hai.",
+            "Return contract saaf hai: None ka matlab 'koi data nahi', isliye caller usse handle kar sakta hai.",
+            "Print statements se behaviour verify hota hai — edge case claim nahi, test karte hain."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "def train(name, epochs=3, lr=0.1, verbose=False):\n    return f\"{name}: epochs={epochs} lr={lr}\"\n\nprint(train(\"model\"))\nprint(train(\"model\", 5, lr=0.01))\nopts = {\"epochs\": 10, \"lr\": 0.001}\nprint(train(\"model\", **opts))\nprint(train(\"model\", epochs=1))",
+          "output": "",
+          "explain": [
+            "Default arguments optional config dete hain, isliye simple call short rehti hai.",
+            "Keyword arguments order-free hote hain aur call site par intent clear karte hain (lr=0.01).",
+            "**opts dict ko keyword arguments me expand karta hai — config object pass karne ka clean tareeka."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "def counted(fn):\n    def inner(*args, **kwargs):\n        inner.calls += 1\n        return fn(*args, **kwargs)\n    inner.calls = 0\n    return inner\n\n@counted\ndef square(n):\n    return n * n\n\nprint(square(3), square.calls)\nprint(square(4), square.calls)\n\ndef collect(*args, **kwargs):\n    return args, sorted(kwargs)\n\nprint(collect(1, 2, x=3, y=4))",
+          "output": "",
+          "explain": [
+            "Decorator ek wrapper return karta hai jo original function ko andar se call karta hai — original code badalna nahi padta.",
+            "*args positional values ka tuple banata hai aur **kwargs keywords ka dict; isliye wrapper kisi bhi signature ko forward kar sakta hai.",
+            "inner.calls attribute closure me state rakhta hai, isliye call count free me mil jata hai (bina global variable)."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Contract pehle likho", "detail": "Input ka type, expected output, aur edge behaviour (None? raise? default?) define karo — uske baad code likho." },
+        { "step": "Ek function ek kaam", "detail": "20-30 lines se lamba ho jaye to helper me todo, warna test cases likhna mushkil ho jata hai.", "code": "def clean(text): ...\ndef tokenize(text): ..." },
+        { "step": "Default immutable rakho", "detail": "Mutable default (acc=[]) calls ke beech share hota hai. None sentinel lo aur andar list banao.", "code": "def f(x, bucket=None):\n    bucket = [] if bucket is None else bucket" },
+        { "step": "Config **kwargs se pass karo", "detail": "Dict ko **opts se expand karo taaki call site saaf rahe aur naye options add karna aasan ho." }
+      ],
+      "commonMistakes": [
+        "Mutable default argument (acc=[]) — do calls ke beech state leak hoti hai.",
+        "Branch me return bhool jana — function chup-chaap None lauta deta hai aur caller par TypeError aata hai.",
+        "def f(**kw, *a) — syntax error; *args hamesha **kwargs se pehle aata hai.",
+        "Global mutable state par bharosa — function test karna mushkil ho jata hai."
+      ],
+      "bestPractices": [
+        "Pure functions likho (same input → same output, koi side effect nahi) — sabse aasan test.",
+        "Type hints + docstring me contract likho (None ka matlab kya hai).",
+        "Chhota signature rakho; 4-5 se zyada parameters ho to config object (dataclass) pass karo.",
+        "Return values consistent rakho — kabhi value, kabhi None, kabhi list: yehi caller ko todta hai."
+      ],
+      "realWorld": "Data cleaning pipeline ke chhote pure helpers, retry wrapper decorator, aur prompt builder jo config dict se options leta hai — teeno production patterns hain. Interview me 'maine is function ka contract ye define kiya' bolna senior signal hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek safe_divide(a, b, default=None) likho jo zero se division par crash na kare." },
+        { "difficulty": "medium", "text": "Ek retry decorator likho jo function ko N baar chalaye aur call count .calls se expose kare." },
+        { "difficulty": "hard", "text": "Ek normalize(text, *, lowercase=True, collapse=True) likho jo keyword-only options ke saath pipeline steps apply kare." }
+      ],
+      "interview": [
+        { "q": "Mutable default argument ka bug kya hai?", "a": "Default value definition ke waqt banati hai, isliye sab calls ek hi object share karte hain — f(1) ke baad f(2) me pehle ka data dikhta hai. Fix: None sentinel." },
+        { "q": "*args aur **kwargs kab use karoge?", "a": "Jab wrapper/forwarding function banao (decorator, adapter) — tab signature exactly pass through karni hoti hai bina har parameter likhne ke." },
+        { "q": "Positional-only aur keyword-only parameters ka fayda?", "a": "API contract lock karte hain: / se positional-only (aage rename safe), * se keyword-only (call site self-documenting)." }
+      ],
+      "miniChallenge": "Ek memoize decorator likho jo arguments ko key bana kar cache kare aur .hits/.misses counters rakhe.",
+      "debugTask": "`def add_item(item, cart=[]): cart.append(item); return cart` do calls ke baad purana item bhi lautata hai. Reproduce karo aur fix likho.",
+      "related": ["Classes & objects", "Closures & decorators", "Type hints", "Exceptions & raising"],
+      "revision": [
+        "Positional → keyword → default binding order",
+        "Mutable default = shared state (None sentinel use karo)",
+        "*args tuple, **kwargs dict",
+        "Decorator = function jo naya function return kare",
+        "Pure function sabse aasan test hota hai"
+      ],
+      "interviewTip": "Interview me bolo: 'main pure functions likhta hoon aur edge behaviour (None/raise) contract me define karta hoon' — phir mutable default ka counterexample batao."
+    },
+    {
+      "section": "s15",
+      "title": "Exceptions, Files & Modules",
+      "level": "core",
+      "what": "Exception ek error ka structured object hai jo normal flow ko rokta hai; file I/O aur module imports ke saath mil kar yehi production code ka failure-handling base banate hain.",
+      "why": "Production me cheezein fail hoti hain: file missing, API timeout, JSON kharab. try/except/finally, context managers aur import structure ke bina system silently galat ya crash karta hai.",
+      "whereUsed": "File/CSV reading, API retry, config loading, resource cleanup, aur library code me custom errors.",
+      "prereqs": ["Functions", "Classes (exception class bhi ek class hai)", "Dicts/JSON basics"],
+      "howItWorks": "raise exception ko upar propagation ke liye bhejta hai; try block ka exception matching except clause me pakda jata hai (specific se general order me). finally hamesha chalta hai, aur 'with' statement context manager ke __exit__ par cleanup karta hai — error aaye ya na aaye.",
+      "syntax": "try:\n    risky()\nexcept (ValueError, OSError) as e:\n    handle(e)\nelse:\n    ok()\nfinally:\n    cleanup()\n\nwith open(path, encoding=\"utf-8\") as f:\n    text = f.read()",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "import json\n\nraw = '{\"model\": \"gpt\", \"temp\": 0.7}'\ntry:\n    cfg = json.loads(raw)\nexcept json.JSONDecodeError as e:\n    print(\"bad json:\", e)\n    cfg = {}\nprint(cfg, cfg.get(\"temp\"))\nprint(json.dumps({\"ok\": True, \"n\": 2}))",
+          "output": "",
+          "explain": [
+            "Sirf specific exception (JSONDecodeError) pakdi gayi — bare except sab bugs chhupa deta hai.",
+            "except block ek safe default (khaali dict) set karta hai, isliye aage code crash nahi hota.",
+            "json.dumps() me separators default hote hain; output deterministic rehta hai, isliye usse test me compare kar sakte ho."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "import tempfile, os\n\npath = os.path.join(tempfile.gettempdir(), \"aiml-guide.txt\")\nwith open(path, \"w\", encoding=\"utf-8\") as f:\n    f.write(\"line1\\nline2\\n\")\nwith open(path, encoding=\"utf-8\") as f:\n    print(f.read().splitlines())\n\n# file na milne par behaviour\ntry:\n    open(\"definitely-missing.txt\", encoding=\"utf-8\")\nexcept FileNotFoundError as e:\n    print(\"missing:\", e.filename)\nos.remove(path)\nprint(\"cleaned up:\", os.path.exists(path))",
+          "output": "",
+          "explain": [
+            "with open(...) file ko guarantee se close karta hai — exception aaye to bhi __exit__ chalta hai.",
+            "encoding='utf-8' explicitly dena zaroori hai warna platform default (Windows cp1252) pe data kharab ho sakta hai.",
+            "FileNotFoundError me .filename attribute hota hai, isliye error message actionable banaya jaa sakta hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "class ConfigError(Exception):\n    \"\"\"Raised when a required config key is missing.\"\"\"\n\ndef load(config, *, require):\n    for key in require:\n        if key not in config:\n            raise ConfigError(f\"missing key: {key}\")\n    return {k: config[k] for k in require}\n\ntry:\n    load({\"model\": \"gpt\"}, require=[\"model\", \"api_key\"])\nexcept ConfigError as e:\n    print(type(e).__name__, e)\nprint(load({\"model\": \"gpt\", \"api_key\": \"sk-x\"}, require=[\"model\"]))\nprint(issubclass(ConfigError, Exception))",
+          "output": "",
+          "explain": [
+            "Custom exception class (Exception se derived) library ka error contract ban jati hai — caller specific naam se pakad sakta hai.",
+            "fail-fast pattern: pehle sab required keys validate hoti hain, phir kaam shuru — aadha-loaded config se bachav.",
+            "Exception ka message actionable rakho (kaunsi key missing) — debugging time bachta hai."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Failure modes list karo", "detail": "Kaunsi cheez fail ho sakti hai: file missing, network timeout, kharab JSON, permission? Har ek ka behaviour decide karo (retry, default, ya raise)." },
+        { "step": "Specific exception pakdo", "detail": "except ValueError as e likho, bare except nahi — warna KeyboardInterrupt aur programming bugs bhi chhup jaate hain.", "code": "try:\n    parse(raw)\nexcept ValueError as e:\n    log.warning(\"bad input: %s\", e)" },
+        { "step": "Resource ko with se kholo", "detail": "open(), lock, DB session — sab context manager se, taaki error par bhi cleanup ho.", "code": "with open(path, encoding=\"utf-8\") as f:\n    data = f.read()" },
+        { "step": "Error ko raise karo, print nahi", "detail": "Library code me print error message chhupa deta hai; raise karne se caller decide karta hai. Custom exception se contract saaf rakho." }
+      ],
+      "commonMistakes": [
+        "Bare `except:` — KeyboardInterrupt/system exit bhi pakad leta hai aur asli bug chhup jata hai.",
+        "Exception ko chup-chaap pass karna — silent failure debug karna sabse mushkil hota hai.",
+        "open() ke saath with use na karna — file handle leak ho jata hai.",
+        "encoding specify na karna — cross-platform par data corrupt ho sakta hai.",
+        "Error message me sensitive value (API key) print kar dena."
+      ],
+      "bestPractices": [
+        "Fail fast: input boundary par validate karo aur clear error message do.",
+        "Error handling aur business logic alag rakho (wrapper/decorator), taaki happy path readable rahe.",
+        "Retry sirf transient errors par (timeout/5xx) karo; ValueError par retry bekaar hai.",
+        "finally ya with se cleanup guarantee karo; logs me kaunsi layer fail hui wo likho."
+      ],
+      "realWorld": "CSV/JSON ingestion me bad row skip karna, API call ke around retry with backoff, aur config validation at startup — teeno production ke daily kaam hain. Interview me 'silent failure sabse mehnga bug hai' bolkar apna error philosophy bata sakte ho.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek safe_load(path) likho jo file missing ho to None laute aur kharab JSON par warning de." },
+        { "difficulty": "medium", "text": "Ek read_lines(path) generator likho jo file ko lazily padhe aur saath me context manager se close kare." },
+        { "difficulty": "hard", "text": "Ek validate_config(cfg) likho jo custom ConfigError raise kare jisme saare missing keys ek hi message me hon." }
+      ],
+      "interview": [
+        { "q": "try/except/else/finally me else kab chalta hai?", "a": "else tab chalta hai jab try block me koi exception na aaye — isse 'success path' ko try ke andar nested rakhe bina likha jaa sakta hai, aur exceptions unintended handle nahi hoti." },
+        { "q": "Custom exception class kab banani chahiye?", "a": "Jab caller ko specific error pakadna ho (ConfigError vs ValueError) — library ke liye public error contract, aur readable traceback." },
+        { "q": "Bare except kyun khatarnak hai?", "a": "SystemExit aur KeyboardInterrupt bhi catch ho jaate hain, aur programming bugs chhup jaate hain. Isliye specific exception ya except Exception with re-raise use karo." }
+      ],
+      "miniChallenge": "Ek load_config(path) likho jo file missing par default dict laute, kharab JSON par ConfigError raise kare, aur hamesha valid config return kare.",
+      "debugTask": "Ek ingestion script 10,000 rows me 3 kharab rows par crash ho jati hai — reproduce karo aur per-row error handling ka fix likho.",
+      "related": ["Functions", "Modules & imports", "Context managers", "Logging"],
+      "revision": [
+        "try → except (specific) → else → finally",
+        "with se guaranteed cleanup",
+        "open() me encoding='utf-8'",
+        "Bare except kabhi nahi",
+        "Custom exception = error contract"
+      ],
+      "interviewTip": "Interview me ye framework do: 'transient errors par retry with backoff, permanent errors par fail fast with actionable message, aur silent failure kabhi nahi'."
+    },
+    {
+      "section": "s16",
+      "title": "Advanced Python & Performance",
+      "level": "advanced",
+      "what": "Generators, comprehensions, itertools, aur profiling — ye topics Python ko bade data par memory-safe aur tez banate hain, aur 'slow script' ko measure karke fix karne ka tareeka dete hain.",
+      "why": "AI/data code me data memory se bada ho jata hai. Lazy iteration aur sahi data structure ka choice, brute-force loop se dash times farq daal deta hai — aur interview me yahi depth poochi jaati hai.",
+      "whereUsed": "Large file ingestion, token streaming, batching, feature pipelines, aur performance debugging.",
+      "prereqs": ["Loops aur comprehensions", "Functions aur generators", "Dicts aur sets"],
+      "howItWorks": "Generator function yield par state preserve karta hai, isliye poori list memory me nahi banti (lazy). timeit/time.perf_counter se measure hota hai ki bottleneck CPU hai ya I/O — uske baad algorithm ya data structure badla jaata hai, na ki andaze se micro-optimization ki jaati hai.",
+      "syntax": "def stream(path):\n    with open(path, encoding=\"utf-8\") as f:\n        for line in f:        # lazily read\n            yield line.rstrip()\n\nsum(x for x in nums if x > 0)      # generator expression\nfrom collections import deque, Counter\nfrom itertools import islice, chain, groupby",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "import sys\n\ndef stream(n):\n    total = 0\n    for i in range(n):\n        total += i\n        yield total\n\ngen = stream(5)\nprint(next(gen), next(gen))\nprint(list(stream(5)))\nprint(sys.getsizeof(range(1000000)), sys.getsizeof(list(range(1000))))",
+          "output": "",
+          "explain": [
+            "yield par function rukta hai aur next() par wahi se chalta hai — poori list banane ki zaroorat nahi.",
+            "list(stream(5)) cumulative sums deta hai, isliye generator ko dobara consume kar sakte ho (naya generator ban gaya).",
+            "range object ka size almost constant rehta hai jabki list ka size elements ke saath badhta hai — yahi lazy vs eager ka farq hai."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "import timeit\n\nsetup = \"nums = list(range(1000))\"\nloop = \"out = []\\nfor x in nums:\\n    if x % 2 == 0:\\n        out.append(x * 2)\"\ncomp = \"out = [x * 2 for x in nums if x % 2 == 0]\"\n\nt_loop = timeit.timeit(loop, setup=setup, number=2000)\nt_comp = timeit.timeit(comp, setup=setup, number=2000)\nprint(\"loop  \", round(t_loop, 4))\nprint(\"comp  \", round(t_comp, 4))\nprint(\"ratio\", round(t_loop / t_comp, 2))\nprint([x * 2 for x in range(10) if x % 2 == 0])",
+          "output": "",
+          "explain": [
+            "timeit sirf snippet run karta hai (setup separate hai), isliye measurement clean rehta hai.",
+            "Comprehension aksar loop se tez hota hai (dedicated bytecode), par farq aksar 1.5-2x hai — algorithmic improvement isse bada hota hai.",
+            "Ratio print karna important hai: 'tez lagta hai' ke bajaye measured number bolo."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "from collections import Counter, deque\nfrom itertools import islice\n\nlog = [\"GET /a\", \"POST /a\", \"GET /a\", \"GET /b\"]\nprint(Counter(line.split()[0] for line in log))\n\nwindow = deque(maxlen=2)\nfor line in log:\n    window.append(line)\nprint(list(window))\n\nprint(list(islice((l.upper() for l in log), 2)))\nprint(dict.fromkeys(log))",
+          "output": "",
+          "explain": [
+            "Counter generator bhi accept karta hai — poori intermediate list memory me nahi banti.",
+            "deque(maxlen=2) sliding window free me deta hai; purane elements automatically drop ho jaate hain.",
+            "islice lazy stream ka pehla N elements leta hai (poori list materialize nahi hoti).",
+            "dict.fromkeys order-safe unique list deta hai — set se behtar jab order matter kare."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Pehle measure karo", "detail": "timeit ya time.perf_counter se baseline lo. Bottleneck pata hone se pehle optimization karna sirf complexity badhata hai.", "code": "import timeit\nprint(timeit.timeit(stmt, number=1000))" },
+        { "step": "Algorithm aur data structure pehle", "detail": "Nested loop ko set/dict lookup, heap, ya sorted two-pointer se badlo — O(n^2) → O(n log n) ka farq micro-optimization se hamesha bada hota hai." },
+        { "step": "Lazy banao", "detail": "Bade data par generator/generator expression use karo; file line-by-line padho, list me poori mat lao." },
+        { "step": "Memory bhi measure karo", "detail": "sys.getsizeof ya tracemalloc se check karo — aksar speed ke saath memory hi asli problem hoti hai." }
+      ],
+      "commonMistakes": [
+        "Generator ko do baar consume karna (dusri baar khaali milta hai) — ya toh list bana lo ya naya generator.",
+        "Loop ke andar string concatenation (s += x) — O(n^2); list + join use karo.",
+        "Loop ke andar list membership check (x in big_list) — set/dict use karo.",
+        "Bina measure kiye andaze se 'tez' code likhna.",
+        "Bade data par list comprehension ko zaroorat se zyada use karna (memory blow-up)."
+      ],
+      "bestPractices": [
+        "Function ko lazy banao: input iterable lo, iterable lauto (poori list nahi).",
+        "Hot path me local variable lookup, built-ins (sum, min, max, Counter) aur C-implemented modules use karo.",
+        "Batching karo (chunks of N) jab network/DB calls ho — per-row call sabse mehnga pattern hai.",
+        "Optimization ko test se lock karo: same output + measured improvement, warna regression chup-chaap aa jaati hai."
+      ],
+      "realWorld": "10 lakh rows wali CSV ko line-by-line stream karna, inference ko batch me chalana, aur sliding-window metrics (p95 over last 100 requests) — teeno production me isi chapter ke tools se likhe jaate hain.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek generator likho jo file ki lines ko lazily yield kare aur blank lines skip kare." },
+        { "difficulty": "medium", "text": "timeit se list membership vs set membership ka ratio measure karo (1000 elements, 10k lookups)." },
+        { "difficulty": "hard", "text": "Ek chunked(iterable, n) generator likho aur batao ki usse API calls kitne kam ho jaate hain." }
+      ],
+      "interview": [
+        { "q": "Generator aur list ka farq performance ke liye?", "a": "Generator lazy hai — ek waqt me ek element memory me, isliye bade data par memory constant rehti hai. List eager hai: sab elements memory me, par multiple passes aur indexing possible." },
+        { "q": "O(n^2) ko kaise theek karoge?", "a": "Pehle bottleneck identify (nested loop me kya dobara compute ho raha hai), phir hash/set lookup, sorting + two-pointer, ya DP. Claim ke saath complexity bolo." },
+        { "q": "Profiling ke tools?", "a": "timeit micro-benchmark ke liye, cProfile/time.perf_counter macro hotspots ke liye, aur tracemalloc/psutil memory growth ke liye — measure karke fix karo." }
+      ],
+      "miniChallenge": "Ek function likho jo 10 lakh numbers ko single pass me stream kare aur running mean, p95 window aur top-3 frequent simultaneously nikaale (bina poori list banane ke).",
+      "debugTask": "Ek script 500 MB CSV par MemoryError deta hai kyunki wo read().split('\\n') karta hai. Reproduce karo aur streaming fix likho.",
+      "related": ["Comprehensions", "itertools", "timeit & profiling", "Memory profiling"],
+      "revision": [
+        "yield = lazy, state preserve karta hai",
+        "Generator expression memory bachata hai",
+        "deque(maxlen=n) sliding window",
+        "Measure pehle (timeit), phir optimize",
+        "Algorithm change > micro-optimization"
+      ],
+      "interviewTip": "Interview me ye sequence do: 'pehle main measure karta hoon, phir data structure/algorithm badalta hoon, aur aakhir me micro-tuning — aur improvement ka number saath rakhta hoon'."
+    }
+  ]
+}

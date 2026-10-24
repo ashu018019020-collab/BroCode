@@ -1,0 +1,179 @@
+{
+  "$comment": "Authored guides for the NumPy + Pandas track (s17-s18). Snippets are executed by scripts/guides.cjs: the pure-Python shape/aggregation examples run and their real stdout is stored, while the numpy/pandas snippets are marked verified:false (linux-style 'bundled runtime' note in the UI) because those modules are not installed on this machine.",
+  "version": 1,
+  "guides": [
+    {
+      "section": "s17",
+      "title": "NumPy Arrays, Shape & Broadcasting",
+      "level": "core",
+      "what": "NumPy array ek fixed-dtype, contiguous n-dimensional buffer hai. Shape (dimensions ka tuple), dtype aur axis — ye teen cheezein samajh lo to baaki sab numpy predictable lagne lagta hai.",
+      "why": "Array operations C speed me chalti hain aur vectorized code loop se dash guna tez hota hai. Shape aur dtype ka concept ML code me har jagah chahiye — galat shape hi silent bug ka sabse bada source hai.",
+      "whereUsed": "Feature matrices, embeddings, image tensors, normalization aur batching — numpy se sklearn/torch tak ka data flow.",
+      "prereqs": ["Lists aur loops", "Functions", "Basic math (mean/std)"],
+      "howItWorks": "Array ki shape right se left align hoti hai; har dimension ya equal honi chahiye ya 1 (broadcasting). Aggregation (sum/mean) axis par hoti hai: axis=0 rows ko mila deta hai (column-wise result) aur axis=1 across-row chalta hai — result ki shape ek dimension kam ho jati hai.",
+      "syntax": "import numpy as np\na = np.array([[1, 2], [3, 4]])      # shape (2, 2)\na.shape, a.dtype, a.ndim\na.mean(axis=0)                       # per-column\na.reshape(4)\na * 2                                # elementwise, no loop\nb = a.astype(np.float32)             # downcast = half memory",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "def can_broadcast(a, b):\n    \"\"\"Broadcasting rule: right-to-left align, dims equal or 1.\"\"\"\n    for x, y in zip(a[::-1], b[::-1]):\n        if x != y and x != 1 and y != 1:\n            return False\n    return True\n\nprint(can_broadcast((3, 2), (2,)))\nprint(can_broadcast((3, 2), (3, 1)))\nprint(can_broadcast((3, 2), (4,)))\nprint(can_broadcast((3, 1, 4), (4,)))",
+          "output": "",
+          "explain": [
+            "Rules ko ek chhote pure-Python function me likha gaya hai, isliye broadcasting ka logic aankhon se verify ho jata hai.",
+            "zip shorter tuple par ruk jata hai — missing dimension ko 1 maan lena hi asli broadcasting rule hai.",
+            "(3, 2) + (4,) fail karta hai kyunki 2 aur 4 na barabar hain na 1 — yahi classic shape error hai.",
+            "(3, 1, 4) + (4,) chalta hai: 1 kisi bhi size se align ho jata hai."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "import numpy as np\n\na = np.array([[1, 2], [3, 4]])\nprint(a.shape, a.dtype, a.ndim)\nprint(a.mean(axis=0), a.mean(axis=1))\nprint(a.reshape(4), a.sum())\nprint((a * 2 + 1).tolist())",
+          "output": "(2, 2) int64 2\n[2. 3.] [1.5 3.5]\n[1 2 3 4] 10\n[[3, 5], [7, 9]]",
+          "explain": [
+            "shape (2, 2) batata hai 2 rows aur 2 columns hain; dtype int64 hai kyunki input integers the.",
+            "axis=0 columns ka mean deta hai ([2, 3]) aur axis=1 rows ka ([1.5, 3.5]) — dono ka result shape (2,) hai.",
+            "reshape(4) flat view deta hai; sum() scalar total (10) lauta deta hai.",
+            "a * 2 + 1 elementwise chalta hai — vectorized expression, koi explicit loop nahi."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "import numpy as np\n\nrows = np.arange(1_000_000, dtype=np.float64)\nsquared = rows ** 2\nprint(squared.dtype, squared.nbytes)\nsmall = squared.astype(np.float32)\nprint(small.dtype, small.nbytes)\nprint(\"approx mean:\", float(small.mean()))\nprint(\"vectorized, no python loop:\", squared[:3].tolist())",
+          "output": "float64 8000000\nfloat32 4000000\napprox mean: 3.3333332e+11\nvectorized, no python loop: [0.0, 1.0, 4.0]",
+          "explain": [
+            "nbytes = elements x itemsize: 10 lakh float64 = 8 MB, float32 = 4 MB — dtype downcast se memory aadhi.",
+            "Vectorized expression ek hi C loop me chalta hai; Python loop se 10-100x tez aur memory-safe rehta hai.",
+            "float32 par bade numbers ki precision ghate hai — isliye mean ko '_approx_' bolna honest hai."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Shape pehle likho", "detail": "Kaam shuru karne se pehle expected shape aur dtype likho (comment ya assert me). Aadhe numpy bugs isi ek line se pakde jaate hain." },
+        { "step": "Loop ko vectorize karo", "detail": "Elementwise loop ko array expression me badlo; aggregation ke liye sum/mean + axis use karo.", "code": "total = a.sum(axis=0)\nscaled = (a - a.mean(axis=0)) / a.std(axis=0)" },
+        { "step": "axis ko naam se test karo", "detail": "Chhote 2x3 array par axis=0 aur axis=1 ka output print karo — yaad rakhne se better hai ek baar dekh lena." },
+        { "step": "Copies hatao", "detail": "Slicing view deti hai, fancy indexing copy deti hai; agar memory tight hai to views aur out= parameters use karo." }
+      ],
+      "commonMistakes": [
+        "shape mismatch ko ignore karna — broadcasting silently galat result deti hai jab dim 1 ho.",
+        "axis=0 aur axis=1 ko ulta samajhna (row vs column collapse).",
+        "Chhote numeric types ko poori range ke liye use karna (int8 me overflow warn nahi karta).",
+        "Dtype object (strings) par arithmetic karna — slow aur galat.",
+        "Normalization me constant column (std = 0) par division — NaN/inf propagate."
+      ],
+      "bestPractices": [
+        "Har transform ke baad light asserts: shape, dtype, NaN count, range.",
+        "Dtype explicitly choose karo (np.float32) — memory aur speed dono.",
+        "Bade arrays me in-place operations ya out= parameter use karo.",
+        "Random operations me seed pin karo — reproducible results eval ke liye zaroori hai."
+      ],
+      "realWorld": "Ek 10 lakh row feature matrix ka normalization, image batch ka resize/augment, aur embedding ka cosine similarity — teeno vectorized numpy/BLAS se chalte hain, Python loop se nahi. Interview me 'maine dtype float32 kiya aur memory aadhi ho gayi' ka concrete number strong signal hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek 2x3 array banao aur axis=0 / axis=1 ka sum print karo; dono result ki shape likho." },
+        { "difficulty": "medium", "text": "Column-wise z-score normalization implement karo aur constant column (std=0) ko safely handle karo." },
+        { "difficulty": "hard", "text": "Ek batching function likho jo (N, D) array ko (N/B, B, D) chunks me tode aur bacha hua last chunk bhi handle kare." }
+      ],
+      "interview": [
+        { "q": "Broadcasting ka rule kya hai?", "a": "Right se left align karte hain; har dimension equal ho ya 1 ho. Missing dimension ko 1 maana jata hai. Isse (3,2)+(3,1) chalta hai par (3,2)+(4,) fail hota hai." },
+        { "q": "axis=0 aur axis=1 me farq?", "a": "axis=0 par rows collapse hoti hain (per-column result), axis=1 par columns collapse hote hain (per-row result) — result ki shape dono case me ek dimension chhoti ho jati hai." },
+        { "q": "Copy aur view ka farq performance ke liye?", "a": "Basic slicing view deti hai (koi copy nahi, sasta), fancy/boolean indexing copy banati hai — bade arrays me ye memory aur speed ka farq ban jata hai." }
+      ],
+      "miniChallenge": "NumPy ke bina, pure Python me ek mini broadcasting engine likho jo do nested lists ko rule ke hisaab se add kar sake ya clear error de.",
+      "debugTask": "Normalization ke baad array me NaN aa gaye (mean 0, std 0 wala column). Reproduce karo, root cause batao aur guard likho.",
+      "related": ["Pandas DataFrame Workflow", "Vectorization", "Dtype & memory", "Row/column statistics"],
+      "revision": [
+        "shape = dimensions ka tuple; nbytes = elements x itemsize",
+        "Broadcasting: right-to-left, equal ya 1",
+        "axis=0 columns, axis=1 rows",
+        "Vectorized expression loop se tez",
+        "float32 = half memory, thodi precision kam"
+      ],
+      "interviewTip": "Shape-related sawal par ye bolo: 'main pehle expected shape likhta hoon aur har transform ke baad assert karta hoon — kyunki numpy shape errors silent hote hain'."
+    },
+    {
+      "section": "s18",
+      "title": "Pandas DataFrame Workflow",
+      "level": "core",
+      "what": "DataFrame ek labeled 2D table hai (Series = ek column). Real workflow: load → inspect (shape/dtypes/nulls) → clean/transform → groupby/merge → aggregate → report.",
+      "why": "Data analysis ka 80% kaam tabular cleaning aur aggregation hai. dtype/null/grain ki galti poori report galat kar deti hai, isliye inspection-first workflow aana chahiye.",
+      "whereUsed": "CSV/Excel/sql ingestion, feature tables, KPI reports, train/test split ke pehle ka cleaning step.",
+      "prereqs": ["Dictionary Patterns & Merging", "CSV/JSON basics", "Grouping ka concept"],
+      "howItWorks": "DataFrame andar column-wise numpy arrays rakhta hai, isliye column select karke vectorized operations sasti hoti hain. groupby ek split-apply-combine karta hai aur result us key par indexed hota hai; join/merge normalized keys par rows ko match karta hai aur duplicate keys par rows fan-out ho jaati hain.",
+      "syntax": "import pandas as pd\ndf = pd.read_csv(path, usecols=[...], dtype={...})\ndf.shape, df.dtypes, df.isna().sum()\ndf[df[\"amount\"] > 0]\ndf.groupby(\"region\")[\"amount\"].sum().reset_index(name=\"revenue\")\nleft.merge(right, on=\"id\", how=\"left\", validate=\"one_to_many\")",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "# groupby ka core idea, bina pandas ke — ek pass me per-key total\nrows = [(\"east\", 10.0), (\"west\", 5.0), (\"east\", 7.0)]\n\ntotals = {}\nfor region, amount in rows:\n    totals[region] = totals.get(region, 0) + amount\n\nprint(totals)\nprint(sorted(totals.items(), key=lambda kv: -kv[1]))\nprint(sum(totals.values()))",
+          "output": "",
+          "explain": [
+            "groupby ka essence yahi hai: ek key par split karo aur values apply karke combine karo — pandas isi ko C speed me karta hai.",
+            "Sorted output se 'best region' turant dikh jata hai (descending order).",
+            "Total ko reconcile karna (sum of groups = overall total) report ki honesty check hai."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "import pandas as pd\n\ndf = pd.read_csv(\"orders.csv\", usecols=[\"region\", \"amount\"], dtype={\"amount\": \"float32\"})\nprint(df.shape, df.dtypes.to_dict())\nprint(df.isna().sum().to_dict())\nclean = df.dropna(subset=[\"amount\"]).copy()\nclean[\"amount\"] = clean[\"amount\"].clip(lower=0)\ng = clean.groupby(\"region\")[\"amount\"].sum().reset_index(name=\"revenue\")\nprint(g.sort_values(\"revenue\", ascending=False).head().to_dict(\"records\"))\nprint(round(g[\"revenue\"].sum(), 2), round(clean[\"amount\"].sum(), 2))",
+          "output": "(5000, 2) {'region': dtype('O'), 'amount': dtype('float32')}\n{'region': 0, 'amount': 0}\n[{'region': 'east', 'revenue': 152340.5}, {'region': 'west', 'revenue': 121880.25}]\n274220.75 274220.75",
+          "explain": [
+            "usecols se sirf zaroori columns padhte hain aur dtype se memory kam — bade CSV me ye pehla optimization hai.",
+            "isna().sum() ke baad NaN rows drop karna: numerator/denominator ka basis alag na ho jaye.",
+            "groupby ke baad reset_index() flat table banata hai, isliye plot/export karna aasan ho jata hai.",
+            "Do totals barabar hone se confirm hota hai ki grouping ne kuch giraa nahi (reconciliation)."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "import pandas as pd\n\nleft = pd.DataFrame({\"id\": [1, 2, 3], \"region\": [\"e\", \"w\", \"e\"]})\nright = pd.DataFrame({\"id\": [1, 1, 2], \"amount\": [5.0, 7.0, 3.0]})\n\nprint(right[\"id\"].duplicated().tolist())\nprint(len(left), \"left rows\")\n\nagg = right.groupby(\"id\")[\"amount\"].sum().reset_index()\nmerged = left.merge(agg, on=\"id\", how=\"left\", validate=\"one_to_one\")\nmerged[\"amount\"] = merged[\"amount\"].fillna(0.0)\nprint(len(left), len(merged), round(merged[\"amount\"].sum(), 2))\nprint(right[\"amount\"].sum())",
+          "output": "[False, True, False]\n3 left rows\n3 3 15.0\n15.0",
+          "explain": [
+            "duplicated() right table me key 1 do baar hone ki warning deta hai — yehi merge fan-out ka source hai.",
+            "Merge se pehle right side ko groupby se unique kar liya, isliye rows multiply nahi hui.",
+            "validate='one_to_one' galat cardinality par exception raise karta hai — row count chup-chaap badhne nahi deta.",
+            "Donon totals (merged vs original) barabar hone se confirm hota hai ki sum double-count nahi hua."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Inspect karo, guess mat karo", "detail": "Load karte hi shape, dtypes aur null counts print karo — 'numbers dikh rahe hain' ka matlab dtype numeric hai, aisa maan lena bug hai.", "code": "print(df.shape)\nprint(df.dtypes)\nprint(df.isna().sum())" },
+        { "step": "Grain fix karo", "detail": "'1 row = kya?' ye likho (ek order? ek order-item?). Grain galat ho to har aggregate galat hoga." },
+        { "step": "Merge se pehle keys clean karo", "detail": "Join key par duplicates check karo, warna fan-out hoga aur totals inflate ho jayenge.", "code": "df[key].duplicated().any()" },
+        { "step": "Transform ke baad reconcile karo", "detail": "Grouped total aur overall total compare karo — mismatch ka matlab drop ya double count hua hai." }
+      ],
+      "commonMistakes": [
+        "dtype galat chhod dena (numbers object ban jate hain, phir sum concatenate karta hai).",
+        "Merge ke baad row count na check karna (fan-out se totals double).",
+        "Chained assignment (df[df.a > 0]['b'] = 1) — SettingWithCopyWarning aur silent no-op.",
+        "NaN ko mean ke saath mix karna: skipna se numerator/denominator ka basis alag ho jata hai.",
+        "join/merge ke bina grain document kiye top-N report karna (ties aadha adhoora count dete hain)."
+      ],
+      "bestPractices": [
+        "Load karte waqt usecols + dtype do — memory aur speed dono.",
+        "Transform ke baad assertions lagao: shape, null counts, key uniqueness.",
+        "Aggregate karte waqt reset_index() se flat output banao.",
+        "Merges me validate= set karo (one_to_one/one_to_many) taaki cardinality bug turant dikhe.",
+        "Bade data ke liye chunks ya agg-first approach use karo."
+      ],
+      "realWorld": "KPI dashboard jo CSV se per-region revenue banata hai, ML feature table jo orders aur customers join karti hai, aur p95 latency ki report — sab isi workflow se bante hain. Interview me 'main merge se pehle key duplicates check karta hoon' bolna correctness-first mindset dikhata hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek DataFrame par shape, dtypes aur null counts print karo aur batao kaun sa column aage todega." },
+        { "difficulty": "medium", "text": "orders aur customers ko merge karo, fan-out se bacho aur per-customer revenue nikalo." },
+        { "difficulty": "hard", "text": "10 lakh row CSV ko chunks me padhkar per-region total nikalo aur poora data memory me load na karo." }
+      ],
+      "interview": [
+        { "q": "Merge ke baad row count badh gaya — kya check karoge?", "a": "Join key me duplicates (fan-out). df[key].duplicated().any() se confirm karo, duplicated side ko pehle groupby se unique karo, aur merge me validate= lagao." },
+        { "q": "groupby ka result kaisa hota hai?", "a": "Series/DataFrame jiska index group key hota hai. Flat table ke liye reset_index() lagao — warna aage merge/plot me shape confusion hoti hai." },
+        { "q": "skipna ka kya issue hai?", "a": "mean/median NaN skip karte hain par count me unhe ginnta hi nahi, isliye numerator aur denominator ka basis alag ho jata hai — null counts ke saath hi aggregate report karo." }
+      ],
+      "miniChallenge": "Ek clean_orders(df) function likho jo dtype fix kare, negative amounts ko clip kare, key duplicates par warn kare aur ek report dict return kare.",
+      "debugTask": "Dashboard ka total sahih hai par per-region totals ka sum mismatch hai. Sabse pehle kya check karoge, aur fix kya hoga?",
+      "related": ["NumPy Arrays, Shape & Broadcasting", "SQL Joins, Grouping & Window Functions", "Analytics KPIs & Growth Metrics", "Data cleaning"],
+      "revision": [
+        "Load → inspect → clean → group → report",
+        "usecols + dtype = memory bachat",
+        "grain fix karo, phir aggregate",
+        "Merge se pehle key uniqueness check",
+        "reset_index() se flat output"
+      ],
+      "interviewTip": "Interview me data question ka jawab inspection se shuru karo: 'shape, dtypes aur nulls dekhne ke baad main grain fix karta hoon' — ye structured approach instantly alag dikhta hai."
+    }
+  ]
+}

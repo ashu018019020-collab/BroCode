@@ -1,0 +1,261 @@
+{
+  "$comment": "Authored guides for the APIs + Production track (s24-s26). Validation, retry/backoff, KPI maths, config fail-fast and probe semantics are plain Python so they genuinely execute; framework wiring (FastAPI/Docker) is described in steps rather than faked as a local run.",
+  "version": 1,
+  "guides": [
+    {
+      "section": "s24",
+      "title": "FastAPI Request, Validation & Response",
+      "level": "core",
+      "what": "HTTP API ek contract hai: request ka shape (types + ranges), response ka shape, aur error ka shape. FastAPI me ye contract Pydantic models se likha jata hai aur usi se validation + docs automatically bante hain.",
+      "why": "90% production bugs invalid/unexpected input se aate hain. Boundary par strict validation, consistent error shape aur timeouts ke bina API 'sometimes works' ban jati hai — jo debug karna sabse mehnga hai.",
+      "whereUsed": "ML inference endpoints (/predict), RAG /ask endpoints, webhooks, aur internal service-to-service APIs.",
+      "prereqs": ["Functions aur exceptions", "JSON basics", "Classes (Pydantic model bhi class hai)"],
+      "howItWorks": "Request path: ASGI server → middleware (logging/CORS/auth) → router → dependencies → request model validation (fail par 422) → handler → response model serialisation (fail par 500) → JSON. Validation request model par hone se error response automatic aur consistent milta hai; isliye app/service/DB teen layer par apni apni responsibility rehti hai.",
+      "syntax": "from fastapi import FastAPI, HTTPException\nfrom pydantic import BaseModel, Field\n\nclass AskRequest(BaseModel):\n    text: str = Field(min_length=1, max_length=2000)\n    top_k: int = Field(default=5, ge=1, le=10)\n\n@app.post(\"/ask\")\ndef ask(req: AskRequest) -> dict:\n    ...",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "def validate(payload):\n    problems = []\n    text = payload.get(\"text\")\n    if not isinstance(text, str) or not text.strip():\n        problems.append(\"text: required non-empty string\")\n    top_k = payload.get(\"top_k\", 3)\n    if not isinstance(top_k, int) or isinstance(top_k, bool) or not (1 <= top_k <= 10):\n        problems.append(\"top_k: int in 1..10\")\n    return problems\n\nprint(validate({\"text\": \"  \"}))\nprint(validate({\"text\": \"hi\", \"top_k\": 99}))\nprint(validate({\"text\": \"hello\", \"top_k\": 5}))",
+          "output": "",
+          "explain": [
+            "Whitespace-only text 'non-empty' lagti hai — isliye strip() ke baad check karna padta hai.",
+            "Bool ko alag se reject kiya gaya kyunki Python me True int ka subclass hai (True ko 1 maan lena silent bug hai).",
+            "Valid payload par khaali list aati hai — handler tab hi chalta hai jab problems khaali hon."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "import time\n\nclass UpstreamTimeout(Exception):\n    pass\n\ndef with_retry(fn, attempts=3, base=0.01):\n    delays = []\n    for i in range(attempts):\n        try:\n            return fn(i), delays\n        except UpstreamTimeout:\n            delays.append(round(base * (2 ** i), 3))\n            time.sleep(delays[-1])\n    raise RuntimeError(\"gave up: upstream down\")\n\ndef flaky(i):\n    if i < 2:\n        raise UpstreamTimeout(\"read timeout\")\n    return \"ok\"\n\nprint(with_retry(flaky))\nprint(with_retry(lambda i: \"first try\", attempts=1))",
+          "output": "",
+          "explain": [
+            "Exponential backoff (base x 2^i) se retries clustered nahi hote — upstream ko recover karne ka time milta hai.",
+            "Delays ko record karke return kiya gaya, isliye behaviour observable hai (test me assert kar sakte ho).",
+            "Attempts khatam hone par clear exception raise hoti hai — silent default return karna debugging ko mushkil banata hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "import json\nfrom datetime import datetime, timezone\n\ndef envelope(result=None, error=None, request_id=\"req-1\"):\n    body = {\n        \"request_id\": request_id,\n        \"ts\": datetime(2026, 1, 1, tzinfo=timezone.utc).isoformat(),\n    }\n    if error:\n        body.update({\"ok\": False, \"error\": {\"code\": \"invalid_request\", \"message\": error}})\n    else:\n        body.update({\"ok\": True, \"data\": result})\n    return body\n\nprint(json.dumps(envelope(result={\"answer\": \"hi\", \"sources\": [\"d2\"]})))\nprint(json.dumps(envelope(error=\"text required\")))",
+          "output": "",
+          "explain": [
+            "Success aur error dono ka same envelope shape (ok + request_id) rakha gaya — client ko do alag parse paths nahi likhne padte.",
+            "request_id har response me jaata hai, isliye client complaint se server logs tak trace karna ek step ka kaam hai.",
+            "Timestamp UTC me ISO format me diya gaya — timezone ambiguity JSON me silent bug ban jati hai."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Request model pehle likho", "detail": "Types, ranges aur required fields model me likho — validation aur OpenAPI docs dono free mil jate hain.", "code": "class AskRequest(BaseModel):\n    text: str = Field(min_length=1)\n    top_k: int = Field(default=5, ge=1, le=10)" },
+        { "step": "Error shape ek jaisa rakho", "detail": "Har error (validation, auth, upstream) ka same JSON shape do — client side branching kam ho jati hai.", "code": "raise HTTPException(status_code=422, detail={\"code\": \"invalid_request\", \"message\": msg})" },
+        { "step": "Timeouts aur limits lagao", "detail": "Har outbound call par timeout do, payload size limit aur rate limit lagao — warna ek hung dependency poori service le doobti hai." },
+        { "step": "Observability add karo", "detail": "Request id, latency aur error-rate metrics; logs me content nahi, ids — PII safe rakho." }
+      ],
+      "commonMistakes": [
+        "Validation ko sirf frontend par chhod dena (curl/scripts se invalid data aata hai).",
+        "Bare except se saare errors ko 500 bana dena — caller ko actionable 4xx chahiye.",
+        "Outbound calls me timeout na dena (worker hang).",
+        "Error response me stack trace ya secrets bhej dena.",
+        "Error case me alag schema lautana — client parse todta hai."
+      ],
+      "bestPractices": [
+        "Request/response models se contract lock karo (versioned API path ya header).",
+        "Timeouts + retries sirf idempotent operations par.",
+        "Rate limit aur payload size limit har public endpoint par.",
+        "Structured logging with request id (aur latency field).",
+        "Smoke test deploy ke baad (health + ek real request)."
+      ],
+      "realWorld": "Ek /ask endpoint jahan top_k range-bound hai, upstream LLM call retry+timeout ke saath chalti hai, aur error envelope consistent rehta hai — yahi production-grade minimal API hai. Interview me 'main schema, timeouts aur limits pehle rakhta hoon, phr throughput tune karta hoon' bolna senior signal hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek validate(payload) function likho jo text aur top_k (1..10) check kare." },
+        { "difficulty": "medium", "text": "Retry with exponential backoff + jitter implement karo aur delays ko return karo taaki test ho sake." },
+        { "difficulty": "hard", "text": "Ek consistent response envelope likho (success + error) aur uske liye 3 unit tests likho." }
+      ],
+      "interview": [
+        { "q": "Validation kis layer me honi chahiye?", "a": "Request model par schema/types, service layer me business rules, aur DB me integrity constraints — teeno, kyunki har layer alag failure mode rokti hai." },
+        { "q": "Retry kab nahi karna chahiye?", "a": "Non-idempotent operations par (POST payment) bina idempotency key ke, aur permanent errors (4xx validation) par — retry sirf transient (timeout/5xx) par." },
+        { "q": "500 ke baad logs me kuch nahi milta — kya check karoge?", "a": "Log level/buffering, request id ki presence, unhandled exception handler, aur upstream timeout — structured logs ke bina 'occasional 500' guesswork hai." }
+      ],
+      "miniChallenge": "Ek mini API contract likho (models + validate + error envelope) aur uske against 5 test cases chalao: empty text, bool top_k, out-of-range, valid, aur upstream failure.",
+      "debugTask": "Local me sab chal raha hai par production me 500 aur logs khaali hain. Structural order likho jisme tum debug karoge.",
+      "related": ["Agent Loops, Tools & Guardrails", "Idempotency & retries", "Observability", "MLOps: Docker, CI/CD & Deploy"],
+      "revision": [
+        "Request models se validation + docs",
+        "Error shape ek jaisa (ok + request_id)",
+        "Timeouts + retries (idempotent only)",
+        "limits: payload size, rate, top_k range",
+        "Logs me ids, content nahi"
+      ],
+      "interviewTip": "API design par ye sequence bolo: 'schema pehle, limits aur timeouts uske baad, phir throughput tuning — kyunki bina limits ke tuning sirf outage ki speed badhati hai'."
+    },
+    {
+      "section": "s25",
+      "title": "Analytics KPIs & Growth Metrics",
+      "level": "core",
+      "what": "KPI ek measurable business number hai (revenue, growth %, conversion, retention). Achha KPI: defined grain, defined filters, aur defined time window — warna har banda apna number laata hai.",
+      "why": "Dashboard ka number decision leta hai. Grain ya filter ki chhoti galti (fan-out, NULL bucket, zero base) poore business ko galat direction me le jaati hai — aur trust ek baar tootne par wapas nahi aata.",
+      "whereUsed": "Revenue/growth reporting, funnel aur conversion analysis, retention cohorts, aur experiment readouts.",
+      "prereqs": ["SQL Joins, Grouping & Window Functions", "Pandas DataFrame Workflow", "Basic percentages & averages"],
+      "howItWorks": "KPI do cheezon par khada hai: grain (ek row kya represent karti hai) aur denominator (ratio ka base). Growth window function (LAG) se nikalta hai, aur ratio metrics ko sum nahi kiya jaa sakta — numerator aur denominator alag sum karke divide karna padta hai.",
+      "syntax": "def mom(months):\n    out = []\n    for prev, cur in zip(months, months[1:]):\n        out.append((cur[0], None if prev[1] == 0\n                    else round((cur[1] - prev[1]) / prev[1] * 100, 1)))\n    return out\n\n# ratio metrics: sum numerator, sum denominator\nrate = sum(converted) / sum(visited)",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "def mom(months):\n    out = []\n    for prev, cur in zip(months, months[1:]):\n        if prev[1] == 0:\n            out.append((cur[0], None))\n        else:\n            out.append((cur[0], round((cur[1] - prev[1]) / prev[1] * 100, 1)))\n    return out\n\nmonths = [(\"2026-01\", 120000), (\"2026-02\", 150000), (\"2026-03\", 90000)]\nprint(mom(months))\nprint(mom([(\"2026-01\", 0), (\"2026-02\", 50)]))\nprint(mom([]))",
+          "output": "",
+          "explain": [
+            "Month-over-month change ((cur - prev) / prev) do consecutive points par chalta hai — window function LAG ka plain-Python version.",
+            "Negative growth bhi print hoti hai (-40%) — use chhupana ya clip karna metric ko jhootha banata hai.",
+            "Base month zero hone par None lauta rahe hain (division by zero ke bajaye) aur khaali input par khaali list."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "rows = [\n    (\"east\", \"2026-01\", 120),\n    (\"east\", \"2026-02\", 150),\n    (\"west\", \"2026-01\", 90),\n    (\"west\", \"2026-02\", 99),\n]\n\ntotal = sum(r[2] for r in rows)\nbest = max(rows, key=lambda r: r[2])\nby_region = {}\nfor region, _, amount in rows:\n    by_region[region] = by_region.get(region, 0) + amount\n\nprint(total, best)\nprint({k: round(v / total * 100, 1) for k, v in sorted(by_region.items())})\nprint(sum(by_region.values()) == total)",
+          "output": "",
+          "explain": [
+            "Grain yahan region-month hai, isliye total SUM aur best MAX se nikalte hain.",
+            "Share (%) nikalne ke liye denominator poora total hai — ratio metrics ko isi tarah base ke saath report karo.",
+            "Reconciliation check (grouped total == overall total) dashboard ki honesty ka sabse sasta test hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "orders = [{\"id\": 1, \"items\": 2}, {\"id\": 2, \"items\": 3}]\nitems = [\n    {\"order_id\": 1, \"amount\": 10.0},\n    {\"order_id\": 1, \"amount\": 5.0},\n    {\"order_id\": 2, \"amount\": 7.0},\n]\n\nitem_total = sum(i[\"amount\"] for i in items)\nnaive = sum(o[\"items\"] * 7.5 for o in orders)   # wrong grain: items x avg price\n\nprint(round(item_total, 2), round(naive, 2))\nprint(\"orders\", len(orders), \"item rows\", len(items))\nprint(\"fan-out risk:\", len(items) != len(orders))",
+          "output": "",
+          "explain": [
+            "Do galat tareeke ka farq dikhaya gaya: item-level sum sahi hai, jabki order-level count ko average price se multiply karna grain mismatch hai.",
+            "Row counts compare karna fan-out detect karne ka pehla step hai (items rows > orders rows).",
+            "Ratio metrics ko aise hi galat sum karne se 'average of averages' wala classic bug aata hai."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Grain aur filters likho", "detail": "Ek row kya represent karti hai, kaun sa time window, aur kaun se filters — KPI definition ek jagah (doc) me likho." },
+        { "step": "Ratios ko numerator/denominator se banao", "detail": "Percentage ko average mat karo: sum(num)/sum(den) karo, aur zero/near-zero denominators par 'n/a' do.", "code": "rate = sum(num) / sum(den) if sum(den) else None" },
+        { "step": "Reconcile karo", "detail": "Visual total aur model total match hone chahiye; grouped sum == overall sum check lagao.", "code": "assert sum(by_region.values()) == total" },
+        { "step": "Comparison baseline rakho", "detail": "Same-period-last-year ya pichhla period saath dikhao — akela number context ke bina decision nahi de sakta." }
+      ],
+      "commonMistakes": [
+        "Ratios ko sum karna (averages of averages) — galat number.",
+        "Fan-out join se double counting (grain mismatch).",
+        "Zero base period par growth calculate karna (division by zero / infinity).",
+        "NULL/unknown bucket ek jagah count karna aur doosri jagah nahi — totals mismatch.",
+        "Timezone/grain mismatch (month boundary UTC vs local)."
+      ],
+      "bestPractices": [
+        "KPI definition document karo (grain, filters, window, exclusions).",
+        "Har report me baseline/comparison period rakho.",
+        "Data quality checks model/data layer par lagao, BI me nahi.",
+        "Slow dashboard ke liye pehle model/grain theek karo, phir DAX-metrics tune karo.",
+        "Totals ke next to reconciliation test rakho (visual vs model)."
+      ],
+      "realWorld": "Monthly revenue dashboard, funnel conversion report, aur retention cohorts — teeno me grain aur denominator define karna hi 80% kaam hai. Interview me 'ratio metrics ko main numerator/denominator se banata hoon' bolna instantly correctness-first mindset dikhata hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Teen months ka MoM growth % calculate karo aur zero-base case handle karo." },
+        { "difficulty": "medium", "text": "Per-region revenue aur share nikalo, phir reconciliation assert lagao." },
+        { "difficulty": "hard", "text": "Ek cohort retention table banao (first-seen month × active month) aur month-1 retention report karo." }
+      ],
+      "interview": [
+        { "q": "Ratio metrics ko sum kyun nahi kar sakte?", "a": "Average of averages galat hota hai: 2/10 aur 100/1000 ka simple average 0.55 dikhata hai jabki sach 102/1010 = 0.101 hai. Isliye numerator aur denominator alag sum karo." },
+        { "q": "Dashboard total sahi par per-region sum mismatch — pehla check?", "a": "Grain/fan-out (duplicate keys se rows multiply) aur filter context ka farq; row counts compare karke shuru karo." },
+        { "q": "Seasonality kaise handle karoge?", "a": "Same-period-last-year comparison aur trailing averages use karo; month-over-month akela Dec→Jan ke liye misleading hai." }
+      ],
+      "miniChallenge": "Ek kpi_report(rows) function likho jo total, best period, MoM growth aur share — sab ek dict me de, aur zero-base case safely handle kare.",
+      "debugTask": "Dashboard ka conversion rate manually nikalne par 12% aata hai par dashboard 19% dikhata hai. Do sabse likely reason batao aur verify karne ka tareeka likho.",
+      "related": ["SQL Joins, Grouping & Window Functions", "Pandas DataFrame Workflow", "Metric definitions & baselines", "Experiment readouts"],
+      "revision": [
+        "KPI = grain + filters + window",
+        "Growth = (cur - prev) / prev, zero base par n/a",
+        "Ratio = sum(num) / sum(den)",
+        "Fan-out join = double counting",
+        "Reconciliation test har report me"
+      ],
+      "interviewTip": "KPI sawal par definition se shuru karo: 'grain ye hai, denominator ye hai, aur main baseline ke saath report karta hoon' — ye teen line hi interviewer ka doubt khatam kar deti hain."
+    },
+    {
+      "section": "s26",
+      "title": "MLOps: Docker, CI/CD & Deploy",
+      "level": "core",
+      "what": "MLOps ka core: reproducible environment (Docker + pinned deps), automated checks (CI), aur safe deploy (immutable image tag, health checks, rollback).",
+      "why": "'Mere machine par chalta hai' ka matlab environment drift hai. Reproducible image + config validation + rollback plan ke bina deployment ek gamble hota hai.",
+      "whereUsed": "Model serving containers, batch jobs, API deploys, aur scheduled pipelines (retrain/eval).",
+      "prereqs": ["FastAPI Request, Validation & Response", "Git basics", "Config/secrets ka idea"],
+      "howItWorks": "Build se deploy tak: commit → CI (lint/tests/build) → image build + tag (commit sha) → registry push → deploy with config inject → startup/readiness probe → traffic shift. Rollback = purana tag dobara deploy karna, isliye image immutable aur tag traceable hona chahiye. Liveness 'process zinda hai?' poochta hai, readiness 'traffic le sakta hai?' — dono alag rakhna must hai.",
+      "syntax": "FROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nENV PYTHONDONTWRITEBYTECODE=1\nCMD [\"uvicorn\", \"app:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]",
+      "examples": [
+        {
+          "level": "basic",
+          "code": "REQUIRED = {\"DATABASE_URL\": str, \"MODEL_PATH\": str, \"WORKERS\": int}\n\ndef load_config(env):\n    problems, cfg = [], {}\n    for key, typ in REQUIRED.items():\n        val = env.get(key)\n        if val is None:\n            problems.append(f\"{key}: missing\")\n            continue\n        try:\n            cfg[key] = typ(val)\n        except (TypeError, ValueError):\n            problems.append(f\"{key}: expected {typ.__name__}\")\n    if problems:\n        raise RuntimeError(\"config invalid: \" + \"; \".join(problems))\n    return cfg\n\ntry:\n    load_config({\"DATABASE_URL\": \"postgres://x\"})\nexcept RuntimeError as e:\n    print(e)\nprint(load_config({\"DATABASE_URL\": \"postgres://x\", \"MODEL_PATH\": \"/m\", \"WORKERS\": \"4\"}))",
+          "output": "",
+          "explain": [
+            "Startup par saari required config validate hoti hai — ek deploy me hi missing var pakda jata hai, runtime error par nahi.",
+            "WORKERS ko string se int me convert kiya gaya, isliye env var typing ka issue yahin handle ho gaya.",
+            "Validation failure par clear message milta hai (kaun kaun si key missing/typed galat) — fail fast, silent default nahi."
+          ]
+        },
+        {
+          "level": "intermediate",
+          "code": "import hashlib\n\ncommit = \"8f2c1ab\"\nsha = hashlib.sha1(commit.encode()).hexdigest()[:12]\nregistry = \"registry.example.com/app\"\ntags = {\"prod\": f\"{registry}:{commit}\", \"previous\": f\"{registry}:1a2b3c4\"}\n\ndef rollback(current, history):\n    return {\"action\": \"redeploy\", \"tag\": history[-1], \"from\": current}\n\nprint(\"sha\", sha)\nprint(tags)\nprint(rollback(tags[\"prod\"], [registry + \":1a2b3c4\"]))\nprint(\"immutable:\", commit in tags[\"prod\"] and tags[\"prod\"] != tags[\"previous\"])",
+          "output": "",
+          "explain": [
+            "Image tag commit ko reference karta hai, isliye 'kaun sa code live hai' ka ek hi jawab hota hai aur rollback deterministic.",
+            "Rollback ek data operation hai (purane tag ko redeploy karna) — isliye rollback ko rehearsed script ki tarah rakho.",
+            "Immutable tags (latest nahi) use karne se same tag par alag code deploy hone ka risk khatam hota hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "code": "from dataclasses import dataclass, field\n\n@dataclass\nclass Probe:\n    name: str\n    checks: list = field(default_factory=list)\n\n    def run(self, deps):\n        results = [(c, bool(deps.get(c))) for c in self.checks]\n        return {\"ok\": all(v for _, v in results), \"detail\": results}\n\nliveness = Probe(\"liveness\", [\"process_alive\"])\nreadiness = Probe(\"readiness\", [\"process_alive\", \"db_ping\", \"vector_index\"])\ndeps = {\"process_alive\": True, \"db_ping\": False, \"vector_index\": True}\n\nprint(liveness.run(deps))\nprint(readiness.run(deps))\nprint(\"send traffic:\", \"yes\" if readiness.run(deps)[\"ok\"] else \"no\")",
+          "output": "",
+          "explain": [
+            "Liveness sirf process check karta hai (restart decision), readiness dependencies bhi check karta hai (traffic decision).",
+            "DB down hone par readiness fail hoti hai par liveness pass — isliye orchestrator container restart nahi karega (galat restart se cascade outage hota hai).",
+            "Detailed result print karne se pata chalta hai kaunsi dependency fail hui — debugging me seedha kaam aata hai."
+          ]
+        }
+      ],
+      "howToCode": [
+        { "step": "Environment pin karo", "detail": "Base image ka explicit tag, lockfile-committed deps, aur .dockerignore — reproducibility ka base.", "code": "FROM python:3.12-slim\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt" },
+        { "step": "Config startup par validate karo", "detail": "Missing env var par boot fail ho, chup-chaap default na le — fail-fast config se ek deploy me pata chal jata hai." },
+        { "step": "Probes properly likho", "detail": "Liveness ko sirf process check karna do, readiness ko dependencies; startup probe ko slow init ke liye time do." },
+        { "step": "Deploy + rollback safe banao", "detail": "Image tag = commit sha, migrations expand-contract (purane aur naye version saath chalein), aur rollback ek script/command ho." }
+      ],
+      "commonMistakes": [
+        "latest tag use karna (rollback ka koi deterministic target nahi).",
+        "Lockfile commit na karna — CI me build pass, production me 'module not found'.",
+        "Liveness me dependency check karna — ek DB hiccup poori fleet restart kar deta hai.",
+        "Secrets image ya git me daalna.",
+        "Rolling deploy ke saath incompatible schema migration — mixed versions ke requests fail."
+      ],
+      "bestPractices": [
+        "Immutable image tags (commit sha) aur ek-command rollback.",
+        "Secrets secrets-manager/env se inject karo, .env.example version karo.",
+        "Observability minimum: structured logs, latency/error metrics, ek dashboard, ek alert.",
+        "Migrations expand-contract pattern me karo (zero-downtime).",
+        "Post-deploy smoke test aur health endpoint rakho."
+      ],
+      "realWorld": "Ek FastAPI model server jo free tier par deploy hai (cold start ke saath warm-up ping), aur ek nightly eval job jo CI me regression gate chalata hai — dono MLOps ke daily kaam hain. Interview me 'maine image tag commit sha rakha, rollback ek command hai' bolna production maturity dikhata hai.",
+      "practice": [
+        { "difficulty": "easy", "text": "Ek Dockerfile likho (pinned base, requirements pehle, code baad me) aur build time kam karne ka order explain karo." },
+        { "difficulty": "medium", "text": "Config validation likho jo missing env var par startup fail kar de." },
+        { "difficulty": "hard", "text": "Ek deploy checklist likho: probes, migrations, rollback, smoke test aur alert — har item ka failure mode bhi likho." }
+      ],
+      "interview": [
+        { "q": "'Mere machine par chalta hai' ka pehla check?", "a": "Environment parity: base image tag, pinned dependencies (lockfile), env vars/secrets, aur paths/permissions — 90% aise issues yahin se aate hain." },
+        { "q": "Liveness aur readiness probe me farq?", "a": "Liveness process zinda hai ya nahi (fail → restart), readiness traffic le sakta hai ya nahi (fail → load balancer se hatao). Dependencies sirf readiness me check karo." },
+        { "q": "Rolling deploy ke baad 5% requests fail kyun ho jaati hain?", "a": "Mixed versions old/new code ya DB schema ke saath incompatible hote hain — expand-contract migration chahiye, aur logs me version tag hona chahiye." }
+      ],
+      "miniChallenge": "Ek deploy plan likho (checklist form me) jo cold start, config validation, probes, rollback aur post-deploy smoke test cover kare.",
+      "debugTask": "Local me pip install theek chal raha hai par CI image me 'module not found'. Do sabse likely cause batao aur fix likho.",
+      "related": ["FastAPI Request, Validation & Response", "Observability", "CI/CD & regression gates", "Secrets management"],
+      "revision": [
+        "Pinned base + lockfile = reproducible",
+        "Tag = commit sha, rollback = redeploy",
+        "Config startup par validate (fail fast)",
+        "Liveness = process, readiness = dependencies",
+        "Migrations expand-contract"
+      ],
+      "interviewTip": "Production sawal par ye teen cheezein naam se bolo: 'pinned image, readiness probe aur ek-command rollback' — yahi teen production readiness ki asli definition hain."
+    }
+  ]
+}

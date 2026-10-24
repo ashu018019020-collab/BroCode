@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f2f4fa" />
+    <!-- The boot theme, applied BEFORE the bundle is fetched and before the first paint.
+         Two bugs this prevents, both visible:
+
+           · A LIGHT-mode learner saw the dark surface for a beat. The token block lives in the
+             stylesheet and `applyTheme()` runs when the module graph loads, which is after this
+             document has already painted — so the first frame was the dark default.
+           · A phone's status bar stayed dark on a light page, because `theme-color` was a static
+             dark hex. It is now set from the same value the app resolves, so it follows the theme.
+
+         It reads the same keys as `src/core/storage/ui.ts` (`aiml:ui:v1` for the preference,
+         `aiml:theme:choice` for "the learner actually chose one") and repeats only the SHAPE of the
+         state. That duplication is deliberate and one-directional: this must run with zero imports,
+         zero network and zero React. `scripts/tests/theme.test.mjs` pins the two keys and the
+         default against the module, so they cannot drift apart silently.
+         A blocked localStorage (private mode, locked-down profile) is not an error — light is the
+         product default, so the catch below IS the default path. -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('aiml:ui:v1');
+          var chosen = localStorage.getItem('aiml:theme:choice') === '1';
+          var stored = raw ? JSON.parse(raw) : null;
+          var theme = stored && (stored.theme === 'light' || stored.theme === 'dark') ? stored.theme : null;
+          // A stored value with no explicit-choice marker is the old dark implication, not a decision.
+          var resolved = stored && theme && (chosen || theme === 'light') ? theme : 'light';
+          var el = document.documentElement;
+          el.setAttribute('data-theme', resolved);
+          el.style.colorScheme = resolved;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0a0a0a' : '#f2f4fa');
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
+    <!-- Meta description: what it is + the real differentiators (36 steps, 11 courses, 13,000+
+         questions are the packs' own counts), ≤160 chars when rendered —
+         scripts/tests/sitemap.test.mjs pins the shape. BroCode is a complete technology learning
+         platform; AI/ML is one major domain among several, not the umbrella identity. -->
+    <meta name="description" content="BroCode — the complete technology learning platform: coding, data, web, AI/ML and more. 36 steps, 11 courses, 13,000+ questions, runnable labs." />
+    <!-- Canonical: the origin the sitemap and robots.txt are generated from (scripts/sitemap.cjs
+         DEFAULT_BASE — change all three together; scripts/tests/sitemap.test.mjs pins the pair).
+         It names the DOCUMENT, and the hash-routed views are parts of it, not separate pages. -->
+    <!-- Open Graph + Twitter: the card a chat app, a feed or a search console renders for a shared
+         link. The image is a GENERATED artifact (scripts/og.cjs → public/brocode-og.png, 1200×630
+         exactly as the OG spec wants, so the declared size below is honest); it is never hand-drawn
+         into `public/`. og:title and og:description are the SAME strings as the <title> and
+         description above — scripts/tests/sitemap.test.mjs pins the pairs together, so neither can
+         drift into a second version of the pitch. og:url and the two image URLs are absolute, on
+         the canonical origin. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="BroCode" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:url" content="https://ashu018019020-collab.github.io/BroCode/" />
+    <meta property="og:title" content="BroCode &mdash; Complete Technology Learning Platform" />
+    <meta property="og:description" content="BroCode — the complete technology learning platform: coding, data, web, AI/ML and more. 36 steps, 11 courses, 13,000+ questions, runnable labs." />
+    <meta property="og:image" content="https://ashu018019020-collab.github.io/BroCode/brocode-og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="BroCode — complete technology learning platform: 36 steps, 11 courses, 13,000+ questions, runnable labs in the browser." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="BroCode &mdash; Complete Technology Learning Platform" />
+    <meta name="twitter:description" content="BroCode — the complete technology learning platform: coding, data, web, AI/ML and more. 36 steps, 11 courses, 13,000+ questions, runnable labs." />
+    <meta name="twitter:image" content="https://ashu018019020-collab.github.io/BroCode/brocode-og.png" />
+    <meta name="twitter:image:alt" content="BroCode — complete technology learning platform: 36 steps, 11 courses, 13,000+ questions, runnable labs in the browser." />
+    <link rel="canonical" href="https://ashu018019020-collab.github.io/BroCode/" />
+    <!-- The brand tile is a real image now, not an emoji glyph: emoji favicons render as whatever the
+         OS feels like (and not at all in some Chromium builds), while this one is the actual mark.
+         Both files live in `public/`, so they are served from the site root at any base path. -->
+    <link rel="icon" type="image/png" href="./brocode.png" />
+    <link rel="apple-touch-icon" href="./brocode-256.png" />
+    <!-- Meta title: brand first, the platform identity, ≤60 chars when rendered —
+         scripts/tests/sitemap.test.mjs pins the shape. -->
+    <title>BroCode &mdash; Complete Technology Learning Platform</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <!-- Structured data (schema.org JSON-LD): the graph names the organisation, the site and the
+         ten learning domains as an ItemList, so a search engine reads BroCode's breadth from the
+         markup instead of inferring it. The domain list mirrors the homepage's domain band
+         (Landing.tsx DOMAINS) — change the two together; scripts/tests/sitemap.test.mjs pins the
+         pair. applicationCategory + operatingSystem are how Google expects a WebApplication
+         typed; "free" states the real price model. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "EducationalOrganization",
+          "@id": "https://ashu018019020-collab.github.io/BroCode/#org",
+          "name": "BroCode",
+          "url": "https://ashu018019020-collab.github.io/BroCode/",
+          "logo": "https://ashu018019020-collab.github.io/BroCode/brocode-256.png",
+          "description": "BroCode is a complete technology learning platform: programming, data, web, AI/ML, projects, interview preparation and career development — all runnable in the browser."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://ashu018019020-collab.github.io/BroCode/#site",
+          "url": "https://ashu018019020-collab.github.io/BroCode/",
+          "name": "BroCode — Complete Technology Learning Platform",
+          "publisher": { "@id": "https://ashu018019020-collab.github.io/BroCode/#org" },
+          "inLanguage": "en"
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://ashu018019020-collab.github.io/BroCode/#app",
+          "name": "BroCode",
+          "url": "https://ashu018019020-collab.github.io/BroCode/",
+          "applicationCategory": "EducationalApplication",
+          "operatingSystem": "Any (browser)",
+          "image": "https://ashu018019020-collab.github.io/BroCode/brocode-og.png",
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "publisher": { "@id": "https://ashu018019020-collab.github.io/BroCode/#org" }
+        },
+        {
+          "@type": "ItemList",
+          "@id": "https://ashu018019020-collab.github.io/BroCode/#domains",
+          "name": "Learning Domains",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Programming" },
+            { "@type": "ListItem", "position": 2, "name": "Web Development" },
+            { "@type": "ListItem", "position": 3, "name": "Data & Analytics" },
+            { "@type": "ListItem", "position": 4, "name": "AI & Machine Learning" },
+            { "@type": "ListItem", "position": 5, "name": "Generative AI" },
+            { "@type": "ListItem", "position": 6, "name": "Backend & APIs" },
+            { "@type": "ListItem", "position": 7, "name": "Databases" },
+            { "@type": "ListItem", "position": 8, "name": "Cloud & DevOps" },
+            { "@type": "ListItem", "position": 9, "name": "DSA & Problem Solving" },
+            { "@type": "ListItem", "position": 10, "name": "Career & Interview" }
+          ]
+        }
+      ]
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>
