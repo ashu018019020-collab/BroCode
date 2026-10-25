@@ -13,6 +13,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { register } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -222,4 +223,61 @@ test('mentor: the same answer switches language without translating content itse
   const full = mentor.mentorTurn('list samjhao', answer, { lang: 'hi-IN' });
   assert.match(full.text, /Simple bhasha mein/);
   assert.ok(full.followUps.every((item) => typeof item === 'string' && item.length > 0));
+});
+
+/* ---------------------------- the platform's own course ---------------------------- */
+
+const REAL_SECTIONS = (() => {
+  const raw = JSON.parse(fs.readFileSync(path.join(ROOT, 'public', 'generated', 'curriculum', 'sections.json'), 'utf8'));
+  return Array.isArray(raw) ? raw : raw.sections;
+})();
+
+test('mentor: "what can I learn here?" is a platform question, not a topic question', () => {
+  for (const ask of ['what can I learn here?', 'BroCode kya sikhata hai', 'kitne sections hain', 'syllabus batao']) {
+    assert.equal(mentor.classifyMentorIntent(ask), 'project', `should be a platform question: ${ask}`);
+  }
+  assert.equal(mentor.isProjectQuestion('this app me kya kya hai'), true);
+
+  // A lesson question must never be answered with a table of contents.
+  for (const ask of ['python course ka example do', 'list vs tuple', 'SQL join samjhao', 'practice question do']) {
+    assert.notEqual(mentor.isProjectQuestion(ask), true, `a lesson question was misread as a platform question: ${ask}`);
+  }
+});
+
+test('mentor: the platform answer is built from the loaded curriculum and invents nothing', () => {
+  const reply = mentor.projectOverview(REAL_SECTIONS, 'en-IN');
+  assert.ok(reply, 'the loaded curriculum is enough to answer');
+  assert.equal(reply.intent, 'project');
+
+  assert.match(reply.text, new RegExp(`${REAL_SECTIONS.length} sections`),
+    'the real count, not a rounded claim');
+  const first = REAL_SECTIONS[0];
+  const last = REAL_SECTIONS[REAL_SECTIONS.length - 1];
+  assert.ok(reply.text.includes(first.title), 'the first real section is named');
+  assert.ok(reply.text.includes(last.title), 'the last real section is named');
+
+  // Every numbered line in the list must be a section the file really contains.
+  const listed = reply.text.split('\n').map((line) => /^(\d+)\.\s+(.+)$/.exec(line)).filter(Boolean);
+  assert.equal(listed.length, REAL_SECTIONS.length, 'one line per real section, none added');
+  for (const [, no, title] of listed) {
+    assert.ok(REAL_SECTIONS.some((section) => String(section.no) === no && section.title === title),
+      `invented curriculum entry: ${no}. ${title}`);
+  }
+
+  // The spoken form is short and never reads a route or a fabricated figure.
+  assert.ok(reply.spoken.length < 400, 'the spoken overview stays a sentence or two');
+  assert.doesNotMatch(reply.spoken, /\/lesson|https?:/);
+  assert.match(reply.spoken, new RegExp(`${REAL_SECTIONS.length} sections`));
+  assert.deepEqual(reply.blocks, [], 'nothing was retrieved, so nothing is quoted');
+});
+
+test('mentor: the platform answer speaks Hinglish and needs a real curriculum', () => {
+  const hindi = mentor.projectOverview(REAL_SECTIONS, 'hi-IN');
+  const english = mentor.projectOverview(REAL_SECTIONS, 'en-IN');
+  assert.notEqual(hindi.spoken, english.spoken, 'the spoken form follows the chosen language');
+  assert.match(hindi.spoken, /sections hain/);
+
+  // No curriculum loaded → the caller falls through to normal retrieval instead of showing nothing.
+  assert.equal(mentor.projectOverview([], 'en-IN'), null);
+  assert.equal(mentor.projectOverview([{ no: 1 }], 'en-IN'), null, 'a titleless section cannot be described');
 });

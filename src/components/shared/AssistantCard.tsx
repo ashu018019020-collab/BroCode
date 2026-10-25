@@ -43,19 +43,11 @@ function loadLog(key: string): Turn[] {
  * to sit inside a notebook without shouting.
  */
 export function AssistantCard({
-  compact = false, embedded = false, context, suggestions,
+  compact = false, embedded = false, context,
 }: {
   compact?: boolean;
   embedded?: boolean;
   context?: AssistantContext;
-  /**
-   * One-tap questions, drawn as buttons above the ask box.
-   *
-   * The footer dock uses these for PROJECT questions (`engine/project.ts`): those facts are only
-   * reachable if the learner knows they exist, and nobody types "how do I run the tests" into a chat box
-   * that looks like a Python tutor.
-   */
-  suggestions?: { label: string; ask: string }[];
 }) {
   const logKey = useSyncExternalStore(
     subscribeStorageAccount,
@@ -69,18 +61,16 @@ export function AssistantCard({
       compact={compact}
       embedded={embedded}
       context={context}
-      suggestions={suggestions}
     />
   );
 }
 
 function AssistantCardSession({
-  compact = false, embedded = false, context, suggestions, logKey,
+  compact = false, embedded = false, context, logKey,
 }: {
   compact?: boolean;
   embedded?: boolean;
   context?: AssistantContext;
-  suggestions?: { label: string; ask: string }[];
   logKey: string;
 }) {
   const { sections } = useCurriculum();
@@ -241,14 +231,6 @@ function AssistantCardSession({
           {activeContext.error && (
             <span className="ctx-err">🔴 This cell's error is on screen above — press "Fix this mistake" and I will point at the exact line to fix.</span>
           )}
-        </div>
-      )}
-
-      {suggestions && suggestions.length > 0 && (
-        <div className="row assistant-suggestions" style={{ gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-          {suggestions.map((s) => (
-            <button key={s.label} className="btn small" onClick={() => ask(s.ask)}>{s.label}</button>
-          ))}
         </div>
       )}
 

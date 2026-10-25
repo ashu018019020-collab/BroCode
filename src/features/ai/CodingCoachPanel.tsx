@@ -167,7 +167,9 @@ export function CodingCoachPanel() {
       toast('The coach could not answer that. Try naming the error or the line.', 'warning');
       return;
     }
-    voiceRef.current.speak(spokenReply(result.reply.spoken, result.answer.sources), result.answer.sources);
+    // A platform question is answered by the curriculum itself and has no retrieved sources.
+    const sources = result.answer?.sources ?? [];
+    voiceRef.current.speak(spokenReply(result.reply.spoken, sources), sources);
   }, [chat]);
 
   const handleTranscript = useCallback((text: string) => { void ask(text); }, [ask]);

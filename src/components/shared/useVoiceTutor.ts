@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, normalizeVoiceLang, pickVoiceFrom, speechChunks,
-  type VoiceLangId, type VoiceStatus,
+  DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, cloudChunks, normalizeVoiceLang, pickVoiceFrom,
+  speechChunks, type VoiceLangId, type VoiceStatus,
 } from '../../core/ai/voice';
 
 /**
@@ -91,6 +91,17 @@ function synthesisAvailable(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
 }
 
+/**
+ * Web Audio, for gapless cloud playback. Safari only ever shipped the prefixed constructor; a
+ * browser with neither falls back to its own synthesiser rather than going silent.
+ */
+type AudioContextCtor = new () => AudioContext;
+function audioContextCtor(): AudioContextCtor | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as { AudioContext?: AudioContextCtor; webkitAudioContext?: AudioContextCtor };
+  return w.AudioContext ?? w.webkitAudioContext ?? null;
+}
+
 /** The failure a learner can act on, in their words — never the raw DOM error code alone. */
 function recognitionErrorCopy(code: string): string {
   switch (code) {
@@ -173,17 +184,26 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const mounted = useRef(true);
   const queue = useRef<string[]>([]);
 
-  // The cloud voice's own machinery. `audio` is the single player for MP3 chunks; `urls` are the
-  // object URLs still owed a revoke; `abort` cancels in-flight chunk fetches on Stop/unmount;
-  // `fails` counts consecutive cloud failures so a dead endpoint is abandoned after the second
-  // instead of taxing every following answer with the same timeout.
+  // The cloud voice's own machinery. `context` is ONE Web Audio graph reused for the whole page —
+  // creating an AudioContext per answer hits Chrome's per-page limit and costs the start-up latency
+  // on every reply. `sources` are the chunks currently scheduled or playing; `abort` cancels
+  // in-flight chunk fetches on Stop/unmount; `fails` counts consecutive cloud failures so a dead
+  // endpoint is abandoned after the second instead of taxing every following answer with the same
+  // timeout.
   const [cloudConfigured, setCloudConfigured] = useState<CloudState>(null);
   const [engine, setEngine] = useState<'cloud' | 'browser' | null>(null);
   const cloudRef = useRef<CloudState>(null);
   const cloudFails = useRef(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const cloudUrls = useRef<string[]>([]);
+  const engineRef = useRef<'cloud' | 'browser' | null>(null);
+  const contextRef = useRef<AudioContext | null>(null);
+  const activeSources = useRef<Set<AudioBufferSourceNode>>(new Set());
   const cloudAbort = useRef<AbortController | null>(null);
+
+  /** One setter for the engine, so the ref the pause switch reads can never lag the state. */
+  const markEngine = useCallback((next: 'cloud' | 'browser') => {
+    engineRef.current = next;
+    setEngine(next);
+  }, []);
 
   const supported = useMemo(() => ({ synthesis: synthesisAvailable(), recognition: recognitionCtor() !== null }), []);
 
@@ -220,16 +240,20 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const releaseCloud = useCallback(() => {
     cloudAbort.current?.abort();
     cloudAbort.current = null;
-    const audio = audioRef.current;
-    audioRef.current = null;
-    if (audio) {
-      audio.onended = null;
-      audio.onerror = null;
-      try { audio.pause(); } catch { /* already stopped */ }
-      audio.removeAttribute('src');
+    for (const source of activeSources.current) {
+      // `onended` is cleared first: a Stop must never be read as "this chunk finished", which would
+      // advance the queue or hand the rest of the answer to the other engine.
+      source.onended = null;
+      try { source.stop(); } catch { /* not started, or already ended */ }
+      try { source.disconnect(); } catch { /* already disconnected */ }
     }
-    for (const url of cloudUrls.current) URL.revokeObjectURL(url);
-    cloudUrls.current = [];
+    activeSources.current.clear();
+    const context = contextRef.current;
+    // Freezing the clock (rather than closing the graph) makes Stop immediate and keeps the one
+    // context reusable. Scheduled nodes are already stopped above.
+    if (context && context.state === 'running') {
+      void context.suspend().catch(() => { /* nothing scheduled */ });
+    }
   }, []);
 
   useEffect(() => {
@@ -240,6 +264,9 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       try { recognition.current?.abort(); } catch { /* already stopped */ }
       recognition.current = null;
       releaseCloud();
+      const context = contextRef.current;
+      contextRef.current = null;
+      if (context) void context.close().catch(() => { /* already closed */ });
       if (synthesisAvailable()) window.speechSynthesis.cancel();
     };
   }, [releaseCloud]);
@@ -306,7 +333,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     /** The browser engine: short utterances in order, generation-guarded against stale `onend`. */
     const speakWithBrowser = () => {
       if (!mounted.current || id !== generation.current) return;
-      setEngine('browser');
+      markEngine('browser');
       const next = () => {
         if (!mounted.current || id !== generation.current) return;
         const chunk = queue.current.shift();
@@ -329,13 +356,48 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     if (!cloudUsable) { speakWithBrowser(); return; }
 
     /**
-     * The Google engine. ALL chunks are fetched before the first one plays, so a failure mid-list
-     * means nothing has been said yet and the browser voice can take the whole answer — one voice
-     * per answer, never two strangers alternating sentences.
+     * The Google engine, played through Web Audio.
+     *
+     * This block is what "smooth" means in practice, and every decision here is about the gaps a
+     * learner actually hears:
+     *
+     *  - PACKING: the server is sent whole sentences (`cloudChunks`), not one line at a time, so a
+     *    600-character answer is 2 requests instead of 4 and the synthesiser places its own prosody
+     *    across a paragraph.
+     *  - PIPELINING: every request starts immediately, but playback begins as soon as the FIRST
+     *    chunk is decoded. The old path waited for `Promise.all`, so the learner heard silence for
+     *    as long as the slowest request took.
+     *  - GApless JOIN: decoded buffers are scheduled on one AudioContext clock with a short breath
+     *    between them. An `<audio>` element reloading a new `src` per sentence is exactly the
+     *    stutter this replaces: there is no decoder re-init and no gap while the next file loads.
+     *  - PAUSE that really pauses: the AudioContext clock freezes, so already-scheduled sentences
+     *    wait instead of playing on under a "Paused" label.
+     *
+     * The browser voice remains the fallback for the WHOLE answer, and for any chunk that never
+     * arrived — from that chunk onward, so a sentence is never skipped.
      */
+    const AudioCtor = audioContextCtor();
+    const cloud = cloudChunks(text);
+    if (!AudioCtor || !cloud.length) { speakWithBrowser(); return; }
+
+    let context = contextRef.current;
+    if (!context) {
+      try {
+        context = new AudioCtor();
+        contextRef.current = context;
+      } catch {
+        speakWithBrowser();
+        return;
+      }
+    }
+    const graph = context;
+    // A context created before any user gesture starts suspended; `speak()` is only ever reached
+    // from a press, so resuming here is allowed — and harmless when it is already running.
+    void graph.resume().catch(() => { /* the first failure hands over to the browser voice */ });
+
     const controller = new AbortController();
     cloudAbort.current = controller;
-    Promise.all(chunks.map(async (chunk) => {
+    const decode = async (chunk: string): Promise<AudioBuffer> => {
       const response = await fetch(TTS_SYNTHESIZE_PATH, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -343,62 +405,81 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         signal: controller.signal,
       });
       if (!response.ok) throw new Error(`tts-${response.status}`);
-      const blob = await response.blob();
       // A static host answers HTML with a 200; audio is audio.
-      if (!blob.type.startsWith('audio')) throw new Error('tts-not-audio');
-      return blob;
-    }))
-      .then((blobs) => {
+      const type = response.headers.get('content-type') ?? '';
+      if (!type.startsWith('audio')) throw new Error('tts-not-audio');
+      return graph.decodeAudioData(await response.arrayBuffer());
+    };
+
+    // All requests in flight at once; only the ORDER of playback is sequential.
+    const pending = cloud.map(decode);
+    const GAP_SECONDS = 0.18;
+    let playhead = 0;
+    let next = 0;
+    let scheduled = 0;
+    let handoff: { from: number } | null = null;
+    let handedOff = false;
+
+    const handOffToBrowser = (from: number) => {
+      if (handedOff || !mounted.current || id !== generation.current) return;
+      handedOff = true;
+      // Everything before `from` was scheduled and has now finished; only the unheard remainder is
+      // re-read, so no sentence is spoken twice and none is skipped.
+      queue.current = speechChunks(cloud.slice(from).join(' '));
+      releaseCloud();
+      speakWithBrowser();
+    };
+
+    const run = async () => {
+      for (;;) {
+        const index = next;
+        if (index >= cloud.length) return;
+        let buffer: AudioBuffer;
+        try {
+          buffer = await pending[index];
+        } catch (cause) {
+          if (!mounted.current || id !== generation.current || controller.signal.aborted) return;
+          cloudFails.current += 1;
+          // Keep `cloudConfigured` as the SERVER's report — the server is configured, it is this
+          // voice that is unavailable. The settings line says which engine spoke.
+          if (cloudFails.current >= 2) cloudRef.current = false;
+          console.warn('BroCode voice: Google voice failed, using the browser voice.', cause);
+          if (scheduled === 0) { handOffToBrowser(0); return; }
+          // Something is already playing: let it finish before the other engine starts, otherwise
+          // two voices talk over each other.
+          handoff = { from: index };
+          // …but that audio may ALREADY have ended while this request was in flight, in which case no
+          // `onended` is left to trigger the hand-off and the answer would simply stop mid-sentence.
+          if (activeSources.current.size === 0) handOffToBrowser(index);
+          return;
+        }
         if (!mounted.current || id !== generation.current) return;
         cloudFails.current = 0;
-        setEngine('cloud');
-        cloudUrls.current = blobs.map((blob) => URL.createObjectURL(blob));
-        const audio = new Audio();
-        audioRef.current = audio;
-        audio.playbackRate = 1; // the speed is already baked into the synthesis request
-        let index = 0;
-        // `play()` rejecting and the element firing `error` are two reports of ONE failure — the
-        // hand-off to the browser voice must happen exactly once, or two queues speak over each
-        // other. `handedOff` is that latch.
-        let handedOff = false;
-        const handOffToBrowser = () => {
-          if (handedOff || !mounted.current || id !== generation.current) return;
-          handedOff = true;
-          // `index` was already advanced past the chunk in flight, so slice from `index - 1`: the
-          // learner heard NONE of a chunk that never played — the browser voice must read it, not
-          // skip it. A skipped sentence is a lesson with a hole in it.
-          queue.current = chunks.slice(Math.max(0, index - 1));
-          releaseCloud();
-          speakWithBrowser();
-        };
-        const advance = () => {
+        if (engineRef.current !== 'cloud') markEngine('cloud');
+
+        const source = graph.createBufferSource();
+        source.buffer = buffer;
+        source.connect(graph.destination);
+        const startAt = Math.max(graph.currentTime + 0.05, playhead);
+        playhead = startAt + buffer.duration + GAP_SECONDS;
+        next = index + 1;
+        scheduled = next;
+        activeSources.current.add(source);
+        source.onended = () => {
+          activeSources.current.delete(source);
           if (!mounted.current || id !== generation.current) return;
-          const url = cloudUrls.current[index];
-          if (!url) {
-            finish();
+          const wasLastScheduled = index === scheduled - 1;
+          if (handoff) {
+            if (wasLastScheduled) handOffToBrowser(handoff.from);
             return;
           }
-          index += 1;
-          audio.src = url;
-          audio.play().catch(handOffToBrowser);
+          if (index === cloud.length - 1) finish();
         };
-        audio.onended = advance;
-        audio.onerror = handOffToBrowser;
-        advance();
-      })
-      .catch((cause) => {
-        if (!mounted.current || id !== generation.current || controller.signal.aborted) return;
-        // The cloud path failed BEFORE anything played. Fall back for this answer and stop
-        // retrying for the session — but keep `cloudConfigured` as the SERVER's report: the
-        // server is configured; it is the voice that is unavailable. The settings line says so.
-        cloudFails.current += 1;
-        if (cloudFails.current >= 2) cloudRef.current = false;
-        console.warn('BroCode voice: Google voice failed, using the browser voice.', cause);
-        queue.current = chunks;
-        releaseCloud();
-        speakWithBrowser();
-      });
-  }, [prefs.lang, prefs.rate, releaseCloud, stopSpeaking, supported.synthesis]);
+        try { source.start(startAt); } catch { handOffToBrowser(index); return; }
+      }
+    };
+    void run();
+  }, [markEngine, prefs.lang, prefs.rate, releaseCloud, stopSpeaking, supported.synthesis]);
 
   const replay = useCallback(() => {
     if (lastSpoken) speak(lastSpoken.text, lastSpoken.sources);
@@ -477,10 +558,12 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   }, [listening, startListening, stopListening]);
 
   const pauseSpeaking = useCallback(() => {
-    // The Audio element and the synthesiser are separate pause switches; only one is ever live.
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setPaused(true);
+    // The AudioContext clock and the synthesiser are separate pause switches; only one is live.
+    const context = contextRef.current;
+    if (engineRef.current === 'cloud' && context && context.state === 'running') {
+      // Suspending freezes `currentTime`, so the sentences already scheduled wait where they are
+      // instead of finishing under a "Paused" label.
+      void context.suspend().then(() => { if (mounted.current) setPaused(true); }).catch(() => { /* not speaking */ });
       return;
     }
     if (!supported.synthesis) return;
@@ -488,9 +571,9 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   }, [supported.synthesis]);
 
   const resumeSpeaking = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.play().catch(() => { /* the onerror path takes over */ });
-      setPaused(false);
+    const context = contextRef.current;
+    if (engineRef.current === 'cloud' && context && context.state === 'suspended') {
+      void context.resume().then(() => { if (mounted.current) setPaused(false); }).catch(() => { /* closed */ });
       return;
     }
     if (!supported.synthesis) return;

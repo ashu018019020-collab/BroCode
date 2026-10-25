@@ -158,6 +158,45 @@ export function speechChunks(text: string, maxLen = 180): string[] {
 }
 
 /**
+ * The chunks to send to the CLOUD voice — fewer and longer than the browser's, on purpose.
+ *
+ * Two different engines need two different shapes. Chrome's synthesiser cuts a single utterance
+ * after ~15 seconds, so `speechChunks` keeps utterances small. A server-side Neural2 request has no
+ * such cut-off: it is billed and delayed per REQUEST, so sending one sentence at a time costs a
+ * round-trip per sentence and makes the voice stop between every line. Here whole sentences are
+ * packed up to `maxLen` (kept under the server's 480-character bound), which is both cheaper and
+ * smoother — the synthesiser gets a paragraph and places its own prosody across it.
+ *
+ * Same honesty rule as `speechChunks`: joining the result with spaces reproduces
+ * `speakable(text)` exactly. Nothing is dropped or reworded.
+ */
+export function cloudChunks(text: string, maxLen = 460): string[] {
+  const limit = Math.max(120, Math.round(maxLen));
+  const clean = speakable(text);
+  if (!clean) return [];
+  const sentences: string[] = [];
+  for (const sentence of clean.split(/(?<=[.!?])\s+/)) {
+    const trimmed = sentence.trim();
+    if (!trimmed) continue;
+    // A single sentence longer than the request bound still has to be cut — at punctuation first.
+    sentences.push(...(trimmed.length > limit ? splitLong(trimmed, limit) : [trimmed]));
+  }
+  const chunks: string[] = [];
+  let current = '';
+  for (const sentence of sentences) {
+    const candidate = current ? `${current} ${sentence}` : sentence;
+    if (current && candidate.length > limit) {
+      chunks.push(current);
+      current = sentence;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+/**
  * What to say for a full answer: the opening sentences (bounded), plus where the rest lives.
  *
  * The whole answer is on screen and long answers stay there; reading 1,200 characters aloud is not
@@ -318,7 +357,7 @@ export function mentorStateLabel(state: MentorUiState, lang: VoiceLangId): strin
     case 'listening': return hi ? 'Sun raha hoon…' : 'Listening…';
     case 'thinking': return hi ? 'Soch raha hoon…' : 'Thinking…';
     case 'speaking': return hi ? 'Bol raha hoon…' : 'Speaking…';
-    case 'muted': return 'Muted';
+    case 'muted': return hi ? 'Mute' : 'Muted';
     case 'reconnecting': return hi ? 'Dobara connect ho raha hai…' : 'Reconnecting…';
     case 'error': return hi ? 'Voice mein dikkat' : 'Voice unavailable';
     case 'ended': return hi ? 'Session khatam' : 'Session ended';

@@ -4,7 +4,9 @@ import { useCurriculum } from '../../core/data/curriculum';
 import { loadKnowledgeIndex } from '../../core/data/knowledge';
 import type { KnowledgeIndex } from '../../core/ai/knowledge';
 import { askLocal, type Answer, type AssistantContext } from '../../core/ai/assistant';
-import { mentorTurn, type MentorHistoryTurn, type MentorReply } from '../../core/ai/mentor';
+import {
+  isProjectQuestion, mentorTurn, projectOverview, type MentorHistoryTurn, type MentorReply,
+} from '../../core/ai/mentor';
 import type { VoiceLangId } from '../../core/ai/voice';
 
 /**
@@ -44,7 +46,8 @@ function loadTurns(key: string): MentorHistoryTurn[] {
 export interface MentorAsk {
   turns: MentorHistoryTurn[];
   busy: boolean;
-  ask: (text: string, lang: VoiceLangId) => Promise<{ reply: MentorReply; answer: Answer } | null>;
+  /** `answer` is null for a platform question — nothing was retrieved, the curriculum itself answered. */
+  ask: (text: string, lang: VoiceLangId) => Promise<{ reply: MentorReply; answer: Answer | null } | null>;
   clear: () => void;
   /** How many hint-style asks this conversation has made — the existing hint ladder reads it. */
   askedHints: number;
@@ -85,6 +88,21 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
         }
       }
       const history = turnsRef.current;
+      // "What does BroCode teach?" is answered by the loaded curriculum itself, not by retrieval —
+      // there is no passage to match, and a made-up overview would be the one wrong answer here.
+      if (isProjectQuestion(question)) {
+        const overview = projectOverview(sections, lang);
+        if (overview) {
+          const learnerTurn: MentorHistoryTurn = { role: 'learner', text: question };
+          const overviewTurn: MentorHistoryTurn = {
+            role: 'mentor', text: overview.text, sources: [], intent: overview.intent,
+          };
+          const next: MentorHistoryTurn[] = [...history, learnerTurn, overviewTurn].slice(-MAX_TURNS);
+          turnsRef.current = next;
+          setTurns(next);
+          return { reply: overview, answer: null };
+        }
+      }
       const askedHints = history.filter((turn) => turn.role === 'learner' && /\b(hint|clue|madad|nudge)\b/i.test(turn.text)).length;
       const answer = askLocal(question, sections, state, contextRef.current, askedHints, index ?? undefined);
       const reply = mentorTurn(question, answer, {

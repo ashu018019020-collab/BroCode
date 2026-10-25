@@ -57,6 +57,28 @@ These are product rules, not prompt suggestions, and the tests enforce them:
 Chrome's speech recognition is itself a browser service — the settings note says so rather than
 claiming the loop is fully offline. Text input always works, and every answer is readable.
 
+#### Smooth playback (Google Neural2 path)
+
+The spoken answer is not one request per utterance. Three details produce the natural feel, and each
+is a deliberate choice rather than a default:
+
+- **Sentence packing.** `cloudChunks()` (`src/core/ai/voice.ts`) packs whole sentences into requests
+  of up to 460 characters, so a long answer is 2 calls instead of 5. The browser's own synthesiser
+  keeps the small chunks (`speechChunks`) because Chrome cuts a single utterance after ~15 s.
+- **Pipelined start.** Every request is fired at once, but playback begins as soon as the FIRST
+  chunk is decoded — the old path waited for `Promise.all`, so the learner sat in silence for as long
+  as the slowest request took.
+- **Gapless scheduling.** Chunks are decoded with `decodeAudioData` and scheduled on ONE
+  `AudioContext` clock with a 180 ms breath between them. Reloading an `<audio>` element per sentence
+  was the stutter this replaced; there is no decoder re-init and no load gap.
+
+`server/voice.mjs` sends multi-sentence text as **SSML** with a 220 ms `<break>` between authored
+sentences (single sentences stay plain `text`), escapes XML metacharacters so a code sample can never
+break the request, and asks for a FEMALE voice so the tutor sounds the same across deployments.
+Pause/Stop call `AudioContext.suspend()`, which freezes the clock — already-scheduled sentences wait
+instead of finishing under a "Paused" label. Without `GOOGLE_TTS_API_KEY` none of this runs and the
+browser voice speaks, exactly as before.
+
 ### Optional: OpenAI Realtime over WebRTC
 
 Adapted from **`openai/openai-realtime-console`** (MIT): the WebRTC offer/answer, the `oai-events`
@@ -69,6 +91,25 @@ different:
 - a user transcript is displayed only after a completed transcription event.
 
 The hook is `src/components/shared/useRealtimeVoice.ts`; the provider code is `server/realtime.mjs`.
+
+### Project grounding — what the agent knows about BroCode
+
+A realtime model with no context answers "what can I learn here?" with generic topics. Two paths fix
+that, and both are derived from the repository rather than written by hand:
+
+- **Live voice (online).** `server/project-brief.mjs` reads
+  `public/generated/curriculum/sections.json` once and builds a bounded brief: the real section count,
+  every real number + title, the eight stages each section has, and the app's real areas. It is
+  appended to the server-side teaching contract (`realtimeInstructions(lang, brief)`), so the model
+  names real sections and is told to say plainly when a topic is not in the course. A missing or
+  unreadable file yields an empty brief — the session still mints and the old contract applies.
+- **Offline mentor (default).** `projectOverview()` in `src/core/ai/mentor.ts` answers platform
+  questions ("what can I learn here?", "kitne sections hain", "syllabus batao") from the curriculum
+  the page already loaded: the real count, one line per real section, and the real stage list. The
+  spoken form names the count plus the first and last section, never 29 titles; the full list stays on
+  screen. With no curriculum loaded it returns `null` and the normal retrieval answer runs instead.
+
+No topic, number or route is generated: every one is read from a file that ships with the build.
 
 ## Provider setup
 
@@ -153,6 +194,11 @@ Both were read at their GitHub pages and LICENSE files before use; neither is ve
 
 ## Known limitations
 
+- The gapless Neural2 player needs a funded `GOOGLE_TTS_API_KEY` on the API server to run at all;
+  without one the browser voice speaks and the settings line says so. The unit tests cover the
+  chunking, the SSML builder and the wiring, not real audio output.
+- The project brief names the curriculum that was generated at build time. It is regenerated when
+  `content/` is rebuilt; a deployment that ships a stale `sections.json` describes that older course.
 - Speech recognition quality depends on the browser and the microphone; the app never records or
   uploads raw audio itself.
 - The realtime path needs WebRTC, a signed-in account and a funded OpenAI project.

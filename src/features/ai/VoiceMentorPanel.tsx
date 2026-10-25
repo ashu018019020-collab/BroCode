@@ -103,9 +103,12 @@ export function VoiceMentorPanel() {
       toast('The mentor could not answer that. Try the concept name, or type a shorter question.', 'warning');
       return;
     }
+    // A platform answer carries no retrieved sources: it came from the loaded curriculum, so there
+    // is nothing to cite and nothing to speak from `answer`.
+    const sources = result.answer?.sources ?? [];
     if (!mutedRef.current) {
-      const speech = spokenReply(result.reply.spoken, result.answer.sources);
-      voiceRef.current.speak(speech, result.answer.sources, () => {
+      const speech = spokenReply(result.reply.spoken, sources);
+      voiceRef.current.speak(speech, sources, () => {
         if (handsFreeRef.current && !mutedRef.current) {
           voiceRef.current.startListening(handleTranscriptRef.current);
         }

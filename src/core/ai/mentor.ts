@@ -22,6 +22,7 @@ import type { VoiceLangId } from './voice';
 
 export type MentorIntent =
   | 'greeting'
+  | 'project'
   | 'explain'
   | 'simpler'
   | 'example'
@@ -184,11 +185,26 @@ export function normalizeAsk(text: string): string {
  * reason, and a bare "why?" is only read as `why` when it is a whole short ask — otherwise a real
  * question containing the word "why" would lose its topic.
  */
+/**
+ * Is the learner asking about the PLATFORM rather than a topic?
+ *
+ * Deliberately narrow: "python course ka example do" is a lesson question and must not be answered
+ * with a table of contents. Only a named platform reference, or a question about the list itself
+ * ("kitne sections", "syllabus", "what can I learn here"), counts.
+ */
+export function isProjectQuestion(text: string): boolean {
+  const raw = String(text ?? '').trim().toLowerCase();
+  if (!raw) return false;
+  if (/\b(brocode|is (app|platform|site)|this (app|platform|site)|is website)\b/.test(raw)) return true;
+  return /\b(kitne (sections?|lessons?|courses?|tracks?)|syllabus|curriculum|roadmap|kaunse courses?|kaunse sections?|which courses?|what can i (learn|study) (here|in (this|brocode))|what does (this|the) (app|platform) teach)\b/.test(raw);
+}
+
 export function classifyMentorIntent(text: string): MentorIntent {
   const raw = String(text ?? '').trim().toLowerCase();
   if (!raw) return 'unknown';
   if (/^(hi|hello|hey|namaste|namaskar|hii+|yo)\b/.test(raw) || /^(brocode )?(mentor )?(se kaise|kaise ho)/.test(raw)) return 'greeting';
   if (/^(thanks|thank you|thx|shukriya|dhanyavad|dhanyawad)\b/.test(raw)) return 'thanks';
+  if (isProjectQuestion(raw)) return 'project';
   if (/\b(repeat|again|dobara|phir (se )?bolo|phir se|samajh nahi aaya|samjha nahi|didn'?t (get|understand))\b/.test(raw)) return 'repeat';
   if (/\b(simple|simpler|easier|aasan|saral|aur simple|bachche|layman|dumb it down|short version|chhota)\b/.test(raw)) return 'simpler';
   if (/\b(example|examples|udaharan|sample|demo|code dikhao|show me code)\b/.test(raw)) return 'example';
@@ -390,6 +406,70 @@ export function mentorGreeting(where: string | undefined, lang: VoiceLangId): Me
     blocks: [],
     followUps: copy.followUps.greeting,
     repeat: false,
+  };
+}
+
+/** What the mentor needs from a curriculum section to answer about the PLATFORM itself. */
+export interface CurriculumEntry {
+  no?: number;
+  title?: string;
+}
+
+/**
+ * "What does BroCode teach?" — answered from the loaded curriculum, not from a blurb.
+ *
+ * This is the one mentor answer that is about the course rather than a concept, so it is built from
+ * the sections the app actually loaded: the real count, the real first and last titles, and the real
+ * per-section stage list. Nothing is summarised into invented "phases" ("Python basics 1–16" would
+ * be a claim about the syllabus that this function cannot verify) and no topic is promised that is
+ * not in the list.
+ *
+ * Returns null when the curriculum has not loaded, so the caller can fall through to normal
+ * retrieval instead of showing an empty list.
+ */
+export function projectOverview(
+  sections: CurriculumEntry[],
+  lang: VoiceLangId,
+): MentorReply | null {
+  const named = (Array.isArray(sections) ? sections : [])
+    .filter((section) => section && typeof section.title === 'string' && section.title.trim())
+    .map((section, index) => ({
+      no: Number.isFinite(Number(section.no)) ? Number(section.no) : index + 1,
+      title: String(section.title).trim(),
+    }));
+  if (!named.length) return null;
+
+  const copy = language(lang);
+  const hindi = lang === 'hi-IN';
+  const first = named[0];
+  const last = named[named.length - 1];
+  const stages = 'learn → interview → code → logic → solved → mini → project → checkpoint';
+
+  const list = named.map((section) => `${section.no}. ${section.title}`).join('\n');
+  const headline = hindi
+    ? `**BroCode course** — loaded curriculum se, ${named.length} sections`
+    : `**BroCode curriculum** — ${named.length} sections, from the loaded course`;
+  const intro = hindi
+    ? `Yeh course ${first.no}. ${first.title} se shuru hota hai aur ${last.no}. ${last.title} par khatam hota hai:`
+    : `The course runs from ${first.no}. ${first.title} to ${last.no}. ${last.title}:`;
+  const pattern = hindi
+    ? `Har section ka same pattern hai: **${stages}**. Aur app mein Courses, Practice, Labs (playground), Projects, Interview, Notes aur yeh AI Mentor hai.`
+    : `Every section follows the same pattern: **${stages}**. The app itself has Courses, Practice, Labs (playground), Projects, Interview, Notes and this AI Mentor.`;
+  const text = `${headline}\n\n${intro}\n\n${list}\n\n${pattern}`;
+
+  // Spoken: the shape and the two real endpoints, never 29 titles read aloud.
+  const spoken = hindi
+    ? `Course mein ${named.length} sections hain — ${first.title} se ${last.title} tak. Poori list screen par hai. Bolo kaunsa section ya topic kholna hai.`
+    : `The course has ${named.length} sections, from ${first.title} to ${last.title}. The full list is on screen. Tell me which section or topic you want to open.`;
+
+  return {
+    intent: 'project',
+    text,
+    spoken,
+    blocks: [],
+    followUps: copy.followUps.greeting,
+    repeat: false,
+    topic: 'BroCode curriculum',
   };
 }
 

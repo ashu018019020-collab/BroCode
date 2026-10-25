@@ -55,12 +55,17 @@ export const REALTIME_SECRET_TTL_SECONDS = 600;
  * Deliberately concrete: the model may explain and question, but it has no tool that runs code in
  * this deployment. Saying that plainly is what stops a confident "I tested it" from a model that
  * cannot have tested anything.
+ *
+ * `brief` is the lesson the model must not have to guess: the REAL section titles, stages and app
+ * areas of this deployment (see `project-brief.mjs`). It is appended rather than merged so the
+ * product rules above keep their exact wording, and an empty brief simply reproduces the old prompt
+ * — a deployment whose curriculum file is unreadable behaves exactly as before.
  */
-export function realtimeInstructions(lang) {
+export function realtimeInstructions(lang, brief = '') {
   const language = lang === 'hi-IN'
     ? 'Reply in natural Hinglish: Roman-script Hindi mixed with the English technical vocabulary. Never use Devanagari script. Keep technical terms in English.'
     : 'Reply in clear, friendly Indian English.';
-  return [
+  const parts = [
     'You are BroCode, a patient AI coding mentor and mock interviewer for a Python/AI learning platform.',
     language,
     'When explaining a concept, use this order: (1) the plain idea in one or two short sentences, (2) why it works or why it matters, (3) one concrete example, (4) the next step the learner should try.',
@@ -70,7 +75,13 @@ export function realtimeInstructions(lang) {
     'Never invent curriculum content, question numbers, scores or routes. If you do not know, say so and point to the lesson.',
     'Do not judge accent, voice, fluency or personality. If asked to score, score technical content and reasoning only, and say the score is an estimate.',
     'No robotic filler, no long preambles. Be warm, direct and useful.',
-  ].join(' ');
+  ];
+  const context = String(brief ?? '').trim();
+  if (context) {
+    parts.push(`This deployment’s own curriculum, read from its generated files: ${context}`);
+    parts.push('When the learner asks what BroCode teaches or where a topic lives, answer from that list, name the real section, and say plainly when a topic is not in it yet.');
+  }
+  return parts.join(' ');
 }
 
 /**
@@ -82,7 +93,8 @@ export function buildRealtimeSessionConfig({
   model = DEFAULT_REALTIME_MODEL,
   voice = DEFAULT_REALTIME_VOICE,
   lang = 'en-IN',
-  instructions = realtimeInstructions(lang),
+  brief = '',
+  instructions = realtimeInstructions(lang, brief),
 } = {}) {
   const safeVoice = REALTIME_VOICES.includes(voice) ? voice : DEFAULT_REALTIME_VOICE;
   return {
@@ -113,6 +125,7 @@ export async function createRealtimeClientSecret({
   lang = 'en-IN',
   model = DEFAULT_REALTIME_MODEL,
   voice = DEFAULT_REALTIME_VOICE,
+  brief = '',
   fetchImpl = globalThis.fetch,
   timeoutMs = 8000,
   now = Date.now,
@@ -133,7 +146,7 @@ export async function createRealtimeClientSecret({
     throw error;
   }
 
-  const body = buildRealtimeSessionConfig({ model, voice, lang });
+  const body = buildRealtimeSessionConfig({ model, voice, lang, brief });
   let response;
   try {
     response = await fetchImpl('https://api.openai.com/v1/realtime/client_secrets', {

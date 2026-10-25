@@ -15,6 +15,14 @@
 /** Google refuses a request over 5,000 UTF-8 bytes; Hindi is 3 bytes a character. 480 chars is safe. */
 export const TTS_MAX_CHARS = 480;
 
+/**
+ * The breath a teacher takes between two sentences.
+ *
+ * Google reads a run-on paragraph as one long exhale; a 220 ms break between authored sentences is
+ * what makes the result sound like someone talking instead of a feed being read out.
+ */
+export const TTS_SENTENCE_GAP_MS = 220;
+
 export const TTS_LANGS = ['en-IN', 'hi-IN'];
 
 export const DEFAULT_TTS_VOICES = {
@@ -22,20 +30,54 @@ export const DEFAULT_TTS_VOICES = {
   'en-IN': 'en-IN-Neural2-A',
 };
 
+/** XML escaping for SSML — an unescaped `&` or `<` is a 400 from Google, not a sentence. */
+function escapeSsml(text) {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
+ * The spoken text as SSML: authored sentences separated by a short, real pause.
+ *
+ * Only the punctuation that is already in the text decides where a break goes — this function adds
+ * silence, never words, so the SSML cannot say something the source did not.
+ */
+export function toSsml(text, gapMs = TTS_SENTENCE_GAP_MS) {
+  const escaped = escapeSsml(String(text ?? '').trim());
+  const sentences = escaped.split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
+  const gap = Math.min(2000, Math.max(50, Math.round(gapMs)));
+  return `<speak>${sentences.join(`<break time="${gap}ms"/>`)}</speak>`;
+}
+
+/** True when the text carries more than one authored sentence, so SSML buys something. */
+function multiSentence(text) {
+  return String(text ?? '').split(/(?<=[.!?])\s+/).filter((sentence) => sentence.trim()).length > 1;
+}
+
 /**
  * The exact body sent to `text:synthesize`. Pure, so what Google receives is testable without a
  * network or a key: text is trimmed and bounded (never rejected — the client's chunks are already
  * short, and a clipped sentence beats a dropped answer), the voice falls back per language, and the
  * speaking rate is clamped to Google's accepted 0.5–2.0 band.
+ *
+ * A single sentence travels as plain text (nothing to pause between); a longer passage travels as
+ * SSML so the synthesiser breathes between the sentences BroCode actually wrote. `ssmlGender` is a
+ * female-sounding voice even if a deployment overrides only the language: one consistent tutor voice
+ * is a product decision, not a per-request guess.
  */
 export function buildGoogleTtsRequest({ text, lang, rate, voiceName }) {
   const clean = String(text ?? '').trim().slice(0, TTS_MAX_CHARS);
   const speakingRate = Number.isFinite(Number(rate)) ? Number(rate) : 1;
   return {
-    input: { text: clean },
+    input: multiSentence(clean) ? { ssml: toSsml(clean) } : { text: clean },
     voice: {
       languageCode: lang,
       name: (voiceName ?? '').trim() || DEFAULT_TTS_VOICES[lang],
+      ssmlGender: 'FEMALE',
     },
     audioConfig: {
       audioEncoding: 'MP3',

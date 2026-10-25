@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { listAllAuthUsers } from './supabase.mjs';
+import { projectBrief } from './project-brief.mjs';
 import { TTS_LANGS, TTS_MAX_CHARS, synthesizeGoogleTts } from './voice.mjs';
 import {
   DEFAULT_REALTIME_MODEL,
@@ -236,6 +237,10 @@ export function createAuthServer({
   openaiRealtimeModel = process.env.OPENAI_REALTIME_MODEL ?? DEFAULT_REALTIME_MODEL,
   openaiRealtimeVoice = process.env.OPENAI_REALTIME_VOICE ?? DEFAULT_REALTIME_VOICE,
   createRealtimeSecret = createRealtimeClientSecret,
+  // The grounded description of THIS deployment's curriculum, handed to the live agent so it names
+  // real sections instead of guessing. Empty when the generated file is unreadable — the session
+  // then runs with the plain teaching contract, exactly as before.
+  curriculumBrief = projectBrief,
   // Online AI voice is opt-in at two levels: this server switch, and the learner's own consent in
   // each session body. Either one being off keeps the browser voice working and returns a message
   // that says so, instead of failing silently.
@@ -401,6 +406,7 @@ export function createAuthServer({
             lang,
             model: openaiRealtimeModel,
             voice: openaiRealtimeVoice,
+            brief: typeof curriculumBrief === 'function' ? curriculumBrief() : curriculumBrief,
           });
           json(response, 200, {
             clientSecret: secret.value,

@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { request as httpRequest } from 'node:http';
 import { createAuthServer } from '../../server/app.mjs';
-import { buildGoogleTtsRequest, synthesizeGoogleTts } from '../../server/voice.mjs';
+import { buildGoogleTtsRequest, synthesizeGoogleTts, toSsml } from '../../server/voice.mjs';
 
 const ORIGIN = 'http://localhost:5173';
 
@@ -38,6 +38,37 @@ test('voice-server: the Google request keeps Hindi text, clamps the rate and nam
   const overridden = buildGoogleTtsRequest({ text: 'x', lang: 'hi-IN', rate: 'nonsense', voiceName: 'hi-IN-Wavenet-B' });
   assert.equal(overridden.audioConfig.speakingRate, 1, 'an unreadable rate is the normal rate');
   assert.equal(overridden.voice.name, 'hi-IN-Wavenet-B', 'a deployment without Neural2 can override');
+});
+
+test('voice-server: a multi-sentence passage travels as SSML so the voice breathes between sentences', () => {
+  const body = buildGoogleTtsRequest({
+    text: 'A list is ordered. You can append to it. Indexing is O(1).',
+    lang: 'en-IN',
+    rate: 1,
+  });
+  assert.ok(body.input.ssml, 'more than one sentence means real pauses');
+  assert.equal(body.input.text, undefined, 'text and ssml are alternatives, never both');
+  assert.match(body.input.ssml, /^<speak>/);
+  assert.equal((body.input.ssml.match(/<break time="220ms"\/>/g) ?? []).length, 2,
+    'one break per sentence boundary, none at the ends');
+  assert.match(body.input.ssml, /A list is ordered\./);
+  assert.equal(body.voice.ssmlGender, 'FEMALE', 'one consistent tutor voice, even with a voice override');
+
+  // A single sentence keeps the plain `text` input: there is nothing to pause between.
+  const single = buildGoogleTtsRequest({ text: 'A tuple is immutable.', lang: 'en-IN', rate: 1 });
+  assert.equal(single.input.text, 'A tuple is immutable.');
+  assert.equal(single.input.ssml, undefined);
+});
+
+test('voice-server: SSML escapes the text, so a code sample can never break the request', () => {
+  const ssml = toSsml('Compare a < b & c > d. Then print "x".');
+  assert.match(ssml, /a &lt; b &amp; c &gt; d/, 'XML metacharacters from a learner’s code are escaped');
+  assert.match(ssml, /&quot;x&quot;/);
+  assert.doesNotMatch(ssml, /(?<!&lt;)<(?!speak>|\/speak>|break )/, 'no raw tag survives from the source');
+
+  // Breaks are clamped, not trusted: a caller cannot ask for a two-second silence per sentence.
+  assert.match(toSsml('One. Two.', 99999), /<break time="2000ms"\/>/);
+  assert.match(toSsml('One. Two.', 1), /<break time="50ms"\/>/);
 });
 
 test('voice-server: the text bound is enforced by slicing — Google never sees an oversized chunk', () => {

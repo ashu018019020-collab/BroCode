@@ -69,6 +69,24 @@ test('voice: an over-long sentence is cut at punctuation before a bare word', ()
   assert.equal(squash(chunks.join(' ')), squash(voice.speakable(sentence)));
 });
 
+test('voice: the cloud voice is sent whole sentences, not one utterance each', () => {
+  const body = Array.from({ length: 30 }, (_, i) => `Sentence ${i + 1} explains one idea in plain words.`).join(' ');
+  const cloud = voice.cloudChunks(body);
+  const utterances = voice.speechChunks(body, 180);
+
+  assert.ok(cloud.length < utterances.length,
+    'a server request per utterance would be slower and choppier than packing sentences');
+  assert.ok(cloud.length >= 2, 'a long answer is still several requests, not one oversized one');
+  for (const chunk of cloud) assert.ok(chunk.length <= 460, `chunk too long (${chunk.length}): ${chunk}`);
+  assert.equal(squash(cloud.join(' ')), squash(body), 'packing must not drop or reorder a sentence');
+
+  // A single sentence over the bound still has to be cut — at punctuation, like the utterance path.
+  const one = `${'alpha beta gamma delta, '.repeat(40)}end.`;
+  for (const chunk of voice.cloudChunks(one)) assert.ok(chunk.length <= 460);
+  assert.equal(voice.cloudChunks('').length, 0);
+  assert.equal(voice.cloudChunks('   ').length, 0, 'silence is not a request');
+});
+
 test('voice: empty speech yields no utterance at all', () => {
   assert.deepEqual(voice.speechChunks(''), []);
   assert.deepEqual(voice.speechChunks('   \n  '), []);
@@ -299,7 +317,14 @@ test('voice: the hook probes the server key and falls back — cloud is an upgra
   assert.doesNotMatch(hook, /googleapis\.com/, 'the Google key and URL must never reach the client');
   assert.match(hook, /speakWithBrowser/, 'the browser engine is the fallback path');
   assert.match(hook, /cloudFails\.current >= 2/, 'two consecutive failures abandon the cloud for the session');
-  assert.match(hook, /URL\.revokeObjectURL/, 'object URLs are released');
+  // Smoothness is a contract, not a preference: the cloud chunks are scheduled on ONE clock and
+  // decoded once. Reloading a fresh <audio> element per sentence is exactly the stutter that was
+  // replaced, so the absence of that pattern is asserted too.
+  assert.match(hook, /createBufferSource\(\)/, 'chunks are scheduled, not restarted per sentence');
+  assert.match(hook, /decodeAudioData/, 'each chunk is decoded once');
+  assert.match(hook, /cloudChunks\(/, 'the cloud gets sentence-packed requests, not utterance-sized ones');
+  assert.match(hook, /context\.suspend\(\)/, 'pause/stop freezes the graph instead of playing on');
+  assert.doesNotMatch(hook, /new Audio\(/, 'no per-sentence audio element any more');
 });
 
 test('voice: the API key is server-side only and documented as such', () => {

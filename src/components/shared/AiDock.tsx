@@ -14,9 +14,6 @@ import { AssistantCard } from './AssistantCard';
  * false on purpose, and everything except the input stays clickable behind it. Three ways out (the
  * AI button that opened it, this panel's close button, Escape), and it stays open while you
  * navigate, because "explain this screen" usually means reading two screens.
- *
- * `suggestions` are one-tap project questions: the facts in `engine/project.ts` are only useful if
- * the learner knows they exist, and "how do I run the tests" is not a question anyone types cold.
  */
 export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -41,16 +38,7 @@ export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }
           <X size={14} />
         </button>
       </div>
-      <AssistantCard
-        compact
-        embedded
-        suggestions={[
-          { label: 'What is this app?', ask: 'what is this app' },
-          { label: 'Commands / test', ask: 'how to run the tests' },
-          { label: 'Where do I add content?', ask: 'where do I add a new question' },
-          { label: 'Where is the code?', ask: 'which file contains the code' },
-        ]}
-      />
+      <AssistantCard compact embedded />
     </div>
   );
 }
