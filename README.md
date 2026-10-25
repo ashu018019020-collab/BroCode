@@ -137,6 +137,14 @@ fallback for missing keys). Adding strings: add the key to `en` first, then tran
 UI labels and app-generated copy live in the packs/source; lesson prose is PDF-authored and is being
 translated in reviewed batches (see `docs/LOCALIZATION-GUIDE.md`).
 
+## AI Mentor, Coding Coach & Spoken Interview
+
+The AI studio at `/#/ai-mentor` adds a voice-first mentor, a diagnostics-driven coding coach inside
+the Playground, and a spoken mock-interview round with scorecards and history. All answers, code
+evidence and scores come from the bundled curriculum and the existing offline runners; the optional
+OpenAI Realtime voice needs a server-side key, is rate-limited, and falls back to the browser voice.
+Architecture, provider setup, security rules and known limits: **[docs/AI-VOICE.md](docs/AI-VOICE.md)**.
+
 ## Adding offline packages
 
 Edit `src/core/data/packages.ts`. `availableOffline: true` may only be used for packages
