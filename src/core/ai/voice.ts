@@ -43,6 +43,38 @@ export function normalizeVoiceLang(value: unknown): VoiceLangId {
   return VOICE_LANGS.some((lang) => lang.id === value) ? (value as VoiceLangId) : DEFAULT_VOICE_LANG;
 }
 
+/* ------------------------------------------------------------------
+ * Language preference and detection
+ * ------------------------------------------------------------------ */
+
+/**
+ * What the learner CHOOSES in the selector: `auto` is not an engine language — it is a preference
+ * that resolves to one per turn from the text they actually typed or said.
+ */
+export type VoicePref = VoiceLangId | 'auto';
+
+export const VOICE_PREFS: VoicePref[] = ['auto', 'en-IN', 'hi-IN'];
+
+export function normalizeVoicePref(value: unknown): VoicePref {
+  return VOICE_PREFS.includes(value as VoicePref) ? (value as VoicePref) : 'auto';
+}
+
+const DEVANAGARI = /[\u0900-\u097F]/;
+/** Roman-script Hindi markers. Deliberately common words, so an English sentence cannot trip them. */
+const HINDI_ROMAN =
+  /\b(kya|kaise|kyun|kyon|karna|karo|karega|batao|bata|samajh|samjha|nahi|nhi|hai|hain|hoon|mera|tum|aap|kuch|abhi|phir|lekin|matlab)\b/i;
+
+/**
+ * `auto` → the concrete language for THIS turn. Devanagari or Roman-Hindi input means Hindi;
+ * everything else stays English. Detection reads only what the learner wrote — nothing else.
+ */
+export function resolveVoiceLang(pref: VoicePref | undefined, sample?: string): VoiceLangId {
+  if (pref && pref !== 'auto') return pref;
+  const text = String(sample ?? '');
+  if (DEVANAGARI.test(text) || HINDI_ROMAN.test(text)) return 'hi-IN';
+  return 'en-IN';
+}
+
 /** Narration speed is clamped, not validated: a slider can never produce a 0.05x voice. */
 export function clampRate(value: unknown): number {
   const n = typeof value === 'number' ? value : Number(value);
@@ -224,6 +256,73 @@ export function voiceStatusLabel(status: VoiceStatus, lang: VoiceLangId): string
     case 'speaking': return hi ? 'Bol raha hoon…' : 'Speaking…';
     case 'error': return hi ? 'Voice mein dikkat' : 'Voice unavailable';
     default: return hi ? 'Voice off' : 'Voice off';
+  }
+}
+
+/* ------------------------------------------------------------------
+ * The one state the UI announces
+ * ------------------------------------------------------------------ */
+
+/**
+ * Every state the voice surface can be in, named once. `reconnecting` and `ended` only exist if the
+ * caller reports them; everything else is derived from the browser loop, the realtime session and
+ * whether a retrieval is in flight — never guessed from a timer.
+ */
+export type MentorUiState =
+  | 'idle'
+  | 'permission-required'
+  | 'connecting'
+  | 'listening'
+  | 'thinking'
+  | 'speaking'
+  | 'muted'
+  | 'reconnecting'
+  | 'error'
+  | 'ended';
+
+export interface MentorUiInput {
+  voice: VoiceStatus;
+  realtime: 'off' | 'connecting' | 'connected' | 'error' | 'unavailable';
+  /** A retrieval is running — "thinking" is a real wait, not a decoration. */
+  busy?: boolean;
+  muted?: boolean;
+  /** The microphone permission was refused; the UI must offer the fix, not a retry. */
+  micDenied?: boolean;
+  /** A session ran and was stopped by the learner or by the session ceiling. */
+  ended?: boolean;
+}
+
+export function mentorUiState(input: MentorUiInput): MentorUiState {
+  const { voice, realtime, busy = false, muted = false, micDenied = false, ended = false } = input;
+  if (realtime === 'connecting') return ended ? 'reconnecting' : 'connecting';
+  if (micDenied) return 'permission-required';
+  if (realtime === 'connected') return voice === 'speaking' ? 'speaking' : muted ? 'muted' : 'listening';
+  if (voice === 'speaking') return 'speaking';
+  if (voice === 'listening') return muted ? 'muted' : 'listening';
+  if (voice === 'thinking' || busy) return 'thinking';
+  if (voice === 'error' || realtime === 'error' || realtime === 'unavailable') return 'error';
+  if (ended) return 'ended';
+  return 'idle';
+}
+
+/** The permission message is a state, not just text — the selector below keys off it. */
+export function micPermissionDenied(message: string | null | undefined): boolean {
+  return /permission is blocked|permission.{0,20}(denied|blocked)|NotAllowedError/i.test(String(message ?? ''));
+}
+
+export function mentorStateLabel(state: MentorUiState, lang: VoiceLangId): string {
+  const hi = lang === 'hi-IN';
+  switch (state) {
+    case 'permission-required': return hi ? 'Microphone ki permission chahiye' : 'Microphone permission needed';
+    case 'connecting': return hi ? 'Connect ho raha hai…' : 'Connecting…';
+    case 'listening': return hi ? 'Sun raha hoon…' : 'Listening…';
+    case 'thinking': return hi ? 'Soch raha hoon…' : 'Thinking…';
+    case 'speaking': return hi ? 'Bol raha hoon…' : 'Speaking…';
+    case 'muted': return 'Muted';
+    case 'reconnecting': return hi ? 'Dobara connect ho raha hai…' : 'Reconnecting…';
+    case 'error': return hi ? 'Voice mein dikkat' : 'Voice unavailable';
+    case 'ended': return hi ? 'Session khatam' : 'Session ended';
+    default: return hi ? 'Taiyar hoon' : 'Idle';
   }
 }
 

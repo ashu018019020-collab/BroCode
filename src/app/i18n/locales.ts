@@ -430,6 +430,13 @@ export const en = {
   'error.reloadSub': 'Restart the app',
   'error.diagnostics': 'Advanced Diagnostics',
   'error.diagnosticsSub': 'Technical details are hidden below — open them only to troubleshoot.',
+  // Online AI Voice — the explicit consent gate for the realtime voice session (VoiceMentorPanel).
+  'ai.onlineVoice.title': 'Online AI Voice',
+  'ai.onlineVoice.consent':
+    'I agree that microphone audio and this conversation are sent to OpenAI for this session only. BroCode stores no audio; only this transcript stays on this device.',
+  'ai.onlineVoice.charges':
+    'Optional and off by default on this device. Live sessions use the server\'s API credits and need a signed-in account; the offline tutor never needs it.',
+  'ai.onlineVoice.enable': 'Turn on Online AI Voice',
 };
 
 export type LocaleKey = keyof typeof en;
@@ -849,6 +856,12 @@ export const hinglish: Partial<Record<LocaleKey, string>> = {
   'error.reloadSub': 'App ko restart karo',
   'error.diagnostics': 'Advanced Diagnostics',
   'error.diagnosticsSub': 'Technical details neeche chhipe hain — sirf troubleshooting ke liye kholo.',
+  'ai.onlineVoice.title': 'Online AI Voice',
+  'ai.onlineVoice.consent':
+    'Main sehmat hoon ki microphone ki audio aur yeh conversation sirf is session ke liye OpenAI ko bheji jaye. BroCode koi audio store nahi karta; sirf yeh transcript isi device par rehta hai.',
+  'ai.onlineVoice.charges':
+    'Optional hai aur is device par default band. Live session server ke API credits use karta hai aur signed-in account chahiye; offline tutor ko iski zaroorat nahi kabhi nahi.',
+  'ai.onlineVoice.enable': 'Online AI Voice on karo',
 };
 
 /* ------------------------------- the locales ------------------------------ */

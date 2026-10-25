@@ -108,6 +108,11 @@ export const BANK_CODE_PREFIX = 'code:qb:';
  */
 export const MENTOR_LOG_KEY = 'aiml:mentor:log';
 export const MOCK_HISTORY_KEY = 'aiml:mock-interview:history';
+/**
+ * The learner's own "Online AI Voice" consent, stored on THIS device only. It is a decision, not a
+ * preference: it gates every realtime session request, and it is cleared the moment they turn it off.
+ */
+export const ONLINE_VOICE_CONSENT_KEY = 'aiml:online-voice-consent';
 
 // ---- gamification policy ----
 export const XP_PER_LEVEL = 50;

@@ -16,6 +16,34 @@ export const DEFAULT_REALTIME_MODEL = 'gpt-realtime';
 export const DEFAULT_REALTIME_VOICE = 'coral';
 export const REALTIME_VOICES = ['coral', 'shimmer', 'sage', 'marin', 'alloy'];
 export const REALTIME_LANGS = ['en-IN', 'hi-IN'];
+
+/**
+ * The session body, validated in one place.
+ *
+ * Two rules, both product rules rather than client courtesies:
+ *   · `lang` must be one this deployment actually serves, so a crafted body cannot reach OpenAI
+ *     with settings the UI never offered;
+ *   · `consent` must be an explicit `true` — audio from the microphone is streamed to a third-party
+ *     provider for this session, and that must be a decision the learner made on this device, not an
+ *     omission the server quietly fills in.
+ *
+ * Pure and dependency-free, so the validation is testable without a key, a socket or a user.
+ */
+export function validateRealtimeSessionBody(input, langs = REALTIME_LANGS) {
+  const body = input && typeof input === 'object' ? input : {};
+  const lang = typeof body.lang === 'string' && langs.includes(body.lang) ? body.lang : null;
+  if (!lang) {
+    return { ok: false, status: 400, message: `Choose a supported realtime language: ${langs.join(', ')}.` };
+  }
+  if (body.consent !== true) {
+    return {
+      ok: false,
+      status: 400,
+      message: 'Online voice consent is required: microphone audio is streamed to the provider for this session only. Turn on "Online AI Voice" first.',
+    };
+  }
+  return { ok: true, lang };
+}
 /** A hard ceiling the client enforces; also returned so the UI can show the remaining time. */
 export const REALTIME_MAX_SESSION_SECONDS = 300;
 /** Short-lived credential lifetime requested from OpenAI. */
