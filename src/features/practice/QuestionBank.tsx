@@ -447,10 +447,12 @@ export default function QuestionBank() {
             {sectionList.map((s) => {
               const incomplete = s.flags.includes('CONTENT_INCOMPLETE');
               const pct = Math.min(100, Math.round((s.published / manifest.baseline) * 100));
+              const sectionId = s.sectionId;
               return (
                 <button
                   key={s.sectionId}
                   className={`file-row ${s.sectionId === selected ? 'on' : ''}`}
+                  data-agent-action={`qb:section:${sectionId}`}
                   onClick={() => setSelected(s.sectionId)}
                   style={{ width: '100%', textAlign: 'left', background: s.sectionId === selected ? undefined : 'transparent' }}
                 >

@@ -1,4 +1,4 @@
-import { BookOpen, Mic2, MicOff, Pause, Play, Volume2, VolumeX, X } from 'lucide-react';
+import { BookOpen, Mic2, MicOff, Pause, Play, RotateCcw, Volume2, VolumeX, X } from 'lucide-react';
 import {
   MAX_RATE, MIN_RATE, VOICE_LANGS, ttsEngineNote, voiceStatusLabel, voiceSupportNote, type VoiceLangId,
 } from '../../core/ai/voice';
@@ -79,6 +79,18 @@ export function VoiceBar({
             <span>Stop</span>
           </button>
         )}
+        {!voice.speaking && !voice.listening && voice.lastSpoken && (
+          <button
+            type="button"
+            className="voice-chip"
+            onClick={voice.replay}
+            aria-label="Replay the last spoken answer"
+            title="Replay the last answer"
+          >
+            <RotateCcw size={13} />
+            <span>Replay</span>
+          </button>
+        )}
 
         {/* Only while something is happening: next to the "Voice off" toggle, an idle "Voice off"
             status said the same thing twice and read as two controls. */}
@@ -86,6 +98,11 @@ export function VoiceBar({
           <span className={`voice-state ${voice.status}`} aria-live="polite">
             <i aria-hidden="true" />
             {status}
+            {(voice.speaking || voice.listening) && (
+              <span className="voice-wave" aria-hidden="true">
+                {[0, 1, 2, 3, 4].map((bar) => <b key={bar} />)}
+              </span>
+            )}
           </span>
         )}
       </div>

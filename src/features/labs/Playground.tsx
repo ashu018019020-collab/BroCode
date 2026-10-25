@@ -20,6 +20,7 @@ import { useI18n } from '../../app/i18n';
 import { useCurriculum } from '../../core/data/curriculum';
 import { Link } from 'react-router-dom';
 import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
+import { AssistantCard } from '../../components/shared/AssistantCard';
 
 interface WsFile { name: string; content: string }
 const WS_KEY = 'aiml:workspace:v1';
@@ -85,7 +86,7 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
   const [busy, setBusy] = useState(false);
   const [out, setOut] = useState<{ ok: boolean; text: string; ms?: number } | null>(null);
   const [showPackages, setShowPackages] = useState(false);
-  const [tutorTab, setTutorTab] = useState<'explain' | 'hints' | 'debug' | 'next' | 'coach'>('explain');
+  const [tutorTab, setTutorTab] = useState<'explain' | 'hints' | 'debug' | 'next' | 'coach' | 'ai'>('explain');
   const [coachOpen, setCoachOpen] = useState(false);
   const [coachRevealed, setCoachRevealed] = useState<Record<number, boolean>>({});
   const [drillShown, setDrillShown] = useState(false);
@@ -225,13 +226,14 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
   const attemptCount = state.attempts[playgroundRun]?.done ? 2 : 1;
   const hints = useMemo(() => hintLadder(tutor, attemptCount + (out?.ok === false ? 1 : 0), stdin.trim().length > 0), [tutor, attemptCount, out, stdin]);
   const dbg = useMemo(() => debugSteps(tutor, stdin.trim().length > 0), [tutor, stdin]);
-  const TUTOR_TABS = ['explain', 'hints', 'debug', 'next', 'coach'] as const;
+  const TUTOR_TABS = ['explain', 'hints', 'debug', 'next', 'coach', 'ai'] as const;
   const tabLabel = (k: typeof TUTOR_TABS[number]) =>
     k === 'explain' ? t('pg.explain')
       : k === 'hints' ? t('pg.hints')
         : k === 'debug' ? t('pg.debug')
           : k === 'next' ? t('pg.nextTask')
-            : 'Coach';
+            : k === 'coach' ? 'Coach'
+              : 'AI Mentor';
   const task = useMemo(() => nextTask(state, sections ?? []), [state, sections]);
   const coachPick = useMemo(() => coachSectionFor(state, sections ?? []), [state, sections]);
   // The coached section's own bank, so the drill can be a fresh question of the
@@ -477,6 +479,23 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
               <p className="small muted" style={{ margin: '4px 0 8px' }}>{task.reason}</p>
               <Link className="btn small primary" to={task.route}>Start →</Link>
               <p className="small muted" style={{ marginTop: 8 }}>Playground runs so far: {runCount} stage activities</p>
+            </div>
+          )}
+          {tutorTab === 'ai' && (
+            <div style={{ marginTop: 10 }}>
+              <AssistantCard
+                compact
+                embedded
+                context={{
+                  sectionId: coachPick.section?.id,
+                  code: file?.content,
+                  error: errText || undefined,
+                  where: file ? `Playground · ${file.name}` : 'Playground',
+                }}
+              />
+              <Link className="btn small" to="/ai-mentor?tab=coach" style={{ marginTop: 8 }}>
+                Open the full Coding Coach →
+              </Link>
             </div>
           )}
           {tutorTab === 'coach' && (

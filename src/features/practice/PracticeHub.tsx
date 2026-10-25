@@ -251,7 +251,7 @@ function SubjectPanel({ subject, rows, counts, loaded, type }: {
           </span>
         </div>
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <Link className="btn small ghost" to="/practice"><ArrowLeft size={13} /> All subjects</Link>
+          <Link className="btn small ghost" to="/practice" data-agent-action={`nav:practice`}><ArrowLeft size={13} /> All subjects</Link>
           {start && (
             <Link className="btn primary" to={bankHref(start.id, type)}>
               <Play size={14} /> Start practice

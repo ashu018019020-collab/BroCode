@@ -65,6 +65,20 @@ export interface RegistrationResult {
   emailConfirmationRequired: boolean;
 }
 
+/**
+ * The short-lived credential for the optional OpenAI Realtime voice.
+ *
+ * `clientSecret` is an EPHEMERAL token minted by the server — never the permanent API key. It is
+ * used once, in memory, to negotiate one WebRTC call; it is never written to localStorage or a log.
+ */
+export interface RealtimeVoiceSession {
+  clientSecret: string;
+  expiresAt: number;
+  model: string;
+  voice: string;
+  maxSessionSeconds: number;
+}
+
 /*
  * Typed as `SupabaseClient` (the SDK's default generics), NOT `ReturnType<typeof createClient>`:
  * the latter instantiates the Database parameter with `unknown`, which turns PostgREST calls
@@ -441,6 +455,15 @@ export const authApi = {
   ),
 
   users: () => request<AdminUserResult>('/api/admin/users'),
+
+  /**
+   * Mint a realtime voice session. The server decides the model, voice and instructions; the browser
+   * only names the language. Requires a signed-in account (the route returns 401 otherwise).
+   */
+  voiceRealtime: (lang: 'en-IN' | 'hi-IN') => request<RealtimeVoiceSession>(
+    '/api/voice/realtime/session',
+    { method: 'POST', body: JSON.stringify({ lang }) },
+  ),
 
   updateStatus: (id: string, status: AccountStatus) => request<{ ok: true }>(
     `/api/admin/users/${encodeURIComponent(id)}/status`,

@@ -97,6 +97,18 @@ export const NOTEBOOK_CODE_PREFIX = 'nbc:';
  */
 export const BANK_CODE_PREFIX = 'code:qb:';
 
+/**
+ * ---- AI mentor and spoken interview ----
+ *
+ * Neither of these is an AppState attempt family. The mentor transcript is a device conversation
+ * (account-scoped by `accountStorageKey`, never uploaded), and a spoken-interview report is a
+ * learner's own record of a practice round. They live here anyway because this file is the single
+ * owner of every persisted key shape — a literal `aiml:mock-interview:...` in a page is the bug this
+ * file exists to prevent.
+ */
+export const MENTOR_LOG_KEY = 'aiml:mentor:log';
+export const MOCK_HISTORY_KEY = 'aiml:mock-interview:history';
+
 // ---- gamification policy ----
 export const XP_PER_LEVEL = 50;
 export const levelForXp = (xp: number) => Math.floor(Math.sqrt(xp / XP_PER_LEVEL)) + 1;

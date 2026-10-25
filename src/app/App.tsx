@@ -35,6 +35,7 @@ const SettingsPage = lazy(() => import('../features/tools/Settings'));
 const Onboarding = lazy(() => import('../features/dashboard/Onboarding'));
 const FinalAssessment = lazy(() => import('../features/interview/FinalAssessment'));
 const AILab = lazy(() => import('../features/labs/AILab'));
+const MentorHub = lazy(() => import('../features/ai/MentorHub'));
 const AgenticLab = lazy(() => import('../features/labs/AgenticLab'));
 const NumPyPandasLab = lazy(() => import('../features/labs/NumPyPandasLab'));
 const DefensePage = lazy(() => import('../features/interview/DefensePage'));
@@ -167,6 +168,7 @@ export const NAV: NavItem[] = [
   { to: '/progress', icon: BarChart3, label: 'Progress', group: 'nav.pillars', tone: 'blue' },
 
   // Tools — reference material, one step below the plan.
+  { to: '/ai-mentor', icon: Sparkles, label: 'AI Mentor', group: 'nav.tools', tone: 'violet' },
   { to: '/notes', icon: StickyNote, label: 'Notes', group: 'nav.tools', tone: 'blue' },
   { to: '/cheat-sheets', icon: BookMarked, label: 'Cheat Sheets', group: 'nav.tools', tone: 'blue' },
   { to: '/pdf', icon: FileText, label: 'PDF Reader', group: 'nav.tools', tone: 'rose' },
@@ -836,6 +838,7 @@ function Shell() {
               <Route path="/admin" element={<Protect><AdminUsersPage /></Protect>} />
               <Route path="/final-assessment" element={<Protect><FinalAssessment /></Protect>} />
               <Route path="/ai-lab" element={<Protect><AILab /></Protect>} />
+              <Route path="/ai-mentor" element={<Protect><MentorHub /></Protect>} />
               <Route path="/rag-lab" element={<Protect><RagLab /></Protect>} />
               <Route path="/agentic" element={<Protect><AgenticLab /></Protect>} />
               <Route path="/numpy-pandas" element={<Protect><NumPyPandasLab /></Protect>} />

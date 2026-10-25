@@ -336,6 +336,7 @@ export const PATH_ROUTE_ALLOWLIST: string[] = [
   '/pdf/:page',           // the guide's page-deep-link form of /pdf
   '/pdf/playbook/:page',  // …and the playbook's page-deep-link form of /pdf/playbook
   '/settings',            // setup, not a path
+  '/ai-mentor',           // a cross-cutting studio (voice, coach, interview) — no single progress denominator
   '/onboarding',          // first-run gate
   '/login',               // Supabase-backed account entry — the app's only front door
   '/reset-password',      // the emailed-recovery half of the account flow, reached from /login

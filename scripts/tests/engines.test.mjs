@@ -481,6 +481,7 @@ test('key families: only keys.ts spells a persisted key shape, and no engine rea
     'src/core/ai/actions.ts': 'the central key-shape registry — declares and maps every persisted key family',
     'src/features/labs/LabsHub.tsx': 'guided navigation data-agent-action labels using lab: family',
     'src/features/practice/PracticeHub.tsx': 'guided navigation data-agent-action labels using qb: family',
+    'src/features/practice/QuestionBank.tsx': 'guided navigation data-agent-action labels using qb: family',
   };
 
   // The engine layer: everything under core/ EXCEPT storage (the store owns localStorage and is

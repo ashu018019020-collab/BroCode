@@ -161,7 +161,7 @@ export default function LabsHub() {
               </span>
             </div>
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-              <Link className="btn small ghost" to="/labs" data-agent-action="nav:labs"><ArrowLeft size={13} /> All subjects</Link>
+              <Link className="btn small ghost" to="/labs" data-agent-action={`nav:labs`}><ArrowLeft size={13} /> All subjects</Link>
               {summary.notebooks > 0 && (
                 <span className="chip">{summary.cellsRun} / {summary.codeCells} notebook cells run</span>
               )}
@@ -173,7 +173,7 @@ export default function LabsHub() {
           {summary.labs.length > 0 && (
             <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '10px 0 2px' }}>
               {summary.labs.map((route) => (
-                <Link key={route} className="chip" to={route}>{labelOf(route)}</Link>
+                <Link key={route} className="chip" to={route} data-agent-action={`lab:${route}`}>{labelOf(route)}</Link>
               ))}
             </div>
           )}

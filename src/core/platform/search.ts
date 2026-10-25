@@ -32,6 +32,7 @@ export const PAGES: { title: string; detail: string; route: string }[] = [
   { title: 'Notebook Lab', detail: 'Jupyter notebooks: run cells here, NumPy + Pandas included', route: '/notebooks' },
   { title: 'SQL Lab', detail: 'Queries, joins, real-world data', route: '/sql' },
   { title: 'AI / GenAI Lab', detail: 'LLMs, prompt engineering, RAG basics', route: '/ai-lab' },
+  { title: 'AI Mentor', detail: 'Voice mentor, coding coach, spoken mock interview and reports', route: '/ai-mentor' },
   { title: 'Agentic AI Lab', detail: 'Agents, tool use, workflows', route: '/agentic' },
   { title: 'RAG Lab', detail: 'Chunk, embed, retrieve, answer — in the browser', route: '/rag-lab' },
   { title: 'Final Assessment', detail: 'Everything, in one final gate', route: '/final-assessment' },

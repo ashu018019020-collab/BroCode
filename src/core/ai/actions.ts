@@ -272,7 +272,8 @@ export const AGENT_ACTION_WIRING = [
   { owner: 'src/features/courses/CoursePage.tsx', marker: 'data-agent-action={`course:continue:${course.slug}`}' },
   { owner: 'src/features/practice/PracticeHub.tsx', marker: 'data-agent-action={`nav:practice`}' },
   { owner: 'src/features/practice/QuestionBank.tsx', marker: 'data-agent-action={`qb:section:${sectionId}`}' },
-  { owner: 'src/features/practice/CoursePage.tsx', marker: 'data-agent-action={`course:continue:${course.slug}`}' },
+  // The practice CoursePage does not exist — that screen lives in src/features/courses/CoursePage.tsx,
+  // wired by the entry above. A registry row pointing at a deleted file only fails the wiring test.
   { owner: 'src/features/labs/LabsHub.tsx', marker: 'data-agent-action={`nav:labs`}' },
   { owner: 'src/features/labs/LabsHub.tsx', marker: 'data-agent-action={`lab:${route}`}' },
 ] as const;

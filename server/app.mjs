@@ -1,6 +1,13 @@
 import { createServer } from 'node:http';
 import { listAllAuthUsers } from './supabase.mjs';
 import { TTS_LANGS, TTS_MAX_CHARS, synthesizeGoogleTts } from './voice.mjs';
+import {
+  DEFAULT_REALTIME_MODEL,
+  DEFAULT_REALTIME_VOICE,
+  REALTIME_LANGS,
+  REALTIME_MAX_SESSION_SECONDS,
+  createRealtimeClientSecret,
+} from './realtime.mjs';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const HSTS_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
@@ -191,6 +198,15 @@ function resumePosition(progress) {
 const TTS_WINDOW_MS = 60 * 1000;
 const TTS_MAX_REQUESTS = 30;
 
+/**
+ * A realtime session is far more expensive than one TTS sentence, so it gets a much tighter budget:
+ * six sessions per ten minutes per account+address. The key is BOTH so a shared NAT cannot let one
+ * tab spend another account's allowance, and an account cannot escape its own limit by changing
+ * address.
+ */
+const REALTIME_WINDOW_MS = 10 * 60 * 1000;
+const REALTIME_MAX_REQUESTS = 6;
+
 export function createAuthServer({
   store,
   supabaseAuth,
@@ -203,6 +219,10 @@ export function createAuthServer({
   googleTtsKey = process.env.GOOGLE_TTS_API_KEY ?? '',
   googleTtsVoices = {},
   synthesizeTts = synthesizeGoogleTts,
+  openaiRealtimeKey = process.env.OPENAI_API_KEY ?? '',
+  openaiRealtimeModel = process.env.OPENAI_REALTIME_MODEL ?? DEFAULT_REALTIME_MODEL,
+  openaiRealtimeVoice = process.env.OPENAI_REALTIME_VOICE ?? DEFAULT_REALTIME_VOICE,
+  createRealtimeSecret = createRealtimeClientSecret,
 }) {
   if (!store) throw new TypeError('A Supabase account store is required.');
   if (!supabaseAuth) throw new TypeError('A Supabase Auth client is required.');
@@ -244,6 +264,24 @@ export function createAuthServer({
       throw new HttpError(403, 'Administrator access is required.');
     }
     return user;
+  }
+
+  const realtimeHits = new Map();
+  function realtimeAllowed(clientKey) {
+    const at = now();
+    const hits = (realtimeHits.get(clientKey) ?? []).filter((stamp) => at - stamp < REALTIME_WINDOW_MS);
+    if (realtimeHits.size > 5000) {
+      for (const [key, stamps] of realtimeHits) {
+        if (!stamps.length || at - stamps[stamps.length - 1] >= REALTIME_WINDOW_MS) realtimeHits.delete(key);
+      }
+    }
+    if (hits.length >= REALTIME_MAX_REQUESTS) {
+      realtimeHits.set(clientKey, hits);
+      return false;
+    }
+    hits.push(at);
+    realtimeHits.set(clientKey, hits);
+    return true;
   }
 
   const ttsHits = new Map();
@@ -305,6 +343,57 @@ export function createAuthServer({
       if (request.method === 'GET' && url.pathname === '/api/voice/status') {
         json(response, 200, { configured: Boolean(googleTtsKey) }, headers);
         return;
+      }
+
+      // The realtime path is OPTIONAL. This status route is public but only ever names a boolean;
+      // the permanent key stays in the process. The client uses it to choose its honest label and
+      // to fall back to the browser loop without a failed network round-trip first.
+      if (request.method === 'GET' && url.pathname === '/api/voice/realtime/status') {
+        json(response, 200, { configured: Boolean(openaiRealtimeKey) }, headers);
+        return;
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/voice/realtime/session') {
+        ensureSameOrigin(request, allowedOrigin);
+        // A live audio session is billable and tied to a person, unlike the text-to-speech route.
+        // Requiring a signed-in account also gives the rate limit a stable identity.
+        const user = await requireUser(request);
+        if (!openaiRealtimeKey) {
+          throw new HttpError(503, 'Realtime voice is not configured on this server. The browser voice will be used.');
+        }
+        const clientKey = `${user.profile.id}:${request.socket?.remoteAddress ?? 'unknown'}`;
+        if (!realtimeAllowed(clientKey)) {
+          throw new HttpError(429, 'Too many realtime voice sessions. Try again in a few minutes.');
+        }
+        const input = await readJson(request);
+        const lang = typeof input?.lang === 'string' && REALTIME_LANGS.includes(input.lang) ? input.lang : null;
+        if (!lang) throw new HttpError(400, `Choose a supported realtime language: ${REALTIME_LANGS.join(', ')}.`);
+        try {
+          const secret = await createRealtimeSecret({
+            apiKey: openaiRealtimeKey,
+            lang,
+            model: openaiRealtimeModel,
+            voice: openaiRealtimeVoice,
+          });
+          json(response, 200, {
+            clientSecret: secret.value,
+            expiresAt: secret.expiresAt,
+            model: secret.model,
+            voice: secret.voice,
+            maxSessionSeconds: secret.maxSessionSeconds ?? REALTIME_MAX_SESSION_SECONDS,
+          }, headers);
+          return;
+        } catch (error) {
+          if (error?.code === 'realtime-rate-limited') {
+            throw new HttpError(429, 'The realtime voice service is rate-limited. Try again in a moment.');
+          }
+          if (error?.code === 'realtime-bad-lang') throw new HttpError(400, 'That realtime language is not supported.');
+          if (error?.code === 'realtime-unconfigured') {
+            throw new HttpError(503, 'Realtime voice is not configured on this server. The browser voice will be used.');
+          }
+          logger.warn?.('Realtime voice request failed.', error?.code ?? error?.name ?? 'unknown');
+          throw new HttpError(502, 'The realtime voice service is unavailable. The browser voice will be used.');
+        }
       }
 
       if (request.method === 'POST' && url.pathname === '/api/voice/tts') {

@@ -139,12 +139,21 @@ export interface VoiceTutor {
   cloudConfigured: CloudState;
   /** Live partial transcript while the learner is speaking. */
   interim: string;
+  /** The last thing spoken, so "Replay" can repeat it without re-asking the engine. */
+  lastSpoken: { text: string; sources: { title: string }[] } | null;
   error: string | null;
   dismissError: () => void;
   startListening: (onTranscript: (text: string) => void) => void;
   stopListening: () => void;
   toggleListening: (onTranscript: (text: string) => void) => void;
-  speak: (text: string, sources?: { title: string }[]) => void;
+  /**
+   * Speak an answer. `onEnd` runs only when the speech really finished — never after Stop, a
+   * navigation, or a barge-in — which is what lets the mentor reopen the mic for a hands-free turn
+   * without ever leaving a microphone open after an interruption.
+   */
+  speak: (text: string, sources?: { title: string }[], onEnd?: () => void) => void;
+  /** Say the last answer again. A no-op when nothing has been spoken. */
+  replay: () => void;
   stopSpeaking: () => void;
   pauseSpeaking: () => void;
   resumeSpeaking: () => void;
@@ -157,6 +166,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const [paused, setPaused] = useState(false);
   const [interim, setInterim] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [lastSpoken, setLastSpoken] = useState<{ text: string; sources: { title: string }[] } | null>(null);
 
   const recognition = useRef<RecognitionLike | null>(null);
   const generation = useRef(0);
@@ -261,7 +271,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     }
   }, [releaseCloud]);
 
-  const speak = useCallback((text: string, sources: { title: string }[] = []) => {
+  const speak = useCallback((text: string, sources: { title: string }[] = [], onEnd?: () => void) => {
     const chunks = speechChunks(text);
     if (!chunks.length) return;
     const cloudUsable = cloudRef.current === true;
@@ -274,9 +284,24 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     stopSpeaking();
     const id = generation.current;
     queue.current = chunks;
+    setLastSpoken({ text, sources });
     setError(null);
     setSpeaking(true);
     setPaused(false);
+
+    /**
+     * One completion per utterance queue. Stop/navigation increments the generation, so a stale
+     * queue can never fire it; the latch covers the cloud path's two failure reports.
+     */
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      if (!mounted.current || id !== generation.current) return;
+      setSpeaking(false);
+      setPaused(false);
+      onEnd?.();
+    };
 
     /** The browser engine: short utterances in order, generation-guarded against stale `onend`. */
     const speakWithBrowser = () => {
@@ -286,8 +311,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         if (!mounted.current || id !== generation.current) return;
         const chunk = queue.current.shift();
         if (!chunk) {
-          setSpeaking(false);
-          setPaused(false);
+          finish();
           return;
         }
         const utterance = new SpeechSynthesisUtterance(chunk);
@@ -351,8 +375,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
           if (!mounted.current || id !== generation.current) return;
           const url = cloudUrls.current[index];
           if (!url) {
-            setSpeaking(false);
-            setPaused(false);
+            finish();
             return;
           }
           index += 1;
@@ -376,6 +399,10 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         speakWithBrowser();
       });
   }, [prefs.lang, prefs.rate, releaseCloud, stopSpeaking, supported.synthesis]);
+
+  const replay = useCallback(() => {
+    if (lastSpoken) speak(lastSpoken.text, lastSpoken.sources);
+  }, [lastSpoken, speak]);
 
   const stopListening = useCallback(() => {
     try { recognition.current?.abort(); } catch { /* already gone */ }
@@ -470,7 +497,17 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     try { window.speechSynthesis.resume(); setPaused(false); } catch { /* nothing paused */ }
   }, [supported.synthesis]);
 
-  const status: VoiceStatus = speaking ? 'speaking' : listening ? 'listening' : thinking ? 'thinking' : 'off';
+  // An error is a real state, not a hidden flag: a dead microphone or a missing synthesiser must
+  // stop the controls looking as if everything is idle.
+  const status: VoiceStatus = speaking
+    ? 'speaking'
+    : listening
+      ? 'listening'
+      : error
+        ? 'error'
+        : thinking
+          ? 'thinking'
+          : 'off';
 
   return {
     supported,
@@ -487,12 +524,14 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     engine,
     cloudConfigured,
     interim,
+    lastSpoken,
     error,
     dismissError: () => setError(null),
     startListening,
     stopListening,
     toggleListening,
     speak,
+    replay,
     stopSpeaking,
     pauseSpeaking,
     resumeSpeaking,

@@ -37,7 +37,7 @@ export const DEFAULT_RATE = 1;
 export const MIN_RATE = 0.7;
 export const MAX_RATE = 1.4;
 
-export type VoiceStatus = 'off' | 'listening' | 'thinking' | 'speaking';
+export type VoiceStatus = 'off' | 'listening' | 'thinking' | 'speaking' | 'error';
 
 export function normalizeVoiceLang(value: unknown): VoiceLangId {
   return VOICE_LANGS.some((lang) => lang.id === value) ? (value as VoiceLangId) : DEFAULT_VOICE_LANG;
@@ -222,6 +222,7 @@ export function voiceStatusLabel(status: VoiceStatus, lang: VoiceLangId): string
     case 'listening': return hi ? 'Sun raha hoon…' : 'Listening…';
     case 'thinking': return hi ? 'Soch raha hoon…' : 'Thinking…';
     case 'speaking': return hi ? 'Bol raha hoon…' : 'Speaking…';
+    case 'error': return hi ? 'Voice mein dikkat' : 'Voice unavailable';
     default: return hi ? 'Voice off' : 'Voice off';
   }
 }
