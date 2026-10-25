@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { Bot, X } from 'lucide-react';
 import { AssistantCard } from './AssistantCard';
 
 /**
@@ -12,8 +11,11 @@ import { AssistantCard } from './AssistantCard';
  *
  * It is a DOCK, not a modal: it never blocks the page, the route, or the keyboard — `aria-modal` is
  * false on purpose, and everything except the input stays clickable behind it. Three ways out (the
- * AI button that opened it, this panel's close button, Escape), and it stays open while you
- * navigate, because "explain this screen" usually means reading two screens.
+ * AI button that opened it, the panel's close button, Escape), and it stays open while you navigate,
+ * because "explain this screen" usually means reading two screens.
+ *
+ * The dock draws no header of its own: the assistant card IS the panel, so its identity, live state
+ * and close control live in one header instead of two stacked ones.
  */
 export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -22,7 +24,9 @@ export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }
   // scrolls the compact dock past its header/actions, so the learner taps the composer explicitly.
   useEffect(() => {
     if (open && !window.matchMedia('(max-width: 780px)').matches) {
-      ref.current?.querySelector('input')?.focus();
+      // `preventScroll`: focusing the composer used to scroll the panel straight to the bottom,
+      // hiding the identity, the live state and the learning context behind the fold.
+      ref.current?.querySelector('input')?.focus({ preventScroll: true });
     }
   }, [open]);
 
@@ -30,15 +34,7 @@ export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }
 
   return (
     <div className="aidock fadeup" role="dialog" aria-modal="false" aria-label="AI assistant" ref={ref}>
-      <div className="aidock-head">
-        <span className="aidock-ic"><Bot size={14} /></span>
-        <b className="small">AI</b>
-        <span className="aidock-sub small muted">Ask or speak — this screen, setup, code</span>
-        <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={onClose} aria-label="Close the AI panel">
-          <X size={14} />
-        </button>
-      </div>
-      <AssistantCard compact embedded />
+      <AssistantCard compact embedded onClose={onClose} />
     </div>
   );
 }

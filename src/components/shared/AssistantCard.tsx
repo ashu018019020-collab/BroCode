@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bot, Send, Sparkles, Lightbulb, Bug, Eraser, Loader2, Target, Wrench, BookOpenCheck, Percent, CircleHelp, ArrowRight } from 'lucide-react';
+import {
+  ArrowRight, BookOpen, BookOpenCheck, Bot, Bug, CircleHelp, Eraser, Lightbulb, Loader2, Mic2, Percent,
+  Send, ShieldCheck, Sparkles, Target, Wrench,
+} from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore } from '../../core/storage/store';
 import { loadKnowledgeIndex } from '../../core/data/knowledge';
@@ -43,11 +46,13 @@ function loadLog(key: string): Turn[] {
  * to sit inside a notebook without shouting.
  */
 export function AssistantCard({
-  compact = false, embedded = false, context,
+  compact = false, embedded = false, context, onClose,
 }: {
   compact?: boolean;
   embedded?: boolean;
   context?: AssistantContext;
+  /** Present only inside the dock: the panel's own close control, in its own header. */
+  onClose?: () => void;
 }) {
   const logKey = useSyncExternalStore(
     subscribeStorageAccount,
@@ -61,17 +66,19 @@ export function AssistantCard({
       compact={compact}
       embedded={embedded}
       context={context}
+      onClose={onClose}
     />
   );
 }
 
 function AssistantCardSession({
-  compact = false, embedded = false, context, logKey,
+  compact = false, embedded = false, context, logKey, onClose,
 }: {
   compact?: boolean;
   embedded?: boolean;
   context?: AssistantContext;
   logKey: string;
+  onClose?: () => void;
 }) {
   const { sections } = useCurriculum();
   const state = useStore();
@@ -201,16 +208,65 @@ function AssistantCardSession({
     }
   };
 
+  /**
+   * The one line the panel leads with. Every value is a REAL state: a retrieval in flight, the
+   * synthesiser talking, the microphone open, or an error the voice engine reported — never a
+   * decorative animation, and never "Listening" while nothing is listening.
+   */
+  const heroState = busy
+    ? { tone: 'thinking', title: 'THINKING', sub: 'Searching your curriculum…' }
+    : voice.speaking
+      ? { tone: 'speaking', title: 'SPEAKING', sub: 'Answering aloud — interrupt any time' }
+      : voice.listening
+        ? { tone: 'listening', title: 'LISTENING', sub: 'Go ahead, I am listening' }
+        : voice.error
+          ? { tone: 'error', title: 'VOICE ISSUE', sub: 'The answer still works by typing' }
+          : { tone: 'idle', title: 'READY TO HELP', sub: 'Ask, speak or share your screen' };
+  const heroActive = heroState.tone === 'thinking' || heroState.tone === 'speaking' || heroState.tone === 'listening';
+
+  // The lesson header, from the page context this card was given — never a guessed title.
+  const contextTitle =
+    activeContext.lessonTitle
+    || activeContext.chapterTitle
+    || activeContext.pageTitle
+    || (activeContext.where ? activeContext.where.split(' · ').slice(-1)[0] : '');
+  // The progress bar reads the measured figure out of the summary string; no summary means no bar.
+  const masteryMatch = /(\d{1,3})\s*%\s*mastery/i.exec(activeContext.progressSummary ?? '');
+  const masteryPct = masteryMatch ? Math.min(100, Math.max(0, Number(masteryMatch[1]))) : null;
+
   return (
     <div className={`assistant${embedded ? ' embedded' : ''}`}>
       <div className="head">
-        <span className="bot"><Bot size={18} color="var(--cyan)" /></span>
+        <span className="bot"><Bot size={19} color="var(--cyan)" /></span>
         <div style={{ flex: 1 }}>
-          <b className="assistant-title"><span>AI</span> Assistant</b>
-          <div className="assistant-subtitle">{busy ? 'Searching local knowledge…' : 'Offline learning assistant · current page aware'}</div>
+          <b className="assistant-title"><span>BroCode</span> AI</b>
+          <div className="assistant-subtitle">Your personal coding mentor</div>
         </div>
         {activeContext.error && <span className="chip hard">● error</span>}
-        <span className={`assistant-status${busy ? ' busy' : ''}`}><i />{busy ? <><Loader2 size={11} className="spin" /> Thinking</> : 'Ready'}</span>
+        {onClose && (
+          <button type="button" className="assistant-close" onClick={onClose} aria-label="Close the AI panel">
+            ✕
+          </button>
+        )}
+      </div>
+
+      <div className={`ai-hero ${heroState.tone}${heroActive ? ' is-active' : ''}`}>
+        <div className="ai-hero-left">
+          <span className="ai-hero-dot" aria-hidden="true" />
+          <div className="ai-hero-copy">
+            <b className="ai-hero-title" aria-live="polite">{heroState.title}</b>
+            <span className="ai-hero-sub">{heroState.sub}</span>
+          </div>
+        </div>
+        <div className="ai-hero-right">
+          <span className="ai-wave" aria-hidden="true">{[0, 1, 2, 3, 4, 5, 6, 7].map((bar) => <b key={bar} />)}</span>
+          {/* A STATE pill, not a second microphone: the Speak chip below is the control, so the
+              panel never shows two buttons that do the same thing. */}
+          <span className={`ai-hero-pill${voice.listening ? ' on' : ''}`} role="status">
+            <Mic2 size={15} />
+            <span>{voice.listening ? 'Listening…' : voice.speaking ? 'Speaking…' : busy ? 'Thinking…' : 'Mic ready'}</span>
+          </span>
+        </div>
       </div>
 
       <VoiceBar
@@ -221,63 +277,102 @@ function AssistantCardSession({
         onGuide={guideMe}
       />
 
-      {(activeContext.where || activeContext.error || activeContext.question) && (
-        <div className="assistant-ctx small muted">
-          {activeContext.where && <span>📍 {activeContext.where}</span>}
-          {activeContext.progressSummary && <span>📈 {activeContext.progressSummary}</span>}
+      <div className="ai-context">
+        <span className="ai-context-icon" aria-hidden="true"><BookOpen size={19} /></span>
+        <div className="ai-context-body">
+          <span className="ai-context-label">CURRENT LEARNING CONTEXT</span>
+          <b className="ai-context-title">{contextTitle || 'No lesson open yet'}</b>
+          {masteryPct !== null && (
+            <span className="ai-context-progress">
+              <span className="ai-context-bar" role="img" aria-label={`${masteryPct}% mastery`}>
+                <i style={{ width: `${masteryPct}%` }} />
+              </span>
+              <em>{masteryPct}%</em>
+            </span>
+          )}
+          <span className="ai-context-stats">
+            {activeContext.progressSummary
+              ?? 'Progress and mistakes appear here once a lesson is open.'}
+          </span>
           {activeContext.question && (
-            <span title={activeContext.question.text}>📄 {activeContext.question.text.length > 70 ? `${activeContext.question.text.slice(0, 70)}…` : activeContext.question.text}</span>
+            <span className="ai-context-q" title={activeContext.question.text}>
+              📄 {activeContext.question.text.length > 74 ? `${activeContext.question.text.slice(0, 74)}…` : activeContext.question.text}
+            </span>
           )}
           {activeContext.error && (
-            <span className="ctx-err">🔴 This cell's error is on screen above — press "Fix this mistake" and I will point at the exact line to fix.</span>
+            <span className="ai-context-err">
+              🔴 This cell's error is on screen above — press "Fix this mistake" and I will point at the exact line to fix.
+            </span>
           )}
         </div>
-      )}
+      </div>
 
       <div className="assistant-actions">
         <button className="assistant-action explain" onClick={() => reply(quickExplain(state, sections, activeContext), 'Explain')}>
           <span className="assistant-action-icon"><Sparkles size={18} /></span>
-          <b>Explain</b><small>Concepts made simple</small>
+          <b>Explain</b><small>Simple concepts, clear examples</small>
+          <span className="assistant-action-go" aria-hidden="true"><ArrowRight size={14} /></span>
         </button>
         <button className="assistant-action hint" onClick={() => reply(quickHint(state, sections, activeContext, askedHints), 'Hint')}>
           <span className="assistant-action-icon"><Lightbulb size={18} /></span>
-          <b>Give Hint</b><small>Get a useful clue</small>
+          <b>Give Hint</b><small>One useful clue at a time</small>
+          <span className="assistant-action-go" aria-hidden="true"><ArrowRight size={14} /></span>
         </button>
         <button className="assistant-action doubt" onClick={() => ask('I have a doubt about this topic. Please explain the concept and resolve my doubt.')}>
           <span className="assistant-action-icon"><CircleHelp size={18} /></span>
-          <b>Solve Doubt</b><small>Ask your own question</small>
+          <b>Solve Doubt</b><small>Ask anything</small>
+          <span className="assistant-action-go" aria-hidden="true"><ArrowRight size={14} /></span>
         </button>
         <button className="assistant-action next" onClick={() => reply(quickNext(state, sections, activeContext, '', knowledge ?? undefined), 'Next Topic')}>
           <span className="assistant-action-icon"><ArrowRight size={18} /></span>
-          <b>Next Topic</b><small>What to learn next</small>
+          <b>Next Topic</b><small>Your next learning step</small>
+          <span className="assistant-action-go" aria-hidden="true"><ArrowRight size={14} /></span>
         </button>
       </div>
 
-      <div className="assistant-tools">
-        {/* Armed, not pushy: the error pane already explains a failure on its own, so this action
-            waits to be asked — but it is the first button whenever something is actually broken. */}
-        {activeContext.error && (
-          <button className="btn small primary" onClick={() => reply(quickFix(state, sections, activeContext), 'Fix this mistake')}>
-            <Wrench size={12} /> Fix this mistake
-          </button>
-        )}
-        {/* With a question in context, the item's own actions lead: its answer, the percentage of
-            what the learner wrote, and a hint about THIS item rather than the topic. */}
-        {activeContext.question && (
-          <>
-            <button className="btn small primary" onClick={() => reply(quickAnswer(state, sections, activeContext), 'Full answer')}>
-              <BookOpenCheck size={12} /> Full answer
+      {(activeContext.error || activeContext.question) && (
+        <div className="ai-chips">
+          {/* Armed, not pushy: the error pane already explains a failure on its own, so this action
+              waits to be asked — but it is the first button whenever something is actually broken. */}
+          {activeContext.error && (
+            <button className="btn small primary" onClick={() => reply(quickFix(state, sections, activeContext), 'Fix this mistake')}>
+              <Wrench size={12} /> Fix this mistake
             </button>
-            <button className="btn small" onClick={() => reply(quickScoreAnswer(state, sections, activeContext), 'How accurate is my answer?')}>
-              <Percent size={12} /> How accurate is my answer?
-            </button>
-          </>
-        )}
-        <button className="btn small" onClick={() => reply(quickMistakes(state, sections), 'My mistakes')}><Target size={12} /> My mistakes</button>
-        <button className="btn small" onClick={() => reply(quickDebug(state, sections), 'Debug')}><Bug size={12} /> Debug</button>
-        {!compact && <button className="btn small" onClick={() => reply(quickAccuracy(state, sections), 'My accuracy')}><Percent size={12} /> My accuracy</button>}
-        {!compact && <button className="btn small" onClick={() => reply(quickStatus(state, sections), 'Status')}>My progress</button>}
+          )}
+          {/* With a question in context, the item's own actions lead: its answer, the percentage of
+              what the learner wrote, and a hint about THIS item rather than the topic. */}
+          {activeContext.question && (
+            <>
+              <button className="btn small primary" onClick={() => reply(quickAnswer(state, sections, activeContext), 'Full answer')}>
+                <BookOpenCheck size={12} /> Full answer
+              </button>
+              <button className="btn small" onClick={() => reply(quickScoreAnswer(state, sections, activeContext), 'How accurate is my answer?')}>
+                <Percent size={12} /> How accurate is my answer?
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="ai-pills">
+        <button className="ai-pill" onClick={() => reply(quickMistakes(state, sections), 'My mistakes')}>
+          <span className="ai-pill-icon" aria-hidden="true"><Target size={16} /></span>
+          <b>My mistakes</b>
+          <ArrowRight size={15} className="ai-pill-go" aria-hidden="true" />
+        </button>
+        <button className="ai-pill" onClick={() => reply(quickDebug(state, sections), 'Debug')}>
+          <span className="ai-pill-icon" aria-hidden="true"><Bug size={16} /></span>
+          <b>Debug code</b>
+          <ArrowRight size={15} className="ai-pill-go" aria-hidden="true" />
+        </button>
       </div>
+
+      {!compact && (
+        <div className="ai-chips">
+          <button className="btn small" onClick={() => reply(quickAccuracy(state, sections), 'My accuracy')}><Percent size={12} /> My accuracy</button>
+          <button className="btn small" onClick={() => reply(quickStatus(state, sections), 'Status')}>My progress</button>
+        </div>
+      )}
 
       {(log.length > 0 || busy) && (
         <div
@@ -320,7 +415,8 @@ function AssistantCardSession({
 
       <div className="ask">
         <div className="assistant-input">
-          <Sparkles className="assistant-input-sparkle" size={17} aria-hidden="true" />
+          <Sparkles className="assistant-input-sparkle" size={18} aria-hidden="true" />
+          <span className="assistant-input-div" aria-hidden="true" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -328,6 +424,16 @@ function AssistantCardSession({
             placeholder={activeContext.question ? 'Ask about this question…' : 'Ask BroCode AI anything…'}
             aria-label="Ask the AI assistant"
           />
+          {/* The composer's own mic is the same switch as the Speak chip — one state, two doors. */}
+          <button
+            type="button"
+            className={`assistant-mic${voice.listening ? ' on' : ''}`}
+            onClick={() => voice.toggleListening((text) => { void ask(text, true); })}
+            aria-pressed={voice.listening}
+            aria-label={voice.listening ? 'Stop listening to the microphone' : 'Speak your question'}
+          >
+            <Mic2 size={16} />
+          </button>
           <button className="assistant-send" onClick={() => ask(q)} disabled={busy || !q.trim()} aria-label="Send question">
             {busy ? <Loader2 size={16} className="spin" /> : <Send size={16} />}
           </button>
@@ -338,8 +444,9 @@ function AssistantCardSession({
           </button>
         )}
       </div>
-      <p className="small muted" style={{ margin: '6px 0 0' }}>
-        Answers are retrieved from the bundled curriculum — no internet needed, and it never invents a wrong answer.
+      <p className="ai-foot small muted">
+        <ShieldCheck size={13} aria-hidden="true" />
+        <span>Answers grounded in your curriculum · No invented solutions</span>
       </p>
     </div>
   );
