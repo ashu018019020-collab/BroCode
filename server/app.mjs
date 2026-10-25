@@ -7,6 +7,7 @@ import {
   REALTIME_LANGS,
   REALTIME_MAX_SESSION_SECONDS,
   createRealtimeClientSecret,
+  validateRealtimeSessionBody,
 } from './realtime.mjs';
 
 const MAX_BODY_BYTES = 16 * 1024;
@@ -207,6 +208,18 @@ const TTS_MAX_REQUESTS = 30;
 const REALTIME_WINDOW_MS = 10 * 60 * 1000;
 const REALTIME_MAX_REQUESTS = 6;
 
+/** An env switch that is only off when it says so: unset means the feature works if it is configured. */
+function envFlag(value, fallback) {
+  if (value === undefined || String(value).trim() === '') return fallback;
+  return !/^(0|false|off|no)$/i.test(String(value).trim());
+}
+
+/** A ceiling an operator can lower (or raise deliberately); a garbage value keeps the safe default. */
+function envPositiveInt(value, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
+
 export function createAuthServer({
   store,
   supabaseAuth,
@@ -223,6 +236,12 @@ export function createAuthServer({
   openaiRealtimeModel = process.env.OPENAI_REALTIME_MODEL ?? DEFAULT_REALTIME_MODEL,
   openaiRealtimeVoice = process.env.OPENAI_REALTIME_VOICE ?? DEFAULT_REALTIME_VOICE,
   createRealtimeSecret = createRealtimeClientSecret,
+  // Online AI voice is opt-in at two levels: this server switch, and the learner's own consent in
+  // each session body. Either one being off keeps the browser voice working and returns a message
+  // that says so, instead of failing silently.
+  onlineVoiceEnabled = envFlag(process.env.ONLINE_VOICE_ENABLED, true),
+  realtimeMaxSessions = envPositiveInt(process.env.REALTIME_SESSIONS_PER_WINDOW, REALTIME_MAX_REQUESTS),
+  realtimeWindowMs = envPositiveInt(process.env.REALTIME_SESSION_WINDOW_MINUTES, Math.round(REALTIME_WINDOW_MS / 60000)) * 60 * 1000,
 }) {
   if (!store) throw new TypeError('A Supabase account store is required.');
   if (!supabaseAuth) throw new TypeError('A Supabase Auth client is required.');
@@ -269,13 +288,13 @@ export function createAuthServer({
   const realtimeHits = new Map();
   function realtimeAllowed(clientKey) {
     const at = now();
-    const hits = (realtimeHits.get(clientKey) ?? []).filter((stamp) => at - stamp < REALTIME_WINDOW_MS);
+    const hits = (realtimeHits.get(clientKey) ?? []).filter((stamp) => at - stamp < realtimeWindowMs);
     if (realtimeHits.size > 5000) {
       for (const [key, stamps] of realtimeHits) {
-        if (!stamps.length || at - stamps[stamps.length - 1] >= REALTIME_WINDOW_MS) realtimeHits.delete(key);
+        if (!stamps.length || at - stamps[stamps.length - 1] >= realtimeWindowMs) realtimeHits.delete(key);
       }
     }
-    if (hits.length >= REALTIME_MAX_REQUESTS) {
+    if (hits.length >= realtimeMaxSessions) {
       realtimeHits.set(clientKey, hits);
       return false;
     }
@@ -349,12 +368,18 @@ export function createAuthServer({
       // the permanent key stays in the process. The client uses it to choose its honest label and
       // to fall back to the browser loop without a failed network round-trip first.
       if (request.method === 'GET' && url.pathname === '/api/voice/realtime/status') {
-        json(response, 200, { configured: Boolean(openaiRealtimeKey) }, headers);
+        // `configured` is "a key is present"; `enabled` is the deployment switch. The UI needs both
+        // to tell "ask your admin to turn it on" apart from "this build never had a key".
+        json(response, 200, { configured: Boolean(openaiRealtimeKey), enabled: onlineVoiceEnabled }, headers);
         return;
       }
 
       if (request.method === 'POST' && url.pathname === '/api/voice/realtime/session') {
         ensureSameOrigin(request, allowedOrigin);
+        // The deployment-level switch: off means no paid session is minted, whatever the body says.
+        if (!onlineVoiceEnabled) {
+          throw new HttpError(503, 'Online AI voice is disabled on this server. The browser voice stays available.');
+        }
         // A live audio session is billable and tied to a person, unlike the text-to-speech route.
         // Requiring a signed-in account also gives the rate limit a stable identity.
         const user = await requireUser(request);
@@ -362,12 +387,14 @@ export function createAuthServer({
           throw new HttpError(503, 'Realtime voice is not configured on this server. The browser voice will be used.');
         }
         const clientKey = `${user.profile.id}:${request.socket?.remoteAddress ?? 'unknown'}`;
+        const input = await readJson(request);
+        const check = validateRealtimeSessionBody(input);
+        if (!check.ok) throw new HttpError(check.status, check.message);
+        const lang = check.lang;
+        // The budget is spent only for a body that would actually have started a session.
         if (!realtimeAllowed(clientKey)) {
           throw new HttpError(429, 'Too many realtime voice sessions. Try again in a few minutes.');
         }
-        const input = await readJson(request);
-        const lang = typeof input?.lang === 'string' && REALTIME_LANGS.includes(input.lang) ? input.lang : null;
-        if (!lang) throw new HttpError(400, `Choose a supported realtime language: ${REALTIME_LANGS.join(', ')}.`);
         try {
           const secret = await createRealtimeSecret({
             apiKey: openaiRealtimeKey,

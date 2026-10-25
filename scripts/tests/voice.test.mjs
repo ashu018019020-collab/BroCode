@@ -312,3 +312,62 @@ test('voice: the API key is server-side only and documented as such', () => {
     assert.doesNotMatch(read(file), /GOOGLE_TTS_API_KEY/, `no client file may name the key: ${file}`);
   }
 });
+
+/* --------------------------- language preference --------------------------- */
+
+test('voice: `auto` resolves per turn from what the learner actually wrote', () => {
+  // Devanagari and Roman Hindi both mean Hindi; English stays English.
+  assert.equal(voice.resolveVoiceLang('auto', 'decorators kaise kaam karte hain?'), 'hi-IN');
+  assert.equal(voice.resolveVoiceLang('auto', 'नमस्ते, tuples क्या हैं?'), 'hi-IN');
+  assert.equal(voice.resolveVoiceLang('auto', 'yeh kyun hota hai'), 'hi-IN');
+  assert.equal(voice.resolveVoiceLang('auto', 'Why is a tuple immutable?'), 'en-IN');
+  assert.equal(voice.resolveVoiceLang('auto', ''), 'en-IN', 'no input means no invention: default English');
+
+  // An explicit choice is never overridden by detection.
+  assert.equal(voice.resolveVoiceLang('en-IN', 'batao kya hua'), 'en-IN');
+  assert.equal(voice.resolveVoiceLang('hi-IN', 'Explain decorators'), 'hi-IN');
+
+  assert.equal(voice.normalizeVoicePref('en-IN'), 'en-IN');
+  assert.equal(voice.normalizeVoicePref('nonsense'), 'auto', 'an unknown preference falls back to detection');
+  assert.deepEqual(voice.VOICE_PREFS, ['auto', 'en-IN', 'hi-IN']);
+});
+
+/* ------------------------------ UI state ---------------------------------- */
+
+test('voice: the announced state matches the real session, not an animation', () => {
+  const base = { voice: 'off', realtime: 'off' };
+
+  assert.equal(voice.mentorUiState(base), 'idle');
+  assert.equal(voice.mentorUiState({ ...base, realtime: 'connecting' }), 'connecting');
+  assert.equal(voice.mentorUiState({ ...base, realtime: 'connecting', ended: true }), 'reconnecting',
+    'connecting after a stop is a reconnect');
+  assert.equal(voice.mentorUiState({ ...base, micDenied: true }), 'permission-required',
+    'a refused permission needs the fix, not a retry');
+  assert.equal(voice.mentorUiState({ voice: 'listening', realtime: 'off' }), 'listening');
+  assert.equal(voice.mentorUiState({ voice: 'speaking', realtime: 'off' }), 'speaking');
+  assert.equal(voice.mentorUiState({ voice: 'thinking', realtime: 'off' }), 'thinking');
+  assert.equal(voice.mentorUiState({ voice: 'off', realtime: 'off', busy: true }), 'thinking',
+    'a retrieval in flight is thinking, not idle');
+  assert.equal(voice.mentorUiState({ voice: 'listening', realtime: 'off', muted: true }), 'muted');
+  assert.equal(voice.mentorUiState({ voice: 'off', realtime: 'connected' }), 'listening');
+  assert.equal(voice.mentorUiState({ voice: 'off', realtime: 'connected', muted: true }), 'muted');
+  assert.equal(voice.mentorUiState({ voice: 'off', realtime: 'error' }), 'error');
+  assert.equal(voice.mentorUiState({ voice: 'off', realtime: 'unavailable' }), 'error');
+  assert.equal(voice.mentorUiState({ ...base, ended: true }), 'ended');
+  // A permission problem outranks a busy retrieval: the learner must see the blocker first.
+  assert.equal(voice.mentorUiState({ voice: 'thinking', realtime: 'off', busy: true, micDenied: true }), 'permission-required');
+
+  for (const state of ['idle', 'permission-required', 'connecting', 'listening', 'thinking', 'speaking', 'muted', 'reconnecting', 'error', 'ended']) {
+    assert.ok(voice.mentorStateLabel(state, 'en-IN').trim(), `${state} needs an English label`);
+    assert.notEqual(voice.mentorStateLabel(state, 'en-IN'), voice.mentorStateLabel(state, 'hi-IN'),
+      `${state} must differ between languages`);
+  }
+});
+
+test('voice: a blocked microphone is recognised as permission, not as a generic failure', () => {
+  assert.equal(voice.micPermissionDenied('Microphone permission is blocked. Allow it in the address bar, then press the mic again.'), true);
+  assert.equal(voice.micPermissionDenied('permission denied'), true);
+  assert.equal(voice.micPermissionDenied('No microphone was found.'), false);
+  assert.equal(voice.micPermissionDenied(null), false);
+  assert.equal(voice.micPermissionDenied(undefined), false);
+});

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { authApi, type RealtimeVoiceSession } from '../../core/auth/client';
+import { ONLINE_VOICE_CONSENT_KEY } from '../../core/platform/keys';
 
 /**
  * The optional OpenAI Realtime voice, adapted from the WebRTC flow in
@@ -39,6 +40,12 @@ export interface RealtimeVoice {
   partial: string;
   model: string | null;
   voice: string | null;
+  /**
+   * The learner's explicit consent to send microphone audio to the online provider for a session.
+   * Persisted on this device, false by default, and required by both this hook and the server.
+   */
+  consent: boolean;
+  setConsent: (value: boolean) => void;
   connect: (lang: 'en-IN' | 'hi-IN') => Promise<boolean>;
   disconnect: () => void;
   sendText: (text: string) => void;
@@ -75,6 +82,11 @@ export function useRealtimeVoice(): RealtimeVoice {
   const [partial, setPartial] = useState('');
   const [model, setModel] = useState<string | null>(null);
   const [voice, setVoice] = useState<string | null>(null);
+  const [consent, setConsentState] = useState<boolean>(() => {
+    try { return localStorage.getItem(ONLINE_VOICE_CONSENT_KEY) === '1'; } catch { return false; }
+  });
+  const consentRef = useRef(consent);
+  consentRef.current = consent;
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
@@ -129,7 +141,9 @@ export function useRealtimeVoice(): RealtimeVoice {
     let live = true;
     fetch(STATUS_PATH, { cache: 'no-store' })
       .then((response) => (response.ok ? response.json() : null))
-      .then((payload) => { if (live) setConfigured(payload?.configured === true); })
+      // A configured key behind a disabled switch is not available online voice — the label must
+      // not offer a connection the server will refuse.
+      .then((payload) => { if (live) setConfigured(payload?.configured === true && payload?.enabled !== false); })
       .catch(() => { if (live) setConfigured(false); });
     return () => { live = false; };
   }, [supported]);
@@ -176,7 +190,23 @@ export function useRealtimeVoice(): RealtimeVoice {
     }
   }, [pushTurn]);
 
+  const setConsent = useCallback((value: boolean) => {
+    consentRef.current = value;
+    setConsentState(value);
+    try {
+      if (value) localStorage.setItem(ONLINE_VOICE_CONSENT_KEY, '1');
+      else localStorage.removeItem(ONLINE_VOICE_CONSENT_KEY);
+    } catch { /* private mode: the session then just stays off */ }
+    // Withdrawing consent ends a live session immediately — the audio must stop on the same action.
+    if (!value) disconnect();
+  }, [disconnect]);
+
   const connect = useCallback(async (lang: 'en-IN' | 'hi-IN'): Promise<boolean> => {
+    if (!consentRef.current) {
+      setStatus('off');
+      setError('Turn on "Online AI Voice" to start a live session. The browser voice works without it.');
+      return false;
+    }
     if (!supported) {
       setStatus('unavailable');
       setError('This browser does not support WebRTC audio for the realtime voice. The browser voice still works.');
@@ -190,7 +220,7 @@ export function useRealtimeVoice(): RealtimeVoice {
 
     let session: RealtimeVoiceSession;
     try {
-      session = await authApi.voiceRealtime(lang);
+      session = await authApi.voiceRealtime(lang, true);
     } catch (cause) {
       setStatus('error');
       setError(cause instanceof Error ? cause.message : 'Could not start the realtime voice session.');
@@ -323,6 +353,8 @@ export function useRealtimeVoice(): RealtimeVoice {
     partial,
     model,
     voice,
+    consent,
+    setConsent,
     connect,
     disconnect,
     sendText,

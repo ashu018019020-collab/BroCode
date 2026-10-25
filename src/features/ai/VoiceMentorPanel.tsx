@@ -6,11 +6,13 @@ import {
 } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore } from '../../core/storage/store';
+import { useI18n } from '../../app/i18n';
 import { assistantContextForPage } from '../../core/ai/context';
 import { mentorGreeting } from '../../core/ai/mentor';
 import {
-  MAX_RATE, MIN_RATE, VOICE_LANGS, spokenReply, ttsEngineNote, voiceStatusLabel, voiceSupportNote,
-  type VoiceLangId,
+  MAX_RATE, MIN_RATE, VOICE_LANGS, normalizeVoicePref, resolveVoiceLang, spokenReply,
+  mentorStateLabel, mentorUiState, micPermissionDenied, ttsEngineNote, voiceSupportNote,
+  type VoiceLangId, type VoicePref,
 } from '../../core/ai/voice';
 import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 import { MENTOR_LOG_KEY } from '../../core/platform/keys';
@@ -27,6 +29,13 @@ const STARTERS = [
   'Explain RAG in simple words',
 ];
 
+/** Never translated: these are language names, like the selector's own note in the packs. */
+const PREF_LABELS: Record<VoicePref, string> = {
+  auto: 'Auto (detect)',
+  'en-IN': 'English',
+  'hi-IN': 'Hindi / Hinglish',
+};
+
 /**
  * The Voice Mentor tab.
  *
@@ -42,6 +51,7 @@ const STARTERS = [
  */
 export function VoiceMentorPanel() {
   const location = useLocation();
+  const { t } = useI18n();
   const { sections } = useCurriculum();
   const state = useStore();
   const logKey = useSyncExternalStore(
@@ -60,6 +70,10 @@ export function VoiceMentorPanel() {
   const [draft, setDraft] = useState('');
   const [muted, setMuted] = useState(false);
   const [handsFree, setHandsFree] = useState(false);
+  /** `auto` means "decide per turn from what they typed", never "assume a language". */
+  const [langPref, setLangPref] = useState<VoicePref>('auto');
+  /** A session that has been stopped, so a later connect is reported as a reconnect, not a first try. */
+  const [sessionEnded, setSessionEnded] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
 
   const voiceRef = useRef(voice);
@@ -68,6 +82,8 @@ export function VoiceMentorPanel() {
   mutedRef.current = muted;
   const handsFreeRef = useRef(handsFree);
   handsFreeRef.current = handsFree;
+  const langPrefRef = useRef(langPref);
+  langPrefRef.current = langPref;
   const live = realtime.status === 'connected';
 
   useEffect(() => {
@@ -78,7 +94,11 @@ export function VoiceMentorPanel() {
   const runAsk = useCallback(async (text: string) => {
     const clean = text.trim();
     if (!clean) return;
-    const result = await chat.ask(clean, voiceRef.current.lang);
+    // Resolve the preference for THIS turn, so an English question answered in an otherwise Hindi
+    // conversation still gets English retrieval and an English voice.
+    const lang = resolveVoiceLang(langPrefRef.current, clean);
+    voiceRef.current.setLang(lang);
+    const result = await chat.ask(clean, lang);
     if (!result) {
       toast('The mentor could not answer that. Try the concept name, or type a shorter question.', 'warning');
       return;
@@ -119,13 +139,31 @@ export function VoiceMentorPanel() {
   const connectRealtime = async () => {
     voice.stopListening();
     voice.stopSpeaking();
-    const ok = await realtime.connect(voice.lang);
+    setSessionEnded(false);
+    const lang = resolveVoiceLang(langPref, voice.lang);
+    voice.setLang(lang);
+    const ok = await realtime.connect(lang);
     if (ok) toast('Cloud realtime is connecting. Speak after it says live.', 'info');
+  };
+
+  const endRealtime = () => {
+    realtime.disconnect();
+    setSessionEnded(true);
   };
 
   const activeTurns = live ? realtime.turns : chat.turns;
   const interim = voice.interim || realtime.partial;
-  const status = voiceStatusLabel(voice.status, voice.lang);
+  // ONE state for the whole surface, announced with aria-live below: the learner should never have
+  // to infer "listening" from an animation that runs while nothing is listening.
+  const uiState = mentorUiState({
+    voice: voice.status,
+    realtime: realtime.status,
+    busy: chat.busy,
+    muted,
+    micDenied: micPermissionDenied(voice.error),
+    ended: sessionEnded,
+  });
+  const status = mentorStateLabel(uiState, voice.lang);
   const supportNote = voiceSupportNote(voice.supported);
   const greeting = mentorGreeting('AI Mentor', voice.lang);
 
@@ -247,7 +285,7 @@ export function VoiceMentorPanel() {
           </span>
         </div>
         <div className="mentor-voice-status" aria-live="polite">
-          <b>{live ? 'Live conversation' : status}</b>
+          <b>{status}</b>
           <span className="small muted">
             {live
               ? `${realtime.model ?? 'realtime'} · ${realtime.voice ?? 'voice'}`
@@ -318,10 +356,17 @@ export function VoiceMentorPanel() {
               <label className="small muted" htmlFor="mentor-lang">Language</label>
               <select
                 id="mentor-lang"
-                value={voice.lang}
-                onChange={(event) => voice.setLang(event.target.value as VoiceLangId)}
+                value={langPref}
+                onChange={(event) => {
+                  const pref = normalizeVoicePref(event.target.value);
+                  setLangPref(pref);
+                  if (pref !== 'auto') voice.setLang(pref);
+                }}
+                title={langPref === 'auto' ? 'Each question decides English or Hindi from what you actually typed.' : undefined}
               >
-                {VOICE_LANGS.map((lang) => <option key={lang.id} value={lang.id}>{lang.label}</option>)}
+                {(['auto', 'en-IN', 'hi-IN'] as VoicePref[]).map((id) => (
+                  <option key={id} value={id}>{PREF_LABELS[id]}</option>
+                ))}
               </select>
               <label className="small muted" htmlFor="mentor-rate">Speed</label>
               <div className="row" style={{ gap: 6 }}>
@@ -352,7 +397,7 @@ export function VoiceMentorPanel() {
             <button type="button" className="btn" onClick={realtime.interrupt} aria-label="Interrupt the realtime mentor">
               <Square size={13} /> Interrupt
             </button>
-            <button type="button" className="btn" onClick={() => realtime.disconnect()}>
+            <button type="button" className="btn" onClick={endRealtime}>
               <CloudOff size={13} /> Disconnect
             </button>
           </div>
@@ -376,13 +421,32 @@ export function VoiceMentorPanel() {
                 : 'Checking this server for the optional realtime voice…'}
           </p>
           {realtime.configured === true && !live && (
+            <div className="mentor-consent">
+              <label className="mentor-check small">
+                <input
+                  type="checkbox"
+                  checked={realtime.consent}
+                  onChange={(event) => realtime.setConsent(event.target.checked)}
+                />
+                <span>
+                  <b>{t('ai.onlineVoice.title')}</b> — {t('ai.onlineVoice.consent')}
+                </span>
+              </label>
+              <p className="small muted" style={{ margin: '4px 0 0' }}>{t('ai.onlineVoice.charges')}</p>
+            </div>
+          )}
+          {realtime.configured === true && !live && (
             <button
               type="button"
               className="btn small primary"
               onClick={() => { void connectRealtime(); }}
-              disabled={realtime.status === 'connecting'}
+              disabled={realtime.status === 'connecting' || !realtime.consent}
             >
-              {realtime.status === 'connecting' ? <><Loader2 size={12} className="spin" /> Connecting…</> : <><Cloud size={13} /> Connect realtime</>}
+              {realtime.status === 'connecting'
+                ? <><Loader2 size={12} className="spin" /> Connecting…</>
+                : !realtime.consent
+                  ? <><Cloud size={13} /> {t('ai.onlineVoice.enable')}</>
+                  : <><Cloud size={13} /> Connect realtime</>}
             </button>
           )}
           {live && (

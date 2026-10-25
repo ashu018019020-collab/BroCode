@@ -460,9 +460,9 @@ export const authApi = {
    * Mint a realtime voice session. The server decides the model, voice and instructions; the browser
    * only names the language. Requires a signed-in account (the route returns 401 otherwise).
    */
-  voiceRealtime: (lang: 'en-IN' | 'hi-IN') => request<RealtimeVoiceSession>(
+  voiceRealtime: (lang: 'en-IN' | 'hi-IN', consent: boolean) => request<RealtimeVoiceSession>(
     '/api/voice/realtime/session',
-    { method: 'POST', body: JSON.stringify({ lang }) },
+    { method: 'POST', body: JSON.stringify({ lang, consent }) },
   ),
 
   updateStatus: (id: string, status: AccountStatus) => request<{ ok: true }>(
