@@ -424,8 +424,8 @@ test('layout: header and navigation dock keep the dark glass treatment and raise
 test('layout: the AI assistant is a dark glass island with four responsive quick actions', () => {
   assert.match(assistantCard, /className=\{`assistant\$\{embedded \? ' embedded' : ''\}`\}/,
     'the shared assistant surface must retain its common root');
-  assert.match(assistantCard, /assistant-title"><span>AI<\/span> Assistant/,
-    'the assistant identity must distinguish the blue AI label');
+  assert.match(assistantCard, /assistant-title"><span>BroCode<\/span> AI/,
+    'the assistant identity must highlight the brand word and keep the AI label next to it');
   for (const label of ['Explain', 'Give Hint', 'Solve Doubt', 'Next Topic']) {
     assert.match(assistantCard, new RegExp(`<b>${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}<\\/b>`),
       `the assistant must expose the ${label} action card`);
@@ -457,13 +457,15 @@ test('layout: the AI assistant is a dark glass island with four responsive quick
     'the mobile AI dock must fit the viewport and sit close above the bottom navigation');
   assert.match(css, /@media \(max-width: 780px\) \{[\s\S]*?\.aidock \.assistant-actions \{[\s\S]*?repeat\(2, minmax\(0, 1fr\)\)[\s\S]*?\.aidock \.assistant-action small, \.aidock \.assistant > p\.small \{ display: none; \}/,
     'the mobile AI dock must compact its action cards and supporting copy');
-  assert.match(css, /\.aidock-head \{[\s\S]*?position: sticky; top: -12px; z-index: 5;[\s\S]*?background: linear-gradient/,
-    'the AI dock header must remain visible over the scrollable panel');
-  assert.match(css, /\.aidock-head \.icon-btn \{ flex: none; margin-left: auto; \}/,
+  assert.match(css, /\.aidock \.assistant \.head \{[\s\S]*?position: sticky; top: -14px; z-index: 5;[\s\S]*?background: linear-gradient/,
+    'the one dock header must remain visible over the scrollable panel');
+  assert.match(css, /\.aidock \.assistant-close \{ flex: none; margin-left: auto; \}/,
     'the close button must stay at the right side of the dock header');
   assert.match(aiDock, /open && !window\.matchMedia\('\(max-width: 780px\)'\)\.matches/,
     'mobile dock opening must not auto-scroll its header and actions offscreen');
-  assert.match(aiDock, /onClick=\{onClose\} aria-label="Close the AI panel"/,
+  assert.match(aiDock, /<AssistantCard compact embedded onClose=\{onClose\} \/>/,
+    'the dock hands its close action to the assistant header it renders');
+  assert.match(assistantCard, /onClick=\{onClose\} aria-label="Close the AI panel"/,
     'the sticky X button must still close the AI dock');
 });
 

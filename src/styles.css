@@ -4175,7 +4175,9 @@ the skill's share of the selected source, and how many of its questions are alre
    ============================================================ */
 .aidock {
   position: fixed; right: 14px; bottom: 46px; z-index: 70;
-  width: min(440px, calc(100vw - 28px)); max-height: min(72vh, 580px); overflow-y: auto;
+  /* Tall enough for the context card, the four tiles, both record rows, the trust line AND the
+     composer in one view — the reference layout; a short screen still caps it and scrolls. */
+  width: min(452px, calc(100vw - 28px)); max-height: min(84vh, 768px); overflow-y: auto;
   padding: 12px 12px 10px;
   border: 1px solid rgba(102, 158, 224, .28); border-radius: var(--radius-xl);
   color: #edf5ff; background-color: rgba(7, 15, 30, .97);
@@ -4192,20 +4194,17 @@ the skill's share of the selected source, and how many of its questions are alre
  * 360px the row squeezed "Next Task" to 59px of its 74px content and the label was cut mid-word.
  */
 .aidock .btn { flex: none; }
-.aidock-head {
-  position: sticky; top: -12px; z-index: 5;
-  display: flex; align-items: center; gap: 8px; margin: -12px -12px 8px; padding: 12px;
-  border-bottom: 1px solid rgba(118, 158, 208, .12);
-  background: linear-gradient(155deg, rgba(16, 31, 53, .99), rgba(7, 15, 30, .99));
-  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+/*
+ * The panel's ONLY header is the assistant's own: the dock draws no second bar, so its identity,
+ * live state and close control stay in one row. Sticky, so they remain reachable while a long
+ * answer scrolls instead of disappearing above the fold.
+ */
+.aidock .assistant .head {
+  position: sticky; top: -14px; z-index: 5;
+  padding: 6px 0 9px;
+  background: linear-gradient(180deg, rgba(9, 19, 36, .99) 72%, rgba(9, 19, 36, 0));
 }
-.aidock-ic {
-  flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--radius-sm);
-  color: var(--cyan); background: rgba(34, 211, 238, .12); border: 1px solid rgba(34, 211, 238, .3);
-}
-.aidock-head b { flex: none; }
-.aidock-head .icon-btn { flex: none; margin-left: auto; }
-.aidock-sub { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aidock .assistant-close { flex: none; margin-left: auto; }
 /* Phone: a sheet across the bottom, above the bottom navigation, with the safe-area inset kept. */
 @media (max-width: 780px) {
   .aidock {
@@ -4214,9 +4213,8 @@ the skill's share of the selected source, and how many of its questions are alre
     bottom: calc(32px + env(safe-area-inset-bottom));
     max-height: min(52dvh, 430px); padding: 8px;
   }
-  .aidock-sub { display: none; }
-  .aidock-head { top: -8px; margin: -8px -8px 7px; padding: 8px; }
-  .aidock .assistant { padding: 10px; }
+  .aidock .assistant .head { top: -8px; padding: 2px 0 7px; }
+  .aidock .assistant { padding: 0; }
   .aidock .assistant-subtitle { display: none; }
   .aidock .assistant-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 9px;
@@ -5022,3 +5020,259 @@ the skill's share of the selected source, and how many of its questions are alre
 @media (prefers-reduced-motion: reduce) {
   .mentor-wave b, .voice-wave b, .mentor-orb.speaking .mentor-orb-core, .mentor-mic.listening { animation: none; }
 }
+
+
+/* ---------------------------------------------------------------------------
+ * BroCode AI console — the neon mentor layout
+ *
+ * The panel reads top-down the way the reference does: identity, live agent
+ * state, voice chips, learning context, the four teaching actions, the two
+ * record actions, then the composer. Everything here is presentation; each
+ * control is bound to the engine call it always was.
+ * ------------------------------------------------------------------------- */
+
+.ai-hero {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 11px; padding: 11px 13px;
+  border: 1px solid rgba(56, 189, 248, .20); border-radius: 18px;
+  background:
+    linear-gradient(100deg, rgba(34, 211, 238, .10), rgba(79, 124, 255, .06) 46%, rgba(139, 92, 246, .10)),
+    rgba(9, 20, 38, .72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 0 22px rgba(34, 211, 238, .06);
+}
+.ai-hero-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.ai-hero-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ai-hero-dot {
+  width: 9px; height: 9px; flex: none; border-radius: 50%;
+  background: #45dfa0; box-shadow: 0 0 10px rgba(52, 211, 153, .65);
+}
+.ai-hero.thinking .ai-hero-dot { background: #56b8ff; box-shadow: 0 0 10px rgba(56, 189, 248, .7); }
+.ai-hero.listening .ai-hero-dot { background: #4ade80; box-shadow: 0 0 12px rgba(74, 222, 128, .8); }
+.ai-hero.speaking .ai-hero-dot { background: #a78bfa; box-shadow: 0 0 12px rgba(167, 139, 250, .85); }
+.ai-hero.error .ai-hero-dot { background: #f87171; box-shadow: 0 0 10px rgba(248, 113, 113, .7); }
+.ai-hero-title { font-size: .74rem; font-weight: 750; letter-spacing: .10em; color: #7ef2c8; line-height: 1.2; }
+.ai-hero.thinking .ai-hero-title { color: #8fd6ff; }
+.ai-hero.listening .ai-hero-title { color: #8ff0b3; }
+.ai-hero.speaking .ai-hero-title { color: #c5b3ff; }
+.ai-hero.error .ai-hero-title { color: #ffa9b4; }
+.ai-hero-sub { color: #9db2d2; font-size: .73rem; line-height: 1.4; }
+
+.ai-hero-right { display: flex; align-items: center; gap: 10px; flex: none; }
+.ai-wave { display: inline-flex; align-items: center; gap: 2px; height: 22px; }
+.ai-wave > b {
+  display: block; width: 2px; height: 6px; border-radius: 99px;
+  background: linear-gradient(180deg, #67e8f9, #818cf8);
+  opacity: .45; transition: height .25s ease, opacity .25s ease;
+}
+.ai-hero.is-active .ai-wave > b { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .ai-hero.is-active .ai-wave > b { animation: ai-wave-pulse 1.05s ease-in-out infinite; }
+  .ai-hero.is-active .ai-wave > b:nth-child(2) { animation-delay: .09s; }
+  .ai-hero.is-active .ai-wave > b:nth-child(3) { animation-delay: .18s; }
+  .ai-hero.is-active .ai-wave > b:nth-child(4) { animation-delay: .27s; }
+  .ai-hero.is-active .ai-wave > b:nth-child(5) { animation-delay: .14s; }
+  .ai-hero.is-active .ai-wave > b:nth-child(6) { animation-delay: .05s; }
+  .ai-hero.is-active .ai-wave > b:nth-child(7) { animation-delay: .22s; }
+  .ai-hero.is-active .ai-wave > b:nth-child(8) { animation-delay: .31s; }
+}
+@keyframes ai-wave-pulse {
+  0%, 100% { height: 6px; }
+  50% { height: 20px; }
+}
+.ai-hero-mic {
+  display: inline-flex; align-items: center; gap: 7px; flex: none;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(74, 222, 128, .38); color: #d8ffe9;
+  background: linear-gradient(135deg, rgba(16, 185, 129, .22), rgba(34, 211, 238, .16));
+  box-shadow: 0 0 16px rgba(34, 211, 238, .12), inset 0 1px 0 rgba(255, 255, 255, .16);
+  font-size: .74rem; font-weight: 650;
+  transition: transform .16s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.ai-hero-mic:hover { transform: translateY(-1px); border-color: rgba(94, 234, 212, .6); box-shadow: 0 0 22px rgba(52, 211, 153, .22); }
+.ai-hero-mic.on { border-color: rgba(74, 222, 128, .8); color: #eafff3; box-shadow: 0 0 24px rgba(52, 211, 153, .34), inset 0 1px 0 rgba(255, 255, 255, .2); }
+.ai-hero-mic:focus-visible { outline: 2px solid rgba(83, 213, 255, .85); outline-offset: 2px; }
+
+.ai-context {
+  display: flex; gap: 12px; align-items: flex-start;
+  margin-top: 12px; padding: 11px 13px;
+  border: 1px solid rgba(124, 92, 255, .34); border-radius: 18px;
+  background:
+    linear-gradient(120deg, rgba(76, 29, 149, .18), rgba(8, 18, 34, .82) 40%, rgba(34, 211, 238, .10)),
+    rgba(8, 18, 34, .86);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 0 22px rgba(124, 58, 237, .09);
+}
+.ai-context-icon {
+  width: 46px; height: 46px; flex: none; display: grid; place-items: center;
+  border-radius: 14px; color: #d6c9ff;
+  border: 1px solid rgba(147, 128, 255, .38);
+  background: linear-gradient(145deg, rgba(99, 102, 241, .32), rgba(139, 92, 246, .22));
+  box-shadow: 0 0 18px rgba(124, 58, 237, .22), inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+.ai-context-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1 1 auto; }
+.ai-context-label { color: #93a9cc; font-size: .62rem; font-weight: 700; letter-spacing: .11em; }
+.ai-context-title { color: #f2f7ff; font-size: 1.02rem; font-weight: 720; letter-spacing: -.015em; line-height: 1.25; }
+.ai-context-progress { display: flex; align-items: center; gap: 9px; margin-top: 3px; }
+.ai-context-bar { position: relative; flex: 1 1 auto; height: 6px; border-radius: 99px; overflow: hidden; background: rgba(120, 150, 200, .18); }
+.ai-context-bar > i {
+  display: block; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, #22d3ee, #6366f1 60%, #a855f7);
+  box-shadow: 0 0 12px rgba(99, 102, 241, .55);
+  transition: width .4s ease;
+}
+.ai-context-progress > em { flex: none; color: #67e8f9; font-size: .74rem; font-style: normal; font-weight: 700; }
+.ai-context-stats { color: #9db2d2; font-size: .72rem; line-height: 1.45; overflow-wrap: anywhere; }
+.ai-context-q, .ai-context-err { font-size: .72rem; line-height: 1.45; overflow-wrap: anywhere; }
+.ai-context-q { color: #a8bcd9; }
+.ai-context-err { color: #ffa9b4; }
+
+.assistant-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.assistant-action {
+  position: relative; min-height: 98px; justify-content: flex-start; gap: 5px;
+  padding: 11px 44px 11px 12px; border-radius: 16px;
+}
+.assistant-action-icon {
+  width: 38px; height: 38px; margin-bottom: 2px; border-radius: 12px;
+  background: linear-gradient(150deg, rgba(var(--action-rgb), .26), rgba(var(--action-rgb), .08));
+  box-shadow: 0 0 18px rgba(var(--action-rgb), .16), inset 0 1px 0 rgba(255, 255, 255, .14);
+}
+.assistant-action b { font-size: .92rem; font-weight: 700; letter-spacing: -.01em; }
+.assistant-action small { font-size: .71rem; line-height: 1.4; }
+.assistant-action-go {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  width: 26px; height: 26px; display: grid; place-items: center;
+  border-radius: 50%; color: rgb(var(--action-rgb));
+  border: 1px solid rgba(var(--action-rgb), .40);
+  background: rgba(var(--action-rgb), .12);
+  box-shadow: 0 0 12px rgba(var(--action-rgb), .18);
+  transition: transform .18s ease, box-shadow .2s ease;
+}
+.assistant-action:hover .assistant-action-go { transform: translateY(-50%) translateX(2px); box-shadow: 0 0 16px rgba(var(--action-rgb), .32); }
+
+.ai-pills { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 10px; }
+.ai-pill {
+  display: flex; align-items: center; gap: 9px; min-width: 0; padding: 10px 12px;
+  border: 1px solid rgba(118, 158, 208, .18); border-radius: 14px; cursor: pointer;
+  color: #e6f0ff; background: rgba(11, 24, 43, .78);
+  transition: border-color .2s ease, background-color .2s ease, transform .16s ease;
+}
+.ai-pill:hover { transform: translateY(-1px); border-color: rgba(83, 213, 255, .42); background: rgba(16, 34, 58, .9); }
+.ai-pill:focus-visible { outline: 2px solid rgba(83, 213, 255, .8); outline-offset: 2px; }
+.ai-pill-icon {
+  width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 9px;
+  color: #8fdcff; border: 1px solid rgba(83, 213, 255, .24); background: rgba(56, 189, 248, .10);
+}
+.ai-pill b { flex: 1; min-width: 0; text-align: left; font-size: .8rem; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-pill-go { flex: none; color: #8aa4c6; }
+
+.ai-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.assistant .ai-chips .btn { border-color: rgba(118, 158, 208, .17); color: #b9c9e3; background: rgba(255, 255, 255, .035); }
+.assistant .ai-chips .btn:hover { color: #f2f7ff; border-color: rgba(75, 204, 255, .34); background: rgba(56, 189, 248, .075); }
+
+.assistant-input-div { width: 1px; height: 22px; flex: none; background: rgba(118, 158, 208, .26); }
+.assistant-mic {
+  width: 34px; height: 34px; flex: none; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid rgba(118, 158, 208, .20); border-radius: 10px;
+  color: #9fdcff; background: rgba(56, 189, 248, .07);
+  transition: border-color .2s ease, color .2s ease, background-color .2s ease;
+}
+.assistant-mic:hover { color: #dff4ff; border-color: rgba(83, 213, 255, .45); background: rgba(56, 189, 248, .14); }
+.assistant-mic.on { color: #eafff3; border-color: rgba(74, 222, 128, .7); background: rgba(16, 185, 129, .18); }
+.assistant-mic:focus-visible { outline: 2px solid rgba(83, 213, 255, .85); outline-offset: 2px; }
+
+.ai-foot {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  margin: 10px 0 0; color: #93a9cc !important; font-size: .7rem; line-height: 1.4; text-align: center;
+}
+.ai-foot svg { flex: none; color: #5ad2ff; filter: drop-shadow(0 0 5px rgba(34, 211, 238, .4)); }
+
+.assistant .voice-bar { gap: 7px; margin-top: 12px; }
+.assistant .voice-chip {
+  padding: 8px 13px; border-radius: 999px; font-size: .75rem;
+  border-color: rgba(118, 158, 208, .20); color: #c8d8ee;
+  background: rgba(12, 26, 46, .72);
+}
+.assistant .voice-chip:hover { border-color: rgba(83, 213, 255, .5); background: rgba(18, 38, 62, .9); }
+.assistant .voice-chip.on { border-color: rgba(74, 222, 128, .5); color: #d8ffe9; background: rgba(16, 185, 129, .14); }
+.assistant .voice-more summary { font-size: .68rem; }
+.assistant .voice-error { color: #ffc2cb; }
+
+@media (max-width: 470px) {
+  .assistant-actions { grid-template-columns: 1fr; }
+  .assistant-action { min-height: 96px; }
+  .ai-pills { grid-template-columns: 1fr; }
+  .ai-hero { padding: 11px 12px; }
+  .ai-hero-right { width: 100%; justify-content: space-between; }
+  .ai-context { padding: 12px; }
+  .ai-context-title { font-size: .95rem; }
+  .ai-foot { font-size: .66rem; }
+}
+
+/* The dock IS the panel: the card inside it drops its own chrome so there are not two frames
+   and two headers stacked on top of each other. */
+.aidock { padding: 14px 14px 12px; }
+.aidock .assistant,
+.aidock .assistant.embedded {
+  padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none;
+}
+.aidock .assistant::before,
+.aidock .assistant::after { display: none; }
+
+.assistant-close {
+  width: 28px; height: 28px; flex: none; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid rgba(118, 158, 208, .22); border-radius: 9px;
+  color: #c1d0e7; background: rgba(255, 255, 255, .045); font-size: .72rem; line-height: 1;
+}
+.assistant-close:hover { color: #f2f7ff; border-color: rgba(83, 213, 255, .45); background: rgba(56, 189, 248, .12); }
+.assistant-close:focus-visible { outline: 2px solid rgba(83, 213, 255, .85); outline-offset: 2px; }
+
+/* The hero's state pill (the Speak control is the chip below it — one control, not two). */
+.ai-hero-pill {
+  display: inline-flex; align-items: center; gap: 7px; flex: none;
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid rgba(118, 158, 208, .28); color: #cfe3ff;
+  background: rgba(9, 20, 38, .8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
+  font-size: .74rem; font-weight: 650;
+  transition: border-color .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.ai-hero-pill.on {
+  border-color: rgba(74, 222, 128, .72); color: #eafff3;
+  box-shadow: 0 0 22px rgba(52, 211, 153, .3), inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+
+/* The composer stays reachable: a long answer scrolls, the ask box does not disappear. */
+.aidock .assistant .ask {
+  position: sticky; bottom: -2px; z-index: 4;
+  padding-bottom: 2px;
+  background: linear-gradient(180deg, rgba(9, 19, 36, 0) 0, rgba(9, 19, 36, .96) 18px);
+}
+
+/* `.assistant` clips its own glow, which would also make it the scroll container and defeat the
+   sticky composer. Inside the dock the panel is the scroll container, so let the card overflow. */
+.aidock .assistant { overflow: visible; }
+
+/* Fit check: the dock must show the context card, all four tiles, both record rows and the
+   composer without scrolling on a laptop. Trimmed spacing, not removed content. */
+.aidock .ai-hero { margin-top: 9px; padding: 9px 12px; }
+.aidock .assistant .voice-bar { margin-top: 9px; }
+.aidock .ai-context { margin-top: 9px; padding: 9px 12px; }
+.aidock .assistant-action { min-height: 86px; padding: 9px 42px 9px 11px; gap: 4px; }
+.aidock .assistant-action-icon { width: 34px; height: 34px; border-radius: 11px; }
+.aidock .ai-pills { margin-top: 8px; }
+.aidock .ai-pill { padding: 8px 11px; }
+.aidock .ai-foot { margin-top: 7px; }
+
+/* Second fit pass — the trust line must sit above the fold too, so the dock scrolls by design
+   only for long conversations, never for its own controls. */
+.aidock .assistant .head { padding: 4px 0 6px; }
+.aidock .voice-chip { padding: 5px 9px; }
+.aidock .voice-bar { gap: 6px; }
+.aidock .ai-hero { margin-top: 7px; padding: 7px 11px; }
+.aidock .ai-context { margin-top: 7px; padding: 8px 11px; }
+.aidock .assistant-action { min-height: 70px; padding: 8px 40px 8px 10px; gap: 2px; }
+.aidock .assistant-action-icon { width: 31px; height: 31px; border-radius: 10px; }
+.aidock .assistant-action h4 { font-size: .9rem; }
+.aidock .ai-pills { margin-top: 6px; }
+.aidock .ai-pill { padding: 7px 10px; }
+.aidock .ai-foot { margin-top: 5px; }
+.aidock .voice-more { margin-top: 0; }
