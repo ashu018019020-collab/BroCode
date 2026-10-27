@@ -243,6 +243,76 @@ async function request<T>(path: string, init: RequestInit = {}, session?: Sessio
   return body;
 }
 
+/**
+ * A structured result instead of a thrown error, for surfaces that must DEGRADE rather than stop.
+ *
+ * The AI interviewer is the first caller: when the account API is not deployed beside the static
+ * site, the answer is `api-unreachable` and the page falls back to its offline rubric. That is a
+ * normal outcome here, not an exception to bubble into an error boundary. `code` is the server's
+ * own machine-readable reason (`ai-unconfigured`, `ai-rate-limited`, …) when it sent one.
+ */
+export type ApiJsonResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; status: number; code: string | null; message: string };
+
+export async function apiJson<T>(
+  path: string,
+  body: unknown,
+  opts: { timeoutMs?: number } = {},
+): Promise<ApiJsonResult<T>> {
+  let token: string | undefined;
+  try {
+    const { data } = await getSupabaseClient().auth.getSession();
+    token = data.session?.access_token;
+  } catch {
+    token = undefined;
+  }
+  if (!token) {
+    return { ok: false, status: 401, code: 'signed-out', message: 'Sign in to use this feature.' };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), Math.max(2000, opts.timeoutMs ?? 15_000));
+  try {
+    const response = await fetch(path, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    // A static host answers an unknown path with its HTML 404 page. That is "no API here", not a
+    // malformed API reply, and the caller must be able to tell the learner exactly that.
+    if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
+      return {
+        ok: false,
+        status: response.status,
+        code: 'api-unreachable',
+        message: `The account API answered HTTP ${response.status} without JSON.`,
+      };
+    }
+    const payload = await response.json().catch(() => null) as { error?: string; code?: string } | null;
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        code: payload?.code ?? null,
+        message: payload?.error ?? `Request failed (${response.status}).`,
+      };
+    }
+    return { ok: true, data: payload as T };
+  } catch (error) {
+    const aborted = error instanceof Error && error.name === 'AbortError';
+    return {
+      ok: false,
+      status: 0,
+      code: aborted ? 'timeout' : 'network',
+      message: aborted ? 'The request timed out.' : 'The account API could not be reached.',
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchCurrentUser(session: Session): Promise<SessionResolution> {
   // Server-verified profile when the account API is reachable: role comes from the database, so a
   // ban or promotion takes effect immediately instead of waiting for the token to refresh. The same

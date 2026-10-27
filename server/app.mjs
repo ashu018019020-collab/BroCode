@@ -3,6 +3,11 @@ import { listAllAuthUsers } from './supabase.mjs';
 import { projectBrief } from './project-brief.mjs';
 import { TTS_LANGS, TTS_MAX_CHARS, synthesizeGoogleTts } from './voice.mjs';
 import {
+  INTERVIEW_DEFAULT_MODEL,
+  evaluateInterviewAnswer,
+  validateEvaluationBody,
+} from './interview.mjs';
+import {
   DEFAULT_REALTIME_MODEL,
   DEFAULT_REALTIME_VOICE,
   REALTIME_LANGS,
@@ -237,6 +242,14 @@ export function createAuthServer({
   openaiRealtimeModel = process.env.OPENAI_REALTIME_MODEL ?? DEFAULT_REALTIME_MODEL,
   openaiRealtimeVoice = process.env.OPENAI_REALTIME_VOICE ?? DEFAULT_REALTIME_VOICE,
   createRealtimeSecret = createRealtimeClientSecret,
+  // The AI INTERVIEW EVALUATOR is text-only and independent of the realtime voice switch: a
+  // deployment can run a written interviewer without minting live audio sessions. It reuses the
+  // same server-only key; the browser never sees either value.
+  openaiInterviewKey = process.env.OPENAI_API_KEY ?? '',
+  interviewModel = process.env.INTERVIEW_MODEL ?? INTERVIEW_DEFAULT_MODEL,
+  evaluateInterview = evaluateInterviewAnswer,
+  interviewMaxRequests = envPositiveInt(process.env.INTERVIEW_REQUESTS_PER_WINDOW, 20),
+  interviewWindowMs = envPositiveInt(process.env.INTERVIEW_WINDOW_MINUTES, 10) * 60 * 1000,
   // The grounded description of THIS deployment's curriculum, handed to the live agent so it names
   // real sections instead of guessing. Empty when the generated file is unreadable — the session
   // then runs with the plain teaching contract, exactly as before.
@@ -323,6 +336,28 @@ export function createAuthServer({
     }
     hits.push(at);
     ttsHits.set(clientKey, hits);
+    return true;
+  }
+
+  /**
+   * One evaluation is one paid model call, so it gets its own budget: twenty per ten minutes per
+   * account+address. That is a full round of ten questions with retries; a loop is what it stops.
+   */
+  const interviewHits = new Map();
+  function interviewAllowed(clientKey) {
+    const at = now();
+    const hits = (interviewHits.get(clientKey) ?? []).filter((stamp) => at - stamp < interviewWindowMs);
+    if (interviewHits.size > 5000) {
+      for (const [key, stamps] of interviewHits) {
+        if (!stamps.length || at - stamps[stamps.length - 1] >= interviewWindowMs) interviewHits.delete(key);
+      }
+    }
+    if (hits.length >= interviewMaxRequests) {
+      interviewHits.set(clientKey, hits);
+      return false;
+    }
+    hits.push(at);
+    interviewHits.set(clientKey, hits);
     return true;
   }
 
@@ -468,6 +503,59 @@ export function createAuthServer({
           if (error?.code === 'voice-bad-lang') throw new HttpError(400, 'That voice language is not supported.');
           logger.warn?.('Google TTS request failed.', error?.code ?? error?.name ?? 'unknown');
           throw new HttpError(502, 'The Google voice service is unavailable. The browser voice will be used.');
+        }
+      }
+
+      // The AI interviewer's evaluator. Text only: one question, one answer, one validated
+      // evaluation. The answer text is never logged, and an unconfigured key is a 503 the client
+      // understands (it falls back to the deterministic rubric), not a 500.
+      if (request.method === 'POST' && url.pathname === '/api/interview/evaluate') {
+        ensureSameOrigin(request, allowedOrigin);
+        const user = await requireUser(request);
+        if (!openaiInterviewKey) {
+          json(response, 503, {
+            error: 'The AI evaluator is not configured on this server. The offline rubric will be used.',
+            code: 'ai-unconfigured',
+          }, headers);
+          return;
+        }
+        const clientKey = `${user.profile.id}:${request.socket?.remoteAddress ?? 'unknown'}`;
+        if (!interviewAllowed(clientKey)) {
+          throw new HttpError(429, 'Too many AI evaluations. Try again in a few minutes — the offline rubric still works.');
+        }
+        const input = await readJson(request);
+        const check = validateEvaluationBody(input);
+        if (!check.ok) throw new HttpError(check.status, check.message);
+        try {
+          const result = await evaluateInterview({
+            apiKey: openaiInterviewKey,
+            model: interviewModel,
+            value: check.value,
+          });
+          json(response, 200, { evaluation: result.evaluation, model: result.model, source: 'ai' }, headers);
+          return;
+        } catch (error) {
+          if (error?.code === 'ai-rate-limited') {
+            json(response, 429, {
+              error: 'The AI evaluator is rate-limited. Try again shortly — the offline rubric still works.',
+              code: 'ai-rate-limited',
+            }, headers);
+            return;
+          }
+          if (error?.code === 'ai-bad-response') {
+            logger.warn?.('AI interview evaluation was malformed.', 'ai-bad-response');
+            json(response, 502, {
+              error: 'The AI evaluator returned an unusable reply. The offline rubric will be used.',
+              code: 'ai-bad-response',
+            }, headers);
+            return;
+          }
+          logger.warn?.('AI interview evaluation failed.', error?.code ?? error?.name ?? 'unknown');
+          json(response, 502, {
+            error: 'The AI evaluator is unavailable. The offline rubric will be used.',
+            code: 'ai-unavailable',
+          }, headers);
+          return;
         }
       }
 

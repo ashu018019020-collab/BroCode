@@ -155,7 +155,7 @@ export default function InterviewsHub() {
           const on = selected?.id === s.range.id;
           const pct = s.total > 0 ? Math.round((s.done / s.total) * 100) : null;
           return (
-            <Link key={s.range.id} to={`/interviews?subject=${s.range.id}`} className={`tile${on ? ' on' : ''}`}>
+            <Link key={s.range.id} to={`/interview-mode?subject=${s.range.id}`} className={`tile${on ? ' on' : ''}`}>
               <span className="ic"><Icon size={18} /></span>
               <span className="t" style={{ flex: 1, minWidth: 0 }}>
                 <b>{t(d.nameKey as LocaleKey)} Interview</b>

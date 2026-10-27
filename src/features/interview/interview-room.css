@@ -1,0 +1,144 @@
+/* The Interview Room workspace — scoped styles, no redesign of any other page. */
+
+.iv-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.iv-brand h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iv-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.iv-mode {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.iv-mode:hover { border-color: rgba(34, 211, 238, 0.35); transform: translateY(-1px); }
+.iv-mode:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.iv-mode.on {
+  border-color: var(--cyan);
+  background: rgba(34, 211, 238, 0.09);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.22) inset;
+}
+
+.iv-live-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .iv-live-grid { grid-template-columns: 1fr; }
+}
+
+.iv-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  background: rgba(34, 211, 238, 0.06);
+  color: var(--cyan);
+}
+
+.iv-dots { display: inline-flex; gap: 4px; }
+.iv-dots i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  animation: iv-blink 1.1s ease-in-out infinite;
+}
+.iv-dots i:nth-child(2) { animation-delay: 0.16s; }
+.iv-dots i:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes iv-blink {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+
+.iv-wave { display: inline-flex; align-items: flex-end; gap: 3px; height: 16px; }
+.iv-wave i {
+  width: 3px; height: 5px; border-radius: 2px;
+  background: var(--cyan);
+  animation: iv-wave 900ms ease-in-out infinite;
+}
+.iv-wave i:nth-child(2) { animation-delay: 120ms; }
+.iv-wave i:nth-child(3) { animation-delay: 240ms; }
+.iv-wave i:nth-child(4) { animation-delay: 360ms; }
+
+@keyframes iv-wave {
+  0%, 100% { height: 4px; opacity: 0.6; }
+  50% { height: 16px; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iv-dots i, .iv-wave i { animation: none; }
+}
+
+.iv-eval {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  background: rgba(34, 211, 238, 0.055);
+  animation: iv-rise 260ms ease-out;
+}
+
+.iv-eval-bad {
+  border-color: rgba(248, 113, 113, 0.38);
+  background: rgba(248, 113, 113, 0.06);
+}
+
+@keyframes iv-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iv-eval { animation: none; }
+}
+
+.iv-score {
+  font-size: 42px;
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--cyan);
+}
+
+.iv-score .small { font-size: 14px; font-weight: 600; color: var(--muted); }
+
+.iv-list { margin: 4px 0 10px 18px; padding: 0; }
+.iv-list li { margin: 2px 0; }
+
+.iv-topic {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
