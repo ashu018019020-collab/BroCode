@@ -1,376 +1,266 @@
-# AI ENGINEER MASTER LAB
+<p align="center">
+  <img src="public/brocode.png" alt="BroCode logo" width="88" />
+</p>
 
-> Learn → Code → Practice → Build → Master
+<h1 align="center">BroCode</h1>
 
-A **premium AI Python learning platform** built from
-**Python_Complete_Guide_AI_Engineer_SMART_SECTION_REBUILD_V5_2026.pdf** (457 pages).
-The PDF is the primary source of truth: all 29 sections, interview Q&A, coding/logic/debug
-tasks, solved practice, mini projects, project labs, checkpoints and mock interviews were
-extracted from it and transformed into an interactive curriculum — nothing is invented.
+<p align="center">
+  <strong>The complete technology learning platform.</strong><br />
+  Learn the theory, run the code, practise the questions, and prepare for the interview — in one browser tab.
+</p>
 
-## What's inside
+<p align="center">
+  <a href="https://mybrocode.vercel.app/"><img alt="Live demo" src="https://img.shields.io/badge/live_demo-mybrocode.vercel.app-22d3ee?style=for-the-badge" /></a>
+  <a href="https://github.com/ashu018019020-collab/BroCode"><img alt="Source code" src="https://img.shields.io/badge/source-GitHub-181717?style=for-the-badge&logo=github" /></a>
+</p>
 
-- **8-pillar learning navigation** — the sidebar *is* the learning journey: Dashboard, Learning,
-  Practice, Labs, Projects, Interview, Career, Progress — then a labelled Tools group (Notes, Cheat
-  Sheets, PDF Reader, Settings). Each pillar is a hub page that indexes the real screens behind it
-  (Question Bank, Playbook V15, Timed Exam, Mock Interviews, Notebook/SQL/AI labs, Resume Labs, Job
-  Prep, …) and every card shows a figure taken from the engine or manifest that owns it — no
-  marketing numbers, ever.
-- **Jupyter notebooks everywhere** — coding practice in every lesson stage (Learn, Coding
-  Lab, Debug, Mini Project, Project Lab, Final Assessment) and in the authored 16-part topic
-  workspace happens in a notebook panel, not a single code box: cells share one kernel session
-  per notebook, imports carry down the page, output is real stdout, `In [n] / Out [n]` numbering
-  and a live kernel-variable panel make the session visible, and a failing cell opens an Errors
-  tab plus a local AI Explanation with a progressive hint ladder. The same notebooks run
-  from the **Notebook Lab**, from the Learning Path, and inline inside any lesson whose section
-  has an authored notebook.
-- **AI Python Learning Studio (Code Playground)** — a VS Code-style IDE (Monaco editor, file
-  explorer, Program Input, Output Console, local AI Tutor, honest package manager) with real
-  in-browser Python (bundled Pyodide, NumPy + pandas wheels included).
-- **Error intelligence** — tracebacks are parsed to file/line/column, the exact line is
-  highlighted in the editor (and named in the notebook's Errors tab), and a teaching card
-  explains the mistake in clear English, with optional Hinglish when that language is selected,
-  plus hints and a one-click Fix It where derivable. A notebook cell can file the failure straight
-  into the Mistake Tracker.
-- **Learning dashboard + roadmap** — 8 tracks (Python Core → Interview + Projects) mapped
-  onto the 29 PDF sections, with prerequisite gates, real XP/levels, streaks, daily
-  mission, mistake tracker and spaced review.
-- **English-first i18n** — English is the permanent default for every new visitor; Hinglish is an
-  optional, explicitly selected alternative. The choice is persisted locally and missing translations
-  always fall back to English.
-- **Self-contained build** — Monaco, icons, fonts, the Python runtime, SQL engine, datasets and
-  the PDF are bundled, so the learning surfaces do not depend on a CDN. The optional account,
-  hosted voice and AI evaluation are the network features, and each says so in the UI.
+<p align="center">
+  <img alt="React 18" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white" />
+  <img alt="Vite 5" src="https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white" />
+  <img alt="TypeScript 5.5" src="https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript&logoColor=white" />
+  <img alt="Supabase authentication" src="https://img.shields.io/badge/Auth-Supabase-3ECF8E?logo=supabase&logoColor=white" />
+  <img alt="Python in the browser" src="https://img.shields.io/badge/Python-in%20the%20browser-3776AB?logo=python&logoColor=white" />
+  <img alt="Node 18 or newer" src="https://img.shields.io/badge/Node-18%2B-339933?logo=nodedotjs&logoColor=white" />
+</p>
 
-## Requirements
+<p align="center">
+  <a href="https://mybrocode.vercel.app/">
+    <img src="public/brocode-og.png" alt="BroCode — complete technology learning platform with 36 steps, 11 courses, 13,000+ questions and runnable labs" width="100%" />
+  </a>
+</p>
 
-- Node.js 18+ (LTS 22 recommended) — one-time install, needs internet
-- A modern browser (Chrome/Edge/Firefox). Python, SQL, PDF rendering all run **inside** the browser.
+## What is BroCode?
 
-## Install & run
+**BroCode** is an online learning platform for programming, data, AI/ML, and interview preparation. It pairs a structured curriculum with real, runnable environments: Python and NumPy/pandas execute in the browser through Pyodide, SQL runs on SQLite compiled to WebAssembly, and a PDF reader keeps the source material one click away.
+
+Everything on the learning path is authored from a single 457-page AI-engineer guide, then published as data the app renders — so the chapters, questions, labs, and projects stay in sync with the material they came from.
+
+**At a glance**
+
+| | |
+|---|---|
+| Curriculum | 29 chapters across 8 learning tracks, organised as **11 courses / 36 numbered steps** |
+| Question bank | **13,865** questions across 29 chapter banks (interview, coding, debug, logic, theory, solved, defense, checkpoint) |
+| Drills | **476** playbook items, plus timed exams and **39** mock-interview questions in 4 rounds |
+| Interview Room | 8 subjects, 6 round types, 3 difficulty levels, voice questions, answer transcription, AI evaluation, session report |
+| Runtime | Python 3.12 + NumPy + pandas, SQLite, pdf.js — all bundled, no CDN |
+| Language | English by default, Hinglish available |
+
+> **An account is required.** BroCode has no guest mode. Email + password sign-in is handled by Supabase, and progress is saved locally and synced to your account.
+
+## Quick links
+
+| Link | What it opens |
+|---|---|
+| [Live demo](https://mybrocode.vercel.app/) | The deployed platform |
+| [Interview Room](https://mybrocode.vercel.app/#/interview-mode) | Pick a subject, configure a round, start |
+| [Practice](https://mybrocode.vercel.app/#/practice) | Tracks → chapters → question bank |
+| [Question Bank](https://mybrocode.vercel.app/#/questions) | Every stored question, filterable |
+| [AI Mentor](https://mybrocode.vercel.app/#/ai-mentor) | Voice-first mentor and coding coach |
+| [Notebook Lab](https://mybrocode.vercel.app/#/notebooks) | Jupyter notebooks on the bundled Python runtime |
+| [Career](https://mybrocode.vercel.app/#/career) | Job-readiness gates, resume answers, next action |
+| [Docs](docs/) | Architecture, security, authentication, content pipeline, voice |
+
+## What you can do
+
+| Area | What is actually there |
+|---|---|
+| **Learn** | 36 steps numbered across 11 courses; each step carries concepts, interview Q&A, coding/debug/logic tasks, mini projects, a project lab, checkpoints, and mastery gates |
+| **Practise** | The 13,865-question bank is the single source: the Question Bank, section lists, stage tiles, mistake tracker, and the Interview Room all read the same records, so an answer marked in one place is marked everywhere |
+| **Run code** | A VS Code-style playground (Monaco + Pyodide), Jupyter notebooks with a shared kernel per notebook, a SQL lab on sql.js, and a full PDF reader — with traceback parsing and a teaching card instead of a raw stack trace |
+| **Interview** | Voice-enabled rounds with real AI evaluation, corrective teaching, and a report built from the answers you actually gave |
+| **Career** | Readiness is measured from real records — stage gates, resume answers, checklist ticks, project defenses — not from a self-rating |
+| **Ask** | The AI mentor retrieves from the bundled curriculum and cites where its answer came from; it works without any API key. Optional hosted voice and evaluation are labelled where they appear |
+| **Track progress** | XP, levels, streaks, daily mission, spaced review, mistakes, notes, bookmarks — stored locally, synced to your account, exportable as JSON |
+
+## The Interview Room
+
+The Interview Room is the part that behaves most like a real interview, so its rules are explicit:
+
+1. **Pick a subject** — Python Core, NumPy + Pandas, SQL, ML + NLP, GenAI, Agentic AI, APIs + Production, or Interview + Projects. Each card opens its own setup screen, not a filtered copy of the hub.
+2. **Configure the round** — Technical, Coding, Project-Based, HR, Mock, or Timed; Beginner, Intermediate, or Advanced; 3, 5, 10 questions, or **All Questions**.
+3. **Answer** — type, or dictate with the microphone. The transcript lands in an editable box; nothing is submitted for you, and a partial answer is never auto-sent.
+4. **Get marked** — the evaluator returns a structured verdict: score, status (correct / partially correct / incorrect / needs clarification), technical accuracy, concepts you showed, concepts missing, specific mistakes, evidence quoted from your answer, an explanation, an improved model answer, a next step, and a follow-up.
+5. **Hear the correction** — the question and the feedback are spoken with the best available female voice (Google Neural2 when the server key is configured, otherwise the best browser voice). Speed and English/Hinglish are selectable.
+6. **Finish with a report** — overall score, answered vs planned, correct/partial/incorrect, accuracy, per-topic averages, strongest and weakest topics, revision concepts, practice recommendations, and every answer expandable for review.
+
+**All Questions means all of them.** The setup screen shows how many stored questions match the round type; when the round starts, every chapter bank in the subject is loaded, the exact eligible set for your level is measured, de-duplicated by question id, and tracked to the end. A round never stops silently after five questions. If a subject has nothing for that combination, the room says so and offers recovery instead of inventing a question. AI follow-ups are shown as follow-ups and never replace a required question.
+
+**Honest boundaries**
+
+- AI evaluation needs `OPENAI_API_KEY` on the server. Without it the room still works and labels the result **Built-in rubric** — it does not pretend a model marked you.
+- Speech recognition uses the browser's Web Speech API. It is available in Chromium-based browsers; elsewhere the room says so and text input works exactly the same.
+- Answers are written to the canonical question-bank records (`qb:<question id>`). The end-of-session report is recomputed from that sitting; saved report history is not implemented yet (see the roadmap).
+
+## Architecture
+
+```mermaid
+flowchart LR
+  C["content/ — authored sources"] --> G["scripts/ — generators (dry run by default)"]
+  G --> P["public/generated/ — published JSON"]
+  P --> A["React app (Vite, HashRouter)"]
+  A --> R["Browser runtimes: Pyodide · sql.js · pdf.js"]
+  A --> L[("localStorage progress")]
+  A -->|signed-in only| API["Node API server (server/)"]
+  API --> SA[("Supabase Auth")]
+  API --> DB[("Postgres + Prisma — optional")]
+  API --> H["Hosted AI + TTS — optional, server-side keys"]
+```
+
+`content/` is the only authored source. `public/generated/` is build output and is never hand-edited; the two largest artifacts (the search index and the compressed AI knowledge file) are asserted byte-for-byte against their generators by the test suite.
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| UI | React 18.3, React Router 6.26 (hash routing), TypeScript 5.5, hand-written CSS, Lucide icons |
+| Build | Vite 5.4, single-page static output (`dist/`) |
+| Editors & runtimes | Monaco 0.56, Pyodide 0.26 with NumPy and pandas wheels, sql.js (SQLite WASM), pdf.js 3.11 |
+| Accounts & data | Supabase Auth (email + password), optional Postgres via Prisma 6.19 for progress history |
+| API | Node.js HTTP server (`server/index.mjs`), no web framework, `.env`-driven |
+| AI (optional) | Retrieval over the bundled corpus for the mentor; OpenAI-compatible chat completions for interview evaluation; Google Cloud TTS or OpenAI Realtime for premium voice |
+| Tests | Node's built-in test runner (`node --test`) — no test framework dependency |
+
+## Run it locally
+
+**Requirements:** Node.js 18+ (LTS 22 recommended) and a modern browser. No Python, database, or cloud account is needed just to open the app and learn locally.
 
 ```bash
+git clone https://github.com/ashu018019020-collab/BroCode.git
+cd BroCode
 npm install
-npm run dev        # http://localhost:5173
+cp .env.example .env     # fill in the Supabase values to enable sign-in
+npm run dev              # http://localhost:5173
 ```
 
-Production:
+The API (accounts, progress sync, voice and AI endpoints) is a separate process:
 
 ```bash
+npm run dev:api          # http://localhost:8787
+```
+
+`vite.config.ts` proxies `/api` to `localhost:8787`, so run both terminals during development. A production build:
+
+```bash
+npm run build            # writes dist/
+npm run preview          # serves the built app on http://localhost:4173
+```
+
+Without `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, the app is **unconfigured by design**: it says sign-in is unavailable rather than granting access without a session.
+
+## Environment variables
+
+Copy `.env.example` to `.env`. The split is a security boundary, not a style choice.
+
+| Variable | Scope | Purpose |
+|---|---|---|
+| `VITE_SUPABASE_URL` | Browser | Supabase project URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser | Publishable (anon) key — safe to ship |
+| `SUPABASE_URL` | Server | Same project, for token verification |
+| `SUPABASE_PUBLISHABLE_KEY` | Server | Verifies the caller's bearer token |
+| `SUPABASE_SECRET_KEY` | Server | Service-role key — full project access, never expose |
+| `DATABASE_URL`, `DIRECT_URL` | Server | Optional Postgres for progress history (`npm run db:deploy`) |
+| `WEB_ORIGIN`, `API_PORT` | Server | Allowed web origin (HTTPS in production) and API port |
+| `GOOGLE_TTS_API_KEY` | Server | Optional premium female voice; falls back to the browser voice |
+| `OPENAI_API_KEY` | Server | Optional Realtime voice and interview answer evaluation |
+| `INTERVIEW_MODEL`, `INTERVIEW_REQUESTS_PER_WINDOW`, `INTERVIEW_WINDOW_MINUTES` | Server | Evaluator model and rate limits |
+| `BOOTSTRAP_ADMIN_EMAIL` | Server | The one account `npm run bootstrap:admin` may promote |
+
+**Never prefix a secret with `VITE_`.** Anything with that prefix is inlined into the JavaScript the browser downloads. `.env` is gitignored; rotate any key that is ever exposed.
+
+## Useful scripts
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Vite dev server |
+| `npm run dev:api` | Account/AI API server |
+| `npm run build` | Production build into `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run typecheck` | `tsc --noEmit` (strict) |
+| `npm test` | Full suite on Node's test runner |
+| `npm run doctor` | Checks Node, project files, bundled runtimes and dependencies |
+| `npm run db:deploy` | Apply Prisma migrations (optional Postgres) |
+| `npm run questions:manifest` | Rebuild the question-bank manifest |
+| `npm run course:audit` | Read-only audit of courses, refs and duplicates |
+| `npm run ai:index:write` | Publish the assistant's knowledge index |
+| `npm run sitemap:write` | Regenerate `public/sitemap.xml` from the route table |
+| `npm run og:write` | Re-render the social card (needs a local Chrome/Edge) |
+
+Content commands are **dry runs by default**; `--write` publishes. Before regenerating anything downstream of `sections.json`, follow [docs/CONTENT-PIPELINE.md](docs/CONTENT-PIPELINE.md) — the pipeline runs in a fixed order.
+
+## Testing and quality
+
+```bash
+npm run typecheck
+npm test
 npm run build
-npm run preview    # http://localhost:4173
 ```
 
-For a plain static host (nginx/IIS/USB stick), serve the `dist/` folder after `npm run build`.
+At the time of writing the suite has **681 tests** covering the curriculum, question banks, generated artifacts, authentication gate, theme contrast, the interview engine, the AI index lineage, and the server-side evaluator (with an injected provider, so no network is used). There is no linter, formatter, or CI — those three commands are the gate, and generated artifacts are checked against their generators rather than reviewed by eye.
 
-## Project structure
+## Deployment
 
-| Path | What it is |
-|---|---|
-| `src/app/` | The shell: `App.tsx` (routes + the sidebar `NAV`, which is also the label/icon source for every card), `main.tsx`, `i18n/` |
-| `src/core/learning/` | Pure logic: mastery gates, the roadmap, spaced review, coverage counts, the study log, the Learning Path card registry |
-| `src/core/assessment/` | Pure logic: keyword rubrics & output checks, exam papers, interview scoring, accuracy, the Learning Path card registry |
-| `src/core/ai/` | The local assistant: page-aware retrieval over the generated lesson/question/project index, tutor hints, progress coaching, and strict app facts |
-| `src/core/platform/` | `keys.ts` (the only owner of persisted-key shapes), command-palette search, notifications, achievements, count-up maths |
-| `src/core/storage/` | `store.ts` — the single owner of `AppState` and the only module that touches `localStorage` — plus UI/exam prefs |
-| `src/core/data/` | Data access: loaders/adapters for curriculum, questions, playbook, notebooks, tracks and the lazy AI knowledge index — fetches `public/generated/`. No JSON lives under `src/`; the authored source is `content/` |
-| `src/features/` | The screens, grouped by pillar: `dashboard`, `learning`, `practice`, `labs`, `projects`, `interview`, `career`, `progress`, `tools` |
-| `src/components/` | Shared UI, the editors (`MonacoIDE`, `JupyterNotebook`) and the card grids (`PathGrid`, `HubGrid`) |
-| `content/` | **Authored source**: curriculum sections, guides/packs/topics, question banks, playbook source, notebooks |
-| `public/generated/` | **Build output** published by the scripts, including compressed `ai/knowledge.json.gz` — never hand-edited |
-| `scripts/`, `tools/` | The generators (dry-run by default, `--write` publishes) and the test suite that holds them to it |
+- **Static frontend:** `npm run build` produces `dist/`, which can be served from any static host. The live demo runs on Vercel at <https://mybrocode.vercel.app/>. `base: './'` keeps asset URLs working under a subpath.
+- **API:** accounts, progress sync, hosted voice, and interview evaluation run in the separate Node API (`server/index.mjs`). Deploy it on a Node host, set the server-only variables there, and point `WEB_ORIGIN` at the deployed frontend (HTTPS required in production; requests from other origins are refused).
+- **Without the API,** the static app still teaches, runs Python/SQL/PDF locally, and evaluates interviews with the built-in rubric. The UI labels the hosted features rather than hiding the gap.
+- **Canonical origin:** the `<link rel="canonical">`, Open Graph URLs, `public/sitemap.xml`, and `public/robots.txt` share one origin defined in `index.html`/`scripts/sitemap.cjs`. Change them together if you move the site.
 
-## Bundled runtimes
-
-The heavy runtimes execute locally in the browser — no CDN and no external font or asset host:
-
-| Capability | Bundled runtime (local files in `public/`) |
-|---|---|
-| Python 3.12 + numpy + pandas | `public/pyodide` (Pyodide WASM + filtered wheel set, ~48 MB) |
-| SQL (SQLite) | sql.js WASM in `public/sqljs` |
-| PDF reader | pdf.js + worker in `public/pdf`, source PDF in `public/pdf/` |
-| Curriculum + search | `public/generated/curriculum/*.json` (extracted from the PDF) |
-| BroCode AI knowledge | `public/generated/ai/knowledge.json.gz` (2.5 MB compressed, loaded on first question; local retrieval only) |
-| Datasets | students, sales, customers, employees, expenses, chat_logs (in-app) |
-
-A service worker (`public/sw.js`, cache `aiml-v6`) caches the app shell and assets at
-runtime, so a reload is served from that cache when the network is slow or unavailable. Install
-as a PWA from the browser menu for a standalone window; signing in and the optional hosted AI
-features still need a connection.
-
-Notes:
-- Refresh the assistant corpus with `npm run ai:index` (dry run) or `npm run ai:index:write` (publish). It is derived from the published curriculum, question banks, playbook, tracks, courses, notebooks and career registries; it does not call a hosted model or include learner records.
-- The service worker never caches HTML responses under asset paths (prevents a poisoned
-  cache if a file is temporarily missing).
-- GenAI/Agentic labs are **simulations** (deterministic, in-browser). Optional hosted features
-  are labeled where they appear.
-
-## Python runtime setup
-
-Nothing to do: the worker loads `pyodide.mjs` from its local folder (path resolved against
-the site base URL, so it works in dev, preview and any static host). First run takes
-~30–60 s to unpack the runtime; afterwards it is served from cache. `input()` reads from
-the "Program input" box under the notebook cells (one value per line).
-
-## SQL runtime setup
-
-Nothing to do: sql.js is imported from npm and loads its `.wasm` from `public/sqljs`.
-
-## Diagnostics
-
-```bash
-npm run doctor
-```
-
-Checks Node/npm, required project files, bundled runtime assets (Pyodide, SQLite WASM,
-curriculum, PDF), dependencies (and rejects cloud/online packages), and storage setup.
-Every line reports ✓ ready, ⚠ warning, or ✕ missing.
-
-## Language system
-
-**English is the official default.** A visitor with no saved choice gets English immediately — the
-app never guesses from the browser language. The `English | Hinglish` switch on Settings (also in the
-quick-actions menu) changes the interface in place and stores the explicit choice;
-returning users get the language they picked, and every missing translation falls back to English.
-
-`src/app/i18n/` holds the packs: `locales.ts` (English + Hinglish dictionaries, keyed) and
-`index.tsx` (`I18nProvider`, `useI18n().t`, instant switch, `localStorage` persistence, English
-fallback for missing keys). Adding strings: add the key to `en` first, then translate in `hinglish`.
-UI labels and app-generated copy live in the packs/source; lesson prose is PDF-authored and is being
-translated in reviewed batches (see `docs/LOCALIZATION-GUIDE.md`).
-
-## AI Mentor, Coding Coach & Spoken Interview
-
-The AI studio at `/#/ai-mentor` adds a voice-first mentor, a diagnostics-driven coding coach inside
-the Playground, and a spoken mock-interview round with scorecards and history. All answers, code
-evidence and scores come from the bundled curriculum and the existing in-browser runners; the optional
-OpenAI Realtime voice needs a server-side key, is rate-limited, and falls back to the browser voice.
-Architecture, provider setup, security rules and known limits: **[docs/AI-VOICE.md](docs/AI-VOICE.md)**.
-
-## Adding bundled packages
-
-Edit `src/core/data/packages.ts`. `availableOffline: true` may only be used for packages
-actually bundled with the runtime (numpy, pandas, stdlib). Anything else must stay
-`false` — the UI then honestly says the package is not available in this runtime.
-
-## Adding lessons / tasks
-
-The curriculum lives in `content/curriculum/` (source) and is published to
-`public/generated/curriculum/sections.json` (generated from the PDF by
-`tools/extract.mjs`). See "Regenerating the curriculum" below for the maintainer flow;
-the app renders whatever the schema contains — no page changes needed for content.
-The bundled datasets seed fresh tables on every query run.
-
-## Authored practice packs & topic guides (maintainer)
-
-The bank ships two layers. `source: "curriculum"` records are seeded from the extracted
-PDF; `source: "authored"` records are hand-written in `content/questions/expansion/*.json`
-(short keys `s/t/d/i/q/a/x` = section, type, difficulty, importance, question, answer,
-explanation). Authored records carry provenance — `sourceVersion`, `verifiedAt`, a track
-tag and a `batch` id like `track:sql:v1` — so a hand-written item can never be mistaken
-for extracted content.
-
-Question types are `theory`, `interview`, `coding`, `logic`, `debug`, `solved`, `defense`
-and `checkpoint`; `defense` (project-defense answers) is first-class: it has its own label,
-its own stage mapping and its own filter in the Question Bank.
-
-```bash
-npm run questions:expand-track -- --track=sql --file=content/questions/expansion/sql.json
-npm run questions:quota                 # per-track x per-type quota gate (exits 1 if short)
-npm run questions:quota -- --report     # ...and regenerate CONTENT-REPORT.md
-```
-
-`questions:expand-track` is append-only and idempotent: it merges into the section banks,
-skips duplicate ids *and* duplicate question text, re-validates, then rewrites the manifest.
-`questions:quota` is the gate: it expects +20 new items of every type in every track
-(8 tracks x 8 types x 20 = 1,280) and reports per-section totals against the 50-item
-baseline, so "complete" can never be claimed while a section is thin.
-
-The "CODE KAISE KARTE HAIN" guide layer lives in `content/curriculum/guides/<track>.json`
-(one guide per required topic) and is measured against `content/curriculum/topics/<track>.json`:
-
-```bash
-npm run curriculum:guides         # dry run: validate guides, execute every example
-npm run curriculum:guides:write   # apply into public/generated/curriculum/sections.json
-npm run curriculum:topics         # required-topic coverage matrix
-```
-
-Every example is executed with the local Python interpreter and the stored `output` is the
-real stdout; an example that needs a bundled-only module (numpy/pandas/sklearn) keeps its
-documented output and is marked `verified: false` so the UI can say so. Guide code steps are
-instructional fragments (a Dockerfile line, a SQL clause) and are deliberately not executed.
-Guides are additive: a guide attaches to an existing concept when the title matches, and
-otherwise creates a new concept marked `authoredTopic: true` — extracted PDF notes are never
-overwritten, and a re-run refreshes only the topics a guide owns. Run this pass *after*
-`curriculum:learn:write` / `curriculum:stages:write`, since it edits sections.json last.
-
-### Jupyter notebooks (content/notebooks)
-
-The Python practice lives in real `.ipynb` files (`content/notebooks/`). They are browsable and
-runnable in the app's **Notebook Lab** (deep-linkable at `/notebooks?nb=<file>`), inline inside
-any lesson stage whose section owns one, and from the Learning Path — all against the bundled
-Pyodide runtime. Each notebook gets its own kernel session, so names never leak between them:
-
-```bash
-npm run notebooks          # dry run: validate every notebook and execute every cell
-npm run notebooks:write    # execute + stamp real stdout, publish to public/notebooks/
-npm run notebooks:check    # structure matrix (cells, verified, app-only)
-```
-
-The pass is honest by construction: each cell is executed with the local Python interpreter
-and its real stdout is stored as a Jupyter `stream` output, cells share one interpreter session
-(so a cell may use a name imported by an earlier cell, exactly like Jupyter), and a cell that
-teaches an exception declares `metadata.expectError: true` so its real traceback is stored
-instead of hiding the failure. Cells that need `numpy`/`pandas` declare `metadata.appOnly:
-true`: the pass checks the wheel is actually bundled under `public/pyodide` and marks them
-`verified: false, verifiedHow: "app-runtime"` — they run for real in the browser (the bundled
-CSV datasets are seeded into the virtual filesystem, so `pd.read_csv('students.csv')` works
-in the browser). Nothing is fabricated: an app-only cell stores no output until the learner runs it.
-
-### 16-part topic workspaces
-
-Every section can additionally carry a **topic workspace** (`section.topic`), which organises
-that one topic end to end instead of leaving its content spread across mixed extracts:
-
-1. Topic introduction · 2. Concepts/theory · 3. Syntax · 4. Simple examples · 5. Real-world
-examples · 6. Interview questions · 7. Practice questions (5 difficulty levels) · 8. Coding
-practice · 9. Debugging questions · 10. Challenges (quick/coding/advanced/interview/build) ·
-11-13. Simple / medium / hard projects · 14. Project improvement tasks (Version 1 → 4) ·
-15. Interview-based practical tasks · 16. Revision checklist — plus project questions grouped
-as understanding/coding/advanced/interview.
-
-Sources live in `content/curriculum/packs/<sectionId>.json` (one file per topic so a topic can
-be authored and reviewed alone):
-
-```bash
-npm run packs -- --section=s08   # dry run: shape check + execute every snippet
-npm run packs:write              # apply into public/generated/curriculum/sections.json
-npm run packs:check              # per-section 16-part quality matrix
-```
-
-Topic purity is enforced, not assumed: the pass refuses to write when a question repeats
-inside a topic, when a pack is missing a part (no coding practice, no debugging, no revision
-checklist…), or when a snippet is dishonest — every "runnable" snippet must really run, every
-"broken" snippet must really fail, and a *logic* bug (`mode: "logic"`) must run cleanly and
-produce output that differs from its fix. Stored `output` values are real stdout; snippets
-that need a module this machine lacks are marked `verified: false` rather than faked. A
-section without a pack renders exactly as before, so a topic can be filled in later without a
-half-built lesson. `CONTENT-REPORT.md` lists which sections are structured and which are not.
-
-## Data storage (local only)
-
-- Progress, XP, streak, attempts, mistakes, notes, bookmarks, saved code: `localStorage` (`aiml:state:v1`), versioned.
-- Large blobs (if any) use IndexedDB; nothing leaves the machine.
-- **Export/Import progress** (JSON backup) lives in Settings.
-
-## Backup
-
-Use Settings → Export progress to save `aiml-progress.json`. Import restores everything
-(progress, streak, mistakes, notes, saved code).
+GitHub Pages deployments also work from the static build; the repository's canonical metadata currently points at its `github.io` origin.
 
 ## Troubleshooting
 
-- **Python says "Loading …" forever** — first boot is slow; run it once so the service worker
-  caches the runtime, then later loads are served from that cache.
-- **SQL shows a wasm/MIME error** — make sure `public/sqljs/sql-wasm-browser.wasm` exists
-  and the server serves `.wasm` as `application/wasm`.
-- **App won't load from cache** — the shell must be loaded once; check the SW is
-  registered (DevTools → Application → Service Workers) and no old cache (`aiml-v1`) remains.
-- **Hard reset** — Settings → reset, or delete the `aiml:state:v1` localStorage key.
+| Symptom | Cause and fix |
+|---|---|
+| Sign-in says the app is unconfigured | `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` missing — set them and rebuild |
+| Confirmation email never arrives | Supabase's built-in sender allows ~2 emails per hour per project; sign in with an existing account or configure custom SMTP |
+| Sign-in loops back to the login page | The Supabase redirect URL allow-list does not include the deployed origin |
+| Python takes a long time on first run | Pyodide unpacks ~48 MB of bundled runtime once, then it is cached |
+| SQL reports a wasm or MIME error | `public/sqljs/sql-wasm-browser.wasm` must be served as `application/wasm` |
+| AI feedback says "Built-in rubric" | No `OPENAI_API_KEY` on the API server — this is the honest fallback, not a failure |
+| Microphone button is disabled | The browser has no Speech Recognition (non-Chromium); type the answer instead |
+| Old build still appears | The service worker is serving its cache — reload once, or bump `CACHE` in `public/sw.js` on deploy |
 
-## Further learning (optional, online, third-party)
+## Roadmap
 
-This lab is fully self-contained. If you also want guided practice with a
-structured path, [boot.dev](https://www.boot.dev) is a reasonable companion:
+**Implemented**
 
-1. Create a free account at <https://www.boot.dev>.
-2. Try a few of the demo lessons first — the free account is enough for that.
-3. If it clicks, the plans are at <https://www.boot.dev/pricing>; the code **FREEBUFF**
-takes 25% off a membership, and the annual plan is the steeper saving.
+- 29-chapter curriculum, 11 courses / 36 steps, mastery gates and spaced review
+- 13,865-question bank with a single record per answer across every surface
+- In-browser Python, notebooks, SQL, PDF reader, and traceback teaching
+- AI mentor with retrieval-grounded answers; optional hosted voice
+- Interview Room with voice questions, editable transcripts, real AI evaluation, spoken correction, and a session report
+- Career readiness, resume answers, project defense, and portfolio selection
+- Account sync, progress export/import, English/Hinglish interface
 
-The individual courses are listed at <https://www.boot.dev/courses>, but for most
-learners the onboarding quiz plus a structured learning path beats cherry-picking
-courses one by one.
+**Next (not built yet)**
 
-Nothing in this app depends on that third-party service, no link here carries tracking
-parameters, and the code is simply a promotional discount passed along to this project —
-treat it like any other coupon and decide for yourself whether the paid tier is worth it.
+- Saved interview-report history per account (today the report belongs to the sitting)
+- Server-side speech-to-text fallback for browsers without SpeechRecognition
+- A CI workflow that runs typecheck, tests, and build on every pull request
 
-## Regenerating the curriculum from the PDF (optional, maintainer)
+## Contributing
 
-```bash
-node tools/extract.mjs "<path-to-pdf.pdf>"   # writes public/generated/curriculum/*.json
-```
+1. Fork the repository and create a branch.
+2. Keep changes inside the existing architecture: `content/` is authored, `public/generated/` is generated, `src/core/*` holds pure logic, `src/features/*` holds screens, `src/app/` is the shell.
+3. Run `npm run typecheck`, `npm test`, and `npm run build` before opening a pull request.
+4. Write commit messages as a single imperative line ("Add the retry state to the interview room"), not a type-prefixed paragraph.
+5. If you add a route, register it in the route table and regenerate the sitemap — the test suite scans both.
+6. Never commit `.env`, API keys, or credentials.
 
-Extraction summary: 163 concepts · 179 interview Q&A · 245 coding tasks · 172 logic cards ·
-120 solved practices · 29 mini projects · 87 project-lab tiers · 20 checkpoint questions ·
-39 mock-interview questions · 60 cross-skill intensive questions.
+## Creator
 
-### Importing the V10 answer PDF into the question banks (optional, maintainer)
+**Created by [Ahetesham Khan](https://github.com/ashu018019020-collab)** — building BroCode as a single place to learn, practise, and prove technical skill.
 
-The V10 "Senior Visual Answer Edition" is a separate, far larger document than
-`public/pdf/guide.pdf`: 3,239 pages, 13,582 answered items, laid out as 29 sections ×
-9 stages × 52 items. `scripts/pdf-questions.cjs` reads it with `pdftotext -layout`
-(cached in `.freebuff/`, exactly like `learn.cjs`) and curates it into each section's own
-bank.
+- GitHub: [@ashu018019020-collab](https://github.com/ashu018019020-collab)
+- Repository: [ashu018019020-collab/BroCode](https://github.com/ashu018019020-collab/BroCode)
+- Live demo: [mybrocode.vercel.app](https://mybrocode.vercel.app/)
 
-```bash
-npm run questions:pdf -- --pdf="<path-to-v10.pdf>"        # dry run: report only
-npm run questions:pdf:write -- --pdf="<path-to-v10.pdf>"  # merge + rewrite the manifest
-```
+## License
 
-Default run is a DRY RUN. It reports every count it is about to change — parsed items,
-dropped duplicates, section-tied rewrites, highlights and the size delta — and validates
-the whole pack before writing. Re-running the import is a no-op: ids are appended the same
-way `questions:expand-track` appends them, and `mergeIntoBank` skips ids *and* texts.
+No license file is included in this repository. The source is public for learning and review; please contact the author before reusing or redistributing it.
 
-All curation is deterministic; nothing is invented:
+---
 
-* **Stage → type** uses the schema's eight types only. MINI PROJECT reuses `coding`
-  (adding a type would break the locked 1,280-item authorship quota) and carries the
-  `mini-project` tag so the UI can still tell the two apart.
-* **Difficulty** maps 1:1 — BASIC→easy, INTERMEDIATE→medium, ADVANCED→hard, SENIOR→expert.
-* **Importance** keeps the PDF's own order intact — CRITICAL→`must_know` (P0),
-  HIGH→`high_value` (P1), CORE→`advanced` (P2).
-* **Duplicates are removed, never hidden.** A question repeated *inside* one section keeps
-  its strongest variant and the copies are dropped (the PDF boilerplates its
-  edge/performance/refactor tasks, so some sections only have 13–17 unique texts out of
-  52). A question repeated *across* sections is made section-specific instead, which is
-  the fix `questions.test.cjs` asks for, so no section loses coverage. The curated set is
-  asserted globally unique *before* anything is written, so this command can never leave
-  the pack in a state the test suite rejects.
-* **Highlighting** writes a `MUST-KNOW` tag on the section's top priority band
-  intersected with the PDF's SENIOR difficulty, then sorts those items first inside the
-  bank. The Question Bank already renders the first two tags as chips, so the highlight
-  needs no CSS and no page changes.
-* **Improvement is structural**: pdftotext wrap artefacts are rejoined (including the MINI
-  PROJECT fragment that the template splits across the ANSWER marker), wrapped words are
-  re-joined, and an answer's `Use:` clause is dropped when the `USE / IMPACT` line already
-  carries that sentence — which is what fills `explanation`.
-
-Sections the PDF labels CRITICAL wholesale (s13–s24, s26–s29) are why the highlight is an
-intersection rather than the band alone: the band by itself would flag 61% of the
-document. The rule lives in one constant (`HIGHLIGHT_RULE`) in `scripts/lib/pdfqa.cjs`.
-
-Every imported record carries `pdfPage`, `pdfStage` and `pdfImportance`, so any item can
-be traced back to the page it came from. The PDF itself is not committed — it would ship
-in `dist/` — so a re-run needs the file path (or the cached layout text).
-
-### Where those questions appear in a lesson (maintainer)
-
-Each **lesson stage carries its own slice of the bank**, so a stage can be practised without
-leaving it: LEARN → `theory`, INTERVIEW → `interview`, CODING LAB → `coding`, LOGIC → `logic`,
-DEBUG → `debug`, Practice Solutions → `solved`, MINI PROJECT → the `mini-project` tag,
-DEFENSE → `defense`, CHECKPOINT → `checkpoint`. Project Lab has no slice, because the PDF has
-no project band — that stage stays built from the section's own project tiers.
-
-The mapping lives once, in `STAGE_QNA` in `src/core/data/questions.ts`, and both the panel and
-the counts read it. `src/components/learning/StageQnA.tsx` renders the questions with reveal-answer,
-self-grading and paging, and writes the **same `qb:<id>` attempt keys as the Question Bank** —
-so a question graded in a lesson is graded everywhere, and nothing is counted twice. It does
-not touch the mastery gates: practice is not a gate, and the thresholds are unchanged.
-
-The stage rail and the hero stats read their numbers from `manifest.json` (`byType`, `byStage`
-and `miniProject`), never from a hard-coded list, so the count on a tile always matches the
-questions behind it. A stage outside a topic's mastery gates still shows its count — that case
-is exactly where a hidden count reads as "no content".
+<p align="center">
+  <sub>BroCode — learn it, code it, prove it.</sub>
+</p>
