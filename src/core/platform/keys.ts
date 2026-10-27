@@ -109,6 +109,14 @@ export const BANK_CODE_PREFIX = 'code:qb:';
 export const MENTOR_LOG_KEY = 'aiml:mentor:log';
 export const MOCK_HISTORY_KEY = 'aiml:mock-interview:history';
 /**
+ * The Interview Room's unfinished-sitting DRAFT and finished-round HISTORY. Same family as the
+ * mentor log on purpose: a sitting is device-local practice, not an AppState attempt family —
+ * the learner wants it back after a navigation, but must never confuse it with the `st:`/`qb:`
+ * records the curriculum reads.
+ */
+export const INTERVIEW_DRAFT_KEY = 'aiml:interview-room:draft';
+export const INTERVIEW_HISTORY_KEY = 'aiml:interview-room:history';
+/**
  * The learner's own "Online AI Voice" consent, stored on THIS device only. It is a decision, not a
  * preference: it gates every realtime session request, and it is cleared the moment they turn it off.
  */

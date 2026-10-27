@@ -50,6 +50,187 @@ export function modeById(id: InterviewModeId): InterviewMode {
   return MODES.find((m) => m.id === id) ?? MODES[0];
 }
 
+/* --------------------------- interviewer styles --------------------------- */
+
+/**
+ * The five interviewer personalities. A style is NOT a label: it changes THREE real things —
+ * the opening line the AI speaks, the lead line of the spoken verdict, and the persona directive
+ * sent to the evaluator (the model is explicitly told how to weigh clarity vs depth vs strictness).
+ * `scripts/tests/interview-voice.test.mjs` holds the ids unique and the directives distinct.
+ */
+export type InterviewerStyleId = 'mentor' | 'recruiter' | 'technical' | 'strict' | 'adaptive';
+
+export interface InterviewerStyle {
+  id: InterviewerStyleId;
+  label: string;
+  emoji: string;
+  blurb: string;
+  /** The persona sentence sent to the AI evaluator with every answer. */
+  promptDirective: string;
+  /** The spoken OPENING line the candidate hears when a round starts. */
+  opening: string;
+  /** How the spoken verdict LEADS, per verdict. Tone is part of the personality. */
+  lead: Record<Verdict, string>;
+}
+
+export const INTERVIEWER_STYLES: InterviewerStyle[] = [
+  {
+    id: 'mentor',
+    label: 'Friendly Mentor',
+    emoji: '🤝',
+    blurb: 'Patient and supportive — best for a first interview round',
+    promptDirective:
+      'Persona: a friendly mentor. Explain unfamiliar concepts in simple language, forgive wording variance generously, and encourage before correcting. Keep the tone warm but still mark real gaps honestly.',
+    opening: 'Hi! I will walk you through a short round — take your time, I am listening.',
+    lead: {
+      correct: 'Very good —',
+      partial: 'You are on the right track —',
+      incorrect: 'No problem, this one trips a lot of people —',
+    },
+  },
+  {
+    id: 'recruiter',
+    label: 'Professional Recruiter',
+    emoji: '💼',
+    blurb: 'Realistic HR-style screening: clarity, structure, examples',
+    promptDirective:
+      'Persona: a professional recruiter screening an AI/Data-Science candidate. Weigh clarity, structure and concrete examples as heavily as technical content; flag vague or rambling answers as communication issues, and keep the tone polite and businesslike.',
+    opening: 'Hello, thanks for making the time. Let us begin with a screening round.',
+    lead: {
+      correct: 'Good answer —',
+      partial: 'Reasonable, though a recruiter would probe further —',
+      incorrect: 'This answer would not survive a screening call —',
+    },
+  },
+  {
+    id: 'technical',
+    label: 'Technical Interviewer',
+    emoji: '🧑‍💻',
+    blurb: 'Concepts, logic, debugging — expects real depth',
+    promptDirective:
+      'Persona: a seasoned technical interviewer. Reward precision, reasoning and edge cases; push on the "why" behind facts, and treat hand-waving as a gap. Stay factual and specific.',
+    opening: 'Let us get into the technical round. Explain your reasoning as you go.',
+    lead: {
+      correct: 'Solid —',
+      partial: 'Halfway there technically —',
+      incorrect: 'That misses the core concept —',
+    },
+  },
+  {
+    id: 'strict',
+    label: 'Strict Interviewer',
+    emoji: '🧨',
+    blurb: 'Direct, demanding evaluation — for the week before a real interview',
+    promptDirective:
+      'Persona: a strict, experienced interviewer. Mark missing concepts directly with no cushioning, hold the score to a high bar, and keep feedback short and actionable. Never invent errors — the reference answer is the authority.',
+    opening: 'I will be direct in this round — answer precisely, that is what you will face.',
+    lead: {
+      correct: 'Accepted —',
+      partial: 'Not good enough yet —',
+      incorrect: 'No —',
+    },
+  },
+  {
+    id: 'adaptive',
+    label: 'Adaptive Interviewer',
+    emoji: '🧭',
+    blurb: 'Moves up after two clean answers, down after two misses',
+    promptDirective:
+      'Persona: an adaptive interviewer calibrating the candidate. Match depth to the apparent skill shown by the answer itself, and name one concrete step up or down the ladder in nextStep.',
+    opening: 'This round adapts to you — it starts at the level you chose and moves with your answers.',
+    lead: {
+      correct: 'That level is behind you —',
+      partial: 'You held your level —',
+      incorrect: 'We are above where you are right now —',
+    },
+  },
+];
+
+export const DEFAULT_STYLE: InterviewerStyleId = 'mentor';
+
+export function styleById(id: InterviewerStyleId): InterviewerStyle {
+  return INTERVIEWER_STYLES.find((s) => s.id === id) ?? INTERVIEWER_STYLES[0];
+}
+
+/** The level order the ADAPTIVE rule walks. Not exported: the page asks, it never indexes. */
+const LEVEL_ORDER: LevelId[] = ['beginner', 'intermediate', 'advanced'];
+
+/**
+ * The level the ADAPTIVE style holds the round at: two clean answers land one level up, two
+ * misses one level down. Anything else holds — the level must not jitter on every question.
+ */
+export function adaptiveLevel(current: LevelId, consecutiveCorrect: number, consecutiveIncorrect: number): LevelId {
+  const at = Math.max(0, LEVEL_ORDER.indexOf(current));
+  if (consecutiveCorrect >= 2 && at < LEVEL_ORDER.length - 1) return LEVEL_ORDER[at + 1];
+  if (consecutiveIncorrect >= 2 && at > 0) return LEVEL_ORDER[at - 1];
+  return LEVEL_ORDER[at];
+}
+
+/**
+ * A HINT built from the authored answer, never invented: the leading keywords of each model-answer
+ * clause. It names the ground the answer should cover WITHOUT handing over phrasing — the detail is
+ * the answer itself, and the hint must not read as it. Returns [] when there is nothing to hint at.
+ */
+export function questionHintSlots(question: Pick<QuestionRecord, 'answer'>): string[] {
+  return questionRubric(question.answer)
+    .map((group) => group.split('|').slice(0, 3).join(', '))
+    .filter((sparse) => sparse.length > 3)
+    .slice(0, 4);
+}
+
+/* ------------------------------ session history ------------------------------ */
+
+/**
+ * One past round, saved under the device-only history key (see keys.ts). Every number is copied
+ * from the built report — nothing recomputed, nothing embellished.
+ */
+export interface InterviewHistoryEntry {
+  savedAt: string;
+  subject: string;
+  subjectId: string;
+  mode: InterviewModeId;
+  level: LevelId;
+  style: InterviewerStyleId;
+  planned: number;
+  answered: number;
+  skipped: number;
+  correct: number;
+  partial: number;
+  incorrect: number;
+  averageScore: number | null;
+  seconds: number;
+}
+
+export const HISTORY_MAX = 20;
+
+/** The history entry for one finished sitting, derived only from the report and the setup. */
+export function historyFromReport(
+  report: InterviewReport,
+  meta: { subject: string; subjectId: string; mode: InterviewModeId; level: LevelId; style: InterviewerStyleId; savedAt: string },
+): InterviewHistoryEntry {
+  return {
+    savedAt: meta.savedAt,
+    subject: meta.subject,
+    subjectId: meta.subjectId,
+    mode: meta.mode,
+    level: meta.level,
+    style: meta.style,
+    planned: report.planned,
+    answered: report.answered,
+    skipped: report.skipped,
+    correct: report.correct,
+    partial: report.partial,
+    incorrect: report.incorrect,
+    averageScore: report.averageScore,
+    seconds: report.seconds,
+  };
+}
+
+/** Append one entry to a history list honouring HISTORY_MAX, newest first. */
+export function appendHistory(history: InterviewHistoryEntry[], entry: InterviewHistoryEntry): InterviewHistoryEntry[] {
+  return [entry, ...history.filter((h) => h.savedAt !== entry.savedAt)].slice(0, HISTORY_MAX);
+}
+
 /* ------------------------------- difficulty ------------------------------- */
 
 export type LevelId = 'beginner' | 'intermediate' | 'advanced';
@@ -249,14 +430,25 @@ export function fallbackEvaluation(question: Pick<QuestionRecord, 'answer'>, ans
   };
 }
 
-/** What the interviewer says aloud after an evaluation. Bounded — the full detail stays on screen. */
-export function evaluationSpeech(evaluation: AnswerEvaluation, verdict: Verdict = verdictForScore(evaluation.score)): string {
+/**
+ * What the interviewer says aloud after an evaluation. Bounded — the full detail stays on screen.
+ * `styleLead` swaps the flat verdict openers for the chosen interviewer persona's tone
+ * (see INTERVIEWER_STYLES); without it the built-in lines keep every existing caller identical.
+ */
+export function evaluationSpeech(
+  evaluation: AnswerEvaluation,
+  verdict: Verdict = verdictForScore(evaluation.score),
+  styleLead?: Partial<Record<Verdict, string>>,
+): string {
   const parts: string[] = [];
-  parts.push(verdict === 'correct'
-    ? `That is correct — ${evaluation.score} out of 100.`
-    : verdict === 'partial'
-      ? `You are partly there — ${evaluation.score} out of 100.`
-      : `Not quite — ${evaluation.score} out of 100.`);
+  const lead = styleLead?.[verdict];
+  parts.push(lead
+    ? `${lead} ${evaluation.score} out of 100.`
+    : verdict === 'correct'
+      ? `That is correct — ${evaluation.score} out of 100.`
+      : verdict === 'partial'
+        ? `You are partly there — ${evaluation.score} out of 100.`
+        : `Not quite — ${evaluation.score} out of 100.`);
   if (evaluation.conceptsUnderstood.length) {
     parts.push(`What you got right: ${evaluation.conceptsUnderstood.slice(0, 3).join(', ')}.`);
   }
@@ -293,6 +485,12 @@ export interface SessionAnswer {
   seconds: number;
   /** How many times the learner re-answered this question before this evaluation. */
   retries?: number;
+  /**
+   * The EVALUATED answer to the interviewer's follow-up question, if the candidate practised it.
+   * It rides on the same sitting record — it never writes a synthetic `qb:` key and never changes
+   * the main verdict; the report shows it beside the answer it belongs to.
+   */
+  followUpEvaluation?: AnswerEvaluation;
 }
 
 /**

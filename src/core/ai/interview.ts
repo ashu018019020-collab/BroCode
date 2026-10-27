@@ -16,6 +16,9 @@ import {
   fallbackEvaluation, parseEvaluation, type AnswerEvaluation, type EvaluationSource,
 } from '../assessment/interview-session';
 
+/** The interviewer persona the learner chose — forwarded to the evaluator verbatim. */
+export type StyleId = 'mentor' | 'recruiter' | 'technical' | 'strict' | 'adaptive';
+
 export interface EvaluationInput {
   question: string;
   /** The authored curriculum answer — the authoritative reference the evaluator marks against. */
@@ -25,6 +28,8 @@ export interface EvaluationInput {
   difficulty: string;
   answer: string;
   lang: 'en-IN' | 'hi-IN';
+  /** Optional interviewer style; the server keeps the prompt grounded without it. */
+  style?: StyleId;
 }
 
 export interface EvaluationResult {
@@ -68,6 +73,7 @@ export async function requestEvaluation(
       difficulty: input.difficulty,
       answer: input.answer,
       lang: input.lang,
+      style: input.style,
     },
     { timeoutMs: 15_000 },
   );

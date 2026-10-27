@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, cloudChunks, normalizeVoiceLang, pickVoiceFrom,
+  DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, cloudChunks, micPermissionDenied, normalizeVoiceLang, pickVoiceFrom,
   speechChunks, type VoiceLangId, type VoiceStatus,
 } from '../../core/ai/voice';
 
@@ -9,26 +9,47 @@ import {
  *
  * This is the only place in the app that touches `SpeechRecognition`, `speechSynthesis` and the
  * tutor's cloud voice. All three have sharp edges, and every one of them is handled here instead of
- * in the assistant's JSX:
+ * in the interview room's JSX:
  *
  *  - SPEECH OUT has two engines. The Google Neural2 voice wins when the server reports a key
  *    (`GET /api/voice/status`): each chunk is fetched as MP3 from `POST /api/voice/tts` — the Google
- *    key itself stays on the server — and played through one `Audio` element. ANY failure (no API
+ *    key itself stays on the server — and played through one `AudioContext`. ANY failure (no API
  *    server, no key, Google refusing, a static host answering HTML) falls back to the browser's own
- *    synthesiser for the same chunks and is REPORTED in the settings line; two consecutive cloud
- *    failures disable it for the session instead of stalling every answer behind a dead endpoint.
- *    A deployment without the key simply never leaves the browser voice.
- *  - Chrome stops one `speak()` call after ~15 s and sometimes drops the first utterance after a
- *    `cancel()`, so browser answers are queued as short chunks and every started utterance carries
- *    a generation id — a stale `onend` from a cancelled answer can never advance the new one.
- *  - Speech recognition is Chromium-only. The hook reports what the browser really has, so the UI can
- *    say "voice input is unavailable here" instead of showing a button that does nothing.
- *  - The mic is never left open: recognition is created per press, aborted on stop and on unmount,
- *    and starting to listen interrupts the tutor's own speech (barge-in).
+ *    synthesiser for the unheard remainder and is REPORTED in the settings line; two consecutive
+ *    cloud failures disable the cloud engine for the session instead of stalling every answer
+ *    behind a dead endpoint.
+ *  - WHY VOICE USED TO DIE MID-SESSION (the Answer-by-Voice bug, fixed here, three causes):
  *
- * Preferences (language, speed, read-replies) are device preferences in `aiml:voice`, not learner
- * records: nothing here is uploaded, and no audio is recorded or stored — the transcript is the only
- * thing that leaves the microphone.
+ *      1. UTTERANCE GC. The old browser path created `SpeechSynthesisUtterance` objects as local
+ *         variables. Chrome has a long-standing bug where a collected utterance fires neither
+ *         `onend` nor `onerror`, so the queue latched "speaking" forever and every later turn
+ *         started behind a dead chain. Every utterance is now held in a strong ref until its own
+ *         event runs, and cleared only when the whole answer finishes or is intentionally stopped.
+ *      2. FIRST UTTERANCE AFTER `cancel()`. `speak()` legitimately stops anything already playing
+ *         first (one answer at a time), and Chrome silently DROPS the utterance spoken in the same
+ *         tick right after a cancel — the exact moment "Answer by Voice" finishes and the verdict
+ *         speech starts. The first chunk of a new answer is now deferred ~180 ms past a cancel.
+ *      3. NO WATCHDOG. Any browser where the audio engine stalls outside the events had no
+ *         recovery, so the interview needed a page refresh. A 1 s watchdog now detects a stalled
+ *         chain and self-recovers the unheard remainder (twice), before reporting a voice error.
+ *
+ *  Every utterance carries a generation id and the watchdog runs only while the engine really
+ *  believes it is speaking: `cancel()` fires for INTENTIONAL interruption only (Stop, pause, leave,
+ *  navigation, shutdown) — never as part of a render or a transcript update.
+ *
+ *  - SPEECH IN. Recognition is Chromium-only. It is created per press, aborted on stop and on
+ *    unmount, and starting to listen still interrupts the tutor's own speech (barge-in: the
+ *    learner talking outranks the AI talking). The interview asks for `continuous: true`, which
+ *    holds the mic open across sentence pauses and re-arms the recognition Chrome auto-ends, so a
+ *    long spoken answer lands whole in the transcript box. `startListening` stays
+ *    backwards-compatible: without options it is the assistant's single-shot press.
+ *  - THE MIC AND THE VOICE ARE SEPARATE. A recognition error (a refused permission, no network)
+ *    sets `micDenied`/`error` and never touches the speech engine or the voice mode toggle; the
+ *    caller decides what that means (see `core/ai/voice-session.ts` for the tested state rules).
+ *
+ * Preferences (language, speed, pitch, voice, read-replies) are device preferences in `aiml:voice`,
+ * not learner records: nothing here is uploaded, and no audio is recorded or stored — the
+ * transcript is the only thing that leaves the microphone.
  */
 
 const PREFS_KEY = 'aiml:voice';
@@ -42,9 +63,23 @@ const TTS_SYNTHESIZE_PATH = './api/voice/tts';
 /** "The account API answers, and its Google key is configured." Null until the probe resolves. */
 type CloudState = boolean | null;
 
-interface Prefs { lang: VoiceLangId; rate: number; speakReplies: boolean }
+interface Prefs {
+  lang: VoiceLangId;
+  rate: number;
+  pitch: number;
+  /** Preferred browser voice by name; null = let the engine's ranking decide. */
+  voiceName: string | null;
+  speakReplies: boolean;
+}
 
-const DEFAULT_PREFS: Prefs = { lang: DEFAULT_VOICE_LANG, rate: DEFAULT_RATE, speakReplies: false };
+const DEFAULT_PREFS: Prefs = { lang: DEFAULT_VOICE_LANG, rate: DEFAULT_RATE, pitch: 1, voiceName: null, speakReplies: false };
+
+/** Pitch is clamped, not validated: a slider can never produce a chipmunk or a rumble. */
+function clampPitch(value: unknown): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return 1;
+  return Math.round(Math.min(1.4, Math.max(0.6, n)) * 10) / 10;
+}
 
 function loadPrefs(): Prefs {
   try {
@@ -54,6 +89,8 @@ function loadPrefs(): Prefs {
     return {
       lang: normalizeVoiceLang(parsed?.lang),
       rate: clampRate(parsed?.rate),
+      pitch: clampPitch(parsed?.pitch),
+      voiceName: typeof parsed?.voiceName === 'string' && parsed.voiceName ? parsed.voiceName : null,
       speakReplies: parsed?.speakReplies === true,
     };
   } catch {
@@ -121,15 +158,37 @@ function recognitionErrorCopy(code: string): string {
   }
 }
 
-/**
- * The browser voice for this language — Google's own voices first when Chrome ships them, because
- * they are the most natural speech a browser offers with no server involved (see `pickVoiceFrom`).
- */
-function pickBrowserVoice(lang: VoiceLangId): SpeechSynthesisVoice | null {
+/** Chrome drops an utterance spoken in the same tick as a cancel; this is the tested-over gap. */
+const CANCEL_GAP_MS = 180;
+/** A browser chain is stalled when no utterance activity happened for this long. */
+const STALL_MS = 8000;
+/** The stall recovery self-repairs the unheard remainder at most twice, then reports honestly. */
+const STALL_RETRIES = 2;
+/** A continuous (interview) listening press is capped, in case a learner walks away. */
+const CONTINUOUS_MAX_MS = 120_000;
+/** Chrome auto-ends a continuous recognition; it is re-armed at most this many times per press. */
+const CONTINUOUS_REARMS = 8;
+
+/** The browser voice for this language, honouring the learner's explicit choice when it exists. */
+function pickBrowserVoice(lang: VoiceLangId, voiceName: string | null): SpeechSynthesisVoice | null {
+  if (voiceName) {
+    const named = window.speechSynthesis.getVoices().find((voice) => voice.name === voiceName);
+    if (named && named.lang.replace('_', '-').toLowerCase().startsWith(lang.slice(0, 2))) return named;
+  }
   const chosen = pickVoiceFrom(window.speechSynthesis.getVoices(), lang);
   if (!chosen) return null;
   // The ranking only read name/lang/localService; the utterance wants the real object.
   return window.speechSynthesis.getVoices().find((voice) => voice.name === chosen.name) ?? null;
+}
+
+export interface ListenOptions {
+  /**
+   * Keep the microphone open across sentence pauses and re-arm it when the engine auto-ends —
+   * what a spoken ANSWER needs. Default (the assistant's press) captures one utterance.
+   */
+  continuous?: boolean;
+  /** Hard cap for a continuous capture, in ms. Defaults to CONTINUOUS_MAX_MS. */
+  maxMs?: number;
 }
 
 export interface VoiceTutor {
@@ -138,6 +197,12 @@ export interface VoiceTutor {
   setLang: (lang: VoiceLangId) => void;
   rate: number;
   setRate: (rate: number) => void;
+  pitch: number;
+  setPitch: (pitch: number) => void;
+  /** Every voice this browser exposes, for the interview room's voice selector. */
+  voices: { name: string; lang: string; localService: boolean }[];
+  voiceName: string | null;
+  setVoiceName: (name: string | null) => void;
   speakReplies: boolean;
   setSpeakReplies: (on: boolean) => void;
   status: VoiceStatus;
@@ -148,19 +213,21 @@ export interface VoiceTutor {
   engine: 'cloud' | 'browser' | null;
   /** What the SERVER reported about its Google key — null until the status probe answers. */
   cloudConfigured: CloudState;
-  /** Live partial transcript while the learner is speaking. */
+  /** The live partial transcript while the learner is speaking. */
   interim: string;
   /** The last thing spoken, so "Replay" can repeat it without re-asking the engine. */
   lastSpoken: { text: string; sources: { title: string }[] } | null;
   error: string | null;
   dismissError: () => void;
-  startListening: (onTranscript: (text: string) => void) => void;
+  /** Was the latest voice-input failure a REFUSED microphone permission? */
+  micDenied: boolean;
+  startListening: (onTranscript: (text: string) => void, options?: ListenOptions) => void;
   stopListening: () => void;
-  toggleListening: (onTranscript: (text: string) => void) => void;
+  toggleListening: (onTranscript: (text: string) => void, options?: ListenOptions) => void;
   /**
    * Speak an answer. `onEnd` runs only when the speech really finished — never after Stop, a
-   * navigation, or a barge-in — which is what lets the mentor reopen the mic for a hands-free turn
-   * without ever leaving a microphone open after an interruption.
+   * navigation, or a barge-in — which is what lets the room auto-advance, or the mentor reopen the
+   * mic for a hands-free turn, without ever leaving a microphone open after an interruption.
    */
   speak: (text: string, sources?: { title: string }[], onEnd?: () => void) => void;
   /** Say the last answer again. A no-op when nothing has been spoken. */
@@ -178,11 +245,21 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const [interim, setInterim] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [lastSpoken, setLastSpoken] = useState<{ text: string; sources: { title: string }[] } | null>(null);
+  const [voices, setVoices] = useState<{ name: string; lang: string; localService: boolean }[]>([]);
 
   const recognition = useRef<RecognitionLike | null>(null);
   const generation = useRef(0);
   const mounted = useRef(true);
   const queue = useRef<string[]>([]);
+  /** Index of the NEXT browser chunk to speak — the watchdog restarts from here. */
+  const queueIndex = useRef(0);
+  /** Strong refs to the live utterances: Chrome's GC bug makes collected utterances mute forever. */
+  const utterances = useRef<Set<SpeechSynthesisUtterance>>(new Set());
+  /** Last event the browser chain produced (onstart fires per real utterance). */
+  const lastActivity = useRef(0);
+  const stallRetries = useRef(0);
+  /** When the last INTENTIONAL speech stop happened — the first-utterance gap reads it. */
+  const lastCancelAt = useRef(0);
 
   // The cloud voice's own machinery. `context` is ONE Web Audio graph reused for the whole page —
   // creating an AudioContext per answer hits Chrome's per-page limit and costs the start-up latency
@@ -198,6 +275,15 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const contextRef = useRef<AudioContext | null>(null);
   const activeSources = useRef<Set<AudioBufferSourceNode>>(new Set());
   const cloudAbort = useRef<AbortController | null>(null);
+
+  // Listening machinery that the event handlers must read without stale closures.
+  const listeningRef = useRef(false);
+  const keepOpenRef = useRef(false);
+  const rearmCountRef = useRef(0);
+  const lastFinalRef = useRef('');
+  /** Which mic PRESS owns the lifetime timer — a stale timer must never close a newer press. */
+  const micSessionRef = useRef(0);
+  const micTimerRef = useRef(0);
 
   /** One setter for the engine, so the ref the pause switch reads can never lag the state. */
   const markEngine = useCallback((next: 'cloud' | 'browser') => {
@@ -256,6 +342,18 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     }
   }, []);
 
+  /** Drop every strong utterance ref. Called on intentional stop and on a full answer finish. */
+  const releaseUtterances = useCallback(() => {
+    for (const utterance of utterances.current) {
+      // The handlers are nulled FIRST so a late Chrome event can never advance a dead generation.
+      utterance.onstart = null;
+      utterance.onend = null;
+      utterance.onerror = null;
+    }
+    utterances.current.clear();
+    lastActivity.current = 0;
+  }, []);
+
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -264,30 +362,57 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       try { recognition.current?.abort(); } catch { /* already stopped */ }
       recognition.current = null;
       releaseCloud();
+      releaseUtterances();
       const context = contextRef.current;
       contextRef.current = null;
       if (context) void context.close().catch(() => { /* already closed */ });
       if (synthesisAvailable()) window.speechSynthesis.cancel();
     };
-  }, [releaseCloud]);
+  }, [releaseCloud, releaseUtterances]);
 
   useEffect(() => {
     try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* quota or blocked */ }
   }, [prefs]);
 
   // Voices load asynchronously in Chrome; asking early returns [] and every language falls back to
-  // the default voice. One listener warms the list up without a polling loop.
+  // the default voice. One listener warms the list up (and feeds the voice selector) without a
+  // polling loop. Reading getVoices() here also keeps the OBJECTS alive for the utterance path.
   useEffect(() => {
     if (!synthesisAvailable()) return;
-    const warm = () => { window.speechSynthesis.getVoices(); };
+    const warm = () => {
+      const list = window.speechSynthesis.getVoices();
+      if (list.length) {
+        setVoices(list.map((v) => ({ name: v.name, lang: v.lang, localService: v.localService })));
+      }
+    };
     warm();
     window.speechSynthesis.addEventListener?.('voiceschanged', warm);
     return () => window.speechSynthesis.removeEventListener?.('voiceschanged', warm);
   }, []);
 
+  const stopListening = useCallback(() => {
+    keepOpenRef.current = false;
+    listeningRef.current = false;
+    if (micTimerRef.current) {
+      window.clearTimeout(micTimerRef.current);
+      micTimerRef.current = 0;
+    }
+    try { recognition.current?.abort(); } catch { /* already gone */ }
+    recognition.current = null;
+    if (mounted.current) {
+      setListening(false);
+      setInterim('');
+    }
+  }, []);
+
   const stopSpeaking = useCallback(() => {
+    // An intentional stop. Chrome measures this instant against the next speak() — see CANCEL_GAP_MS.
+    lastCancelAt.current = Date.now();
     generation.current += 1;
     queue.current = [];
+    queueIndex.current = 0;
+    stallRetries.current = 0;
+    releaseUtterances();
     releaseCloud();
     if (synthesisAvailable()) {
       try { window.speechSynthesis.cancel(); } catch { /* nothing queued */ }
@@ -296,7 +421,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       setSpeaking(false);
       setPaused(false);
     }
-  }, [releaseCloud]);
+  }, [releaseCloud, releaseUtterances]);
 
   const speak = useCallback((text: string, sources: { title: string }[] = [], onEnd?: () => void) => {
     const chunks = speechChunks(text);
@@ -311,10 +436,13 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     stopSpeaking();
     const id = generation.current;
     queue.current = chunks;
+    queueIndex.current = 0;
+    stallRetries.current = 0;
     setLastSpoken({ text, sources });
     setError(null);
     setSpeaking(true);
     setPaused(false);
+    lastActivity.current = Date.now();
 
     /**
      * One completion per utterance queue. Stop/navigation increments the generation, so a stale
@@ -324,6 +452,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     const finish = () => {
       if (finished) return;
       finished = true;
+      releaseUtterances();
       if (!mounted.current || id !== generation.current) return;
       setSpeaking(false);
       setPaused(false);
@@ -334,23 +463,67 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     const speakWithBrowser = () => {
       if (!mounted.current || id !== generation.current) return;
       markEngine('browser');
-      const next = () => {
+
+      const speakChunk = (index: number) => {
         if (!mounted.current || id !== generation.current) return;
-        const chunk = queue.current.shift();
+        const chunk = queue.current[index];
         if (!chunk) {
+          queueIndex.current = index;
           finish();
           return;
         }
+        queueIndex.current = index;
         const utterance = new SpeechSynthesisUtterance(chunk);
         utterance.lang = prefs.lang;
         utterance.rate = prefs.rate;
-        const voice = pickBrowserVoice(prefs.lang);
+        utterance.pitch = prefs.pitch;
+        utterance.volume = 1;
+        const voice = pickBrowserVoice(prefs.lang, prefs.voiceName);
         if (voice) utterance.voice = voice;
-        utterance.onend = next;
-        utterance.onerror = next;
-        try { window.speechSynthesis.speak(utterance); } catch { setSpeaking(false); }
+        // STRONG REF: the utterance object must outlive its own callbacks, or Chrome may collect it
+        // mid-speech and fire no event at all — the cause of voice going permanently silent.
+        utterances.current.add(utterance);
+        let done = false;
+        const advance = () => {
+          if (done) return;
+          done = true;
+          utterances.current.delete(utterance);
+          lastActivity.current = Date.now();
+          if (!mounted.current || id !== generation.current) return;
+          if (index + 1 >= queue.current.length) {
+            finish();
+            return;
+          }
+          speakChunk(index + 1);
+        };
+        utterance.onstart = () => { lastActivity.current = Date.now(); };
+        utterance.onend = advance;
+        utterance.onerror = advance; // a failed engine advances; silence beats a hung "speaking"
+        try {
+          window.speechSynthesis.speak(utterance);
+        } catch {
+          advance();
+          return;
+        }
+        // The Windows-Chrome stuck bug: speak() resolves but nothing plays and no event ever
+        // fires. One 600 ms check per chunk re-fires the utterance if it never started; the
+        // generation and `done` guards make a retry the only path it can take.
+        window.setTimeout(() => {
+          if (!mounted.current || id !== generation.current || done) return;
+          if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return;
+          try { window.speechSynthesis.cancel(); } catch { /* nothing queued */ }
+          speakChunk(index);
+        }, 600);
       };
-      next();
+
+      const start = () => speakChunk(0);
+      // Chrome drops the FIRST utterance spoken in the same tick as a cancel. speak() always
+      // cancels what played before, so the very first chunk of a fresh answer waits one gap out.
+      if (Date.now() - lastCancelAt.current < CANCEL_GAP_MS) {
+        window.setTimeout(start, CANCEL_GAP_MS + 60);
+      } else {
+        start();
+      }
     };
 
     if (!cloudUsable) { speakWithBrowser(); return; }
@@ -358,18 +531,15 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     /**
      * The Google engine, played through Web Audio.
      *
-     * This block is what "smooth" means in practice, and every decision here is about the gaps a
-     * learner actually hears:
-     *
      *  - PACKING: the server is sent whole sentences (`cloudChunks`), not one line at a time, so a
      *    600-character answer is 2 requests instead of 4 and the synthesiser places its own prosody
      *    across a paragraph.
      *  - PIPELINING: every request starts immediately, but playback begins as soon as the FIRST
      *    chunk is decoded. The old path waited for `Promise.all`, so the learner heard silence for
      *    as long as the slowest request took.
-     *  - GApless JOIN: decoded buffers are scheduled on one AudioContext clock with a short breath
+     *  - GAPLESS JOIN: decoded buffers are scheduled on one AudioContext clock with a short breath
      *    between them. An `<audio>` element reloading a new `src` per sentence is exactly the
-     *    stutter this replaces: there is no decoder re-init and no gap while the next file loads.
+     *    stutter this replaces.
      *  - PAUSE that really pauses: the AudioContext clock freezes, so already-scheduled sentences
      *    wait instead of playing on under a "Paused" label.
      *
@@ -426,6 +596,8 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       // Everything before `from` was scheduled and has now finished; only the unheard remainder is
       // re-read, so no sentence is spoken twice and none is skipped.
       queue.current = speechChunks(cloud.slice(from).join(' '));
+      queueIndex.current = 0;
+      lastActivity.current = Date.now();
       releaseCloud();
       speakWithBrowser();
     };
@@ -438,7 +610,15 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         try {
           buffer = await pending[index];
         } catch (cause) {
-          if (!mounted.current || id !== generation.current || controller.signal.aborted) return;
+          if (!mounted.current || id !== generation.current || controller.signal.aborted) {
+            // An aborted fetch here is an intentional stop, EXCEPT when the client watchdog
+            // aborted it to recover a hanging endpoint — in that case the browser voice finishes
+            // the answer instead of leaving the learner in silence.
+            if (mounted.current && id === generation.current && controller.signal.aborted) {
+              handOffToBrowser(0);
+            }
+            return;
+          }
           cloudFails.current += 1;
           // Keep `cloudConfigured` as the SERVER's report — the server is configured, it is this
           // voice that is unavailable. The settings line says which engine spoke.
@@ -448,13 +628,14 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
           // Something is already playing: let it finish before the other engine starts, otherwise
           // two voices talk over each other.
           handoff = { from: index };
-          // …but that audio may ALREADY have ended while this request was in flight, in which case no
-          // `onended` is left to trigger the hand-off and the answer would simply stop mid-sentence.
+          // …but that audio may ALREADY have ended while this request was in flight, in which case
+          // no `onended` is left to trigger the hand-off and the answer would stop mid-sentence.
           if (activeSources.current.size === 0) handOffToBrowser(index);
           return;
         }
         if (!mounted.current || id !== generation.current) return;
         cloudFails.current = 0;
+        lastActivity.current = Date.now();
         if (engineRef.current !== 'cloud') markEngine('cloud');
 
         const source = graph.createBufferSource();
@@ -467,6 +648,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         activeSources.current.add(source);
         source.onended = () => {
           activeSources.current.delete(source);
+          lastActivity.current = Date.now();
           if (!mounted.current || id !== generation.current) return;
           const wasLastScheduled = index === scheduled - 1;
           if (handoff) {
@@ -479,83 +661,142 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       }
     };
     void run();
-  }, [markEngine, prefs.lang, prefs.rate, releaseCloud, stopSpeaking, supported.synthesis]);
+  }, [markEngine, prefs.lang, prefs.pitch, prefs.rate, prefs.voiceName, releaseCloud, releaseUtterances, stopSpeaking, supported.synthesis]);
 
   const replay = useCallback(() => {
     if (lastSpoken) speak(lastSpoken.text, lastSpoken.sources);
   }, [lastSpoken, speak]);
 
-  const stopListening = useCallback(() => {
-    try { recognition.current?.abort(); } catch { /* already gone */ }
-    recognition.current = null;
-    if (mounted.current) {
-      setListening(false);
-      setInterim('');
-    }
-  }, []);
-
-  const startListening = useCallback((onTranscript: (text: string) => void) => {
+  const startListening = useCallback((onTranscript: (text: string) => void, options: ListenOptions = {}) => {
     const Ctor = recognitionCtor();
     if (!Ctor) { setError('This browser has no speech recognition. Type your question instead.'); return; }
+    const continuous = options.continuous === true;
+    const maxMs = options.maxMs ?? CONTINUOUS_MAX_MS;
     // Barge-in: the learner talking is always the higher priority than the tutor talking.
     stopSpeaking();
     stopListening();
     setError(null);
     setInterim('');
-    const instance = new Ctor();
-    instance.lang = prefs.lang;
-    instance.continuous = false;
-    instance.interimResults = true;
-    instance.onresult = (event) => {
-      let final = '';
-      let partial = '';
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const result = event.results[i];
-        if (!result) continue;
-        if (result.isFinal) final += result[0].transcript;
-        else partial += result[0].transcript;
-      }
-      if (mounted.current) setInterim(partial);
-      if (final.trim()) {
-        const text = final.trim();
-        setListening(false);
-        setInterim('');
-        try { instance.stop(); } catch { /* already ended */ }
-        onTranscript(text);
+    lastFinalRef.current = '';
+    keepOpenRef.current = continuous;
+    rearmCountRef.current = 0;
+    micSessionRef.current += 1;
+    const session = micSessionRef.current;
+    if (micTimerRef.current) {
+      // The previous press's cap (if it is still armed) must never close THIS press.
+      window.clearTimeout(micTimerRef.current);
+      micTimerRef.current = 0;
+    }
+    let alive = true;
+
+    const arm = () => {
+      if (!alive || !keepOpenRef.current) return;
+      const instance = new Ctor();
+      instance.lang = prefs.lang;
+      instance.continuous = continuous;
+      instance.interimResults = true;
+      instance.onresult = (event) => {
+        let final = '';
+        let partial = '';
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+          const result = event.results[i];
+          if (!result) continue;
+          if (result.isFinal) final += result[0].transcript;
+          else partial += result[0].transcript;
+        }
+        if (mounted.current) setInterim(partial);
+        if (final.trim()) {
+          const text = final.trim();
+          // Chrome can replay the same final result on a re-armed instance; a candidate never
+          // repeats a sentence verbatim here, so a verbatim repeat is the engine, not the learner.
+          if (text === lastFinalRef.current) return;
+          lastFinalRef.current = text;
+          // Continuous mode appends one sentence per final result and KEEPS listening; single-shot
+          // mode (the assistant's press) closes the mic after the one utterance, as before.
+          if (!continuous) {
+            keepOpenRef.current = false;
+            alive = false;
+            listeningRef.current = false;
+            setListening(false);
+            setInterim('');
+            try { instance.stop(); } catch { /* already ended */ }
+            recognition.current = null;
+          }
+          onTranscript(text);
+        }
+      };
+      instance.onerror = (event) => {
+        const copy = recognitionErrorCopy(event.error);
+        // The mic's failure must never reach the SPEAKER: voice mode stays exactly as the learner
+        // left it, and the page shows the cause with the text fallback beside it.
+        listeningRef.current = false;
+        if (mounted.current) {
+          if (copy) setError(copy);
+          setListening(false);
+          setInterim('');
+        }
+        recognition.current = null;
+      };
+      instance.onend = () => {
+        recognition.current = null;
+        if (!mounted.current || !alive) return;
+        if (keepOpenRef.current) {
+          // Chrome ends a continuous recognition after every pause. Re-arm it — a spoken answer
+          // naturally stops mid-sentence, and one auto-end must not become "Answer by Voice
+          // stopped working". The rearm cap keeps a dead mic from cycling forever.
+          if (rearmCountRef.current < CONTINUOUS_REARMS) {
+            rearmCountRef.current += 1;
+            window.setTimeout(() => {
+              if (!alive || !keepOpenRef.current || !mounted.current) return;
+              try {
+                arm();
+                if (recognition.current) setListening(true);
+              } catch (cause) {
+                console.warn('BroCode voice: re-arming recognition failed', cause);
+              }
+            }, 360);
+          } else {
+            keepOpenRef.current = false;
+            setListening(false);
+          }
+          return;
+        }
+        if (mounted.current) {
+          setListening(false);
+          setInterim('');
+        }
+      };
+      recognition.current = instance;
+      try {
+        instance.start();
+        listeningRef.current = true;
+        setListening(true);
+      } catch (cause) {
+        // `start()` throws if a previous recognition is still finishing. That is not a learner error.
+        console.warn('BroCode voice: speech recognition did not start', cause);
+        setError('The microphone is still closing from the last try. Press the mic again.');
+        recognition.current = null;
       }
     };
-    instance.onerror = (event) => {
-      const copy = recognitionErrorCopy(event.error);
-      if (mounted.current) {
-        setListening(false);
-        setInterim('');
-        if (copy) setError(copy);
-      }
-      recognition.current = null;
-    };
-    instance.onend = () => {
-      if (mounted.current) {
-        setListening(false);
-        setInterim('');
-      }
-      recognition.current = null;
-    };
-    recognition.current = instance;
-    try {
-      instance.start();
-      setListening(true);
-    } catch (cause) {
-      // `start()` throws if a previous recognition is still finishing. That is not a learner error.
-      console.warn('BroCode voice: speech recognition did not start', cause);
-      setError('The microphone is still closing from the last try. Press the mic again.');
-      recognition.current = null;
+
+    arm();
+    if (continuous && maxMs > 0) {
+      // A walked-away mic closes itself; the transcript captured so far stays in the answer box.
+      // The cap dies with its OWN press: a newer press (a higher session) is never touched by an
+      // old timer, and a manual stop clears the timer outright.
+      micTimerRef.current = window.setTimeout(() => {
+        if (micSessionRef.current !== session) return;
+        alive = false;
+        keepOpenRef.current = false;
+        stopListening();
+      }, maxMs);
     }
   }, [prefs.lang, stopListening, stopSpeaking]);
 
-  const toggleListening = useCallback((onTranscript: (text: string) => void) => {
-    if (listening) stopListening();
-    else startListening(onTranscript);
-  }, [listening, startListening, stopListening]);
+  const toggleListening = useCallback((onTranscript: (text: string) => void, options?: ListenOptions) => {
+    if (listeningRef.current) stopListening();
+    else startListening(onTranscript, options);
+  }, [startListening, stopListening]);
 
   const pauseSpeaking = useCallback(() => {
     // The AudioContext clock and the synthesiser are separate pause switches; only one is live.
@@ -580,6 +821,66 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     try { window.speechSynthesis.resume(); setPaused(false); } catch { /* nothing paused */ }
   }, [supported.synthesis]);
 
+  /**
+   * The watchdog. Runs only while `speaking` believes itself true, and repairs exactly the two
+   * stalls no event can tell us about:
+   *
+   *  - the browser chain went mute with chunks left (GC bug, an engine that fired no events) —
+   *    cancel and re-speak the unheard remainder, twice at most, then finish with an honest error;
+   *  - the cloud chain hung in a fetch that never promised (no per-request timeout) — abort the
+   *    fetch so the pipeline's own failure path hands the answer to the browser voice.
+   *
+   * It never touches the mic: while the learner is being recorded, the machines hold still —
+   * turn-taking, not a race.
+   */
+  useEffect(() => {
+    if (!speaking) return;
+    const timer = window.setInterval(() => {
+      if (!mounted.current) return;
+      if (listeningRef.current) return; // recording owns the turn; no sound is expected
+      if (Date.now() - lastActivity.current < (engineRef.current === 'cloud' ? 15000 : STALL_MS)) return;
+      const context = contextRef.current;
+      const pausedHere = context?.state === 'suspended' || (engineRef.current === 'browser' && window.speechSynthesis.paused);
+      if (pausedHere) {
+        // Paused playback is not a stall: hold the timestamp so the watchdog stays idle.
+        lastActivity.current = Date.now();
+        return;
+      }
+      if (engineRef.current === 'cloud') {
+        if (activeSources.current.size > 0) {
+          // Real audio is scheduled; a suspended-but-running graph has `pausedHere` above, so this
+          // means scheduled audio with a dead clock — restart the clock rather than the queue.
+          void contextRef.current?.resume().catch(() => { /* handed to the browser voice */ });
+          lastActivity.current = Date.now();
+          return;
+        }
+        // Nothing is playing: the fetches hung. Aborting makes `run()`'s catch hand off cleanly.
+        lastActivity.current = Date.now();
+        cloudAbort.current?.abort();
+        return;
+      }
+      // Browser engine, stalled, with or without a remainder.
+      if (stallRetries.current >= STALL_RETRIES) {
+        stopSpeaking();
+        setError('The voice stopped speaking on this device. Press Replay to hear the last answer again.');
+        return;
+      }
+      stallRetries.current += 1;
+      const remainder = queue.current.slice(queueIndex.current).join(' ');
+      generation.current += 1;
+      try { window.speechSynthesis.cancel(); } catch { /* nothing queued */ }
+      releaseUtterances();
+      lastCancelAt.current = 0; // the gap after a cancel would delay the recovery two beats
+      if (remainder) {
+        // Re-speak only what has not been heard — no sentence twice, none skipped.
+        remainder && speak(remainder);
+      } else {
+        setSpeaking(false);
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [releaseUtterances, speak, speaking, stopSpeaking]);
+
   // An error is a real state, not a hidden flag: a dead microphone or a missing synthesiser must
   // stop the controls looking as if everything is idle.
   const status: VoiceStatus = speaking
@@ -598,6 +899,11 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     setLang: (lang) => setPrefs((current) => ({ ...current, lang: normalizeVoiceLang(lang) })),
     rate: prefs.rate,
     setRate: (rate) => setPrefs((current) => ({ ...current, rate: clampRate(rate) })),
+    pitch: prefs.pitch,
+    setPitch: (pitch) => setPrefs((current) => ({ ...current, pitch: clampPitch(pitch) })),
+    voices,
+    voiceName: prefs.voiceName,
+    setVoiceName: (name) => setPrefs((current) => ({ ...current, voiceName: name })),
     speakReplies: prefs.speakReplies,
     setSpeakReplies: (on) => setPrefs((current) => ({ ...current, speakReplies: on })),
     status,
@@ -610,6 +916,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     lastSpoken,
     error,
     dismissError: () => setError(null),
+    micDenied: micPermissionDenied(error),
     startListening,
     stopListening,
     toggleListening,

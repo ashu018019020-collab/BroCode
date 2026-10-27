@@ -23,6 +23,18 @@ export const INTERVIEW_MAX_KIND = 40;
 export const INTERVIEW_MAX_DIFFICULTY = 20;
 export const INTERVIEW_DEFAULT_MODEL = 'gpt-4o-mini';
 export const INTERVIEW_LANGS = ['en-IN', 'hi-IN'];
+/**
+ * The interviewer personas the ROOM offers. The id is chosen on the client and travels in the
+ * request; the directive is authored HERE so a client cannot inject arbitrary prompt text. A
+ * request without a style evaluates exactly as before — the persona is additive.
+ */
+export const INTERVIEW_STYLES = {
+  mentor: 'Persona: a friendly mentor. Explain unfamiliar concepts in simple language, forgive wording variance generously, and encourage before correcting. Keep the tone warm but still mark real gaps honestly.',
+  recruiter: 'Persona: a professional recruiter screening an AI/Data-Science candidate. Weigh clarity, structure and concrete examples as heavily as technical content; flag vague or rambling answers as communication issues, and keep the tone polite and businesslike.',
+  technical: 'Persona: a seasoned technical interviewer. Reward precision, reasoning and edge cases; push on the "why" behind facts, and treat hand-waving as a gap. Stay factual and specific.',
+  strict: 'Persona: a strict, experienced interviewer. Mark missing concepts directly with no cushioning, hold the score to a high bar, and keep feedback short and actionable. Never invent errors — the reference answer is the authority.',
+  adaptive: 'Persona: an adaptive interviewer calibrating the candidate. Match depth to the apparent skill shown by the answer itself, and name one concrete step up or down the ladder in nextStep.',
+};
 const ACCURACY = ['accurate', 'mostly-accurate', 'partially-accurate', 'inaccurate'];
 const STATUSES = ['correct', 'partially-correct', 'incorrect', 'needs-clarification'];
 
@@ -43,6 +55,7 @@ export function validateEvaluationBody(input) {
   if (modelAnswer.length < 8) return { ok: false, status: 400, message: 'A model answer is required to mark against.' };
   if (answer.length < 2) return { ok: false, status: 400, message: 'Write or say an answer before asking for feedback.' };
   const lang = INTERVIEW_LANGS.includes(input.lang) ? input.lang : 'en-IN';
+  const style = typeof input.style === 'string' && input.style in INTERVIEW_STYLES ? input.style : null;
   return {
     ok: true,
     value: {
@@ -50,6 +63,8 @@ export function validateEvaluationBody(input) {
       modelAnswer,
       answer,
       lang,
+      // An unknown or missing style evaluates as before — never a 400, never a fake persona.
+      style,
       sectionTitle: trimmed(input.sectionTitle, INTERVIEW_MAX_SECTION) || 'Interview question',
       kind: trimmed(input.kind, INTERVIEW_MAX_KIND) || 'Concept',
       difficulty: trimmed(input.difficulty, INTERVIEW_MAX_DIFFICULTY) || 'medium',
@@ -68,9 +83,12 @@ export function validateEvaluationBody(input) {
  * The model is never asked to reveal chain-of-thought. It is asked for a concise verdict.
  */
 export function buildInterviewPrompt(value) {
+  const persona = typeof value.style === 'string' && INTERVIEW_STYLES[value.style]
+    ? ` ${INTERVIEW_STYLES[value.style]}`
+    : '';
   const system = [
     'You are a senior technical interviewer for an AI/Data-Science curriculum.',
-    'Mark the candidate answer against the reference answer, but accept any technically valid alternative approach or wording.',
+    `Mark the candidate answer against the reference answer, but accept any technically valid alternative approach or wording.${persona}`,
     'Be strict about factual errors and missing concepts; be encouraging in tone; never invent facts that are not in the reference.',
     'Scores must reflect the answer actually given. Never award full marks by default, and never give 0 for a partial attempt that names real concepts.',
     'Return ONLY a JSON object, no prose and no code fences, with exactly these keys:',
