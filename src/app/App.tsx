@@ -5,13 +5,14 @@ import {
   Sigma, Database, Sparkles, Bot, Briefcase, BarChart3, FileText, Settings as SettingsIcon,
   Search, Star, Flame, Target, Trophy, Code2, GraduationCap, ListChecks,
   Bell, FolderGit2, Network, ClipboardList, StickyNote, BookMarked, Moon, Sun, Focus, Library,
-  Menu, PanelLeftClose, X, ChevronRight, ChevronLeft, Award,
+  Menu, PanelLeftClose, X, ChevronRight, ChevronLeft, Award, WifiOff,
   Plus, Download, Languages, Timer, BookOpen, Cloud, UserRound, LogIn, LogOut,
 } from 'lucide-react';
 import { CurriculumProvider, useCurriculum } from '../core/data/curriculum';
 import { useStore, bumpStreak, markNotifsRead, clearNotifs, exportProgress } from '../core/storage/store';
 import { toast } from '../components/ui/Toast';
 import { levelForXp, levelProgress, XP_PER_LEVEL } from '../core/platform/keys';
+import { offlineBannerCopy } from '../core/platform/offline';
 import { routeMeta } from '../core/platform/meta';
 import { I18nProvider, useI18n, setLang } from './i18n';
 import { buildNotifications, unreadCount } from '../core/platform/notify';
@@ -778,6 +779,36 @@ function Shell() {
 
         <ErrorBoundary>
           <div className="content">
+            {/* The offline banner is a STATUS, not an error: the browser's own online/offline
+                events drive it, it disappears on recovery, and every claim in it comes from the
+                tested contract in `core/platform/offline.ts` — never from ad-hoc copy here. */}
+            {!online && (
+              <div className="net-banner" role="status" aria-live="polite">
+                <div className="net-banner-head">
+                  <WifiOff size={15} aria-hidden="true" />
+                  <b>{offlineBannerCopy().title}</b>
+                </div>
+                <div className="net-banner-cols">
+                  <div>
+                    <b className="small">Still working</b>
+                    <ul>
+                      {offlineBannerCopy().capable.map((item) => (
+                        <li key={item.id} className="small"><span>{item.label}</span><span className="muted"> — {item.note}</span></li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <b className="small">Waits for the network</b>
+                    <ul>
+                      {offlineBannerCopy().waiting.map((item) => (
+                        <li key={item.id} className="small"><span>{item.label}</span><span className="muted"> — {item.note}</span></li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <p className="small muted" style={{ margin: '6px 0 0' }}>{offlineBannerCopy().footnote}</p>
+              </div>
+            )}
             <Suspense fallback={<RouteSkeleton />}>
             <Routes>
               {/* ---------- PUBLIC ----------

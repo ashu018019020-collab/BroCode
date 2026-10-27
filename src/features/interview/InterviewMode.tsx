@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle, ArrowRight, CheckCircle2, ChevronLeft, CirclePause, Mic2, Pause, Play, RotateCcw,
@@ -7,6 +7,7 @@ import {
 import { HubCrumb } from '../../components/learning/SectionChrome';
 import { BrandMark } from '../../components/shared/BrandMark';
 import { useVoiceTutor } from '../../components/shared/useVoiceTutor';
+import { useOnlineStatus } from '../../components/shared/useOnlineStatus';
 import { Bar } from '../../components/ui/ui';
 import { useI18n } from '../../app/i18n';
 import type { LocaleKey } from '../../app/i18n/locales';
@@ -16,6 +17,7 @@ import { useBankManifest, loadBanksFor, TYPE_LABEL } from '../../core/data/quest
 import type { BankManifestEntry } from '../../core/data/questions';
 import type { QuestionRecord } from '../../core/data/schema';
 import { bankAttempt, INTERVIEW_DRAFT_KEY, INTERVIEW_HISTORY_KEY } from '../../core/platform/keys';
+import { offlineRoomNote } from '../../core/platform/offline';
 import {
   INTERVIEW_KINDS, KIND_BY_ID, eligibleInBank, kindCounts, kindOf, pickQuestion, planSections,
 } from '../../core/assessment/interview-room';
@@ -88,6 +90,11 @@ interface SavedDraft {
   asked: string[];
   answers: SessionAnswer[];
   queue: SessionQuestion[];
+  /**
+   * The transcript that is TYPED or SPOKEN but not yet submitted. Saved so a connection drop, a
+   * navigation or a crash costs nothing — the one piece of unsaved work the room used to lose.
+   */
+  answer?: string;
 }
 
 const DRAFT_VERSION = 1;
@@ -130,6 +137,8 @@ export default function InterviewMode() {
   const manifest = useBankManifest();
   const [params, setParams] = useSearchParams();
   const voice = useVoiceTutor();
+  /** Network status for the in-room offline note — the shell banner covers the app globally. */
+  const online = useOnlineStatus();
 
   const ranges = useMemo(() => TRACK_DEFS.map((d) => ({ id: d.id, from: d.from, to: d.to })), []);
   const trackDef = TRACK_DEFS.find((d) => d.id === params.get('subject')) ?? null;
@@ -522,7 +531,9 @@ export default function InterviewMode() {
     setElapsed(saved.elapsed);
     setSkipped(saved.skipped);
     setAsked(saved.asked ?? []);
-    setDraft('');
+    // The UNSUBMITTED transcript comes back inside its own box — the network dropping must not
+    // cost the answer that was mid-flight when it happened.
+    setDraft(typeof saved.answer === 'string' ? saved.answer : '');
     setFollowUpDraft('');
     setEvaluation(null);
     setEvalError(null);
@@ -559,8 +570,14 @@ export default function InterviewMode() {
   };
 
   /** Guard state so the draft effect and the auto-advance read what IS stored, not a past render. */
-  const liveRef = useRef({ phase, paused, answers, skipped, step, queue, elapsed, asked });
-  liveRef.current = { phase, paused, answers, skipped, step, queue, elapsed, asked };
+  const liveRef = useRef({
+    phase, paused, answers, skipped, step, queue, elapsed, asked,
+    mode, level, style, size, autoNext, preparing, trackId: trackDef?.id ?? '',
+  });
+  liveRef.current = {
+    phase, paused, answers, skipped, step, queue, elapsed, asked,
+    mode, level, style, size, autoNext, preparing, trackId: trackDef?.id ?? '',
+  };
 
   const submit = async (followUpQuestion?: string) => {
     if (!q || !currentSection || evaluating || preparing) return;
@@ -693,29 +710,53 @@ export default function InterviewMode() {
   };
 
   /**
-   * The draft is written after every evaluated answer and every advance, so a navigation, a react
-   * error, or a closed tab costs nothing but the answer being typed. The report phase clears it
-   * (the sitting is finished); setup leaves it, because that exit is a pause, not a verdict.
+   * The draft is written after every evaluated answer, every advance, AND every typed or spoken
+   * transcript beat — a network drop, a navigation, or a closed tab must not cost the UNSUBMITTED
+   * answer either. The report phase clears the draft (the sitting is finished); setup leaves it,
+   * because that exit is a pause, not a verdict.
    */
   const [draftSaved, setDraftSaved] = useState(false);
-  /** The clock is deliberately NOT a draft trigger, or the round would bine up every second. */
+  /** The clock is deliberately NOT a draft trigger, or the round would churn once a second. */
   const elapsedRef = useRef(elapsed);
   elapsedRef.current = elapsed;
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+
+  /** One writer, two triggers: round changes commit immediately, typing commits debounced —
+   *  every keystroke must not stringify the whole sitting (the store's own lesson in AGENTS.md). */
+  const commitDraft = useCallback(() => {
+    const snapshot = liveRef.current;
+    if (snapshot.phase !== 'live' || !snapshot.queue.length || snapshot.preparing) return;
+    writeDraft({
+      version: DRAFT_VERSION,
+      savedAt: new Date().toISOString(),
+      subjectId: snapshot.trackId,
+      mode: snapshot.mode, level: snapshot.level, style: snapshot.style, size: snapshot.size,
+      autoNext: snapshot.autoNext,
+      step: snapshot.step, skipped: snapshot.skipped, asked: snapshot.asked,
+      answers: snapshot.answers, queue: snapshot.queue,
+      elapsed: snapshot.elapsed,
+      answer: draftRef.current,
+    });
+    setSavedDraft(null);
+    setDraftSaved(true);
+  }, []);
+
+  const draftToggleRef = useRef({ phase, preparing });
+  draftToggleRef.current = { phase, preparing };
 
   useEffect(() => {
     if (phase === 'report') { writeDraft(null); setDraftSaved(false); return; }
     if (phase !== 'live' || !queue.length || preparing) return;
-    writeDraft({
-      version: DRAFT_VERSION,
-      savedAt: new Date().toISOString(),
-      subjectId: trackDef?.id ?? '',
-      mode, level, style, size, autoNext,
-      step, skipped, asked, answers, queue,
-      elapsed: elapsedRef.current,
-    });
-    setSavedDraft(null);
-    setDraftSaved(true);
-  }, [phase, queue, step, answers, skipped, asked, mode, level, style, size, autoNext, preparing, trackDef?.id]);
+    commitDraft();
+  }, [commitDraft, phase, queue, step, answers, skipped, asked, mode, level, style, size, autoNext, preparing, trackDef?.id]);
+
+  // The typed transcript: debounced, cleared when it matches the last committed text.
+  useEffect(() => {
+    if (phase !== 'live') return;
+    const timer = window.setTimeout(commitDraft, 700);
+    return () => window.clearTimeout(timer);
+  }, [commitDraft, draft, phase]);
 
   // Persist the summary in the device history when the round ENDS (the report phase shows it).
   useEffect(() => {
@@ -1258,6 +1299,7 @@ export default function InterviewMode() {
         <span className={`chip iv-status-chip iv-status-${voicePhase}`}>
           <span aria-hidden className="iv-status-dot" /> {phaseLabel(voicePhase)}
         </span>
+        {!online && <span className="chip iv-offline-chip">Offline · device save</span>}
         <button
           type="button"
           className={`chip${autoNext ? ' on' : ''}`}
@@ -1471,6 +1513,13 @@ export default function InterviewMode() {
                 )}
                 {voice.interim && voice.listening && (
                   <p className="small" style={{ margin: '4px 0 0', color: 'var(--cyan)' }}>{voice.interim}</p>
+                )}
+                {!online && (
+                  <div className="iv-perm iv-offline-note" role="status">
+                    <p className="small" style={{ margin: 0 }}>
+                      <b>Offline.</b> {offlineRoomNote()}
+                    </p>
+                  </div>
                 )}
 
                 <label className="small muted" htmlFor="iv-answer" style={{ display: 'block', marginTop: 10 }}>

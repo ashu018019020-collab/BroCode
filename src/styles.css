@@ -1158,6 +1158,35 @@ table.data tbody tr:hover td { background-color: var(--hover-soft); }
  * line of status text and a row of pills there would out-shout the page. Tone tint on the icon and
  * a cyan lift on hover keep it in the same family as the header cluster.
  */
+/*
+ * The offline banner: the shell's network STATUS. It appears on the browser's own online/offline
+ * events and names the tested offline contract from `core/platform/offline.ts`. Amber states
+ * "attention, not alarm": nothing is lost, some things merely wait.
+ */
+.net-banner {
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  background: rgba(250, 204, 21, 0.07);
+}
+
+.net-banner-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--amber, #fbbf24);
+}
+
+.net-banner-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px 20px;
+  margin-top: 8px;
+}
+
+.net-banner-cols ul { margin: 4px 0 0 16px; padding: 0; }
+.net-banner-cols li { margin: 3px 0; }
 .statusbar .sb-stat {
   flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
   padding: 3px 9px; border-radius: 99px; text-decoration: none; color: var(--glass-muted);

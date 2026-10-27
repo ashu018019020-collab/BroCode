@@ -27,6 +27,7 @@ import { NotebookCells, type NbCellSpec } from '../../components/code/NotebookCe
 import { isPythonReady, warmupPython } from '../coding/runners';
 import { useStore } from '../../core/storage/store';
 import { useNotebooks } from '../../core/data/notebooks';
+import { useOnlineStatus } from '../../components/shared/useOnlineStatus';
 import { notebookCellsRunFor } from '../../core/learning/coverage';
 
 /** `public/notebooks/<file>` (nbformat 4) → the engine's cell specs. */
@@ -50,6 +51,8 @@ function toSpecs(nb: any): NbCellSpec[] {
 export default function NotebookLab() {
   const manifest = useNotebooks();
   const state = useStore();
+  /** Distinguishes "nothing published" from "offline and never cached" — the empty states differ. */
+  const online = useOnlineStatus();
   const [params, setParams] = useSearchParams();
   const [active, setActive] = useState<string | null>(null);
   const [nb, setNb] = useState<{ file: string; cells: NbCellSpec[] } | null>(null);
@@ -87,7 +90,18 @@ export default function NotebookLab() {
 
   if (!manifest) return <div className="loading">Loading notebooks…</div>;
   if (!manifest.length) {
-    return <div className="card muted">No notebooks have been published yet — run <code>npm run notebooks:write</code>.</div>;
+    // An empty library is different OFFLINE than online: online it means nothing was published;
+    // offline on a first visit it means the manifest was never cached, and saying "no notebooks"
+    // would be false data. The honest state names both outcomes.
+    return (
+      <div className="card muted">
+        <p style={{ margin: 0 }}>
+          {online
+            ? <>No notebooks have been published yet — run <code>npm run notebooks:write</code>.</>
+            : 'No cached notebook library on this device — reconnect once so the lab can fetch its list.'}
+        </p>
+      </div>
+    );
   }
 
   const meta = manifest.find((m) => m.file === active);

@@ -50,7 +50,10 @@ self.addEventListener('fetch', (e) => {
           }
           return res;
         })
-        .catch(() => caches.match(req).then((r) => r ?? new Response('[]', { status: 504, headers: { 'content-type': 'application/json' } }))),
+        // The offline miss must stay a NON-OK response (504) with a named error body: a loader
+        // that checks response.ok routes this to its error state, and none may mistake a
+        // placeholder for real data on a device that has never cached the pack.
+        .catch(() => caches.match(req).then((r) => r ?? new Response(JSON.stringify({ error: 'offline-never-cached' }), { status: 504, headers: { 'content-type': 'application/json' } }))),
     );
     return;
   }
