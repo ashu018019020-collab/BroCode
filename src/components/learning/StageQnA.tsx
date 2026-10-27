@@ -262,7 +262,7 @@ function BankItem({
               <NotebookPen size={12} /> {notebook ? 'Close notebook' : 'Notebook'}
             </button>
           )}
-          {/* The offline assistant, scoped to THIS question: answer, hint and a rubric percentage of
+          {/* The local assistant, scoped to THIS question: answer, hint and a rubric percentage of
               whatever is written above. Lazy — one instance per opened item, never per row. */}
           <button className={`btn small${ai ? ' primary' : ''}`} onClick={() => setAi((v) => !v)} aria-expanded={ai} title="The answer, a hint, and a percentage for your written answer">
             <Bot size={12} /> AI

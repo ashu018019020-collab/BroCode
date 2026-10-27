@@ -5,7 +5,7 @@
  * here (it lives in the server process; see `server/interview.mjs`), and this module never guesses
  * at an evaluation: when the endpoint is absent, unconfigured, slow or malformed it returns the
  * DETERMINISTIC rubric evaluation and a note that says exactly why. The page then labels the result
- * `Offline rubric`, so a learner is never told a keyword count is a language model.
+ * `Built-in rubric`, so a learner is never told a keyword count is a language model.
  *
  * The static deployment (GitHub Pages) has no `/api` at all. That is a normal, expected state: the
  * request resolves to `api-unreachable`, the rubric answers, and the interview keeps working.
@@ -40,17 +40,17 @@ export interface EvaluationResult {
 function fallbackNote(code: string | null, message: string): string {
   switch (code) {
     case 'ai-unconfigured':
-      return 'The AI evaluator is not configured on this server, so this score comes from the offline keyword rubric.';
+      return 'The AI evaluator is not configured on this server, so this score comes from the built-in keyword rubric.';
     case 'api-unreachable':
-      return 'This deployment has no account API, so the AI evaluator cannot be reached. This score is the offline keyword rubric.';
+      return 'This deployment has no account API, so the AI evaluator cannot be reached. This score is the built-in keyword rubric.';
     case 'signed-out':
-      return 'Sign in to use the AI evaluator. Until then, this score is the offline keyword rubric.';
+      return 'Sign in to use the AI evaluator. Until then, this score is the built-in keyword rubric.';
     case 'timeout':
-      return 'The AI evaluator did not answer in time. This score is the offline keyword rubric — press Retry to ask the AI again.';
+      return 'The AI evaluator did not answer in time. This score is the built-in keyword rubric — press Retry to ask the AI again.';
     case 'ai-rate-limited':
-      return 'The AI evaluator is busy right now. This score is the offline keyword rubric — try again in a minute for the AI review.';
+      return 'The AI evaluator is busy right now. This score is the built-in keyword rubric — try again in a minute for the AI review.';
     default:
-      return message || 'The AI evaluator could not answer, so this score is the offline keyword rubric.';
+      return message || 'The AI evaluator could not answer, so this score is the built-in keyword rubric.';
   }
 }
 
@@ -85,7 +85,7 @@ export async function requestEvaluation(
     return {
       evaluation: fallbackEvaluation(question, input.answer),
       source: 'rubric',
-      note: `The AI reply was not in the expected shape (${parsed.reason}), so this score is the offline keyword rubric.`,
+      note: `The AI reply was not in the expected shape (${parsed.reason}), so this score is the built-in keyword rubric.`,
     };
   }
   return {

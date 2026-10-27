@@ -44,7 +44,7 @@ const OPTIONAL_MODULE = /^\s*(?:import|from)\s+(numpy|pandas|sklearn|scipy|matpl
 function runSnippet(code, opts = {}) {
   if (!code || !code.trim()) return { state: 'unrunnable', reason: 'empty snippet' };
   // A snippet that reads stdin cannot be verified non-interactively, and a snippet that
-  // shells out is not something an offline lesson should be doing in the first place.
+  // shells out is not something a browser lesson should be doing in the first place.
   if (/\binput\s*\(/.test(code)) return { state: 'unrunnable', reason: 'needs stdin' };
   if (!pythonAvailable()) return { state: 'unrunnable', reason: 'python not on PATH' };
 

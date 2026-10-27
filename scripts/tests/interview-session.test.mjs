@@ -88,10 +88,12 @@ test('interview session: scores band into correct / partial / incorrect', () => 
 test('interview session: a valid model evaluation is accepted and normalised', () => {
   const parsed = session.parseEvaluation({
     score: '82',
+    status: 'partially-correct',
     technicalAccuracy: 'mostly-accurate',
     conceptsUnderstood: ['ordered collection', '', 42],
     missingConcepts: ['mutability'],
     mistakes: ['said tuples are mutable'],
+    evidence: ['"a tuple cannot" — correct, but no reason given'],
     explanation: 'Lists are mutable sequences.',
     modelAnswer: 'A list is an ordered, mutable sequence.',
     nextStep: 'Say the mutability point first.',
@@ -99,9 +101,19 @@ test('interview session: a valid model evaluation is accepted and normalised', (
   });
   assert.equal(parsed.ok, true);
   assert.equal(parsed.evaluation.score, 82);
+  assert.equal(parsed.evaluation.status, 'partially-correct');
   assert.deepEqual(parsed.evaluation.conceptsUnderstood, ['ordered collection']);
+  assert.deepEqual(parsed.evaluation.evidence, ['"a tuple cannot" — correct, but no reason given']);
   assert.equal(parsed.evaluation.technicalAccuracy, 'mostly-accurate');
   assert.equal(parsed.evaluation.followUp, 'When would a tuple be better?');
+
+  // A reply that states only a score still carries a defensible status.
+  const derived = session.parseEvaluation({ score: 20, explanation: 'x', modelAnswer: 'y' });
+  assert.equal(derived.evaluation.status, 'incorrect');
+  assert.deepEqual(derived.evaluation.evidence, []);
+  // An unknown status is never trusted.
+  const unknown = session.parseEvaluation({ score: 90, status: 'perfect', explanation: 'x', modelAnswer: 'y' });
+  assert.equal(unknown.evaluation.status, 'correct');
 });
 
 test('interview session: malformed model output is refused, never half-displayed', () => {
@@ -121,17 +133,49 @@ test('interview session: malformed model output is refused, never half-displayed
   assert.equal(inferred.evaluation.followUp, null);
 });
 
-test('interview session: the offline rubric scores the answer, and an empty answer scores zero', () => {
+test('interview session: the built-in rubric scores the answer, and an empty answer scores zero', () => {
   const q = question();
   const blank = session.fallbackEvaluation(q, '   ');
   assert.equal(blank.score, 0);
+  assert.equal(blank.status, 'incorrect');
   assert.equal(blank.technicalAccuracy, 'inaccurate');
   assert.ok(blank.explanation.includes('ordered'));
 
   const good = session.fallbackEvaluation(q, 'A list is an ordered mutable collection that keeps duplicates and indexing starts at zero.');
   assert.ok(good.score > 0 && good.score <= 100);
+  assert.equal(good.status, session.statusForScore(good.score));
   assert.ok(good.conceptsUnderstood.length > 0);
+  assert.ok(good.evidence.length > 0, 'the rubric reports what it matched, not just a number');
   assert.equal(good.modelAnswer, q.answer);
+});
+
+/* ------------------------------ all questions ----------------------------- */
+
+test('all questions: the queue is every eligible item, level-filtered, de-duplicated', () => {
+  const banks = [
+    { sectionId: 's01', title: 'Lists', questions: [
+      question(),
+      question({ id: 's01:interview:1', difficulty: 'easy' }),
+      question({ id: 's01:logic:0', type: 'logic' }),
+    ] },
+    { sectionId: 's02', title: 'Tuples', questions: [question({ id: 's02:interview:0', sectionId: 's02', type: 'coding' })] },
+    // The same id twice must not be asked twice.
+    { sectionId: 's03', title: 'Duplicate', questions: [question({ id: 's01:interview:0' })] },
+  ];
+  const result = session.collectQuestions(banks, ['concept', 'coding'], 'intermediate');
+  assert.deepEqual(result.questions.map((q) => q.id), ['s01:interview:0', 's02:interview:0']);
+  assert.equal(result.sections, 3);
+  assert.equal(result.relaxed, false, 'the exact level existed, so nothing was relaxed');
+  assert.equal(result.questions[0].sectionTitle, 'Lists', 'a slot carries its section title');
+
+  // No item at the chosen level anywhere: the whole set is asked and the page can say it relaxed.
+  const easyOnly = [{ sectionId: 's01', title: 'Lists', questions: [question({ difficulty: 'easy' })] }];
+  const relaxed = session.collectQuestions(easyOnly, ['concept'], 'advanced');
+  assert.equal(relaxed.questions.length, 1);
+  assert.equal(relaxed.relaxed, true);
+
+  // An empty bank stays empty — nothing is invented.
+  assert.deepEqual(session.collectQuestions([], ['concept'], 'advanced').questions, []);
 });
 
 test('interview session: the spoken summary names the score and the missing concept', () => {
@@ -177,6 +221,7 @@ const answer = (over = {}) => ({
     followUp: null,
   },
   verdict: 'correct',
+  status: 'correct',
   source: 'ai',
   seconds: 30,
   ...over,
@@ -185,7 +230,7 @@ const answer = (over = {}) => ({
 test('interview report: every metric is derived from the answers actually evaluated', () => {
   const report = session.buildInterviewReport({
     answers: [
-      answer(),
+      answer({ retries: 2 }),
       answer({
         questionId: 's01:logic:1',
         sectionId: 's01',
@@ -209,6 +254,9 @@ test('interview report: every metric is derived from the answers actually evalua
   assert.equal(report.accuracyPct, 50, 'accuracy is correct/answered, not correct/planned');
   assert.equal(report.skipped, 1);
   assert.equal(report.planned, 3);
+  assert.equal(report.remaining, 0, 'two answered + one skipped covers the plan');
+  assert.equal(report.unanswered, 0);
+  assert.equal(report.retries, 2);
   assert.equal(report.seconds, 90);
   assert.equal(report.topics.length, 1);
   assert.equal(report.topics[0].average, 60);
@@ -226,6 +274,9 @@ test('interview report: an empty sitting reports dashes, not a flattering score'
   assert.equal(report.accuracyPct, null);
   assert.equal(report.answered, 0);
   assert.equal(report.skipped, 2);
+  assert.equal(report.remaining, 1, 'the third planned question was never reached');
+  assert.equal(report.unanswered, 1);
+  assert.equal(report.retries, 0);
   assert.deepEqual(report.topics, []);
   assert.deepEqual(report.weakest, []);
   assert.ok(report.recommendations.length >= 1);

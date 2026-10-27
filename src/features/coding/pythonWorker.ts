@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { DATASETS, datasetAsCSV } from '../../core/data/datasets';
 /**
- * Offline Python worker. The main thread passes the absolute URL of
+ * In-browser Python worker. The main thread passes the absolute URL of
  * ./pyodide/pyodide.mjs (computed against document.baseURI), so this works in
  * dev, preview and any static hosting — always from local files.
  */
@@ -50,7 +50,7 @@ async function init(pyodideUrl: string) {
   // int() with base 10: ''` — a message that blames the learner's conversion and hides the fact
   // that the Program Input box was simply empty, making the app's own EOFError coaching unreachable.
   pyodide.setStdin({ stdin: () => (stdinQueue.length ? stdinQueue.shift() + '\n' : undefined) });
-  // Seed the bundled datasets into the virtual FS so pd.read_csv('students.csv') works offline.
+  // Seed the bundled datasets into the virtual FS so pd.read_csv('students.csv') works in the browser.
   for (const d of DATASETS) pyodide.FS.writeFile(`${d.name}.csv`, datasetAsCSV(d), { encoding: 'utf8' });
 }
 

@@ -12,7 +12,7 @@ import { useI18n } from '../../app/i18n';
 import type { LocaleKey } from '../../app/i18n/locales';
 import { TRACK_DEFS } from '../../app/App';
 import { useStore, setState, addXp, addMistake, recordAttempt } from '../../core/storage/store';
-import { useBankManifest, useBank, TYPE_LABEL } from '../../core/data/questions';
+import { useBankManifest, loadBanksFor, TYPE_LABEL } from '../../core/data/questions';
 import type { BankManifestEntry } from '../../core/data/questions';
 import { bankAttempt } from '../../core/platform/keys';
 import {
@@ -20,13 +20,13 @@ import {
 } from '../../core/assessment/interview-room';
 import {
   DEFAULT_LEVEL, DEFAULT_MODE, LEVELS, MODES, PER_QUESTION_SECONDS,
-  buildInterviewReport, evaluationSpeech, levelPool, modeById, verdictForScore, verdictLabel,
+  buildInterviewReport, collectQuestions, evaluationSpeech, levelPool, modeById, statusLabel,
+  verdictForScore,
   type AnswerEvaluation, type EvaluationSource, type InterviewModeId, type LevelId,
-  type SessionAnswer,
+  type SessionAnswer, type SessionQuestion,
 } from '../../core/assessment/interview-session';
 import { requestEvaluation } from '../../core/ai/interview';
 import { voiceSupportNote } from '../../core/ai/voice';
-import type { QuestionRecord } from '../../core/data/schema';
 import './interview-room.css';
 
 /**
@@ -39,7 +39,7 @@ import './interview-room.css';
  *     answer there are ONE record. Nothing is generated on the client.
  *  2. THE AI IS ASKED, NOT IMITATED. Every evaluation is a real request with a deadline. The
  *     thinking indicator shows only while that request (or speech, or recognition) is genuinely in
- *     flight; when the API is absent the panel says "Offline rubric" and the deterministic keyword
+ *     flight; when the API is absent the panel says "Built-in rubric" and the deterministic keyword
  *     score is displayed instead. No animation pretends a model is working when it is not.
  *  3. THE VOICE IS THE EXISTING TUTOR. `useVoiceTutor` owns SpeechRecognition, the browser voice
  *     and the Google Neural2 voice; this page only decides WHEN to speak. A transcript is placed in
@@ -54,9 +54,12 @@ const ACCURACY_LABEL: Record<string, string> = {
   inaccurate: 'Inaccurate',
 };
 
-const clampSize = (value: string | null): number => {
+type SessionSize = 3 | 5 | 10 | 'all';
+
+const clampSize = (value: string | null): SessionSize => {
+  if (value === 'all') return 'all';
   const n = Number(value);
-  return [3, 5, 10].includes(n) ? n : 5;
+  return n === 3 || n === 5 || n === 10 ? n : 5;
 };
 
 export default function InterviewMode() {
@@ -74,11 +77,9 @@ export default function InterviewMode() {
   const [phase, setPhase] = useState<Phase>('setup');
   const [mode, setMode] = useState<InterviewModeId>(DEFAULT_MODE);
   const [level, setLevel] = useState<LevelId>(DEFAULT_LEVEL);
-  const [size, setSize] = useState(() => clampSize(params.get('size')));
-  const [nonce, setNonce] = useState(0);
+  const [size, setSize] = useState<SessionSize>(() => clampSize(params.get('size')));
 
   const [step, setStep] = useState(0);
-  const [questionId, setQuestionId] = useState<string | null>(null);
   const [asked, setAsked] = useState<string[]>([]);
   const [answers, setAnswers] = useState<SessionAnswer[]>([]);
   const [skipped, setSkipped] = useState(0);
@@ -98,57 +99,23 @@ export default function InterviewMode() {
   const levelDef = LEVELS.find((l) => l.id === level) ?? LEVELS[1];
   const subjectLabel = trackDef ? t(trackDef.nameKey as LocaleKey) : 'Interview';
 
-  /* ------------------------------- the plan -------------------------------- */
+  /* ------------------------------- the queue ------------------------------- */
 
-  // The lead kind of the mode weights the section order; the MODE still decides which kinds may be
-  // asked inside a section. This is the same planner the hub and the old room used.
+  // The lead kind of the mode weights the SECTION ORDER (the planner); the mode's whole kind list
+  // decides which questions are eligible inside each section.
   const kind = KIND_BY_ID[modeDef.kinds[0]];
-  const plan = useMemo<BankManifestEntry[]>(() => {
-    if (!range) return [];
-    return planSections(range, entries, kind.id, size)
-      .map((sid) => entries.find((e) => e.sectionId === sid))
-      .filter((e): e is BankManifestEntry => !!e);
-  }, [range, entries, kind.id, size, nonce]);
-
-  const currentSection = phase === 'live' ? plan[step] ?? null : null;
-  const bank = useBank(currentSection?.sectionId);
-
-  const base = useMemo<QuestionRecord[]>(() => {
-    if (!bank) return [];
-    return eligibleInBank(bank).filter((q) => {
-      const k = kindOf(q);
-      return k !== null && modeDef.kinds.includes(k);
-    });
-  }, [bank, modeDef]);
-
-  const poolInfo = useMemo(() => levelPool(base, level), [base, level]);
-  const pool = poolInfo.questions;
   const weak = useMemo(() => new Set(state.mistakes.filter((m) => !m.fixed).map((m) => m.section)), [state.mistakes]);
 
-  const pickedFor = useRef<{ step: number; id: string } | null>(null);
-  const askedRef = useRef(asked);
-  askedRef.current = asked;
+  const [queue, setQueue] = useState<SessionQuestion[]>([]);
+  const [preparing, setPreparing] = useState(false);
+  const [prepError, setPrepError] = useState<string | null>(null);
+  const [loadNote, setLoadNote] = useState<string | null>(null);
+  const [levelRelaxed, setLevelRelaxed] = useState(false);
+  const [retries, setRetries] = useState(0);
 
-  useEffect(() => {
-    if (phase !== 'live') return;
-    if (pickedFor.current?.step === step && pickedFor.current.id && pool.some((q) => q.id === pickedFor.current!.id)) {
-      setQuestionId(pickedFor.current.id);
-      return;
-    }
-    if (!pool.length) {
-      pickedFor.current = null;
-      setQuestionId(null);
-      return;
-    }
-    // The recovery ladder from the engine: unseen-weak → unseen → failed → review-due → passed,
-    // with every id already asked in this sitting excluded.
-    const id = pickQuestion(pool, state.attempts, { weak, avoid: new Set(askedRef.current) });
-    const chosen = id ?? pool[0].id;
-    pickedFor.current = { step, id: chosen };
-    setQuestionId(chosen);
-  }, [phase, step, pool]);
-
-  const q = questionId ? pool.find((x) => x.id === questionId) ?? null : null;
+  const current = queue[step] ?? null;
+  const q = current?.question ?? null;
+  const currentSection = current ? { sectionId: current.sectionId, title: current.sectionTitle } : null;
   const qKind = q ? kindOf(q) : null;
 
   /* --------------------------------- clock --------------------------------- */
@@ -164,7 +131,7 @@ export default function InterviewMode() {
   };
 
   useEffect(() => {
-    if (phase !== 'live' || paused) return;
+    if (phase !== 'live' || paused || preparing) return;
     const timer = window.setInterval(() => {
       setElapsed((n) => n + 1);
       if (!modeDef.timed || evaluationRef.current) return;
@@ -173,7 +140,7 @@ export default function InterviewMode() {
       if (next === 0) expired.current = true;
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [phase, paused, modeDef.timed]);
+  }, [phase, paused, modeDef.timed, preparing]);
 
   /* ------------------------------ voice output ------------------------------ */
 
@@ -216,7 +183,7 @@ export default function InterviewMode() {
     // Cancel any evaluation still in flight for the question being left behind.
     requestToken.current += 1;
     spokenFor.current = null;
-    pickedFor.current = null;
+    setRetries(0);
     setEvaluation(null);
     setEvalError(null);
     setDraft('');
@@ -225,7 +192,7 @@ export default function InterviewMode() {
     setQuestionLeft(PER_QUESTION_SECONDS);
     expired.current = false;
     if (opts.skipped) setSkipped((n) => n + 1);
-    if (step + 1 >= plan.length) {
+    if (step + 1 >= queue.length) {
       setPhase('report');
       voice.stopSpeaking();
     } else {
@@ -241,9 +208,9 @@ export default function InterviewMode() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionLeft, phase]);
 
-  const start = () => {
+  const start = async () => {
+    if (!range) return;
     requestToken.current += 1;
-    pickedFor.current = null;
     spokenFor.current = null;
     setAnswers([]);
     setSkipped(0);
@@ -254,12 +221,70 @@ export default function InterviewMode() {
     setEvalError(null);
     setNotice(null);
     setElapsed(0);
-    setQuestionLeft(PER_QUESTION_SECONDS);
     setLeft(PER_QUESTION_SECONDS);
     expired.current = false;
     setPaused(false);
-    setNonce((n) => n + 1);
+    setQueue([]);
+    setPrepError(null);
+    setLoadNote(null);
+    setLevelRelaxed(false);
+    setRetries(0);
+    setPreparing(true);
     setPhase('live');
+
+    // `All Questions` needs every bank in the subject BEFORE the first question, so its total is
+    // MEASURED rather than guessed and no later fetch can stall the middle of a sitting.
+    const subjectSections = entries.filter((e) => e.no >= range.from && e.no <= range.to);
+    const sectionIds = size === 'all'
+      ? subjectSections.map((e) => e.sectionId)
+      : planSections(range, entries, kind.id, size);
+    const banks = await loadBanksFor(sectionIds);
+    if (!mounted.current) return;
+
+    const sections = sectionIds.map((sectionId) => {
+      const entry = entries.find((e) => e.sectionId === sectionId);
+      const bank = banks.get(sectionId) ?? null;
+      return {
+        sectionId,
+        title: entry?.title ?? sectionId.toUpperCase(),
+        questions: bank ? eligibleInBank(bank) : [],
+      };
+    });
+    const missing = sections.filter((s) => s.questions.length === 0).length;
+
+    let items: SessionQuestion[] = [];
+    let relaxed = false;
+    if (size === 'all') {
+      const collected = collectQuestions(sections, modeDef.kinds, level);
+      items = collected.questions;
+      relaxed = collected.relaxed;
+    } else {
+      // One question per planned section, chosen by the recovery ladder. The bank's own level is
+      // preferred; a section with nothing at that level is taken at the bank's difficulty.
+      for (const section of sections) {
+        const exact = levelPool(section.questions, level);
+        if (exact.relaxed) relaxed = true;
+        const pool = exact.questions.filter((x) => {
+          const k = kindOf(x);
+          return k !== null && modeDef.kinds.includes(k);
+        });
+        if (!pool.length) continue;
+        const id = pickQuestion(pool, state.attempts, { weak, avoid: new Set(asked) });
+        const chosen = pool.find((x) => x.id === id) ?? pool[0];
+        items.push({ id: chosen.id, sectionId: section.sectionId, sectionTitle: section.title, question: chosen });
+      }
+    }
+
+    setLevelRelaxed(relaxed);
+    setQueue(items);
+    setPreparing(false);
+    if (!items.length) {
+      setPrepError(
+        `The ${subjectLabel} banks hold no stored ${modeDef.label.toLowerCase()} question at the ${levelDef.label.toLowerCase()} level. Change the difficulty, pick another round type, or open the Question Bank.`,
+      );
+    } else if (missing && size === 'all') {
+      setLoadNote(`${missing} of ${sections.length} chapter banks have no stored question for this round type — nothing was invented to fill them.`);
+    }
   };
 
   const toSetup = () => {
@@ -274,10 +299,28 @@ export default function InterviewMode() {
     setEvaluation(null);
     setEvalError(null);
     setElapsed(0);
+    setQueue([]);
+    setPreparing(false);
+    setPrepError(null);
+    setLoadNote(null);
+    setLevelRelaxed(false);
+    setRetries(0);
+  };
+
+  /** Re-open the current question. The old evaluation is discarded, so a re-answer replaces it in
+   *  the report instead of counting twice. */
+  const retryAnswer = () => {
+    requestToken.current += 1;
+    setAnswers((list) => list.filter((a) => a.questionId !== q?.id));
+    setEvaluation(null);
+    setEvalError(null);
+    setRetries((n) => n + 1);
+    setLeft(PER_QUESTION_SECONDS);
+    expired.current = false;
   };
 
   const submit = async () => {
-    if (!q || !currentSection || evaluating || evaluation) return;
+    if (!q || !currentSection || evaluating || evaluation || preparing) return;
     const text = draft.trim();
     if (text.length < 3) {
       setEvalError('Say or write a little more before submitting — a few words is enough to start.');
@@ -300,6 +343,17 @@ export default function InterviewMode() {
     }, question);
 
     if (!mounted.current || requestToken.current !== token) return;
+
+    // "Too vague to mark" is not a zero. The question stays open, nothing is recorded, and the
+    // learner is asked for one concrete point instead of being scored on a shrug.
+    if (result.evaluation.status === 'needs-clarification') {
+      setEvaluation({ value: result.evaluation, source: result.source, note: result.note });
+      setEvaluating(false);
+      if (voiceOn) {
+        voice.speak('I need a little more detail before I can mark that. Please add one concrete point or example, then submit again.');
+      }
+      return;
+    }
 
     const verdict = verdictForScore(result.evaluation.score);
     const prev = state.attempts[bankAttempt(question.id)];
@@ -344,10 +398,13 @@ export default function InterviewMode() {
         answer: text,
         evaluation: result.evaluation,
         verdict,
+        status: result.evaluation.status,
         source: result.source,
         seconds: PER_QUESTION_SECONDS - leftRef.current,
+        retries,
       },
     ]);
+    setRetries(0);
     setAsked((ids) => [...ids, question.id]);
     setEvaluation({ value: result.evaluation, source: result.source, note: result.note });
     setEvaluating(false);
@@ -357,11 +414,11 @@ export default function InterviewMode() {
   const report = useMemo(() => buildInterviewReport({
     answers,
     skipped,
-    planned: plan.length,
+    planned: queue.length,
     subject: subjectLabel,
     subjectId: trackDef?.id ?? '',
     seconds: elapsed,
-  }), [answers, skipped, plan.length, subjectLabel, trackDef?.id, elapsed]);
+  }), [answers, skipped, queue.length, subjectLabel, trackDef?.id, elapsed]);
 
   /* -------------------------------- the data -------------------------------- */
 
@@ -472,7 +529,7 @@ export default function InterviewMode() {
 
         <div className="sec-head"><h2>Length</h2><span className="line" /></div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-          {[3, 5, 10].map((n) => (
+          {([3, 5, 10] as const).map((n) => (
             <button
               key={n}
               type="button"
@@ -484,7 +541,21 @@ export default function InterviewMode() {
               {n} questions
             </button>
           ))}
+          <button
+            type="button"
+            className={`chip${size === 'all' ? ' on' : ''}`}
+            style={{ cursor: 'pointer' }}
+            aria-pressed={size === 'all'}
+            onClick={() => setSize('all')}
+          >
+            All questions
+          </button>
         </div>
+        <p className="small muted" style={{ marginTop: 6 }}>
+          {size === 'all'
+            ? `Every eligible stored question in this subject is asked for the ${modeDef.label.toLowerCase()} round. ${subjectInventory} match this round type across all levels; the exact ${levelDef.label.toLowerCase()} total is fixed when the session starts.`
+            : `One question per planned chapter. ${subjectInventory} stored questions match this round type in this subject.`}
+        </p>
 
         <div className="sec-head"><h2>Voice</h2><span className="line" /></div>
         <div className="card" style={{ marginTop: 0 }}>
@@ -556,7 +627,8 @@ export default function InterviewMode() {
                 <div className="small muted">Overall score</div>
                 <div className="iv-score">{report.averageScore === null ? '—' : `${report.averageScore}%`}</div>
                 <div className="small muted">
-                  {report.answered} answered of {report.planned} planned{report.skipped ? ` · ${report.skipped} skipped` : ''} ·{' '}
+                  {report.answered} answered of {report.planned} planned{report.skipped ? ` · ${report.skipped} skipped` : ''}
+                  {report.remaining ? ` · ${report.remaining} not reached` : ''}{report.retries ? ` · ${report.retries} re-answered` : ''} ·{' '}
                   {Math.floor(report.seconds / 60)}m {report.seconds % 60}s
                 </div>
               </div>
@@ -621,8 +693,9 @@ export default function InterviewMode() {
         {report.answers.map((answer, i) => (
           <details key={answer.questionId} className="card">
             <summary className="small" style={{ cursor: 'pointer' }}>
-              <b>Q{i + 1} · {answer.sectionTitle}</b> — {verdictLabel(answer.verdict)} · {answer.evaluation.score}% ·{' '}
-              {answer.source === 'ai' ? 'AI evaluation' : 'offline rubric'}
+              <b>Q{i + 1} · {answer.sectionTitle}</b> — {statusLabel(answer.status)} · {answer.evaluation.score}% ·{' '}
+              {answer.source === 'ai' ? 'AI evaluation' : 'built-in rubric'}
+              {answer.retries ? ` · ${answer.retries} re-answer${answer.retries === 1 ? '' : 's'}` : ''}
             </summary>
             <p className="small" style={{ marginBottom: 4 }}><b>{answer.question}</b></p>
             <p className="small muted" style={{ marginTop: 0 }}>Your answer: {answer.answer}</p>
@@ -647,10 +720,10 @@ export default function InterviewMode() {
 
   /* ---------------------------------- live --------------------------------- */
 
-  const total = plan.length;
+  const total = queue.length;
   const progress = total ? ((step + (evaluation ? 1 : 0)) / total) * 100 : 0;
-  const levelRelaxed = poolInfo.relaxed;
   const remaining = modeDef.timed ? Math.max(0, questionLeft) : null;
+  const stillToAsk = Math.max(0, total - step - (evaluation ? 1 : 0));
 
   return (
     <div>
@@ -669,6 +742,7 @@ export default function InterviewMode() {
               <span className={`chip${remaining <= 20 ? ' hard' : ''}`}>⏳ {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')} left</span>
             )}
             <span className="chip">{report.correct} correct · {report.answered} answered</span>
+            <span className="chip">{stillToAsk} remaining</span>
             <span className="chip">{answers.length} evaluated</span>
           </div>
         </div>
@@ -681,10 +755,38 @@ export default function InterviewMode() {
         </p>
       )}
 
+      {loadNote && !prepError && <p className="small muted" style={{ margin: '6px 0 0' }}>{loadNote}</p>}
+
       <div className="iv-live-grid" style={{ marginTop: 12 }}>
         <div>
           <div className="card" style={{ marginTop: 0 }}>
-            {!currentSection && (
+            {preparing && (
+              <div>
+                <h2 style={{ marginTop: 0 }}>Preparing the interview…</h2>
+                <p className="small muted">
+                  Reading the chapter banks for this subject. This one step is what makes the question
+                  total exact — nothing starts until every bank has answered.
+                </p>
+                <div className="iv-status" role="status" aria-live="polite">
+                  <span className="iv-dots"><i /><i /><i /></span>
+                  <span className="small">Loading question banks…</span>
+                </div>
+              </div>
+            )}
+
+            {!preparing && prepError && (
+              <div>
+                <h2 style={{ marginTop: 0 }}>This round cannot start</h2>
+                <p className="small muted">{prepError}</p>
+                <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                  <button className="btn small" onClick={() => void start()}>Try again</button>
+                  <button className="btn small ghost" onClick={toSetup}>Change setup</button>
+                  <Link className="btn small ghost" to="/questions">Question Bank <ArrowRight size={12} /></Link>
+                </div>
+              </div>
+            )}
+
+            {!preparing && !prepError && !currentSection && (
               <div>
                 <h2 style={{ marginTop: 0 }}>No question available for this round</h2>
                 <p className="small muted">
@@ -692,21 +794,6 @@ export default function InterviewMode() {
                   another subject — nothing is invented to fill the gap.
                 </p>
                 <button className="btn small" onClick={toSetup}>Change setup</button>
-              </div>
-            )}
-
-            {currentSection && !q && (
-              <div>
-                <h2 style={{ marginTop: 0 }}>{bank === null ? 'Loading this section’s bank…' : 'This section has no matching question'}</h2>
-                <p className="small muted">
-                  {bank === null
-                    ? 'Reading the section bank. If it never arrives, the file is missing from this deployment.'
-                    : 'The loaded bank holds nothing for this round type. Skip this question to continue the round.'}
-                </p>
-                <div className="row" style={{ gap: 6 }}>
-                  <button className="btn small" onClick={() => advance({ skipped: true })}><SkipForward size={12} /> Skip</button>
-                  <button className="btn small" onClick={() => setNonce((n) => n + 1)}>Re-plan</button>
-                </div>
               </div>
             )}
 
@@ -812,10 +899,25 @@ export default function InterviewMode() {
                       <SkipForward size={13} /> Skip question
                     </button>
                   )}
-                  {evaluation && (
-                    <button type="button" className="btn primary" onClick={() => advance()}>
-                      {step + 1 >= total ? 'Finish and see report' : 'Next question'} <ArrowRight size={13} />
-                    </button>
+                  {evaluation && evaluation.value.status === 'needs-clarification' && (
+                    <>
+                      <button type="button" className="btn primary" onClick={retryAnswer}>
+                        <RotateCcw size={13} /> Add detail and re-submit
+                      </button>
+                      <button type="button" className="btn small" onClick={() => advance({ skipped: true })}>
+                        <SkipForward size={13} /> Skip for now
+                      </button>
+                    </>
+                  )}
+                  {evaluation && evaluation.value.status !== 'needs-clarification' && (
+                    <>
+                      <button type="button" className="btn" onClick={retryAnswer}>
+                        <RotateCcw size={13} /> Try again
+                      </button>
+                      <button type="button" className="btn primary" onClick={() => advance()}>
+                        {step + 1 >= total ? 'Finish and see report' : 'Next question'} <ArrowRight size={13} />
+                      </button>
+                    </>
                   )}
                   <button type="button" className="btn small ghost" onClick={() => setPaused((p) => !p)}>
                     {paused ? <Play size={13} /> : <Pause size={13} />} {paused ? 'Resume' : 'Pause'}
@@ -834,18 +936,25 @@ export default function InterviewMode() {
                 <div>
                   <div className="small muted">Evaluation</div>
                   <div className="iv-score">{evaluation.value.score}<span className="small"> / 100</span></div>
-                  <b>{verdictLabel(verdictForScore(evaluation.value.score))}</b>
+                  <b>{statusLabel(evaluation.value.status)}</b>
                 </div>
                 <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                   <span className="chip">{ACCURACY_LABEL[evaluation.value.technicalAccuracy] ?? evaluation.value.technicalAccuracy}</span>
                   <span className="chip">
-                    {evaluation.source === 'ai' ? <><Sparkles size={12} /> AI evaluation</> : 'Offline rubric'}
+                    {evaluation.source === 'ai' ? <><Sparkles size={12} /> AI evaluation</> : 'Built-in rubric'}
                   </span>
                 </div>
               </div>
 
               {evaluation.note && (
                 <p className="small" style={{ margin: '8px 0 0', color: 'var(--amber)' }}>{evaluation.note}</p>
+              )}
+
+              {evaluation.value.status === 'needs-clarification' && (
+                <p className="small" style={{ margin: '8px 0 0', color: 'var(--amber)' }}>
+                  This answer was too vague to mark, so it is not counted in the report yet. Add one concrete
+                  point or example and submit again.
+                </p>
               )}
 
               <div className="small" style={{ marginTop: 8 }}>
@@ -861,6 +970,12 @@ export default function InterviewMode() {
                   <>
                     <b>Specific mistakes</b>
                     <ul className="iv-list">{evaluation.value.mistakes.map((x) => <li key={x}>{x}</li>)}</ul>
+                  </>
+                )}
+                {evaluation.value.evidence.length > 0 && (
+                  <>
+                    <b>From your answer</b>
+                    <ul className="iv-list">{evaluation.value.evidence.map((x) => <li key={x}>{x}</li>)}</ul>
                   </>
                 )}
                 <b>Explanation</b>
@@ -884,7 +999,7 @@ export default function InterviewMode() {
           <div className="card" style={{ marginTop: 0 }}>
             <h2 style={{ marginTop: 0, fontSize: 15 }}>This sitting</h2>
             <p className="small muted" style={{ marginTop: 0 }}>
-              {modeDef.label} · {levelDef.label} · {total} planned.
+              {modeDef.label} · {levelDef.label} · {total} in this round{stillToAsk ? ` · ${stillToAsk} still to ask` : ''}.
             </p>
             <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
               <span className="chip"><CheckCircle2 size={12} /> {report.correct} correct</span>

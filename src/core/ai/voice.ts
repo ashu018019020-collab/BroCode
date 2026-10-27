@@ -281,7 +281,7 @@ export function ttsEngineNote(
   if (engine === 'browser' && cloudConfigured === true) {
     return 'Google voice is busy — using the built-in browser voice for this answer.';
   }
-  if (cloudConfigured === true) return 'Google Neural2 voice ready · browser voice as the offline fallback.';
+  if (cloudConfigured === true) return 'Google Neural2 voice ready · browser voice as the fallback.';
   if (cloudConfigured === false) return 'Browser voice (this server has no Google voice configured).';
   return 'Checking the voice engine…';
 }

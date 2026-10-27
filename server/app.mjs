@@ -514,14 +514,14 @@ export function createAuthServer({
         const user = await requireUser(request);
         if (!openaiInterviewKey) {
           json(response, 503, {
-            error: 'The AI evaluator is not configured on this server. The offline rubric will be used.',
+            error: 'The AI evaluator is not configured on this server. The built-in rubric will be used.',
             code: 'ai-unconfigured',
           }, headers);
           return;
         }
         const clientKey = `${user.profile.id}:${request.socket?.remoteAddress ?? 'unknown'}`;
         if (!interviewAllowed(clientKey)) {
-          throw new HttpError(429, 'Too many AI evaluations. Try again in a few minutes — the offline rubric still works.');
+          throw new HttpError(429, 'Too many AI evaluations. Try again in a few minutes — the built-in rubric still works.');
         }
         const input = await readJson(request);
         const check = validateEvaluationBody(input);
@@ -537,7 +537,7 @@ export function createAuthServer({
         } catch (error) {
           if (error?.code === 'ai-rate-limited') {
             json(response, 429, {
-              error: 'The AI evaluator is rate-limited. Try again shortly — the offline rubric still works.',
+              error: 'The AI evaluator is rate-limited. Try again shortly — the built-in rubric still works.',
               code: 'ai-rate-limited',
             }, headers);
             return;
@@ -545,14 +545,14 @@ export function createAuthServer({
           if (error?.code === 'ai-bad-response') {
             logger.warn?.('AI interview evaluation was malformed.', 'ai-bad-response');
             json(response, 502, {
-              error: 'The AI evaluator returned an unusable reply. The offline rubric will be used.',
+              error: 'The AI evaluator returned an unusable reply. The built-in rubric will be used.',
               code: 'ai-bad-response',
             }, headers);
             return;
           }
           logger.warn?.('AI interview evaluation failed.', error?.code ?? error?.name ?? 'unknown');
           json(response, 502, {
-            error: 'The AI evaluator is unavailable. The offline rubric will be used.',
+            error: 'The AI evaluator is unavailable. The built-in rubric will be used.',
             code: 'ai-unavailable',
           }, headers);
           return;

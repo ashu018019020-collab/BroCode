@@ -24,6 +24,7 @@ export const INTERVIEW_MAX_DIFFICULTY = 20;
 export const INTERVIEW_DEFAULT_MODEL = 'gpt-4o-mini';
 export const INTERVIEW_LANGS = ['en-IN', 'hi-IN'];
 const ACCURACY = ['accurate', 'mostly-accurate', 'partially-accurate', 'inaccurate'];
+const STATUSES = ['correct', 'partially-correct', 'incorrect', 'needs-clarification'];
 
 const trimmed = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 
@@ -73,9 +74,12 @@ export function buildInterviewPrompt(value) {
     'Be strict about factual errors and missing concepts; be encouraging in tone; never invent facts that are not in the reference.',
     'Scores must reflect the answer actually given. Never award full marks by default, and never give 0 for a partial attempt that names real concepts.',
     'Return ONLY a JSON object, no prose and no code fences, with exactly these keys:',
-    '{"score": number 0-100, "technicalAccuracy": "accurate" | "mostly-accurate" | "partially-accurate" | "inaccurate",',
-    '"conceptsUnderstood": string[], "missingConcepts": string[], "mistakes": string[],',
+    '{"score": number 0-100, "status": "correct" | "partially-correct" | "incorrect" | "needs-clarification",',
+    '"technicalAccuracy": "accurate" | "mostly-accurate" | "partially-accurate" | "inaccurate",',
+    '"conceptsUnderstood": string[], "missingConcepts": string[], "mistakes": string[], "evidence": string[],',
     '"explanation": string, "modelAnswer": string, "nextStep": string, "followUp": string | null}',
+    'status: use "needs-clarification" ONLY when the answer is too vague or empty to mark at all; then keep the score low and say what detail is missing.',
+    'evidence: short quotes or observations from the candidate answer that justify the score — never your own reasoning steps.',
     'explanation: 2-4 sentences teaching the correct idea in beginner-friendly language.',
     'modelAnswer: an improved answer the candidate could say aloud, grounded in the reference.',
     'nextStep: one concrete action. followUp: one relevant follow-up question, or null if none helps.',
@@ -133,12 +137,18 @@ export function normalizeEvaluation(raw) {
     ? raw.technicalAccuracy
     : score >= 85 ? 'accurate' : score >= 65 ? 'mostly-accurate' : score >= 40 ? 'partially-accurate' : 'inaccurate';
 
+  const status = STATUSES.includes(raw.status)
+    ? raw.status
+    : Math.round(score) >= 75 ? 'correct' : Math.round(score) >= 45 ? 'partially-correct' : 'incorrect';
+
   return {
     score: Math.round(score),
+    status,
     technicalAccuracy: accuracy,
     conceptsUnderstood: toList(raw.conceptsUnderstood),
     missingConcepts: toList(raw.missingConcepts),
     mistakes: toList(raw.mistakes),
+    evidence: toList(raw.evidence, 6, 300),
     explanation,
     modelAnswer,
     nextStep: trimmed(raw.nextStep, 400) || 'Compare your answer with the model answer, then say it again in your own words.',

@@ -12,11 +12,11 @@
  *     leaks across sections;
  *   · Run all executes the notebook top to bottom and stops at the first raise, like Jupyter;
  *   · a failing cell auto-opens an Errors tab with the structured traceback, and an
- *     "AI Explanation" tab built from the offline tutor engine (what happened, why, how to
+ *     "AI Explanation" tab built from the local tutor engine (what happened, why, how to
  *     debug, then a progressive hint ladder) that can file the mistake in the tracker;
  *   · the kernel-variable panel lists the names the session really has, so `df` disappearing is
  *     visible instead of mysterious;
- *   · the library shelf offers only what the offline runtime truly bundles (numpy + pandas free
+ *   · the library shelf offers only what the bundled runtime truly ships (numpy + pandas free
  *     of installation) and inserts a ready-made cell, so a library lesson starts in one click.
  *
  * Persistence is per cell: edited source lands in `state.savedCode[codeSlot.notebook(slug, id)]`
@@ -325,7 +325,7 @@ function ExplainPane({
 
 /* ------------------------------ library shelf ------------------------------ */
 /**
- * What the offline runtime really has, offered as one-click cells. The list is verified against
+ * What the bundled runtime really has, offered as one-click cells. The list is verified against
  * the wheels in `public/pyodide/` by a test, so it can never advertise an uninstallable import.
  */
 export function LibraryShelf({ onInsert, open: openProp }: { onInsert?: (code: string, label: string) => void; open?: boolean }) {
@@ -399,7 +399,7 @@ interface NotebookCellsProps {
   sectionId?: string;
   /** Human label for the assistant's context strip, e.g. "Task 4 · coding". */
   where?: string;
-  /** Hide the offline assistant that normally sits under the last cell. */
+  /** Hide the local assistant that normally sits under the last cell. */
   assistant?: boolean;
   /**
    * Report the traceback the cells really raised (null once a run succeeds).
@@ -590,7 +590,7 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
     setRunningAll(false);
   }, [codeCells, runCell]);
 
-  /** Hard stop: the offline runtime can only be interrupted by restarting its worker. */
+  /** Hard stop: the in-browser runtime can only be interrupted by restarting its worker. */
   const stop = () => {
     stopRef.current = true;
     stopPython();

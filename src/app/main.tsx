@@ -20,13 +20,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 mountSpotlight();
 
 // Study time is measured for as long as the app is open, so the tracker lives at module scope too.
-// It counts only visible, in-use time and writes to the store on a slow timer (see offline/study.ts).
+// It counts only visible, in-use time and writes to the store on a slow timer (see core/storage/study.ts).
 mountStudyTracker();
 
 /**
  * Service worker policy.
  *
- * Production: register the local worker — it precaches the offline assets
+ * Production: register the local worker — it precaches the bundled assets
  * (Pyodide, Monaco, curriculum, question banks) so the app works with no network.
  *
  * Dev: actively UNREGISTER any worker + purge its caches, then reload once. A

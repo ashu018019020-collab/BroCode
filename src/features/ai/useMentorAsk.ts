@@ -10,7 +10,7 @@ import {
 import type { VoiceLangId } from '../../core/ai/voice';
 
 /**
- * One mentor turn over the EXISTING offline engine.
+ * One mentor turn over the EXISTING local engine.
  *
  * No model call and no second corpus: `askLocal` retrieves the bundled curriculum exactly as the
  * footer assistant does, and `mentorTurn` reshapes that answer into a teaching turn. The only state

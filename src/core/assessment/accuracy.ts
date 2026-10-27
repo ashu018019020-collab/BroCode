@@ -14,7 +14,7 @@
  *   2. THE GATE AND THE PERCENTAGE ARE DIFFERENT THINGS. `done` still decides mastery and XP; the
  *      percentage is feedback. A rubric of 60% on an answer the learner called "sahi" is not a
  *      contradiction, it is information — and every label here says which one it is.
- *   3. THE RUBRIC IS DETERMINISTIC AND OFFLINE. `engine/evaluate.ts` keyword rubrics only — the
+ *   3. THE RUBRIC IS DETERMINISTIC AND LOCAL. `engine/evaluate.ts` keyword rubrics only — the
  *      same ones Interview Mode, the mock rounds and the final paper already score with, so an
  *      answer cannot score 74% here and 40% there.
  *

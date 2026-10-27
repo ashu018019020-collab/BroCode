@@ -9,7 +9,7 @@ Two files own the working agreement for this repository, and neither is restated
   spine across 6 parts, per-phase GATE commands and done criteria, the canonical duplicate-merge
   algorithm, the decision framework, the evidence standard, and **Appendix A** (this repo's real
   facts: the gate commands, the test-loader ceiling, route/duplication couplings, data semantics that
-  read one way and behave another, store/offline rules, local-serving quirks, brand surface).
+  read one way and behave another, store/cache rules, local-serving quirks, brand surface).
 - **`AGENTS.md`** (project root) — operational truth for the same facts. Where the two disagree,
   `AGENTS.md` wins.
 

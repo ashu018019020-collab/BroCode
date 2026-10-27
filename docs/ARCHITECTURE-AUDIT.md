@@ -22,7 +22,7 @@ Confirmed strengths, each verified rather than assumed:
 | Cross-references all resolve | `npm run course:audit`: 14 551 items, 0 unmapped, 0 unresolved, 0 true duplicates, 0 orphans, index 1…36 no gaps |
 | Server authorization is server-side | `requireAdmin()` reads the DB role on every request; role lives in admin-only `app_metadata` |
 | Database access is closed by default | RLS enabled + `REVOKE ALL ... FROM anon, authenticated` on both tables |
-| Offline-first is real | Pyodide, sql.js, pdf.js and notebooks are bundled; `sw.js` caches `/generated/` and `/notebooks` |
+| Local runtimes are real | Pyodide, sql.js, pdf.js and notebooks are bundled; `sw.js` caches `/generated/` and `/notebooks` |
 
 ## Confirmed defects (found and fixed in this work)
 

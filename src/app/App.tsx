@@ -997,7 +997,7 @@ function Shell() {
  *
  * The icon is what you will GET, not what you have — a moon on a dark screen reads as "you are here",
  * and the tooltip says the same thing ("Light mode"). The theme itself is applied by `applyTheme()`
- * in offline/ui.ts, which writes `data-theme` on <html> before the first paint.
+ * in core/storage/ui.ts, which writes `data-theme` on <html> before the first paint.
  */
 function ThemeToggle() {
   const prefs = useUi();

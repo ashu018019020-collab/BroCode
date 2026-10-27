@@ -10,12 +10,12 @@ import {
 export type { PbIndex, PbItem, PbChapter, PbTotals, PbTrackRow, PbTarget, PbTrackDef } from '../assessment/playbook';
 
 /**
- * The offline content pack's lazy JSON.
+ * The bundled content pack's lazy JSON.
  *
  * Each file is fetched at most ONCE per session, because the promise itself is cached at module
  * level rather than the result: two surfaces on one page (the Playbook band and the path cards)
  * both ask for items.json, and 192 KB should not be fetched twice. Every file here is part of the
- * offline pack, so the cached copy is also what makes the Learning Path work with no network —
+ * bundled pack, so the cached copy is also what makes the Learning Path work with no network —
  * `Public/sw.js` keeps `/playbook`, `/questions` and `/notebooks` JSON in its content cache.
  */
 let indexPromise: Promise<PbIndex | null> | null = null;

@@ -30,10 +30,12 @@ const body = (over = {}) => ({
 
 const validEvaluation = {
   score: 78,
+  status: 'partially-correct',
   technicalAccuracy: 'mostly-accurate',
   conceptsUnderstood: ['mutability'],
   missingConcepts: ['ordered'],
   mistakes: [],
+  evidence: ['"a list can change, a tuple cannot" — correct on mutability'],
   explanation: 'A list is mutable and ordered; a tuple is immutable and ordered.',
   modelAnswer: 'Lists are mutable sequences, tuples are immutable sequences.',
   nextStep: 'Name the ordering guarantee as well.',
@@ -82,6 +84,8 @@ test('interview api: the prompt carries the reference answer and demands a JSON 
   assert.match(prompt.system, /accept any technically valid alternative approach/);
   assert.match(prompt.system, /Never award full marks by default/);
   assert.match(prompt.system, /Do not include internal reasoning/);
+  assert.match(prompt.system, /needs-clarification/);
+  assert.match(prompt.system, /"evidence": string\[\]/);
   assert.match(prompt.user, /REFERENCE ANSWER \(authoritative curriculum content\)/);
   assert.match(prompt.user, /A list is mutable and ordered/);
   assert.match(prompt.user, /CANDIDATE ANSWER:/);
@@ -92,9 +96,21 @@ test('interview api: the prompt carries the reference answer and demands a JSON 
 test('interview api: a valid evaluation passes through', () => {
   const evaluation = normalizeEvaluation(validEvaluation);
   assert.equal(evaluation.score, 78);
+  assert.equal(evaluation.status, 'partially-correct');
   assert.equal(evaluation.technicalAccuracy, 'mostly-accurate');
   assert.deepEqual(evaluation.missingConcepts, ['ordered']);
+  assert.deepEqual(evaluation.evidence, ['"a list can change, a tuple cannot" — correct on mutability']);
   assert.equal(evaluation.followUp, 'When is a tuple the better choice?');
+});
+
+test('interview api: a missing status is derived from the score and an unknown one is not trusted', () => {
+  const { status, ...rest } = validEvaluation;
+  assert.equal(normalizeEvaluation({ ...rest, score: 90 }).status, 'correct');
+  assert.equal(normalizeEvaluation({ ...rest, score: 60 }).status, 'partially-correct');
+  assert.equal(normalizeEvaluation({ ...rest, score: 20 }).status, 'incorrect');
+  assert.equal(normalizeEvaluation({ ...rest, status: 'perfect' }).status, 'correct', 'unknown status falls back to the score band');
+  assert.equal(normalizeEvaluation({ ...validEvaluation, status: 'needs-clarification' }).status, 'needs-clarification');
+  assert.deepEqual(normalizeEvaluation({ ...validEvaluation, evidence: undefined }).evidence, []);
 });
 
 test('interview api: unusable model output throws ai-bad-response', () => {

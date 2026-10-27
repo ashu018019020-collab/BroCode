@@ -1,4 +1,4 @@
-# OFFLINE TEST REPORT — AI Engineer Master Lab
+# LOCAL RUNTIME TEST REPORT — AI Engineer Master Lab
 
 Validated **2026-09-21** on the live running app (dev `:5173` and production build `:4173`,
 `vite preview` of `dist/`). All checks below were executed against the real UI, not just code.
@@ -19,8 +19,8 @@ Validated **2026-09-21** on the live running app (dev `:5173` and production bui
 | 3 | Learning path / roadmap | ✅ | 29 sections with status chips (AVAILABLE/CURRENT/…), %, concept/coding/interview counts, PDF page links |
 | 4 | PDF reader (local pdf.js) | ✅ | Canvas renders page 1 of the bundled PDF (72 KB raster confirmed); page navigation present |
 | 5 | Global search (Ctrl+K) | ✅ | Palette opens; "broadcasting" returns NumPy hits incl. PDF interview Q with page ref; Esc closes |
-| 6 | Python executes offline | ✅ | `import numpy as np; a=np.arange(6); print(a.mean())` → `2.5` (numpy wheel loaded from local files) |
-| 6b | Pandas executes offline | ✅ | `pd.read_csv('students.csv')` → `(8, 5)` + head/describe on the built app; datasets seeded into the Pyodide FS; groupby/HAVING workflows verified (see Dataset Lab below) |
+| 6 | Python executes in the browser | ✅ | `import numpy as np; a=np.arange(6); print(a.mean())` → `2.5` (numpy wheel loaded from local files) |
+| 6b | Pandas executes in the browser | ✅ | `pd.read_csv('students.csv')` → `(8, 5)` + head/describe on the built app; datasets seeded into the Pyodide FS; groupby/HAVING workflows verified (see Dataset Lab below) |
 | 7 | Python production build | ✅ | `PROD-OK 3.12.1` — Pyodide boots from the built bundle, no CDN |
 | 8 | stdin / input() | ✅ | `age = input("Age: ")` with Program input `25` → `Next year: 26` |
 | 9 | Error path + friendly decomposition | ✅ | Traceback captured; ERROR → WHAT HAPPENED / LIKELY CAUSE / HOW TO DEBUG panel implemented (OSError/EOFError mapped for input cases) |
@@ -68,5 +68,5 @@ Validated **2026-09-21** on the live running app (dev `:5173` and production bui
 7. **SRI mismatch on the dependency wheels** — wheels fetched from PyPI carry different bytes
    (and digests) than Pyodide's release build, so lock-driven integrity blocked them. Fixed by
    recording the SHA-256 of the actual shipped wheel bytes in the lock entries; Pyodide's own
-   validation then passes against the files we serve, fully offline. Digested bytes are
+   validation then passes against the files we serve, from local assets. Digested bytes are
    verified-size PyPI artifacts (~746 KB total).

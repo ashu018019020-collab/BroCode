@@ -12,7 +12,7 @@
  * Every technical sentence in every block is a contiguous piece of the retrieved answer. The only
  * authored strings are labels ("Why it works", "Try this"), the greeting/closing, and the
  * "the source has no example" refusal — no explanation, no number and no example is generated. That
- * is what makes the same engine safe offline and behind a voice.
+ * is what makes the same engine safe in the browser and behind a voice.
  *
  * Pure: no React, no store, no browser API. The hook that speaks it lives in
  * `src/components/shared/useVoiceTutor.ts`; the wording that can be wrong is testable here.

@@ -41,12 +41,12 @@ Write pitches around these, never around "another learning platform".
 | Asset | Why a stranger would cite it | Where the number comes from |
 | --- | --- | --- |
 | The practice bank | **13,865** published items over a Hinglish-authored curriculum, with an English/Hinglish UI switch — a large rare-language corpus in a field dominated by English | `public/generated/search/index.json` → `counts.items`; `src/app/i18n/locales.ts` |
-| Offline learning | Python (Pyodide), SQL (sql.js), notebooks, Monaco and the source PDF all run in the browser after first load — no sign-up for the learning path, and the account service is optional | `README.md`, `public/sw.js`, `scripts/tests/offline.test.cjs` |
+| Browser-run learning | Python (Pyodide), SQL (sql.js), notebooks, Monaco and the source PDF all run in the browser; the learning path needs a signed-in account, and the account service is part of the platform | `README.md`, `public/sw.js`, `scripts/tests/offline.test.cjs` |
 | The reproducibility discipline | Artifacts asserted **byte-for-byte** against their generators (search index, sitemap, robots), 360 tests, a 1200×630 social card rendered by headless Chrome as a build step | `scripts/tests/*.test.mjs`, `scripts/og.cjs` |
 | Breadth as data | 36 course steps, 11 courses, 29 sections, 8 tracks, 10 domains — all counted from registries, never typed by hand | `public/generated/**`, `index.html` JSON-LD |
 | The free win nobody uses | The OG card is the exact 1200×630 GitHub wants for the repo's **Social preview** — set it and every GitHub link previews as the card | GitHub → repo → Settings |
 
-What is *not* link-worthy, so it should not appear in a pitch: "offline" alone (every PWA claims it),
+What is *not* link-worthy, so it should not appear in a pitch: "runs in the browser" alone (every web app claims it),
 the hash-routed URL scheme, the emoji-free icon set, or anything about the tech stack without a
 result attached.
 
@@ -54,7 +54,7 @@ result attached.
 
 **Tier 0 — self-controlled, no outreach, do it the day the site is live**
 1. Repo **About**: one-line description, the live URL as the website, and topics
-   (`python`, `learning-platform`, `offline-first`, `pwa`, `hinglish`, `education`, `pyodide`,
+   (`python`, `learning-platform`, `online-learning`, `pwa`, `hinglish`, `education`, `pyodide`,
    `sql-js`, `interview-preparation`) — topics are how GitHub's own search and topic pages link you.
 2. Repo **Social preview** image = `public/brocode-og.png`.
 3. `package.json` `homepage` set to the real origin (it currently points at a deleted deployment).
@@ -64,7 +64,7 @@ result attached.
 
 **Tier 1 — curated lists (gated on a LICENSE, see §6)**
 `awesome-*` style lists and regional-resource lists. Realistic winners: lists that match
-`offline-first`, `education`, `regional-language`, `python practice`. Each is a one-line PR; expect
+`online-learning`, `education`, `regional-language`, `python practice`. Each is a one-line PR; expect
 rejections, and do not argue with maintainers. Kaggle/Hugging Face dataset pages are a link source
 *if* the bank is exported as a dataset with provenance and a license.
 
@@ -75,7 +75,7 @@ write-up on dev.to or Hashnode ("How 13,865 practice items are kept byte-for-byt
 Product Hunt or Indie Hackers — pick one, not both.
 
 **Tier 3 — earned, slow, highest quality**
-Teachers and computer-lab coordinators (an offline lab for a lab with no internet is a real need),
+Teachers and computer-lab coordinators (a browser-based lab that needs no install is a real need),
 Hinglish YouTube/Instagram educators (offer the bank as a free practice set), newsletters
 (Python Weekly, PyCoder's Weekly) *when* there is a release and a story, and the Pyodide/Vite
 communities when there is a specific bug or technique worth reporting.
@@ -113,11 +113,11 @@ every `<loc>` in `sitemap.xml` must return 200 on that origin, and the OG card m
 "BroCode" is already a TV-show phrase and a common repo name, so the bare brand query is polluted.
 Practical rules that cost nothing:
 
-- Always pair the name with a qualifier in titles, anchors and descriptions: **"BroCode, the offline
-  technology learning platform"**. Prefer anchors like "BroCode offline learning platform" over
+- Always pair the name with a qualifier in titles, anchors and descriptions: **"BroCode, the online
+  technology learning platform"**. Prefer anchors like "BroCode online learning platform" over
   "click here" or "this app".
-- Target the qualifying search: `offline learning platform`, `offline python practice`, `hinglish
-  python questions`, `pyodide practice app`, `no internet coding practice`.
+- Target the qualifying search: `online learning platform`, `python practice questions`, `hinglish
+  python questions`, `pyodide practice app`, `ai interview preparation`.
 - Own the URLs that carry the brand: the repo path (`github.com/ashu018019020-collab/BroCode`) and
   the eventual origin. Consistency of handle across GitHub, dev.to, Reddit and Hugging Face matters
   more than any single link.
@@ -133,12 +133,12 @@ meant to be reused), and add the same licence line to the README and to any data
 
 ## 7. Templates
 
-**Awesome-list PR** — title: `Add BroCode (offline-first practice platform)`. Body: one line ≤100
+**Awesome-list PR** — title: `Add BroCode (browser-based practice platform)`. Body: one line ≤100
 chars, alphabetical position, and the two facts maintainers ask for: the live URL, the licence, and
-"runs entirely offline in the browser, 13,865 practice items in Hinglish". One PR per list; never
+"runs in the browser with 13,865 practice items in Hinglish". One PR per list; never
 batch-edit lists you have not read.
 
-**Show HN** — title: `Show HN: BroCode – an offline-first learning platform that runs in the
+**Show HN** — title: `Show HN: BroCode – an online learning platform that runs in the
 browser`. First comment: what it is, who it is for, the one hard problem (13,865 items kept
 byte-for-byte reproducible with no build server), what is unfinished, and a direct link. Answer
 criticism with facts, never defensiveness; do not repost for at least a few months.
@@ -146,8 +146,8 @@ criticism with facts, never defensiveness; do not repost for at least a few mont
 **Reddit weekly thread** — post the *thing that helps* (a free practice set, a printable sheet), with
 the link inside the post. Read the sub's self-promotion rule first; a removed post is a wasted week.
 
-**Educator email** (≤150 words) — who you are, what runs where (browser, no internet, no accounts,
-no data leaves the machine), what you will give them (the full bank as a printable/offline set),
+**Educator email** (≤150 words) — who you are, what runs where (browser, signed-in account, the
+learner's data stays in their browser), what you will give them (the full bank as a printable set),
 and one ask: feedback, not a link. Links come from use, not from asking.
 
 **Newsletter pitch** — three sentences: what it is, the audience it serves, the single most
@@ -186,8 +186,8 @@ The app has no telemetry by design, so measurement is external:
   poisons every later ask.
 - Never link to a 404, and never publish before §0. A broken link spends the one first impression a
   channel gives you.
-- No fabricated benchmarks. Be exact about what "offline" means here, because it is a pinned
-  property and not a slogan: the runtimes and the PDF are bundled, guest learning needs no account,
-  and `scripts/tests/offline.test.cjs` asserts the service worker's cache coverage of
+- No fabricated benchmarks. Be exact about what "runs in the browser" means here, because it is a
+  pinned property and not a slogan: the runtimes and the PDF are bundled, learning needs a signed-in
+  account, and `scripts/tests/offline.test.cjs` asserts the service worker's cache coverage of
   `/generated/` and `/notebooks` (network-first, cache fallback). "Fast", "SEO-friendly" and "used
   by" are not claims this repo can back, so they do not appear in a pitch.

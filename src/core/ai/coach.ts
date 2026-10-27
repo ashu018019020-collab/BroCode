@@ -1,5 +1,5 @@
 /**
- * Offline coach decisions — WHO to re-teach and WHAT to re-ask, derived only
+ * Local coach decisions — WHO to re-teach and WHAT to re-ask, derived only
  * from real learner state.
  *
  * Two rules this module exists to guarantee:

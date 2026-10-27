@@ -1,4 +1,4 @@
-/** Bundled datasets — loadable offline in the SQL lab and the NumPy/Pandas lab. */
+/** Bundled datasets — loadable in the SQL lab and the NumPy/Pandas lab. */
 export interface Dataset { name: string; desc: string; columns: string[]; rows: (string | number)[][] }
 
 export const DATASETS: Dataset[] = [

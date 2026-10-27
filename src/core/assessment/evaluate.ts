@@ -1,4 +1,4 @@
-/** Deterministic offline evaluation — no fake AI. Keyword rubrics + output checks only. */
+/** Deterministic local evaluation — no fake AI. Keyword rubrics + output checks only. */
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
 

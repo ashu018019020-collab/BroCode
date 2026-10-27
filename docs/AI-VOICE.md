@@ -1,15 +1,15 @@
 # AI Mentor, Coding Coach & Spoken Interview
 
 The AI section at **`/#/ai-mentor`** is one studio with four tabs. Everything except the optional
-OpenAI Realtime voice works with **zero network**: answers come from the bundled curriculum, code
-evidence comes from the existing Pyodide/JS runners, and interview scores come from deterministic
-rubrics over the authored questions.
+hosted services (account, OpenAI Realtime voice, AI evaluation) runs in the browser: answers come
+from the bundled curriculum, code evidence comes from the existing Pyodide/JS runners, and
+interview scores come from deterministic rubrics over the authored questions.
 
 ## Tabs and engines
 
 | Tab | UI | Engine (pure, testable) | Evidence source |
 | --- | --- | --- | --- |
-| Voice Mentor | `src/features/ai/VoiceMentorPanel.tsx` | `src/core/ai/mentor.ts`, `src/core/ai/voice.ts` | Offline retrieval (`core/ai/assistant.ts`) over the generated curriculum |
+| Voice Mentor | `src/features/ai/VoiceMentorPanel.tsx` | `src/core/ai/mentor.ts`, `src/core/ai/voice.ts` | Local retrieval (`core/ai/assistant.ts`) over the generated curriculum |
 | Coding Coach | `src/features/ai/CodingCoachPanel.tsx` | `src/core/ai/coding-coach.ts`, `src/core/platform/diff.ts` | Real runner traceback/stdout, real editor text, Program Input |
 | Mock Interview | `src/features/ai/MockInterviewPanel.tsx` | `src/core/assessment/mock-interview.ts` | Authored `interview`, `coding`, `logic` and project items in `sections.json` |
 | Reports | same panel, `?tab=reports` | `sanitizeReports` / `buildMockReport` | The per-account store (`MOCK_HISTORY_KEY`) |
@@ -50,12 +50,12 @@ These are product rules, not prompt suggestions, and the tests enforce them:
 
 ## Voice paths
 
-### Default: browser speech loop (offline-friendly)
+### Default: browser speech loop (no server voice needed)
 
 `src/components/shared/useVoiceTutor.ts` uses `SpeechRecognition` when the browser provides it and
 `speechSynthesis` for output; optional Google Neural2 TTS (`GOOGLE_TTS_API_KEY`) upgrades the voice.
 Chrome's speech recognition is itself a browser service — the settings note says so rather than
-claiming the loop is fully offline. Text input always works, and every answer is readable.
+claiming every path is local. Text input always works, and every answer is readable.
 
 #### Smooth playback (Google Neural2 path)
 
@@ -103,7 +103,7 @@ that, and both are derived from the repository rather than written by hand:
   appended to the server-side teaching contract (`realtimeInstructions(lang, brief)`), so the model
   names real sections and is told to say plainly when a topic is not in the course. A missing or
   unreadable file yields an empty brief — the session still mints and the old contract applies.
-- **Offline mentor (default).** `projectOverview()` in `src/core/ai/mentor.ts` answers platform
+- **Local mentor (default).** `projectOverview()` in `src/core/ai/mentor.ts` answers platform
   questions ("what can I learn here?", "kitne sections hain", "syllabus batao") from the curriculum
   the page already loaded: the real count, one line per real section, and the real stage list. The
   spoken form names the count plus the first and last section, never 29 titles; the full list stays on
@@ -188,7 +188,7 @@ route.
 | Repository | License | What was taken |
 | --- | --- | --- |
 | [`openai/openai-realtime-console`](https://github.com/openai/openai-realtime-console) | MIT | The WebRTC offer/answer exchange with the Realtime API, the `oai-events` data channel, streaming assistant transcript handling and barge-in/interruption — re-implemented in `src/components/shared/useRealtimeVoice.ts` + `server/realtime.mjs`. Deliberately different: the browser never holds a permanent key, the teaching instructions are built server-side, and the session is hard-capped at 5 minutes. |
-| [`karanjot-gaidu/ai-mock-interviewer`](https://github.com/karanjot-gaidu/ai-mock-interviewer) | MIT | Workflow design only, no source files: one question at a time, the app owning phase/evidence while the conversation stays free, follow-ups aimed at the candidate's actual answer, and a scorecard grounded in what was really done (its "the model owns the conversation, the app owns the evidence" split). Its stack (Next.js + Vercel AI SDK + Judge0 + BYOK + Upstash) does not fit BroCode's Vite app and offline runners, so copying code would have duplicated frameworks. |
+| [`karanjot-gaidu/ai-mock-interviewer`](https://github.com/karanjot-gaidu/ai-mock-interviewer) | MIT | Workflow design only, no source files: one question at a time, the app owning phase/evidence while the conversation stays free, follow-ups aimed at the candidate's actual answer, and a scorecard grounded in what was really done (its "the model owns the conversation, the app owns the evidence" split). Its stack (Next.js + Vercel AI SDK + Judge0 + BYOK + Upstash) does not fit BroCode's Vite app and in-browser runners, so copying code would have duplicated frameworks. |
 
 Both were read at their GitHub pages and LICENSE files before use; neither is vendored into this repo.
 

@@ -85,7 +85,7 @@ export default function PDFReader() {
         <span className="chip">{book.note}</span>
       </h1>
 
-      {/* Source switcher — both books ship with the app and are read offline. Page 1 of each: a page
+      {/* Source switcher — both books ship with the app and are read in the browser. Page 1 of each: a page
           number does not carry across documents, so switching never pretends that it does. */}
       <div className="row" style={{ margin: '10px 0', flexWrap: 'wrap' }}>
         {(Object.keys(SOURCES) as SourceKey[]).map((key) => (

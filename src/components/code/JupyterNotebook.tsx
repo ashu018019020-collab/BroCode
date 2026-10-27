@@ -11,7 +11,7 @@
  *
  * It also carries the Notebook Lab along: the shelf at the bottom of the panel lists the
  * published notebooks, and a notebook authored for the current section sits right there, ready
- * to open and run offline without leaving the lesson.
+ * to open and run without leaving the lesson.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BookOpen, ChevronRight, ExternalLink, Loader } from 'lucide-react';
@@ -224,7 +224,7 @@ interface Props {
   /** Namespace for saved cells, run records and the kernel session. */
   storageKey: string;
   starter?: string;
-  /** Kept for call-site compatibility; notebooks run Python (the only offline runtime here). */
+  /** Kept for call-site compatibility; notebooks run Python (the only in-browser runtime here). */
   lang?: 'python' | 'js';
   solution?: string;
   onComplete?: () => void;

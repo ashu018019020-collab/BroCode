@@ -1,5 +1,5 @@
 /**
- * Offline RAG primitives.
+ * Local RAG primitives.
  *
  * This is a REAL, fully deterministic retrieval pipeline that runs in the
  * browser with no network and no model weights:

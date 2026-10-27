@@ -4,7 +4,7 @@
  * The text is authored by the retrieval engine, but it still contains Markdown. This renderer knows
  * exactly three things — a fenced code block, a `### label` heading, and `**bold**` — and escapes
  * everything else as text. That is enough for a lesson passage and avoids pulling a Markdown parser
- * (and an HTML injection surface) into an offline app.
+ * (and an HTML injection surface) into a browser app.
  */
 import type { ReactNode } from 'react';
 

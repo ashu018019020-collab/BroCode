@@ -14,7 +14,7 @@
  * instructions tell it to say so when a topic is missing instead of inventing one.
  *
  * Failure is silent by design: a missing or unreadable file yields an empty brief, the session is
- * minted without project context, and online voice still works. Offline behaviour is untouched
+ * minted without project context, and online voice still works. Browser-voice behaviour is untouched
  * because this module is only read by the Node API.
  */
 import { readFileSync } from 'node:fs';

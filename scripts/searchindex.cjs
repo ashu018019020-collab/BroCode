@@ -27,7 +27,7 @@
  *  · DETERMINISTIC. No timestamp: regenerating over an unchanged bank set produces an identical
  *    file, so the artifact's diff is reviewable and a test can byte-compare it.
  *  · NO ANSWERS. Model answers would triple the size and the point of search is to FIND a question;
- *    the Question Bank (and the offline assistant) already answer it once you are there.
+ *    the Question Bank (and the assistant) already answer it once you are there.
  *
  * Usage:
  *   node scripts/searchindex.cjs            # report only (dry run)

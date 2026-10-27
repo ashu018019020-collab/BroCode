@@ -11,7 +11,7 @@ import {
 } from './coach';
 
 /**
- * Offline tutor engine — deterministic, rule-based, no cloud AI.
+ * Local tutor engine — deterministic, rule-based, no cloud AI.
  * Turns a parsed traceback into progressive Hinglish teaching content and
  * computes the next best task from real learner state (mistakes + attempts).
  */
@@ -213,7 +213,7 @@ const DEBUG_STEPS: Record<string, string[]> = {
 };
 
 /**
- * Step-by-step debugging checklist for the current error (offline).
+ * Step-by-step debugging checklist for the current error (local).
  * With no error yet it returns how to get a usable traceback in the first place.
  */
 export function debugSteps(expl: TutorExplanation | null, hasInput: boolean): string[] {

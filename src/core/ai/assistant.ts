@@ -1,5 +1,5 @@
 /**
- * Offline assistant.
+ * Local assistant.
  *
  * There is no network and no hosted model here — and this module never pretends
  * otherwise. It answers by *retrieving* the matching part of the bundled

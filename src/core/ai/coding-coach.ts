@@ -201,7 +201,7 @@ function fromPythonTraceback(kind: string, message: string, code: string, line: 
     case 'ImportError':
       return {
         title: 'That module is not available in this runtime',
-        why: `The offline Python runtime contains a fixed wheel set, and this import is not in it.${lineText}`,
+        why: `The bundled Python runtime contains a fixed wheel set, and this import is not in it.${lineText}`,
         fix: 'Use the Packages panel to see what is bundled. Do not assume a successful import means a cloud install happened — this app never installs at runtime.',
       };
     case 'EOFError':
@@ -213,7 +213,7 @@ function fromPythonTraceback(kind: string, message: string, code: string, line: 
     case 'FileNotFoundError':
       return {
         title: 'The file is not where the code expects it',
-        why: `The open() call used a path this offline workspace does not have.${lineText}`,
+        why: `The open() call used a path this in-browser workspace does not have.${lineText}`,
         fix: 'Use a bundled dataset name exactly as it appears in the Datasets list, or read from Program Input instead of a missing file.',
       };
     default:

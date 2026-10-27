@@ -2,7 +2,7 @@
 
 > Learn → Code → Practice → Build → Master
 
-A **premium offline-first AI Python Learning IDE** built from
+A **premium AI Python learning platform** built from
 **Python_Complete_Guide_AI_Engineer_SMART_SECTION_REBUILD_V5_2026.pdf** (457 pages).
 The PDF is the primary source of truth: all 29 sections, interview Q&A, coding/logic/debug
 tasks, solved practice, mini projects, project labs, checkpoints and mock interviews were
@@ -21,11 +21,11 @@ extracted from it and transformed into an interactive curriculum — nothing is 
   workspace happens in a notebook panel, not a single code box: cells share one kernel session
   per notebook, imports carry down the page, output is real stdout, `In [n] / Out [n]` numbering
   and a live kernel-variable panel make the session visible, and a failing cell opens an Errors
-  tab plus an offline AI Explanation with a progressive hint ladder. The same notebooks run
+  tab plus a local AI Explanation with a progressive hint ladder. The same notebooks run
   from the **Notebook Lab**, from the Learning Path, and inline inside any lesson whose section
   has an authored notebook.
 - **AI Python Learning Studio (Code Playground)** — a VS Code-style IDE (Monaco editor, file
-  explorer, Program Input, Output Console, offline AI Tutor, honest package manager) with real
+  explorer, Program Input, Output Console, local AI Tutor, honest package manager) with real
   in-browser Python (bundled Pyodide, NumPy + pandas wheels included).
 - **Error intelligence** — tracebacks are parsed to file/line/column, the exact line is
   highlighted in the editor (and named in the notebook's Errors tab), and a teaching card
@@ -38,8 +38,9 @@ extracted from it and transformed into an interactive curriculum — nothing is 
 - **English-first i18n** — English is the permanent default for every new visitor; Hinglish is an
   optional, explicitly selected alternative. The choice is persisted locally and missing translations
   always fall back to English.
-- **100% offline** — Monaco, icons, fonts, Python runtime, SQL engine, datasets and the
-  PDF are all bundled. No CDN, no cloud APIs, no telemetry.
+- **Self-contained build** — Monaco, icons, fonts, the Python runtime, SQL engine, datasets and
+  the PDF are bundled, so the learning surfaces do not depend on a CDN. The optional account,
+  hosted voice and AI evaluation are the network features, and each says so in the UI.
 
 ## Requirements
 
@@ -69,7 +70,7 @@ For a plain static host (nginx/IIS/USB stick), serve the `dist/` folder after `n
 | `src/app/` | The shell: `App.tsx` (routes + the sidebar `NAV`, which is also the label/icon source for every card), `main.tsx`, `i18n/` |
 | `src/core/learning/` | Pure logic: mastery gates, the roadmap, spaced review, coverage counts, the study log, the Learning Path card registry |
 | `src/core/assessment/` | Pure logic: keyword rubrics & output checks, exam papers, interview scoring, accuracy, the Learning Path card registry |
-| `src/core/ai/` | The offline assistant: page-aware retrieval over the generated lesson/question/project index, tutor hints, progress coaching, and strict app facts |
+| `src/core/ai/` | The local assistant: page-aware retrieval over the generated lesson/question/project index, tutor hints, progress coaching, and strict app facts |
 | `src/core/platform/` | `keys.ts` (the only owner of persisted-key shapes), command-palette search, notifications, achievements, count-up maths |
 | `src/core/storage/` | `store.ts` — the single owner of `AppState` and the only module that touches `localStorage` — plus UI/exam prefs |
 | `src/core/data/` | Data access: loaders/adapters for curriculum, questions, playbook, notebooks, tracks and the lazy AI knowledge index — fetches `public/generated/`. No JSON lives under `src/`; the authored source is `content/` |
@@ -79,9 +80,9 @@ For a plain static host (nginx/IIS/USB stick), serve the `dist/` folder after `n
 | `public/generated/` | **Build output** published by the scripts, including compressed `ai/knowledge.json.gz` — never hand-edited |
 | `scripts/`, `tools/` | The generators (dry-run by default, `--write` publishes) and the test suite that holds them to it |
 
-## Offline mode
+## Bundled runtimes
 
-Everything executes locally — no CDN, no fonts, no external APIs:
+The heavy runtimes execute locally in the browser — no CDN and no external font or asset host:
 
 | Capability | Bundled runtime (local files in `public/`) |
 |---|---|
@@ -93,15 +94,16 @@ Everything executes locally — no CDN, no fonts, no external APIs:
 | Datasets | students, sales, customers, employees, expenses, chat_logs (in-app) |
 
 A service worker (`public/sw.js`, cache `aiml-v6`) caches the app shell and assets at
-runtime. After the first full load, disconnect the internet and reload — the app works
-completely offline. Install as a PWA from the browser menu for a standalone window.
+runtime, so a reload is served from that cache when the network is slow or unavailable. Install
+as a PWA from the browser menu for a standalone window; signing in and the optional hosted AI
+features still need a connection.
 
 Notes:
 - Refresh the assistant corpus with `npm run ai:index` (dry run) or `npm run ai:index:write` (publish). It is derived from the published curriculum, question banks, playbook, tracks, courses, notebooks and career registries; it does not call a hosted model or include learner records.
 - The service worker never caches HTML responses under asset paths (prevents a poisoned
   cache if a file is temporarily missing).
-- GenAI/Agentic labs are **simulations** (deterministic, offline). Any optional online
-  feature would be clearly labeled — the core course never needs one.
+- GenAI/Agentic labs are **simulations** (deterministic, in-browser). Optional hosted features
+  are labeled where they appear.
 
 ## Python runtime setup
 
@@ -141,15 +143,15 @@ translated in reviewed batches (see `docs/LOCALIZATION-GUIDE.md`).
 
 The AI studio at `/#/ai-mentor` adds a voice-first mentor, a diagnostics-driven coding coach inside
 the Playground, and a spoken mock-interview round with scorecards and history. All answers, code
-evidence and scores come from the bundled curriculum and the existing offline runners; the optional
+evidence and scores come from the bundled curriculum and the existing in-browser runners; the optional
 OpenAI Realtime voice needs a server-side key, is rate-limited, and falls back to the browser voice.
 Architecture, provider setup, security rules and known limits: **[docs/AI-VOICE.md](docs/AI-VOICE.md)**.
 
-## Adding offline packages
+## Adding bundled packages
 
 Edit `src/core/data/packages.ts`. `availableOffline: true` may only be used for packages
 actually bundled with the runtime (numpy, pandas, stdlib). Anything else must stay
-`false` — the UI then honestly says the package is not available offline.
+`false` — the UI then honestly says the package is not available in this runtime.
 
 ## Adding lessons / tasks
 
@@ -206,7 +208,7 @@ overwritten, and a re-run refreshes only the topics a guide owns. Run this pass 
 
 The Python practice lives in real `.ipynb` files (`content/notebooks/`). They are browsable and
 runnable in the app's **Notebook Lab** (deep-linkable at `/notebooks?nb=<file>`), inline inside
-any lesson stage whose section owns one, and from the Learning Path — all against the offline
+any lesson stage whose section owns one, and from the Learning Path — all against the bundled
 Pyodide runtime. Each notebook gets its own kernel session, so names never leak between them:
 
 ```bash
@@ -223,7 +225,7 @@ instead of hiding the failure. Cells that need `numpy`/`pandas` declare `metadat
 true`: the pass checks the wheel is actually bundled under `public/pyodide` and marks them
 `verified: false, verifiedHow: "app-runtime"` — they run for real in the browser (the bundled
 CSV datasets are seeded into the virtual filesystem, so `pd.read_csv('students.csv')` works
-offline). Nothing is fabricated: an app-only cell stores no output until the learner runs it.
+in the browser). Nothing is fabricated: an app-only cell stores no output until the learner runs it.
 
 ### 16-part topic workspaces
 
@@ -268,17 +270,17 @@ Use Settings → Export progress to save `aiml-progress.json`. Import restores e
 
 ## Troubleshooting
 
-- **Python says "Loading …" forever** — first boot is slow; run once while online so the
-  service worker caches the runtime, then it works offline.
+- **Python says "Loading …" forever** — first boot is slow; run it once so the service worker
+  caches the runtime, then later loads are served from that cache.
 - **SQL shows a wasm/MIME error** — make sure `public/sqljs/sql-wasm-browser.wasm` exists
   and the server serves `.wasm` as `application/wasm`.
-- **App won't load offline** — it must be fully loaded once while online; check the SW is
+- **App won't load from cache** — the shell must be loaded once; check the SW is
   registered (DevTools → Application → Service Workers) and no old cache (`aiml-v1`) remains.
 - **Hard reset** — Settings → reset, or delete the `aiml:state:v1` localStorage key.
 
 ## Further learning (optional, online, third-party)
 
-This lab is fully self-contained and offline. If you also want guided practice with a
+This lab is fully self-contained. If you also want guided practice with a
 structured path, [boot.dev](https://www.boot.dev) is a reasonable companion:
 
 1. Create a free account at <https://www.boot.dev>.

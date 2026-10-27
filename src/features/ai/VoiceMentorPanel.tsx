@@ -40,7 +40,7 @@ const PREF_LABELS: Record<VoicePref, string> = {
  * The Voice Mentor tab.
  *
  * Two engines, one visible choice:
- *   · BROWSER (default, no key): speech recognition + the existing tutor voice, with the offline
+ *   · BROWSER (default, no key): speech recognition + the existing tutor voice, with the local
  *     retrieval engine answering. Chrome's recognition is a browser service, so the panel says so.
  *   · CLOUD REALTIME (optional): the server mints a short-lived secret and the browser talks to
  *     OpenAI's WebRTC endpoint directly. When the server has no key, this panel says so and the
@@ -90,7 +90,7 @@ export function VoiceMentorPanel() {
     if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
   }, [chat.turns.length, realtime.turns.length, realtime.partial, chat.busy]);
 
-  /** Answer through the offline mentor, then speak it and (optionally) reopen the mic. */
+  /** Answer through the local mentor, then speak it and (optionally) reopen the mic. */
   const runAsk = useCallback(async (text: string) => {
     const clean = text.trim();
     if (!clean) return;
@@ -276,7 +276,7 @@ export function VoiceMentorPanel() {
         <p className="small muted" style={{ margin: '8px 0 0' }}>
           {live
             ? 'The realtime model is the conversational partner in this mode. Its session has a hard time limit and closes automatically.'
-            : 'Answers come from the bundled lessons — no internet is needed for the answer itself. Speech recognition is a browser service; Chrome may send audio to its vendor to transcribe it.'}
+            : 'Answers come from the bundled lessons and are retrieved in your browser. Speech recognition is a browser service; Chrome may send audio to its vendor to transcribe it.'}
         </p>
       </section>
 

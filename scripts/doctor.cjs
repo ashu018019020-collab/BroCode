@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** npm run doctor — offline environment diagnostic. No network calls. */
+/** npm run doctor — local environment diagnostic. No network calls. */
 const fs = require('fs');
 const path = require('path');
 
@@ -30,7 +30,7 @@ for (const f of must) {
   else { bad(`missing: ${f}`); failures++; }
 }
 
-section('Offline runtime assets (public/)');
+section('Bundled runtime assets (public/)');
 const assets = [
   ['public/pyodide/pyodide.mjs', 'Python (Pyodide) runtime'],
   ['public/pyodide/python_stdlib.zip', 'Python stdlib'],
@@ -43,7 +43,7 @@ for (const [f, why] of assets) {
   else { warn(`${f} absent — ${why} will not load`); }
 }
 
-section('Dependencies (offline learning + optional Supabase accounts)');
+section('Dependencies (learning runtime + optional Supabase accounts)');
 const pkg = require(path.join(__dirname, '..', 'package.json'));
 const needed = ['react', 'react-dom', 'react-router-dom', 'monaco-editor', 'lucide-react', 'pdfjs-dist', 'sql.js'];
 for (const d of needed) {
@@ -54,7 +54,7 @@ const forbidden = Object.keys(pkg.dependencies ?? {}).filter((d) => /openai|anth
 if (forbidden.length) { bad(`forbidden online deps: ${forbidden.join(', ')}`); failures++; }
 else ok('no unrelated hosted-service SDKs');
 if (pkg.dependencies?.['@supabase/supabase-js']) {
-  ok(`${pkg.dependencies['@supabase/supabase-js']} (Supabase Auth; guest learning remains available offline)`);
+  ok(`${pkg.dependencies['@supabase/supabase-js']} (Supabase Auth; learning stays available in the browser)`);
 } else { bad('missing Supabase Auth client: @supabase/supabase-js'); failures++; }
 if (pkg.dependencies?.['@prisma/client'] && pkg.devDependencies?.prisma) {
   ok(`Prisma ${pkg.devDependencies.prisma} with generated client ${pkg.dependencies['@prisma/client']}`);
@@ -100,5 +100,5 @@ try {
 section('Storage');
 for (const s of ['localStorage (progress, workspace, language)', 'IndexedDB-ready (large assets via runtime)']) ok(s);
 
-console.log(`\n${failures ? '\x1b[31m✕ ' + failures + ' problem(s) found\x1b[0m' : '\x1b[32m✓ Environment ready — offline learning with optional online accounts\x1b[0m'}`);
+console.log(`\n${failures ? '\x1b[31m✕ ' + failures + ' problem(s) found\x1b[0m' : '\x1b[32m✓ Environment ready — learning platform with optional online accounts\x1b[0m'}`);
 process.exit(failures ? 1 : 0);

@@ -3,7 +3,7 @@ import type { TopicBank, QuestionRecord, QuestionType, Difficulty } from './sche
 import type { Section } from '../../types';
 
 /**
- * Local question banks (offline content pack).
+ * Local question banks (bundled content pack).
  * public/generated/questions/manifest.json indexes every bank; each bank is fetched
  * lazily only when its section is opened — no 29-file fetch on page load.
  */
@@ -200,17 +200,45 @@ export function useBankManifest(): BankManifest | null {
   return m;
 }
 
+/**
+ * One section bank, remembered for the session.
+ *
+ * `All Questions` has to read every section a subject owns (16 for Python Core), and a sitting can
+ * revisit those files on a restart. The cache makes that one download per section per tab instead
+ * of one per attempt. A failed file is NOT cached, so a retry can recover from a transient 404.
+ */
+const bankCache = new Map<string, TopicBank>();
+
+export function loadBankFor(sectionId: string): Promise<TopicBank | null> {
+  const cached = bankCache.get(sectionId);
+  if (cached) return Promise.resolve(cached);
+  return fetch(`./generated/questions/${sectionId}.json`)
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .then((d: TopicBank) => {
+      if (d && Array.isArray(d.questions)) bankCache.set(sectionId, d);
+      return d;
+    })
+    .catch(() => null);
+}
+
+/** Load several banks at once, in parallel; missing sections are simply absent from the map. */
+export async function loadBanksFor(sectionIds: string[]): Promise<Map<string, TopicBank>> {
+  const out = new Map<string, TopicBank>();
+  await Promise.all(sectionIds.map(async (id) => {
+    const bank = await loadBankFor(id);
+    if (bank) out.set(id, bank);
+  }));
+  return out;
+}
+
 /** Lazy per-section bank loader. */
 export function useBank(sectionId: string | undefined): TopicBank | null {
   const [bank, setBank] = useState<TopicBank | null>(null);
   useEffect(() => {
     if (!sectionId) { setBank(null); return; }
     let alive = true;
-    setBank(null);
-    fetch(`./generated/questions/${sectionId}.json`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d) => { if (alive) setBank(d); })
-      .catch(() => { if (alive) setBank(null); });
+    setBank(bankCache.get(sectionId) ?? null);
+    loadBankFor(sectionId).then((d) => { if (alive) setBank(d); });
     return () => { alive = false; };
   }, [sectionId]);
   return bank;

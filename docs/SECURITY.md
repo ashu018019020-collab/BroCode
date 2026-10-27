@@ -79,7 +79,7 @@ process fails loudly at boot instead of returning 500s to learners later.
 - Migrations are additive and reversible in practice: add nullable columns or new tables, backfill,
   then constrain. Do not drop or rewrite a column that carries `profiles` / `progress_snapshots` data.
 - Learner progress lives in two places by design: the **browser** (per-account localStorage namespace,
-  the source of truth for the offline-first app) and a **summary snapshot** in Postgres
+  the source of truth for the learning app) and a **summary snapshot** in Postgres
   (7 integers + a sign-in log). Never treat the snapshot as authoritative over the learner's own
   device.
 - No secret (`DATABASE_URL`, `DIRECT_URL`, `SUPABASE_SECRET_KEY`) may be exposed to the browser, put
@@ -94,7 +94,6 @@ Stated so it is a decision, not an oversight:
   bucket.
 - **`/api/health` is unauthenticated** and reports `{api, database, store}`. It reveals only which
   backend answered, which an operator needs; it exposes no user data.
-- **Guest mode is fully offline** and involves no server call at all.
 - **CSRF** is handled by same-origin enforcement plus `Authorization: Bearer` rather than a token,
   which is not automatically attached by a browser. No cookie-based session exists to forge.
 - The admin panel is server-authorized but the **UI is not the control**: hiding a button is not a

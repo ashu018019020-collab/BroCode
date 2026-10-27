@@ -146,7 +146,7 @@ function runCell(cell, at, bundledMissing) {
 
   const first = moduleNames[0];
   if (first && !BUNDLED.includes(first) && bundledMissing.has(first)) {
-    return { cell, problems: [`${at}: imports "${first}" which is neither stdlib nor bundled in the offline runtime`] };
+    return { cell, problems: [`${at}: imports "${first}" which is neither stdlib nor bundled in the browser runtime`] };
   }
 
   const result = runSnippet(code);
@@ -175,7 +175,7 @@ function runCell(cell, at, bundledMissing) {
 /* ------------------------------------------------------------------- main */
 
 function loadImports() {
-  // Modules that must not be used because the offline runtime does not have them. Detected
+  // Modules that must not be used because the browser runtime does not have them. Detected
   // by trying to import them locally — the same failure a learner would see.
   const candidates = ['matplotlib', 'seaborn', 'sklearn', 'scipy', 'torch', 'transformers', 'langchain', 'openai', 'requests', 'fastapi', 'nltk'];
   const missing = new Set();

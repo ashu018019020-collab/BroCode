@@ -18,7 +18,7 @@ const PANDAS_EXAMPLES = [
   { title: 'Missing values', code: 'import pandas as pd\nimport numpy as np\ndf = pd.DataFrame({"a": [1, np.nan, 3]})\nprint(df.isna().sum())\nprint(df.fillna(0))\n' },
 ];
 
-/** Per-dataset pandas workflows — every example runs offline against the seeded CSV. */
+/** Per-dataset pandas workflows — every example runs in the browser against the seeded CSV. */
 const DATA_EXAMPLES: Record<string, { title: string; code: string }[]> = {
   students: [
     { title: 'Load + inspect', code: `import pandas as pd\ndf = pd.read_csv('students.csv')\nprint(df.shape)\nprint(df.head())\nprint(df.describe())\n` },

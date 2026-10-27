@@ -17,12 +17,13 @@ const TABS: { id: TabId; label: string; icon: typeof AudioLines; hint: string }[
  * The AI section, in one place.
  *
  * This page is a SHELL, not a second assistant: every tab renders the same engines the rest of
- * BroCode uses — the offline retrieval assistant, the bundled Python/JS runners, the curriculum
+ * BroCode uses — the local retrieval assistant, the bundled Python/JS runners, the curriculum
  * question banks and the per-account store. The tabs are ordinary links in the URL (`?tab=`), so a
  * report or a coach view can be bookmarked and the browser's back button behaves.
  *
- * The "offline" claim in the header is deliberate: the answers and scoring work with zero network.
- * Only the optional realtime voice upgrade needs a server key, and the Voice Mentor tab says so.
+ * Answers and scoring are grounded in the bundled curriculum and the existing engines, so they do
+ * not depend on a hosted model. The optional realtime voice upgrade needs a server key, and the
+ * Voice Mentor tab says so.
  */
 export default function MentorHub() {
   const [params, setParams] = useSearchParams();
@@ -51,7 +52,7 @@ export default function MentorHub() {
           </p>
         </div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-          <span className="chip easy"><ShieldCheck size={11} /> Offline answers</span>
+          <span className="chip easy"><ShieldCheck size={11} /> Grounded answers</span>
           <span className="chip">Voice optional</span>
           <span className="chip">English + Hinglish</span>
         </div>

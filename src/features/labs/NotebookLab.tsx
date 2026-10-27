@@ -1,5 +1,5 @@
 /**
- * Notebook Lab — the Jupyter notebooks, running offline in the browser.
+ * Notebook Lab — the Jupyter notebooks, running in the browser.
  *
  * Notebooks are authored in `content/notebooks/*.ipynb` and published to `public/notebooks/` by
  * `npm run notebooks:write`, which executes every cell with the local Python interpreter and
@@ -7,7 +7,7 @@
  *
  *   · a cell marked "verified" already ran while authoring — its stored output is real stdout;
  *   · a cell marked "expected error" deliberately raises, and the stored traceback is real;
- *   · an "app runtime" cell uses the bundled numpy/pandas wheels and runs HERE, in the offline
+ *   · an "app runtime" cell uses the bundled numpy/pandas wheels and runs HERE, in the in-browser
  *     Pyodide runtime (the app seeds the bundled CSVs, so read_csv works too).
  *
  * The cells themselves are rendered by the shared notebook engine (`NotebookCells`), the same

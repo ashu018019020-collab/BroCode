@@ -90,7 +90,7 @@ export default function LabsHub() {
             <h1 style={{ margin: 0 }}>Write code. Run it. Build it.</h1>
             <p className="muted small" style={{ margin: '8px 0 0', maxWidth: 640 }}>
               Hands-on labs follow the same course structure: pick a subject, open its topics, then
-              write and run code there in the notebook or runtime. Everything runs in the browser, without internet.
+              write and run code there in the notebook or runtime. Everything runs in your browser.
             </p>
           </div>
           {/* Secondary on purpose: the numbers are here to orient, not to lead the page. */}

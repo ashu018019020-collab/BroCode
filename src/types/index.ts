@@ -152,7 +152,7 @@ export interface Extras {
 export interface Attempt { done?: boolean; score?: number; tries?: number; answer?: string; ts?: number }
 /**
  * Where a mistake came from. Optional so records written before this existed
- * stay valid; the offline coach labels and weighs each source honestly instead
+ * stay valid; the local coach labels and weighs each source honestly instead
  * of pretending every failure was a coding-lab bug.
  */
 export type MistakeSource = 'bank' | 'exam' | 'lesson' | 'lab' | 'mock' | 'interview' | 'final';

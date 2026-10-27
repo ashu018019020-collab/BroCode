@@ -1,4 +1,4 @@
-/** Unified code-runner API for the app. All execution is local/offline. */
+/** Unified code-runner API for the app. All execution is local to the browser. */
 export interface RunResult {
   ok: boolean;
   output: string;
@@ -52,7 +52,7 @@ function pythonReady(): Promise<void> {
 
 /**
  * Boot the Pyodide worker early so the learner's first Run is instant, and let
- * the UI show that the offline Python runtime is warming up (~5-15s, once).
+ * the UI show that the in-browser Python runtime is warming up (~5-15s, once).
  * Python itself is bundled under public/pyodide — nothing to install, no network.
  */
 export async function warmupPython(): Promise<boolean> {

@@ -9,7 +9,7 @@
  * Three of the choices here are the point of the module:
  *
  *   · No React state. A per-move `useState` would re-render every card on the page at 60 Hz, and
- *     `offline/store.ts` serialises the WHOLE state to localStorage on every `setState` — so the
+ *     `core/storage/store.ts` serialises the WHOLE state to localStorage on every `setState` — so the
  *     glow would cost a full `JSON.stringify` per mouse move. Custom properties never touch it.
  *   · At most one style write per animation frame, on one element, and the box is measured inside
  *     that frame rather than on every event, so a burst of moves collapses to a single layout read.

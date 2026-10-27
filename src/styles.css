@@ -184,7 +184,7 @@
 /*
  * LIGHT THEME
  *
- * Applied by `offline/ui.ts`, which sets `data-theme` on <html> before the first paint. Same token
+ * Applied by `core/storage/ui.ts`, which sets `data-theme` on <html> before the first paint. Same token
  * names, so every rule above gets a light value without a second set of rules: a soft blue-grey
  * page, white panels with a real shadow, and accents one shade deeper because here they are text
  * on white rather than on black.
@@ -2242,7 +2242,7 @@ body.reduce-motion * { animation: none !important; transition: none !important; 
 .reveal { margin-top: 6px; border-left: 2px solid rgba(167, 139, 250, .5); padding-left: 10px; }
 .pack .codeblock { max-height: 320px; overflow: auto; }
 
-/* Notebook Lab (Jupyter notebooks, run offline cell by cell) */
+/* Notebook Lab (Jupyter notebooks, run in the browser cell by cell) */
 .nb-page { display: block; }
 .nb-layout { display: grid; grid-template-columns: 250px 1fr; gap: 12px; margin-top: 12px; align-items: start; }
 /*
@@ -3286,7 +3286,7 @@ a.side-act, a.side-act:hover { text-decoration: none; }
    The page is a reading of two different things that must never be confused: TIME (the study log,
    measured by the tracker and stored per day) and MASTERY (what the curriculum thinks was learned).
    The charts below are hand-built — flex columns, not a charting library — because the app ships
-   with no runtime dependencies and must work offline; a bar chart has no diagonal lines worth an
+   with no runtime dependencies and must work locally; a bar chart has no diagonal lines worth an
    SVG viewBox, and divs re-lay out at any width instead of letterboxing.
 
    Every colour resolves from a token, and the intensity ramps use `rgb(var(--accent-rgb) / x)`, so

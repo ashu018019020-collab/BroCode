@@ -381,7 +381,7 @@ export function buildExamWrites(
         myAnswer: typed ? typed.slice(0, 220) : '(left blank in the exam)',
         correct: q.answer.slice(0, 220),
         type: mistakeTypeForType(q.type),
-        // Provenance so the offline coach knows this failure came from a bank
+        // Provenance so the local coach knows this failure came from a bank
         // question under exam pressure, not from a coding-lab traceback.
         source: 'exam',
       },

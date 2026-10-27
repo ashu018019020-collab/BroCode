@@ -6,9 +6,9 @@
  * per session and hands it to every place a notebook can be opened: the Notebook Lab page, the
  * notebook panel inside each lesson stage, and the Learning Path shelf.
  *
- * Everything here is offline: the manifest is a local file, and the libraries listed in
+ * Everything here is local: the manifest is a local file, and the libraries listed in
  * `NOTEBOOK_LIBS` are the wheels bundled under `public/pyodide/` (a test keeps the two in sync,
- * so the shelf can never advertise an import the offline runtime cannot satisfy).
+ * so the shelf can never advertise an import the bundled runtime cannot satisfy).
  */
 import { useEffect, useState } from 'react';
 import { DATASETS } from './datasets';
@@ -28,7 +28,7 @@ export interface NotebookMeta {
 }
 
 /**
- * Libraries the offline runtime really ships. `test` proves each one against the wheels in
+ * Libraries the bundled runtime really ships. `test` proves each one against the wheels in
  * `public/pyodide/`, so this list is a promise, not a wish list.
  */
 export const NOTEBOOK_LIBS = [
@@ -39,7 +39,7 @@ export const NOTEBOOK_LIBS = [
 /** Snippet that loads both bundled libraries in one cell. */
 export const NOTEBOOK_LIBS_SNIPPET = `import numpy as np\nimport pandas as pd\n\nprint("numpy", np.__version__)\nprint("pandas", pd.__version__)\n`;
 
-/** Dataset file names pre-seeded in the offline filesystem — `pd.read_csv('students.csv')` works. */
+/** Dataset file names pre-seeded in the in-browser filesystem — `pd.read_csv('students.csv')` works. */
 export const NB_DATASETS = DATASETS.map((d) => ({ name: `${d.name}.csv`, desc: d.desc }));
 
 const listDir = () => (import.meta.env.BASE_URL ?? '/');

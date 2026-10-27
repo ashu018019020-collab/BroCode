@@ -247,7 +247,7 @@ async function request<T>(path: string, init: RequestInit = {}, session?: Sessio
  * A structured result instead of a thrown error, for surfaces that must DEGRADE rather than stop.
  *
  * The AI interviewer is the first caller: when the account API is not deployed beside the static
- * site, the answer is `api-unreachable` and the page falls back to its offline rubric. That is a
+ * site, the answer is `api-unreachable` and the page falls back to its built-in rubric. That is a
  * normal outcome here, not an exception to bubble into an error boundary. `code` is the server's
  * own machine-readable reason (`ai-unconfigured`, `ai-rate-limited`, …) when it sent one.
  */

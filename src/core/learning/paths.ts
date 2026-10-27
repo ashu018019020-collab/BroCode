@@ -8,7 +8,7 @@
  *
  * Two rules hold this file together:
  *
- *   1. NO INVENTED NUMBERS. Every card's number is read from the offline content pack (a
+ *   1. NO INVENTED NUMBERS. Every card's number is read from the bundled content pack (a
  *      manifest on disk) or from real learner state. When no honest denominator exists the entry
  *      declares `progress: null` and shows facts only — never a made-up percentage.
  *   2. NO HIDDEN PATH. `PATH_ROUTE_ALLOWLIST` names the routes that are deliberately NOT paths
@@ -172,7 +172,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
     route: '/exam',
     group: 'practice',
     facts: () => [`${EXAM_FOCI} focus types`, `${EXAM_SIZES} paper sizes`, '5–45 min timed'],
-    // The exam session lives in its own offline store and keeps no history in AppState, so there
+    // The exam session lives in its own local store and keeps no history in AppState, so there
     // is no honest "done" figure to show. Facts only — the card never claims a score it cannot read.
     progress: null,
   },

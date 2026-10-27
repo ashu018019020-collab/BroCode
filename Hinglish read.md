@@ -153,7 +153,7 @@ Har moment pe relevant roles simultaneously operate karte hain. Role ek lens hai
 |---|---|---|
 | D1 | **Curriculum / Content Engineer** | 36-step roadmap spine, chapters ↔ steps bijection, lessons, stage panels, playbook |
 | D2 | **Learning-Science & Assessment Engineer** | Question families, coverage predicate, grading semantics, mastery, review scheduling, XP |
-| D3 | **Offline / PWA & Runtime Engineer** | Service worker, cache-on-demand, Pyodide/SQL.js/PDF bundling, zero-network promise |
+| D3 | **PWA & Runtime Engineer** | Service worker, cache-on-demand, Pyodide/SQL.js/PDF bundling, browser execution |
 | D4 | **i18n / Localization Engineer** | Locale parity, brand strings, Hinglish/English copy, pluralisation, `app.name` |
 
 ---
@@ -162,7 +162,7 @@ Har moment pe relevant roles simultaneously operate karte hain. Role ek lens hai
 
 Yeh "project constraints" hain — Rule 01/Rule 04 ke aage. Inhe tod kar kuch "improve" nahi hai.
 
-1. **Zero-network pe app chalega.** Pyodide, notebooks, SQL engine, PDF — sab bundled. Offline rahega.
+1. **Browser me app chalega.** Pyodide, notebooks, SQL engine, PDF — sab bundled.
 2. **Koi naya runtime dependency nahi.** Koi build config change nahi. Koi naya framework nahi.
 3. **Koi linter / formatter / new tooling nahi.** eslint, prettier, `.editorconfig` — mana hai.
 4. **`content/**` source hai, `public/generated/**` output.** Pipeline (`scripts/*.cjs`) edit karo,
@@ -779,7 +779,7 @@ se aage actual values ho.
 
 **Done:** Offline checklist ticked; metadata issues closed.
 
-**Anti-pattern:** Offline ko "nice to have" maan lena — is project me yeh core promise hai.
+**Anti-pattern:** PWA caching ko "nice to have" maan lena — core flow ke liye yeh zaroori hai.
 
 ---
 
@@ -1164,7 +1164,7 @@ Evidence kya hota hai (kam se kam ek, ideally do):
 | "Performance improved" | Before/after numbers (size, ms, warning counts) |
 | "Preserved" | Preserve-ledger row with before/after behaviour |
 | "No console errors" | Documented run, zero errors/warnings |
-| "Offline works" | Network blocked, critical routes loaded + flow completed |
+| "Cached routes work" | Network blocked, critical routes loaded + flow completed |
 | "Data preserved" | Purana stored state reload pe sahi values deta hai |
 
 Jo verify nahi hua, usko "verified" na likho — "not verified" likho.
@@ -1372,7 +1372,7 @@ Iske badle:
 Final output:
 
 > **A completely redesigned, intelligently restructured, professionally reordered, technically
-> upgraded, fully responsive, accessible, secure, offline-capable, high-performance, deeply tested,
+> upgraded, fully responsive, accessible, secure, browser-capable, high-performance, deeply tested,
 > regression-safe and production-ready version of this product — with MORE quality, MORE clarity,
 > MORE consistency, MORE usability and MORE polish. Never less.**
 
@@ -1446,7 +1446,7 @@ Jahan kuch update ho, woh update **yahan aur `AGENTS.md` me** likho — teen jag
 - XP helper `type`/`label` param leta hai par silently ignore karta hai (~21 call sites provenance bhejte
   hain) — `noUnusedParameters: false` typecheck ko chup rakhta hai. Ise "implemented provenance" mat samjho.
 
-## A5. STORE & OFFLINE
+## A5. STORE & CACHING
 
 - State write: **poora state serialize** hota hai aur localStorage pe **synchronously** likha jaata hai,
   har call pe — ~40 call sites, koi batching nahi. Measured: 13,865 attempts → 1.18 MB, ~17 ms
@@ -1641,5 +1641,5 @@ Kaam ke end pe agli thread/agent ke liye yeh chhodo:
 5. **Open decisions** — jo cheezein deliberately *nahi* ki gayi, aur wajah.
 6. **Known issues** — remaining issues with severity + repro (filler nahi, sirf real).
 7. **Next 3 steps** — highest value aglaa kaam, priority order me.
-8. **Constraints reminder** — offline promise, no new deps, no linter, generated-artifact rule,
+8. **Constraints reminder** — PWA caching, no new deps, no linter, generated-artifact rule,
    test-loader ceiling (agar inme se kuch relevant ho).

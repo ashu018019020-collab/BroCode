@@ -33,9 +33,9 @@ let overlayPromise: Promise<SectionNameOverlay | null> | null = null;
  * The overlay, fetched once per session and cached as the PROMISE (not the result) so two callers
  * cannot race a second request for the same few KB.
  *
- * A missing, offline or corrupt overlay is NOT an error: it resolves to `null`, which degrades to
+ * A missing, unreachable or corrupt overlay is NOT an error: it resolves to `null`, which degrades to
  * "no Hinglish names yet" — the honest state of a partially translated corpus — and it keeps the app
- * fully offline-capable, because a translation can never be the reason a learner sees no lesson.
+ * fully usable, because a translation can never be the reason a learner sees no lesson.
  */
 export const loadSectionsOverlay = (): Promise<SectionNameOverlay | null> =>
   (overlayPromise ??= fetch('./generated/curriculum/i18n.json')

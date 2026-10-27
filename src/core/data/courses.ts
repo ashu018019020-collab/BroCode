@@ -34,7 +34,7 @@ export type {
  * `index.json` is 3 KB and drives `/courses`; each `<slug>.json` is the course's own item list and
  * is fetched ONLY by that course's page — python.json alone is 1.5 MB, and no home screen should
  * parse the whole pack to draw eleven rings (the same reason the track views are per-file). Both
- * are part of the offline pack (`public/generated/`), so the service worker serves them with no
+ * are part of the bundled pack (`public/generated/`), so the service worker serves them with no
  * network once visited.
  */
 let indexPromise: Promise<CourseIndexRecord | null> | null = null;

@@ -96,7 +96,7 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
   const [pyReady, setPyReady] = useState(isPythonReady());
   const taRef = useRef<HTMLTextAreaElement>(null);
 
-  // Boot the offline Python runtime in the background so the first Run is instant.
+  // Boot the in-browser Python runtime in the background so the first Run is instant.
   useEffect(() => {
     if (pyReady) return;
     let alive = true;
@@ -200,7 +200,7 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
   const fixSuggestion = useMemo(() => {
     if (!diag) return null;
     const content = file?.content ?? '';
-    // `<var>.mean()` etc. on a list/str → the offline-correct numpy equivalent.
+    // `<var>.mean()` etc. on a list/str → the numpy-correct equivalent.
     const attrFix = diag.kind === 'AttributeError'
       ? diag.message.match(/has no attribute '(mean|median|std|var|sqrt)'/)
       : null;

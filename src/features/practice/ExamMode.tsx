@@ -22,7 +22,7 @@ import {
 } from '../../core/assessment/exam';
 
 /**
- * Exam Mode — an offline, timed mock interview assembled from the real question
+ * Exam Mode — a timed mock interview assembled from the real question
  * banks.
  *
  * The honesty rules this page is built around:

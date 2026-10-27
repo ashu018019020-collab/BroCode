@@ -707,7 +707,7 @@ function QuestionCard({
           <Link className="btn small" to={`/lesson/${q.sectionId}/${stageForQuestion(q)}`}>
             <ExternalLink size={12} /> Practice
           </Link>
-          {/* The offline assistant, scoped to this item: its answer, a hint, and the percentage of
+          {/* The local assistant, scoped to this item: its answer, a hint, and the percentage of
               whatever is written below. Lazy — built only for the row the learner opened. */}
           <button className={`btn small${ai ? ' primary' : ''}`} onClick={() => setAi((v) => !v)} aria-expanded={ai} title="This question's answer, a hint, and the percentage of your answer">
             <Bot size={12} /> AI

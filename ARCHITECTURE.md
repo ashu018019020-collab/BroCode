@@ -22,10 +22,10 @@ Companion documents, each verified against the source rather than aspirational:
 | Source | `content/**` — curriculum sections/guides/packs/topics, question banks, playbook source, notebooks (`.ipynb`) | Hand-editable. The only place content is *authored*. `content/` is not served and never ships in `dist/`. |
 | Generators | `scripts/*.cjs`, `scripts/lib/*.cjs`, `tools/extract.mjs` | Dry-run by default, `--write` publishes. Each one validates before writing and executes the snippets it stores. |
 | Output | `public/generated/**` — `curriculum/`, `questions/`, `playbook/`, `search/`, `tracks/` | **Generated. Edit the pipeline, never the artifact.** `public/generated/search/index.json` is asserted byte-for-byte against its generator, so artifact and code ship together. |
-| Bundled runtimes | `public/pyodide/`, `public/sqljs/`, `public/pdf/`, `public/notebooks/`, `public/data/` | Third-party runtimes, the source PDF, published notebooks. Inputs the app consumes offline — not generated from `content/`. |
+| Bundled runtimes | `public/pyodide/`, `public/sqljs/`, `public/pdf/`, `public/notebooks/`, `public/data/` | Third-party runtimes, the source PDF, published notebooks. Inputs the app consumes at runtime — not generated from `content/`. |
 
 The `generated/` prefix is not cosmetic: `public/sw.js`'s fetch rule treats `/generated/` and
-`/notebooks` as the offline content surface, so a runtime file at a new top-level path is *not*
+`/notebooks` as the cached content surface, so a runtime file at a new top-level path is *not*
 cached by that rule and must be added deliberately.
 
 ## Layers
@@ -35,7 +35,7 @@ cached by that rule and must be added deliberately.
 | Data access | `src/core/data/` — `curriculum.tsx` (the React context + JSON load), `questions`, `playbook` (loader), `tracks`, `paths` (the only place that knows stored-key shapes for cards), `notebooks`, `datasets`, `packages`, `schema`, `searchindex`, `knowledge` (lazy AI index loader) | **Loaders/adapters only** — there is no JSON under `src/`; the authored source is `content/` and this layer fetches the published `./generated/…` and exposes it typed. No maths, no gates. `curriculum.tsx` is the one `.tsx` here — a provider, not a page. |
 | Core — learning | `src/core/learning/` — `progress` (mastery gates, section %), `roadmap` (the learning spine), `review` (spaced repetition), `advance` (stage unlock), `paths` (the support-path card registry + `PATH_ROUTE_ALLOWLIST` + `pathStat`), `coverage` (the family predicates **and** every family tally), `study` (the study-day timeline, the year heat grid + its month labels, `today()`) | Pure functions over `AppState` + curriculum. `paths.ts` is here, not in `assessment/`: its subject is the learning journey (which card, at what step), while `assessment/` is only about grading — rubrics, exam papers, accuracy. |
 | Core — assessment | `src/core/assessment/` — `evaluate` (keyword rubrics, output checks, defense scoring), `exam` (focus types, paper sizes), `interview`, `accuracy` (what was done / how right it was), `playbook` (the pure item contract + `nextPlaybookTarget`) | Pure, and **grading-only**. `learning/paths.ts` and `assessment/exam.ts` are loaded by explicit path by two test files that do not register the `.ts` hook, so those two stay value-import-free (see below). Two modules are named `playbook.ts` on purpose and must not be merged: this one holds the rule, `core/data/playbook.ts` holds the loader. |
-| Core — AI | `src/core/ai/` — `assistant`, `context` (current route/course/lesson/progress), `knowledge` (typed inverted-index retrieval), `tutor` (hints, `nextTask`), `rag`, `project` (strict app facts), `mission` (daily queue), `coach` (mistake classification, the redo pile) | Deterministic and offline. No model calls: the assistant retrieves only relevant local passages and answers with source links. `npm run ai:index` reports; `npm run ai:index:write` regenerates compressed `public/generated/ai/knowledge.json.gz` from published sources. |
+| Core — AI | `src/core/ai/` — `assistant`, `context` (current route/course/lesson/progress), `knowledge` (typed inverted-index retrieval), `tutor` (hints, `nextTask`), `rag`, `project` (strict app facts), `mission` (daily queue), `coach` (mistake classification, the redo pile) | Deterministic and local. No model calls: the assistant retrieves only relevant local passages and answers with source links. `npm run ai:index` reports; `npm run ai:index:write` regenerates compressed `public/generated/ai/knowledge.json.gz` from published sources. |
 | Core — platform | `src/core/platform/` — `keys` (**persisted-key shapes + gamification policy**), `search` + `searchindex` (the Ctrl+K index), `notify`, `achievements`, `anim` (count-up maths), `ipynb`, `traceback` | Pure utilities. `keys.ts` is the only owner of stored shapes. |
 | Storage | `src/core/storage/` — `store.ts` (**single owner** of `AppState`), `account.ts` (the per-account localStorage namespace), `ui.ts` (theme/panel prefs), `exam.ts`, `study.ts` | Exposes `useStore()`, `setState()` and the mutation helpers (`addXp`, `recordAttempt`, `addMistake`, `bumpStreak`, `exportProgress`, `importProgress`). Private state is keyed per signed-in account; on sign-in/out the store re-reads the matching namespace. |
 | Runners | `src/features/coding/` — `runners` (main thread), `pythonWorker` (Pyodide in a Web Worker) | Execution only; no app state. The worker seeds the bundled datasets into the Pyodide FS at boot, so `pd.read_csv('<dataset>.csv')` works in every Python surface. |
@@ -43,9 +43,9 @@ cached by that rule and must be added deliberately.
 | Components | `src/components/{ui,code,learning,shared}/` | Presentational building blocks. `learning/PathGrid` and `shared/HubGrid` render card grids; `code/MonacoIDE` and `code/JupyterNotebook` own the editor surfaces. |
 | App shell | `src/app/` — `App.tsx` (routes, sidebar, `NAV`), `main.tsx`, `i18n/{index.tsx,locales.ts}` | `App.tsx` doubles as the shared **label/icon module**: 8 files import `NAV`/`TRACK_DEFS` *from* `../app/App`. |
 | Types | `src/types/` — `index.ts` (`AppState` and friends), `sql.d.ts` | Shared shapes; storage and features both import from here. |
-| Optional account service | `src/core/auth/` (browser Supabase client + session provider), `server/` (Node API, Supabase adapter, Prisma store, first-admin bootstrap), `prisma/` (schema and migration) | Supabase Auth owns credentials and sessions (email, GitHub, Google; PKCE). Postgres stores profiles, roles and summary-only progress snapshots behind RLS; the server checks the database-backed role on every admin request. Private learning data stays in per-account browser storage and remains available to guests offline. |
+| Optional account service | `src/core/auth/` (browser Supabase client + session provider), `server/` (Node API, Supabase adapter, Prisma store, first-admin bootstrap), `prisma/` (schema and migration) | Supabase Auth owns credentials and sessions (email, GitHub, Google; PKCE). Postgres stores profiles, roles and summary-only progress snapshots behind RLS; the server checks the database-backed role on every admin request. Private learning data stays in per-account browser storage. |
 
-The account service is an intentional online exception to the offline-first learning app. Only the
+The account service is one of the platform's online services. Only the
 Supabase publishable key may reach the browser; the secret key is server-only. Production must
 terminate HTTPS and proxy `/api` to the Node service; local setup, schema, and bootstrap
 instructions live in `server/README.md`.
@@ -148,7 +148,7 @@ that own the questions.
 ## Invariants worth preserving
 
 - Mastery gates (`core/learning/progress.ts`) are the only readers of attempt semantics; features only write.
-- The app must stay fully offline: no CDN, no external fetch. Bundled runtimes: Pyodide 0.26
+- The app must serve its learning surfaces from the bundle: no CDN, no external asset fetch. Bundled runtimes: Pyodide 0.26
   (Python 3.12 + numpy + pandas), sql.js (SQLite WASM), pdf.js + the source PDF, notebooks.
 - Evaluation is deterministic (tests + keyword rubrics). No fake AI; optional online features must be
   labelled.

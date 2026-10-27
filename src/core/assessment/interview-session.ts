@@ -17,7 +17,7 @@
  */
 import type { Difficulty, QuestionRecord } from '../data/schema';
 import { keywordScore, questionRubric } from './evaluate';
-import type { InterviewKindId } from './interview-room';
+import { kindOf, type InterviewKindId } from './interview-room';
 
 /* --------------------------------- modes --------------------------------- */
 
@@ -97,7 +97,15 @@ export type Verdict = 'correct' | 'partial' | 'incorrect';
 export type TechnicalAccuracy = 'accurate' | 'mostly-accurate' | 'partially-accurate' | 'inaccurate';
 
 /**
- * The structured evaluation both the model and the offline rubric produce.
+ * The verdict the EVALUATOR reports. `needs-clarification` is not a low score — it means the answer
+ * was too vague to mark, so the room asks for detail instead of inventing a number.
+ */
+export type EvaluationStatus = 'correct' | 'partially-correct' | 'incorrect' | 'needs-clarification';
+
+const STATUSES: EvaluationStatus[] = ['correct', 'partially-correct', 'incorrect', 'needs-clarification'];
+
+/**
+ * The structured evaluation both the model and the built-in rubric produce.
  *
  * Deliberately flat and string-based: it has to survive JSON round-trips from a model, pass a
  * strict validator, and render without a second normalisation pass in the page.
@@ -105,10 +113,14 @@ export type TechnicalAccuracy = 'accurate' | 'mostly-accurate' | 'partially-accu
 export interface AnswerEvaluation {
   /** 0–100. Derived from the answer's quality by the evaluator, never preset. */
   score: number;
+  /** The evaluator's verdict, including the "too vague to mark" case. */
+  status: EvaluationStatus;
   technicalAccuracy: TechnicalAccuracy;
   conceptsUnderstood: string[];
   missingConcepts: string[];
   mistakes: string[];
+  /** Short quotes or observations from the candidate's own answer that justify the verdict. */
+  evidence: string[];
   explanation: string;
   modelAnswer: string;
   nextStep: string;
@@ -145,6 +157,20 @@ function accuracyForScore(score: number): TechnicalAccuracy {
   return 'inaccurate';
 }
 
+/** The status a score alone implies. Used when a model omits `status`. */
+export function statusForScore(score: number): EvaluationStatus {
+  if (score >= 75) return 'correct';
+  if (score >= 45) return 'partially-correct';
+  return 'incorrect';
+}
+
+export function statusLabel(status: EvaluationStatus): string {
+  if (status === 'correct') return 'Correct';
+  if (status === 'partially-correct') return 'Partially correct';
+  if (status === 'needs-clarification') return 'Needs clarification';
+  return 'Incorrect';
+}
+
 /**
  * Validate one model reply.
  *
@@ -165,14 +191,19 @@ export function parseEvaluation(value: unknown): ParseResult {
   const accuracy = ACCURACY.includes(raw.technicalAccuracy as TechnicalAccuracy)
     ? (raw.technicalAccuracy as TechnicalAccuracy)
     : accuracyForScore(score);
+  const status = STATUSES.includes(raw.status as EvaluationStatus)
+    ? (raw.status as EvaluationStatus)
+    : statusForScore(Math.round(score));
   return {
     ok: true,
     evaluation: {
       score: Math.round(score),
+      status,
       technicalAccuracy: accuracy,
       conceptsUnderstood: list(raw.conceptsUnderstood),
       missingConcepts: list(raw.missingConcepts),
       mistakes: list(raw.mistakes),
+      evidence: list(raw.evidence, 6, 300),
       explanation,
       modelAnswer,
       nextStep: text(raw.nextStep, 400) || 'Re-read the model answer, then try the same question again.',
@@ -186,7 +217,7 @@ export function parseEvaluation(value: unknown): ParseResult {
  *
  * It is the SAME keyword rubric the Question Bank uses, so its number is auditable: it counts how
  * many clauses of the authored answer the learner actually hit. It is not a language model and the
- * UI labels it `Offline rubric`, never `AI`.
+ * UI labels it `Built-in rubric`, never `AI`.
  */
 export function fallbackEvaluation(question: Pick<QuestionRecord, 'answer'>, answer: string): AnswerEvaluation {
   const written = answer.trim();
@@ -201,12 +232,14 @@ export function fallbackEvaluation(question: Pick<QuestionRecord, 'answer'>, ans
     .filter(Boolean);
   return {
     score,
+    status: written ? statusForScore(score) : 'incorrect',
     technicalAccuracy: accuracyForScore(score),
     conceptsUnderstood: understood.slice(0, 6),
     missingConcepts: scored.missing.slice(0, 8),
     mistakes: written
       ? []
       : ['No answer was recorded, so nothing could be matched against the model answer.'],
+    evidence: understood.slice(0, 4).map((group) => `Matched the model answer's point: ${group}`),
     explanation: question.answer,
     modelAnswer: question.answer,
     nextStep: score >= 75
@@ -254,9 +287,58 @@ export interface SessionAnswer {
   answer: string;
   evaluation: AnswerEvaluation;
   verdict: Verdict;
+  status: EvaluationStatus;
   source: EvaluationSource;
   /** Seconds this answer took from the question appearing to submission. */
   seconds: number;
+  /** How many times the learner re-answered this question before this evaluation. */
+  retries?: number;
+}
+
+/**
+ * One question in a sitting's queue, with its record attached.
+ *
+ * The record travels with the slot so the live room never re-fetches a bank to show a question it
+ * already planned — which is what makes "All Questions" over an entire subject possible in one
+ * pass, and what keeps every asked id unique within the sitting.
+ */
+export interface SessionQuestion {
+  id: string;
+  sectionId: string;
+  sectionTitle: string;
+  question: QuestionRecord;
+}
+
+/**
+ * Build the full queue from already-loaded banks.
+ *
+ * `All Questions` means exactly that: every PUBLISHED, interview-eligible question of the chosen
+ * kinds in the chosen subject, at the chosen level — with one honest fallback. If a section has
+ * nothing at that level, its questions are taken at the bank's own difficulty and `relaxed` is true,
+ * so the room says so. Ids are de-duplicated, so a question can never be asked twice in a sitting.
+ */
+export function collectQuestions(
+  sections: { sectionId: string; title: string; questions: QuestionRecord[] }[],
+  kinds: InterviewKindId[],
+  level: LevelId,
+): { questions: SessionQuestion[]; relaxed: boolean; sections: number } {
+  const out: SessionQuestion[] = [];
+  const seen = new Set<string>();
+  let relaxed = false;
+  for (const section of sections) {
+    const eligible = section.questions.filter((q) => {
+      const k = kindOf(q);
+      return k !== null && kinds.includes(k);
+    });
+    const pool = levelPool(eligible, level);
+    if (pool.relaxed) relaxed = true;
+    for (const question of pool.questions) {
+      if (seen.has(question.id)) continue;
+      seen.add(question.id);
+      out.push({ id: question.id, sectionId: section.sectionId, sectionTitle: section.title, question });
+    }
+  }
+  return { questions: out, relaxed, sections: sections.length };
 }
 
 export interface TopicPerformance {
@@ -280,6 +362,12 @@ export interface InterviewReport {
   correct: number;
   partial: number;
   incorrect: number;
+  /** Planned questions never reached because the learner ended early. */
+  remaining: number;
+  /** Planned questions neither answered nor explicitly skipped. */
+  unanswered: number;
+  /** Total re-answers across the sitting. */
+  retries: number;
   /** Mean of the evaluated answers' scores, or null when nothing was evaluated. */
   averageScore: number | null;
   /** Correct answers / answered answers, as a percentage. Null when nothing was answered. */
@@ -353,11 +441,15 @@ export function buildInterviewReport(input: {
     });
   }
 
+  const remaining = Math.max(0, input.planned - answers.length - input.skipped);
   return {
     subject: input.subject,
     planned: input.planned,
     answered: answers.length,
     skipped: input.skipped,
+    remaining,
+    unanswered: remaining,
+    retries: answers.reduce((sum, a) => sum + (a.retries ?? 0), 0),
     correct,
     partial: count('partial'),
     incorrect: count('incorrect'),

@@ -1,4 +1,4 @@
-/** Spaced repetition: 1 / 3 / 7 / 14 / 30 days. Fully offline. */
+/** Spaced repetition: 1 / 3 / 7 / 14 / 30 days. Fully local. */
 import type { AppState } from '../../types';
 
 export const INTERVALS = [1, 3, 7, 14, 30];
