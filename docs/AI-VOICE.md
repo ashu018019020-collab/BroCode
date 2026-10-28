@@ -50,21 +50,25 @@ These are product rules, not prompt suggestions, and the tests enforce them:
 
 ## Voice paths
 
-### Default: the server voice (no download, no model in the browser)
+### Two engines, one model: hosted first, on-device when there is no server
 
-The tutor's voice is **Supertonic 3** (`Supertone/supertonic-3`), a 99M-parameter ONNX TTS model that
-runs on the **server**, in `voice-service/` (see its README for deploy steps). The browser sends text
-and receives audio:
+The tutor's voice is **Supertonic 3** (`Supertone/supertonic-3`), a 99M-parameter ONNX TTS model. When
+the deployment has a hosted engine, the browser sends text to it and receives audio:
 
 ```
 browser ──POST /api/voice/tts──▶ account API ──▶ voice-service (ONNX Runtime, CPU) ──▶ audio/wav
         ◀──────────────────────── audio ─────────┘
 ```
 
-Nothing model-shaped is shipped to, cached by, or executed in the browser any more. The previous
-build ran the model on-device through ONNX Runtime Web; that path, its Cache API bucket, its WASM files
-and its "Download 398 MB (one time)" control are gone. `scripts/tests/supertonic.test.mjs` fails if a
-model host, a weight size or an on-device loader reappears in the client.
+**When there is no hosted engine — which is the case on the static production deployment, where
+`/api` answers with the host's 404 page — the same model runs on the learner's device.** The pinned
+weights (398 MB, verified byte sizes) are fetched once from the immutable revision, stored in a Cache
+API bucket keyed by that revision, and executed by ONNX Runtime Web's **WASM CPU** provider
+(single-threaded, so no COOP/COEP requirement). The load starts on the FIRST spoken answer rather
+than behind a manual install step; the status row reports real progress and a Cancel, and a second
+visit warms from disk. `scripts/ort-copy.mjs` copies ORT's `.mjs`/`.wasm` into `public/ort/` during
+`dev`/`build` so the runtime is served same-origin. The built-in browser voice is used only when the
+on-device engine genuinely fails, and the settings line says which engine actually spoke.
 
 | | |
 | --- | --- |
@@ -116,7 +120,7 @@ with fake sessions, so it proves the tensor wiring, not the voice.
 | --- | --- | --- |
 | `supertonic` | `TTS_SERVICE_URL` + `TTS_SERVICE_SECRET` point at a healthy `voice-service/` | No (your container) |
 | `google` | No service URL, or the service failed and `GOOGLE_TTS_API_KEY` exists | Yes, per character |
-| `none` | Neither is configured | — the browser voice speaks, and the UI says so |
+| `none` | Neither is configured | — the on-device model loads on the first answer; the browser voice is the last resort |
 
 The response header `X-Voice-Engine` names the engine that produced the audio, so the UI's label is
 evidence rather than an assumption. A configured-but-unreachable service is reported as unavailable —

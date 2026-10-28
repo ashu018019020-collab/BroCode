@@ -53,38 +53,29 @@ test('supertonic: the four graphs and their real sizes are declared once', () =>
   assert.equal(st.SUPERTONIC_WEIGHT_BYTES, 398_075_273, 'the weight budget the model downloader verifies');
 });
 
-test('supertonic: the model runs on the SERVER — the browser ships neither weights nor runtime', () => {
-  // The whole point of the migration: nothing model-shaped may re-enter the client bundle.
+test('supertonic: one contract, two engines — browser WASM and the server runtime', () => {
   const pkg = JSON.parse(read('package.json'));
-  assert.equal(pkg.dependencies?.['onnxruntime-web'], undefined, 'the browser runtime is gone');
-  assert.ok(!fs.existsSync(path.join(ROOT, 'src/core/ai/supertonic-runtime.ts')));
-  assert.ok(!fs.existsSync(path.join(ROOT, 'scripts/ort-copy.mjs')));
-  assert.doesNotMatch(read('package.json'), /ort-copy/, 'no build step may copy a WASM runtime');
+  // Pinned exactly: the runtime was written and verified against this API, not a moving major.
+  assert.equal(pkg.dependencies?.['onnxruntime-web'], '1.23.0', 'the browser runtime is pinned');
+  assert.ok(fs.existsSync(path.join(ROOT, 'src/core/ai/supertonic-runtime.ts')), 'the on-device runtime exists');
+  assert.ok(fs.existsSync(path.join(ROOT, 'scripts/ort-copy.mjs')), 'the WASM files are copied at build time');
+  assert.match(read('package.json'), /ort-copy\.mjs && vite build/, 'every build ships the ORT files');
 
-  // No client source may point at the model host or print a download size.
-  const clientFiles = [
-    'src/core/ai/voice.ts',
-    'src/components/shared/useVoiceTutor.ts',
-    'src/components/shared/VoiceBar.tsx',
-    'src/components/shared/AiVoiceRow.tsx',
-    'src/features/ai/VoiceMentorPanel.tsx',
-  ];
-  for (const file of clientFiles) {
-    const source = read(file);
-    assert.doesNotMatch(source, /huggingface\.co/i, `the browser must not fetch weights: ${file}`);
-    assert.doesNotMatch(source, /398\s*MB/i, `no download size may be shown: ${file}`);
-    assert.doesNotMatch(source, /loadSupertonic|synthesizeChunk/, `no on-device inference: ${file}`);
-  }
+  const runtime = read('src/core/ai/supertonic-runtime.ts');
+  assert.match(runtime, /executionProviders: \['wasm'\]/, 'CPU WebAssembly, not a GPU requirement');
+  assert.match(runtime, /numThreads = 1/, 'single-threaded, so no COOP/COEP requirement');
+  assert.match(runtime, /ort-wasm-simd-threaded\.wasm/);
 
-  // The engine is a server module and opens the contract's graphs through native ONNX Runtime.
+  // The hosted engine still exists and reuses the same inference core.
   const engine = read('server/supertonic-tts.mjs');
   assert.match(engine, /src\/core\/ai\/supertonic\.ts/, 'the server reuses the one model contract');
   assert.match(engine, /onnxruntime-node/);
   assert.match(engine, /executionProviders: \['cpu'\]/, 'CPU inference, not a GPU requirement');
   assert.match(engine, /queue\.then\(run, run\)/, 'synthesis is serialized, not raced');
 
-  // Weights are deployment data, never repository data.
+  // Browser weights and the server model directory are never repository data.
   assert.match(read('.gitignore'), /^models\/$/m, 'the weights directory must stay out of Git');
+  assert.match(read('.gitignore'), /^public\/ort\/$/m, 'the copied WASM runtime is build output');
 });
 
 /* -------------------------------- language -------------------------------- */

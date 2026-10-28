@@ -309,23 +309,30 @@ test('voice: the engine note never promises a voice the deployment does not have
   assert.match(voice.ttsEngineNote('cloud', ready('google')), /Google Neural2/);
   assert.doesNotMatch(voice.ttsEngineNote(null, { state: 'checking', engine: null }), /Server-powered/);
   assert.match(voice.ttsEngineNote(null, { state: 'checking', engine: null }), /Checking the AI voice/);
-  assert.match(voice.ttsEngineNote(null, ready('none')), /unavailable on this deployment/);
+  // No hosted engine: the on-device Supertonic model is the AI voice, and the note says so.
+  assert.match(voice.ttsEngineNote(null, ready('none')), /runs on this device/);
+  assert.match(voice.ttsEngineNote(null, ready('none'), { state: 'ready', percent: 100 }), /on this device/);
+  assert.match(
+    voice.ttsEngineNote(null, { state: 'checking', engine: null }, { state: 'loading', percent: 12 }),
+    /Preparing the AI voice on this device… 12%/,
+  );
   // A browser voice is reported as exactly that, never as the AI voice.
   assert.match(voice.ttsEngineNote('browser', ready('supertonic')), /did not answer/);
   assert.doesNotMatch(voice.ttsEngineNote('browser', ready('supertonic')), /Server-powered/);
   assert.match(voice.ttsEngineNote('browser', { state: 'unavailable', engine: 'none' }), /Built-in browser voice/);
 });
 
-test('voice: the client downloads no model — the server is the only engine', () => {
+test('voice: a deployment without a server runs the model on this device', () => {
   const hook = read('src/components/shared/useVoiceTutor.ts');
-  assert.doesNotMatch(hook, /loadSupertonic|supertonic-runtime|supertonicChunksFor|synthesizeChunk/);
-  assert.doesNotMatch(hook, /398\s*MB/i, 'no download size may survive in the hook');
-  assert.match(hook, /serverVoice/, 'the probe\'s result is a first-class state');
-  assert.match(hook, /refreshServerVoice/, 'Retry re-probes the server instead of downloading');
+  assert.match(hook, /supertonic-runtime/, 'the on-device runtime is wired');
+  assert.match(hook, /synthesizeChunk\(/, 'the on-device engine is actually called');
+  assert.match(hook, /downloadAiVoice/, 'the first answer starts the one-time load');
+  assert.match(hook, /serverVoice/, 'the probe\'s result is still a first-class state');
   const row = read('src/components/shared/AiVoiceRow.tsx');
-  assert.doesNotMatch(row, /Download|398/);
-  assert.match(row, /Server-powered/);
-  assert.match(row, /refreshServerVoice/);
+  assert.match(row, /Supertonic 3/);
+  assert.match(row, /downloadAiVoice/);
+  assert.match(row, /on this device/);
+  assert.doesNotMatch(row, /unavailable on this deployment/, 'a working on-device engine is not a dead end');
 });
 
 test('voice: the hook probes the server key and falls back — cloud is an upgrade, never a dependency', () => {

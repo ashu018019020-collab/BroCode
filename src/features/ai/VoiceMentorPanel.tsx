@@ -387,7 +387,7 @@ export function VoiceMentorPanel() {
                 <span className="small muted">{voice.rate.toFixed(1)}×</span>
               </div>
               <p className="small muted" style={{ margin: 0 }} aria-live="polite">
-                {ttsEngineNote(voice.engine, voice.serverVoice)}
+                {ttsEngineNote(voice.engine, voice.serverVoice, voice.aiVoice)}
               </p>
               <AiVoiceRow voice={voice} />
             </div>

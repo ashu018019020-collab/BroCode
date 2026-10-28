@@ -16,6 +16,7 @@
  *    learner says it aloud.
  */
 import type { Section } from '../../types';
+import { SUPERTONIC_WEIGHT_BYTES, supertonicSizeLabel } from './supertonic';
 import type { AssistantContext } from './assistant';
 
 export type VoiceLangId = 'en-IN' | 'hi-IN';
@@ -280,6 +281,7 @@ export type ServerVoiceEngine = 'supertonic' | 'google' | 'none' | null;
 export function ttsEngineNote(
   engine: 'supertonic' | 'cloud' | 'browser' | null,
   server: { state: 'checking' | 'ready' | 'unavailable'; engine: ServerVoiceEngine },
+  ai: { state: 'off' | 'loading' | 'ready' | 'error'; percent: number } = { state: 'off', percent: 0 },
 ): string {
   const name = server.engine === 'supertonic'
     ? 'Supertonic 3'
@@ -296,11 +298,15 @@ export function ttsEngineNote(
     }
     return 'Built-in browser voice — this deployment has no AI voice configured, so answers are read locally.';
   }
+  if (ai.state === 'ready') return 'AI voice · Supertonic 3 · Hindi + English · on this device.';
+  if (ai.state === 'loading') {
+    return `Preparing the AI voice on this device… ${ai.percent}% of ${supertonicSizeLabel(SUPERTONIC_WEIGHT_BYTES)} (one time).`;
+  }
   if (server.state === 'checking') return 'Checking the AI voice…';
   if (server.state === 'ready' && name) {
     return `AI voice · ${name} · Hindi + English · Server-powered.`;
   }
-  return 'AI voice is unavailable on this deployment — the built-in browser voice reads answers.';
+  return `AI voice · Supertonic 3 · Hindi + English — runs on this device and loads on the first answer (${supertonicSizeLabel(SUPERTONIC_WEIGHT_BYTES)}, one time).`;
 }
 
 /** The line under the mic button. One state, one short label. */
