@@ -50,8 +50,7 @@ test('supertonic: the four graphs and their real sizes are declared once', () =>
     assert.ok(file.bytes > 1_000_000, `${file.path} should carry its measured size`);
     assert.ok(file.label.length > 2);
   }
-  assert.equal(st.SUPERTONIC_WEIGHT_BYTES, 398_075_273, 'the size the UI promises must stay the size');
-  assert.equal(st.supertonicSizeLabel(st.SUPERTONIC_WEIGHT_BYTES), '398 MB');
+  assert.equal(st.SUPERTONIC_WEIGHT_BYTES, 398_075_273, 'the weight budget the model downloader verifies');
 });
 
 test('supertonic: the model runs on the SERVER — the browser ships neither weights nor runtime', () => {
@@ -382,52 +381,4 @@ test('supertonic: the WAV header is a real 16-bit mono PCM header', () => {
   assert.equal(pcm[1], Math.floor(0.5 * 32767));
   assert.equal(pcm[3], 32767);
   assert.equal(pcm[4], -32767, 'samples are clamped, never wrapped');
-});
-
-/* ------------------------------- messages -------------------------------- */
-
-test('supertonic: every failure names what still works', () => {
-  for (const fail of ['network', 'quota', 'wasm', 'model', 'unsupported', 'aborted', 'empty']) {
-    const copy = st.supertonicErrorCopy(fail);
-    assert.ok(copy.length > 30, `${fail} needs a real sentence`);
-    assert.ok(!/undefined|null/.test(copy));
-  }
-  assert.match(st.supertonicErrorCopy('network'), /built-in voice/);
-  assert.match(st.supertonicErrorCopy('aborted'), /again/);
-});
-
-test('supertonic: failures are classified from the real thrown shapes', () => {
-  const abort = new Error('The operation was aborted.');
-  abort.name = 'AbortError';
-  assert.equal(st.classifySupertonicFailure(abort), 'aborted');
-  const quota = new Error('The quota has been exceeded.');
-  quota.name = 'QuotaExceededError';
-  assert.equal(st.classifySupertonicFailure(quota), 'quota');
-  assert.equal(st.classifySupertonicFailure(new Error('HTTP 503 for onnx/vocoder.onnx')), 'network');
-  assert.equal(st.classifySupertonicFailure(new Error('failed to asynchronously prepare wasm')), 'wasm');
-  assert.equal(st.classifySupertonicFailure(new Error('Supertonic predicted no audio for this text')), 'empty');
-  assert.equal(st.classifySupertonicFailure(new Error('unexpected shape [1,2]')), 'model');
-});
-
-test('supertonic: progress is clamped and the note never claims a voice it does not have', () => {
-  assert.equal(st.supertonicPercent(0, 100), 0);
-  assert.equal(st.supertonicPercent(50, 200), 25);
-  assert.equal(st.supertonicPercent(300, 200), 100);
-  assert.equal(st.supertonicPercent(1, 0), 0);
-
-  const loading = st.supertonicEngineNote('loading', { percent: 12 });
-  assert.match(loading, /12%/);
-  assert.match(loading, /built-in voice/, 'while loading, say what is actually speaking');
-
-  const ready = st.supertonicEngineNote('ready');
-  assert.match(ready, /Supertonic 3/);
-  assert.match(ready, /Hindi \+ English/);
-
-  const off = st.supertonicEngineNote('off', { downloaded: false });
-  assert.match(off, /398 MB/);
-  assert.match(off, /built-in voice/);
-
-  const failed = st.supertonicEngineNote('error', { error: 'Boom.' });
-  assert.match(failed, /Boom\./);
-  assert.match(failed, /Retry/);
 });

@@ -28,8 +28,10 @@ export const VOICE_ENGINE_LABEL = {
   none: 'no server voice',
 };
 
-/** How long a health answer is trusted before the service is asked again. */
+/** How long a healthy answer is trusted before the service is asked again. */
 const PROBE_TTL_MS = 30_000;
+/** A failure is re-checked sooner: the learner's Retry must not be answered from a stale negative. */
+const PROBE_FAILURE_TTL_MS = 5_000;
 
 function trimUrl(value) {
   return String(value ?? '').trim().replace(/\/+$/, '');
@@ -56,7 +58,8 @@ export function createVoiceEngine({
    */
   async function serviceHealth({ force = false } = {}) {
     if (!base) return { ready: false, detail: 'TTS_SERVICE_URL is not set.' };
-    if (!force && probe.at && now() - probe.at < PROBE_TTL_MS) {
+    const ttl = probe.ready ? PROBE_TTL_MS : PROBE_FAILURE_TTL_MS;
+    if (!force && probe.at && now() - probe.at < ttl) {
       return { ready: probe.ready, detail: probe.detail };
     }
     try {

@@ -233,9 +233,6 @@ export interface VoiceTutor {
   serverVoice: { state: 'checking' | 'ready' | 'unavailable'; engine: 'supertonic' | 'google' | 'none' | null };
   /** Ask the server again — the only "fix it" action a learner needs now that nothing downloads. */
   refreshServerVoice: () => void;
-  /** No-op kept for older callers; re-probes the server instead of downloading anything. */
-  downloadAiVoice: () => void;
-  cancelAiVoice: () => void;
   /** What the SERVER reported about its voice engine — null until the status probe answers. */
   cloudConfigured: CloudState;
   /** The live partial transcript while the learner is speaking. */
@@ -401,14 +398,6 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     cloudFails.current = 0;
     setServerProbe((value) => value + 1);
   }, []);
-
-  /**
-   * Nothing is downloaded any more. Kept as an explicit no-op so an older component that still wires
-   * a "download the voice" button cannot resurrect the old weight download.
-   */
-  const downloadAiVoice = useCallback(() => {
-    refreshServerVoice();
-  }, [refreshServerVoice]);
 
   useEffect(() => {
     mounted.current = true;
@@ -730,7 +719,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     };
     void run();
   }, [
-    downloadAiVoice, markEngine, prefs.engine, prefs.lang, prefs.pitch, prefs.rate, prefs.voiceName,
+    markEngine, prefs.engine, prefs.lang, prefs.pitch, prefs.rate, prefs.voiceName,
     releaseCloud, releaseUtterances, stopSpeaking, supported.synthesis,
   ]);
 
@@ -985,8 +974,6 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     cloudConfigured,
     serverVoice,
     refreshServerVoice,
-    downloadAiVoice,
-    cancelAiVoice: refreshServerVoice,
     interim,
     lastSpoken,
     error,

@@ -128,9 +128,11 @@ function readAsset(dir, relPath) {
 }
 
 function resolveModelDir(explicit) {
+  // An operator-supplied path is AUTHORITATIVE. Falling back from a typo to a different directory
+  // would run a model the deployment did not choose, which is worse than failing with "missing file".
   if (explicit) return explicit;
-  if (fs.existsSync(path.join(explicit ?? DEFAULT_MODEL_DIR, 'onnx'))) return explicit ?? DEFAULT_MODEL_DIR;
-  if (fs.existsSync(DEFAULT_MODEL_DIR)) return DEFAULT_MODEL_DIR;
+  if (fs.existsSync(path.join(DEFAULT_MODEL_DIR, 'onnx'))) return DEFAULT_MODEL_DIR;
+  // The dev cache that `tools/supertonic-check.mjs` fills, so local runs need no copy step.
   if (fs.existsSync(path.join(DEV_CACHE_DIR, 'onnx'))) return DEV_CACHE_DIR;
   return DEFAULT_MODEL_DIR;
 }
