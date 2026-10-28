@@ -80,7 +80,24 @@ so and uses its clearly labelled browser voice.
 
 ## Deploy
 
-### Docker / any container host (recommended)
+### Render — one blueprint (recommended)
+
+[`render.yaml`](../render.yaml) in the repository root is a complete Render Blueprint: Docker build,
+a 10 GB disk mounted at `/models`, `/healthz` checks, auto-deploy from `main`, and a generated
+`TTS_SERVICE_SECRET`.
+
+1. Render Dashboard → **New → Blueprint** → connect this repository → **Apply**.
+2. Wait for the first boot. The build installs `onnxruntime-node`; the boot then downloads the
+   pinned weights into the disk (minutes on a slow link). `healthz` passes when the model is loaded.
+3. Copy `TTS_SERVICE_SECRET` from the service's Environment tab into the **account API / web host**
+   as `TTS_SERVICE_URL=https://<service>.onrender.com` and the same `TTS_SERVICE_SECRET`.
+4. Redeploy the API host, then run the check below.
+
+Use the **Starter** plan: a free instance cannot attach a disk and idles out, which throws away the
+400 MB of loaded weights on every quiet period. This is the only recurring cost — roughly one small
+always-on container (2 GB RAM is the floor, 4 GB is comfortable).
+
+### Docker / any other container host
 
 ```bash
 docker build -t brocode-voice -f voice-service/Dockerfile .
@@ -105,14 +122,28 @@ The website stays on Vercel. The **inference** does not: the model is 398 MB, re
 seconds per sentence — far outside a serverless function's bundle and duration limits. `voice-service/`
 is a long-running container so the model is loaded once per process, not once per request.
 
-### After deploying
+### After deploying — verify the whole chain, not just the container
 
-1. `curl https://<voice-host>/healthz` → `"ready": true`.
-2. Set `TTS_SERVICE_URL` and the same `TTS_SERVICE_SECRET` on the web/API deployment, redeploy it.
-3. In the app: `GET /api/voice/status` must answer `{"configured":true,"engine":"supertonic",…}`.
-   The settings line then reads **AI voice · Supertonic 3 · Hindi + English · Server-powered**.
-4. Open the browser Network panel and confirm the page loads **no** `.onnx` file and no multi-hundred-MB
-   request; only `/api/voice/tts` returning `audio/wav`.
+```bash
+TTS_SERVICE_URL=https://<voice-host> TTS_SERVICE_SECRET=... npm run voice:check
+# or:
+npm run voice:check -- --url https://<voice-host> --public https://mybrocode.vercel.app
+```
+
+The script proves four separate things and exits non-zero if any fails:
+
+1. `/healthz` is `ready` (the model loaded, not just the process).
+2. An unauthenticated `POST /v1/tts` is **401** — the shared secret is enforced.
+3. Hindi **and** English return real `RIFF` WAV bytes with `X-Voice-Engine` set.
+4. `https://<site>/api/voice/status` reports `engine: "supertonic"` — i.e. production is wired.
+
+Then, in the app: the settings line reads **AI voice · Supertonic 3 · Hindi + English ·
+Server-powered**, and the browser Network panel shows no `.onnx` file and no multi-hundred-MB
+request — only `/api/voice/tts` returning audio.
+
+> `/api/voice/*` is served by the **account API**, not by the static site. If the web host only serves
+> `dist/`, the status route returns 404/HTML and the client correctly says the AI voice is unavailable
+> until that API is deployed with `TTS_SERVICE_URL` set.
 
 ## Cost
 

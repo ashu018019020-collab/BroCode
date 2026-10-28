@@ -1,0 +1,48 @@
+# BroCode deployment blueprint — Render Blueprint (Infrastructure as Code).
+#
+# Deploys ONLY the voice service. The website and the account API keep their existing deployment;
+# they reach this service through the `TTS_SERVICE_URL` variable, and this service authenticates
+# them with the same `TTS_SERVICE_SECRET`.
+#
+#   https://dashboard.render.com/blueprints → New Blueprint Instance → this repository → Apply
+#
+# What Render does with this file:
+#   1. Builds voice-service/Dockerfile from the repository root (Node 24 + onnxruntime-node).
+#   2. Creates a persistent disk at /models — the 398 MB of weights live there, NOT in the image,
+#      so a redeploy never re-downloads them.
+#   3. Generates TTS_SERVICE_SECRET once. Copy it into the web/API deployment as the SAME value.
+#   4. Routes HTTPS to the container, health-checks /healthz, and restarts a failed instance.
+#
+# Cost: the Starter plan is the cheapest one that allows a persistent disk and no sleep. A free
+# instance cannot hold the weights and unloads the model after idle, which would make the first
+# sentence of every lesson pay a 2-second warm-up. Budget roughly one small always-on container.
+services:
+  - type: web
+    name: brocode-voice
+    runtime: docker
+    plan: starter
+    region: singapore
+    branch: main
+    dockerfilePath: ./voice-service/Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true
+    disk:
+      name: brocode-voice-models
+      mountPath: /models
+      sizeGB: 10
+    envVars:
+      # Shared bearer token. Render generates it; paste the same value into the web/API host.
+      - key: TTS_SERVICE_SECRET
+        generateValue: true
+      # The model lives on the disk, never in the image.
+      - key: SUPERTONIC_MODEL_DIR
+        value: /models/supertonic-3
+      - key: SUPERTONIC_STYLE
+        value: F1
+      - key: SUPERTONIC_STEPS
+        value: "8"
+      # Fetch the pinned weights on first boot (they are then reused forever).
+      - key: SUPERTONIC_AUTO_FETCH
+        value: "1"
+      - key: NODE_ENV
+        value: production

@@ -169,6 +169,32 @@ test('voice service: it refuses to start without a secret and caps the body', ()
   assert.match(docker, /SUPERTONIC_AUTO_FETCH/, 'a fresh volume fills itself');
 });
 
+test('voice deploy: the Render blueprint matches the service contract', () => {
+  const yaml = read('render.yaml');
+  assert.match(yaml, /runtime: docker/);
+  assert.match(yaml, /dockerfilePath: \.\/voice-service\/Dockerfile/);
+  assert.match(yaml, /healthCheckPath: \/healthz/, 'Render must poll the real readiness route');
+  assert.match(yaml, /mountPath: \/models/, 'the weights live on a disk, never in the image');
+  assert.match(yaml, /SUPERTONIC_MODEL_DIR[\s\S]{0,80}\/models\/supertonic-3/);
+  assert.match(yaml, /TTS_SERVICE_SECRET[\s\S]{0,80}generateValue: true/, 'the token is generated, not hard-coded');
+  assert.match(yaml, /autoDeploy: true/);
+  // A free instance cannot attach a disk and unloads the model after idle — the weights would be lost.
+  assert.match(yaml, /plan: (starter|standard)/, 'the plan must support a persistent disk');
+  assert.doesNotMatch(yaml, /TTS_SERVICE_SECRET:\s*[A-Za-z0-9]/, 'no literal secret in the blueprint');
+});
+
+test('voice deploy: the wiring check proves auth, both languages and production', () => {
+  const script = read('scripts/voice-deploy-check.mjs');
+  assert.match(script, /\/healthz/);
+  assert.match(script, /Authorization: `Bearer \$\{SECRET\}`/);
+  assert.match(script, /'en-IN'/);
+  assert.match(script, /'hi-IN'/);
+  assert.match(script, /RIFF/);
+  assert.match(script, /\/api\/voice\/status/, 'the check must include the wiring half');
+  assert.ok(!/console\.log\([^\n]*SECRET/.test(script), 'the token is never printed');
+  assert.match(read('package.json'), /"voice:check": "node scripts\/voice-deploy-check\.mjs"/);
+});
+
 test('voice service: the model is fetched from the pinned revision, on the server only', () => {
   const script = read('scripts/voice-model.mjs');
   assert.match(script, /src\/core\/ai\/supertonic\.ts/, 'URLs and sizes come from the one contract');
