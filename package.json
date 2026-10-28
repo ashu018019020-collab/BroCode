@@ -13,7 +13,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:setup": "node scripts/db-setup.cjs",
-    "build": "vite build",
+    "build": "node scripts/ort-copy.mjs && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"scripts/tests/*.test.cjs\" \"scripts/tests/*.test.mjs\"",
@@ -64,8 +64,7 @@
     "questions:pdf:write": "node scripts/pdf-questions.cjs --write",
     "questions:import": "node scripts/questions.cjs import",
     "questions:export": "node scripts/questions.cjs export",
-    "predev": "node scripts/ort-copy.mjs",
-    "prebuild": "node scripts/ort-copy.mjs"
+    "predev": "node scripts/ort-copy.mjs"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",

@@ -77,7 +77,7 @@ test('supertonic: the ONNX Runtime files the app serves exist in the installed p
   // `public/ort` is build output: if it were tracked, a stale binary could outlive a package bump.
   const ignore = read('.gitignore');
   assert.match(ignore, /public\/ort/, 'public/ort must stay out of version control');
-  assert.match(read('package.json'), /"prebuild": "node scripts\/ort-copy\.mjs"/);
+  assert.match(read('package.json'), /"build": "node scripts\/ort-copy\.mjs && vite build"/, 'the build must copy the runtime files itself');
 });
 
 /* -------------------------------- language -------------------------------- */
