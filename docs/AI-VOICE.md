@@ -60,8 +60,8 @@ browser ──POST /api/voice/tts──▶ account API ──▶ voice-service (
         ◀──────────────────────── audio ─────────┘
 ```
 
-**When there is no hosted engine — which is the case on the static production deployment, where
-`/api` answers with the host's 404 page — the same model runs on the learner's device.** The pinned
+**When there is no hosted engine — the Vercel functions answer `engine: none` when neither an
+inference service nor a Google key is configured — the same model runs on the learner's device.** The pinned
 weights (398 MB, verified byte sizes) are fetched once from the immutable revision, stored in a Cache
 API bucket keyed by that revision, and executed by ONNX Runtime Web's **WASM CPU** provider
 (single-threaded, so no COOP/COEP requirement). The load starts on the FIRST spoken answer rather
@@ -246,9 +246,28 @@ npm run dev:api      # account API on http://localhost:8787 (Vite proxies /api)
    `TTS_SERVICE_SECRET=dev PORT=8080 node voice-service/server.mjs` and set
    `TTS_SERVICE_URL=http://localhost:8080`, `TTS_SERVICE_SECRET=dev` for `npm run dev:api`.
 4. Upload in production is `npm run build`; serve `dist/` and run the Node API beside it with the same
-   `WEB_ORIGIN`, `API_PORT` and provider keys. The inference service is a separate container (the
-   website host cannot run it). If the API is absent, the page detects that (`configured: false`) and
-   stays on the browser voice.
+   `WEB_ORIGIN`, `API_PORT` and provider keys.
+
+### Vercel: the two voice routes as functions
+
+The Vercel deployment does not need the account API host for voice. `api/voice/status.js` and
+`api/voice/tts.js` are Vercel Functions that reuse the SAME engine selection as `server/`
+(`server/vercel-voice.mjs` → `server/voice-engine.mjs`):
+
+| Variable | Effect on Vercel |
+| --- | --- |
+| `TTS_SERVICE_URL` + `TTS_SERVICE_SECRET` | Functions proxy to `voice-service/`; Supertonic speaks |
+| `GOOGLE_TTS_API_KEY` (only) | Functions call Google directly; no extra host at all |
+| neither | Status answers `engine: none`; the browser runs the on-device model |
+
+**The checkpoint still cannot run inside a function.** 398 MB of weights plus the native runtime is
+far past a serverless bundle, and a cold start that downloads the model would time out. `voice-service/`
+remains a container with a volume; Google is the zero-infrastructure alternative. Both routes are
+same-origin only, rate-limited per client (best-effort per warm instance), validate text/language
+before spending anything, return `X-Voice-Engine` with the audio, and map failures to 400/429/502/503
+without leaking a URL, a key or an upstream body. `vercel.json` raises the TTS function's
+`maxDuration` to 60 s for a cold inference service. `scripts/tests/vercel-voice.test.mjs` pins the
+contract; the routes are live at `https://<site>/api/voice/status` and `/api/voice/tts`.
 
 ## Tests
 

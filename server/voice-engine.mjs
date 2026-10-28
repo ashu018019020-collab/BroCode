@@ -1,8 +1,9 @@
 /**
  * Which voice speaks, and what happens when it cannot.
  *
- * The browser used to download 398 MB of model weights. That is gone: audio now comes from the
- * server, from one of two engines, chosen by configuration and reported honestly.
+ * When the deployment has a server voice, audio comes from one of two engines, chosen by
+ * configuration and reported honestly. (The browser also carries an on-device Supertonic fallback for
+ * static deployments; `engine: 'none'` is what makes the client use it.)
  *
  *   1. `supertonic` — a separate inference service (`voice-service/`) running the real Supertonic 3
  *      ONNX graphs on CPU. `TTS_SERVICE_URL` points at it; `TTS_SERVICE_SECRET` authenticates this
