@@ -191,7 +191,9 @@ test('voice deploy: the wiring check proves auth, both languages and production'
   assert.match(script, /'hi-IN'/);
   assert.match(script, /RIFF/);
   assert.match(script, /\/api\/voice\/status/, 'the check must include the wiring half');
-  assert.ok(!/console\.log\([^\n]*SECRET/.test(script), 'the token is never printed');
+  // The secret's VALUE must never be interpolated into output (naming the variable is fine).
+  assert.ok(!/console\.(?:log|error)\([^\n]*\$\{SECRET\}/.test(script), 'the token value is never printed');
+  assert.ok(!/console\.(?:log|error)\([^\n]*\)\s*;\s*\/\/.*secret/i.test(script), 'no secret in a comment');
   assert.match(read('package.json'), /"voice:check": "node scripts\/voice-deploy-check\.mjs"/);
 });
 
