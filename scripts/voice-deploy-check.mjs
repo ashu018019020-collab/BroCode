@@ -15,17 +15,30 @@
  * Never prints the secret. Exits non-zero when the service or the wiring is not ready, so it can gate
  * a release.
  */
-const args = new Map(process.argv.slice(2).map((arg) => {
-  const [key, value = 'true'] = arg.replace(/^--/, '').split('=');
-  return [key, value];
-}));
+const argv = process.argv.slice(2);
+const args = new Map();
+for (let i = 0; i < argv.length; i += 1) {
+  const raw = argv[i];
+  if (!raw.startsWith('--')) continue;
+  const [key, inline] = raw.replace(/^--/, '').split('=');
+  if (inline !== undefined) { args.set(key, inline); continue; }
+  // Both `--url=X` and `--url X` are accepted: npm passes the second form through unchanged,
+  // and a bare `--url` with no value must not silently become the string "true".
+  const following = argv[i + 1];
+  if (following && !following.startsWith('--')) { args.set(key, following); i += 1; }
+  else args.set(key, 'true');
+}
 
 const SERVICE = String(args.get('url') ?? process.env.TTS_SERVICE_URL ?? '').trim().replace(/\/+$/, '');
 const SECRET = String(args.get('secret') ?? process.env.TTS_SERVICE_SECRET ?? '').trim();
 const PUBLIC = String(args.get('public') ?? 'https://mybrocode.vercel.app').trim().replace(/\/+$/, '');
 
 if (!SERVICE) {
-  console.error('Set TTS_SERVICE_URL (or pass --url=...) to the deployed voice service.');
+  console.error('Set TTS_SERVICE_URL (or pass --url=... / --url ...) to the deployed voice service.');
+  process.exit(2);
+}
+if (!/^https?:\/\//.test(SERVICE)) {
+  console.error(`--url must be an http(s) URL; got "${SERVICE}".`);
   process.exit(2);
 }
 if (!SECRET) {
