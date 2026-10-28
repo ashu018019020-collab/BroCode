@@ -3,6 +3,7 @@ import {
   MAX_RATE, MIN_RATE, VOICE_LANGS, ttsEngineNote, voiceStatusLabel, voiceSupportNote, type VoiceLangId,
 } from '../../core/ai/voice';
 import type { VoiceTutor } from './useVoiceTutor';
+import { AiVoiceRow } from './AiVoiceRow';
 
 /**
  * The voice agent's controls — one row, inside the assistant.
@@ -146,8 +147,14 @@ export function VoiceBar({
             <span className="small muted">{voice.rate.toFixed(1)}×</span>
             {/* Which engine is ACTUALLY speaking — never a promise the deployment cannot keep. */}
             <span className="small muted" style={{ marginTop: 6 }} aria-live="polite">
-              {ttsEngineNote(voice.engine, voice.cloudConfigured)}
+              {ttsEngineNote(voice.engine, voice.cloudConfigured, {
+                state: voice.aiVoice.state,
+                percent: voice.aiVoice.percent,
+                error: voice.aiVoice.error,
+                downloaded: voice.aiCached,
+              })}
             </span>
+            <AiVoiceRow voice={voice} />
           </div>
         </details>
       </div>

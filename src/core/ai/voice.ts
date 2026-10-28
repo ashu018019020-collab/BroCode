@@ -17,6 +17,7 @@
  */
 import type { Section } from '../../types';
 import type { AssistantContext } from './assistant';
+import { supertonicEngineNote, type SupertonicState } from './supertonic';
 
 export type VoiceLangId = 'en-IN' | 'hi-IN';
 
@@ -272,11 +273,25 @@ export function pickVoiceFrom(voices: VoiceLike[], lang: VoiceLangId): VoiceLike
  * `cloudConfigured` is what the SERVER reported (null while unknown): the label must never promise
  * Google audio the deployment does not have, and a mid-session failure is shown as the fallback it
  * is rather than hidden.
+ *
+ * `ai` is the on-device voice's report. Passed as an object rather than three arguments because the
+ * state, the download progress and the reason all belong to one fact, and the note below prefers the
+ * most specific true sentence available: what is loading, what failed, or which voice will speak
+ * NEXT — in that order.
  */
 export function ttsEngineNote(
-  engine: 'cloud' | 'browser' | null,
+  engine: 'supertonic' | 'cloud' | 'browser' | null,
   cloudConfigured: boolean | null,
+  ai?: { state: SupertonicState; percent?: number; error?: string | null; downloaded?: boolean },
 ): string {
+  if (engine === 'supertonic') return supertonicEngineNote('ready');
+  if (ai?.state === 'loading') return supertonicEngineNote('loading', ai);
+  if (ai?.state === 'error') return supertonicEngineNote('error', ai);
+  if (engine === 'browser' && ai) {
+    return ai.downloaded
+      ? 'Built-in browser voice for this answer — the AI voice is stored here and starts on the next one.'
+      : supertonicEngineNote('off', { downloaded: false });
+  }
   if (engine === 'cloud') return 'Speaking with the Google Neural2 voice (online).';
   if (engine === 'browser' && cloudConfigured === true) {
     return 'Google voice is busy — using the built-in browser voice for this answer.';

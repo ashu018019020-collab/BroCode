@@ -8,6 +8,7 @@ import { HubCrumb } from '../../components/learning/SectionChrome';
 import { BrandMark } from '../../components/shared/BrandMark';
 import { useVoiceTutor } from '../../components/shared/useVoiceTutor';
 import { useOnlineStatus } from '../../components/shared/useOnlineStatus';
+import { AiVoiceRow } from '../../components/shared/AiVoiceRow';
 import { Bar } from '../../components/ui/ui';
 import { useI18n } from '../../app/i18n';
 import type { LocaleKey } from '../../app/i18n/locales';
@@ -1116,9 +1117,10 @@ export default function InterviewMode() {
                 .map((v) => <option key={v.name} value={v.name}>{v.name}{v.localService ? ' (device)' : ' (network)'}</option>)}
             </select>
           </div>
+          <AiVoiceRow voice={voice} />
           <p className="small muted" style={{ margin: '8px 0 0' }}>
             {voiceSupportNote(voice.supported)
-              || `Questions are spoken with the selected ${voice.lang === 'hi-IN' ? 'Hindi' : 'English'} voice; the transcript appears in the answer box for you to edit. Answering by voice never turns the interviewer's voice off — the mic and the speaker are separate.`}
+              || `Questions are spoken with the ${voice.lang === 'hi-IN' ? 'Hindi' : 'English'} voice — the on-device Supertonic voice once it is downloaded, the built-in voice until then. The transcript appears in the answer box for you to edit. Answering by voice never turns the interviewer's voice off — the mic and the speaker are separate.`}
             {draftSaved && ' Your progress in the last sitting is saved on this device.'}
           </p>
           {voice.error && (

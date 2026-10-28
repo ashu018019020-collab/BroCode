@@ -50,10 +50,65 @@ These are product rules, not prompt suggestions, and the tests enforce them:
 
 ## Voice paths
 
-### Default: browser speech loop (no server voice needed)
+### Default: Supertonic 3, on the learner's device
+
+The tutor's voice is **Supertonic 3** (`Supertone/supertonic-3`), a 99M-parameter ONNX TTS model that
+runs inside the tab through ONNX Runtime Web. It speaks English and Hindi, needs no API key and no
+server, and the audio never leaves the device.
+
+| | |
+| --- | --- |
+| Model | `Supertone/supertonic-3`, pinned to revision `724fb5a…` (never `main`) |
+| Graphs | `duration_predictor` · `text_encoder` · `vector_estimator` (×8 denoising steps) · `vocoder` |
+| Download | 398 MB (379 MiB) of weights + ~0.6 MB config/index/style, once per browser profile |
+| Output | 44.1 kHz mono float32 → scheduled on one `AudioContext` |
+| Voice preset | `F1` (of `F1–F5` female / `M1–M5` male); one constant in `core/ai/supertonic.ts` |
+| License | Model: OpenRAIL-M · reference code: MIT |
+| Code | `core/ai/supertonic.ts` (pure model contract), `core/ai/supertonic-runtime.ts` (browser plumbing) |
+
+**Language policy.** The model takes a language tag per utterance (`<hi>…</hi>` / `<en>…</en>`).
+BroCode's `hi-IN` setting means "Hindi voice, Hinglish explanations", and Hinglish is usually Roman
+script — tagging Roman text `hi` asks the model to read Latin letters as Hindi. So the tag follows the
+script on the page: Devanagari → `hi`, everything else → `en`. The setting still decides whether a
+Hindi answer is *spoken* in Hindi; it never rewrites the answer.
+
+**Download and storage.** Nothing loads until the learner presses **Download** on the voice row (the
+size is printed first). Files stream with real byte progress, are stored in a Cache API bucket named
+after the pinned revision, and are loaded from disk on later visits. A `QuotaExceededError` is not a
+dead end: the voice works for that visit and the UI says it will download again. ONNX Runtime runs
+**single-threaded** on purpose — threads need `crossOriginIsolated` (COOP/COEP), which this deployment
+does not set.
+
+**What is honest about the timing.** Chunks are synthesized one at a time and each is scheduled as soon
+as it is ready, so the first sentence plays while the second is generated; nothing is claimed to be
+streamed. Measured with the real graphs on native CPU (`tools/supertonic-check.mjs`, 8 steps):
+English 4.31 s of audio in 1.2 s, Hindi 5.14 s in 1.5 s, Hinglish 3.39 s in 1.1 s — about 3× realtime.
+Browser WebAssembly is slower than that native build by a factor this environment could not measure
+(no browser with 400 MB of weights available), so treat those numbers as a lower bound.
+
+**Failure is a fallback, not a dead end.** Every failure is classified (`network`, `quota`, `wasm`,
+`model`, `unsupported`, `aborted`, `empty`) and each message names what still works. The built-in
+browser voice reads the rest of the answer, and the settings line says which engine actually spoke —
+fallback audio is never described as Supertonic.
+
+To verify the model for real on a development machine (downloads the pinned weights once, writes WAVs,
+prints latency and loudness):
+
+```bash
+npm install --no-save onnxruntime-node
+node tools/supertonic-check.mjs            # --steps=4 --only=hi --style=F2
+```
+
+`onnxruntime-node` is deliberately NOT a dependency: the browser uses `onnxruntime-web`, and a second
+native runtime would be dead weight for every learner. The unit suite drives the same inference core
+with fake sessions, so it proves the tensor wiring, not the voice.
+
+### Fallback: browser speech loop (no server voice needed)
 
 `src/components/shared/useVoiceTutor.ts` uses `SpeechRecognition` when the browser provides it and
-`speechSynthesis` for output; optional Google Neural2 TTS (`GOOGLE_TTS_API_KEY`) upgrades the voice.
+`speechSynthesis` for output — the path that speaks whenever the on-device model is not loaded (never
+downloaded, still downloading, or failed). Optional Google Neural2 TTS (`GOOGLE_TTS_API_KEY`) upgrades
+that fallback further when a server key exists.
 Chrome's speech recognition is itself a browser service — the settings note says so rather than
 claiming every path is local. Text input always works, and every answer is readable.
 

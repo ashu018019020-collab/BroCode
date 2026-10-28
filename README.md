@@ -93,7 +93,7 @@ English is the permanent default; the app never guesses from the browser languag
 
 ### Runs locally, ships as a static build
 
-Monaco, icons, fonts, the Python runtime, the SQL engine, datasets and the PDF are all bundled. The optional account, hosted voice and AI evaluation are the network features, and each says so in the UI.
+Monaco, icons, fonts, the Python runtime, the SQL engine, datasets and the PDF are all bundled. The optional account, the one-time AI voice download and hosted evaluation are the network features, and each says so in the UI.
 
 ---
 
@@ -185,7 +185,9 @@ A service worker (`public/sw.js`, cache `aiml-v6`) caches the app shell at runti
 
 ## AI Mentor, Coding Coach & Spoken Interview
 
-The AI studio at `/#/ai-mentor` adds a voice-first mentor, a diagnostics-driven coding coach inside the Playground, and a spoken mock-interview round with scorecards. Answers, code evidence and scores come from the bundled curriculum and the offline runners. Optional OpenAI Realtime voice needs a server-side key, is rate-limited, and falls back to the browser voice. Details: [docs/AI-VOICE.md](docs/AI-VOICE.md).
+The AI studio at `/#/ai-mentor` adds a voice-first mentor, a diagnostics-driven coding coach inside the Playground, and a spoken mock-interview round with scorecards. Answers, code evidence and scores come from the bundled curriculum and the offline runners.
+
+The spoken voice is **Supertonic 3**, a 99M-parameter multilingual TTS model that runs inside the browser through ONNX Runtime Web: Hindi and English, no API key, no server, audio never leaves the device. It is a one-time ~398 MB download, started by a button that states the size, cached on the device; until it is loaded (and if it ever fails) the built-in browser voice reads answers and the UI says which engine spoke. Optional OpenAI Realtime voice needs a server-side key, is rate-limited, and is a separate path. Details: [docs/AI-VOICE.md](docs/AI-VOICE.md).
 
 ---
 

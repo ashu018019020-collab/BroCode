@@ -17,6 +17,7 @@ import {
 import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 import { MENTOR_LOG_KEY } from '../../core/platform/keys';
 import { useVoiceTutor } from '../../components/shared/useVoiceTutor';
+import { AiVoiceRow } from '../../components/shared/AiVoiceRow';
 import { useRealtimeVoice } from '../../components/shared/useRealtimeVoice';
 import { toast } from '../../components/ui/Toast';
 import { useMentorAsk } from './useMentorAsk';
@@ -386,8 +387,14 @@ export function VoiceMentorPanel() {
                 <span className="small muted">{voice.rate.toFixed(1)}×</span>
               </div>
               <p className="small muted" style={{ margin: 0 }} aria-live="polite">
-                {ttsEngineNote(voice.engine, voice.cloudConfigured)}
+                {ttsEngineNote(voice.engine, voice.cloudConfigured, {
+                  state: voice.aiVoice.state,
+                  percent: voice.aiVoice.percent,
+                  error: voice.aiVoice.error,
+                  downloaded: voice.aiCached,
+                })}
               </p>
+              <AiVoiceRow voice={voice} />
             </div>
           </>
         )}
