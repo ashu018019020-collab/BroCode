@@ -50,51 +50,51 @@ These are product rules, not prompt suggestions, and the tests enforce them:
 
 ## Voice paths
 
-### Two engines, one model: hosted first, on-device when there is no server
+### Default: the server voice (no download, no model in the browser)
 
-The tutor's voice is **Supertonic 3** (`Supertone/supertonic-3`), a 99M-parameter ONNX TTS model. When
-the deployment has a hosted engine, the browser sends text to it and receives audio:
+The tutor's voice is **Supertonic 3** (`Supertone/supertonic-3`), a 99M-parameter ONNX TTS model that
+runs on the **server**, in `services/supertonic-tts/` (see its README for deploy steps). The browser
+sends text and receives audio:
 
 ```
-browser ──POST /api/voice/tts──▶ account API ──▶ voice-service (ONNX Runtime, CPU) ──▶ audio/wav
-        ◀──────────────────────── audio ─────────┘
+browser ──POST /api/voice/tts──▶ Vercel function ──▶ services/supertonic-tts (CPU) ──▶ audio/wav
+        ◀──────────────────────── audio ──────────┘
 ```
 
-**When there is no hosted engine — the Vercel functions answer `engine: none` when neither an
-inference service nor a Google key is configured — the same model runs on the learner's device.** The pinned
-weights (398 MB, verified byte sizes) are fetched once from the immutable revision, stored in a Cache
-API bucket keyed by that revision, and executed by ONNX Runtime Web's **WASM CPU** provider
-(single-threaded, so no COOP/COEP requirement). The load starts on the FIRST spoken answer rather
-than behind a manual install step; the status row reports real progress and a Cancel, and a second
-visit warms from disk. `scripts/ort-copy.mjs` copies ORT's `.mjs`/`.wasm` into `public/ort/` during
-`dev`/`build` so the runtime is served same-origin. The built-in browser voice is used only when the
-on-device engine genuinely fails, and the settings line says which engine actually spoke.
+Nothing model-shaped is shipped to, cached by, or executed in the browser. The browser receives only
+the audio for the sentence it is about to hear. The 398 MB checkpoint lives on the inference server
+(`services/supertonic-tts/`, Python) and is cached on that host's persistent disk; a static deployment
+reaches it through the Vercel functions in `api/voice/`. Without a configured backend the app falls
+back to its built-in browser voice and says so — it never starts a model download.
 
 | | |
 | --- | --- |
 | Model | `Supertone/supertonic-3`, pinned to revision `724fb5a…` (never `main`) |
 | Graphs | `duration_predictor` · `text_encoder` · `vector_estimator` (×8 denoising steps) · `vocoder` |
-| Runtime | `onnxruntime-node`, CPU execution provider |
+| Runtime | Python `supertonic==1.3.1` (`supertonic[serve]`), ONNX Runtime CPU |
 | Output | 44.1 kHz mono 16-bit WAV |
 | Voice preset | `F1` (`F1–F5` female / `M1–M5` male), `SUPERTONIC_STYLE` |
-| Code | `server/supertonic-tts.mjs` (engine), `voice-service/` (HTTP service), `core/ai/supertonic.ts` (pure model contract, shared with the tests) |
+| Code | `services/supertonic-tts/app.py` (HTTP, auth, readiness), `api/voice/*` (Vercel proxy), `server/voice-engine.mjs` (engine selection) |
 
 **Language policy.** The model takes a language tag per chunk (`<hi>…</hi>` / `<en>…</en>`).
 BroCode's `hi-IN` setting means "Hindi voice, Hinglish explanations", and Hinglish is usually Roman
 script — tagging Roman text `hi` asks the model to read Latin letters as Hindi. So the tag follows the
 script on the page: Devanagari → `hi`, everything else → `en`. The setting still decides whether a
-Hindi answer is *spoken* in Hindi; it never rewrites the answer. The server applies exactly this rule
-(`supertonicLang`) per chunk, so a mixed answer is tagged sentence by sentence.
+Hindi answer is *spoken* in Hindi; it never rewrites the answer. `speechLangFor()` in
+`src/core/ai/voice.ts` applies this rule per chunk before the request, and the Python service maps the
+UI tags (`hi-IN`/`en-IN`) to the model's `hi`/`en` without changing the text.
 
-**Time to first audio.** The server synthesizes the first chunk with a deliberately shorter cap
-(90 characters, then 220), and the account API's route returns the whole answer as one WAV; the client
-splits long answers into sentence-packed requests (`cloudChunks`, ≤460 characters each) and starts
-playback as soon as the FIRST chunk decodes. The engine also warms all four graphs at boot, so the
-learner never pays WebAssembly/kernel start-up on the first sentence. Measured on the container used
-for verification, 8 steps, style `F1`: warm-up 2.3 s once; English 4.56 s of audio in 1.8 s; Hindi
-5.14 s in 1.8 s; Hinglish 3.39 s in 1.3 s (≈2.5–3× realtime). A repeat request is served from a small
-in-process cache in 0 ms. This is chunk-level, not token-level streaming, and it is not described as
-streaming anywhere in the UI.
+**Time to first audio.** Every request produces one complete WAV; the client splits a long answer
+into sentence-packed requests (`cloudChunks`, ≤460 characters each) and starts playback as soon as
+the FIRST chunk decodes, while later chunks are still being generated. The service serializes
+inference on CPU (ONNX sessions are not thread-safe), so concurrent learners wait in a bounded queue
+rather than racing. There is no in-process audio cache: a repeated request re-runs inference. This is
+chunk-level, not token-level streaming, and it is not described as streaming anywhere in the UI.
+
+Measured against the real cached checkpoint on a Linux CPU container (8 steps, style `F1`,
+44.1 kHz): Hindi 5.14 s of audio in 1.42 s, English 4.31 s in 1.22 s, and Roman Hinglish 3.39 s in
+1.15 s. First boot downloads the 398 MB checkpoint once; later starts load it from
+`SUPERTONIC_CACHE_DIR`. These are one-machine measurements, not a guarantee for every CPU.
 
 **Failure is a fallback, not a dead end.** `/api/voice/status` names the engine and whether it is
 ready; "Server-powered" is printed only for `ready`, which the server only reports after its
@@ -102,25 +102,28 @@ inference service answered a health check. A failed chunk hands the unheard rema
 voice, the settings line says which engine actually spoke, and Retry re-probes the server. The rest of
 BroCode keeps working with no voice at all.
 
-To verify the model for real on a development machine (downloads the pinned weights once, writes WAVs,
-prints latency and loudness):
+To verify the model for real on a development machine (downloads the pinned weights once, writes WAVs):
 
 ```bash
-npm install --no-save onnxruntime-node
-node tools/supertonic-check.mjs            # --steps=4 --only=hi --style=F2
+python -m venv .venv && . .venv/bin/activate
+pip install -r services/supertonic-tts/requirements-dev.txt
+python -m pytest services/supertonic-tts/tests -q
+
+TTS_SERVICE_SECRET=dev SUPERTONIC_CACHE_DIR="$PWD/.freebuff/supertonic3" \
+  uvicorn app:app --app-dir services/supertonic-tts --host 127.0.0.1 --port 8000
 ```
 
-`onnxruntime-node` is deliberately NOT a dependency of the web app: only `voice-service/` needs it, and
-the website must never carry a 100 MB native runtime. The unit suite drives the same inference core
-with fake sessions, so it proves the tensor wiring, not the voice.
+The unit suite uses a fake engine, so it proves the HTTP/auth contract without a checkpoint. The
+real WAV check is `npm run voice:check` against the running container (or the deployed service): it
+posts Hindi and English text, verifies RIFF audio and checks the production status route.
 
 ### Engines and the fallback chain
 
 | Engine | Selected when | Billable? |
 | --- | --- | --- |
-| `supertonic` | `TTS_SERVICE_URL` + `TTS_SERVICE_SECRET` point at a healthy `voice-service/` | No (your container) |
+| `supertonic` | `TTS_SERVICE_URL` + `TTS_SERVICE_SECRET` point at a healthy `services/supertonic-tts/` | No (your container) |
 | `google` | No service URL, or the service failed and `GOOGLE_TTS_API_KEY` exists | Yes, per character |
-| `none` | Neither is configured | — the on-device model loads on the first answer; the browser voice is the last resort |
+| `none` | Neither is configured | — the browser voice speaks, and the UI says so |
 
 The response header `X-Voice-Engine` names the engine that produced the audio, so the UI's label is
 evidence rather than an assumption. A configured-but-unreachable service is reported as unavailable —
@@ -190,12 +193,12 @@ No topic, number or route is generated: every one is read from a file that ships
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `TTS_SERVICE_URL` | No | Base URL of `voice-service/` (Supertonic 3 on CPU). Preferred voice. |
+| `TTS_SERVICE_URL` | No | Base URL of `services/supertonic-tts/` (Supertonic 3 on CPU). Preferred voice. |
 | `TTS_SERVICE_SECRET` | with the URL | Shared bearer token between the account API and the service. Server only. |
 | `TTS_SERVICE_TIMEOUT_MS` | No | Per-chunk budget, default 20000. |
 | `GOOGLE_TTS_API_KEY` | No | Alternative server engine (Google Cloud Text-to-Speech). Server only. |
 | `GOOGLE_TTS_VOICE_EN` / `_HI` | No | Neural2 voice overrides. |
-| `SUPERTONIC_MODEL_DIR` / `_STYLE` / `_STEPS` / `_AUTO_FETCH` | No | Read by `voice-service/`, not by the website. |
+| `SUPERTONIC_CACHE_DIR` / `_MODEL_REVISION` / `_STYLE` / `_STEPS` | No | Read by `services/supertonic-tts/`, not by the website. |
 | `OPENAI_API_KEY` | No | Enables realtime voice session minting. Server only. |
 | `OPENAI_REALTIME_MODEL` / `_VOICE` | No | Defaults `gpt-realtime` / `coral`; allowlist in `server/realtime.mjs`. |
 
@@ -225,10 +228,10 @@ feature depends on it.
 - Unsupported languages and oversized text are rejected before any provider is called (400).
 - Provider failures map to 429 (rate limit), 502 (unavailable) or 503 (not configured), with copy that
   names the browser-voice fallback.
-- The `voice-service/` shared secret is read from the server environment, sent only to the inference
-  service, and never serialized into a response, an error message or the client bundle. The service
-  itself binds a bearer check (constant-time), rejects bodies over 8 kB and refuses to start without a
-  secret.
+- The inference service's shared secret is read from the server environment, sent only to
+  `services/supertonic-tts/`, and never serialized into a response, an error message or the client
+  bundle. The service binds a constant-time bearer check and serves 503 rather than synthesizing
+  without a configured secret.
 
 ## Local development and deployment
 
@@ -242,9 +245,10 @@ npm run dev:api      # account API on http://localhost:8787 (Vite proxies /api)
    want the hosted AI voice.
 2. Sign in — realtime session creation requires an account. The browser voice path works signed-out
    anywhere the page is reachable.
-3. For the AI voice locally: `npm run voice:model`, then run
-   `TTS_SERVICE_SECRET=dev PORT=8080 node voice-service/server.mjs` and set
-   `TTS_SERVICE_URL=http://localhost:8080`, `TTS_SERVICE_SECRET=dev` for `npm run dev:api`.
+3. For the AI voice locally: install the Python service (`services/supertonic-tts/README.md`) and run
+   `TTS_SERVICE_SECRET=dev SUPERTONIC_CACHE_DIR="$PWD/.freebuff/supertonic3" uvicorn app:app --app-dir services/supertonic-tts --port 8000`.
+   Set `TTS_SERVICE_URL=http://localhost:8000` and `TTS_SERVICE_SECRET=dev` for `npm run dev:api` or
+   the Vercel project. The first boot downloads the checkpoint once; `/healthz` is 503 until ready.
 4. Upload in production is `npm run build`; serve `dist/` and run the Node API beside it with the same
    `WEB_ORIGIN`, `API_PORT` and provider keys.
 
@@ -256,12 +260,12 @@ The Vercel deployment does not need the account API host for voice. `api/voice/s
 
 | Variable | Effect on Vercel |
 | --- | --- |
-| `TTS_SERVICE_URL` + `TTS_SERVICE_SECRET` | Functions proxy to `voice-service/`; Supertonic speaks |
+| `TTS_SERVICE_URL` + `TTS_SERVICE_SECRET` | Functions proxy to `services/supertonic-tts/`; Supertonic speaks |
 | `GOOGLE_TTS_API_KEY` (only) | Functions call Google directly; no extra host at all |
-| neither | Status answers `engine: none`; the browser runs the on-device model |
+| neither | Status answers `engine: none`; the built-in browser voice reads answers |
 
 **The checkpoint still cannot run inside a function.** 398 MB of weights plus the native runtime is
-far past a serverless bundle, and a cold start that downloads the model would time out. `voice-service/`
+far past a serverless bundle, and a cold start that downloads the model would time out. `services/supertonic-tts/`
 remains a container with a volume; Google is the zero-infrastructure alternative. Both routes are
 same-origin only, rate-limited per client (best-effort per warm instance), validate text/language
 before spending anything, return `X-Voice-Engine` with the audio, and map failures to 400/429/502/503
@@ -276,16 +280,17 @@ npm run typecheck
 node --test scripts/tests/voice.test.mjs
 node --test scripts/tests/voice-server.test.mjs
 node --test scripts/tests/voice-service.test.mjs
-node --test scripts/tests/supertonic.test.mjs
+node --test scripts/tests/supertonic-backend.test.mjs
 node --test scripts/tests/realtime-voice.test.mjs
+python -m pytest services/supertonic-tts/tests -q
 npm test
 ```
 
 The suites cover: engine selection and the fallback chain, the secret never leaving the server, status
 shapes, validation before any provider call, the browser voice never being described as AI audio,
 chunking and packing, one AudioContext with gapless scheduling, and realtime session config,
-key non-disclosure and rate limiting. The model itself is verified by
-`tools/supertonic-check.mjs` (real graphs, real WAVs) and by the `voice-service/` health check.
+key non-disclosure and rate limiting. The model itself is verified by the Python service's pytest
+suite (fake engine contract) and by `npm run voice:check` (real WAVs from the deployed service).
 
 ## Reference repositories
 
@@ -293,13 +298,13 @@ key non-disclosure and rate limiting. The model itself is verified by
 | --- | --- | --- |
 | [`openai/openai-realtime-console`](https://github.com/openai/openai-realtime-console) | MIT | The WebRTC offer/answer exchange with the Realtime API, the `oai-events` data channel, streaming assistant transcript handling and barge-in/interruption — re-implemented in `src/components/shared/useRealtimeVoice.ts` + `server/realtime.mjs`. Deliberately different: the browser never holds a permanent key, the teaching instructions are built server-side, and the session is hard-capped at 5 minutes. |
 | [`karanjot-gaidu/ai-mock-interviewer`](https://github.com/karanjot-gaidu/ai-mock-interviewer) | MIT | Workflow design only, no source files: one question at a time, the app owning phase/evidence while the conversation stays free, follow-ups aimed at the candidate's actual answer, and a scorecard grounded in what was really done. Its stack does not fit BroCode's Vite app, so copying code would have duplicated frameworks. |
-| [`Supertone/supertonic-3`](https://huggingface.co/Supertone/supertonic-3) | OpenRAIL-M | The model checkpoint, its text-tag contract and voice presets. Inference wiring is ours; the model contract lives in `core/ai/supertonic.ts` and runs server-side. |
+| [`Supertone/supertonic-3`](https://huggingface.co/Supertone/supertonic-3) | OpenRAIL-M | The model checkpoint, its text-tag contract and voice presets. Inference runs through the official `supertonic` Python SDK in `services/supertonic-tts/app.py`. |
 
 All were read at their pages and LICENSE files before use; none is vendored into this repo.
 
 ## Known limitations
 
-- The AI voice needs `voice-service/` deployed (or a Google key). Without either, the browser voice
+- The AI voice needs `services/supertonic-tts/` deployed (or a Google key). Without either, the browser voice
   speaks and the settings line says exactly that — the product is fully usable, just plainer.
 - The service runs requests **sequentially** on CPU. One instance is enough for a class, not for
   thousands of simultaneous listeners; scale out rather than turning the queue into a race.

@@ -10,10 +10,10 @@
  *
  *  - A Vercel function cannot hold the Supertonic checkpoint: 398 MB of weights plus a 100 MB native
  *    ONNX Runtime is far past a serverless bundle, and a cold start that downloads the model would
- *    time out. So the function is a PROXY when `TTS_SERVICE_URL` points at `voice-service/` (a
+ *    time out. So the function is a PROXY when `TTS_SERVICE_URL` points at `services/supertonic-tts/` (a
  *    container with the model), and a direct caller of Google Cloud TTS when only
- *    `GOOGLE_TTS_API_KEY` is set. With neither, it answers `engine: none` and the browser keeps the
- *    on-device Supertonic path.
+ *    `GOOGLE_TTS_API_KEY` is set. With neither, it answers `engine: none` and the browser uses its
+ *    own labelled voice; the checkpoint is never downloaded to the visitor.
  *  - Nothing secret is ever returned: the status body carries engine names and readiness only, and
  *    errors are sanitized. `TTS_SERVICE_SECRET` and the Google key stay in the function environment.
  *

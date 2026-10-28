@@ -239,7 +239,7 @@ export function createAuthServer({
   googleTtsKey = process.env.GOOGLE_TTS_API_KEY ?? '',
   googleTtsVoices = {},
   synthesizeTts = synthesizeGoogleTts,
-  // The preferred voice: the Supertonic service the deployment runs (voice-service/). A configured
+  // The preferred voice: the Supertonic service the deployment runs (services/supertonic-tts/). A configured
   // but unreachable service is reported as unavailable; Google is only a fallback when a key exists.
   voiceServiceUrl = process.env.TTS_SERVICE_URL ?? '',
   voiceServiceSecret = process.env.TTS_SERVICE_SECRET ?? '',

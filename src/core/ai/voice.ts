@@ -16,7 +16,6 @@
  *    learner says it aloud.
  */
 import type { Section } from '../../types';
-import { SUPERTONIC_WEIGHT_BYTES, supertonicSizeLabel } from './supertonic';
 import type { AssistantContext } from './assistant';
 
 export type VoiceLangId = 'en-IN' | 'hi-IN';
@@ -37,6 +36,19 @@ export const DEFAULT_VOICE_LANG: VoiceLangId = 'en-IN';
 export const DEFAULT_RATE = 1;
 export const MIN_RATE = 0.7;
 export const MAX_RATE = 1.4;
+
+/**
+ * The language tag to send with one spoken chunk.
+ *
+ * BroCode's Hindi setting still means "Hindi voice", but Roman Hinglish is not Devanagari: sending
+ * `hi-IN` for Latin text asks the model to read the letters as Hindi. The tag therefore follows the
+ * script in the chunk. English keeps English; Hindi text written in Devanagari gets the Hindi voice.
+ * This is a request hint only — it never rewrites the answer the learner sees.
+ */
+export function speechLangFor(lang: VoiceLangId, text: string): VoiceLangId {
+  if (lang !== 'hi-IN') return 'en-IN';
+  return /[\u0900-\u097F]/.test(text) ? 'hi-IN' : 'en-IN';
+}
 
 export type VoiceStatus = 'off' | 'listening' | 'thinking' | 'speaking' | 'error';
 
@@ -281,7 +293,6 @@ export type ServerVoiceEngine = 'supertonic' | 'google' | 'none' | null;
 export function ttsEngineNote(
   engine: 'supertonic' | 'cloud' | 'browser' | null,
   server: { state: 'checking' | 'ready' | 'unavailable'; engine: ServerVoiceEngine },
-  ai: { state: 'off' | 'loading' | 'ready' | 'error'; percent: number } = { state: 'off', percent: 0 },
 ): string {
   const name = server.engine === 'supertonic'
     ? 'Supertonic 3'
@@ -298,15 +309,11 @@ export function ttsEngineNote(
     }
     return 'Built-in browser voice — this deployment has no AI voice configured, so answers are read locally.';
   }
-  if (ai.state === 'ready') return 'AI voice · Supertonic 3 · Hindi + English · on this device.';
-  if (ai.state === 'loading') {
-    return `Preparing the AI voice on this device… ${ai.percent}% of ${supertonicSizeLabel(SUPERTONIC_WEIGHT_BYTES)} (one time).`;
-  }
   if (server.state === 'checking') return 'Checking the AI voice…';
   if (server.state === 'ready' && name) {
     return `AI voice · ${name} · Hindi + English · Server-powered.`;
   }
-  return `AI voice · Supertonic 3 · Hindi + English — runs on this device and loads on the first answer (${supertonicSizeLabel(SUPERTONIC_WEIGHT_BYTES)}, one time).`;
+  return 'AI voice is unavailable on this deployment — the built-in browser voice reads answers.';
 }
 
 /** The line under the mic button. One state, one short label. */

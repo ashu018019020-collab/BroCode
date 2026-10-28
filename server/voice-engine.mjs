@@ -2,10 +2,10 @@
  * Which voice speaks, and what happens when it cannot.
  *
  * When the deployment has a server voice, audio comes from one of two engines, chosen by
- * configuration and reported honestly. (The browser also carries an on-device Supertonic fallback for
- * static deployments; `engine: 'none'` is what makes the client use it.)
+ * configuration and reported honestly. `engine: 'none'` means the client uses its built-in voice;
+ * the checkpoint is never downloaded to the visitor.
  *
- *   1. `supertonic` — a separate inference service (`voice-service/`) running the real Supertonic 3
+ *   1. `supertonic` — a separate inference service (`services/supertonic-tts/`) running the real Supertonic 3
  *      ONNX graphs on CPU. `TTS_SERVICE_URL` points at it; `TTS_SERVICE_SECRET` authenticates this
  *      process to it. Preferred because it needs no per-character billing and speaks Hindi/English.
  *   2. `google`     — Google Cloud Text-to-Speech (`GOOGLE_TTS_API_KEY`), the previous server voice.

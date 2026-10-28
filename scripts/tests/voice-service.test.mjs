@@ -4,8 +4,7 @@
  * Everything here runs against a FAKE fetch. That is deliberate: the assertions are about the
  * decisions a deployment can get wrong (claiming Supertonic while Google answered, hiding a dead
  * service behind a Google key, passing a secret to the wrong place), not about audio quality. The
- * real audio check is `tools/supertonic-check.mjs`; the real HTTP surface is exercised by
- * `interview-api.test.mjs` and the browser suite.
+ * real audio check lives in `services/supertonic-tts/tests` (pytest against the actual SDK).
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -152,30 +151,13 @@ test('voice engine: a non-audio 200 is a failure, not a silent no-op', async () 
   await assert.rejects(engine.speak({ text: 'Hello', lang: 'en-IN' }), /not audio/);
 });
 
-test('voice service: it refuses to start without a secret and caps the body', () => {
-  const service = read('voice-service/server.mjs');
-  assert.match(service, /TTS_SERVICE_SECRET is required/, 'an open inference endpoint is not an option');
-  assert.match(service, /timingSafeEqual/, 'the bearer comparison is constant-time');
-  assert.match(service, /MAX_BODY_BYTES/, 'a huge body is rejected before a tensor is built');
-  assert.match(service, /\/healthz/);
-  assert.match(service, /'\/v1\/tts'/);
-  assert.match(service, /X-Voice-Engine/, 'audio says which engine produced it');
-
-  const docker = read('voice-service/Dockerfile');
-  assert.match(docker, /FROM node:24/, 'Node 24 is what runs the task contract through type stripping');
-  assert.match(docker, /onnxruntime-node/, 'the native runtime is installed in the image');
-  assert.match(docker, /VOLUME \["\/models"\]/, 'weights live on a volume, not in the image');
-  assert.match(docker, /HEALTHCHECK/);
-  assert.match(docker, /SUPERTONIC_AUTO_FETCH/, 'a fresh volume fills itself');
-});
-
-test('voice deploy: the Render blueprint matches the service contract', () => {
+test('voice deploy: the Render blueprint matches the Python service contract', () => {
   const yaml = read('render.yaml');
   assert.match(yaml, /runtime: docker/);
-  assert.match(yaml, /dockerfilePath: \.\/voice-service\/Dockerfile/);
+  assert.match(yaml, /dockerfilePath: \.\/services\/supertonic-tts\/Dockerfile/);
   assert.match(yaml, /healthCheckPath: \/healthz/, 'Render must poll the real readiness route');
   assert.match(yaml, /mountPath: \/models/, 'the weights live on a disk, never in the image');
-  assert.match(yaml, /SUPERTONIC_MODEL_DIR[\s\S]{0,80}\/models\/supertonic-3/);
+  assert.match(yaml, /SUPERTONIC_CACHE_DIR[\s\S]{0,80}\/models\/supertonic3/);
   assert.match(yaml, /TTS_SERVICE_SECRET[\s\S]{0,80}generateValue: true/, 'the token is generated, not hard-coded');
   assert.match(yaml, /autoDeploy: true/);
   // A free instance cannot attach a disk and unloads the model after idle — the weights would be lost.
@@ -195,13 +177,4 @@ test('voice deploy: the wiring check proves auth, both languages and production'
   assert.ok(!/console\.(?:log|error)\([^\n]*\$\{SECRET\}/.test(script), 'the token value is never printed');
   assert.ok(!/console\.(?:log|error)\([^\n]*\)\s*;\s*\/\/.*secret/i.test(script), 'no secret in a comment');
   assert.match(read('package.json'), /"voice:check": "node scripts\/voice-deploy-check\.mjs"/);
-});
-
-test('voice service: the model is fetched from the pinned revision, on the server only', () => {
-  const script = read('scripts/voice-model.mjs');
-  assert.match(script, /src\/core\/ai\/supertonic\.ts/, 'URLs and sizes come from the one contract');
-  assert.match(script, /supertonicAsset\(/, 'the pinned revision is reused, not re-typed');
-  assert.match(script, /statSync\(target\)\.size/, 'an existing complete file is not re-downloaded');
-  assert.match(script, /expected \$\{expectedBytes\}/, 'a truncated download is rejected');
-  assert.match(read('package.json'), /"voice:model": "node scripts\/voice-model\.mjs"/);
 });

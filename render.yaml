@@ -1,21 +1,21 @@
 # BroCode deployment blueprint — Render Blueprint (Infrastructure as Code).
 #
-# Deploys ONLY the voice service. The website and the account API keep their existing deployment;
-# they reach this service through the `TTS_SERVICE_URL` variable, and this service authenticates
-# them with the same `TTS_SERVICE_SECRET`.
+# Deploys ONLY the Python voice service. The website stays on Vercel; the Vercel Functions in
+# `api/voice/` reach this service through `TTS_SERVICE_URL` and authenticate with the same
+# `TTS_SERVICE_SECRET`.
 #
 #   https://dashboard.render.com/blueprints → New Blueprint Instance → this repository → Apply
 #
-# What Render does with this file:
-#   1. Builds voice-service/Dockerfile from the repository root (Node 24 + onnxruntime-node).
-#   2. Creates a persistent disk at /models — the 398 MB of weights live there, NOT in the image,
-#      so a redeploy never re-downloads them.
-#   3. Generates TTS_SERVICE_SECRET once. Copy it into the web/API deployment as the SAME value.
-#   4. Routes HTTPS to the container, health-checks /healthz, and restarts a failed instance.
+# What Render does:
+#   1. Builds services/supertonic-tts/Dockerfile (Python 3.12 + supertonic[serve] 1.3.1).
+#   2. Mounts a 10 GB disk at /models and caches the 398 MB checkpoint there, so a redeploy or
+#      restart does NOT download it again. The model is never in the image or in Git.
+#   3. Generates TTS_SERVICE_SECRET once. Paste the SAME value into Vercel's environment.
+#   4. Waits for /healthz (200 only when the model is loaded), then routes HTTPS to it.
 #
-# Cost: the Starter plan is the cheapest one that allows a persistent disk and no sleep. A free
-# instance cannot hold the weights and unloads the model after idle, which would make the first
-# sentence of every lesson pay a 2-second warm-up. Budget roughly one small always-on container.
+# Cost: the Starter plan is the cheapest that allows a persistent disk and no sleep. A free instance
+# cannot hold the model and would re-download it on every cold start. Nothing is created until the
+# owner clicks Apply — this file alone incurs no charge.
 services:
   - type: web
     name: brocode-voice
@@ -23,7 +23,8 @@ services:
     plan: starter
     region: singapore
     branch: main
-    dockerfilePath: ./voice-service/Dockerfile
+    dockerContext: .
+    dockerfilePath: ./services/supertonic-tts/Dockerfile
     healthCheckPath: /healthz
     autoDeploy: true
     disk:
@@ -31,18 +32,21 @@ services:
       mountPath: /models
       sizeGB: 10
     envVars:
-      # Shared bearer token. Render generates it; paste the same value into the web/API host.
       - key: TTS_SERVICE_SECRET
         generateValue: true
-      # The model lives on the disk, never in the image.
-      - key: SUPERTONIC_MODEL_DIR
-        value: /models/supertonic-3
+      - key: SUPERTONIC_MODEL
+        value: supertonic-3
+      # The exact revision the SDK pins; declared here so a package bump cannot change the voice
+      # without a review.
+      - key: SUPERTONIC_MODEL_REVISION
+        value: 724fb5abbf5502583fb520898d45929e62f02c0b
+      - key: SUPERTONIC_CACHE_DIR
+        value: /models/supertonic3
       - key: SUPERTONIC_STYLE
         value: F1
       - key: SUPERTONIC_STEPS
         value: "8"
-      # Fetch the pinned weights on first boot (they are then reused forever).
-      - key: SUPERTONIC_AUTO_FETCH
+      - key: PORT
+        value: "8000"
+      - key: PYTHONUNBUFFERED
         value: "1"
-      - key: NODE_ENV
-        value: production

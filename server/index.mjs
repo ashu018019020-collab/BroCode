@@ -41,7 +41,7 @@ const server = createAuthServer({
     'hi-IN': process.env.GOOGLE_TTS_VOICE_HI ?? '',
     'en-IN': process.env.GOOGLE_TTS_VOICE_EN ?? '',
   },
-  // The preferred voice engine. `TTS_SERVICE_URL` points at voice-service/ (Supertonic 3 on CPU);
+  // The preferred voice engine. `TTS_SERVICE_URL` points at services/supertonic-tts/ (Supertonic 3 on CPU);
   // without it the Google key is used, and without either the client keeps its browser voice.
   voiceServiceUrl: process.env.TTS_SERVICE_URL ?? '',
   voiceServiceSecret: process.env.TTS_SERVICE_SECRET ?? '',
