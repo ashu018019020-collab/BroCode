@@ -54,30 +54,38 @@ test('supertonic: the four graphs and their real sizes are declared once', () =>
   assert.equal(st.supertonicSizeLabel(st.SUPERTONIC_WEIGHT_BYTES), '398 MB');
 });
 
-test('supertonic: the ONNX Runtime files the app serves exist in the installed package', () => {
-  const pkg = JSON.parse(read('node_modules/onnxruntime-web/package.json'));
-  assert.match(pkg.version, /^1\.\d+\.\d+/, `unexpected onnxruntime-web version ${pkg.version}`);
+test('supertonic: the model runs on the SERVER — the browser ships neither weights nor runtime', () => {
+  // The whole point of the migration: nothing model-shaped may re-enter the client bundle.
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.dependencies?.['onnxruntime-web'], undefined, 'the browser runtime is gone');
+  assert.ok(!fs.existsSync(path.join(ROOT, 'src/core/ai/supertonic-runtime.ts')));
+  assert.ok(!fs.existsSync(path.join(ROOT, 'scripts/ort-copy.mjs')));
+  assert.doesNotMatch(read('package.json'), /ort-copy/, 'no build step may copy a WASM runtime');
 
-  // The runtime names the files, the copy script moves them, and both must agree — a rename in either
-  // place ships a voice that fails at the first word instead of at build time.
-  const runtime = read('src/core/ai/supertonic-runtime.ts');
-  const named = [...runtime.matchAll(/ORT_WASM_(?:MODULE|BINARY) = '([^']+)'/g)].map((m) => m[1]);
-  assert.deepEqual(named, ['ort-wasm-simd-threaded.mjs', 'ort-wasm-simd-threaded.wasm']);
-
-  const copier = read('scripts/ort-copy.mjs');
-  const copied = [...copier.matchAll(/'(ort-wasm-simd-threaded\.[a-z]+)'/g)].map((m) => m[1]);
-  for (const file of named) {
-    assert.ok(copied.includes(file), `scripts/ort-copy.mjs does not copy ${file}`);
-    assert.ok(
-      fs.existsSync(path.join(ROOT, 'node_modules/onnxruntime-web/dist', file)),
-      `onnxruntime-web@${pkg.version} has no dist/${file}`,
-    );
+  // No client source may point at the model host or print a download size.
+  const clientFiles = [
+    'src/core/ai/voice.ts',
+    'src/components/shared/useVoiceTutor.ts',
+    'src/components/shared/VoiceBar.tsx',
+    'src/components/shared/AiVoiceRow.tsx',
+    'src/features/ai/VoiceMentorPanel.tsx',
+  ];
+  for (const file of clientFiles) {
+    const source = read(file);
+    assert.doesNotMatch(source, /huggingface\.co/i, `the browser must not fetch weights: ${file}`);
+    assert.doesNotMatch(source, /398\s*MB/i, `no download size may be shown: ${file}`);
+    assert.doesNotMatch(source, /loadSupertonic|synthesizeChunk/, `no on-device inference: ${file}`);
   }
 
-  // `public/ort` is build output: if it were tracked, a stale binary could outlive a package bump.
-  const ignore = read('.gitignore');
-  assert.match(ignore, /public\/ort/, 'public/ort must stay out of version control');
-  assert.match(read('package.json'), /"build": "node scripts\/ort-copy\.mjs && vite build"/, 'the build must copy the runtime files itself');
+  // The engine is a server module and opens the contract's graphs through native ONNX Runtime.
+  const engine = read('server/supertonic-tts.mjs');
+  assert.match(engine, /src\/core\/ai\/supertonic\.ts/, 'the server reuses the one model contract');
+  assert.match(engine, /onnxruntime-node/);
+  assert.match(engine, /executionProviders: \['cpu'\]/, 'CPU inference, not a GPU requirement');
+  assert.match(engine, /queue\.then\(run, run\)/, 'synthesis is serialized, not raced');
+
+  // Weights are deployment data, never repository data.
+  assert.match(read('.gitignore'), /^models\/$/m, 'the weights directory must stay out of Git');
 });
 
 /* -------------------------------- language -------------------------------- */
@@ -147,6 +155,28 @@ test('supertonic: chunks keep order, respect the cap, and never split a word', (
     assert.ok(!/^[a-z]/.test(part) || /^[a-z]+$/.test(part) === false);
   }
   assert.equal(st.chunkSupertonicText('   ').length, 0);
+});
+
+test('supertonic: the first chunk is deliberately shorter, so speech starts sooner', () => {
+  const text = [
+    'This opening sentence is long enough to fill a whole default chunk on its own, and it keeps going for a while yet.',
+    'A second sentence follows the first one.',
+    'And a third closes the answer.',
+  ].join(' ');
+  const chunks = st.chunkSupertonicText(text, st.SUPERTONIC_CHUNK, st.SUPERTONIC_FIRST_CHUNK);
+  assert.ok(st.SUPERTONIC_FIRST_CHUNK < st.SUPERTONIC_CHUNK, 'the opener must be the smaller cap');
+  assert.ok(chunks[0].length <= st.SUPERTONIC_FIRST_CHUNK, `opener too long: ${chunks[0].length}`);
+  for (const chunk of chunks.slice(1)) assert.ok(chunk.length <= st.SUPERTONIC_CHUNK);
+  const squash = (value) => value.replace(/\s+/g, ' ').trim();
+  assert.equal(squash(chunks.join(' ')), squash(text), 'a shorter opener may not lose or reorder text');
+  // An answer that fits the opener in one go stays one chunk — no needless boundary.
+  assert.deepEqual(st.chunkSupertonicText('Short answer.', st.SUPERTONIC_CHUNK, st.SUPERTONIC_FIRST_CHUNK), ['Short answer.']);
+  // The runtime must actually use both caps, not just define them.
+  assert.match(
+    read('server/supertonic-tts.mjs'),
+    /SUPERTONIC_CHUNK, active\.core\.SUPERTONIC_FIRST_CHUNK/,
+    'the server must use both caps, not just define them',
+  );
 });
 
 test('supertonic: an answer is cut at a sentence boundary, and the cut is bounded', () => {

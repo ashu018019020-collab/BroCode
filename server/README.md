@@ -131,6 +131,30 @@ create Supabase Auth accounts. Existing guest data stays under the original brow
 after sign-in, private app state, exam answers, assistant conversations, and Playground files use
 separate per-account browser-local keys. Switching accounts never assigns guest data to an account.
 
+## AI voice (server-side TTS)
+
+The tutor's voice is generated on the server; the browser downloads no model and holds no provider key.
+
+- `POST /api/voice/tts` turns text into audio. The preferred engine is the Supertonic 3 service in
+  [`voice-service/`](../voice-service/README.md), reached through `TTS_SERVICE_URL` and authenticated
+  with `TTS_SERVICE_SECRET` (the same token must be set on both sides).
+- `GOOGLE_TTS_API_KEY` is the fallback engine when no service URL is set, or when the service is
+  unreachable. The response's `X-Voice-Engine` header and `GET /api/voice/status` always name the
+  engine that actually spoke.
+- With neither configured the route answers 503 and the client uses its clearly labelled browser
+  voice; the rest of the app is unaffected.
+- The service is a separate long-running container because the model is ~398 MB resident and takes
+  seconds per sentence — it cannot run inside a serverless function. See `voice-service/README.md`
+  for the Docker image, volume, memory floor and verification steps.
+
+```bash
+npm run voice:model        # once, on the inference host → models/supertonic-3
+TTS_SERVICE_SECRET=dev PORT=8080 node voice-service/server.mjs
+# then, for the account API:
+#   TTS_SERVICE_URL=http://localhost:8080
+#   TTS_SERVICE_SECRET=dev
+```
+
 ## Tests
 
 The focused API tests use in-memory Auth and store doubles. They cover role enforcement, activity,

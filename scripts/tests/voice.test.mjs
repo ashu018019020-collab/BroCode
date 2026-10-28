@@ -301,13 +301,31 @@ test('voice: ties break deterministically so the same install always speaks the 
   assert.equal(voice.pickVoiceFrom(voices, 'en-IN')?.name, 'Google UK English Female');
 });
 
-test('voice: the engine note never promises a Google voice the server does not have', () => {
-  assert.match(voice.ttsEngineNote('cloud', true), /Google Neural2/);
-  assert.match(voice.ttsEngineNote(null, false), /no Google voice configured/);
-  assert.match(voice.ttsEngineNote(null, null), /Checking/);
-  assert.match(voice.ttsEngineNote('browser', true), /busy/,
-    'a mid-session fallback is REPORTED, not hidden');
-  assert.match(voice.ttsEngineNote('browser', false), /Browser voice/);
+test('voice: the engine note never promises a voice the deployment does not have', () => {
+  const ready = (engine) => ({ state: 'ready', engine });
+  // "Server-powered" is only printed for a READY server engine, and it names the engine that answered.
+  assert.match(voice.ttsEngineNote(null, ready('supertonic')), /Supertonic 3 .*Hindi \+ English .*Server-powered/);
+  assert.match(voice.ttsEngineNote('supertonic', ready('supertonic')), /Server-powered/);
+  assert.match(voice.ttsEngineNote('cloud', ready('google')), /Google Neural2/);
+  assert.doesNotMatch(voice.ttsEngineNote(null, { state: 'checking', engine: null }), /Server-powered/);
+  assert.match(voice.ttsEngineNote(null, { state: 'checking', engine: null }), /Checking the AI voice/);
+  assert.match(voice.ttsEngineNote(null, ready('none')), /unavailable on this deployment/);
+  // A browser voice is reported as exactly that, never as the AI voice.
+  assert.match(voice.ttsEngineNote('browser', ready('supertonic')), /did not answer/);
+  assert.doesNotMatch(voice.ttsEngineNote('browser', ready('supertonic')), /Server-powered/);
+  assert.match(voice.ttsEngineNote('browser', { state: 'unavailable', engine: 'none' }), /Built-in browser voice/);
+});
+
+test('voice: the client downloads no model — the server is the only engine', () => {
+  const hook = read('src/components/shared/useVoiceTutor.ts');
+  assert.doesNotMatch(hook, /loadSupertonic|supertonic-runtime|supertonicChunksFor|synthesizeChunk/);
+  assert.doesNotMatch(hook, /398\s*MB/i, 'no download size may survive in the hook');
+  assert.match(hook, /serverVoice/, 'the probe\'s result is a first-class state');
+  assert.match(hook, /refreshServerVoice/, 'Retry re-probes the server instead of downloading');
+  const row = read('src/components/shared/AiVoiceRow.tsx');
+  assert.doesNotMatch(row, /Download|398/);
+  assert.match(row, /Server-powered/);
+  assert.match(row, /refreshServerVoice/);
 });
 
 test('voice: the hook probes the server key and falls back — cloud is an upgrade, never a dependency', () => {

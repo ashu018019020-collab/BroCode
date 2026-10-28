@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, cloudChunks, micPermissionDenied, normalizeVoiceLang, pickVoiceFrom,
-  speakable, speechChunks, type VoiceLangId, type VoiceStatus,
+  speechChunks, type VoiceLangId, type VoiceStatus,
 } from '../../core/ai/voice';
-import {
-  classifySupertonicFailure, supertonicErrorCopy, type SupertonicState,
-} from '../../core/ai/supertonic';
-import {
-  isSupertonicReady, loadSupertonic, supertonicCached, supertonicChunksFor, synthesizeChunk,
-} from '../../core/ai/supertonic-runtime';
+
 
 /**
  * Speech in and speech out, as a hook.
@@ -17,13 +12,14 @@ import {
  * tutor's cloud voice. All three have sharp edges, and every one of them is handled here instead of
  * in the interview room's JSX:
  *
- *  - SPEECH OUT has two engines. The Google Neural2 voice wins when the server reports a key
- *    (`GET /api/voice/status`): each chunk is fetched as MP3 from `POST /api/voice/tts` — the Google
- *    key itself stays on the server — and played through one `AudioContext`. ANY failure (no API
- *    server, no key, Google refusing, a static host answering HTML) falls back to the browser's own
- *    synthesiser for the unheard remainder and is REPORTED in the settings line; two consecutive
- *    cloud failures disable the cloud engine for the session instead of stalling every answer
- *    behind a dead endpoint.
+ *  - SPEECH OUT has two engines, and the first one lives on the SERVER. `GET /api/voice/status`
+ *    reports which server engine is ready (Supertonic 3 via `voice-service/`, or Google Neural2);
+ *    each sentence-packed chunk is then fetched as audio from `POST /api/voice/tts` and played
+ *    through one `AudioContext`. The browser downloads no model, no weights and no runtime — only
+ *    the audio it is about to hear. ANY failure (no API server, an unreachable inference service, a
+ *    static host answering HTML) falls back to the browser's own synthesiser for the unheard
+ *    remainder and is REPORTED in the settings line; two consecutive server failures disable the
+ *    server engine for the session instead of stalling every answer behind a dead endpoint.
  *  - WHY VOICE USED TO DIE MID-SESSION (the Answer-by-Voice bug, fixed here, three causes):
  *
  *      1. UTTERANCE GC. The old browser path created `SpeechSynthesisUtterance` objects as local
@@ -77,9 +73,10 @@ interface Prefs {
   voiceName: string | null;
   speakReplies: boolean;
   /**
-   * The learner's choice of speaking voice, not a capability probe: `ai` means "use the on-device
-   * Supertonic voice when it is available", and every path where it is NOT available falls back to
-   * the built-in voice with a line that says which one actually spoke.
+   * The learner's choice of speaking voice, not a capability probe: `ai` means "use the server AI
+   * voice when it is reachable", and every path where it is NOT falls back to the built-in voice with
+   * a line that says which one actually spoke. Stored preferences from the old on-device build carry
+   * over unchanged — `ai` simply means the hosted voice now.
    */
   engine: 'ai' | 'browser';
 }
@@ -225,18 +222,21 @@ export interface VoiceTutor {
   speaking: boolean;
   paused: boolean;
   /**
-   * Which engine spoke last: the on-device Supertonic voice, the Google voice through the server, or
-   * the built-in browser voice. Never a promise about what the deployment has.
+   * Which engine spoke last: the server's Supertonic voice, the server's Google voice, or the
+   * built-in browser voice. Never a promise about what the deployment has.
    */
   engine: 'supertonic' | 'cloud' | 'browser' | null;
-  /** The on-device voice's own report: what it is doing, and how far the one-time download is. */
-  aiVoice: { state: SupertonicState; percent: number; error: string | null };
-  /** True once the weights are stored on this device; labels the button honestly on a later visit. */
-  aiCached: boolean;
-  /** Start the one-time ~398 MB download. Safe to call twice — the second call joins the first. */
+  /**
+   * What the SERVER reported: which engine it will use, and whether it is ready. `checking` is the
+   * 3-second probe; `unavailable` means this deployment has no server voice and the UI says so.
+   */
+  serverVoice: { state: 'checking' | 'ready' | 'unavailable'; engine: 'supertonic' | 'google' | 'none' | null };
+  /** Ask the server again — the only "fix it" action a learner needs now that nothing downloads. */
+  refreshServerVoice: () => void;
+  /** No-op kept for older callers; re-probes the server instead of downloading anything. */
   downloadAiVoice: () => void;
   cancelAiVoice: () => void;
-  /** What the SERVER reported about its Google key — null until the status probe answers. */
+  /** What the SERVER reported about its voice engine — null until the status probe answers. */
   cloudConfigured: CloudState;
   /** The live partial transcript while the learner is speaking. */
   interim: string;
@@ -286,16 +286,15 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   /** When the last INTENTIONAL speech stop happened — the first-utterance gap reads it. */
   const lastCancelAt = useRef(0);
 
-  // The on-device voice. `aiVoice` is the UI's report, `aiLoading` the in-flight guard (a second
-  // download press must join the first, not start another 398 MB), `aiAbort` cancels a download and
-  // `aiSynthAbort` cancels synthesis when the learner stops the answer.
-  const [aiVoice, setAiVoice] = useState<{ state: SupertonicState; percent: number; error: string | null }>(
-    { state: 'off', percent: 0, error: null },
-  );
-  const [aiCached, setAiCached] = useState(false);
-  const aiLoading = useRef(false);
-  const aiAbort = useRef<AbortController | null>(null);
-  const aiSynthAbort = useRef<AbortController | null>(null);
+  // The SERVER voice's report: which engine answered the status probe, and whether it is ready.
+  // There is no download, no percentage and no model in this tab any more — `checking` is a short
+  // probe, and `unavailable` means this deployment has no server voice, which the label says plainly.
+  const [serverVoice, setServerVoice] = useState<{
+    state: 'checking' | 'ready' | 'unavailable';
+    engine: 'supertonic' | 'google' | 'none' | null;
+  }>({ state: 'checking', engine: null });
+  /** Bumped by Retry: re-runs the one status probe instead of reloading the page. */
+  const [serverProbe, setServerProbe] = useState(0);
 
   // The cloud voice's own machinery. `context` is ONE Web Audio graph reused for the whole page —
   // creating an AudioContext per answer hits Chrome's per-page limit and costs the start-up latency
@@ -329,20 +328,23 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
 
   const supported = useMemo(() => ({ synthesis: synthesisAvailable(), recognition: recognitionCtor() !== null }), []);
 
-  // The one probe. It asks the account API whether a Google key is configured; every failure mode —
-  // no server, a static host, a 503 — reads as "not configured", so the browser voice starts
-  // immediately and the cloud voice is simply never attempted.
+  // The one probe. It asks the account API which server engine is ready; every failure mode — no
+  // server, a static host, a 503 — reads as "not configured", so the browser voice starts immediately
+  // and the server voice is simply never attempted.
   useEffect(() => {
     let alive = true;
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 3000);
+    setServerVoice((current) => (current.state === 'checking' ? current : { state: 'checking', engine: current.engine }));
     fetch(TTS_STATUS_PATH, { signal: controller.signal, cache: 'no-store' })
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
         if (!alive) return;
         const configured = payload?.configured === true;
+        const name = payload?.engine === 'supertonic' || payload?.engine === 'google' ? payload.engine : 'none';
         cloudRef.current = configured;
         setCloudConfigured(configured);
+        setServerVoice({ state: configured ? 'ready' : 'unavailable', engine: name });
       })
       // No API server, a proxy error, a redirect to HTML — every failure reads as "not
       // configured", so the label settles on the truth instead of "Checking…" forever.
@@ -350,6 +352,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         if (!alive) return;
         cloudRef.current = false;
         setCloudConfigured(false);
+        setServerVoice({ state: 'unavailable', engine: 'none' });
       })
       .finally(() => window.clearTimeout(timer));
     return () => {
@@ -357,7 +360,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, []);
+  }, [serverProbe]);
 
   const releaseCloud = useCallback(() => {
     cloudAbort.current?.abort();
@@ -391,64 +394,22 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   }, []);
 
   /**
-   * Start the one-time download of the on-device voice.
-   *
-   * Deliberately explicit rather than automatic: the weights are ~398 MB, which is a real decision on
-   * a metered connection, so the learner presses a button that names the size first. Once the model
-   * is in memory every spoken answer uses it until the page is closed.
+   * Re-run the status probe. There is nothing to download any more: `Retry` asks the server again, so
+   * a deployment that configured its voice after this tab was opened starts working without a reload.
+   */
+  const refreshServerVoice = useCallback(() => {
+    cloudFails.current = 0;
+    setServerProbe((value) => value + 1);
+  }, []);
+
+  /**
+   * Nothing is downloaded any more. Kept as an explicit no-op so an older component that still wires
+   * a "download the voice" button cannot resurrect the old weight download.
    */
   const downloadAiVoice = useCallback(() => {
-    if (isSupertonicReady()) {
-      setAiVoice({ state: 'ready', percent: 100, error: null });
-      return;
-    }
-    if (aiLoading.current) return;
-    aiLoading.current = true;
-    const controller = new AbortController();
-    aiAbort.current = controller;
-    setAiVoice({ state: 'loading', percent: 0, error: null });
-    void loadSupertonic({
-      signal: controller.signal,
-      onProgress: (progress) => {
-        if (mounted.current) setAiVoice({ state: 'loading', percent: progress.percent, error: null });
-      },
-    })
-      .then(() => {
-        aiLoading.current = false;
-        aiAbort.current = null;
-        if (!mounted.current) return;
-        setAiCached(true);
-        setAiVoice({ state: 'ready', percent: 100, error: null });
-      })
-      .catch((cause) => {
-        aiLoading.current = false;
-        aiAbort.current = null;
-        if (!mounted.current) return;
-        const fail = classifySupertonicFailure(cause);
-        setAiVoice({
-          state: fail === 'aborted' ? 'off' : 'error',
-          percent: 0,
-          error: fail === 'aborted' ? null : supertonicErrorCopy(fail),
-        });
-      });
-  }, []);
+    refreshServerVoice();
+  }, [refreshServerVoice]);
 
-  const cancelAiVoice = useCallback(() => {
-    aiAbort.current?.abort();
-    aiAbort.current = null;
-    aiLoading.current = false;
-    setAiVoice({ state: 'off', percent: 0, error: null });
-  }, []);
-
-  // Ask the cheap question only: are the weights already stored here? Calling this costs one cache
-  // lookup, not a model load, so the label is honest on a second visit without warming 398 MB on
-  // every page that happens to render a voice control.
-  useEffect(() => {
-    if (prefs.engine !== 'ai') return;
-    let alive = true;
-    void supertonicCached().then((cached) => { if (alive) setAiCached(cached); });
-    return () => { alive = false; };
-  }, [prefs.engine]);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -508,10 +469,8 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     queueIndex.current = 0;
     stallRetries.current = 0;
     releaseUtterances();
-    // A cancelled answer must stop the synthesis too, not just the playback: the 99M-parameter
-    // denoiser is the expensive half, and leaving it running would fight the next question.
-    aiSynthAbort.current?.abort();
-    aiSynthAbort.current = null;
+    // Cancelling the fetch is what stops the SERVER's synthesis: the request is aborted, so the
+    // inference service drops the work instead of finishing an answer nobody will hear.
     releaseCloud();
     if (synthesisAvailable()) {
       try { window.speechSynthesis.cancel(); } catch { /* nothing queued */ }
@@ -525,14 +484,10 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const speak = useCallback((text: string, sources: { title: string }[] = [], onEnd?: () => void) => {
     const chunks = speechChunks(text);
     if (!chunks.length) return;
-    const cloudUsable = cloudRef.current === true;
-    // The on-device voice has no 15-second utterance limit and no server round-trip, so it is the
-    // first choice whenever it is actually loaded.
-    const aiUsable = prefs.engine === 'ai' && isSupertonicReady();
-    // Stored bytes are local: warming them on the first answer costs no bandwidth, so the first answer
-    // speaks with the built-in voice and every one after it uses the AI voice.
-    if (prefs.engine === 'ai' && !aiUsable && aiCached && !aiLoading.current) downloadAiVoice();
-    if (!aiUsable && !cloudUsable && !supported.synthesis) {
+    // The server voice is the first choice whenever the probe found one. There is no local model to
+    // warm any more, so this is a plain capability check rather than a download state machine.
+    const cloudUsable = prefs.engine === 'ai' && cloudRef.current === true;
+    if (!cloudUsable && !supported.synthesis) {
       setError(cloudRef.current === null
         ? 'This browser cannot speak text aloud, and the voice service has not answered yet.'
         : 'This browser cannot speak text aloud.');
@@ -631,102 +586,10 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       }
     };
 
-    /**
-     * The on-device engine: Supertonic 3 inside this tab.
-     *
-     * Chunks are synthesized ONE AT A TIME and each is scheduled as soon as it is ready, so the first
-     * sentence starts playing while the second is still being generated. That is also why the chunks
-     * are shorter here than the browser's: the wait a learner feels is the time to the FIRST sentence,
-     * not the total. `/audio` is not used and nothing is claimed to be streamed — the scheduling is
-     * simply not waiting for the whole answer.
-     *
-     * Any failure falls back to the built-in voice for the UNHEARD remainder (never the whole answer,
-     * so a sentence is not spoken twice) and the report says which engine took over.
-     */
-    const speakWithAi = () => {
-      const AudioCtor = audioContextCtor();
-      if (!AudioCtor) { speakWithBrowser(); return; }
-      let graph = contextRef.current;
-      if (!graph) {
-        try {
-          graph = new AudioCtor();
-          contextRef.current = graph;
-        } catch {
-          speakWithBrowser();
-          return;
-        }
-      }
-      const audio = graph;
-      void audio.resume().catch(() => { /* the first failure hands over to the browser voice */ });
-      const controller = new AbortController();
-      aiSynthAbort.current = controller;
-      markEngine('supertonic');
-
-      const pieces = supertonicChunksFor(speakable(text));
-      let playhead = 0;
-      let scheduled = 0;
-      let ended = 0;
-      let loopDone = false;
-
-      const handOff = (from: number) => {
-        queue.current = pieces.slice(from);
-        if (!queue.current.length) { finish(); return; }
-        markEngine('browser');
-        speakWithBrowser();
-      };
-
-      const play = async () => {
-        for (let index = 0; index < pieces.length; index += 1) {
-          if (!mounted.current || id !== generation.current || controller.signal.aborted) return;
-          let pcm: Float32Array;
-          try {
-            const result = await synthesizeChunk(pieces[index], prefs.lang, { signal: controller.signal });
-            pcm = result.pcm;
-          } catch (cause) {
-            if (!mounted.current || id !== generation.current || controller.signal.aborted) return;
-            const fail = classifySupertonicFailure(cause);
-            const copy = supertonicErrorCopy(fail);
-            console.warn('BroCode voice: the AI voice failed, finishing this answer with the browser voice.', cause);
-            if (fail !== 'aborted' && fail !== 'empty') setAiVoice({ state: 'error', percent: 0, error: copy });
-            setError(copy);
-            // Two voices must never overlap: stop what was scheduled, then read the rest.
-            releaseCloud();
-            handOff(index);
-            return;
-          }
-          if (!mounted.current || id !== generation.current || controller.signal.aborted) return;
-          if (!pcm.length) continue;
-          const buffer = audio.createBuffer(1, pcm.length, 44100);
-          // A fresh Float32Array, not the model's view: `decodeAudioData` and `copyToChannel` want a
-          // buffer they own, and reusing a subarray view of a larger allocation is not one.
-          buffer.copyToChannel(new Float32Array(pcm), 0);
-          const source = audio.createBufferSource();
-          source.buffer = buffer;
-          source.connect(audio.destination);
-          const startAt = Math.max(audio.currentTime + 0.05, playhead);
-          playhead = startAt + buffer.duration + 0.05;
-          scheduled += 1;
-          activeSources.current.add(source);
-          source.onended = () => {
-            activeSources.current.delete(source);
-            ended += 1;
-            if (!mounted.current || id !== generation.current) return;
-            if (loopDone && ended >= scheduled) finish();
-          };
-          try { source.start(startAt); } catch { /* the graph was closed */ }
-        }
-        loopDone = true;
-        if (scheduled === 0) { handOff(0); return; }
-        if (ended >= scheduled && mounted.current && id === generation.current) finish();
-      };
-      void play();
-    };
-
-    if (aiUsable) { speakWithAi(); return; }
     if (!cloudUsable) { speakWithBrowser(); return; }
 
     /**
-     * The Google engine, played through Web Audio.
+     * The SERVER engine, played through Web Audio (Supertonic 3 or Google, whichever answered).
      *
      *  - PACKING: the server is sent whole sentences (`cloudChunks`), not one line at a time, so a
      *    600-character answer is 2 requests instead of 4 and the synthesiser places its own prosody
@@ -775,6 +638,14 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       // A static host answers HTML with a 200; audio is audio.
       const type = response.headers.get('content-type') ?? '';
       if (!type.startsWith('audio')) throw new Error('tts-not-audio');
+      // The route names the engine that produced the audio; the settings line reports it, so the UI
+      // never says "Supertonic" when Google spoke (or the reverse).
+      const producedBy = response.headers.get('x-voice-engine');
+      if (producedBy === 'supertonic' || producedBy === 'google') {
+        markEngine(producedBy === 'google' ? 'cloud' : 'supertonic');
+      } else if (!engineRef.current) {
+        markEngine('cloud');
+      }
       return graph.decodeAudioData(await response.arrayBuffer());
     };
 
@@ -859,7 +730,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     };
     void run();
   }, [
-    aiCached, downloadAiVoice, markEngine, prefs.engine, prefs.lang, prefs.pitch, prefs.rate, prefs.voiceName,
+    downloadAiVoice, markEngine, prefs.engine, prefs.lang, prefs.pitch, prefs.rate, prefs.voiceName,
     releaseCloud, releaseUtterances, stopSpeaking, supported.synthesis,
   ]);
 
@@ -1112,10 +983,10 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     paused,
     engine,
     cloudConfigured,
-    aiVoice,
-    aiCached,
+    serverVoice,
+    refreshServerVoice,
     downloadAiVoice,
-    cancelAiVoice,
+    cancelAiVoice: refreshServerVoice,
     interim,
     lastSpoken,
     error,

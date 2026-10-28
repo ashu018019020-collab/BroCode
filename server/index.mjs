@@ -41,6 +41,10 @@ const server = createAuthServer({
     'hi-IN': process.env.GOOGLE_TTS_VOICE_HI ?? '',
     'en-IN': process.env.GOOGLE_TTS_VOICE_EN ?? '',
   },
+  // The preferred voice engine. `TTS_SERVICE_URL` points at voice-service/ (Supertonic 3 on CPU);
+  // without it the Google key is used, and without either the client keeps its browser voice.
+  voiceServiceUrl: process.env.TTS_SERVICE_URL ?? '',
+  voiceServiceSecret: process.env.TTS_SERVICE_SECRET ?? '',
 });
 
 await new Promise((resolve, reject) => {
@@ -48,9 +52,11 @@ await new Promise((resolve, reject) => {
   server.listen(port, () => {
     server.removeListener('error', reject);
     console.log(`BroCode Supabase account API listening on port ${port} (account store: ${label}).`);
-    console.log(process.env.GOOGLE_TTS_API_KEY?.trim()
-      ? 'Google Neural2 voice enabled for the tutor (server-side key).'
-      : 'No GOOGLE_TTS_API_KEY — the tutor speaks with the browser voice only.');
+    console.log(process.env.TTS_SERVICE_URL?.trim()
+      ? 'Supertonic 3 voice service configured (server-side inference).'
+      : process.env.GOOGLE_TTS_API_KEY?.trim()
+        ? 'Google Neural2 voice enabled for the tutor (server-side key).'
+        : 'No server voice configured — the tutor speaks with the browser voice only.');
     if (enforceHttps) console.log('Plain-HTTP requests are redirected to HTTPS and HSTS is sent.');
     resolve();
   });

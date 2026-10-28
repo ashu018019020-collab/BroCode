@@ -193,14 +193,23 @@ const post = (port, payload) => send(port, '/api/voice/tts', {
   body: JSON.stringify(payload),
 });
 
-test('voice-server: status reports only the boolean — the key itself never leaves the process', async () => {
+test('voice-server: status names the engine and never the key', async () => {
   const bare = await send(barePort, '/api/voice/status', { headers: { Origin: ORIGIN } });
   assert.equal(bare.status, 200);
-  assert.deepEqual(JSON.parse(bare.text), { configured: false });
+  const bareBody = JSON.parse(bare.text);
+  assert.equal(bareBody.configured, false);
+  assert.equal(bareBody.engine, 'none');
+  assert.equal(bareBody.ready, false);
+  assert.match(bareBody.reason, /No server voice/);
+  assert.deepEqual(bareBody.langs, ['en-IN', 'hi-IN']);
 
   const keyed = await send(keyedPort, '/api/voice/status', { headers: { Origin: ORIGIN } });
-  assert.deepEqual(JSON.parse(keyed.text), { configured: true });
+  const keyedBody = JSON.parse(keyed.text);
+  assert.equal(keyedBody.configured, true);
+  assert.equal(keyedBody.engine, 'google', 'the response names the engine that will speak');
+  assert.equal(keyedBody.engineLabel, 'Google Neural2 (server)');
   assert.ok(!keyed.text.includes('test-key'), 'no key material in the response');
+  assert.ok(!keyed.text.includes('tts-service.invalid'), 'no backend URL in the response');
 });
 
 test('voice-server: without a key the synthesize route says so and points at the browser voice', async () => {
@@ -246,7 +255,8 @@ test('voice-server: a Google failure becomes 502/429, never raw Google text', as
   failNext = 'voice-unavailable';
   const down = await post(keyedPort, { text: 'Hello', lang: 'en-IN', rate: 1 });
   assert.equal(down.status, 502);
-  assert.match(JSON.parse(down.text).error, /browser voice/);
+  assert.match(JSON.parse(down.text).error, /temporarily unavailable/i, 'the learner gets an actionable line');
+  assert.ok(!JSON.parse(down.text).error.includes('voice-unavailable'), 'no internal code leak');
 
   failNext = 'voice-rate-limited';
   const limited = await post(keyedPort, { text: 'Hello', lang: 'en-IN', rate: 1 });

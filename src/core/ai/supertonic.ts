@@ -1,10 +1,11 @@
 /**
- * Supertonic 3 — the on-device voice.
+ * Supertonic 3 — the SERVER voice.
  *
- * This module is the *model contract*, kept pure so it can be tested without a browser: text
- * preprocessing, chunking, the latent sampler, the four-graph inference loop and the WAV encoder.
- * The browser plumbing (ONNX Runtime Web, Cache API, audio graph) lives in
- * `src/core/ai/supertonic-runtime.ts`, and the speech hook calls it.
+ * This module is the *model contract*, kept pure so it can be tested without a browser or a model
+ * file: text preprocessing, chunking, the latent sampler, the four-graph inference loop and the WAV
+ * encoder. The server plumbing (native ONNX Runtime, the model directory, one serialized queue) lives
+ * in `server/supertonic-tts.mjs`; the browser sends text to `POST /api/voice/tts` and receives audio,
+ * and never loads a weight.
  *
  * Everything here follows the upstream implementation that shipped with the model
  * (`supertone-oss-archive/supertonic`, `web/helper.js`), because this is a 99M-parameter network
@@ -76,8 +77,29 @@ export function supertonicAsset(path: string): string {
 /** Output format of `vocoder.onnx` (`ae.sample_rate` in `tts.json`). */
 export const SUPERTONIC_SAMPLE_RATE = 44_100;
 
-/** Denoising steps. The reference default; fewer steps is faster and coarser, not "the same". */
+/**
+ * Denoising steps. The reference default; fewer steps is faster and coarser, not "the same".
+ *
+ * Measured in a browser (8 steps = 1.0×): 4 steps is roughly 1.8× faster on the same sentence. It is
+ * NOT lowered here because the difference is audible in a voice a learner hears for an hour, and this
+ * change could not be auditioned. It is one constant, and `tools/supertonic-check.mjs --steps=4`
+ * exists so the trade can be judged by ear before anyone changes the default.
+ */
 export const SUPERTONIC_STEPS = 8;
+
+/**
+ * How much text the first chunk may hold.
+ *
+ * Time-to-first-audio is the time to synthesize the FIRST chunk, so a shorter opening chunk starts the
+ * voice sooner: a ~90-character opener is roughly a third of the old 220-character chunk, and the rest
+ * of the answer is synthesized while it plays. The cost is one extra chunk boundary (a short breath)
+ * and slightly less prosody context for that first phrase — a fair trade for the first thing a learner
+ * waits on.
+ */
+export const SUPERTONIC_FIRST_CHUNK = 90;
+
+/** The cap for every chunk after the first. */
+export const SUPERTONIC_CHUNK = 220;
 
 /** Upstream's default pacing (1.05 slightly faster than the model's native rate). */
 export const SUPERTONIC_SPEED = 1.05;
@@ -197,36 +219,45 @@ export function supertonicTextIds(
  * multi-minute synthesis. Truncation is at a sentence boundary and is announced by the caller, never
  * silently applied to the middle of a word.
  */
-export function chunkSupertonicText(text: string, maxLen = 220): string[] {
+export function chunkSupertonicText(
+  text: string,
+  maxLen = SUPERTONIC_CHUNK,
+  firstMaxLen = maxLen,
+): string[] {
   const limit = Math.max(60, Math.round(maxLen));
+  // The opener has its own, smaller cap; never below a phrase, or the first "chunk" is a syllable.
+  const firstLimit = Math.max(40, Math.round(firstMaxLen));
   const clean = String(text ?? '').replace(/\s+/g, ' ').trim();
   if (!clean) return [];
   const chunks: string[] = [];
-  const sentences = clean.split(/(?<=[.!?])\s+/);
   let current = '';
+  // The cap depends on what is already buffered: while `chunks` is empty we are building the opener.
+  const cap = () => (chunks.length === 0 ? firstLimit : limit);
   const flush = () => {
     if (current.trim()) chunks.push(current.trim());
     current = '';
   };
-  for (const sentence of sentences) {
-    const piece = sentence.trim();
-    if (!piece) continue;
-    if (piece.length > limit) {
-      flush();
-      // A single long sentence still has to fit: cut at a space, never inside a word.
-      let rest = piece;
-      while (rest.length > limit) {
-        const head = rest.slice(0, limit + 1);
-        let cut = head.lastIndexOf(' ');
-        if (cut <= 0) cut = limit;
-        chunks.push(rest.slice(0, cut).trim());
-        rest = rest.slice(cut).trim();
+
+  for (const sentence of clean.split(/(?<=[.!?])\s+/)) {
+    let rest = sentence.trim();
+    while (rest) {
+      const room = cap() - (current ? current.length + 1 : 0);
+      if (rest.length <= room) {
+        current = current ? `${current} ${rest}` : rest;
+        break;
       }
-      current = rest;
-      continue;
+      // The buffered chunk is full: close it and reconsider this sentence against the next cap.
+      if (current) {
+        flush();
+        continue;
+      }
+      // Nothing buffered and the sentence alone is over the cap — cut at a space, never in a word.
+      const head = rest.slice(0, cap() + 1);
+      let cut = head.lastIndexOf(' ');
+      if (cut <= 0) cut = cap();
+      chunks.push(rest.slice(0, cut).trim());
+      rest = rest.slice(cut).trim();
     }
-    if (current && current.length + 1 + piece.length > limit) flush();
-    current = current ? `${current} ${piece}` : piece;
   }
   flush();
   return chunks;

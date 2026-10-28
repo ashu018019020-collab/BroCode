@@ -17,7 +17,6 @@
  */
 import type { Section } from '../../types';
 import type { AssistantContext } from './assistant';
-import { supertonicEngineNote, type SupertonicState } from './supertonic';
 
 export type VoiceLangId = 'en-IN' | 'hi-IN';
 
@@ -267,38 +266,41 @@ export function pickVoiceFrom(voices: VoiceLike[], lang: VoiceLangId): VoiceLike
   return [...matches].sort((a, b) => score(a) - score(b) || a.name.localeCompare(b.name))[0] ?? null;
 }
 
+/** Which server engine the deployment reported, if any. */
+export type ServerVoiceEngine = 'supertonic' | 'google' | 'none' | null;
+
 /**
  * What engine is actually speaking — the settings line, and the one place the plumbing is named.
  *
- * `cloudConfigured` is what the SERVER reported (null while unknown): the label must never promise
- * Google audio the deployment does not have, and a mid-session failure is shown as the fallback it
- * is rather than hidden.
- *
- * `ai` is the on-device voice's report. Passed as an object rather than three arguments because the
- * state, the download progress and the reason all belong to one fact, and the note below prefers the
- * most specific true sentence available: what is loading, what failed, or which voice will speak
- * NEXT — in that order.
+ * Two facts decide the sentence, in this order: which engine AUDIBLY spoke last, then what the server
+ * said it has. Nothing here may claim a voice the deployment does not have, and no line may describe
+ * a browser voice as AI audio. Since the model moved to the server there is no download to report —
+ * only readiness, which is a probe result rather than a promise.
  */
 export function ttsEngineNote(
   engine: 'supertonic' | 'cloud' | 'browser' | null,
-  cloudConfigured: boolean | null,
-  ai?: { state: SupertonicState; percent?: number; error?: string | null; downloaded?: boolean },
+  server: { state: 'checking' | 'ready' | 'unavailable'; engine: ServerVoiceEngine },
 ): string {
-  if (engine === 'supertonic') return supertonicEngineNote('ready');
-  if (ai?.state === 'loading') return supertonicEngineNote('loading', ai);
-  if (ai?.state === 'error') return supertonicEngineNote('error', ai);
-  if (engine === 'browser' && ai) {
-    return ai.downloaded
-      ? 'Built-in browser voice for this answer — the AI voice is stored here and starts on the next one.'
-      : supertonicEngineNote('off', { downloaded: false });
+  const name = server.engine === 'supertonic'
+    ? 'Supertonic 3'
+    : server.engine === 'google'
+      ? 'Google Neural2'
+      : null;
+  if (engine === 'supertonic' || engine === 'cloud') {
+    return `AI voice · ${name ?? (engine === 'supertonic' ? 'Supertonic 3' : 'Google Neural2')} · Hindi + English · Server-powered.`;
   }
-  if (engine === 'cloud') return 'Speaking with the Google Neural2 voice (online).';
-  if (engine === 'browser' && cloudConfigured === true) {
-    return 'Google voice is busy — using the built-in browser voice for this answer.';
+  if (engine === 'browser') {
+    if (server.state === 'checking') return 'Built-in browser voice for this answer — checking the AI voice…';
+    if (server.state === 'ready') {
+      return 'The AI voice did not answer — the built-in browser voice read this one. Retry the AI voice.';
+    }
+    return 'Built-in browser voice — this deployment has no AI voice configured, so answers are read locally.';
   }
-  if (cloudConfigured === true) return 'Google Neural2 voice ready · browser voice as the fallback.';
-  if (cloudConfigured === false) return 'Browser voice (this server has no Google voice configured).';
-  return 'Checking the voice engine…';
+  if (server.state === 'checking') return 'Checking the AI voice…';
+  if (server.state === 'ready' && name) {
+    return `AI voice · ${name} · Hindi + English · Server-powered.`;
+  }
+  return 'AI voice is unavailable on this deployment — the built-in browser voice reads answers.';
 }
 
 /** The line under the mic button. One state, one short label. */

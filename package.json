@@ -13,7 +13,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:setup": "node scripts/db-setup.cjs",
-    "build": "node scripts/ort-copy.mjs && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"scripts/tests/*.test.cjs\" \"scripts/tests/*.test.mjs\"",
@@ -64,7 +64,7 @@
     "questions:pdf:write": "node scripts/pdf-questions.cjs --write",
     "questions:import": "node scripts/questions.cjs import",
     "questions:export": "node scripts/questions.cjs export",
-    "predev": "node scripts/ort-copy.mjs"
+    "voice:model": "node scripts/voice-model.mjs"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
@@ -72,7 +72,6 @@
     "dotenv": "16.6.1",
     "lucide-react": "^1.47.0",
     "monaco-editor": "^0.56.0",
-    "onnxruntime-web": "^1.23.0",
     "pdfjs-dist": "3.11.174",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

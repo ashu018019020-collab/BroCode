@@ -147,12 +147,7 @@ export function VoiceBar({
             <span className="small muted">{voice.rate.toFixed(1)}×</span>
             {/* Which engine is ACTUALLY speaking — never a promise the deployment cannot keep. */}
             <span className="small muted" style={{ marginTop: 6 }} aria-live="polite">
-              {ttsEngineNote(voice.engine, voice.cloudConfigured, {
-                state: voice.aiVoice.state,
-                percent: voice.aiVoice.percent,
-                error: voice.aiVoice.error,
-                downloaded: voice.aiCached,
-              })}
+              {ttsEngineNote(voice.engine, voice.serverVoice)}
             </span>
             <AiVoiceRow voice={voice} />
           </div>
