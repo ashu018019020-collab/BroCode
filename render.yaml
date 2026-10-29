@@ -1,8 +1,14 @@
 # BroCode deployment blueprint — Render Blueprint (Infrastructure as Code).
 #
-# Deploys ONLY the Python voice service. The website stays on Vercel; the Vercel Functions in
-# `api/voice/` reach this service through `TTS_SERVICE_URL` and authenticate with the same
-# `TTS_SERVICE_SECRET`.
+# Deploys the two long-running pieces, in one Apply:
+#   · brocode-voice   — the Python Supertonic 3 service (CPU inference, checkpoint on a disk).
+#   · brocode-account — the Node account API (`server/index.mjs`). The website stays on Vercel; the
+#                       Vercel Functions in `api/voice/` reach the voice service through
+#                       `TTS_SERVICE_URL` and authenticate with the same `TTS_SERVICE_SECRET`.
+#
+# The blueprint wires the pair: `brocode-account` takes both the URL and the generated secret from
+# `brocode-voice`, so the token is typed nowhere. Only the Supabase keys are asked for at Apply time
+# (`sync: false`) — they are never written into this file.
 #
 #   https://dashboard.render.com/blueprints → New Blueprint Instance → this repository → Apply
 #
@@ -50,3 +56,47 @@ services:
         value: "8000"
       - key: PYTHONUNBUFFERED
         value: "1"
+
+  # The account API the browser calls for sign-in verification and progress history. It is a plain
+  # Node server (`npm run dev:api` runs the same file locally), so Render runs the repository as-is.
+  # Everything optional stays optional: without `DATABASE_URL` it runs on Supabase Auth alone, and
+  # `npm run db:deploy` is what creates the progress tables (run it once from a machine that has the
+  # real DATABASE_URL — a build step must never migrate production data).
+  - type: web
+    name: brocode-account
+    runtime: node
+    plan: starter
+    region: singapore
+    branch: main
+    # `--include=dev` is required: vite/typescript are devDependencies, and Render prunes them by
+    # default when NODE_ENV=production. The build script itself needs no compiler for the API.
+    buildCommand: npm ci --include=dev
+    # Render injects PORT; `server/index.mjs` prefers API_PORT, so PORT must be the one it listens on.
+    startCommand: node server/index.mjs
+    healthCheckPath: /api/voice/status
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: WEB_ORIGIN
+        value: https://mybrocode.vercel.app
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      # Optional: add DATABASE_URL / DIRECT_URL in the dashboard to enable server-side progress history.
+      # Taken from the voice service, so the shared token exists exactly once.
+      - key: TTS_SERVICE_URL
+        fromService:
+          name: brocode-voice
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: TTS_SERVICE_SECRET
+        fromService:
+          name: brocode-voice
+          type: web
+          envVarKey: TTS_SERVICE_SECRET
+      - key: TTS_SERVICE_TIMEOUT_MS
+        value: "20000"

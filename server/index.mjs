@@ -3,7 +3,9 @@ import { createAuthServer } from './app.mjs';
 import { createSupabaseServices } from './supabase.mjs';
 import { createStore } from './db-config.mjs';
 
-const port = Number(process.env.API_PORT ?? 8787);
+// Render (and most PaaS hosts) inject PORT; a local run and `npm run dev:api` use API_PORT, which keeps
+// priority so the Vite proxy target and the server can never disagree.
+const port = Number(process.env.API_PORT ?? process.env.PORT ?? 8787);
 const allowedOrigin = process.env.WEB_ORIGIN
   ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5173');
 

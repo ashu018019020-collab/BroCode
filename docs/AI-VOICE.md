@@ -250,7 +250,43 @@ npm run dev:api      # account API on http://localhost:8787 (Vite proxies /api)
    Set `TTS_SERVICE_URL=http://localhost:8000` and `TTS_SERVICE_SECRET=dev` for `npm run dev:api` or
    the Vercel project. The first boot downloads the checkpoint once; `/healthz` is 503 until ready.
 4. Upload in production is `npm run build`; serve `dist/` and run the Node API beside it with the same
-   `WEB_ORIGIN`, `API_PORT` and provider keys.
+   `WEB_ORIGIN`, `API_PORT` and provider keys. A PaaS host that injects `PORT` is honoured too; `API_PORT`
+   still wins when both are set.
+
+### Render: both long-running services in one blueprint
+
+`render.yaml` declares BOTH services, so one **Blueprints → New Blueprint Instance → Apply** creates
+the pair:
+
+| Service | Runtime | What it is |
+| --- | --- | --- |
+| `brocode-voice` | Docker (`services/supertonic-tts/Dockerfile`) | Supertonic 3 on CPU, checkpoint cached on a 10 GB disk at `/models` |
+| `brocode-account` | Node (`node server/index.mjs`) | The account API the site calls for sign-in verification and progress history |
+
+The blueprint wires them itself: `brocode-account` reads `TTS_SERVICE_URL` from `brocode-voice`'s
+`RENDER_EXTERNAL_URL` and takes the SAME generated `TTS_SERVICE_SECRET`, so the shared token is typed
+nowhere. The only values Render asks for at Apply time are `SUPABASE_URL`,
+`SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY` (`sync: false`); `DATABASE_URL` stays optional and
+`npm run db:deploy` is still the only thing that migrates production data.
+
+Then, in the **Vercel** project (Production), set the pair the functions need — the same two values:
+
+```
+TTS_SERVICE_URL=https://brocode-voice.onrender.com     # the Render service URL, no trailing slash
+TTS_SERVICE_SECRET=<the secret Render generated>       # copy from brocode-voice → Environment
+```
+
+Redeploy the Vercel project (a push does it) and gate the result with the operator check, which prints
+nothing secret and exits non-zero until BOTH halves are live:
+
+```bash
+TTS_SERVICE_URL=https://brocode-voice.onrender.com TTS_SERVICE_SECRET=... npm run voice:check
+```
+
+`https://mybrocode.vercel.app/api/voice/status` must answer
+`{"configured":true,"engine":"supertonic","ready":true,…}`. While it answers `engine: "none"` the
+deployment has no server voice and the settings row says `built-in browser voice` — the site is not
+broken, it is simply speaking with the browser, and no model weight is downloaded to say so.
 
 ### Vercel: the two voice routes as functions
 
