@@ -219,6 +219,7 @@ feature depends on it.
 | Route | Auth | Notes |
 | --- | --- | --- |
 | `GET /api/voice/status` | Public | `{ configured, engine, engineLabel, ready, langs, reason }`. Never names a URL, a key or a token. |
+| `GET /api/voice/health` | Public | Operator diagnostics: `code`, `engine`, `ready`, `verified`, whether each variable is `set`/`missing` (names only) and the next step. 200 only when the engine really answered, so it works as an uptime check. |
 | `POST /api/voice/tts` | Same-origin + rate limit | `{ text, lang, rate }` → audio. 480-character cap server-side. `X-Voice-Engine` says who spoke. |
 | `GET /api/voice/realtime/status` | Public | `{ configured, enabled }`; never names the key. |
 | `POST /api/voice/realtime/session` | Signed-in, same-origin, rate-limited | Body `{ lang: 'en-IN' \| 'hi-IN' }`; returns only `clientSecret`, `expiresAt`, `model`, `voice`, `maxSessionSeconds`. |
@@ -321,6 +322,35 @@ node --test scripts/tests/realtime-voice.test.mjs
 python -m pytest services/supertonic-tts/tests -q
 npm test
 ```
+
+### Why the AI voice says "unavailable on this deployment"
+
+The one cause is configuration, never the client: `GET /api/voice/status` answers `engine: "none"`
+when the deployment has neither `TTS_SERVICE_URL` + `TTS_SERVICE_SECRET` nor `GOOGLE_TTS_API_KEY`.
+Diagnose it with the health route instead of guessing:
+
+```bash
+curl -s https://mybrocode.vercel.app/api/voice/health
+# 503 {"code":"VOICE_NOT_CONFIGURED","engine":"none",
+#      "env":{"TTS_SERVICE_URL":"missing","TTS_SERVICE_SECRET":"missing","GOOGLE_TTS_API_KEY":"missing"},
+#      "hints":["Set GOOGLE_TTS_API_KEY … or TTS_SERVICE_URL + TTS_SERVICE_SECRET …", …]}
+```
+
+| `code` | Meaning | What fixes it |
+| --- | --- | --- |
+| `VOICE_READY` | The engine answered (200) | — |
+| `VOICE_NOT_CONFIGURED` | No provider set on this deployment | set one variable pair, then REDEPLOY |
+| `VOICE_PROVIDER_UNAVAILABLE` | The service URL is set but unreachable / still loading | start it, or check its `/healthz` |
+| `VOICE_TIMEOUT` | The health probe or a synthesis ran past its budget | scale the service, or retry (transient) |
+| `VOICE_AUTH_FAILED` | The service is up and refused our shared secret | make `TTS_SERVICE_SECRET` identical on both sides |
+| `VOICE_RATE_LIMITED` | Per-client limit, or the provider's | retry after the window |
+| `VOICE_INVALID_AUDIO` | The engine returned no playable bytes | check the service, retry once |
+| `VOICE_INVALID_REQUEST` / `VOICE_FORBIDDEN` | Bad text/language, or a foreign `Origin` | client bug — never retried by the UI |
+
+A key present is not a working voice: with only `GOOGLE_TTS_API_KEY`, the report says `verified: false`
+and the first spoken answer is what proves the key, because the check never spends a character.
+`TTS_SERVICE_URL` with a missing secret reports `VOICE_NOT_CONFIGURED`, not “busy” — retrying cannot
+fix a missing token.
 
 The suites cover: engine selection and the fallback chain, the secret never leaving the server, status
 shapes, validation before any provider call, the browser voice never being described as AI audio,

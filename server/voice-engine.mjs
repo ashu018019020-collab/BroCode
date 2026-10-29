@@ -130,20 +130,26 @@ export function createVoiceEngine({
     });
     if (!response.ok) {
       const error = new Error(`The AI voice service refused the request (HTTP ${response.status}).`);
-      error.code = response.status === 429 ? 'voice-rate-limited' : 'voice-unavailable';
+      // 401/403 is a configuration fault (rotated or mismatched shared secret), not a busy service:
+      // the route must not tell the learner to retry something that cannot start working by itself.
+      error.code = response.status === 429
+        ? 'voice-rate-limited'
+        : response.status === 401 || response.status === 403
+          ? 'voice-auth-failed'
+          : 'voice-unavailable';
       error.status = response.status;
       throw error;
     }
     const type = response.headers.get('content-type') ?? '';
     if (!type.startsWith('audio/')) {
       const error = new Error('The AI voice service returned something that was not audio.');
-      error.code = 'voice-unavailable';
+      error.code = 'voice-invalid-audio';
       throw error;
     }
     const audio = Buffer.from(await response.arrayBuffer());
     if (!audio.length) {
       const error = new Error('The AI voice service returned no audio.');
-      error.code = 'voice-unavailable';
+      error.code = 'voice-invalid-audio';
       throw error;
     }
     // The service's own sample rate is in a header so the client never guesses one; the WAV also
@@ -200,6 +206,9 @@ export function createVoiceEngine({
         return await speakSupertonic({ text: clean, lang, rate });
       } catch (cause) {
         logger.warn?.('Supertonic voice service failed.', cause?.code ?? cause?.name ?? 'unknown');
+        // A timeout is worth reporting as itself: the route maps it to 504 so the client retries once
+        // instead of looping, and `/api/voice/health` can name it.
+        if (cause?.name === 'TimeoutError' && !cause.code) cause.code = 'voice-timeout';
         if (!googleKey) throw cause;
         // An explicit, logged downgrade — the response still says `engine: 'google'`, so nothing hides.
       }

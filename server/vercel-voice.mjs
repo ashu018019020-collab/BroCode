@@ -23,6 +23,7 @@
  * stops a runaway tab, not a botnet. Vercel's own DDoS protection is the outer layer.
  */
 import { createVoiceEngine, VOICE_LANGS, VOICE_MAX_CHARS } from './voice-engine.mjs';
+import { voiceDiagnostics, VOICE_CODES } from './voice-diagnostics.mjs';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const RATE_WINDOW_MS = 60 * 1000;
@@ -142,21 +143,47 @@ async function readBody(request) {
   }
 }
 
+/**
+ * One failure, one status, one code. The `code` is what the client can branch on (`VOICE_RATE_LIMITED`
+ * is worth a retry, `VOICE_NOT_CONFIGURED` never is); the prose is what a person reads. Neither ever
+ * carries an upstream body, a URL, a token or a stack trace.
+ */
 function errorCopy(response, cause) {
+  const timeout = cause?.code === 'voice-timeout' || cause?.name === 'TimeoutError';
   switch (cause?.code) {
     case 'voice-bad-text':
-      return json(response, 400, { error: 'Text is required and must be under the voice limit.' });
+      return json(response, 400, { code: VOICE_CODES.invalidRequest, error: 'Text is required and must be under the voice limit.' });
     case 'voice-bad-lang':
-      return json(response, 400, { error: `Choose a supported voice language: ${VOICE_LANGS.join(', ')}.` });
+      return json(response, 400, { code: VOICE_CODES.invalidRequest, error: `Choose a supported voice language: ${VOICE_LANGS.join(', ')}.` });
     case 'voice-rate-limited':
-      return json(response, 429, { error: 'The AI voice is busy. Try again in a moment.' }, { 'Retry-After': '5' });
+      return json(response, 429, { code: VOICE_CODES.rateLimited, error: 'The AI voice is busy. Try again in a moment.' }, { 'Retry-After': '5' });
     case 'voice-unconfigured':
       return json(response, 503, {
+        code: VOICE_CODES.notConfigured,
         error: 'No AI voice is configured on this deployment — the built-in browser voice still reads answers.',
       });
+    case 'voice-auth-failed':
+      // The service is reachable but refused this process: a rotated or mistyped shared secret.
+      return json(response, 502, {
+        code: VOICE_CODES.authFailed,
+        error: 'The AI voice rejected this deployment\'s credentials. The browser voice reads answers meanwhile.',
+      });
+    case 'voice-invalid-audio':
+      return json(response, 502, {
+        code: VOICE_CODES.invalidAudio,
+        error: 'The AI voice returned no playable audio. Please try again.',
+      });
     default:
-      // Never echo an upstream body, a URL, or a stack trace.
-      return json(response, 502, { error: 'The AI voice is temporarily unavailable. Please try again.' });
+      if (timeout) {
+        return json(response, 504, {
+          code: VOICE_CODES.timeout,
+          error: 'The AI voice took too long to answer. Please try again.',
+        });
+      }
+      return json(response, 502, {
+        code: VOICE_CODES.providerUnavailable,
+        error: 'The AI voice is temporarily unavailable. Please try again.',
+      });
   }
 }
 
@@ -192,21 +219,24 @@ export function createTtsHandler({
     // A browser same-origin POST always carries Origin; a foreign page's does too, with its own
     // origin. This is CSRF-shaped protection, not authentication.
     if (!sameOrigin(request, env)) {
-      return json(response, 403, { error: 'Voice requests must come from the BroCode app.' });
+      return json(response, 403, { code: VOICE_CODES.forbidden, error: 'Voice requests must come from the BroCode app.' });
     }
     if (!limiter.take(clientKey(request))) {
-      return json(response, 429, { error: 'Too many voice requests. Try again in a minute.' }, { 'Retry-After': '60' });
+      return json(response, 429, { code: VOICE_CODES.rateLimited, error: 'Too many voice requests. Try again in a minute.' }, { 'Retry-After': '60' });
     }
     const type = String(request.headers['content-type'] ?? '').toLowerCase();
     if (!type.startsWith('application/json')) {
-      return json(response, 415, { error: 'Send JSON using Content-Type: application/json.' });
+      return json(response, 415, { code: VOICE_CODES.invalidRequest, error: 'Send JSON using Content-Type: application/json.' });
     }
 
     let body;
     try {
       body = await readBody(request);
     } catch (cause) {
-      return json(response, cause?.status ?? 400, { error: String(cause?.message ?? 'Send a valid JSON body.') });
+      return json(response, cause?.status ?? 400, {
+        code: VOICE_CODES.invalidRequest,
+        error: String(cause?.message ?? 'Send a valid JSON body.'),
+      });
     }
 
     const text = String(body?.text ?? '');
@@ -214,12 +244,12 @@ export function createTtsHandler({
     const rate = Number(body?.rate ?? 1);
     const clean = text.trim();
     if (!clean || clean.length > VOICE_MAX_CHARS) {
-      return json(response, 400, { error: `Text must be 1–${VOICE_MAX_CHARS} characters.` });
+      return json(response, 400, { code: VOICE_CODES.invalidRequest, error: `Text must be 1–${VOICE_MAX_CHARS} characters.` });
     }
 
     try {
       const speech = await engine.speak({ text: text, lang, rate });
-      if (!speech?.audio?.length) throw Object.assign(new Error('empty audio'), { code: 'voice-unavailable' });
+      if (!speech?.audio?.length) throw Object.assign(new Error('empty audio'), { code: 'voice-invalid-audio' });
       response.writeHead(200, {
         ...SECURITY_HEADERS,
         'Content-Type': speech.contentType,
@@ -231,6 +261,42 @@ export function createTtsHandler({
     } catch (cause) {
       errorCopy(response, cause);
     }
+  };
+}
+
+/**
+ * `GET /api/voice/health` — the operator's answer, not the browser's.
+ *
+ * 200 when the engine that would speak is actually ready, 503 when it is not, and the body always
+ * carries a sanitized `code` from `VOICE_CODES`, the presence of each variable (never its value) and
+ * the next step. It force-probes the inference service, so `Retry` on a dashboard never reads a
+ * cached negative.
+ */
+export function createHealthHandler({ engine = engineFromEnv(), env = process.env, logger = console } = {}) {
+  return async function healthHandler(request, response) {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return json(response, 405, { error: 'Use GET.' }, { Allow: 'GET' });
+    }
+    const requestId = Math.random().toString(36).slice(2, 10);
+    let report;
+    try {
+      report = await voiceDiagnostics({ env, engine });
+    } catch {
+      // A diagnostics route that throws is worse than useless: answer with the honest generic state.
+      report = {
+        ok: false,
+        code: VOICE_CODES.providerUnavailable,
+        engine: 'none',
+        ready: false,
+        verified: false,
+        env: {},
+        hints: [],
+        detail: 'The voice diagnostics could not be collected on this instance.',
+      };
+    }
+    // One line per check, ids and codes only: no text, no key, no URL with a token in it.
+    if (!report.ok) logger.warn?.(`[voice-health ${requestId}] ${report.code} engine=${report.engine}`);
+    json(response, report.ok ? 200 : 503, { requestId, ...report });
   };
 }
 
