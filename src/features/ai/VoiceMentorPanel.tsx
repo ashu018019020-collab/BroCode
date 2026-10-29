@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { Link, useLocation } from 'react-router-dom';
 import {
   AudioLines, Bot, Cloud, CloudOff, Eraser, Loader2, Mic2, MicOff, Pause, Play,
-  RotateCcw, Send, Square, Volume2, VolumeX, WifiOff,
+  RotateCcw, Send, Square, Volume2, VolumeX,
 } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore } from '../../core/storage/store';
@@ -408,24 +408,21 @@ export function VoiceMentorPanel() {
           </div>
         )}
 
+        {/* Only rendered when the server actually has a realtime key — an unconfigured server shows
+            nothing rather than a permanent "Not configured" card. */}
+        {realtime.configured === true && (
         <div className="mentor-provider">
           <div className="row spread" style={{ gap: 8 }}>
             <b className="small row" style={{ gap: 6 }}>
-              {realtime.configured === true ? <Cloud size={14} color="var(--cyan)" /> : <WifiOff size={14} color="var(--muted)" />}
+              <Cloud size={14} color="var(--cyan)" />
               Cloud realtime voice
             </b>
-            <span className={`chip ${realtime.configured === true ? 'easy' : ''}`}>
-              {realtime.configured === null ? 'Checking…' : realtime.configured ? 'Configured' : 'Not configured'}
-            </span>
+            <span className="chip easy">Configured</span>
           </div>
           <p className="small muted" style={{ margin: '6px 0' }}>
-            {realtime.configured === true
-              ? 'Optional low-latency conversation. Signed-in sessions only; the server issues a short-lived secret and applies a session limit.'
-              : realtime.configured === false
-                ? 'This server has no OpenAI realtime key. The browser voice above is fully functional and needs no key.'
-                : 'Checking this server for the optional realtime voice…'}
+            Optional low-latency conversation. Signed-in sessions only; the server issues a short-lived secret and applies a session limit.
           </p>
-          {realtime.configured === true && !live && (
+          {!live && (
             <div className="mentor-consent">
               <label className="mentor-check small">
                 <input
@@ -440,7 +437,7 @@ export function VoiceMentorPanel() {
               <p className="small muted" style={{ margin: '4px 0 0' }}>{t('ai.onlineVoice.charges')}</p>
             </div>
           )}
-          {realtime.configured === true && !live && (
+          {!live && (
             <button
               type="button"
               className="btn small primary"
@@ -468,6 +465,7 @@ export function VoiceMentorPanel() {
             </p>
           )}
         </div>
+        )}
 
         {voice.error && (
           <p className="voice-error small" role="status">
