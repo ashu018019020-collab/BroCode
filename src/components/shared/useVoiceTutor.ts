@@ -858,22 +858,39 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     else startListening(onTranscript, options);
   }, [startListening, stopListening]);
 
+  /**
+   * Pause, without ever claiming a pause that did not happen.
+   *
+   * The AudioContext clock and the synthesiser are separate switches, and the SERVER engine spends
+   * its first moments in flight: `speak()` creates the graph and calls `resume()` before the first
+   * chunk has been fetched. A pause pressed in that window used to fall through to
+   * `speechSynthesis.pause()` — which pauses nothing — and set `paused: true`, so the label said
+   * "Paused" while the answer started playing a second later. Suspending the graph holds the
+   * pending audio instead, and if there is no graph yet there is genuinely nothing to pause, so the
+   * button keeps saying "Pause" rather than lying.
+   */
   const pauseSpeaking = useCallback(() => {
-    // The AudioContext clock and the synthesiser are separate pause switches; only one is live.
     const context = contextRef.current;
-    if ((engineRef.current === 'cloud' || engineRef.current === 'supertonic') && context && context.state === 'running') {
-      // Suspending freezes `currentTime`, so the sentences already scheduled wait where they are
-      // instead of finishing under a "Paused" label.
-      void context.suspend().then(() => { if (mounted.current) setPaused(true); }).catch(() => { /* not speaking */ });
+    const serverVoice = engineRef.current === 'cloud' || engineRef.current === 'supertonic';
+    if (serverVoice) {
+      if (!context) return; // nothing has been created yet: no audio is playing to pause
+      // Suspending freezes `currentTime`, so sources already scheduled wait where they are and
+      // chunks still in flight are queued silently instead of starting under a "Paused" label.
+      void context.suspend().then(() => { if (mounted.current) setPaused(true); }).catch(() => { /* closed */ });
       return;
     }
     if (!supported.synthesis) return;
-    try { window.speechSynthesis.pause(); setPaused(true); } catch { /* not speaking */ }
+    // `speechSynthesis.pause()` on an engine that is not speaking is a silent no-op; saying
+    // "Paused" after it is how the controls came to disagree with the sound.
+    if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) return;
+    try { window.speechSynthesis.pause(); setPaused(true); } catch { /* nothing to pause */ }
   }, [supported.synthesis]);
 
   const resumeSpeaking = useCallback(() => {
     const context = contextRef.current;
-    if ((engineRef.current === 'cloud' || engineRef.current === 'supertonic') && context && context.state === 'suspended') {
+    const serverVoice = engineRef.current === 'cloud' || engineRef.current === 'supertonic';
+    if (serverVoice) {
+      if (!context || context.state === 'running') { setPaused(false); return; }
       void context.resume().then(() => { if (mounted.current) setPaused(false); }).catch(() => { /* closed */ });
       return;
     }
