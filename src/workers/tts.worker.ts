@@ -23,8 +23,12 @@ declare const self: DedicatedWorkerGlobalScope & {
 
 // The WASM runtime is served from OUR OWN ORIGIN: `scripts/ort-copy.mjs` publishes the pinned
 // runtime's two files into `public/ort/` at build time, so there is no third-party CDN in the path and
-// the site keeps working under a strict CSP. `BASE_URL` keeps it correct under a subpath too.
-ort.env.wasm.wasmPaths = `${import.meta.env.BASE_URL}ort/`;
+// the site keeps working under a strict CSP.
+//
+// Resolved against THIS worker's own URL (`/assets/tts.worker-*.js` → `/ort/`) rather than
+// `import.meta.env.BASE_URL`, which Vite inlines as `./` inside a worker and would then resolve to
+// `/assets/ort/` — a 404 that only shows up when the engine actually tries to start.
+ort.env.wasm.wasmPaths = new URL('../ort/', self.location.href).href;
 // Threads need COOP/COEP headers; without them the runtime silently falls back to one thread, and
 // asking for more than one would throw. Single-threaded WASM is the portable choice.
 ort.env.wasm.numThreads = 1;
