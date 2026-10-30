@@ -220,6 +220,24 @@ feature depends on it.
 | --- | --- | --- |
 | `GET /api/voice/status` | Public | `{ configured, engine, engineLabel, ready, langs, reason }`. Never names a URL, a key or a token. |
 | `GET /api/voice/health` | Public | Operator diagnostics: `code`, `engine`, `ready`, `verified`, whether each variable is `set`/`missing` (names only) and the next step. 200 only when the engine really answered, so it works as an uptime check. |
+
+### Voice health dashboard (`/voice-health`)
+
+A signed-in operator page that answers "is the voice working right now?" without reading logs. It
+shows two halves and never blends them:
+
+- **Deployment** — the live `/api/voice/health` answer: engine, `VOICE_*` code, whether the engine
+  *really* answered, the variables present (names only), the probe's round-trip time, and the
+  server's `requestId` to quote in the function logs.
+- **This browser** — which engine actually spoke for every answer read aloud here, time to first
+  audio (p50/p95 over the last 40 requests), the browser-fallback share, and failure counts by code
+  (`tts-503`, `tts-not-audio`, …). Counted after real playback in `useVoiceTutor`'s `finish()` and
+  stored per device (`aiml:voice:telemetry`), cleared by the page's Clear button.
+
+There is deliberately **no site-wide total**: each Vercel function keeps its own memory, so a
+server-side counter would be a number that looks authoritative and means nothing. A real aggregate
+needs a store (D1/Redis) — `core/platform/voice-telemetry.ts` is the pure aggregation, ready to be
+posted there when one exists. The page prints `—`, not `0%`, when nothing has been spoken yet.
 | `POST /api/voice/tts` | Same-origin + rate limit | `{ text, lang, rate }` → audio. 480-character cap server-side. `X-Voice-Engine` says who spoke. |
 | `GET /api/voice/realtime/status` | Public | `{ configured, enabled }`; never names the key. |
 | `POST /api/voice/realtime/session` | Signed-in, same-origin, rate-limited | Body `{ lang: 'en-IN' \| 'hi-IN' }`; returns only `clientSecret`, `expiresAt`, `model`, `voice`, `maxSessionSeconds`. |

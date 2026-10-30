@@ -341,6 +341,7 @@ export const PATH_ROUTE_ALLOWLIST: string[] = [
   '/login',               // Supabase-backed account entry — the app's only front door
   '/reset-password',      // the emailed-recovery half of the account flow, reached from /login
   '/admin',               // server-authorized account management
+  '/voice-health',        // operations: AI voice readiness/latency/fallbacks, not a learning path
   '*',                    // fallback route
 ];
 

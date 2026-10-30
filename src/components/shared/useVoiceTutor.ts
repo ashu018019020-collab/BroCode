@@ -3,6 +3,7 @@ import {
   DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, cloudChunks, micPermissionDenied, normalizeVoiceLang, pickVoiceFrom,
   speechChunks, speechLangFor, type VoiceLangId, type VoiceStatus,
 } from '../../core/ai/voice';
+import { noteVoiceAnswer, noteVoiceFailure } from '../../core/storage/voice-telemetry';
 
 
 /**
@@ -473,6 +474,10 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const speak = useCallback((text: string, sources: { title: string }[] = [], onEnd?: () => void) => {
     const chunks = speechChunks(text);
     if (!chunks.length) return;
+    // Time from press to the first playable chunk of THIS answer — the number the dashboard shows
+    // as latency. It is measured around the real fetch, never estimated from the text length.
+    let firstAudioMs: number | null = null;
+    const answerStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
     // The server voice is the first choice whenever the probe found one. There is no local model to
     // warm any more, so this is a plain capability check rather than a download state machine.
     const cloudUsable = prefs.engine === 'ai' && cloudRef.current === true;
@@ -502,6 +507,10 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       if (finished) return;
       finished = true;
       releaseUtterances();
+      // One count per ANSWER, tagged with the engine that actually produced the sound. A fallback
+      // mid-answer therefore lands on `browser`, which is exactly what the dashboard must show.
+      const tag = engineRef.current === 'supertonic' ? 'supertonic' : engineRef.current === 'cloud' ? 'google' : 'browser';
+      noteVoiceAnswer(tag, firstAudioMs ?? undefined);
       if (!mounted.current || id !== generation.current) return;
       setSpeaking(false);
       setPaused(false);
@@ -617,16 +626,24 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     const controller = new AbortController();
     cloudAbort.current = controller;
     const decode = async (chunk: string): Promise<AudioBuffer> => {
+      const askedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
       const response = await fetch(TTS_SYNTHESIZE_PATH, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: chunk, lang: speechLangFor(prefs.lang, chunk), rate: prefs.rate }),
         signal: controller.signal,
       });
-      if (!response.ok) throw new Error(`tts-${response.status}`);
+      if (!response.ok) {
+        // The route sends a machine code (`VOICE_NOT_CONFIGURED`, …); it is a category, never text.
+        noteVoiceFailure(`tts-${response.status}`);
+        throw new Error(`tts-${response.status}`);
+      }
       // A static host answers HTML with a 200; audio is audio.
       const type = response.headers.get('content-type') ?? '';
-      if (!type.startsWith('audio')) throw new Error('tts-not-audio');
+      if (!type.startsWith('audio')) {
+        noteVoiceFailure('tts-not-audio');
+        throw new Error('tts-not-audio');
+      }
       // The route names the engine that produced the audio; the settings line reports it, so the UI
       // never says "Supertonic" when Google spoke (or the reverse).
       const producedBy = response.headers.get('x-voice-engine');
@@ -635,7 +652,12 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       } else if (!engineRef.current) {
         markEngine('cloud');
       }
-      return graph.decodeAudioData(await response.arrayBuffer());
+      const buffer = await graph.decodeAudioData(await response.arrayBuffer());
+      if (firstAudioMs === null) {
+        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        firstAudioMs = Math.round(now - answerStartedAt);
+      }
+      return buffer;
     };
 
     // All requests in flight at once; only the ORDER of playback is sequential.
@@ -677,6 +699,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
             return;
           }
           cloudFails.current += 1;
+          noteVoiceFailure(String((cause as { message?: string })?.message ?? 'tts-failed').slice(0, 24));
           // Keep `cloudConfigured` as the SERVER's report — the server is configured, it is this
           // voice that is unavailable. The settings line says which engine spoke.
           if (cloudFails.current >= 2) cloudRef.current = false;

@@ -121,6 +121,12 @@ export const INTERVIEW_HISTORY_KEY = 'aiml:interview-room:history';
  * preference: it gates every realtime session request, and it is cleared the moment they turn it off.
  */
 export const ONLINE_VOICE_CONSENT_KEY = 'aiml:online-voice-consent';
+/**
+ * Which engine actually spoke on THIS device, how long the audio took and how often it fell back.
+ * Read by the voice health dashboard; device-local, capped, and never part of AppState (that would
+ * re-serialize the whole learning record every time an answer is read aloud).
+ */
+export const VOICE_TELEMETRY_KEY = 'aiml:voice:telemetry';
 
 // ---- gamification policy ----
 export const XP_PER_LEVEL = 50;

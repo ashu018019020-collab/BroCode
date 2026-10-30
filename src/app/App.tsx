@@ -5,7 +5,7 @@ import {
   Sigma, Database, Sparkles, Bot, Briefcase, BarChart3, FileText, Settings as SettingsIcon,
   Search, Star, Flame, Target, Trophy, Code2, GraduationCap, ListChecks,
   Bell, FolderGit2, Network, ClipboardList, StickyNote, BookMarked, Moon, Sun, Focus, Library,
-  Menu, PanelLeftClose, X, ChevronRight, ChevronLeft, Award, WifiOff,
+  Menu, PanelLeftClose, X, ChevronRight, ChevronLeft, Award, WifiOff, Activity,
   Plus, Download, Languages, Timer, BookOpen, Cloud, UserRound, LogIn, LogOut,
 } from 'lucide-react';
 import { CurriculumProvider, useCurriculum } from '../core/data/curriculum';
@@ -33,6 +33,7 @@ const ReviewPage = lazy(() => import('../features/practice/Review'));
 const ProgressPage = lazy(() => import('../features/progress/Progress'));
 const PDFReader = lazy(() => import('../features/tools/PDFReader'));
 const SettingsPage = lazy(() => import('../features/tools/Settings'));
+const VoiceHealth = lazy(() => import('../features/ops/VoiceHealth'));
 const Onboarding = lazy(() => import('../features/dashboard/Onboarding'));
 const FinalAssessment = lazy(() => import('../features/interview/FinalAssessment'));
 const AILab = lazy(() => import('../features/labs/AILab'));
@@ -202,6 +203,10 @@ export const NAV: NavItem[] = [
   { to: '/final-assessment', icon: Target, label: 'Final Assessment', group: 'hidden', sidebar: false },
   { to: '/mock-interviews', icon: Mic2, label: 'Mock Interviews', group: 'hidden', sidebar: false },
   { to: '/job-prep', icon: ClipboardList, label: 'Job Prep', group: 'hidden', sidebar: false },
+  // Operations, not learning: readiness/latency/fallback counts for the AI voice. Registered with a
+  // label so any grid that reads NAV renders a name, but never a sidebar entry — an operator page is
+  // not part of the learning journey.
+  { to: '/voice-health', icon: Activity, label: 'Voice Health', group: 'hidden', sidebar: false },
 ];
 
 /** Mobile bottom navigation — the four highest-frequency destinations. */
@@ -840,6 +845,7 @@ function Shell() {
               <Route path="/lesson/:sid/:stage" element={<Protect><Lesson /></Protect>} />
               <Route path="/lesson/:sid" element={<Protect><Lesson /></Protect>} />
               <Route path="/playground" element={<Protect><Playground /></Protect>} />
+              <Route path="/voice-health" element={<Protect><VoiceHealth /></Protect>} />
               <Route path="/questions" element={<Protect><QuestionBank /></Protect>} />
               <Route path="/exam" element={<Protect><ExamMode /></Protect>} />
               <Route path="/projects" element={<Protect><ProjectLab /></Protect>} />
