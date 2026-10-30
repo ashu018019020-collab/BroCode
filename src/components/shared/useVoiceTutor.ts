@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, cloudChunks, micPermissionDenied, normalizeVoiceLang, pickVoiceFrom,
-  speechChunks, speechLangFor, type VoiceLangId, type VoiceStatus,
+  speechChunks, type VoiceLangId, type VoiceStatus,
 } from '../../core/ai/voice';
 import { noteVoiceAnswer, noteVoiceFailure } from '../../core/storage/voice-telemetry';
+import { createVoiceClient, INITIAL_VOICE_STATUS, type VoiceClient, type VoiceStatus as EngineStatus } from '../../core/voice/client';
+import { DEFAULT_PRESET, isVoicePreset, clearVoiceCache as clearVoiceCacheEntries, type VoicePreset } from '../../core/voice/assets';
+import { speechRequests, languageForChunk } from '../../core/voice/text';
 
 
 /**
@@ -13,16 +16,16 @@ import { noteVoiceAnswer, noteVoiceFailure } from '../../core/storage/voice-tele
  * tutor's cloud voice. All three have sharp edges, and every one of them is handled here instead of
  * in the interview room's JSX:
  *
- *  - SPEECH OUT has two engines, and the first one lives on the SERVER. `GET /api/voice/status`
- *    reports which server engine is ready (Supertonic 3 via `services/supertonic-tts/`, or Google Neural2);
- *    each sentence-packed chunk is then fetched as audio from `POST /api/voice/tts` and played
- *    through one `AudioContext`. The browser downloads no model, no weights and no runtime — only
- *    the audio it is about to hear. The AI voice is the ONLY voice the primary flow may use: a
- *    failure (no service configured, an unreachable inference service, a static host answering
- *    HTML, a rejected request) surfaces as a real error with a Retry that re-asks the server, never
- *    as a robotic substitute the learner did not ask for. That substitution is exactly how a broken
- *    deployment used to look healthy. The built-in browser synthesiser still exists, but only
- *    behind the learner's own explicit `engine: 'browser'` choice in the voice settings.
+ *  - SPEECH OUT is Supertonic 3, and it runs IN THIS BROWSER. A worker
+ *    (`src/workers/tts.worker.ts`) downloads the revision-pinned checkpoint once, caches it in Cache
+ *    Storage, builds the four ONNX sessions and synthesises one sentence at a time; this hook only
+ *    queues those sentences and plays them through one `AudioContext`. There is no server route and no
+ *    status probe: "is the voice configured?" is not a question that can have a wrong answer. Progress,
+ *    readiness and failures come from the engine itself and are surfaced verbatim.
+ *    A failure is an ERROR with a Retry that re-runs the real work — never a quiet hand-off to the
+ *    browser's robotic synthesiser, which is exactly how a broken voice used to look healthy.
+ *    The built-in browser synthesiser survives only behind the learner's explicit `engine: 'browser'`
+ *    preference, where it is labelled as such.
  *  - WHY VOICE USED TO DIE MID-SESSION (the Answer-by-Voice bug, fixed here, three causes):
  *
  *      1. UTTERANCE GC. The old browser path created `SpeechSynthesisUtterance` objects as local
@@ -65,22 +68,21 @@ const PREFS_KEY = 'aiml:voice';
  * (`refreshServerVoice` + the learner's own press), so a voice configured after this tab was opened
  * starts working without a reload.
  */
-const VOICE_PROBING_TEXT = 'The AI voice has not answered yet. Press Retry in a moment.';
-const VOICE_ABSENT_TEXT = 'AI voice unavailable: no Supertonic service is configured for this deployment. Nothing is spoken — press Retry to ask the server again.';
+const VOICE_ABSENT_TEXT = 'Supertonic 3 cannot run in this browser, so nothing is spoken. Retry re-checks the engine.';
 const VOICE_FAILED_TEXT = 'The AI voice could not answer that. Nothing is spoken — press Retry to ask the server again.';
 const VOICE_AUDIO_TEXT = 'This browser cannot play the AI voice (Web Audio is unavailable). Nothing is spoken.';
 
-/* The account API's two voice routes. Relative on purpose: the app is served from a subpath, and a
-   static host without the API answers with its 404 page — which the cloud probe must read as
-   "not configured", never as a broken tutor. */
-const TTS_STATUS_PATH = './api/voice/status';
-const TTS_SYNTHESIZE_PATH = './api/voice/tts';
+/* The voice worker — the ONLY speech provider. There is no status endpoint to probe any more: the
+   model lives in the browser, so "is it configured?" is not a question that can have a wrong answer. */
+const VOICE_STEPS = 8;
 
 /** "The account API answers, and its Google key is configured." Null until the probe resolves. */
 type CloudState = boolean | null;
 
 interface Prefs {
   lang: VoiceLangId;
+  /** Which Supertonic voice preset speaks — `F1`…`F5`, `M1`…`M5`, stored per device. */
+  preset: VoicePreset;
   rate: number;
   pitch: number;
   /** Preferred browser voice by name; null = let the engine's ranking decide. */
@@ -96,7 +98,7 @@ interface Prefs {
 }
 
 const DEFAULT_PREFS: Prefs = {
-  lang: DEFAULT_VOICE_LANG, rate: DEFAULT_RATE, pitch: 1, voiceName: null, speakReplies: false, engine: 'ai',
+  lang: DEFAULT_VOICE_LANG, preset: DEFAULT_PRESET, rate: DEFAULT_RATE, pitch: 1, voiceName: null, speakReplies: false, engine: 'ai',
 };
 
 /** Pitch is clamped, not validated: a slider can never produce a chipmunk or a rumble. */
@@ -113,6 +115,7 @@ function loadPrefs(): Prefs {
     const parsed = JSON.parse(raw) as Partial<Prefs> | null;
     return {
       lang: normalizeVoiceLang(parsed?.lang),
+      preset: isVoicePreset(parsed?.preset) ? parsed.preset : DEFAULT_PRESET,
       rate: clampRate(parsed?.rate),
       pitch: clampPitch(parsed?.pitch),
       voiceName: typeof parsed?.voiceName === 'string' && parsed.voiceName ? parsed.voiceName : null,
@@ -223,6 +226,9 @@ export interface VoiceTutor {
   setLang: (lang: VoiceLangId) => void;
   rate: number;
   setRate: (rate: number) => void;
+  /** Which Supertonic voice preset is selected. */
+  preset: VoicePreset;
+  setPreset: (preset: VoicePreset) => void;
   pitch: number;
   setPitch: (pitch: number) => void;
   /** Every voice this browser exposes, for the interview room's voice selector. */
@@ -241,14 +247,18 @@ export interface VoiceTutor {
    */
   engine: 'supertonic' | 'cloud' | 'browser' | null;
   /**
-   * What the SERVER reported: which engine it will use, and whether it is ready. `checking` is the
-   * 3-second probe; `unavailable` means this deployment has no server voice and the UI says so.
+   * What the ENGINE reported: downloading (with progress), initializing, ready, speaking, or an
+   * error with a code. The panel renders this verbatim instead of guessing at a host's state.
    */
+  voiceStatus: EngineStatus;
+  /** The engine's state in the shape the older rows read it (`checking`/`ready`/`unavailable`). */
   serverVoice: { state: 'checking' | 'ready' | 'unavailable'; engine: 'supertonic' | 'google' | 'none' | null };
-  /** Ask the server again — the only "fix it" action a learner needs now that nothing downloads. */
+  /** Retry the real thing: start the download and the sessions again. */
   refreshServerVoice: () => void;
-  /** What the SERVER reported about its voice engine — null until the status probe answers. */
-  cloudConfigured: CloudState;
+  /** Delete ONLY this model's Cache Storage entry — never learner data. */
+  clearVoiceCache: () => Promise<string[]>;
+  /** True once the engine can speak — false while it is still loading or after a failure. */
+  cloudConfigured: boolean;
   /** The live partial transcript while the learner is speaking. */
   interim: string;
   /** The last thing spoken, so "Replay" can repeat it without re-asking the engine. */
@@ -297,15 +307,11 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   /** When the last INTENTIONAL speech stop happened — the first-utterance gap reads it. */
   const lastCancelAt = useRef(0);
 
-  // The SERVER voice's report: which engine answered the status probe, and whether it is ready.
-  // There is no download, no percentage and no model in this tab any more — `checking` is a short
-  // probe, and `unavailable` means this deployment has no server voice, which the label says plainly.
-  const [serverVoice, setServerVoice] = useState<{
-    state: 'checking' | 'ready' | 'unavailable';
-    engine: 'supertonic' | 'google' | 'none' | null;
-  }>({ state: 'checking', engine: null });
-  /** Bumped by Retry: re-runs the one status probe instead of reloading the page. */
-  const [serverProbe, setServerProbe] = useState(0);
+  /**
+   * The engine's own report, straight from the worker: download progress, initialization, ready,
+   * speaking, or a real error with a code. Nothing here is inferred from a guess about the host.
+   */
+  const [voiceStatus, setVoiceStatus] = useState<EngineStatus>(INITIAL_VOICE_STATUS);
 
   // The cloud voice's own machinery. `context` is ONE Web Audio graph reused for the whole page —
   // creating an AudioContext per answer hits Chrome's per-page limit and costs the start-up latency
@@ -313,10 +319,8 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   // in-flight chunk fetches on Stop/unmount; `fails` counts consecutive cloud failures so a dead
   // endpoint is abandoned after the second instead of taxing every following answer with the same
   // timeout.
-  const [cloudConfigured, setCloudConfigured] = useState<CloudState>(null);
   const [engine, setEngine] = useState<'supertonic' | 'cloud' | 'browser' | null>(null);
-  const cloudRef = useRef<CloudState>(null);
-  const cloudFails = useRef(0);
+  const voiceRef = useRef<VoiceClient | null>(null);
   const engineRef = useRef<'supertonic' | 'cloud' | 'browser' | null>(null);
   const contextRef = useRef<AudioContext | null>(null);
   const activeSources = useRef<Set<AudioBufferSourceNode>>(new Set());
@@ -339,39 +343,32 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
 
   const supported = useMemo(() => ({ synthesis: synthesisAvailable(), recognition: recognitionCtor() !== null }), []);
 
-  // The one probe. It asks the account API which server engine is ready; every failure mode — no
-  // server, a static host, a 503 — reads as "not configured", so the browser voice starts immediately
-  // and the server voice is simply never attempted.
+  /**
+   * One worker for the page's lifetime — created on mount, terminated on unmount. It is NOT created
+   * eagerly in a `useMemo`: mounting a worker starts the module graph (ONNX Runtime included), and a
+   * learner who never presses Speak should not pay for that.
+   */
   useEffect(() => {
-    let alive = true;
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 3000);
-    setServerVoice((current) => (current.state === 'checking' ? current : { state: 'checking', engine: current.engine }));
-    fetch(TTS_STATUS_PATH, { signal: controller.signal, cache: 'no-store' })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((payload) => {
-        if (!alive) return;
-        const configured = payload?.configured === true;
-        const name = payload?.engine === 'supertonic' || payload?.engine === 'google' ? payload.engine : 'none';
-        cloudRef.current = configured;
-        setCloudConfigured(configured);
-        setServerVoice({ state: configured ? 'ready' : 'unavailable', engine: name });
-      })
-      // No API server, a proxy error, a redirect to HTML — every failure reads as "not
-      // configured", so the label settles on the truth instead of "Checking…" forever.
-      .catch(() => {
-        if (!alive) return;
-        cloudRef.current = false;
-        setCloudConfigured(false);
-        setServerVoice({ state: 'unavailable', engine: 'none' });
-      })
-      .finally(() => window.clearTimeout(timer));
+    const client = createVoiceClient();
+    voiceRef.current = client;
+    if (!client) {
+      setVoiceStatus({
+        phase: 'error',
+        progress: 0,
+        message: 'Supertonic 3 cannot run in this browser',
+        code: 'unsupported',
+        detail: 'This browser has no module worker support, which the voice engine needs.',
+      });
+      return undefined;
+    }
+    const unsubscribe = client.subscribe(setVoiceStatus);
+    setVoiceStatus(client.status());
     return () => {
-      alive = false;
-      controller.abort();
-      window.clearTimeout(timer);
+      unsubscribe();
+      client.dispose();
+      voiceRef.current = null;
     };
-  }, [serverProbe]);
+  }, []);
 
   const releaseCloud = useCallback(() => {
     cloudAbort.current?.abort();
@@ -405,12 +402,23 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   }, []);
 
   /**
-   * Re-run the status probe. There is nothing to download any more: `Retry` asks the server again, so
-   * a deployment that configured its voice after this tab was opened starts working without a reload.
+   * Retry the REAL failure: start the download and the sessions again. A retry that only cleared the
+   * message would leave the engine exactly as broken as it was.
    */
   const refreshServerVoice = useCallback(() => {
-    cloudFails.current = 0;
-    setServerProbe((value) => value + 1);
+    setError(null);
+    voiceRef.current?.preload();
+  }, []);
+
+  /** Cache Storage is versioned per checkpoint revision, so clearing it cannot touch anything else. */
+  const clearVoiceCache = useCallback(async () => {
+    try {
+      const removed = await clearVoiceCacheEntries();
+      if (removed.length) setError(null);
+      return removed;
+    } catch {
+      return [];
+    }
   }, []);
 
   useEffect(() => {
@@ -491,12 +499,12 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     // as latency. It is measured around the real fetch, never estimated from the text length.
     let firstAudioMs: number | null = null;
     const answerStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    // The server voice is the ONLY voice the default (`engine: 'ai'`) flow may use. There is no local
-    // model to warm any more, so this is a plain capability check — and a missing server voice is an
-    // ERROR, not a licence to hand the answer to the browser's robotic synthesiser.
-    const cloudUsable = prefs.engine === 'ai' && cloudRef.current === true;
-    if (prefs.engine === 'ai' && !cloudUsable) {
-      setError(cloudRef.current === null ? VOICE_PROBING_TEXT : VOICE_ABSENT_TEXT);
+    // The Supertonic worker is the ONLY voice the default (`engine: 'ai'`) flow may use. Its absence
+    // is an ERROR, not a licence to hand the answer to the browser's robotic synthesiser.
+    const client = voiceRef.current;
+    const cloudUsable = prefs.engine === 'ai' && client !== null;
+    if (prefs.engine === 'ai' && !client) {
+      setError(VOICE_ABSENT_TEXT);
       setSpeaking(false);
       return;
     }
@@ -651,41 +659,27 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     // from a press, so resuming here is allowed — and harmless when it is already running.
     void graph.resume().catch(() => { /* the first `start()` reports it as an error */ });
 
+    // Kept as the cancel token: `releaseCloud()` aborts it, and the loop below reads it exactly as
+    // it did when a fetch was the thing being cancelled.
     const controller = new AbortController();
     cloudAbort.current = controller;
     const decode = async (chunk: string): Promise<AudioBuffer> => {
-      const askedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
-      const response = await fetch(TTS_SYNTHESIZE_PATH, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: chunk, lang: speechLangFor(prefs.lang, chunk), rate: prefs.rate }),
-        signal: controller.signal,
+      // The model is asked for ONE sentence at a time, in the language the script decides. Devanagari
+      // is Hindi and Latin is English; Romanised Hinglish falls back to the learner's own choice.
+      const { lang } = languageForChunk(chunk, prefs.lang === 'hi-IN' ? 'hi' : 'en');
+      const spoken = await client!.speak({
+        text: chunk,
+        lang,
+        preset: prefs.preset,
+        steps: VOICE_STEPS,
+        speed: prefs.rate,
       });
-      if (!response.ok) {
-        // The route sends a machine code (`VOICE_NOT_CONFIGURED`, …); it is a category, never text.
-        noteVoiceFailure(`tts-${response.status}`);
-        throw new Error(`tts-${response.status}`);
-      }
-      // A static host answers HTML with a 200; audio is audio.
-      const type = response.headers.get('content-type') ?? '';
-      if (!type.startsWith('audio')) {
-        noteVoiceFailure('tts-not-audio');
-        throw new Error('tts-not-audio');
-      }
-      // The route names the engine that produced the audio; the settings line reports it, so the UI
-      // never says "Supertonic" when Google spoke (or the reverse).
-      const producedBy = response.headers.get('x-voice-engine');
-      if (producedBy === 'supertonic' || producedBy === 'google') {
-        markEngine(producedBy === 'google' ? 'cloud' : 'supertonic');
-      } else if (!engineRef.current) {
-        markEngine('cloud');
-      }
-      const buffer = await graph.decodeAudioData(await response.arrayBuffer());
+      markEngine('supertonic');
       if (firstAudioMs === null) {
         const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
         firstAudioMs = Math.round(now - answerStartedAt);
       }
-      return buffer;
+      return graph.decodeAudioData(spoken.wav.slice(0));
     };
 
     // All requests in flight at once; only the ORDER of playback is sequential.
@@ -723,17 +717,12 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
             if (mounted.current && id === generation.current && controller.signal.aborted) failAnswer();
             return;
           }
-          cloudFails.current += 1;
           noteVoiceFailure(String((cause as { message?: string })?.message ?? 'tts-failed').slice(0, 24));
-          // Keep `cloudConfigured` as the SERVER's report — the server is configured, it is this
-          // voice that is unavailable. The settings line says which engine spoke.
-          if (cloudFails.current >= 2) cloudRef.current = false;
-          console.warn('BroCode voice: the server voice failed; the answer is not spoken.', cause);
+          console.warn('BroCode voice: Supertonic 3 could not speak this chunk; the answer is not spoken.', cause);
           failAnswer();
           return;
         }
         if (!mounted.current || id !== generation.current) return;
-        cloudFails.current = 0;
         lastActivity.current = Date.now();
         if (engineRef.current !== 'cloud') markEngine('cloud');
 
@@ -1025,9 +1014,22 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     speaking,
     paused,
     engine,
-    cloudConfigured,
-    serverVoice,
+    voiceStatus,
+    // Derived from the engine's own report, so every existing row keeps a truthful value without
+    // each of them learning the new vocabulary.
+    cloudConfigured: voiceStatus.phase === 'ready' || voiceStatus.phase === 'speaking' || voiceStatus.phase === 'initializing',
+    serverVoice: {
+      state: voiceStatus.phase === 'ready' || voiceStatus.phase === 'speaking'
+        ? ('ready' as const)
+        : voiceStatus.phase === 'error'
+          ? ('unavailable' as const)
+          : ('checking' as const),
+      engine: voiceStatus.phase === 'error' && voiceStatus.code === 'unsupported' ? ('none' as const) : ('supertonic' as const),
+    },
     refreshServerVoice,
+    clearVoiceCache,
+    setPreset: (preset: VoicePreset) => setPrefs((current) => ({ ...current, preset })),
+    preset: prefs.preset,
     interim,
     lastSpoken,
     error,

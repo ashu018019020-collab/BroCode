@@ -50,6 +50,64 @@ These are product rules, not prompt suggestions, and the tests enforce them:
 
 ## Voice paths
 
+### Default: Supertonic 3 in the browser (ONNX Runtime Web)
+
+The AI Mentor speaks with the real Supertonic 3 model running **in the visitor's browser**. There is
+no inference service to host, no API key and no server env var: `https://mybrocode.vercel.app/` works
+on a deployment with nothing configured, which is precisely what the previous server-backed design
+could not do.
+
+How it fits together:
+
+| Piece | File | What it does |
+| --- | --- | --- |
+| Inference | `src/core/voice/engine.ts` | The four ONNX graphs in the SDK's order: duration predictor → text encoder → flow-matching loop over the vector estimator → vocoder. Runtime-agnostic (`Session` is a two-line interface). |
+| Tokenizer | `src/core/voice/text.ts` | A faithful port of the SDK's `UnicodeProcessor`: NFKD, symbol table, `<lang>…</lang>` wrapper, `unicode_indexer.json` lookup, sentence chunking. |
+| Voice styles | `src/core/voice/style.ts` | `voice_styles/<preset>.json` → `[1,50,256]` / `[1,8,16]` tensors, shape-checked so a bad file is an error rather than nonsense audio. |
+| Weights | `src/core/voice/assets.ts` | Revision-pinned URLs, Cache Storage keyed by revision, progress from real bytes, retry on failure, `clearVoiceCache()`. |
+| Worker | `src/workers/tts.worker.ts` | Owns ONNX Runtime Web, downloads the checkpoint, builds the sessions, synthesises. WebGPU preferred, WASM fallback. |
+| Client | `src/core/voice/client.ts` | The page's only handle: status events + finished PCM. Parses worker messages, drops anything unrecognised. |
+
+- **Model**: `Supertone/supertonic-3` pinned to revision `3cadd1ee6394adea1bd021217a0e650ede09a323`
+  (OpenRAIL-M, `supertonic` SDK 1.3.1 semantics). Weights come from that revision's Hugging Face URLs —
+  379 MB across `duration_predictor`, `text_encoder`, `vector_estimator` (244.7 MB) and `vocoder` —
+  never from a branch, never from a CDN that could change under us.
+- **Caching**: one Cache Storage bucket per revision, written only after a complete, length-verified
+  body. A returning visitor downloads nothing; `Clear voice cache` in the settings row deletes that
+  bucket and nothing else (no `localStorage`, no IndexedDB, no learner record).
+- **Runtime**: `onnxruntime-web` 1.22 with its WASM files published to `public/ort/` by
+  `scripts/ort-copy.mjs` at build time (a `prebuild`/`predev` hook), so nothing is fetched from a
+  third-party CDN at runtime. WebGPU is used when the browser exposes an adapter; WASM otherwise.
+- **Cost**: the first Speak press costs the download; every later one is local inference. There is no
+  per-character billing, no rate limit and no cold start beyond the browser itself.
+
+**Measured on the pinned checkpoint** (ONNX Runtime Web's WASM build, one thread, 8 steps, preset `F1`,
+44.1 kHz) — the same code path the worker runs:
+
+| Case | Predicted | Audio | Synthesis |
+| --- | --- | --- | --- |
+| Hindi, 3 sentences | 10.044 s | 10.101 s | 16.0 s |
+| English, 2 sentences | 7.782 s | 7.802 s | 11.6 s |
+| Hindi, 1 sentence | 5.139 s | 5.155 s | 8.2 s |
+| English, 1 sentence | 3.601 s | 3.622 s | 6.4 s |
+
+The duration predictor is deterministic, which is what makes these a correctness check: the browser
+engine's predicted durations match the official Python SDK's for the same text (5.4 s ÷ 1.05 speed =
+5.14 s, 3.78 ÷ 1.05 = 3.60 s). A drifting tokenizer would move them immediately.
+
+**Honest limits.** WASM synthesis runs at roughly 1.5× real time on one thread, so the first sentence
+of a long answer is heard a few seconds after the press; WebGPU is materially faster where it exists.
+The checkpoint is 379 MB, which is real bandwidth on a mobile connection — the panel reports the
+percentage rather than hiding it, and the cache means it is paid once per browser. A device that cannot
+hold the sessions reports the engine's error code instead of pretending to speak.
+
+### Legacy: the server voice (kept, unused by the client)
+
+`services/supertonic-tts/`, `api/voice/*` and `server/voice*.mjs` still exist and still pass their own
+tests — they are a working server-side implementation of the same contract, kept because deleting a
+tested subsystem is a separate decision. The page no longer calls them: `useVoiceTutor` asks the worker,
+and `scripts/tests/supertonic-voice.test.mjs` fails if the hook ever fetches `/api/voice/*` again.
+
 ### Default: the server voice (no download, no model in the browser)
 
 The tutor's voice is **Supertonic 3** (`Supertone/supertonic-3`), a 99M-parameter ONNX TTS model that

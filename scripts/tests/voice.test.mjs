@@ -309,46 +309,52 @@ test('voice: ties break deterministically so the same install always speaks the 
 
 test('voice: the engine note never promises a voice the deployment does not have', () => {
   const ready = (engine) => ({ state: 'ready', engine });
-  // "Server-powered" is only printed for a READY server engine, and it names the engine that answered.
-  assert.match(voice.ttsEngineNote(null, ready('supertonic')), /Supertonic 3 .*Hindi \+ English .*Server-powered/);
-  assert.match(voice.ttsEngineNote('supertonic', ready('supertonic')), /Server-powered/);
+  // The engine is named, and so is WHERE it runs: the browser, so the line says exactly that.
+  assert.match(voice.ttsEngineNote(null, ready('supertonic')), /Supertonic 3 .*Hindi \+ English .*runs in this browser/);
+  assert.match(voice.ttsEngineNote('supertonic', ready('supertonic')), /runs in this browser/);
   assert.match(voice.ttsEngineNote('cloud', ready('google')), /Google Neural2/);
-  assert.doesNotMatch(voice.ttsEngineNote(null, { state: 'checking', engine: null }), /Server-powered/);
-  assert.match(voice.ttsEngineNote(null, { state: 'checking', engine: null }), /Checking the AI voice/);
-  assert.match(voice.ttsEngineNote(null, ready('none')), /unavailable on this deployment/);
+  assert.doesNotMatch(voice.ttsEngineNote(null, { state: 'checking', engine: null }), /runs in this browser/);
+  assert.match(voice.ttsEngineNote(null, { state: 'checking', engine: null }), /Loading Supertonic 3/);
+  // An engine that failed says so and points at the one action that can fix it, instead of claiming
+  // a voice the browser does not have.
+  assert.match(voice.ttsEngineNote(null, { state: 'unavailable', engine: 'none' }), /not loaded yet .*press Speak/);
   // A browser voice is reported as exactly that, never as the AI voice.
   assert.match(voice.ttsEngineNote('browser', ready('supertonic')), /did not answer/);
-  assert.doesNotMatch(voice.ttsEngineNote('browser', ready('supertonic')), /Server-powered/);
+  assert.doesNotMatch(voice.ttsEngineNote('browser', ready('supertonic')), /runs in this browser/);
   assert.match(voice.ttsEngineNote('browser', { state: 'unavailable', engine: 'none' }), /Built-in browser voice/);
 });
 
-test('voice: the client downloads no model — the server is the only engine', () => {
+test('voice: the model lives in the worker, and the hook only asks it to speak', () => {
   const hook = read('src/components/shared/useVoiceTutor.ts');
-  assert.doesNotMatch(hook, /loadSupertonic|supertonic-runtime|supertonicChunksFor|synthesizeChunk/);
-  assert.doesNotMatch(hook, /398\s*MB/i, 'no download size may survive in the hook');
-  assert.match(hook, /serverVoice/, 'the probe\'s result is a first-class state');
-  assert.match(hook, /refreshServerVoice/, 'Retry re-probes the server instead of downloading');
+  // No model code in the hook: the worker owns the graphs, so a re-render can never load weights.
+  assert.doesNotMatch(hook, /onnxruntime|InferenceSession|loadSupertonic/);
+  assert.match(hook, /createVoiceClient/, 'the hook talks to the engine through the client');
+  assert.match(hook, /voiceStatus/, 'readiness and progress are first-class state');
+  assert.match(hook, /refreshServerVoice/, 'Retry re-runs the real download and sessions');
   const row = read('src/components/shared/AiVoiceRow.tsx');
-  assert.doesNotMatch(row, /Download|398/);
-  assert.match(row, /Server-powered/);
+  assert.match(row, /Downloading Supertonic 3/, 'the first visit says what it is downloading');
+  assert.match(row, /runs in this browser/, 'readiness names where the model actually runs');
   assert.match(row, /refreshServerVoice/);
 });
 
 test('voice: the hook probes the server key and speaks ONLY from it unless browser voice is chosen', () => {
   const hook = read('src/components/shared/useVoiceTutor.ts');
-  assert.match(hook, /\.\/api\/voice\/status/, 'the status probe is the only key check');
-  assert.match(hook, /\.\/api\/voice\/tts/, 'audio is fetched, never a Google URL in the browser');
+  assert.doesNotMatch(hook, /api\/voice\/status/, 'there is no server status probe to gate speech');
+  assert.doesNotMatch(hook, /api\/voice\/tts/, 'audio is synthesised locally, not fetched from a route');
   assert.doesNotMatch(hook, /googleapis\.com/, 'the Google key and URL must never reach the client');
   assert.match(hook, /speakWithBrowser/, 'the browser engine survives as the learner\'s explicit choice');
   // The AI flow fails loudly instead of handing the answer to a robotic voice: with
   // `engine: 'ai'` and no server voice, speak() sets the error and returns before any browser path.
   assert.match(
     hook,
-    /prefs\.engine === 'ai' && !cloudUsable[\s\S]{0,160}setError\(/,
-    'a missing server voice is an error in the AI flow, never a substitution',
+    /prefs\.engine === 'ai' && !client[\s\S]{0,160}setError\(/,
+    'a missing engine is an error in the AI flow, never a substitution',
   );
   assert.doesNotMatch(hook, /handOffToBrowser/, 'a failed server chunk fails the answer; no mid-answer engine swap');
-  assert.match(hook, /cloudFails\.current >= 2/, 'two consecutive failures abandon the cloud for the session');
+  // Stop aborts the request in flight: the worker drops a superseded answer instead of finishing
+  // minutes of synthesis nobody will hear.
+  assert.match(hook, /cloudAbort\.current\?\.abort\(\)/, 'Stop cancels the request in flight');
+  assert.match(hook, /voiceRef\.current\?\.preload\(\)/, 'Retry starts the engine again');
   // Smoothness is a contract, not a preference: the cloud chunks are scheduled on ONE clock and
   // decoded once. Reloading a fresh <audio> element per sentence is exactly the stutter that was
   // replaced, so the absence of that pattern is asserted too.

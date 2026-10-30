@@ -17,7 +17,7 @@ import {
 import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 import { MENTOR_LOG_KEY } from '../../core/platform/keys';
 import { useVoiceTutor } from '../../components/shared/useVoiceTutor';
-import { AiVoiceRow } from '../../components/shared/AiVoiceRow';
+import { AiVoiceRow, VoicePresetPicker } from '../../components/shared/AiVoiceRow';
 import { useRealtimeVoice } from '../../components/shared/useRealtimeVoice';
 import { toast } from '../../components/ui/Toast';
 import { useMentorAsk } from './useMentorAsk';
@@ -372,6 +372,7 @@ export function VoiceMentorPanel() {
                   <option key={id} value={id}>{PREF_LABELS[id]}</option>
                 ))}
               </select>
+              <VoicePresetPicker value={voice.preset} onChange={voice.setPreset} />
               <label className="small muted" htmlFor="mentor-rate">Speed</label>
               <div className="row" style={{ gap: 6 }}>
                 <input

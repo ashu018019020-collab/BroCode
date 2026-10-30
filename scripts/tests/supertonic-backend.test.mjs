@@ -50,22 +50,25 @@ test('backend: the pinned package, container and cache are deployable as written
   assert.doesNotMatch(blueprint, /voice-service\/Dockerfile/, 'the Node service is not the deployed backend');
 });
 
-test('backend: no visitor is asked to download a model or run ONNX Runtime', () => {
+test('backend: the voice engine runs in the browser and the page never touches ONNX Runtime', () => {
+  // The architecture this test used to pin (model on a server, nothing in the browser) was replaced
+  // on request: the checkpoint now loads in a worker, so `onnxruntime-web` is a real dependency and
+  // must be imported by exactly one file.
   const pkg = JSON.parse(read('package.json'));
-  assert.equal(pkg.dependencies?.['onnxruntime-web'], undefined, 'the browser runtime is gone');
-  assert.doesNotMatch(read('package.json'), /ort-copy/, 'no WASM copy step');
-  assert.ok(!exists('src/core/ai/supertonic-runtime.ts'), 'no on-device runtime');
-  assert.ok(!exists('scripts/ort-copy.mjs'), 'no WASM build step');
+  assert.ok(pkg.dependencies?.['onnxruntime-web'], 'the browser runtime is installed');
+  assert.equal(pkg.devDependencies?.['onnxruntime-node'], undefined, 'no second native runtime to keep alive');
+  assert.ok(exists('src/workers/tts.worker.ts'), 'the worker is the owner of the runtime');
+  assert.ok(exists('src/core/voice/engine.ts'), 'the inference pipeline is a module of its own');
 
   for (const file of [
     'src/components/shared/useVoiceTutor.ts',
     'src/components/shared/AiVoiceRow.tsx',
     'src/core/ai/voice.ts',
+    'src/core/voice/client.ts',
   ]) {
-    const source = read(file);
-    assert.doesNotMatch(source, /loadSupertonic|synthesizeChunk|supertonic-runtime/, `${file} must not load the model`);
-    assert.doesNotMatch(source, /Preparing the AI voice on this device|398\s*MB/, `${file} must not offer a download`);
+    assert.doesNotMatch(read(file), /onnxruntime/, `${file} must not import the runtime`);
   }
+  assert.match(read('src/workers/tts.worker.ts'), /onnxruntime-web/, 'only the worker does');
 });
 
 test('backend: Vercel reaches the Python service through the same authenticated contract', () => {

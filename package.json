@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "node scripts/ort-copy.mjs",
     "dev:api": "node server/index.mjs",
     "bootstrap:admin": "node server/bootstrap-admin.mjs",
     "db:generate": "prisma generate",
@@ -14,6 +15,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:setup": "node scripts/db-setup.cjs",
     "build": "vite build",
+    "prebuild": "node scripts/ort-copy.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"scripts/tests/*.test.cjs\" \"scripts/tests/*.test.mjs\"",
@@ -72,6 +74,7 @@
     "dotenv": "16.6.1",
     "lucide-react": "^1.47.0",
     "monaco-editor": "^0.56.0",
+    "onnxruntime-web": "^1.22.0",
     "pdfjs-dist": "3.11.174",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
