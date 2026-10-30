@@ -118,6 +118,14 @@ for (const [id, text, lang] of [
 
 /* 4. Has PRODUCTION been told about this service? This is the wiring half. */
 try {
+  const health = await json(`${PUBLIC}/api/voice/health`).catch(() => null);
+  if (health?.body?.code) {
+    const state = health.body.ok === true ? 'ready' : 'not ready';
+    console.log(`  INFO  /api/voice/health → ${health.body.code} (${state}), vars ${JSON.stringify(health.body.env ?? {})}`);
+  }
+} catch { /* older deployments have no health route yet */ }
+
+try {
   const { response, body, text } = await json(`${PUBLIC}/api/voice/status`);
   if (body?.configured === true && body?.engine === 'supertonic') {
     ok('production is wired', `${PUBLIC}/api/voice/status → engine=supertonic`);
@@ -131,6 +139,41 @@ try {
   }
 } catch (cause) {
   bad('production is wired', cause?.message ?? String(cause));
+}
+
+/* 5. The endpoint the BROWSER actually calls. Steps 1–3 prove the container can speak; only this
+ *    proves production serves that audio to a page, with the same-origin rule and the real headers.
+ *    It is the check that answers "does /api/voice/tts return real audio?" — not just "is a URL set?". */
+for (const [id, text, lang] of [
+  ['English', 'Welcome to BroCode. Let us begin your AI engineering interview.', 'en-IN'],
+  ['Hindi', 'नमस्ते! आज हम BroCode में Python प्रोग्रामिंग सीखेंगे।', 'hi-IN'],
+]) {
+  const began = Date.now();
+  try {
+    const response = await fetch(`${PUBLIC}/api/voice/tts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: PUBLIC },
+      body: JSON.stringify({ text, lang, rate: 1 }),
+      signal: AbortSignal.timeout(60000),
+    });
+    const type = response.headers.get('content-type') ?? '';
+    const bytes = Buffer.from(await response.arrayBuffer());
+    const riff = bytes.subarray(0, 4).toString('ascii');
+    const engine = response.headers.get('x-voice-engine') ?? '(not reported)';
+    if (response.ok && type.startsWith('audio/') && riff === 'RIFF' && bytes.length > 10_000) {
+      ok(`production ${id} audio`, `${(bytes.length / 1024).toFixed(0)} kB · ${engine} · ${Date.now() - began} ms · ${PUBLIC}/api/voice/tts`);
+    } else {
+      // The route sends a machine code; name it instead of guessing at the status alone.
+      let code = '';
+      try { code = JSON.parse(bytes.toString('utf8'))?.code ?? ''; } catch { /* not JSON */ }
+      bad(`production ${id} audio`, `HTTP ${response.status}${code ? ` ${code}` : ''} · ${type || 'no type'} · ${bytes.length} bytes`);
+      if (code === 'VOICE_NOT_CONFIGURED') {
+        console.log('        → the deployment has no provider. Set GOOGLE_TTS_API_KEY, or TTS_SERVICE_URL + TTS_SERVICE_SECRET, then REDEPLOY.');
+      }
+    }
+  } catch (cause) {
+    bad(`production ${id} audio`, cause?.message ?? String(cause));
+  }
 }
 
 console.log(failures === 0
