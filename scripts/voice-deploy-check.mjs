@@ -29,12 +29,14 @@ for (let i = 0; i < argv.length; i += 1) {
   else args.set(key, 'true');
 }
 
-const SERVICE = String(args.get('url') ?? process.env.TTS_SERVICE_URL ?? '').trim().replace(/\/+$/, '');
-const SECRET = String(args.get('secret') ?? process.env.TTS_SERVICE_SECRET ?? '').trim();
+// Both documented spellings, resolved in the same order as the route itself (`TTS_SERVICE_*` first),
+// so an operator who exported the aliases checks exactly the service production would call.
+const SERVICE = String(args.get('url') ?? process.env.TTS_SERVICE_URL ?? process.env.SUPERTONIC_TTS_BASE_URL ?? '').trim().replace(/\/+$/, '');
+const SECRET = String(args.get('secret') ?? process.env.TTS_SERVICE_SECRET ?? process.env.SUPERTONIC_TTS_API_KEY ?? '').trim();
 const PUBLIC = String(args.get('public') ?? 'https://mybrocode.vercel.app').trim().replace(/\/+$/, '');
 
 if (!SERVICE) {
-  console.error('Set TTS_SERVICE_URL (or pass --url=... / --url ...) to the deployed voice service.');
+  console.error('Set TTS_SERVICE_URL (or SUPERTONIC_TTS_BASE_URL, or pass --url=...) to the deployed voice service.');
   process.exit(2);
 }
 if (!/^https?:\/\//.test(SERVICE)) {

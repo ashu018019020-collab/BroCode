@@ -98,11 +98,18 @@ export function sameOrigin(request, env = process.env) {
   return Boolean(origin && allowed && origin === allowed);
 }
 
-/** The engine the account API would build, from the same environment variable names. */
+/**
+ * The engine the account API would build, from the same environment variable names.
+ *
+ * Two spellings are accepted for the inference service, because two live documents disagree:
+ * `TTS_SERVICE_URL` / `TTS_SERVICE_SECRET` (render.yaml, docs/AI-VOICE.md) and
+ * `SUPERTONIC_TTS_BASE_URL` / `SUPERTONIC_TTS_API_KEY` (the Supertonic hosting notes). The first
+ * spelling wins when both are set, so a half-migrated deployment can never call two services.
+ */
 export function engineFromEnv(env = process.env) {
   return createVoiceEngine({
-    serviceUrl: env.TTS_SERVICE_URL ?? '',
-    serviceSecret: env.TTS_SERVICE_SECRET ?? '',
+    serviceUrl: env.TTS_SERVICE_URL || env.SUPERTONIC_TTS_BASE_URL || '',
+    serviceSecret: env.TTS_SERVICE_SECRET || env.SUPERTONIC_TTS_API_KEY || '',
     googleKey: env.GOOGLE_TTS_API_KEY ?? '',
     googleVoices: {
       'hi-IN': env.GOOGLE_TTS_VOICE_HI ?? '',
@@ -160,13 +167,13 @@ function errorCopy(response, cause) {
     case 'voice-unconfigured':
       return json(response, 503, {
         code: VOICE_CODES.notConfigured,
-        error: 'No AI voice is configured on this deployment — the built-in browser voice still reads answers.',
+        error: 'No AI voice is configured on this deployment. Nothing is spoken instead — the answer stays on screen.',
       });
     case 'voice-auth-failed':
       // The service is reachable but refused this process: a rotated or mistyped shared secret.
       return json(response, 502, {
         code: VOICE_CODES.authFailed,
-        error: 'The AI voice rejected this deployment\'s credentials. The browser voice reads answers meanwhile.',
+        error: 'The AI voice rejected this deployment\'s credentials, so nothing was spoken. Fix or rotate the shared secret.',
       });
     case 'voice-invalid-audio':
       return json(response, 502, {

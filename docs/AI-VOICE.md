@@ -64,8 +64,8 @@ browser ──POST /api/voice/tts──▶ Vercel function ──▶ services/su
 Nothing model-shaped is shipped to, cached by, or executed in the browser. The browser receives only
 the audio for the sentence it is about to hear. The 398 MB checkpoint lives on the inference server
 (`services/supertonic-tts/`, Python) and is cached on that host's persistent disk; a static deployment
-reaches it through the Vercel functions in `api/voice/`. Without a configured backend the app falls
-back to its built-in browser voice and says so — it never starts a model download.
+reaches it through the Vercel functions in `api/voice/`. Without a configured backend the AI flow
+**says so and stays silent** — it never substitutes a robotic voice and never starts a model download.
 
 | | |
 | --- | --- |
@@ -73,7 +73,7 @@ back to its built-in browser voice and says so — it never starts a model downl
 | Graphs | `duration_predictor` · `text_encoder` · `vector_estimator` (×8 denoising steps) · `vocoder` |
 | Runtime | Python `supertonic==1.3.1` (`supertonic[serve]`), ONNX Runtime CPU |
 | Output | 44.1 kHz mono 16-bit WAV |
-| Voice preset | `F1` (`F1–F5` female / `M1–M5` male), `SUPERTONIC_STYLE` |
+| Voice preset | `F1` (`F1–F5` female / `M1–M5` male), `SUPERTONIC_STYLE` or per request as `voice` |
 | Code | `services/supertonic-tts/app.py` (HTTP, auth, readiness), `api/voice/*` (Vercel proxy), `server/voice-engine.mjs` (engine selection) |
 
 **Language policy.** The model takes a language tag per chunk (`<hi>…</hi>` / `<en>…</en>`).
@@ -96,11 +96,35 @@ Measured against the real cached checkpoint on a Linux CPU container (8 steps, s
 1.15 s. First boot downloads the 398 MB checkpoint once; later starts load it from
 `SUPERTONIC_CACHE_DIR`. These are one-machine measurements, not a guarantee for every CPU.
 
-**Failure is a fallback, not a dead end.** `/api/voice/status` names the engine and whether it is
+**A failure is an error, not a downgrade.** `/api/voice/status` names the engine and whether it is
 ready; "Server-powered" is printed only for `ready`, which the server only reports after its
-inference service answered a health check. A failed chunk hands the unheard remainder to the browser
-voice, the settings line says which engine actually spoke, and Retry re-probes the server. The rest of
-BroCode keeps working with no voice at all.
+inference service answered a health check. With the default `engine: 'ai'` preference the AI voice is
+the ONLY source of speech: a missing service, an unreachable one, a rejected request or a chunk that
+never arrived stops the answer, says why, and offers Retry — which re-probes the deployment and
+re-issues the request. It is deliberately *not* finished by the browser's synthesiser. Swapping in a
+robotic voice mid-answer is what made a broken deployment look healthy, and two engines in one
+answer talk over each other. The browser voice still exists behind the learner's own explicit
+`engine: 'browser'` choice in the voice settings.
+
+### Voice presets — measured, not guessed
+
+All ten documented presets were run through the real cached checkpoint (8 steps, 44.1 kHz) in both
+languages; every one returned valid WAV audio, and the median fundamental frequency separates them
+cleanly:
+
+| Preset | Hindi F0 | English F0 | | Preset | Hindi F0 | English F0 |
+| --- | --- | --- | --- | --- | --- | --- |
+| **F1** | **184 Hz** | **186 Hz** | | M1 | 129 Hz | 128 Hz |
+| F2 | 197 Hz | 174 Hz | | M2 | 98 Hz | 92 Hz |
+| F3 | 170 Hz | 163 Hz | | M3 | 98 Hz | 97 Hz |
+| F4 | 215 Hz | 189 Hz | | M4 | 120 Hz | 115 Hz |
+| F5 | 168 Hz | 159 Hz | | M5 | 90 Hz | 85 Hz |
+
+`F1` is the default because it is a female preset whose pitch is the most *consistent across the two
+languages* (184/186 Hz — F4 swings 26 Hz between them), which is what keeps one tutor sounding like
+one person whether it answers in Hindi or English. Naturalness is a listening judgement, not
+something this repository can assert: change `SUPERTONIC_STYLE` (or send `voice` per request) to
+compare presets by ear without touching code.
 
 To verify the model for real on a development machine (downloads the pinned weights once, writes WAVs):
 
@@ -123,20 +147,20 @@ posts Hindi and English text, verifies RIFF audio and checks the production stat
 | --- | --- | --- |
 | `supertonic` | `TTS_SERVICE_URL` + `TTS_SERVICE_SECRET` point at a healthy `services/supertonic-tts/` | No (your container) |
 | `google` | No service URL, or the service failed and `GOOGLE_TTS_API_KEY` exists | Yes, per character |
-| `none` | Neither is configured | — the browser voice speaks, and the UI says so |
+| `none` | Neither is configured | — nothing is spoken; the UI says so and offers Retry |
 
 The response header `X-Voice-Engine` names the engine that produced the audio, so the UI's label is
 evidence rather than an assumption. A configured-but-unreachable service is reported as unavailable —
 never silently replaced by Google without that header changing.
 
-### Last resort: browser speech loop
+### Opt-in: the browser speech loop
 
-`src/components/shared/useVoiceTutor.ts` uses `SpeechRecognition` when the browser provides it and
-`speechSynthesis` for output when no server voice answered. This path is always labelled as the
-built-in browser voice: it is never described as AI audio, and the settings line separates "this
-deployment has no AI voice" from "the AI voice did not answer". Chrome's speech recognition is itself a
-browser service — the settings note says so rather than claiming every path is local. Text input
-always works, and every answer is readable.
+`src/components/shared/useVoiceTutor.ts` keeps `speechSynthesis` for the case where the learner
+chooses it explicitly (`engine: 'browser'`). It is never reached from the default AI preference, and
+when it is used it is labelled as the built-in browser voice — never described as AI audio. Chrome's
+speech recognition is itself a browser service — the settings note says so rather than claiming every
+path is local. Text input always works, and every answer is readable, so a deployment with no voice
+is a quiet tutoring session rather than a broken page.
 
 #### Smooth playback (server path)
 
@@ -195,6 +219,7 @@ No topic, number or route is generated: every one is read from a file that ships
 | --- | --- | --- |
 | `TTS_SERVICE_URL` | No | Base URL of `services/supertonic-tts/` (Supertonic 3 on CPU). Preferred voice. |
 | `TTS_SERVICE_SECRET` | with the URL | Shared bearer token between the account API and the service. Server only. |
+| `SUPERTONIC_TTS_BASE_URL` / `SUPERTONIC_TTS_API_KEY` | No | Accepted **aliases** of the pair above, for hosting guides that use those names. The `TTS_SERVICE_*` spelling wins when both are set, so a half-migrated deployment never calls two services. |
 | `TTS_SERVICE_TIMEOUT_MS` | No | Per-chunk budget, default 20000. |
 | `GOOGLE_TTS_API_KEY` | No | Alternative server engine (Google Cloud Text-to-Speech). Server only. |
 | `GOOGLE_TTS_VOICE_EN` / `_HI` | No | Neural2 voice overrides. |
@@ -246,7 +271,7 @@ posted there when one exists. The page prints `—`, not `0%`, when nothing has 
 - Foreign `Origin` headers are rejected (403); a request with no `Origin` is not treated as a browser.
 - Unsupported languages and oversized text are rejected before any provider is called (400).
 - Provider failures map to 429 (rate limit), 502 (unavailable) or 503 (not configured), with copy that
-  names the browser-voice fallback.
+  states that nothing was spoken — no response promises a substitute engine.
 - The inference service's shared secret is read from the server environment, sent only to
   `services/supertonic-tts/`, and never serialized into a response, an error message or the client
   bundle. The service binds a constant-time bearer check and serves 503 rather than synthesizing

@@ -17,10 +17,12 @@ import { noteVoiceAnswer, noteVoiceFailure } from '../../core/storage/voice-tele
  *    reports which server engine is ready (Supertonic 3 via `services/supertonic-tts/`, or Google Neural2);
  *    each sentence-packed chunk is then fetched as audio from `POST /api/voice/tts` and played
  *    through one `AudioContext`. The browser downloads no model, no weights and no runtime — only
- *    the audio it is about to hear. ANY failure (no API server, an unreachable inference service, a
- *    static host answering HTML) falls back to the browser's own synthesiser for the unheard
- *    remainder and is REPORTED in the settings line; two consecutive server failures disable the
- *    server engine for the session instead of stalling every answer behind a dead endpoint.
+ *    the audio it is about to hear. The AI voice is the ONLY voice the primary flow may use: a
+ *    failure (no service configured, an unreachable inference service, a static host answering
+ *    HTML, a rejected request) surfaces as a real error with a Retry that re-asks the server, never
+ *    as a robotic substitute the learner did not ask for. That substitution is exactly how a broken
+ *    deployment used to look healthy. The built-in browser synthesiser still exists, but only
+ *    behind the learner's own explicit `engine: 'browser'` choice in the voice settings.
  *  - WHY VOICE USED TO DIE MID-SESSION (the Answer-by-Voice bug, fixed here, three causes):
  *
  *      1. UTTERANCE GC. The old browser path created `SpeechSynthesisUtterance` objects as local
@@ -56,6 +58,17 @@ import { noteVoiceAnswer, noteVoiceFailure } from '../../core/storage/voice-tele
  */
 
 const PREFS_KEY = 'aiml:voice';
+
+/*
+ * The two copy strings the primary flow is allowed to fail with. They name the cause instead of
+ * apologising, and both point at Retry — which re-probes the deployment and re-issues the request
+ * (`refreshServerVoice` + the learner's own press), so a voice configured after this tab was opened
+ * starts working without a reload.
+ */
+const VOICE_PROBING_TEXT = 'The AI voice has not answered yet. Press Retry in a moment.';
+const VOICE_ABSENT_TEXT = 'AI voice unavailable: no Supertonic service is configured for this deployment. Nothing is spoken — press Retry to ask the server again.';
+const VOICE_FAILED_TEXT = 'The AI voice could not answer that. Nothing is spoken — press Retry to ask the server again.';
+const VOICE_AUDIO_TEXT = 'This browser cannot play the AI voice (Web Audio is unavailable). Nothing is spoken.';
 
 /* The account API's two voice routes. Relative on purpose: the app is served from a subpath, and a
    static host without the API answers with its 404 page — which the cloud probe must read as
@@ -478,13 +491,18 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     // as latency. It is measured around the real fetch, never estimated from the text length.
     let firstAudioMs: number | null = null;
     const answerStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    // The server voice is the first choice whenever the probe found one. There is no local model to
-    // warm any more, so this is a plain capability check rather than a download state machine.
+    // The server voice is the ONLY voice the default (`engine: 'ai'`) flow may use. There is no local
+    // model to warm any more, so this is a plain capability check — and a missing server voice is an
+    // ERROR, not a licence to hand the answer to the browser's robotic synthesiser.
     const cloudUsable = prefs.engine === 'ai' && cloudRef.current === true;
+    if (prefs.engine === 'ai' && !cloudUsable) {
+      setError(cloudRef.current === null ? VOICE_PROBING_TEXT : VOICE_ABSENT_TEXT);
+      setSpeaking(false);
+      return;
+    }
     if (!cloudUsable && !supported.synthesis) {
-      setError(cloudRef.current === null
-        ? 'This browser cannot speak text aloud, and the voice service has not answered yet.'
-        : 'This browser cannot speak text aloud.');
+      // Only reachable when the learner explicitly chose the built-in voice on a browser without one.
+      setError('This browser cannot speak text aloud.');
       return;
     }
     stopSpeaking();
@@ -584,6 +602,8 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       }
     };
 
+    // Reached only when the learner explicitly chose the built-in voice: `engine: 'ai'` without a
+    // server voice already failed above, so the AI flow can never land on this path.
     if (!cloudUsable) { speakWithBrowser(); return; }
 
     /**
@@ -601,12 +621,18 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
      *  - PAUSE that really pauses: the AudioContext clock freezes, so already-scheduled sentences
      *    wait instead of playing on under a "Paused" label.
      *
-     * The browser voice remains the fallback for the WHOLE answer, and for any chunk that never
-     * arrived — from that chunk onward, so a sentence is never skipped.
+     * A chunk that never arrives FAILS the answer: the audio that already played is released and the
+     * learner gets an error with Retry. It is never finished by another engine — two voices in one
+     * answer, the second one robotic, is precisely the behaviour this flow exists to avoid.
      */
     const AudioCtor = audioContextCtor();
     const cloud = cloudChunks(text);
-    if (!AudioCtor || !cloud.length) { speakWithBrowser(); return; }
+    if (!AudioCtor || !cloud.length) {
+      setError(VOICE_AUDIO_TEXT);
+      setSpeaking(false);
+      setPaused(false);
+      return;
+    }
 
     let context = contextRef.current;
     if (!context) {
@@ -614,14 +640,16 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         context = new AudioCtor();
         contextRef.current = context;
       } catch {
-        speakWithBrowser();
+        setError(VOICE_AUDIO_TEXT);
+        setSpeaking(false);
+        setPaused(false);
         return;
       }
     }
     const graph = context;
     // A context created before any user gesture starts suspended; `speak()` is only ever reached
     // from a press, so resuming here is allowed — and harmless when it is already running.
-    void graph.resume().catch(() => { /* the first failure hands over to the browser voice */ });
+    void graph.resume().catch(() => { /* the first `start()` reports it as an error */ });
 
     const controller = new AbortController();
     cloudAbort.current = controller;
@@ -665,20 +693,20 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     const GAP_SECONDS = 0.18;
     let playhead = 0;
     let next = 0;
-    let scheduled = 0;
-    let handoff: { from: number } | null = null;
-    let handedOff = false;
+    let failed = false;
 
-    const handOffToBrowser = (from: number) => {
-      if (handedOff || !mounted.current || id !== generation.current) return;
-      handedOff = true;
-      // Everything before `from` was scheduled and has now finished; only the unheard remainder is
-      // re-read, so no sentence is spoken twice and none is skipped.
-      queue.current = speechChunks(cloud.slice(from).join(' '));
-      queueIndex.current = 0;
-      lastActivity.current = Date.now();
+    /**
+     * The one terminal state for a server answer that could not be spoken. Idempotent (`failed`), and
+     * it releases the graph so a half-scheduled answer cannot keep playing under an error message.
+     */
+    const failAnswer = () => {
+      if (failed) return;
+      failed = true;
       releaseCloud();
-      speakWithBrowser();
+      if (!mounted.current || id !== generation.current) return;
+      setError(VOICE_FAILED_TEXT);
+      setSpeaking(false);
+      setPaused(false);
     };
 
     const run = async () => {
@@ -690,12 +718,9 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
           buffer = await pending[index];
         } catch (cause) {
           if (!mounted.current || id !== generation.current || controller.signal.aborted) {
-            // An aborted fetch here is an intentional stop, EXCEPT when the client watchdog
-            // aborted it to recover a hanging endpoint — in that case the browser voice finishes
-            // the answer instead of leaving the learner in silence.
-            if (mounted.current && id === generation.current && controller.signal.aborted) {
-              handOffToBrowser(0);
-            }
+            // An aborted fetch is an intentional stop (Stop, pause, navigation). A watchdog abort of
+            // a HANGING endpoint is a failure, and it says so rather than handing the answer over.
+            if (mounted.current && id === generation.current && controller.signal.aborted) failAnswer();
             return;
           }
           cloudFails.current += 1;
@@ -703,14 +728,8 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
           // Keep `cloudConfigured` as the SERVER's report — the server is configured, it is this
           // voice that is unavailable. The settings line says which engine spoke.
           if (cloudFails.current >= 2) cloudRef.current = false;
-          console.warn('BroCode voice: Google voice failed, using the browser voice.', cause);
-          if (scheduled === 0) { handOffToBrowser(0); return; }
-          // Something is already playing: let it finish before the other engine starts, otherwise
-          // two voices talk over each other.
-          handoff = { from: index };
-          // …but that audio may ALREADY have ended while this request was in flight, in which case
-          // no `onended` is left to trigger the hand-off and the answer would stop mid-sentence.
-          if (activeSources.current.size === 0) handOffToBrowser(index);
+          console.warn('BroCode voice: the server voice failed; the answer is not spoken.', cause);
+          failAnswer();
           return;
         }
         if (!mounted.current || id !== generation.current) return;
@@ -724,20 +743,15 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         const startAt = Math.max(graph.currentTime + 0.05, playhead);
         playhead = startAt + buffer.duration + GAP_SECONDS;
         next = index + 1;
-        scheduled = next;
         activeSources.current.add(source);
         source.onended = () => {
           activeSources.current.delete(source);
           lastActivity.current = Date.now();
           if (!mounted.current || id !== generation.current) return;
-          const wasLastScheduled = index === scheduled - 1;
-          if (handoff) {
-            if (wasLastScheduled) handOffToBrowser(handoff.from);
-            return;
-          }
+          if (failed) return;
           if (index === cloud.length - 1) finish();
         };
-        try { source.start(startAt); } catch { handOffToBrowser(index); return; }
+        try { source.start(startAt); } catch { failAnswer(); return; }
       }
     };
     void run();

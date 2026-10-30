@@ -334,12 +334,20 @@ test('voice: the client downloads no model — the server is the only engine', (
   assert.match(row, /refreshServerVoice/);
 });
 
-test('voice: the hook probes the server key and falls back — cloud is an upgrade, never a dependency', () => {
+test('voice: the hook probes the server key and speaks ONLY from it unless browser voice is chosen', () => {
   const hook = read('src/components/shared/useVoiceTutor.ts');
   assert.match(hook, /\.\/api\/voice\/status/, 'the status probe is the only key check');
   assert.match(hook, /\.\/api\/voice\/tts/, 'audio is fetched, never a Google URL in the browser');
   assert.doesNotMatch(hook, /googleapis\.com/, 'the Google key and URL must never reach the client');
-  assert.match(hook, /speakWithBrowser/, 'the browser engine is the fallback path');
+  assert.match(hook, /speakWithBrowser/, 'the browser engine survives as the learner\'s explicit choice');
+  // The AI flow fails loudly instead of handing the answer to a robotic voice: with
+  // `engine: 'ai'` and no server voice, speak() sets the error and returns before any browser path.
+  assert.match(
+    hook,
+    /prefs\.engine === 'ai' && !cloudUsable[\s\S]{0,160}setError\(/,
+    'a missing server voice is an error in the AI flow, never a substitution',
+  );
+  assert.doesNotMatch(hook, /handOffToBrowser/, 'a failed server chunk fails the answer; no mid-answer engine swap');
   assert.match(hook, /cloudFails\.current >= 2/, 'two consecutive failures abandon the cloud for the session');
   // Smoothness is a contract, not a preference: the cloud chunks are scheduled on ONE clock and
   // decoded once. Reloading a fresh <audio> element per sentence is exactly the stutter that was

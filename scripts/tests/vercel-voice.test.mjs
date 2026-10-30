@@ -216,7 +216,12 @@ test('vercel voice: engine failures are mapped, and internal detail never reache
 
   const unconfigured = await call(handlerFor('voice-unconfigured'), { body: payload });
   assert.equal(unconfigured.statusCode, 503);
-  assert.match(JSON.parse(unconfigured.body.toString()).error, /browser voice/);
+  const absent = JSON.parse(unconfigured.body.toString()).error;
+  assert.match(absent, /No AI voice is configured/i);
+  // The deployment with no voice says so. It must NOT promise a robotic substitute: that sentence
+  // is how a broken deployment read as healthy for months.
+  assert.match(absent, /not spoken|stays on screen/i, 'the silence is stated, not denied');
+  assert.doesNotMatch(absent, /browser voice/i, 'the AI flow never advertises another engine');
 
   const unavailable = await call(handlerFor('voice-unavailable'), { body: payload });
   assert.equal(unavailable.statusCode, 502);

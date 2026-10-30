@@ -28,10 +28,17 @@ export const VOICE_CODES = Object.freeze({
   forbidden: 'VOICE_FORBIDDEN',
 });
 
-/** The variable names this deployment reads. Presence only — a value is never returned. */
+/**
+ * The variable names this deployment reads. Presence only — a value is never returned.
+ * `SUPERTONIC_TTS_BASE_URL` / `SUPERTONIC_TTS_API_KEY` are accepted aliases of the service pair, so
+ * they are reported too: a deployment that set the other spelling should not read `missing` for its
+ * own variable, and one that set BOTH wrong should see which is actually in use.
+ */
 export const VOICE_ENV_NAMES = Object.freeze([
   'TTS_SERVICE_URL',
   'TTS_SERVICE_SECRET',
+  'SUPERTONIC_TTS_BASE_URL',
+  'SUPERTONIC_TTS_API_KEY',
   'GOOGLE_TTS_API_KEY',
 ]);
 
@@ -44,23 +51,26 @@ function presence(env, name) {
  */
 export function voiceEnvReport(env = process.env) {
   const vars = Object.fromEntries(VOICE_ENV_NAMES.map((name) => [name, presence(env, name)]));
-  const url = vars.TTS_SERVICE_URL === 'set';
-  const secret = vars.TTS_SERVICE_SECRET === 'set';
+  // Either spelling configures the service; `TTS_SERVICE_*` wins when both are present, exactly as
+  // `engineFromEnv` resolves them, so the report can never describe a different engine than runs.
+  const url = vars.TTS_SERVICE_URL === 'set' || vars.SUPERTONIC_TTS_BASE_URL === 'set';
+  const secret = vars.TTS_SERVICE_SECRET === 'set' || vars.SUPERTONIC_TTS_API_KEY === 'set';
   const google = vars.GOOGLE_TTS_API_KEY === 'set';
+  const base = String(env?.TTS_SERVICE_URL || env?.SUPERTONIC_TTS_BASE_URL || '').trim();
 
   const hints = [];
   if (url && !secret) {
-    hints.push('TTS_SERVICE_SECRET is missing: the service refuses every synthesis without it. Copy the same value from the inference service.');
+    hints.push('The service URL is set but no shared secret is (TTS_SERVICE_SECRET or SUPERTONIC_TTS_API_KEY): the service refuses every synthesis without it.');
   }
   if (!url && secret) {
-    hints.push('TTS_SERVICE_SECRET is set but TTS_SERVICE_URL is not set, so nothing is called. Set the service base URL too.');
+    hints.push('A shared secret is set but no service URL is (TTS_SERVICE_URL or SUPERTONIC_TTS_BASE_URL), so nothing is called. Set the base URL too.');
   }
   if (!url && !google) {
     hints.push('Set GOOGLE_TTS_API_KEY (one key, no extra host) or TTS_SERVICE_URL + TTS_SERVICE_SECRET (the Render blueprint in render.yaml).');
     hints.push('Vercel only exposes a new variable to a NEW deployment: after saving it, redeploy (an empty commit or the dashboard Redeploy button).');
   }
-  if (url && !/^https:\/\//i.test(String(env?.TTS_SERVICE_URL ?? '').trim())) {
-    hints.push('TTS_SERVICE_URL should be an https:// URL; a plain-http service is unreachable from a Vercel function.');
+  if (url && !/^https:\/\//i.test(base)) {
+    hints.push('The service URL should be an https:// URL; a plain-http service is unreachable from a Vercel function.');
   }
 
   return {
@@ -88,7 +98,7 @@ export async function voiceDiagnostics({ env = process.env, engine } = {}) {
       ready: false,
       verified: false,
       code: VOICE_CODES.notConfigured,
-      detail: 'No server voice is configured on this deployment. The built-in browser voice reads answers.',
+      detail: 'No server voice is configured on this deployment, so nothing is spoken — the answer stays on screen.',
     };
   }
 

@@ -67,6 +67,10 @@ test('voice health: presence is reported by name, and a value never appears', ()
   assert.deepEqual(report.vars, {
     TTS_SERVICE_URL: 'set',
     TTS_SERVICE_SECRET: 'set',
+    // The alias spelling is reported too, so an operator who set it never reads `missing` for the
+    // variable they actually typed.
+    SUPERTONIC_TTS_BASE_URL: 'missing',
+    SUPERTONIC_TTS_API_KEY: 'missing',
     GOOGLE_TTS_API_KEY: 'set',
   });
   assert.doesNotMatch(JSON.stringify(report), /voice\.example\.com|secret-value|google-key/);
@@ -76,11 +80,25 @@ test('voice health: half a Supertonic configuration names the missing half', () 
   const url = voiceEnvReport({ TTS_SERVICE_URL: 'https://voice.example.com' });
   assert.equal(url.configured, false, 'a URL with no secret cannot synthesize');
   assert.equal(url.engine, 'supertonic');
-  assert.ok(url.hints.some((hint) => /TTS_SERVICE_SECRET is missing/.test(hint)));
+  assert.ok(url.hints.some((hint) => /no shared secret is/.test(hint)));
 
   const secretOnly = voiceEnvReport({ TTS_SERVICE_SECRET: SECRET });
   assert.equal(secretOnly.engine, 'none', 'a secret alone calls nothing');
-  assert.ok(secretOnly.hints.some((hint) => /TTS_SERVICE_URL is not set/.test(hint)));
+  assert.ok(secretOnly.hints.some((hint) => /no service URL is/.test(hint)));
+
+  // The other documented spelling configures the same service, and is reported as configured —
+  // recording it as missing while it is the one in use would be the lie this report exists to avoid.
+  const alias = voiceEnvReport({ SUPERTONIC_TTS_BASE_URL: 'https://voice.example.com', SUPERTONIC_TTS_API_KEY: SECRET });
+  assert.equal(alias.configured, true, 'SUPERTONIC_TTS_* configures the service');
+  assert.equal(alias.engine, 'supertonic');
+  assert.deepEqual(alias.vars, {
+    TTS_SERVICE_URL: 'missing',
+    TTS_SERVICE_SECRET: 'missing',
+    SUPERTONIC_TTS_BASE_URL: 'set',
+    SUPERTONIC_TTS_API_KEY: 'set',
+    GOOGLE_TTS_API_KEY: 'missing',
+  });
+  assert.doesNotMatch(JSON.stringify(alias), /secret-value/);
 
   const plainHttp = voiceEnvReport({ TTS_SERVICE_URL: 'http://voice.example.com', TTS_SERVICE_SECRET: SECRET });
   assert.ok(plainHttp.hints.some((hint) => /https:\/\//.test(hint)), 'a function cannot reach plain http');

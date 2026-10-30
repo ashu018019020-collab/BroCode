@@ -38,7 +38,7 @@ export function AiVoiceRow({ voice }: { voice: VoiceTutor }) {
           <span className="row" style={{ gap: 5 }}>
             <AlertTriangle size={12} aria-hidden="true" />
             <span>
-              AI voice is unavailable on this deployment — the built-in browser voice reads answers.
+              AI voice is unavailable on this deployment: no Supertonic service is configured, so answers are not spoken. Retry asks the server again.
             </span>
           </span>
           <button type="button" className="btn small ghost" onClick={voice.refreshServerVoice}>
