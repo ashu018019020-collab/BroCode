@@ -35,15 +35,22 @@ const SERVICE = String(args.get('url') ?? process.env.TTS_SERVICE_URL ?? process
 const SECRET = String(args.get('secret') ?? process.env.TTS_SERVICE_SECRET ?? process.env.SUPERTONIC_TTS_API_KEY ?? '').trim();
 const PUBLIC = String(args.get('public') ?? 'https://mybrocode.vercel.app').trim().replace(/\/+$/, '');
 
-if (!SERVICE) {
-  console.error('Set TTS_SERVICE_URL (or SUPERTONIC_TTS_BASE_URL, or pass --url=...) to the deployed voice service.');
+/**
+ * `--site-only` verifies the DEPLOYMENT without the service's address or secret. Those two live only in
+ * the host's environment, so the person asking "is the live site speaking?" often does not have them —
+ * and the site can answer that question by itself, through its own `/api/voice/tts`.
+ */
+const SITE_ONLY = args.get('site-only') === 'true' || args.has('site-only');
+
+if (!SITE_ONLY && !SERVICE) {
+  console.error('Set TTS_SERVICE_URL (or SUPERTONIC_TTS_BASE_URL, or pass --url=...), or use --site-only to check the deployment alone.');
   process.exit(2);
 }
-if (!/^https?:\/\//.test(SERVICE)) {
+if (SERVICE && !/^https?:\/\//.test(SERVICE)) {
   console.error(`--url must be an http(s) URL; got "${SERVICE}".`);
   process.exit(2);
 }
-if (!SECRET) {
+if (!SITE_ONLY && !SECRET) {
   console.error('Set TTS_SERVICE_SECRET to the same token the account API uses. Never paste it into a file.');
   process.exit(2);
 }
@@ -63,10 +70,10 @@ async function json(url, options = {}) {
   return { response, body, text };
 }
 
-console.log(`\nVoice service: ${SERVICE}`);
+console.log(`\nVoice service: ${SERVICE || '(not checked: --site-only)'}`);
 
 /* 1. Is the container up, and has the model loaded? */
-try {
+if (!SITE_ONLY) try {
   const { response, body } = await json(`${SERVICE}/healthz`);
   if (body?.ready === true) {
     ok('healthz ready', `${body.sampleRate} Hz · ${body.steps} steps · style ${body.style ?? 'F1'}`);
@@ -78,7 +85,7 @@ try {
 }
 
 /* 2. Is the shared secret enforced? An open endpoint is a denial-of-service target. */
-try {
+if (!SITE_ONLY) try {
   const response = await fetch(`${SERVICE}/v1/tts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -92,10 +99,10 @@ try {
 }
 
 /* 3. Hindi and English audio, over the wire, as a browser would receive it. */
-for (const [id, text, lang] of [
+for (const [id, text, lang] of (SITE_ONLY ? [] : [
   ['English', 'Welcome to BroCode. Let us begin your AI engineering interview.', 'en-IN'],
   ['Hindi', 'नमस्ते! आज हम BroCode में Python प्रोग्रामिंग सीखेंगे।', 'hi-IN'],
-]) {
+])) {
   const began = Date.now();
   try {
     const response = await fetch(`${SERVICE}/v1/tts`, {
