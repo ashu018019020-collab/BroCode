@@ -1,144 +1,130 @@
 import { AlertTriangle, Check, Loader2, RotateCw } from 'lucide-react';
 import type { VoiceTutor } from './useVoiceTutor';
-import { FEMALE_PRESETS, TOTAL_MODEL_BYTES, VOICE_PRESETS, bytesProgressLabel, formatBytes, type VoicePreset } from '../../core/voice/assets';
-import type { VoiceStatus as StatusShape } from '../../core/voice/protocol';
-import { clamp01 } from '../../core/voice/protocol';
+import { FEMALE_PRESETS, VOICE_PRESETS, type VoicePreset } from '../../core/voice/presets';
+import { isVoicePreparing, type VoiceStatus as StatusShape } from '../../core/voice/protocol';
 
 /**
  * The voice engine's status — real, and never aspirational.
  *
- * The model runs in THIS browser, so the row reports what the worker said: bytes crossing the network
- * while the checkpoint arrives, "starting" while the four sessions are built, "ready" once a preset is
- * loaded, and the engine's own error code when it could not start. "Ready" is only ever printed after
- * the graphs loaded: an HTTP 200 for a 250 MB file proves nothing about whether ONNX Runtime could
- * parse it.
+ * The model runs on the BroCode server, so this row reports what the DEPLOYMENT said: `connecting`
+ * while the status probe is in flight, `preparing` while the inference service is still loading the
+ * checkpoint on its first boot, `idle` once it is warm, and the route's own code when it answered
+ * with a fault. "Ready" is only ever printed after `GET /api/voice/status` returned `ready: true`.
  *
- * The first visit is the only slow one, and the panel says so out loud — a bar, megabytes, and the
- * promise that this is paid once.
+ * There is deliberately no download bar here any more. The browser receives a few hundred kilobytes
+ * of WAV per sentence; nothing is cached on the device and nothing is counted in megabytes. A bar
+ * that measured a download that no longer happens was the bug wearing a progress indicator.
  */
 export function AiVoiceRow({ voice }: { voice: VoiceTutor }) {
   const status: StatusShape = voice.voiceStatus;
   const { phase, code, detail } = status;
-  const ready = phase === 'ready' || phase === 'speaking';
+  const label = voice.serverVoice.engine === 'google' ? 'Google Neural2' : 'Supertonic 3';
 
   return (
     <div className="small muted" style={{ marginTop: 8, display: 'grid', gap: 6 }} aria-live="polite">
-      {ready ? (
+      {phase === 'idle' || phase === 'speaking' || phase === 'paused' || phase === 'completed' || phase === 'generating' ? (
         <span className="row" style={{ gap: 5 }}>
           <Check size={12} aria-hidden="true" />
           <span>
-            <b>AI voice</b> · Supertonic 3 · {voice.preset} · Hindi + English · runs in this browser
+            <b>AI voice</b> · {label} · {voice.preset} · Hindi + English · runs on the BroCode server
           </span>
         </span>
-      ) : phase === 'error' ? (
+      ) : phase === 'error' || phase === 'disconnected' ? (
         <span className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <span className="row" style={{ gap: 5 }}>
+          <span className="row" style={{ gap: 5, alignItems: 'flex-start' }}>
             <AlertTriangle size={12} aria-hidden="true" />
             <span>
-              Supertonic 3 could not load{code ? ` (${code})` : ''}
+              {phase === 'disconnected' ? 'The AI voice is offline' : 'The AI voice could not speak'}
+              {code ? ` (${code})` : ''}
               {detail ? `: ${detail}` : '.'}
             </span>
           </span>
-          <button type="button" className="btn small ghost" onClick={voice.refreshServerVoice}>
-            <RotateCw size={12} /> Retry
-          </button>
-          <button type="button" className="btn small ghost" onClick={() => void voice.clearVoiceCache()}>
-            Clear voice cache
-          </button>
+          {/*
+            Retry appears ONLY where pressing it can change something. A missing voice or a rejected
+            secret is configuration: offering Retry there trains the learner to press a button that
+            cannot work, which is the "permanent Retry" this screen used to have.
+          */}
+          {phase === 'error' && code !== 'voice-auth-failed' && code !== 'voice-unconfigured' && (
+            <button type="button" className="btn small ghost" onClick={voice.refreshServerVoice}>
+              <RotateCw size={12} /> Retry
+            </button>
+          )}
         </span>
       ) : (
-        <>
-          <VoiceLoadProgress status={status} />
+        <span className="row" style={{ gap: 5 }}>
+          <Loader2 size={12} className="spin" aria-hidden="true" />
           <span>
-            {phase === 'idle'
-              ? `Supertonic 3 · ${voice.preset} · downloads on the first Speak (${formatBytes(status.totalBytes ?? TOTAL_MODEL_BYTES)}, then cached)`
-              : 'One-time download. It stays in this browser, so later answers speak immediately.'}
+            {phase === 'connecting'
+              ? 'Connecting to the AI voice on the BroCode server…'
+              : 'The voice service is loading its model — this is the first request after a restart.'}
           </span>
-        </>
+        </span>
+      )}
+      {voice.presets.length > 1 && (
+        <span className="row" style={{ gap: 4, flexWrap: 'wrap' }}>
+          {voice.presets.map((preset) => (
+            <span key={preset} className={`chip${preset === voice.preset ? ' easy' : ''}`}>{preset}</span>
+          ))}
+        </span>
       )}
     </div>
   );
 }
 
 /**
- * The bar itself — shared by the settings row and the mentor panel so both describe the same state.
- *
- * Bytes are the headline where they exist, because "259 of 379 MB" answers the real question ("how
- * long?") in a way a percentage cannot. Once the download is done there is nothing to count, so the
- * bar turns indeterminate and says what it is doing instead of inventing a number.
- */
-export function VoiceLoadProgress({ status }: { status: StatusShape }) {
-  const downloading = status.phase === 'downloading';
-  const pct = Math.round(clamp01(status.progress ?? 0) * 100);
-  const received = Number(status.receivedBytes ?? 0);
-  const total = Number(status.totalBytes ?? 0);
-  const preparing = status.phase === 'initializing';
-
-  return (
-    <div className="voice-load">
-      <div
-        className={`voice-load-track${downloading ? '' : ' indeterminate'}`}
-        role="progressbar"
-        aria-label="Supertonic 3 model download"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={downloading ? pct : undefined}
-        aria-valuetext={downloading ? `${pct}%, ${bytesProgressLabel(received, total)}` : status.message}
-      >
-        <span className="voice-load-fill" style={{ width: `${downloading ? Math.max(2, pct) : 35}%` }} />
-      </div>
-      <div className="voice-load-line">
-        <span>{downloading ? <b>{bytesProgressLabel(received, total)}</b> : <b>{preparing ? 'Starting the engine…' : 'Waiting to start'}</b>}</span>
-        <span>{downloading ? `${pct}%` : ''}</span>
-      </div>
-    </div>
-  );
-}
-
-/**
- * What the Speak button says while the engine is not ready yet — an acknowledgement that the press
+ * What the Speak button says while the voice is not ready yet — an acknowledgement that the press
  * landed, which is the difference between "slow" and "broken".
  */
 export function VoicePrepareChip({ status }: { status: StatusShape }) {
-  if (status.phase !== 'downloading' && status.phase !== 'initializing') return null;
-  const pct = Math.round(clamp01(status.progress ?? 0) * 100);
+  if (!isVoicePreparing(status)) return null;
   return (
     <span className="voice-prep small muted" aria-live="polite">
       <span className="dot" aria-hidden="true" />
-      {status.phase === 'downloading' ? `Preparing voice… ${pct}%` : 'Starting voice…'}
+      {status.phase === 'generating' ? 'Generating voice…' : status.phase === 'preparing' ? 'Preparing voice…' : 'Connecting…'}
     </span>
   );
 }
 
-/** True while the engine is busy loading, so callers can label a button without re-deriving it. */
-export function isVoicePreparing(status: StatusShape): boolean {
-  return status.phase === 'downloading' || status.phase === 'initializing';
-}
-
 /**
  * The preset picker: the five female voices first, because the mentor ships as a female tutor, and
- * the male pair behind them for anyone who prefers one. Every option is a real `voice_styles/*.json`
- * file from the pinned checkpoint — no option is decorative.
+ * the male five behind them for anyone who prefers one.
+ *
+ * Every option here is a real `voice_styles/*.json` in the pinned checkpoint, and the list is
+ * narrowed to what the backend reported once `GET /api/voice/status` has answered — a voice the
+ * server does not have is never offered.
  */
 export function VoicePresetPicker({
   value,
   onChange,
+  available = VOICE_PRESETS,
+  disabled = false,
 }: {
   value: VoicePreset;
   onChange: (preset: VoicePreset) => void;
+  available?: readonly VoicePreset[];
+  disabled?: boolean;
 }) {
+  const female = available.filter((preset) => (FEMALE_PRESETS as readonly string[]).includes(preset));
+  const male = available.filter((preset) => !(FEMALE_PRESETS as readonly string[]).includes(preset));
   return (
     <>
       <label className="small muted" htmlFor="mentor-preset">Voice</label>
-      <select id="mentor-preset" value={value} onChange={(event) => onChange(event.target.value as VoicePreset)}>
-        <optgroup label="Female">
-          {FEMALE_PRESETS.map((preset) => <option key={preset} value={preset}>{preset}</option>)}
-        </optgroup>
-        <optgroup label="Male">
-          {VOICE_PRESETS.filter((preset) => preset.startsWith('M')).map((preset) => (
-            <option key={preset} value={preset}>{preset}</option>
-          ))}
-        </optgroup>
+      <select
+        id="mentor-preset"
+        value={value}
+        onChange={(event) => onChange(event.target.value as VoicePreset)}
+        disabled={disabled}
+      >
+        {female.length > 0 && (
+          <optgroup label="Female">
+            {female.map((preset) => <option key={preset} value={preset}>{preset}</option>)}
+          </optgroup>
+        )}
+        {male.length > 0 && (
+          <optgroup label="Male">
+            {male.map((preset) => <option key={preset} value={preset}>{preset}</option>)}
+          </optgroup>
+        )}
       </select>
     </>
   );

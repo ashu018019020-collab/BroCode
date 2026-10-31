@@ -93,6 +93,9 @@ def _public_state(state: State) -> dict:
         "phase": state.phase,
         "style": STYLE,
         "steps": STEPS,
+        # The presets this checkpoint really ships. The web app narrows its selector to this list, so
+        # a voice it does not have can never be offered (and a stale stored choice is corrected).
+        "voices": list(getattr(tts, "voice_style_names", []) or []) if tts else [],
         "sampleRate": getattr(tts, "sample_rate", None) if tts else None,
         "cache": "disk" if CACHE_DIR else "default",
         "error": state.error,
@@ -153,6 +156,15 @@ def create_app(
         body = _public_state(state)
         body["ok"] = True
         return body
+
+    @app.get("/v1/voices")
+    def voices() -> dict:
+        return {
+            "engine": "supertonic",
+            "model": MODEL,
+            "default": STYLE,
+            "voices": _public_state(state)["voices"],
+        }
 
     @app.get("/healthz")
     @app.get("/ready")

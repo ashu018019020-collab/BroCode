@@ -125,11 +125,10 @@ test('voice health page: the route is registered, protected and reachable from s
 
 test('voice telemetry: the voice hook records what actually spoke, after playback', () => {
   const hook = read('src/components/shared/useVoiceTutor.ts');
-  assert.match(hook, /noteVoiceAnswer\(tag, firstAudioMs \?\? undefined\)/, 'one count per answer, not per chunk');
-  // The worker reports its own failure; the hook records the message it carried (a code such as
-  // `model-load` or `synth-bad-output`), so the dashboard can separate a download failure from a
-  // synthesis failure without guessing from a status line that no longer exists.
-  assert.match(hook, /noteVoiceFailure\(String\(\(cause as \{ message\?: string \}\)\?\.message/, 'a failure keeps the engine\'s code');
+  assert.match(hook, /noteVoiceAnswer\('supertonic', firstAudioMs\)/, 'one count per answer, tagged with the engine that spoke');
+  // A failure carries the ROUTE's code (`voice-timeout`, `voice-rate-limited`, …), so the dashboard
+  // can separate a busy service from a misconfigured one without parsing prose.
+  assert.match(hook, /noteVoiceFailure\(reason\.code/, 'a failure keeps the route\'s code');
   // The measurement is around the real request.
   assert.match(hook, /performance\.now\(\)/);
   // Telemetry must never be able to break playback: the storage shim swallows its own errors.
