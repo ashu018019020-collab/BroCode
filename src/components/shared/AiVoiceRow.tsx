@@ -22,7 +22,7 @@ export function AiVoiceRow({ voice }: { voice: VoiceTutor }) {
         <>
           <span className="row" style={{ gap: 5 }}>
             <Volume2 size={12} aria-hidden="true" />
-            <span><b>Device voice</b> · this browser · Hindi + English</span>
+            <span><b>Device voice</b> · this browser · Hindi/Hinglish + English</span>
           </span>
           <button type="button" className="btn small ghost" onClick={() => voice.setUseDeviceVoice(false)}>
             Use server voice

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   TTS_MAX_CHARS, TTS_VOICES, buildSsml, clampRate, createTtsEngine, escapeSsml, voiceFor,
+  voiceMatchesLang, voiceOverrides,
 } from '../../server/tts.mjs';
 
 /** A fetch stub that records the request and answers with a tiny MP3-shaped body. */
@@ -96,7 +97,7 @@ test('tts: one request, the right endpoint, the key only in its own header', asy
   assert.equal(init.method, 'POST');
   assert.equal(init.headers['Ocp-Apim-Subscription-Key'], 'k-123');
   assert.equal(init.headers['Content-Type'], 'application/ssml+xml');
-  assert.match(init.headers['X-Microsoft-OutputFormat'], /mp3/);
+  assert.match(init.headers['X-Microsoft-OutputFormat'], /^audio-24khz-96kbitrate-mono-mp3$/);
   assert.match(init.body, /SwaraNeural/);
 
   assert.equal(result.contentType, 'audio/mpeg');
@@ -155,10 +156,33 @@ test('tts: text and language are validated before any request is made', async ()
   assert.equal(calls.length, 0, 'nothing billable happens for a request that cannot succeed');
 });
 
-test('tts: an operator can pin another voice, and it is reported back honestly', async () => {
-  const { impl } = stubFetch();
+test('tts: an operator can pin another voice, and it is the voice the SSML really asks for', async () => {
+  const { calls, impl } = stubFetch();
   const engine = createTtsEngine({ key: 'k', region: 'r', fetchImpl: impl, voices: { 'hi-IN': 'hi-IN-AnanyaNeural' } });
   const result = await engine.synthesize({ text: 'Namaste', lang: 'hi-IN' });
   assert.equal(result.voice, 'hi-IN-AnanyaNeural');
   assert.equal(engine.status().voices['hi-IN'], 'hi-IN-AnanyaNeural');
+  // The reported id and the requested id must be the same voice, or the UI names a stranger.
+  assert.match(calls[0].init.body, /<voice name="hi-IN-AnanyaNeural">/);
+  // Pinning Hindi does not disturb English.
+  assert.match(buildSsml({ text: 'Hi', lang: 'en-IN', voices: { 'hi-IN': 'hi-IN-AnanyaNeural' } }), /en-IN-NeerjaNeural/);
+});
+
+test('tts: a pin filed under the wrong language is dropped, never sent to the provider', () => {
+  assert.deepEqual(voiceOverrides({ hi: 'en-IN-NeerjaNeural', en: '' }), {});
+  assert.deepEqual(voiceOverrides({ hi: 'hi-IN-AnanyaNeural', en: 'en-IN-NeerjaNeural' }), {
+    'hi-IN': 'hi-IN-AnanyaNeural',
+    'en-IN': 'en-IN-NeerjaNeural',
+  });
+  assert.deepEqual(voiceOverrides({ hi: '  ', en: 'Neerja' }), {}, 'a name that is not a voice id is not a voice');
+  assert.equal(voiceMatchesLang('hi-IN-SwaraNeural', 'hi-IN'), true);
+  assert.equal(voiceMatchesLang('en-IN-SwaraNeural', 'hi-IN'), false);
+  const engine = createTtsEngine({ key: 'k', region: 'r', voices: { 'hi-IN': 'en-IN-NeerjaNeural' } });
+  assert.equal(engine.status().voices['hi-IN'], TTS_VOICES['hi-IN'], 'the matched default still speaks');
+});
+
+test('tts: Hinglish in Roman script is spoken by the Hindi voice, untouched', () => {
+  const ssml = buildSsml({ text: 'Aaj hum Python ka function banayenge.', lang: 'hi-IN' });
+  assert.match(ssml, /xml:lang="hi-IN"/);
+  assert.match(ssml, />Aaj hum Python ka function banayenge\.</);
 });

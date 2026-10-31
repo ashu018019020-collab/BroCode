@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { createAiObservability } from './ai-observability.mjs';
 import { listAllAuthUsers } from './supabase.mjs';
-import { TTS_LANGS, TTS_MAX_CHARS, TtsError, createTtsEngine } from './tts.mjs';
+import { TTS_DEFAULT_TIMEOUT_MS, TTS_LANGS, TTS_MAX_CHARS, TtsError, createTtsEngine, voiceOverrides } from './tts.mjs';
 import { projectBrief } from './project-brief.mjs';
 import {
   INTERVIEW_DEFAULT_MODEL,
@@ -199,8 +199,8 @@ function resumePosition(progress) {
 }
 
 /**
- * The tutor's voice budget: requests per minute per client address. Google Text-to-Speech charges
- * per character, so an unauthenticated text-to-speech endpoint needs a bound of its own — the
+ * The tutor's voice budget: requests per minute per client address. Azure AI Speech bills per
+ * character, so an unauthenticated text-to-speech endpoint needs a bound of its own — the
  * origin check stops other sites, this stops one tab looping. Sliding window, dropped lazily.
  */
 const TTS_WINDOW_MS = 60 * 1000;
@@ -241,6 +241,11 @@ export function createAuthServer({
   // the route answers 503 and says so — it never fakes audio and never falls back on the quiet.
   ttsKey = process.env.AZURE_SPEECH_KEY ?? '',
   ttsRegion = process.env.AZURE_SPEECH_REGION ?? '',
+  // Optional pins, validated in `tts.mjs`: a voice filed under the wrong language is dropped so the
+  // matched default speaks instead of the provider rejecting a billable request.
+  ttsVoiceHi = process.env.AZURE_SPEECH_VOICE_HI ?? '',
+  ttsVoiceEn = process.env.AZURE_SPEECH_VOICE_EN ?? '',
+  ttsTimeoutMs = Number(process.env.AZURE_SPEECH_TIMEOUT_MS ?? '') || TTS_DEFAULT_TIMEOUT_MS,
   openaiRealtimeModel = process.env.OPENAI_REALTIME_MODEL ?? DEFAULT_REALTIME_MODEL,
   openaiRealtimeVoice = process.env.OPENAI_REALTIME_VOICE ?? DEFAULT_REALTIME_VOICE,
   createRealtimeSecret = createRealtimeClientSecret,
@@ -329,7 +334,13 @@ export function createAuthServer({
 
   const ttsHits = new Map();
   /** One engine per process: the key is read once and stays in this scope. */
-  const tts = createTtsEngine({ key: ttsKey, region: ttsRegion, logger });
+  const tts = createTtsEngine({
+    key: ttsKey,
+    region: ttsRegion,
+    voices: voiceOverrides({ hi: ttsVoiceHi, en: ttsVoiceEn }),
+    timeoutMs: Math.min(60_000, Math.max(1_000, Number(ttsTimeoutMs) || TTS_DEFAULT_TIMEOUT_MS)),
+    logger,
+  });
 
   /**
    * Text-to-speech is the only route billed per character, so it gets its own budget: thirty

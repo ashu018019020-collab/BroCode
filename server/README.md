@@ -135,9 +135,20 @@ separate per-account browser-local keys. Switching accounts never assigns guest 
 
 The tutor's voice is generated on the server; the browser downloads no model and holds no provider key.
 
-- **There is no server voice.** The tutor speaks with the browser's own speech synthesiser, so
-  this API has no text-to-speech route and needs no model, no key and no voice host. The Supertonic 3
-  service, its Docker image, its Vercel proxy and the `TTS_SERVICE_*` variables were removed.
+- `GET /api/voice/status` reports `{ configured, engine, langs, voices }`; `POST /api/voice/tts`
+  answers `audio/mpeg`. Both are same-origin; the speech route is budgeted at 30 requests a minute
+  per address and is capped at 600 characters per request.
+- The provider is **Azure AI Speech** (`server/tts.mjs`): `hi-IN-SwaraNeural` for Hindi **and
+  Hinglish**, `en-IN-NeerjaNeural` for English. Set `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` in
+  this process's environment only — they are never `VITE_`-prefixed and never reach the browser.
+  Without them `POST /api/voice/tts` answers 503 with a sentence the UI shows; there is no model to
+  download and no silent fallback to a robotic voice.
+- `AZURE_SPEECH_VOICE_HI` / `AZURE_SPEECH_VOICE_EN` pin other female voices without a code change
+  (a pin filed under the wrong language is dropped), `AZURE_SPEECH_TIMEOUT_MS` bounds the provider
+  call, and `npm run voice:check` verifies a deployed origin end to end.
+- The same two routes exist as Vercel Functions (`api/voice/status.js`, `api/voice/tts.js`, both thin
+  wrappers over `server/voice-handler.mjs`) for a static deployment that has no long-running process.
+  The Supertonic 3 model, its container, its proxy and the `TTS_SERVICE_*` variables are gone.
 
 ## Tests
 

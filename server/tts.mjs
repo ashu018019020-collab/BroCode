@@ -33,7 +33,9 @@ export const TTS_VOICES = {
 
 const VOICE_LANG = Object.fromEntries(Object.entries(TTS_VOICES).map(([lang, voice]) => [voice, lang]));
 
-const OUTPUT_FORMAT = 'audio-24khz-48kbitrate-mono-mp3';
+// 96 kbps at 24 kHz: the provider's own sample rate, at a bitrate that keeps consonants (which is
+// where an Indian-English technical term becomes unintelligible) intact. 48 kbps muffles them.
+const OUTPUT_FORMAT = 'audio-24khz-96kbitrate-mono-mp3';
 
 export class TtsError extends Error {
   constructor(code, message, status = 502) {
@@ -62,18 +64,41 @@ export function clampRate(rate) {
   return Math.min(1.5, Math.max(0.5, Math.round(n * 100) / 100));
 }
 
-export function voiceFor(lang) {
-  return TTS_VOICES[lang] ?? null;
+export function voiceFor(lang, voices = {}) {
+  return voices[lang] ?? TTS_VOICES[lang] ?? null;
+}
+
+/** A voice id belongs to the language its locale says: `hi-IN-…` can only speak `hi-IN`. */
+export function voiceMatchesLang(voice, lang) {
+  return typeof voice === 'string' && /^[a-z]{2}-[A-Z]{2}-[A-Za-z]+Neural$/.test(voice) && voice.startsWith(`${lang}-`);
+}
+
+/**
+ * The operator's pins, filtered rather than trusted: a voice filed under the wrong language would be
+ * rejected by the provider AFTER billing, and a status route advertising it would lie about the
+ * voice the learner hears. Anything invalid is dropped and the default speaks instead.
+ */
+export function voiceOverrides({ hi = '', en = '' } = {}) {
+  const wanted = { 'hi-IN': String(hi ?? '').trim(), 'en-IN': String(en ?? '').trim() };
+  const out = {};
+  for (const [lang, voice] of Object.entries(wanted)) {
+    if (voice && voiceMatchesLang(voice, lang)) out[lang] = voice;
+  }
+  return out;
 }
 
 /**
  * The SSML body. `xml:lang` and the voice must agree, and the prosody wraps ONLY the words, so the
  * markup stays constant and the rate is the only thing that changes between requests.
  */
-export function buildSsml({ text, lang, rate = 1 }) {
-  const voice = voiceFor(lang);
+export function buildSsml({ text, lang, rate = 1, voices = {} }) {
+  const voice = voiceFor(lang, voices);
   if (!voice) throw new TtsError('TTS_LANG_UNSUPPORTED', `Unsupported voice language: ${lang}`, 400);
-  if (!VOICE_LANG[voice]) throw new TtsError('TTS_VOICE_INVALID', 'The configured voice does not match its language.', 500);
+  // The SSML must carry the voice that will actually speak — an operator's pin included, or the
+  // response's `X-Voice-Id` would name a voice the learner never heard.
+  if (!voiceMatchesLang(voice, lang) || (VOICE_LANG[voice] && VOICE_LANG[voice] !== lang)) {
+    throw new TtsError('TTS_VOICE_INVALID', 'The configured voice does not match its language.', 500);
+  }
   const percent = Math.round((clampRate(rate) - 1) * 100);
   const prosody = percent === 0 ? '0%' : `${percent > 0 ? '+' : ''}${percent}%`;
   return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${lang}">`
@@ -94,6 +119,11 @@ export function createTtsEngine({
   voices = {},
 } = {}) {
   const configured = Boolean(key && region);
+  // Pins are filtered at the engine's own door as well as in `voiceOverrides`, so no caller can
+  // advertise (or request) a voice filed under the wrong language.
+  const pinned = Object.fromEntries(
+    Object.entries(voices ?? {}).filter(([lang, voice]) => TTS_LANGS.includes(lang) && voiceMatchesLang(voice, lang)),
+  );
 
   function endpoint() {
     return `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
@@ -105,7 +135,7 @@ export function createTtsEngine({
       configured,
       engine: 'azure',
       langs: [...TTS_LANGS],
-      voices: { ...TTS_VOICES, ...voices },
+      voices: { ...TTS_VOICES, ...pinned },
       femaleOnly: true,
       maxChars: TTS_MAX_CHARS,
     };
@@ -127,7 +157,7 @@ export function createTtsEngine({
     const language = TTS_LANGS.includes(lang) ? lang : null;
     if (!language) throw new TtsError('TTS_LANG_UNSUPPORTED', `Choose one of: ${TTS_LANGS.join(', ')}.`, 400);
 
-    const body = buildSsml({ text: clean, lang: language, rate });
+    const body = buildSsml({ text: clean, lang: language, rate, voices: pinned });
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     let response;
@@ -168,7 +198,7 @@ export function createTtsEngine({
     }
     if (!audio.byteLength) throw new TtsError('TTS_EMPTY_AUDIO', 'The speech service returned silence.', 502);
 
-    const voice = voices[language] ?? TTS_VOICES[language];
+    const voice = voiceFor(language, pinned);
     logger?.info?.(`tts: ${voice} · ${clean.length} chars`);
     return { audio, contentType: 'audio/mpeg', voice, lang: language };
   }

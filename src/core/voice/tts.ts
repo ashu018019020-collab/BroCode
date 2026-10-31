@@ -129,7 +129,7 @@ export function serverVoiceNote(state: ServerVoiceState, voiceId: string | null,
   if (state === 'checking') return 'Checking the AI voice…';
   if (state === 'ready') {
     const name = voiceDisplayName(voiceId);
-    return `Female AI voice${name ? ` · ${name}` : ''} · Hindi + English · generated on the server.`;
+    return `Female AI voice${name ? ` · ${name}` : ''} · Hindi/Hinglish + English · generated on the server.`;
   }
   return support
     ? 'The server voice is not configured. Your browser’s own voice can read answers instead.'

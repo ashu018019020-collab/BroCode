@@ -248,7 +248,7 @@ export function pickVoiceFrom(voices: VoiceLike[], lang: VoiceLangId): VoiceLike
  * choose between and nothing for the caller to pass in. It promises only what the browser keeps.
  */
 export function ttsEngineNote(): string {
-  return 'Female AI voice · Hindi + English · generated on the server, streamed as audio.';
+  return 'Female AI voice · Hindi/Hinglish + English · generated on the server, streamed as audio.';
 }
 
 export function voiceStatusLabel(status: VoiceStatus, lang: VoiceLangId): string {

@@ -3,6 +3,7 @@ import { createAiObservability } from './ai-observability.mjs';
 import { createAuthServer } from './app.mjs';
 import { createSupabaseServices } from './supabase.mjs';
 import { createStore } from './db-config.mjs';
+import { TTS_VOICES, voiceOverrides } from './tts.mjs';
 
 // Render (and most PaaS hosts) inject PORT; a local run and `npm run dev:api` use API_PORT, which keeps
 // priority so the Vite proxy target and the server can never disagree.
@@ -50,8 +51,13 @@ await new Promise((resolve, reject) => {
   server.listen(port, () => {
     server.removeListener('error', reject);
     console.log(`BroCode Supabase account API listening on port ${port} (account store: ${label}).`);
+    // The voice ids the engine will actually speak — an operator's pin included, never a guess.
+    const speaking = {
+      ...TTS_VOICES,
+      ...voiceOverrides({ hi: process.env.AZURE_SPEECH_VOICE_HI, en: process.env.AZURE_SPEECH_VOICE_EN }),
+    };
     console.log(process.env.AZURE_SPEECH_KEY && process.env.AZURE_SPEECH_REGION
-      ? 'Speech out runs on Azure AI Speech (hi-IN-SwaraNeural / en-IN-NeerjaNeural), synthesised here.'
+      ? `Speech out runs on Azure AI Speech (${speaking['hi-IN']} / ${speaking['en-IN']}), synthesised here.`
       : 'No AZURE_SPEECH_KEY: /api/voice/tts answers 503 and the client uses its device voice only.');
     if (aiObservability.enabled) console.log('PostHog AI observability enabled for server AI calls.');
     if (enforceHttps) console.log('Plain-HTTP requests are redirected to HTTPS and HSTS is sent.');

@@ -280,7 +280,7 @@ test('voice: ties break deterministically so the same install always speaks the 
 
 test('voice: the engine note names the server voice, never Supertonic', () => {
   const note = voice.ttsEngineNote();
-  assert.match(note, /Hindi \+ English/);
+  assert.match(note, /Hindi\/Hinglish \+ English/);
   assert.match(note, /server/i);
   const pkg = JSON.parse(read('package.json'));
   assert.doesNotMatch(note, /Supertonic|Neural2/i);
