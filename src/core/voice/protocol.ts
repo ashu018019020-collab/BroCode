@@ -1,84 +1,127 @@
 /**
- * The nine states the voice surface can be in — as data, so the UI and the tests share one list.
+ * The contract between the page and the voice worker.
  *
- * These describe a CONVERSATION WITH A SERVER, which is why there is no `downloading` phase any
- * more: the model is loaded once on the inference service, and the browser only ever waits for a
- * small WAV. What can still take time is the connection, the service's first-request warm-up, and
- * the synthesis itself, and each of those is its own state so the panel can say which one it is.
- *
- *   idle         — the service answered and is ready. Nothing is playing.
- *   connecting   — asking `GET /api/voice/status` whether a voice exists at all.
- *   preparing    — the service is up but still loading the model (its first boot).
- *   generating   — a request is in flight and no audio has started yet.
- *   speaking     — audio is actually playing. Never set from a timer.
- *   paused       — playback is held at its position (the audio clock is suspended).
- *   completed    — the answer finished playing.
- *   disconnected — the service is unreachable or unconfigured. A real state, not an error dialog.
- *   error        — the service answered with a failure; `code` says which.
+ * Kept in one place, and pure, so the two ends cannot drift: the worker's `switch` and the client's
+ * `onmessage` both read these types, and `parseWorkerMessage` is what the tests drive. A message that
+ * does not fit is dropped rather than trusted — a worker is a separate realm, and its output is data,
+ * not instructions.
  */
-export type VoicePhase =
-  | 'idle'
-  | 'connecting'
-  | 'preparing'
-  | 'generating'
-  | 'speaking'
-  | 'paused'
-  | 'completed'
-  | 'disconnected'
-  | 'error';
+import type { VoicePreset } from './assets';
 
+export type VoicePhase = 'idle' | 'downloading' | 'initializing' | 'ready' | 'speaking' | 'error';
+
+/**
+ * What the panel shows. `progress` is bytes-downloaded / bytes-total while downloading, and the
+ * absolute byte counts travel with it: "259 of 379 MB" tells a learner how long the wait is, where a
+ * bare percentage leaves them guessing whether it is 4 MB or 400.
+ */
 export interface VoiceStatus {
   phase: VoicePhase;
-  /** Short line for the panel. Never "Loading…" with no subject for more than one state. */
+  progress: number;
   message: string;
-  /** The route's own machine code (`VOICE_NOT_CONFIGURED`, `VOICE_TIMEOUT`, …), when it sent one. */
+  preset?: VoicePreset;
   code?: string;
-  /** A sentence the learner can act on. Only ever set with `phase: 'error'`. */
   detail?: string;
-  /** 0–1, only where a real fraction exists (the connection probe does not have one). */
-  progress?: number;
+  /** Bytes received in THIS download, across the whole plan. */
+  receivedBytes?: number;
+  /** Bytes the whole plan will need (the pinned checkpoint's size). */
+  totalBytes?: number;
+  /** Which file is arriving right now, for the second line of the panel. */
+  file?: string;
 }
 
-export const INITIAL_VOICE_STATUS: VoiceStatus = {
-  phase: 'connecting',
-  message: 'Connecting to the AI voice…',
-};
+export interface SpeakRequest {
+  type: 'speak';
+  id: number;
+  text: string;
+  lang: 'hi' | 'en';
+  preset: VoicePreset;
+  steps: number;
+  speed: number;
+}
+
+export type WorkerRequest =
+  | { type: 'preload' }
+  | { type: 'cancel'; id: number }
+  | { type: 'clear-cache' }
+  | SpeakRequest;
+
+export type WorkerResponse =
+  | { type: 'status'; status: VoiceStatus }
+  | { type: 'audio'; id: number; pcm: ArrayBuffer; sampleRate: number; durationSeconds: number; synthMs: number }
+  | { type: 'error'; id?: number; code: string; detail: string }
+  | { type: 'cache-cleared'; caches: string[] };
+
+const PHASES: readonly VoicePhase[] = ['idle', 'downloading', 'initializing', 'ready', 'speaking', 'error'];
+
+/** Narrow an untrusted message. Returns `null` for anything that is not one of ours. */
+export function parseWorkerMessage(input: unknown): WorkerResponse | null {
+  if (!input || typeof input !== 'object') return null;
+  const message = input as Record<string, unknown>;
+  switch (message.type) {
+    case 'status': {
+      const status = message.status as Record<string, unknown> | undefined;
+      if (!status || !PHASES.includes(status.phase as VoicePhase)) return null;
+      return {
+        type: 'status',
+        status: {
+          phase: status.phase as VoicePhase,
+          progress: clamp01(Number(status.progress ?? 0)),
+          message: String(status.message ?? ''),
+          preset: typeof status.preset === 'string' ? (status.preset as VoicePreset) : undefined,
+          code: typeof status.code === 'string' ? status.code : undefined,
+          detail: typeof status.detail === 'string' ? status.detail : undefined,
+          // Byte counts are the one place a bad number would be visible as a lie, so they are
+          // clamped to non-negative integers rather than trusted.
+          receivedBytes: byteCount(status.receivedBytes),
+          totalBytes: byteCount(status.totalBytes),
+          file: typeof status.file === 'string' ? status.file : undefined,
+        },
+      };
+    }
+    case 'audio': {
+      if (!(message.pcm instanceof ArrayBuffer) || !message.pcm.byteLength) return null;
+      return {
+        type: 'audio',
+        id: Number(message.id ?? 0),
+        pcm: message.pcm,
+        sampleRate: Number(message.sampleRate ?? 44100) || 44100,
+        durationSeconds: Number(message.durationSeconds ?? 0) || 0,
+        synthMs: Number(message.synthMs ?? 0) || 0,
+      };
+    }
+    case 'error':
+      return {
+        type: 'error',
+        id: message.id === undefined ? undefined : Number(message.id),
+        code: String(message.code ?? 'voice-error'),
+        detail: String(message.detail ?? 'The voice could not speak.'),
+      };
+    case 'cache-cleared':
+      return { type: 'cache-cleared', caches: Array.isArray(message.caches) ? message.caches.map(String) : [] };
+    default:
+      return null;
+  }
+}
+
+/** A byte count from an untrusted message: finite, integral, never negative. */
+export function byteCount(value: unknown): number | undefined {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return undefined;
+  return Math.round(number);
+}
 
 export function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.min(1, Math.max(0, value));
 }
 
-/** Copy for each phase, so no component invents its own wording. */
+/** The copy the panel shows. One owner, so the worker and the page cannot describe the same state differently. */
 export const PHASE_COPY: Record<VoicePhase, string> = {
-  idle: 'Ready',
-  connecting: 'Connecting to the AI voice…',
-  preparing: 'Preparing the voice…',
-  generating: 'Generating speech…',
-  speaking: 'Speaking',
-  paused: 'Paused',
-  completed: 'Finished',
-  disconnected: 'Voice offline',
-  error: 'Voice error',
+  idle: 'Voice ready to start',
+  downloading: 'Downloading Supertonic 3…',
+  initializing: 'Initializing Supertonic 3…',
+  ready: 'Supertonic 3 ready',
+  speaking: 'AI Mentor is speaking',
+  error: 'Supertonic 3 could not load',
 };
-
-/**
- * Can the engine speak right now?
- *
- * `generating` counts: the request is already accepted, so a control must not treat the engine as
- * unavailable in the half-second before the first sample. `disconnected` and `error` are the only
- * two states that mean "this will not work until something changes".
- */
-export function isVoiceReady(status: Pick<VoiceStatus, 'phase'>): boolean {
-  return status.phase !== 'disconnected' && status.phase !== 'error';
-}
-
-/** A wait the learner should be told about, rather than a failure. */
-export function isVoicePreparing(status: Pick<VoiceStatus, 'phase'>): boolean {
-  return status.phase === 'connecting' || status.phase === 'preparing' || status.phase === 'generating';
-}
-
-/** Is audio (or a press that will produce it) currently owning the speaker? */
-export function isVoiceActive(status: Pick<VoiceStatus, 'phase'>): boolean {
-  return status.phase === 'speaking' || status.phase === 'paused' || status.phase === 'generating';
-}

@@ -1089,6 +1089,16 @@ export default function InterviewMode() {
               value={voice.rate}
               onChange={(e) => voice.setRate(Number(e.target.value))}
             />
+            <label className="small muted" htmlFor="iv-pitch">Pitch {voice.pitch.toFixed(1)}</label>
+            <input
+              id="iv-pitch"
+              type="range"
+              min={0.6}
+              max={1.4}
+              step={0.1}
+              value={voice.pitch}
+              onChange={(e) => voice.setPitch(Number(e.target.value))}
+            />
             <label className="small muted" htmlFor="iv-lang">Speech language</label>
             <select id="iv-lang" value={voice.lang} onChange={(e) => voice.setLang(e.target.value === 'hi-IN' ? 'hi-IN' : 'en-IN')}>
               <option value="en-IN">English</option>
@@ -1097,16 +1107,20 @@ export default function InterviewMode() {
             <label className="small muted" htmlFor="iv-voice">Voice</label>
             <select
               id="iv-voice"
-              value={voice.preset}
-              onChange={(e) => voice.setPreset(e.target.value as (typeof voice.presets)[number])}
+              value={voice.voiceName ?? ''}
+              onChange={(e) => voice.setVoiceName(e.target.value || null)}
+              disabled={voice.voices.length === 0}
             >
-              {voice.presets.map((preset) => <option key={preset} value={preset}>{preset}</option>)}
+              <option value="">Best available (automatic)</option>
+              {voice.voices
+                .filter((v) => v.lang.replace('_', '-').toLowerCase().startsWith(voice.lang.slice(0, 2)))
+                .map((v) => <option key={v.name} value={v.name}>{v.name}{v.localService ? ' (device)' : ' (network)'}</option>)}
             </select>
           </div>
           <AiVoiceRow voice={voice} />
           <p className="small muted" style={{ margin: '8px 0 0' }}>
             {voiceSupportNote(voice.supported)
-              || `Questions are spoken with the ${voice.lang === 'hi-IN' ? 'Hindi' : 'English'} Supertonic voice from the BroCode server. The transcript appears in the answer box for you to edit. Answering by voice never turns the interviewer's voice off — the mic and the speaker are separate.`}
+              || `Questions are spoken with the ${voice.lang === 'hi-IN' ? 'Hindi' : 'English'} voice — the on-device Supertonic voice once it is downloaded, the built-in voice until then. The transcript appears in the answer box for you to edit. Answering by voice never turns the interviewer's voice off — the mic and the speaker are separate.`}
             {draftSaved && ' Your progress in the last sitting is saved on this device.'}
           </p>
           {voice.error && (
@@ -1393,7 +1407,7 @@ export default function InterviewMode() {
                   <span className="chip">~{Math.ceil(PER_QUESTION_SECONDS / 60)} min typical</span>
                   {style === 'adaptive' && <span className="chip">adaptive level: {adaptiveLevelNow}</span>}
                   {voice.engine === 'cloud' && <span className="chip iv-engine">Google voice</span>}
-                  {voice.engine === 'supertonic' && <span className="chip iv-engine">Supertonic 3</span>}
+                  {voice.engine === 'browser' && voice.supported.synthesis && <span className="chip iv-engine">Browser voice</span>}
                 </div>
 
                 <div className="iv-hint-block">

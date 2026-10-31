@@ -50,82 +50,72 @@ These are product rules, not prompt suggestions, and the tests enforce them:
 
 ## Voice paths
 
-### One engine: Supertonic 3 on the server
+### Default: Supertonic 3 in the browser (ONNX Runtime Web)
 
-The tutor's voice is **Supertonic 3** (`Supertone/supertonic-3`), a 99M-parameter ONNX TTS model that
-runs on the **server**, in `services/supertonic-tts/`. The browser sends text and receives audio:
+The AI Mentor speaks with the real Supertonic 3 model running **in the visitor's browser**. There is
+no inference service to host, no API key and no server env var: `https://mybrocode.vercel.app/` works
+on a deployment with nothing configured, which is precisely what the previous server-backed design
+could not do.
 
-```
-browser ──POST /api/voice/tts──▶ Vercel function ──▶ services/supertonic-tts (CPU) ──▶ audio/wav
-        ◀──────────────────────── audio ──────────┘
-```
+How it fits together:
 
-There is exactly one speech engine in the product. Nothing model-shaped is shipped to, cached by, or
-executed in the browser: no ONNX Runtime, no worker, no WASM, no checkpoint download. The browser
-receives the WAV for the sentence it is about to hear, decodes it with `decodeAudioData` and schedules
-it on one `AudioContext`. Without a configured backend the AI flow **says so and stays silent** — it
-never substitutes a robotic voice and never starts a model download.
+| Piece | File | What it does |
+| --- | --- | --- |
+| Inference | `src/core/voice/engine.ts` | The four ONNX graphs in the SDK's order: duration predictor → text encoder → flow-matching loop over the vector estimator → vocoder. Runtime-agnostic (`Session` is a two-line interface). |
+| Tokenizer | `src/core/voice/text.ts` | A faithful port of the SDK's `UnicodeProcessor`: NFKD, symbol table, `<lang>…</lang>` wrapper, `unicode_indexer.json` lookup, sentence chunking. |
+| Voice styles | `src/core/voice/style.ts` | `voice_styles/<preset>.json` → `[1,50,256]` / `[1,8,16]` tensors, shape-checked so a bad file is an error rather than nonsense audio. |
+| Weights | `src/core/voice/assets.ts` | Revision-pinned URLs, Cache Storage keyed by revision, progress from real bytes, retry on failure, `clearVoiceCache()`. |
+| Worker | `src/workers/tts.worker.ts` | Owns ONNX Runtime Web, downloads the checkpoint, builds the sessions, synthesises. WebGPU preferred, WASM fallback. |
+| Client | `src/core/voice/client.ts` | The page's only handle: status events + finished PCM. Parses worker messages, drops anything unrecognised. |
 
-| | |
-| --- | --- |
-| Model | `Supertone/supertonic-3`, pinned to revision `724fb5a…` (never `main`) |
-| Graphs | `duration_predictor` · `text_encoder` · `vector_estimator` (×8 denoising steps) · `vocoder` |
-| Runtime | Python `supertonic[serve]==1.3.1`, ONNX Runtime CPU, one process, one model |
-| Output | 44.1 kHz mono 16-bit WAV |
-| Voice preset | `F1` (`F1–F5` female / `M1–M5` male), `SUPERTONIC_STYLE` or per request as `voice` |
-| Code | `services/supertonic-tts/app.py` (HTTP, auth, readiness), `api/voice/*` (Vercel proxy), `server/voice-engine.mjs` (engine + health), `src/core/voice/server.ts` (the browser's only client) |
+- **Model**: `Supertone/supertonic-3` pinned to revision `3cadd1ee6394adea1bd021217a0e650ede09a323`
+  (OpenRAIL-M, `supertonic` SDK 1.3.1 semantics). Weights come from that revision's Hugging Face URLs —
+  380 MB (398,361,202 bytes, exactly) across `duration_predictor`, `text_encoder`, `vector_estimator` (244.7 MB) and `vocoder` —
+  never from a branch, never from a CDN that could change under us.
+- **Caching**: one Cache Storage bucket per revision, written only after a complete, length-verified
+  body. A returning visitor downloads nothing; `Clear voice cache` in the settings row deletes that
+  bucket and nothing else (no `localStorage`, no IndexedDB, no learner record).
+- **Runtime**: `onnxruntime-web` 1.22 with its WASM files published to `public/ort/` by
+  `scripts/ort-copy.mjs` at build time (a `prebuild`/`predev` hook), so nothing is fetched from a
+  third-party CDN at runtime. WebGPU is used when the browser exposes an adapter; WASM otherwise.
+- **Cost**: the first Speak press costs the download; every later one is local inference. There is no
+  per-character billing, no rate limit and no cold start beyond the browser itself.
 
-**The browser side is two routes and a state machine.**
+**Measured on the pinned checkpoint** (ONNX Runtime Web's WASM build, one thread, 8 steps, preset `F1`,
+44.1 kHz) — the same code path the worker runs:
 
-| Route | Purpose |
-| --- | --- |
-| `GET /api/voice/status` | Does a voice exist, is it ready, which presets does this checkpoint ship |
-| `POST /api/voice/tts` | `{ text, lang, rate, voice }` → `audio/wav` (+ `X-Voice-Engine`, `X-Sample-Rate`) |
+| Case | Predicted | Audio | Synthesis |
+| --- | --- | --- | --- |
+| Hindi, 3 sentences | 10.044 s | 10.101 s | 16.0 s |
+| English, 2 sentences | 7.782 s | 7.802 s | 11.6 s |
+| Hindi, 1 sentence | 5.139 s | 5.155 s | 8.2 s |
+| English, 1 sentence | 3.601 s | 3.622 s | 6.4 s |
 
-`src/core/voice/server.ts` maps each failure to a code the UI branches on — `voice-unconfigured`,
-`voice-auth-failed`, `voice-rate-limited`, `voice-timeout`, `voice-unavailable`, `voice-invalid-audio`,
-`voice-bad-request`, `voice-offline`, `voice-aborted` — and each carries `retryable`. That is what
-keeps Retry off screens where pressing it cannot help: a missing service or a rejected secret is
-configuration, not a blip.
+The duration predictor is deterministic, which is what makes these a correctness check: the browser
+engine's predicted durations match the official Python SDK's for the same text (5.4 s ÷ 1.05 speed =
+5.14 s, 3.78 ÷ 1.05 = 3.60 s). A drifting tokenizer would move them immediately.
 
-**Phases** (`src/core/voice/protocol.ts` + `src/core/voice/state.ts`) are derived, never timed:
-`connecting` → `preparing` (the service says its model is still loading) → `idle` (ready) →
-`generating` (a request is in flight) → `speaking` (a buffer source actually started) → `paused` →
-`completed`, with `disconnected` and `error` as the two honest failure states. `speaking` is only ever
-set by a started source, so the UI can never show a speaking animation over silence.
+**Honest limits.** WASM synthesis runs at roughly 1.5× real time on one thread, so the first sentence
+of a long answer is heard a few seconds after the press; WebGPU is materially faster where it exists.
+The checkpoint is 380 MB, which is real bandwidth on a mobile connection — the panel reports the
+percentage rather than hiding it, and the cache means it is paid once per browser. A device that cannot
+hold the sessions reports the engine's error code instead of pretending to speak.
 
-**Language policy.** The model takes a language tag per chunk. BroCode's `hi-IN` setting means "Hindi
-voice, Hinglish explanations", and Hinglish is usually Roman script — tagging Roman text `hi` asks the
-model to read Latin letters as Hindi. So the tag follows the script on the page
-(`languageForChunk`: Devanagari → `hi`, Latin → `en`). The setting decides whether a Hindi answer is
-*spoken* in Hindi; it never rewrites the answer. The Python service maps the UI tags (`hi-IN`/`en-IN`)
-to the model's `hi`/`en` without changing the text.
+**First-load UX.** The download starts on intent, not on arrival: turning the voice on, opening the
+mic, or pressing Speak begins it, and the panel then shows a real progress bar labelled in bytes
+("259 of 380 MB") with the line "One-time download — it stays cached in this browser". The Speak button
+answers the press with "Preparing voice… 42%" so a slow network never reads as a dead button, and while
+the four sessions are being built the bar switches to an indeterminate sweep instead of sitting at a
+frozen 0%. A failed download shows the engine's own code with `Retry` (which resumes — the files already
+in Cache Storage are not fetched again) and `Clear voice cache`. Nothing here is a timer: every number
+is bytes that actually crossed the network.
 
-**Time to first audio.** Every request produces one complete WAV; the client splits a long answer into
-sentence-packed requests (`cloudChunks`, ≤460 characters) and starts playback as soon as the FIRST
-chunk decodes, while later chunks are still being generated. The service serializes inference on CPU
-(ONNX sessions are not thread-safe), so concurrent learners wait in a bounded queue rather than racing.
-There is no in-process audio cache: a repeated request re-runs inference. This is chunk-level, not
-token-level streaming, and it is not described as streaming anywhere in the UI.
+### Legacy: the server voice (kept, unused by the client)
 
-Measured against the real cached checkpoint on a Linux CPU container (8 steps, style `F1`, 44.1 kHz):
-Hindi 5.14 s of audio in 1.42 s, English 4.31 s in 1.22 s, and Roman Hinglish 3.39 s in 1.15 s. First
-boot downloads the 398 MB checkpoint once; later starts load it from `SUPERTONIC_CACHE_DIR`. These are
-one-machine measurements, not a guarantee for every CPU.
-
-**A failure is an error, not a downgrade.** A missing service, an unreachable one, a rejected request
-or a chunk that never arrived stops the answer, says why, and offers Retry only where Retry can help —
-which re-probes the deployment and re-issues the request. It is deliberately *not* finished by the
-browser's synthesiser. Swapping in a robotic voice mid-answer is what made a broken deployment look
-healthy, and two engines in one answer talk over each other. That whole branch was deleted, along with
-the worker that used to run the model in the tab.
-
-**Why the old build stalled.** The previous implementation ran the four ONNX graphs in a module worker
-on the visitor's machine: 398 MB of weights, an 11 MB WASM runtime served from `public/ort/`, and four
-sessions to build before the first word. "Preparing Supertonic 3…" was that work, and on a phone, on a
-metered connection, or wherever the runtime could not fetch its WASM it never finished. The fix was
-architectural, not cosmetic: the model moved to a process that loads it once, and the page went back to
-being a page.
+`services/supertonic-tts/`, `api/voice/*` and `server/voice*.mjs` still exist and still pass their own
+tests — they are a working server-side implementation of the same contract, kept because deleting a
+tested subsystem is a separate decision. The page no longer calls them: `useVoiceTutor` asks the worker,
+and `scripts/tests/supertonic-voice.test.mjs` fails if the hook ever fetches `/api/voice/*` again.
 
 ### Voice presets — measured, not guessed
 
@@ -174,15 +164,16 @@ The response header `X-Voice-Engine` names the engine that produced the audio, s
 evidence rather than an assumption. A configured-but-unreachable service is reported as unavailable —
 never silently replaced by Google without that header changing.
 
-### No fallback voice
+### Opt-in: the browser speech loop
 
-There is no `speechSynthesis` path any more, opt-in or otherwise. A learner who cannot be spoken to
-keeps every word on screen; the panel names the cause (`voice-unconfigured`, `voice-offline`, …)
-instead of switching to a robotic voice that would make the deployment look healthier than it is.
-Speech *input* is still Chromium's `SpeechRecognition`, which is a browser service — the settings note
-says so rather than claiming every path is local.
+`src/components/shared/useVoiceTutor.ts` keeps `speechSynthesis` for the case where the learner
+chooses it explicitly (`engine: 'browser'`). It is never reached from the default AI preference, and
+when it is used it is labelled as the built-in browser voice — never described as AI audio. Chrome's
+speech recognition is itself a browser service — the settings note says so rather than claiming every
+path is local. Text input always works, and every answer is readable, so a deployment with no voice
+is a quiet tutoring session rather than a broken page.
 
-### Smooth playback
+#### Smooth playback (server path)
 
 The spoken answer is not one request per utterance. Three details produce the natural feel, and each
 is a deliberate choice rather than a default:
@@ -349,8 +340,8 @@ TTS_SERVICE_URL=https://brocode-voice.onrender.com TTS_SERVICE_SECRET=... npm ru
 
 `https://mybrocode.vercel.app/api/voice/status` must answer
 `{"configured":true,"engine":"supertonic","ready":true,…}`. While it answers `engine: "none"` the
-deployment has no server voice and the settings row says so — the site is not broken, it is simply silent, and no model weight is
-downloaded to say so.
+deployment has no server voice and the settings row says `built-in browser voice` — the site is not
+broken, it is simply speaking with the browser, and no model weight is downloaded to say so.
 
 ### Vercel: the two voice routes as functions
 
@@ -362,7 +353,7 @@ The Vercel deployment does not need the account API host for voice. `api/voice/s
 | --- | --- |
 | `TTS_SERVICE_URL` + `TTS_SERVICE_SECRET` | Functions proxy to `services/supertonic-tts/`; Supertonic speaks |
 | `GOOGLE_TTS_API_KEY` (only) | Functions call Google directly; no extra host at all |
-| neither | Status answers `engine: none`; the AI flow says so and stays silent |
+| neither | Status answers `engine: none`; the built-in browser voice reads answers |
 
 **The checkpoint still cannot run inside a function.** 398 MB of weights plus the native runtime is
 far past a serverless bundle, and a cold start that downloads the model would time out. `services/supertonic-tts/`

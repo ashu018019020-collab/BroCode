@@ -286,13 +286,12 @@ export type ServerVoiceEngine = 'supertonic' | 'google' | 'none' | null;
  * What engine is actually speaking — the settings line, and the one place the plumbing is named.
  *
  * Two facts decide the sentence, in this order: which engine AUDIBLY spoke last, then what the engine
- * reported about itself. Nothing here may claim a voice the deployment does not have, and no line may
- * describe the browser's own synthesiser as AI audio. Supertonic 3 runs on the BroCode server, so the
- * sentence says exactly that — and there is no "loading…" string here, because the model is loaded
- * once by the service and a learner should never be shown a download that is not happening.
+ * reported about itself. Nothing here may claim a voice the browser does not have, and no line may
+ * describe the browser's own synthesiser as AI audio. Supertonic 3 now runs in this browser, so the
+ * sentence says exactly that instead of implying a server.
  */
 export function ttsEngineNote(
-  engine: 'supertonic' | 'cloud' | null,
+  engine: 'supertonic' | 'cloud' | 'browser' | null,
   server: { state: 'checking' | 'ready' | 'unavailable'; engine: ServerVoiceEngine },
 ): string {
   const name = server.engine === 'supertonic'
@@ -301,16 +300,23 @@ export function ttsEngineNote(
       ? 'Google Neural2'
       : null;
   if (engine === 'supertonic') {
-    return `AI voice · Supertonic 3 · Hindi + English · runs on the BroCode server.`;
+    return `AI voice · Supertonic 3 · Hindi + English · runs in this browser.`;
   }
   if (engine === 'cloud') {
     return `AI voice · ${name ?? 'Google Neural2'} · Hindi + English · server voice.`;
   }
-  if (server.state === 'checking') return 'Connecting to the AI voice…';
-  if (server.state === 'ready') {
-    return `AI voice · ${name ?? 'Supertonic 3'} · Hindi + English · runs on the BroCode server.`;
+  if (engine === 'browser') {
+    if (server.state === 'checking') return 'Built-in browser voice for this answer — checking the AI voice…';
+    if (server.state === 'ready') {
+      return 'The AI voice did not answer — the built-in browser voice read this one. Retry the AI voice.';
+    }
+    return 'Built-in browser voice — this deployment has no AI voice configured, so answers are read locally.';
   }
-  return 'The AI voice is not available on this deployment yet — press Retry to check again.';
+  if (server.state === 'checking') return 'Loading Supertonic 3…';
+  if (server.state === 'ready') {
+    return `AI voice · ${name ?? 'Supertonic 3'} · Hindi + English · runs in this browser.`;
+  }
+  return 'Supertonic 3 is not loaded yet — press Speak to start it.';
 }
 
 /** The line under the mic button. One state, one short label. */

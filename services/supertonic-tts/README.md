@@ -24,7 +24,6 @@ to download.
 | `GET /healthz` · `/ready` | — | 200 only when the model is loaded; 503 while loading/failed |
 | `GET /health` | — | always 200 with `phase`, `ready`, `error`, `sampleRate` |
 | `POST /v1/tts` | `Authorization: Bearer $TTS_SERVICE_SECRET` | `{ text, lang, rate, voice? }` → `audio/wav` |
-| `GET /v1/voices` | — | The presets this checkpoint really ships (`F1`…`M5`) |
 
 `lang` accepts `en`, `en-IN`, `hi`, `hi-IN`. `voice` defaults to `F1` (`M1–M5`, `F1–F5` are the
 built-ins). `rate` is clamped to 0.5–2.0 by the schema. Text is validated to 1–1200 characters before

@@ -51,7 +51,7 @@ export function createVoiceEngine({
   probeTimeoutMs = 1_500,
 } = {}) {
   const base = trimUrl(serviceUrl);
-  let probe = { at: 0, ready: false, detail: null, voices: [] };
+  let probe = { at: 0, ready: false, detail: null };
 
   /**
    * Ask the inference service whether it is up. Never throws: an unreachable service is a state, and
@@ -61,7 +61,7 @@ export function createVoiceEngine({
     if (!base) return { ready: false, detail: 'TTS_SERVICE_URL is not set.' };
     const ttl = probe.ready ? PROBE_TTL_MS : PROBE_FAILURE_TTL_MS;
     if (!force && probe.at && now() - probe.at < ttl) {
-      return { ready: probe.ready, detail: probe.detail, voices: probe.voices };
+      return { ready: probe.ready, detail: probe.detail };
     }
     try {
       const response = await fetchImpl(`${base}/healthz`, {
@@ -69,21 +69,15 @@ export function createVoiceEngine({
         signal: AbortSignal.timeout(probeTimeoutMs),
       });
       if (!response.ok) {
-        probe = { at: now(), ready: false, detail: `health check answered HTTP ${response.status}`, voices: [] };
+        probe = { at: now(), ready: false, detail: `health check answered HTTP ${response.status}` };
         return probe;
       }
       const body = await response.json().catch(() => ({}));
       const ready = body?.ready === true;
-      // The service lists the presets its checkpoint actually ships; the browser's selector is
-      // narrowed to this, so a voice that does not exist is never offered.
-      const voices = Array.isArray(body?.voices)
-        ? body.voices.filter((name) => typeof name === 'string' && /^[FM][1-5]$/.test(name))
-        : [];
       probe = {
         at: now(),
         ready,
         detail: ready ? null : String(body?.error ?? 'the model is still loading'),
-        voices,
       };
       return probe;
     } catch (cause) {
@@ -91,7 +85,6 @@ export function createVoiceEngine({
         at: now(),
         ready: false,
         detail: cause?.name === 'TimeoutError' ? 'health check timed out' : 'service unreachable',
-        voices: [],
       };
       return probe;
     }
@@ -102,11 +95,9 @@ export function createVoiceEngine({
     let engine = 'none';
     let ready = false;
     let reason = null;
-    let voices = [];
     if (base) {
       const health = await serviceHealth();
       ready = health.ready;
-      voices = health.voices ?? [];
       // A configured but unreachable service still names itself: the UI can then say "the AI voice is
       // temporarily unavailable" instead of pretending this deployment never had one.
       engine = 'supertonic';
@@ -124,7 +115,6 @@ export function createVoiceEngine({
       ready,
       langs: VOICE_LANGS,
       reason,
-      voices,
     };
   }
 

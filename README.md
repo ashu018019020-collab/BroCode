@@ -187,7 +187,7 @@ A service worker (`public/sw.js`, cache `aiml-v6`) caches the app shell at runti
 
 The AI studio at `/#/ai-mentor` adds a voice-first mentor, a diagnostics-driven coding coach inside the Playground, and a spoken mock-interview round with scorecards. Answers, code evidence and scores come from the bundled curriculum and the offline runners.
 
-The spoken voice is **Supertonic 3**, a 99M-parameter multilingual TTS model that runs on the **server** (Hindi and English, CPU, no per-character billing). The browser sends text to `POST /api/voice/tts` and receives audio: nothing model-sized is downloaded, cached or executed on the learner's device. The engine is the container in [`services/supertonic-tts/`](services/supertonic-tts/README.md), reached through `TTS_SERVICE_URL`; a Google TTS key is the alternative server engine, and if neither is configured the AI flow says so and stays silent — there is no robotic fallback voice. Optional OpenAI Realtime voice needs a server-side key, is rate-limited, and is a separate path. Details: [docs/AI-VOICE.md](docs/AI-VOICE.md).
+The spoken voice is **Supertonic 3**, a 99M-parameter multilingual TTS model that runs **inside the visitor's browser** with ONNX Runtime Web (WebGPU where available, WASM otherwise). The four ONNX graphs and the selected voice style are fetched once from a pinned Hugging Face revision, cached by the browser and reused — so there is no TTS server, no API key and no per-character billing. F1 is the default female voice, and Hindi + English are both spoken. Details: [docs/AI-VOICE.md](docs/AI-VOICE.md).
 
 ---
 

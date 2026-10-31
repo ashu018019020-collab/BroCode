@@ -50,40 +50,25 @@ test('backend: the pinned package, container and cache are deployable as written
   assert.doesNotMatch(blueprint, /voice-service\/Dockerfile/, 'the Node service is not the deployed backend');
 });
 
-test('backend: no model, runtime or download reaches the browser', () => {
-  // This used to pin the opposite (a browser worker owning ONNX Runtime). The browser-side engine was
-  // removed on request: the checkpoint is loaded once by the service above, and the page only ever
-  // receives WAV. These assertions exist so the old architecture cannot be reintroduced by accident.
+test('backend: the voice engine runs in the browser and the page never touches ONNX Runtime', () => {
+  // The architecture this test used to pin (model on a server, nothing in the browser) was replaced
+  // on request: the checkpoint now loads in a worker, so `onnxruntime-web` is a real dependency and
+  // must be imported by exactly one file.
   const pkg = JSON.parse(read('package.json'));
-  assert.equal(pkg.dependencies?.['onnxruntime-web'], undefined, 'the browser runtime is gone');
-  assert.equal(pkg.devDependencies?.['onnxruntime-node'], undefined, 'no native runtime either');
-  assert.equal(pkg.scripts?.prebuild, undefined, 'nothing copies WASM into the build any more');
-
-  for (const gone of [
-    'src/workers/tts.worker.ts',
-    'src/core/voice/engine.ts',
-    'src/core/voice/client.ts',
-    'src/core/voice/assets.ts',
-    'src/core/voice/style.ts',
-    'scripts/ort-copy.mjs',
-    'public/ort',
-  ]) {
-    assert.equal(exists(gone), false, `${gone} must not come back`);
-  }
+  assert.ok(pkg.dependencies?.['onnxruntime-web'], 'the browser runtime is installed');
+  assert.equal(pkg.devDependencies?.['onnxruntime-node'], undefined, 'no second native runtime to keep alive');
+  assert.ok(exists('src/workers/tts.worker.ts'), 'the worker is the owner of the runtime');
+  assert.ok(exists('src/core/voice/engine.ts'), 'the inference pipeline is a module of its own');
 
   for (const file of [
     'src/components/shared/useVoiceTutor.ts',
     'src/components/shared/AiVoiceRow.tsx',
     'src/core/ai/voice.ts',
-    'src/core/voice/server.ts',
+    'src/core/voice/client.ts',
   ]) {
-    assert.doesNotMatch(read(file), /onnxruntime/i, `${file} must not name the runtime`);
+    assert.doesNotMatch(read(file), /onnxruntime/, `${file} must not import the runtime`);
   }
-
-  // The page speaks through the deployment, and the deployment is the only thing holding the model.
-  assert.match(read('src/components/shared/useVoiceTutor.ts'), /createServerVoice/);
-  assert.match(read('src/core/voice/server.ts'), /\/tts/, 'the client posts to the proxy route');
-  assert.match(read('services/supertonic-tts/app.py'), /def voices/, 'the backend reports the presets it really has');
+  assert.match(read('src/workers/tts.worker.ts'), /onnxruntime-web/, 'only the worker does');
 });
 
 test('backend: Vercel reaches the Python service through the same authenticated contract', () => {
