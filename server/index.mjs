@@ -54,11 +54,7 @@ await new Promise((resolve, reject) => {
   server.listen(port, () => {
     server.removeListener('error', reject);
     console.log(`BroCode Supabase account API listening on port ${port} (account store: ${label}).`);
-    console.log(process.env.TTS_SERVICE_URL?.trim()
-      ? 'Supertonic 3 voice service configured (server-side inference).'
-      : process.env.GOOGLE_TTS_API_KEY?.trim()
-        ? 'Google Neural2 voice enabled for the tutor (server-side key).'
-        : 'No server voice configured — the tutor speaks with the browser voice only.');
+    console.log('The tutor speaks with the browser voice (SpeechSynthesis); no server TTS is involved.');
     if (enforceHttps) console.log('Plain-HTTP requests are redirected to HTTPS and HSTS is sent.');
     resolve();
   });

@@ -1,8 +1,6 @@
 import { createServer } from 'node:http';
 import { listAllAuthUsers } from './supabase.mjs';
 import { projectBrief } from './project-brief.mjs';
-import { synthesizeGoogleTts } from './voice.mjs';
-import { createVoiceEngine, VOICE_LANGS, VOICE_MAX_CHARS } from './voice-engine.mjs';
 import {
   INTERVIEW_DEFAULT_MODEL,
   evaluateInterviewAnswer,
@@ -236,15 +234,6 @@ export function createAuthServer({
   logger = console,
   enforceHttps = false,
   storeLabel = store?.name ?? 'unknown',
-  googleTtsKey = process.env.GOOGLE_TTS_API_KEY ?? '',
-  googleTtsVoices = {},
-  synthesizeTts = synthesizeGoogleTts,
-  // The preferred voice: the Supertonic service the deployment runs (services/supertonic-tts/). A configured
-  // but unreachable service is reported as unavailable; Google is only a fallback when a key exists.
-  voiceServiceUrl = process.env.TTS_SERVICE_URL ?? '',
-  voiceServiceSecret = process.env.TTS_SERVICE_SECRET ?? '',
-  voiceFetch = globalThis.fetch,
-  voiceServiceTimeoutMs = Number(process.env.TTS_SERVICE_TIMEOUT_MS ?? 20000) || 20000,
   openaiRealtimeKey = process.env.OPENAI_API_KEY ?? '',
   openaiRealtimeModel = process.env.OPENAI_REALTIME_MODEL ?? DEFAULT_REALTIME_MODEL,
   openaiRealtimeVoice = process.env.OPENAI_REALTIME_VOICE ?? DEFAULT_REALTIME_VOICE,
@@ -273,17 +262,6 @@ export function createAuthServer({
   if (!supabaseAdmin) throw new TypeError('A Supabase admin client is required.');
   if (!allowedOrigin) throw new TypeError('An allowed web origin is required.');
   if (typeof enforceHttps !== 'boolean') throw new TypeError('enforceHttps must be a boolean.');
-
-  const voice = createVoiceEngine({
-    serviceUrl: voiceServiceUrl,
-    serviceSecret: voiceServiceSecret,
-    googleKey: googleTtsKey,
-    googleVoices: googleTtsVoices,
-    synthesizeGoogle: synthesizeTts,
-    fetchImpl: voiceFetch,
-    logger,
-    serviceTimeoutMs: voiceServiceTimeoutMs,
-  });
 
   async function getUser(request) {
     const token = bearerToken(request);
@@ -340,22 +318,6 @@ export function createAuthServer({
   }
 
   const ttsHits = new Map();
-  function ttsAllowed(clientKey) {
-    const at = now();
-    const hits = (ttsHits.get(clientKey) ?? []).filter((stamp) => at - stamp < TTS_WINDOW_MS);
-    if (ttsHits.size > 5000) {
-      for (const [key, stamps] of ttsHits) {
-        if (!stamps.length || at - stamps[stamps.length - 1] >= TTS_WINDOW_MS) ttsHits.delete(key);
-      }
-    }
-    if (hits.length >= TTS_MAX_REQUESTS) {
-      ttsHits.set(clientKey, hits);
-      return false;
-    }
-    hits.push(at);
-    ttsHits.set(clientKey, hits);
-    return true;
-  }
 
   /**
    * One evaluation is one paid model call, so it gets its own budget: twenty per ten minutes per
@@ -412,14 +374,6 @@ export function createAuthServer({
         // real, Supabase Auth otherwise. `store` names which one answered, so an operator never has
         // to guess which path is live.
         json(response, 200, { api: 'ok', database: 'ok', store: storeLabel }, headers);
-        return;
-      }
-
-      // The voice engine's PUBLIC state: which server engine will speak, or none. No key, no service
-      // URL and no token ever leaves this process — the client needs the engine name and a boolean to
-      // label its own controls honestly, and nothing more.
-      if (request.method === 'GET' && url.pathname === '/api/voice/status') {
-        json(response, 200, await voice.status(), headers);
         return;
       }
 
@@ -480,50 +434,6 @@ export function createAuthServer({
           }
           logger.warn?.('Realtime voice request failed.', error?.code ?? error?.name ?? 'unknown');
           throw new HttpError(502, 'The realtime voice service is unavailable. The browser voice will be used.');
-        }
-      }
-
-      // One voice route, whatever engine is behind it. The browser sends text and gets audio: the
-      // model, the key and the inference service all stay on this side.
-      if (request.method === 'POST' && url.pathname === '/api/voice/tts') {
-        ensureSameOrigin(request, allowedOrigin);
-        const clientKey = request.socket?.remoteAddress ?? 'unknown';
-        if (!ttsAllowed(clientKey)) {
-          throw new HttpError(429, 'Too many voice requests in the last minute. Try again shortly.');
-        }
-        const input = await readJson(request);
-        const lang = typeof input?.lang === 'string' && VOICE_LANGS.includes(input.lang) ? input.lang : null;
-        if (!lang) throw new HttpError(400, `Choose a supported voice language: ${VOICE_LANGS.join(', ')}.`);
-        const text = typeof input?.text === 'string' ? input.text.trim() : '';
-        if (!text) throw new HttpError(400, 'Text is required.');
-        if (text.length > VOICE_MAX_CHARS) throw new HttpError(400, `Text must be at most ${VOICE_MAX_CHARS} characters.`);
-        const rate = Number(input?.rate);
-        try {
-          const speech = await voice.speak({
-            text,
-            lang,
-            rate: Number.isFinite(rate) ? rate : 1,
-          });
-          response.writeHead(200, {
-            ...SECURITY_HEADERS, ...headers,
-            'Content-Type': speech.contentType,
-            'Content-Length': String(speech.audio.length),
-            'X-Voice-Engine': speech.engine,
-            // Spoken lines repeat verbatim across a lesson; ten minutes of private caching spares the
-            // learner's network and the inference budget without leaving this account.
-            'Cache-Control': 'private, max-age=600',
-          });
-          response.end(speech.audio);
-          return;
-        } catch (error) {
-          if (error?.code === 'voice-rate-limited') throw new HttpError(429, 'The voice service is rate-limited. Try again in a moment.');
-          if (error?.code === 'voice-bad-lang') throw new HttpError(400, 'That voice language is not supported.');
-          if (error?.code === 'voice-bad-text') throw new HttpError(400, error.message);
-          if (error?.code === 'voice-unconfigured') {
-            throw new HttpError(503, 'No server voice is configured on this deployment. The browser voice will be used.');
-          }
-          logger.warn?.('Server TTS request failed.', error?.code ?? error?.name ?? 'unknown');
-          throw new HttpError(502, 'The AI voice is temporarily unavailable. Please try again.');
         }
       }
 
