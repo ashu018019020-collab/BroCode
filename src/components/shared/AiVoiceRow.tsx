@@ -1,31 +1,28 @@
 import { AlertTriangle, Check, Loader2, RotateCw } from 'lucide-react';
 import type { VoiceTutor } from './useVoiceTutor';
-import { FEMALE_PRESETS, VOICE_PRESETS, type VoicePreset } from '../../core/voice/assets';
+import { FEMALE_PRESETS, TOTAL_MODEL_BYTES, VOICE_PRESETS, bytesProgressLabel, formatBytes, type VoicePreset } from '../../core/voice/assets';
+import type { VoiceStatus as StatusShape } from '../../core/voice/protocol';
+import { clamp01 } from '../../core/voice/protocol';
 
 /**
- * The voice engine's status line — real, never aspirational.
+ * The voice engine's status — real, and never aspirational.
  *
- * The model runs in THIS browser (a worker holding the real Supertonic 3 graphs), so the row reports
- * what the worker said: bytes downloaded while the checkpoint arrives, "initializing" while the
- * sessions are created, "ready" once a preset is loaded, and the engine's own error code when it
- * could not start. "Ready" is only ever printed after the graphs loaded — an HTTP 200 for a 250 MB
- * file proves nothing about whether ONNX Runtime could parse it.
+ * The model runs in THIS browser, so the row reports what the worker said: bytes crossing the network
+ * while the checkpoint arrives, "starting" while the four sessions are built, "ready" once a preset is
+ * loaded, and the engine's own error code when it could not start. "Ready" is only ever printed after
+ * the graphs loaded: an HTTP 200 for a 250 MB file proves nothing about whether ONNX Runtime could
+ * parse it.
  *
- * Retry re-runs the real work (download + sessions), and Clear cache deletes only this model's Cache
- * Storage entry, never the learner's records.
+ * The first visit is the only slow one, and the panel says so out loud — a bar, megabytes, and the
+ * promise that this is paid once.
  */
 export function AiVoiceRow({ voice }: { voice: VoiceTutor }) {
-  const { phase, progress, code, detail } = voice.voiceStatus;
+  const status: StatusShape = voice.voiceStatus;
+  const { phase, code, detail } = status;
   const ready = phase === 'ready' || phase === 'speaking';
-  const busy = phase === 'downloading' || phase === 'initializing';
-  const pct = Math.round(Math.min(1, Math.max(0, progress)) * 100);
 
   return (
-    <div
-      className="small muted"
-      style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}
-      aria-live="polite"
-    >
+    <div className="small muted" style={{ marginTop: 8, display: 'grid', gap: 6 }} aria-live="polite">
       {ready ? (
         <span className="row" style={{ gap: 5 }}>
           <Check size={12} aria-hidden="true" />
@@ -33,22 +30,13 @@ export function AiVoiceRow({ voice }: { voice: VoiceTutor }) {
             <b>AI voice</b> · Supertonic 3 · {voice.preset} · Hindi + English · runs in this browser
           </span>
         </span>
-      ) : busy ? (
-        <span className="row" style={{ gap: 5 }}>
-          <Loader2 size={12} aria-hidden="true" />
-          <span>
-            {phase === 'downloading'
-              ? `Downloading Supertonic 3… ${pct}% (one time, then cached)`
-              : 'Initializing Supertonic 3…'}
-          </span>
-        </span>
       ) : phase === 'error' ? (
-        <>
+        <span className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <span className="row" style={{ gap: 5 }}>
             <AlertTriangle size={12} aria-hidden="true" />
             <span>
               Supertonic 3 could not load{code ? ` (${code})` : ''}
-              {detail ? `: ${detail}` : '.'} Check your connection and retry.
+              {detail ? `: ${detail}` : '.'}
             </span>
           </span>
           <button type="button" className="btn small ghost" onClick={voice.refreshServerVoice}>
@@ -57,14 +45,74 @@ export function AiVoiceRow({ voice }: { voice: VoiceTutor }) {
           <button type="button" className="btn small ghost" onClick={() => void voice.clearVoiceCache()}>
             Clear voice cache
           </button>
-        </>
-      ) : (
-        <span className="row" style={{ gap: 5 }}>
-          <span>Supertonic 3 · {voice.preset} · loads on first Speak (~379 MB, then cached)</span>
         </span>
+      ) : (
+        <>
+          <VoiceLoadProgress status={status} />
+          <span>
+            {phase === 'idle'
+              ? `Supertonic 3 · ${voice.preset} · downloads on the first Speak (${formatBytes(status.totalBytes ?? TOTAL_MODEL_BYTES)}, then cached)`
+              : 'One-time download. It stays in this browser, so later answers speak immediately.'}
+          </span>
+        </>
       )}
     </div>
   );
+}
+
+/**
+ * The bar itself — shared by the settings row and the mentor panel so both describe the same state.
+ *
+ * Bytes are the headline where they exist, because "259 of 379 MB" answers the real question ("how
+ * long?") in a way a percentage cannot. Once the download is done there is nothing to count, so the
+ * bar turns indeterminate and says what it is doing instead of inventing a number.
+ */
+export function VoiceLoadProgress({ status }: { status: StatusShape }) {
+  const downloading = status.phase === 'downloading';
+  const pct = Math.round(clamp01(status.progress ?? 0) * 100);
+  const received = Number(status.receivedBytes ?? 0);
+  const total = Number(status.totalBytes ?? 0);
+  const preparing = status.phase === 'initializing';
+
+  return (
+    <div className="voice-load">
+      <div
+        className={`voice-load-track${downloading ? '' : ' indeterminate'}`}
+        role="progressbar"
+        aria-label="Supertonic 3 model download"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={downloading ? pct : undefined}
+        aria-valuetext={downloading ? `${pct}%, ${bytesProgressLabel(received, total)}` : status.message}
+      >
+        <span className="voice-load-fill" style={{ width: `${downloading ? Math.max(2, pct) : 35}%` }} />
+      </div>
+      <div className="voice-load-line">
+        <span>{downloading ? <b>{bytesProgressLabel(received, total)}</b> : <b>{preparing ? 'Starting the engine…' : 'Waiting to start'}</b>}</span>
+        <span>{downloading ? `${pct}%` : ''}</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * What the Speak button says while the engine is not ready yet — an acknowledgement that the press
+ * landed, which is the difference between "slow" and "broken".
+ */
+export function VoicePrepareChip({ status }: { status: StatusShape }) {
+  if (status.phase !== 'downloading' && status.phase !== 'initializing') return null;
+  const pct = Math.round(clamp01(status.progress ?? 0) * 100);
+  return (
+    <span className="voice-prep small muted" aria-live="polite">
+      <span className="dot" aria-hidden="true" />
+      {status.phase === 'downloading' ? `Preparing voice… ${pct}%` : 'Starting voice…'}
+    </span>
+  );
+}
+
+/** True while the engine is busy loading, so callers can label a button without re-deriving it. */
+export function isVoicePreparing(status: StatusShape): boolean {
+  return status.phase === 'downloading' || status.phase === 'initializing';
 }
 
 /**

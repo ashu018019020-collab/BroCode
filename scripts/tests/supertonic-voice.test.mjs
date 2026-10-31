@@ -390,3 +390,70 @@ test('supertonic voice: the AI answer path has no browser synthesiser and no ser
   const browserPath = hook.indexOf('speakWithBrowser(); return;');
   assert.ok(aiGuard > 0 && browserPath > aiGuard, 'the AI guard runs before any browser path');
 });
+
+/* ------------------------------------------------------- the first-load experience */
+
+test('supertonic voice: the wait is described in bytes, because a percentage is not an answer', () => {
+  assert.equal(assets.formatBytes(0), '0 MB');
+  assert.equal(assets.formatBytes(430_000), '0.4 MB');
+  assert.equal(assets.formatBytes(3_670_016), '3.5 MB');
+  assert.equal(assets.formatBytes(244_700_000), '233 MB');
+  assert.equal(assets.bytesProgressLabel(0, assets.TOTAL_MODEL_BYTES), `0 MB of ${assets.formatBytes(assets.TOTAL_MODEL_BYTES)}`);
+  assert.equal(assets.bytesProgressLabel(150_000_000, assets.TOTAL_MODEL_BYTES), `143 MB of ${assets.formatBytes(assets.TOTAL_MODEL_BYTES)}`);
+  // A count that overshoots the plan would be a lie on screen: it is clamped, and no total means no "of".
+  // A count that overshoots the plan is clamped to the total instead of printing 1 GB of 380 MB.
+  assert.equal(
+    assets.bytesProgressLabel(999_000_000, assets.TOTAL_MODEL_BYTES),
+    `${assets.formatBytes(assets.TOTAL_MODEL_BYTES)} of ${assets.formatBytes(assets.TOTAL_MODEL_BYTES)}`,
+  );
+  assert.equal(assets.bytesProgressLabel(12_000_000, 0), '11 MB');
+  assert.equal(assets.formatBytes(Number.NaN), '0 MB');
+});
+
+test('supertonic voice: download progress carries absolute bytes and the file in flight', () => {
+  const parsed = protocol.parseWorkerMessage({
+    type: 'status',
+    status: {
+      phase: 'downloading',
+      progress: 0.68,
+      message: 'Downloading Supertonic 3… 68%',
+      receivedBytes: 259_000_000,
+      totalBytes: 379_000_000,
+      file: 'vector_estimator.onnx',
+    },
+  });
+  assert.equal(parsed.status.receivedBytes, 259_000_000);
+  assert.equal(parsed.status.totalBytes, 379_000_000);
+  assert.equal(parsed.status.file, 'vector_estimator.onnx');
+
+  // Untrusted numbers are cleaned, not trusted: a negative or NaN count would render as nonsense.
+  const cleaned = protocol.parseWorkerMessage({
+    type: 'status',
+    status: { phase: 'downloading', progress: 0.1, message: 'x', receivedBytes: -5, totalBytes: 'many' },
+  });
+  assert.equal(cleaned.status.receivedBytes, undefined);
+  assert.equal(cleaned.status.totalBytes, undefined);
+  assert.equal(protocol.byteCount(12.7), 13);
+});
+
+test('supertonic voice: the engine starts loading when the learner asks for voice, not on page load', async () => {
+  const { readFileSync } = await import('node:fs');
+  const panel = readFileSync('src/features/ai/VoiceMentorPanel.tsx', 'utf8');
+  const hook = readFileSync('src/components/shared/useVoiceTutor.ts', 'utf8');
+  const row = readFileSync('src/components/shared/AiVoiceRow.tsx', 'utf8');
+  const css = readFileSync('src/styles.css', 'utf8');
+
+  // Intent, not arrival: the two moments that mean "I am about to listen".
+  assert.match(panel, /if \(muted\) voice\.preloadVoice\(\)/, 'turning the voice on starts the download');
+  assert.match(panel, /voice\.preloadVoice\(\); voice\.toggleListening/, 'opening the mic starts it too');
+  assert.match(hook, /const preloadVoice = useCallback\(\(\) => \{[\s\S]{0,80}preload\(\)/, 'the hook owns the call');
+
+  // The press is acknowledged while the engine is not ready, and the wait is visible where it happens.
+  assert.match(panel, /<VoicePrepareChip status=\{voice\.voiceStatus\} \/>/);
+  assert.match(panel, /<VoiceLoadProgress status=\{voice\.voiceStatus\} \/>/);
+  assert.match(panel, /One-time download/);
+  assert.match(row, /role="progressbar"/, 'the bar is a real progressbar for a screen reader');
+  assert.match(row, /bytesProgressLabel/, 'the bar is labelled in bytes');
+  assert.match(css, /\.voice-load-fill/, 'the bar has a fill');
+  assert.match(css, /indeterminate/, 'starting the engine is not a frozen 0%');
+});

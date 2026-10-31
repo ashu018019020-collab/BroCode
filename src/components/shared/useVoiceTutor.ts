@@ -255,6 +255,8 @@ export interface VoiceTutor {
   serverVoice: { state: 'checking' | 'ready' | 'unavailable'; engine: 'supertonic' | 'google' | 'none' | null };
   /** Retry the real thing: start the download and the sessions again. */
   refreshServerVoice: () => void;
+  /** Warm the engine WITHOUT speaking — called when the learner turns the voice on. */
+  preloadVoice: () => void;
   /** Delete ONLY this model's Cache Storage entry — never learner data. */
   clearVoiceCache: () => Promise<string[]>;
   /** True once the engine can speak — false while it is still loading or after a failure. */
@@ -407,6 +409,15 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
    */
   const refreshServerVoice = useCallback(() => {
     setError(null);
+    voiceRef.current?.preload();
+  }, []);
+
+  /**
+   * Start loading before the first answer. Turning the voice on, or opening the mic, is a clear signal
+   * that speech is about to be wanted — so the 379 MB is paid while the learner is still reading the
+   * previous reply instead of after they press Speak and wait.
+   */
+  const preloadVoice = useCallback(() => {
     voiceRef.current?.preload();
   }, []);
 
@@ -1027,6 +1038,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       engine: voiceStatus.phase === 'error' && voiceStatus.code === 'unsupported' ? ('none' as const) : ('supertonic' as const),
     },
     refreshServerVoice,
+    preloadVoice,
     clearVoiceCache,
     setPreset: (preset: VoicePreset) => setPrefs((current) => ({ ...current, preset })),
     preset: prefs.preset,

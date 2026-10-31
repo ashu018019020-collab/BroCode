@@ -17,7 +17,7 @@ import {
 import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 import { MENTOR_LOG_KEY } from '../../core/platform/keys';
 import { useVoiceTutor } from '../../components/shared/useVoiceTutor';
-import { AiVoiceRow, VoicePresetPicker } from '../../components/shared/AiVoiceRow';
+import { AiVoiceRow, VoiceLoadProgress, VoicePrepareChip, VoicePresetPicker, isVoicePreparing } from '../../components/shared/AiVoiceRow';
 import { useRealtimeVoice } from '../../components/shared/useRealtimeVoice';
 import { toast } from '../../components/ui/Toast';
 import { useMentorAsk } from './useMentorAsk';
@@ -297,9 +297,20 @@ export function VoiceMentorPanel() {
                 ? 'Google Neural2 voice'
                 : voice.engine === 'browser'
                   ? 'Browser voice'
-                  : 'Ready'}
+                  : isVoicePreparing(voice.voiceStatus)
+                    ? 'Preparing Supertonic 3…'
+                    : `Supertonic 3 · ${voice.preset}`}
           </span>
         </div>
+
+        {!live && isVoicePreparing(voice.voiceStatus) && (
+          <div style={{ padding: '0 18px' }}>
+            <VoiceLoadProgress status={voice.voiceStatus} />
+            <p className="small muted" style={{ margin: '2px 0 0' }}>
+              One-time download — it stays cached in this browser, so every later answer speaks immediately.
+            </p>
+          </div>
+        )}
 
         {!live && (
           <>
@@ -307,11 +318,14 @@ export function VoiceMentorPanel() {
               <button
                 type="button"
                 className={`btn ${voice.listening ? 'primary' : ''}`}
-                onClick={() => voice.toggleListening(handleTranscript)}
+                onClick={() => { voice.preloadVoice(); voice.toggleListening(handleTranscript); }}
                 aria-pressed={voice.listening}
               >
-                {voice.listening ? <><Square size={13} /> Stop listening</> : <><Mic2 size={14} /> {voice.lang === 'hi-IN' ? 'Bolo' : 'Speak'}</>}
+                {voice.listening
+                  ? <><Square size={13} /> Stop listening</>
+                  : <><Mic2 size={14} /> {voice.lang === 'hi-IN' ? 'Bolo' : 'Speak'}</>}
               </button>
+              <VoicePrepareChip status={voice.voiceStatus} />
               {(voice.speaking || voice.listening) && (
                 <button
                   type="button"
@@ -343,7 +357,12 @@ export function VoiceMentorPanel() {
               <button
                 type="button"
                 className={`btn ${muted ? '' : 'primary'}`}
-                onClick={() => setMuted((value) => !value)}
+                onClick={() => {
+                  // Turning the voice ON is the moment the learner committed to hearing answers, so the
+                  // download starts now rather than after the next reply.
+                  if (muted) voice.preloadVoice();
+                  setMuted((value) => !value);
+                }}
                 aria-pressed={!muted}
                 aria-label={muted ? 'Unmute spoken answers' : 'Mute spoken answers'}
               >

@@ -70,7 +70,7 @@ How it fits together:
 
 - **Model**: `Supertone/supertonic-3` pinned to revision `3cadd1ee6394adea1bd021217a0e650ede09a323`
   (OpenRAIL-M, `supertonic` SDK 1.3.1 semantics). Weights come from that revision's Hugging Face URLs —
-  379 MB across `duration_predictor`, `text_encoder`, `vector_estimator` (244.7 MB) and `vocoder` —
+  380 MB (398,361,202 bytes, exactly) across `duration_predictor`, `text_encoder`, `vector_estimator` (244.7 MB) and `vocoder` —
   never from a branch, never from a CDN that could change under us.
 - **Caching**: one Cache Storage bucket per revision, written only after a complete, length-verified
   body. A returning visitor downloads nothing; `Clear voice cache` in the settings row deletes that
@@ -97,9 +97,18 @@ engine's predicted durations match the official Python SDK's for the same text (
 
 **Honest limits.** WASM synthesis runs at roughly 1.5× real time on one thread, so the first sentence
 of a long answer is heard a few seconds after the press; WebGPU is materially faster where it exists.
-The checkpoint is 379 MB, which is real bandwidth on a mobile connection — the panel reports the
+The checkpoint is 380 MB, which is real bandwidth on a mobile connection — the panel reports the
 percentage rather than hiding it, and the cache means it is paid once per browser. A device that cannot
 hold the sessions reports the engine's error code instead of pretending to speak.
+
+**First-load UX.** The download starts on intent, not on arrival: turning the voice on, opening the
+mic, or pressing Speak begins it, and the panel then shows a real progress bar labelled in bytes
+("259 of 380 MB") with the line "One-time download — it stays cached in this browser". The Speak button
+answers the press with "Preparing voice… 42%" so a slow network never reads as a dead button, and while
+the four sessions are being built the bar switches to an indeterminate sweep instead of sitting at a
+frozen 0%. A failed download shows the engine's own code with `Retry` (which resumes — the files already
+in Cache Storage are not fetched again) and `Clear voice cache`. Nothing here is a timer: every number
+is bytes that actually crossed the network.
 
 ### Legacy: the server voice (kept, unused by the client)
 

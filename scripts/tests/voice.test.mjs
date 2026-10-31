@@ -332,7 +332,8 @@ test('voice: the model lives in the worker, and the hook only asks it to speak',
   assert.match(hook, /voiceStatus/, 'readiness and progress are first-class state');
   assert.match(hook, /refreshServerVoice/, 'Retry re-runs the real download and sessions');
   const row = read('src/components/shared/AiVoiceRow.tsx');
-  assert.match(row, /Downloading Supertonic 3/, 'the first visit says what it is downloading');
+  assert.match(row, /Supertonic 3 · .+ · downloads on the first Speak/, 'the first visit names the voice and its trigger')
+  assert.match(row, /bytesProgressLabel/, 'download progress is shown in bytes, not just a percentage');
   assert.match(row, /runs in this browser/, 'readiness names where the model actually runs');
   assert.match(row, /refreshServerVoice/);
 });

@@ -50,22 +50,41 @@ export type AssetName =
   | 'unicode_indexer.json'
   | 'tts.json';
 
-/** `bytes` are the published sizes, used for an honest progress bar before headers arrive. */
+/**
+ * `bytes` are the EXACT published sizes at the pinned revision (read from the Hub's blob metadata),
+ * not rounded megabytes: they are what the panel's "259 of 380 MB" is built from, and a fudged total
+ * would make the progress bar disagree with itself as files complete.
+ */
 export interface AssetSpec {
   name: AssetName;
   bytes: number;
 }
 
 export const MODEL_ASSETS: readonly AssetSpec[] = [
-  { name: 'duration_predictor.onnx', bytes: 3_670_016 },
-  { name: 'text_encoder.onnx', bytes: 36_388_864 },
-  { name: 'vector_estimator.onnx', bytes: 256_589_824 },
-  { name: 'vocoder.onnx', bytes: 101_384_192 },
-  { name: 'unicode_indexer.json', bytes: 331_776 },
-  { name: 'tts.json', bytes: 6_000 },
+  { name: 'duration_predictor.onnx', bytes: 3_700_147 },
+  { name: 'text_encoder.onnx', bytes: 36_416_150 },
+  { name: 'vector_estimator.onnx', bytes: 256_534_781 },
+  { name: 'vocoder.onnx', bytes: 101_424_195 },
+  { name: 'unicode_indexer.json', bytes: 277_676 },
+  { name: 'tts.json', bytes: 8_253 },
 ];
 
 export const TOTAL_MODEL_BYTES = MODEL_ASSETS.reduce((sum, asset) => sum + asset.bytes, 0);
+
+/** `0.4 MB`, `37 MB`, `379 MB` — one decimal only when it carries information. */
+export function formatBytes(bytes: number): string {
+  const value = Number(bytes);
+  if (!Number.isFinite(value) || value <= 0) return '0 MB';
+  const mega = value / 1_048_576;
+  if (mega < 10) return `${mega.toFixed(1)} MB`;
+  return `${Math.round(mega)} MB`;
+}
+
+/** "259 of 379 MB" — the line that makes a long download look finite. */
+export function bytesProgressLabel(received: number, total: number): string {
+  if (!(total > 0)) return formatBytes(received);
+  return `${formatBytes(Math.min(received, total))} of ${formatBytes(total)}`;
+}
 
 /**
  * The asset base. A single override (`VITE_SUPERTONIC_ASSET_BASE`) exists for a self-hosted mirror;
@@ -101,6 +120,8 @@ export interface AssetLoadProgress {
   size: number;
   /** 0…1 across the whole plan. */
   overall: number;
+  /** Bytes of the WHOLE plan so far — what "259 of 379 MB" is built from. */
+  receivedTotal: number;
 }
 
 export interface LoadOptions {
@@ -130,7 +151,7 @@ export async function loadAsset(
   if (cached) {
     const body = await cached.arrayBuffer();
     if (body.byteLength > 0) {
-      onProgress?.({ file: name, received: body.byteLength, size: body.byteLength, overall: 1 });
+      onProgress?.({ file: name, received: body.byteLength, size: body.byteLength, overall: 1, receivedTotal: body.byteLength });
       return body;
     }
     // A zero-byte entry is a failed write from an older session: drop it and refetch.
@@ -144,7 +165,7 @@ export async function loadAsset(
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const size = Number(response.headers.get('content-length') ?? 0) || 0;
       const body = await readWithProgress(response, size, (received, total) => {
-        onProgress?.({ file: name, received, size: total, overall: total ? received / total : 0 });
+        onProgress?.({ file: name, received, size: total, overall: total ? received / total : 0, receivedTotal: received });
       });
       if (!body.byteLength) throw new Error('empty response');
       // Only a COMPLETE body is stored: a truncated graph is worse than no cache at all.
@@ -212,15 +233,16 @@ export async function downloadModel(
     const buffer = await loadAsset(entry.name, entry.url, {
       ...options,
       onProgress: (progress) => {
-        const overall = total ? (done + Math.min(progress.received, entry.bytes)) / total : 0;
-        options.onProgress?.({ ...progress, overall: Math.min(0.999, overall) });
+        const receivedTotal = done + Math.min(progress.received, entry.bytes);
+        const overall = total ? receivedTotal / total : 0;
+        options.onProgress?.({ ...progress, overall: Math.min(0.999, overall), receivedTotal });
       },
     });
     done += buffer.byteLength;
     files[entry.name] = buffer;
-    options.onProgress?.({ file: entry.name, received: buffer.byteLength, size: buffer.byteLength, overall: Math.min(0.999, done / total) });
+    options.onProgress?.({ file: entry.name, received: buffer.byteLength, size: buffer.byteLength, overall: Math.min(0.999, done / total), receivedTotal: done });
   }
-  options.onProgress?.({ file: 'done', received: done, size: done, overall: 1 });
+  options.onProgress?.({ file: 'done', received: done, size: done, overall: 1, receivedTotal: done });
   return files;
 }
 

@@ -11,7 +11,7 @@
  * a returning visit finds them already there), never from a timer.
  */
 import * as ort from 'onnxruntime-web';
-import { downloadModel, clearVoiceCache, assetBase, type VoicePreset } from '../core/voice/assets';
+import { downloadModel, clearVoiceCache, assetBase, TOTAL_MODEL_BYTES, type VoicePreset } from '../core/voice/assets';
 import { createSupertonicEngine, type Session, type Tensor } from '../core/voice/engine';
 import { encodeText } from '../core/voice/text';
 import { parseStyle } from '../core/voice/style';
@@ -105,12 +105,18 @@ function ensureEngine(): Promise<Engine> {
         onProgress: (progress) => {
           status({
             phase: 'downloading',
-            message: progress.file === 'done' ? 'Supertonic 3 downloaded' : `Downloading Supertonic 3… ${Math.round(progress.overall * 100)}%`,
+            // The message names bytes, not just a percentage: a learner can see the end.
+            message: progress.file === 'done'
+              ? 'Supertonic 3 downloaded — one time only'
+              : `Downloading Supertonic 3… ${Math.round(progress.overall * 100)}%`,
             progress: clamp01(progress.overall),
+            receivedBytes: progress.receivedTotal,
+            totalBytes: TOTAL_MODEL_BYTES,
+            file: progress.file,
           });
         },
       });
-      status({ phase: 'initializing', message: 'Initializing Supertonic 3…', progress: 1 });
+      status({ phase: 'initializing', message: 'Starting the voice engine…', progress: 1, receivedBytes: TOTAL_MODEL_BYTES, totalBytes: TOTAL_MODEL_BYTES });
 
       const providers = await executionProviders();
       const [duration, textEncoder, vectorEstimator, vocoder] = await Promise.all([

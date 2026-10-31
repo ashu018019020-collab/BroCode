@@ -10,7 +10,11 @@ import type { VoicePreset } from './assets';
 
 export type VoicePhase = 'idle' | 'downloading' | 'initializing' | 'ready' | 'speaking' | 'error';
 
-/** What the panel shows. `progress` is bytes-downloaded / bytes-total while downloading. */
+/**
+ * What the panel shows. `progress` is bytes-downloaded / bytes-total while downloading, and the
+ * absolute byte counts travel with it: "259 of 379 MB" tells a learner how long the wait is, where a
+ * bare percentage leaves them guessing whether it is 4 MB or 400.
+ */
 export interface VoiceStatus {
   phase: VoicePhase;
   progress: number;
@@ -18,6 +22,12 @@ export interface VoiceStatus {
   preset?: VoicePreset;
   code?: string;
   detail?: string;
+  /** Bytes received in THIS download, across the whole plan. */
+  receivedBytes?: number;
+  /** Bytes the whole plan will need (the pinned checkpoint's size). */
+  totalBytes?: number;
+  /** Which file is arriving right now, for the second line of the panel. */
+  file?: string;
 }
 
 export interface SpeakRequest {
@@ -61,6 +71,11 @@ export function parseWorkerMessage(input: unknown): WorkerResponse | null {
           preset: typeof status.preset === 'string' ? (status.preset as VoicePreset) : undefined,
           code: typeof status.code === 'string' ? status.code : undefined,
           detail: typeof status.detail === 'string' ? status.detail : undefined,
+          // Byte counts are the one place a bad number would be visible as a lie, so they are
+          // clamped to non-negative integers rather than trusted.
+          receivedBytes: byteCount(status.receivedBytes),
+          totalBytes: byteCount(status.totalBytes),
+          file: typeof status.file === 'string' ? status.file : undefined,
         },
       };
     }
@@ -87,6 +102,13 @@ export function parseWorkerMessage(input: unknown): WorkerResponse | null {
     default:
       return null;
   }
+}
+
+/** A byte count from an untrusted message: finite, integral, never negative. */
+export function byteCount(value: unknown): number | undefined {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return undefined;
+  return Math.round(number);
 }
 
 export function clamp01(value: number): number {
