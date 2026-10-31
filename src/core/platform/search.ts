@@ -12,7 +12,6 @@ export interface SearchItem {
 /** Every screen in the app, so Ctrl+K doubles as a command launcher. */
 export const PAGES: { title: string; detail: string; route: string }[] = [
   { title: 'Dashboard', detail: 'Mission, next best action, progress', route: '/' },
-  { title: 'Voice Health', detail: 'AI voice readiness, latency and fallback counts on this deployment', route: '/voice-health' },
   { title: 'Start', detail: 'The front door — what this app is and where to begin', route: '/start' },
   { title: 'Courses', detail: '11 courses over the 36 roadmap steps, each with its own index', route: '/courses' },
   { title: 'Practice', detail: 'Question Bank, exams, review queue and mistakes', route: '/practice' },

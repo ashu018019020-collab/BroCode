@@ -86,7 +86,6 @@ const SKIPPED = {
  */
 const PRIVATE = {
   '/admin': 'the owner console — server-authorized, never advertised',
-  '/voice-health': 'the voice operations console — readiness and telemetry, never advertised',
   '/progress': 'the learner\'s own analytics — per-account data',
   '/notes': 'the learner\'s private notes',
   '/settings': 'per-account preferences, no public content',

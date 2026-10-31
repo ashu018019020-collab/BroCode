@@ -97,16 +97,19 @@ test('voice session: auto-advance fires only on a finished speech of a marked an
 
 test('voice hook: the recovery machinery is pinned where the speech engine reads it', () => {
   const hook = read('src/components/shared/useVoiceTutor.ts');
-  // The generation guard replaced the utterance bookkeeping when the model moved to the server: a
-  // stale answer can never schedule another sentence, which is what the old strong-ref/GC dance was
-  // protecting against.
-  assert.match(hook, /generation\.current \+= 1/, 'an intentional stop invalidates the answer in flight');
-  assert.match(hook, /id !== generation\.current/, 'every async continuation checks the generation');
+  // The cancel gap: the first utterance after an INTENTIONAL cancel waits it out — Chrome's
+  // first-utterance-after-cancel drop is the exact moment the old bug bit.
+  assert.match(hook, /const CANCEL_GAP_MS = \d+/, 'the cancel gap must be a named constant');
+  assert.match(hook, /if \(Date\.now\(\) - lastCancelAt\.current < CANCEL_GAP_MS\)/,
+    'the gap is measured against the last intentional stop');
+  // The stall watchdog: bounded retries, so a dead chain self-recovers instead of needing a reload.
   assert.match(hook, /const STALL_MS = \d+/, 'the stall watchdog must be a named constant');
-  assert.match(hook, /Date\.now\(\) - lastActivity\.current < STALL_MS/, 'the watchdog measures real silence');
-  // A hung request is CANCELLED, not waited on: the server stops synthesising audio nobody will hear.
-  assert.match(hook, /abortRef\.current\?\.abort\(\)/, 'the watchdog aborts a hung request');
-  assert.match(hook, /const COMPLETED_LINGER_MS = \d+/, 'a finished answer returns to Ready on a bounded timer');
+  assert.match(hook, /const STALL_RETRIES = \d+/, 'recovery is bounded, not infinite');
+  assert.match(hook, /stallRetries\.current >= STALL_RETRIES/, 'the cap is enforced on the recovery path');
+  // The GC fix: every utterance is held in a strong ref until its own event runs.
+  assert.match(hook, /utterances\.current\.add\(utterance\)/,
+    'collected utterances fire no events — that is why voice used to die mid-session');
+  assert.match(hook, /const releaseUtterances/, 'one released path clears the strong refs');
   // Continuous answers: the interview asks for a mic that survives sentence pauses.
   assert.match(hook, /CONTINUOUS_REARMS = \d+/, 'the re-arm cap exists');
   assert.match(hook, /keepOpenRef\.current = continuous/, 'the press honours the continuous option');

@@ -17,7 +17,6 @@ import { toast } from '../ui/Toast';
 import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 import { useVoiceTutor } from './useVoiceTutor';
 import { VoiceBar } from './VoiceBar';
-import { isVoicePreparing } from '../../core/voice/protocol';
 import { startGuide } from './guideStore';
 import { lessonScript, screenBriefing, spokenReply } from '../../core/ai/voice';
 
@@ -187,12 +186,6 @@ function AssistantCardSession({
   const ask = async (text: string, spoken = false) => {
     const question = text.trim();
     if (!question || busy) return;
-    // The learner's new question outranks the old answer: stop it now, not when the new audio is
-    // finally ready, or two answers talk over each other for the length of the retrieval.
-    voice.stopSpeaking();
-    // Pay the one-time model load WHILE retrieval runs instead of after the answer appears — but
-    // only for an answer that will actually be spoken, never behind a learner who silenced the voice.
-    if (spoken || voice.speakReplies) voice.preloadVoice();
     setBusy(true);
     try {
       let index = knowledge;
@@ -271,14 +264,7 @@ function AssistantCardSession({
               panel never shows two buttons that do the same thing. */}
           <span className={`ai-hero-pill${voice.listening ? ' on' : ''}`} role="status">
             <Mic2 size={15} />
-            <span>{
-              voice.listening ? 'Listening…'
-                : voice.speaking ? 'Speaking…'
-                  // Auto-speak starts the one-time model download on the first answer: "Thinking…"
-                  // for four minutes is the stuck-looking wait this surface must never show.
-                  : isVoicePreparing(voice.voiceStatus) ? 'Loading voice…'
-                    : busy ? 'Thinking…' : 'Mic ready'
-            }</span>
+            <span>{voice.listening ? 'Listening…' : voice.speaking ? 'Speaking…' : busy ? 'Thinking…' : 'Mic ready'}</span>
           </span>
         </div>
       </div>

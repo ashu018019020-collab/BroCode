@@ -17,8 +17,7 @@ import {
 import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 import { MENTOR_LOG_KEY } from '../../core/platform/keys';
 import { useVoiceTutor } from '../../components/shared/useVoiceTutor';
-import { AiVoiceRow, VoicePrepareChip, VoicePresetPicker } from '../../components/shared/AiVoiceRow';
-import { isVoicePreparing } from '../../core/voice/protocol';
+import { AiVoiceRow } from '../../components/shared/AiVoiceRow';
 import { useRealtimeVoice } from '../../components/shared/useRealtimeVoice';
 import { toast } from '../../components/ui/Toast';
 import { useMentorAsk } from './useMentorAsk';
@@ -70,8 +69,7 @@ export function VoiceMentorPanel() {
   const voice = useVoiceTutor(chat.busy);
   const realtime = useRealtimeVoice();
   const [draft, setDraft] = useState('');
-  /** Mute is the hook's master gain, so it acts on the sentence already playing. */
-  const muted = voice.muted;
+  const [muted, setMuted] = useState(false);
   const [handsFree, setHandsFree] = useState(false);
   /** `auto` means "decide per turn from what they typed", never "assume a language". */
   const [langPref, setLangPref] = useState<VoicePref>('auto');
@@ -296,23 +294,12 @@ export function VoiceMentorPanel() {
             {live
               ? `${realtime.model ?? 'realtime'} · ${realtime.voice ?? 'voice'}`
               : voice.engine === 'cloud'
-                ? `Google Neural2 · ${voice.preset}`
-                : isVoicePreparing(voice.voiceStatus)
-                  ? voice.voiceStatus.phase === 'generating' ? 'Generating speech…' : 'Preparing the voice…'
-                  : `Supertonic 3 · ${voice.preset}`}
+                ? 'Google Neural2 voice'
+                : voice.engine === 'browser'
+                  ? 'Browser voice'
+                  : 'Ready'}
           </span>
         </div>
-
-        {!live && voice.voiceStatus.phase === 'preparing' && (
-          <p className="small muted" style={{ padding: '0 18px', margin: '2px 0 0' }}>
-            {voice.voiceStatus.detail ?? 'The voice service is loading its model — this is the first request after a restart.'}
-          </p>
-        )}
-        {!live && voice.voiceStatus.phase === 'disconnected' && (
-          <p className="voice-error small" role="status" style={{ padding: '0 18px' }}>
-            <span>{voice.voiceStatus.detail ?? 'The AI voice is offline on this deployment.'}</span>
-          </p>
-        )}
 
         {!live && (
           <>
@@ -320,14 +307,11 @@ export function VoiceMentorPanel() {
               <button
                 type="button"
                 className={`btn ${voice.listening ? 'primary' : ''}`}
-                onClick={() => { voice.preloadVoice(); voice.toggleListening(handleTranscript); }}
+                onClick={() => voice.toggleListening(handleTranscript)}
                 aria-pressed={voice.listening}
               >
-                {voice.listening
-                  ? <><Square size={13} /> Stop listening</>
-                  : <><Mic2 size={14} /> {voice.lang === 'hi-IN' ? 'Bolo' : 'Speak'}</>}
+                {voice.listening ? <><Square size={13} /> Stop listening</> : <><Mic2 size={14} /> {voice.lang === 'hi-IN' ? 'Bolo' : 'Speak'}</>}
               </button>
-              <VoicePrepareChip status={voice.voiceStatus} />
               {(voice.speaking || voice.listening) && (
                 <button
                   type="button"
@@ -359,11 +343,7 @@ export function VoiceMentorPanel() {
               <button
                 type="button"
                 className={`btn ${muted ? '' : 'primary'}`}
-                onClick={() => {
-                  // One master gain, so muting silences the sentence that is already playing instead of
-                  // only suppressing the next answer.
-                  voice.setMuted(!voice.muted);
-                }}
+                onClick={() => setMuted((value) => !value)}
                 aria-pressed={!muted}
                 aria-label={muted ? 'Unmute spoken answers' : 'Mute spoken answers'}
               >
@@ -392,12 +372,6 @@ export function VoiceMentorPanel() {
                   <option key={id} value={id}>{PREF_LABELS[id]}</option>
                 ))}
               </select>
-              <VoicePresetPicker
-                value={voice.preset}
-                onChange={voice.setPreset}
-                available={voice.presets}
-                disabled={voice.voiceStatus.phase === 'disconnected'}
-              />
               <label className="small muted" htmlFor="mentor-rate">Speed</label>
               <div className="row" style={{ gap: 6 }}>
                 <input

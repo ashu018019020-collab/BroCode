@@ -98,37 +98,11 @@ test('voice telemetry: a corrupt or foreign record is discarded, not trusted', (
 
 /* ----------------------------- the dashboard ----------------------------- */
 
-test('voice health page: reports deployment readiness and device-local counts separately', () => {
-  const source = read('src/features/ops/VoiceHealth.tsx');
-  assert.match(source, /makePath|api\/voice\/health|\.\/api\/voice\/health/, 'it reads the real health route');
-  assert.match(source, /api\/voice\/status|\.\/api\/voice\/status/);
-  assert.match(source, /readVoiceTelemetry/);
-  // The two halves are named, so no reader mistakes a browser count for a site-wide one.
-  assert.match(source, /Deployment/);
-  assert.match(source, /This browser/);
-  // A share with no answers must not print 0%.
-  assert.match(source, /value === null \? '—'/);
-  // "Verified" is only claimed when the engine really answered.
-  assert.match(source, /health\?\.verified === true/);
-  // It must not claim a site-wide aggregate it cannot back.
-  assert.match(source, /this device only/i);
-});
-
-test('voice health page: the route is registered, protected and reachable from search', () => {
-  const app = read('src/app/App.tsx');
-  assert.match(app, /const VoiceHealth = lazy\(\(\) => import\('\.\.\/features\/ops\/VoiceHealth'\)\)/);
-  assert.match(app, /<Route path="\/voice-health" element=\{<Protect><VoiceHealth \/><\/Protect>\} \/>/);
-  assert.match(app, /\{ to: '\/voice-health'.*sidebar: false \}/, 'an operator page is not a sidebar entry');
-  assert.match(read('src/core/platform/search.ts'), /route: '\/voice-health'/);
-  assert.match(read('src/core/learning/paths.ts'), /'\/voice-health'/);
-});
-
 test('voice telemetry: the voice hook records what actually spoke, after playback', () => {
   const hook = read('src/components/shared/useVoiceTutor.ts');
-  assert.match(hook, /noteVoiceAnswer\('supertonic', firstAudioMs\)/, 'one count per answer, tagged with the engine that spoke');
-  // A failure carries the ROUTE's code (`voice-timeout`, `voice-rate-limited`, …), so the dashboard
-  // can separate a busy service from a misconfigured one without parsing prose.
-  assert.match(hook, /noteVoiceFailure\(reason\.code/, 'a failure keeps the route\'s code');
+  assert.match(hook, /noteVoiceAnswer\(tag, firstAudioMs \?\? undefined\)/, 'one count per answer, not per chunk');
+  assert.match(hook, /noteVoiceFailure\(`tts-\$\{response\.status\}`\)/, 'an HTTP failure names its status');
+  assert.match(hook, /noteVoiceFailure\('tts-not-audio'\)/);
   // The measurement is around the real request.
   assert.match(hook, /performance\.now\(\)/);
   // Telemetry must never be able to break playback: the storage shim swallows its own errors.

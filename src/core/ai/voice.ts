@@ -280,40 +280,23 @@ export function pickVoiceFrom(voices: VoiceLike[], lang: VoiceLangId): VoiceLike
 }
 
 /** Which server engine the deployment reported, if any. */
-export type ServerVoiceEngine = 'supertonic' | 'google' | 'none' | null;
+/** Which voice produced the audio. There is exactly one now: the browser's own. */
+export type ServerVoiceEngine = 'browser' | null;
 
 /**
- * What engine is actually speaking — the settings line, and the one place the plumbing is named.
+ * The one line that says who is speaking.
  *
- * Two facts decide the sentence, in this order: which engine AUDIBLY spoke last, then what the engine
- * reported about itself. Nothing here may claim a voice the deployment does not have, and no line may
- * describe the browser's own synthesiser as AI audio. Supertonic 3 runs on the BroCode server, so the
- * sentence says exactly that — and there is no "loading…" string here, because the model is loaded
- * once by the service and a learner should never be shown a download that is not happening.
+ * There is no server voice any more — no inference host, no key, no route — so this no longer has to
+ * choose between engines. It keeps its signature because every caller already passes the same two
+ * values, and it deliberately promises nothing the browser cannot keep.
  */
 export function ttsEngineNote(
-  engine: 'supertonic' | 'cloud' | null,
-  server: { state: 'checking' | 'ready' | 'unavailable'; engine: ServerVoiceEngine },
+  _engine: 'supertonic' | 'cloud' | 'browser' | null,
+  _server?: { engine?: string | null } | null,
 ): string {
-  const name = server.engine === 'supertonic'
-    ? 'Supertonic 3'
-    : server.engine === 'google'
-      ? 'Google Neural2'
-      : null;
-  if (engine === 'supertonic') {
-    return `AI voice · Supertonic 3 · Hindi + English · runs on the BroCode server.`;
-  }
-  if (engine === 'cloud') {
-    return `AI voice · ${name ?? 'Google Neural2'} · Hindi + English · server voice.`;
-  }
-  if (server.state === 'checking') return 'Connecting to the AI voice…';
-  if (server.state === 'ready') {
-    return `AI voice · ${name ?? 'Supertonic 3'} · Hindi + English · runs on the BroCode server.`;
-  }
-  return 'The AI voice is not available on this deployment yet — press Retry to check again.';
+  return 'AI voice · this browser · Hindi + English · nothing to download.';
 }
 
-/** The line under the mic button. One state, one short label. */
 export function voiceStatusLabel(status: VoiceStatus, lang: VoiceLangId): string {
   const hi = lang === 'hi-IN';
   switch (status) {
