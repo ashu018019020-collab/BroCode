@@ -17,7 +17,7 @@ import { toast } from '../ui/Toast';
 import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 import { useVoiceTutor } from './useVoiceTutor';
 import { VoiceBar } from './VoiceBar';
-import { isVoicePreparing } from './AiVoiceRow';
+import { isVoicePreparing } from '../../core/voice/protocol';
 import { startGuide } from './guideStore';
 import { lessonScript, screenBriefing, spokenReply } from '../../core/ai/voice';
 

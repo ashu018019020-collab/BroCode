@@ -27,6 +27,7 @@ COPY services/supertonic-tts/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY services/supertonic-tts/app.py ./app.py
+COPY services/supertonic-tts/brocode_voice ./brocode_voice
 
 EXPOSE 8000
 # ONE worker: the model is ~400 MB in memory and ONNX sessions are serialized inside the app.

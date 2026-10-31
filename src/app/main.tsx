@@ -1,3 +1,4 @@
+import { purgeLegacyVoiceStorage } from '../core/voice/legacy';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -6,6 +7,8 @@ import { mountSpotlight } from '../components/shared/spotlight';
 import { mountStudyTracker } from '../core/storage/study';
 import '../styles.css';
 
+// The browser-side voice is gone; retire its caches/key once, without waiting for a voice press.
+void purgeLegacyVoiceStorage();
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <AuthProvider>

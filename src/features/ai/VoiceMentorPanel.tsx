@@ -17,7 +17,8 @@ import {
 import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 import { MENTOR_LOG_KEY } from '../../core/platform/keys';
 import { useVoiceTutor } from '../../components/shared/useVoiceTutor';
-import { AiVoiceRow, VoiceLoadProgress, VoicePrepareChip, VoicePresetPicker, isVoicePreparing } from '../../components/shared/AiVoiceRow';
+import { AiVoiceRow, VoicePrepareChip, VoicePresetPicker } from '../../components/shared/AiVoiceRow';
+import { isVoicePreparing } from '../../core/voice/protocol';
 import { useRealtimeVoice } from '../../components/shared/useRealtimeVoice';
 import { toast } from '../../components/ui/Toast';
 import { useMentorAsk } from './useMentorAsk';
@@ -69,7 +70,7 @@ export function VoiceMentorPanel() {
   const voice = useVoiceTutor(chat.busy);
   const realtime = useRealtimeVoice();
   const [draft, setDraft] = useState('');
-  /** Mute is the hook master gain, so it acts on the sentence already playing. */
+  /** Mute is the hook's master gain, so it acts on the sentence already playing. */
   const muted = voice.muted;
   const [handsFree, setHandsFree] = useState(false);
   /** `auto` means "decide per turn from what they typed", never "assume a language". */
@@ -96,10 +97,6 @@ export function VoiceMentorPanel() {
   const runAsk = useCallback(async (text: string) => {
     const clean = text.trim();
     if (!clean) return;
-    // Interrupt the previous answer and start warming the engine now: by the time the mentor has
-    // its reply, the model is loaded (or the progress bar is already on screen).
-    voiceRef.current.stopSpeaking();
-    if (!mutedRef.current) voiceRef.current.preloadVoice();
     // Resolve the preference for THIS turn, so an English question answered in an otherwise Hindi
     // conversation still gets English retrieval and an English voice.
     const lang = resolveVoiceLang(langPrefRef.current, clean);
@@ -299,22 +296,22 @@ export function VoiceMentorPanel() {
             {live
               ? `${realtime.model ?? 'realtime'} · ${realtime.voice ?? 'voice'}`
               : voice.engine === 'cloud'
-                ? 'Google Neural2 voice'
-                : voice.engine === 'browser'
-                  ? 'Browser voice'
-                  : isVoicePreparing(voice.voiceStatus)
-                    ? 'Preparing Supertonic 3…'
-                    : `Supertonic 3 · ${voice.preset}`}
+                ? `Google Neural2 · ${voice.preset}`
+                : isVoicePreparing(voice.voiceStatus)
+                  ? voice.voiceStatus.phase === 'generating' ? 'Generating speech…' : 'Preparing the voice…'
+                  : `Supertonic 3 · ${voice.preset}`}
           </span>
         </div>
 
-        {!live && isVoicePreparing(voice.voiceStatus) && (
-          <div style={{ padding: '0 18px' }}>
-            <VoiceLoadProgress status={voice.voiceStatus} />
-            <p className="small muted" style={{ margin: '2px 0 0' }}>
-              One-time download — it stays cached in this browser, so every later answer speaks immediately.
-            </p>
-          </div>
+        {!live && voice.voiceStatus.phase === 'preparing' && (
+          <p className="small muted" style={{ padding: '0 18px', margin: '2px 0 0' }}>
+            {voice.voiceStatus.detail ?? 'The voice service is loading its model — this is the first request after a restart.'}
+          </p>
+        )}
+        {!live && voice.voiceStatus.phase === 'disconnected' && (
+          <p className="voice-error small" role="status" style={{ padding: '0 18px' }}>
+            <span>{voice.voiceStatus.detail ?? 'The AI voice is offline on this deployment.'}</span>
+          </p>
         )}
 
         {!live && (
@@ -363,12 +360,9 @@ export function VoiceMentorPanel() {
                 type="button"
                 className={`btn ${muted ? '' : 'primary'}`}
                 onClick={() => {
-                  // Turning the voice ON is the moment the learner committed to hearing answers, so the
-                  // download starts now rather than after the next reply.
-                  const next = !voice.muted;
-                  voice.setMuted(next);
-                  // Unmuting is the moment the learner wants sound, so warm the engine then.
-                  if (!next) voice.preloadVoice();
+                  // One master gain, so muting silences the sentence that is already playing instead of
+                  // only suppressing the next answer.
+                  voice.setMuted(!voice.muted);
                 }}
                 aria-pressed={!muted}
                 aria-label={muted ? 'Unmute spoken answers' : 'Mute spoken answers'}
@@ -398,7 +392,12 @@ export function VoiceMentorPanel() {
                   <option key={id} value={id}>{PREF_LABELS[id]}</option>
                 ))}
               </select>
-              <VoicePresetPicker value={voice.preset} onChange={voice.setPreset} />
+              <VoicePresetPicker
+                value={voice.preset}
+                onChange={voice.setPreset}
+                available={voice.presets}
+                disabled={voice.voiceStatus.phase === 'disconnected'}
+              />
               <label className="small muted" htmlFor="mentor-rate">Speed</label>
               <div className="row" style={{ gap: 6 }}>
                 <input

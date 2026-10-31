@@ -73,6 +73,7 @@ def test_tts_requires_the_shared_bearer_secret():
 def test_tts_returns_wav_and_maps_the_ui_language_tags():
     api, fake = client()
     with api as running:
+        fake.calls.clear()  # the startup warm-up is not part of this assertion
         response = running.post(
             "/v1/tts",
             json={"text": "नमस्ते! आज हम Python सीखेंगे।", "lang": "hi-IN", "rate": 1.1},
@@ -91,9 +92,40 @@ def test_tts_returns_wav_and_maps_the_ui_language_tags():
 def test_tts_rejects_unsupported_language_voice_and_oversized_text():
     api, fake = client()
     with api as running:
+        fake.calls.clear()  # the startup warm-up is not part of this assertion
         headers = {"Authorization": "Bearer test-secret"}
         assert running.post("/v1/tts", json={"text": "Hello", "lang": "fr-FR"}, headers=headers).status_code == 400
         assert running.post("/v1/tts", json={"text": "Hello", "lang": "en", "voice": "Z9"}, headers=headers).status_code == 400
         assert running.post("/v1/tts", json={"text": "x" * 1201, "lang": "en"}, headers=headers).status_code == 422
         assert running.post("/v1/tts", json={"text": "   ", "lang": "en"}, headers=headers).status_code == 400
     assert fake.calls == []
+
+
+def test_startup_runs_a_real_warmup_synthesis():
+    """Ready means audio really came out, not that the file was opened."""
+    api, fake = client()
+    with api:
+        assert fake.calls, "startup must exercise the loop"
+        assert fake.calls[0]["text"] == "Ready."
+        assert fake.calls[0]["steps"] <= 4, "the warm-up is short, not a full-length sentence"
+
+
+def test_voices_endpoint_exposes_only_female_and_male_and_two_languages():
+    api, _ = client()
+    with api as running:
+        body = running.get("/v1/voices").json()
+    assert [voice["id"] for voice in body["voices"]] == ["F1", "M1"]
+    assert [voice["gender"] for voice in body["voices"]] == ["female", "male"]
+    assert body["languages"] == ["en", "hi"]
+    assert body["defaultVoice"] == "F1"
+
+
+def test_an_unapproved_preset_is_refused_even_though_the_checkpoint_has_it():
+    # FakeTTS exposes F2; the registry does not, so the request never reaches synthesis.
+    api, fake = client()
+    with api as running:
+        fake.calls.clear()
+        headers = {"Authorization": "Bearer test-secret"}
+        assert running.post("/v1/tts", json={"text": "Hello", "lang": "en", "voice": "F2"}, headers=headers).status_code == 400
+        assert running.post("/v1/tts", json={"text": "Hello", "lang": "en", "voice": "M1"}, headers=headers).status_code == 200
+    assert [call["text"] for call in fake.calls] == ["Hello"], "only the approved voice reached the model"
