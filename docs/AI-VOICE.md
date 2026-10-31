@@ -24,16 +24,23 @@ no cold start. If a browser has no compatible voice, the UI says so instead of p
 
 ## Choosing the voice
 
-`pickVoiceFrom(voices, lang)` ranks what the browser actually has:
+`pickVoiceFrom(voices, lang)` ranks what the browser actually has. It is deliberately simple:
 
-1. a voice whose language matches the requested one (`hi-IN`, then `hi`; `en-IN`, then `en-GB`/`en-US`/`en`),
-2. preferring a **female** name (`female`, `woman`, `zira`, `heera`, `kalpana`, `swara`, `samantha`, …)
-   over a male or neutral one,
-3. preferring a **local** voice (no network round-trip) over a remote one,
-4. falling back to the browser default when nothing matches — and the row says which voice spoke.
+1. **Language first** — `en-IN`/`hi-IN`, then the bare two-letter tag, then `en-GB`/`en-US` variants.
+2. **Google-branded voices first** (`/^google\b/i`). On Chrome, Edge and Android these are the natural
+   female English and Hindi voices learners already heard — "Google UK English Female", "Google हिन्दी".
+   Chrome serves them over the network, and that is intentional: ranking `localService` first (as an
+   earlier version did) is what pushed learners onto the robotic offline voice.
+3. Then any other voice, preferring a local one over a remote one.
+4. Nothing matches → `null`, and the row says this browser has no voice for that language instead of
+   speaking in the wrong one.
 
-A learner can pin a specific installed voice with `voiceName`; the picker only ever lists voices the
-browser reports, so a stored name that disappeared falls back to the ranking instead of silence.
+There is no separate gender filter, and that is not an oversight: the Google voice for each language
+*is* the female one (Zira/Aria style in English, Heera/Neerja/Kalpana in Hindi), so preferring it *is*
+preferring the female tutor. A learner can pin any installed voice by name (`voiceName`); the picker
+only lists voices the browser reports, so a stored name that disappeared falls back to this ranking
+rather than silence. If a device ships only a male voice, that is what speaks — and the row names it
+rather than pretending otherwise.
 
 ## Speaking an answer
 
