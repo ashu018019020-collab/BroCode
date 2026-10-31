@@ -318,16 +318,13 @@ test('voice: the engine note names this browser, never a server that does not ex
   }
 });
 
-test('voice: the client downloads no model — the server is the only engine', () => {
+test('voice: nothing is downloaded and no voice service is called — the browser speaks', () => {
   const hook = read('src/components/shared/useVoiceTutor.ts');
-  assert.doesNotMatch(hook, /loadSupertonic|supertonic-runtime|supertonicChunksFor|synthesizeChunk/);
-  assert.doesNotMatch(hook, /398\s*MB/i, 'no download size may survive in the hook');
-  assert.match(hook, /serverVoice/, 'the probe\'s result is a first-class state');
-  assert.match(hook, /refreshServerVoice/, 'Retry re-probes the server instead of downloading');
-  const row = read('src/components/shared/AiVoiceRow.tsx');
-  assert.doesNotMatch(row, /Download|398/);
-  assert.match(row, /Server-powered/);
-  assert.match(row, /refreshServerVoice/);
+  assert.match(hook, /speechSynthesis/, 'the browser synthesiser is the engine');
+  assert.doesNotMatch(hook, /onnxruntime|\.onnx|ort-wasm/i, 'no model runtime in the client');
+  assert.doesNotMatch(hook, /fetch\(|api\/voice\//, 'and no voice service to call');
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.dependencies?.['onnxruntime-web'], undefined, 'the browser ONNX runtime is gone');
 });
 
 test('voice: the hook never asks a server for audio — there is no voice service any more', () => {

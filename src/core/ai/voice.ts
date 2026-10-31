@@ -291,7 +291,7 @@ export type ServerVoiceEngine = 'browser' | null;
  * values, and it deliberately promises nothing the browser cannot keep.
  */
 export function ttsEngineNote(
-  _engine: 'supertonic' | 'cloud' | 'browser' | null,
+  _engine?: string | null,
   _server?: { engine?: string | null } | null,
 ): string {
   return 'AI voice · this browser · Hindi + English · nothing to download.';

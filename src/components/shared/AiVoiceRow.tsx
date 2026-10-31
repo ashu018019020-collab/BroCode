@@ -4,16 +4,11 @@ import type { VoiceTutor } from './useVoiceTutor';
 /**
  * The AI voice's status line — three facts, no download.
  *
- * The model runs on the server (`services/supertonic-tts/`), so there is nothing for a learner to install, cache
- * or wait for. What is left to show is which engine answered the readiness probe and whether it is
- * ready; when it is not, the row says so plainly and offers the only useful action: ask again.
- *
- * "Server-powered" is printed only for `ready`, which the server only reports after its inference
- * service has actually answered a health check — the label is evidence, not aspiration.
+ * The voice is the browser's own synthesiser, so there is nothing to install, cache or download and no
+ * server to wait for.
  */
 export function AiVoiceRow({ voice }: { voice: VoiceTutor }) {
   const { state, engine } = voice.serverVoice;
-  const name = engine === 'supertonic' ? 'Supertonic 3' : engine === 'google' ? 'Google Neural2' : null;
 
   return (
     <div
@@ -25,7 +20,7 @@ export function AiVoiceRow({ voice }: { voice: VoiceTutor }) {
         <span className="row" style={{ gap: 5 }}>
           <Check size={12} aria-hidden="true" />
           <span>
-            <b>AI voice</b> · {name ?? 'Server voice'} · Hindi + English · Server-powered
+            <b>AI voice</b> · this browser · Hindi + English · nothing to download
           </span>
         </span>
       ) : state === 'checking' ? (

@@ -1120,7 +1120,7 @@ export default function InterviewMode() {
           <AiVoiceRow voice={voice} />
           <p className="small muted" style={{ margin: '8px 0 0' }}>
             {voiceSupportNote(voice.supported)
-              || `Questions are spoken with the ${voice.lang === 'hi-IN' ? 'Hindi' : 'English'} voice — the on-device Supertonic voice once it is downloaded, the built-in voice until then. The transcript appears in the answer box for you to edit. Answering by voice never turns the interviewer's voice off — the mic and the speaker are separate.`}
+              || `Questions are spoken with the ${voice.lang === 'hi-IN' ? 'Hindi' : 'English'} voice your browser provides. The transcript appears in the answer box for you to edit. Answering by voice never turns the interviewer's voice off — the mic and the speaker are separate.`}
             {draftSaved && ' Your progress in the last sitting is saved on this device.'}
           </p>
           {voice.error && (

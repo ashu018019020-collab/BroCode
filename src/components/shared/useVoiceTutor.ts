@@ -3,7 +3,6 @@ import {
   DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, cloudChunks, micPermissionDenied, normalizeVoiceLang, pickVoiceFrom,
   speechChunks, speechLangFor, type VoiceLangId, type VoiceStatus,
 } from '../../core/ai/voice';
-import { noteVoiceAnswer, noteVoiceFailure } from '../../core/storage/voice-telemetry';
 
 
 /**
@@ -211,13 +210,13 @@ export interface VoiceTutor {
   speaking: boolean;
   paused: boolean;
   /**
-   * Which engine spoke last: the server's Supertonic voice, the server's Google voice, or the
-   * built-in browser voice. Never a promise about what the deployment has.
+   * Which engine spoke last. Only the browser's own synthesiser can, since the server voice was
+   * retired with Supertonic — this stays a value the UI reads, never a promise about a host.
    */
   engine: 'supertonic' | 'cloud' | 'browser' | null;
   /**
-   * What the SERVER reported: which engine it will use, and whether it is ready. `checking` is the
-   * 3-second probe; `unavailable` means this deployment has no server voice and the UI says so.
+   * The voice's readiness as the rows read it. There is no server to probe any more, so it settles on
+   * `unavailable` immediately and the UI says "this browser" instead of "Checking…".
    */
   serverVoice: { state: 'checking' | 'ready' | 'unavailable'; engine: 'supertonic' | 'google' | 'none' | null };
   /** Ask the server again — the only "fix it" action a learner needs now that nothing downloads. */
@@ -472,7 +471,6 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       // One count per ANSWER, tagged with the engine that actually produced the sound. A fallback
       // mid-answer therefore lands on `browser`, which is exactly what the dashboard must show.
       const tag = engineRef.current === 'supertonic' ? 'supertonic' : engineRef.current === 'cloud' ? 'google' : 'browser';
-      noteVoiceAnswer(tag, firstAudioMs ?? undefined);
       if (!mounted.current || id !== generation.current) return;
       setSpeaking(false);
       setPaused(false);
@@ -593,13 +591,11 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       const response = await Promise.reject<Response>(new Error('server voice retired'));
       if (!response.ok) {
         // The route sends a machine code (`VOICE_NOT_CONFIGURED`, …); it is a category, never text.
-        noteVoiceFailure(`tts-${response.status}`);
         throw new Error(`tts-${response.status}`);
       }
       // A static host answers HTML with a 200; audio is audio.
       const type = response.headers.get('content-type') ?? '';
       if (!type.startsWith('audio')) {
-        noteVoiceFailure('tts-not-audio');
         throw new Error('tts-not-audio');
       }
       // The route names the engine that produced the audio; the settings line reports it, so the UI
@@ -657,7 +653,6 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
             return;
           }
           cloudFails.current += 1;
-          noteVoiceFailure(String((cause as { message?: string })?.message ?? 'tts-failed').slice(0, 24));
           // Keep `cloudConfigured` as the SERVER's report — the server is configured, it is this
           // voice that is unavailable. The settings line says which engine spoke.
           if (cloudFails.current >= 2) cloudRef.current = false;
