@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { createAiObservability } from './ai-observability.mjs';
 import { createAuthServer } from './app.mjs';
 import { createSupabaseServices } from './supabase.mjs';
 import { createStore } from './db-config.mjs';
@@ -28,6 +29,9 @@ if (process.env.NODE_ENV === 'production' && webUrl.protocol !== 'https:') {
 const enforceHttps = (process.env.ENFORCE_HTTPS ?? (process.env.NODE_ENV === 'production' ? 'on' : 'off')) !== 'off';
 
 const supabase = createSupabaseServices();
+// PostHog AI Observability: server-only, created once and shut down with the process so the last
+// generations are flushed. Without POSTHOG_API_KEY this is a disabled, no-network instance.
+const aiObservability = createAiObservability();
 // Postgres when DATABASE_URL is real, otherwise the Supabase-Auth store — the account system must
 // start and work with the keys that are configured, not fail because a database is missing.
 const { store, label } = await createStore({ admin: supabase.admin });
@@ -38,6 +42,7 @@ const server = createAuthServer({
   allowedOrigin,
   enforceHttps,
   storeLabel: label,
+  aiObservability,
 });
 
 await new Promise((resolve, reject) => {
@@ -48,6 +53,7 @@ await new Promise((resolve, reject) => {
     console.log(process.env.AZURE_SPEECH_KEY && process.env.AZURE_SPEECH_REGION
       ? 'Speech out runs on Azure AI Speech (hi-IN-SwaraNeural / en-IN-NeerjaNeural), synthesised here.'
       : 'No AZURE_SPEECH_KEY: /api/voice/tts answers 503 and the client uses its device voice only.');
+    if (aiObservability.enabled) console.log('PostHog AI observability enabled for server AI calls.');
     if (enforceHttps) console.log('Plain-HTTP requests are redirected to HTTPS and HSTS is sent.');
     resolve();
   });
@@ -56,6 +62,7 @@ await new Promise((resolve, reject) => {
 async function shutdown() {
   server.close(async (error) => {
     try {
+      await aiObservability.shutdown();
       await store.close();
       if (error) {
         console.error('Failed to close the account API cleanly.', error.code ?? error.name);

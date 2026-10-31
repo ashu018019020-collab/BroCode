@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { createAiObservability } from './ai-observability.mjs';
 import { listAllAuthUsers } from './supabase.mjs';
 import { TTS_LANGS, TTS_MAX_CHARS, TtsError, createTtsEngine } from './tts.mjs';
 import { projectBrief } from './project-brief.mjs';
@@ -249,6 +250,10 @@ export function createAuthServer({
   openaiInterviewKey = process.env.OPENAI_API_KEY ?? '',
   interviewModel = process.env.INTERVIEW_MODEL ?? INTERVIEW_DEFAULT_MODEL,
   evaluateInterview = evaluateInterviewAnswer,
+  // PostHog AI Observability for the evaluator's provider call. Server-only and OFF unless
+  // POSTHOG_API_KEY is set: the default instance then wraps `fetch` with the identity function, so
+  // an unconfigured deployment makes exactly the requests it made before.
+  aiObservability = createAiObservability({ logger }),
   interviewMaxRequests = envPositiveInt(process.env.INTERVIEW_REQUESTS_PER_WINDOW, 20),
   interviewWindowMs = envPositiveInt(process.env.INTERVIEW_WINDOW_MINUTES, 10) * 60 * 1000,
   // The grounded description of THIS deployment's curriculum, handed to the live agent so it names
@@ -539,6 +544,12 @@ export function createAuthServer({
             apiKey: openaiInterviewKey,
             model: interviewModel,
             value: check.value,
+            // Trace the call for this learner without touching the request the evaluator builds.
+            fetchImpl: aiObservability.wrapFetch({
+              fetchImpl: globalThis.fetch,
+              distinctId: user.profile.id,
+              spanName: 'interview_evaluation',
+            }),
           });
           json(response, 200, { evaluation: result.evaluation, model: result.model, source: 'ai' }, headers);
           return;
