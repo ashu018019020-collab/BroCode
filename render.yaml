@@ -3,9 +3,10 @@
 # Deploys the ONE long-running piece BroCode needs:
 #   · brocode-account — the Node account API (`server/index.mjs`). The website stays on Vercel.
 #
-# The voice is a BROWSER voice (SpeechSynthesis): it needs no server, no model, no key and no
-# service. The Supertonic inference service and its Vercel proxy were removed, so this blueprint no
-# longer creates a voice host and no voice variable is passed to the account API.
+# The voice is synthesised by THIS API (Azure AI Speech) and streamed to the browser as MP3, so
+# there is no model host, no GPU and nothing for a visitor to download. Add AZURE_SPEECH_KEY and
+# AZURE_SPEECH_REGION in the dashboard (sync: false — never in this file); without them the voice
+# route answers 503 and the UI says so instead of pretending.
 #
 # Only the Supabase keys are asked for at Apply time (`sync: false`) — they are never written here.
 #
@@ -41,3 +42,4 @@ services:
       - key: SUPABASE_SECRET_KEY
         sync: false
       # Optional: add DATABASE_URL / DIRECT_URL in the dashboard to enable server-side progress history.
+      # Voice: add AZURE_SPEECH_KEY + AZURE_SPEECH_REGION here too. Both are server-only secrets.

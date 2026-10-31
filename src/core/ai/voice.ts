@@ -170,44 +170,6 @@ export function speechChunks(text: string, maxLen = 180): string[] {
   return chunks;
 }
 
-/**
- * The chunks to send to the CLOUD voice — fewer and longer than the browser's, on purpose.
- *
- * Two different engines need two different shapes. Chrome's synthesiser cuts a single utterance
- * after ~15 seconds, so `speechChunks` keeps utterances small. A server-side Neural2 request has no
- * such cut-off: it is billed and delayed per REQUEST, so sending one sentence at a time costs a
- * round-trip per sentence and makes the voice stop between every line. Here whole sentences are
- * packed up to `maxLen` (kept under the server's 480-character bound), which is both cheaper and
- * smoother — the synthesiser gets a paragraph and places its own prosody across it.
- *
- * Same honesty rule as `speechChunks`: joining the result with spaces reproduces
- * `speakable(text)` exactly. Nothing is dropped or reworded.
- */
-export function cloudChunks(text: string, maxLen = 460): string[] {
-  const limit = Math.max(120, Math.round(maxLen));
-  const clean = speakable(text);
-  if (!clean) return [];
-  const sentences: string[] = [];
-  for (const sentence of clean.split(/(?<=[.!?])\s+/)) {
-    const trimmed = sentence.trim();
-    if (!trimmed) continue;
-    // A single sentence longer than the request bound still has to be cut — at punctuation first.
-    sentences.push(...(trimmed.length > limit ? splitLong(trimmed, limit) : [trimmed]));
-  }
-  const chunks: string[] = [];
-  let current = '';
-  for (const sentence of sentences) {
-    const candidate = current ? `${current} ${sentence}` : sentence;
-    if (current && candidate.length > limit) {
-      chunks.push(current);
-      current = sentence;
-    } else {
-      current = candidate;
-    }
-  }
-  if (current) chunks.push(current);
-  return chunks;
-}
 
 /**
  * What to say for a full answer: the opening sentences (bounded), plus where the rest lives.
@@ -279,22 +241,14 @@ export function pickVoiceFrom(voices: VoiceLike[], lang: VoiceLangId): VoiceLike
   return [...matches].sort((a, b) => score(a) - score(b) || a.name.localeCompare(b.name))[0] ?? null;
 }
 
-/** Which server engine the deployment reported, if any. */
-/** Which voice produced the audio. There is exactly one now: the browser's own. */
-export type ServerVoiceEngine = 'browser' | null;
-
 /**
  * The one line that says who is speaking.
  *
- * There is no server voice any more — no inference host, no key, no route — so this no longer has to
- * choose between engines. It keeps its signature because every caller already passes the same two
- * values, and it deliberately promises nothing the browser cannot keep.
+ * There is no server voice any more — no inference host, no key, no route — so there is no engine to
+ * choose between and nothing for the caller to pass in. It promises only what the browser keeps.
  */
-export function ttsEngineNote(
-  _engine?: string | null,
-  _server?: { engine?: string | null } | null,
-): string {
-  return 'AI voice · this browser · Hindi + English · nothing to download.';
+export function ttsEngineNote(): string {
+  return 'Female AI voice · Hindi + English · generated on the server, streamed as audio.';
 }
 
 export function voiceStatusLabel(status: VoiceStatus, lang: VoiceLangId): string {

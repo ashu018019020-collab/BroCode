@@ -1,79 +1,60 @@
-# The AI mentor's voice
+# The AI voice
 
-BroCode speaks with the **browser's own speech synthesiser**. There is no model to download, no
-inference server, no API key and no audio route: the page builds utterances and the browser says them.
+The tutor speaks with a **female Indian voice generated on the server** and streamed to the browser
+as MP3. Nothing is downloaded, no model runs in the tab, no GPU is involved and the key never leaves
+the API process.
 
-## Why this shape
+| Piece | Where | What it does |
+| --- | --- | --- |
+| `server/tts.mjs` | server | Azure AI Speech client: SSML, voice pair, validation, typed errors. The key lives only here. |
+| `POST /api/voice/tts` | `server/app.mjs` | Same-origin, 30 requests/minute per address, 600 characters per request → `audio/mpeg`. |
+| `GET /api/voice/status` | `server/app.mjs` | `{ configured, engine, langs, voices }`. Never the key. |
+| `src/core/voice/tts.ts` | browser | The only client that talks to those routes; typed failures, never a silent fallback. |
+| `src/components/shared/useVoiceTutor.ts` | browser | The queue: one `<audio>`, one chunk at a time, cancellation, pause/resume, replay. |
+| `src/core/ai/voice.ts` | pure | `speakable()`, `speechChunks()`, `spokenReply()`, language resolution, device-voice ranking. |
 
-The voice has to work on the free deployment, on a phone, on a slow connection, and without a paid
-TTS provider. `SpeechSynthesis` is the one engine that satisfies all four, and Chromium/Edge/Safari
-ship good Hindi and English voices on every desktop and Android device.
+## The voice
 
-It also cannot fail the way a model download can: there is no 380 MB checkpoint, no WASM runtime and
-no cold start. If a browser has no compatible voice, the UI says so instead of pretending to speak.
+Two matched Indian female voices, so switching language changes the language and not the person:
 
-## The pieces
+| Language | Voice | Covers |
+| --- | --- | --- |
+| Hindi | `hi-IN-SwaraNeural` | Hindi and Hinglish (Roman Hindi is read the way it sounds) |
+| English | `en-IN-NeerjaNeural` | English with Indian pronunciation of technical terms |
 
-| File | Owns |
-| --- | --- |
-| `src/core/ai/voice.ts` | Pure text + voice logic: `speakable()`, `speechChunks()`, `spokenReply()`, language resolution (`auto`/`en-IN`/`hi-IN`), and `pickVoiceFrom()` — the female-first ranking. |
-| `src/components/shared/useVoiceTutor.ts` | The only place that touches `SpeechRecognition` and `speechSynthesis`: speak, stop, pause/resume, rate, mute, language, the female voice choice, and the speech-in half (mic). |
-| `src/components/shared/VoiceBar.tsx`, `AiVoiceRow.tsx` | The controls and the honest status line. |
-| `src/features/ai/VoiceMentorPanel.tsx` | The AI Mentor's conversation: asks, then speaks the answer. |
-| `src/features/interview/InterviewMode.tsx` | The interview room's voice, same engine. |
-
-## Choosing the voice
-
-`pickVoiceFrom(voices, lang)` ranks what the browser actually has. It is deliberately simple:
-
-1. **Language first** — `en-IN`/`hi-IN`, then the bare two-letter tag, then `en-GB`/`en-US` variants.
-2. **Google-branded voices first** (`/^google\b/i`). On Chrome, Edge and Android these are the natural
-   female English and Hindi voices learners already heard — "Google UK English Female", "Google हिन्दी".
-   Chrome serves them over the network, and that is intentional: ranking `localService` first (as an
-   earlier version did) is what pushed learners onto the robotic offline voice.
-3. Then any other voice, preferring a local one over a remote one.
-4. Nothing matches → `null`, and the row says this browser has no voice for that language instead of
-   speaking in the wrong one.
-
-There is no separate gender filter, and that is not an oversight: the Google voice for each language
-*is* the female one (Zira/Aria style in English, Heera/Neerja/Kalpana in Hindi), so preferring it *is*
-preferring the female tutor. A learner can pin any installed voice by name (`voiceName`); the picker
-only lists voices the browser reports, so a stored name that disappeared falls back to this ranking
-rather than silence. If a device ships only a male voice, that is what speaks — and the row names it
-rather than pretending otherwise.
+An operator may pin another female voice with `AZURE_SPEECH_VOICE_HI` / `AZURE_SPEECH_VOICE_EN`
+without touching code; the server reports the id it will actually use in `/api/voice/status`, and the
+mentor shows that name rather than a hardcoded one.
 
 ## Speaking an answer
 
-1. `spokenReply()` trims an answer to the sentences worth hearing (Markdown stripped, code fences
-   collapsed to "code example", long answers cut with "The rest is written on screen.").
-2. `speechChunks()` splits it into utterance-sized pieces (≤ ~180 characters, split at punctuation
-   first) so the synthesiser does not truncate a long line mid-word.
-3. Utterances are queued in order on one synthesiser. Speak again supersedes the previous answer
-   (the queue is cleared first), so two answers can never overlap.
-4. `onend` runs only for a queue that really finished — Stop, a barge-in or a navigation never fires
-   it, which is what lets the mentor reopen the mic after a hands-free turn.
+1. `speakable()` strips code fences and markdown noise from the reply.
+2. `speechChunks()` splits it into ≤180-character sentence pieces — small enough for the first sound
+   to start quickly, large enough to keep a sentence's own intonation inside one request.
+3. Each chunk is posted to `/api/voice/tts`; the next chunk is fetched while the current one plays.
+4. One `<audio>` element plays them in order, so two answers can never overlap. `Stop` bumps a
+   generation counter, pauses the element and revokes every blob URL; a late chunk cannot revive.
+5. `Pause`/`Resume` pause the element itself, so the label matches the silence.
 
-## Controls
+## When the server has no key
 
-**Speak** (manual, always available) · **Stop** (clears the queue immediately) · **Replay** (says the
-last answer again) · **Voice on/off** (auto-speak, on by default) · **Speed** (0.7×–1.4×) ·
-**Language** (`auto` decides per message: Devanagari or Roman Hindi ⇒ `hi-IN`, otherwise `en-IN`) ·
-**Mic** (push-to-talk; in the mentor it stays open for a hands-free turn). A new question stops the
-previous answer before retrieval, so the old voice never talks over the new one.
-
-## Failure, honestly
-
-- **No speech synthesis in this browser** → the controls say the voice is unavailable and the answer
-  stays on screen. No robotic substitute is synthesised by us.
-- **No voice for the language** → the row names the voice that will actually be used.
-- **Mic permission refused** → a message that says how to allow it, not a silent no-op.
-- **Autoplay blocked** → the press that started the answer is the gesture; a rejected `speak()`
-  surfaces as an error state rather than a stuck "Speaking…".
+`POST /api/voice/tts` answers **503** with a sentence, and the mentor shows it. The tutor does **not**
+quietly switch to a robot voice: the settings row offers **Use device voice** — the browser's own
+`SpeechSynthesis`, ranked language-first with Google's voice preferred — and only the learner turns
+it on. A browser without speech synthesis says so instead of pretending.
 
 ## What was removed
 
-The Supertonic 3 integration (on-device ONNX worker, then a Python inference service with a Vercel
-proxy) is gone: `src/workers/tts.worker.ts`, `src/core/voice/*`, `services/supertonic-tts/`,
-`api/voice/{tts,status,health}.js`, `server/voice*.mjs`, `render.yaml`'s voice host, the
-`onnxruntime-web` dependency, the `/voice-health` operator page, and the `TTS_SERVICE_*` /
-`SUPERTONIC_*` variables. Nothing in the app requests a model, a `.wasm` file or an inference URL.
+Supertonic 3 and its whole chain: `services/supertonic-tts/`, `api/voice/*`, `server/voice-engine.mjs`,
+`server/voice.mjs`, `server/vercel-voice.mjs`, `server/voice-diagnostics.mjs`, `src/core/voice/*`
+(the old client stack), `onnxruntime-web`, `public/ort`, the 380 MB first-run download, the
+`/voice-health` operations page and the voice telemetry built to compare the two engines.
+
+## Checking the real audio
+
+Naming a voice proves nothing. Generate the four acceptance sentences and listen:
+
+```bash
+AZURE_SPEECH_KEY=… AZURE_SPEECH_REGION=centralindia npm run voice:preview
+# → artifacts/voice-preview/{hi-1,hi-2,en-1,en-2}.mp3 + manifest.json
+```

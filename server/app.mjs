@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { listAllAuthUsers } from './supabase.mjs';
+import { TTS_LANGS, TTS_MAX_CHARS, TtsError, createTtsEngine } from './tts.mjs';
 import { projectBrief } from './project-brief.mjs';
 import {
   INTERVIEW_DEFAULT_MODEL,
@@ -235,6 +236,10 @@ export function createAuthServer({
   enforceHttps = false,
   storeLabel = store?.name ?? 'unknown',
   openaiRealtimeKey = process.env.OPENAI_API_KEY ?? '',
+  // Speech out runs on this server: Azure AI Speech, two matched Indian female voices. Without a key
+  // the route answers 503 and says so — it never fakes audio and never falls back on the quiet.
+  ttsKey = process.env.AZURE_SPEECH_KEY ?? '',
+  ttsRegion = process.env.AZURE_SPEECH_REGION ?? '',
   openaiRealtimeModel = process.env.OPENAI_REALTIME_MODEL ?? DEFAULT_REALTIME_MODEL,
   openaiRealtimeVoice = process.env.OPENAI_REALTIME_VOICE ?? DEFAULT_REALTIME_VOICE,
   createRealtimeSecret = createRealtimeClientSecret,
@@ -318,6 +323,30 @@ export function createAuthServer({
   }
 
   const ttsHits = new Map();
+  /** One engine per process: the key is read once and stays in this scope. */
+  const tts = createTtsEngine({ key: ttsKey, region: ttsRegion, logger });
+
+  /**
+   * Text-to-speech is the only route billed per character, so it gets its own budget: thirty
+   * requests a minute per address. A learner pressing Speak twice costs two requests at most; a
+   * loop is what this stops.
+   */
+  function ttsAllowed(clientKey) {
+    const at = now();
+    const hits = (ttsHits.get(clientKey) ?? []).filter((stamp) => at - stamp < TTS_WINDOW_MS);
+    if (ttsHits.size > 5000) {
+      for (const [key, stamps] of ttsHits) {
+        if (!stamps.length || at - stamps[stamps.length - 1] >= TTS_WINDOW_MS) ttsHits.delete(key);
+      }
+    }
+    if (hits.length >= TTS_MAX_REQUESTS) {
+      ttsHits.set(clientKey, hits);
+      return false;
+    }
+    hits.push(at);
+    ttsHits.set(clientKey, hits);
+    return true;
+  }
 
   /**
    * One evaluation is one paid model call, so it gets its own budget: twenty per ten minutes per
@@ -374,6 +403,54 @@ export function createAuthServer({
         // real, Supabase Auth otherwise. `store` names which one answered, so an operator never has
         // to guess which path is live.
         json(response, 200, { api: 'ok', database: 'ok', store: storeLabel }, headers);
+        return;
+      }
+
+      // Which voice will speak: an engine name and two voice ids, never the key. Public because the
+      // client needs it to label its own controls before it presses anything.
+      if (request.method === 'GET' && url.pathname === '/api/voice/status') {
+        json(response, 200, tts.status(), headers);
+        return;
+      }
+
+      /**
+       * Speech out. The browser sends text and receives audio: the provider, the permanent key and
+       * the request's exact SSML all stay on this side. The response names the voice that actually
+       * spoke, so the UI can report it instead of guessing.
+       */
+      if (request.method === 'POST' && url.pathname === '/api/voice/tts') {
+        ensureSameOrigin(request, allowedOrigin);
+        const clientKey = request.socket?.remoteAddress ?? 'unknown';
+        if (!ttsAllowed(clientKey)) {
+          throw new HttpError(429, 'Too many voice requests in the last minute. Try again shortly.');
+        }
+        const input = await readJson(request);
+        const text = typeof input?.text === 'string' ? input.text.trim() : '';
+        if (!text) throw new HttpError(400, 'Text is required.');
+        if (text.length > TTS_MAX_CHARS) {
+          throw new HttpError(400, `Text must be at most ${TTS_MAX_CHARS} characters.`);
+        }
+        if (!TTS_LANGS.includes(input?.lang)) {
+          throw new HttpError(400, `Choose one of these voice languages: ${TTS_LANGS.join(', ')}.`);
+        }
+        let speech;
+        try {
+          speech = await tts.synthesize({ text, lang: input.lang, rate: input?.rate });
+        } catch (cause) {
+          // A typed failure carries its own status; anything else is a real bug and keeps its 500.
+          if (cause instanceof TtsError) throw new HttpError(cause.status, cause.message);
+          throw cause;
+        }
+        response.writeHead(200, {
+          ...SECURITY_HEADERS,
+          ...headers,
+          'Content-Type': speech.contentType,
+          'Content-Length': speech.audio.byteLength,
+          'Cache-Control': 'private, no-store',
+          'X-Voice-Id': speech.voice,
+          'X-Voice-Lang': speech.lang,
+        });
+        response.end(Buffer.from(speech.audio));
         return;
       }
 

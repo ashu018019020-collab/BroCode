@@ -38,15 +38,6 @@ const server = createAuthServer({
   allowedOrigin,
   enforceHttps,
   storeLabel: label,
-  googleTtsKey: process.env.GOOGLE_TTS_API_KEY ?? '',
-  googleTtsVoices: {
-    'hi-IN': process.env.GOOGLE_TTS_VOICE_HI ?? '',
-    'en-IN': process.env.GOOGLE_TTS_VOICE_EN ?? '',
-  },
-  // The preferred voice engine. `TTS_SERVICE_URL` points at services/supertonic-tts/ (Supertonic 3 on CPU);
-  // without it the Google key is used, and without either the client keeps its browser voice.
-  voiceServiceUrl: process.env.TTS_SERVICE_URL ?? '',
-  voiceServiceSecret: process.env.TTS_SERVICE_SECRET ?? '',
 });
 
 await new Promise((resolve, reject) => {
@@ -54,7 +45,9 @@ await new Promise((resolve, reject) => {
   server.listen(port, () => {
     server.removeListener('error', reject);
     console.log(`BroCode Supabase account API listening on port ${port} (account store: ${label}).`);
-    console.log('The tutor speaks with the browser voice (SpeechSynthesis); no server TTS is involved.');
+    console.log(process.env.AZURE_SPEECH_KEY && process.env.AZURE_SPEECH_REGION
+      ? 'Speech out runs on Azure AI Speech (hi-IN-SwaraNeural / en-IN-NeerjaNeural), synthesised here.'
+      : 'No AZURE_SPEECH_KEY: /api/voice/tts answers 503 and the client uses its device voice only.');
     if (enforceHttps) console.log('Plain-HTTP requests are redirected to HTTPS and HSTS is sent.');
     resolve();
   });

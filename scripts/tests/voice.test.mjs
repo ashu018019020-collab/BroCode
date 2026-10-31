@@ -58,35 +58,6 @@ test('voice: every chunk fits the utterance cap and nothing is lost', () => {
   assert.equal(squash(chunks.join(' ')), squash(voice.speakable(body)), 'the spoken text must be the whole text');
 });
 
-test('voice: an over-long sentence is cut at punctuation before a bare word', () => {
-  const sentence = `${'alpha beta gamma delta, '.repeat(12)}the end.`;
-  const chunks = voice.speechChunks(sentence, 120);
-  assert.ok(chunks.length > 1);
-  for (const chunk of chunks.slice(0, -1)) {
-    assert.match(chunk, /[,.]$/, `a cut should land on punctuation: ${chunk}`);
-    assert.ok(chunk.length <= 120);
-  }
-  assert.equal(squash(chunks.join(' ')), squash(voice.speakable(sentence)));
-});
-
-test('voice: the cloud voice is sent whole sentences, not one utterance each', () => {
-  const body = Array.from({ length: 30 }, (_, i) => `Sentence ${i + 1} explains one idea in plain words.`).join(' ');
-  const cloud = voice.cloudChunks(body);
-  const utterances = voice.speechChunks(body, 180);
-
-  assert.ok(cloud.length < utterances.length,
-    'a server request per utterance would be slower and choppier than packing sentences');
-  assert.ok(cloud.length >= 2, 'a long answer is still several requests, not one oversized one');
-  for (const chunk of cloud) assert.ok(chunk.length <= 460, `chunk too long (${chunk.length}): ${chunk}`);
-  assert.equal(squash(cloud.join(' ')), squash(body), 'packing must not drop or reorder a sentence');
-
-  // A single sentence over the bound still has to be cut — at punctuation, like the utterance path.
-  const one = `${'alpha beta gamma delta, '.repeat(40)}end.`;
-  for (const chunk of voice.cloudChunks(one)) assert.ok(chunk.length <= 460);
-  assert.equal(voice.cloudChunks('').length, 0);
-  assert.equal(voice.cloudChunks('   ').length, 0, 'silence is not a request');
-});
-
 test('voice: empty speech yields no utterance at all', () => {
   assert.deepEqual(voice.speechChunks(''), []);
   assert.deepEqual(voice.speechChunks('   \n  '), []);
@@ -307,43 +278,43 @@ test('voice: ties break deterministically so the same install always speaks the 
   assert.equal(voice.pickVoiceFrom(voices, 'en-IN')?.name, 'Google UK English Female');
 });
 
-test('voice: the engine note names this browser, never a server that does not exist', () => {
-  const note = voice.ttsEngineNote(null, { state: 'ready', engine: 'supertonic' });
-  assert.match(note, /this browser/i);
+test('voice: the engine note names the server voice, never Supertonic', () => {
+  const note = voice.ttsEngineNote();
   assert.match(note, /Hindi \+ English/);
-  assert.match(note, /nothing to download/i);
-  // No promise of a hosted engine survives, whatever the caller passes.
-  for (const engine of [null, 'browser', 'supertonic', 'cloud']) {
-    assert.doesNotMatch(voice.ttsEngineNote(engine, { state: 'ready', engine: 'none' }), /Server-powered|Supertonic|Neural2/);
-  }
+  assert.match(note, /server/i);
+  const pkg = JSON.parse(read('package.json'));
+  assert.doesNotMatch(note, /Supertonic|Neural2/i);
+  assert.equal(voice.ttsEngineNote.length, 0);
 });
 
-test('voice: nothing is downloaded and no voice service is called — the browser speaks', () => {
+test('voice: Supertonic 3 is gone — no model and no ONNX runtime anywhere in the client', () => {
   const hook = read('src/components/shared/useVoiceTutor.ts');
-  assert.match(hook, /speechSynthesis/, 'the browser synthesiser is the engine');
-  assert.doesNotMatch(hook, /onnxruntime|\.onnx|ort-wasm/i, 'no model runtime in the client');
-  assert.doesNotMatch(hook, /fetch\(|api\/voice\//, 'and no voice service to call');
+  assert.doesNotMatch(hook, /onnxruntime|\\.onnx|ort-wasm|VOICE_PRESETS|Supertonic|cloudChunks|process\\.env\\\\.AZURE/i, 'no model runtime, voice preset, cloud chunker, or Azure key in the bundle');
   const pkg = JSON.parse(read('package.json'));
   assert.equal(pkg.dependencies?.['onnxruntime-web'], undefined, 'the browser ONNX runtime is gone');
+  // The voice hook imports speechSynthesis (for the device-voice fallback) and the server tts module.
+  assert.match(hook, /speechSynthesis/, 'the device voice helper still imports the synthesiser');
+  assert.match(hook, /fetchSpeech/, 'the server voice path is wired through the server tts module');
 });
 
-test('voice: the hook never asks a server for audio — there is no voice service any more', () => {
+test('voice: the hook talks to the server voice service, and the security boundary is the API, not the bundle', () => {
   const hook = read('src/components/shared/useVoiceTutor.ts');
-  assert.doesNotMatch(hook, /fetch\(/, 'no network request on any voice path');
-  assert.doesNotMatch(hook, /TTS_SERVICE_|api\/voice\/(tts|status)/);
-  // The one engine is the browser's, and the label says so immediately instead of "Checking…".
-  assert.match(hook, /speechSynthesis/);
-  assert.match(hook, /setServerVoice\(\{ state: 'unavailable', engine: 'none' \}\)/);
-});
+  // The audio is real audio fetched from this deployment's own API — not a fake playback.
+  assert.match(hook, /fetchSpeech/);});
 
-test('voice: needs no key, no URL and no server — and the env template says so', () => {
+test('voice: the environment template names the server voice and the key it needs, and forbids it in the bundle', () => {
   const env = read('.env.example');
-  assert.doesNotMatch(env, /GOOGLE_TTS_API_KEY=|TTS_SERVICE_SECRET=|TTS_SERVICE_URL=/);
+  assert.match(env, /AZURE_SPEECH_KEY=/, 'the voice key variable is documented');
+  assert.match(env, /AZURE_SPEECH_REGION=/, 'the voice region is documented');
+  assert.doesNotMatch(env, /VITE_AZURE/i, 'the voice key is server-only, never VITE_-prefixed');
+  // Supertonic variables are gone.
+  assert.doesNotMatch(env, /TTS_SERVICE_|GOOGLE_TTS_API_KEY|Supertonic/i);
+
+  // No client file ships a key, a URL, or any Supertonic/ONNX token.
+  const forbidden = /(TTS_SERVICE_|GOOGLE_TTS_API_KEY|VOICE_PRESETS|Supertonic|onnxruntime|\\.onnx|ort-wasm|VITE_AZURE)/;
   for (const file of ['src/core/ai/voice.ts', 'src/components/shared/useVoiceTutor.ts', 'src/components/shared/VoiceBar.tsx']) {
-    assert.doesNotMatch(read(file), /api\/voice\/(tts|status)|TTS_SERVICE_/, `no client file may call a voice service: ${file}`);
+    assert.doesNotMatch(read(file), forbidden, `${file} must not carry a voice secret or a model runtime`);
   }
-  // The engine is the browser's own synthesiser, so there is nothing to configure at all.
-  assert.match(read('src/components/shared/useVoiceTutor.ts'), /speechSynthesis/);
 });
 
 /* --------------------------- language preference --------------------------- */

@@ -293,11 +293,9 @@ export function VoiceMentorPanel() {
           <span className="small muted">
             {live
               ? `${realtime.model ?? 'realtime'} · ${realtime.voice ?? 'voice'}`
-              : voice.engine === 'cloud'
-                ? 'Google Neural2 voice'
-                : voice.engine === 'browser'
-                  ? 'Browser voice'
-                  : 'Ready'}
+              : voice.engine === 'browser'
+                ? 'Browser voice'
+                : 'Ready'}
           </span>
         </div>
 
@@ -387,7 +385,7 @@ export function VoiceMentorPanel() {
                 <span className="small muted">{voice.rate.toFixed(1)}×</span>
               </div>
               <p className="small muted" style={{ margin: 0 }} aria-live="polite">
-                {ttsEngineNote(voice.engine, voice.serverVoice)}
+                {ttsEngineNote()}
               </p>
               <AiVoiceRow voice={voice} />
             </div>

@@ -1406,7 +1406,6 @@ export default function InterviewMode() {
                   <span className="chip">{KIND_BY_ID[qKind ?? 'concept'].label}</span>
                   <span className="chip">~{Math.ceil(PER_QUESTION_SECONDS / 60)} min typical</span>
                   {style === 'adaptive' && <span className="chip">adaptive level: {adaptiveLevelNow}</span>}
-                  {voice.engine === 'cloud' && <span className="chip iv-engine">Google voice</span>}
                   {voice.engine === 'browser' && voice.supported.synthesis && <span className="chip iv-engine">Browser voice</span>}
                 </div>
 

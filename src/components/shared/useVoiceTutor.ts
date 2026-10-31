@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, cloudChunks, micPermissionDenied, normalizeVoiceLang, pickVoiceFrom,
+  DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, micPermissionDenied, normalizeVoiceLang, pickVoiceFrom,
   speechChunks, speechLangFor, type VoiceLangId, type VoiceStatus,
 } from '../../core/ai/voice';
+import { SpeechError, fetchSpeech, voiceStatus, type ServerVoiceState } from '../../core/voice/tts';
 
 
 /**
@@ -13,9 +14,10 @@ import {
  *
  *  - SPEECH OUT is the BROWSER's own synthesiser, and only that. There is no model, no worker, no
  *    WASM runtime, no inference service and no audio route: the page builds utterances out of
- *    `speechChunks()` and the browser says them. A female voice is preferred for the chosen language
- *    (see `pickVoiceFrom`), the learner may pin an installed voice by name, and the settings line
- *    names the voice that actually spoke. Nothing is ever fetched for speech.
+ *    `speechChunks()` and the browser says them. `pickVoiceFrom` ranks the browser's voices for the
+ *    chosen language — Google's voice first, which is the natural female one on Chrome, Edge and
+ *    Android — the learner may pin an installed voice by name, and the settings line names the voice
+ *    that actually spoke. Nothing is ever fetched for speech.
  *    A browser that cannot synthesise says so, honestly, instead of faking playback.
  *  - WHY VOICE USED TO DIE MID-SESSION (the Answer-by-Voice bug, fixed here, three causes):
  *
@@ -54,9 +56,6 @@ import {
 const PREFS_KEY = 'aiml:voice';
 
 
-/** Whether a server voice is reachable. It never is any more: the browser voice is the only engine. */
-type CloudState = boolean | null;
-
 interface Prefs {
   lang: VoiceLangId;
   rate: number;
@@ -64,13 +63,11 @@ interface Prefs {
   /** Preferred browser voice by name; null = let the engine's ranking decide. */
   voiceName: string | null;
   speakReplies: boolean;
-  /** The engine that speaks. Only `browser` can: the server voice was retired with Supertonic. */
-  engine: 'ai' | 'browser';
 }
 
 const DEFAULT_PREFS: Prefs = {
   // Auto-speak stays ON (a talking tutor); a stored "Voice off" still wins.
-  lang: DEFAULT_VOICE_LANG, rate: DEFAULT_RATE, pitch: 1, voiceName: null, speakReplies: true, engine: 'browser',
+  lang: DEFAULT_VOICE_LANG, rate: DEFAULT_RATE, pitch: 1, voiceName: null, speakReplies: true,
 };
 
 /** Pitch is clamped, not validated: a slider can never produce a chipmunk or a rumble. */
@@ -91,7 +88,6 @@ function loadPrefs(): Prefs {
       pitch: clampPitch(parsed?.pitch),
       voiceName: typeof parsed?.voiceName === 'string' && parsed.voiceName ? parsed.voiceName : null,
       speakReplies: parsed?.speakReplies !== false,
-      engine: parsed?.engine === 'browser' ? 'browser' : 'ai',
     };
   } catch {
     return { ...DEFAULT_PREFS };
@@ -126,17 +122,6 @@ function recognitionCtor(): RecognitionCtor | null {
 
 function synthesisAvailable(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
-}
-
-/**
- * Web Audio, for gapless cloud playback. Safari only ever shipped the prefixed constructor; a
- * browser with neither falls back to its own synthesiser rather than going silent.
- */
-type AudioContextCtor = new () => AudioContext;
-function audioContextCtor(): AudioContextCtor | null {
-  if (typeof window === 'undefined') return null;
-  const w = window as unknown as { AudioContext?: AudioContextCtor; webkitAudioContext?: AudioContextCtor };
-  return w.AudioContext ?? w.webkitAudioContext ?? null;
 }
 
 /** The failure a learner can act on, in their words — never the raw DOM error code alone. */
@@ -211,18 +196,20 @@ export interface VoiceTutor {
   paused: boolean;
   /**
    * Which engine spoke last. Only the browser's own synthesiser can, since the server voice was
-   * retired with Supertonic — this stays a value the UI reads, never a promise about a host.
    */
-  engine: 'supertonic' | 'cloud' | 'browser' | null;
+  engine: 'browser' | 'server' | null;
   /**
-   * The voice's readiness as the rows read it. There is no server to probe any more, so it settles on
-   * `unavailable` immediately and the UI says "this browser" instead of "Checking…".
+   * Can this browser speak at all? A synchronous capability check, not a network probe: there is no
+   * server voice left to wait for, so the rows label the controls correctly on the first render.
    */
-  serverVoice: { state: 'checking' | 'ready' | 'unavailable'; engine: 'supertonic' | 'google' | 'none' | null };
-  /** Ask the server again — the only "fix it" action a learner needs now that nothing downloads. */
-  refreshServerVoice: () => void;
-  /** What the SERVER reported about its voice engine — null until the status probe answers. */
-  cloudConfigured: CloudState;
+  synthesisReady: boolean;
+  /** The SERVER voice's state: a real probe of /api/voice/status, not a guess. */
+  serverVoice: ServerVoiceState;
+  /** The voice id the server will speak the current language with (`hi-IN-SwaraNeural`). */
+  voiceId: string | null;
+  /** The learner's own choice to fall back to the device voice. Never switched on behind their back. */
+  useDeviceVoice: boolean;
+  setUseDeviceVoice: (on: boolean) => void;
   /** The live partial transcript while the learner is speaking. */
   interim: string;
   /** The last thing spoken, so "Replay" can repeat it without re-asking the engine. */
@@ -256,6 +243,12 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const [error, setError] = useState<string | null>(null);
   const [lastSpoken, setLastSpoken] = useState<{ text: string; sources: { title: string }[] } | null>(null);
   const [voices, setVoices] = useState<{ name: string; lang: string; localService: boolean }[]>([]);
+  const [serverVoice, setServerVoice] = useState<ServerVoiceState>('checking');
+  const [voiceId, setVoiceId] = useState<string | null>(null);
+  const [useDeviceVoice, setUseDeviceVoice] = useState(false);
+  /** The <audio> element currently speaking the server's audio, and every URL it has created. */
+  const serverAudio = useRef<HTMLAudioElement | null>(null);
+  const blobUrls = useRef<Set<string>>(new Set());
 
   const recognition = useRef<RecognitionLike | null>(null);
   const generation = useRef(0);
@@ -271,30 +264,8 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   /** When the last INTENTIONAL speech stop happened — the first-utterance gap reads it. */
   const lastCancelAt = useRef(0);
 
-  // The SERVER voice's report: which engine answered the status probe, and whether it is ready.
-  // There is no download, no percentage and no model in this tab any more — `checking` is a short
-  // probe, and `unavailable` means this deployment has no server voice, which the label says plainly.
-  const [serverVoice, setServerVoice] = useState<{
-    state: 'checking' | 'ready' | 'unavailable';
-    engine: 'supertonic' | 'google' | 'none' | null;
-  }>({ state: 'checking', engine: null });
-  /** Bumped by Retry: re-runs the one status probe instead of reloading the page. */
-  const [serverProbe, setServerProbe] = useState(0);
-
-  // The cloud voice's own machinery. `context` is ONE Web Audio graph reused for the whole page —
-  // creating an AudioContext per answer hits Chrome's per-page limit and costs the start-up latency
-  // on every reply. `sources` are the chunks currently scheduled or playing; `abort` cancels
-  // in-flight chunk fetches on Stop/unmount; `fails` counts consecutive cloud failures so a dead
-  // endpoint is abandoned after the second instead of taxing every following answer with the same
-  // timeout.
-  const [cloudConfigured, setCloudConfigured] = useState<CloudState>(null);
-  const [engine, setEngine] = useState<'supertonic' | 'cloud' | 'browser' | null>(null);
-  const cloudRef = useRef<CloudState>(null);
-  const cloudFails = useRef(0);
-  const engineRef = useRef<'supertonic' | 'cloud' | 'browser' | null>(null);
-  const contextRef = useRef<AudioContext | null>(null);
-  const activeSources = useRef<Set<AudioBufferSourceNode>>(new Set());
-  const cloudAbort = useRef<AbortController | null>(null);
+  /** Which engine spoke last. Only the browser's can, and it stays null until it has spoken once. */
+  const [engine, setEngine] = useState<'browser' | 'server' | null>(null);
 
   // Listening machinery that the event handlers must read without stale closures.
   const listeningRef = useRef(false);
@@ -305,39 +276,22 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const micSessionRef = useRef(0);
   const micTimerRef = useRef(0);
 
-  /** One setter for the engine, so the ref the pause switch reads can never lag the state. */
-  const markEngine = useCallback((next: 'supertonic' | 'cloud' | 'browser') => {
-    engineRef.current = next;
-    setEngine(next);
-  }, []);
-
   const supported = useMemo(() => ({ synthesis: synthesisAvailable(), recognition: recognitionCtor() !== null }), []);
 
-  // There is no server voice to probe any more. The label settles on the truth immediately — one
-  // browser voice, nothing to configure — instead of asking a route that no longer exists.
-  useEffect(() => {
-    cloudRef.current = false;
-    setCloudConfigured(false);
-    setServerVoice({ state: 'unavailable', engine: 'none' });
-  }, [serverProbe]);
 
-  const releaseCloud = useCallback(() => {
-    cloudAbort.current?.abort();
-    cloudAbort.current = null;
-    for (const source of activeSources.current) {
-      // `onended` is cleared first: a Stop must never be read as "this chunk finished", which would
-      // advance the queue or hand the rest of the answer to the other engine.
-      source.onended = null;
-      try { source.stop(); } catch { /* not started, or already ended */ }
-      try { source.disconnect(); } catch { /* already disconnected */ }
+  /** Stop the server audio and revoke every blob URL it made. A leak, not just a pause. */
+  const releaseServerAudio = useCallback(() => {
+    const audio = serverAudio.current;
+    serverAudio.current = null;
+    if (audio) {
+      audio.onended = null;
+      audio.onerror = null;
+      try { audio.pause(); } catch { /* already stopped */ }
+      audio.removeAttribute('src');
+      try { audio.load(); } catch { /* detached */ }
     }
-    activeSources.current.clear();
-    const context = contextRef.current;
-    // Freezing the clock (rather than closing the graph) makes Stop immediate and keeps the one
-    // context reusable. Scheduled nodes are already stopped above.
-    if (context && context.state === 'running') {
-      void context.suspend().catch(() => { /* nothing scheduled */ });
-    }
+    for (const url of blobUrls.current) URL.revokeObjectURL(url);
+    blobUrls.current.clear();
   }, []);
 
   /** Drop every strong utterance ref. Called on intentional stop and on a full answer finish. */
@@ -352,15 +306,6 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     lastActivity.current = 0;
   }, []);
 
-  /**
-   * Re-run the status probe. There is nothing to download any more: `Retry` asks the server again, so
-   * a deployment that configured its voice after this tab was opened starts working without a reload.
-   */
-  const refreshServerVoice = useCallback(() => {
-    cloudFails.current = 0;
-    setServerProbe((value) => value + 1);
-  }, []);
-
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -368,14 +313,11 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       generation.current += 1;
       try { recognition.current?.abort(); } catch { /* already stopped */ }
       recognition.current = null;
-      releaseCloud();
       releaseUtterances();
-      const context = contextRef.current;
-      contextRef.current = null;
-      if (context) void context.close().catch(() => { /* already closed */ });
+      releaseServerAudio();
       if (synthesisAvailable()) window.speechSynthesis.cancel();
     };
-  }, [releaseCloud, releaseUtterances]);
+  }, [releaseServerAudio, releaseUtterances]);
 
   useEffect(() => {
     try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* quota or blocked */ }
@@ -396,6 +338,20 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     window.speechSynthesis.addEventListener?.('voiceschanged', warm);
     return () => window.speechSynthesis.removeEventListener?.('voiceschanged', warm);
   }, []);
+
+
+  // Ask the API once which female voice it will speak with. A failed probe is not an error the
+  // learner must act on yet: the row names the device voice as the explicit alternative.
+  useEffect(() => {
+    let alive = true;
+    void voiceStatus().then((status) => {
+      if (!alive) return;
+      setServerVoice(status?.configured ? 'ready' : 'unavailable');
+      setVoiceId(status?.configured ? (status.voices[prefs.lang] ?? null) : null);
+    });
+    return () => { alive = false; };
+  }, [prefs.lang]);
+
 
   const stopListening = useCallback(() => {
     keepOpenRef.current = false;
@@ -420,32 +376,22 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     queueIndex.current = 0;
     stallRetries.current = 0;
     releaseUtterances();
-    // Cancelling the fetch is what stops the SERVER's synthesis: the request is aborted, so the
-    // inference service drops the work instead of finishing an answer nobody will hear.
-    releaseCloud();
     if (synthesisAvailable()) {
       try { window.speechSynthesis.cancel(); } catch { /* nothing queued */ }
     }
+    releaseServerAudio();
     if (mounted.current) {
       setSpeaking(false);
       setPaused(false);
     }
-  }, [releaseCloud, releaseUtterances]);
+  }, [releaseServerAudio, releaseUtterances]);
 
   const speak = useCallback((text: string, sources: { title: string }[] = [], onEnd?: () => void) => {
     const chunks = speechChunks(text);
     if (!chunks.length) return;
-    // Time from press to the first playable chunk of THIS answer — the number the dashboard shows
-    // as latency. It is measured around the real fetch, never estimated from the text length.
-    let firstAudioMs: number | null = null;
-    const answerStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    // The browser's synthesiser is the only engine. This is a capability check, not a preference:
-    // a browser without one says so instead of pretending, and no network request is ever made.
-    const cloudUsable = false;
-    if (!cloudUsable && !supported.synthesis) {
-      setError(cloudRef.current === null
-        ? 'This browser cannot speak text aloud, and the voice service has not answered yet.'
-        : 'This browser cannot speak text aloud.');
+    const viaServer = serverVoice === 'ready' && !useDeviceVoice;
+    if (!viaServer && !supported.synthesis) {
+      setError('This browser cannot read text aloud, and the server voice is not configured.');
       return;
     }
     stopSpeaking();
@@ -459,28 +405,30 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     setPaused(false);
     lastActivity.current = Date.now();
 
-    /**
-     * One completion per utterance queue. Stop/navigation increments the generation, so a stale
-     * queue can never fire it; the latch covers the cloud path's two failure reports.
-     */
+    /** One completion per answer. Stop/navigation bumps the generation, so a stale queue cannot fire it. */
     let finished = false;
     const finish = () => {
       if (finished) return;
       finished = true;
       releaseUtterances();
-      // One count per ANSWER, tagged with the engine that actually produced the sound. A fallback
-      // mid-answer therefore lands on `browser`, which is exactly what the dashboard must show.
-      const tag = engineRef.current === 'supertonic' ? 'supertonic' : engineRef.current === 'cloud' ? 'google' : 'browser';
+      releaseServerAudio();
       if (!mounted.current || id !== generation.current) return;
       setSpeaking(false);
       setPaused(false);
       onEnd?.();
     };
 
-    /** The browser engine: short utterances in order, generation-guarded against stale `onend`. */
+    const fail = (message: string) => {
+      if (!mounted.current || id !== generation.current) return;
+      setError(message);
+      setSpeaking(false);
+      setPaused(false);
+    };
+
+    /** The device engine — only ever reached when the learner chose it, or the server has no key. */
     const speakWithBrowser = () => {
       if (!mounted.current || id !== generation.current) return;
-      markEngine('browser');
+      setEngine('browser');
 
       const speakChunk = (index: number) => {
         if (!mounted.current || id !== generation.current) return;
@@ -523,9 +471,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
           advance();
           return;
         }
-        // The Windows-Chrome stuck bug: speak() resolves but nothing plays and no event ever
-        // fires. One 600 ms check per chunk re-fires the utterance if it never started; the
-        // generation and `done` guards make a retry the only path it can take.
+        // The Windows-Chrome stuck bug: speak() resolves but nothing plays and no event ever fires.
         window.setTimeout(() => {
           if (!mounted.current || id !== generation.current || done) return;
           if (window.speechSynthesis.speaking || window.speechSynthesis.pending) return;
@@ -535,8 +481,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       };
 
       const start = () => speakChunk(0);
-      // Chrome drops the FIRST utterance spoken in the same tick as a cancel. speak() always
-      // cancels what played before, so the very first chunk of a fresh answer waits one gap out.
+      // Chrome drops the FIRST utterance spoken in the same tick as a cancel.
       if (Date.now() - lastCancelAt.current < CANCEL_GAP_MS) {
         window.setTimeout(start, CANCEL_GAP_MS + 60);
       } else {
@@ -544,159 +489,68 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       }
     };
 
-    if (!cloudUsable) { speakWithBrowser(); return; }
-
     /**
-     * The SERVER engine, played through Web Audio (Supertonic 3 or Google, whichever answered).
+     * The server engine: one sentence per request, played in order on ONE <audio> element.
      *
-     *  - PACKING: the server is sent whole sentences (`cloudChunks`), not one line at a time, so a
-     *    600-character answer is 2 requests instead of 4 and the synthesiser places its own prosody
-     *    across a paragraph.
-     *  - PIPELINING: every request starts immediately, but playback begins as soon as the FIRST
-     *    chunk is decoded. The old path waited for `Promise.all`, so the learner heard silence for
-     *    as long as the slowest request took.
-     *  - GAPLESS JOIN: decoded buffers are scheduled on one AudioContext clock with a short breath
-     *    between them. An `<audio>` element reloading a new `src` per sentence is exactly the
-     *    stutter this replaces.
-     *  - PAUSE that really pauses: the AudioContext clock freezes, so already-scheduled sentences
-     *    wait instead of playing on under a "Paused" label.
-     *
-     * The browser voice remains the fallback for the WHOLE answer, and for any chunk that never
-     * arrived — from that chunk onward, so a sentence is never skipped.
+     *  - ORDERING is the anti-overlap guarantee: the next chunk is only started by the previous
+     *    `onended`, so a rapid double-press cannot open a second stream (the generation guard ends the
+     *    earlier one first).
+     *  - PREFETCH: the next sentence is fetched while this one speaks, so the gap is a breath rather
+     *    than a round-trip.
+     *  - NO SILENT FALLBACK: a failure is shown, and the device voice stays the learner's choice.
      */
-    const AudioCtor = audioContextCtor();
-    const cloud = cloudChunks(text);
-    if (!AudioCtor || !cloud.length) { speakWithBrowser(); return; }
+    const speakFromServer = () => {
+      setEngine('server');
+      const urls: (string | null)[] = queue.current.map(() => null);
 
-    let context = contextRef.current;
-    if (!context) {
-      try {
-        context = new AudioCtor();
-        contextRef.current = context;
-      } catch {
-        speakWithBrowser();
-        return;
-      }
-    }
-    const graph = context;
-    // A context created before any user gesture starts suspended; `speak()` is only ever reached
-    // from a press, so resuming here is allowed — and harmless when it is already running.
-    void graph.resume().catch(() => { /* the first failure hands over to the browser voice */ });
+      const load = async (index: number): Promise<string> => {
+        const cached = urls[index];
+        if (cached) return cached;
+        const url = await fetchSpeech({ text: queue.current[index], lang: prefs.lang, rate: prefs.rate });
+        urls[index] = url;
+        blobUrls.current.add(url);
+        return url;
+      };
 
-    const controller = new AbortController();
-    cloudAbort.current = controller;
-    const decode = async (chunk: string): Promise<AudioBuffer> => {
-      const askedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
-      // The server voice is retired: this branch is unreachable (`cloudUsable` is always false).
-      const response = await Promise.reject<Response>(new Error('server voice retired'));
-      if (!response.ok) {
-        // The route sends a machine code (`VOICE_NOT_CONFIGURED`, …); it is a category, never text.
-        throw new Error(`tts-${response.status}`);
-      }
-      // A static host answers HTML with a 200; audio is audio.
-      const type = response.headers.get('content-type') ?? '';
-      if (!type.startsWith('audio')) {
-        throw new Error('tts-not-audio');
-      }
-      // The route names the engine that produced the audio; the settings line reports it, so the UI
-      // never says "Supertonic" when Google spoke (or the reverse).
-      const producedBy = response.headers.get('x-voice-engine');
-      if (producedBy === 'supertonic' || producedBy === 'google') {
-        markEngine(producedBy === 'google' ? 'cloud' : 'supertonic');
-      } else if (!engineRef.current) {
-        markEngine('cloud');
-      }
-      const buffer = await graph.decodeAudioData(await response.arrayBuffer());
-      if (firstAudioMs === null) {
-        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-        firstAudioMs = Math.round(now - answerStartedAt);
-      }
-      return buffer;
-    };
-
-    // All requests in flight at once; only the ORDER of playback is sequential.
-    const pending = cloud.map(decode);
-    const GAP_SECONDS = 0.18;
-    let playhead = 0;
-    let next = 0;
-    let scheduled = 0;
-    let handoff: { from: number } | null = null;
-    let handedOff = false;
-
-    const handOffToBrowser = (from: number) => {
-      if (handedOff || !mounted.current || id !== generation.current) return;
-      handedOff = true;
-      // Everything before `from` was scheduled and has now finished; only the unheard remainder is
-      // re-read, so no sentence is spoken twice and none is skipped.
-      queue.current = speechChunks(cloud.slice(from).join(' '));
-      queueIndex.current = 0;
-      lastActivity.current = Date.now();
-      releaseCloud();
-      speakWithBrowser();
-    };
-
-    const run = async () => {
-      for (;;) {
-        const index = next;
-        if (index >= cloud.length) return;
-        let buffer: AudioBuffer;
-        try {
-          buffer = await pending[index];
-        } catch (cause) {
-          if (!mounted.current || id !== generation.current || controller.signal.aborted) {
-            // An aborted fetch here is an intentional stop, EXCEPT when the client watchdog
-            // aborted it to recover a hanging endpoint — in that case the browser voice finishes
-            // the answer instead of leaving the learner in silence.
-            if (mounted.current && id === generation.current && controller.signal.aborted) {
-              handOffToBrowser(0);
-            }
-            return;
-          }
-          cloudFails.current += 1;
-          // Keep `cloudConfigured` as the SERVER's report — the server is configured, it is this
-          // voice that is unavailable. The settings line says which engine spoke.
-          if (cloudFails.current >= 2) cloudRef.current = false;
-          console.warn('BroCode voice: Google voice failed, using the browser voice.', cause);
-          if (scheduled === 0) { handOffToBrowser(0); return; }
-          // Something is already playing: let it finish before the other engine starts, otherwise
-          // two voices talk over each other.
-          handoff = { from: index };
-          // …but that audio may ALREADY have ended while this request was in flight, in which case
-          // no `onended` is left to trigger the hand-off and the answer would stop mid-sentence.
-          if (activeSources.current.size === 0) handOffToBrowser(index);
-          return;
-        }
+      const play = (index: number) => {
         if (!mounted.current || id !== generation.current) return;
-        cloudFails.current = 0;
-        lastActivity.current = Date.now();
-        if (engineRef.current !== 'cloud') markEngine('cloud');
-
-        const source = graph.createBufferSource();
-        source.buffer = buffer;
-        source.connect(graph.destination);
-        const startAt = Math.max(graph.currentTime + 0.05, playhead);
-        playhead = startAt + buffer.duration + GAP_SECONDS;
-        next = index + 1;
-        scheduled = next;
-        activeSources.current.add(source);
-        source.onended = () => {
-          activeSources.current.delete(source);
-          lastActivity.current = Date.now();
+        queueIndex.current = index;
+        if (index >= queue.current.length) { finish(); return; }
+        void load(index).then((url) => {
           if (!mounted.current || id !== generation.current) return;
-          const wasLastScheduled = index === scheduled - 1;
-          if (handoff) {
-            if (wasLastScheduled) handOffToBrowser(handoff.from);
+          const audio = new Audio(url);
+          audio.preload = 'auto';
+          serverAudio.current = audio;
+          audio.onended = () => {
+            lastActivity.current = Date.now();
+            if (!mounted.current || id !== generation.current) return;
+            play(index + 1);
+          };
+          audio.onerror = () => fail('The generated audio could not be played. Press Replay, or switch to the device voice.');
+          void audio.play().catch(() => fail('Your browser blocked playback. Press Speak once more.'));
+          // Warm the next sentence while this one is speaking.
+          if (index + 1 < queue.current.length) void load(index + 1).catch(() => { /* retried on demand */ });
+        }).catch((cause: unknown) => {
+          if (!mounted.current || id !== generation.current) return;
+          if (cause instanceof SpeechError && cause.status === 503) {
+            // The server answered and said it has no key: that is a fact about THIS deployment, so
+            // the row updates and the device voice becomes an explicit offer, never an automatic swap.
+            setServerVoice('unavailable');
+            fail('The server voice is not configured. Press “Use device voice” to hear answers in this browser’s voice.');
             return;
           }
-          if (index === cloud.length - 1) finish();
-        };
-        try { source.start(startAt); } catch { handOffToBrowser(index); return; }
-      }
+          fail(cause instanceof Error && cause.message ? cause.message : 'The voice could not be generated.');
+        });
+      };
+
+      play(0);
     };
-    void run();
+
+    if (viaServer) speakFromServer();
+    else speakWithBrowser();
   }, [
-    markEngine, prefs.engine, prefs.lang, prefs.pitch, prefs.rate, prefs.voiceName,
-    releaseCloud, releaseUtterances, stopSpeaking, supported.synthesis,
+    prefs.lang, prefs.pitch, prefs.rate, prefs.voiceName, releaseServerAudio, releaseUtterances,
+    serverVoice, stopSpeaking, supported.synthesis, useDeviceVoice,
   ]);
 
   const replay = useCallback(() => {
@@ -837,37 +691,26 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   /**
    * Pause, without ever claiming a pause that did not happen.
    *
-   * The AudioContext clock and the synthesiser are separate switches, and the SERVER engine spends
-   * its first moments in flight: `speak()` creates the graph and calls `resume()` before the first
-   * chunk has been fetched. A pause pressed in that window used to fall through to
-   * `speechSynthesis.pause()` — which pauses nothing — and set `paused: true`, so the label said
-   * "Paused" while the answer started playing a second later. Suspending the graph holds the
-   * pending audio instead, and if there is no graph yet there is genuinely nothing to pause, so the
-   * button keeps saying "Pause" rather than lying.
+   * `speechSynthesis.pause()` on an engine that is not speaking is a silent no-op, and reporting
+   * "Paused" after it is how the controls came to disagree with the sound. So the press reads the
+   * synthesiser's own state first and claims only the pause it actually caused.
    */
   const pauseSpeaking = useCallback(() => {
-    const context = contextRef.current;
-    const serverVoice = engineRef.current === 'cloud' || engineRef.current === 'supertonic';
-    if (serverVoice) {
-      if (!context) return; // nothing has been created yet: no audio is playing to pause
-      // Suspending freezes `currentTime`, so sources already scheduled wait where they are and
-      // chunks still in flight are queued silently instead of starting under a "Paused" label.
-      void context.suspend().then(() => { if (mounted.current) setPaused(true); }).catch(() => { /* closed */ });
+    const audio = serverAudio.current;
+    if (audio && !audio.paused) {
+      audio.pause();
+      setPaused(true);
       return;
     }
     if (!supported.synthesis) return;
-    // `speechSynthesis.pause()` on an engine that is not speaking is a silent no-op; saying
-    // "Paused" after it is how the controls came to disagree with the sound.
     if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) return;
     try { window.speechSynthesis.pause(); setPaused(true); } catch { /* nothing to pause */ }
   }, [supported.synthesis]);
 
   const resumeSpeaking = useCallback(() => {
-    const context = contextRef.current;
-    const serverVoice = engineRef.current === 'cloud' || engineRef.current === 'supertonic';
-    if (serverVoice) {
-      if (!context || context.state === 'running') { setPaused(false); return; }
-      void context.resume().then(() => { if (mounted.current) setPaused(false); }).catch(() => { /* closed */ });
+    const audio = serverAudio.current;
+    if (audio && audio.paused) {
+      void audio.play().then(() => { if (mounted.current) setPaused(false); }).catch(() => { /* blocked */ });
       return;
     }
     if (!supported.synthesis) return;
@@ -879,9 +722,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
    * stalls no event can tell us about:
    *
    *  - the browser chain went mute with chunks left (GC bug, an engine that fired no events) —
-   *    cancel and re-speak the unheard remainder, twice at most, then finish with an honest error;
-   *  - the cloud chain hung in a fetch that never promised (no per-request timeout) — abort the
-   *    fetch so the pipeline's own failure path hands the answer to the browser voice.
+   *    cancel and re-speak the unheard remainder, twice at most, then finish with an honest error.
    *
    * It never touches the mic: while the learner is being recorded, the machines hold still —
    * turn-taking, not a race.
@@ -891,25 +732,10 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     const timer = window.setInterval(() => {
       if (!mounted.current) return;
       if (listeningRef.current) return; // recording owns the turn; no sound is expected
-      if (Date.now() - lastActivity.current < (engineRef.current === 'cloud' ? 15000 : STALL_MS)) return;
-      const context = contextRef.current;
-      const pausedHere = context?.state === 'suspended' || (engineRef.current === 'browser' && window.speechSynthesis.paused);
-      if (pausedHere) {
+      if (Date.now() - lastActivity.current < STALL_MS) return;
+      if (window.speechSynthesis.paused) {
         // Paused playback is not a stall: hold the timestamp so the watchdog stays idle.
         lastActivity.current = Date.now();
-        return;
-      }
-      if (engineRef.current === 'cloud') {
-        if (activeSources.current.size > 0) {
-          // Real audio is scheduled; a suspended-but-running graph has `pausedHere` above, so this
-          // means scheduled audio with a dead clock — restart the clock rather than the queue.
-          void contextRef.current?.resume().catch(() => { /* handed to the browser voice */ });
-          lastActivity.current = Date.now();
-          return;
-        }
-        // Nothing is playing: the fetches hung. Aborting makes `run()`'s catch hand off cleanly.
-        lastActivity.current = Date.now();
-        cloudAbort.current?.abort();
         return;
       }
       // Browser engine, stalled, with or without a remainder.
@@ -964,9 +790,11 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     speaking,
     paused,
     engine,
-    cloudConfigured,
+    synthesisReady: supported.synthesis,
     serverVoice,
-    refreshServerVoice,
+    voiceId,
+    useDeviceVoice,
+    setUseDeviceVoice,
     interim,
     lastSpoken,
     error,
