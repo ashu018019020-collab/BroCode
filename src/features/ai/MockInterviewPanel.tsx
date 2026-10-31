@@ -123,7 +123,8 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
     voiceRef.current.stopSpeaking();
     if (!voiceRef.current.supported.synthesis) return;
     voiceRef.current.speak(next.prompt, [], () => {
-      if (autoListenRef.current) voiceRef.current.startListening(handleAnswerRef.current);
+      // The round's mic stays open across sentence pauses: an answer is several sentences, not one.
+      if (autoListenRef.current) voiceRef.current.startListening(handleAnswerRef.current, { continuous: true });
     });
   }, []);
 
@@ -232,7 +233,7 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
     setFollowUpDraft('');
     if (voiceRef.current.supported.synthesis) {
       voiceRef.current.speak(next.prompt, [], () => {
-        if (autoListenRef.current) voiceRef.current.startListening(handleAnswerRef.current);
+        if (autoListenRef.current) voiceRef.current.startListening(handleAnswerRef.current, { continuous: true });
       });
     }
   };
@@ -479,8 +480,10 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
             <button
               type="button"
               className={`btn small${voice.listening ? ' primary' : ''}`}
-              onClick={() => voice.toggleListening(handleAnswer)}
+              onClick={() => voice.toggleListening(handleAnswer, { continuous: true })}
               aria-pressed={voice.listening}
+              disabled={!voice.supported.recognition}
+              title={voice.supported.recognition ? 'Answer aloud; the transcript lands in the box and stays editable' : 'This browser has no speech recognition — type your answer instead'}
             >
               {voice.listening ? <><MicOff size={13} /> Stop listening</> : <><Mic2 size={13} /> Answer by voice</>}
             </button>
@@ -576,7 +579,7 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
                   style={{ width: '100%', marginTop: 5 }}
                 />
                 <div className="row" style={{ gap: 6, marginTop: 6 }}>
-                  <button type="button" className="btn small" onClick={() => voice.toggleListening(handleAnswer)} aria-pressed={voice.listening}>
+                  <button type="button" className="btn small" onClick={() => voice.toggleListening(handleAnswer, { continuous: true })} aria-pressed={voice.listening}>
                     {voice.listening ? <><MicOff size={12} /> Stop</> : <><Mic2 size={12} /> Answer by voice</>}
                   </button>
                   <button type="button" className="btn small primary" onClick={saveFollowUp} disabled={!followUpDraft.trim()}>

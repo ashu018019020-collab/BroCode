@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_RATE, DEFAULT_VOICE_LANG, clampRate, micPermissionDenied, normalizeVoiceLang, pickVoiceFrom,
-  speechChunks, speechLangFor, type VoiceLangId, type VoiceStatus,
+  recognitionLanguages, speechChunks, speechLangFor, type VoiceLangId, type VoiceStatus,
 } from '../../core/ai/voice';
 import { SpeechError, fetchSpeech, voiceStatus, type ServerVoiceState } from '../../core/voice/tts';
 
@@ -12,13 +12,15 @@ import { SpeechError, fetchSpeech, voiceStatus, type ServerVoiceState } from '..
  * This is the only place in the app that touches `SpeechRecognition` and `speechSynthesis`. Both
  * have sharp edges, and every one of them is handled here instead of in the interview room's JSX:
  *
- *  - SPEECH OUT is the BROWSER's own synthesiser, and only that. There is no model, no worker, no
- *    WASM runtime, no inference service and no audio route: the page builds utterances out of
- *    `speechChunks()` and the browser says them. `pickVoiceFrom` ranks the browser's voices for the
- *    chosen language — Google's voice first, which is the natural female one on Chrome, Edge and
- *    Android — the learner may pin an installed voice by name, and the settings line names the voice
- *    that actually spoke. Nothing is ever fetched for speech.
- *    A browser that cannot synthesise says so, honestly, instead of faking playback.
+ *  - SPEECH OUT comes from the deployment's own route (`/api/voice/tts`, Azure AI Speech) and is
+ *    played through one `<audio>` element; when the server has no key, or the learner explicitly
+ *    switches, the BROWSER's synthesiser speaks instead. There is never a model in the tab. For the
+ *    device voice, `pickVoiceFrom` ranks the browser's voices for the chosen language — Google's
+ *    voice first, which is the natural female one on Chrome, Edge and Android — the learner may pin
+ *    an installed voice by name, and the settings line names the voice that actually spoke.
+ *  - SPEECH IN is the browser's recogniser, and it is a different product with a different language
+ *    list: `hi-IN` is missing on some Chrome builds, so the capture walks Hindi → English India →
+ *    English US instead of giving up on a `language-not-supported` error.
  *  - WHY VOICE USED TO DIE MID-SESSION (the Answer-by-Voice bug, fixed here, three causes):
  *
  *      1. UTTERANCE GC. The old browser path created `SpeechSynthesisUtterance` objects as local
@@ -136,12 +138,19 @@ function recognitionErrorCopy(code: string): string {
       return 'No microphone was found. Check that one is connected and allowed.';
     case 'network':
       return 'Speech recognition needs a network connection in this browser. You can type instead.';
+    case 'language-not-supported':
+      return 'This browser’s speech recogniser does not know that language. Switch Language to English, or type your answer.';
     case 'aborted':
       return '';
     default:
       return `Voice input stopped (${code}). You can type instead.`;
   }
 }
+
+/** Codes that mean "the engine went quiet", not "the learner is finished": keep the mic open. */
+const QUIET_CODES = new Set(['no-speech', 'aborted']);
+/** Chrome replays a previous final result on a re-armed instance; a real repeat comes later. */
+const REPEAT_WINDOW_MS = 2500;
 
 /** Chrome drops an utterance spoken in the same tick as a cancel; this is the tested-over gap. */
 const CANCEL_GAP_MS = 180;
@@ -194,9 +203,7 @@ export interface VoiceTutor {
   listening: boolean;
   speaking: boolean;
   paused: boolean;
-  /**
-   * Which engine spoke last. Only the browser's own synthesiser can, since the server voice was
-   */
+  /** Which engine spoke last: the deployment's Azure voice, or this browser's own synthesiser. */
   engine: 'browser' | 'server' | null;
   /**
    * Can this browser speak at all? A synchronous capability check, not a network probe: there is no
@@ -272,6 +279,9 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const keepOpenRef = useRef(false);
   const rearmCountRef = useRef(0);
   const lastFinalRef = useRef('');
+  const lastFinalAtRef = useRef(0);
+  /** Index into `recognitionLanguages(prefs.lang)`: 0 is the learner's choice, then the fallbacks. */
+  const langTryRef = useRef(0);
   /** Which mic PRESS owns the lifetime timer — a stale timer must never close a newer press. */
   const micSessionRef = useRef(0);
   const micTimerRef = useRef(0);
@@ -568,8 +578,10 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     setError(null);
     setInterim('');
     lastFinalRef.current = '';
+    lastFinalAtRef.current = 0;
     keepOpenRef.current = continuous;
     rearmCountRef.current = 0;
+    langTryRef.current = 0;
     micSessionRef.current += 1;
     const session = micSessionRef.current;
     if (micTimerRef.current) {
@@ -579,10 +591,56 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     }
     let alive = true;
 
+    // Speech-out and speech-IN don't share a language list: the recogniser is a network service and
+    // some builds have no Hindi model, which until now meant a mic that never typed a word.
+    const languages = recognitionLanguages(prefs.lang);
+
+    /**
+     * Chrome throws `InvalidStateError` on `start()` while the previous instance is still closing —
+     * which is exactly what happens after the room stops one mic and opens the next (barge-in, an
+     * auto-listened turn). One short retry turns that into a working press instead of an error.
+     */
+    const startInstance = (instance: RecognitionLike, attempt = 0) => {
+      if (!alive || !mounted.current) return;
+      try {
+        instance.start();
+        listeningRef.current = true;
+        setListening(true);
+      } catch (cause) {
+        if (attempt < 1 && keepOpenRef.current) {
+          window.setTimeout(() => {
+            if (!alive || !keepOpenRef.current || !mounted.current) return;
+            startInstance(instance, attempt + 1);
+          }, 300);
+          return;
+        }
+        console.warn('BroCode voice: speech recognition did not start', cause);
+        setError('The microphone is still closing from the last try. Press the mic again.');
+        listeningRef.current = false;
+        setListening(false);
+        recognition.current = null;
+      }
+    };
+
+    /** Re-arm after an auto-end, an error the mic survives, or a language it did not have. */
+    const rearm = (delayMs: number) => {
+      if (rearmCountRef.current >= CONTINUOUS_REARMS) return false;
+      rearmCountRef.current += 1;
+      window.setTimeout(() => {
+        if (!alive || !keepOpenRef.current || !mounted.current) return;
+        try {
+          arm();
+        } catch (cause) {
+          console.warn('BroCode voice: re-arming recognition failed', cause);
+        }
+      }, delayMs);
+      return true;
+    };
+
     const arm = () => {
       if (!alive || !keepOpenRef.current) return;
       const instance = new Ctor();
-      instance.lang = prefs.lang;
+      instance.lang = languages[Math.min(langTryRef.current, languages.length - 1)];
       instance.continuous = continuous;
       instance.interimResults = true;
       instance.onresult = (event) => {
@@ -597,10 +655,11 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         if (mounted.current) setInterim(partial);
         if (final.trim()) {
           const text = final.trim();
-          // Chrome can replay the same final result on a re-armed instance; a candidate never
-          // repeats a sentence verbatim here, so a verbatim repeat is the engine, not the learner.
-          if (text === lastFinalRef.current) return;
+          // Chrome replays the last final result on a re-armed instance. Dedupe only inside a short
+          // window: a learner who really repeats a sentence a few seconds later must keep it.
+          if (text === lastFinalRef.current && Date.now() - lastFinalAtRef.current < REPEAT_WINDOW_MS) return;
           lastFinalRef.current = text;
+          lastFinalAtRef.current = Date.now();
           // Continuous mode appends one sentence per final result and KEEPS listening; single-shot
           // mode (the assistant's press) closes the mic after the one utterance, as before.
           if (!continuous) {
@@ -616,16 +675,38 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         }
       };
       instance.onerror = (event) => {
-        const copy = recognitionErrorCopy(event.error);
+        recognition.current = null;
+        const code = event.error;
+        if (!mounted.current || !alive) return;
+
+        // Silence is not an answer. A continuous capture (the interview's mic) survives `no-speech`
+        // and its own auto-end, which is what made "Answer by voice" look broken after one pause.
+        if (keepOpenRef.current && QUIET_CODES.has(code)) {
+          if (rearm(360)) return;
+          keepOpenRef.current = false;
+          listeningRef.current = false;
+          setListening(false);
+          setInterim('');
+          setError('I stopped after a long silence. Press the mic again when you are ready, or type.');
+          return;
+        }
+
+        // A recogniser without this language model is not the learner's mistake: move down the
+        // chain (Hindi → English India → English US) and keep listening.
+        if (code === 'language-not-supported' && langTryRef.current + 1 < languages.length) {
+          langTryRef.current += 1;
+          if (keepOpenRef.current && rearm(120)) return;
+        }
+
         // The mic's failure must never reach the SPEAKER: voice mode stays exactly as the learner
         // left it, and the page shows the cause with the text fallback beside it.
         listeningRef.current = false;
         if (mounted.current) {
+          const copy = recognitionErrorCopy(code);
           if (copy) setError(copy);
           setListening(false);
           setInterim('');
         }
-        recognition.current = null;
       };
       instance.onend = () => {
         recognition.current = null;
@@ -634,18 +715,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
           // Chrome ends a continuous recognition after every pause. Re-arm it — a spoken answer
           // naturally stops mid-sentence, and one auto-end must not become "Answer by Voice
           // stopped working". The rearm cap keeps a dead mic from cycling forever.
-          if (rearmCountRef.current < CONTINUOUS_REARMS) {
-            rearmCountRef.current += 1;
-            window.setTimeout(() => {
-              if (!alive || !keepOpenRef.current || !mounted.current) return;
-              try {
-                arm();
-                if (recognition.current) setListening(true);
-              } catch (cause) {
-                console.warn('BroCode voice: re-arming recognition failed', cause);
-              }
-            }, 360);
-          } else {
+          if (!rearm(360)) {
             keepOpenRef.current = false;
             setListening(false);
           }
@@ -657,16 +727,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
         }
       };
       recognition.current = instance;
-      try {
-        instance.start();
-        listeningRef.current = true;
-        setListening(true);
-      } catch (cause) {
-        // `start()` throws if a previous recognition is still finishing. That is not a learner error.
-        console.warn('BroCode voice: speech recognition did not start', cause);
-        setError('The microphone is still closing from the last try. Press the mic again.');
-        recognition.current = null;
-      }
+      startInstance(instance);
     };
 
     arm();

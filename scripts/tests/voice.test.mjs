@@ -270,6 +270,29 @@ test('voice: a plain local voice still beats a Google voice in the wrong languag
   assert.equal(voice.pickVoiceFrom(voices, 'fr-FR'), null, 'no match is null, not a random voice');
 });
 
+test('voice: the answer mic asks for a language the recogniser might actually have', () => {
+  // Speech-IN is not speech-OUT: some Chrome builds have no hi-IN model and fire
+  // `language-not-supported`, which used to end the capture with an empty answer box.
+  assert.deepEqual(voice.recognitionLanguages('hi-IN'), ['hi-IN', 'en-IN', 'en-US']);
+  assert.deepEqual(voice.recognitionLanguages('en-IN'), ['en-IN', 'en-US'], 'no duplicate first entry');
+  assert.equal(voice.recognitionLanguages('fr-FR')[0], 'en-IN', 'an unknown language is normalised first');
+  const hook = read('src/components/shared/useVoiceTutor.ts');
+  assert.match(hook, /recognitionLanguages\(prefs\.lang\)/, 'the capture walks the chain');
+  assert.match(hook, /language-not-supported/, 'the missing model is handled, not reported as the learner’s fault');
+  assert.match(hook, /no-speech/, 'silence inside a continuous capture does not close the mic');
+});
+
+test('voice: the interview answer is captured continuously, so a full answer lands in the box', () => {
+  const panel = read('src/features/ai/MockInterviewPanel.tsx');
+  const toggles = panel.match(/toggleListening\(\s*handleAnswer[^)]*\)/g) ?? [];
+  assert.ok(toggles.length >= 2, 'the answer box has its mic button(s)');
+  for (const call of toggles) {
+    assert.match(call, /continuous: true/, `${call} must keep listening across sentence pauses`);
+  }
+  assert.match(panel, /startListening\(handleAnswerRef\.current, \{ continuous: true \}\)/);
+  assert.match(panel, /disabled=\{!voice\.supported\.recognition\}/, 'a browser without recognition says so instead of a dead button');
+});
+
 test('voice: ties break deterministically so the same install always speaks the same voice', () => {
   const voices = [
     { name: 'Google UK English Female', lang: 'en-GB', localService: false },

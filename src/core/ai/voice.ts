@@ -56,6 +56,22 @@ export function normalizeVoiceLang(value: unknown): VoiceLangId {
   return VOICE_LANGS.some((lang) => lang.id === value) ? (value as VoiceLangId) : DEFAULT_VOICE_LANG;
 }
 
+/**
+ * What the RECOGNISER is allowed to be asked for, in order.
+ *
+ * Speech-to-text is not the same product as speech-out: Chrome's recogniser is a network service
+ * with its own language list, and `hi-IN` is missing on some builds and regions — the engine then
+ * fires `language-not-supported` and the learner sees a mic that never types anything. A spoken
+ * Hinglish answer is also mostly English words in an Indian accent, so English India is a faithful
+ * second try and English US the last one. The first entry is always the learner's own choice.
+ */
+export const RECOGNITION_FALLBACK_LANGS = ['en-IN', 'en-US'] as const;
+
+export function recognitionLanguages(lang: VoiceLangId): string[] {
+  const chain = [normalizeVoiceLang(lang), ...RECOGNITION_FALLBACK_LANGS];
+  return chain.filter((id, index) => chain.indexOf(id) === index);
+}
+
 /* ------------------------------------------------------------------
  * Language preference and detection
  * ------------------------------------------------------------------ */
