@@ -441,3 +441,30 @@ All were read at their pages and LICENSE files before use; none is vendored into
   fabricating questions.
 - The coach reads the bundled Python/JS runners' evidence; a language it cannot run gets an explanation
   only, never a claimed result.
+
+## Auto-speak: the answer is the utterance
+
+The mentor is a talking tutor, so speaking is the default, not a button. `speakReplies` ships **on**
+(`src/components/shared/useVoiceTutor.ts`) and a stored "Voice off" still wins; the footer assistant
+speaks every answer through one path (`reply()` in `AssistantCard`), and the AI Mentor panel speaks
+each mentor turn unless muted.
+
+The pipeline, end to end:
+
+1. A question is asked — typed, spoken, or by mic in conversation mode.
+2. `voice.stopSpeaking()` runs **first**, so the previous answer is already silent while retrieval
+   works instead of talking over the new one.
+3. `spokenReply()` turns the reply into what a teacher would say: Markdown stripped, fenced code
+   collapsed to "code example", long answers cut at a sentence with "The rest is written on screen."
+4. `cloudChunks()` splits it into whole sentences (`speakable()` is the single cleaner; joining the
+   chunks reproduces it exactly — nothing is dropped).
+5. One sentence is synthesised at a time, chained so sentence N+1 starts the moment N resolves.
+   **Never post every sentence at once**: the worker evaluates serially, and a new request used to
+   reject its siblings, which killed every multi-sentence answer on sentence one.
+6. Playback is scheduled on one `AudioContext` clock, so sentences are gapless and never overlap.
+   The first sentence is audible before the last one exists.
+
+Interrupt is therefore three cheap things: `stopSpeaking()` (cancel the worker, drop the sources,
+release the queue), a new generation id (late audio is discarded), and the master gain node (mute
+acts mid-sentence, instantly). A refresh keeps the model in Cache Storage, so the second conversation
+starts without a download.

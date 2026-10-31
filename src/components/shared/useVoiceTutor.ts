@@ -98,7 +98,9 @@ interface Prefs {
 }
 
 const DEFAULT_PREFS: Prefs = {
-  lang: DEFAULT_VOICE_LANG, preset: DEFAULT_PRESET, rate: DEFAULT_RATE, pitch: 1, voiceName: null, speakReplies: false, engine: 'ai',
+  // Auto-speak is ON: the mentor is a talking tutor, not a text pane with a Speak button. The
+  // learner's explicit "Voice off" is still honoured (see `loadPrefs`).
+  lang: DEFAULT_VOICE_LANG, preset: DEFAULT_PRESET, rate: DEFAULT_RATE, pitch: 1, voiceName: null, speakReplies: true, engine: 'ai',
 };
 
 /** Pitch is clamped, not validated: a slider can never produce a chipmunk or a rumble. */
@@ -119,7 +121,7 @@ function loadPrefs(): Prefs {
       rate: clampRate(parsed?.rate),
       pitch: clampPitch(parsed?.pitch),
       voiceName: typeof parsed?.voiceName === 'string' && parsed.voiceName ? parsed.voiceName : null,
-      speakReplies: parsed?.speakReplies === true,
+      speakReplies: parsed?.speakReplies !== false,
       engine: parsed?.engine === 'browser' ? 'browser' : 'ai',
     };
   } catch {
@@ -729,8 +731,16 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
       return graph.decodeAudioData(spoken.wav.slice(0));
     };
 
-    // All requests in flight at once; only the ORDER of playback is sequential.
-    const pending = cloud.map(decode);
+    // ONE synthesis in flight at a time. The worker evaluates the graphs serially, so posting every
+    // sentence at once bought nothing and cost correctness; this chain starts sentence N+1 the
+    // moment N resolves, which is all the pipelining that ever helped — playback begins on N.
+    const pending: Promise<AudioBuffer>[] = [];
+    let chain: Promise<unknown> = Promise.resolve();
+    for (const chunk of cloud) {
+      const request = chain.then(() => decode(chunk));
+      pending.push(request);
+      chain = request.catch(() => undefined);
+    }
     const GAP_SECONDS = 0.18;
     let playhead = 0;
     let next = 0;

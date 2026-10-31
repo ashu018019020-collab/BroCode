@@ -138,11 +138,9 @@ export function createVoiceClient(): VoiceClient | null {
     speak(input) {
       const id = nextId++;
       activeId = id;
-      // A new answer supersedes the previous one: its audio must never arrive behind this one.
-      for (const [pendingId, entry] of pending) {
-        pending.delete(pendingId);
-        entry.reject(new Error('superseded'));
-      }
+      // Chunks of the SAME answer arrive together, so a new `speak` must NOT reject the ones
+      // already in flight — that turned every two-sentence answer into a failure on sentence one.
+      // Superseding is `cancel()`'s job: Stop, a barge-in, or a new answer (the hook calls it).
       return new Promise<SpokenAudio>((resolve, reject) => {
         pending.set(id, { resolve, reject });
         worker.postMessage({

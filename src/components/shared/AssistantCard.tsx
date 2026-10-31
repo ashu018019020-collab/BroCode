@@ -186,6 +186,12 @@ function AssistantCardSession({
   const ask = async (text: string, spoken = false) => {
     const question = text.trim();
     if (!question || busy) return;
+    // The learner's new question outranks the old answer: stop it now, not when the new audio is
+    // finally ready, or two answers talk over each other for the length of the retrieval.
+    voice.stopSpeaking();
+    // Pay the one-time model load WHILE retrieval runs instead of after the answer appears — but
+    // only for an answer that will actually be spoken, never behind a learner who silenced the voice.
+    if (spoken || voice.speakReplies) voice.preloadVoice();
     setBusy(true);
     try {
       let index = knowledge;

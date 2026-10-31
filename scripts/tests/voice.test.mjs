@@ -275,6 +275,30 @@ test('voice: the speaking and listening states are visible, not implied', () => 
   assert.match(bar, /type="range"/, 'narration speed is adjustable');
 });
 
+test('voice: the mentor auto-speaks every answer, and a new question interrupts the old one', () => {
+  const hook = read('src/components/shared/useVoiceTutor.ts');
+  const card = read('src/components/shared/AssistantCard.tsx');
+  // Auto-speak is the product default — a learner who asks the mentor hears the answer without
+  // pressing anything — while a stored "Voice off" still wins.
+  assert.match(hook, /speakReplies: true/, 'answers are spoken by default');
+  assert.match(hook, /parsed\?\.speakReplies !== false/, 'an explicit off is honoured');
+  assert.match(card, /if \(opts\.speak \|\| voice\.speakReplies\) voice\.speak\(/, 'the answer path speaks');
+  // Interrupt: the old audio stops BEFORE retrieval, so two answers never overlap.
+  assert.match(card, /const ask = async[\s\S]{0,420}voice\.stopSpeaking\(\)/, 'a new question stops the old audio');
+  assert.match(card, /voice\.preloadVoice\(\)/, 'the model load overlaps the retrieval');
+  assert.match(read('src/features/ai/VoiceMentorPanel.tsx'), /voiceRef\.current\.stopSpeaking\(\);[\s\S]{0,80}preloadVoice\(\)/);
+});
+
+test('voice: sentences are synthesised one at a time, so a later chunk cannot cancel an earlier one', () => {
+  const client = read('src/core/voice/client.ts');
+  const hook = read('src/components/shared/useVoiceTutor.ts');
+  // The worker evaluates serially; posting every sentence at once made each request supersede the
+  // previous one, so a two-sentence answer failed on its first sentence. One chain fixes it.
+  assert.doesNotMatch(client, /entry\.reject\(new Error\('superseded'\)\)/, 'a chunk never rejects its siblings');
+  assert.match(hook, /chain\.then\(\(\) => decode\(chunk\)\)/, 'the pipeline chains one request per sentence');
+  assert.match(hook, /pending\.push\(request\)/, 'every sentence keeps its place in the order');
+});
+
 /* ------------------------------ the voice engine ------------------------------ */
 
 test('voice: Google browser voices win their own language — the old localService pick cost quality', () => {

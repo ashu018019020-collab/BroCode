@@ -96,6 +96,10 @@ export function VoiceMentorPanel() {
   const runAsk = useCallback(async (text: string) => {
     const clean = text.trim();
     if (!clean) return;
+    // Interrupt the previous answer and start warming the engine now: by the time the mentor has
+    // its reply, the model is loaded (or the progress bar is already on screen).
+    voiceRef.current.stopSpeaking();
+    if (!mutedRef.current) voiceRef.current.preloadVoice();
     // Resolve the preference for THIS turn, so an English question answered in an otherwise Hindi
     // conversation still gets English retrieval and an English voice.
     const lang = resolveVoiceLang(langPrefRef.current, clean);

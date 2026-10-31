@@ -187,7 +187,7 @@ A service worker (`public/sw.js`, cache `aiml-v6`) caches the app shell at runti
 
 The AI studio at `/#/ai-mentor` adds a voice-first mentor, a diagnostics-driven coding coach inside the Playground, and a spoken mock-interview round with scorecards. Answers, code evidence and scores come from the bundled curriculum and the offline runners.
 
-The spoken voice is **Supertonic 3**, a 99M-parameter multilingual TTS model that runs **inside the visitor's browser** with ONNX Runtime Web (WebGPU where available, WASM otherwise). The four ONNX graphs and the selected voice style are fetched once from a pinned Hugging Face revision, cached by the browser and reused — so there is no TTS server, no API key and no per-character billing. F1 is the default female voice, and Hindi + English are both spoken. Details: [docs/AI-VOICE.md](docs/AI-VOICE.md).
+The spoken voice is **Supertonic 3**, a 99M-parameter multilingual TTS model that runs **inside the visitor's browser** with ONNX Runtime Web (WebGPU where available, WASM otherwise). The four ONNX graphs and the selected voice style are fetched once from a pinned Hugging Face revision, cached by the browser and reused — so there is no TTS server, no API key and no per-character billing. F1 is the default female voice, and Hindi + English are both spoken. Every mentor answer is spoken automatically ("Voice on" is the default), a new question interrupts the previous answer, and Pause / Resume / Replay / Mute / Speed all act on the audio that is really playing. Details: [docs/AI-VOICE.md](docs/AI-VOICE.md).
 
 ---
 
