@@ -43,7 +43,7 @@ const STARTERS = [
  * One shared voice hook, one shared conversation engine, three columns:
  *   left   — the thread's own history and the topic it is about,
  *   centre — the conversation, with code, sources and message actions,
- *   right  — the Supertonic 3 control center and the Smart Tools.
+ *   right  — the device-voice control center and the Smart Tools.
  *
  * The other tabs mount the EXISTING engines (Coding Coach, Mock Interview, Reports) rather than
  * copies, so the redesign cannot drift from the features it presents. Selection lives in `?tab=`,
@@ -71,7 +71,7 @@ export function MentorStudio() {
   }, [location.pathname, location.search, sections, state]);
 
   const chat = useMentorAsk(logKey, context);
-  const voice = useMentorVoice();
+  const voice = useMentorVoice(chat.busy);
 
   const lastLearner = useMemo(() => {
     for (let i = chat.turns.length - 1; i >= 0; i -= 1) {
@@ -294,8 +294,9 @@ export function MentorStudio() {
       )}
 
       <p className="studio-foot">
-        Answers come from the bundled lessons and are retrieved in this browser. Speech recognition is
-        a browser service; the voice itself is generated on this device by Supertonic 3.
+        Answers come from the bundled lessons and are retrieved in this browser. Speech recognition and
+        the spoken voice are browser services: the voice is one already installed on this device, so
+        nothing is downloaded and no audio leaves the page for us to generate.
       </p>
     </div>
   );

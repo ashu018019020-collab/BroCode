@@ -148,7 +148,9 @@ The tutor's voice is generated on the server; the browser downloads no model and
   call, and `npm run voice:check` verifies a deployed origin end to end.
 - The same two routes exist as Vercel Functions (`api/voice/status.js`, `api/voice/tts.js`, both thin
   wrappers over `server/voice-handler.mjs`) for a static deployment that has no long-running process.
-  The Supertonic 3 model, its container, its proxy and the `TTS_SERVICE_*` variables are gone.
+  The browser model engine (Supertonic 3, its ONNX runtime, worker and model assets) has been
+  removed: the AI Mentor speaks with the voice the device already has, so these routes serve only the
+  interview room's optional voice.
 
 ## Tests
 

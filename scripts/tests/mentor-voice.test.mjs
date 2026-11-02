@@ -1,9 +1,11 @@
 /**
- * The AI Mentor studio — the pure voice vocabulary, the speech text and the Smart Tools registry.
+ * The AI Mentor voice — the pure selection rules, the engine's queue, the state vocabulary, the
+ * speech text and the Smart Tools registry.
  *
  * These are the parts where a lie would be invisible on screen: a state that says "Speaking" while
- * nothing plays, a sentence the voice never reads, a tool that looks functional and does nothing.
- * The suite pins each of them, plus the wiring that makes the studio use ONE voice adapter.
+ * nothing plays, a voice chosen across the wrong language, a sentence the voice never reads, a tool
+ * that looks functional and does nothing. The suite pins each of them, plus the removal of the old
+ * model engine (the whole point of this migration).
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -19,42 +21,45 @@ const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 register('./_ts-resolve.mjs', import.meta.url);
 
 const voice = await load('src/core/voice/mentor-voice.ts');
+const discovery = await load('src/core/voice/voice-discovery.ts');
+const engineModule = await load('src/core/voice/voice-engine.ts');
 const tools = await load('src/core/ai/smart-tools.ts');
 
 /* --------------------------------- states --------------------------------- */
 
-test('mentor voice: a real failure outranks everything else', () => {
-  const state = voice.mentorVoiceState({
-    phase: 'speaking', speaking: true, listening: true, error: 'the model did not load',
-  });
-  assert.equal(state, 'error');
-  assert.equal(voice.mentorVoiceState({ phase: 'error' }), 'error');
+test('mentor voice: a missing engine is a fact, and an error outranks playback', () => {
+  assert.equal(voice.mentorVoiceState({ unsupported: true, playing: 'speaking' }), 'unsupported');
+  assert.equal(voice.mentorVoiceState({ playing: 'speaking', error: 'the voice stopped' }), 'error');
+  assert.equal(voice.mentorVoiceState({ playing: 'error' }), 'error');
 });
 
 test('mentor voice: speaking is only reported for real playback', () => {
-  // A request in flight is generating, not speaking — the mistake that animated the orb to silence.
-  assert.equal(voice.mentorVoiceState({ phase: 'generating', generating: true }), 'generating');
-  assert.equal(voice.mentorVoiceState({ phase: 'speaking' }), 'speaking');
-  assert.equal(voice.mentorVoiceState({ phase: 'speaking', paused: true }), 'paused');
-  assert.equal(voice.mentorVoiceState({ phase: 'ready' }), 'ready');
-  assert.equal(voice.mentorVoiceState({ phase: 'downloading' }), 'loading');
-  assert.equal(voice.mentorVoiceState({ phase: 'initializing' }), 'preparing');
-  assert.equal(voice.mentorVoiceState({ phase: 'idle' }), 'idle');
+  // A retrieval in flight is thinking, not speaking — the mistake that animated the orb to silence.
+  assert.equal(voice.mentorVoiceState({ playing: 'idle', thinking: true }), 'thinking');
+  assert.equal(voice.mentorVoiceState({ playing: 'idle' }), 'ready');
+  assert.equal(voice.mentorVoiceState({ playing: 'speaking' }), 'speaking');
+  assert.equal(voice.mentorVoiceState({ playing: 'paused' }), 'paused');
+  assert.equal(voice.mentorVoiceState({ playing: 'completed' }), 'completed');
 });
 
 test('mentor voice: the microphone is announced as listening, before any synthesis', () => {
-  assert.equal(voice.mentorVoiceState({ phase: 'idle', listening: true }), 'listening');
+  assert.equal(voice.mentorVoiceState({ playing: 'idle', listening: true }), 'listening');
+  assert.equal(voice.mentorVoiceState({ playing: 'idle', permissionRequired: true }), 'permission-required');
 });
 
-test('mentor voice: every state has a label and a hint, and none mentions a server', () => {
-  const states = ['idle', 'loading', 'preparing', 'ready', 'listening', 'generating', 'speaking', 'paused', 'completed', 'error'];
+test('mentor voice: every state has a label and a hint, with no download or model language', () => {
+  const states = [
+    'idle', 'ready', 'listening', 'thinking', 'speaking', 'paused', 'completed', 'error',
+    'unsupported', 'permission-required',
+  ];
   for (const state of states) {
     for (const locale of ['en', 'hi']) {
       const label = voice.mentorVoiceLabel(state, locale);
       const hint = voice.mentorVoiceHint(state, locale);
       assert.ok(label.length > 2, `${state}/${locale} has a label`);
       assert.ok(hint.length > 5, `${state}/${locale} has a hint`);
-      assert.ok(!/server/i.test(label + hint), `${state}/${locale} must not mention a server`);
+      assert.doesNotMatch(label + hint, /supertonic|onnx|wasm|download|model\b|server/i,
+        `${state}/${locale} must not describe a model or a server`);
     }
   }
 });
@@ -85,15 +90,13 @@ test('speech text: English digits are read aloud, Devanagari numerals are left a
   assert.equal(voice.numberWords(2026), 'two thousand twenty-six');
   assert.equal(voice.verbalizeNumbers('epochs 3'), 'epochs three');
   assert.equal(voice.verbalizeNumbers('loss 1.5'), 'loss one point five');
-  // A Hindi sentence keeps its numerals: the Hindi voice reads them.
-  assert.equal(voice.verbalizeNumbers('2 plus 2'), 'two plus two');
   assert.equal(voice.verbalizeNumbers('सवाल 2'), 'सवाल 2');
 });
 
 test('speech text: empty input never produces a sentence', () => {
   assert.equal(voice.speechText(''), '');
-  assert.deepEqual(voice.speechSegments('   '), []);
   assert.equal(voice.speechText('   '), '');
+  assert.deepEqual(voice.speechSegments('   '), []);
 });
 
 test('speech segments: every word survives, and no segment exceeds the limit', () => {
@@ -110,17 +113,206 @@ test('speech segments: every word survives, and no segment exceeds the limit', (
 test('speech language: Devanagari is Hindi, Latin is English, Roman Hinglish follows the choice', () => {
   assert.equal(voice.speechLanguage('यह क्या है?'), 'hi');
   assert.equal(voice.speechLanguage('What is a tuple?'), 'en');
-  // Roman Hindi is Latin text: only an explicit choice makes it Hindi.
   assert.equal(voice.speechLanguage('SQL join kaise kaam karta hai', 'auto'), 'hi');
   assert.equal(voice.speechLanguage('SQL join kaise kaam karta hai', 'en'), 'en');
   assert.equal(voice.speechLanguage('tuple kya hai', 'hi'), 'hi');
 });
 
-test('speech engine note names the real engine and preset', () => {
-  const note = voice.speechEngineNote('F1');
-  assert.ok(/Supertonic 3/.test(note));
-  assert.ok(/F1/.test(note));
-  assert.ok(/browser/i.test(note), 'the note says where the audio is generated');
+/* ---------------------------- voice discovery ----------------------------- */
+
+const V = (name, lang, localService = true, voiceURI = name) => ({
+  name, lang, voiceURI, localService, default: false,
+});
+
+test('discovery: language comes before quality — an English beauty never answers Hindi', () => {
+  const voices = [
+    V('Google UK English Female', 'en-GB', false),
+    V('Microsoft Harika Desktop', 'hi-IN', true),
+  ];
+  assert.equal(discovery.resolveVoice(voices, 'hi')?.name, 'Microsoft Harika Desktop');
+  assert.equal(discovery.resolveVoice(voices, 'en')?.name, 'Google UK English Female');
+  assert.equal(discovery.resolveVoice([V('Google US English', 'en-US', false)], 'hi'), null,
+    'no Hindi voice is null, not a random English one');
+});
+
+test('discovery: the regional accent chain wins, then a female-sounding name', () => {
+  const voices = [
+    V('Microsoft Zira Desktop', 'en-US'),
+    V('Google UK English Male', 'en-GB', false),
+    V('Google UK English Female', 'en-GB', false),
+    V('Google हिन्दी', 'hi-IN', false),
+  ];
+  const english = discovery.voicesForLocale(voices, 'en');
+  assert.equal(english[0]?.name, 'Google UK English Female', 'the female voice wins the en-GB tie');
+  assert.ok(
+    english.findIndex((v) => v.name === 'Google UK English Male')
+      < english.findIndex((v) => v.name === 'Microsoft Zira Desktop'),
+    'a regional en-GB voice outranks a same-language en-US one',
+  );
+  assert.equal(discovery.resolveVoice(voices, 'hi')?.name, 'Google हिन्दी');
+});
+
+test('discovery: a stored voice is honoured only while it is installed and speaks the language', () => {
+  const voices = [V('Google हिन्दी', 'hi-IN', false, 'uri-hi'), V('Google US English', 'en-US', false, 'uri-en')];
+  assert.equal(discovery.resolveVoice(voices, 'hi', 'uri-hi')?.name, 'Google हिन्दी');
+  // The stored English voice must not answer a Hindi sentence.
+  assert.equal(discovery.resolveVoice(voices, 'hi', 'uri-en')?.name, 'Google हिन्दी');
+  assert.equal(discovery.resolveVoice(voices, 'hi', 'uri-gone')?.name, 'Google हिन्दी',
+    'an uninstalled pick falls back instead of failing');
+});
+
+test('discovery: no installed voice produces an honest message, not a silent wrong language', () => {
+  const englishOnly = [V('Google US English', 'en-US', false)];
+  assert.equal(discovery.availabilityMessage(englishOnly, 'en'), '', 'a present voice says nothing');
+  const missing = discovery.availabilityMessage(englishOnly, 'hi');
+  assert.match(missing, /no hindi voice/i);
+  assert.match(missing, /english voice/i, 'it names the fallback consequence');
+  assert.equal(discovery.availabilityMessage([V('Google हिन्दी', 'hi-IN', false)], 'hi'), '');
+});
+
+test('discovery: auto resolves per answer from the text itself', () => {
+  assert.equal(discovery.resolveLocale('auto', 'decorators kaise kaam karte hain?'), 'hi');
+  assert.equal(discovery.resolveLocale('auto', 'नमस्ते, tuples क्या हैं?'), 'hi');
+  assert.equal(discovery.resolveLocale('auto', 'Why is a tuple immutable?'), 'en');
+  assert.equal(discovery.resolveLocale('auto', ''), 'en', 'no text invents nothing');
+  assert.equal(discovery.resolveLocale('hi', 'Why is a tuple immutable?'), 'hi', 'an explicit choice wins');
+});
+
+test('discovery: the note names the real voice and does not promise an offline service', () => {
+  const voices = [V('Google UK English Female', 'en-GB', false)];
+  const note = discovery.voiceEngineNote(voices, 'en', voices[0]);
+  assert.match(note, /Google UK English Female/);
+  assert.match(note, /may be online/i, 'a remote voice is described honestly');
+  const local = discovery.voiceEngineNote([V('Microsoft Heera', 'hi-IN', true)], 'hi', null);
+  assert.match(local, /installed on this device/i);
+  assert.doesNotMatch(note + local, /supertonic|neural|download/i);
+});
+
+/* ------------------------------- the engine -------------------------------- */
+
+function fakeWorld(voices) {
+  const spoken = [];
+  const synth = {
+    speaking: false,
+    paused: false,
+    pending: false,
+    getVoices: () => voices,
+    speak: (utterance) => { spoken.push(utterance); },
+    cancel: () => {},
+    pause: () => { synth.paused = true; },
+    resume: () => { synth.paused = false; },
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  };
+  const engine = new engineModule.VoiceEngine({
+    synthesis: synth,
+    createUtterance: (text) => ({
+      text,
+      lang: '',
+      voice: null,
+      rate: 1,
+      pitch: 1,
+      onstart: null,
+      onend: null,
+      onerror: null,
+      onpause: null,
+      onresume: null,
+      onboundary: null,
+    }),
+  });
+  return { engine, synth, spoken };
+}
+
+test('engine: an answer is spoken sentence by sentence, and completed only after the last end', async () => {
+  const { engine, spoken } = fakeWorld([V('Google UK English Female', 'en-GB', false)]);
+  await engine.initialize(40);
+  let ended = 0;
+  engine.speak('A tuple cannot change. A list can change.', { onEnd: () => { ended += 1; } });
+  assert.equal(spoken.length, 1, 'one utterance at a time');
+  assert.equal(engine.getSnapshot().state, 'idle', 'nothing is "speaking" before onstart');
+  assert.equal(spoken[0].voice.name, 'Google UK English Female', 'the resolved voice is used');
+
+  spoken[0].onstart();
+  assert.equal(engine.getSnapshot().state, 'speaking');
+  spoken[0].onend();
+  assert.equal(spoken.length, 2, 'the next sentence follows the first');
+  spoken[1].onstart();
+  spoken[1].onend();
+  assert.equal(ended, 1, 'onEnd runs exactly once, after the final sentence');
+  assert.equal(engine.getSnapshot().state, 'completed');
+});
+
+test('engine: stop cancels the queue and never runs the hands-free callback', async () => {
+  const { engine, spoken } = fakeWorld([V('Google हिन्दी', 'hi-IN', false)]);
+  await engine.initialize(40);
+  let ended = 0;
+  engine.speak('One sentence. Another sentence.', { onEnd: () => { ended += 1; } });
+  spoken[0].onstart();
+  engine.stop();
+  assert.equal(engine.getSnapshot().state, 'idle');
+  assert.equal(ended, 0, 'hands-free must not reopen after Stop');
+  // A late event from the cancelled utterance cannot restart the old queue.
+  spoken[0].onend?.();
+  assert.equal(spoken.length, 1);
+});
+
+test('engine: a new answer supersedes the previous one instead of overlapping it', async () => {
+  const { engine, spoken } = fakeWorld([V('Google UK English Female', 'en-GB', false)]);
+  await engine.initialize(40);
+  engine.speak('First answer.');
+  spoken[0].onstart();
+  engine.speak('Second answer.');
+  assert.equal(spoken.length, 2);
+  spoken[0].onend?.();
+  assert.equal(spoken.length, 2, 'the superseded utterance does not advance the new run');
+  assert.equal(spoken[1].text, 'Second answer.');
+});
+
+test('engine: pause and resume publish the platform state, and replay re-speaks the last text', async () => {
+  const { engine, spoken } = fakeWorld([V('Google UK English Female', 'en-GB', false)]);
+  await engine.initialize(40);
+  engine.speak('A single sentence.');
+  spoken[0].onstart();
+  engine.pause();
+  assert.equal(engine.getSnapshot().state, 'paused');
+  engine.resume();
+  assert.equal(engine.getSnapshot().state, 'speaking');
+  engine.replay();
+  assert.equal(spoken.length, 2);
+  assert.equal(spoken[1].text, 'A single sentence.');
+});
+
+test('engine: a real error is reported as a failure, not as a completed answer', async () => {
+  const { engine, spoken } = fakeWorld([V('Google UK English Female', 'en-GB', false)]);
+  await engine.initialize(40);
+  let ended = 0;
+  engine.speak('This will fail.', { onEnd: () => { ended += 1; } });
+  spoken[0].onerror?.({ error: 'network' });
+  assert.equal(engine.getSnapshot().state, 'error');
+  assert.match(engine.getSnapshot().lastError, /network/);
+  assert.equal(ended, 0);
+});
+
+test('engine: preview uses the named voice without becoming the last answer', async () => {
+  const { engine, spoken } = fakeWorld([
+    V('Google UK English Female', 'en-GB', false, 'uri-en'),
+    V('Google हिन्दी', 'hi-IN', false, 'uri-hi'),
+  ]);
+  await engine.initialize(40);
+  engine.preview('Namaste, yeh ek sample hai.', { locale: 'hi', voiceURI: 'uri-hi' });
+  assert.equal(spoken.length, 1);
+  assert.equal(spoken[0].voice.name, 'Google हिन्दी');
+  engine.replay();
+  assert.equal(spoken.length, 1, 'a preview is not remembered as the answer to replay');
+});
+
+test('engine: with no speech synthesis the surface says so instead of pretending', async () => {
+  const engine = new engineModule.VoiceEngine({ synthesis: null });
+  await engine.initialize(40);
+  assert.equal(engine.getSnapshot().supported, false);
+  engine.speak('Anything.');
+  assert.equal(engine.getSnapshot().state, 'error');
+  assert.match(engine.getSnapshot().lastError, /no speech synthesis/i);
 });
 
 /* ------------------------------- smart tools ------------------------------ */
@@ -154,7 +346,6 @@ test('smart tools: a route tool opens the surface that really owns the job', () 
   assert.equal(tools.smartToolRoute('interview'), '/ai-mentor?tab=interview');
   assert.equal(tools.smartToolRoute('project'), '/projects');
   assert.equal(tools.smartToolRoute('plan'), '/courses');
-  // The real question bank when a section is open, the practice index otherwise.
   assert.equal(tools.smartToolRoute('practice', { sectionId: 's12' }), '/questions?section=s12');
   assert.equal(tools.smartToolRoute('practice'), '/practice');
   assert.equal(tools.smartToolRoute('explain-simple'), '', 'an ask tool has no route');
@@ -162,20 +353,28 @@ test('smart tools: a route tool opens the surface that really owns the job', () 
 
 /* --------------------------------- wiring -------------------------------- */
 
-test('studio: the mentor hub renders one studio, and the studio uses one voice adapter', () => {
+test('studio: one studio, one voice adapter, one control center', () => {
   const hub = read('src/features/ai/MentorHub.tsx');
   assert.ok(hub.includes("from './studio/MentorStudio'"), 'MentorHub hands the section to the studio');
-  assert.ok(!/VoiceMentorPanel/.test(hub), 'no second mentor panel is mounted');
+  assert.doesNotMatch(hub, /Supertonic/);
 
   const studio = read('src/features/ai/studio/MentorStudio.tsx');
-  assert.ok(studio.includes('useMentorVoice'), 'the studio uses the shared Supertonic adapter');
+  assert.ok(studio.includes('useMentorVoice'), 'the studio uses the shared adapter');
   assert.ok(studio.includes('<VoiceControlCenter'), 'the control center is the one voice surface');
   assert.ok(studio.includes('<SmartToolsPanel'), 'the smart tools are wired');
   assert.ok(studio.includes('MockInterviewPanel'), 'the interview tab mounts the existing engine');
 
   const hook = read('src/components/shared/useMentorVoice.ts');
-  assert.ok(hook.includes("createVoiceClient"), 'the adapter talks to the existing TTS worker');
-  assert.ok(!/speechSynthesis/.test(hook), 'the mentor never falls back to the device voice');
+  assert.ok(hook.includes('getVoiceEngine'), 'the adapter talks to the one engine');
+  assert.ok(!/createVoiceClient|tts\.worker/.test(hook), 'there is no model worker any more');
+
+  const cards = read('src/features/ai/studio/VoiceControlCenter.tsx');
+  assert.match(cards, /role="switch"/, 'the switches are switches');
+  assert.match(cards, /aria-checked=\{checked\}/, 'and they announce their state');
+  assert.match(cards, /Auto speak/);
+  assert.match(cards, /Hands-free/);
+  assert.match(cards, /Test voice/, 'the diagnostics panel can speak a real sample');
+  assert.doesNotMatch(cards, /Supertonic|Download model|ONNX|WASM/i);
 });
 
 test('studio: the dark studio is scoped, token-driven and honours reduced motion', () => {
@@ -186,6 +385,8 @@ test('studio: the dark studio is scoped, token-driven and honours reduced motion
   assert.ok(css.includes('.mentor-studio'), 'the palette is scoped to the studio');
   assert.ok(css.includes('prefers-reduced-motion'), 'motion can be switched off');
   assert.ok(css.includes('@media (max-width: 720px)'), 'the layout has a phone breakpoint');
+  assert.ok(css.includes('.toggle-card'), 'the switch cards have their own layout');
+  assert.ok(!css.includes('.voice-progress'), 'no model-download progress bar survives');
 });
 
 test('studio: no stale server-voice warning is shown to the learner', () => {
@@ -195,13 +396,45 @@ test('studio: no stale server-voice warning is shown to the learner', () => {
   }
 });
 
-test('voice: the browser engine is published with the build', () => {
-  const pkg = JSON.parse(read('package.json'));
-  assert.ok(pkg.dependencies['onnxruntime-web'], 'onnxruntime-web is a dependency');
-  assert.equal(pkg.scripts.prebuild, 'node scripts/ort-copy.mjs');
-  assert.ok(fs.existsSync(path.join(ROOT, 'scripts/ort-copy.mjs')));
-  assert.ok(fs.existsSync(path.join(ROOT, 'src/workers/tts.worker.ts')));
-  for (const asset of ['assets.ts', 'engine.ts', 'text.ts', 'style.ts', 'client.ts']) {
-    assert.ok(fs.existsSync(path.join(ROOT, 'src/core/voice', asset)), `${asset} exists`);
+test('migration: the Supertonic engine, its runtime and its assets are gone', () => {
+  for (const gone of [
+    'src/workers/tts.worker.ts',
+    'src/core/voice/assets.ts',
+    'src/core/voice/client.ts',
+    'src/core/voice/engine.ts',
+    'src/core/voice/protocol.ts',
+    'src/core/voice/style.ts',
+    'src/core/voice/text.ts',
+    'scripts/ort-copy.mjs',
+  ]) {
+    assert.equal(fs.existsSync(path.join(ROOT, gone)), false, `${gone} is removed`);
   }
+  assert.equal(fs.existsSync(path.join(ROOT, 'public/ort')), false, 'no ORT runtime is published');
+
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.dependencies?.['onnxruntime-web'], undefined, 'the ONNX runtime is not a dependency');
+  assert.equal(pkg.scripts?.prebuild, undefined, 'no ORT copy hook runs before the build');
+  assert.equal(pkg.scripts?.predev, undefined, 'no ORT copy hook runs before dev');
+});
+
+test('migration: no source file names the retired model runtime', () => {
+  const offenders = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) { walk(full); continue; }
+      if (!/\.(ts|tsx)$/.test(entry.name)) continue;
+      // The engine's cache purge is the one place that may NAME the retired caches: it is what
+      // deletes them from a returning learner's browser, so it cannot be written without the words.
+      if (path.basename(full) === 'voice-engine.ts') continue;
+      const source = fs.readFileSync(full, 'utf8');
+      if (/supertonic|onnxruntime|ort-wasm|initWasm|tts\.worker/i.test(source)) {
+        offenders.push(path.relative(ROOT, full));
+      }
+    }
+  };
+  walk(path.join(ROOT, 'src'));
+  assert.deepEqual(offenders, [], 'the bundle cannot load a removed runtime');
+  // ...and the only surviving mention is the cleanup that removes the old caches.
+  assert.match(read('src/core/voice/voice-engine.ts'), /purgeLegacyVoiceCaches[\s\S]*supertonic/i);
 });

@@ -10,8 +10,9 @@ import type { MentorVoiceState } from '../../../core/voice/mentor-voice';
  * phone, and needs no asset download before the conversation can start.
  *
  * The motion is honest:
- *  · `levelRef` (real output amplitude) scales the shell and the waveform ONLY while audio plays.
- *  · `micLevelRef` drives the listening pulse ONLY while the recogniser is open.
+ *  · `levelRef` is driven by the platform's real word-boundary events while an utterance plays — it
+ *    is a speech pulse, not a sampled waveform, so the orb never claims sound the engine is not making.
+ *  · `micLevelRef` is a real analyser reading of the microphone, and only while the recogniser is open.
  *  · reduced motion draws one still frame; a hidden tab draws nothing at all.
  */
 export interface AIVoiceOrbProps {
@@ -34,15 +35,15 @@ function prefersReducedMotion(): boolean {
 
 const ACCENT: Record<MentorVoiceState, [number, number, number]> = {
   idle: [110, 200, 255],
-  loading: [120, 160, 255],
-  preparing: [140, 150, 255],
   ready: [110, 220, 255],
   listening: [80, 240, 230],
-  generating: [160, 140, 255],
+  thinking: [160, 140, 255],
   speaking: [120, 200, 255],
   paused: [150, 170, 210],
   completed: [110, 220, 200],
   error: [255, 130, 150],
+  unsupported: [150, 170, 210],
+  'permission-required': [255, 205, 120],
 };
 
 export function AIVoiceOrb({ state, levelRef, micLevelRef, size = 232, label }: AIVoiceOrbProps) {

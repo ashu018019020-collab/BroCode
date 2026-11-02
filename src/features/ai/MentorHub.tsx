@@ -19,13 +19,13 @@ export default function MentorHub() {
           </h1>
           <p className="muted small" style={{ maxWidth: 760, margin: '6px 0 0' }}>
             A voice-first learning studio: explain a concept, review your own code, or sit a spoken mock
-            interview. Answers are retrieved from the bundled curriculum, and the voice is generated in
-            this browser.
+            interview. Answers are retrieved from the bundled curriculum, and the voice is one your own
+            device already has — nothing to download.
           </p>
         </div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
           <span className="chip easy"><ShieldCheck size={11} /> Grounded answers</span>
-          <span className="chip">Supertonic 3 voice</span>
+          <span className="chip">Device voice</span>
           <span className="chip">English + Hinglish</span>
         </div>
       </div>

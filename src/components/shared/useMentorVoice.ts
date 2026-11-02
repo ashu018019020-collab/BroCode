@@ -1,95 +1,96 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createVoiceClient, type VoiceClient, type VoiceStatus } from '../../core/voice/client';
-import type { VoicePreset } from '../../core/voice/assets';
-import { DEFAULT_PRESET, VOICE_PRESETS } from '../../core/voice/assets';
 import {
-  mentorVoiceState, speechLanguage, speechSegments, speechText,
-  type MentorVoicePhase, type MentorVoiceState, type SpeechLocale, type SpeechPreference,
-} from '../../core/voice/mentor-voice';
+  getVoiceEngine, purgeLegacyVoiceCaches, VoiceEngine, type VoiceEngineSnapshot,
+} from '../../core/voice/voice-engine';
+import {
+  availabilityMessage, describeVoice, resolveLocale, resolveVoice, voiceCounts, voiceEngineNote,
+  voicesForLocale,
+} from '../../core/voice/voice-discovery';
+import { mentorVoiceState, speechText, type MentorVoiceState } from '../../core/voice/mentor-voice';
+import type {
+  BrowserVoice, MicPermission, VoiceLanguagePreference, VoiceLocale, VoicePlaybackState, VoiceSelection,
+} from '../../core/voice/voice-types';
 import { clampRate, recognitionLanguages } from '../../core/ai/voice';
 
 /**
- * The one Supertonic 3 voice, shared by every AI Mentor surface.
+ * The one voice adapter shared by every AI Mentor surface.
  *
- * This hook is the only place the mentor talks to the worker, the <audio> graph and the microphone.
- * Components receive facts and verbs; they never create a worker, decode PCM or reopen a mic
- * themselves, which is what keeps two panels from starting two 379 MB model loads.
+ * It is a thin, honest layer over `VoiceEngine`:
  *
- * The rules it enforces:
- *
- *  · ONE CLIENT PER PAGE. The worker (and its ONNX sessions) live in a module singleton, so opening a
- *    tab or remounting the studio reuses the loaded model instead of re-downloading it.
- *  · SPEAKING MEANS PLAYING. State flips to `speaking` when an AudioBufferSourceNode actually starts,
- *    and `completed` when the last sentence's `ended` fires — never when a request was merely sent.
- *  · SENTENCES, IN ORDER, ONE AT A TIME. Synthesis per sentence, playback strictly sequential, a short
- *    gap between sentences for a natural pause. Nothing overlaps, and no sentence is spoken twice.
- *  · INTERRUPT IS TOTAL. Cancel the worker generation, stop the node, drop the queue, bump the run id.
- *    A late buffer cannot revive, and `onEnd` never fires after an interruption.
- *  · NO DEVICE-VOICE FALLBACK. If the model cannot load the learner is told, and can retry. Silently
- *    switching to the browser's robot voice is the failure this hook exists to prevent.
+ *  · ONE ENGINE PER PAGE — a module singleton, so remounting the studio never creates a second queue
+ *    and two surfaces can never speak over each other.
+ *  · SPEAKING MEANS PLAYING — the state is the engine's own `onstart`/`onend`/`onerror` report.
+ *  · THE VOICE IS THE DEVICE'S — `voices` is exactly what `getVoices()` returned; nothing is renamed
+ *    into an invented preset and no "female" claim is made for a voice whose name does not say so.
+ *  · HANDS-FREE IS NOT A TIMER — the hook only reveals `onEnd` after the final utterance ended, and
+ *    the studio reopens the microphone there. `stop()` never runs that callback.
+ *  · THE ORB READS REAL EVENTS — `levelRef` is driven by word-boundary events from the platform, and
+ *    the microphone level by a real `AnalyserNode`. Neither moves to a decorative animation loop.
  */
 
-let sharedClient: VoiceClient | null | undefined;
-
-function client(): VoiceClient | null {
-  if (sharedClient !== undefined) return sharedClient;
-  sharedClient = createVoiceClient();
-  return sharedClient;
-}
-
-/** A silent `VoiceStatus` for a host without module workers. */
-const UNAVAILABLE: VoiceStatus = {
-  phase: 'error',
-  progress: 0,
-  message: 'This browser cannot run the voice engine',
-  code: 'no-worker',
-  detail: 'Module workers are unavailable here, so Supertonic 3 cannot start.',
-};
-
-export interface MentorVoiceOptions {
-  /** URL search of the page, used to decide the default language of the interface copy. */
-  lang?: SpeechPreference;
+export interface VoiceDiagnostics {
+  synthesis: boolean;
+  recognition: boolean;
+  voices: number;
+  hindi: number;
+  english: number;
+  selected: string;
+  selectedLang: string;
+  language: VoiceLanguagePreference;
+  playback: VoicePlaybackState;
+  enabled: boolean;
+  lastError: string | null;
+  micPermission: MicPermission;
+  handsFree: boolean;
 }
 
 export interface MentorVoice {
-  /** The raw engine phase, as the worker reported it. */
-  phase: MentorVoicePhase;
-  /** The one announced state, derived from real signals. */
-  state: MentorVoiceState;
-  progress: number;
-  receivedBytes: number;
-  totalBytes: number;
-  totalLabel: string;
-  file: string;
-  detail: string;
-  error: string | null;
+  /** Speech synthesis is available in this browser. */
   supported: boolean;
-  listening: boolean;
+  /** The recogniser exists (Chromium today). */
+  recognitionSupported: boolean;
+  state: MentorVoiceState;
+  playback: VoicePlaybackState;
   speaking: boolean;
   paused: boolean;
-  /** The worker is producing audio for the next sentence (synthesis, not playback). */
-  generating: boolean;
+  listening: boolean;
+  /** True once the device's voice list arrived (or the bounded wait ended). */
+  ready: boolean;
+  enabled: boolean;
+  /** Alias of `!enabled`, kept because the studio speaks about a muted mentor. */
   muted: boolean;
   autoSpeak: boolean;
   handsFree: boolean;
-  preset: VoicePreset;
   speed: number;
-  langPref: SpeechPreference;
-  locale: SpeechLocale;
+  langPref: VoiceLanguagePreference;
+  locale: VoiceLocale;
   lastSpoken: string;
   interim: string;
-  /** Live output amplitude, 0…1, read by the orb's animation loop (not React state). */
+  error: string | null;
+  micPermission: MicPermission;
+  /** Every voice the device reported, in the device's order. */
+  voices: BrowserVoice[];
+  /** The voices for the resolved language, best first. */
+  availableVoices: BrowserVoice[];
+  selectedVoice: BrowserVoice | null;
+  /** `voiceURI` of the selected voice, or '' for automatic. */
+  voiceURI: string;
+  counts: { total: number; hindi: number; english: number };
+  /** One honest sentence about where the sound comes from. */
+  note: string;
+  availability: string;
+  diagnostics: VoiceDiagnostics;
   levelRef: { current: number };
-  /** Live microphone amplitude, 0…1. */
   micLevelRef: { current: number };
-  setPreset: (preset: VoicePreset) => void;
-  setSpeed: (speed: number) => void;
-  setLangPref: (pref: SpeechPreference) => void;
+  setEnabled: (on: boolean) => void;
   setAutoSpeak: (on: boolean) => void;
   setHandsFree: (on: boolean) => void;
-  setMuted: (on: boolean) => void;
-  /** Download and open the model now (the first Speak also does this). */
-  prepare: () => void;
+  setSpeed: (speed: number) => void;
+  setLangPref: (pref: VoiceLanguagePreference) => void;
+  selectVoice: (locale: VoiceLocale, voiceURI: string) => void;
+  previewVoice: (voiceURI?: string) => void;
+  testVoice: () => void;
+  refreshVoices: () => void;
   /** Speak the FINAL assistant text. `onEnd` runs only after real completion. */
   speak: (text: string, onEnd?: () => void) => void;
   pause: () => void;
@@ -99,37 +100,55 @@ export interface MentorVoice {
   startListening: (onTranscript: (text: string) => void) => void;
   stopListening: () => void;
   toggleListening: (onTranscript: (text: string) => void) => void;
-  clearCache: () => Promise<void>;
   dismissError: () => void;
 }
 
-const PRESET_KEY = 'aiml:mentor-voice';
+const STORAGE_KEY = 'aiml:mentor-voice';
+const SENTENCE_GAP_FREE = 'The browser reads sentence by sentence, in order.';
 
-interface StoredPrefs {
-  preset: VoicePreset;
+const SAMPLE: Record<VoiceLocale, string> = {
+  en: 'Hi, I am your BroCode mentor. This is how I will read your answers.',
+  hi: 'Namaste! Main tumhara BroCode mentor hoon. Tumhare jawab aise padhe jayenge.',
+};
+
+interface Prefs {
   speed: number;
-  lang: SpeechPreference;
+  lang: VoiceLanguagePreference;
   autoSpeak: boolean;
   handsFree: boolean;
+  enabled: boolean;
+  voices: VoiceSelection;
 }
 
-function loadPrefs(): StoredPrefs {
-  const fallback: StoredPrefs = { preset: DEFAULT_PRESET, speed: 1, lang: 'auto', autoSpeak: true, handsFree: false };
+const FALLBACK_PREFS: Prefs = {
+  speed: 1,
+  lang: 'auto',
+  autoSpeak: true,
+  handsFree: false,
+  enabled: true,
+  voices: {},
+};
+
+function loadPrefs(): Prefs {
   try {
-    const raw = localStorage.getItem(PRESET_KEY);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw) as Partial<StoredPrefs> | null;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return FALLBACK_PREFS;
+    const parsed = JSON.parse(raw) as Partial<Prefs> | null;
+    const voices: VoiceSelection = {};
+    if (parsed?.voices && typeof parsed.voices === 'object') {
+      if (typeof parsed.voices.en === 'string') voices.en = parsed.voices.en;
+      if (typeof parsed.voices.hi === 'string') voices.hi = parsed.voices.hi;
+    }
     return {
-      preset: (VOICE_PRESETS as readonly string[]).includes(String(parsed?.preset))
-        ? (parsed?.preset as VoicePreset)
-        : fallback.preset,
       speed: clampRate(parsed?.speed ?? 1),
       lang: parsed?.lang === 'hi' || parsed?.lang === 'en' ? parsed.lang : 'auto',
       autoSpeak: parsed?.autoSpeak !== false,
       handsFree: parsed?.handsFree === true,
+      enabled: parsed?.enabled !== false,
+      voices,
     };
   } catch {
-    return fallback;
+    return FALLBACK_PREFS;
   }
 }
 
@@ -156,156 +175,118 @@ function recognitionCtor(): RecognitionCtor | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-function bytesLabel(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes <= 0) return '0 MB';
-  const mb = bytes / 1_048_576;
-  return mb < 10 ? `${mb.toFixed(1)} MB` : `${Math.round(mb)} MB`;
+const LANGUAGE_LABELS: Record<VoiceLanguagePreference, string> = {
+  auto: 'Auto detect',
+  en: 'English',
+  hi: 'Hindi / Hinglish',
+};
+
+export function languageLabel(pref: VoiceLanguagePreference): string {
+  return LANGUAGE_LABELS[pref];
 }
 
-/** How long to hold the queue between sentences — a breath, not a gap. */
-const SENTENCE_GAP_MS = 120;
-
-export function useMentorVoice(): MentorVoice {
-  const prefs = useMemo(() => loadPrefs(), []);
-  const [phase, setPhase] = useState<MentorVoicePhase>('idle');
-  const [progress, setProgress] = useState(0);
-  const [receivedBytes, setReceivedBytes] = useState(0);
-  const [totalBytes, setTotalBytes] = useState(0);
-  const [file, setFile] = useState('');
-  const [detail, setDetail] = useState('');
-  const [error, setError] = useState<string | null>(null);
+export function useMentorVoice(busy = false): MentorVoice {
+  const engine = useMemo(() => getVoiceEngine(), []);
+  const [snapshot, setSnapshot] = useState<VoiceEngineSnapshot>(() => engine.getSnapshot());
+  const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
+  const [ready, setReady] = useState(false);
   const [listening, setListening] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [muted, setMutedState] = useState(false);
-  const [autoSpeak, setAutoSpeakState] = useState(prefs.autoSpeak);
-  const [handsFree, setHandsFreeState] = useState(prefs.handsFree);
-  const [preset, setPresetState] = useState<VoicePreset>(prefs.preset);
-  const [speed, setSpeedState] = useState(prefs.speed);
-  const [langPref, setLangPrefState] = useState<SpeechPreference>(prefs.lang);
-  const [lastSpoken, setLastSpoken] = useState('');
+  const [micDenied, setMicDenied] = useState(false);
+  const [micPermission, setMicPermission] = useState<MicPermission>('unknown');
   const [interim, setInterim] = useState('');
+  const [lastSpoken, setLastSpoken] = useState('');
 
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
   const levelRef = useRef(0);
   const micLevelRef = useRef(0);
-  const audioContext = useRef<AudioContext | null>(null);
-  const analyser = useRef<AnalyserNode | null>(null);
+  const pulse = useRef(0);
   const micAnalyser = useRef<AnalyserNode | null>(null);
   const micStream = useRef<MediaStream | null>(null);
-  const source = useRef<AudioBufferSourceNode | null>(null);
-  const buffer = useRef<AudioBuffer | null>(null);
-  const offset = useRef(0);
-  const startedAt = useRef(0);
-  const runId = useRef(0);
-  const queue = useRef<string[]>([]);
-  const index = useRef(0);
-  const pausedFlag = useRef(false);
-  const speakingFlag = useRef(false);
-  const onEndRef = useRef<(() => void) | null>(null);
-  /** Filled in after `speakNext` is defined; the ended-callback reads it later, never during render. */
-  const speakNextRef = useRef<(id: number) => void>(() => undefined);
+  const audioContext = useRef<AudioContext | null>(null);
   const mounted = useRef(true);
   const recognition = useRef<RecognitionLike | null>(null);
   const recognitionWanted = useRef(false);
   const recognitionLang = useRef(0);
   const micTimer = useRef(0);
 
-  const supported = useMemo(() => recognitionCtor() !== null, []);
+  const supported = ready ? snapshot.supported : VoiceEngine.isSupported();
+  const recognitionSupported = useMemo(() => recognitionCtor() !== null, []);
 
   useEffect(() => {
     mounted.current = true;
+    const unsubscribe = engine.subscribe((next) => {
+      if (mounted.current) setSnapshot(next);
+    });
+    let alive = true;
+    void engine.initialize().then(() => {
+      if (!alive) return;
+      setSnapshot(engine.getSnapshot());
+      setReady(true);
+    });
+    // The old model engine cached hundreds of megabytes; deleting those entries is the migration's
+    // own cleanup, and it happens once, quietly, whether or not the learner ever uses the voice.
+    void purgeLegacyVoiceCaches();
     return () => {
+      alive = false;
       mounted.current = false;
-      runId.current += 1;
-      recognitionWanted.current = false;
+      unsubscribe();
+      engine.stop();
       try { recognition.current?.abort(); } catch { /* gone */ }
-      try { source.current?.stop(); } catch { /* not started */ }
       micStream.current?.getTracks().forEach((track) => track.stop());
       micStream.current = null;
+      micAnalyser.current = null;
       if (micTimer.current) window.clearTimeout(micTimer.current);
-      client()?.cancel();
       void audioContext.current?.close().catch(() => undefined);
       audioContext.current = null;
     };
-  }, []);
+  }, [engine]);
+
+  useEffect(() => {
+    engine.setSelection(prefs.voices);
+    engine.setRate(prefs.speed);
+    engine.setEnabled(prefs.enabled);
+  }, [engine, prefs]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(PRESET_KEY, JSON.stringify({ preset, speed, lang: langPref, autoSpeak, handsFree }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
     } catch { /* quota or blocked */ }
-  }, [preset, speed, langPref, autoSpeak, handsFree]);
+  }, [prefs]);
 
-  const voice = client();
-
-  // One subscription for the whole page: the worker's own phases drive the announced state.
+  /* ------------------------------ permissions ------------------------------ */
   useEffect(() => {
-    const instance = voice;
-    if (!instance) {
-      setPhase('error');
-      setError(UNAVAILABLE.detail ?? UNAVAILABLE.message);
+    if (typeof navigator === 'undefined') return;
+    const permissions = (navigator as unknown as {
+      permissions?: { query?: (descriptor: { name: string }) => Promise<{ state: string }> };
+    }).permissions;
+    if (!permissions?.query) {
+      setMicPermission(recognitionCtor() ? 'unknown' : 'unsupported');
       return;
     }
-    const apply = (status: VoiceStatus) => {
-      if (!mounted.current) return;
-      setPhase(status.phase);
-      setProgress(Math.min(1, Math.max(0, status.progress)));
-      setReceivedBytes(status.receivedBytes ?? 0);
-      setTotalBytes(status.totalBytes ?? 0);
-      setFile(status.file ?? '');
-      setDetail(status.detail ?? '');
-      if (status.phase === 'error') setError(status.detail || status.message);
-      if (status.phase === 'downloading' || status.phase === 'initializing' || status.phase === 'ready') {
-        setError(null);
-      }
-    };
-    apply(instance.status());
-    const unsubscribe = instance.subscribe(apply);
-    return () => { unsubscribe(); };
-  }, [voice]);
-
-  /* ------------------------------ playback ------------------------------ */
-
-  const ensureAudio = useCallback(() => {
-    if (!audioContext.current) {
-      const Ctor = window.AudioContext
-        ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!Ctor) return null;
-      audioContext.current = new Ctor();
-    }
-    const context = audioContext.current;
-    if (!context) return null;
-    if (context.state === 'suspended') void context.resume().catch(() => undefined);
-    if (!analyser.current) {
-      const node = context.createAnalyser();
-      node.fftSize = 512;
-      node.smoothingTimeConstant = 0.75;
-      node.connect(context.destination);
-      analyser.current = node;
-    }
-    return context;
+    let alive = true;
+    void permissions.query({ name: 'microphone' })
+      .then((status) => {
+        if (!alive) return;
+        setMicPermission(status.state === 'granted' ? 'granted' : status.state === 'denied' ? 'denied' : 'unknown');
+      })
+      .catch(() => { if (alive) setMicPermission('unknown'); });
+    return () => { alive = false; };
   }, []);
 
-  /** Read the output's real amplitude — the orb must only move while sound is playing. */
+  /* -------------------------------- levels -------------------------------- */
   useEffect(() => {
     let frame = 0;
+    let smooth = 0;
     const data = new Uint8Array(256);
     const tick = () => {
-      const node = analyser.current;
-      if (node) {
-        node.getByteTimeDomainData(data);
-        let sum = 0;
-        for (let i = 0; i < data.length; i += 1) {
-          const value = (data[i] - 128) / 128;
-          sum += value * value;
-        }
-        levelRef.current = Math.min(1, Math.sqrt(sum / data.length) * 3.4);
-      } else {
-        levelRef.current = 0;
-      }
-      const mic = micAnalyser.current;
-      if (mic) {
-        mic.getByteTimeDomainData(data);
+      // Boundary events are real (the platform is advancing word by word); the decay is only visual.
+      pulse.current *= 0.86;
+      smooth += (pulse.current - smooth) * 0.24;
+      levelRef.current = Math.min(1, smooth);
+      const analyser = micAnalyser.current;
+      if (analyser) {
+        analyser.getByteTimeDomainData(data);
         let sum = 0;
         for (let i = 0; i < data.length; i += 1) {
           const value = (data[i] - 128) / 128;
@@ -321,167 +302,59 @@ export function useMentorVoice(): MentorVoice {
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
-  const clearQueue = useCallback(() => {
-    queue.current = [];
-    index.current = 0;
-    buffer.current = null;
-    offset.current = 0;
-    try { source.current?.stop(); } catch { /* not started */ }
-    source.current = null;
-    if (analyser.current) levelRef.current = 0;
-  }, []);
-
-  const finishRun = useCallback(() => {
-    const done = onEndRef.current;
-    onEndRef.current = null;
-    speakingFlag.current = false;
-    pausedFlag.current = false;
-    if (!mounted.current) return;
-    setSpeaking(false);
-    setPaused(false);
-    setPhase('completed');
-    done?.();
-  }, []);
-
-  /** Play one decoded sentence. Resolves when it ENDS (or is superseded). */
-  const playBuffer = useCallback((audio: AudioBuffer, id: number) => {
-    const context = ensureAudio();
-    if (!context) {
-      setError('This browser blocked audio playback. Press Speak once more.');
-      return;
+  const ensureAudio = useCallback(() => {
+    if (typeof window === 'undefined') return null;
+    if (!audioContext.current) {
+      const Ctor = window.AudioContext
+        ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctor) return null;
+      audioContext.current = new Ctor();
     }
-    const node = context.createBufferSource();
-    node.buffer = audio;
-    node.playbackRate.value = 1;
-    if (analyser.current) node.connect(analyser.current);
-    else node.connect(context.destination);
-    source.current = node;
-    buffer.current = audio;
-    const from = Math.min(offset.current, Math.max(0, audio.duration - 0.02));
-    startedAt.current = context.currentTime - from;
-    offset.current = from;
-    speakingFlag.current = true;
-    pausedFlag.current = false;
-    setSpeaking(true);
-    setPaused(false);
-    setPhase('speaking');
-    node.onended = () => {
-      if (id !== runId.current || !mounted.current) return;
-      const consumed = context.currentTime - startedAt.current;
-      // A stop() we caused (pause/interrupt) leaves the offset where it was; a natural end resets it.
-      if (pausedFlag.current || id !== runId.current) return;
-      if (consumed >= audio.duration - 0.08) {
-        buffer.current = null;
-        offset.current = 0;
-        speakNextRef.current(id);
-      }
-    };
-    node.start(0, from);
-  }, [ensureAudio]);
-
-  /** Speak the next queued sentence, or finish the run. */
-  const speakNext = useCallback(async (id: number) => {
-    if (id !== runId.current || !mounted.current) return;
-    const next = queue.current[index.current];
-    if (!next) {
-      finishRun();
-      return;
-    }
-    index.current += 1;
-    setGenerating(true);
-    setPhase('generating');
-    try {
-      const audio = await client()?.speak({
-        text: next,
-        lang: speechLanguage(next, langPref),
-        preset,
-        steps: 8,
-        speed,
-      });
-      if (!audio) throw new Error('The voice worker is not available.');
-      if (id !== runId.current || !mounted.current) return;
-      const context = ensureAudio();
-      if (!context) throw new Error('Audio playback is unavailable.');
-      const decoded = await context.decodeAudioData(audio.wav.slice(0));
-      if (id !== runId.current || !mounted.current) return;
-      setGenerating(false);
-      playBuffer(decoded, id);
-    } catch (cause) {
-      if (id !== runId.current || !mounted.current) return;
-      setGenerating(false);
-      const message = String((cause as Error)?.message ?? cause);
-      if (/cancelled|superseded|interrupted/i.test(message)) return;
-      setError(`Supertonic 3 could not speak: ${message}`);
-      setPhase('error');
-      speakingFlag.current = false;
-      setSpeaking(false);
-      onEndRef.current = null;
-    }
-  }, [ensureAudio, finishRun, langPref, playBuffer, preset, speed]);
-  speakNextRef.current = speakNext;
-
-  const speak = useCallback((text: string, onEnd?: () => void) => {
-    const clean = speechText(text);
-    const segments = speechSegments(clean);
-    if (!segments.length) return;
-    runId.current += 1;
-    const id = runId.current;
-    clearQueue();
-    setError(null);
-    setDetail('');
-    setLastSpoken(clean);
-    queue.current = segments;
-    index.current = 0;
-    onEndRef.current = onEnd ?? null;
-    void speakNext(id);
-  }, [clearQueue, speakNext]);
-
-  const interrupt = useCallback(() => {
-    runId.current += 1;
-    onEndRef.current = null;
-    speakingFlag.current = false;
-    pausedFlag.current = false;
-    client()?.cancel();
-    clearQueue();
-    setSpeaking(false);
-    setPaused(false);
-    setGenerating(false);
-    setPhase('ready');
-    levelRef.current = 0;
-  }, [clearQueue]);
-
-  const pause = useCallback(() => {
-    const node = source.current;
-    if (!node || !audioContext.current) return;
     const context = audioContext.current;
-    offset.current = Math.max(0, context.currentTime - startedAt.current);
-    pausedFlag.current = true;
-    try { node.stop(); } catch { /* already stopped */ }
-    source.current = null;
-    speakingFlag.current = false;
-    setSpeaking(false);
-    setPaused(true);
-    setPhase('paused');
-    levelRef.current = 0;
+    if (!context) return null;
+    if (context.state === 'suspended') void context.resume().catch(() => undefined);
+    return context;
   }, []);
 
-  const resume = useCallback(() => {
-    const audio = buffer.current;
-    if (!audio || !pausedFlag.current) return;
-    pausedFlag.current = false;
-    playBuffer(audio, runId.current);
-  }, [playBuffer]);
+  /* -------------------------------- speaking ------------------------------- */
+  const speak = useCallback((text: string, onEnd?: () => void) => {
+    if (!prefsRef.current.enabled) return;
+    const clean = speechText(text);
+    if (!clean) return;
+    setLastSpoken(clean);
+    engine.speak(clean, {
+      preference: prefsRef.current.lang,
+      onEnd,
+      onPulse: () => { pulse.current = 1; },
+    });
+  }, [engine]);
 
+  const pause = useCallback(() => engine.pause(), [engine]);
+  const resume = useCallback(() => engine.resume(), [engine]);
+  const interrupt = useCallback(() => engine.stop(), [engine]);
   const replay = useCallback(() => {
-    if (lastSpoken) speak(lastSpoken);
-  }, [lastSpoken, speak]);
+    if (!prefsRef.current.enabled) return;
+    engine.replay();
+  }, [engine]);
 
-  const prepare = useCallback(() => {
-    client()?.preload();
-  }, []);
+  const previewVoice = useCallback((voiceURI?: string) => {
+    const pref = prefsRef.current;
+    const locale = resolveLocale(pref.lang, lastSpoken);
+    engine.preview(SAMPLE[locale], {
+      locale,
+      voiceURI: voiceURI || pref.voices[locale],
+      preference: pref.lang,
+    });
+  }, [engine, lastSpoken]);
 
-  /* ------------------------------ microphone ------------------------------ */
+  const testVoice = useCallback(() => previewVoice(undefined), [previewVoice]);
 
+  const refreshVoices = useCallback(() => {
+    engine.refreshVoices();
+    setSnapshot(engine.getSnapshot());
+  }, [engine]);
+
+  /* ------------------------------- microphone ------------------------------ */
   const stopListening = useCallback(() => {
     recognitionWanted.current = false;
     if (micTimer.current) {
@@ -503,20 +376,20 @@ export function useMentorVoice(): MentorVoice {
   const startListening = useCallback((onTranscript: (text: string) => void) => {
     const Ctor = recognitionCtor();
     if (!Ctor) {
-      setError('This browser has no speech recognition. Type your question instead.');
+      setMicPermission('unsupported');
       return;
     }
-    // Barge-in: the learner speaking outranks the tutor speaking.
-    interrupt();
+    // Barge-in: the learner speaking outranks the mentor speaking, and the mic never opens on top of
+    // the voice — that is exactly how a recogniser ends up transcribing the speaker.
+    engine.stop();
     stopListening();
     recognitionWanted.current = true;
     recognitionLang.current = 0;
-    setError(null);
+    setMicDenied(false);
     setInterim('');
-    const languages = recognitionLanguages(langPref === 'hi' ? 'hi-IN' : 'en-IN');
+    const languages = recognitionLanguages(prefsRef.current.lang === 'hi' ? 'hi-IN' : 'en-IN');
     setListening(true);
 
-    // The mic's own level: the orb reacts to real input, not to a timer.
     void navigator.mediaDevices?.getUserMedia({ audio: true }).then((stream) => {
       if (!recognitionWanted.current) {
         stream.getTracks().forEach((track) => track.stop());
@@ -527,10 +400,13 @@ export function useMentorVoice(): MentorVoice {
       if (!context) return;
       const node = context.createAnalyser();
       node.fftSize = 512;
-      const src = context.createMediaStreamSource(stream);
-      src.connect(node);
+      context.createMediaStreamSource(stream).connect(node);
       micAnalyser.current = node;
-    }).catch(() => undefined);
+      setMicPermission('granted');
+    }).catch(() => {
+      // The recogniser can still work with its own permission prompt; the level meter simply stays flat.
+      setMicPermission((current) => (current === 'granted' ? current : 'denied'));
+    });
 
     const arm = () => {
       if (!recognitionWanted.current || !mounted.current) return;
@@ -574,13 +450,10 @@ export function useMentorVoice(): MentorVoice {
         recognitionWanted.current = false;
         setListening(false);
         setInterim('');
-        setError(event.error === 'not-allowed' || event.error === 'service-not-allowed'
-          ? 'Microphone permission is blocked. Allow it in the address bar, then press the mic again.'
-          : 'Voice input stopped. You can type instead.');
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') setMicDenied(true);
       };
       instance.onend = () => {
         recognition.current = null;
-        // Chrome ends a single-shot recognition on its own; keep the press alive until a final result.
         if (recognitionWanted.current && mounted.current) {
           window.setTimeout(() => { if (recognitionWanted.current) { try { arm(); } catch { /* done */ } } }, 260);
         }
@@ -589,72 +462,124 @@ export function useMentorVoice(): MentorVoice {
       try {
         instance.start();
       } catch {
-        setError('The microphone is still closing from the last try. Press the mic again.');
         recognitionWanted.current = false;
         setListening(false);
       }
     };
 
     arm();
-    // A press that never hears anything must not hold the mic forever.
+    // A press that never hears anything must not hold the microphone forever.
     micTimer.current = window.setTimeout(() => {
       if (!recognitionWanted.current) return;
       stopListening();
-      setError('I did not hear anything. Press the mic and speak right after it says Listening.');
     }, 20_000);
-  }, [ensureAudio, interrupt, langPref, stopListening]);
+  }, [engine, ensureAudio, stopListening]);
 
   const toggleListening = useCallback((onTranscript: (text: string) => void) => {
     if (recognitionWanted.current) stopListening();
     else startListening(onTranscript);
   }, [startListening, stopListening]);
 
-  const clearCache = useCallback(async () => {
-    interrupt();
-    await client()?.clearCache();
-  }, [interrupt]);
+  /* ------------------------------ the surface ----------------------------- */
+  const locale = resolveLocale(prefs.lang, lastSpoken);
+  const availableVoices = useMemo(() => voicesForLocale(snapshot.voices, locale), [snapshot.voices, locale]);
+  const selectedVoice = useMemo(
+    () => resolveVoice(snapshot.voices, locale, prefs.voices[locale]),
+    [snapshot.voices, locale, prefs.voices],
+  );
+  const counts = useMemo(() => voiceCounts(snapshot.voices), [snapshot.voices]);
+  const note = useMemo(
+    () => voiceEngineNote(snapshot.voices, locale, selectedVoice),
+    [snapshot.voices, locale, selectedVoice],
+  );
+  const availability = useMemo(
+    () => availabilityMessage(snapshot.voices, locale),
+    [snapshot.voices, locale],
+  );
 
   const state = mentorVoiceState({
-    phase, listening, speaking, paused, muted, generating, error,
+    playing: snapshot.state,
+    listening,
+    thinking: busy,
+    error: snapshot.lastError,
+    unsupported: ready && !snapshot.supported,
+    permissionRequired: micDenied,
   });
-  const locale: SpeechLocale = langPref === 'hi' ? 'hi' : 'en';
+
+  const setEnabled = useCallback((on: boolean) => {
+    setPrefs((current) => ({ ...current, enabled: on }));
+  }, []);
+  const setAutoSpeak = useCallback((on: boolean) => {
+    setPrefs((current) => ({ ...current, autoSpeak: on }));
+  }, []);
+  const setHandsFree = useCallback((on: boolean) => {
+    setPrefs((current) => ({ ...current, handsFree: on }));
+  }, []);
+  const setSpeed = useCallback((speed: number) => {
+    setPrefs((current) => ({ ...current, speed: clampRate(speed) }));
+  }, []);
+  const setLangPref = useCallback((lang: VoiceLanguagePreference) => {
+    setPrefs((current) => ({ ...current, lang }));
+  }, []);
+  const selectVoice = useCallback((target: VoiceLocale, voiceURI: string) => {
+    setPrefs((current) => ({ ...current, voices: { ...current.voices, [target]: voiceURI } }));
+  }, []);
+
+  const diagnostics: VoiceDiagnostics = {
+    synthesis: supported,
+    recognition: recognitionSupported,
+    voices: counts.total,
+    hindi: counts.hindi,
+    english: counts.english,
+    selected: describeVoice(selectedVoice),
+    selectedLang: selectedVoice?.lang ?? '—',
+    language: prefs.lang,
+    playback: snapshot.state,
+    enabled: prefs.enabled,
+    lastError: snapshot.lastError,
+    micPermission,
+    handsFree: prefs.handsFree,
+  };
 
   return {
-    phase,
-    state,
-    progress,
-    receivedBytes,
-    totalBytes,
-    totalLabel: bytesLabel(totalBytes),
-    file,
-    detail,
-    error,
     supported,
+    recognitionSupported,
+    state,
+    playback: snapshot.state,
+    speaking: snapshot.state === 'speaking',
+    paused: snapshot.state === 'paused',
     listening,
-    speaking,
-    paused,
-    generating,
-    muted,
-    autoSpeak,
-    handsFree,
-    preset,
-    speed,
-    langPref,
+    ready,
+    enabled: prefs.enabled,
+    muted: !prefs.enabled,
+    autoSpeak: prefs.autoSpeak,
+    handsFree: prefs.handsFree,
+    speed: prefs.speed,
+    langPref: prefs.lang,
     locale,
     lastSpoken,
     interim,
+    error: snapshot.lastError,
+    micPermission,
+    voices: snapshot.voices,
+    availableVoices,
+    selectedVoice,
+    voiceURI: selectedVoice?.voiceURI ?? '',
+    counts,
+    note,
+    availability,
+    diagnostics,
     levelRef,
     micLevelRef,
-    setPreset: setPresetState,
-    setSpeed: (value: number) => setSpeedState(clampRate(value)),
-    setLangPref: setLangPrefState,
-    setAutoSpeak: setAutoSpeakState,
-    setHandsFree: setHandsFreeState,
-    setMuted: (on: boolean) => {
-      setMutedState(on);
-      if (on) interrupt();
-    },
-    prepare,
+    setEnabled,
+    setAutoSpeak,
+    setHandsFree,
+    setSpeed,
+    setLangPref,
+    selectVoice,
+    previewVoice,
+    testVoice,
+    refreshVoices,
     speak,
     pause,
     resume,
@@ -663,10 +588,9 @@ export function useMentorVoice(): MentorVoice {
     startListening,
     stopListening,
     toggleListening,
-    clearCache,
-    dismissError: () => {
-      setError(null);
-      setPhase((current) => (current === 'error' ? 'ready' : current));
-    },
+    dismissError: () => engine.stop(),
   };
 }
+
+/** Exported for the copy panel: the sentence gap is the platform's, not a promise we invented. */
+export const VOICE_QUEUE_NOTE = SENTENCE_GAP_FREE;

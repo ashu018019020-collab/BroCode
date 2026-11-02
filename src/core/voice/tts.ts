@@ -132,7 +132,7 @@ export function serverVoiceNote(state: ServerVoiceState, voiceId: string | null,
     return `Female AI voice${name ? ` · ${name}` : ''} · Hindi/Hinglish + English · generated on the server.`;
   }
   // This deployment has no server key. That is a fact about the INTERVIEW's optional voice only: the
-  // AI Mentor speaks with Supertonic 3 in the browser and never asks for a key. The old sentence
+  // AI Mentor speaks with the device's own installed voice and never asks for a key. The old sentence
   // ("the server voice is not configured") read like a broken product, so it is not shown any more.
   return support
     ? 'This deployment has no server voice key. The interview can read answers with this browser’s own voice.'

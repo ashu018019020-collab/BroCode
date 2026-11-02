@@ -260,11 +260,12 @@ export function pickVoiceFrom(voices: VoiceLike[], lang: VoiceLangId): VoiceLike
 /**
  * The one line that says who is speaking.
  *
- * There is no server voice any more — no inference host, no key, no route — so there is no engine to
- * choose between and nothing for the caller to pass in. It promises only what the browser keeps.
+ * There is no server voice and no model download any more — the sound comes from a voice already
+ * installed on the device — so there is no engine to choose between and nothing for the caller to
+ * pass in. It promises only what the platform keeps.
  */
 export function ttsEngineNote(): string {
-  return 'Female AI voice · Hindi/Hinglish + English · generated on the server, streamed as audio.';
+  return 'Device voice · Hindi/Hinglish + English · spoken by your browser, with nothing to download.';
 }
 
 export function voiceStatusLabel(status: VoiceStatus, lang: VoiceLangId): string {

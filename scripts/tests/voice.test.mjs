@@ -301,25 +301,23 @@ test('voice: ties break deterministically so the same install always speaks the 
   assert.equal(voice.pickVoiceFrom(voices, 'en-IN')?.name, 'Google UK English Female');
 });
 
-test('voice: the engine note names the server voice, never Supertonic', () => {
+test('voice: the engine note names the device voice, never a model or a server', () => {
   const note = voice.ttsEngineNote();
   assert.match(note, /Hindi\/Hinglish \+ English/);
-  assert.match(note, /server/i);
-  const pkg = JSON.parse(read('package.json'));
-  assert.doesNotMatch(note, /Supertonic|Neural2/i);
+  assert.match(note, /device|browser/i, 'the note says whose voice it is');
+  assert.doesNotMatch(note, /Supertonic|Neural2|server/i);
   assert.equal(voice.ttsEngineNote.length, 0);
 });
 
-test('voice: the mentor speaks with Supertonic 3 in the browser, and the interview keeps the server path', () => {
-  // The AI Mentor runs the model in a worker on the learner's machine: no key, no route, no cost.
+test('voice: the mentor speaks with the device voice, and the interview keeps the server path', () => {
+  // The old browser model is gone: no runtime, no worker, no WASM copy hook, nothing to download.
   const pkg = JSON.parse(read('package.json'));
-  assert.ok(pkg.dependencies?.['onnxruntime-web'], 'the browser ONNX runtime is a dependency');
-  assert.equal(pkg.scripts.prebuild, 'node scripts/ort-copy.mjs', 'the WASM runtime is published with the build');
-  assert.match(read('src/workers/tts.worker.ts'), /onnxruntime-web/, 'the worker owns the runtime');
+  assert.equal(pkg.dependencies?.['onnxruntime-web'], undefined, 'no browser model runtime ships');
+  assert.equal(pkg.scripts.prebuild, undefined, 'no WASM copy hook runs before the build');
 
-  const mentor = read('src/components/shared/useMentorVoice.ts');
-  assert.match(mentor, /createVoiceClient/, 'the mentor talks to the TTS worker');
-  assert.doesNotMatch(mentor, /speechSynthesis/, 'the mentor never speaks with the device voice');
+  const mentor = read('src/core/voice/voice-engine.ts');
+  assert.match(mentor, /speechSynthesis/, 'the mentor asks the platform for its voices');
+  assert.doesNotMatch(mentor, /onnxruntime/i, 'no model runtime is loaded');
 
   // The interview room is unchanged: its optional server voice and device option stay exactly as they were.
   const interview = read('src/components/shared/useVoiceTutor.ts');
