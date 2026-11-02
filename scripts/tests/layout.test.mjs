@@ -355,7 +355,7 @@ test('layout: light mode keeps the console dark — code, notebook and answer su
     'src/components/learning/StageQnA.tsx',
     'src/features/interview/FinalAssessment.tsx',
     'src/features/interview/InterviewMode.tsx',
-    'src/features/interview/MockInterviews.tsx',
+    'src/features/ai/MockInterviewPanel.tsx',
     'src/features/interview/DefensePage.tsx',
     'src/features/learning/Lesson.tsx',
     'src/features/practice/ExamMode.tsx',

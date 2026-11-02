@@ -244,3 +244,87 @@ test('interview: the headline reports coverage, not a fake pass', () => {
   const headline = interview.reportHeadline(report);
   assert.match(headline, /% overall · 1\/\d+ answered/);
 });
+
+/* ------------------------- length, levels and one bank ------------------------- */
+
+test('interview: the round length is the requested count, never a hard-coded six', () => {
+  for (const count of [10, 20, 30]) {
+    const plan = interview.buildMockPlan(sections, {
+      role: 'ai-engineer', difficulty: 'mid', minutes: 40, questionCount: count, seed: 5,
+    });
+    assert.equal(plan.config.questionCount, count);
+    assert.ok(plan.questions.length <= count, `a ${count}-question round cannot exceed its length`);
+    assert.ok(plan.questions.length >= Math.min(count, 10), `a ${count}-question round is not a stub`);
+    assert.equal(new Set(plan.questions.map((q) => q.id)).size, plan.questions.length, 'no duplicate question');
+  }
+  assert.equal(interview.DEFAULT_QUESTION_COUNT, 20);
+  assert.equal(interview.normalizeQuestionCount(undefined), 20);
+  assert.equal(interview.normalizeQuestionCount('abc'), 20);
+  assert.equal(interview.normalizeQuestionCount(4), 5, 'a custom count is clamped, not accepted as 4');
+});
+
+test('interview: role weights apportion the round instead of repeating one topic', () => {
+  const topics = interview.MOCK_TOPICS.map((topic) => topic.id);
+  const slots = interview.allocationFor('ai-engineer', topics, 20);
+  assert.equal(slots.reduce((sum, slot) => sum + slot.count, 0), 20);
+  assert.ok(slots.length >= 6, 'an AI round spans the role, not one chapter');
+  assert.ok(slots.some((slot) => slot.topic === 'genai' && slot.count >= 2));
+  const mlops = interview.allocationFor('mlops-engineer', topics, 20);
+  assert.ok(mlops.some((slot) => slot.topic === 'production' && slot.count >= 6), 'MLOps leans on the production sections');
+  assert.equal(interview.MOCK_ROLES.length, 14, 'every requested role is a real choice');
+});
+
+test('interview: beginner, intermediate and advanced rounds are genuinely different', () => {
+  const base = { role: 'ai-engineer', minutes: 40, questionCount: 15, seed: 21 };
+  const beginner = interview.buildMockPlan(sections, { ...base, difficulty: 'intern' });
+  const advanced = interview.buildMockPlan(sections, { ...base, difficulty: 'senior' });
+  const advancedIds = new Set(advanced.questions.map((q) => q.id));
+  const overlap = beginner.questions.filter((q) => advancedIds.has(q.id)).length;
+  assert.ok(overlap < Math.min(beginner.questions.length, advanced.questions.length), 'the levels do not ask the same round');
+  assert.equal(
+    beginner.questions.some((q) => q.kind === 'coding' || q.kind === 'debug' || q.kind === 'project'),
+    false,
+    'a beginner round is not a coding or defence round',
+  );
+  assert.ok(
+    advanced.questions.some((q) => q.kind === 'coding' || q.kind === 'debug' || q.kind === 'project'),
+    'an advanced round reaches applied work',
+  );
+});
+
+test('interview: a section focus pins the round to that real curriculum section', () => {
+  const plan = interview.buildMockPlan(sections, {
+    role: 'data-analyst', difficulty: 'mid', minutes: 30, questionCount: 10, sections: [19], seed: 9,
+  });
+  assert.ok(plan.questions.length > 0);
+  assert.ok(plan.questions.every((question) => question.sectionNo === 19));
+  assert.deepEqual(plan.config.sections, [19]);
+});
+
+test('interview: both authored collections feed the same round', () => {
+  const extras = JSON.parse(read('public/generated/curriculum/extras.json'));
+  const merged = interview.questionsFromExtras(extras);
+  assert.ok(merged.length >= 50, 'the older mock and intensive sets are not dropped');
+  assert.ok(merged.every((question) => question.prompt.length > 5 && question.model.length > 0));
+  assert.ok(merged.every((question) => question.sectionId === 'extras:authored'));
+  assert.ok(new Set(merged.map((question) => question.topic)).size > 1, 'their own category tags survive');
+
+  const config = { role: 'ai-engineer', difficulty: 'mid', minutes: 40, questionCount: 20, seed: 4 };
+  const withExtras = interview.buildMockPlan(sections, config, extras);
+  const without = interview.buildMockPlan(sections, config);
+  assert.ok(withExtras.available > without.available, 'the merged pool is the bigger pool');
+});
+
+test('interview: a stored report keeps its round length and section focus', () => {
+  const reports = interview.sanitizeReports([{
+    id: 'r1',
+    createdAt: 1,
+    config: { role: 'ai-engineer', topics: ['python'], difficulty: 'mid', minutes: 40, questionCount: 30, sections: [19] },
+    totals: {},
+    results: [],
+    revision: [],
+  }]);
+  assert.equal(reports.length, 1);
+  assert.equal(reports[0].config.questionCount, 30);
+  assert.deepEqual(reports[0].config.sections, [19]);
+});

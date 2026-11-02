@@ -6,11 +6,14 @@ import {
 } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
 import {
-  MOCK_DIFFICULTIES, MOCK_MINUTES, MOCK_ROLES, MOCK_TOPICS, UNAVAILABLE_TOPICS,
+  DEFAULT_QUESTION_COUNT, MAX_QUESTION_COUNT, MIN_QUESTION_COUNT, MOCK_DIFFICULTIES, MOCK_LENGTHS,
+  MOCK_ROLES, MOCK_TOPICS, UNAVAILABLE_TOPICS,
   addReport, buildMockPlan, buildMockReport, createMockSession, evaluateMockAnswer, followUpsFor,
-  mockRole, normalizeTopics, recordMockAnswer, removeReport, reportHeadline, sanitizeReports,
-  type MockAnswerScore, type MockConfig, type MockCodingEvidence, type MockDifficulty, type MockMinutes,
-  type MockPlan, type MockQuestion, type MockReport, type MockRoleId, type MockSession, type MockTopicId,
+  minutesForQuestions, mockLevelLabel, mockRole, normalizeQuestionCount, normalizeTopics, recordMockAnswer,
+  removeReport, reportHeadline, sanitizeReports, topicsForSection,
+  type MockAnswerScore, type MockCodingEvidence, type MockDifficulty,
+  type MockPlan, type MockQuestion, type MockQuestionKind, type MockReport, type MockRoleId,
+  type MockSession, type MockTopicId,
 } from '../../core/assessment/mock-interview';
 import { spokenReply } from '../../core/ai/voice';
 import { MOCK_HISTORY_KEY } from '../../core/platform/keys';
@@ -18,6 +21,7 @@ import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/a
 import { useVoiceTutor } from '../../components/shared/useVoiceTutor';
 import { runPython, stopPython } from '../coding/runners';
 import { parseTraceback } from '../../core/platform/traceback';
+import { addMistake } from '../../core/storage/store';
 import { toast } from '../../components/ui/Toast';
 import { Bar } from '../../components/ui/ui';
 
@@ -57,8 +61,16 @@ function writeHistory(key: string, reports: MockReport[]) {
  * A report saves only after the round ends, and its numbers are the same ones shown next to each
  * answer. Nothing here scores voice, accent or confidence.
  */
+const KIND_LABEL: Record<MockQuestionKind, string> = {
+  concept: 'Conceptual',
+  coding: 'Coding',
+  debug: 'Debugging',
+  logic: 'Logic',
+  project: 'Scenario / project',
+};
+
 export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: Phase } = {}) {
-  const { sections } = useCurriculum();
+  const { sections, extras } = useCurriculum();
   const historyKey = useSyncExternalStore(
     subscribeStorageAccount,
     () => accountStorageKey(MOCK_HISTORY_KEY),
@@ -76,13 +88,19 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
   const [role, setRole] = useState<MockRoleId>('ai-engineer');
   const [topics, setTopics] = useState<MockTopicId[]>(mockRole('ai-engineer').topics);
   const [difficulty, setDifficulty] = useState<MockDifficulty>('mid');
-  const [minutes, setMinutes] = useState<MockMinutes>(15);
+  const [questionCount, setQuestionCount] = useState(DEFAULT_QUESTION_COUNT);
+  /** 0 = no focus; otherwise one real curriculum section number. */
+  const [focusSection, setFocusSection] = useState(0);
+  const advancingRef = useRef(0);
+  const roundMinutes = minutesForQuestions(questionCount);
+  const focus = focusSection > 0 ? [focusSection] : undefined;
 
   const [plan, setPlan] = useState<MockPlan | null>(null);
   const [session, setSession] = useState<MockSession | null>(null);
   const [index, setIndex] = useState(0);
   const [remaining, setRemaining] = useState(0);
   const [answer, setAnswer] = useState('');
+  // Guards the double press: two clicks in one frame must not burn two questions.
   const [followUps, setFollowUps] = useState<{ prompt: string; answer: string }[]>([]);
   const [activeFollowUp, setActiveFollowUp] = useState<string | null>(null);
   const [followUpDraft, setFollowUpDraft] = useState('');
@@ -102,8 +120,13 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
 
   const question = plan?.questions[index] ?? null;
   const preview = useMemo(
-    () => buildMockPlan(sections, { role, topics, difficulty, minutes, seed: 1 }),
-    [sections, role, topics, difficulty, minutes],
+    () => buildMockPlan(
+      sections,
+      { role, topics, difficulty, minutes: roundMinutes, questionCount, sections: focus, seed: 1 },
+      extras,
+    ),
+    // `extras` is a stable reference from the curriculum loader; the plan is recomputed on a real choice.
+    [sections, extras, role, topics, difficulty, roundMinutes, questionCount, focusSection],
   );
 
   const handleAnswer = useCallback((text: string) => {
@@ -183,13 +206,13 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
   }, [phase, index]);
 
   const start = () => {
-    if (!topics.length) {
+    if (!topics.length && !focusSection) {
       toast('Choose at least one topic for the round.', 'warning');
       return;
     }
     const builtPlan = buildMockPlan(sections, {
-      role, topics, difficulty, minutes, seed: Date.now(),
-    });
+      role, topics, difficulty, minutes: roundMinutes, questionCount, sections: focus, seed: Date.now(),
+    }, extras);
     if (!builtPlan.questions.length) {
       toast(builtPlan.notes[0] ?? 'No question matches this selection. Choose another topic.', 'warning');
       return;
@@ -197,7 +220,7 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
     setPlan(builtPlan);
     setSession(createMockSession(builtPlan));
     setIndex(0);
-    setRemaining(minutes * 60);
+    setRemaining(roundMinutes * 60);
     setReport(null);
     resetForQuestion();
     setPhase('live');
@@ -210,7 +233,21 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
       return;
     }
     const combined = [answer, ...followUps.map((item) => item.answer)].filter(Boolean).join(' ');
-    setFeedback(evaluateMockAnswer(question, combined, coding));
+    const score = evaluateMockAnswer(question, combined, coding);
+    setFeedback(score);
+    // A weak answer becomes a real revision task, filed under the section it came from. Authored
+    // extras have no curriculum section to send the learner back to, so they are not filed.
+    if (question.sectionNo > 0 && score.overall !== null && score.overall < 60) {
+      addMistake({
+        section: question.sectionId,
+        topic: question.sectionTitle,
+        question: question.prompt.slice(0, 140),
+        myAnswer: answer.slice(0, 220),
+        correct: question.model.slice(0, 240),
+        type: 'interview',
+        source: 'mock',
+      });
+    }
     const next = recordMockAnswer(session, question.id, {
       text: answer,
       followUps,
@@ -249,8 +286,17 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
     setSession(recordMockAnswer(session, question.id, { text: answer, followUps: nextFollowUps, coding }));
   };
 
-  const nextQuestion = () => {
-    if (!plan) return;
+  /** One press, one advance: a double-click must never skip a question silently. */
+  const claimAdvance = (): boolean => {
+    const now = Date.now();
+    if (now - advancingRef.current < 400) return false;
+    advancingRef.current = now;
+    return true;
+  };
+
+  /** Move on without recording anything: a skipped question is never scored. */
+  const advance = () => {
+    if (!plan || !claimAdvance()) return;
     voiceRef.current.stopListening();
     voiceRef.current.stopSpeaking();
     if (index + 1 >= plan.questions.length) {
@@ -260,6 +306,9 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
     setIndex(index + 1);
     resetForQuestion();
   };
+
+  const nextQuestion = advance;
+  const skipQuestion = advance;
 
   const runCoding = async () => {
     if (!question) return;
@@ -308,10 +357,13 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
         <section className="card">
           <h2 className="row" style={{ gap: 8, margin: 0 }}><Mic2 size={18} color="var(--pink)" /> Spoken mock interview</h2>
           <p className="small muted" style={{ margin: '6px 0 12px', maxWidth: 760 }}>
-            A timed round built only from questions in the bundled curriculum. The interviewer asks
-            one question aloud, transcribes your answer, asks a follow-up about what is missing, and
-            writes a report with separate technical, reasoning, communication and coding evidence.
-            Scores are deterministic estimates, not a hiring decision.
+            One round, one question at a time, built only from the bundled curriculum and the
+            authored interview sets — both collections now live in this single interview. Pick a
+            role, a level and a length (quick 10, standard 20, deep 30, or a custom count). The
+            interviewer reads each question aloud, keeps your spoken answer as an editable transcript,
+            asks a follow-up about what is missing, and writes a report with separate technical,
+            reasoning, communication and coding evidence. Scores are deterministic estimates, not a
+            hiring decision.
           </p>
 
           <div className="mock-form-grid">
@@ -320,18 +372,58 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
               const next = event.target.value as MockRoleId;
               setRole(next);
               setTopics(mockRole(next).topics);
+              setFocusSection(0);
             }}>
               {MOCK_ROLES.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
             </select>
 
-            <label className="small muted" htmlFor="mock-difficulty">Difficulty</label>
+            <label className="small muted" htmlFor="mock-difficulty">Level</label>
             <select id="mock-difficulty" value={difficulty} onChange={(event) => setDifficulty(event.target.value as MockDifficulty)}>
-              {MOCK_DIFFICULTIES.map((level) => <option key={level} value={level}>{level[0].toUpperCase() + level.slice(1)}</option>)}
+              {MOCK_DIFFICULTIES.map((level) => <option key={level} value={level}>{mockLevelLabel(level)}</option>)}
             </select>
 
-            <label className="small muted" htmlFor="mock-minutes">Duration</label>
-            <select id="mock-minutes" value={minutes} onChange={(event) => setMinutes(Number(event.target.value) as MockMinutes)}>
-              {MOCK_MINUTES.map((value) => <option key={value} value={value}>{value} minutes</option>)}
+            <label className="small muted" htmlFor="mock-count">Questions</label>
+            <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+              {MOCK_LENGTHS.map((count) => (
+                <button
+                  key={count}
+                  type="button"
+                  className={`chip mock-topic${questionCount === count ? ' on' : ''}`}
+                  aria-pressed={questionCount === count}
+                  onClick={() => setQuestionCount(count)}
+                >
+                  {count === 10 ? 'Quick · 10' : count === 20 ? 'Standard · 20' : 'Deep · 30'}
+                </button>
+              ))}
+              <input
+                id="mock-count"
+                type="number"
+                min={MIN_QUESTION_COUNT}
+                max={MAX_QUESTION_COUNT}
+                value={questionCount}
+                aria-label={`Custom question count, ${MIN_QUESTION_COUNT} to ${MAX_QUESTION_COUNT}`}
+                onChange={(event) => setQuestionCount(normalizeQuestionCount(event.target.value))}
+                style={{ width: 84 }}
+              />
+            </div>
+
+            <label className="small muted" htmlFor="mock-focus">Focus section</label>
+            <select
+              id="mock-focus"
+              value={focusSection}
+              onChange={(event) => {
+                const no = Number(event.target.value);
+                setFocusSection(no);
+                if (no > 0) {
+                  const owned = topicsForSection(no);
+                  if (owned.length) setTopics(owned);
+                }
+              }}
+            >
+              <option value={0}>Whole curriculum for this role</option>
+              {sections.map((section) => (
+                <option key={section.id} value={section.no}>{section.no}. {section.title}</option>
+              ))}
             </select>
           </div>
 
@@ -362,7 +454,10 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
           <div className="row spread" style={{ flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
             <div className="small muted">
               <b className="chip">{preview.available} eligible questions</b>{' '}
-              <span>this round picks {preview.questions.length}.</span>
+              <span>
+                this round asks <b>{preview.questions.length}</b> in {roundMinutes} minutes
+                {focusSection > 0 ? ` · focused on section ${focusSection}` : ''}.
+              </span>
             </div>
             <button type="button" className="btn primary" onClick={start} disabled={!preview.questions.length || !topics.length}>
               <Play size={14} /> Start spoken round
@@ -441,14 +536,14 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
   }
 
   if (phase === 'live' && plan && question) {
-    const progress = Math.round((index / Math.max(1, plan.questions.length)) * 100);
+    const progress = Math.round(((index + 1) / Math.max(1, plan.questions.length)) * 100);
     return (
       <div className="mock-live">
         <section className="card">
           <div className="row spread" style={{ flexWrap: 'wrap', gap: 8 }}>
             <div>
-              <span className="chip">{mockRole(plan.config.role).label} · {plan.config.difficulty}</span>
-              <span className="chip" style={{ marginLeft: 6 }}>Q{index + 1} / {plan.questions.length}</span>
+              <span className="chip">{mockRole(plan.config.role).label} · {mockLevelLabel(plan.config.difficulty)}</span>
+              <span className="chip" style={{ marginLeft: 6 }}>Question {index + 1} / {plan.questions.length}</span>
             </div>
             <div className="row" style={{ gap: 6 }}>
               <span className={`chip ${remaining <= 60 ? 'hard' : ''}`}><Clock size={11} /> {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}</span>
@@ -456,7 +551,9 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
             </div>
           </div>
           <Bar pct={progress} />
-          <p className="small muted" style={{ marginTop: 4 }}>{question.sectionTitle} · {question.kind}</p>
+          <p className="small muted" style={{ marginTop: 4 }}>
+            {progress}% completed · {question.sectionTitle} · {KIND_LABEL[question.kind]} · {mockLevelLabel(plan.config.difficulty)} · {roundMinutes} minutes total
+          </p>
           <h2 style={{ marginTop: 8 }}>{question.prompt}</h2>
           <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
             <button type="button" className="btn small" onClick={() => askQuestion(question)}><Volume2 size={12} /> Read question again</button>
@@ -492,6 +589,9 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
             </button>
             <button type="button" className="btn small" onClick={askFollowUp} disabled={!feedback}>
               <Sparkles size={13} /> Ask a follow-up
+            </button>
+            <button type="button" className="btn small ghost" onClick={skipQuestion} disabled={Boolean(feedback)}>
+              Skip question <ArrowRight size={12} />
             </button>
             <button type="button" className="btn small" onClick={nextQuestion}>
               {index + 1 >= plan.questions.length ? 'Finish' : 'Next question'} <ArrowRight size={12} />

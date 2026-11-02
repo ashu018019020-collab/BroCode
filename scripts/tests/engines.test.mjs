@@ -614,7 +614,7 @@ test('every mistake writer records where the failure came from', () => {
     'src/features/practice/QuestionBank.tsx': /source: 'bank'/,
     'src/features/labs/Playground.tsx': /mistakeFromDiagnostic/,
     'src/features/learning/Lesson.tsx': /source: 'lesson'/,
-    'src/features/interview/MockInterviews.tsx': /source: 'mock'/,
+    'src/features/ai/MockInterviewPanel.tsx': /source: 'mock'/,
     'src/features/interview/InterviewMode.tsx': /source: 'interview'/,
     'src/features/interview/FinalAssessment.tsx': /source: 'final'/,
     // The notebook cell files through the tutor's factory, which tags `source: 'lab'`.

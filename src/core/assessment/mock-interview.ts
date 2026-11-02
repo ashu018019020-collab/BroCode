@@ -25,18 +25,32 @@ import { keywordScore, questionRubric } from './evaluate';
 /* --------------------------------- the roles -------------------------------- */
 
 export type MockRoleId =
-  | 'ai-engineer'
+  | 'python-developer'
+  | 'data-analyst'
   | 'data-scientist'
   | 'ml-engineer'
-  | 'data-analyst'
-  | 'python-developer'
-  | 'backend-engineer';
+  | 'ai-engineer'
+  | 'generative-ai-engineer'
+  | 'llm-engineer'
+  | 'rag-engineer'
+  | 'agentic-ai-engineer'
+  | 'ai-automation-engineer'
+  | 'backend-engineer'
+  | 'mlops-engineer'
+  | 'junior-ai-developer'
+  | 'fullstack-ai-developer';
 
 export interface MockRole {
   id: MockRoleId;
   label: string;
   hint: string;
   topics: MockTopicId[];
+  /**
+   * How the round is apportioned across those topics. A weight is not a percentage: the planner
+   * spreads the requested question count in proportion to them, so a 20-question AI Engineer round
+   * is not 20 Python questions with one LLM question at the end. Missing weights count as 1.
+   */
+  weights?: Partial<Record<MockTopicId, number>>;
 }
 
 export type MockTopicId =
@@ -55,12 +69,90 @@ export interface MockTopic {
 export type MockQuestionKind = 'concept' | 'coding' | 'debug' | 'logic' | 'project';
 
 export const MOCK_ROLES: MockRole[] = [
-  { id: 'ai-engineer', label: 'AI Engineer', hint: 'Python, LLMs, RAG, agents, production APIs', topics: ['python', 'genai', 'agentic', 'ml', 'production'] },
-  { id: 'data-scientist', label: 'Data Scientist', hint: 'Python, pandas, SQL, ML, projects', topics: ['python', 'data', 'sql', 'ml', 'projects'] },
-  { id: 'ml-engineer', label: 'ML Engineer', hint: 'scikit-learn, transformers, MLOps', topics: ['python', 'ml', 'nlp', 'production'] },
-  { id: 'data-analyst', label: 'Data Analyst', hint: 'SQL, pandas, analytics, storytelling', topics: ['sql', 'data', 'python', 'projects'] },
-  { id: 'python-developer', label: 'Python Developer', hint: 'Language, DSA, APIs, debugging', topics: ['python', 'dsa', 'production', 'sql'] },
-  { id: 'backend-engineer', label: 'Backend Engineer', hint: 'Python, APIs, SQL, production', topics: ['production', 'python', 'sql', 'dsa'] },
+  {
+    id: 'python-developer', label: 'Python Developer',
+    hint: 'Language, DSA, APIs, debugging',
+    topics: ['python', 'dsa', 'production', 'sql'],
+    weights: { python: 4, dsa: 3, production: 1, sql: 1, projects: 1 },
+  },
+  {
+    id: 'data-analyst', label: 'Data Analyst',
+    hint: 'SQL, pandas, analytics, Power BI, storytelling',
+    topics: ['sql', 'data', 'python', 'projects'],
+    weights: { sql: 4, data: 4, python: 1, projects: 1 },
+  },
+  {
+    id: 'data-scientist', label: 'Data Scientist',
+    hint: 'Python, statistics, pandas, SQL, ML',
+    topics: ['python', 'data', 'sql', 'ml', 'projects'],
+    weights: { python: 2, data: 4, sql: 2, ml: 3, projects: 1 },
+  },
+  {
+    id: 'ml-engineer', label: 'ML Engineer',
+    hint: 'scikit-learn, transformers, pipelines, MLOps',
+    topics: ['python', 'ml', 'data', 'nlp', 'production'],
+    weights: { python: 2, ml: 4, data: 2, nlp: 1, production: 1 },
+  },
+  {
+    id: 'ai-engineer', label: 'AI Engineer',
+    hint: 'Python, ML, LLMs, RAG, agents, production APIs',
+    topics: ['python', 'data', 'ml', 'genai', 'agentic', 'production', 'projects'],
+    weights: { python: 2, data: 1, ml: 2, genai: 3, agentic: 2, production: 2, projects: 2 },
+  },
+  {
+    id: 'generative-ai-engineer', label: 'Generative AI Engineer',
+    hint: 'LLMs, prompt engineering, RAG, evaluation',
+    topics: ['genai', 'nlp', 'agentic', 'python', 'production'],
+    weights: { genai: 4, nlp: 2, agentic: 2, python: 1, production: 1 },
+  },
+  {
+    id: 'llm-engineer', label: 'LLM Engineer',
+    hint: 'Context windows, sampling, function calling, evaluation',
+    topics: ['genai', 'nlp', 'production', 'python', 'projects'],
+    weights: { genai: 4, nlp: 2, production: 2, python: 1, projects: 1 },
+  },
+  {
+    id: 'rag-engineer', label: 'RAG Engineer',
+    hint: 'Chunking, embeddings, retrieval quality, evaluation',
+    topics: ['genai', 'nlp', 'python', 'production', 'projects'],
+    weights: { genai: 4, nlp: 2, python: 2, production: 1, projects: 1 },
+  },
+  {
+    id: 'agentic-ai-engineer', label: 'Agentic AI Engineer',
+    hint: 'Tools, planning, memory, multi-agent orchestration',
+    topics: ['agentic', 'genai', 'production', 'python'],
+    weights: { agentic: 4, genai: 3, production: 2, python: 1 },
+  },
+  {
+    id: 'ai-automation-engineer', label: 'AI Automation Engineer',
+    hint: 'n8n, Zapier, webhooks, API integration, workflows',
+    topics: ['agentic', 'production', 'genai', 'python', 'sql'],
+    weights: { agentic: 4, production: 2, genai: 2, python: 1, sql: 1 },
+  },
+  {
+    id: 'backend-engineer', label: 'Backend Python Developer',
+    hint: 'FastAPI, databases, auth, async, testing',
+    topics: ['production', 'python', 'sql', 'dsa'],
+    weights: { production: 4, python: 3, sql: 2, dsa: 2 },
+  },
+  {
+    id: 'mlops-engineer', label: 'MLOps Engineer',
+    hint: 'Docker, Git, CI/CD, AWS, deployment, monitoring',
+    topics: ['production', 'ml', 'python', 'data', 'projects'],
+    weights: { production: 4, ml: 2, python: 2, data: 1, projects: 1 },
+  },
+  {
+    id: 'junior-ai-developer', label: 'Junior AI Developer',
+    hint: 'Fundamentals first: Python, pandas, ML basics, GenAI',
+    topics: ['python', 'data', 'ml', 'genai', 'sql'],
+    weights: { python: 4, data: 2, ml: 2, genai: 2, sql: 1 },
+  },
+  {
+    id: 'fullstack-ai-developer', label: 'Full Stack AI Developer',
+    hint: 'Python, APIs, GenAI, agents, SQL, deployment',
+    topics: ['production', 'python', 'genai', 'agentic', 'sql', 'projects'],
+    weights: { production: 3, python: 3, genai: 2, agentic: 2, sql: 1, projects: 1 },
+  },
 ];
 
 /**
@@ -80,7 +172,7 @@ export const MOCK_TOPICS: MockTopic[] = [
   { id: 'nlp', label: 'NLP & Transformers', hint: 'Section 21', sections: [21], kinds: ['concept', 'coding'] },
   { id: 'genai', label: 'Generative AI, LLMs & RAG', hint: 'Sections 22–23', sections: [22, 23], kinds: ['concept', 'coding'] },
   { id: 'agentic', label: 'Agentic AI & LangChain', hint: 'Section 23', sections: [23], kinds: ['concept', 'coding'] },
-  { id: 'production', label: 'APIs, FastAPI, Docker & MLOps', hint: 'Sections 24 + 26', sections: [24, 26], kinds: ['concept', 'coding'] },
+  { id: 'production', label: 'MLOps + Docker + Git + AWS', hint: 'Sections 24 + 26', sections: [24, 26], kinds: ['concept', 'coding'] },
   { id: 'projects', label: 'Projects & System Design', hint: 'Sections 27–29', sections: [27, 28, 29], kinds: ['project', 'concept'] },
   { id: 'hr', label: 'HR & Behavioural', hint: 'Career sections 27–29', sections: [27, 29], kinds: ['concept', 'project'] },
 ];
@@ -94,8 +186,40 @@ export const UNAVAILABLE_TOPICS = [
 export const MOCK_DIFFICULTIES = ['intern', 'junior', 'mid', 'senior'] as const;
 export type MockDifficulty = (typeof MOCK_DIFFICULTIES)[number];
 
-export const MOCK_MINUTES = [5, 10, 15, 20, 30] as const;
+export const MOCK_MINUTES = [5, 10, 15, 20, 30, 40, 50, 60] as const;
 export type MockMinutes = (typeof MOCK_MINUTES)[number];
+
+/**
+ * Round lengths. The 6-question round is gone: a spoken round is a preset count, not a clock interval
+ * (the old count came from `minutes / 2.5`, which made a 15-minute round exactly six questions).
+ */
+export const MOCK_LENGTHS = [10, 20, 30] as const;
+export const DEFAULT_QUESTION_COUNT = 20;
+export const MIN_QUESTION_COUNT = 5;
+export const MAX_QUESTION_COUNT = 50;
+
+export function normalizeQuestionCount(value: unknown): number {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_QUESTION_COUNT;
+  return Math.max(MIN_QUESTION_COUNT, Math.min(MAX_QUESTION_COUNT, n));
+}
+
+/** Two minutes per question, snapped to the timer presets. */
+export function minutesForQuestions(count: number): MockMinutes {
+  return normalizeMinutes(normalizeQuestionCount(count) * 2);
+}
+
+/** The learner-facing name of each authored difficulty band. */
+export const MOCK_LEVEL_LABELS: Record<MockDifficulty, string> = {
+  intern: 'Beginner',
+  junior: 'Junior',
+  mid: 'Intermediate',
+  senior: 'Advanced',
+};
+
+export function mockLevelLabel(level: MockDifficulty): string {
+  return MOCK_LEVEL_LABELS[level] ?? 'Intermediate';
+}
 
 export function mockRole(id: MockRoleId): MockRole {
   return MOCK_ROLES.find((role) => role.id === id) ?? MOCK_ROLES[0];
@@ -272,6 +396,10 @@ export interface MockConfig {
   topics: MockTopicId[];
   difficulty: MockDifficulty;
   minutes: MockMinutes;
+  /** How many questions the round asks. 10 / 20 / 30 or a custom count — never a hard-coded 6. */
+  questionCount: number;
+  /** Optional focus: only these curriculum section NUMBERS may be asked. */
+  sections?: number[];
 }
 
 export interface MockPlan {
@@ -297,9 +425,165 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** Target questions by round length. A spoken answer plus a follow-up takes about 2.5 minutes. */
+/** The clock-derived count, kept for an older caller that never passes `questionCount`. */
 export function targetQuestionCount(minutes: MockMinutes): number {
   return Math.max(2, Math.min(12, Math.round(minutes / 2.5)));
+}
+
+/** The plan's real length: the requested count, or the clock-derived one when nobody asked. */
+export function resolveQuestionCount(config: Partial<MockConfig>): number {
+  if (config.questionCount === undefined || config.questionCount === null) {
+    return targetQuestionCount(normalizeMinutes(config.minutes));
+  }
+  return normalizeQuestionCount(config.questionCount);
+}
+
+/**
+ * How many questions each topic gets.
+ *
+ * Greedy largest-deficit apportionment: every slot goes to the topic furthest below its ideal share,
+ * so the totals are proportional to the role's weights, deterministic, and always add up to the
+ * requested count. A topic with no weight in the role is not allocated a slot at all.
+ */
+export function allocationFor(
+  role: MockRoleId,
+  topics: MockTopicId[],
+  count: number,
+): { topic: MockTopicId; count: number }[] {
+  const chosen = (topics.length ? topics : mockRole(role).topics)
+    .filter((topic, index, list) => list.indexOf(topic) === index);
+  if (!chosen.length) return [];
+  const roleWeights = mockRole(role).weights ?? {};
+  // A topic the role does not ask about gets no share — otherwise every extra topic the UI lists
+  // would dilute the role's own mix. A role with no weights at all falls back to equal shares.
+  const hasWeights = Object.keys(roleWeights).length > 0;
+  const weights = chosen.map((topic) => Math.max(0, hasWeights ? (roleWeights[topic] ?? 0) : 1));
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (total <= 0) return [];
+  const target = Math.max(0, Math.floor(count));
+  const out = chosen.map(() => 0);
+  for (let n = 0; n < target; n += 1) {
+    let best = 0;
+    let bestDeficit = -Infinity;
+    for (let i = 0; i < chosen.length; i += 1) {
+      if (weights[i] <= 0) continue;
+      const deficit = (weights[i] / total) * (n + 1) - out[i];
+      if (deficit > bestDeficit + 1e-9) {
+        bestDeficit = deficit;
+        best = i;
+      }
+    }
+    out[best] += 1;
+  }
+  return chosen
+    .map((topic, i) => ({ topic, count: out[i] }))
+    .filter((slot) => slot.count > 0);
+}
+
+/* -------------------------------- levels ----------------------------------- */
+
+export type MockBand = 'beginner' | 'intermediate' | 'advanced';
+
+/** The difficulty the learner picked, expressed as the three interview levels. */
+export function difficultyBand(level: MockDifficulty): MockBand {
+  if (level === 'intern' || level === 'junior') return 'beginner';
+  if (level === 'senior') return 'advanced';
+  return 'intermediate';
+}
+
+/**
+ * The band a real item belongs to.
+ *
+ * Sections 1–16 are the language/ fundamentals, 17–26 the applied data/ML/LLM core, and 27–29 the
+ * interview-mastery, coding-pattern and project labs. Coding, debugging and project items are never
+ * a beginner question. Nothing is invented: the band is a fact about which authored section the item
+ * lives in and which kind it is, not a difficulty label guessed from the prompt.
+ */
+export function questionBand(question: Pick<MockQuestion, 'kind' | 'sectionNo'>): MockBand {
+  if (question.kind === 'project') return 'advanced';
+  if (question.kind === 'coding' || question.kind === 'debug') {
+    return question.sectionNo >= 27 ? 'advanced' : 'intermediate';
+  }
+  if (question.sectionNo <= 0) return 'intermediate';
+  if (question.sectionNo <= 16) return 'beginner';
+  if (question.sectionNo <= 26) return 'intermediate';
+  return 'advanced';
+}
+
+/** Higher is a better fit for the chosen level. Adjacent bands are still eligible, never ideal. */
+export function levelAffinity(level: MockDifficulty, question: Pick<MockQuestion, 'kind' | 'sectionNo'>): number {
+  const wanted = difficultyBand(level);
+  const band = questionBand(question);
+  if (wanted === band) return 2;
+  if (wanted === 'intermediate') return 1;
+  if (wanted === 'beginner') return band === 'intermediate' ? 1 : 0;
+  return band === 'intermediate' ? 1 : 0;
+}
+
+/* ---------------------------- the merged collections ----------------------------- */
+
+/** The authored mock/intensive sets from `extras.json` (the older `/mock-interviews` collection). */
+export interface MockExtraQuestion { cat?: string; q: string; a: string }
+export interface MockExtrasLike {
+  mockInterview?: { round: number; questions: MockExtraQuestion[] }[];
+  intensive?: MockExtraQuestion[];
+}
+
+const TOPIC_HINTS: [MockTopicId, RegExp][] = [
+  ['agentic', /\b(agent|langchain|langgraph|n8n|zapier|automat|workflow|tool call|orchestrat)/i],
+  ['genai', /\b(llm|genai|generative|prompt|rag|embedding|vector|token|hallucinat|fine.?tun|context window)/i],
+  ['nlp', /\b(nlp|transformer|attention|bert|tokeniz|sentiment|ner|named entit)/i],
+  ['ml', /\b(ml|machine learning|model|regression|classif|clustering|random forest|xgboost|sklearn|scikit|overfit)/i],
+  ['sql', /\b(sql|join|query|database|window function|cte|group by)/i],
+  ['data', /\b(pandas|numpy|dataframe|analytics|power bi|dax|visualis|visualiz|statistic|probability)/i],
+  ['production', /\b(fastapi|flask|api|docker|deploy|aws|mlops|ci\/cd|kubernetes|endpoint|auth|backend)/i],
+  ['projects', /\b(project|architecture|incident|debug|design|scale)/i],
+  ['dsa', /\b(complexity|algorithm|loop|recursion|array|list|dict|big o)/i],
+  ['hr', /\b(yourself|strength|weakness|team|conflict|salary|career|behaviour|behavioral)/i],
+];
+
+/** Which topic an authored extra question belongs to. Categories are authored labels, not guesses. */
+export function topicForText(text: string): MockTopicId {
+  const body = clean(text);
+  for (const [topic, pattern] of TOPIC_HINTS) {
+    if (pattern.test(body)) return topic;
+  }
+  // Uncategorised authored items fall back to Python fundamentals, the one topic every round has.
+  return 'python';
+}
+
+/**
+ * The second question collection, projected into the one shape the round understands.
+ *
+ * These items are authored in `content/curriculum/extras.json` and were only reachable from the old
+ * `/mock-interviews` page. They are tagged from their own category, keep their real text and answer,
+ * and are capped by the same per-section rule in the planner, so neither collection is lost and
+ * neither one drowns the other.
+ */
+export function questionsFromExtras(extras: MockExtrasLike | undefined): MockQuestion[] {
+  if (!extras) return [];
+  const out: MockQuestion[] = [];
+  const push = (item: MockExtraQuestion, id: string, source: string) => {
+    const prompt = clean(item?.q);
+    const model = String(item?.a ?? '').trim();
+    if (!prompt || !model) return;
+    out.push({
+      id,
+      sectionId: 'extras:authored',
+      sectionNo: 0,
+      sectionTitle: clean(item.cat) || source,
+      topic: topicForText(`${item.cat ?? ''} ${prompt}`),
+      kind: 'concept',
+      prompt,
+      model,
+      rubric: questionRubric(model),
+    });
+  };
+  (extras.mockInterview ?? []).forEach((round) => {
+    (round.questions ?? []).forEach((item, i) => push(item, `extras:mock:${round.round}:${i}`, `Mock round ${round.round}`));
+  });
+  (extras.intensive ?? []).forEach((item, i) => push(item, `extras:intensive:${i}`, 'Intensive set'));
+  return out;
 }
 
 /**
@@ -313,17 +597,23 @@ export function targetQuestionCount(minutes: MockMinutes): number {
 export function buildMockPlan(
   sections: Section[],
   config: Partial<MockConfig> & { seed?: number } = {},
+  extras?: MockExtrasLike,
 ): MockPlan {
   const role = MOCK_ROLES.some((r) => r.id === config.role) ? config.role! : 'ai-engineer';
   const topics = normalizeTopics(config.topics?.length ? config.topics : mockRole(role).topics);
   const difficulty = normalizeDifficulty(config.difficulty);
   const minutes = normalizeMinutes(config.minutes);
+  const questionCount = resolveQuestionCount(config);
+  const focus = (Array.isArray(config.sections) ? config.sections : [])
+    .map((no) => Math.round(Number(no)))
+    .filter((no) => Number.isFinite(no) && no > 0);
   const seed = Number.isFinite(config.seed) ? Math.abs(Math.floor(config.seed!)) : 1;
   const rng = mulberry32(seed);
   const notes: string[] = [];
 
   const allowed = new Set(sections.filter((section) =>
-    topics.some((id) => mockTopic(id)?.sections.includes(section.no))).map((section) => section.id));
+    (!focus.length || focus.includes(section.no))
+    && topics.some((id) => mockTopic(id)?.sections.includes(section.no))).map((section) => section.id));
 
   const all: MockQuestion[] = [];
   for (const section of sections) {
@@ -331,6 +621,16 @@ export function buildMockPlan(
     for (const question of questionsForSection(section, topics)) {
       // A question is eligible when its authored difficulty band fits OR it has no tag (concept and
       // project items are not tagged by the source; pretending otherwise would invent a level).
+      if (question.sourceDifficulty && !difficultyMatches(difficulty, question.sourceDifficulty)) continue;
+      all.push(question);
+    }
+  }
+
+  // The older `/mock-interviews` collection (`extras.mockInterview` + `extras.intensive`) joins the
+  // same pool: one bank, two authors, no duplicate array and no question lost in the merge.
+  if (!focus.length) {
+    for (const question of questionsFromExtras(extras)) {
+      if (!topics.includes(question.topic)) continue;
       if (question.sourceDifficulty && !difficultyMatches(difficulty, question.sourceDifficulty)) continue;
       all.push(question);
     }
@@ -355,7 +655,7 @@ export function buildMockPlan(
       || (q.kind === 'concept' && /\b(tell me|yourself|your (best|strength|weakness)|team|conflict|pressure|fail|mistake|project|why should|salary|career)\b/i.test(q.prompt)));
     if (behavioural.length) {
       all.splice(0, all.length, ...behavioural);
-      if (behavioural.length < targetQuestionCount(minutes)) {
+      if (behavioural.length < questionCount) {
         notes.push('Only a few authored behavioural/project questions were found; the round is shorter than requested rather than padded with technical questions.');
       }
     } else {
@@ -369,39 +669,65 @@ export function buildMockPlan(
     }
   }
 
-  const target = targetQuestionCount(minutes);
+  const target = questionCount;
   const perSection = new Map<string, number>();
   const picked: MockQuestion[] = [];
-  const take = (predicate: (q: MockQuestion) => boolean, limit = 1): number => {
-    let added = 0;
+  // A 20-question round may ask three from one section; a short one never does.
+  const sectionCap = target > 12 ? 3 : 2;
+  // Coding and debugging questions are the minority of a spoken round: at most one in six.
+  const codingBudget = Math.max(1, Math.ceil(target / 6));
+  let codingTaken = 0;
+
+  /**
+   * Take the best remaining question for a predicate. Level fit is ranked first, then the seeded
+   * shuffle, so a beginner round is not the advanced round in a different order.
+   */
+  const takeOne = (predicate: (q: MockQuestion) => boolean): boolean => {
+    if (picked.length >= target) return false;
     const pool = all.filter((question) => !picked.includes(question) && predicate(question));
-    // Shuffle within a kind so two rounds on the same topic are not identical.
     for (let i = pool.length - 1; i > 0; i -= 1) {
       const j = Math.floor(rng() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
+    pool.sort((a, b) => levelAffinity(difficulty, b) - levelAffinity(difficulty, a));
     for (const question of pool) {
-      if (added >= limit || picked.length >= target) break;
+      const isCode = question.kind === 'coding' || question.kind === 'debug';
+      if (isCode && (minutes < 10 || codingTaken >= codingBudget)) continue;
       const count = perSection.get(question.sectionId) ?? 0;
-      if (count >= 2) continue;
+      if (count >= sectionCap) continue;
       picked.push(question);
       perSection.set(question.sectionId, count + 1);
-      added += 1;
+      if (isCode) codingTaken += 1;
+      return true;
     }
-    return added;
+    return false;
   };
 
-  // 1 concept opener, then logic, then one coding/debug item (if the round is long enough), then the
-  // rest concept. This is a real interview shape, not a shuffled dump.
-  take((q) => q.kind === 'concept', 1);
-  take((q) => q.kind === 'logic', minutes >= 15 ? 2 : 1);
-  if (minutes >= 10) take((q) => q.kind === 'coding' || q.kind === 'debug', 1);
-  take((q) => q.kind === 'project', 1);
-  take((q) => q.kind === 'concept', target);
-  take(() => true, target);
+  // A real interview opens with a concept question, then spends its allocated slots topic by topic.
+  takeOne((q) => q.kind === 'concept');
+  // The level decides what the round reaches for first: fundamentals for a beginner, applied work
+  // (defence, debugging, coding) for an advanced round. Same bank, genuinely different interview.
+  const kindOrder: MockQuestionKind[] = difficultyBand(difficulty) === 'advanced'
+    ? ['project', 'debug', 'coding', 'concept', 'logic']
+    : ['concept', 'logic', 'coding', 'debug', 'project'];
+  for (const slot of allocationFor(role, topics, target)) {
+    for (let i = 0; i < slot.count && picked.length < target; i += 1) {
+      let added = false;
+      for (const kind of kindOrder) {
+        if (takeOne((q) => q.topic === slot.topic && q.kind === kind)) { added = true; break; }
+      }
+      // A topic thinner than its share is topped up from the same topic before anything else.
+      if (!added) takeOne((q) => q.topic === slot.topic);
+    }
+  }
+  // Anything still unfilled comes from the rest of the run's pool — never from a padded question.
+  while (picked.length < target && takeOne(() => true)) { /* keep filling */ }
 
   if (!picked.length) {
     notes.push('No questions matched this selection. Choose another topic — the curriculum has no bank for that combination.');
+  }
+  if (picked.length && picked.length < target) {
+    notes.push(`Only ${picked.length} of the ${target} requested questions exist for this role, level and section selection. The round is shorter rather than padded with questions from another topic.`);
   }
   if (!picked.some((q) => q.kind === 'coding' || q.kind === 'debug')) {
     notes.push(minutes < 10
@@ -410,7 +736,14 @@ export function buildMockPlan(
   }
 
   return {
-    config: { role, topics, difficulty, minutes },
+    config: {
+      role,
+      topics,
+      difficulty,
+      minutes,
+      questionCount: picked.length || target,
+      ...(focus.length ? { sections: focus } : {}),
+    },
     seed,
     questions: picked,
     available: all.length,
@@ -824,7 +1157,8 @@ export function buildMockReport(session: MockSession, now = Date.now()): MockRep
     bySection.set(result.question.sectionId, current);
   }
   const revision: MockRevisionItem[] = [...bySection.entries()]
-    .filter(([, data]) => data.weak > 0)
+    // The authored extras have no lesson to revise: their `sectionId` is not a curriculum section.
+    .filter(([sectionId, data]) => data.weak > 0 && !sectionId.startsWith('extras'))
     .sort((a, b) => b[1].weak - a[1].weak || a[0].localeCompare(b[0]))
     .slice(0, 6)
     .map(([sectionId, data]) => ({
@@ -882,6 +1216,10 @@ export function sanitizeReports(value: unknown): MockReport[] {
         topics: normalizeTopics(config.topics),
         difficulty: normalizeDifficulty(config.difficulty),
         minutes: normalizeMinutes(config.minutes),
+        questionCount: normalizeQuestionCount(config.questionCount),
+        ...(Array.isArray(config.sections) && config.sections.length
+          ? { sections: config.sections.map((no) => Math.round(Number(no))).filter((no) => Number.isFinite(no) && no > 0) }
+          : {}),
       },
       totals: {
         technical: numberOrNull(totals.technical),
@@ -893,6 +1231,7 @@ export function sanitizeReports(value: unknown): MockReport[] {
       answered: typeof raw.answered === 'number' ? Math.max(0, Math.round(raw.answered)) : 0,
       total: typeof raw.total === 'number' ? Math.max(0, Math.round(raw.total)) : 0,
       results: raw.results.filter((result) => result && typeof result === 'object' && result.question) as MockQuestionResult[],
+      // `total` above is stored; it must keep matching the results the report was built from.
       strengths: Array.isArray(raw.strengths) ? raw.strengths.filter((s) => typeof s === 'string') : [],
       weaknesses: Array.isArray(raw.weaknesses) ? raw.weaknesses.filter((s) => typeof s === 'string') : [],
       incomplete: Array.isArray(raw.incomplete) ? raw.incomplete.filter((entry) => entry && typeof entry.prompt === 'string') : [],
