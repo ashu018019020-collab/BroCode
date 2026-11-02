@@ -71,6 +71,11 @@ const STOP = new Set([
 const tokenize = (text: string) => (text.toLowerCase().match(/[a-z0-9_]+/g) ?? [])
   .filter((token) => token.length > 1 && !STOP.has(token));
 
+/** Everything a document can teach from — the title alone is never an answer. */
+function teachableText(document: KnowledgeDocument): string {
+  return `${document.body ?? ''} ${document.answer ?? ''} ${document.explanation ?? ''}`.trim();
+}
+
 function intentKind(question: string): string | null {
   if (/\b(interview|interview questions?|mock interview|interview me)\b/i.test(question)) return 'interview';
   if (/\b(project|portfolio|build idea|project idea)\b/i.test(question)) return 'project';
@@ -106,6 +111,9 @@ export function retrieveKnowledge(
     if (!document) continue;
     if (intent === 'interview' && document.kind !== 'interview' && document.type !== 'interview') continue;
     if (intent === 'project' && document.kind !== 'project') continue;
+    // A document with no body, answer or explanation can only contribute its title, so it cannot be
+    // the answer to anything. Skipping it here also keeps empty passages out of the source chips.
+    if (teachableText(document).length < 24) continue;
 
     let score = overlap / Math.sqrt(terms.length);
     if (document.title.toLowerCase().includes(phrase)) score += 1.5;

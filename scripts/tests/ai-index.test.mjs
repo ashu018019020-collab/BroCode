@@ -148,6 +148,27 @@ test('the data loader transparently decompresses the lazy published asset', asyn
   }
 });
 
+test('a document with no body, answer or explanation can never become the answer', () => {
+  // A title is not a lesson. The index carries title-only records (a bank question whose answer was
+  // not published), and because a lexical index rewards a title that repeats the query, one of those
+  // could be the top hit and the mentor would read the question out as if it were the answer.
+  const index = {
+    version: 1,
+    sourceHash: 'fixture',
+    counts: { documents: 2, bankQuestions: 1, sections: 0, courses: 0, tracks: 0, playbook: 0, notebooks: 0, mockInterviews: 0, intensiveInterviewQuestions: 0, byKind: { question: 1, concept: 1 } },
+    courses: [],
+    trackRoutes: [],
+    documents: [
+      { id: 'title-only', kind: 'question', title: 'Python decorator kya hota hai?', route: '/questions?section=s01&type=theory', source: 'bank.json', sourceRef: 'bank.json#1' },
+      { id: 'lesson', kind: 'concept', title: 'Decorators', route: '/lesson/s01/learn', source: 'notes.md', sourceRef: 'notes.md#1', body: 'A decorator takes a function and returns a wrapped function, so behaviour is added without editing the original.' },
+    ],
+    postings: { python: [0], decorator: [0, 1], kya: [0], hota: [0], hai: [0] },
+  };
+  const hits = retrieveKnowledge(index, 'python decorator kya hota hai');
+  assert.equal(hits[0]?.document.id, 'lesson', 'the teachable passage wins over a bare title');
+  assert.ok(!hits.some(({ document }) => document.id === 'title-only'), 'a title-only document is not a candidate');
+});
+
 test('SQL interview queries retrieve real published answers with traceable source records', async () => {
   const index = await buildAiIndex();
   const hits = retrieveKnowledge(index, 'SQL interview question about CTE', { course: 'sql' });
