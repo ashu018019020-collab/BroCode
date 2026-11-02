@@ -112,7 +112,7 @@ Monaco, icons, fonts, the Python runtime, the SQL engine, datasets and the PDF a
 </div>
 
 **Runtimes:** Pyodide · sql.js · pdf.js  
-**Offline cache:** Service Worker (PWA, cache `aiml-v6`)
+**Offline cache:** Service Worker (PWA, cache `aiml-v7`)
 
 ---
 
@@ -172,7 +172,7 @@ To sign in, copy `.env.example` to `.env` and fill in the Supabase values. Witho
 | BroCode AI knowledge | `public/generated/ai/knowledge.json.gz` (local retrieval only) |
 | Datasets | students, sales, customers, employees, expenses, chat_logs |
 
-A service worker (`public/sw.js`, cache `aiml-v6`) caches the app shell at runtime. After the first full load, a reload is served from that cache when the network is slow or unavailable. Install as a **PWA** from the browser menu for a standalone window. It is a **local** runtime, not a "works completely offline" claim — signing in and the optional hosted AI features still need a connection.
+A service worker (`public/sw.js`, cache `aiml-v7`) caches the app shell at runtime. After the first full load, a reload is served from that cache when the network is slow or unavailable. Install as a **PWA** from the browser menu for a standalone window. It is a **local** runtime, not a "works completely offline" claim — signing in and the optional hosted AI features still need a connection.
 
 - Refresh the assistant corpus: `npm run ai:index` (dry run) / `npm run ai:index:write` (publish). No hosted model, no learner records.
 - The service worker never caches HTML under asset paths (no poisoned cache).

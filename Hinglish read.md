@@ -1455,7 +1455,7 @@ Jahan kuch update ho, woh update **yahan aur `AGENTS.md` me** likho — teen jag
 - Ek snapshot helper isliye exist karta hai ki async flows (notebook cell-by-cell) apne render ke
   snapshot ke bajaye **actually-stored** state padhein.
 - Service worker install pe **kuch precache nahi** karta (cache-on-demand); `CACHE` bump karna hi ekmatra
-  purge hai (`CACHE = 'aiml-v6'`). Fetch handler successful `/pyodide`, `/pdf`, `/generated/` aur
+  purge hai (`CACHE = 'aiml-v7'`). Fetch handler successful `/pyodide`, `/pdf`, `/generated/` aur
   `/notebooks` responses cache karta hai ⇒ poora offline bundle plain `fetch()`es se warm ho sakta hai,
   SW change kiye bina.
 - `content/**` **source** hai; `public/**` ya **generated build output** ya bundled runtime — pipeline
