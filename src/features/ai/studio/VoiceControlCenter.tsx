@@ -24,6 +24,12 @@ export interface VoiceControlCenterProps {
   onSpeakLast: () => void;
   onMic: () => void;
   hasSpoken: boolean;
+  /** The answer engine's own state — a voice problem must never be shown as an AI problem. */
+  aiBusy: boolean;
+  aiError: string | null;
+  onDismissAiError: () => void;
+  /** Hands-free is not just a preference: enabling it opens the microphone. */
+  onHandsFree: (on: boolean) => void;
 }
 
 const LANGUAGES: SpeechPreference[] = ['auto', 'en', 'hi'];
@@ -70,9 +76,13 @@ function ToggleCard({
   );
 }
 
-export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: VoiceControlCenterProps) {
+export function VoiceControlCenter({
+  voice, onSpeakLast, onMic, hasSpoken, aiBusy, aiError, onDismissAiError, onHandsFree,
+}: VoiceControlCenterProps) {
   const { state, locale, profile } = voice;
   const status = mentorVoiceLabel(state, locale);
+  const aiState = aiError ? 'bad' : aiBusy ? 'busy' : 'ok';
+  const aiLabel = aiError ? 'Error' : aiBusy ? 'Thinking' : 'Ready';
   const profileReady = profile.status === 'ready';
   const handsFreeStatus = !voice.recognitionSupported
     ? 'Voice input unavailable here'
@@ -84,6 +94,15 @@ export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: Voi
 
   return (
     <section className="voice-card glass" aria-label="Voice control center">
+      {/* Two separate facts: the answer engine and the voice each report their own state. */}
+      <div className={`ai-health ${aiState}`} role="status" aria-live="polite" title={aiError ?? 'Answers are built in this browser from the bundled lessons.'}>
+        <span className="ai-health-dot" aria-hidden="true" />
+        <span className="ai-health-text">
+          <b>Answer engine</b>
+          <em>{aiLabel}</em>
+        </span>
+      </div>
+
       <header className="voice-head">
         <div>
           <span className="eyebrow">Voice control</span>
@@ -137,7 +156,7 @@ export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: Voi
           description="The mic reopens after the voice finishes."
           checked={voice.handsFree}
           status={handsFreeStatus}
-          onChange={voice.setHandsFree}
+          onChange={onHandsFree}
           icon={<Mic2 size={15} />}
           tone="mint"
           disabled={!voice.recognitionSupported}
@@ -237,6 +256,14 @@ export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: Voi
         </p>
       )}
 
+      {aiError && (
+        <p className="voice-error" role="alert">
+          <AlertTriangle size={13} />
+          <span>{aiError}</span>
+          <button type="button" className="link" onClick={onDismissAiError}>Dismiss</button>
+        </p>
+      )}
+
       {!voice.enabled && (
         <p className="voice-warning" role="status">
           <VolumeX size={13} />
@@ -270,7 +297,8 @@ export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: Voi
           </div>
           <div><dt>Language</dt><dd>{languageLabel(voice.langPref)} → {locale.toUpperCase()}</dd></div>
           <div><dt>Playback</dt><dd>{voice.playback}</dd></div>
-          <div><dt>Microphone</dt><dd>{voice.micPermission}</dd></div>
+          <div><dt>Microphone</dt><dd>{voice.listening ? 'Listening' : 'Stopped'} · {voice.micPermission}</dd></div>
+          <div><dt>Answer engine</dt><dd>{aiError ? 'Error' : aiBusy ? 'Thinking' : 'Ready'}</dd></div>
           <div><dt>Last error</dt><dd>{voice.error ?? 'None'}</dd></div>
         </dl>
         <div className="diagnostics-actions">

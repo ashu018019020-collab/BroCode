@@ -29,6 +29,12 @@ export interface ConversationPanelProps {
   onReplay: (text: string) => void;
   onMic: () => void;
   starters: string[];
+  /**
+   * A finished dictation waiting for review. It lands in the composer — editable — instead of being
+   * sent straight into the thread, so a misheard word never becomes a question.
+   */
+  dictation?: { text: string; id: number } | null;
+  onDictationTaken?: () => void;
 }
 
 const REVEAL_CHARS_PER_TICK = 3;
@@ -163,6 +169,7 @@ function Bubble({
 
 export function ConversationPanel({
   turns, busy, interim, listening, locale, mode, onMode, onSend, onClear, onReplay, onMic, starters,
+  dictation, onDictationTaken,
 }: ConversationPanelProps) {
   const [draft, setDraft] = useState('');
   const [code, setCode] = useState('');
@@ -174,6 +181,19 @@ export function ConversationPanel({
   useEffect(() => {
     if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
   }, [turns.length, busy, interim]);
+
+  // A dictated question is a draft: the learner edits it and presses Enter, which is also the only
+  // way a mis-transcribed word can be fixed before it costs an answer.
+  useEffect(() => {
+    if (!dictation?.text) return;
+    setDraft(dictation.text);
+    onDictationTaken?.();
+    const field = input.current;
+    if (field) {
+      field.focus();
+      field.setSelectionRange(field.value.length, field.value.length);
+    }
+  }, [dictation, onDictationTaken]);
 
   const send = () => {
     const text = draft.trim();

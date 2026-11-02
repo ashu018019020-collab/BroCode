@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import {
   AudioLines, BookOpen, Code2, History, Mic2, Search, Sparkles, Trash2, Wand2,
@@ -72,6 +72,12 @@ export function MentorStudio() {
 
   const chat = useMentorAsk(logKey, context);
   const voice = useMentorVoice(chat.busy);
+  const [dictation, setDictation] = useState<{ text: string; id: number } | null>(null);
+
+  // An engine failure is its own event, not a voice problem: say it once, out loud in the UI.
+  useEffect(() => {
+    if (chat.error) toast(chat.error, 'warning');
+  }, [chat.error]);
 
   const lastLearner = useMemo(() => {
     for (let i = chat.turns.length - 1; i >= 0; i -= 1) {
@@ -145,10 +151,23 @@ export function MentorStudio() {
   }, [chat, speakFinal, voice]);
 
   const handleTranscript = useCallback((text: string) => {
-    void ask(text);
-  }, [ask]);
+    // Hands-free is the automatic loop. Everywhere else the transcript is a DRAFT in the composer, so
+    // a misheard word is edited before it becomes a question instead of costing an answer.
+    if (voice.handsFree) { void ask(text); return; }
+    setDictation({ text, id: Date.now() });
+  }, [ask, voice.handsFree]);
   const handleTranscriptRef = useRef(handleTranscript);
   handleTranscriptRef.current = handleTranscript;
+
+  // Hands-free is not just a stored preference: switching it on opens the microphone now, and off
+  // releases it. The mic is never opened while the mentor is speaking.
+  const setHandsFree = useCallback((on: boolean) => {
+    voice.setHandsFree(on);
+    if (!on) { voice.stopListening(); return; }
+    if (!voice.recognitionSupported || voice.listening) return;
+    voice.prime();
+    voice.startListening(handleTranscriptRef.current);
+  }, [voice]);
 
   const toggleMic = useCallback(() => {
     if (!voice.recognitionSupported) {
@@ -260,6 +279,8 @@ export function MentorStudio() {
             onClear={() => { voice.interrupt(); chat.clear(); }}
             onReplay={(text) => speakFinal(text, [], false)}
             onMic={toggleMic}
+            dictation={dictation}
+            onDictationTaken={() => setDictation(null)}
             starters={STARTERS}
           />
 
@@ -269,6 +290,10 @@ export function MentorStudio() {
               hasSpoken={chat.turns.some((turn) => turn.role === 'mentor' && turn.text.trim().length > 0)}
               onSpeakLast={speakLast}
               onMic={toggleMic}
+              aiBusy={chat.busy}
+              aiError={chat.error}
+              onDismissAiError={chat.dismissError}
+              onHandsFree={setHandsFree}
             />
             <SmartToolsPanel
               busy={chat.busy}

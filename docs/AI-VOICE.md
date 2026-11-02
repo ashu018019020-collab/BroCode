@@ -110,7 +110,15 @@ What the hands-free loop actually depends on:
   with Auto speak off; Mute still silences everything; Test voice deliberately ignores mute so the
   panel can prove audio works.
 - **Hands-free reopens the mic only after a natural end.** `Stop` and errors never run `onEnd`, and
-  `startListening()` stops the voice first, so the recogniser cannot transcribe the mentor.
+  `startListening()` stops the voice first, so the recogniser cannot transcribe the mentor. Switching
+  Hands-free ON also opens the microphone immediately; OFF releases it.
+- **A transcript is a draft unless Hands-free is on.** The recogniser's final text lands in the
+  composer for editing, so a misheard word is fixed before it becomes a question. Hands-free keeps
+  the automatic loop and sends it directly.
+- **The engine and the voice report separately.** `useMentorAsk` returns an `error` when the grounded
+  answer could not be produced (it used to return a bare `null`, which rendered as "Ready"), and the
+  voice panel shows `Answer engine: Ready / Thinking / Error` above its own voice state. A silent
+  voice is never presented as an AI failure, and vice versa.
 
 ## Microphone
 

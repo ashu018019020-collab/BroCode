@@ -46,6 +46,9 @@ function loadTurns(key: string): MentorHistoryTurn[] {
 export interface MentorAsk {
   turns: MentorHistoryTurn[];
   busy: boolean;
+  /** Why the last question produced no answer, or null. This is an ENGINE failure, not a voice one. */
+  error: string | null;
+  dismissError: () => void;
   /** `answer` is null for a platform question — nothing was retrieved, the curriculum itself answered. */
   ask: (text: string, lang: VoiceLangId) => Promise<{ reply: MentorReply; answer: Answer | null } | null>;
   clear: () => void;
@@ -58,6 +61,7 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
   const state = useStore();
   const [turns, setTurns] = useState<MentorHistoryTurn[]>(() => loadTurns(logKey));
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [knowledge, setKnowledge] = useState<KnowledgeIndex | null>(null);
   const turnsRef = useRef(turns);
   const contextRef = useRef(context);
@@ -76,6 +80,7 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
     const question = text.trim();
     if (!question || busy) return null;
     setBusy(true);
+    setError(null);
     try {
       let index = knowledge;
       if (!index) {
@@ -134,7 +139,10 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
       setTurns(next);
       return { reply, answer };
     } catch (cause) {
+      // This used to be a bare `null`, so a failed retrieval was indistinguishable from "nothing to
+      // say" and the panel stayed silently ready. The answer engine reports its own failure now.
       console.error('BroCode mentor: the answer could not be produced.', cause);
+      setError('The answer engine could not finish that question. Check your connection and ask again.');
       return null;
     } finally {
       setBusy(false);
@@ -144,12 +152,17 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
   const clear = useCallback(() => {
     turnsRef.current = [];
     setTurns([]);
+    setError(null);
     try { localStorage.removeItem(logKey); } catch { /* blocked */ }
   }, [logKey]);
+
+  const dismissError = useCallback(() => setError(null), []);
 
   return {
     turns,
     busy,
+    error,
+    dismissError,
     ask,
     clear,
     askedHints: turns.filter((turn) => turn.role === 'learner' && /\b(hint|clue|madad|nudge)\b/i.test(turn.text)).length,

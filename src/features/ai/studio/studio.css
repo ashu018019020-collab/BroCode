@@ -618,6 +618,24 @@
 .segmented button.on { background: rgba(111, 220, 255, 0.18); color: var(--ms-ink); }
 .segmented button:focus-visible { outline: 2px solid var(--ms-cyan); outline-offset: 1px; }
 
+/* The answer engine reports its own state, beside the voice — never merged into it, so a silent
+   voice is not blamed on an engine that answered, and an engine failure is not shown as "Ready". */
+.ai-health {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; margin-bottom: 2px;
+  border: 1px solid var(--ms-line); border-radius: 10px;
+  background: rgba(10, 20, 40, 0.45);
+}
+.ai-health-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ms-ink-3); flex: none; }
+.ai-health.ok .ai-health-dot { background: #4ade80; box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.16); }
+.ai-health.busy .ai-health-dot { background: var(--ms-cyan); animation: ai-health-pulse 1s ease-in-out infinite; }
+.ai-health.bad .ai-health-dot { background: #ff7a7a; box-shadow: 0 0 0 3px rgba(255, 122, 122, 0.16); }
+.ai-health-text { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.ai-health-text b { font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; color: var(--ms-ink-2); }
+.ai-health-text em { font-style: normal; font-size: 11px; color: var(--ms-ink); }
+.ai-health.bad .ai-health-text em { color: #ffb4b4; }
+@keyframes ai-health-pulse { 50% { opacity: 0.35; } }
+
 @media (max-width: 420px) {
   .voice-profile { grid-template-columns: auto minmax(0, 1fr); }
   .voice-profile-side { grid-column: 1 / -1; justify-items: start; grid-auto-flow: column; align-items: center; gap: 8px; }

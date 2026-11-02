@@ -454,6 +454,19 @@ test('surface: voice input and manual replay do not depend on Auto speak', () =>
   assert.match(studio, /role === 'mentor'/, 'Speak is enabled by the answer, not by a prior spoken one');
 });
 
+test('surface: the answer engine and the voice report their own state', () => {
+  const ask = read('src/features/ai/useMentorAsk.ts');
+  assert.match(ask, /setError\(/, 'a failed answer is reported, not swallowed');
+  assert.match(ask, /error: string \| null/, 'the engine exposes its own error');
+  const studio = read('src/features/ai/studio/MentorStudio.tsx');
+  assert.match(studio, /aiError=\{chat\.error\}/, 'the panel receives the engine error');
+  assert.match(studio, /if \(voice\.handsFree\)/, 'hands-free sends; other dictation is a draft');
+  assert.match(studio, /setDictation/, 'a transcript is editable before it is sent');
+  assert.match(studio, /const setHandsFree/, 'hands-free opens the microphone');
+  const panel = read('src/features/ai/studio/ConversationPanel.tsx');
+  assert.match(panel, /dictation\?\.text/, 'the dictated draft lands in the composer');
+});
+
 test('surface: one profile on screen — no dropdown and no device voice names', () => {
   const center = read('src/features/ai/studio/VoiceControlCenter.tsx');
   assert.doesNotMatch(center, /<select/, 'the voice dropdown is gone');
