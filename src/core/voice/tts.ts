@@ -131,7 +131,10 @@ export function serverVoiceNote(state: ServerVoiceState, voiceId: string | null,
     const name = voiceDisplayName(voiceId);
     return `Female AI voice${name ? ` · ${name}` : ''} · Hindi/Hinglish + English · generated on the server.`;
   }
+  // This deployment has no server key. That is a fact about the INTERVIEW's optional voice only: the
+  // AI Mentor speaks with Supertonic 3 in the browser and never asks for a key. The old sentence
+  // ("the server voice is not configured") read like a broken product, so it is not shown any more.
   return support
-    ? 'The server voice is not configured. Your browser’s own voice can read answers instead.'
-    : 'No AI voice is available: the server has no speech key and this browser cannot read text aloud.';
+    ? 'This deployment has no server voice key. The interview can read answers with this browser’s own voice.'
+    : 'No voice is available here: this deployment has no server key and this browser cannot read text aloud.';
 }
