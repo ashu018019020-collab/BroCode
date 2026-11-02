@@ -310,14 +310,21 @@ test('voice: the engine note names the server voice, never Supertonic', () => {
   assert.equal(voice.ttsEngineNote.length, 0);
 });
 
-test('voice: Supertonic 3 is gone — no model and no ONNX runtime anywhere in the client', () => {
-  const hook = read('src/components/shared/useVoiceTutor.ts');
-  assert.doesNotMatch(hook, /onnxruntime|\\.onnx|ort-wasm|VOICE_PRESETS|Supertonic|cloudChunks|process\\.env\\\\.AZURE/i, 'no model runtime, voice preset, cloud chunker, or Azure key in the bundle');
+test('voice: the mentor speaks with Supertonic 3 in the browser, and the interview keeps the server path', () => {
+  // The AI Mentor runs the model in a worker on the learner's machine: no key, no route, no cost.
   const pkg = JSON.parse(read('package.json'));
-  assert.equal(pkg.dependencies?.['onnxruntime-web'], undefined, 'the browser ONNX runtime is gone');
-  // The voice hook imports speechSynthesis (for the device-voice fallback) and the server tts module.
-  assert.match(hook, /speechSynthesis/, 'the device voice helper still imports the synthesiser');
-  assert.match(hook, /fetchSpeech/, 'the server voice path is wired through the server tts module');
+  assert.ok(pkg.dependencies?.['onnxruntime-web'], 'the browser ONNX runtime is a dependency');
+  assert.equal(pkg.scripts.prebuild, 'node scripts/ort-copy.mjs', 'the WASM runtime is published with the build');
+  assert.match(read('src/workers/tts.worker.ts'), /onnxruntime-web/, 'the worker owns the runtime');
+
+  const mentor = read('src/components/shared/useMentorVoice.ts');
+  assert.match(mentor, /createVoiceClient/, 'the mentor talks to the TTS worker');
+  assert.doesNotMatch(mentor, /speechSynthesis/, 'the mentor never speaks with the device voice');
+
+  // The interview room is unchanged: its optional server voice and device option stay exactly as they were.
+  const interview = read('src/components/shared/useVoiceTutor.ts');
+  assert.match(interview, /speechSynthesis/, 'the interview keeps its device-voice option');
+  assert.match(interview, /fetchSpeech/, 'the interview keeps the server voice path');
 });
 
 test('voice: the hook talks to the server voice service, and the security boundary is the API, not the bundle', () => {

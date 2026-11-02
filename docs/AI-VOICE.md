@@ -1,79 +1,68 @@
 # The AI voice
 
-The tutor speaks with a **female Indian voice generated on the server** and streamed to the browser
-as MP3. Nothing is downloaded, no model runs in the tab, no GPU is involved and the key never leaves
-the API process.
+The mentor speaks with **Supertonic 3 running in the browser**. Nothing is sent anywhere: the ONNX
+graphs, the tokenizer and the flow-matching loop all run inside a module worker on the learner's own
+machine, and the audio is played from memory. No key, no server route, no per-character cost.
 
 | Piece | Where | What it does |
 | --- | --- | --- |
-| `server/tts.mjs` | server | Azure AI Speech client: SSML, voice pair, validation, typed errors. The key lives only here. |
-| `POST /api/voice/tts` | `server/app.mjs` | Same-origin, 30 requests/minute per address, 600 characters per request → `audio/mpeg`. |
-| `GET /api/voice/status` | `server/app.mjs` | `{ configured, engine, langs, voices }`. Never the key. |
-| `server/voice-handler.mjs` + `api/voice/*.js` | serverless | The same two routes as Vercel Functions, for the static deployment that has no long-running process. |
-| `src/core/voice/tts.ts` | browser | The only client that talks to those routes; typed failures, never a silent fallback. |
-| `src/components/shared/useVoiceTutor.ts` | browser | The queue: one `<audio>`, one chunk at a time, cancellation, pause/resume, replay. |
-| `src/core/ai/voice.ts` | pure | `speakable()`, `speechChunks()`, `spokenReply()`, language resolution, device-voice ranking. |
+| `src/workers/tts.worker.ts` | browser worker | Owns the four ONNX sessions, the voice-style cache and synthesis. Reports real download progress. |
+| `src/core/voice/engine.ts` | pure | The inference pipeline, ported from `supertonic/core.py` 1.3.1: duration → text encoder → vector estimator steps → vocoder. |
+| `src/core/voice/text.ts` | pure | The model's `UnicodeProcessor`: NFKD, symbol table, `<hi>`/`<en>` wrapper, `unicode_indexer.json` lookup. |
+| `src/core/voice/style.ts` | pure | `voice_styles/F1.json` → `style_ttl` `[1,50,256]` and `style_dp` `[1,8,16]`, shape-checked. |
+| `src/core/voice/assets.ts` | pure + fetch | The pinned checkpoint (`Supertone/supertonic-3` @ `3cadd1e`), Cache Storage, byte-accurate progress. |
+| `src/core/voice/client.ts` | browser | One worker per page; status events and finished PCM. |
+| `src/components/shared/useMentorVoice.ts` | browser | The shared adapter: playback, pause/resume, the sentence queue, the microphone, the amplitude the orb reads. |
+| `src/core/voice/mentor-voice.ts` | pure | The one state vocabulary (`idle … speaking … error`) plus speech-text preparation. |
 
-## The voice
+## The model
 
-Two matched Indian female voices, so switching language changes the language and not the person:
+379 MB across four graphs plus `unicode_indexer.json` and `tts.json`, downloaded **once** from a
+revision-pinned URL and stored in Cache Storage under the revision's name. `Clear cache` in the voice
+panel removes exactly that cache. The first answer costs the download; every later answer loads from
+the browser cache. `scripts/ort-copy.mjs` publishes ONNX Runtime Web's WASM pair into `public/ort/` at
+build time, so the runtime is same-origin and the site keeps working under a strict CSP.
 
-| Language | Voice | Covers |
-| --- | --- | --- |
-| Hindi | `hi-IN-SwaraNeural` | Hindi and Hinglish (Roman Hindi is read the way it sounds) |
-| English | `en-IN-NeerjaNeural` | English with Indian pronunciation of technical terms |
-
-An operator may pin another female voice with `AZURE_SPEECH_VOICE_HI` / `AZURE_SPEECH_VOICE_EN`
-without touching code; the server reports the id it will actually use in `/api/voice/status`, and the
-mentor shows that name rather than a hardcoded one. A pin filed under the wrong language (an `en-IN`
-id in the Hindi slot) is dropped before any request is made, so the matched default speaks instead of
-the provider rejecting a billable call. The output format is 24 kHz MP3 at 96 kbps: the provider's own
-sample rate at a bitrate that keeps consonants intact, which is where an Indian-English technical term
-becomes unintelligible.
+WebGPU is requested first (`webgpu`, then `wasm`); a browser without an adapter runs the WASM build,
+which is the path the engine was verified on.
 
 ## Speaking an answer
 
-1. `speakable()` strips code fences and markdown noise from the reply.
-2. `speechChunks()` splits it into ≤180-character sentence pieces — small enough for the first sound
-   to start quickly, large enough to keep a sentence's own intonation inside one request.
-3. Each chunk is posted to `/api/voice/tts`; the next chunk is fetched while the current one plays.
-4. One `<audio>` element plays them in order, so two answers can never overlap. `Stop` bumps a
-   generation counter, pauses the element and revokes every blob URL; a late chunk cannot revive.
-5. `Pause`/`Resume` pause the element itself, so the label matches the silence.
+1. `spokenReply()` bounds a long answer and says that the rest is on screen; `speechText()` strips
+   markdown, expands `e.g.`/`etc.`/`vs.`, turns `→`/`·`/`%` into words and reads digits in English
+   (Devanagari text keeps its numerals).
+2. `speechSegments()` cuts it into sentence-sized requests — quick first sound, and a boundary
+   `Interrupt` can cut on.
+3. Each sentence is synthesised in order by the worker; the page decodes the PCM into an
+   `AudioBuffer` and plays it through one `AudioBufferSourceNode` and an `AnalyserNode`.
+4. There is a 120 ms breath between sentences and never two sources at once. `Pause` stops the node
+   and remembers the offset; `Resume` starts a new node at that offset; `Interrupt` bumps the run id,
+   drops the queue and cancels the worker generation, so a late buffer cannot revive.
 
-## When the server has no key
+`Speaking` is shown only when a source actually starts, and `Finished speaking` only when the last
+sentence's `ended` event fires. The orb's waveform reads the real output amplitude, so it cannot
+animate to silence.
 
-`POST /api/voice/tts` answers **503** with a sentence, and the mentor shows it. The tutor does **not**
-quietly switch to a robot voice: the settings row offers **Use device voice** — the browser's own
-`SpeechSynthesis`, ranked language-first with Google's voice preferred — and only the learner turns
-it on. A browser without speech synthesis says so instead of pretending.
+## Language
 
-## What was removed
+`speechLanguage()` decides the model's own token: Devanagari is Hindi, Latin is English, and Roman
+Hinglish follows the learner's explicit *Hindi / Hinglish* choice instead of pretending the script
+decides it. English technical terms inside a Hinglish sentence keep their Latin spelling. The
+selector's `Auto detect` resolves per answer.
 
-Supertonic 3 and its whole chain: `services/supertonic-tts/`, `server/voice-engine.mjs`,
-`server/voice.mjs`, `server/vercel-voice.mjs`, `server/voice-diagnostics.mjs`, the old client stack
-under `src/core/voice/`, `onnxruntime-web`, `public/ort`, the 380 MB first-run download, the
-`/voice-health` operations page and the voice telemetry built to compare the two engines. The
-`/api/voice/*` paths stay — they are this server's own routes now, and a page that still asks for an
-ONNX graph gets nothing instead of a stale copy.
+## What is deliberately NOT here
+
+No device speech synthesis as a silent fallback: if the model cannot load, the panel says so and offers
+`Download model now`. No external TTS provider, no server key, no separate inference service. The old
+`/api/voice/*` routes still exist for the interview room's optional server voice, but the AI Mentor
+does not depend on them and shows no "server voice is not configured" message.
 
 ## Checking the real audio
 
-Naming a voice proves nothing. Generate the acceptance sentences and listen:
+Audio output cannot be verified from a headless shell. In a real browser:
 
-```bash
-AZURE_SPEECH_KEY=… AZURE_SPEECH_REGION=centralindia npm run voice:preview
-# → artifacts/voice-preview/{hi-1,hi-2,en-1,en-2}.mp3 + manifest.json
-```
-
-And check the deployment the way a browser receives it — status, MP3 bytes for English, Roman-script
-Hinglish and Hindi, plus the foreign-origin refusal:
-
-```bash
-npm run voice:check -- --public https://mybrocode.vercel.app
-```
-
-Set `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` in the deployment's own environment (Vercel →
-Settings → Environment Variables, or Render for the account API). They are server-only: never
-`VITE_`-prefixed, never in the bundle. Without them the check prints `TTS_NOT_CONFIGURED`, which is
-the honest answer — no model runs in the browser any more.
+1. Open `/#/ai-mentor`, press **Download model now** in the voice panel and watch the byte progress.
+2. Ask an English question with Auto speak on — the answer should start speaking after synthesis.
+3. Ask a Hindi/Hinglish question (`SQL join kaise kaam karta hai?`) and confirm the Hindi voice.
+4. Pause, Resume, Replay, Interrupt, Mute, and hands-free mic reopen.
+5. Reload the page: the second answer must not download the model again.
