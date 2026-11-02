@@ -14,11 +14,12 @@ way.
 | Piece | Where | What it does |
 | --- | --- | --- |
 | `src/core/voice/voice-discovery.ts` | pure | Which installed voice speaks which language: language first, then accent chain, then a female-sounding name, then Chrome/local/default, then name. Plus the honest "no Hindi voice" message. |
-| `src/core/voice/voice-engine.ts` | browser | The single queue over `speechSynthesis`: sentence utterances, real `onstart`/`onend`/`onerror` state, pause/resume, replay, stop, preview, and the legacy-cache purge. |
+| `src/core/voice/voice-profile.ts` | pure | The single `BroCode Natural Voice` profile: the Hindi and English voices behind it, the per-sentence plan, and the honest "no Hindi voice" message. |
+| `src/core/voice/voice-engine.ts` | browser | The single queue over `speechSynthesis`: sentence utterances, real `onstart`/`onend`/`onerror` state, pause/resume, replay, stop, preview, the four Chromium silent-playback repairs, and the legacy-cache purge. |
 | `src/core/voice/speech-processor.ts` | pure | Markdown → speech, English digits → words, sentence segmentation, language detection. |
 | `src/core/voice/mentor-voice.ts` | pure | The one state vocabulary (`ready … speaking … unsupported`) and the wording for it. |
 | `src/components/shared/useMentorVoice.ts` | browser | The shared adapter: preferences, the microphone, the levels the orb reads, diagnostics. |
-| `src/features/ai/studio/VoiceControlCenter.tsx` | UI | The two switch cards, transport buttons, voice picker with preview, and the diagnostics panel. |
+| `src/features/ai/studio/VoiceControlCenter.tsx` | UI | One profile card with Test voice, the two switch cards, transport buttons, language and speed, and the collapsed technical details. |
 
 ## Speaking an answer
 
@@ -35,21 +36,53 @@ way.
    pause/resume; where a browser cannot resume mid-utterance the current sentence restarts, and no
    progress percentage is invented.
 
-## Language and voice selection
+## One profile, two languages
+
+The learner chooses a **language**, never a voice: `Auto`, `English` or `Hindi / Hinglish`. On screen
+there is one card, **BroCode Natural Voice — Hindi + English — Automatic language selection**, and a
+**Test voice** button. No dropdown, no device voice name and no raw language tag is shown in the
+panel; those live only in the collapsed **Voice details** block.
+
+Underneath, `naturalVoices()` resolves the best installed Hindi voice and the best installed English
+voice, and `planSpeech()` decides **per sentence** which one reads it: Devanagari is Hindi, Roman
+Hinglish is Hindi (its `hain`/`kya`/`matlab` words), everything else is English. An explicit
+English/Hindi choice applies to every sentence, including a Devanagari one. A single mixed answer can
+therefore move between the two voices sentence by sentence — the alternative, one accent reading
+both scripts, is what sounds broken.
+
+The profile says "one voice" only when the platform reported the **same `voiceURI`** for both
+languages (`naturalVoices().shared`); otherwise the details say "two voices behind one profile". No
+stored voice name survives a reload: the profile re-resolves on every load, so an uninstalled or
+wrong-language pick cannot stick.
+
+Within a language the accent chain is `en-IN → en-GB → en-US → …` and `hi-IN → hi`, then a
+female-sounding name when the device actually has one (`Google UK English Female`, `Microsoft Heera`,
+`Samantha`, `Aditi`, …). Browsers expose no gender field, so that is a *preference*, never a promise.
+
+## Why a device voice goes silent (and the four repairs)
+
+Each of these produces the same symptom — a panel that says Ready and an answer that makes no sound —
+and each is handled in `voice-engine.ts` rather than blamed on the voice:
+
+1. **`cancel()` then `speak()` in the same task.** Chromium drops the new utterance. When the
+   platform was playing or paused, the first sentence now starts one task later (`CANCEL_GAP_MS`).
+2. **An unreferenced utterance is garbage-collected** mid-sentence. The engine holds the live
+   utterance in `current` until it ends.
+3. **`speechSynthesis.paused` is page-global and survives `cancel()`.** A platform left paused queues
+   everything and plays nothing, so a paused platform is resumed before the first sentence.
+4. **`speak()` accepted but never started.** A bounded watchdog checks whether the platform really
+   began, re-issues the same sentence once, and only then reports an actionable failure.
+
+A cancellation error that arrives for an utterance the engine still wants is re-issued once as well;
+only a second one becomes `The browser interrupted the voice… Press Replay`.
+
+## Language detection
 
 `resolveLocale()` follows the learner's choice (`Auto`, `English`, `Hindi / Hinglish`). On `Auto`,
-Devanagari or Roman-Hindi words mean Hindi and everything else is English — per answer, from the text
-itself.
-
-`voicesForLocale()` never crosses languages: an excellent English voice never answers a Hindi
-request. Within a language the accent chain is `en-IN → en-GB → en-US → …` and `hi-IN → hi`, then a
-female-sounding name when the device actually has one (`Google UK English Female`, `Microsoft Heera`,
-`Samantha`, `Aditi`, …). Browsers expose no gender field, so the panel says *preference*, never a
-promise, and it lists the real installed names instead of invented presets.
-
-The learner can pin a voice per language; the choice is stored by `voiceURI` (list order is not
-stable) and is ignored if that voice is uninstalled or belongs to the other language. **Preview**
-speaks a sample with the highlighted voice; **Test voice** does the same from the diagnostics panel.
+Devanagari or Roman-Hindi words mean Hindi and everything else is English — per sentence, from the
+text itself. `voicesForLocale()` never crosses languages: an excellent English voice never answers a
+Hindi request, and when the device has no Hindi voice the panel says so before the answer instead of
+silently substituting an English one.
 
 ## The two switches
 
@@ -81,11 +114,16 @@ pulse comes from the platform's `boundary` events, so it only moves while an utt
 
 Audio cannot be verified from a headless shell. In a real browser:
 
-1. Open `/#/ai-mentor`; the panel should list the voices the device reported and select one.
-2. Press **Test voice** — you should hear the sample with the listed voice.
+1. Open `/#/ai-mentor`; the panel should show one card, **BroCode Natural Voice**, with a status
+   (`Ready`, `Limited voices` or `Voice unavailable`) and no device voice names.
+2. Press **Test voice** — you should hear the sample. If nothing plays, open **Voice details** and read
+   *Last error*; the four silent-playback cases above are what it names.
 3. Ask an English question with Auto speak on; the answer should start speaking and the orb should
    pulse with word boundaries.
-4. Ask `SQL join kaise kaam karta hai?` and confirm the Hindi voice (or the honest "no Hindi voice"
-   notice if the device has none).
-5. Pause, Resume, Replay, Stop, Voice off, and hands-free reopen after an answer.
-6. Reload: the selected voices and switches must be remembered.
+4. Ask the Hindi sample `नमस्ते! आपका स्वागत है। आज हम Python programming सीखेंगे।` and the Hinglish
+   sample `Chalo aaj Python programming seekhte hain. Main tumhe step by step guide karunga.`; the
+   first must use the Hindi voice, and the honest "no Hindi voice" notice must appear on a device
+   without one rather than an English voice reading Devanagari.
+5. Pause, Resume, Replay, Stop, Mute, and hands-free reopen after an answer; then send a second
+   question while the first is speaking and confirm there is no overlap and no interrupted repeat.
+6. Reload: language, speed and the two switches must be remembered.

@@ -1,25 +1,23 @@
 import {
-  AlertTriangle, AudioLines, Check, Gauge, Info, Mic2, MicOff, Pause, Play, RefreshCw,
-  RotateCcw, Square, Volume2, VolumeX,
+  AlertTriangle, AudioLines, Gauge, Info, Mic2, MicOff, Pause, Play, RefreshCw,
+  RotateCcw, Square, Sparkles, Volume2, VolumeX,
 } from 'lucide-react';
 import {
   mentorVoiceHint, mentorVoiceLabel, type SpeechPreference,
 } from '../../../core/voice/mentor-voice';
-import { describeVoice } from '../../../core/voice/voice-discovery';
 import { languageLabel, type MentorVoice } from '../../../components/shared/useMentorVoice';
 import { AIVoiceOrb } from './AIVoiceOrb';
 
 /**
  * The voice control center.
  *
- * Every control maps to a verb on the shared adapter and every disabled state is a fact (nothing has
- * been spoken yet, nothing is playing, no voice is installed) rather than a placeholder. The two
- * switches the learner actually uses are proper `role="switch"` cards with their own state line — not
- * two cramped checkboxes sharing a row — and the diagnostics list is the honest answer to "why is
- * there no sound?": the detected voices, the selected one, the platform state and the last error.
+ * The learner meets ONE voice — `BroCode Natural Voice` — and never a list of device names. Which
+ * installed voices sit behind that profile is resolved on every load, so an uninstalled or
+ * wrong-language pick cannot stick, and the technical names live only inside the collapsed
+ * "Voice details" block (that block is also where the last platform error is readable).
  *
- * There is no download progress here because there is nothing to download: the sound is a voice the
- * device already has.
+ * Every control maps to a verb on the shared adapter, and every disabled state is a fact: nothing has
+ * been spoken yet, nothing is playing, no voice is installed.
  */
 export interface VoiceControlCenterProps {
   voice: MentorVoice;
@@ -29,6 +27,12 @@ export interface VoiceControlCenterProps {
 }
 
 const LANGUAGES: SpeechPreference[] = ['auto', 'en', 'hi'];
+
+const PROFILE_STATUS: Record<MentorVoice['profile']['status'], string> = {
+  ready: 'Ready',
+  partial: 'Limited voices',
+  unavailable: 'Voice unavailable',
+};
 
 function ToggleCard({
   title, description, checked, status, onChange, icon, disabled, tone,
@@ -67,8 +71,9 @@ function ToggleCard({
 }
 
 export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: VoiceControlCenterProps) {
-  const { state, locale } = voice;
+  const { state, locale, profile } = voice;
   const status = mentorVoiceLabel(state, locale);
+  const profileReady = profile.status === 'ready';
   const handsFreeStatus = !voice.recognitionSupported
     ? 'Voice input unavailable here'
     : voice.micPermission === 'denied'
@@ -93,6 +98,27 @@ export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: Voi
       <AIVoiceOrb state={state} levelRef={voice.levelRef} micLevelRef={voice.micLevelRef} label={status} />
 
       <p className="voice-hint">{mentorVoiceHint(state, locale)}</p>
+
+      {/* The single profile. No dropdown, no device voice names on the surface. */}
+      <div className={`voice-profile ${profile.status}`}>
+        <span className="voice-profile-mark" aria-hidden="true"><Sparkles size={16} /></span>
+        <div className="voice-profile-text">
+          <strong>{profile.name}</strong>
+          <span>{profile.subtitle} · {profile.detail}</span>
+        </div>
+        <div className="voice-profile-side">
+          <span className={`voice-profile-status ${profile.status}`}>{PROFILE_STATUS[profile.status]}</span>
+          <button
+            type="button"
+            className="voice-profile-test"
+            onClick={voice.testVoice}
+            disabled={!voice.supported || profile.status === 'unavailable'}
+            title="Hear this voice read a short sample"
+          >
+            <Play size={11} /> Test voice
+          </button>
+        </div>
+      </div>
 
       {/* The two switches, as cards: a real target, a real state, and no shared checkbox row. */}
       <div className="toggle-grid">
@@ -132,6 +158,15 @@ export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: Voi
         <button
           type="button"
           className="ctl"
+          onClick={onSpeakLast}
+          disabled={!hasSpoken || !voice.enabled || !voice.supported}
+          title="Read the last answer aloud"
+        >
+          <AudioLines size={15} /> Speak
+        </button>
+        <button
+          type="button"
+          className="ctl"
           onClick={voice.paused ? voice.resume : voice.pause}
           disabled={!voice.speaking && !voice.paused}
           title={voice.paused ? 'Continue the spoken answer' : 'Pause the spoken answer'}
@@ -153,67 +188,34 @@ export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: Voi
         </button>
         <button
           type="button"
-          className={`ctl${voice.enabled ? ' on' : ''}`}
+          className={`ctl mute${voice.enabled ? '' : ' on'}`}
           onClick={() => voice.setEnabled(!voice.enabled)}
-          aria-pressed={voice.enabled}
-          title={voice.enabled ? 'Turn spoken answers off' : 'Turn spoken answers on'}
+          aria-pressed={!voice.enabled}
+          title={voice.enabled ? 'Mute spoken answers' : 'Unmute spoken answers'}
         >
           {voice.enabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-          {voice.enabled ? 'Voice on' : 'Muted'}
-        </button>
-        <button
-          type="button"
-          className="ctl"
-          onClick={onSpeakLast}
-          disabled={!hasSpoken || !voice.enabled}
-          title="Read the last answer aloud"
-        >
-          <AudioLines size={15} /> Speak last
+          {voice.enabled ? 'Mute' : 'Unmute'}
         </button>
       </div>
 
       <div className="voice-settings">
-        <label className="field">
-          <span>Language</span>
-          <select
-            value={voice.langPref}
-            onChange={(event) => voice.setLangPref(event.target.value as SpeechPreference)}
-          >
+        <div className="field">
+          <span id="voice-language-label">Language</span>
+          <div className="segmented" role="radiogroup" aria-labelledby="voice-language-label">
             {LANGUAGES.map((id) => (
-              <option key={id} value={id}>{languageLabel(id)}</option>
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={voice.langPref === id}
+                className={voice.langPref === id ? 'on' : ''}
+                onClick={() => voice.setLangPref(id)}
+              >
+                {languageLabel(id)}
+              </button>
             ))}
-          </select>
-        </label>
-
-        <label className="field">
-          <span>Voice · {locale === 'hi' ? 'Hindi' : 'English'}</span>
-          <div className="field-row">
-            <select
-              value={voice.voiceURI}
-              onChange={(event) => voice.selectVoice(locale, event.target.value)}
-              disabled={!voice.availableVoices.length}
-            >
-              <option value="">
-                {voice.availableVoices.length ? 'Best available (automatic)' : 'No voice installed'}
-              </option>
-              {voice.availableVoices.map((item) => (
-                <option key={item.voiceURI} value={item.voiceURI}>
-                  {item.name} · {item.lang}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="icon-btn"
-              onClick={() => voice.previewVoice()}
-              disabled={!voice.availableVoices.length}
-              title="Hear the selected voice"
-              aria-label="Preview the selected voice"
-            >
-              <Play size={13} />
-            </button>
           </div>
-        </label>
+        </div>
 
         <label className="field speed">
           <span><Gauge size={12} /> Speed · {voice.speed.toFixed(1)}×</span>
@@ -229,34 +231,43 @@ export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: Voi
         </label>
       </div>
 
-      {voice.availability && (
+      {profile.message && (
         <p className="voice-warning" role="status">
-          <Info size={13} /> <span>{voice.availability}</span>
+          <Info size={13} /> <span>{profile.message}</span>
         </p>
       )}
 
-      <p className="voice-foot">{voice.note}</p>
+      {!profileReady && voice.supported && !profile.message && (
+        <p className="voice-warning" role="status">
+          <Info size={13} />
+          <span>This device has a voice for one of the two languages. Hindi and English answers will not sound alike.</span>
+        </p>
+      )}
 
+      {/* Technical names, counts and the raw platform error — collapsed, never in the way. */}
       <details className="diagnostics">
-        <summary><Info size={12} /> Voice diagnostics</summary>
+        <summary><Info size={12} /> Voice details</summary>
         <dl>
           <div><dt>Speech synthesis</dt><dd>{voice.supported ? 'Supported' : 'Not available'}</dd></div>
           <div><dt>Speech recognition</dt><dd>{voice.recognitionSupported ? 'Supported' : 'Not available'}</dd></div>
-          <div><dt>Installed voices</dt><dd>{voice.counts.total} · {voice.counts.hindi} Hindi · {voice.counts.english} English</dd></div>
-          <div><dt>Selected voice</dt><dd>{describeVoice(voice.selectedVoice)}</dd></div>
+          <div>
+            <dt>Installed voices</dt>
+            <dd>{voice.diagnostics.voices} · {voice.diagnostics.hindi} Hindi · {voice.diagnostics.english} English</dd>
+          </div>
+          <div><dt>Hindi voice</dt><dd>{voice.diagnostics.selected.split(' / ')[0]}</dd></div>
+          <div><dt>English voice</dt><dd>{voice.diagnostics.selected.split(' / ')[1]}</dd></div>
+          <div>
+            <dt>Profile</dt>
+            <dd>{voice.diagnostics.shared ? 'One voice serves both languages' : 'Two voices behind one profile'}</dd>
+          </div>
           <div><dt>Language</dt><dd>{languageLabel(voice.langPref)} → {locale.toUpperCase()}</dd></div>
           <div><dt>Playback</dt><dd>{voice.playback}</dd></div>
-          <div><dt>Spoken answers</dt><dd>{voice.enabled ? 'On' : 'Off'}</dd></div>
-          <div><dt>Hands-free</dt><dd>{voice.handsFree ? 'On' : 'Off'}</dd></div>
           <div><dt>Microphone</dt><dd>{voice.micPermission}</dd></div>
           <div><dt>Last error</dt><dd>{voice.error ?? 'None'}</dd></div>
         </dl>
         <div className="diagnostics-actions">
-          <button type="button" className="link" onClick={voice.testVoice} disabled={!voice.supported}>
-            <Play size={11} /> Test voice
-          </button>
           <button type="button" className="link subtle" onClick={voice.refreshVoices}>
-            <RefreshCw size={11} /> Refresh list
+            <RefreshCw size={11} /> Refresh voices
           </button>
         </div>
       </details>
@@ -275,16 +286,6 @@ export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: Voi
           <span>
             This browser has no speech synthesis. Answers are still written in full — try Chrome, Edge
             or Safari to hear them.
-          </span>
-        </p>
-      )}
-
-      {voice.supported && voice.counts.hindi === 0 && (
-        <p className="voice-warning" role="status">
-          <Check size={13} />
-          <span>
-            No Hindi voice is installed. English answers sound natural; Hindi ones fall back to the
-            English voice.
           </span>
         </p>
       )}

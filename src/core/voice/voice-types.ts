@@ -29,9 +29,6 @@ export interface BrowserVoice {
 /** Microphone permission, as the Permissions API reports it (or as an error told us). */
 export type MicPermission = 'unknown' | 'granted' | 'denied' | 'unsupported';
 
-/** Stored choice per language — a `voiceURI`, never an index (the list order is not stable). */
-export type VoiceSelection = Partial<Record<VoiceLocale, string>>;
-
 export interface VoiceCounts {
   total: number;
   hindi: number;

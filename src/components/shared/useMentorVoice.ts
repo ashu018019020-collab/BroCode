@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   getVoiceEngine, purgeLegacyVoiceCaches, VoiceEngine, type VoiceEngineSnapshot,
 } from '../../core/voice/voice-engine';
+import { describeVoice, resolveLocale, voiceCounts } from '../../core/voice/voice-discovery';
 import {
-  availabilityMessage, describeVoice, resolveLocale, resolveVoice, voiceCounts, voiceEngineNote,
-  voicesForLocale,
-} from '../../core/voice/voice-discovery';
+  NATURAL_VOICE, naturalVoices, profileMessage, profileStatus,
+  type NaturalVoiceStatus,
+} from '../../core/voice/voice-profile';
 import { mentorVoiceState, speechText, type MentorVoiceState } from '../../core/voice/mentor-voice';
 import type {
-  BrowserVoice, MicPermission, VoiceLanguagePreference, VoiceLocale, VoicePlaybackState, VoiceSelection,
+  MicPermission, VoiceLanguagePreference, VoiceLocale, VoicePlaybackState,
 } from '../../core/voice/voice-types';
 import { clampRate, recognitionLanguages } from '../../core/ai/voice';
 
@@ -34,6 +35,8 @@ export interface VoiceDiagnostics {
   voices: number;
   hindi: number;
   english: number;
+  /** True when ONE installed voice serves both languages, which is said in the details. */
+  shared: boolean;
   selected: string;
   selectedLang: string;
   language: VoiceLanguagePreference;
@@ -68,17 +71,19 @@ export interface MentorVoice {
   interim: string;
   error: string | null;
   micPermission: MicPermission;
-  /** Every voice the device reported, in the device's order. */
-  voices: BrowserVoice[];
-  /** The voices for the resolved language, best first. */
-  availableVoices: BrowserVoice[];
-  selectedVoice: BrowserVoice | null;
-  /** `voiceURI` of the selected voice, or '' for automatic. */
-  voiceURI: string;
-  counts: { total: number; hindi: number; english: number };
-  /** One honest sentence about where the sound comes from. */
-  note: string;
-  availability: string;
+  /**
+   * The ONE profile the learner sees. The installed voices behind it are an implementation detail:
+   * they are named only in the diagnostic details, never in the main panel.
+   */
+  profile: {
+    id: string;
+    name: string;
+    subtitle: string;
+    detail: string;
+    status: NaturalVoiceStatus;
+    /** What will actually happen, or '' when both languages have a voice. */
+    message: string;
+  };
   diagnostics: VoiceDiagnostics;
   levelRef: { current: number };
   micLevelRef: { current: number };
@@ -87,8 +92,6 @@ export interface MentorVoice {
   setHandsFree: (on: boolean) => void;
   setSpeed: (speed: number) => void;
   setLangPref: (pref: VoiceLanguagePreference) => void;
-  selectVoice: (locale: VoiceLocale, voiceURI: string) => void;
-  previewVoice: (voiceURI?: string) => void;
   testVoice: () => void;
   refreshVoices: () => void;
   /** Speak the FINAL assistant text. `onEnd` runs only after real completion. */
@@ -117,7 +120,6 @@ interface Prefs {
   autoSpeak: boolean;
   handsFree: boolean;
   enabled: boolean;
-  voices: VoiceSelection;
 }
 
 const FALLBACK_PREFS: Prefs = {
@@ -126,7 +128,6 @@ const FALLBACK_PREFS: Prefs = {
   autoSpeak: true,
   handsFree: false,
   enabled: true,
-  voices: {},
 };
 
 function loadPrefs(): Prefs {
@@ -134,18 +135,14 @@ function loadPrefs(): Prefs {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return FALLBACK_PREFS;
     const parsed = JSON.parse(raw) as Partial<Prefs> | null;
-    const voices: VoiceSelection = {};
-    if (parsed?.voices && typeof parsed.voices === 'object') {
-      if (typeof parsed.voices.en === 'string') voices.en = parsed.voices.en;
-      if (typeof parsed.voices.hi === 'string') voices.hi = parsed.voices.hi;
-    }
+    // A stored voice name from the picker era is deliberately DROPPED: the profile re-resolves the
+    // device's best voices on every load, so an uninstalled or wrong-language pick cannot stick.
     return {
       speed: clampRate(parsed?.speed ?? 1),
       lang: parsed?.lang === 'hi' || parsed?.lang === 'en' ? parsed.lang : 'auto',
       autoSpeak: parsed?.autoSpeak !== false,
       handsFree: parsed?.handsFree === true,
       enabled: parsed?.enabled !== false,
-      voices,
     };
   } catch {
     return FALLBACK_PREFS;
@@ -243,7 +240,6 @@ export function useMentorVoice(busy = false): MentorVoice {
   }, [engine]);
 
   useEffect(() => {
-    engine.setSelection(prefs.voices);
     engine.setRate(prefs.speed);
     engine.setEnabled(prefs.enabled);
   }, [engine, prefs]);
@@ -337,17 +333,12 @@ export function useMentorVoice(busy = false): MentorVoice {
     engine.replay();
   }, [engine]);
 
-  const previewVoice = useCallback((voiceURI?: string) => {
+  /** The profile's one button: the device's best voice for the current language reads a sample. */
+  const testVoice = useCallback(() => {
     const pref = prefsRef.current;
     const locale = resolveLocale(pref.lang, lastSpoken);
-    engine.preview(SAMPLE[locale], {
-      locale,
-      voiceURI: voiceURI || pref.voices[locale],
-      preference: pref.lang,
-    });
+    engine.preview(SAMPLE[locale], { locale, preference: pref.lang });
   }, [engine, lastSpoken]);
-
-  const testVoice = useCallback(() => previewVoice(undefined), [previewVoice]);
 
   const refreshVoices = useCallback(() => {
     engine.refreshVoices();
@@ -482,20 +473,13 @@ export function useMentorVoice(busy = false): MentorVoice {
 
   /* ------------------------------ the surface ----------------------------- */
   const locale = resolveLocale(prefs.lang, lastSpoken);
-  const availableVoices = useMemo(() => voicesForLocale(snapshot.voices, locale), [snapshot.voices, locale]);
-  const selectedVoice = useMemo(
-    () => resolveVoice(snapshot.voices, locale, prefs.voices[locale]),
-    [snapshot.voices, locale, prefs.voices],
-  );
+  const pair = useMemo(() => naturalVoices(snapshot.voices), [snapshot.voices]);
   const counts = useMemo(() => voiceCounts(snapshot.voices), [snapshot.voices]);
-  const note = useMemo(
-    () => voiceEngineNote(snapshot.voices, locale, selectedVoice),
-    [snapshot.voices, locale, selectedVoice],
-  );
-  const availability = useMemo(
-    () => availabilityMessage(snapshot.voices, locale),
-    [snapshot.voices, locale],
-  );
+  const profile = useMemo(() => ({
+    ...NATURAL_VOICE,
+    status: profileStatus(snapshot.voices, prefs.lang),
+    message: profileMessage(snapshot.voices, prefs.lang),
+  }), [snapshot.voices, prefs.lang]);
 
   const state = mentorVoiceState({
     playing: snapshot.state,
@@ -521,18 +505,15 @@ export function useMentorVoice(busy = false): MentorVoice {
   const setLangPref = useCallback((lang: VoiceLanguagePreference) => {
     setPrefs((current) => ({ ...current, lang }));
   }, []);
-  const selectVoice = useCallback((target: VoiceLocale, voiceURI: string) => {
-    setPrefs((current) => ({ ...current, voices: { ...current.voices, [target]: voiceURI } }));
-  }, []);
-
   const diagnostics: VoiceDiagnostics = {
     synthesis: supported,
     recognition: recognitionSupported,
     voices: counts.total,
     hindi: counts.hindi,
     english: counts.english,
-    selected: describeVoice(selectedVoice),
-    selectedLang: selectedVoice?.lang ?? '—',
+    shared: pair.shared,
+    selected: `${describeVoice(pair.hi)} / ${describeVoice(pair.en)}`,
+    selectedLang: pair.hi?.lang ?? pair.en?.lang ?? '—',
     language: prefs.lang,
     playback: snapshot.state,
     enabled: prefs.enabled,
@@ -561,13 +542,7 @@ export function useMentorVoice(busy = false): MentorVoice {
     interim,
     error: snapshot.lastError,
     micPermission,
-    voices: snapshot.voices,
-    availableVoices,
-    selectedVoice,
-    voiceURI: selectedVoice?.voiceURI ?? '',
-    counts,
-    note,
-    availability,
+    profile,
     diagnostics,
     levelRef,
     micLevelRef,
@@ -576,8 +551,6 @@ export function useMentorVoice(busy = false): MentorVoice {
     setHandsFree,
     setSpeed,
     setLangPref,
-    selectVoice,
-    previewVoice,
     testVoice,
     refreshVoices,
     speak,

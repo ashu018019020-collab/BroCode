@@ -9,6 +9,17 @@
  *    `onend` — never when `speak()` was merely called.
  *  · ONE answer at a time. A new `speak()` cancels the previous one and bumps a run id, so a late
  *    `onend` from the cancelled utterance cannot continue an old queue.
+ *  · The four repairs that make the difference between a voice that works and one that silently does
+ *    nothing (all seen in Chromium):
+ *      1. `cancel()` then `speak()` in the SAME task drops the new utterance. When the platform was
+ *         busy, the first sentence is started one task later (`CANCEL_GAP_MS`), not immediately.
+ *      2. An utterance nobody references can be garbage-collected mid-sentence and stop the audio.
+ *         `current` holds the live one until it ends.
+ *      3. `speechSynthesis.paused` is page-global and survives `cancel()`. A previously paused
+ *         platform queues every new utterance and plays none, so a paused platform is resumed before
+ *         speaking.
+ *      4. `speak()` can be accepted and never start. A bounded watchdog checks whether the platform
+ *         really began, re-issues the same sentence once, and only then reports a failure.
  *  · `pause`/`resume` call the platform's own pause/resume and publish the state the platform
  *    reports. Where a browser cannot resume mid-utterance it restarts the current sentence — the UI
  *    never shows a progress percentage that would be invented.
@@ -20,9 +31,10 @@
  */
 
 import { resolveVoice } from './voice-discovery';
-import { speechLanguage, speechSegments, speechText, type SpeechPreference } from './speech-processor';
+import { speechSegments, speechText, type SpeechPreference } from './speech-processor';
+import { planSpeech } from './voice-profile';
 import type {
-  BrowserVoice, VoiceLocale, VoicePlaybackState, VoiceSelection,
+  BrowserVoice, VoiceLocale, VoicePlaybackState,
 } from './voice-types';
 
 /** The fields of `SpeechSynthesisVoice` this engine reads. Plain data, so the tests can supply it. */
@@ -82,14 +94,20 @@ export interface SpeakOptions {
 
 export interface PreviewOptions {
   locale: VoiceLocale;
-  voiceURI?: string;
   preference?: SpeechPreference;
 }
 
 export interface VoiceEngineOptions {
   synthesis?: SynthesisLike | null;
   createUtterance?: (text: string) => UtteranceLike | null;
+  /** How long a silent start is tolerated before the sentence is re-issued (tests shorten it). */
+  startTimeoutMs?: number;
 }
+
+/** Chromium drops a `speak()` issued in the same task as `cancel()`; one task of daylight is enough. */
+const CANCEL_GAP_MS = 90;
+/** Default grace period for a silent start before the sentence is re-issued once. */
+const START_TIMEOUT_MS = 4000;
 
 function browserSynthesis(): SynthesisLike | null {
   if (typeof window === 'undefined') return null;
@@ -112,31 +130,40 @@ function toBrowserVoice(voice: SynthesisVoiceLike): BrowserVoice {
   };
 }
 
-type QueueItem = { text: string; lang: string };
+type QueueItem = { text: string; lang: VoiceLocale };
 
 export class VoiceEngine {
   private readonly synthesis: () => SynthesisLike | null;
   private readonly create: (text: string) => UtteranceLike | null;
   private readonly listeners = new Set<(snapshot: VoiceEngineSnapshot) => void>();
+  private readonly startTimeout: number;
 
   private playback: VoicePlaybackState = 'idle';
   private supportedFlag = false;
   private voices: BrowserVoice[] = [];
-  private selection: VoiceSelection = {};
   private queue: QueueItem[] = [];
   private index = 0;
   private runId = 0;
   private onEnd: (() => void) | null = null;
   private onPulse: (() => void) | null = null;
   private lastText = '';
+  private lastPreference: SpeechPreference = 'auto';
   private rate = 1;
   private pitch = 1;
   private enabled = true;
   private lastError: string | null = null;
 
+  /** The live utterance. Chromium can collect an unreferenced one and stop the audio. */
+  private current: UtteranceLike | null = null;
+  /** At most one internal timer: the cancel gap, the start watchdog, or nothing. */
+  private timer = 0;
+  /** One re-issue per answer, so a platform that never starts cannot loop forever. */
+  private retries = 0;
+
   constructor(options: VoiceEngineOptions = {}) {
     this.synthesis = options.synthesis === undefined ? browserSynthesis : () => options.synthesis ?? null;
     this.create = options.createUtterance ?? browserUtterance;
+    this.startTimeout = Math.max(10, options.startTimeoutMs ?? START_TIMEOUT_MS);
     this.supportedFlag = VoiceEngine.isSupported() || options.synthesis !== undefined;
   }
 
@@ -217,10 +244,6 @@ export class VoiceEngine {
     return this.voices;
   }
 
-  setSelection(selection: VoiceSelection): void {
-    this.selection = { ...selection };
-  }
-
   setRate(rate: number): void {
     this.rate = Math.min(1.4, Math.max(0.7, Number.isFinite(rate) ? rate : 1));
   }
@@ -242,11 +265,7 @@ export class VoiceEngine {
    * cleaned the same way; segmentation is idempotent on already-clean text.
    */
   speak(text: string, options: SpeakOptions = {}): void {
-    const clean = speechText(text);
-    const segments = speechSegments(clean);
-    if (!segments.length) return;
     if (!this.enabled) return;
-
     const synth = this.synthesis();
     if (!synth) {
       this.fail('This browser has no speech synthesis, so answers cannot be read aloud.');
@@ -255,38 +274,52 @@ export class VoiceEngine {
     this.supportedFlag = true;
     this.readVoices();
 
+    const preference = options.preference ?? 'auto';
+    const plan = planSpeech(text, preference);
+    if (!plan.segments.length) return;
+
+    // Read the platform BEFORE the cancel below clears it: if it was playing (or left paused), the
+    // new utterance must wait a task or Chromium silently discards it.
+    const platformBusy = Boolean(synth.speaking || synth.pending || synth.paused)
+      || this.playback === 'speaking' || this.playback === 'paused';
+
     this.stopRun();
     this.lastError = null;
-    this.lastText = clean;
+    this.lastText = plan.segments.map((segment) => segment.text).join(' ');
+    this.lastPreference = preference;
     this.onEnd = options.onEnd ?? null;
     this.onPulse = options.onPulse ?? null;
-    const preference = options.preference ?? 'auto';
-    this.queue = segments.map((segment) => ({ text: segment, lang: speechLanguage(segment, preference) }));
+    this.queue = plan.segments.map((segment) => ({ text: segment.text, lang: segment.lang }));
     this.index = 0;
+    this.retries = 0;
     this.playback = 'idle';
     this.emit();
-    this.speakNext(this.runId);
+    this.start(platformBusy ? CANCEL_GAP_MS : 0);
   }
 
-  /** One sentence with one named voice, used by the picker's Preview button. */
+  /** One sentence, used by the profile's Test voice button. It is never remembered for Replay. */
   preview(text: string, options: PreviewOptions): void {
+    if (!this.enabled) return;
     const clean = speechSegments(speechText(text))[0];
-    if (!clean || !this.enabled) return;
+    if (!clean) return;
     const synth = this.synthesis();
     if (!synth) {
       this.fail('This browser has no speech synthesis, so voices cannot be previewed.');
       return;
     }
     this.readVoices();
+    const platformBusy = Boolean(synth.speaking || synth.pending || synth.paused)
+      || this.playback === 'speaking' || this.playback === 'paused';
     this.stopRun();
     this.lastError = null;
     this.onEnd = null;
     this.onPulse = null;
-    this.playback = 'idle';
-    this.queue = [{ text: clean, lang: speechLanguage(clean, options.preference ?? options.locale) }];
+    this.queue = [{ text: clean, lang: options.locale }];
     this.index = 0;
+    this.retries = 0;
+    this.playback = 'idle';
     this.emit();
-    this.speakNext(this.runId, resolveVoice(this.voices, options.locale, options.voiceURI));
+    this.start(platformBusy ? CANCEL_GAP_MS : 0);
   }
 
   pause(): void {
@@ -306,7 +339,7 @@ export class VoiceEngine {
   /** Say the last answer again — the same text, a fresh run, no new retrieval. */
   replay(): void {
     if (!this.lastText) return;
-    this.speak(this.lastText);
+    this.speak(this.lastText, { preference: this.lastPreference });
   }
 
   /** Stop the voice and the whole queue. `onEnd` is NOT called, so hands-free stays closed. */
@@ -356,24 +389,47 @@ export class VoiceEngine {
     this.index = 0;
     this.onEnd = null;
     this.onPulse = null;
+    this.current = null;
+    this.retries = 0;
+    this.clearTimer();
     try { this.synthesis()?.cancel(); } catch { /* nothing was speaking */ }
   }
 
-  private speakNext(id: number, forcedVoice?: BrowserVoice | null): void {
+  /** Begin the run after an optional one-task gap (see `CANCEL_GAP_MS`). */
+  private start(delay: number): void {
+    const id = this.runId;
+    const synth = this.synthesis();
+    // A page-global paused platform queues utterances and never plays them; clear it first.
+    if (synth?.paused) {
+      try { synth.resume(); } catch { /* platform refused */ }
+    }
+    if (delay <= 0) {
+      this.speakNext(id);
+      return;
+    }
+    this.schedule(delay, () => {
+      if (id === this.runId) this.speakNext(id);
+    });
+  }
+
+  private speakNext(id: number): void {
     if (id !== this.runId) return;
     const item = this.queue[this.index];
     if (!item) {
       this.finish();
       return;
     }
+    const attempted = this.index;
     this.index += 1;
     const utterance = this.create(item.text);
     if (!utterance) {
       this.fail('This browser could not create an utterance.');
       return;
     }
-    const voice = forcedVoice ?? resolveVoice(this.voices, item.lang === 'hi' ? 'hi' : 'en', this.selection[item.lang === 'hi' ? 'hi' : 'en']);
+    const voice = resolveVoice(this.voices, item.lang);
     utterance.text = item.text;
+    // A Hindi sentence never gets an English voice's tag: the platform's own voice matters for the
+    // script, and a mismatch is the classic "it speaks nothing" case on Windows.
     utterance.lang = voice?.lang ?? (item.lang === 'hi' ? 'hi-IN' : 'en-IN');
     utterance.voice = voice ?? null;
     utterance.rate = this.rate;
@@ -381,6 +437,7 @@ export class VoiceEngine {
 
     utterance.onstart = () => {
       if (id !== this.runId) return;
+      this.clearTimer();
       this.playback = 'speaking';
       this.emit();
     };
@@ -400,18 +457,33 @@ export class VoiceEngine {
     };
     utterance.onerror = (event) => {
       if (id !== this.runId) return;
+      this.clearTimer();
       const code = String(event?.error ?? '');
-      // Every browser reports a cancelled utterance as an error; that is our own stop, not a failure.
-      if (/cancel|interrupt|abort/i.test(code)) return;
+      // Our own stop changes the run id, so a cancellation that reaches this line is the platform
+      // dropping an utterance we still wanted. One re-issue, then an honest failure.
+      if (/cancel|interrupt|abort/i.test(code)) {
+        if (this.retries < 1) {
+          this.retries += 1;
+          this.index = attempted;
+          this.speakNext(id);
+          return;
+        }
+        this.fail('The browser interrupted the voice before it could finish. Press Replay.');
+        return;
+      }
       this.fail(code === 'not-allowed'
         ? 'The browser blocked speech. Press Speak once more, and allow audio for this site.'
-        : `The device voice stopped${code ? ` (${code})` : ''}.`);
+        : `The device voice stopped${code ? ` (${code})` : ''}. Press Replay.`);
     };
     utterance.onend = () => {
       if (id !== this.runId) return;
+      this.clearTimer();
+      this.current = null;
       this.speakNext(id);
     };
 
+    this.current = utterance;
+    this.armWatchdog(id, attempted);
     try {
       this.synthesis()?.speak(utterance);
     } catch (cause) {
@@ -419,7 +491,51 @@ export class VoiceEngine {
     }
   }
 
+  /**
+   * `speak()` accepted but silent — the fourth Chromium failure.
+   *
+   * If the platform is neither speaking nor pending after the grace period, the sentence is issued
+   * once more. Only a second silence is reported as an error, so a slow start is not called a failure.
+   */
+  private armWatchdog(id: number, attempted: number): void {
+    this.schedule(this.startTimeout, () => {
+      if (id !== this.runId || this.playback === 'speaking') return;
+      const synth = this.synthesis();
+      if (synth && (synth.speaking || synth.pending)) return;
+      if (this.retries > 0) {
+        this.fail('The device voice did not start. Press Test voice, or check that the voice is '
+          + 'installed in your system settings.');
+        return;
+      }
+      this.retries += 1;
+      this.index = attempted;
+      this.speakNext(id);
+    });
+  }
+
+  private schedule(ms: number, run: () => void): void {
+    this.clearTimer();
+    if (typeof setTimeout !== 'function') {
+      run();
+      return;
+    }
+    const handle = setTimeout(() => {
+      this.timer = 0;
+      run();
+    }, ms) as unknown as number;
+    // Server-side (the test suite) must not be held open by a pending watchdog.
+    (handle as unknown as { unref?: () => void })?.unref?.();
+    this.timer = handle;
+  }
+
+  private clearTimer(): void {
+    if (this.timer && typeof clearTimeout === 'function') clearTimeout(this.timer);
+    this.timer = 0;
+  }
+
   private finish(): void {
+    this.clearTimer();
+    this.current = null;
     this.playback = 'completed';
     const done = this.onEnd;
     this.onEnd = null;

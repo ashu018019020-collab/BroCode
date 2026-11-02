@@ -22,6 +22,7 @@ register('./_ts-resolve.mjs', import.meta.url);
 
 const voice = await load('src/core/voice/mentor-voice.ts');
 const discovery = await load('src/core/voice/voice-discovery.ts');
+const profile = await load('src/core/voice/voice-profile.ts');
 const engineModule = await load('src/core/voice/voice-engine.ts');
 const tools = await load('src/core/ai/smart-tools.ts');
 
@@ -190,7 +191,9 @@ test('discovery: the note names the real voice and does not promise an offline s
 
 /* ------------------------------- the engine -------------------------------- */
 
-function fakeWorld(voices) {
+const settle = (ms = 170) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+function fakeWorld(voices, options = {}) {
   const spoken = [];
   const synth = {
     speaking: false,
@@ -206,6 +209,7 @@ function fakeWorld(voices) {
   };
   const engine = new engineModule.VoiceEngine({
     synthesis: synth,
+    startTimeoutMs: options.startTimeoutMs,
     createUtterance: (text) => ({
       text,
       lang: '',
@@ -262,6 +266,8 @@ test('engine: a new answer supersedes the previous one instead of overlapping it
   engine.speak('First answer.');
   spoken[0].onstart();
   engine.speak('Second answer.');
+  // The platform was playing, so the new sentence starts one task later (see CANCEL_GAP_MS).
+  await settle();
   assert.equal(spoken.length, 2);
   spoken[0].onend?.();
   assert.equal(spoken.length, 2, 'the superseded utterance does not advance the new run');
@@ -278,6 +284,7 @@ test('engine: pause and resume publish the platform state, and replay re-speaks 
   engine.resume();
   assert.equal(engine.getSnapshot().state, 'speaking');
   engine.replay();
+  await settle();
   assert.equal(spoken.length, 2);
   assert.equal(spoken[1].text, 'A single sentence.');
 });
@@ -299,7 +306,7 @@ test('engine: preview uses the named voice without becoming the last answer', as
     V('Google हिन्दी', 'hi-IN', false, 'uri-hi'),
   ]);
   await engine.initialize(40);
-  engine.preview('Namaste, yeh ek sample hai.', { locale: 'hi', voiceURI: 'uri-hi' });
+  engine.preview('Namaste, yeh ek sample hai.', { locale: 'hi' });
   assert.equal(spoken.length, 1);
   assert.equal(spoken[0].voice.name, 'Google हिन्दी');
   engine.replay();
@@ -313,6 +320,112 @@ test('engine: with no speech synthesis the surface says so instead of pretending
   engine.speak('Anything.');
   assert.equal(engine.getSnapshot().state, 'error');
   assert.match(engine.getSnapshot().lastError, /no speech synthesis/i);
+});
+
+/* --------------------------- the one voice profile -------------------------- */
+
+test('profile: one name, and two real voices behind it — never one voice claimed as two', () => {
+  const both = [V('Microsoft Kalpana', 'hi-IN'), V('Microsoft Heera', 'en-IN')];
+  const pair = profile.naturalVoices(both);
+  assert.equal(pair.hi.name, 'Microsoft Kalpana');
+  assert.equal(pair.en.name, 'Microsoft Heera');
+  assert.equal(pair.shared, false, 'two different voices are not called the same speaker');
+  const one = profile.naturalVoices([
+    V('Google हिन्दी', 'hi-IN', true, 'uri-google'),
+    V('Google हिन्दी', 'en-IN', true, 'uri-google'),
+  ]);
+  assert.equal(one.shared, true, 'the same reported voice for both tags may be called one voice');
+  assert.equal(profile.NATURAL_VOICE.name, 'BroCode Natural Voice');
+  assert.match(profile.NATURAL_VOICE.subtitle, /Hindi \+ English/);
+});
+
+test('profile: a half-installed device says what will actually happen', () => {
+  const enOnly = [V('Microsoft Heera', 'en-IN')];
+  assert.equal(profile.profileStatus(enOnly, 'auto'), 'partial');
+  assert.equal(profile.profileStatus(enOnly, 'en'), 'ready');
+  assert.match(profile.profileMessage(enOnly, 'auto'), /No Hindi voice is installed/);
+  assert.match(profile.profileMessage(enOnly, 'auto'), /may sound wrong/);
+  assert.equal(profile.profileMessage(enOnly, 'en'), '');
+  assert.equal(profile.profileStatus([], 'auto'), 'unavailable');
+  assert.match(profile.profileMessage([], 'auto'), /No speech voice is installed/);
+});
+
+test('profile: every sentence goes to a voice that can read it, and an explicit choice wins', () => {
+  const hindi = profile.planSpeech('नमस्ते! आज हम Python सीखेंगे।', 'auto');
+  assert.equal(hindi.lang, 'hi');
+  assert.ok(hindi.segments.every((segment) => segment.lang === 'hi'));
+
+  const mixed = profile.planSpeech('A tuple cannot change. यह ज़रूरी है.', 'auto');
+  assert.equal(mixed.lang, 'en', 'the dominant language is the longer one');
+  assert.equal(mixed.segments[0].lang, 'en');
+  assert.equal(mixed.segments[1].lang, 'hi', 'the Devanagari sentence keeps the Hindi voice');
+
+  const forced = profile.planSpeech('A tuple cannot change. यह ज़रूरी है.', 'en');
+  assert.ok(forced.segments.every((segment) => segment.lang === 'en'), 'explicit English is not overridden');
+
+  const hinglish = profile.planSpeech('Chalo aaj Python seekhte hain.', 'auto');
+  assert.equal(hinglish.lang, 'hi', 'Roman Hinglish is Hindi, not English');
+});
+
+/* --------------------------- playback repairs ----------------------------- */
+
+test('engine: a platform that was playing gets one task before the new sentence', async () => {
+  const { engine, synth, spoken } = fakeWorld([V('Google UK English Female', 'en-GB', false)]);
+  await engine.initialize(40);
+  engine.speak('First answer.');
+  synth.speaking = true;
+  spoken[0].onstart();
+  engine.speak('Second answer.');
+  assert.equal(spoken.length, 1, 'the new sentence waits out the cancel');
+  await settle();
+  assert.equal(spoken.length, 2);
+  assert.equal(spoken[1].text, 'Second answer.');
+});
+
+test('engine: a platform left paused is resumed before anything is queued', async () => {
+  const { engine, synth, spoken } = fakeWorld([V('Google UK English Female', 'en-GB', false)]);
+  await engine.initialize(40);
+  synth.paused = true; // another tab, or an earlier Pause, left the page-global flag on
+  engine.speak('Speak anyway.');
+  assert.equal(synth.paused, false, 'the stuck pause is cleared');
+  await settle();
+  assert.equal(spoken.length, 1);
+});
+
+test('engine: an interrupted utterance is re-issued once instead of dying silently', async () => {
+  const { engine, spoken } = fakeWorld([V('Google UK English Female', 'en-GB', false)]);
+  await engine.initialize(40);
+  engine.speak('Interrupted answer.');
+  spoken[0].onerror({ error: 'interrupted' });
+  assert.equal(spoken.length, 2, 'the same sentence is tried again');
+  assert.equal(spoken[1].text, 'Interrupted answer.');
+  spoken[1].onerror({ error: 'interrupted' });
+  assert.equal(engine.getSnapshot().state, 'error');
+  assert.match(engine.getSnapshot().lastError, /Replay/);
+});
+
+test('engine: a start that never happens is retried, then reported as a failure', async () => {
+  const { engine } = fakeWorld([V('Google UK English Female', 'en-GB', false)], { startTimeoutMs: 20 });
+  await engine.initialize(40);
+  let ended = 0;
+  engine.speak('Never starts.', { onEnd: () => { ended += 1; } });
+  await settle(120);
+  assert.equal(engine.getSnapshot().state, 'error');
+  assert.match(engine.getSnapshot().lastError, /did not start/);
+  assert.equal(ended, 0, 'a failure is not a completion');
+});
+
+/* ------------------------------ the surface ------------------------------- */
+
+test('surface: one profile on screen — no dropdown and no device voice names', () => {
+  const center = read('src/features/ai/studio/VoiceControlCenter.tsx');
+  assert.doesNotMatch(center, /<select/, 'the voice dropdown is gone');
+  assert.doesNotMatch(center, /selectVoice|previewVoice|availableVoices/, 'no per-voice picker callbacks');
+  assert.match(center, /profile\.name/);
+  assert.match(center, /Test voice/);
+  const hook = read('src/components/shared/useMentorVoice.ts');
+  assert.doesNotMatch(hook, /setSelection|selectVoice|previewVoice/, 'the hook exposes no voice list');
+  assert.doesNotMatch(hook, /voices: VoiceSelection/, 'no stored per-language voice picks');
 });
 
 /* ------------------------------- smart tools ------------------------------ */
