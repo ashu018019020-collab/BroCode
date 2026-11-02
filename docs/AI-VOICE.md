@@ -93,6 +93,25 @@ silently substituting an English one.
 
 They are `role="switch"` cards with their own state line, not a shared checkbox row.
 
+## Voice conversation (speak → answer → speak)
+
+What the hands-free loop actually depends on:
+
+- **One click unlocks audio.** Chrome and Safari refuse a `speak()` that happens after an `await`
+  unless the page was activated. Every send, mic press and switch to Voice mode calls
+  `VoiceEngine.prime()`, which speaks one silent, empty utterance from that gesture. It is not part of
+  the answer: `lastText`, the queue and `onEnd` are untouched.
+- **The microphone starts in the language the learner will speak.** `recognitionLocale()` follows the
+  last answer — Hindi answer → `hi-IN`, English answer → `en-IN` — and an explicit choice wins.
+  Recognition and synthesis are separate services, so this is decided separately from the voice.
+- **Listening ends after silence, not after a stopwatch.** The 20-second ceiling is reset by every
+  interim or final transcript, and four empty passes stop the loop instead of retrying forever.
+- **Manual controls never depend on Auto speak.** Speak (newest answer) and a message's Replay work
+  with Auto speak off; Mute still silences everything; Test voice deliberately ignores mute so the
+  panel can prove audio works.
+- **Hands-free reopens the mic only after a natural end.** `Stop` and errors never run `onEnd`, and
+  `startListening()` stops the voice first, so the recogniser cannot transcribe the mentor.
+
 ## Microphone
 
 Recognition is unchanged: Chromium's `SpeechRecognition`, language fallback chain

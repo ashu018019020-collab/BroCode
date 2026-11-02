@@ -415,7 +415,44 @@ test('engine: a start that never happens is retried, then reported as a failure'
   assert.equal(ended, 0, 'a failure is not a completion');
 });
 
+test('profile: the microphone starts in the language the learner is likely to speak', () => {
+  assert.equal(profile.recognitionLocale('auto', 'A tuple cannot change.'), 'en-IN');
+  assert.equal(profile.recognitionLocale('auto', 'नमस्ते, Python क्या है?'), 'hi-IN');
+  assert.equal(profile.recognitionLocale('hi'), 'hi-IN');
+  assert.equal(profile.recognitionLocale('en', 'नमस्ते'), 'en-IN', 'an explicit choice is not overridden');
+});
+
+test('engine: a click primes the queue without becoming the answer', async () => {
+  const { engine, spoken } = fakeWorld([V('Google UK English Female', 'en-GB', false)]);
+  await engine.initialize(40);
+  engine.prime();
+  assert.equal(spoken.length, 1, 'one silent utterance unlocks the platform');
+  assert.equal(spoken[0].volume, 0, 'the unlock is silent');
+  assert.notEqual(engine.getSnapshot().state, 'speaking', 'a prime is not an answer');
+  engine.replay();
+  assert.equal(spoken.length, 1, 'a prime is never remembered for replay');
+});
+
+test('engine: Test voice is heard even while the mentor is muted', async () => {
+  const { engine, spoken } = fakeWorld([V('Google UK English Female', 'en-GB', false)]);
+  await engine.initialize(40);
+  engine.setEnabled(false);
+  engine.preview('Sample sentence.', { locale: 'en' });
+  assert.equal(spoken.length, 1, 'mute silences answers, not an explicit test');
+  engine.speak('An answer.');
+  assert.equal(spoken.length, 1, 'answers stay muted');
+});
+
 /* ------------------------------ the surface ------------------------------- */
+
+test('surface: voice input and manual replay do not depend on Auto speak', () => {
+  const studio = read('src/features/ai/studio/MentorStudio.tsx');
+  assert.match(studio, /voice\.prime\(\)/, 'a click unlocks speech before the async answer');
+  assert.match(studio, /const toggleMic/, 'the microphone has one guarded entry point');
+  assert.match(studio, /const speakLast/, 'Speak reads the newest answer');
+  assert.match(studio, /speakFinal\(text, \[\], false\)/, 'a manual replay ignores the Auto speak switch');
+  assert.match(studio, /role === 'mentor'/, 'Speak is enabled by the answer, not by a prior spoken one');
+});
 
 test('surface: one profile on screen — no dropdown and no device voice names', () => {
   const center = read('src/features/ai/studio/VoiceControlCenter.tsx');

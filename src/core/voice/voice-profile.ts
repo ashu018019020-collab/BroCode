@@ -14,7 +14,7 @@
  * Pure: no `window`, no utterance, no storage. The suite drives it with plain objects.
  */
 
-import { availabilityMessage, voicesForLocale } from './voice-discovery';
+import { availabilityMessage, resolveLocale, voicesForLocale } from './voice-discovery';
 import { speechLanguage, speechSegments, speechText } from './speech-processor';
 import type { BrowserVoice, VoiceLanguagePreference, VoiceLocale } from './voice-types';
 
@@ -87,6 +87,22 @@ export function profileMessage(
       + 'voice — the words may sound unclear. Install an English voice in your system settings.';
   }
   return '';
+}
+
+/**
+ * The language the microphone should start with for the NEXT question.
+ *
+ * Recognition and synthesis are different services: Chrome's recogniser will not turn Hindi speech
+ * into text with an English-only language tag, and a Hindi-speaking learner typing nothing at all
+ * reads that as "the mic does not work". `auto` therefore follows the last answer — a Hindi answer
+ * invites a Hindi reply — and an explicit choice is used as-is.
+ */
+export function recognitionLocale(
+  preference: VoiceLanguagePreference = 'auto',
+  sample = '',
+): 'hi-IN' | 'en-IN' {
+  const lang = preference === 'auto' ? resolveLocale('auto', sample) : preference;
+  return lang === 'hi' ? 'hi-IN' : 'en-IN';
 }
 
 export interface SpeechPlanSegment {

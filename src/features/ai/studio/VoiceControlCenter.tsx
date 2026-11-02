@@ -237,6 +237,14 @@ export function VoiceControlCenter({ voice, onSpeakLast, onMic, hasSpoken }: Voi
         </p>
       )}
 
+      {!voice.enabled && (
+        <p className="voice-warning" role="status">
+          <VolumeX size={13} />
+          <span>Spoken answers are muted, so no answer will be read aloud.</span>
+          <button type="button" className="link" onClick={() => voice.setEnabled(true)}>Unmute</button>
+        </p>
+      )}
+
       {!profileReady && voice.supported && !profile.message && (
         <p className="voice-warning" role="status">
           <Info size={13} />

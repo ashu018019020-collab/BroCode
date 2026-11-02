@@ -4,7 +4,7 @@ import {
 } from '../../core/voice/voice-engine';
 import { describeVoice, resolveLocale, voiceCounts } from '../../core/voice/voice-discovery';
 import {
-  NATURAL_VOICE, naturalVoices, profileMessage, profileStatus,
+  NATURAL_VOICE, naturalVoices, profileMessage, profileStatus, recognitionLocale,
   type NaturalVoiceStatus,
 } from '../../core/voice/voice-profile';
 import { mentorVoiceState, speechText, type MentorVoiceState } from '../../core/voice/mentor-voice';
@@ -93,6 +93,8 @@ export interface MentorVoice {
   setSpeed: (speed: number) => void;
   setLangPref: (pref: VoiceLanguagePreference) => void;
   testVoice: () => void;
+  /** Unlock the platform's speech queue from a click (Chrome/Safari activation). */
+  prime: () => void;
   refreshVoices: () => void;
   /** Speak the FINAL assistant text. `onEnd` runs only after real completion. */
   speak: (text: string, onEnd?: () => void) => void;
@@ -205,6 +207,8 @@ export function useMentorVoice(busy = false): MentorVoice {
   const recognition = useRef<RecognitionLike | null>(null);
   const recognitionWanted = useRef(false);
   const recognitionLang = useRef(0);
+  /** Consecutive empty recognition passes; capped so a silent room cannot loop forever. */
+  const recognitionFailures = useRef(0);
   const micTimer = useRef(0);
 
   const supported = ready ? snapshot.supported : VoiceEngine.isSupported();
@@ -340,6 +344,8 @@ export function useMentorVoice(busy = false): MentorVoice {
     engine.preview(SAMPLE[locale], { locale, preference: pref.lang });
   }, [engine, lastSpoken]);
 
+  const prime = useCallback(() => { engine.prime(); }, [engine]);
+
   const refreshVoices = useCallback(() => {
     engine.refreshVoices();
     setSnapshot(engine.getSnapshot());
@@ -376,28 +382,47 @@ export function useMentorVoice(busy = false): MentorVoice {
     stopListening();
     recognitionWanted.current = true;
     recognitionLang.current = 0;
+    recognitionFailures.current = 0;
     setMicDenied(false);
     setInterim('');
-    const languages = recognitionLanguages(prefsRef.current.lang === 'hi' ? 'hi-IN' : 'en-IN');
+    // The recogniser follows the last answer: a Hindi answer invites a Hindi reply. Starting every
+    // question with `en-IN` is why a Hindi question came back as nothing at all.
+    const languages = recognitionLanguages(recognitionLocale(prefsRef.current.lang, lastSpoken));
     setListening(true);
 
-    void navigator.mediaDevices?.getUserMedia({ audio: true }).then((stream) => {
-      if (!recognitionWanted.current) {
-        stream.getTracks().forEach((track) => track.stop());
-        return;
-      }
-      micStream.current = stream;
-      const context = ensureAudio();
-      if (!context) return;
-      const node = context.createAnalyser();
-      node.fftSize = 512;
-      context.createMediaStreamSource(stream).connect(node);
-      micAnalyser.current = node;
-      setMicPermission('granted');
-    }).catch(() => {
-      // The recogniser can still work with its own permission prompt; the level meter simply stays flat.
-      setMicPermission((current) => (current === 'granted' ? current : 'denied'));
-    });
+    // `mediaDevices` is absent on an insecure origin and in some webviews; calling it unguarded threw
+    // before recognition ever started, which looked exactly like a broken microphone.
+    const media = typeof navigator !== 'undefined' ? navigator.mediaDevices : undefined;
+    if (media?.getUserMedia) {
+      void media.getUserMedia({ audio: true }).then((stream) => {
+        if (!recognitionWanted.current) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        micStream.current = stream;
+        const context = ensureAudio();
+        if (!context) return;
+        const node = context.createAnalyser();
+        node.fftSize = 512;
+        context.createMediaStreamSource(stream).connect(node);
+        micAnalyser.current = node;
+        setMicPermission('granted');
+      }).catch((cause: unknown) => {
+        // The recogniser can still work with its own permission prompt; the level meter simply stays flat.
+        const name = String((cause as { name?: string })?.name ?? '');
+        const blocked = name === 'NotAllowedError' || name === 'SecurityError';
+        setMicPermission((current) => (current === 'granted' ? current : blocked ? 'denied' : 'unknown'));
+      });
+    }
+
+    // Listening ends after 20 seconds of SILENCE, not 20 seconds from the press: a learner who pauses
+    // to think mid-question must not have their microphone closed under them.
+    const resetMicTimer = () => {
+      if (micTimer.current) window.clearTimeout(micTimer.current);
+      micTimer.current = window.setTimeout(() => {
+        if (recognitionWanted.current) stopListening();
+      }, 20_000);
+    };
 
     const arm = () => {
       if (!recognitionWanted.current || !mounted.current) return;
@@ -406,6 +431,8 @@ export function useMentorVoice(busy = false): MentorVoice {
       instance.continuous = false;
       instance.interimResults = true;
       instance.onresult = (event) => {
+        recognitionFailures.current = 0;
+        resetMicTimer();
         let final = '';
         let partial = '';
         for (let i = event.resultIndex; i < event.results.length; i += 1) {
@@ -430,6 +457,11 @@ export function useMentorVoice(busy = false): MentorVoice {
         recognition.current = null;
         if (!mounted.current || !recognitionWanted.current) return;
         if (event.error === 'no-speech' || event.error === 'aborted') {
+          recognitionFailures.current += 1;
+          if (recognitionFailures.current > 4) {
+            stopListening();
+            return;
+          }
           window.setTimeout(() => { if (recognitionWanted.current) { try { arm(); } catch { /* retry later */ } } }, 300);
           return;
         }
@@ -459,12 +491,8 @@ export function useMentorVoice(busy = false): MentorVoice {
     };
 
     arm();
-    // A press that never hears anything must not hold the microphone forever.
-    micTimer.current = window.setTimeout(() => {
-      if (!recognitionWanted.current) return;
-      stopListening();
-    }, 20_000);
-  }, [engine, ensureAudio, stopListening]);
+    resetMicTimer();
+  }, [engine, ensureAudio, lastSpoken, stopListening]);
 
   const toggleListening = useCallback((onTranscript: (text: string) => void) => {
     if (recognitionWanted.current) stopListening();
@@ -552,6 +580,7 @@ export function useMentorVoice(busy = false): MentorVoice {
     setSpeed,
     setLangPref,
     testVoice,
+    prime,
     refreshVoices,
     speak,
     pause,

@@ -53,6 +53,7 @@ export interface UtteranceLike {
   voice: SynthesisVoiceLike | null;
   rate: number;
   pitch: number;
+  volume: number;
   onstart: (() => void) | null;
   onend: (() => void) | null;
   onerror: ((event: { error?: string }) => void) | null;
@@ -259,6 +260,40 @@ export class VoiceEngine {
   }
 
   /**
+   * Unlock the platform's speech queue from a real user gesture.
+   *
+   * Chrome and Safari only allow `speak()` once the page has been activated; an answer that arrives
+   * from a fetch a second later is then refused (`not-allowed`) or dropped silently — the exact
+   * "Ready but no sound" report. Called from the send and mic clicks, this speaks one silent, empty
+   * utterance so the later answer is allowed. It is NOT part of the answer: `lastText`, the queue and
+   * `onEnd` are untouched, and nothing is announced.
+   */
+  prime(): void {
+    const synth = this.synthesis();
+    if (!synth) return;
+    if (this.playback === 'speaking' || this.playback === 'paused') return;
+    if (synth.paused) {
+      try { synth.resume(); } catch { /* platform refused */ }
+    }
+    const utterance = this.create('.');
+    if (!utterance) return;
+    const voice = resolveVoice(this.voices, 'en');
+    utterance.text = '.';
+    utterance.lang = voice?.lang ?? 'en-IN';
+    utterance.voice = voice ?? null;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 0;
+    utterance.onstart = null;
+    utterance.onend = null;
+    utterance.onerror = null;
+    utterance.onpause = null;
+    utterance.onresume = null;
+    utterance.onboundary = null;
+    try { synth.speak(utterance); } catch { /* activation still missing; speak() reports it */ }
+  }
+
+  /**
    * Speak one FINAL answer.
    *
    * `speechText` is applied here as well as by the caller, so a direct call from any surface is
@@ -297,9 +332,12 @@ export class VoiceEngine {
     this.start(platformBusy ? CANCEL_GAP_MS : 0);
   }
 
-  /** One sentence, used by the profile's Test voice button. It is never remembered for Replay. */
+  /**
+   * One sentence, used by the profile's Test voice button. It is never remembered for Replay, and it
+   * deliberately ignores the mute switch: pressing Test voice is an explicit request to hear a voice,
+   * so a muted panel must still be able to prove that audio works.
+   */
   preview(text: string, options: PreviewOptions): void {
-    if (!this.enabled) return;
     const clean = speechSegments(speechText(text))[0];
     if (!clean) return;
     const synth = this.synthesis();
@@ -434,6 +472,7 @@ export class VoiceEngine {
     utterance.voice = voice ?? null;
     utterance.rate = this.rate;
     utterance.pitch = this.pitch;
+    utterance.volume = 1;
 
     utterance.onstart = () => {
       if (id !== this.runId) return;

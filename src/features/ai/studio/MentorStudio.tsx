@@ -103,8 +103,13 @@ export function MentorStudio() {
     return chat.turns.filter((turn) => turn.text.toLowerCase().includes(needle));
   }, [chat.turns, query]);
 
-  const speakFinal = useCallback((replyText: string, sources: { title: string }[] = []) => {
-    if (voice.muted || !voice.autoSpeak) return;
+  /**
+   * Speak an answer. `auto` respects the Auto speak switch; a manual press bypasses it (pressing
+   * Replay while Auto speak is off is an explicit request), while Mute still silences everything.
+   */
+  const speakFinal = useCallback((replyText: string, sources: { title: string }[] = [], auto = true) => {
+    if (voice.muted) return;
+    if (auto && !voice.autoSpeak) return;
     const speech = spokenReply(replyText, sources);
     if (!speech) return;
     voice.speak(speech, () => {
@@ -112,9 +117,23 @@ export function MentorStudio() {
     });
   }, [voice]);
 
+  /** Speak the newest mentor turn — independent of whether Auto speak was ever on. */
+  const speakLast = useCallback(() => {
+    for (let i = chat.turns.length - 1; i >= 0; i -= 1) {
+      const turn = chat.turns[i];
+      if (turn?.role === 'mentor' && turn.text.trim()) {
+        speakFinal(turn.text, turn.sources ?? [], false);
+        return;
+      }
+    }
+  }, [chat.turns, speakFinal]);
+
   const ask = useCallback(async (text: string) => {
     const clean = text.trim();
     if (!clean) return;
+    // Unlock speech inside this click: the answer arrives later, after an await, and a browser that
+    // never saw a gesture refuses it.
+    voice.prime();
     voice.interrupt();
     const lang = speechLanguage(clean, voice.langPref);
     const result = await chat.ask(clean, lang === 'hi' ? 'hi-IN' : 'en-IN');
@@ -130,6 +149,18 @@ export function MentorStudio() {
   }, [ask]);
   const handleTranscriptRef = useRef(handleTranscript);
   handleTranscriptRef.current = handleTranscript;
+
+  const toggleMic = useCallback(() => {
+    if (!voice.recognitionSupported) {
+      toast('Voice input needs Chrome or Edge — this browser cannot listen. You can still type.', 'warning');
+      return;
+    }
+    if (voice.micPermission === 'denied') {
+      toast('The microphone is blocked. Allow it for this site in the browser settings, then press Ask again.', 'warning');
+    }
+    voice.prime();
+    voice.toggleListening(handleTranscriptRef.current);
+  }, [voice]);
 
   const select = (next: StudioTab) => {
     const nextParams = new URLSearchParams(params);
@@ -223,20 +254,21 @@ export function MentorStudio() {
             onMode={(next) => {
               setMode(next);
               voice.setAutoSpeak(next === 'voice');
+              if (next === 'voice') voice.prime();
             }}
             onSend={(text) => { void ask(text); }}
             onClear={() => { voice.interrupt(); chat.clear(); }}
-            onReplay={(text) => speakFinal(text)}
-            onMic={() => voice.toggleListening(handleTranscriptRef.current)}
+            onReplay={(text) => speakFinal(text, [], false)}
+            onMic={toggleMic}
             starters={STARTERS}
           />
 
           <aside className="studio-right">
             <VoiceControlCenter
               voice={voice}
-              hasSpoken={Boolean(voice.lastSpoken)}
-              onSpeakLast={voice.replay}
-              onMic={() => voice.toggleListening(handleTranscriptRef.current)}
+              hasSpoken={chat.turns.some((turn) => turn.role === 'mentor' && turn.text.trim().length > 0)}
+              onSpeakLast={speakLast}
+              onMic={toggleMic}
             />
             <SmartToolsPanel
               busy={chat.busy}
