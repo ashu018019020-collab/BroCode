@@ -138,9 +138,10 @@ export function MentorStudio() {
     const clean = text.trim();
     if (!clean) return;
     // Unlock speech inside this click: the answer arrives later, after an await, and a browser that
-    // never saw a gesture refuses it.
-    voice.prime();
+    // never saw a gesture refuses it. Interrupt FIRST — `interrupt()` cancels the platform queue,
+    // which used to cancel the silent unlocking utterance we had just spoken.
     voice.interrupt();
+    voice.prime();
     const lang = speechLanguage(clean, voice.langPref);
     const result = await chat.ask(clean, lang === 'hi' ? 'hi-IN' : 'en-IN');
     if (!result) {
@@ -150,12 +151,17 @@ export function MentorStudio() {
     speakFinal(result.reply.spoken, result.answer?.sources?.map((source) => ({ title: source.title })) ?? []);
   }, [chat, speakFinal, voice]);
 
+  // Read the switch from a ref: the recogniser holds the callback from the render that opened the
+  // mic, so a captured `voice.handsFree` could still say OFF for the first transcript after enabling
+  // it — the loop then stayed silent. The ref always answers for the CURRENT switch.
+  const handsFreeRef = useRef(voice.handsFree);
+  handsFreeRef.current = voice.handsFree;
   const handleTranscript = useCallback((text: string) => {
     // Hands-free is the automatic loop. Everywhere else the transcript is a DRAFT in the composer, so
     // a misheard word is edited before it becomes a question instead of costing an answer.
-    if (voice.handsFree) { void ask(text); return; }
+    if (handsFreeRef.current) { void ask(text); return; }
     setDictation({ text, id: Date.now() });
-  }, [ask, voice.handsFree]);
+  }, [ask]);
   const handleTranscriptRef = useRef(handleTranscript);
   handleTranscriptRef.current = handleTranscript;
 

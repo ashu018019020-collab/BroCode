@@ -169,6 +169,25 @@ test('a document with no body, answer or explanation can never become the answer
   assert.ok(!hits.some(({ document }) => document.id === 'title-only'), 'a title-only document is not a candidate');
 });
 
+test('a quiz item whose title repeats the ask does not answer a plain concept question', () => {
+  // The real defect: bank titles are written in the learner's phrasing ("explain: … simple words
+  // me?"), so the word "explain" matched perfectly and the quiz prompt was read aloud as the answer.
+  const index = {
+    version: 1,
+    sourceHash: 'fixture',
+    counts: { documents: 2, bankQuestions: 1, sections: 0, courses: 0, tracks: 0, playbook: 0, notebooks: 0, mockInterviews: 0, intensiveInterviewQuestions: 0, byKind: { question: 1, concept: 1 } },
+    courses: [],
+    trackRoutes: [],
+    documents: [
+      { id: 'quiz', kind: 'question', type: 'logic', title: 'explain: decorators simple words me?', route: '/questions?section=s01&type=logic', source: 'bank.json', sourceRef: 'bank.json#1', answer: 'Quiz answer that does not teach decorators.' },
+      { id: 'lesson', kind: 'concept', title: 'Functions & Reusable Python', route: '/lesson/s01/learn', source: 'notes.md', sourceRef: 'notes.md#1', body: 'A decorator takes a function and returns a wrapped function, so behaviour is added without editing the original.' },
+    ],
+    postings: { explain: [0], decorators: [0, 1], simple: [0], words: [0], me: [0], a: [0], function: [0, 1], returns: [0, 1] },
+  };
+  const hits = retrieveKnowledge(index, 'Explain decorators in simple words');
+  assert.equal(hits[0]?.document.id, 'lesson', 'the lesson that teaches decorators must answer, not the quiz prompt');
+});
+
 test('SQL interview queries retrieve real published answers with traceable source records', async () => {
   const index = await buildAiIndex();
   const hits = retrieveKnowledge(index, 'SQL interview question about CTE', { course: 'sql' });

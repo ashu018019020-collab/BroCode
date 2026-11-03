@@ -71,6 +71,66 @@ const STOP = new Set([
 const tokenize = (text: string) => (text.toLowerCase().match(/[a-z0-9_]+/g) ?? [])
   .filter((token) => token.length > 1 && !STOP.has(token));
 
+/**
+ * Words that describe the ASK, not the topic.
+ *
+ * The corpus is overwhelmingly assessment material whose titles are written in the learner's own
+ * phrasing ("explain: OOP ka benefit simple words me?"). Matching `explain`/`simple`/`words` scored
+ * those titles as a perfect hit and the +1.5 title boost finished the job, so "Explain Python
+ * decorators in simple words" answered with an unrelated quiz prompt. Dropping them leaves the topic
+ * (`python decorators`) and lets the lesson that teaches it win.
+ */
+const INSTRUCTION = new Set([
+  'explain', 'explains', 'explained', 'describe', 'define', 'definition', 'meaning', 'simple',
+  'simply', 'words', 'word', 'example', 'examples', 'eg', 'why', 'what', 'how', 'when', 'where',
+  'which', 'difference', 'differentiate', 'compare', 'tell', 'give', 'show', 'use', 'using', 'used',
+  'work', 'works', 'working', 'understand', 'overview', 'summary', 'summarize', 'basic', 'basics',
+  'beginner', 'introduction', 'intro', 'question', 'questions', 'answer', 'answers', 'please',
+  'help', 'kya', 'kyaa', 'kaise', 'kyu', 'kyun', 'batao', 'bata', 'samjhao', 'samjha', 'matlab',
+  'bhasha', 'hota', 'hoti', 'hote', 'chahiye', 'dedo', 'do', 'karo', 'karte', 'kaun', 'kab',
+  'kahan', 'kitna', 'kitni', 'padho', 'seekho', 'bolo', 'suno',
+]);
+
+/** Documents that ASK something rather than teach it. */
+const QUESTION_KINDS = new Set(['question', 'checkpoint', 'defense-question']);
+
+/**
+ * Navigation and status surfaces. They are real pages, but "Python Core 100% mastered" is not an
+ * explanation of Python — a progress badge must never be read aloud as the answer.
+ */
+const NAVIGATION_KINDS = new Set(['career', 'roadmap', 'track-topic', 'playbook', 'notebook-code']);
+
+/**
+ * A document is an assessment item when it is a question kind OR carries a bank `type`
+ * (`logic`, `theory`, `solved`, `checkpoint`…). Those are still answers when the learner explicitly
+ * asks for an interview/project question, and are demoted — never dropped — otherwise.
+ */
+function isAssessmentItem(document: KnowledgeDocument): boolean {
+  return QUESTION_KINDS.has(document.kind) || Boolean(document.type);
+}
+
+/**
+ * The query's TOPIC terms, falling back to every term when the ask is only instruction words
+ * ("explain in simple words" has no topic of its own, so nothing is stripped).
+ */
+function queryTerms(question: string): string[] {
+  const all = [...new Set(tokenize(question))];
+  const topic = all.filter((term) => !INSTRUCTION.has(term));
+  return topic.length ? topic : all;
+}
+
+/**
+ * Postings for one query term. The index is not stemmed, so a plural ask must still find the
+ * singular passage ("decorators" → "decorator"); only an exact miss falls back.
+ */
+function postingsFor(index: KnowledgeIndex, term: string): number[] {
+  const direct = index.postings[term];
+  if (direct) return direct;
+  const singular = term.replace(/(?:es|s)$/, '');
+  if (singular !== term) return index.postings[singular] ?? [];
+  return [];
+}
+
 /** Everything a document can teach from — the title alone is never an answer. */
 function teachableText(document: KnowledgeDocument): string {
   return `${document.body ?? ''} ${document.answer ?? ''} ${document.explanation ?? ''}`.trim();
@@ -93,20 +153,24 @@ export function retrieveKnowledge(
   limit = 5,
 ): KnowledgeHit[] {
   const query = question.trim();
-  const terms = [...new Set(tokenize(query))];
+  const terms = queryTerms(query);
   if (!terms.length || limit <= 0) return [];
 
   const intent = intentKind(query);
-  const scores = new Map<number, number>();
+  // Distinct query terms per document: a doc reachable through both the plural and the singular
+  // posting must count once, or a single word would look like two matches.
+  const matched = new Map<number, Set<string>>();
   for (const term of terms) {
-    for (const docIndex of index.postings[term] ?? []) {
-      scores.set(docIndex, (scores.get(docIndex) ?? 0) + 1);
+    for (const docIndex of postingsFor(index, term)) {
+      const bucket = matched.get(docIndex) ?? new Set<string>();
+      bucket.add(term);
+      matched.set(docIndex, bucket);
     }
   }
 
-  const phrase = query.toLowerCase();
   const hits: KnowledgeHit[] = [];
-  for (const [docIndex, overlap] of scores) {
+  for (const [docIndex, matchedTerms] of matched) {
+    const overlap = matchedTerms.size;
     const document = index.documents[docIndex];
     if (!document) continue;
     if (intent === 'interview' && document.kind !== 'interview' && document.type !== 'interview') continue;
@@ -116,7 +180,12 @@ export function retrieveKnowledge(
     if (teachableText(document).length < 24) continue;
 
     let score = overlap / Math.sqrt(terms.length);
-    if (document.title.toLowerCase().includes(phrase)) score += 1.5;
+    // Title coverage of the TOPIC words only: a quiz title that repeats "explain … simple words"
+    // earns nothing for the instruction part of the ask.
+    const title = document.title.toLowerCase();
+    const inTitle = terms.filter((term) => title.includes(term)
+      || (term.length > 3 && title.includes(term.replace(/(?:es|s)$/, '')))).length;
+    if (inTitle) score += (inTitle === terms.length ? 1.5 : 0.6) * (inTitle / terms.length);
     if (context.sectionId && document.sectionId === context.sectionId) score += 0.7;
     if (context.course && document.course === context.course) score += 0.35;
     if (context.type && document.type === context.type) score += 0.25;
@@ -135,6 +204,12 @@ export function retrieveKnowledge(
     }
     if (intent === 'interview' && document.type === 'interview') score += 0.5;
     if (intent === 'project' && document.kind === 'project') score += 0.5;
+    // A plain concept ask is answered by the material that TEACHES it. An explicit interview or
+    // project ask is the opposite case: there the bank item is the right answer, so it is untouched.
+    if (!intent) {
+      if (isAssessmentItem(document) || NAVIGATION_KINDS.has(document.kind)) score *= 0.6;
+      else score += 0.75;
+    }
     hits.push({ document, score });
   }
 

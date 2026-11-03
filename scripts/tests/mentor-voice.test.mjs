@@ -460,7 +460,9 @@ test('surface: the answer engine and the voice report their own state', () => {
   assert.match(ask, /error: string \| null/, 'the engine exposes its own error');
   const studio = read('src/features/ai/studio/MentorStudio.tsx');
   assert.match(studio, /aiError=\{chat\.error\}/, 'the panel receives the engine error');
-  assert.match(studio, /if \(voice\.handsFree\)/, 'hands-free sends; other dictation is a draft');
+  assert.match(studio, /if \(handsFreeRef\.current\)/, 'hands-free sends; other dictation is a draft');
+  assert.match(studio, /handsFreeRef\.current = voice\.handsFree/, 'the loop reads the CURRENT switch, not the render that opened the mic');
+  assert.match(studio, /voice\.interrupt\(\);\s*\n\s*voice\.prime\(\);/, 'interrupt runs before prime, so cancelling the queue cannot cancel the unlock');
   assert.match(studio, /setDictation/, 'a transcript is editable before it is sent');
   assert.match(studio, /const setHandsFree/, 'hands-free opens the microphone');
   const panel = read('src/features/ai/studio/ConversationPanel.tsx');
