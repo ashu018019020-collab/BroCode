@@ -71,6 +71,9 @@ export interface MentorVoice {
   interim: string;
   error: string | null;
   micPermission: MicPermission;
+  /** Why the microphone stopped, in words a learner can act on. Null when nothing went wrong. */
+  micError: string | null;
+  dismissMicError: () => void;
   /**
    * The ONE profile the learner sees. The installed voices behind it are an implementation detail:
    * they are named only in the diagnostic details, never in the main panel.
@@ -191,6 +194,7 @@ export function useMentorVoice(busy = false): MentorVoice {
   const [ready, setReady] = useState(false);
   const [listening, setListening] = useState(false);
   const [micDenied, setMicDenied] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
   const [micPermission, setMicPermission] = useState<MicPermission>('unknown');
   const [interim, setInterim] = useState('');
   const [lastSpoken, setLastSpoken] = useState('');
@@ -384,6 +388,7 @@ export function useMentorVoice(busy = false): MentorVoice {
     recognitionLang.current = 0;
     recognitionFailures.current = 0;
     setMicDenied(false);
+    setMicError(null);
     setInterim('');
     // The recogniser follows the last answer: a Hindi answer invites a Hindi reply. Starting every
     // question with `en-IN` is why a Hindi question came back as nothing at all.
@@ -474,6 +479,17 @@ export function useMentorVoice(busy = false): MentorVoice {
         setListening(false);
         setInterim('');
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') setMicDenied(true);
+        // Every recogniser failure used to end in a silent stop, which reads as "the voice section does
+        // nothing". The code is mapped to the one action that actually fixes it.
+        const MIC_ERRORS: Record<string, string> = {
+          'not-allowed': 'The microphone is blocked. Allow it for this site in the browser settings, then press Ask again.',
+          'service-not-allowed': 'This browser blocked microphone access for the page. Allow it, then press Ask again.',
+          'audio-capture': 'No microphone was found. Connect one, then press Ask again — or type the question.',
+          network: 'Speech recognition could not reach its service. Check your connection, then try again or type the question.',
+          'language-not-supported': 'This browser cannot recognise the selected language yet. Pick English in Language, or type the question.',
+        };
+        setMicError(MIC_ERRORS[event.error]
+          ?? `The microphone stopped (${event.error || 'unknown error'}). Press Ask to try again.`);
       };
       instance.onend = () => {
         recognition.current = null;
@@ -590,6 +606,8 @@ export function useMentorVoice(busy = false): MentorVoice {
     startListening,
     stopListening,
     toggleListening,
+    micError,
+    dismissMicError: () => setMicError(null),
     dismissError: () => engine.stop(),
   };
 }

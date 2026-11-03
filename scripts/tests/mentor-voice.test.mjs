@@ -467,6 +467,19 @@ test('surface: the answer engine and the voice report their own state', () => {
   assert.match(studio, /const setHandsFree/, 'hands-free opens the microphone');
   const panel = read('src/features/ai/studio/ConversationPanel.tsx');
   assert.match(panel, /dictation\?\.text/, 'the dictated draft lands in the composer');
+  assert.match(studio, /catch \(cause\) \{\s*\n\s*console\.warn\('BroCode voice/, 'a speech failure can never block the answer');
+});
+
+test('voice: every microphone failure is a sentence the learner can act on', () => {
+  // A recogniser that stops silently is indistinguishable from a panel that does nothing.
+  const hook = read('src/components/shared/useMentorVoice.ts');
+  assert.match(hook, /MIC_ERRORS/, 'recogniser error codes are mapped to wording');
+  assert.match(hook, /setMicError\(/, 'the failure is published, not swallowed');
+  assert.match(hook, /dismissMicError/, 'the learner can dismiss it');
+  const center = read('src/features/ai/studio/VoiceControlCenter.tsx');
+  assert.match(center, /voice\.micError/, 'the panel renders the microphone failure');
+  const engine = read('src/core/voice/voice-engine.ts');
+  assert.match(engine, /No speech voice is installed on this device/, 'no installed voice is said plainly');
 });
 
 test('surface: one profile on screen — no dropdown and no device voice names', () => {

@@ -464,6 +464,12 @@ export class VoiceEngine {
       this.fail('This browser could not create an utterance.');
       return;
     }
+    // No installed voice at all: say so once, instead of letting the watchdog report a silent device.
+    if (!this.voices.length) {
+      this.fail('No speech voice is installed on this device, so answers cannot be read aloud. '
+        + 'Install one in your system settings, then press Speak.');
+      return;
+    }
     const voice = resolveVoice(this.voices, item.lang);
     utterance.text = item.text;
     // A Hindi sentence never gets an English voice's tag: the platform's own voice matters for the

@@ -118,9 +118,14 @@ export function MentorStudio() {
     if (auto && !voice.autoSpeak) return;
     const speech = spokenReply(replyText, sources);
     if (!speech) return;
-    voice.speak(speech, () => {
-      if (voice.handsFree && !voice.muted) voice.startListening(handleTranscriptRef.current);
-    });
+    // The answer is already on screen; a voice failure must not become an unhandled rejection.
+    try {
+      voice.speak(speech, () => {
+        if (voice.handsFree && !voice.muted) voice.startListening(handleTranscriptRef.current);
+      });
+    } catch (cause) {
+      console.warn('BroCode voice: speech playback could not start.', cause);
+    }
   }, [voice]);
 
   /** Speak the newest mentor turn — independent of whether Auto speak was ever on. */
@@ -142,8 +147,16 @@ export function MentorStudio() {
     // Unlock speech inside this click: the answer arrives later, after an await, and a browser that
     // never saw a gesture refuses it. Interrupt FIRST — `interrupt()` cancels the platform queue,
     // which used to cancel the silent unlocking utterance we had just spoken.
-    voice.interrupt();
-    voice.prime();
+    //
+    // NEVER let the voice block the answer: `speechSynthesis` can throw on some devices and settings,
+    // and an exception here used to abort the whole ask before `chat.ask()` was ever called — the
+    // learner saw a click that did nothing at all. The answer is text first; the voice is optional.
+    try {
+      voice.interrupt();
+      voice.prime();
+    } catch (cause) {
+      console.warn('BroCode voice: could not unlock speech; the answer is still produced.', cause);
+    }
     const lang = speechLanguage(clean, voice.langPref);
     const result = await chat.ask(clean, lang === 'hi' ? 'hi-IN' : 'en-IN');
     if (!result) {

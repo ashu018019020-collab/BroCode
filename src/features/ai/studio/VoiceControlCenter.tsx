@@ -308,6 +308,14 @@ export function VoiceControlCenter({
         </div>
       </details>
 
+      {voice.micError && (
+        <p className="voice-error" role="alert">
+          <AlertTriangle size={13} />
+          <span>{voice.micError}</span>
+          <button type="button" className="link" onClick={voice.dismissMicError}>Dismiss</button>
+        </p>
+      )}
+
       {voice.error && (
         <p className="voice-error" role="alert">
           <AlertTriangle size={13} />
