@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowUp, BookOpen, Check, Code2, Copy, Eraser, Loader2, Mic2, MicOff, RotateCcw,
-  Send, Sparkles, ThumbsDown, ThumbsUp, Type, Volume2,
+  AlertTriangle, ArrowUp, BookOpen, Check, Code2, Copy, Eraser, Loader2, Mic2, MicOff,
+  RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, Type, Volume2,
 } from 'lucide-react';
 import type { MentorHistoryTurn } from '../../../core/ai/mentor';
 import { toast } from '../../../components/ui/Toast';
@@ -35,6 +35,9 @@ export interface ConversationPanelProps {
    */
   dictation?: { text: string; id: number } | null;
   onDictationTaken?: () => void;
+  /** The engine's own failure, shown IN the thread with a retry — never only as a toast. */
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 const REVEAL_CHARS_PER_TICK = 3;
@@ -169,7 +172,7 @@ function Bubble({
 
 export function ConversationPanel({
   turns, busy, interim, listening, locale, mode, onMode, onSend, onClear, onReplay, onMic, starters,
-  dictation, onDictationTaken,
+  dictation, onDictationTaken, error, onRetry,
 }: ConversationPanelProps) {
   const [draft, setDraft] = useState('');
   const [code, setCode] = useState('');
@@ -261,6 +264,16 @@ export function ConversationPanel({
             onReplay={onReplay}
           />
         ))}
+
+        {error && (
+          <div className="chat-error" role="alert">
+            <AlertTriangle size={13} />
+            <span>{error}</span>
+            {onRetry && (
+              <button type="button" className="link" onClick={onRetry}>Try again</button>
+            )}
+          </div>
+        )}
 
         {busy && (
           <div className="thinking" role="status">

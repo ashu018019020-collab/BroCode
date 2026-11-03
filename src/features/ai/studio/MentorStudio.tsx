@@ -132,6 +132,8 @@ export function MentorStudio() {
         return;
       }
     }
+    // A disabled-looking button with no explanation is why this read as "Speak does not work".
+    toast('Ask a question first — Speak then reads the answer aloud.', 'info');
   }, [chat.turns, speakFinal]);
 
   const ask = useCallback(async (text: string) => {
@@ -287,6 +289,8 @@ export function MentorStudio() {
             onMic={toggleMic}
             dictation={dictation}
             onDictationTaken={() => setDictation(null)}
+            error={chat.error}
+            onRetry={() => { if (lastLearner) void ask(lastLearner); }}
             starters={STARTERS}
           />
 

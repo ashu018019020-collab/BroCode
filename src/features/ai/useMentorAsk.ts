@@ -22,6 +22,18 @@ import type { VoiceLangId } from '../../core/ai/voice';
  */
 
 const MAX_TURNS = 24;
+/** The index is a 2.5 MB request; a network that never answers must not leave the panel "thinking". */
+const INDEX_TIMEOUT_MS = 12_000;
+
+function withTimeout<T>(work: Promise<T>, ms: number, message: string): Promise<T> {
+  return Promise.race([
+    work,
+    new Promise<never>((_resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(message)), ms);
+      void work.finally(() => clearTimeout(timer)).catch(() => undefined);
+    }),
+  ]);
+}
 
 function loadTurns(key: string): MentorHistoryTurn[] {
   try {
@@ -85,7 +97,11 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
       let index = knowledge;
       if (!index) {
         try {
-          index = await loadKnowledgeIndex();
+          index = await withTimeout(
+            loadKnowledgeIndex(),
+            INDEX_TIMEOUT_MS,
+            'The bundled lesson index did not load in time.',
+          );
           setKnowledge(index);
         } catch (cause) {
           // The assistant already answers from `sections` when this fails; the mentor keeps working.
@@ -142,7 +158,15 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
       // This used to be a bare `null`, so a failed retrieval was indistinguishable from "nothing to
       // say" and the panel stayed silently ready. The answer engine reports its own failure now.
       console.error('BroCode mentor: the answer could not be produced.', cause);
-      setError('The answer engine could not finish that question. Check your connection and ask again.');
+      const message = 'The answer engine could not finish that question. Check your connection and ask again.';
+      setError(message);
+      // A failed ask is STILL an answer in the thread. Leaving the panel untouched is what a learner
+      // reports as "I clicked and nothing happened"; the message below is visible and retryable.
+      const learnerTurn: MentorHistoryTurn = { role: 'learner', text: question };
+      const failureTurn: MentorHistoryTurn = { role: 'mentor', text: message, sources: [] };
+      const failed: MentorHistoryTurn[] = [...turnsRef.current, learnerTurn, failureTurn].slice(-MAX_TURNS);
+      turnsRef.current = failed;
+      setTurns(failed);
       return null;
     } finally {
       setBusy(false);

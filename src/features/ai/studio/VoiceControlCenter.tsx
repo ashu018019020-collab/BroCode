@@ -178,7 +178,7 @@ export function VoiceControlCenter({
           type="button"
           className="ctl"
           onClick={onSpeakLast}
-          disabled={!hasSpoken || !voice.enabled || !voice.supported}
+          disabled={!voice.supported || !voice.enabled}
           title="Read the last answer aloud"
         >
           <AudioLines size={15} /> Speak
