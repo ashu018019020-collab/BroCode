@@ -3,7 +3,7 @@
  * cache-first for immutable app assets, network-first for the JSON content packs
  * (curriculum / question banks / tracks) so a content update is never shadowed
  * by a stale cache. All app assets are local — nothing leaves the device. */
-const CACHE = 'aiml-v8';
+const CACHE = 'aiml-v9'; // v9: the brand icons moved to /brand/* and the old /brocode*.png names are gone
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

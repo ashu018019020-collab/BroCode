@@ -11,6 +11,7 @@ import {
 import { CurriculumProvider, useCurriculum } from '../core/data/curriculum';
 import { useStore, bumpStreak, markNotifsRead, clearNotifs, exportProgress } from '../core/storage/store';
 import { toast } from '../components/ui/Toast';
+import { BrandMark } from '../components/shared/BrandMark';
 import { levelForXp, levelProgress, XP_PER_LEVEL } from '../core/platform/keys';
 import { offlineBannerCopy } from '../core/platform/offline';
 import { routeMeta } from '../core/platform/meta';
@@ -513,7 +514,7 @@ function Shell() {
             <div className="logo pic">
               {/* The wordmark text beside the tile names the brand while it is visible; a collapsed
                   rail hides that text (`display: none`), so the tile itself must carry the name. */}
-              <img src="./brocode.png" alt={collapsed ? 'BroCode' : ''} width={44} height={44} />
+              <BrandMark size={44} alt={collapsed ? 'BroCode' : ''} />
             </div>
             <div className="brand-txt">
               <b>Bro<span className="grad">Code</span></b>

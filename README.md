@@ -2,7 +2,7 @@
   <a href="https://mybrocode.vercel.app/">
     <img src="./public/brocode-og.png" alt="BroCode — learn → code → practice → build → master" width="100%" />
   </a>
-  <img src="public/brocode.png" alt="BroCode logo" width="74" />
+  <img src="public/brand/icon-192.png" alt="BroCode logo" width="74" />
 </p>
 
 <h1 align="center">BroCode</h1>

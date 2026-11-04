@@ -559,8 +559,18 @@ button:not(:disabled), [role='button']:not(:disabled), label[for] { cursor: poin
  */
 /* `flex: none` because a flex child shrinks by default: a 36px glyph tile absorbed that silently, but
    a picture squashed to 29×40 letterboxes itself and looks cropped. */
-.brand .logo.pic { flex: none; width: 44px; height: 44px; background: none; border-color: transparent; box-shadow: none; overflow: hidden; }
-.brand .logo.pic img { width: 100%; height: 100%; display: block; object-fit: contain; }
+/* `overflow: visible` because the tile's glow is drawn OUTSIDE its box: clipping it there would
+   leave a flat sticker, while the mark itself is transparent-cornered and needs no crop. */
+.brand .logo.pic {
+  flex: none; width: 44px; height: 44px; background: none; border-color: transparent;
+  box-shadow: none; overflow: visible;
+}
+.brand .logo.pic img {
+  width: 100%; height: 100%; display: block; object-fit: contain;
+  /* The subtle cyan/violet bloom belongs to the shell, not to the asset: a glow baked into the PNG
+     would smear the tab icon and double up under the sidebar's own dark surface. */
+  filter: drop-shadow(0 0 9px rgba(34, 211, 238, .22)) drop-shadow(0 0 18px rgba(139, 92, 246, .16));
+}
 /* `padding-right` reserves the fold button's corner so the tagline wraps beside it, not under it. */
 .brand-txt { flex: 1; min-width: 0; padding-right: 26px; }
 .brand b { display: block; font-size: 1.22rem; letter-spacing: .2px; line-height: 1.15; }

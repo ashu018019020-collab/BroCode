@@ -15,6 +15,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { CheckCircle2, Home, RefreshCw, RotateCcw, Wrench } from 'lucide-react';
 import { useI18n } from '../../app/i18n';
+import { BrandMark } from '../shared/BrandMark';
 
 interface Props { children: ReactNode }
 interface State { error: Error | null; info: string }
@@ -29,7 +30,7 @@ function RecoveryScreen({ error, info, onRetry }: { error: Error; info: string; 
     <div className="recovery" role="alert">
       <div className="recovery-card fadeup">
         <span className="recovery-badge">
-          <img src="./brocode.png" alt="" width={20} height={20} aria-hidden="true" />
+          <BrandMark size={20} alt="" />
           {t('error.badge')}
         </span>
         <h1 className="recovery-title">

@@ -71,11 +71,16 @@
     <meta name="twitter:image" content="https://ashu018019020-collab.github.io/BroCode/brocode-og.png" />
     <meta name="twitter:image:alt" content="BroCode — complete technology learning platform: 36 steps, 11 courses, 13,000+ questions, runnable labs in the browser." />
     <link rel="canonical" href="https://ashu018019020-collab.github.io/BroCode/" />
-    <!-- The brand tile is a real image now, not an emoji glyph: emoji favicons render as whatever the
-         OS feels like (and not at all in some Chromium builds), while this one is the actual mark.
-         Both files live in `public/`, so they are served from the site root at any base path. -->
-    <link rel="icon" type="image/png" href="./brocode.png" />
-    <link rel="apple-touch-icon" href="./brocode-256.png" />
+    <!-- The brand tile, in every size a browser or an OS asks for. All of it is GENERATED from one
+         geometry by `scripts/brand-icons.cjs` (`npm run brand:write`), so the tab icon, the install
+         icon and the iOS tile cannot drift apart. The SVG is offered last: a browser that supports
+         it picks the infinitely sharp master, the rest fall back to the PNGs above. Files live in
+         `public/`, so they resolve at any base path (project-path deployments included). -->
+    <link rel="icon" href="./favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./brand/icon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./brand/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./brand/apple-touch-icon-180.png" />
+    <link rel="icon" type="image/svg+xml" href="./brand/brocode-mark.svg" />
     <!-- The startup illustration: fetched while the bundle is still downloading, so the first
          thing a learner sees is the real artwork instead of a blank frame. -->
     <link rel="preload" as="image" href="./images/brocode-loading.png" fetchpriority="high" />
@@ -98,7 +103,7 @@
           "@id": "https://ashu018019020-collab.github.io/BroCode/#org",
           "name": "BroCode",
           "url": "https://ashu018019020-collab.github.io/BroCode/",
-          "logo": "https://ashu018019020-collab.github.io/BroCode/brocode-256.png",
+          "logo": "https://ashu018019020-collab.github.io/BroCode/brand/icon-512.png",
           "description": "BroCode is a complete technology learning platform: programming, data, web, AI/ML, projects, interview preparation and career development — all runnable in the browser."
         },
         {
