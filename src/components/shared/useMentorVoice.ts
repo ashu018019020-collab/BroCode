@@ -12,6 +12,8 @@ import type {
   MicPermission, VoiceLanguagePreference, VoiceLocale, VoicePlaybackState,
 } from '../../core/voice/voice-types';
 import { clampRate, recognitionLanguages } from '../../core/ai/voice';
+import { SpeechError, fetchSpeech, voiceStatus, type ServerVoiceState } from '../../core/voice/tts';
+import { planServerSpeech, serverVoiceLine } from '../../core/voice/server-speech';
 
 /**
  * The one voice adapter shared by every AI Mentor surface.
@@ -70,6 +72,12 @@ export interface MentorVoice {
   lastSpoken: string;
   interim: string;
   error: string | null;
+  /** The deployment's AI voice (Azure neural), separate from this browser's installed voices. */
+  serverVoice: ServerVoiceState;
+  /** The voice id the server will speak with, or null when it has no key. */
+  serverVoiceId: string | null;
+  /** One honest line about the server voice, or '' when there is nothing to say. */
+  serverNote: string;
   micPermission: MicPermission;
   /** Why the microphone stopped, in words a learner can act on. Null when nothing went wrong. */
   micError: string | null;
@@ -198,9 +206,19 @@ export function useMentorVoice(busy = false): MentorVoice {
   const [micPermission, setMicPermission] = useState<MicPermission>('unknown');
   const [interim, setInterim] = useState('');
   const [lastSpoken, setLastSpoken] = useState('');
+  const [serverVoice, setServerVoice] = useState<ServerVoiceState>('checking');
+  const [serverVoiceId, setServerVoiceId] = useState<string | null>(null);
+  const [serverSpeaking, setServerSpeaking] = useState(false);
+  const [serverPaused, setServerPaused] = useState(false);
+  const serverAudio = useRef<HTMLAudioElement | null>(null);
+  const serverUrls = useRef<Set<string>>(new Set());
+  /** Bumped by every stop/answer, so a late sentence cannot continue a finished answer. */
+  const serverGen = useRef(0);
 
   const prefsRef = useRef(prefs);
   prefsRef.current = prefs;
+  const serverVoiceRef = useRef(serverVoice);
+  serverVoiceRef.current = serverVoice;
   const levelRef = useRef(0);
   const micLevelRef = useRef(0);
   const pulse = useRef(0);
@@ -257,6 +275,18 @@ export function useMentorVoice(busy = false): MentorVoice {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
     } catch { /* quota or blocked */ }
   }, [prefs]);
+
+  // Which voice will speak: asked once per language, never assumed. A missing route (a static preview)
+  // and a route with no key are the same answer for the learner — the device voice stays available.
+  useEffect(() => {
+    let alive = true;
+    void voiceStatus().then((status) => {
+      if (!alive) return;
+      setServerVoice(status?.configured ? 'ready' : 'unavailable');
+      setServerVoiceId(status?.configured ? (status.voices[prefs.lang] ?? null) : null);
+    });
+    return () => { alive = false; };
+  }, [prefs.lang]);
 
   /* ------------------------------ permissions ------------------------------ */
   useEffect(() => {
@@ -321,21 +351,128 @@ export function useMentorVoice(busy = false): MentorVoice {
   }, []);
 
   /* -------------------------------- speaking ------------------------------- */
-  const speak = useCallback((text: string, onEnd?: () => void) => {
-    if (!prefsRef.current.enabled) return;
-    const clean = speechText(text);
-    if (!clean) return;
-    setLastSpoken(clean);
+  /** Drop the server audio and every blob URL it created. A leak, not just a pause. */
+  const releaseServerAudio = useCallback(() => {
+    const audio = serverAudio.current;
+    serverAudio.current = null;
+    if (audio) {
+      audio.onended = null;
+      audio.onerror = null;
+      try { audio.pause(); } catch { /* already stopped */ }
+      audio.removeAttribute('src');
+      try { audio.load(); } catch { /* detached */ }
+    }
+    for (const url of serverUrls.current) {
+      try { URL.revokeObjectURL(url); } catch { /* nothing to revoke */ }
+    }
+    serverUrls.current.clear();
+    if (mounted.current) { setServerSpeaking(false); setServerPaused(false); }
+  }, []);
+
+  /** This browser's own voice: the fallback that never needs a key, a network or a model. */
+  const speakWithDevice = useCallback((clean: string, onEnd?: () => void) => {
+    releaseServerAudio();
     engine.speak(clean, {
       preference: prefsRef.current.lang,
       onEnd,
       onPulse: () => { pulse.current = 1; },
     });
+  }, [engine, releaseServerAudio]);
+
+  /**
+   * The deployment's AI voice: one sentence per request, played in order on ONE <audio> element.
+   * The next sentence starts only on the previous `onended`, so a rapid double-press can never open
+   * two streams; any failure — no key, offline, blocked playback — hands the same text to the device
+   * voice instead of leaving the learner in silence.
+   */
+  const speakFromServer = useCallback((clean: string, onEnd?: () => void): boolean => {
+    const chunks = planServerSpeech(clean, prefsRef.current.lang);
+    if (!chunks.length) return false;
+    releaseServerAudio();
+    const gen = serverGen.current + 1;
+    serverGen.current = gen;
+    setServerSpeaking(true);
+    setServerPaused(false);
+
+    const play = (index: number) => {
+      if (gen !== serverGen.current) return;
+      if (index >= chunks.length) {
+        releaseServerAudio();
+        if (gen === serverGen.current) onEnd?.();
+        return;
+      }
+      const chunk = chunks[index];
+      void fetchSpeech({ text: chunk.text, lang: chunk.lang, rate: prefsRef.current.speed })
+        .then((url) => {
+          if (gen !== serverGen.current) {
+            try { URL.revokeObjectURL(url); } catch { /* gone */ }
+            return;
+          }
+          serverUrls.current.add(url);
+          const audio = new Audio(url);
+          audio.preload = 'auto';
+          serverAudio.current = audio;
+          audio.onended = () => { pulse.current = 1; play(index + 1); };
+          audio.onerror = () => { if (gen === serverGen.current) speakWithDevice(clean, onEnd); };
+          // `play()` is a promise in every browser we support; a webview that returns nothing must
+          // still fall back rather than throw inside the chain.
+          const playback = audio.play();
+          if (playback && typeof playback.catch === 'function') {
+            void playback.catch(() => { if (gen === serverGen.current) speakWithDevice(clean, onEnd); });
+          }
+        })
+        .catch((cause: unknown) => {
+          if (gen !== serverGen.current) return;
+          // 503 means the deployment answered and said it has no key: that is a fact, not a glitch.
+          if (cause instanceof SpeechError && cause.status === 503) setServerVoice('unavailable');
+          speakWithDevice(clean, onEnd);
+        });
+    };
+
+    play(0);
+    return true;
+  }, [releaseServerAudio, speakWithDevice]);
+
+  const speak = useCallback((text: string, onEnd?: () => void) => {
+    if (!prefsRef.current.enabled) return;
+    const clean = speechText(text);
+    if (!clean) return;
+    setLastSpoken(clean);
+    if (serverVoiceRef.current === 'ready' && speakFromServer(clean, onEnd)) return;
+    speakWithDevice(clean, onEnd);
+  }, [speakFromServer, speakWithDevice]);
+
+  // A remount must not leave a server sentence playing in the background.
+  useEffect(() => () => {
+    serverGen.current += 1;
+    releaseServerAudio();
+  }, [releaseServerAudio]);
+
+  const pause = useCallback(() => {
+    const audio = serverAudio.current;
+    if (audio && !audio.paused) {
+      try { audio.pause(); } catch { /* already stopped */ }
+      setServerPaused(true);
+      return;
+    }
+    engine.pause();
   }, [engine]);
 
-  const pause = useCallback(() => engine.pause(), [engine]);
-  const resume = useCallback(() => engine.resume(), [engine]);
-  const interrupt = useCallback(() => engine.stop(), [engine]);
+  const resume = useCallback(() => {
+    const audio = serverAudio.current;
+    if (audio && audio.paused) {
+      setServerPaused(false);
+      void audio.play().catch(() => setServerPaused(false));
+      return;
+    }
+    engine.resume();
+  }, [engine]);
+
+  const interrupt = useCallback(() => {
+    serverGen.current += 1;
+    releaseServerAudio();
+    engine.stop();
+  }, [engine, releaseServerAudio]);
   const replay = useCallback(() => {
     if (!prefsRef.current.enabled) return;
     engine.replay();
@@ -345,8 +482,9 @@ export function useMentorVoice(busy = false): MentorVoice {
   const testVoice = useCallback(() => {
     const pref = prefsRef.current;
     const locale = resolveLocale(pref.lang, lastSpoken);
+    if (serverVoiceRef.current === 'ready' && speakFromServer(speechText(SAMPLE[locale]))) return;
     engine.preview(SAMPLE[locale], { locale, preference: pref.lang });
-  }, [engine, lastSpoken]);
+  }, [engine, lastSpoken, speakFromServer]);
 
   const prime = useCallback(() => { engine.prime(); }, [engine]);
 
@@ -525,8 +663,14 @@ export function useMentorVoice(busy = false): MentorVoice {
     message: profileMessage(snapshot.voices, prefs.lang),
   }), [snapshot.voices, prefs.lang]);
 
+  // ONE playback state, whichever engine owns the sound. The orb must not animate to the device
+  // engine's idle while the server voice is mid-sentence.
+  const playing: VoicePlaybackState = serverSpeaking
+    ? 'speaking'
+    : serverPaused ? 'paused' : snapshot.state;
+
   const state = mentorVoiceState({
-    playing: snapshot.state,
+    playing,
     listening,
     thinking: busy,
     error: snapshot.lastError,
@@ -570,9 +714,9 @@ export function useMentorVoice(busy = false): MentorVoice {
     supported,
     recognitionSupported,
     state,
-    playback: snapshot.state,
-    speaking: snapshot.state === 'speaking',
-    paused: snapshot.state === 'paused',
+    playback: playing,
+    speaking: playing === 'speaking',
+    paused: playing === 'paused',
     listening,
     ready,
     enabled: prefs.enabled,
@@ -585,6 +729,9 @@ export function useMentorVoice(busy = false): MentorVoice {
     lastSpoken,
     interim,
     error: snapshot.lastError,
+    serverVoice,
+    serverVoiceId,
+    serverNote: serverVoiceLine(serverVoice === 'ready', serverVoiceId),
     micPermission,
     profile,
     diagnostics,

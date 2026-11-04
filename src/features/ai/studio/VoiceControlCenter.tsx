@@ -139,6 +139,12 @@ export function VoiceControlCenter({
         </div>
       </div>
 
+      {voice.serverNote && (
+        <p className="voice-hint" role="status">
+          <Sparkles size={12} /> {voice.serverNote}
+        </p>
+      )}
+
       {/* The two switches, as cards: a real target, a real state, and no shared checkbox row. */}
       <div className="toggle-grid">
         <ToggleCard
@@ -294,6 +300,12 @@ export function VoiceControlCenter({
           <div>
             <dt>Profile</dt>
             <dd>{voice.diagnostics.shared ? 'One voice serves both languages' : 'Two voices behind one profile'}</dd>
+          </div>
+          <div>
+            <dt>AI voice</dt>
+            <dd>{voice.serverVoice === 'ready'
+              ? `${voice.serverVoiceId ?? 'ready'} · generated on the server`
+              : voice.serverVoice === 'checking' ? 'Checking…' : 'Device voice · this browser'}</dd>
           </div>
           <div><dt>Language</dt><dd>{languageLabel(voice.langPref)} → {locale.toUpperCase()}</dd></div>
           <div><dt>Playback</dt><dd>{voice.playback}</dd></div>
