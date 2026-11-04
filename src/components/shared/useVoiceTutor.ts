@@ -368,11 +368,15 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
 
 
   const stopListening = useCallback(() => {
+    // Only a CONTINUOUS capture (the interview answer) is committed here: a single-shot press has
+    // already delivered its one utterance, and turning its half-sentence into a question would be
+    // worse than dropping it.
+    const wasContinuous = keepOpenRef.current;
     keepOpenRef.current = false;
     listeningRef.current = false;
     // Stop means "keep what I said". Chrome drops the interim transcript the moment the recogniser
     // is aborted, which is why a learner could speak a whole answer and press Stop on an EMPTY box.
-    const pending = pendingPartialRef.current.trim();
+    const pending = wasContinuous ? pendingPartialRef.current.trim() : '';
     pendingPartialRef.current = '';
     if (pending) {
       const replay = pending === lastFinalRef.current && Date.now() - lastFinalAtRef.current < REPEAT_WINDOW_MS;

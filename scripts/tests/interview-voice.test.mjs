@@ -98,8 +98,10 @@ test('voice hook: stopping the mic keeps the words Chrome would have thrown away
   // An interim transcript is not committed on abort, so a learner could speak a full answer,
   // press Stop, and find the box empty. The stop path must save the pending tail first.
   assert.match(hook, /pendingPartialRef = useRef\(/);
-  assert.match(hook, /const pending = pendingPartialRef\.current\.trim\(\)/);
+  assert.match(hook, /const pending = wasContinuous \? pendingPartialRef\.current\.trim\(\) : ''/);
   assert.match(hook, /onTranscriptRef\.current\?\.\(pending\)/);
+  assert.match(hook, /const wasContinuous = keepOpenRef\.current/,
+    'only the interview’s continuous capture commits a partial — the assistant’s one-shot press does not');
   assert.match(hook, /if \(!replay\)/, 'the duplicate guard runs before the pending tail is committed');
 });
 
