@@ -130,6 +130,34 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
   // A late evaluation must never land on the next question: the id it was asked for is compared.
   const questionRef = useRef<string | null>(question?.id ?? null);
   questionRef.current = question?.id ?? null;
+  /** The answer box grows with the transcript instead of sitting at a fixed five rows. */
+  const answerRef = useRef<HTMLTextAreaElement | null>(null);
+  const answerText = answer.trim();
+  const answerWords = answerText ? answerText.split(/\s+/).filter(Boolean).length : 0;
+  // The same deterministic rubric Check answer uses, run live so the learner sees their own progress
+  // while they speak — no invented score, just the signals the evaluator already counts.
+  const liveRead = useMemo(
+    () => (question && answerText ? evaluateMockAnswer(question, answerText, coding) : null),
+    [question, answerText, coding],
+  );
+  const rubricTotal = question?.rubric.length ?? 0;
+  const rubricLine = liveRead && rubricTotal
+    ? `${rubricTotal - liveRead.missing.length}/${rubricTotal} rubric points covered`
+    : 'rubric starts once you answer';
+  const smartHint = !liveRead
+    ? 'Answer by voice or type — this line follows what you say.'
+    : (liveRead.reasoning ?? 0) < 60
+      ? 'Add a reason (“because…”), an example, or an edge case.'
+      : (liveRead.communication ?? 0) < 65
+        ? 'Add one more sentence so it reads like a spoken answer.'
+        : 'Reasoning and length look solid — check it when ready.';
+
+  useEffect(() => {
+    const el = answerRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(240, Math.max(84, el.scrollHeight))}px`;
+  }, [answer, voice.interim, question?.id]);
   const preview = useMemo(
     () => buildMockPlan(
       sections,
@@ -625,21 +653,31 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
             {question.check && <span className="chip">task check: {question.check.slice(0, 80)}</span>}
           </div>
 
-          <label className="small muted" htmlFor="mock-answer" style={{ display: 'block', marginTop: 12 }}>
-            Your answer (spoken transcript is editable)
-          </label>
           {/* The live partial transcript is appended INSIDE the box, so the learner watches their
-              words arrive where the answer lives — not in a line under it. The final result then
-              commits the sentence to `answer`, and the box is editable the moment the mic stops. */}
+              words arrive where the answer lives. The final result commits the sentence to `answer`,
+              and the box is editable the moment the mic stops. */}
+          <div className="row spread" style={{ gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+            <label className="small muted" htmlFor="mock-answer">Your answer (spoken transcript is editable)</label>
+            <span id="mock-answer-meta" className="row small muted" style={{ gap: 6 }} aria-live="polite">
+              {voice.listening && <span className="chip easy">Listening</span>}
+              <span>{answerWords} word{answerWords === 1 ? '' : 's'}</span>
+              <span>· {rubricLine}</span>
+            </span>
+          </div>
           <textarea
             id="mock-answer"
+            ref={answerRef}
             className="console"
-            rows={5}
+            rows={3}
             value={voice.listening && voice.interim ? `${answer}${answer ? ' ' : ''}${voice.interim}` : answer}
             onChange={(event) => setAnswer(event.target.value)}
-            placeholder="Press Start listening and answer aloud, or type. One question at a time."
-            style={{ width: '100%', marginTop: 5 }}
+            placeholder="Start listening and answer aloud, or type here."
+            aria-describedby="mock-answer-smart mock-answer-hint"
+            style={{ width: '100%', marginTop: 5, minHeight: 84, maxHeight: 240, resize: 'vertical' }}
           />
+          <p id="mock-answer-smart" className="small muted" style={{ margin: '4px 0 0' }} aria-live="polite">
+            <b>Smart check:</b> {smartHint}
+          </p>
           <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
             <button
               type="button"
@@ -658,9 +696,15 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
               disabled={checking || (!answer.trim() && !coding?.ran)}
             >
               {checking ? <><Loader2 size={13} className="spin" /> Checking…</> : <><CheckCircle2 size={13} /> Check answer</>}
-            </button>            <button
+            </button>
+            <button type="button" className="btn small" onClick={nextQuestion}>
+              {index + 1 >= plan.questions.length ? 'Finish' : 'Next question'} <ArrowRight size={12} />
+            </button>
+          </div>
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+            <button
               type="button"
-              className="btn small"
+              className="btn small ghost"
               onClick={() => setRevealed((value) => !value)}
               aria-expanded={revealed}
               aria-controls="mock-model-answer"
@@ -670,7 +714,7 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
             </button>
             <button
               type="button"
-              className="btn small"
+              className="btn small ghost"
               onClick={askFollowUp}
               disabled={checking}
               title="Ask about what is missing from this answer — no Check answer needed first"
@@ -680,18 +724,14 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
             <button type="button" className="btn small ghost" onClick={skipQuestion} title="Move on without scoring this answer">
               Skip question <ArrowRight size={12} />
             </button>
-            <button type="button" className="btn small" onClick={nextQuestion}>
-              {index + 1 >= plan.questions.length ? 'Finish' : 'Next question'} <ArrowRight size={12} />
-            </button>
           </div>
-          {voice.interim && <p className="voice-interim small" aria-live="polite">“{voice.interim}”</p>}
           {voice.error && (
             <p className="voice-error small" role="status">
               <span>{voice.error}</span>
               <button type="button" className="icon-btn" style={{ width: 22, height: 22 }} onClick={voice.dismissError} aria-label="Dismiss the voice message">×</button>
             </p>
           )}
-          <p className="small muted" aria-live="polite" style={{ margin: '6px 0 0' }}>
+          <p id="mock-answer-hint" className="small muted" aria-live="polite" style={{ margin: '6px 0 0' }}>
             {voice.listening
               ? `Listening… speak naturally${voice.interim ? ' — your words appear in the box as you talk.' : '.'}`
               : answer.trim()

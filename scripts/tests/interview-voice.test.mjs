@@ -126,6 +126,21 @@ test('interview: a follow-up and an advance are never locked behind a check', ()
     'the follow-up scores the answer itself instead of demanding a check first');
 });
 
+test('interview: the answer box stays compact and coaches in place', () => {
+  const panel = read('src/features/ai/MockInterviewPanel.tsx');
+  // The reported state: a five-row empty box and six buttons in one row. The fix keeps the same
+  // capabilities but opens compact, grows with the answer and puts the rubric line where you type.
+  assert.match(panel, /rows=\{3\}/, 'the box opens compact instead of five empty rows');
+  assert.match(panel, /answerRef/, 'auto-grow measures the real scroll height');
+  assert.match(panel, /maxHeight: 240/, 'the box stops growing before it swallows the screen');
+  assert.match(panel, /id="mock-answer-meta"/, 'word count and rubric progress sit above the box');
+  assert.match(panel, /rubric points covered/);
+  assert.match(panel, /<b>Smart check:<\/b>/, 'the live coaching line is real, from the same rubric');
+  assert.match(panel, /toggleListening\(handleAnswer, \{ continuous: true \}\)/, 'voice and listening stay');
+  assert.match(panel, /Read question aloud/, 'the question can still be read aloud');
+  assert.doesNotMatch(panel, /voice-interim small/, 'the interim line is inside the box, not repeated below it');
+});
+
 /* ------------------------- the hook's recovery machinery ------------------------- */
 
 test('voice hook: the recovery machinery is pinned where the speech engine reads it', () => {
