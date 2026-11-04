@@ -40,8 +40,6 @@ export interface MentorHistoryTurn {
   /** Sources shown under the turn; persisted so reloading the panel keeps them. */
   sources?: { title: string; route: string }[];
   intent?: MentorIntent;
-  /** Which engine produced this turn: the connected AI model, or the bundled local engine. */
-  engine?: 'llm' | 'local';
 }
 
 export type MentorBlockKind = 'simple' | 'why' | 'example' | 'where' | 'refusal';

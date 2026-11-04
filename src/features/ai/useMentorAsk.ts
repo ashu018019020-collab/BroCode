@@ -3,7 +3,6 @@ import { useStore } from '../../core/storage/store';
 import { useCurriculum } from '../../core/data/curriculum';
 import { loadKnowledgeIndex } from '../../core/data/knowledge';
 import type { KnowledgeIndex } from '../../core/ai/knowledge';
-import { askLlm, llmStatus, passagesFor } from '../../core/ai/llm';
 import { askLocal, type Answer, type AssistantContext } from '../../core/ai/assistant';
 import {
   isProjectQuestion, mentorTurn, projectOverview, type MentorHistoryTurn, type MentorReply,
@@ -47,7 +46,6 @@ function loadTurns(key: string): MentorHistoryTurn[] {
       .map((turn) => ({
         role: turn.role,
         text: String(turn.text),
-        ...(turn.engine === 'llm' || turn.engine === 'local' ? { engine: turn.engine } : {}),
         ...(Array.isArray(turn.sources)
           ? { sources: turn.sources.filter((s: { title?: unknown; route?: unknown }) => typeof s?.title === 'string' && typeof s?.route === 'string') }
           : {}),
@@ -62,8 +60,6 @@ export interface MentorAsk {
   busy: boolean;
   /** Why the last question produced no answer, or null. This is an ENGINE failure, not a voice one. */
   error: string | null;
-  /** The connected model's name, or null when this deployment answers from the bundled engine. */
-  llmModel: string | null;
   dismissError: () => void;
   /** `answer` is null for a platform question — nothing was retrieved, the curriculum itself answered. */
   ask: (text: string, lang: VoiceLangId) => Promise<{ reply: MentorReply; answer: Answer | null } | null>;
@@ -79,7 +75,6 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [knowledge, setKnowledge] = useState<KnowledgeIndex | null>(null);
-  const [llmModel, setLlmModel] = useState<string | null>(null);
   const turnsRef = useRef(turns);
   const contextRef = useRef(context);
   contextRef.current = context;
@@ -88,14 +83,6 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
     setTurns(loadTurns(logKey));
   }, [logKey]);
 
-  // Is a model connected on THIS deployment? Asked once, bounded, and never awaited by a question.
-  useEffect(() => {
-    let alive = true;
-    void llmStatus().then((status) => {
-      if (alive && status.configured) setLlmModel(status.model ?? 'AI');
-    });
-    return () => { alive = false; };
-  }, []);
 
   useEffect(() => {
     turnsRef.current = turns;
@@ -146,16 +133,6 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
         where: contextRef.current?.where,
         topic: contextRef.current?.topic,
       });
-      // The second engine answers the SAME retrieved passages, so it cannot drift away from the
-      // course. `askLlm` returns null for every failure (no key, offline, slow, empty), and the
-      // local `reply` above is already a complete answer — so this can only improve the answer.
-      const remote = await askLlm(question, {
-        lang,
-        history,
-        passages: passagesFor(index, question, contextRef.current ?? {}),
-      });
-      const groundedReply = remote ? { ...reply, text: remote.text } : reply;
-      if (remote?.model) setLlmModel(remote.model);
       const learnerTurn: MentorHistoryTurn = { role: 'learner', text: question };
       // The retrieval can return the same document twice under two headings — dedupe so the chips
       // under a mentor turn never show the same link twice.
@@ -170,15 +147,14 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
         });
       const mentorTurnEntry: MentorHistoryTurn = {
         role: 'mentor',
-        text: groundedReply.text,
+        text: reply.text,
         sources,
-        intent: groundedReply.intent,
-        engine: remote ? 'llm' : 'local',
+        intent: reply.intent,
       };
       const next: MentorHistoryTurn[] = [...history, learnerTurn, mentorTurnEntry].slice(-MAX_TURNS);
       turnsRef.current = next;
       setTurns(next);
-      return { reply: groundedReply, answer };
+      return { reply, answer };
     } catch (cause) {
       // This used to be a bare `null`, so a failed retrieval was indistinguishable from "nothing to
       // say" and the panel stayed silently ready. The answer engine reports its own failure now.
@@ -211,7 +187,6 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
     turns,
     busy,
     error,
-    llmModel,
     dismissError,
     ask,
     clear,
