@@ -300,7 +300,16 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
 
   const askFollowUp = () => {
     if (!question) return;
-    const combined = [answer, ...followUps.map((item) => item.answer)].filter(Boolean).join(' ');
+    const combined = [answer, ...followUps.map((item) => item.answer)].filter(Boolean).join(' ').trim();
+    if (!combined && !coding?.ran) {
+      toast('Answer by voice or type first — the follow-up is built from what you actually said.', 'warning');
+      return;
+    }
+    // Asking a follow-up does NOT require pressing Check answer first. The same rubric is scored
+    // here so the follow-up has real content, and the feedback panel opens with it.
+    if (!feedback) setFeedback(evaluateMockAnswer(question, combined, coding));
+    if (session) setSession(recordMockAnswer(session, question.id, { text: answer, followUps, coding }));
+    voiceRef.current.stopListening();
     const options = followUpsFor(question, combined, { lang: voiceRef.current.lang, limit: 2 });
     const next = options.find((option) => !followUps.some((item) => item.prompt === option.prompt));
     if (!next) {
@@ -663,11 +672,12 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
               type="button"
               className="btn small"
               onClick={askFollowUp}
-              disabled={!feedback}
+              disabled={checking}
+              title="Ask about what is missing from this answer — no Check answer needed first"
             >
               <Sparkles size={13} /> Ask a follow-up
             </button>
-            <button type="button" className="btn small ghost" onClick={skipQuestion} disabled={Boolean(feedback)}>
+            <button type="button" className="btn small ghost" onClick={skipQuestion} title="Move on without scoring this answer">
               Skip question <ArrowRight size={12} />
             </button>
             <button type="button" className="btn small" onClick={nextQuestion}>

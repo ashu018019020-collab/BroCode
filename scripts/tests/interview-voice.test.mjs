@@ -114,6 +114,18 @@ test('interview: the authored answer can be revealed without pretending it was c
   assert.match(panel, /Revealing the answer does not score it/);
 });
 
+test('interview: a follow-up and an advance are never locked behind a check', () => {
+  const panel = read('src/features/ai/MockInterviewPanel.tsx');
+  // The reported bug: Ask a follow-up was disabled until Check answer ran, and Skip was disabled
+  // AFTER it ran — so the two ways out of a question could each be blocked.
+  assert.match(panel, /onClick=\{askFollowUp\}\n\s*disabled=\{checking\}/, 'the follow-up is gated only by a run in flight');
+  assert.doesNotMatch(panel, /onClick=\{askFollowUp\}[\s\S]{0,80}disabled=\{!feedback\}/);
+  assert.match(panel, /onClick=\{skipQuestion\}/, 'skip always advances');
+  assert.doesNotMatch(panel, /onClick=\{skipQuestion\}[^\n]*disabled=/, 'skip is never blocked by a prior score');
+  assert.match(panel, /if \(!feedback\) setFeedback\(evaluateMockAnswer\(question, combined, coding\)\)/,
+    'the follow-up scores the answer itself instead of demanding a check first');
+});
+
 /* ------------------------- the hook's recovery machinery ------------------------- */
 
 test('voice hook: the recovery machinery is pinned where the speech engine reads it', () => {
