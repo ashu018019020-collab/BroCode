@@ -47,7 +47,7 @@ export interface LlmDeps {
   fetch?: typeof fetch;
 }
 
-const ENDPOINT = '/api/chat';
+const ENDPOINT = '/api/ai/chat';
 const STATUS_TIMEOUT_MS = 2000;
 const ANSWER_TIMEOUT_MS = 20000;
 const HISTORY_TURNS = 4;

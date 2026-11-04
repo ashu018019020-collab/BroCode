@@ -20,7 +20,7 @@ const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 register('./_ts-resolve.mjs', import.meta.url);
 
 const llm = await load('src/core/ai/llm.ts');
-const proxy = (await import(pathToFileURL(path.join(ROOT, 'api', 'chat.mjs')).href)).default;
+const proxy = (await import(pathToFileURL(path.join(ROOT, 'api', 'ai', 'chat.js')).href)).default;
 
 const jsonResponse = (body, status = 200) => ({
   ok: status >= 200 && status < 300,
@@ -87,7 +87,7 @@ test('llm: the browser bundle never holds a key or a provider URL', () => {
   assert.doesNotMatch(client, /process\.env/, 'the client cannot read server secrets');
   assert.doesNotMatch(client, /sk-[A-Za-z0-9]/, 'no key literal');
   assert.doesNotMatch(client, /api\.openai\.com|api\.z\.ai/, 'the provider is chosen on the server');
-  assert.match(client, /'\/api\/chat'/, 'exactly one endpoint: the same-origin proxy');
+  assert.match(client, /'\/api\/ai\/chat'/, 'exactly one endpoint: the same-origin proxy');
 });
 
 /* ------------------------------- the proxy ------------------------------- */
