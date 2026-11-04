@@ -553,20 +553,48 @@ export function topicForText(text: string): MockTopicId {
 }
 
 /**
+ * Is this text a question a learner can be asked?
+ *
+ * The authored extras set is prose written by hand, and one of its items was the literal sentence
+ * "Client malformed JSON bhejta hai." — a transport failure quoted as a prompt. Nothing in the bank
+ * may render an error string as an interview question, so this guard rejects the shapes that are
+ * tokens, JSON blobs or parser/transport failures. It is DELIBERATELY narrow: terse Hinglish
+ * scenario prompts ("Agent same tool repeat kar raha hai.") are authored content and stay.
+ */
+const FAILURE_TEXT = /\b(json\.parse|syntaxerror|unexpected token|unexpected end of json|failed to parse|parse error|malformed json|invalid json|internal server error|stack trace)\b/i;
+export function isUsablePrompt(prompt: string): boolean {
+  const text = clean(prompt);
+  if (text.length < 8) return false;
+  if (!/[a-z]{3,}/i.test(text)) return false;
+  // A serialised payload or a raw error envelope is not a question, whatever its length.
+  if (/^[\[{]/.test(text)) return false;
+  if (/"(error|message|detail)"\s*:/.test(text)) return false;
+  return !FAILURE_TEXT.test(text);
+}
+
+/**
  * The second question collection, projected into the one shape the round understands.
  *
  * These items are authored in `content/curriculum/extras.json` and were only reachable from the old
  * `/mock-interviews` page. They are tagged from their own category, keep their real text and answer,
  * and are capped by the same per-section rule in the planner, so neither collection is lost and
  * neither one drowns the other.
+ *
+ * The published artifact repeats the same intensive items several times, so a prompt may only enter
+ * the pool once — a round that asks one question twice is not a longer interview.
  */
 export function questionsFromExtras(extras: MockExtrasLike | undefined): MockQuestion[] {
   if (!extras) return [];
   const out: MockQuestion[] = [];
+  const seen = new Set<string>();
   const push = (item: MockExtraQuestion, id: string, source: string) => {
     const prompt = clean(item?.q);
     const model = String(item?.a ?? '').trim();
     if (!prompt || !model) return;
+    if (!isUsablePrompt(prompt)) return;
+    const key = prompt.toLowerCase().replace(/\s+/g, ' ');
+    if (seen.has(key)) return;
+    seen.add(key);
     out.push({
       id,
       sectionId: 'extras:authored',

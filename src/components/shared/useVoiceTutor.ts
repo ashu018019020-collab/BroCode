@@ -280,6 +280,10 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const rearmCountRef = useRef(0);
   const lastFinalRef = useRef('');
   const lastFinalAtRef = useRef(0);
+  /** The unfinished tail of the CURRENT press. Chrome discards it on abort, so Stop commits it. */
+  const pendingPartialRef = useRef('');
+  /** The callback that owns this press, so the stop path can save the words before closing. */
+  const onTranscriptRef = useRef<((text: string) => void) | null>(null);
   /** Index into `recognitionLanguages(prefs.lang)`: 0 is the learner's choice, then the fallbacks. */
   const langTryRef = useRef(0);
   /** Which mic PRESS owns the lifetime timer — a stale timer must never close a newer press. */
@@ -366,6 +370,18 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
   const stopListening = useCallback(() => {
     keepOpenRef.current = false;
     listeningRef.current = false;
+    // Stop means "keep what I said". Chrome drops the interim transcript the moment the recogniser
+    // is aborted, which is why a learner could speak a whole answer and press Stop on an EMPTY box.
+    const pending = pendingPartialRef.current.trim();
+    pendingPartialRef.current = '';
+    if (pending) {
+      const replay = pending === lastFinalRef.current && Date.now() - lastFinalAtRef.current < REPEAT_WINDOW_MS;
+      if (!replay) {
+        try { onTranscriptRef.current?.(pending); } catch (cause) {
+          console.warn('BroCode voice: the final transcript could not be saved.', cause);
+        }
+      }
+    }
     if (micTimerRef.current) {
       window.clearTimeout(micTimerRef.current);
       micTimerRef.current = 0;
@@ -579,6 +595,8 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
     setInterim('');
     lastFinalRef.current = '';
     lastFinalAtRef.current = 0;
+    pendingPartialRef.current = '';
+    onTranscriptRef.current = onTranscript;
     keepOpenRef.current = continuous;
     rearmCountRef.current = 0;
     langTryRef.current = 0;
@@ -652,6 +670,7 @@ export function useVoiceTutor(thinking = false): VoiceTutor {
           if (result.isFinal) final += result[0].transcript;
           else partial += result[0].transcript;
         }
+        pendingPartialRef.current = partial;
         if (mounted.current) setInterim(partial);
         if (final.trim()) {
           const text = final.trim();

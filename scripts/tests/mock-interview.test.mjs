@@ -304,8 +304,17 @@ test('interview: a section focus pins the round to that real curriculum section'
 test('interview: both authored collections feed the same round', () => {
   const extras = JSON.parse(read('public/generated/curriculum/extras.json'));
   const merged = interview.questionsFromExtras(extras);
-  assert.ok(merged.length >= 50, 'the older mock and intensive sets are not dropped');
+  assert.ok(merged.length >= 40, 'the older mock and intensive sets are not dropped');
+  assert.equal(
+    new Set(merged.map((question) => question.prompt.toLowerCase().replace(/\s+/g, ' '))).size,
+    merged.length,
+    'a repeated authored item enters the pool once',
+  );
   assert.ok(merged.every((question) => question.prompt.length > 5 && question.model.length > 0));
+  assert.ok(
+    merged.every((question) => interview.isUsablePrompt(question.prompt)),
+    'a transport failure is never handed to the candidate as a question',
+  );
   assert.ok(merged.every((question) => question.sectionId === 'extras:authored'));
   assert.ok(new Set(merged.map((question) => question.topic)).size > 1, 'their own category tags survive');
 
@@ -313,6 +322,25 @@ test('interview: both authored collections feed the same round', () => {
   const withExtras = interview.buildMockPlan(sections, config, extras);
   const without = interview.buildMockPlan(sections, config);
   assert.ok(withExtras.available > without.available, 'the merged pool is the bigger pool');
+});
+
+test('interview: a JSON/parse failure is never an interview question', () => {
+  assert.equal(interview.isUsablePrompt('Client malformed JSON bhejta hai.'), false, 'the reported prompt is refused');
+  assert.equal(interview.isUsablePrompt('{"error":"malformed json"}'), false, 'a serialised payload is refused');
+  assert.equal(interview.isUsablePrompt('SyntaxError: unexpected token < in JSON'), false, 'a parser error is refused');
+  assert.equal(interview.isUsablePrompt('What is the difference between == and is?'), true);
+  assert.equal(interview.isUsablePrompt('Explain LEGB with one practical bug.'), true);
+  assert.equal(interview.isUsablePrompt('Agent same tool repeat kar raha hai.'), true, 'authored Hinglish scenarios survive');
+
+  const filtered = interview.questionsFromExtras({
+    intensive: [
+      { cat: 'APIS', q: 'Client malformed JSON bhejta hai.', a: 'Validate at the boundary and return a 4xx.' },
+      { cat: 'APIS', q: 'Client malformed JSON bhejta hai.', a: 'Validate at the boundary and return a 4xx.' },
+      { cat: 'APIS', q: 'API boundary par payload validate kaise karoge?', a: 'Schema validate karo aur structured 4xx return karo.' },
+    ],
+  });
+  assert.equal(filtered.length, 1, 'the failure text and its duplicate never reach the pool');
+  assert.equal(filtered[0].prompt, 'API boundary par payload validate kaise karoge?');
 });
 
 test('interview: a stored report keeps its round length and section focus', () => {

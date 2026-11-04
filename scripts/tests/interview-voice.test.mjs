@@ -93,6 +93,16 @@ test('voice session: auto-advance fires only on a finished speech of a marked an
   assert.ok(rules.phaseLabel('processing').includes('Evaluat'), 'the status chip states the real wait');
 });
 
+test('voice hook: stopping the mic keeps the words Chrome would have thrown away', () => {
+  const hook = read('src/components/shared/useVoiceTutor.ts');
+  // An interim transcript is not committed on abort, so a learner could speak a full answer,
+  // press Stop, and find the box empty. The stop path must save the pending tail first.
+  assert.match(hook, /pendingPartialRef = useRef\(/);
+  assert.match(hook, /const pending = pendingPartialRef\.current\.trim\(\)/);
+  assert.match(hook, /onTranscriptRef\.current\?\.\(pending\)/);
+  assert.match(hook, /if \(!replay\)/, 'the duplicate guard runs before the pending tail is committed');
+});
+
 /* ------------------------- the hook's recovery machinery ------------------------- */
 
 test('voice hook: the recovery machinery is pinned where the speech engine reads it', () => {
