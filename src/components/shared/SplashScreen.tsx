@@ -1,0 +1,132 @@
+import { useEffect, useState, type ReactNode } from 'react';
+import { useAuth } from '../../core/auth/AuthProvider';
+
+/**
+ * The startup screen.
+ *
+ * ONE job: hold the first paint until the app actually knows who is signed in. It is mounted ABOVE
+ * the router (`main.tsx`), so an internal navigation never replays it — only a document load does.
+ *
+ * The image's own "78%" is artwork. Nothing here fakes progress: the only status text is the real
+ * phase the session restore is in, and a failure is a failure with a Retry, never a spinner that
+ * hangs forever.
+ */
+const IMAGE_SRC = './images/brocode-loading.png';
+const EXIT_MS = 380;
+/** After this long, a restore that has not answered says so and offers the two real exits. */
+const SLOW_MS = 15_000;
+
+export function StartupSplash({ children }: { children: ReactNode }) {
+  const { loading, serviceError } = useAuth();
+  const [dismissedError, setDismissedError] = useState(false);
+  const [gone, setGone] = useState(false);
+  const [slow, setSlow] = useState(false);
+  const [imageBroken, setImageBroken] = useState(false);
+
+  // A failed account service is an error state that needs an answer, not a splash that spins
+  // forever. "Continue" is the honest way out: the app itself already renders signed-out.
+  const blocked = Boolean(serviceError) && !dismissedError;
+  const busy = loading || blocked;
+
+  useEffect(() => {
+    if (busy) {
+      setGone(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setGone(true), EXIT_MS);
+    return () => window.clearTimeout(timer);
+  }, [busy]);
+
+  useEffect(() => {
+    if (!loading) return;
+    const timer = window.setTimeout(() => setSlow(true), SLOW_MS);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
+
+  // The page behind the splash must not scroll under it.
+  useEffect(() => {
+    if (gone) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
+  }, [gone]);
+
+  const reload = () => window.location.reload();
+
+  return (
+    <>
+      {!gone && (
+        <div
+          className={`boot-splash${busy ? '' : ' is-leaving'}`}
+          aria-busy={busy}
+          aria-live="polite"
+          role="status"
+        >
+          <div className="boot-aurora" aria-hidden="true" />
+          <div className="boot-grid" aria-hidden="true" />
+          <div className="boot-stars" aria-hidden="true" />
+
+          <div className="boot-inner">
+            {imageBroken ? (
+              // The artwork is missing from this build: a wordmark is better than a broken icon.
+              <div className="boot-fallback" aria-hidden="true">
+                <span className="boot-fallback-mark">&lt;/&gt;</span>
+                <b>BroCode</b>
+              </div>
+            ) : (
+              <img
+                className="boot-art"
+                src={IMAGE_SRC}
+                alt="BroCode — an anime coder at a neon desk while the learning platform starts"
+                width={1400}
+                height={1100}
+                decoding="async"
+                fetchPriority="high"
+                onError={() => setImageBroken(true)}
+              />
+            )}
+
+            {blocked ? (
+              <div className="boot-error">
+                <p className="boot-status">{serviceError}</p>
+                <div className="boot-actions">
+                  <button type="button" className="boot-btn primary" onClick={reload}>Retry</button>
+                  <button type="button" className="boot-btn" onClick={() => setDismissedError(true)}>
+                    Continue to BroCode
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="boot-status">
+                  {loading ? 'Restoring your session…' : 'Ready — opening your dashboard…'}
+                </p>
+                {loading && (
+                  <span className="boot-dots" aria-hidden="true">
+                    <span className="boot-dot" />
+                    <span className="boot-dot" />
+                    <span className="boot-dot" />
+                  </span>
+                )}
+                {slow && loading && (
+                  <div className="boot-error">
+                    <p className="boot-status">
+                      This is taking longer than usual. The account service has not answered yet.
+                    </p>
+                    <div className="boot-actions">
+                      <button type="button" className="boot-btn" onClick={reload}>Retry</button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className={`app-reveal${gone ? ' is-live' : ''}`} aria-hidden={!gone}>
+        {children}
+      </div>
+    </>
+  );
+}
