@@ -81,10 +81,21 @@ export function scoreVoice(voice: BrowserVoice, locale: VoiceLocale): number {
   // Every tie-breaker below is smaller than one step of the accent chain: the accent the learner
   // expects outranks a preferred name, and the name only decides between voices of the same tag.
   const gender = isFemaleSounding(voice.name) ? -0.75 : 0;
-  const brand = /^google\b/i.test(voice.name) ? -0.5 : 0;
+  const google = /^google\b/i.test(voice.name);
+  const brand = google ? -0.5 : 0;
+  // Neural/"Natural" voices (Edge/Windows, Chrome's cloud voices) are the closest thing to an AI
+  // voice the platform offers: same language, better prosody than the legacy formant ones. Google's
+  // own voices count as neural — they are cloud-synthesised — so this preference does not downgrade
+  // the one family the suite already prefers.
+  const quality = google || /\b(natural|neural|premium|enhanced|wavenet|studio)\b/i.test(voice.name)
+    ? -0.45
+    : 0;
   const local = voice.localService ? 0 : 0.5;
   const declared = voice.default ? -0.25 : 0;
-  return language + gender + brand + local + declared;
+  // The personality block never outranks the accent chain: one chain step is 1, so the whole block is
+  // clamped below it. Otherwise a natural US voice would beat an installed Indian English one.
+  const taste = Math.max(-0.95, Math.min(0.95, gender + brand + quality + local + declared));
+  return language + taste;
 }
 
 /** Every voice the device has for this language, best first. Other languages are excluded. */

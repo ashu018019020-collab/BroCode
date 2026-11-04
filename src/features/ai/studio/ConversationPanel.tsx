@@ -102,6 +102,13 @@ function Bubble({
   return (
     <article className={`msg ${isMentor ? 'from-mentor' : 'from-learner'}`}>
       <div className="msg-body">
+        {isMentor && turn.engine === 'llm' && (
+          <span
+            className="engine-chip"
+            title="Answered by the connected AI model, grounded in your own lessons"
+          >AI</span>
+        )}
+
         {isMentor
           ? <MentorText text={revealed} />
           : <p className="learner-text">{turn.text}</p>}
