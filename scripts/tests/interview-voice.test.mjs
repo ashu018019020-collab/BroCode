@@ -105,6 +105,15 @@ test('voice hook: stopping the mic keeps the words Chrome would have thrown away
   assert.match(hook, /if \(!replay\)/, 'the duplicate guard runs before the pending tail is committed');
 });
 
+test('interview: the authored answer can be revealed without pretending it was checked', () => {
+  const panel = read('src/features/ai/MockInterviewPanel.tsx');
+  assert.match(panel, /Show answer/);
+  assert.match(panel, /Hide answer/);
+  assert.match(panel, /aria-expanded=\{revealed\}/, 'the reveal is announced');
+  assert.match(panel, /\{question\.model\}/, 'the revealed text is the authored answer, not an invented one');
+  assert.match(panel, /Revealing the answer does not score it/);
+});
+
 /* ------------------------- the hook's recovery machinery ------------------------- */
 
 test('voice hook: the recovery machinery is pinned where the speech engine reads it', () => {

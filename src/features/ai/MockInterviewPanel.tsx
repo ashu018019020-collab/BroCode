@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowLeft, ArrowRight, BarChart3, CheckCircle2, Clock, History,
+  AlertTriangle, ArrowLeft, ArrowRight, BarChart3, CheckCircle2, Clock, Eye, EyeOff, History,
   ListChecks, Loader2, Mic2, MicOff, Play, RotateCcw, Send, Sparkles, Square, Trash2, Volume2,
 } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
@@ -117,6 +117,8 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
   const [aiResult, setAiResult] = useState<EvaluationResult | null>(null);
   const [aiQuestionId, setAiQuestionId] = useState('');
   const [aiError, setAiError] = useState<string | null>(null);
+  /** Showing the authored answer is an explicit reveal, never an automatic hint. */
+  const [revealed, setRevealed] = useState(false);
 
   const voice = useVoiceTutor(false);
   const voiceRef = useRef(voice);
@@ -173,6 +175,7 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
     setAiResult(null);
     setAiQuestionId('');
     setAiError(null);
+    setRevealed(false);
   };
 
   const finish = useCallback(() => {
@@ -646,8 +649,22 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
               disabled={checking || (!answer.trim() && !coding?.ran)}
             >
               {checking ? <><Loader2 size={13} className="spin" /> Checking…</> : <><CheckCircle2 size={13} /> Check answer</>}
+            </button>            <button
+              type="button"
+              className="btn small"
+              onClick={() => setRevealed((value) => !value)}
+              aria-expanded={revealed}
+              aria-controls="mock-model-answer"
+              title="Show the authored answer for this question"
+            >
+              {revealed ? <><EyeOff size={13} /> Hide answer</> : <><Eye size={13} /> Show answer</>}
             </button>
-            <button type="button" className="btn small" onClick={askFollowUp} disabled={!feedback}>
+            <button
+              type="button"
+              className="btn small"
+              onClick={askFollowUp}
+              disabled={!feedback}
+            >
               <Sparkles size={13} /> Ask a follow-up
             </button>
             <button type="button" className="btn small ghost" onClick={skipQuestion} disabled={Boolean(feedback)}>
@@ -671,6 +688,18 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
                 ? 'Microphone off. The transcript stays editable — fix a word, then press Check answer.'
                 : 'Type or press Start listening. Nothing is sent to BroCode as audio.'}
           </p>
+          {revealed && (
+            <div id="mock-model-answer" className="fadeup" style={{ marginTop: 10 }}>
+              <p className="small" style={{ margin: '0 0 4px' }}>
+                <b>Authored answer</b>{' '}
+                <span className="muted">— the reference Check answer marks against. Read it after your own attempt.</span>
+              </p>
+              <div className="bubble small">{question.model}</div>
+              <p className="small muted" style={{ margin: '6px 0 0' }}>
+                Revealing the answer does not score it. Press Check answer when you want the evaluation.
+              </p>
+            </div>
+          )}
         </section>
 
         {(question.kind === 'coding' || question.kind === 'debug') && (
