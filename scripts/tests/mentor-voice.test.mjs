@@ -449,9 +449,8 @@ test('surface: voice input and manual replay do not depend on Auto speak', () =>
   const studio = read('src/features/ai/studio/MentorStudio.tsx');
   assert.match(studio, /voice\.prime\(\)/, 'a click unlocks speech before the async answer');
   assert.match(studio, /const toggleMic/, 'the microphone has one guarded entry point');
-  assert.match(studio, /const speakLast/, 'Speak reads the newest answer');
+  assert.match(studio, /speakFinal\(result\.reply\.spoken/, 'every finished answer is read through the one voice');
   assert.match(studio, /speakFinal\(text, \[\], false\)/, 'a manual replay ignores the Auto speak switch');
-  assert.match(studio, /role === 'mentor'/, 'Speak is enabled by the answer, not by a prior spoken one');
 });
 
 test('surface: the answer engine and the voice report their own state', () => {
@@ -459,12 +458,11 @@ test('surface: the answer engine and the voice report their own state', () => {
   assert.match(ask, /setError\(/, 'a failed answer is reported, not swallowed');
   assert.match(ask, /error: string \| null/, 'the engine exposes its own error');
   const studio = read('src/features/ai/studio/MentorStudio.tsx');
-  assert.match(studio, /aiError=\{chat\.error\}/, 'the panel receives the engine error');
+  assert.match(studio, /error=\{chat\.error\}/, 'the conversation carries the engine error');
   assert.match(studio, /if \(handsFreeRef\.current\)/, 'hands-free sends; other dictation is a draft');
   assert.match(studio, /handsFreeRef\.current = voice\.handsFree/, 'the loop reads the CURRENT switch, not the render that opened the mic');
   assert.match(studio, /voice\.interrupt\(\);\s*\n\s*voice\.prime\(\);/, 'interrupt runs before prime, so cancelling the queue cannot cancel the unlock');
   assert.match(studio, /setDictation/, 'a transcript is editable before it is sent');
-  assert.match(studio, /const setHandsFree/, 'hands-free opens the microphone');
   const panel = read('src/features/ai/studio/ConversationPanel.tsx');
   assert.match(panel, /dictation\?\.text/, 'the dictated draft lands in the composer');
   assert.match(studio, /catch \(cause\) \{\s*\n\s*console\.warn\('BroCode voice/, 'a speech failure can never block the answer');
@@ -476,21 +474,21 @@ test('voice: every microphone failure is a sentence the learner can act on', () 
   assert.match(hook, /MIC_ERRORS/, 'recogniser error codes are mapped to wording');
   assert.match(hook, /setMicError\(/, 'the failure is published, not swallowed');
   assert.match(hook, /dismissMicError/, 'the learner can dismiss it');
-  const center = read('src/features/ai/studio/VoiceControlCenter.tsx');
-  assert.match(center, /voice\.micError/, 'the panel renders the microphone failure');
+  const studio = read('src/features/ai/studio/MentorStudio.tsx');
+  assert.match(studio, /voice\.micError/, 'a microphone failure is still announced');
   const engine = read('src/core/voice/voice-engine.ts');
   assert.match(engine, /No speech voice is installed on this device/, 'no installed voice is said plainly');
 });
 
-test('surface: one profile on screen — no dropdown and no device voice names', () => {
-  const center = read('src/features/ai/studio/VoiceControlCenter.tsx');
-  assert.doesNotMatch(center, /<select/, 'the voice dropdown is gone');
-  assert.doesNotMatch(center, /selectVoice|previewVoice|availableVoices/, 'no per-voice picker callbacks');
-  assert.match(center, /profile\.name/);
-  assert.match(center, /Test voice/);
+test('surface: the mentor keeps one voice path and no voice panel', () => {
+  assert.equal(
+    fs.existsSync(path.join(ROOT, 'src/features/ai/studio/VoiceControlCenter.tsx')), false,
+    'the separate voice panel is deleted',
+  );
   const hook = read('src/components/shared/useMentorVoice.ts');
   assert.doesNotMatch(hook, /setSelection|selectVoice|previewVoice/, 'the hook exposes no voice list');
   assert.doesNotMatch(hook, /voices: VoiceSelection/, 'no stored per-language voice picks');
+  assert.match(hook, /engine\.speak\(/, 'answers are read through the one engine');
 });
 
 /* ------------------------------- smart tools ------------------------------ */
@@ -538,7 +536,7 @@ test('studio: one studio, one voice adapter, one control center', () => {
 
   const studio = read('src/features/ai/studio/MentorStudio.tsx');
   assert.ok(studio.includes('useMentorVoice'), 'the studio uses the shared adapter');
-  assert.ok(studio.includes('<VoiceControlCenter'), 'the control center is the one voice surface');
+  assert.ok(!studio.includes('<VoiceControlCenter'), 'the mentor shows no separate voice panel');
   assert.ok(studio.includes('<SmartToolsPanel'), 'the smart tools are wired');
   assert.ok(studio.includes('MockInterviewPanel'), 'the interview tab mounts the existing engine');
 
@@ -546,13 +544,10 @@ test('studio: one studio, one voice adapter, one control center', () => {
   assert.ok(hook.includes('getVoiceEngine'), 'the adapter talks to the one engine');
   assert.ok(!/createVoiceClient|tts\.worker/.test(hook), 'there is no model worker any more');
 
-  const cards = read('src/features/ai/studio/VoiceControlCenter.tsx');
-  assert.match(cards, /role="switch"/, 'the switches are switches');
-  assert.match(cards, /aria-checked=\{checked\}/, 'and they announce their state');
-  assert.match(cards, /Auto speak/);
-  assert.match(cards, /Hands-free/);
-  assert.match(cards, /Test voice/, 'the diagnostics panel can speak a real sample');
-  assert.doesNotMatch(cards, /Supertonic|Download model|ONNX|WASM/i);
+  assert.equal(
+    fs.existsSync(path.join(ROOT, 'src/features/ai/studio/VoiceControlCenter.tsx')), false,
+    'the separate voice panel is deleted; the mentor keeps one voice path',
+  );
 });
 
 test('studio: the dark studio is scoped, token-driven and honours reduced motion', () => {
@@ -568,7 +563,7 @@ test('studio: the dark studio is scoped, token-driven and honours reduced motion
 });
 
 test('studio: no stale server-voice warning is shown to the learner', () => {
-  for (const file of ['ConversationPanel.tsx', 'VoiceControlCenter.tsx', 'SmartToolsPanel.tsx', 'MentorStudio.tsx']) {
+  for (const file of ['ConversationPanel.tsx', 'SmartToolsPanel.tsx', 'MentorStudio.tsx']) {
     const source = read(`src/features/ai/studio/${file}`);
     assert.ok(!/not configured/i.test(source), `${file} carries no server-voice warning`);
   }

@@ -17,7 +17,6 @@ import { speechLanguage } from '../../../core/voice/mentor-voice';
 import { toast } from '../../../components/ui/Toast';
 import { ConversationPanel } from './ConversationPanel';
 import { SmartToolsPanel } from './SmartToolsPanel';
-import { VoiceControlCenter } from './VoiceControlCenter';
 import './studio.css';
 
 type StudioTab = 'mentor' | 'coach' | 'interview' | 'reports' | 'tools';
@@ -79,6 +78,15 @@ export function MentorStudio() {
     if (chat.error) toast(chat.error, 'warning');
   }, [chat.error]);
 
+  // The voice panel is gone, so a microphone failure is announced here instead — it must never
+  // disappear into a silent stop.
+  const dismissMicError = voice.dismissMicError;
+  useEffect(() => {
+    if (!voice.micError) return;
+    toast(voice.micError, 'warning');
+    dismissMicError();
+  }, [voice.micError, dismissMicError]);
+
   const lastLearner = useMemo(() => {
     for (let i = chat.turns.length - 1; i >= 0; i -= 1) {
       if (chat.turns[i]?.role === 'learner') return chat.turns[i].text;
@@ -128,19 +136,6 @@ export function MentorStudio() {
     }
   }, [voice]);
 
-  /** Speak the newest mentor turn — independent of whether Auto speak was ever on. */
-  const speakLast = useCallback(() => {
-    for (let i = chat.turns.length - 1; i >= 0; i -= 1) {
-      const turn = chat.turns[i];
-      if (turn?.role === 'mentor' && turn.text.trim()) {
-        speakFinal(turn.text, turn.sources ?? [], false);
-        return;
-      }
-    }
-    // A disabled-looking button with no explanation is why this read as "Speak does not work".
-    toast('Ask a question first — Speak then reads the answer aloud.', 'info');
-  }, [chat.turns, speakFinal]);
-
   const ask = useCallback(async (text: string) => {
     const clean = text.trim();
     if (!clean) return;
@@ -179,16 +174,6 @@ export function MentorStudio() {
   }, [ask]);
   const handleTranscriptRef = useRef(handleTranscript);
   handleTranscriptRef.current = handleTranscript;
-
-  // Hands-free is not just a stored preference: switching it on opens the microphone now, and off
-  // releases it. The mic is never opened while the mentor is speaking.
-  const setHandsFree = useCallback((on: boolean) => {
-    voice.setHandsFree(on);
-    if (!on) { voice.stopListening(); return; }
-    if (!voice.recognitionSupported || voice.listening) return;
-    voice.prime();
-    voice.startListening(handleTranscriptRef.current);
-  }, [voice]);
 
   const toggleMic = useCallback(() => {
     if (!voice.recognitionSupported) {
@@ -308,16 +293,6 @@ export function MentorStudio() {
           />
 
           <aside className="studio-right">
-            <VoiceControlCenter
-              voice={voice}
-              hasSpoken={chat.turns.some((turn) => turn.role === 'mentor' && turn.text.trim().length > 0)}
-              onSpeakLast={speakLast}
-              onMic={toggleMic}
-              aiBusy={chat.busy}
-              aiError={chat.error}
-              onDismissAiError={chat.dismissError}
-              onHandsFree={setHandsFree}
-            />
             <SmartToolsPanel
               busy={chat.busy}
               context={{
