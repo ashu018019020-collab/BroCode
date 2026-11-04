@@ -548,8 +548,8 @@ export class VoiceEngine {
       const synth = this.synthesis();
       if (synth && (synth.speaking || synth.pending)) return;
       if (this.retries > 0) {
-        this.fail('The device voice did not start. Press Test voice, or check that the voice is '
-          + 'installed in your system settings.');
+        this.fail('The device voice did not start. Check that a voice for this language is '
+          + 'installed in your browser or system settings, then ask again.');
         return;
       }
       this.retries += 1;
