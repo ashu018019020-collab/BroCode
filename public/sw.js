@@ -3,7 +3,7 @@
  * cache-first for immutable app assets, network-first for the JSON content packs
  * (curriculum / question banks / tracks) so a content update is never shadowed
  * by a stale cache. All app assets are local — nothing leaves the device. */
-const CACHE = 'aiml-v7';
+const CACHE = 'aiml-v8';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

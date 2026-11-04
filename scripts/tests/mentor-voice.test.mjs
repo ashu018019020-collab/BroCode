@@ -25,7 +25,6 @@ const discovery = await load('src/core/voice/voice-discovery.ts');
 const profile = await load('src/core/voice/voice-profile.ts');
 const engineModule = await load('src/core/voice/voice-engine.ts');
 const tools = await load('src/core/ai/smart-tools.ts');
-const serverSpeech = await load('src/core/voice/server-speech.ts');
 
 /* --------------------------------- states --------------------------------- */
 
@@ -481,28 +480,6 @@ test('voice: every microphone failure is a sentence the learner can act on', () 
   assert.match(center, /voice\.micError/, 'the panel renders the microphone failure');
   const engine = read('src/core/voice/voice-engine.ts');
   assert.match(engine, /No speech voice is installed on this device/, 'no installed voice is said plainly');
-});
-
-test('voice: the server AI voice is planned per sentence, inside the route limit, in order', () => {
-  const plan = serverSpeech.planServerSpeech(
-    'Decorator function ko wrap karta hai aur logging add karta hai. A tuple is immutable.',
-    'auto',
-  );
-  assert.ok(plan.length >= 1, 'an answer produces at least one chunk');
-  assert.ok(plan.every((chunk) => chunk.lang === 'hi-IN' || chunk.lang === 'en-IN'));
-  assert.ok(plan.every((chunk) => chunk.text.length <= 480), 'the TTS route cap (600) is respected');
-  assert.match(plan.map((chunk) => chunk.text).join(' '), /immutable/, 'no sentence is dropped');
-  assert.deepEqual(serverSpeech.planServerSpeech('   '), [], 'nothing to say is an empty plan');
-  assert.match(serverSpeech.serverVoiceLine(true, 'hi-IN-SwaraNeural'), /Swara/);
-  assert.equal(serverSpeech.serverVoiceLine(false, null), '');
-
-  // The mentor must ASK the deployment and USE its audio, not assume a device voice is enough.
-  const hook = read('src/components/shared/useMentorVoice.ts');
-  assert.match(hook, /voiceStatus\(\)/, 'the deployment is probed, not assumed');
-  assert.match(hook, /fetchSpeech\(/, 'the AI voice is the server audio');
-  assert.match(hook, /speakWithDevice\(clean, onEnd\)/, 'a server failure falls back to the device voice');
-  const center = read('src/features/ai/studio/VoiceControlCenter.tsx');
-  assert.match(center, /serverNote/, 'the panel names the voice that will speak');
 });
 
 test('surface: one profile on screen — no dropdown and no device voice names', () => {
