@@ -203,10 +203,24 @@ test('brand: the PWA manifest installs the new icon on every platform', () => {
   assert.deepEqual(any.map((i) => i.sizes).sort(), ['192x192', '512x512'], 'install needs 192 and 512');
   assert.deepEqual(maskable.map((i) => i.sizes), ['512x512'], 'Android needs one maskable 512');
   for (const icon of manifest.icons) {
-    const rel = `public/${icon.src.replace(/^\.\//, '')}`;
+    // The query string is the cache-buster: the file on disk has no `?v=`, but the URL a launcher
+    // fetches does, which is the ONLY way an already-installed PWA can pick up a new mark.
+    const rel = `public/${icon.src.replace(/^\.\//, '').split('?')[0]}`;
     assert.ok(exists(rel), `manifest promises ${icon.src}, which does not ship`);
     assert.equal(icon.type, 'image/png');
+    assert.match(icon.src, /\?v=\d+$/, `${icon.src} must carry a version, or installs keep the old icon`);
   }
+  // One version for every branded URL, so a bump cannot leave the tab and the launcher on different
+  // marks — the exact bug the screenshots showed (sidebar new, tab and install icon old).
+  const html = read('index.html');
+  const versions = new Set([
+    ...[...html.matchAll(/\?v=(\d+)/g)].map((m) => m[1]),
+    ...[...read('public/manifest.webmanifest').matchAll(/\?v=(\d+)/g)].map((m) => m[1]),
+  ]);
+  assert.equal(versions.size, 1, `branded URLs disagree on the cache version: ${[...versions].join(', ')}`);
+  const sw = /const CACHE = 'aiml-v(\d+)'/.exec(read('public/sw.js'));
+  assert.ok(sw, 'the service worker cache is versioned');
+  assert.equal(sw[1], [...versions][0], 'the SW cache and the icon URLs must bump together');
 });
 
 test('brand: every surface draws the same component, and the old bitmaps are gone', () => {

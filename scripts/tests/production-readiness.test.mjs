@@ -249,7 +249,8 @@ test('gate E: PWA metadata is present and consistent with the shell', { skip: !d
   assert.match(html, /name="theme-color"/, 'the shell must declare a theme colour');
   // Every icon the manifest promises must actually ship, or install breaks silently.
   for (const icon of manifest.icons) {
-    const file = path.join(DIST, icon.src.replace(/^\.\//, ''));
+    // `?v=` is the install-cache buster on the URL, not part of the file name.
+    const file = path.join(DIST, icon.src.replace(/^\.\//, '').split('?')[0]);
     assert.ok(fs.existsSync(file), `manifest icon missing from dist: ${icon.src}`);
   }
 });

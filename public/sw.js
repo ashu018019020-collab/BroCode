@@ -3,7 +3,7 @@
  * cache-first for immutable app assets, network-first for the JSON content packs
  * (curriculum / question banks / tracks) so a content update is never shadowed
  * by a stale cache. All app assets are local — nothing leaves the device. */
-const CACHE = 'aiml-v12'; // v12: the official interlocked ribbon mark replaced the interim tile-B icon
+const CACHE = 'aiml-v13'; // v13: every icon URL is versioned, so the tab and installed launcher refetch the ribbon mark
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
