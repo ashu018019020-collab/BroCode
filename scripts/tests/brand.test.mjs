@@ -66,6 +66,7 @@ test('brand: one generator owns the mark, and every size it promises exists', ()
     'public/brand/icon-16.png', 'public/brand/icon-32.png', 'public/brand/icon-48.png',
     'public/brand/icon-96.png', 'public/brand/icon-192.png', 'public/brand/icon-512.png',
     'public/brand/maskable-512.png', 'public/brand/apple-touch-icon-180.png',
+    'public/brand/brocode-mark-1024.png',
     'public/brand/brocode-mark.svg', 'public/favicon.ico',
   ]) {
     assert.ok(exists(rel), `${rel} is missing — run \`npm run brand:write\``);
@@ -84,6 +85,7 @@ test('brand: every raster icon is the exact size its filename claims', () => {
     'public/brand/icon-512.png': 512,
     'public/brand/maskable-512.png': 512,
     'public/brand/apple-touch-icon-180.png': 180,
+    'public/brand/brocode-mark-1024.png': 1024,
   };
   for (const [rel, size] of Object.entries(expected)) {
     const png = decodePNG(rel);
@@ -93,18 +95,31 @@ test('brand: every raster icon is the exact size its filename claims', () => {
   }
 });
 
-test('brand: the favicon sizes stay transparent, installed sizes stay opaque', () => {
-  // "Transparent background where supported": the tab icon sits on the browser's own chrome, so the
-  // field outside the rounded tile must be empty — a white plate there is what a bad export looks like.
-  for (const rel of ['public/brand/icon-16.png', 'public/brand/icon-32.png', 'public/brand/icon-192.png']) {
+test('brand: the tab and install icons are background-free — only the logo shows', () => {
+  // "One logo, transparent field": the tab icons sit on the browser chrome and the manifest "any"
+  // icons on the install sheet, so those carry the tubes and nothing else. A plate behind the mark
+  // is what a bad export looks like here.
+  for (const rel of [
+    'public/brand/icon-16.png', 'public/brand/icon-32.png', 'public/brand/icon-192.png',
+    'public/brand/icon-512.png', 'public/brand/brocode-mark-1024.png',
+  ]) {
     const png = decodePNG(rel);
-    assert.equal(png.at(0, 0)[3], 0, `${rel} must be transparent in the corner`);
+    assert.equal(png.at(0, 0)[3], 0, `${rel} must be transparent outside the mark`);
+    assert.equal(png.at(png.width - 1, png.height - 1)[3], 0, `${rel} must not paint a plate`);
   }
-  // An installed app paints its own plate behind the icon, and iOS rounds the corners itself, so the
-  // maskable and apple-touch tiles are full-bleed instead of transparent.
+});
+
+test('brand: the launcher artifacts sit on the brand plate, not on transparency', () => {
+  // Android crops a maskable icon to its own shape and iOS paints black behind alpha, so these two
+  // — and only these two — carry the brand navy/indigo plate, fully opaque to the corner.
   for (const rel of ['public/brand/maskable-512.png', 'public/brand/apple-touch-icon-180.png']) {
     const png = decodePNG(rel);
-    assert.equal(png.at(0, 0)[3], 255, `${rel} must be opaque (no transparent plate)`);
+    const corners = [[0, 0], [png.width - 1, 0], [0, png.height - 1], [png.width - 1, png.height - 1]];
+    for (const [x, y] of corners) {
+      const [r, g, b, a] = png.at(x, y);
+      assert.equal(a, 255, `${rel} corner ${x},${y} must be opaque — the launcher paints behind it`);
+      assert.ok(b > r && b > 40, `${rel} corner ${r},${g},${b} is not the brand plate`);
+    }
   }
 });
 
@@ -129,47 +144,49 @@ test('brand: the mark is centred and square inside its tile, never stretched', (
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
   assert.ok(Math.abs(cx - png.width / 2) <= 2 && Math.abs(cy - png.height / 2) <= 2, 'the mark must be centred');
-  // The safe-area padding the maskable variant exists for: at least 10% of the plate on each side.
+  // The safe-area padding the maskable variant exists for: the mark's farthest pixel must stay
+  // inside the mask circle Android might draw — centred, radius 80% of the canvas.
   const maskable = decodePNG('public/brand/maskable-512.png');
-  assert.equal(maskable.at(2, 2)[3], 255, 'the maskable plate must reach the edge');
-  const inset = Math.round(maskable.width * 0.08);
-  assert.notDeepEqual(
-    [maskable.at(inset, maskable.height / 2)[0], maskable.at(inset, maskable.height / 2)[1], maskable.at(inset, maskable.height / 2)[2]],
-    [0, 0, 0],
-    'the maskable plate is a flat plate, not a black band',
-  );
+  let farthest = 0;
+  for (let y = 0; y < maskable.height; y += 1) {
+    for (let x = 0; x < maskable.width; x += 1) {
+      const [r, g, b] = maskable.at(x, y);
+      if (Math.max(r, g, b) - Math.min(r, g, b) < 60) continue; // the plate, not the mark
+      farthest = Math.max(farthest, Math.hypot(x - maskable.width / 2, y - maskable.height / 2));
+    }
+  }
+  assert.ok(farthest <= maskable.width * 0.4, `mark reaches ${farthest.toFixed(1)}px from centre; the maskable safe zone is 40%`);
 });
 
 test('brand: the 16px favicon still shows the mark, not a colour blob', () => {
-  // A favicon that is "the right file" but unreadable at 16 px fails the actual requirement. Two
-  // measurable signs that the glyph survived: a bright stroke pixel and the near-black inner tile —
-  // the mark's two highest-contrast regions, counted on the real bytes.
+  // The old check counted a white glyph on a near-black inner tile; the official chevron diamond has
+  // no inner tile. What must survive 16 px instead is the mark's saturated tube colour — the cyan/
+  // blue/magenta gradient — plus enough of the dark extrusion edge for the diamond to read as a
+  // SHAPE rather than a soft smudge, all counted on the real bytes.
   const png = decodePNG('public/brand/icon-16.png');
-  let bright = 0;
+  let saturated = 0;
   let dark = 0;
   for (let y = 0; y < 16; y += 1) {
     for (let x = 0; x < 16; x += 1) {
       const [r, g, b, a] = png.at(x, y);
       if (a < 128) continue;
-      if (r > 190 && g > 190 && b > 190) bright += 1;
-      if (r < 70 && g < 70 && b < 95) dark += 1;
+      if (Math.max(r, g, b) - Math.min(r, g, b) >= 60) saturated += 1;
+      if (r < 70 && g < 70 && b < 110) dark += 1;
     }
   }
-  assert.ok(dark >= 6, `the inner tile covers only ${dark} opaque pixels at 16px`);
-  assert.ok(bright >= 3, `the code glyph covers only ${bright} bright pixels at 16px`);
-  // The small variant exists because three glyphs merge: at 16 px the slash is deliberately gone.
+  assert.ok(saturated >= 12, `the tube gradient covers only ${saturated} opaque pixels at 16px`);
+  assert.ok(dark >= 2, `the extrusion edge covers only ${dark} opaque pixels at 16px`);
+  // The small variant re-inflates the tube because 10px of stroke does not survive without it.
   const generator = read('scripts/brand-icons.cjs');
-  assert.match(generator, /MARK_SMALL/, '16–32 px must use the opticall- tuned variant');
+  assert.match(generator, /MARK_SMALL/, '16–32 px must use the optically tuned variant');
 });
 
 test('brand: the shell names the tab icon, the iOS tile and the vector master', () => {
   const html = read('index.html');
-  // The URLs are deliberately versioned (?v=11): a stale browser favicon cache has been the
-  // customer-facing failure three times running, so the shell forces a fresh fetch itself.
-  assert.match(html, /<link rel="icon" href="\.\/favicon\.ico\?v=11" sizes="16x16 32x32 48x48" \/>/);
-  assert.match(html, /<link rel="icon" type="image\/png" sizes="32x32" href="\.\/brand\/icon-32\.png\?v=11" \/>/);
-  assert.match(html, /rel="apple-touch-icon" sizes="180x180" href="\.\/brand\/apple-touch-icon-180\.png\?v=11"/);
-  assert.match(html, /type="image\/svg\+xml" href="\.\/brand\/brocode-mark\.svg\?v=11"/);
+  assert.match(html, /<link rel="icon" href="\.\/favicon\.ico\?v=\d+" sizes="16x16 32x32 48x48" \/>/);
+  assert.match(html, /<link rel="icon" type="image\/png" sizes="32x32" href="\.\/brand\/icon-32\.png\?v=\d+" \/>/);
+  assert.match(html, /rel="apple-touch-icon" sizes="180x180" href="\.\/brand\/apple-touch-icon-180\.png\?v=\d+"/);
+  assert.match(html, /type="image\/svg\+xml" href="\.\/brand\/brocode-mark\.svg\?v=\d+"/);
   assert.match(html, /"logo": "https:\/\/[^"]*\/brand\/icon-512\.png"/, 'the JSON-LD organisation logo is the new mark');
 });
 

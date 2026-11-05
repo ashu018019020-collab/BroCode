@@ -10,21 +10,25 @@
  * artifact the shell, the PWA manifest and the OG card name:
  *
  *   public/brand/brocode-mark.svg          vector master (infinitely sharp, transparent field)
- *   public/brand/icon-{16,32,48,96}.png    favicon sizes, transparent behind the rounded tile
+ *   public/brand/brocode-mark-1024.png     raster master at 2× the tile, transparent field
+ *   public/brand/icon-{16,32,48,96}.png    favicon sizes, transparent behind the mark
  *   public/brand/icon-192.png              install icon (manifest, "any")
  *   public/brand/icon-512.png              install icon (manifest "any", OG card source)
- *   public/brand/maskable-512.png          full-bleed plate with the safe-area padding Android wants
- *   public/brand/apple-touch-icon-180.png  iOS home screen — opaque, because iOS paints the corners
+ *   public/brand/maskable-512.png          mark inside the safe-area padding Android masks want
+ *   public/brand/apple-touch-icon-180.png  iOS home screen (iOS paints black behind transparency)
  *   public/favicon.ico                     16/32/48 packed as PNG entries (what `/favicon.ico` needs)
  *
  * WHY PURE JS: `npm run og` needs a local Chrome/Edge, which a build box does not have. This renders
  * with signed-distance shapes and analytic antialiasing, so the mark is reproducible anywhere Node
  * runs, with no image library. Do not replace it with a manual export.
  *
- * The mark is the official BroCode tile: a cyan → blue → purple rounded square, a night-black inner
- * tile and the `< / >` code glyph in ice white. The supplied artwork's outer ring and glow are left
- * to CSS (`drop-shadow` on the sidebar tile): at 16 px a ring is sub-pixel noise, and a favicon has
- * to stay legible at exactly that size.
+ * The mark is the official BroCode diamond: two giant code chevrons `‹ ›` interlocked bottom-to-top,
+ * their tube strokes gloss-shaded like the supplied 3D artwork — cyan → blue → violet → magenta
+ * flowing through every arm, a dark extrusion peeking toward the centre slit, a soft gloss along
+ * each tube's upper edge. The field outside the tubes is transparent everywhere except the two
+ * launcher artifacts (maskable + apple-touch), which take a brand-navy plate: Android crops a
+ * maskable icon to its own shape and iOS paints black behind alpha, so a plate is what keeps the
+ * mark readable there. The tab icons and the manifest "any" icons stay fully transparent.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -36,55 +40,47 @@ const OUT = path.join(ROOT, 'public', 'brand');
 /* ------------------------------- the mark -------------------------------- */
 
 const SPACE = 512;
-const TILE = { cx: 256, cy: 256, hw: 200, hh: 200, r: 104 };
-const INNER = { cx: 256, cy: 256, hw: 106, hh: 106, r: 44 };
-const GLYPH = {
-  width: 40,
-  points: [
-    [[216, 204], [174, 256], [216, 308]], // <
-    [[272, 198], [240, 314]], // /
-    [[296, 204], [338, 256], [296, 308]], // >
-  ],
-};
-const MARK_NORMAL = { tile: TILE, inner: INNER, glyph: GLYPH };
+/** Tube half-width. 72 units ≈ 14% of the canvas, the supplied artwork's stroke proportion. */
+const TUBE = 36;
 
 /**
- * 16–32 px is a different optical problem, not a smaller copy of the same one: three glyphs inside a
- * 212-unit tile land under two pixels of stroke and merge into a white smudge, which is exactly how
- * a logo becomes unreadable in a tab. The small variant keeps only `<` and `>`, spreads them and
- * thickens the stroke so the tab icon reads as code brackets rather than a blob. It is the same
- * mark — same tile, same gradient — with the detail the pixels can actually carry.
+ * The two chevrons. Each is a bent capsule: from `tipTop` through `vertex` to `tipBot`, round caps,
+ * round join. `stops` colour the tube along the path (t = 0 at the top tip, 0.5 at the bend, 1 at
+ * the bottom tip); `shadow` is the extrusion offset — toward the centre slit, as in the artwork.
  */
-const MARK_SMALL = {
-  tile: TILE,
-  inner: { cx: 256, cy: 256, hw: 118, hh: 118, r: 52 },
-  glyph: {
-    width: 58,
-    points: [
-      [[218, 194], [158, 256], [218, 318]], // <
-      [[294, 194], [354, 256], [294, 318]], // >
-    ],
+const CHEVRONS = [
+  {
+    vertex: [50, 256],
+    tipTop: [206, 50],
+    tipBot: [206, 462],
+    stops: [[0, [59, 130, 246]], [0.5, [59, 210, 250]], [1, [212, 40, 236]]],
+    shadow: [24, 0],
   },
-};
+  {
+    vertex: [462, 256],
+    tipTop: [306, 50],
+    tipBot: [306, 462],
+    stops: [[0, [43, 105, 240]], [0.5, [176, 70, 244]], [1, [64, 196, 248]]],
+    shadow: [-24, 0],
+  },
+];
 
-/** The tile gradient, top-left to bottom-right: cyan → electric blue → purple → magenta. */
-const TILE_STOPS = [
-  [0, [36, 224, 255]],
-  [0.35, [47, 139, 255]],
-  [0.65, [124, 77, 255]],
-  [1, [232, 58, 208]],
-];
-/** The glyph runs white at the top to ice-cyan at the bottom, as in the artwork. */
-const GLYPH_STOPS = [
-  [0, [255, 255, 255]],
-  [1, [150, 234, 255]],
-];
-const INNER_COLOR = [9, 3, 16];
-/** Install plates: midnight navy, so an opaque icon still looks native on a dark home screen. */
-const PLATE_GRADIENT = [
-  [0, [10, 20, 44]],
-  [1, [22, 8, 40]],
-];
+const MARK_NORMAL = { chevrons: CHEVRONS, half: TUBE };
+
+/**
+ * 16–32 px is a different optical problem, not a smaller copy of the same one: a 36-unit stroke is
+ * 1.1 px wide at 16 px and the mark melts into a faint smudge. The small variant is the same mark —
+ * same chevrons, same gradients — with the tube re-inflated to ~16% of the canvas so the slit, the
+ * bend and the diagonals survive at tab size.
+ */
+const MARK_SMALL = { chevrons: CHEVRONS, half: 42 };
+
+/** The 3D render's extrusion: deep navy peeking out of the inner edges of every arm. */
+const SHADOW_COLOR = [13, 28, 84];
+/** The glossy highlight riding the upper edge of each tube. */
+const GLOSS_ALPHA = 0.15;
+/** Brand plate behind the launcher artifacts, corner-to-corner navy → deep indigo. */
+const PLATE = [[0, [17, 24, 58]], [1, [40, 22, 80]]];
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const mix = (a, b, t) => a + (b - a) * t;
@@ -101,13 +97,7 @@ function gradient(stops, t) {
   return stops[stops.length - 1][1];
 }
 
-/** Signed distance to a rounded rectangle, in mark units: negative inside. */
-function sdRoundRect(x, y, { cx, cy, hw, hh, r }) {
-  const qx = Math.abs(x - cx) - hw + r;
-  const qy = Math.abs(y - cy) - hh + r;
-  return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
-}
-/** Distance to a segment, for the glyph strokes. */
+/** Distance to a segment, for the chevron arms. */
 function sdSegment(x, y, ax, ay, bx, by) {
   const vx = bx - ax;
   const vy = by - ay;
@@ -118,14 +108,44 @@ function sdSegment(x, y, ax, ay, bx, by) {
 }
 
 /**
- * Colour + coverage for one point in mark space.
- *
- *   `plate` — fill the corners with the install plate and shrink the mark by `scale` (maskable
- *             safe area). Without it the field outside the rounded tile stays transparent.
- *   `pxPerUnit` — output pixels per mark unit, which is what turns a distance into coverage.
+ * Signed distance to one chevron (negative inside the tube) plus, for the point's colour, the path
+ * parameter t (0 at the top tip → 0.5 at the bend → 1 at the bottom tip) and the signed lateral
+ * offset from the nearest arm's centreline, positive toward the visually-up side — that is where
+ * the gloss band sits.
  */
-function sample(x, y, { plate = false, scale = 1, pxPerUnit, mark }) {
-  const { tile, inner, glyph } = mark;
+function chevronAt(c, half, x, y) {
+  let best = Infinity;
+  let t = 0.5;
+  let lateral = 0;
+  const arm = (tip, bottom) => {
+    const d = sdSegment(x, y, c.vertex[0], c.vertex[1], tip[0], tip[1]);
+    if (d >= best) return;
+    const vx = tip[0] - c.vertex[0];
+    const vy = tip[1] - c.vertex[1];
+    const wx = x - c.vertex[0];
+    const wy = y - c.vertex[1];
+    const proj = clamp01((wx * vx + wy * vy) / (vx * vx + vy * vy));
+    t = bottom ? (1 + proj) / 2 : (1 - proj) / 2;
+    const vxu = vx / (Math.hypot(vx, vy) || 1);
+    const vyu = vy / (Math.hypot(vx, vy) || 1);
+    // normals: (vy,-vx) vs (-vy,vx) — take the one pointing up (screen y grows downward)
+    const nx = vyu < 0 ? -vyu : vyu;
+    const ny = vyu < 0 ? vxu : -vxu;
+    lateral = (x - (c.vertex[0] + vxu * proj * Math.hypot(vx, vy))) * nx
+      + (y - (c.vertex[1] + vyu * proj * Math.hypot(vx, vy))) * ny;
+    best = d;
+  };
+  arm(c.tipTop, false);
+  arm(c.tipBot, true);
+  return { d: best - half, t, lateral };
+}
+
+/**
+ * Colour + coverage for one point in mark space. `pxPerUnit` = output pixels per mark unit, which
+ * is what turns a distance into analytic antialiased coverage. `plate` paints the brand background
+ * first; without it the artifact is background-free and only the tubes carry alpha.
+ */
+function sample(x, y, { scale = 1, pxPerUnit, mark, plate = false }) {
   let r = 0;
   let g = 0;
   let b = 0;
@@ -139,26 +159,35 @@ function sample(x, y, { plate = false, scale = 1, pxPerUnit, mark }) {
   };
   const cover = (distance) => clamp01(0.5 - distance * pxPerUnit);
 
-  if (plate) put(gradient(PLATE_GRADIENT, (x + y) / (2 * SPACE)), 1);
-
   const mx = (x - SPACE / 2) / scale + SPACE / 2;
   const my = (y - SPACE / 2) / scale + SPACE / 2;
 
-  const tileD = sdRoundRect(mx, my, tile);
-  put(gradient(TILE_STOPS, (mx - 56 + (my - 56)) / 800), cover(tileD));
-  if (tileD > 0) return { r, g, b, a };
+  if (plate) put(gradient(PLATE, clamp01(x / SPACE) * 0.5 + clamp01(y / SPACE) * 0.5), 1);
 
-  const innerD = sdRoundRect(mx, my, inner);
-  put(INNER_COLOR, cover(innerD));
-  if (innerD > 0) return { r, g, b, a };
+  // Paint every extrusion, then the faces over them.
+  for (const c of mark.chevrons) {
+    const shifted = chevronAt(c, mark.half, mx - c.shadow[0], my - c.shadow[1]);
+    put(SHADOW_COLOR, cover(shifted.d));
+  }
 
-  let toStroke = Infinity;
-  for (const segment of glyph.points) {
-    for (let i = 1; i < segment.length; i += 1) {
-      toStroke = Math.min(toStroke, sdSegment(mx, my, ...segment[i - 1], ...segment[i]));
+  let toFace = Infinity;
+  for (const c of mark.chevrons) {
+    const at = chevronAt(c, mark.half, mx, my);
+    if (at.d < toFace) toFace = at.d;
+  }
+  const faceCover = cover(toFace);
+  if (faceCover > 0) {
+    // the arm whose tube owns this pixel supplies the colour along its path
+    const owned = mark.chevrons
+      .map((c) => ({ c, at: chevronAt(c, mark.half, mx, my) }))
+      .sort((p, q) => p.at.d - q.at.d)[0];
+    put(gradient(owned.c.stops, owned.at.t), faceCover);
+    // gloss: a soft white band in the upper half of the tube of whichever arm owns the pixel
+    const half = mark.half;
+    if (owned.at.lateral > half * 0.12 && owned.at.lateral < half * 0.52) {
+      put([255, 255, 255], faceCover * GLOSS_ALPHA);
     }
   }
-  put(gradient(GLYPH_STOPS, (my - 194) / 124), cover(toStroke - glyph.width / 2));
   return { r, g, b, a };
 }
 
@@ -168,7 +197,7 @@ function render(size, options = {}) {
   const pxPerUnit = size / SPACE;
   const scale = options.scale ?? 1;
   const mark = options.mark ?? (size <= 32 ? MARK_SMALL : MARK_NORMAL);
-  // A 16 px tile is 0.78 mark units per pixel: sampling once per pixel would alias the `<` away.
+  // tubes are 1.1 mark units per pixel at 16 px: sampling once per pixel would alias the slit away.
   const grid = size <= 64 ? 4 : 1;
   for (let py = 0; py < size; py += 1) {
     for (let px = 0; px < size; px += 1) {
@@ -180,7 +209,9 @@ function render(size, options = {}) {
         for (let sx = 0; sx < grid; sx += 1) {
           const markX = (px + (sx + 0.5) / grid) / pxPerUnit;
           const markY = (py + (sy + 0.5) / grid) / pxPerUnit;
-          const c = sample(markX, markY, { plate: options.plate, scale, pxPerUnit: pxPerUnit * scale, mark });
+          const c = sample(markX, markY, {
+            scale, pxPerUnit: pxPerUnit * scale, mark, plate: options.plate,
+          });
           wr += c.r * c.a;
           wg += c.g * c.a;
           wb += c.b * c.a;
@@ -270,22 +301,31 @@ function encodeICO(entries) {
 
 const hex = (c) => `#${c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
 function svg() {
-  const glyphPath = MARK_NORMAL.glyph.points
-    .map((segment) => `M ${segment.map(([x, y]) => `${x} ${y}`).join(' L ')}`)
-    .join(' ');
+  const defs = [];
+  const strokes = [];
+  CHEVRONS.forEach((c, i) => {
+    const width = MARK_NORMAL.half * 2;
+    // per-arm gradients: SVG cannot bend a linear gradient around the corner of a path
+    const armGrad = (id, tip, colorAtTip) => {
+      defs.push(`<linearGradient id="${id}" x1="${tip[0]}" y1="${tip[1]}" x2="${c.vertex[0]}" y2="${c.vertex[1]}" gradientUnits="userSpaceOnUse">`
+        + `<stop offset="0" stop-color="${hex(colorAtTip)}" /><stop offset="1" stop-color="${hex(gradient(c.stops, 0.5))}" /></linearGradient>`);
+    };
+    armGrad(`face${i}a`, c.tipTop, c.stops[0][1]);
+    armGrad(`face${i}b`, c.tipBot, c.stops[2][1]);
+    const d = `M ${c.tipTop[0]} ${c.tipTop[1]} L ${c.vertex[0]} ${c.vertex[1]} L ${c.tipBot[0]} ${c.tipBot[1]}`;
+    strokes.push(`<path d="${d}" transform="translate(${c.shadow[0]} ${c.shadow[1]})" stroke="${hex(SHADOW_COLOR)}" stroke-width="${width}" />`);
+    strokes.push(`<path d="M ${c.tipTop[0]} ${c.tipTop[1]} L ${c.vertex[0]} ${c.vertex[1]}" stroke="url(#face${i}a)" stroke-width="${width}" />`);
+    strokes.push(`<path d="M ${c.tipBot[0]} ${c.tipBot[1]} L ${c.vertex[0]} ${c.vertex[1]}" stroke="url(#face${i}b)" stroke-width="${width}" />`);
+    strokes.push(`<path d="${d}" transform="translate(0 -15)" stroke="rgba(255,255,255,${GLOSS_ALPHA})" stroke-width="22" />`);
+  });
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="BroCode">
   <!-- Generated by scripts/brand-icons.cjs — edit the geometry there, never this file. -->
   <defs>
-    <linearGradient id="tile" x1="56" y1="56" x2="456" y2="456" gradientUnits="userSpaceOnUse">
-${TILE_STOPS.map(([at, c]) => `      <stop offset="${at}" stop-color="${hex(c)}" />`).join('\n')}
-    </linearGradient>
-    <linearGradient id="glyph" x1="0" y1="198" x2="0" y2="314" gradientUnits="userSpaceOnUse">
-${GLYPH_STOPS.map(([at, c]) => `      <stop offset="${at}" stop-color="${hex(c)}" />`).join('\n')}
-    </linearGradient>
+${defs.map((d) => `    ${d}`).join('\n')}
   </defs>
-  <rect x="${TILE.cx - TILE.hw}" y="${TILE.cy - TILE.hh}" width="${TILE.hw * 2}" height="${TILE.hh * 2}" rx="${TILE.r}" fill="url(#tile)" />
-  <rect x="${INNER.cx - INNER.hw}" y="${INNER.cy - INNER.hh}" width="${INNER.hw * 2}" height="${INNER.hh * 2}" rx="${INNER.r}" fill="${hex(INNER_COLOR)}" />
-  <path d="${glyphPath}" fill="none" stroke="url(#glyph)" stroke-width="${MARK_NORMAL.glyph.width}" stroke-linecap="round" stroke-linejoin="round" />
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+${strokes.map((s) => `    ${s}`).join('\n')}
+  </g>
 </svg>
 `;
 }
@@ -299,8 +339,13 @@ const ARTIFACTS = [
   { file: 'icon-96.png', size: 96 },
   { file: 'icon-192.png', size: 192 },
   { file: 'icon-512.png', size: 512 },
-  { file: 'maskable-512.png', size: 512, options: { plate: true, scale: 0.78 } },
-  { file: 'apple-touch-icon-180.png', size: 180, options: { plate: true, scale: 0.86 } },
+  // The raster master: the supplied artwork's own resolution, transparent, for any export
+  // (social card, docs, store listings) that needs more than the 512 tile.
+  { file: 'brocode-mark-1024.png', size: 1024 },
+  // Launchers get the brand plate. Android crops a maskable icon to its own shape and iOS paints
+  // black behind alpha, so these two are the only artifacts that are not background-free.
+  { file: 'maskable-512.png', size: 512, options: { scale: 0.78, plate: true } },
+  { file: 'apple-touch-icon-180.png', size: 180, options: { scale: 0.86, plate: true } },
 ];
 
 function run() {
