@@ -193,6 +193,10 @@ test('brand: the shell names the tab icon, the iOS tile and the vector master', 
 test('brand: the PWA manifest installs the new icon on every platform', () => {
   const manifest = JSON.parse(read('public/manifest.webmanifest'));
   assert.equal(manifest.name, 'BroCode');
+  // The install splash and the window chrome take the product's own light surface: the manifest said
+  // #0a0a0a while the app ships light, so an installed BroCode opened on a black flash.
+  assert.equal(manifest.background_color, '#f2f4fa', 'the install splash is the light product surface');
+  assert.equal(manifest.theme_color, '#f2f4fa', 'the installed title bar matches the shell theme-color');
   const byPurpose = (purpose) => manifest.icons.filter((i) => i.purpose === purpose);
   const any = byPurpose('any');
   const maskable = byPurpose('maskable');
