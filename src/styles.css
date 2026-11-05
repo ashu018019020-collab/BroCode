@@ -5469,3 +5469,8 @@ the skill's share of the selected source, and how many of its questions are alre
 @keyframes bootFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-6px) scale(1.006); } }
 @keyframes bootGlow { from { opacity: .75; } to { opacity: 1; } }
 @keyframes bootPulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+
+/* The loader and splash draw the generated mark (an <img>, not the retired pixel art): the
+   pixelated scaling that art needed must not follow the mark. */
+.brand-mark.loader-art,
+.brand-mark.boot-art { image-rendering: auto; }

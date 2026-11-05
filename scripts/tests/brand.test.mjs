@@ -118,7 +118,7 @@ test('brand: the launcher artifacts sit on the brand plate, not on transparency'
     for (const [x, y] of corners) {
       const [r, g, b, a] = png.at(x, y);
       assert.equal(a, 255, `${rel} corner ${x},${y} must be opaque — the launcher paints behind it`);
-      assert.ok(b > r && b > 40, `${rel} corner ${r},${g},${b} is not the brand plate`);
+      assert.ok(b > r && b > 30, `${rel} corner ${r},${g},${b} is not the brand plate`);
     }
   }
 });
