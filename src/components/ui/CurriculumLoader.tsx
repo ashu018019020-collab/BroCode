@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
+import { BrandMark } from '../shared/BrandMark';
 
 const LOADING_STATES = [
   'Preparing BroCode...',
@@ -50,14 +51,7 @@ export function CurriculumLoader({ ready = false, error, onRetry, onComplete }: 
           <span className="loader-particle p4">·</span>
           <span className="loader-particle p5">✦</span>
           <span className="loader-particle p6">✧</span>
-          <img
-            className="loader-art"
-            src="./brocode-pixel-loader.gif"
-            alt=""
-            width="791"
-            height="768"
-            decoding="async"
-          />
+          <BrandMark size={132} alt="" className="loader-art" />
         </div>
 
         {error ? (

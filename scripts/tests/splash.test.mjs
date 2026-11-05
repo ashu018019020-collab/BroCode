@@ -17,11 +17,15 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-test('splash: the supplied illustration is the first visual, unmodified and proportional', () => {
+test('splash: the official mark is the first visual, unmodified and proportional', () => {
+  // The splash used to point at an owner-supplied illustration that was never committed, so the
+  // first frame was a 404 and the wordmark fallback. It now draws the SAME generated mark every
+  // other surface draws, which `npm run brand:write` renders and the gate below pins.
   const splash = read('src/components/shared/SplashScreen.tsx');
-  assert.match(splash, /'\.\/images\/brocode-loading\.png'/, 'the exact asset path is used');
+  assert.match(splash, /import \{ BrandMark \} from '\.\/BrandMark'/, 'the splash draws the shared mark');
+  assert.match(splash, /<BrandMark size=\{\d+\} alt="BroCode"/, 'the mark is attributed and never stretched');
+  assert.doesNotMatch(splash, /brocode-loading|brocode-pixel-loader/, 'retired hand-exported art is gone');
   assert.doesNotMatch(splash, /canvas|filter: |transform: scale\(1\.\d+\) .*img/i, 'the artwork is not re-rendered');
-  assert.match(splash, /onError=/, 'a missing asset degrades to a wordmark, never a broken-image icon');
 
   const css = read('src/styles.css');
   const art = css.slice(css.indexOf('.boot-art {'));
@@ -53,17 +57,17 @@ test('splash: it runs on a document load only, above the router', () => {
   assert.match(main, /<AuthProvider>[\s\S]{0,120}<StartupSplash>/, 'the splash sits inside the provider it reads');
   const app = read('src/app/App.tsx');
   assert.doesNotMatch(app, /StartupSplash|SplashScreen/, 'a route change can never replay the splash');
-  assert.match(read('index.html'), /rel="preload" as="image"[\s\S]{0,80}brocode-loading\.png/, 'the artwork is preloaded');
+  assert.match(read('index.html'), /rel="preload" as="image"[\s\S]{0,120}brocode-mark\.svg\?v=\d+/, 'the mark the splash draws is preloaded');
 });
 
-test('splash: the asset path is the one the build serves, with a fallback when it is absent', () => {
-  // The illustration is supplied by the product owner. The path is pinned here so a correct
-  // component can never ship pointing at a file the build does not serve; if the PNG is not in the
-  // tree yet, the splash must still paint the wordmark instead of a broken-image icon.
+test('splash: every asset it draws ships in the build', () => {
+  // A splash may never point at a file the build does not serve: both of its old paths 404'd on the
+  // live site. It draws the shared component, so the only asset to check is the mark that component
+  // names — and that is generated, so it must exist on disk after `npm run brand:write`.
   const splash = read('src/components/shared/SplashScreen.tsx');
-  const match = /IMAGE_SRC = '\.\/(.+?)'/.exec(splash);
-  assert.ok(match, 'the image path is a static constant');
-  assert.equal(match[1], 'images/brocode-loading.png');
-  const present = fs.existsSync(path.join(ROOT, 'public', match[1]));
-  assert.ok(present || /boot-fallback/.test(splash), 'an absent PNG still renders a wordmark, never an img error');
+  assert.doesNotMatch(splash, /IMAGE_SRC/, 'the splash keeps no separate artwork constant');
+  const mark = read('src/components/shared/BrandMark.tsx');
+  const match = /MARK_SVG = '\.\/(.+?)'/.exec(mark);
+  assert.ok(match, 'BrandMark names its master on one static line');
+  assert.ok(fs.existsSync(path.join(ROOT, 'public', match[1])), `public/${match[1]} must ship — run \`npm run brand:write\``);
 });

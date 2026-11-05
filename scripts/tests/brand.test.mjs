@@ -218,6 +218,19 @@ test('brand: every surface draws the same component, and the old bitmaps are gon
   assert.match(mark, /'\.\/brand\/icon-192\.png'/, 'the SVG needs a PNG fallback');
   assert.match(mark, /onError=/, 'a refused SVG must not leave a broken-image glyph');
 
+  // The startup splash and the curriculum loader draw the SAME generated mark. Both used to point at
+  // hand-exported art: the splash's illustration was never committed and the loader asked for a `.gif`
+  // while only a (retired-logo) `.png` shipped, so each was a 404 on the first screen a learner sees.
+  for (const rel of ['src/components/shared/SplashScreen.tsx', 'src/components/ui/CurriculumLoader.tsx']) {
+    const source = read(rel);
+    assert.match(source, /BrandMark/, `${rel} must draw the generated mark`);
+    assert.ok(!/brocode-pixel-loader|images\/brocode-loading/.test(source), `${rel} still points at retired art`);
+  }
+  assert.ok(
+    !/brocode-pixel-loader|images\/brocode-loading/.test(read('index.html')),
+    'the shell must not preload art that is not in the build',
+  );
+
   for (const rel of ['public/brocode.png', 'public/brocode-192.png', 'public/brocode-256.png']) {
     assert.equal(exists(rel), false, `${rel} is the old logo and must not ship`);
   }
