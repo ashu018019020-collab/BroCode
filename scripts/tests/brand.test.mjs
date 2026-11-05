@@ -164,10 +164,12 @@ test('brand: the 16px favicon still shows the mark, not a colour blob', () => {
 
 test('brand: the shell names the tab icon, the iOS tile and the vector master', () => {
   const html = read('index.html');
-  assert.match(html, /<link rel="icon" href="\.\/favicon\.ico" sizes="16x16 32x32 48x48" \/>/);
-  assert.match(html, /<link rel="icon" type="image\/png" sizes="32x32" href="\.\/brand\/icon-32\.png" \/>/);
-  assert.match(html, /rel="apple-touch-icon" sizes="180x180" href="\.\/brand\/apple-touch-icon-180\.png"/);
-  assert.match(html, /type="image\/svg\+xml" href="\.\/brand\/brocode-mark\.svg"/);
+  // The URLs are deliberately versioned (?v=11): a stale browser favicon cache has been the
+  // customer-facing failure three times running, so the shell forces a fresh fetch itself.
+  assert.match(html, /<link rel="icon" href="\.\/favicon\.ico\?v=11" sizes="16x16 32x32 48x48" \/>/);
+  assert.match(html, /<link rel="icon" type="image\/png" sizes="32x32" href="\.\/brand\/icon-32\.png\?v=11" \/>/);
+  assert.match(html, /rel="apple-touch-icon" sizes="180x180" href="\.\/brand\/apple-touch-icon-180\.png\?v=11"/);
+  assert.match(html, /type="image\/svg\+xml" href="\.\/brand\/brocode-mark\.svg\?v=11"/);
   assert.match(html, /"logo": "https:\/\/[^"]*\/brand\/icon-512\.png"/, 'the JSON-LD organisation logo is the new mark');
 });
 
