@@ -124,6 +124,9 @@ test('brand: the launcher artifacts sit on the brand plate, not on transparency'
 });
 
 test('brand: the mark is centred and square inside its tile, never stretched', () => {
+  // The orbit ribbon deliberately reaches past the tile (it does in the official artwork), so the
+  // "not stretched" guarantee is measured on the tile's own dark screen: it is drawn as a square and
+  // must stay one, centred, however the sizes around it change.
   const png = decodePNG('public/brand/icon-512.png');
   let minX = png.width;
   let maxX = -1;
@@ -131,7 +134,9 @@ test('brand: the mark is centred and square inside its tile, never stretched', (
   let maxY = -1;
   for (let y = 0; y < png.height; y += 1) {
     for (let x = 0; x < png.width; x += 1) {
-      if (png.at(x, y)[3] < 8) continue;
+      const [r, g, b, a] = png.at(x, y);
+      if (a < 200) continue;
+      if (0.299 * r + 0.587 * g + 0.114 * b > 45) continue; // the screen, not the tile or the ribbon
       if (x < minX) minX = x;
       if (x > maxX) maxX = x;
       if (y < minY) minY = y;
@@ -140,7 +145,7 @@ test('brand: the mark is centred and square inside its tile, never stretched', (
   }
   const width = maxX - minX + 1;
   const height = maxY - minY + 1;
-  assert.ok(Math.abs(width - height) <= 2, `the tile is ${width}×${height} — the mark is distorted`);
+  assert.ok(Math.abs(width - height) <= 2, `the screen is ${width}×${height} — the mark is distorted`);
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
   assert.ok(Math.abs(cx - png.width / 2) <= 2 && Math.abs(cy - png.height / 2) <= 2, 'the mark must be centred');
