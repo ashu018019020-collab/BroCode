@@ -170,7 +170,7 @@ export default function CCoursePage() {
         {TABS.map(([id, label]) => (
           <button key={id} className={`btn small${tab === id ? ' primary' : ''}`} onClick={() => open(id)} aria-pressed={tab === id}>{label}</button>
         ))}
-        <Link className="btn small" to={`/c-programming/${next?.id ?? 'c01'}`}><BookOpen size={13} /> Notebook</Link>
+        <Link className="btn small" to={`/c-programming/${next?.id ?? 'c01'}`}><BookOpen size={13} /> Code Bro</Link>
       </div>
 
       {tab === 'overview' && (

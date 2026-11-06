@@ -56,7 +56,7 @@ export const PROJECT_FACTS: ProjectFact[] = [
     body:
       'BroCode (AI Engineer Master Lab) — an AI/Data learning lab that runs entirely on this device.\n' +
       'All of its content is extracted from a 457-page PDF: 29 sections, 8 tracks (from Python Core to\n' +
-      'Interview + Projects), with lesson stages, questions, notebooks, and projects in every section.\n' +
+      'Interview + Projects), with lesson stages, questions, Code Bro files, and projects in every section.\n' +
       'Python, SQL, and PDF reading — all run inside the browser: Pyodide (Python 3.12 + numpy/pandas),\n' +
       'sql.js, and pdf.js are bundled with this app.',
   },
@@ -70,7 +70,7 @@ export const PROJECT_FACTS: ProjectFact[] = [
       'Python actually runs, it is not simulated: Pyodide (CPython 3.12 WASM) loads in a web worker,\n' +
       'and the numpy and pandas wheels are bundled in `public/pyodide`. On the first run the runtime\n' +
       'takes 30-60s to unpack; after that it starts instantly from cache.\n' +
-      '`input()` reads from the Notebook\'s "Program input" box — one value per line.\n' +
+      '`input()` reads from Code Bro\'s "Program input" box — one value per line.\n' +
       'SQL (sql.js) and PDF (pdf.js) load from local files in the same way.',
   },
   {
@@ -160,7 +160,7 @@ export const PROJECT_FACTS: ProjectFact[] = [
       '    which is why they are testable.\n' +
       '  · `src/features/*` and `src/components/*` — screens and UI; the route table is in `src/app/App.tsx`.\n' +
       '  · `src/core/storage/*` — store (localStorage), theme/UI prefs, exam writes.\n' +
-      '  · `src/core/data/*` — curriculum / questions / notebooks / tracks loaders (from `public/generated/`).\n' +
+      '  · `src/core/data/*` — curriculum / questions / Code Bro / tracks loaders (from `public/generated/`).\n' +
       '  · `scripts/tests/*.test.mjs` — node:test suite that runs against the real curriculum.\n' +
       '  · `content/**` is source; `public/**` is GENERATED or bundled runtime — do not edit it by hand,\n' +
       '    edit the pipeline (`scripts/*.cjs`).\n' +
@@ -190,7 +190,7 @@ export const PROJECT_FACTS: ProjectFact[] = [
       'Screens at a glance:\n' +
       '  · Learn — Dashboard, Learning Path (8 tracks), Concepts, Lesson (Learn/Coding/Debug/Project…),\n' +
       '    Review Queue, Mistake Tracker.\n' +
-      '  · Practice — Question Bank, Playbook V15, Timed Exam, Notebook Lab, SQL Lab, NumPy+Pandas Lab,\n' +
+      '  · Practice — Question Bank, Playbook V15, Timed Exam, Code Bro Lab, SQL Lab, NumPy+Pandas Lab,\n' +
       '    Interview Mode, Project Defense, Project Lab, Code Playground.\n' +
       '  · AI — AI/GenAI Lab, Agentic Lab, RAG Lab, Final Assessment.\n' +
       '  · Career — Project Defense, Mock Interviews, Job Prep, Progress (study time + mastery).\n' +

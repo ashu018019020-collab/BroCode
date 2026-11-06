@@ -400,7 +400,7 @@ export function LibraryShelf({ onInsert, open: openProp }: { onInsert?: (code: s
               value={spec}
               onChange={(e) => setSpec(e.target.value)}
               placeholder="pip install numpy"
-              aria-label="Install a library into this notebook's kernel"
+              aria-label="Install a library into this Code Bro's kernel"
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void install(spec); } }}
             />
             <button className="btn small primary" onClick={() => void install(spec)} disabled={!!installing || !spec.trim()}>
@@ -413,7 +413,7 @@ export function LibraryShelf({ onInsert, open: openProp }: { onInsert?: (code: s
                 {installing === l.id ? '…' : `+ install ${l.id}`}
               </button>
             ))}
-            <span className="small muted">bundled wheels — installs offline, into this notebook</span>
+            <span className="small muted">bundled wheels — installs offline, into this Code Bro</span>
           </div>
           {log.length > 0 && (
             <div className="pkglog">
@@ -754,8 +754,8 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
           <button
             className="btn"
             onClick={downloadIpynb}
-            title="Download the whole notebook as an .ipynb file — with your edits and run outputs (opens in real Jupyter)"
-            aria-label="Download this notebook as a .ipynb file"
+            title="Download the whole Code Bro as an .ipynb file — with your edits and run outputs"
+            aria-label="Download this Code Bro as a .ipynb file"
           >
             <Download size={13} /> .ipynb
           </button>
@@ -782,7 +782,7 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
       {showVars && (
         <div className="card jup-vars">
           <div className="row spread">
-            <b className="small">🧠 Kernel variables — this notebook's session</b>
+            <b className="small">🧠 Kernel variables — this Code Bro's session</b>
             <span className="small muted">Import once, available in every cell below</span>
           </div>
           {!vars.length && <p className="small muted" style={{ margin: '6px 0 0' }}>Empty for now — run the first cell.</p>}
@@ -824,7 +824,7 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
        * The line under every notebook. Cell stepping works everywhere (any notebook, any surface);
        * notebook stepping appears when the surface owns a list of notebooks and passed the steps in.
        */}
-      <div className="nb-nav" role="group" aria-label="Notebook navigation" data-nb-nav={slug}>
+      <div className="nb-nav" role="group" aria-label="Code Bro navigation" data-nb-nav={slug}>
         <span className="row">
           <button className="btn small" onClick={() => moveCell(-1)} title="Previous code cell (Alt+↑)">
             <ChevronUp size={12} /> Previous cell
@@ -837,12 +837,12 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
         {(nav?.prev || nav?.next) && (
           <span className="row">
             {nav?.prev && (
-              <button className="btn small" onClick={nav.prev.run} title={`Previous notebook: ${nav.prev.label}`}>
+              <button className="btn small" onClick={nav.prev.run} title={`Previous Code Bro: ${nav.prev.label}`}>
                 ← {nav.prev.label}
               </button>
             )}
             {nav?.next && (
-              <button className="btn small primary" onClick={nav.next.run} title={`Next notebook: ${nav.next.label}`}>
+              <button className="btn small primary" onClick={nav.next.run} title={`Next Code Bro: ${nav.next.label}`}>
                 {nav.next.label} →
               </button>
             )}

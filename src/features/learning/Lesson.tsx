@@ -440,7 +440,7 @@ function LearnStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i:
             <TopicGuide concept={c} />
             {c.code && (
               <button className="btn small" style={{ marginTop: 8 }} onClick={() => setSel(i)}>
-                ▶ Try this in the notebook →
+                ▶ Try this in Code Bro →
               </button>
             )}
           </div>

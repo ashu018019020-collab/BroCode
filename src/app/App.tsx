@@ -197,7 +197,7 @@ export const NAV: NavItem[] = [
   { to: '/playbook', icon: Library, label: 'Practice Archive', group: 'hidden', sidebar: false },
   { to: '/exam', icon: Timer, label: 'Timed Exam', group: 'hidden', sidebar: false },
   { to: '/numpy-pandas', icon: Sigma, label: 'NumPy + Pandas Lab', group: 'hidden', sidebar: false },
-  { to: '/notebooks', icon: BookOpen, label: 'Notebook Lab', group: 'hidden', sidebar: false },
+  { to: '/notebooks', icon: BookOpen, label: 'Code Bro Lab', group: 'hidden', sidebar: false },
   { to: '/sql', icon: Database, label: 'SQL Lab', group: 'hidden', sidebar: false },
   { to: '/ai-lab', icon: Sparkles, label: 'AI / GenAI Lab', group: 'hidden', sidebar: false },
   { to: '/agentic', icon: Bot, label: 'Agentic AI Lab', group: 'hidden', sidebar: false },

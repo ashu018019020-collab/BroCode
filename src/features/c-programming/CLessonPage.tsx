@@ -248,7 +248,7 @@ export default function CLessonPage() {
         <aside className="c-split-left" ref={leftRef}>
           <div>
             <div className="row spread" style={{ marginBottom: 8, gap: 8 }}>
-              <strong className="small">Coding notebook · {notebookLab.title}</strong>
+              <strong className="small">Code Bro · {notebookLab.title}</strong>
               <span className="chip small">C17 · GCC · no sign-in</span>
             </div>
             <CNotebook
@@ -400,7 +400,7 @@ export default function CLessonPage() {
       <section>
         <h3 style={{ margin: 0, marginBottom: 8 }}><FlaskConical size={15} /> 15 · Lab assignment{activeLab ? ` · ${activeLab.title}` : ''}</h3>
         <p className="muted small" style={{ marginTop: 0 }}>{notebookLab.brief}</p>
-        <p className="muted small">The notebook is pinned beside this lesson — it opens with this lab's starter, stdin and public tests.</p>
+        <p className="muted small">Code Bro is pinned beside this lesson — it opens with this lab's starter, stdin and public tests.</p>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '6px 0 10px' }}>
           {notebookLab.tests.map((t) => <span key={t.name} className="chip small">{t.name}</span>)}
           <span className="chip small">expected {JSON.stringify(notebookLab.expected)}</span>

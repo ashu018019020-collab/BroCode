@@ -102,7 +102,7 @@ test('layout: the shelf header is one line — never a wrapped, stray button', (
   // is room to truncate: on a phone card there is not, and the label wraps there instead (see the
   // phone-rows test below, which owns the narrow half of this contract).
   assert.match(css, /\.shelf-label \{[^}]*text-overflow: ellipsis;/, 'the label must truncate, not wrap, where there is room');
-  assert.match(jn, /<span className="shelf-label"><span className="shelf-brand">Notebook Lab — <\/span>/,
+  assert.match(jn, /<span className="shelf-label"><span className="shelf-brand">Code Bro — <\/span>/,
     'the label must be its own truncating node, with the shelf\u2019s name in its own child so a narrow card can drop it');
   // The hint is decoration and yields to the label. It may only appear when the CARD is wide
   // enough to lend it ~95px — a container query, because the card width is not the viewport width
@@ -112,7 +112,7 @@ test('layout: the shelf header is one line — never a wrapped, stray button', (
   assert.match(css, /\.shelf-hint \{ display: none;/, 'the hint must start hidden');
   // …and it says something the collapsed line cannot otherwise show: that a notebook is open in a
   // body the learner has folded away.
-  assert.match(jn, /\{!open && <span className="shelf-hint">\{openFile \? 'notebook is open' : 'click to open'\}/);
+  assert.match(jn, /\{!open && <span className="shelf-hint">\{openFile \? 'Code Bro is open' : 'click to open'\}/);
 });
 
 test('layout: on a phone the three clipping rows wrap instead of eating their own label', () => {
@@ -136,7 +136,7 @@ test('layout: on a phone the three clipping rows wrap instead of eating their ow
   assert.match(css, /@container \(max-width: 460px\) \{ \.shelf-brand \{ display: none; \} \.shelf-label \{ white-space: normal;/,
     'a narrow shelf card must drop the shelf name and let the count and the scope wrap');
   assert.match(css, /\.shelf-brand \{ display: inline; \}/, 'the name must stay on a wide card');
-  assert.match(shelf, /<span className="shelf-brand">Notebook Lab — <\/span>/,
+  assert.match(shelf, /<span className="shelf-brand">Code Bro — <\/span>/,
     'the shelf name must be its own node for the narrow rule to drop');
 
   // The head must ALSO be allowed to wrap: `flex-basis` on a `nowrap` row just shrinks back to what
@@ -833,7 +833,7 @@ test('layout: the heroless pages still own their route H1', () => {
   }
   assert.match(
     read('src/features/labs/NotebookLab.tsx'),
-    /<h1 style=\{\{ margin: 0 \}\}><BookOpen size=\{18\} \/> Notebook Lab<\/h1>/,
+    /<h1 style=\{\{ margin: 0 \}\}><BookOpen size=\{18\} \/> Code Bro<\/h1>/,
     'the Notebook Lab card title IS the page title',
   );
 });

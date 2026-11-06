@@ -208,7 +208,7 @@ export const EXTRA_PATHS: ExtraPath[] = [
     route: '/notebooks',
     group: 'lab',
     prefix: 'nb:',
-    facts: (c) => (c.notebooks ? [`${c.notebooks.notebooks} notebooks`, `${c.notebooks.cells} cells`] : ['notebooks pending']),
+    facts: (c) => (c.notebooks ? [`${c.notebooks.notebooks} files`, `${c.notebooks.cells} cells`] : ['files pending']),
     progress: (c) => (c.notebooks && c.notebooks.cells > 0 ? { done: c.counts.notebookCells, total: c.notebooks.cells } : null),
   },
   {

@@ -259,7 +259,7 @@ function BankItem({
         <span className="row" style={{ gap: 6 }}>
           {CODE_TYPES.has(q.type) && (
             <button className="btn small" onClick={() => setNotebook((v) => !v)} aria-expanded={notebook}>
-              <NotebookPen size={12} /> {notebook ? 'Close notebook' : 'Notebook'}
+              <NotebookPen size={12} /> {notebook ? 'Close Code Bro' : 'Code Bro'}
             </button>
           )}
           {/* The local assistant, scoped to THIS question: answer, hint and a rubric percentage of

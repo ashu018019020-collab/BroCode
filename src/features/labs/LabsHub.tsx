@@ -102,8 +102,8 @@ export default function LabsHub() {
           {/* Secondary on purpose: the numbers are here to orient, not to lead the page. */}
           <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
             <span className="chip"><FlaskConical size={12} /> {LAB_ROUTES.length} labs</span>
-            {notebooks && <span className="chip"><BookOpen size={12} /> {notebooks.length} notebooks</span>}
-            {cells !== null && <span className="chip">{ctx.counts.notebookCells} / {cells} notebook cells run</span>}
+            {notebooks && <span className="chip"><BookOpen size={12} /> {notebooks.length} files</span>}
+            {cells !== null && <span className="chip">{ctx.counts.notebookCells} / {cells} Code Bro cells run</span>}
             {ctx.counts.ragRounds > 0 && <span className="chip">{ctx.counts.ragRounds} retrieval rounds</span>}
           </div>
         </div>
@@ -146,7 +146,7 @@ export default function LabsHub() {
               <span className="t" style={{ flex: 1, minWidth: 0 }}>
                 <b>{t(d.nameKey as LocaleKey)}</b>
                 <span>
-                  {!s ? '…' : `${s.labs.length} labs · ${s.notebooks} ${s.notebooks === 1 ? 'notebook' : 'notebooks'} · ${s.exercises} exercises`}
+                  {!s ? '…' : `${s.labs.length} labs · ${s.notebooks} ${s.notebooks === 1 ? 'file' : 'files'} · ${s.exercises} exercises`}
                 </span>
               </span>
             </Link>
@@ -172,14 +172,14 @@ export default function LabsHub() {
               <span style={{ minWidth: 0 }}>
                 <b style={{ fontSize: '1rem' }}>{t(subject.nameKey as LocaleKey)} Lab</b>
                 <span className="small muted" style={{ display: 'block' }}>
-                  {`${summary.topics} topics · ${summary.labs.length} labs · ${summary.notebooks} ${summary.notebooks === 1 ? 'notebook' : 'notebooks'} · ${summary.exercises} exercises`}
+                  {`${summary.topics} topics · ${summary.labs.length} labs · ${summary.notebooks} ${summary.notebooks === 1 ? 'file' : 'files'} · ${summary.exercises} exercises`}
                 </span>
               </span>
             </div>
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
               <Link className="btn small ghost" to="/labs" data-agent-action={`nav:labs`}><ArrowLeft size={13} /> All subjects</Link>
               {summary.notebooks > 0 && (
-                <span className="chip">{summary.cellsRun} / {summary.codeCells} notebook cells run</span>
+                <span className="chip">{summary.cellsRun} / {summary.codeCells} Code Bro cells run</span>
               )}
             </div>
           </div>
@@ -217,7 +217,7 @@ export default function LabsHub() {
                   {tp.title}
                   <span className="small muted" style={{ display: 'block' }}>
                     {[
-                      hasNotebook ? `${tp.notebooks.length} notebook · ${tp.codeCells} code cells` : null,
+                      hasNotebook ? `${tp.notebooks.length} file · ${tp.codeCells} code cells` : null,
                       tp.exercises > 0 ? `${tp.exercises} coding exercises` : null,
                       tp.step !== null && !route && !hasNotebook && tp.exercises === 0 ? `step ${tp.step}` : null,
                     ].filter(Boolean).join(' · ') || 'course topic'}
@@ -226,7 +226,7 @@ export default function LabsHub() {
                 <span className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                   {hasNotebook && (
                     <Link className="btn small" to={notebookHref(tp.notebooks[0].file)}>
-                      <BookOpen size={13} /> Notebook
+                      <BookOpen size={13} /> Code Bro
                     </Link>
                   )}
                   {routes.map((r) => (
@@ -261,7 +261,7 @@ export default function LabsHub() {
           panel opens, so a learner can see the whole shelf without losing the subject structure. */}
       {!!notebooks?.length && (
         <>
-          <div className="sec-head"><h2>All notebooks</h2><span className="line" /></div>
+          <div className="sec-head"><h2>All Code Bro</h2><span className="line" /></div>
           <div className="tile-grid">
             {notebooks.map((nb: NotebookMeta) => {
               const done = cellsRun(nb.file);

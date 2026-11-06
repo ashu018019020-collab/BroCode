@@ -305,7 +305,7 @@ export function careerProgress(c: CareerCounts): ProgressLine[] {
   return [
     { id: 'learning', label: 'Learning', pct: c.learningPct, note: `${c.mastered}/${c.sections} sections mastered` },
     { id: 'practice', label: 'Practice', pct: pctOf(c.bankPractised, c.bankTotal), note: `${c.bankPractised} answers` },
-    { id: 'labs', label: 'Labs', pct: pctOf(c.notebookCells, c.notebookCellsTotal), note: `${c.notebookCells} notebook cells run` },
+    { id: 'labs', label: 'Labs', pct: pctOf(c.notebookCells, c.notebookCellsTotal), note: `${c.notebookCells} Code Bro cells run` },
     { id: 'projects', label: 'Projects', pct: pctOf(c.projectGates, c.sections), note: `${c.projectGates}/${c.sections} builds` },
     { id: 'interview', label: 'Interview', pct: pctOf(c.mockDone, c.mockTotal), note: `${c.mockDone} mock Qs passed` },
     { id: 'resume', label: 'Resume', pct: pctOf(c.resumeAnswers, c.resumeTotal), note: `${c.resumeAnswers}/${c.resumeTotal} pitches` },

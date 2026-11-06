@@ -32,7 +32,7 @@ export const OFFLINE_CAPABLE: OfflineCapability[] = [
   },
   {
     id: 'code',
-    label: 'Python, SQL & notebook labs',
+    label: 'Python, SQL & Code Bro labs',
     note: 'The Python and SQL runtimes ship inside the app — editing and running code never needs a network.',
   },
   {
@@ -66,8 +66,8 @@ export const NETWORK_ONLY: OfflineCapability[] = [
   },
   {
     id: 'notebook-manifest',
-    label: 'Notebook library (first visit)',
-    note: 'The list may appear empty until the app has fetched it once — the notebooks themselves still run from cache.',
+    label: 'Code Bro library (first visit)',
+    note: 'The list may appear empty until the app has fetched it once — the Code Bro files themselves still run from cache.',
   },
 ];
 

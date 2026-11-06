@@ -368,7 +368,7 @@ export default function QuestionBank() {
         Local content pack — <b>{manifest.published}</b> Python &amp; AI questions across <b>{manifest.sections.length}</b> sections,
         plus <b>{cQuestionCount}</b> C Programming MCQs across <b>{cModules.length}</b> modules.
         Every question lives in its own course box, its section/module and its stage. Write an answer (it saves automatically) or open the
-        notebook for code, then grade yourself: you decide correct or wrong, and the app computes no score.
+        Code Bro for code, then grade yourself: you decide correct or wrong, and the app computes no score.
       </p>
 
       {/* Four figures, four tones: each card publishes its own `--accent`, so the row reads as four
@@ -682,7 +682,7 @@ function QuestionCard({
         <span className="row" style={{ gap: 6 }}>
           {CODE_TYPES.has(q.type) && (
             <button className="btn small" onClick={() => setNotebook((v) => !v)} aria-expanded={notebook}>
-              <NotebookPen size={12} /> Notebook
+              <NotebookPen size={12} /> Code Bro
             </button>
           )}
           <Link className="btn small" to={`/lesson/${q.sectionId}/${stageForQuestion(q)}`}>

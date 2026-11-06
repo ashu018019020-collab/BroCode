@@ -88,7 +88,7 @@ export default function NotebookLab() {
   const doneCount = active ? notebookCellsRunFor(state.attempts, active) : 0;
   const pct = codeCells.length ? Math.min(100, Math.round((doneCount / codeCells.length) * 100)) : 0;
 
-  if (!manifest) return <div className="loading">Loading notebooks…</div>;
+  if (!manifest) return <div className="loading">Loading Code Bro…</div>;
   if (!manifest.length) {
     // An empty library is different OFFLINE than online: online it means nothing was published;
     // offline on a first visit it means the manifest was never cached, and saying "no notebooks"
@@ -97,8 +97,8 @@ export default function NotebookLab() {
       <div className="card muted">
         <p style={{ margin: 0 }}>
           {online
-            ? <>No notebooks have been published yet — run <code>npm run notebooks:write</code>.</>
-            : 'No cached notebook library on this device — reconnect once so the lab can fetch its list.'}
+            ? <>No Code Bro files have been published yet — run <code>npm run notebooks:write</code>.</>
+            : 'No cached Code Bro library on this device — reconnect once so the lab can fetch its list.'}
         </p>
       </div>
     );
@@ -115,19 +115,19 @@ export default function NotebookLab() {
 
   return (
     <div className="nb-page">
-      <HubCrumb hub="/labs" hubLabel="Labs" page="Notebook Lab" />
+      <HubCrumb hub="/labs" hubLabel="Labs" page="Code Bro" />
       <div className="card">
         <div className="row spread">
           <div>
-            <h1 style={{ margin: 0 }}><BookOpen size={18} /> Notebook Lab</h1>
+            <h1 style={{ margin: 0 }}><BookOpen size={18} /> Code Bro</h1>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
-              Jupyter notebooks that run entirely inside this app. Every cell was executed at author time;
+              Code Bro runs entirely inside this app. Every cell was executed at author time;
               &quot;app runtime&quot; cells run here from the bundled NumPy/Pandas wheels.
             </p>
           </div>
           <span className="row">
             <Chip kind={isPythonReady() ? 'easy' : 'medium'}>{isPythonReady() ? '✓ Python ready' : 'Python booting…'}</Chip>
-            <Chip kind="interview">{manifest.length} notebooks</Chip>
+            <Chip kind="interview">{manifest.length} files</Chip>
           </span>
         </div>
       </div>
@@ -149,8 +149,8 @@ export default function NotebookLab() {
         </aside>
 
         <main className="nb-main">
-          {failed && <div className="card" style={{ color: 'var(--red)' }}>The notebook failed to load — check `public/notebooks/{active}`.</div>}
-          {!nb && !failed && <div className="card muted">Loading notebook…</div>}
+          {failed && <div className="card" style={{ color: 'var(--red)' }}>Code Bro failed to load — check `public/notebooks/{active}`.</div>}
+          {!nb && !failed && <div className="card muted">Loading Code Bro…</div>}
           {nb && (
             <>
               <div className="card">
@@ -182,8 +182,8 @@ export default function NotebookLab() {
       </div>
 
       <div className="row" style={{ marginTop: 12 }}>
-        <button className="btn ghost" onClick={() => pick(manifest[0].file)}><ChevronLeft size={14} /> First notebook</button>
-        <span className="small muted">Notebooks are edited in `content/notebooks`, then published with `npm run notebooks:write`.</span>
+        <button className="btn ghost" onClick={() => pick(manifest[0].file)}><ChevronLeft size={14} /> First Code Bro</button>
+        <span className="small muted">Code Bro files are edited in `content/notebooks`, then published with `npm run notebooks:write`.</span>
       </div>
     </div>
   );

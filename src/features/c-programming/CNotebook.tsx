@@ -106,7 +106,7 @@ export default function CNotebook({ initialSource, lab = null, storageKey, sourc
   const reset = () => setFiles([{ name: 'main.c', content: seed }]);
   const save = () => {
     try { localStorage.setItem(key, JSON.stringify({ files, savedAt: Date.now() })); setError(''); }
-    catch { setError('This browser refused to save the notebook.'); }
+    catch { setError('This browser refused to save Code Bro.'); }
   };
 
   /**
