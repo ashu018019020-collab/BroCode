@@ -5,7 +5,6 @@ import { useCAssessments, useCCourse, useCLabs } from '../../core/data/ccourse';
 import { addXp, recordAttempt, useStore } from '../../core/storage/store';
 import { checkpointKey, quizScore, testKey, wrongIndexes } from '../../core/learning/ccourse';
 import CNotebook from './CNotebook';
-import { AssistantCard } from '../../components/shared/AssistantCard';
 
 export default function CLessonPage() {
   const { moduleId } = useParams<{ moduleId: string }>();
@@ -143,21 +142,6 @@ export default function CLessonPage() {
               storageKey={`brocode:c-lab:${module.id}`}
             />
           </div>
-          <AssistantCard
-            embedded
-            compact
-            context={{
-              route: `/c-programming/${module.id}`,
-              pageTitle: `${module.title} — C Programming`,
-              courseSlug: 'c-programming',
-              courseTitle: 'C Programming',
-              lessonTitle: module.title,
-              topic: module.topics[0]?.title,
-              learningLevel: module.level,
-              learningGoal: module.goal,
-              progressSummary: `${done ? 'checkpoint complete' : 'in progress'} · ${module.topics.length} topics · ${module.mcqs.length} MCQs`,
-            }}
-          />
         </aside>
         <div className="c-split-right">
 <section className="card">
