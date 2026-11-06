@@ -31,7 +31,8 @@ import type { IdeError } from './MonacoIDE';
 import { parseTraceback } from '../../core/platform/traceback';
 import { addMistake, addXp, recordAttempt, setState, stateSnapshot, useStore } from '../../core/storage/store';
 import { codeSlot, notebookCell } from '../../core/platform/keys';
-import { debugSteps, explainTraceback, hintLadder, mistakeFromDiagnostic } from '../../core/ai/tutor';
+import { debugSteps, explainTraceback, hintLadder, mistakeFromDiagnostic, suggestFix } from '../../core/ai/tutor';
+import { toast } from '../ui/Toast';
 import { NB_DATASETS, NOTEBOOK_LIBS, NOTEBOOK_LIBS_SNIPPET } from '../../core/data/notebooks';
 import { buildIpynb, ipynbFileName } from '../../core/platform/ipynb';
 import { attemptPct, notebookAccuracy, pctText } from '../../core/assessment/accuracy';
@@ -207,6 +208,11 @@ function CodeCell({ cell, value, run, execCount, cellIndex, busy, locked, score,
   const errors: IdeError[] = diag?.line && !cell.expectError
     ? [{ line: diag.line, message: `${diag.kind}: ${diag.message}`, severity: 'error' }]
     : [];
+  /** The tutor's repair for this exact traceback — null when it has nothing it can name. */
+  const fix = useMemo(
+    () => (run?.error && !cell.expectError ? suggestFix(run.error, value) : null),
+    [run, value, cell.expectError],
+  );
 
   return (
     <div className={`card nb-cell jup-cell${cell.primary ? ' jup-primary' : ''}`}>
@@ -240,6 +246,7 @@ function CodeCell({ cell, value, run, execCount, cellIndex, busy, locked, score,
         running={busy}
         cellIndex={cellIndex}
         onRun={onRun}
+        fix={fix ? { note: fix.note, apply: () => { onChange(fix.code); toast('Fix applied — run the cell again'); } } : null}
         onRunNext={() => { onRun(); focusNextCell(cellIndex); }}
         onKeyDownCapture={(e) => {
           if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); onRun(); focusNextCell(cellIndex, e.currentTarget); }

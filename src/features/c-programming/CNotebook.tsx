@@ -3,6 +3,7 @@ import { Copy, Download, FileCode2, Package, Play, Plus, RotateCcw, Save, Trash2
 import { CodeBox } from '../../components/code/CodeBox';
 import type { IdeError } from '../../components/code/MonacoIDE';
 import { runC } from '../../core/data/ccourse';
+import { suggestFix } from '../../core/ai/tutor';
 import type { CLab } from '../../core/learning/ccourse';
 
 interface CFile { name: string; content: string }
@@ -122,6 +123,12 @@ export default function CNotebook({ initialSource, lab = null, storageKey, sourc
     return out.slice(0, 20);
   }, [result.compileOutput, result.stderr]);
 
+  /** The same one-click repair the notebooks get, driven by GCC's own diagnostics. */
+  const fix = useMemo(() => {
+    const text = [result.compileOutput, result.stderr].filter(Boolean).join('\n');
+    return text ? suggestFix(text, file.content) : null;
+  }, [result.compileOutput, result.stderr, file.content]);
+
   const addInclude = (header: string) => {
     if (file.content.includes(`#include <${header}>`)) return;
     write(`#include <${header}>\n${file.content}`);
@@ -171,6 +178,7 @@ export default function CNotebook({ initialSource, lab = null, storageKey, sourc
         errors={errors}
         running={busy}
         onRun={() => run(false)}
+        fix={fix ? { note: fix.note, apply: () => write(fix.code) } : null}
         actions={(
           <>
             <button className="btn small primary" onClick={() => run(false)} disabled={busy}><Play size={12} /> {busy ? 'Compiling…' : 'Run'}</button>

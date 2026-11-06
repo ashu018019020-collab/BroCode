@@ -533,3 +533,104 @@ export function mistakeFromDiagnostic(
     source: 'lab',
   };
 }
+
+/* ------------------------------- one-click fix ------------------------------ */
+
+/**
+ * The repair the error lens offers, as CODE rather than prose.
+ *
+ * Rule-based and deliberately narrow: every branch can name its change in one line, and anything
+ * it does not recognise returns `null`, so the learner keeps the tutor's explanation instead of
+ * getting a confident wrong edit. The same function serves Python tracebacks and GCC diagnostics,
+ * because "the failing line is line N" is the one thing both formats agree on.
+ */
+export interface SuggestedFix { code: string; note: string }
+
+/** C stdlib function → the header it needs. Adding the include IS the fix, not a workaround. */
+const C_HEADERS: Record<string, string> = {
+  printf: 'stdio.h', scanf: 'stdio.h', puts: 'stdio.h', getchar: 'stdio.h', fgets: 'stdio.h',
+  malloc: 'stdlib.h', free: 'stdlib.h', atoi: 'stdlib.h', exit: 'stdlib.h', realloc: 'stdlib.h',
+  strlen: 'string.h', strcpy: 'string.h', strcmp: 'string.h', memset: 'string.h',
+  sqrt: 'math.h', pow: 'math.h', fabs: 'math.h',
+};
+
+export function suggestFix(errText: string, code: string): SuggestedFix | null {
+  const text = String(errText ?? '');
+  if (!text.trim() || !String(code ?? '').trim()) return null;
+  const lines = String(code).split('\n');
+
+  // Python reports a traceback line; GCC reports `file:line:col: error: …`. Both are 1-indexed.
+  const diag = parseTraceback(text);
+  const gccLine = text.match(/^[^:\n]*:(\d+):\d+:\s*(?:fatal error|error|warning)/m);
+  const at = diag?.line && diag.line <= lines.length
+    ? diag.line - 1
+    : gccLine && Number(gccLine[1]) <= lines.length ? Number(gccLine[1]) - 1 : -1;
+  const lineAt = at >= 0 ? lines[at] : '';
+
+  const patchLine = (make: (line: string) => string, note: string): SuggestedFix => {
+    const next = lines.slice();
+    next[at] = make(next[at]);
+    return { code: next.join('\n'), note };
+  };
+  const prepend = (line: string, note: string): SuggestedFix => ({ code: `${line}\n${code}`, note });
+
+  // 1. numpy aggregation written as a list method: arr.mean() → np.mean(arr).
+  const attr = text.match(/has no attribute '(mean|median|std|var|sqrt)'/);
+  if (attr && at >= 0) {
+    const use = lineAt.match(new RegExp(`([\\w.]+)\\.${attr[1]}\\s*\\(`));
+    if (use) {
+      const fixed = patchLine((l) => l.replace(use[0], `np.${attr[1]}(${use[1]}`), `${use[1]}.${attr[1]}() → np.${attr[1]}(${use[1]})`);
+      return /^\s*import\s+numpy/m.test(code) ? fixed : { code: `import numpy as np\n${fixed.code}`, note: fixed.note };
+    }
+  }
+
+  // 2. numpy used but never imported.
+  if (/name 'np' is not defined/.test(text) && !/^\s*import\s+numpy/m.test(code)) {
+    return prepend('import numpy as np', 'add the missing numpy import');
+  }
+
+  // 3. `if x = 5` — a comparison written as an assignment.
+  if (at >= 0 && /SyntaxError/.test(text)) {
+    const m = lineAt.match(/^(\s*(?:if|elif|while)\s+)([^=]+?)\s*=\s*([^=].*)$/);
+    if (m) return patchLine(() => `${m[1]}${m[2].trim()} == ${m[3]}`, 'use == for comparison');
+  }
+
+  // 4. Python 2's print statement.
+  if (at >= 0 && /Missing parentheses in call to 'print'|SyntaxError/.test(text)) {
+    const m = lineAt.match(/^(\s*)print\s+(.+?)\s*$/);
+    if (m && !m[2].startsWith('(')) return patchLine(() => `${m[1]}print(${m[2]})`, 'print(...) needs parentheses');
+  }
+
+  // 5. A block header with no colon (and no C brace).
+  if (at >= 0) {
+    const trimmed = lineAt.replace(/\s+$/, '');
+    if (/^\s*(if|elif|else|for|while|def|class|try|except|finally|with|switch|case|default)\b/.test(trimmed)
+      && !trimmed.endsWith(':') && !trimmed.endsWith('{')) {
+      return patchLine(() => `${trimmed}:`, 'add the missing colon');
+    }
+  }
+
+  // 6. `expected an indented block` — indent the body's first line.
+  if (/expected an indented block/i.test(text) && at >= 0) {
+    const j = lines.findIndex((l, k) => k > at && l.trim().length > 0);
+    if (j > 0) {
+      const next = lines.slice();
+      next[j] = `    ${next[j]}`;
+      return { code: next.join('\n'), note: `indent line ${j + 1} by 4 spaces` };
+    }
+  }
+
+  // 7. C: a missing semicolon, which GCC reports against the NEXT token.
+  if (at >= 0 && /expected ';'/i.test(text) && !lineAt.trimEnd().endsWith(';')) {
+    return patchLine((l) => `${l.replace(/\s+$/, '')};`, 'add the missing ;');
+  }
+
+  // 8. C: a stdlib function used without its header.
+  const undeclared = text.match(/(?:implicit declaration of function|undeclared)[^\n]*?'(\w+)'/);
+  const header = undeclared ? C_HEADERS[undeclared[1]] : undefined;
+  if (undeclared && header && !new RegExp(`#include\\s*<${header.replace('.', '\\.')}>`).test(code)) {
+    return prepend(`#include <${header}>`, `add #include <${header}> for ${undeclared[1]}`);
+  }
+
+  return null;
+}

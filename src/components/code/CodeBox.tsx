@@ -16,7 +16,7 @@
  * should not pay for it.
  */
 import { lazy, Suspense, type KeyboardEvent, type ReactNode } from 'react';
-import { AlertTriangle, Circle, Loader } from 'lucide-react';
+import { AlertTriangle, Circle, Loader, Zap } from 'lucide-react';
 import type { IdeError } from './MonacoIDE';
 
 const MonacoIDE = lazy(() => import('./MonacoIDE').then((m) => ({ default: m.MonacoIDE })));
@@ -39,6 +39,8 @@ interface Props {
   onRunNext?: () => void;
   /** Buttons that belong to the surface (Run tests, Save, …). */
   actions?: ReactNode;
+  /** The tutor's one-click repair for the failing line, shown in the lens strip. */
+  fix?: { note: string; apply: () => void } | null;
   /** Notebook cell position — the wrapper carries it so cell stepping can find this editor. */
   cellIndex?: number;
   onKeyDownCapture?: (e: KeyboardEvent<HTMLDivElement>) => void;
@@ -55,7 +57,7 @@ const LANG_LABEL: Record<CodeLanguage, string> = {
 
 export function CodeBox({
   value, onChange, language = 'python', errors = [], height = 260, fileName, label,
-  readOnly, running, onRun, onRunNext, actions, cellIndex, onKeyDownCapture, className,
+  readOnly, running, onRun, onRunNext, actions, fix, cellIndex, onKeyDownCapture, className,
 }: Props) {
   const lines = value ? value.split('\n').length : 1;
   const errorsOnly = errors.filter((e) => e.severity === 'error');
@@ -96,14 +98,23 @@ export function CodeBox({
       </Suspense>
 
       {shown.length > 0 && (
-        <ul className="codebox-problems">
-          {shown.slice(0, 4).map((p, i) => (
-            <li key={`${p.line}-${i}`} className={p.severity === 'error' ? 'is-err' : 'is-warn'}>
-              <Circle size={7} /> <b>line {p.line}</b> {p.message}
-            </li>
-          ))}
-          {shown.length > 4 && <li className="muted">+{shown.length - 4} more — hover the squiggles.</li>}
-        </ul>
+        <div className="codebox-problems">
+          {/* The lens says where and why; this says what to change, and does it. The note IS the
+              label, so the button never claims a fix it cannot describe in one line. */}
+          {fix && (
+            <button className="codebox-fix" onClick={fix.apply} title={`${fix.note} — applied to the cell, then run it again`}>
+              <Zap size={11} /> Fix: {fix.note}
+            </button>
+          )}
+          <ul>
+            {shown.slice(0, 4).map((p, i) => (
+              <li key={`${p.line}-${i}`} className={p.severity === 'error' ? 'is-err' : 'is-warn'}>
+                <Circle size={7} /> <b>line {p.line}</b> {p.message}
+              </li>
+            ))}
+            {shown.length > 4 && <li className="muted">+{shown.length - 4} more — hover the squiggles.</li>}
+          </ul>
+        </div>
       )}
     </div>
   );
