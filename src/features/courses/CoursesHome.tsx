@@ -5,6 +5,10 @@ import { CourseLogo } from '../../components/shared/CourseLogo';
 import { ProgressRing } from '../../components/ui/ui';
 import { useCourseIndex, useSectionPct } from '../../core/data/courses';
 import { sectionAvg, sectionsClear } from '../../core/learning/courses';
+import cLogo from '../../assets/logos/c.svg';
+import { useCIndex } from '../../core/data/ccourse';
+import { checkpointKey } from '../../core/learning/ccourse';
+import { useStore } from '../../core/storage/store';
 
 /**
  * /courses — the eleven course cards.
@@ -22,6 +26,8 @@ import { sectionAvg, sectionsClear } from '../../core/learning/courses';
 export default function CoursesHome() {
   const { t } = useI18n();
   const index = useCourseIndex();
+  const cIndex = useCIndex();
+  const store = useStore();
   const pctOf = useSectionPct();
   const courses = index?.courses ?? [];
   const steps = courses.reduce((a, c) => a + (c.steps?.length ?? 0), 0);
@@ -44,20 +50,6 @@ export default function CoursesHome() {
               <span className="chip">{index.totals.items} {t('courses.itemsUnit')}</span>
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="card glow fadeup" style={{ marginTop: 12 }}>
-        <div className="row spread" style={{ gap: 12, flexWrap: 'wrap' }}>
-          <div>
-            <div className="chip small" style={{ marginBottom: 6 }}>Programming Languages · ISO C17</div>
-            <h2 style={{ margin: 0 }}>C Programming</h2>
-            <p className="muted small" style={{ margin: '6px 0 0', maxWidth: 620 }}>
-              20 modules from your first printf to pointers, the heap and data structures — real GCC notebook,
-              40 labs, 15 projects and a 100+ question interview bank.
-            </p>
-          </div>
-          <Link className="btn small primary" to="/c-programming">Open C course</Link>
         </div>
       </div>
 
@@ -103,6 +95,35 @@ export default function CoursesHome() {
               </Link>
             );
           })}
+          {cIndex && (() => {
+            const total = cIndex.modules.length;
+            const done = cIndex.modules.filter((m) => store.attempts[checkpointKey(m.id)]?.done).length;
+            const pct = total ? Math.round((done / total) * 100) : null;
+            const items = cIndex.stats.topics + cIndex.stats.examples + cIndex.stats.practice
+              + cIndex.stats.mcqs + cIndex.stats.interview + cIndex.stats.labs + cIndex.stats.projects;
+            return (
+              <Link
+                to="/c-programming"
+                className="course-card tone-cyan"
+                data-agent-action="course:c-programming"
+                data-agent-label="C Programming"
+                title={`C Programming — ${done}/${total} modules`}
+              >
+                <span className="cc-logo"><img className="course-logo" src={cLogo} width={56} height={56} alt="" /></span>
+                <b className="cc-name">C Programming</b>
+                <span className="cc-meta small muted">{total} modules · {items} items</span>
+                <span className="cc-foot">
+                  {pct !== null && (
+                    <>
+                      <ProgressRing pct={pct} size={44} label={`Progress — ${done}/${total}`} />
+                      <span className="small muted">{done}/{total} modules</span>
+                    </>
+                  )}
+                  <ChevronRight size={15} className="cc-go" />
+                </span>
+              </Link>
+            );
+          })()}
         </div>
       )}
 
