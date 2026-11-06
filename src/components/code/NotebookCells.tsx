@@ -25,7 +25,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, Copy, Download, Loader, Package, Play, Plus, RotateCcw, Save, Square, Trash2 } from 'lucide-react';
 import { Chip } from '../ui/ui';
-import { explainError, isPythonReady, kernelVars, resetKernel, runPython, stopPython, warmupPython } from '../../features/coding/runners';
+import { explainError, installPython, isPythonReady, kernelVars, resetKernel, runPython, stopPython, warmupPython } from '../../features/coding/runners';
+import { CodeBox } from './CodeBox';
+import type { IdeError } from './MonacoIDE';
+import { parseTraceback } from '../../core/platform/traceback';
 import { addMistake, addXp, recordAttempt, setState, stateSnapshot, useStore } from '../../core/storage/store';
 import { codeSlot, notebookCell } from '../../core/platform/keys';
 import { debugSteps, explainTraceback, hintLadder, mistakeFromDiagnostic } from '../../core/ai/tutor';
@@ -162,15 +165,27 @@ interface CodeCellProps {
  * lookup would silently drop focus whenever a prose cell followed. The last cell simply
  * stays focused (nothing to move to) — no jump to the browser chrome mid-thought.
  */
+/**
+ * Put the caret in a cell's editor.
+ *
+ * The cells are Monaco editors now, so the element carrying `data-cell-index` is the CodeBox
+ * wrapper, not a textarea: focusing it would focus a div. Monaco's own editable node is the
+ * `native-edit-context`, and that is what has to receive focus.
+ */
+function focusCell(el: HTMLElement) {
+  const editable = el.querySelector<HTMLElement>('.monaco-editor .native-edit-context, textarea');
+  (editable ?? el).focus();
+}
+
 function focusNextCell(index: number, from?: HTMLElement | null) {
   // Scoped to the notebook the caret is already in. A page can hold many notebooks at once (the
   // 16-part workspace renders one per part, and collapsed parts stay mounted), so a document-wide
   // lookup would hand focus to a cell in a different — possibly hidden — notebook.
   const root: ParentNode = from?.closest('.jup') ?? document;
-  const cells = Array.from(root.querySelectorAll<HTMLTextAreaElement>('[data-cell-index]'));
+  const cells = Array.from(root.querySelectorAll<HTMLElement>('[data-cell-index]'));
   const next = cells.find((el) => Number(el.dataset.cellIndex) > index);
   if (!next) return;
-  next.focus();
+  focusCell(next);
   next.scrollIntoView({ block: 'nearest' });
 }
 
@@ -185,19 +200,13 @@ function CodeCell({ cell, value, run, execCount, cellIndex, busy, locked, score,
   const expl = !run?.ok && run?.error ? explainTraceback(run.error) : null;
   const simple = !run?.ok && run?.error && !expl ? explainError(run.error) : null;
   const badge = badgeFor(cell);
-  const lines = Math.min(24, Math.max(3, value.split('\n').length));
-
-  const type = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); onRun(); return; }
-    if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); onRun(); focusNextCell(cellIndex, e.currentTarget); return; }
-    if (e.key === 'Tab') {                                   // Tab = 4 spaces, never leave the cell
-      e.preventDefault();
-      const el = e.currentTarget;
-      const { selectionStart: s, selectionEnd: en } = el;
-      onChange(`${value.slice(0, s)}    ${value.slice(en)}`);
-      requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = s + 4; });
-    }
-  };
+  const lineCount = Math.min(24, Math.max(3, value.split('\n').length));
+  /** The traceback's line is a real position in THIS cell, so Monaco can mark it and the lens can
+   *  print the message beside it. An expected-error cell is teaching a raise, not failing. */
+  const diag = !run?.ok && run?.error ? parseTraceback(run.error) : null;
+  const errors: IdeError[] = diag?.line && !cell.expectError
+    ? [{ line: diag.line, message: `${diag.kind}: ${diag.message}`, severity: 'error' }]
+    : [];
 
   return (
     <div className={`card nb-cell jup-cell${cell.primary ? ' jup-primary' : ''}`}>
@@ -220,15 +229,31 @@ function CodeCell({ cell, value, run, execCount, cellIndex, busy, locked, score,
         </span>
       </div>
 
-      <textarea
-        className="nb-editor"
-        spellCheck={false}
+      <CodeBox
         value={value}
-        rows={lines}
-        data-cell-index={cellIndex}
-        aria-label={cell.label ? `Code cell — ${cell.label}` : 'Code cell'}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={type}
+        onChange={onChange}
+        language="python"
+        errors={errors}
+        height={Math.min(420, Math.max(140, (lineCount + 1) * 21))}
+        fileName={`cell-${cellIndex + 1}.py`}
+        label={cell.label}
+        running={busy}
+        cellIndex={cellIndex}
+        onRun={onRun}
+        onRunNext={() => { onRun(); focusNextCell(cellIndex); }}
+        onKeyDownCapture={(e) => {
+          if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); onRun(); focusNextCell(cellIndex, e.currentTarget); }
+        }}
+        actions={(
+          <>
+            <button className="btn small primary" onClick={onRun} disabled={busy || locked} aria-label="Run this cell" title="Ctrl+↵ to run · Shift+↵ to run and move to the next cell">
+              {busy ? <Loader size={12} /> : <Play size={12} />} Run
+            </button>
+            <button className="btn small" onClick={onReset} title="Restore the cell to its original code"><RotateCcw size={12} /> Reset</button>
+            <button className="btn small" onClick={() => void navigator.clipboard?.writeText(value).catch(() => {})}><Copy size={12} /> Copy</button>
+            <button className="btn small" onClick={onSave}><Save size={12} /> Save</button>
+          </>
+        )}
       />
 
       {shown ? (
@@ -330,9 +355,27 @@ function ExplainPane({
  */
 export function LibraryShelf({ onInsert, open: openProp }: { onInsert?: (code: string, label: string) => void; open?: boolean }) {
   const [open, setOpen] = useState(!!openProp);
+  const [spec, setSpec] = useState('');
+  const [installing, setInstalling] = useState('');
+  const [log, setLog] = useState<{ ok: boolean; text: string }[]>([]);
   const insert = (code: string, label: string) => {
     if (onInsert) onInsert(code, label);
     else void navigator.clipboard?.writeText(code).catch(() => {});
+  };
+  /**
+   * Install is real, not a label: the bundled wheels are loaded into the SAME kernel the cells run
+   * in, then the import cell is added so the learner can see it working. A package that is not in
+   * `public/pyodide` fails honestly — this runtime never fetches from the network.
+   */
+  const install = async (name: string) => {
+    const pkg = name.trim().toLowerCase();
+    if (!pkg) return;
+    setInstalling(pkg);
+    const r = await installPython(pkg);
+    setLog((l) => [{ ok: r.ok, text: r.message }, ...l].slice(0, 3));
+    setInstalling('');
+    setSpec('');
+    if (r.ok) insert(NOTEBOOK_LIBS.find((x) => x.id === pkg)?.code ?? `import ${pkg}\n\nprint(${pkg}.__version__)\n`, `install ${pkg}`);
   };
   return (
     <div className="jup-shelf">
@@ -349,6 +392,33 @@ export function LibraryShelf({ onInsert, open: openProp }: { onInsert?: (code: s
       </div>
       {open && (
         <div className="fadeup" style={{ marginTop: 8 }}>
+          <div className="pkgbar">
+            <Package size={13} />
+            <input
+              className="assistant-input pkgbar-in"
+              value={spec}
+              onChange={(e) => setSpec(e.target.value)}
+              placeholder="pip install numpy"
+              aria-label="Install a library into this notebook's kernel"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void install(spec); } }}
+            />
+            <button className="btn small primary" onClick={() => void install(spec)} disabled={!!installing || !spec.trim()}>
+              {installing ? 'Installing…' : 'Install'}
+            </button>
+          </div>
+          <div className="row" style={{ marginTop: 6, flexWrap: 'wrap' }}>
+            {NOTEBOOK_LIBS.map((l) => (
+              <button key={`i-${l.id}`} className="btn small" onClick={() => void install(l.id)} disabled={!!installing} title={`Load the bundled ${l.id} wheel`}>
+                {installing === l.id ? '…' : `+ install ${l.id}`}
+              </button>
+            ))}
+            <span className="small muted">bundled wheels — installs offline, into this notebook</span>
+          </div>
+          {log.length > 0 && (
+            <div className="pkglog">
+              {log.map((l, i) => <div key={i} className={l.ok ? 'ok' : 'bad'}>{l.ok ? '✓' : '✖'} {l.text}</div>)}
+            </div>
+          )}
           <div className="row">
             <button className="btn small primary" onClick={() => insert(NOTEBOOK_LIBS_SNIPPET, 'numpy + pandas')}>+ numpy + pandas</button>
             {NOTEBOOK_LIBS.map((l) => (
@@ -496,14 +566,15 @@ export function NotebookCells({ cells, slug, compact, stdin: showStdin, showKern
   const moveCell = useCallback((dir: -1 | 1) => {
     const root = rootRef.current;
     if (!root) return;
-    const list = Array.from(root.querySelectorAll<HTMLTextAreaElement>('[data-cell-index]'));
+    const list = Array.from(root.querySelectorAll<HTMLElement>('[data-cell-index]'));
     if (!list.length) return;
-    const at = document.activeElement instanceof HTMLTextAreaElement ? list.indexOf(document.activeElement) : -1;
+    // The caret lives inside Monaco now, so "which cell am I in" is answered by containment.
+    const at = list.findIndex((el) => el.contains(document.activeElement));
     const nextIndex = at < 0
       ? (dir > 0 ? 0 : list.length - 1)
       : Math.min(list.length - 1, Math.max(0, at + dir));
     const el = list[nextIndex];
-    el.focus();
+    focusCell(el);
     el.scrollIntoView({ block: 'center' });
   }, []);
 

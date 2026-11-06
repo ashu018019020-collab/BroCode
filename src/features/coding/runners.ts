@@ -16,6 +16,7 @@ const pending = new Map<number, (r: RunResult) => void>();
 const outBuffers = new Map<number, { out: string; err: string }>();
 let readyRes: (() => void) | null = null;
 let readyRej: ((e: Error) => void) | null = null;
+const installs = new Map<number, (r: { ok: boolean; message: string }) => void>();
 
 function pyodideUrl(): string {
   const base = import.meta.env.BASE_URL ?? '/';
@@ -32,6 +33,12 @@ function ensureWorker(): Worker {
     const buf = outBuffers.get(id) ?? { out: '', err: '' };
     if (type === 'stdout') { buf.out += (buf.out ? '\n' : '') + text; outBuffers.set(id, buf); return; }
     if (type === 'stderr') { buf.err += (buf.err ? '\n' : '') + text; outBuffers.set(id, buf); return; }
+    if (type === 'install-done') {
+      const done = installs.get(id);
+      installs.delete(id);
+      done?.({ ok: !!e.data.ok, message: String(e.data.message ?? '') });
+      return;
+    }
     const res = pending.get(id);
     if (!res) return;
     pending.delete(id);
@@ -69,6 +76,22 @@ export async function runPython(code: string, stdin = '', scope = ''): Promise<R
   return new Promise<RunResult>((resolve) => {
     pending.set(id, (r) => resolve({ ...r, ms: Math.round(performance.now() - t0) }));
     pyWorker!.postMessage({ type: 'run', id, code, stdin, scope });
+  });
+}
+
+/**
+ * Install a library into the notebook kernel.
+ *
+ * The wheels that ship under `public/pyodide/` are the whole offline catalogue, so this loads one
+ * of those into the live session — no network, no CDN. Anything else is refused with the reason,
+ * which is the honest answer this runtime can give (see `core/data/packages.ts`).
+ */
+export async function installPython(spec: string): Promise<{ ok: boolean; message: string }> {
+  await pythonReady();
+  const id = ++seq;
+  return new Promise((resolve) => {
+    installs.set(id, resolve);
+    pyWorker!.postMessage({ type: 'install', id, spec });
   });
 }
 

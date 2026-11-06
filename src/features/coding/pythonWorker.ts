@@ -81,6 +81,30 @@ self.onmessage = (e: MessageEvent) => {
       }
     });
   }
+  if (type === 'install') {
+    // Install = load one of the wheels bundled beside pyodide.mjs into THIS session.
+    chain = chain.then(async () => {
+      if (!pyodide) { post({ type: 'install-done', id, ok: false, message: 'Python runtime not ready — run a cell first.' }); return; }
+      const raw = String(e.data.spec ?? '').trim().toLowerCase();
+      const name = raw.replace(/^pip\s+install\s+/, '').split(/[<>=!\s]/)[0];
+      if (!name) { post({ type: 'install-done', id, ok: false, message: 'Type a package name, e.g. numpy' }); return; }
+      if (name !== 'numpy' && name !== 'pandas') {
+        post({ type: 'install-done', id, ok: false, message: `${name} is not bundled — this offline runtime ships numpy + pandas only, and never downloads from PyPI.` });
+        return;
+      }
+      activeId = id;
+      try {
+        await pyodide.loadPackage(name);
+        const version = String(pyodide.runPython(`import ${name} as _pkg; _pkg.__version__`));
+        post({ type: 'install-done', id, ok: true, message: `${name} ${version} installed from the bundled wheel (offline)` });
+      } catch (err: any) {
+        post({ type: 'install-done', id, ok: false, message: `${name} could not be loaded: ${String(err?.message ?? err)}` });
+      } finally {
+        if (activeId === id) activeId = null;
+      }
+    });
+    return;
+  }
   if (type === 'reset-kernel') {
     // Jupyter's "Restart kernel": drop this notebook's names, keep the others.
     const s = scopes.get(scope);

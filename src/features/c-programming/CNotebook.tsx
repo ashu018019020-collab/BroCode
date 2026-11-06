@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Copy, Download, FileCode2, Play, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
-import { MonacoIDE } from '../../components/code/MonacoIDE';
+import { Copy, Download, FileCode2, Package, Play, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { CodeBox } from '../../components/code/CodeBox';
+import type { IdeError } from '../../components/code/MonacoIDE';
 import { runC } from '../../core/data/ccourse';
 import type { CLab } from '../../core/learning/ccourse';
 
@@ -15,6 +16,8 @@ interface TestResult { name: string; pass: boolean; expected: string; actual: st
 
 const STARTER = '#include <stdio.h>\n\nint main(void) {\n    printf("Namaste, BroCode!\\n");\n    return 0;\n}\n';
 const STORAGE = 'brocode:c-notebook:v1';
+/** Headers a C learner reaches for; each button is a real `#include` added to the file. */
+const STDLIB = ['stdio.h', 'stdlib.h', 'string.h', 'math.h', 'stdbool.h', 'ctype.h', 'time.h'];
 const EMPTY = {
   stdout: '', stderr: '', compileOutput: '', exitCode: null as number | null,
   time: null as number | null, memory: null as number | null, status: '', timedOut: false,
@@ -97,6 +100,33 @@ export default function CNotebook({ initialSource, lab = null, storageKey, sourc
     catch { setError('This browser refused to save the notebook.'); }
   };
 
+  /**
+   * GCC's diagnostics, as positions Monaco can mark.
+   *
+   * `main.c:5:9: error: expected ';' before 'return'` is already a line and a column, so the
+   * compiler's own output is the error lens — no separate linter to disagree with it.
+   */
+  const errors = useMemo<IdeError[]>(() => {
+    const text = [result.compileOutput, result.stderr].filter(Boolean).join('\n');
+    const seen = new Set<string>();
+    const out: IdeError[] = [];
+    for (const raw of text.split('\n')) {
+      const m = raw.match(/^(?:[^:\n]*):(\d+):(\d+):\s*(fatal error|error|warning|note):\s*(.*)$/);
+      if (!m) continue;
+      const severity = m[3] === 'warning' ? 'warning' : 'error';
+      const key = `${m[1]}:${m[4]}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ line: Number(m[1]), message: m[4], severity });
+    }
+    return out.slice(0, 20);
+  }, [result.compileOutput, result.stderr]);
+
+  const addInclude = (header: string) => {
+    if (file.content.includes(`#include <${header}>`)) return;
+    write(`#include <${header}>\n${file.content}`);
+  };
+
   const output = useMemo(() => [
     result.stdout,
     result.stderr && `stderr:\n${result.stderr}`,
@@ -115,7 +145,7 @@ export default function CNotebook({ initialSource, lab = null, storageKey, sourc
           <button className="btn small" onClick={addFile} disabled={files.length >= 8} title="Add a file"><Plus size={12} /></button>
         </div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-          <button className="btn small primary" onClick={() => run(false)} disabled={busy}><Play size={12} /> {busy ? 'Compiling…' : 'Run'}</button>
+          {/* Run lives in the editor chrome now (that is where an IDE puts it) — one button, not two. */}
           {lab && <button className="btn small" onClick={() => run(true)} disabled={busy}>Run tests</button>}
           <button className="btn small" onClick={save} title="Save to this browser"><Save size={12} /></button>
           <button className="btn small" onClick={copy} title="Copy"><Copy size={12} /></button>
@@ -131,7 +161,30 @@ export default function CNotebook({ initialSource, lab = null, storageKey, sourc
         <span className="muted small">C17 · GCC · extra .c files are linked into the entry file; headers are available to it.</span>
       </div>
 
-      <MonacoIDE value={file.content} language="cpp" onChange={write} height={height} onRun={() => run(false)} />
+      <CodeBox
+        value={file.content}
+        language="cpp"
+        onChange={write}
+        height={height}
+        fileName={file.name || 'main.c'}
+        label={files.length > 1 ? `${files.length} files linked` : undefined}
+        errors={errors}
+        running={busy}
+        onRun={() => run(false)}
+        actions={(
+          <>
+            <button className="btn small primary" onClick={() => run(false)} disabled={busy}><Play size={12} /> {busy ? 'Compiling…' : 'Run'}</button>
+            {lab && <button className="btn small" onClick={() => run(true)} disabled={busy}>Run tests</button>}
+          </>
+        )}
+      />
+
+      <div className="codebox-libs">
+        <span className="small muted"><Package size={12} /> Add a library header:</span>
+        {STDLIB.map((h) => (
+          <button key={h} className="btn small" onClick={() => addInclude(h)} title={`Add #include <${h}>`}>+ {h}</button>
+        ))}
+      </div>
 
       <label className="muted small" style={{ display: 'block', marginTop: 10 }}>stdin (scanf input, one value per line)</label>
       <textarea className="assistant-input" style={{ width: '100%', minHeight: 70 }} value={stdin} onChange={(e) => setStdin(e.target.value)} placeholder={'42\nBroCode'} />
@@ -157,7 +210,7 @@ export default function CNotebook({ initialSource, lab = null, storageKey, sourc
             {result.time != null && ` · ${result.time} ms`}{result.memory != null && ` · ${result.memory} KB`}
           </span>
         </div>
-        <pre style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: 12, minHeight: 90, maxHeight: 320, overflow: 'auto', fontSize: 12, whiteSpace: 'pre-wrap' }}>
+        <pre className="cout">
           {output || (busy ? 'Running…' : notice || 'Run the program to see real compiler output.')}
         </pre>
       </div>

@@ -45,21 +45,25 @@ interface Props {
   language?: 'python' | 'javascript' | 'sql' | 'plaintext' | 'cpp';
   onChange: (v: string) => void;
   onRun?: () => void;
+  /** Shift+Enter: run this editor and hand on to whatever comes after it (notebook cells). */
+  onRunNext?: () => void;
   onSave?: () => void;
   errors?: IdeError[];
   height?: number | string;
   readOnly?: boolean;
+  /** Print each line's first problem at the end of that line (Monaco "error lens"). */
+  lens?: boolean;
 }
 
-export function MonacoIDE({ value, language = 'python', onChange, onRun, onSave, errors = [], height = 380, readOnly }: Props) {
+export function MonacoIDE({ value, language = 'python', onChange, onRun, onRunNext, onSave, errors = [], height = 380, readOnly, lens = true }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const edRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const decoRef = useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 
   // The editor is built once per language, so its listeners read the CURRENT handlers: capturing
   // them in the create-effect would write an edit into the file selected back then.
-  const handlers = useRef({ onChange, onRun, onSave });
-  handlers.current = { onChange, onRun, onSave };
+  const handlers = useRef({ onChange, onRun, onRunNext, onSave });
+  handlers.current = { onChange, onRun, onRunNext, onSave };
 
   useEffect(() => {
     ensureMonaco();
@@ -87,6 +91,7 @@ export function MonacoIDE({ value, language = 'python', onChange, onRun, onSave,
     // Nothing to dispose by hand: `ed.dispose()` tears down its own registrations, like the commands below.
     ed.onDidChangeModelContent(() => handlers.current.onChange(ed.getValue()));
     ed.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => handlers.current.onRun?.());
+    ed.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => handlers.current.onRunNext?.());
     ed.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => handlers.current.onSave?.());
 
     return () => { ed.dispose(); edRef.current = null; };
@@ -106,12 +111,37 @@ export function MonacoIDE({ value, language = 'python', onChange, onRun, onSave,
       startLineNumber: e.line, startColumn: 1, endLineNumber: e.line, endColumn: 1e5,
       message: e.message, severity: e.severity === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
     }));
-    monaco.editor.setModelMarkers(ed.getModel()!, 'aiml', markers);
-    decoRef.current?.set(errors.filter((e) => e.severity === 'error').map((e) => ({
-      range: new monaco.Range(e.line, 1, e.line, 1e5),
-      options: { isWholeLine: true, className: 'err-line', overviewRuler: { color: '#f87171', position: 4 } },
-    })));
-  }, [errors, value]);
+    const model = ed.getModel();
+    monaco.editor.setModelMarkers(model!, 'aiml', markers);
+
+    // Error lens: the first problem ON a line is printed at the end of that line, so the message
+    // sits beside the code that caused it instead of hiding in a hover. The squiggle and the red
+    // gutter bar stay — the lens is the readable half, not a replacement.
+    const firstOnLine = new Map<number, IdeError>();
+    for (const e of errors) if (!firstOnLine.has(e.line)) firstOnLine.set(e.line, e);
+    const decos: monaco.editor.IModelDeltaDecoration[] = errors
+      .filter((e) => e.severity === 'error')
+      .map((e) => ({
+        range: new monaco.Range(e.line, 1, e.line, 1),
+        options: { isWholeLine: true, className: 'err-line', overviewRuler: { color: '#f87171', position: 4 } },
+      }));
+    if (lens && model) {
+      for (const [line, e] of firstOnLine) {
+        const col = model.getLineMaxColumn(line);
+        decos.push({
+          range: new monaco.Range(line, col, line, col),
+          options: {
+            showIfCollapsed: true,
+            after: {
+              content: `   ${e.severity === 'error' ? '✖' : '▲'} ${e.message.replace(/\s+/g, ' ').trim()}`,
+              inlineClassName: e.severity === 'error' ? 'lens-err' : 'lens-warn',
+            },
+          },
+        });
+      }
+    }
+    decoRef.current?.set(decos);
+  }, [errors, value, lens]);
 
   return (
     <div style={{ position: 'relative' }}>

@@ -5503,3 +5503,76 @@ the skill's share of the selected source, and how many of its questions are alre
 .qb-course-head .who { flex: 1; min-width: 0; }
 .qb-course-rows { display: grid; gap: 2px; }
 .qb-course .file-row { width: 100%; text-align: left; }
+
+/* ---- the advanced code box: Playground-grade chrome around every editor ------ */
+/*
+ * Deliberately dark in BOTH themes, like the console and the codeblock: this is a screen you type
+ * code into, and the same reasoning the light-theme console scope already follows applies here.
+ */
+.codebox {
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #0d0d0d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+.codebox-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 5px 10px;
+  background: linear-gradient(90deg, #141a2c 0%, #0f1420 55%, #0d0d0d 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+.codebox-dots { display: inline-flex; gap: 4px; }
+.codebox-dots i { display: block; width: 7px; height: 7px; border-radius: 50%; background: #3a3a3a; }
+.codebox-dots i:nth-child(1) { background: #f87171; }
+.codebox-dots i:nth-child(2) { background: #fbbf24; }
+.codebox-dots i:nth-child(3) { background: #34d399; }
+.codebox-name { font-family: ui-monospace, monospace; font-size: .73rem; color: #d7e4ff; }
+.codebox-lang {
+  font-size: .64rem; letter-spacing: .07em; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 999px; color: #a5b4fc;
+  border: 1px solid rgba(165, 180, 252, .35); background: rgba(99, 102, 241, .12);
+}
+.codebox-lang.lang-python { color: #f2cc60; border-color: rgba(242, 204, 96, .35); background: rgba(242, 204, 96, .1); }
+.codebox-lang.lang-cpp { color: #7ee787; border-color: rgba(126, 231, 135, .35); background: rgba(126, 231, 135, .1); }
+.codebox-lang.lang-sql { color: #7fd1e8; border-color: rgba(127, 209, 232, .35); background: rgba(127, 209, 232, .1); }
+.codebox-label, .codebox-meta { font-size: .68rem; color: #8b96ad; }
+.codebox-run { display: inline-flex; align-items: center; gap: 4px; color: #f2cc60; }
+.codebox-badge {
+  display: inline-flex; align-items: center; gap: 4px; margin-left: auto;
+  font-size: .68rem; padding: 1px 7px; border-radius: 999px;
+  color: #fecaca; background: rgba(248, 113, 113, .14); border: 1px solid rgba(248, 113, 113, .35);
+}
+.codebox-actions { display: inline-flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.codebox-loading { display: flex; align-items: center; gap: 6px; padding: 18px 12px; color: #8b96ad; font-size: .76rem; }
+.codebox-problems {
+  list-style: none; margin: 0; padding: 6px 10px 8px; display: flex; flex-direction: column; gap: 3px;
+  background: #140b0b; border-top: 1px solid rgba(248, 113, 113, .22);
+}
+.codebox-problems li { display: flex; align-items: baseline; gap: 6px; font-size: .72rem; color: #fecaca; }
+.codebox-problems li.is-warn { color: #fcd34d; }
+.codebox-problems li b { font-weight: 600; }
+/* These two are Monaco inline classes, applied to text injected into the editor itself. */
+.lens-err { color: #fca5a5; font-style: italic; opacity: .9; }
+.lens-warn { color: #fcd34d; font-style: italic; opacity: .9; }
+
+/* The library strip under the C editor: each chip is a real #include. */
+.codebox-libs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.codebox-libs > .small { display: inline-flex; align-items: center; gap: 4px; }
+/* The C program's console. */
+.cout {
+  background: #0b0b0b; border: 1px solid rgba(255, 255, 255, .08); border-radius: 10px;
+  padding: 12px; min-height: 90px; max-height: 320px; overflow: auto;
+  font-size: 12px; white-space: pre-wrap; color: #d7e4ff;
+}
+
+/* ---- install a library ------------------------------------------------------ */
+.pkgbar {
+  display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+  border: 1px solid rgba(56, 189, 248, .28); border-radius: var(--radius-md);
+  background: rgba(56, 189, 248, .07); color: #7fd1e8;
+}
+.pkgbar-in { flex: 1 1 auto; min-width: 120px; font-family: ui-monospace, monospace; font-size: .76rem; }
+.pkglog { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; font-size: .72rem; }
+.pkglog .ok { color: #34d399; }
+.pkglog .bad { color: #fca5a5; }
