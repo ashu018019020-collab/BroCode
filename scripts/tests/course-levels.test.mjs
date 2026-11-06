@@ -105,6 +105,30 @@ test('levels: database overrides move a course and invalid rows are ignored', ()
   assert.equal(levels.placementOf('python').hidden, undefined);
 });
 
+test('levels: the flat grid sequence is the twelve-card order the page renders', () => {
+  // The Courses page draws ONE grid in this order — catalog courses and the C card interleaved by
+  // the same registry, which is what lets C sit third without becoming a catalog record.
+  assert.deepEqual(levels.COURSE_ORDER, [
+    'ai-career-foundations',
+    'python',
+    'c-programming',
+    'statistics-data-analysis',
+    'numpy-pandas',
+    'sql',
+    'data-engineering',
+    'ml-nlp',
+    'generative-ai',
+    'agentic-ai',
+    'build-production',
+    'interview-career',
+  ]);
+  assert.equal(levels.COURSE_ORDER.length, 12, 'twelve cards, no duplicates');
+  assert.equal(new Set(levels.COURSE_ORDER).size, 12, 'no course repeated');
+  assert.equal(levels.COURSE_ORDER.indexOf('c-programming'), 2, 'C is the third card, not the last');
+  // The order is explicit — the generator's authoring order never decides a position.
+  assert.notDeepEqual(levels.COURSE_ORDER, [...published, 'c-programming'].sort());
+});
+
 test('levels: a course can be stood down and restored without losing its place', () => {
   const hidden = levels.mergePlacements([
     { slug: 'sql', level: 'foundations', order: 4, hidden: true },
