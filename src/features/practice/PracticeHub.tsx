@@ -14,6 +14,7 @@ import { useBankManifest, QUESTION_TYPES, TYPE_LABEL } from '../../core/data/que
 import { useCAssessments, useCIndex, useCLabs } from '../../core/data/ccourse';
 import { cQuizTally } from '../../core/learning/ccourse';
 import { CLogo } from '../c-programming/CLogo';
+import { SubjectLogo } from '../../components/shared/SubjectLogo';
 import type { QuestionType } from '../../core/data/schema';
 import { bankAccuracyBySection } from '../../core/assessment/accuracy';
 import {
@@ -180,16 +181,15 @@ export default function PracticeHub() {
           holds for it; the chosen one stays in the grid and opens its panel below, so switching
           subject is one click and never a lost page. */}
       <div className="sec-head"><h2><ListChecks size={16} color="var(--cyan)" /> Choose subject</h2><span className="line" /></div>
-      <div className="tile-grid">
+      <div className="tile-grid tile-grid-lg">
         {TRACK_DEFS.map((d) => {
-          const Icon = d.icon;
           const range = rangeOf(d.id);
           const list = manifest && range ? chaptersOf(manifest.sections, range, answered) : [];
           const c = subjectCounts(list, 'all');
           const on = subject?.id === d.id;
           return (
-            <Link key={d.id} to={subjectHref(d.id, 'all')} className={`tile${on ? ' on' : ''}`} data-agent-action={`course:${d.id}`}>
-              <span className="ic"><Icon size={18} /></span>
+            <Link key={d.id} to={subjectHref(d.id, 'all')} className={`tile tech${on ? ' on' : ''}`} data-agent-action={`course:${d.id}`}>
+              <span className="ic"><SubjectLogo id={d.id} name={t(d.nameKey as LocaleKey)} size={30} /></span>
               <span className="t" style={{ flex: 1, minWidth: 0 }}>
                 <b>{t(d.nameKey as LocaleKey)}</b>
                 <span>
@@ -201,8 +201,8 @@ export default function PracticeHub() {
           );
         })}
         {/* The C course, beside the tracks: own logo, real totals, and a link into the C pane. */}
-        <Link to="/questions?course=c" className="tile c-tile" data-agent-action="course:c">
-          <span className="ic c-ic"><CLogo size={22} /></span>
+        <Link to="/questions?course=c" className="tile tech c-tile" data-agent-action="course:c">
+          <span className="ic c-ic"><CLogo size={32} /></span>
           <span className="t" style={{ flex: 1, minWidth: 0 }}>
             <b>C Programming</b>
             <span>
@@ -265,7 +265,6 @@ function SubjectPanel({ subject, rows, counts, loaded, type }: {
   type: QuestionType | 'all';
 }) {
   const { t } = useI18n();
-  const Icon = subject.icon;
   const coding = subjectCounts(rows, 'coding').typed;
   const interview = subjectCounts(rows, 'interview').typed;
   const start = startChapter(rows, type);
@@ -274,7 +273,7 @@ function SubjectPanel({ subject, rows, counts, loaded, type }: {
     <div className="card fadeup" style={{ marginTop: 12 }}>
       <div className="row spread" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
         <div className="row" style={{ gap: 10, minWidth: 0 }}>
-          <span className="suj-ic"><Icon size={18} /></span>
+          <span className="suj-ic"><SubjectLogo id={subject.id} name={t(subject.nameKey as LocaleKey)} size={26} /></span>
           <span style={{ minWidth: 0 }}>
             <b style={{ fontSize: '1rem' }}>{t(subject.nameKey as LocaleKey)}</b>
             <span className="small muted" style={{ display: 'block' }}>

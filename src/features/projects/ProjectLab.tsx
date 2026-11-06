@@ -2,6 +2,10 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FolderGit2, Check, ArrowRight, Boxes, Hammer, ListChecks } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
+import { TRACK_DEFS } from '../../app/App';
+import { useI18n } from '../../app/i18n';
+import type { LocaleKey } from '../../app/i18n/locales';
+import { SubjectLogo } from '../../components/shared/SubjectLogo';
 import { useStore, recordAttempt, addXp, setState, today } from '../../core/storage/store';
 import { stageAttempt, codeSlot, labAttempt } from '../../core/platform/keys';
 import { sectionProgress } from '../../core/learning/progress';
@@ -32,6 +36,7 @@ interface Proj {
 
 export default function ProjectLab() {
   const { sections } = useCurriculum();
+  const { t } = useI18n();
   const state = useStore();
   const [tier, setTier] = useState<'all' | 'mini' | 'real'>('all');
   const [open, setOpen] = useState<string | null>(null);
@@ -137,10 +142,14 @@ export default function ProjectLab() {
               const isOpen = open === p.key;
               const s = sections.find((x) => x.id === p.sid)!;
               const sp = sectionProgress(s, state);
+              const tech = TRACK_DEFS.find((d) => p.no >= d.from && p.no <= d.to) ?? null;
               return (
                 <div key={p.key} className={`card ${p.done ? 'wb-active' : ''}`}>
                   <div className="row spread">
-                    <span className="chip">s{String(p.no).padStart(2, '0')} · {p.tier}</span>
+                    <span className="chip row" style={{ gap: 6 }}>
+                      {tech && <span className="proj-logo"><SubjectLogo id={tech.id} name={t(tech.nameKey as LocaleKey)} size={16} /></span>}
+                      s{String(p.no).padStart(2, '0')} · {p.tier}
+                    </span>
                     {p.done && <span className="chip easy"><Check size={11} /> Complete</span>}
                   </div>
                   <h2 style={{ margin: '8px 0 4px' }}>{p.name}</h2>

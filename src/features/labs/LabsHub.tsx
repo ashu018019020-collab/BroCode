@@ -14,6 +14,7 @@ import { notebookCellsRunFor } from '../../core/learning/coverage';
 import { EXTRA_PATHS } from '../../core/learning/paths';
 import { useCLabs } from '../../core/data/ccourse';
 import { CLogo } from '../c-programming/CLogo';
+import { SubjectLogo } from '../../components/shared/SubjectLogo';
 import {
   continueLab, courseRoutes, labSummary, labTopics, routesOfSteps, stepOfSections,
   type LabCourseLike, type LabSummary, type LabTopic,
@@ -134,15 +135,14 @@ export default function LabsHub() {
         Open the subject for the technology you want to try hands-on — each card's numbers come from its own course,
         notebooks and exercises.
       </p>
-      <div className="tile-grid">
+      <div className="tile-grid tile-grid-lg">
         {TRACK_DEFS.map((d) => {
-          const Icon = d.icon;
           const range = rangeOf(d.id);
           const s = range ? viewOf(range).summary : null;
           const on = subject?.id === d.id;
           return (
-            <Link key={d.id} to={`/labs?subject=${d.id}`} className={`tile${on ? ' on' : ''}`} data-agent-action={`lab:subject:${d.id}`}>
-              <span className="ic"><Icon size={18} /></span>
+            <Link key={d.id} to={`/labs?subject=${d.id}`} className={`tile tech${on ? ' on' : ''}`} data-agent-action={`lab:subject:${d.id}`}>
+              <span className="ic"><SubjectLogo id={d.id} name={t(d.nameKey as LocaleKey)} size={30} /></span>
               <span className="t" style={{ flex: 1, minWidth: 0 }}>
                 <b>{t(d.nameKey as LocaleKey)}</b>
                 <span>
@@ -153,8 +153,8 @@ export default function LabsHub() {
           );
         })}
         {/* The C course's labs, beside the tracks and with its own course mark. */}
-        <Link to="/c-programming?tab=labs" className="tile c-tile" data-agent-action="lab:course:c">
-          <span className="ic c-ic"><CLogo size={22} /></span>
+        <Link to="/c-programming?tab=labs" className="tile tech c-tile" data-agent-action="lab:course:c">
+          <span className="ic c-ic"><CLogo size={32} /></span>
           <span className="t" style={{ flex: 1, minWidth: 0 }}>
             <b>C Programming</b>
             <span>
@@ -168,7 +168,7 @@ export default function LabsHub() {
         <div className="card fadeup" style={{ marginTop: 12 }}>
           <div className="row spread" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
             <div className="row" style={{ gap: 10, minWidth: 0 }}>
-              <span className="suj-ic"><subject.icon size={18} /></span>
+              <span className="suj-ic"><SubjectLogo id={subject.id} name={t(subject.nameKey as LocaleKey)} size={26} /></span>
               <span style={{ minWidth: 0 }}>
                 <b style={{ fontSize: '1rem' }}>{t(subject.nameKey as LocaleKey)} Lab</b>
                 <span className="small muted" style={{ display: 'block' }}>

@@ -13,6 +13,7 @@ import {
   INTERVIEW_KINDS, KIND_BY_ID, kindCounts, kindProgress, lastInterviewTouch, SESSION_SIZES,
 } from '../../core/assessment/interview-room';
 import { HubGrid } from '../../components/shared/HubGrid';
+import { SubjectLogo } from '../../components/shared/SubjectLogo';
 import { Bar } from '../../components/ui/ui';
 
 /**
@@ -148,15 +149,14 @@ export default function InterviewsHub() {
 
       {/* ---------- choose your interview ---------- */}
       <div className="sec-head"><h2>Choose your interview</h2><span className="line" /></div>
-      <div className="tile-grid">
-        {subjects.map((s, i) => {
+      <div className="tile-grid tile-grid-lg">
+        {subjects.map((s) => {
           const d = TRACK_DEFS.find((x) => x.id === s.range.id)!;
-          const Icon = d.icon;
           const on = selected?.id === s.range.id;
           const pct = s.total > 0 ? Math.round((s.done / s.total) * 100) : null;
           return (
-            <Link key={s.range.id} to={`/interview-mode?subject=${s.range.id}`} className={`tile${on ? ' on' : ''}`}>
-              <span className="ic"><Icon size={18} /></span>
+            <Link key={s.range.id} to={`/interview-mode?subject=${s.range.id}`} className={`tile tech${on ? ' on' : ''}`}>
+              <span className="ic"><SubjectLogo id={s.range.id} name={t(d.nameKey as LocaleKey)} size={30} /></span>
               <span className="t" style={{ flex: 1, minWidth: 0 }}>
                 <b>{t(d.nameKey as LocaleKey)} Interview</b>
                 <span>
