@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Briefcase, Bug, CheckCircle2, FlaskConical, Lightbulb, ListChecks, Play } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Briefcase, Bug, CheckCircle2, FlaskConical, Lightbulb, ListChecks, Play, Sparkles, X } from 'lucide-react';
 import { useCAssessments, useCCourse, useCLabs } from '../../core/data/ccourse';
+import { AssistantCard } from '../../components/shared/AssistantCard';
 import { addXp, recordAttempt, useStore } from '../../core/storage/store';
 import { checkpointKey, quizScore, testKey, wrongIndexes } from '../../core/learning/ccourse';
 import CNotebook from './CNotebook';
@@ -22,6 +23,16 @@ export default function CLessonPage() {
   const [tryCode, setTryCode] = useState<{ code: string; id: number; module: string } | null>(null);
   const tryId = useRef(0);
   const leftRef = useRef<HTMLElement | null>(null);
+  /** The mentor is a sheet opened from the header, not a second card in the page. */
+  const [ask, setAsk] = useState(false);
+
+  // Escape closes it, like every other dialog on the site.
+  useEffect(() => {
+    if (!ask) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setAsk(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [ask]);
 
   const module = data?.modules.find((m) => m.id === moduleId) ?? null;
   const position = data && module ? data.modules.findIndex((m) => m.id === module.id) : -1;
@@ -87,8 +98,35 @@ export default function CLessonPage() {
           <span className="chip small">Module {String(module.no).padStart(2, '0')} · {module.level} · {module.hours}h</span>
           <Link className="btn small" to="/c-programming?tab=practice"><ListChecks size={12} /> Practice</Link>
           <Link className="btn small" to="/c-programming?tab=career"><Briefcase size={12} /> Career</Link>
+          <button className="btn small c-ask" onClick={() => setAsk(true)} aria-haspopup="dialog">
+            <Sparkles size={12} /> Ask AI
+          </button>
         </div>
       </div>
+
+      {/* The mentor, for THIS module: the sheet passes the module id as the section and names it in
+          the context strip, so answers are about the code on screen instead of the whole course. */}
+      {ask && (
+        <div
+          className="ai-sheet-back"
+          onClick={(e) => { if (e.target === e.currentTarget) setAsk(false); }}
+        >
+          <div className="ai-sheet" role="dialog" aria-modal="true" aria-label={`Ask the mentor about ${module.title}`}>
+            <div className="row spread ai-sheet-head">
+              <span className="row small">
+                <Sparkles size={13} /> Mentor · Module {String(module.no).padStart(2, '0')} · {module.title}
+              </span>
+              <button className="btn small" onClick={() => setAsk(false)}>
+                <X size={12} /> Close
+              </button>
+            </div>
+            <AssistantCard
+              embedded
+              context={{ sectionId: module.id, where: `Module ${String(module.no).padStart(2, '0')} · ${module.title}` }}
+            />
+          </div>
+        </div>
+      )}
 
       {params.get('tab') === 'test' && set && (
         <div className="card glow" style={{ marginBottom: 14 }}>
