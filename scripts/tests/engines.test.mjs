@@ -463,7 +463,7 @@ test('key families: only keys.ts spells a persisted key shape, and no engine rea
 
   // Every persisted family. Adding one to keys.ts means adding it here; the assertions at the end fail
   // if this list and the owner drift apart.
-  const FAMILIES = ['st:', 'view:', 'ia:', 'df:', 'final:', 'qb:', 'tp:', 'nb:', 'lab:', 'code:', 'nbc:', 'nplab:', 'pg:', 'sql:', 'resume:', 'cquiz:'];
+  const FAMILIES = ['st:', 'view:', 'ia:', 'df:', 'final:', 'qb:', 'tp:', 'nb:', 'lab:', 'code:', 'nbc:', 'nplab:', 'pg:', 'sql:', 'resume:', 'cquiz:', 'clab:'];
   // The quote anchor matters: without it `last:`/`first:` inside any identifier would read as a family,
   // and the alternation group matters: a character class here would fire on `'http:'` and the like.
   const shape = new RegExp("(['\"`])(" + FAMILIES.map((f) => f.slice(0, -1)).join('|') + '):');

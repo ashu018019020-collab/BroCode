@@ -12,7 +12,8 @@ import { usePathCtx } from '../../core/data/paths';
 import { HubGrid } from '../../components/shared/HubGrid';
 import { notebookCellsRunFor } from '../../core/learning/coverage';
 import { EXTRA_PATHS } from '../../core/learning/paths';
-import { useCProjects, useCLabs } from '../../core/data/ccourse';
+import { useCProjects, useCLabs, useCIndex } from '../../core/data/ccourse';
+import { cQuizTally } from '../../core/learning/ccourse';
 import { CLogo } from '../c-programming/CLogo';
 import {
   continueLab, courseRoutes, labSummary, labTopics, routesOfSteps, stepOfSections,
@@ -58,6 +59,14 @@ export default function LabsHub() {
   const cLabs = useCLabs();
   const cProjects = useCProjects();
   const cLabModules = useMemo(() => new Set(cLabs.map((l) => l.module)).size, [cLabs]);
+  // Labs and MCQ practice report the SAME record: a lab tile carries its module's answered count,
+  // so the two hubs never disagree about how far a C module has got.
+  const cIndex = useCIndex();
+  const cModuleOf = (id: string) => cIndex?.modules.find((m) => m.id === id) ?? null;
+  const cAnswered = useMemo(
+    () => (cIndex?.modules ?? []).reduce((n, m) => n + cQuizTally(state.attempts, m.id, m.counts.mcqs).answered, 0),
+    [cIndex, state.attempts],
+  );
 
   /** Every count of a notebook's progress comes from the family the Notebook Lab itself writes. */
   const cellsRun = useMemo(
@@ -264,7 +273,7 @@ export default function LabsHub() {
               <b style={{ fontSize: '1rem' }}>C Programming · hands-on labs</b>
               <span className="small muted" style={{ display: 'block' }}>
                 {cLabs.length
-                  ? `${cLabs.length} labs · ${cLabModules} modules · ${cLabs.reduce((n, l) => n + l.tests.length, 0)} test cases · C17 / GCC`
+                  ? `${cLabs.length} labs · ${cLabModules} modules · ${cAnswered} MCQs answered · ${cLabs.reduce((n, l) => n + l.tests.length, 0)} test cases · C17 / GCC`
                   : 'Loading the C labs…'}
               </span>
             </span>
@@ -279,21 +288,33 @@ export default function LabsHub() {
         </div>
 
         <div className="tile-grid" style={{ marginTop: 10 }}>
-          {cLabs.slice(0, 8).map((l) => (
-            <Link
-              key={l.id}
-              to={`/c-programming/${l.module}?tab=practice&lab=${l.id}&try=starter`}
-              className="tile c-tile"
-              data-agent-action={`lab:c:${l.id}`}
-              title={l.brief}
-            >
-              <span className="ic"><span className="small">C</span></span>
-              <span className="t" style={{ flex: 1, minWidth: 0 }}>
-                <b>{l.title}</b>
-                <span>{l.level} · {l.tests.length} tests · +{l.xp} XP</span>
-              </span>
-            </Link>
-          ))}
+          {cLabs.slice(0, 8).map((l) => {
+            const m = cModuleOf(l.module);
+            const progress = m ? cQuizTally(state.attempts, m.id, m.counts.mcqs) : null;
+            return (
+              <Link
+                key={l.id}
+                to={`/c-programming/${l.module}?tab=practice&lab=${l.id}&try=starter`}
+                className="tile c-tile"
+                data-agent-action={`lab:c:${l.id}`}
+                title={l.brief}
+              >
+                <span className="ic"><span className="small">C</span></span>
+                <span className="t" style={{ flex: 1, minWidth: 0 }}>
+                  <b>{l.title}</b>
+                  <span>{l.level} · {l.tests.length} tests · +{l.xp} XP</span>
+                  {progress && (
+                    <span>{progress.answered}/{progress.total} MCQs answered · {l.module.toUpperCase()}</span>
+                  )}
+                  {progress && (
+                    <span className="c-progress" role="img" aria-label={`${progress.pct ?? 0}% of ${l.title}'s module MCQs answered`}>
+                      <i style={{ width: `${progress.pct ?? 0}%` }} />
+                    </span>
+                  )}
+                </span>
+              </Link>
+            );
+          })}
         </div>
         <p className="small muted" style={{ margin: '8px 0 0' }}>
           {cLabs.length > 8 ? `+${cLabs.length - 8} more labs · ` : ''}

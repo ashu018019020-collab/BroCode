@@ -5,6 +5,8 @@ import type { IdeError } from '../../components/code/MonacoIDE';
 import { runC } from '../../core/data/ccourse';
 import { suggestFix } from '../../core/ai/tutor';
 import type { CLab } from '../../core/learning/ccourse';
+import { cLabDone } from '../../core/platform/keys';
+import { recordAttempt } from '../../core/storage/store';
 
 interface CFile { name: string; content: string }
 interface Props {
@@ -71,7 +73,13 @@ export default function CNotebook({ initialSource, lab = null, storageKey, sourc
         files: files.filter((_, i) => i !== index),
         ...(withTests && lab ? { tests: lab.tests.map((t) => ({ name: t.name, stdin: t.stdin ?? '', stdout: t.stdout })) } : {}),
       });
-      setResult({ ...EMPTY, ...body, tests: body.tests ?? [] });
+      const tests = body.tests ?? [];
+      setResult({ ...EMPTY, ...body, tests });
+      // A lab is DONE the moment its own public tests all pass — the same verdict shown below, and
+      // the record the course overview and the Labs hub read back.
+      if (lab && withTests && tests.length > 0 && tests.every((t) => t.pass)) {
+        recordAttempt(cLabDone(lab.module), { done: true, score: 100 });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Compilation could not be started.');
     } finally { setBusy(false); }

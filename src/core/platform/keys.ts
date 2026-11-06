@@ -139,6 +139,13 @@ export const C_QUIZ_PREFIX = 'cquiz:';
 /** One module's question family, e.g. `cQuizFamily('m03')` -> `'cquiz:m03:'`. */
 export const cQuizFamily = (moduleId: string) => `cquiz:${moduleId}:`;
 /**
+ * The C course's lab verdict: one record per module, written when that module's lab passes every
+ * public test. Its own family so a passed lab is never mistaken for a lab STEP (`lab:`) or for the
+ * module checkpoint — the overview reads this to say which labs are actually done.
+ */
+export const cLabDone = (moduleId: string) => `clab:${moduleId}`;
+export const C_LAB_PREFIX = 'clab:';
+/**
  * The module whose mentor sheet the learner last asked about. Device-local like the mentor log:
  * it reopens the sheet on that topic, and is a conversation pointer, not a learning record.
  */

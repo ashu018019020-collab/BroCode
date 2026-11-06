@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { useCAssessments, useCCourse, useCIndex, useCInterview, useCLabs, useCProjects } from '../../core/data/ccourse';
 import { useStore } from '../../core/storage/store';
-import { checkpointKey, nextModule, progressOf } from '../../core/learning/ccourse';
+import { cQuizTally, checkpointKey, nextModule, progressOf } from '../../core/learning/ccourse';
+import { cLabDone } from '../../core/platform/keys';
 import type { CLab, CProject } from '../../core/learning/ccourse';
 
 const TABS = [
@@ -70,6 +71,16 @@ export default function CCoursePage() {
   const completed = useMemo(() => new Set(
     (index?.modules ?? []).filter((m) => store.attempts[checkpointKey(m.id)]?.done).map((m) => m.id),
   ), [index, store.attempts]);
+
+  /** Answered MCQs and passed labs, both read from the records the quiz and the notebook write. */
+  const cAnswered = useMemo(
+    () => (index?.modules ?? []).reduce((n, m) => n + cQuizTally(store.attempts, m.id, m.counts.mcqs).answered, 0),
+    [index, store.attempts],
+  );
+  const cLabsPassed = useMemo(
+    () => (index?.modules ?? []).filter((m) => store.attempts[cLabDone(m.id)]?.done === true).length,
+    [index, store.attempts],
+  );
 
   /** Every C exercise in one list: writing prompts, the debugging drill and the module MCQs. */
   const practice = useMemo<PracticeItem[]>(() => (course?.modules ?? []).flatMap((m) => [
@@ -183,6 +194,41 @@ export default function CCoursePage() {
               <p className="muted small" style={{ marginBottom: 0 }}>…and {index.modules.length - 6} more, from preprocessor to trees and graphs.</p>
               <button className="btn small" style={{ marginTop: 10 }} onClick={() => open('curriculum')}>See all {index.modules.length} modules <ChevronRight size={13} /></button>
             </div>
+          </div>
+
+          {/* Compact progress: one row per module, MCQ answered and lab verdict side by side, so the
+              overview answers "where am I?" without opening the Progress tab. */}
+          <div className="sec-head"><h2><BarChart3 size={16} color="var(--cyan)" /> Progress by module</h2><span className="line" /></div>
+          <div className="card fadeup c-band">
+            <div className="row spread" style={{ flexWrap: 'wrap', gap: 10 }}>
+              <span className="small muted">
+                {cAnswered}/{index.stats.mcqs} MCQs answered · {cLabsPassed}/{index.modules.length} module labs passed
+              </span>
+              <button className="btn small" onClick={() => open('progress')}>Full progress <ChevronRight size={13} /></button>
+            </div>
+            <div className="tile-grid" style={{ marginTop: 10 }}>
+              {index.modules.slice(0, 8).map((m) => {
+                const q = cQuizTally(store.attempts, m.id, m.counts.mcqs);
+                const passed = store.attempts[cLabDone(m.id)]?.done === true;
+                return (
+                  <Link key={m.id} to={`/c-programming/${m.id}`} className="tile c-tile">
+                    <span className="ic"><span className="small">C{String(m.no).padStart(2, '0')}</span></span>
+                    <span className="t" style={{ flex: 1, minWidth: 0 }}>
+                      <b>{m.title}</b>
+                      <span>{q.answered}/{q.total} MCQs answered · lab {passed ? 'passed ✓' : 'not passed yet'}</span>
+                      <span className="c-progress" role="img" aria-label={`${q.pct ?? 0}% of ${m.title} MCQs answered`}>
+                        <i style={{ width: `${q.pct ?? 0}%` }} />
+                      </span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+            {index.modules.length > 8 && (
+              <p className="small muted" style={{ margin: '8px 0 0' }}>
+                +{index.modules.length - 8} more modules · every one counts on the Progress tab.
+              </p>
+            )}
           </div>
 
           <div className="sec-head"><h2><ListChecks size={16} color="var(--cyan)" /> Course sections</h2><span className="line" /></div>
