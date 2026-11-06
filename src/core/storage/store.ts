@@ -199,6 +199,20 @@ export function recordAttempt(key: string, attempt: Partial<AppState['attempts']
   }));
 }
 
+/**
+ * Remove ONE attempt record. The C quiz's "Try again" needs its question to go back to unanswered,
+ * so the module's answered count drops with it; `recordAttempt` only merges, and a record that
+ * cannot be cleared would leave the hub reporting an answer the learner has taken back.
+ */
+export function forgetAttempt(key: string) {
+  setState((s) => {
+    if (!(key in s.attempts)) return s;
+    const attempts = { ...s.attempts };
+    delete attempts[key];
+    return { ...s, attempts };
+  });
+}
+
 // ---- written answers -------------------------------------------------------
 /**
  * The single place a WRITTEN answer lives.

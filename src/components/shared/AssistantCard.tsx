@@ -46,8 +46,10 @@ function loadLog(key: string): Turn[] {
  * to sit inside a notebook without shouting.
  */
 export function AssistantCard({
-  compact = false, embedded = false, context, onClose,
+  seed, compact = false, embedded = false, context, onClose,
 }: {
+  /** A question the page hands in (a module starter); asked once per nonce. */
+  seed?: { text: string; nonce: number };
   compact?: boolean;
   embedded?: boolean;
   context?: AssistantContext;
@@ -66,14 +68,17 @@ export function AssistantCard({
       compact={compact}
       embedded={embedded}
       context={context}
+      seed={seed}
       onClose={onClose}
     />
   );
 }
 
 function AssistantCardSession({
-  compact = false, embedded = false, context, logKey, onClose,
+  seed, compact = false, embedded = false, context, logKey, onClose,
 }: {
+  /** A question the page hands in (a module starter); asked once per nonce. */
+  seed?: { text: string; nonce: number };
   compact?: boolean;
   embedded?: boolean;
   context?: AssistantContext;
@@ -207,6 +212,15 @@ function AssistantCardSession({
       setQ('');
     }
   };
+
+  /**
+   * A starter question handed in by the page (the C lesson's chips) is asked exactly once per nonce,
+   * so re-rendering the sheet never re-sends it.
+   */
+  useEffect(() => {
+    if (!seed) return;
+    void ask(seed.text);
+  }, [seed?.nonce]);
 
   /**
    * The one line the panel leads with. Every value is a REAL state: a retrieval in flight, the

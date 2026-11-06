@@ -12,6 +12,7 @@ import { usePathCtx } from '../../core/data/paths';
 import { HubGrid } from '../../components/shared/HubGrid';
 import { useBankManifest, QUESTION_TYPES, TYPE_LABEL } from '../../core/data/questions';
 import { useCAssessments, useCIndex, useCLabs } from '../../core/data/ccourse';
+import { cQuizTally } from '../../core/learning/ccourse';
 import { CLogo } from '../c-programming/CLogo';
 import type { QuestionType } from '../../core/data/schema';
 import { bankAccuracyBySection } from '../../core/assessment/accuracy';
@@ -67,6 +68,12 @@ export default function PracticeHub() {
   const cModules = cIndex?.modules ?? [];
   const cMcqs = useMemo(() => cSets.reduce((n, s) => n + s.questions.length, 0), [cSets]);
   const cLabModules = useMemo(() => new Set(cLabs.map((l) => l.module)).size, [cLabs]);
+  // Answered MCQs are the quiz's own attempt records, not a click count: the tile reports what the
+  // learner has actually answered, and drops again when they take an answer back with Try again.
+  const cAnswered = useMemo(
+    () => cModules.reduce((n, m) => n + cQuizTally(state.attempts, m.id, m.counts.mcqs).answered, 0),
+    [cModules, state.attempts],
+  );
 
   // Weak areas: the coach already groups open mistakes by section, so the hub only sorts and prints.
   const weak = [...openBySection(state, sections).entries()]
@@ -199,7 +206,7 @@ export default function PracticeHub() {
           <span className="t" style={{ flex: 1, minWidth: 0 }}>
             <b>C Programming</b>
             <span>
-              {cIndex ? `${cMcqs} MCQs · ${cModules.length} modules` : '…'}
+              {cIndex ? `${cAnswered}/${cMcqs} MCQs answered · ${cModules.length} modules` : '…'}
               {cLabModules > 0 ? ` · ${cLabModules} lab modules` : ''}
             </span>
           </span>
@@ -227,7 +234,7 @@ export default function PracticeHub() {
               <b style={{ fontSize: '1rem' }}>C Programming · practice bank</b>
               <span className="small muted" style={{ display: 'block' }}>
                 {cIndex
-                  ? `${cMcqs} MCQs · ${cModules.length} modules · ${cLabs.length} labs · C17 / GCC`
+                  ? `${cMcqs} MCQs · ${cAnswered} answered · ${cModules.length} modules · ${cLabs.length} labs · C17 / GCC`
                   : 'Loading the C course…'}
               </span>
             </span>
@@ -240,20 +247,26 @@ export default function PracticeHub() {
         </div>
 
         <div className="tile-grid" style={{ marginTop: 10 }}>
-          {cModules.slice(0, 8).map((m) => (
-            <Link
-              key={m.id}
-              to={`/questions?course=c&section=${m.id}`}
-              className="tile c-tile"
-              data-agent-action={`course:c:${m.id}`}
-            >
-              <span className="ic"><span className="small">C{String(m.no).padStart(2, '0')}</span></span>
-              <span className="t" style={{ flex: 1, minWidth: 0 }}>
-                <b>{m.title}</b>
-                <span>{m.counts.mcqs} MCQs · {m.counts.practice} practice · {m.level}</span>
-              </span>
-            </Link>
-          ))}
+          {cModules.slice(0, 8).map((m) => {
+            const progress = cQuizTally(state.attempts, m.id, m.counts.mcqs);
+            return (
+              <Link
+                key={m.id}
+                to={`/questions?course=c&section=${m.id}`}
+                className="tile c-tile"
+                data-agent-action={`course:c:${m.id}`}
+              >
+                <span className="ic"><span className="small">C{String(m.no).padStart(2, '0')}</span></span>
+                <span className="t" style={{ flex: 1, minWidth: 0 }}>
+                  <b>{m.title}</b>
+                  <span>{progress.answered}/{m.counts.mcqs} MCQs answered · {m.counts.practice} practice · {m.level}</span>
+                  <span className="c-progress" role="img" aria-label={`${progress.pct ?? 0}% of ${m.title} MCQs answered`}>
+                    <i style={{ width: `${progress.pct ?? 0}%` }} />
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
         </div>
         <p className="small muted" style={{ margin: '8px 0 0' }}>
           {cModules.length > 8 ? `+${cModules.length - 8} more modules · ` : ''}

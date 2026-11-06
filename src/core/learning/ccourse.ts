@@ -6,6 +6,7 @@
  * and fixture-testable: the page supplies a set of completed module ids, this module answers what is
  * unlocked, what comes next, and how much of the course is done.
  */
+import { cQuizFamily } from '../platform/keys';
 
 export type CLevel = 'beginner' | 'intermediate' | 'advanced';
 
@@ -130,4 +131,30 @@ export function wrongIndexes(questions: CMcq[], answers: Record<number, number>)
 /** Labs are open with the course — nothing waits on a checkpoint. */
 export function labUnlocked(lab: CLab, _completed: ReadonlySet<string>): boolean {
   return Boolean(lab.module);
+}
+
+/**
+ * How much of ONE module's MCQ set has been answered, from the records the quiz writes.
+ *
+ * `answered` counts that module's own attempt family (the prefix comes from `platform/keys`, so no
+ * page spells a stored shape), capped at the set size so a stale record for a removed question
+ * cannot push the hub past `N/N`. `correct` only counts records graded right.
+ */
+export interface CQuizTally { answered: number; correct: number; total: number; pct: number | null }
+
+export function cQuizTally(
+  attempts: Record<string, { done?: boolean } | undefined>,
+  moduleId: string,
+  total: number,
+): CQuizTally {
+  const family = cQuizFamily(moduleId);
+  let answered = 0;
+  let correct = 0;
+  for (const [key, record] of Object.entries(attempts)) {
+    if (!key.startsWith(family) || !record) continue;
+    answered += 1;
+    if (record.done === true) correct += 1;
+  }
+  const capped = Math.max(0, Math.min(answered, total));
+  return { answered: capped, correct: Math.min(correct, capped), total, pct: total > 0 ? Math.round((capped / total) * 100) : null };
 }

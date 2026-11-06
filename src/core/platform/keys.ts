@@ -128,6 +128,22 @@ export const ONLINE_VOICE_CONSENT_KEY = 'aiml:online-voice-consent';
  */
 export const VOICE_TELEMETRY_KEY = 'aiml:voice:telemetry';
 
+// ---- the C course's module MCQs ----
+/**
+ * One record per answered C module MCQ: `cquiz:<module>:<index>`, with the chosen option in
+ * `answer`. Its own family on purpose — the Python bank's tallies (`qb:`) must never count a C
+ * answer it did not serve, and the practice hub reads this family to report real progress.
+ */
+export const cQuizAttempt = (moduleId: string, i: number) => `cquiz:${moduleId}:${i}`;
+export const C_QUIZ_PREFIX = 'cquiz:';
+/** One module's question family, e.g. `cQuizFamily('m03')` -> `'cquiz:m03:'`. */
+export const cQuizFamily = (moduleId: string) => `cquiz:${moduleId}:`;
+/**
+ * The module whose mentor sheet the learner last asked about. Device-local like the mentor log:
+ * it reopens the sheet on that topic, and is a conversation pointer, not a learning record.
+ */
+export const ASSISTANT_MODULE_KEY = 'aiml:assistant:module';
+
 // ---- gamification policy ----
 export const XP_PER_LEVEL = 50;
 export const levelForXp = (xp: number) => Math.floor(Math.sqrt(xp / XP_PER_LEVEL)) + 1;

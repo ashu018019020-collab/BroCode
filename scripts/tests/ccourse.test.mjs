@@ -17,9 +17,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { register } from 'node:module';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const readJSON = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
+register('./_ts-resolve.mjs', import.meta.url);
 const engine = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/ccourse.ts')).href);
 
 const course = readJSON('content/c-programming/course.json');

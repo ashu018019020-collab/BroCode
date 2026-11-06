@@ -5,6 +5,7 @@ import { useCAssessments, useCCourse, useCLabs } from '../../core/data/ccourse';
 import { AssistantCard } from '../../components/shared/AssistantCard';
 import { addXp, recordAttempt, useStore } from '../../core/storage/store';
 import { checkpointKey, quizScore, testKey, wrongIndexes } from '../../core/learning/ccourse';
+import { ASSISTANT_MODULE_KEY } from '../../core/platform/keys';
 import CNotebook from './CNotebook';
 
 export default function CLessonPage() {
@@ -25,11 +26,20 @@ export default function CLessonPage() {
   const leftRef = useRef<HTMLElement | null>(null);
   /** The mentor is a sheet opened from the header, not a second card in the page. */
   const [ask, setAsk] = useState(false);
+  /** The module the sheet is about: this one, or the one last asked about. */
+  const [askModuleId, setAskModuleId] = useState<string | null>(null);
+  /** A starter question handed to the card; the nonce lets the same text be asked twice. */
+  const [seed, setSeed] = useState<{ text: string; nonce: number } | null>(null);
+  const seedId = useRef(0);
+  /** Device-local memory of the module the mentor was last asked about. */
+  const [lastAsked, setLastAsked] = useState<string | null>(() => {
+    try { return localStorage.getItem(ASSISTANT_MODULE_KEY); } catch { return null; }
+  });
 
   // Escape closes it, like every other dialog on the site.
   useEffect(() => {
     if (!ask) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setAsk(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setAsk(false); setSeed(null); } };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [ask]);
@@ -58,10 +68,38 @@ export default function CLessonPage() {
     return code ? { code, id: 1 } : null;
   }, [handoff, activeLab, wants]);
   const injected = (tryCode && tryCode.module === module?.id ? tryCode : null) ?? seeded;
+  const askModule = module ? (data?.modules.find((m) => m.id === (askModuleId ?? module.id)) ?? module) : null;
+  const remembered = lastAsked && data ? data.modules.find((m) => m.id === lastAsked) ?? null : null;
+  /**
+   * Starter questions from THIS module's own authored material — its first topic, its first classic
+   * mistake, its lab and its interview set — so the sheet opens with something worth asking instead
+   * of an empty box. They are prompts: clicking one asks the mentor.
+   */
+  const starters = useMemo(() => {
+    if (!askModule) return [];
+    const topic = askModule.topics[0]?.title;
+    const wrong = askModule.mistakes[0]?.wrong;
+    return [
+      topic
+        ? `Explain "${topic}" from ${askModule.title} with a small C example`
+        : `Explain the main idea of ${askModule.title} with a small C example`,
+      wrong ? `Why is this wrong in C: ${wrong}` : `What is the most common mistake in ${askModule.title}?`,
+      `Give me a hint for the lab: ${askModule.lab.title}`,
+      `Ask me one interview question on ${askModule.title} and judge my answer`,
+    ];
+  }, [askModule]);
 
   if (!data) return <div className="card"><div className="skeleton" style={{ height: 100 }} /><div className="skeleton" style={{ height: 500, marginTop: 12 }} /></div>;
   if (!module) return <div className="card"><h2>Module not found</h2><p className="muted small">That id is not part of the C Programming course.</p><Link className="btn small primary" to="/c-programming">Back to the course</Link></div>;
 
+  /** Asking from a chip records the module, so the next sheet remembers where the conversation was. */
+  const askStarter = (text: string) => {
+    const id = (askModule ?? module).id;
+    try { localStorage.setItem(ASSISTANT_MODULE_KEY, id); } catch { /* storage can be blocked */ }
+    setLastAsked(id);
+    seedId.current += 1;
+    setSeed({ text, nonce: seedId.current });
+  };
   const submitQuiz = () => {
     const result = quizScore(module.mcqs, answers);
     recordAttempt(testKey(module.id), { score: result.pct, done: true });
@@ -98,7 +136,11 @@ export default function CLessonPage() {
           <span className="chip small">Module {String(module.no).padStart(2, '0')} · {module.level} · {module.hours}h</span>
           <Link className="btn small" to="/c-programming?tab=practice"><ListChecks size={12} /> Practice</Link>
           <Link className="btn small" to="/c-programming?tab=career"><Briefcase size={12} /> Career</Link>
-          <button className="btn small c-ask" onClick={() => setAsk(true)} aria-haspopup="dialog">
+          <button
+            className="btn small c-ask"
+            onClick={() => { setAskModuleId(null); setSeed(null); setAsk(true); }}
+            aria-haspopup="dialog"
+          >
             <Sparkles size={12} /> Ask AI
           </button>
         </div>
@@ -109,20 +151,58 @@ export default function CLessonPage() {
       {ask && (
         <div
           className="ai-sheet-back"
-          onClick={(e) => { if (e.target === e.currentTarget) setAsk(false); }}
+          onClick={(e) => { if (e.target === e.currentTarget) { setAsk(false); setSeed(null); } }}
         >
-          <div className="ai-sheet" role="dialog" aria-modal="true" aria-label={`Ask the mentor about ${module.title}`}>
+          <div
+            className="ai-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Ask the mentor about ${(askModule ?? module).title}`}
+          >
             <div className="row spread ai-sheet-head">
               <span className="row small">
-                <Sparkles size={13} /> Mentor · Module {String(module.no).padStart(2, '0')} · {module.title}
+                <Sparkles size={13} /> Mentor · Module {String((askModule ?? module).no).padStart(2, '0')} · {(askModule ?? module).title}
               </span>
-              <button className="btn small" onClick={() => setAsk(false)}>
+              <button className="btn small" onClick={() => { setAsk(false); setSeed(null); }}>
                 <X size={12} /> Close
               </button>
             </div>
+
+            {/* The sheet remembers the module last asked about, so a new sitting can pick that
+                conversation back up instead of starting from whatever module is on screen. */}
+            {remembered && askModule && remembered.id !== askModule.id && (
+              <div className="row ai-sheet-mem" style={{ gap: 6, flexWrap: 'wrap' }}>
+                <span className="small muted">Last asked about</span>
+                <button className="btn small" onClick={() => { setAskModuleId(remembered.id); setSeed(null); }}>
+                  Module {String(remembered.no).padStart(2, '0')} · {remembered.title}
+                </button>
+              </div>
+            )}
+            {remembered && askModule && remembered.id === askModule.id && askModule.id !== module.id && (
+              <div className="row ai-sheet-mem" style={{ gap: 6, flexWrap: 'wrap' }}>
+                <span className="small muted">Continuing that conversation ·</span>
+                <button className="btn small" onClick={() => { setAskModuleId(null); setSeed(null); }}>
+                  This module · {module.title}
+                </button>
+              </div>
+            )}
+
+            <div className="ai-starters">
+              <span className="small muted">Ask about this module:</span>
+              <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                {starters.map((s) => (
+                  <button key={s} className="btn small" onClick={() => askStarter(s)}>{s}</button>
+                ))}
+              </div>
+            </div>
+
             <AssistantCard
               embedded
-              context={{ sectionId: module.id, where: `Module ${String(module.no).padStart(2, '0')} · ${module.title}` }}
+              seed={seed ?? undefined}
+              context={{
+                sectionId: (askModule ?? module).id,
+                where: `Module ${String((askModule ?? module).no).padStart(2, '0')} · ${(askModule ?? module).title}`,
+              }}
             />
           </div>
         </div>
