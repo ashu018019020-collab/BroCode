@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, ChevronRight, FlaskConical, FolderGit2, GraduationCap, Lock, Mic2, Play, Sparkles, Target, Trophy } from 'lucide-react';
+import { BookOpen, ChevronRight, FlaskConical, FolderGit2, GraduationCap, Mic2, Play, Sparkles, Target, Trophy } from 'lucide-react';
 import { useCAssessments, useCIndex, useCInterview, useCLabs, useCProjects } from '../../core/data/ccourse';
 import { useStore } from '../../core/storage/store';
 import { checkpointKey, nextModule, progressOf } from '../../core/learning/ccourse';
@@ -107,11 +107,10 @@ export default function CCoursePage() {
 
       {tab === 'curriculum' && (
         <div style={{ display: 'grid', gap: 10 }}>
-          {index.modules.map((m, i) => {
+          {index.modules.map((m) => {
             const done = completed.has(m.id);
-            const unlocked = i === 0 || completed.has(index.modules[i - 1].id);
             return (
-              <div key={m.id} className="card" style={{ opacity: unlocked ? 1 : 0.55 }}>
+              <div key={m.id} className="card">
                 <div className="row spread" style={{ gap: 12, flexWrap: 'wrap' }}>
                   <div className="row" style={{ gap: 12, alignItems: 'flex-start', minWidth: 240 }}>
                     <span style={{ fontSize: 18, fontWeight: 800, minWidth: 34 }}>{String(m.no).padStart(2, '0')}</span>
@@ -124,9 +123,9 @@ export default function CCoursePage() {
                       </div>
                     </div>
                   </div>
-                  {done ? <span className="chip small">✓ complete</span>
-                    : unlocked ? <Link className="btn small primary" to={`/c-programming/${m.id}`}>Open <ChevronRight size={13} /></Link>
-                      : <span className="chip small"><Lock size={11} /> finish module {m.no - 1}</span>}
+                  {done
+                    ? <span className="chip small">✓ complete</span>
+                    : <Link className="btn small primary" to={`/c-programming/${m.id}`}>Open <ChevronRight size={13} /></Link>}
                 </div>
               </div>
             );

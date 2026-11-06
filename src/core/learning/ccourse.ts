@@ -78,13 +78,12 @@ export function testKey(moduleId: string): string { return `ccourse:${moduleId}:
 export function isComplete(id: string, completed: ReadonlySet<string>): boolean { return completed.has(id); }
 
 /**
- * A module is open when it is the first one, or the previous module is complete.
- * Returning to an earlier module is always allowed — this is a gate, not a binding order.
+ * Every module ships OPEN. The order is a recommendation, not a lock: a learner can jump to
+ * pointers on day one, or come back to module 3 after module 12. Completion still comes from the
+ * checkpoint record, so progress stays honest even when the order is not.
  */
-export function isUnlocked(index: number, completed: ReadonlySet<string>, modules: CModuleCard[]): boolean {
-  if (index <= 0) return true;
-  const prev = modules[index - 1];
-  return !!prev && completed.has(prev.id);
+export function isUnlocked(index: number, _completed: ReadonlySet<string>, modules: CModuleCard[]): boolean {
+  return index >= 0 && index < modules.length;
 }
 
 export function nextModule(modules: CModuleCard[], completed: ReadonlySet<string>): CModuleCard | null {
@@ -126,7 +125,7 @@ export function wrongIndexes(questions: CMcq[], answers: Record<number, number>)
   return questions.map((q, i) => (answers[i] === q.answer ? -1 : i)).filter((i) => i >= 0);
 }
 
-/** Unlock rule for labs: a lab opens with its module. */
-export function labUnlocked(lab: CLab, completed: ReadonlySet<string>): boolean {
-  return completed.has(lab.module) || lab.module === 'c01';
+/** Labs are open with the course — nothing waits on a checkpoint. */
+export function labUnlocked(lab: CLab, _completed: ReadonlySet<string>): boolean {
+  return Boolean(lab.module);
 }

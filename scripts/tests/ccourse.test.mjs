@@ -126,12 +126,12 @@ test('generated artifacts are counted from the authored content', () => {
   });
 });
 
-test('progress rules: sequential unlock, resume target, honest percentage', () => {
+test('progress rules: every module open, resume target, honest percentage', () => {
   const cards = index.modules;
   assert.equal(engine.checkpointKey('c03'), 'ccourse:c03:checkpoint');
   assert.equal(engine.isUnlocked(0, new Set(), cards), true);
-  assert.equal(engine.isUnlocked(1, new Set(), cards), false);
-  assert.equal(engine.isUnlocked(1, new Set(['c01']), cards), true);
+  assert.equal(engine.isUnlocked(1, new Set(), cards), true);
+  assert.equal(engine.isUnlocked(19, new Set(), cards), true);
   assert.equal(engine.isUnlocked(0, new Set(['c01', 'c02']), cards), true);
 
   const empty = engine.progressOf(cards, new Set());
