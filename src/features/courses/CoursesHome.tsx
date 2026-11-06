@@ -4,6 +4,10 @@ import { useI18n } from '../../app/i18n';
 import { CourseLogo } from '../../components/shared/CourseLogo';
 import { useCourseIndex, useSectionPct } from '../../core/data/courses';
 import { useCoursePlacements } from '../../core/data/course-placement';
+import { useOwnerCourses } from '../../core/data/owner-courses';
+import {
+  ownerCourseCards, ownerCoursePlacements, visibleOwnerCards, type OwnerCourseCard,
+} from '../../core/learning/owner-courses';
 import { sectionAvg } from '../../core/learning/courses';
 import {
   ALL_PLACEMENTS, nextCourse, placementOf, sortByCourseOrder, withoutHidden,
@@ -33,6 +37,13 @@ export default function CoursesHome() {
   const pctOf = useSectionPct();
   /** Owner overrides when the database has them; the code-authored journey otherwise. */
   const { placements } = useCoursePlacements();
+  /** The owner's OWN cards, plus their placements, so both kinds share one journey order. */
+  const { rows: ownerRows } = useOwnerCourses();
+  const ownerCards = ownerCourseCards(ownerRows);
+  const ownerPlacements = ownerCoursePlacements(ownerCards);
+  const ownerVisible = visibleOwnerCards(ownerCards);
+  const journey = [...placements, ...ownerPlacements];
+  const ownerBySlug = new Map(ownerCards.map((card) => [card.slug, card] as const));
   const courses = index?.courses ?? [];
   const steps = courses.reduce((a, c) => a + (c.steps?.length ?? 0), 0);
   /**
@@ -54,7 +65,8 @@ export default function CoursesHome() {
    * is never re-created or re-fetched to move it; a course the pack publishes but the registry has
    * not placed yet still renders (at the end) rather than disappearing.
    */
-  const sequence = sortByCourseOrder(withoutHidden(ALL_PLACEMENTS, placements), placements);
+  const sequence = sortByCourseOrder(
+    withoutHidden([...ALL_PLACEMENTS, ...ownerPlacements], journey), journey);
   const bySlug = new Map(visible.map((card) => [card.slug, card] as const));
   const placed = new Set(sequence.map((p) => p.slug));
   const unplaced = visible.filter((card) => !placed.has(card.slug));
@@ -74,6 +86,24 @@ export default function CoursesHome() {
       data-agent-action={`course:${card.slug}`}
       data-agent-label={card.name}
       title={card.name}
+    >
+      <span className="cc-logo"><CourseLogo logo={card.logo} name={card.name} size={88} /></span>
+      <b className="cc-name">{card.name}</b>
+    </Link>
+  );
+
+  /**
+   * An owner-created card. It owns no generated content, so it is a plain link to the internal page
+   * the owner chose — the card design is the catalog card's, so a custom course never looks foreign.
+   */
+  const renderOwnerCard = (card: OwnerCourseCard) => (
+    <Link
+      key={card.slug}
+      to={card.href}
+      className={`course-card cc-simple tone-${card.tone}`}
+      data-agent-action={`owner-course:${card.slug}`}
+      data-agent-label={card.name}
+      title={card.summary || card.name}
     >
       <span className="cc-logo"><CourseLogo logo={card.logo} name={card.name} size={88} /></span>
       <b className="cc-name">{card.name}</b>
@@ -109,7 +139,7 @@ export default function CoursesHome() {
           </div>
           {index && (
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-              <span className="chip">{visible.length + (cHidden ? 0 : 1)} {t('courses.coursesUnit')}</span>
+              <span className="chip">{visible.length + (cHidden ? 0 : 1) + ownerVisible.length} {t('courses.coursesUnit')}</span>
               <span className="chip">{steps} {t('courses.stepsUnit')}</span>
               <span className="chip">{index.totals.items} {t('courses.itemsUnit')}</span>
             </div>
@@ -149,7 +179,9 @@ export default function CoursesHome() {
           {sequence.map(({ slug }) => {
             if (slug === 'c-programming') return renderC();
             const card = bySlug.get(slug);
-            return card ? renderCard(card) : null;
+            if (card) return renderCard(card);
+            const own = ownerBySlug.get(slug);
+            return own ? renderOwnerCard(own) : null;
           })}
           {unplaced.map(renderCard)}
         </div>

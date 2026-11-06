@@ -5798,3 +5798,20 @@ the skill's share of the selected source, and how many of its questions are alre
 /* A project card's own mark: which technology the brief belongs to, at chip scale. */
 .proj-logo { display: grid; place-items: center; flex: none; }
 .proj-logo .course-logo { display: block; border-radius: 4px; box-shadow: none; }
+
+/* Owner course studio (the owner dashboard's create/delete half).
+   Reuses the order editor's row rhythm so the two editors read as one panel; the form is a
+   responsive grid because seven short fields are faster to scan in one row than in a column. */
+.owner-course-studio { margin: 14px 0; }
+.ocs-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin: 12px 0 4px; }
+.ocs-form label { display: grid; gap: 4px; font-size: .72rem; color: var(--muted); }
+.ocs-form input, .ocs-form select {
+  width: 100%; padding: 7px 9px; border-radius: var(--radius-md);
+  border: 1px solid var(--border); background-color: var(--panel2); color: inherit; font: inherit;
+}
+.ocs-form input:focus, .ocs-form select:focus { outline: none; border-color: var(--accent); }
+.ocs-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 9px 0; border-top: 1px solid var(--border); }
+.ocs-row:first-of-type { border-top: 0; }
+.ocs-row select { padding: 6px 8px; border-radius: var(--radius-md); border: 1px solid var(--border); background-color: var(--panel2); color: inherit; font: inherit; }
+.ocs-name { flex: 1; min-width: 220px; }
+.ocs-row.is-archived .ocs-name { opacity: .6; }

@@ -54,6 +54,27 @@ model ProgressSnapshot {
   @@map("progress_snapshots")
 }
 
+/// Owner-created course cards: a name, a mark, a level and an internal link.
+/// They own no generated content, which is why a dashboard may DELETE one; catalog courses are
+/// only ever hidden (`course_placement.hidden`) because their slugs key pages and progress.
+model OwnerCourse {
+  slug      String    @id @db.VarChar(48)
+  name      String    @db.VarChar(80)
+  summary   String    @default("") @db.VarChar(240)
+  href      String    @default("/courses") @db.VarChar(200)
+  logo      String    @default("brain") @db.VarChar(24)
+  tone      String    @default("cyan") @db.VarChar(16)
+  level     String    @db.VarChar(24)
+  sortOrder Int       @default(1) @map("sort_order")
+  optional  Boolean   @default(false)
+  hidden    Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("owner_course")
+}
+
 model SignInEvent {
   id         Int      @id @default(autoincrement())
   userId     String   @map("user_id") @db.Uuid
