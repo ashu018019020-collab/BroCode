@@ -5,10 +5,10 @@ import { CourseLogo } from '../../components/shared/CourseLogo';
 import { ProgressRing } from '../../components/ui/ui';
 import { useCourseIndex, useSectionPct } from '../../core/data/courses';
 import { sectionAvg, sectionsClear } from '../../core/learning/courses';
-import cLogo from '../../assets/logos/c.svg';
 import { useCIndex } from '../../core/data/ccourse';
 import { checkpointKey } from '../../core/learning/ccourse';
 import { useStore } from '../../core/storage/store';
+import { CLogo } from '../c-programming/CLogo';
 
 /**
  * /courses — the eleven course cards.
@@ -109,7 +109,7 @@ export default function CoursesHome() {
                 data-agent-label="C Programming"
                 title={`C Programming — ${done}/${total} modules`}
               >
-                <span className="cc-logo"><img className="course-logo" src={cLogo} width={56} height={56} alt="" /></span>
+                <span className="cc-logo"><CLogo size={56} /></span>
                 <b className="cc-name">C Programming</b>
                 <span className="cc-meta small muted">{total} modules · {items} items</span>
                 <span className="cc-foot">
