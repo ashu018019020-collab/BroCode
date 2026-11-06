@@ -5479,12 +5479,14 @@ the skill's share of the selected source, and how many of its questions are alre
    get the same width, the code+AI column stays pinned while the topic scrolls, and below 1024px
    the topic comes first so reading never starts inside an editor. */
 .c-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; margin-top: 12px; }
-.c-split-left { position: sticky; top: 12px; display: grid; gap: 10px; max-height: calc(100vh - 24px); overflow: auto; overscroll-behavior: contain; }
-.c-split-right { display: grid; gap: 12px; min-width: 0; }
+/* The lesson owns the LEFT column and the notebook the RIGHT one; the DOM keeps the notebook
+   first so the sticky pane and its "Try this code" scroll target stay together, and grid order
+   does the visual swap without a second copy of either pane. */
+.c-split-left { order: 2; position: sticky; top: 12px; display: grid; gap: 10px; max-height: calc(100vh - 24px); overflow: auto; overscroll-behavior: contain; }
+.c-split-right { order: 1; display: grid; gap: 12px; min-width: 0; }
 @media (max-width: 1024px) {
   .c-split { grid-template-columns: 1fr; }
-  .c-split-left { position: static; max-height: none; overflow: visible; order: 2; }
-  .c-split-right { order: 1; }
+  .c-split-left { position: static; max-height: none; overflow: visible; }
 }
 
 /* Every lesson example carries its own "Try this code" button, docked to the code block so the
