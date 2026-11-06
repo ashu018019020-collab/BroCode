@@ -1,19 +1,15 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, GraduationCap, Lock, Play, Route } from 'lucide-react';
+import { ChevronRight, GraduationCap, Play, Route } from 'lucide-react';
 import { useI18n } from '../../app/i18n';
 import { CourseLogo } from '../../components/shared/CourseLogo';
-import { ProgressRing } from '../../components/ui/ui';
 import { useCourseIndex, useSectionPct } from '../../core/data/courses';
 import { useCoursePlacements } from '../../core/data/course-placement';
 import { sectionAvg } from '../../core/learning/courses';
 import {
-  ALL_PLACEMENTS, C_COMPLEMENT, COURSE_LEVELS, levelOf, nextCourse, placementOf,
-  prerequisiteNames, sortByCourseOrder, withoutHidden,
+  ALL_PLACEMENTS, nextCourse, placementOf, sortByCourseOrder, withoutHidden,
 } from '../../core/learning/course-levels';
 import type { CourseCard } from '../../core/learning/courses';
 import { useCIndex } from '../../core/data/ccourse';
-import { checkpointKey } from '../../core/learning/ccourse';
-import { useStore } from '../../core/storage/store';
 import { CLogo } from '../c-programming/CLogo';
 
 /**
@@ -34,7 +30,6 @@ export default function CoursesHome() {
   const { t } = useI18n();
   const index = useCourseIndex();
   const cIndex = useCIndex();
-  const store = useStore();
   const pctOf = useSectionPct();
   /** Owner overrides when the database has them; the code-authored journey otherwise. */
   const { placements } = useCoursePlacements();
@@ -48,20 +43,8 @@ export default function CoursesHome() {
   const visible = withoutHidden(courses, placements);
   const cHidden = Boolean(placementOf('c-programming', placements)?.hidden);
 
-  /** Section-mastery ring for a catalog course; null when it has no honest denominator. */
+  /** Section mastery, used only to pick the next course the Continue strip offers. */
   const pctFor = (card: CourseCard) => sectionAvg(card, pctOf);
-  const names: Record<string, string> = Object.fromEntries([
-    ...courses.map((c) => [c.slug, c.name] as const),
-    ['c-programming', 'C Programming'] as const,
-  ]);
-
-  const cTotal = cIndex?.modules.length ?? 0;
-  const cDone = (cIndex?.modules ?? []).filter((m) => store.attempts[checkpointKey(m.id)]?.done).length;
-  const cPct = cTotal ? Math.round((cDone / cTotal) * 100) : null;
-  const cItems = cIndex
-    ? cIndex.stats.topics + cIndex.stats.examples + cIndex.stats.practice
-      + cIndex.stats.mcqs + cIndex.stats.interview + cIndex.stats.labs + cIndex.stats.projects
-    : 0;
 
   const next = nextCourse(visible, pctFor, placements);
   const nextPct = next ? pctFor(next) : null;
@@ -76,79 +59,39 @@ export default function CoursesHome() {
   const placed = new Set(sequence.map((p) => p.slug));
   const unplaced = visible.filter((card) => !placed.has(card.slug));
 
-  const renderCard = (card: CourseCard) => {
-    const pct = pctFor(card);
-    const sectionIds = Object.keys(card.sections ?? {});
-    const placement = placementOf(card.slug, placements);
-    const level = placement ? levelOf(placement.level) : COURSE_LEVELS[COURSE_LEVELS.length - 1];
-    const prereqs = prerequisiteNames(card.slug, names, placements);
-    return (
-      <Link
-        key={card.slug}
-        to={`/course/${card.slug}`}
-        className={`course-card tone-${card.tone}`}
-        data-agent-action={`course:${card.slug}`}
-        data-agent-label={card.name}
-        title={pct !== null ? `${card.name} — ${pct}% ${t('courses.progress')}` : card.name}
-      >
-        <span className="cc-top">
-          <span className="cc-logo"><CourseLogo logo={card.logo} name={card.name} size={52} /></span>
-          <span className="cc-level">LEVEL {String(level.no).padStart(2, '0')} · {level.difficulty}</span>
-        </span>
-        <b className="cc-name">{card.name}</b>
-        <span className="cc-meta small muted">
-          {card.steps.length} {t('courses.stepsUnit')} · {card.counts.total} {t('courses.itemsUnit')}
-        </span>
-        {placement?.blurb && <span className="cc-desc small muted">{placement.blurb}</span>}
-        {prereqs.length > 0 && (
-          <span className="cc-prereq small">
-            <Lock size={11} /> After {prereqs.join(' · ')}
-          </span>
-        )}
-        <span className="cc-foot">
-          {pct !== null ? (
-            <>
-              <ProgressRing pct={pct} size={42} label={`${t('courses.progress')} — ${pct}%`} />
-              <span className="small muted">
-                {Math.round((pct / 100) * sectionIds.length)}/{sectionIds.length} {t('courses.sectionsUnit')}
-              </span>
-            </>
-          ) : (
-            <span className="small muted">{t('courses.noSections')}</span>
-          )}
-          <ChevronRight size={15} className="cc-go" />
-        </span>
-      </Link>
-    );
-  };
+  /**
+   * One card: the course's mark and its name. Nothing else.
+   *
+   * Levels, step/item counts, descriptions, prerequisite lines and the progress ring all came off
+   * at the owner's request — the grid is a chooser, and the course page is where the counts and
+   * progress live. The mark is bigger than it was, because it is now what the card is read by.
+   */
+  const renderCard = (card: CourseCard) => (
+    <Link
+      key={card.slug}
+      to={`/course/${card.slug}`}
+      className={`course-card cc-simple tone-${card.tone}`}
+      data-agent-action={`course:${card.slug}`}
+      data-agent-label={card.name}
+      title={card.name}
+    >
+      <span className="cc-logo"><CourseLogo logo={card.logo} name={card.name} size={88} /></span>
+      <b className="cc-name">{card.name}</b>
+    </Link>
+  );
 
   const renderC = () => {
     if (!cIndex || cHidden) return null;
     return (
       <Link
         to="/c-programming"
-        className="course-card tone-cyan"
+        className="course-card cc-simple tone-cyan"
         data-agent-action="course:c-programming"
         data-agent-label="C Programming"
-        title={`C Programming — ${cDone}/${cTotal} modules`}
+        title="C Programming"
       >
-        <span className="cc-top">
-          <span className="cc-logo"><CLogo size={52} /></span>
-          <span className="cc-level optional">LEVEL 02 · OPTIONAL</span>
-        </span>
-        <b className="cc-name">C Programming <span className="cc-opt small">complementary</span></b>
-        <span className="cc-meta small muted">{cTotal} modules · {cItems} items</span>
-        <span className="cc-desc small muted">{C_COMPLEMENT.blurb}</span>
-        <span className="cc-prereq small"><Lock size={11} /> After Python · never blocks the AI path</span>
-        <span className="cc-foot">
-          {cPct !== null && (
-            <>
-              <ProgressRing pct={cPct} size={42} label={`Progress — ${cDone}/${cTotal}`} />
-              <span className="small muted">{cDone}/{cTotal} modules</span>
-            </>
-          )}
-          <ChevronRight size={15} className="cc-go" />
-        </span>
+        <span className="cc-logo"><CLogo size={88} /></span>
+        <b className="cc-name">C Programming</b>
       </Link>
     );
   };
@@ -185,7 +128,7 @@ export default function CoursesHome() {
           <span style={{ minWidth: 0 }}>
             <b>Continue learning</b>
             <span className="small muted" style={{ display: 'block' }}>
-              {next.name} · Level {String(levelOf(placementOf(next.slug, placements)?.level ?? 'beginner').no).padStart(2, '0')}
+              {next.name}
               {nextPct !== null ? ` · ${nextPct}% complete` : ''}
             </span>
           </span>
