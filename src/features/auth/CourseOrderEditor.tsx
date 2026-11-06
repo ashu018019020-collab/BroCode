@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, Check, RotateCcw, Save } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, Eye, EyeOff, RotateCcw, Save } from 'lucide-react';
 import { useCourseIndex } from '../../core/data/courses';
 import {
   clearPlacementOverrides, loadPlacementOverrides, savePlacementOverrides,
@@ -19,6 +19,11 @@ import {
  * The page itself does not depend on this editor working: no rows, no table, no network or a
  * non-admin visitor all fall back to the code-authored order. "Save" writes every placement, so a
  * course cannot be left half-moved; "Use built-in order" deletes the override rows.
+ *
+ * HIDE, not delete. The courses are authored content (`content/**` → generators), so there is no
+ * safe way to remove one from a dashboard: a half-deleted course would break its own page, its
+ * steps and every stored progress record that names it. Standing a course down is the honest
+ * equivalent — the journey stops showing it, and everything it owns is kept for a restore.
  */
 export default function CourseOrderEditor() {
   const index = useCourseIndex();
@@ -76,9 +81,13 @@ export default function CourseOrderEditor() {
   const toggleOptional = (slug: string) => setDraft((prev) =>
     prev.map((p) => (p.slug === slug ? { ...p, optional: !p.optional } : p)));
 
+  /** Take a course off the student journey (or bring it back). Nothing is deleted. */
+  const toggleHidden = (slug: string) => setDraft((prev) =>
+    prev.map((p) => (p.slug === slug ? { ...p, hidden: !p.hidden } : p)));
+
   const save = async () => {
     setBusy(true);
-    const error = await savePlacementOverrides(draft.map(({ slug, level, order, optional }) => ({ slug, level, order, optional })));
+    const error = await savePlacementOverrides(draft.map(({ slug, level, order, optional, hidden }) => ({ slug, level, order, optional, hidden })));
     setBusy(false);
     if (error) { setNote(error); return; }
     setSource('database');
@@ -102,9 +111,10 @@ export default function CourseOrderEditor() {
         <div>
           <h2 style={{ margin: 0 }}>Course journey</h2>
           <p className="muted small" style={{ margin: '4px 0 0', maxWidth: 620 }}>
-            Move a course between levels, or up and down inside one. Students only read this;
-            saving writes it to the database, and the page falls back to the built-in journey if the
-            table is empty or unreachable. Currently: <b>{source === 'database' ? 'your saved order' : 'built-in order'}</b>.
+            Move a course between levels, or up and down inside one. Hide takes a course off the
+            student journey without deleting it — its page, steps and every learner's progress stay,
+            so Restore brings it back whole. Saving writes it to the database, and the page falls
+            back to the built-in journey if the table is empty or unreachable. Currently: <b>{source === 'database' ? 'your saved journey' : 'built-in journey'}</b>.
           </p>
         </div>
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
@@ -123,19 +133,23 @@ export default function CourseOrderEditor() {
       <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '10px 0' }}>
         {COURSE_LEVELS.map((level) => (
           <span key={level.id} className="chip small">
-            {String(level.no).padStart(2, '0')} {level.title} · {draft.filter((p) => p.level === level.id).length}
+            {String(level.no).padStart(2, '0')} {level.title} · {draft.filter((p) => p.level === level.id && !p.hidden).length}
           </span>
         ))}
+        <span className="chip small">
+          {draft.filter((p) => !p.hidden).length}/{draft.length} visible
+        </span>
       </div>
       <div className="oce-levels">
         {groups.map(({ level, cards: rows }) => (
           <section key={level.id} className="oce-level">
             <h3>Level {String(level.no).padStart(2, '0')} · {level.title}</h3>
             {rows.map((row, i) => (
-              <div className="oce-row" key={row.slug}>
+              <div className={`oce-row${row.hidden ? ' is-hidden' : ''}`} key={row.slug}>
                 <span className="oce-name">
                   <b>{names[row.slug] ?? row.slug}</b>
                   {row.optional && <span className="chip small">optional</span>}
+                  {row.hidden && <span className="chip small">hidden</span>}
                 </span>
                 <select
                   aria-label={`Level for ${row.slug}`}
@@ -155,6 +169,17 @@ export default function CourseOrderEditor() {
                 <button className="btn small" type="button" disabled={i === rows.length - 1} aria-label={`Move ${row.slug} down`} onClick={() => move(row.slug, 1)}>
                   <ArrowDown size={12} />
                 </button>
+                <button
+                  className="btn small"
+                  type="button"
+                  aria-pressed={Boolean(row.hidden)}
+                  title={row.hidden
+                    ? 'Show this course in the journey again — its page and progress were never removed.'
+                    : 'Take this course off the student journey. Nothing is deleted.'}
+                  onClick={() => toggleHidden(row.slug)}
+                >
+                  {row.hidden ? <><Eye size={12} /> Restore</> : <><EyeOff size={12} /> Hide</>}
+                </button>
               </div>
             ))}
             {!rows.length && <p className="muted small">No course in this level yet.</p>}
@@ -163,6 +188,7 @@ export default function CourseOrderEditor() {
       </div>
       <p className="muted small" style={{ marginBottom: 0 }}>
         <Check size={12} /> This list is the student journey: levels in order, courses in their saved sequence.
+        Hidden courses are kept here so you can restore them.
       </p>
     </div>
   );

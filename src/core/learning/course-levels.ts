@@ -81,6 +81,12 @@ export interface CoursePlacement {
   prerequisites: string[];
   /** A complementary course: real content, not on the critical path. */
   optional?: boolean;
+  /**
+   * Stood down by the owner: the course is not drawn in the journey. Its page, route, ids and the
+   * learner's progress are all untouched — this is a VISIBILITY switch, not a deletion, because the
+   * content is authored in `content/` and cannot be rewritten from a dashboard.
+   */
+  hidden?: boolean;
 }
 
 /**
@@ -171,6 +177,7 @@ export interface PlacementOverride {
   level: CourseLevelId;
   order: number;
   optional?: boolean;
+  hidden?: boolean;
 }
 
 export function isCourseLevelId(value: unknown): value is CourseLevelId {
@@ -200,8 +207,25 @@ export function mergePlacements(overrides: readonly PlacementOverride[]): Course
       level: row.level,
       order: Math.max(1, Math.round(row.order)),
       optional: row.optional ?? base.optional,
+      hidden: row.hidden ?? base.hidden,
     };
   });
+}
+
+/**
+ * The cards a learner may see: everything except the courses the owner has stood down.
+ *
+ * Filtering happens HERE rather than inside `groupByLevel` because the owner editor draws the
+ * hidden rows too — it needs the full journey to be able to restore one. Callers that render the
+ * student journey pass their catalog through this; the course page and its progress records are
+ * never touched, so a restored course comes back with its history intact.
+ */
+export function withoutHidden<T extends { slug: string }>(
+  cards: readonly T[],
+  list: readonly CoursePlacement[] = ALL_PLACEMENTS,
+): T[] {
+  const hidden = new Set(list.filter((p) => p.hidden).map((p) => p.slug));
+  return hidden.size ? cards.filter((card) => !hidden.has(card.slug)) : [...cards];
 }
 
 /** Every placed slug, in journey order (the complementary course included). */
@@ -284,7 +308,7 @@ export function nextCourse<T extends { slug: string }>(
 ): T | null {
   for (const card of sortByCourseOrder(cards, list)) {
     const placement = placementOf(card.slug, list);
-    if (placement?.optional) continue;
+    if (placement?.optional || placement?.hidden) continue;
     const pct = pctOf(card);
     if (pct === null || pct < 100) return card;
   }

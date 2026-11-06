@@ -18,11 +18,12 @@ interface PlacementRow {
   level: string;
   sort_order: number;
   optional: boolean;
+  hidden?: boolean | null;
 }
 
 const selectRows = () => getSupabaseClient()
   .from('course_placement')
-  .select('slug,level,sort_order,optional');
+  .select('slug,level,sort_order,optional,hidden');
 
 /** `null` means "could not read" (unconfigured, offline or the migration is not deployed yet). */
 export async function loadPlacementOverrides(): Promise<PlacementOverride[] | null> {
@@ -35,6 +36,7 @@ export async function loadPlacementOverrides(): Promise<PlacementOverride[] | nu
       level: row.level as PlacementOverride['level'],
       order: Number(row.sort_order),
       optional: Boolean(row.optional),
+      hidden: Boolean(row.hidden),
     }));
   } catch {
     return null;
@@ -53,6 +55,7 @@ export async function savePlacementOverrides(rows: readonly PlacementOverride[])
           level: row.level,
           sort_order: row.order,
           optional: Boolean(row.optional),
+          hidden: Boolean(row.hidden),
           updated_at: new Date().toISOString(),
         })),
         { onConflict: 'slug' },

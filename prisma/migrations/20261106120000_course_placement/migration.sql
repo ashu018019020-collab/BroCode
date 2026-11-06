@@ -6,7 +6,9 @@
 -- no-op and the page never depends on a write having happened.
 --
 -- The level is a closed set; `sort_order` is the position INSIDE that level. No course content,
--- ids, progress or routes live here — only the four fields above.
+-- ids, progress or routes live here — only the fields above. `hidden` is a VISIBILITY switch: a
+-- stood-down course is not drawn in the journey, but its page, route and every stored progress
+-- record stay exactly as they were, so restoring it brings the course back whole.
 --
 -- Writes are gated by the SAME claim the owner dashboard uses: Supabase's `brocode_role` in
 -- app_metadata, which a browser cannot set for itself.
@@ -18,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.course_placement (
               CHECK (level IN ('beginner','foundations','intermediate','advanced','professional','career')),
   sort_order  integer     NOT NULL CHECK (sort_order BETWEEN 1 AND 999),
   optional    boolean     NOT NULL DEFAULT false,
+  hidden      boolean     NOT NULL DEFAULT false,
   updated_at  timestamptz NOT NULL DEFAULT now(),
   updated_by  uuid
 );

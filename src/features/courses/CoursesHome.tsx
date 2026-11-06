@@ -8,6 +8,7 @@ import { useCoursePlacements } from '../../core/data/course-placement';
 import { sectionAvg } from '../../core/learning/courses';
 import {
   C_COMPLEMENT, COURSE_LEVELS, groupByLevel, levelOf, nextCourse, placementOf, prerequisiteNames,
+  withoutHidden,
 } from '../../core/learning/course-levels';
 import type { CourseCard } from '../../core/learning/courses';
 import { useCIndex } from '../../core/data/ccourse';
@@ -37,6 +38,13 @@ export default function CoursesHome() {
   const { placements } = useCoursePlacements();
   const courses = index?.courses ?? [];
   const steps = courses.reduce((a, c) => a + (c.steps?.length ?? 0), 0);
+  /**
+   * The journey the owner has published: a course they stood down leaves the page, but its course
+   * page, route and the learner's stored progress are untouched. The header totals stay catalog
+   * totals, because the pack itself did not change.
+   */
+  const visible = withoutHidden(courses, placements);
+  const cHidden = Boolean(placementOf('c-programming', placements)?.hidden);
 
   /** Section-mastery ring for a catalog course; null when it has no honest denominator. */
   const pctFor = (card: CourseCard) => sectionAvg(card, pctOf);
@@ -53,8 +61,8 @@ export default function CoursesHome() {
       + cIndex.stats.mcqs + cIndex.stats.interview + cIndex.stats.labs + cIndex.stats.projects
     : 0;
 
-  const groups = groupByLevel(courses, placements);
-  const next = nextCourse(courses, pctFor, placements);
+  const groups = groupByLevel(visible, placements);
+  const next = nextCourse(visible, pctFor, placements);
   const nextPct = next ? pctFor(next) : null;
 
   /**
@@ -114,7 +122,7 @@ export default function CoursesHome() {
   };
 
   const renderC = () => {
-    if (!cIndex) return null;
+    if (!cIndex || cHidden) return null;
     return (
       <Link
         to="/c-programming"
@@ -157,7 +165,7 @@ export default function CoursesHome() {
           </div>
           {index && (
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-              <span className="chip">{courses.length + 1} {t('courses.coursesUnit')}</span>
+              <span className="chip">{visible.length + (cHidden ? 0 : 1)} {t('courses.coursesUnit')}</span>
               <span className="chip">{steps} {t('courses.stepsUnit')}</span>
               <span className="chip">{index.totals.items} {t('courses.itemsUnit')}</span>
               <span className="chip">{COURSE_LEVELS.length} levels</span>
@@ -205,7 +213,7 @@ export default function CoursesHome() {
       {index && (
         <div className="level-stack">
           {groups.map(({ level, cards }) => {
-            const withC = level.id === 'foundations' && Boolean(cIndex);
+            const withC = level.id === 'foundations' && Boolean(cIndex) && !cHidden;
             const pct = levelPct(cards, withC);
             const levelSteps = cards.reduce((a, c) => a + c.steps.length, 0) + (withC ? cTotal : 0);
             const levelItems = cards.reduce((a, c) => a + c.counts.total, 0) + (withC ? cItems : 0);

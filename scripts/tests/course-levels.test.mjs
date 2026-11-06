@@ -102,4 +102,36 @@ test('levels: database overrides move a course and invalid rows are ignored', ()
   // The built-in journey is untouched by any merge call.
   assert.equal(levels.placementOf('python').level, 'beginner');
   assert.equal(levels.placementOf('c-programming').optional, true);
+  assert.equal(levels.placementOf('python').hidden, undefined);
+});
+
+test('levels: a course can be stood down and restored without losing its place', () => {
+  const hidden = levels.mergePlacements([
+    { slug: 'sql', level: 'foundations', order: 4, hidden: true },
+  ]);
+
+  // Visibility is a filter over the journey, never a mutation of the registry.
+  const cards = published.map((slug) => ({ slug }));
+  const visible = levels.withoutHidden(cards, hidden);
+  assert.equal(visible.length, cards.length - 1);
+  assert.equal(visible.some((c) => c.slug === 'sql'), false);
+  assert.equal(levels.withoutHidden(cards).length, cards.length, 'no overrides hides nothing');
+
+  // A hidden course is skipped by "continue learning" even when it is unfinished.
+  const pct = () => 0;
+  const next = levels.nextCourse(cards, pct, hidden);
+  assert.notEqual(next?.slug, 'sql');
+  assert.equal(levels.nextCourse(cards, pct)?.slug, 'ai-career-foundations');
+
+  // Restoring it returns the SAME placement, not a re-added one at the bottom.
+  const restored = levels.mergePlacements([
+    { slug: 'sql', level: 'foundations', order: 4, hidden: false },
+  ]);
+  assert.equal(levels.placementOf('sql', restored).hidden, false);
+  assert.equal(levels.placementOf('sql', restored).level, 'foundations');
+  assert.equal(levels.withoutHidden(cards, restored).length, cards.length);
+
+  // A row for an unknown slug can never hide anything real.
+  const badRow = levels.mergePlacements([{ slug: 'gone', level: 'beginner', order: 1, hidden: true }]);
+  assert.equal(levels.withoutHidden(cards, badRow).length, cards.length);
 });
