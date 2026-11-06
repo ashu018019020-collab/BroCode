@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Bug, CheckCircle2, FlaskConical, Lightbulb, Play } from 'lucide-react';
-import { useCAssessments, useCCourse } from '../../core/data/ccourse';
+import { useCAssessments, useCCourse, useCLabs } from '../../core/data/ccourse';
 import { addXp, recordAttempt, useStore } from '../../core/storage/store';
 import { checkpointKey, quizScore, testKey, wrongIndexes } from '../../core/learning/ccourse';
 import CNotebook from './CNotebook';
@@ -13,12 +13,14 @@ export default function CLessonPage() {
   const sets = useCAssessments();
   const store = useStore();
   const [params] = useSearchParams();
+  const location = useLocation();
+  const labs = useCLabs();
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   const [testAnswers, setTestAnswers] = useState<Record<number, number>>({});
   const [testSubmitted, setTestSubmitted] = useState(false);
-  const [tryCode, setTryCode] = useState<{ code: string; id: number } | null>(null);
+  const [tryCode, setTryCode] = useState<{ code: string; id: number; module: string } | null>(null);
   const tryId = useRef(0);
   const leftRef = useRef<HTMLElement | null>(null);
 
@@ -30,6 +32,22 @@ export default function CLessonPage() {
   const done = store.attempts[checkpointKey(moduleId ?? '')]?.done === true;
   const score = useMemo(() => quizScore(module?.mcqs ?? [], answers), [module, answers]);
   const testScore = useMemo(() => quizScore(set?.questions ?? [], testAnswers), [set, testAnswers]);
+  // A lab card can deep-link its own starter (`?lab=`) and its solution (`&try=solution`), while a
+  // project card hands its starter over in router state. Both land in the same pinned notebook.
+  const labId = params.get('lab');
+  const activeLab = labs.find((l) => l.id === labId && l.module === module?.id) ?? null;
+  const handoff = (location.state as { tryCode?: string } | null)?.tryCode ?? null;
+  const wants = params.get('try');
+  const seeded = useMemo(() => {
+    // Only an explicit Try click seeds code: opening a lab for reference must never overwrite the
+    // draft a learner already has saved for that module.
+    const picked = activeLab && (wants === 'starter' || wants === 'solution')
+      ? (wants === 'solution' ? activeLab.solution : activeLab.starter)
+      : null;
+    const code = handoff ?? picked;
+    return code ? { code, id: 1 } : null;
+  }, [handoff, activeLab, wants]);
+  const injected = (tryCode && tryCode.module === module?.id ? tryCode : null) ?? seeded;
 
   if (!data) return <div className="card"><div className="skeleton" style={{ height: 100 }} /><div className="skeleton" style={{ height: 500, marginTop: 12 }} /></div>;
   if (!module) return <div className="card"><h2>Module not found</h2><p className="muted small">That id is not part of the C Programming course.</p><Link className="btn small primary" to="/c-programming">Back to the course</Link></div>;
@@ -45,9 +63,10 @@ export default function CLessonPage() {
     if (testScore.pct >= 60) addXp(20);
     setTestSubmitted(true);
   };
+  const notebookLab = activeLab ?? { ...module.lab, id: `lab-${module.id}`, module: module.id, objective: module.goal, level: module.level, category: 'module', xp: 20 };
   const sendToNotebook = (code: string) => {
     tryId.current += 1;
-    setTryCode({ code, id: tryId.current });
+    setTryCode({ code, id: tryId.current, module: module.id });
     leftRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   const TryBlock = ({ code }: { code: string }) => (
@@ -108,15 +127,15 @@ export default function CLessonPage() {
         <aside className="c-split-left" ref={leftRef}>
           <div>
             <div className="row spread" style={{ marginBottom: 8, gap: 8 }}>
-              <strong className="small">Coding notebook · {module.lab.title}</strong>
+              <strong className="small">Coding notebook · {notebookLab.title}</strong>
               <span className="chip small">C17 · GCC · no sign-in</span>
             </div>
             <CNotebook
               key={module.id}
-              source={tryCode}
+              source={injected}
               height={360}
-              initialSource={module.lab.starter}
-              lab={{ ...module.lab, id: `lab-${module.id}`, module: module.id, objective: module.goal, level: module.level, category: 'module', xp: 20 }}
+              initialSource={notebookLab.starter}
+              lab={notebookLab}
               storageKey={`brocode:c-lab:${module.id}`}
             />
           </div>
@@ -273,11 +292,17 @@ export default function CLessonPage() {
       </section>
 
       <section>
-        <h3 style={{ margin: 0, marginBottom: 8 }}><FlaskConical size={15} /> 15 · Lab assignment</h3>
-        <p className="muted small" style={{ marginTop: 0 }}>{module.lab.brief}</p>
-        <p className="muted small">The notebook is pinned in the left column — it opens with this lab's starter, stdin and public tests.</p>
+        <h3 style={{ margin: 0, marginBottom: 8 }}><FlaskConical size={15} /> 15 · Lab assignment{activeLab ? ` · ${activeLab.title}` : ''}</h3>
+        <p className="muted small" style={{ marginTop: 0 }}>{notebookLab.brief}</p>
+        <p className="muted small">The notebook is pinned beside this lesson — it opens with this lab's starter, stdin and public tests.</p>
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '6px 0 10px' }}>
+          {notebookLab.tests.map((t) => <span key={t.name} className="chip small">{t.name}</span>)}
+          <span className="chip small">expected {JSON.stringify(notebookLab.expected)}</span>
+        </div>
+        {notebookLab.hints.length > 0 && <ul className="muted small" style={{ margin: '0 0 8px', paddingLeft: 18 }}>{notebookLab.hints.map((h) => <li key={h}>{h}</li>)}</ul>}
+        <TryBlock code={notebookLab.starter} />
         <details className="card" style={{ marginTop: 10 }}><summary className="small" style={{ cursor: 'pointer' }}>Solution (open after you have tried)</summary>
-          <TryBlock code={module.lab.solution} />
+          <TryBlock code={notebookLab.solution} />
         </details>
       </section>
 

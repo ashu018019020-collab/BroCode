@@ -53,6 +53,8 @@ export interface CLab {
 }
 export interface CProject {
   id: string; title: string; level: CLevel; summary: string; concepts: string[]; features: string[];
+  /** Module whose notebook opens the starter, and a compiling starting point for the project. */
+  module: string; starter: string;
   milestones: { title: string; tasks: string[] }[];
 }
 export interface CModule {

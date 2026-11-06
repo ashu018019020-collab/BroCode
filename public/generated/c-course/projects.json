@@ -34,7 +34,9 @@
             "Deliver: Test edge cases"
           ]
         }
-      ]
+      ],
+      "module": "c09",
+      "starter": "#include <stdio.h>\n\n/* p01 Smart Calculator: menu -> operation -> result.\n   TODO: add input validation and a loop. */\nint main(void) {\n    int choice = 0;\n    printf(\"1 add  2 sub  3 mul  4 div\\n\");\n    printf(\"choice: \");\n    if (scanf(\"%d\", &choice) != 1) return 1;\n    printf(\"chosen=%d\\n\", choice);\n    return 0;\n}\n"
     },
     {
       "id": "p02",
@@ -70,7 +72,9 @@
             "Deliver: Report + edge cases"
           ]
         }
-      ]
+      ],
+      "module": "c11",
+      "starter": "#include <stdio.h>\n\n/* p02 Student Marks: keep the marks in an array, average them.\n   TODO: sort the marks and print the topper. */\nint main(void) {\n    int marks[5] = {72, 65, 88, 91, 54};\n    int total = 0;\n    for (int i = 0; i < 5; i++) total += marks[i];\n    printf(\"average=%.2f\\n\", total / 5.0);\n    return 0;\n}\n"
     },
     {
       "id": "p03",
@@ -106,7 +110,9 @@
             "Deliver: Replay"
           ]
         }
-      ]
+      ],
+      "module": "c07",
+      "starter": "#include <stdio.h>\n\n/* p03 Number Guessing: loop until the guess matches.\n   TODO: randomise the secret with rand() and count tries. */\nint main(void) {\n    int secret = 7, guess = 0, tries = 0;\n    while (guess != secret) {\n        printf(\"guess: \");\n        if (scanf(\"%d\", &guess) != 1) return 1;\n        tries++;\n    }\n    printf(\"correct in %d tries\\n\", tries);\n    return 0;\n}\n"
     },
     {
       "id": "p04",
@@ -142,7 +148,9 @@
             "Deliver: Score"
           ]
         }
-      ]
+      ],
+      "module": "c11",
+      "starter": "#include <stdio.h>\n\n/* p04 Quiz Application: one question, one score.\n   TODO: store the questions in arrays and score every answer. */\nint main(void) {\n    int answer = 0, score = 0;\n    printf(\"2 + 2 = ? \");\n    if (scanf(\"%d\", &answer) == 1 && answer == 4) score++;\n    printf(\"score=%d\\n\", score);\n    return 0;\n}\n"
     },
     {
       "id": "p05",
@@ -178,7 +186,9 @@
             "Deliver: Menu"
           ]
         }
-      ]
+      ],
+      "module": "c09",
+      "starter": "#include <stdio.h>\n\n/* p05 Unit Converter: one function per conversion.\n   TODO: add a menu for km, kg and Celsius. */\nstatic double km_to_miles(double km) { return km * 0.621371; }\n\nint main(void) {\n    printf(\"%.2f km = %.2f miles\\n\", 10.0, km_to_miles(10.0));\n    return 0;\n}\n"
     },
     {
       "id": "p06",
@@ -214,7 +224,9 @@
             "Deliver: Search"
           ]
         }
-      ]
+      ],
+      "module": "c15",
+      "starter": "#include <stdio.h>\n\n/* p06 Contact Management: one contact today, an array next.\n   TODO: search and update a contact by name. */\nstruct Contact { char name[32]; char phone[16]; };\n\nint main(void) {\n    struct Contact c = {\"Ahetesham\", \"9999999999\"};\n    printf(\"%s -> %s\\n\", c.name, c.phone);\n    return 0;\n}\n"
     },
     {
       "id": "p07",
@@ -250,7 +262,9 @@
             "Deliver: Reports"
           ]
         }
-      ]
+      ],
+      "module": "c15",
+      "starter": "#include <stdio.h>\n\n/* p07 Library Management: a shelf of books.\n   TODO: issue and return a copy, then persist the shelf in a file. */\nstruct Book { char title[40]; int copies; };\n\nint main(void) {\n    struct Book shelf[2] = {{\"C Primer\", 3}, {\"Algorithms\", 1}};\n    for (int i = 0; i < 2; i++) printf(\"%s: %d\\n\", shelf[i].title, shelf[i].copies);\n    return 0;\n}\n"
     },
     {
       "id": "p08",
@@ -286,7 +300,9 @@
             "Deliver: Payslip"
           ]
         }
-      ]
+      ],
+      "module": "c15",
+      "starter": "#include <stdio.h>\n\n/* p08 Employee Payroll: salary in, gross pay out.\n   TODO: read several employees and total the payroll. */\nstruct Employee { char name[32]; double salary; };\n\nint main(void) {\n    struct Employee e = {\"Sara\", 48000.0};\n    double hra = e.salary * 0.20;\n    printf(\"%s gross=%.2f\\n\", e.name, e.salary + hra);\n    return 0;\n}\n"
     },
     {
       "id": "p09",
@@ -322,7 +338,9 @@
             "Deliver: Alerts"
           ]
         }
-      ]
+      ],
+      "module": "c17",
+      "starter": "#include <stdio.h>\n\n/* p09 Inventory Management: stock in memory, then on disk.\n   TODO: load the file back and support add/remove. */\nstruct Item { char name[24]; int qty; };\n\nint main(void) {\n    struct Item stock[2] = {{\"pen\", 40}, {\"notebook\", 12}};\n    FILE *f = fopen(\"stock.txt\", \"w\");\n    if (!f) { perror(\"stock.txt\"); return 1; }\n    for (int i = 0; i < 2; i++) fprintf(f, \"%s %d\\n\", stock[i].name, stock[i].qty);\n    fclose(f);\n    puts(\"wrote stock.txt\");\n    return 0;\n}\n"
     },
     {
       "id": "p10",
@@ -358,7 +376,9 @@
             "Deliver: Report"
           ]
         }
-      ]
+      ],
+      "module": "c17",
+      "starter": "#include <stdio.h>\n\n/* p10 Expense Tracker: append one expense, then read it back.\n   TODO: aggregate by category and print a monthly total. */\nint main(void) {\n    FILE *f = fopen(\"expenses.txt\", \"a\");\n    if (!f) { perror(\"expenses.txt\"); return 1; }\n    fprintf(f, \"chai 20\\n\");\n    fclose(f);\n    puts(\"expense saved\");\n    return 0;\n}\n"
     },
     {
       "id": "p11",
@@ -394,7 +414,9 @@
             "Deliver: Persistence"
           ]
         }
-      ]
+      ],
+      "module": "c15",
+      "starter": "#include <stdio.h>\n\n/* p11 Banking Management: one account, one deposit.\n   TODO: add withdraw with a balance guard and a transaction log. */\nstruct Account { int id; double balance; };\n\nint main(void) {\n    struct Account a = {101, 5000.0};\n    double deposit = 1500.0;\n    if (deposit > 0) a.balance += deposit;\n    printf(\"account %d balance=%.2f\\n\", a.id, a.balance);\n    return 0;\n}\n"
     },
     {
       "id": "p12",
@@ -430,7 +452,9 @@
             "Deliver: Search"
           ]
         }
-      ]
+      ],
+      "module": "c17",
+      "starter": "#include <stdio.h>\n\n/* p12 File-Based Student Database: one binary record.\n   TODO: add a record, then read every record back. */\nstruct Student { int roll; char name[32]; };\n\nint main(void) {\n    struct Student s = {1, \"Ahetesham\"};\n    FILE *f = fopen(\"students.dat\", \"wb\");\n    if (!f) { perror(\"students.dat\"); return 1; }\n    fwrite(&s, sizeof s, 1, f);\n    fclose(f);\n    printf(\"saved %zu bytes\\n\", sizeof s);\n    return 0;\n}\n"
     },
     {
       "id": "p13",
@@ -466,7 +490,9 @@
             "Deliver: Report"
           ]
         }
-      ]
+      ],
+      "module": "c12",
+      "starter": "#include <stdio.h>\n#include <string.h>\n\n/* p13 Text Analysis: count words in a sentence.\n   TODO: count characters, lines and the most frequent word. */\nint main(void) {\n    char text[] = \"the quick brown fox jumps over the lazy dog\";\n    int words = 1;\n    for (size_t i = 0; i < strlen(text); i++) if (text[i] == ' ') words++;\n    printf(\"words=%d\\n\", words);\n    return 0;\n}\n"
     },
     {
       "id": "p14",
@@ -502,7 +528,9 @@
             "Deliver: Cleanup"
           ]
         }
-      ]
+      ],
+      "module": "c20",
+      "starter": "#include <stdio.h>\n#include <stdlib.h>\n\n/* p14 Linked List Record Manager: one node to begin with.\n   TODO: append, search and free the whole list. */\nstruct Node { int value; struct Node *next; };\n\nint main(void) {\n    struct Node *head = malloc(sizeof *head);\n    if (!head) return 1;\n    head->value = 42;\n    head->next = NULL;\n    printf(\"head=%d\\n\", head->value);\n    free(head);\n    return 0;\n}\n"
     },
     {
       "id": "p15",
@@ -538,7 +566,9 @@
             "Deliver: Eval"
           ]
         }
-      ]
+      ],
+      "module": "c20",
+      "starter": "#include <stdio.h>\n\n/* p15 Expression Evaluator: a fixed-size stack is enough to start.\n   TODO: push/pop helpers and postfix parsing. */\nint main(void) {\n    int stack[16], top = -1;\n    stack[++top] = 2;\n    stack[++top] = 3;\n    int b = stack[top--], a = stack[top--];\n    printf(\"2 + 3 = %d\\n\", a + b);\n    return 0;\n}\n"
     }
   ]
 }

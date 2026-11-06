@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronRight, FlaskConical, FolderGit2, GraduationCap, Mic2, Play, Sparkles, Target, Trophy } from 'lucide-react';
 import { useCAssessments, useCIndex, useCInterview, useCLabs, useCProjects } from '../../core/data/ccourse';
 import { useStore } from '../../core/storage/store';
 import { checkpointKey, nextModule, progressOf } from '../../core/learning/ccourse';
+import type { CLab, CProject } from '../../core/learning/ccourse';
 
 const TABS = [
   ['overview', 'Overview'], ['curriculum', 'Curriculum'], ['labs', 'Labs'], ['projects', 'Projects'],
@@ -23,6 +24,7 @@ export default function CCoursePage() {
   const [params, setParams] = useSearchParams();
   const [level, setLevel] = useState<(typeof LEVELS)[number]>('all');
   const [q, setQ] = useState('');
+  const navigate = useNavigate();
   const tab = (TABS.some(([id]) => id === params.get('tab')) ? params.get('tab') : 'overview') as Tab;
 
   const completed = useMemo(() => new Set(
@@ -37,6 +39,8 @@ export default function CCoursePage() {
   const progress = progressOf(index.modules, completed);
   const next = nextModule(index.modules, completed);
   const open = (id: Tab) => setParams(id === 'overview' ? {} : { tab: id });
+  const tryLab = (lab: CLab, solution = false) => navigate(`/c-programming/${lab.module}?lab=${encodeURIComponent(lab.id)}&try=${solution ? 'solution' : 'starter'}`);
+  const tryProject = (project: CProject) => navigate(`/c-programming/${project.module}`, { state: { tryCode: project.starter } });
 
   const filteredLabs = labs.filter((lab) => (level === 'all' || lab.level === level) && (!q || `${lab.title} ${lab.category}`.toLowerCase().includes(q.toLowerCase())));
   const filteredQs = interview.filter((item) => (level === 'all' || item.level === level) && (!q || `${item.q} ${item.topic}`.toLowerCase().includes(q.toLowerCase())));
@@ -147,7 +151,18 @@ export default function CCoursePage() {
                 <h4 style={{ margin: '8px 0 4px' }}>{lab.title}</h4>
                 <p className="muted small">{lab.brief}</p>
                 <div className="muted small">Module {lab.module.toUpperCase()} · {lab.tests.length} tests · {lab.xp} XP</div>
-                <Link className="btn small" style={{ marginTop: 8 }} to={`/c-programming/${lab.module}?tab=labs&lab=${lab.id}`}>Open lab</Link>
+                <div className="c-code" style={{ marginTop: 8 }}>
+                  <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12, margin: 0, maxHeight: 180 }}><code>{lab.starter}</code></pre>
+                  <button type="button" className="btn small c-code-try" onClick={() => tryLab(lab)}><Play size={11} /> Try this code</button>
+                </div>
+                <details style={{ marginTop: 6 }}>
+                  <summary className="muted small" style={{ cursor: 'pointer' }}>Solution</summary>
+                  <div className="c-code" style={{ marginTop: 6 }}>
+                    <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12, margin: 0, maxHeight: 180 }}><code>{lab.solution}</code></pre>
+                    <button type="button" className="btn small c-code-try" onClick={() => tryLab(lab, true)}><Play size={11} /> Try this code</button>
+                  </div>
+                </details>
+                <Link className="btn small" style={{ marginTop: 8 }} to={`/c-programming/${lab.module}?lab=${lab.id}`}>Open lab</Link>
               </div>
             ))}
           </div>
@@ -164,6 +179,10 @@ export default function CCoursePage() {
               <ol className="muted small" style={{ margin: '8px 0 0', paddingLeft: 18 }}>
                 {p.milestones.map((m) => <li key={m.title}>{m.title} <span className="muted">({m.tasks.length} tasks)</span></li>)}
               </ol>
+              <div className="c-code" style={{ marginTop: 8 }}>
+                <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12, margin: 0, maxHeight: 180 }}><code>{p.starter}</code></pre>
+                <button type="button" className="btn small c-code-try" onClick={() => tryProject(p)}><Play size={11} /> Try this code</button>
+              </div>
             </div>
           ))}
         </div>

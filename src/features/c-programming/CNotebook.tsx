@@ -52,7 +52,7 @@ export default function CNotebook({ initialSource, lab = null, storageKey, sourc
     setActive(0);
     setResult(EMPTY);
     setError('');
-    setNotice('Lesson code loaded — press Run to see its output.');
+    setNotice('Code loaded — press Run to see its output.');
   }, [source]);
 
   const write = useCallback((content: string) => {

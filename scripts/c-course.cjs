@@ -94,6 +94,8 @@ for (const p of extras.projects) {
   if (projectIds.has(p.id)) fail(`duplicate project id ${p.id}`);
   projectIds.add(p.id);
   if (!p.title || !p.summary) fail(`${p.id}: project incomplete`);
+  if (!ids.has(p.module)) fail(`${p.id}: unknown module ${p.module}`);
+  if (!p.starter?.trim()) fail(`${p.id}: needs a starter program`);
   if (!p.milestones?.length) fail(`${p.id}: needs milestones`);
   for (const ms of p.milestones || []) if (!ms.title || !ms.tasks?.length) fail(`${p.id}: milestone incomplete`);
 }
