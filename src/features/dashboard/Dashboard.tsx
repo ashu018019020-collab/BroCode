@@ -24,6 +24,9 @@ import { earnedAchievements } from '../../core/platform/achievements';
 import { useUi, setUi } from '../../core/storage/ui';
 import { useI18n } from '../../app/i18n';
 import { useCourseIndex, useSectionPct } from '../../core/data/courses';
+import { useCIndex } from '../../core/data/ccourse';
+import { checkpointKey } from '../../core/learning/ccourse';
+import { CLogo } from '../c-programming/CLogo';
 import { activeCourse, cardMeasures, nextStep, sectionAvg, sectionsClear, type StepMeasure } from '../../core/learning/courses';
 import { STEPS } from '../../core/learning/roadmap';
 import { CourseLogo } from '../../components/shared/CourseLogo';
@@ -185,6 +188,7 @@ export default function Dashboard() {
    * file reports none on the card, and the hero then offers the course page instead of guessing.
    */
   const courseIndex = useCourseIndex();
+  const cIndex = useCIndex();
   const sectionPct = useSectionPct();
   /**
    * The dashboard's own "Continue" control uses the same resume resolver as the footer and the
@@ -308,7 +312,7 @@ export default function Dashboard() {
       </div>
 
       {/* 3 — COURSES: continue where you left off. One hero card for the course the learner is
-             actually in (started, unfinished, most section mastery) and the other ten as chips.
+             actually in (started, unfinished, most section mastery) and the other eleven as chips, including C Programming.
              Every figure comes from index.json + section mastery — a course file is never fetched
              here, so a course with no sections shows its counts, never a ring. */}
       {courseTarget && (
@@ -357,6 +361,28 @@ export default function Dashboard() {
                 </Link>
               );
             })}
+
+            {cIndex && (() => {
+              const total = cIndex.modules.length;
+              const done = cIndex.modules.filter((m) => state.attempts[checkpointKey(m.id)]?.done).length;
+              const pct = total ? Math.round((done / total) * 100) : 0;
+              return (
+                <Link
+                  to="/c-programming"
+                  className="course-chip tone-cyan"
+                  data-agent-action="course:c-programming"
+                  data-agent-label="C Programming"
+                  title={`C Programming — ${done}/${total} modules`}
+                >
+                  <CLogo size={28} />
+                  <span className="dc-body">
+                    <b>C Programming</b>
+                    <span className="dc-meta">{done}/{total} modules</span>
+                  </span>
+                  <ProgressRing pct={pct} size={30} />
+                </Link>
+              );
+            })()}
 
             <Link to="/courses" className="course-chip course-chip-all">
               <GraduationCap size={16} />
