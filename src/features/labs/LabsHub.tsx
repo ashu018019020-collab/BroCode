@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, FlaskConical, ArrowLeft, ChevronRight, Play, PenLine } from 'lucide-react';
+import { BookOpen, FlaskConical, FolderGit2, ArrowLeft, ChevronRight, Play, PenLine } from 'lucide-react';
 import { useI18n } from '../../app/i18n';
 import type { LocaleKey } from '../../app/i18n/locales';
 import { NAV, TRACK_DEFS } from '../../app/App';
@@ -12,6 +12,8 @@ import { usePathCtx } from '../../core/data/paths';
 import { HubGrid } from '../../components/shared/HubGrid';
 import { notebookCellsRunFor } from '../../core/learning/coverage';
 import { EXTRA_PATHS } from '../../core/learning/paths';
+import { useCProjects, useCLabs } from '../../core/data/ccourse';
+import { CLogo } from '../c-programming/CLogo';
 import {
   continueLab, courseRoutes, labSummary, labTopics, routesOfSteps, stepOfSections,
   type LabCourseLike, type LabSummary, type LabTopic,
@@ -51,6 +53,11 @@ export default function LabsHub() {
   const banks = useBankManifest();
   const notebooks = useNotebooks();
   const [params] = useSearchParams();
+
+  /** The C course runs its own labs and projects outside the eight Python/AI tracks. */
+  const cLabs = useCLabs();
+  const cProjects = useCProjects();
+  const cLabModules = useMemo(() => new Set(cLabs.map((l) => l.module)).size, [cLabs]);
 
   /** Every count of a notebook's progress comes from the family the Notebook Lab itself writes. */
   const cellsRun = useMemo(
@@ -146,6 +153,16 @@ export default function LabsHub() {
             </Link>
           );
         })}
+        {/* The C course's labs, beside the tracks and with its own course mark. */}
+        <Link to="/c-programming?tab=labs" className="tile c-tile" data-agent-action="lab:course:c">
+          <span className="ic c-ic"><CLogo size={22} /></span>
+          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+            <b>C Programming</b>
+            <span>
+              {cLabs.length ? `${cLabs.length} labs · ${cLabModules} modules · GCC` : '…'}
+            </span>
+          </span>
+        </Link>
       </div>
 
       {subject && summary && (
@@ -234,6 +251,56 @@ export default function LabsHub() {
           </p>
         </div>
       )}
+
+      {/* C labs: the same row language as a subject's topics, but grouped by the C module that owns
+          the lab — and the starter is handed straight to the module's notebook, which is where the
+          lab actually runs. */}
+      <div className="sec-head"><h2><CLogo size={16} /> C Programming labs</h2><span className="line" /></div>
+      <div className="card fadeup c-band">
+        <div className="row spread" style={{ flexWrap: 'wrap', gap: 10 }}>
+          <span className="row" style={{ gap: 10, minWidth: 0 }}>
+            <CLogo size={34} />
+            <span style={{ minWidth: 0 }}>
+              <b style={{ fontSize: '1rem' }}>C Programming · hands-on labs</b>
+              <span className="small muted" style={{ display: 'block' }}>
+                {cLabs.length
+                  ? `${cLabs.length} labs · ${cLabModules} modules · ${cLabs.reduce((n, l) => n + l.tests.length, 0)} test cases · C17 / GCC`
+                  : 'Loading the C labs…'}
+              </span>
+            </span>
+          </span>
+          <span className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <Link className="btn small" to="/c-programming?tab=labs"><FlaskConical size={12} /> All C labs</Link>
+            {cProjects.length > 0 && (
+              <Link className="btn small" to="/c-programming?tab=projects"><FolderGit2 size={12} /> C projects</Link>
+            )}
+            <Link className="btn primary" to="/c-programming?tab=curriculum">Open C course</Link>
+          </span>
+        </div>
+
+        <div className="tile-grid" style={{ marginTop: 10 }}>
+          {cLabs.slice(0, 8).map((l) => (
+            <Link
+              key={l.id}
+              to={`/c-programming/${l.module}?tab=practice&lab=${l.id}&try=starter`}
+              className="tile c-tile"
+              data-agent-action={`lab:c:${l.id}`}
+              title={l.brief}
+            >
+              <span className="ic"><span className="small">C</span></span>
+              <span className="t" style={{ flex: 1, minWidth: 0 }}>
+                <b>{l.title}</b>
+                <span>{l.level} · {l.tests.length} tests · +{l.xp} XP</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+        <p className="small muted" style={{ margin: '8px 0 0' }}>
+          {cLabs.length > 8 ? `+${cLabs.length - 8} more labs · ` : ''}
+          A lab opens its own starter in the module's C notebook with the test cases ready — compile with GCC and
+          check each case without leaving the page.
+        </p>
+      </div>
 
       <div className="sec-head"><h2>Global tools</h2><span className="line" /></div>
       <p className="small muted" style={{ margin: '0 0 8px' }}>

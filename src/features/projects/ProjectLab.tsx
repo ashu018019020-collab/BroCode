@@ -8,6 +8,8 @@ import { sectionProgress } from '../../core/learning/progress';
 import { portfolioTrio } from '../../core/learning/career';
 import { Bar, ProgressRing } from '../../components/ui/ui';
 import { toast } from '../../components/ui/Toast';
+import { useCProjects } from '../../core/data/ccourse';
+import { CLogo } from '../c-programming/CLogo';
 
 interface Proj {
   key: string;
@@ -37,6 +39,8 @@ export default function ProjectLab() {
   const [open, setOpen] = useState<string | null>(null);
   // 116 project cards at once is needless DOM — page them instead.
   const [limit, setLimit] = useState(36);
+  /** The C course's builds are authored separately from the 116 Python/AI briefs below. */
+  const cProjects = useCProjects();
 
   const projects: Proj[] = useMemo(() => {
     const out: Proj[] = [];
@@ -115,6 +119,48 @@ export default function ProjectLab() {
             <div>{Math.max(0, 3 - done)} more for a full portfolio</div>
           </div>
         </div>
+      </div>
+
+      {/* C projects: their own course mark, and a starter that opens in the module's notebook —
+          router state is the same handoff the C course page already uses for "Try this code". */}
+      <div className="sec-head"><h2><CLogo size={16} /> C Programming projects</h2><span className="line" /></div>
+      <div className="card fadeup c-band">
+        <div className="row spread" style={{ flexWrap: 'wrap', gap: 10 }}>
+          <span className="row" style={{ gap: 10, minWidth: 0 }}>
+            <CLogo size={34} />
+            <span style={{ minWidth: 0 }}>
+              <b style={{ fontSize: '1rem' }}>C Programming · build briefs</b>
+              <span className="small muted" style={{ display: 'block' }}>
+                {cProjects.length
+                  ? `${cProjects.length} projects · ${new Set(cProjects.map((p) => p.module)).size} modules · every starter compiles with GCC`
+                  : 'Loading the C projects…'}
+              </span>
+            </span>
+          </span>
+          <Link className="btn small primary" to="/c-programming?tab=projects">Open C projects</Link>
+        </div>
+        <div className="tile-grid" style={{ marginTop: 10 }}>
+          {cProjects.slice(0, 6).map((p) => (
+            <Link
+              key={p.id}
+              to={`/c-programming/${p.module}`}
+              state={{ tryCode: p.starter }}
+              className="tile c-tile"
+              data-agent-action={`project:c:${p.id}`}
+              title={p.summary}
+            >
+              <span className="ic"><span className="small">C</span></span>
+              <span className="t" style={{ flex: 1, minWidth: 0 }}>
+                <b>{p.title}</b>
+                <span>{p.level} · {p.features.length} features · {p.module.toUpperCase()}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+        <p className="small muted" style={{ margin: '8px 0 0' }}>
+          Opening one loads its starter into that module's C notebook, so the build begins from code that
+          already compiles.
+        </p>
       </div>
 
       <div className="row" style={{ gap: 6, margin: '14px 0', flexWrap: 'wrap' }}>

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Repeat, Bug, ChevronRight, Zap, ListChecks, Play, ArrowLeft } from 'lucide-react';
+import { Repeat, Bug, ChevronRight, FlaskConical, Zap, ListChecks, Play, ArrowLeft } from 'lucide-react';
 import { useI18n } from '../../app/i18n';
 import type { LocaleKey } from '../../app/i18n/locales';
 import { TRACK_DEFS } from '../../app/App';
@@ -11,6 +11,8 @@ import { openBySection, sourceLabel } from '../../core/ai/coach';
 import { usePathCtx } from '../../core/data/paths';
 import { HubGrid } from '../../components/shared/HubGrid';
 import { useBankManifest, QUESTION_TYPES, TYPE_LABEL } from '../../core/data/questions';
+import { useCAssessments, useCIndex, useCLabs } from '../../core/data/ccourse';
+import { CLogo } from '../c-programming/CLogo';
 import type { QuestionType } from '../../core/data/schema';
 import { bankAccuracyBySection } from '../../core/assessment/accuracy';
 import {
@@ -52,6 +54,19 @@ export default function PracticeHub() {
   const [params] = useSearchParams();
   const due = dueReview(state).length;
   const open = openMistakes(state).length;
+
+  /* -------------------------------- the C course ------------------------------ */
+  /*
+   * C is a course, not one of the eight Python/AI tracks: its questions live in module sets
+   * (`useCAssessments`), its hands-on work in labs, and its bank has its own pane. So it gets its
+   * own mark and its own box here instead of being squeezed into a track range it does not have.
+   */
+  const cIndex = useCIndex();
+  const cSets = useCAssessments();
+  const cLabs = useCLabs();
+  const cModules = cIndex?.modules ?? [];
+  const cMcqs = useMemo(() => cSets.reduce((n, s) => n + s.questions.length, 0), [cSets]);
+  const cLabModules = useMemo(() => new Set(cLabs.map((l) => l.module)).size, [cLabs]);
 
   // Weak areas: the coach already groups open mistakes by section, so the hub only sorts and prints.
   const weak = [...openBySection(state, sections).entries()]
@@ -178,6 +193,17 @@ export default function PracticeHub() {
             </Link>
           );
         })}
+        {/* The C course, beside the tracks: own logo, real totals, and a link into the C pane. */}
+        <Link to="/questions?course=c" className="tile c-tile" data-agent-action="course:c">
+          <span className="ic c-ic"><CLogo size={22} /></span>
+          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+            <b>C Programming</b>
+            <span>
+              {cIndex ? `${cMcqs} MCQs · ${cModules.length} modules` : '…'}
+              {cLabModules > 0 ? ` · ${cLabModules} lab modules` : ''}
+            </span>
+          </span>
+        </Link>
       </div>
 
       {subject && (
@@ -189,6 +215,52 @@ export default function PracticeHub() {
           type={type}
         />
       )}
+
+      {/* C practice, in its own box: one row per C module, each opening the bank already on that
+          module (the `?course=c&section=` contract the bank's course split uses). */}
+      <div className="sec-head"><h2><CLogo size={16} /> C Programming practice</h2><span className="line" /></div>
+      <div className="card fadeup c-band">
+        <div className="row spread" style={{ flexWrap: 'wrap', gap: 10 }}>
+          <span className="row" style={{ gap: 10, minWidth: 0 }}>
+            <CLogo size={34} />
+            <span style={{ minWidth: 0 }}>
+              <b style={{ fontSize: '1rem' }}>C Programming · practice bank</b>
+              <span className="small muted" style={{ display: 'block' }}>
+                {cIndex
+                  ? `${cMcqs} MCQs · ${cModules.length} modules · ${cLabs.length} labs · C17 / GCC`
+                  : 'Loading the C course…'}
+              </span>
+            </span>
+          </span>
+          <span className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <Link className="btn small" to="/c-programming?tab=practice"><ListChecks size={12} /> C practice</Link>
+            <Link className="btn small" to="/c-programming?tab=labs"><FlaskConical size={12} /> C labs</Link>
+            <Link className="btn primary" to="/questions?course=c">Open C bank</Link>
+          </span>
+        </div>
+
+        <div className="tile-grid" style={{ marginTop: 10 }}>
+          {cModules.slice(0, 8).map((m) => (
+            <Link
+              key={m.id}
+              to={`/questions?course=c&section=${m.id}`}
+              className="tile c-tile"
+              data-agent-action={`course:c:${m.id}`}
+            >
+              <span className="ic"><span className="small">C{String(m.no).padStart(2, '0')}</span></span>
+              <span className="t" style={{ flex: 1, minWidth: 0 }}>
+                <b>{m.title}</b>
+                <span>{m.counts.mcqs} MCQs · {m.counts.practice} practice · {m.level}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+        <p className="small muted" style={{ margin: '8px 0 0' }}>
+          {cModules.length > 8 ? `+${cModules.length - 8} more modules · ` : ''}
+          C questions are answered in their own module pane (pick an option, get the verdict) — not in the
+          Python write-then-self-grade flow.
+        </p>
+      </div>
 
       <div className="sec-head"><h2><Zap size={16} color="var(--amber)" /> Practice surfaces</h2><span className="line" /></div>
       <HubGrid routes={ROUTES} />
