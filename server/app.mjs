@@ -699,8 +699,10 @@ export function createAuthServer({
        */
       if (request.method === 'POST' && url.pathname === '/api/c/execute') {
         ensureSameOrigin(request, allowedOrigin);
-        const user = await requireUser(request);
-        const clientKey = `${user.profile.id}:${request.socket?.remoteAddress ?? 'unknown'}`;
+        // Running C is a tool, not a learner record: it must work before sign-up too. The budget
+        // is keyed by the caller, so an anonymous visitor still cannot hammer the compiler.
+        const user = await requireUser(request).catch(() => null);
+        const clientKey = `${user?.profile?.id ?? 'anon'}:${request.socket?.remoteAddress ?? 'unknown'}`;
         if (!cExecutor.allow(clientKey)) {
           throw new HttpError(429, 'Too many compile requests. Try again in a minute.');
         }

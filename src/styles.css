@@ -5474,3 +5474,15 @@ the skill's share of the selected source, and how many of its questions are alre
    pixelated scaling that art needed must not follow the mark. */
 .brand-mark.loader-art,
 .brand-mark.boot-art { image-rendering: auto; }
+
+/* C lesson workspace: the topic is the lesson, the notebook is where it is tested. Both halves
+   get the same width, the code+AI column stays pinned while the topic scrolls, and below 1024px
+   the topic comes first so reading never starts inside an editor. */
+.c-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; margin-top: 12px; }
+.c-split-left { position: sticky; top: 12px; display: grid; gap: 10px; max-height: calc(100vh - 24px); overflow: auto; overscroll-behavior: contain; }
+.c-split-right { display: grid; gap: 12px; min-width: 0; }
+@media (max-width: 1024px) {
+  .c-split { grid-template-columns: 1fr; }
+  .c-split-left { position: static; max-height: none; overflow: visible; order: 2; }
+  .c-split-right { order: 1; }
+}

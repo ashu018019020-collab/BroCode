@@ -1,8 +1,9 @@
 /**
  * Vercel Function: `POST /api/c/execute`.
  *
- * Same contract as the Node API's `/api/c/execute`: signed-in users only, same-origin only, a
- * bounded body, and a typed 503 when `JUDGE0_URL` is missing. The Judge0 key stays in the host's
+ * Same contract as the Node API's `/api/c/execute`: same-origin only, a bounded body, and real
+ * compiler output. Running C needs no account — it is a tool, so the course can be tried first;
+ * the budget is keyed by caller instead of by account. The Judge0 key stays in the host's
  * environment and never reaches the bundle.
  */
 import { CExecError, createCExecutor } from '../../server/c-runner.mjs';
@@ -49,8 +50,7 @@ export default async function handler(req, res) {
   const allowed = String(process.env.APP_ORIGIN ?? '').trim();
   if (!origin || (allowed && origin !== allowed)) return send(res, 403, { error: 'Request origin is not allowed.' });
   const user = await signedIn(req);
-  if (!user) return send(res, 401, { error: 'Sign in to run C code.' });
-  const key = `${user.id}:${req.headers['x-forwarded-for'] ?? 'local'}`;
+  const key = `${user?.id ?? 'anon'}:${req.headers['x-forwarded-for'] ?? 'local'}`;
   if (!executor.allow(key)) return send(res, 429, { error: 'Too many compile requests. Try again in a minute.' });
   try {
     const body = await readBody(req);

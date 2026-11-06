@@ -5,6 +5,7 @@ import { useCAssessments, useCCourse } from '../../core/data/ccourse';
 import { addXp, recordAttempt, useStore } from '../../core/storage/store';
 import { checkpointKey, quizScore, testKey, wrongIndexes } from '../../core/learning/ccourse';
 import CNotebook from './CNotebook';
+import { AssistantCard } from '../../components/shared/AssistantCard';
 
 export default function CLessonPage() {
   const { moduleId } = useParams<{ moduleId: string }>();
@@ -51,7 +52,6 @@ export default function CLessonPage() {
       <div className="row spread" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <Link className="btn small" to="/c-programming?tab=curriculum"><ArrowLeft size={13} /> C Programming</Link>
         <span className="chip small">Module {String(module.no).padStart(2, '0')} · {module.level} · {module.hours}h</span>
-        <Link className="btn small" to={`/c-programming/${module.id}?tab=notebook`}><FlaskConical size={13} /> Notebook</Link>
       </div>
 
       {params.get('tab') === 'test' && set && (
@@ -90,7 +90,38 @@ export default function CLessonPage() {
         {done && <span className="chip small" style={{ marginTop: 8 }}><CheckCircle2 size={11} /> checkpoint complete</span>}
       </div>
 
-      <section className="card" style={{ marginTop: 12 }}>
+      <div className="c-split">
+        <aside className="c-split-left">
+          <div className="card" style={{ padding: 12 }}>
+            <div className="row spread" style={{ marginBottom: 8, gap: 8 }}>
+              <strong className="small">Coding notebook · {module.lab.title}</strong>
+              <span className="chip small">C17 · GCC · no sign-in</span>
+            </div>
+            <CNotebook
+              key={module.id}
+              initialSource={module.lab.starter}
+              lab={{ ...module.lab, id: `lab-${module.id}`, module: module.id, objective: module.goal, level: module.level, category: 'module', xp: 20 }}
+              storageKey={`brocode:c-lab:${module.id}`}
+            />
+          </div>
+          <AssistantCard
+            embedded
+            compact
+            context={{
+              route: `/c-programming/${module.id}`,
+              pageTitle: `${module.title} — C Programming`,
+              courseSlug: 'c-programming',
+              courseTitle: 'C Programming',
+              lessonTitle: module.title,
+              topic: module.topics[0]?.title,
+              learningLevel: module.level,
+              learningGoal: module.goal,
+              progressSummary: `${done ? 'checkpoint complete' : 'in progress'} · ${module.topics.length} topics · ${module.mcqs.length} MCQs`,
+            }}
+          />
+        </aside>
+        <div className="c-split-right">
+<section className="card">
         <h2 style={{ marginTop: 0 }}>1 · Prerequisites</h2>
         <ul className="muted small" style={{ margin: 0, paddingLeft: 18 }}>{module.prereqs.map((p) => <li key={p}>{p}</li>)}</ul>
         <h3>2 · Definition</h3>
@@ -103,7 +134,7 @@ export default function CLessonPage() {
         <p className="small" style={{ marginBottom: 0 }}>{module.why}</p>
       </section>
 
-      <section className="card" style={{ marginTop: 12 }}>
+      <section className="card">
         <h3 style={{ marginTop: 0 }}>6 · Syntax and rules</h3>
         {module.syntax.map((s) => (
           <div key={s.code} style={{ marginBottom: 12 }}>
@@ -122,7 +153,7 @@ export default function CLessonPage() {
         ))}
       </section>
 
-      <section className="card" style={{ marginTop: 12 }}>
+      <section className="card">
         <h3 style={{ marginTop: 0 }}>8 · Code examples, simple → advanced</h3>
         {module.examples.map((ex) => (
           <div key={ex.title} style={{ marginBottom: 18 }}>
@@ -154,7 +185,7 @@ export default function CLessonPage() {
         )}
       </section>
 
-      <section className="card" style={{ marginTop: 12 }}>
+      <section className="card">
         <h3 style={{ marginTop: 0 }}>9 · Common mistakes</h3>
         {module.mistakes.map((m) => (
           <div key={m.wrong} style={{ marginBottom: 10 }}>
@@ -175,7 +206,7 @@ export default function CLessonPage() {
         <ul className="muted small" style={{ margin: 0, paddingLeft: 18 }}>{module.best.map((b) => <li key={b}>{b}</li>)}</ul>
       </section>
 
-      <section className="card" style={{ marginTop: 12 }}>
+      <section className="card">
         <h3 style={{ marginTop: 0 }}>12 · Practice questions</h3>
         {module.practice.map((p, i) => (
           <div key={p.title} style={{ marginBottom: 10 }}>
@@ -186,7 +217,7 @@ export default function CLessonPage() {
         ))}
       </section>
 
-      <section className="card" style={{ marginTop: 12 }}>
+      <section className="card">
         <h3 style={{ marginTop: 0 }}>13 · Quiz and MCQs</h3>
         {module.mcqs.map((q, i) => (
           <div key={q.q} style={{ marginBottom: 12 }}>
@@ -214,7 +245,7 @@ export default function CLessonPage() {
         {set && <p className="muted small" style={{ marginBottom: 0 }}>Module test also available: <Link to={`/c-programming/${module.id}?tab=test`}>{set.title}</Link>.</p>}
       </section>
 
-      <section className="card" style={{ marginTop: 12 }}>
+      <section className="card">
         <h3 style={{ marginTop: 0 }}>14 · Interview questions with answers</h3>
         {module.interview.map((q) => (
           <details key={q.q} style={{ marginBottom: 8 }}>
@@ -225,16 +256,16 @@ export default function CLessonPage() {
         ))}
       </section>
 
-      <section style={{ marginTop: 12 }}>
+      <section>
         <h3 style={{ margin: 0, marginBottom: 8 }}><FlaskConical size={15} /> 15 · Lab assignment</h3>
         <p className="muted small" style={{ marginTop: 0 }}>{module.lab.brief}</p>
-        <CNotebook key={module.id} initialSource={module.lab.starter} lab={{ ...module.lab, id: `lab-${module.id}`, module: module.id, objective: module.goal, level: module.level, category: 'module', xp: 20 }} storageKey={`brocode:c-lab:${module.id}`} />
+        <p className="muted small">The notebook is pinned in the left column — it opens with this lab's starter, stdin and public tests.</p>
         <details className="card" style={{ marginTop: 10 }}><summary className="small" style={{ cursor: 'pointer' }}>Solution (open after you have tried)</summary>
           <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12 }}><code>{module.lab.solution}</code></pre>
         </details>
       </section>
 
-      <section className="card" style={{ marginTop: 12 }}>
+      <section className="card">
         <h3 style={{ marginTop: 0 }}>16 · Topic completion checkpoint</h3>
         <p className="muted small">{module.checkpoint.title}</p>
         {module.checkpoint.checks.map((c, i) => (
@@ -249,6 +280,9 @@ export default function CLessonPage() {
           {done && next && <Link className="btn small" to={`/c-programming/${next.id}`}>Next: {next.title} <ArrowRight size={13} /></Link>}
         </div>
       </section>
+
+        </div>
+      </div>
 
       <div className="row spread" style={{ marginTop: 14, gap: 8 }}>
         {prev ? <Link className="btn small" to={`/c-programming/${prev.id}`}><ArrowLeft size={13} /> {prev.title}</Link> : <span />}

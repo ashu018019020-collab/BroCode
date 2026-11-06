@@ -15,6 +15,8 @@ export class CExecError extends Error {
 }
 
 const DEFAULT_LANGUAGE_ID = 103; // C (GCC 14) on the public Judge0 CE image
+/** Keyless Judge0 CE: real GCC execution with no account, so C runs out of the box. */
+const PUBLIC_JUDGE0_URL = 'https://ce.judge0.com';
 const MAX_FILES = 8;
 const MAX_TEST_CASES = 8;
 const WINDOW_MS = 60_000;
@@ -101,7 +103,7 @@ function withoutLocalIncludes(source) {
 }
 
 export function createCExecutor({ env = process.env, fetchImpl = fetch, now = Date.now, logger = console } = {}) {
-  const baseUrl = String(env.JUDGE0_URL ?? '').trim().replace(/\/+$/, '');
+  const baseUrl = String(env.JUDGE0_URL ?? PUBLIC_JUDGE0_URL).trim().replace(/\/+$/, '');
   const apiKey = String(env.JUDGE0_KEY ?? '').trim();
   const apiHost = String(env.JUDGE0_HOST ?? '').trim();
   const languageId = positiveInt(env.JUDGE0_LANGUAGE_ID, DEFAULT_LANGUAGE_ID);
@@ -121,6 +123,7 @@ export function createCExecutor({ env = process.env, fetchImpl = fetch, now = Da
   function status() {
     return {
       configured: Boolean(baseUrl),
+      provider: env.JUDGE0_URL ? 'custom' : 'public',
       language: 'C',
       standard: 'C17',
       compiler: 'GCC',
