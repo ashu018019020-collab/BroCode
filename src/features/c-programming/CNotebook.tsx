@@ -5,7 +5,12 @@ import { runC } from '../../core/data/ccourse';
 import type { CLab } from '../../core/learning/ccourse';
 
 interface CFile { name: string; content: string }
-interface Props { initialSource?: string; lab?: CLab | null; storageKey?: string }
+interface Props {
+  initialSource?: string; lab?: CLab | null; storageKey?: string;
+  /** Code handed over by a "Try this code" button in the lesson. */
+  source?: { code: string; id: number } | null;
+  height?: number;
+}
 interface TestResult { name: string; pass: boolean; expected: string; actual: string }
 
 const STARTER = '#include <stdio.h>\n\nint main(void) {\n    printf("Namaste, BroCode!\\n");\n    return 0;\n}\n';
@@ -16,7 +21,7 @@ const EMPTY = {
   tests: [] as TestResult[],
 };
 
-export default function CNotebook({ initialSource, lab = null, storageKey }: Props) {
+export default function CNotebook({ initialSource, lab = null, storageKey, source = null, height = 420 }: Props) {
   const key = storageKey ?? STORAGE;
   const seed = initialSource ?? lab?.starter ?? STARTER;
   const [files, setFiles] = useState<CFile[]>(() => {
@@ -32,6 +37,7 @@ export default function CNotebook({ initialSource, lab = null, storageKey }: Pro
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(EMPTY);
+  const [notice, setNotice] = useState('');
   const index = Math.min(active, files.length - 1);
   const file = files[index];
 
@@ -39,12 +45,22 @@ export default function CNotebook({ initialSource, lab = null, storageKey }: Pro
     try { localStorage.setItem(key, JSON.stringify({ files })); } catch { /* quota is not fatal */ }
   }, [files, key]);
 
+  // A lesson example replaces the working file, so "Try this code" is one click away from Run.
+  useEffect(() => {
+    if (!source) return;
+    setFiles([{ name: 'main.c', content: source.code }]);
+    setActive(0);
+    setResult(EMPTY);
+    setError('');
+    setNotice('Lesson code loaded — press Run to see its output.');
+  }, [source]);
+
   const write = useCallback((content: string) => {
     setFiles((prev) => prev.map((f, i) => (i === index ? { ...f, content } : f)));
   }, [index]);
 
   const run = useCallback(async (withTests: boolean) => {
-    setBusy(true); setError(''); setResult(EMPTY);
+    setBusy(true); setError(''); setResult(EMPTY); setNotice('');
     try {
       const body = await runC({
         source: file.content, stdin, args,
@@ -115,7 +131,7 @@ export default function CNotebook({ initialSource, lab = null, storageKey }: Pro
         <span className="muted small">C17 · GCC · extra .c files are linked into the entry file; headers are available to it.</span>
       </div>
 
-      <MonacoIDE value={file.content} language="cpp" onChange={write} height={420} onRun={() => run(false)} />
+      <MonacoIDE value={file.content} language="cpp" onChange={write} height={height} onRun={() => run(false)} />
 
       <label className="muted small" style={{ display: 'block', marginTop: 10 }}>stdin (scanf input, one value per line)</label>
       <textarea className="assistant-input" style={{ width: '100%', minHeight: 70 }} value={stdin} onChange={(e) => setStdin(e.target.value)} placeholder={'42\nBroCode'} />
@@ -142,7 +158,7 @@ export default function CNotebook({ initialSource, lab = null, storageKey }: Pro
           </span>
         </div>
         <pre style={{ background: '#0b0b0b', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: 12, minHeight: 90, maxHeight: 320, overflow: 'auto', fontSize: 12, whiteSpace: 'pre-wrap' }}>
-          {output || (busy ? 'Running…' : 'Run the program to see real compiler output.')}
+          {output || (busy ? 'Running…' : notice || 'Run the program to see real compiler output.')}
         </pre>
       </div>
     </div>

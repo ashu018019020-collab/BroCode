@@ -55,20 +55,117 @@ export function useCAssessments(): CAssessmentSet[] {
 }
 
 /** Compiled once, shared by the notebook and lab runner. */
-export async function runC(req: {
+export interface CRunRequest {
   source: string; stdin?: string; files?: { name: string; content: string }[];
-  args?: string; tests?: { stdin?: string; stdout: string }[];
-}): Promise<{
+  args?: string; tests?: { name?: string; stdin?: string; stdout: string }[];
+}
+export interface CRunResult {
   status: string; stdout: string; stderr: string; compileOutput: string;
   exitCode: number | null; time: number | null; memory: number | null; timedOut: boolean;
   tests?: { name: string; pass: boolean; expected: string; actual: string }[];
-}> {
-  const res = await fetch('api/c/execute', {
+}
+
+const PUBLIC_COMPILER = 'https://ce.judge0.com';
+const COMPILER_FLAGS = '-std=c17 -Wall -Wextra -O2';
+const COMPILER_TIMEOUT_MS = 20_000;
+const stripLocalIncludes = (code: string) => code.replace(/^[ \t]*#[ \t]*include[ \t]*"[^"]*"[^\n]*\n?/gm, '');
+
+function mergedSource(req: CRunRequest): string {
+  const extra = (req.files ?? []).filter((f) => /\.c$/i.test(f.name));
+  return [req.source, ...extra.map((f) => `\n/* ${f.name} */\n${stripLocalIncludes(f.content)}`)].join('\n');
+}
+
+function shapeRun(body: any, expected?: string): CRunResult & { pass?: boolean } {
+  const stdout = String(body?.stdout ?? '');
+  const stderr = String(body?.stderr ?? '');
+  const compileOutput = String(body?.compile_output ?? '');
+  const status = String(body?.status?.description ?? 'Unknown');
+  const statusId = Number(body?.status?.id ?? 0);
+  const ran = statusId === 3 || statusId === 4;
+  return {
+    status, stdout, stderr, compileOutput,
+    exitCode: typeof body?.exit_code === 'number' ? body.exit_code : ran ? 0 : statusId ? 1 : null,
+    time: body?.time ? Math.round(Number(body.time) * 1000) : null,
+    memory: body?.memory ?? null,
+    timedOut: /time limit/i.test(status),
+    ...(expected === undefined ? {} : { pass: !compileOutput.trim() && ran && stdout.trim() === expected.trim(), expected }),
+  };
+}
+
+async function judgeRun(req: CRunRequest, source: string, stdin: string): Promise<any> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), COMPILER_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${PUBLIC_COMPILER}/submissions?base64_encoded=false&wait=true`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source_code: source,
+        language_id: 103,
+        stdin,
+        command_line_arguments: req.args ?? '',
+        compiler_options: COMPILER_FLAGS,
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(res.status === 429
+        ? 'The free compiler is busy right now. Try again in a few seconds.'
+        : `The compiler service answered ${res.status}.`);
+    }
+    return await res.json();
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('The compiler took too long. Try a smaller program.');
+    }
+    throw error instanceof Error ? error : new Error('The compiler is unreachable right now.');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * No serverless function needed: this page calls the keyless public Judge0 CE instance directly,
+ * so Run works on a static host, on the dev server, and even on a deployment whose API still asks
+ * for a session. It is the same real GCC compile — never a simulated answer.
+ */
+async function runWithoutApi(req: CRunRequest): Promise<CRunResult> {
+  const source = mergedSource(req);
+  const stdin = req.stdin ?? '';
+  const tests = req.tests ?? [];
+  if (!tests.length) return shapeRun(await judgeRun(req, source, stdin));
+  const results = [];
+  for (const [i, test] of tests.entries()) {
+    const shaped = shapeRun(await judgeRun(req, source, test.stdin ?? stdin), test.stdout);
+    results.push({ name: test.name || `Test ${i + 1}`, pass: shaped.pass === true, expected: test.stdout, actual: shaped.stdout });
+    // The free instance asks for a little breathing room between submissions.
+    if (i < tests.length - 1) await new Promise((resolve) => setTimeout(resolve, 400));
+  }
+  const passed = results.filter((r) => r.pass).length;
+  return {
+    status: passed === results.length ? 'Accepted' : 'Wrong Answer',
+    stdout: results.map((r) => r.actual).join('\n'), stderr: '', compileOutput: '',
+    exitCode: passed === results.length ? 0 : 1, time: null, memory: null, timedOut: false,
+    tests: results,
+  };
+}
+
+export async function runC(req: CRunRequest): Promise<CRunResult> {
+  // The app's own proxy goes first (headers, per-caller budget). A static host, a dev server with
+  // no API route, or a build that still demands a session falls through to the public compiler, so
+  // Run never dead-ends on "sign in to run C code".
+  const proxy = await fetch('api/c/execute', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `Compiler request failed (${res.status})`);
-  return body;
+  }).catch(() => null);
+  if (proxy) {
+    const raw = await proxy.text().catch(() => '');
+    let body: any = null;
+    try { body = JSON.parse(raw); } catch { body = null; }
+    if (proxy.ok && body && typeof body.status === 'string') return body as CRunResult;
+    const retryable = !proxy.ok && [401, 403, 404, 405, 408, 425, 500, 501, 502, 503, 504].includes(proxy.status);
+    if (!retryable && !proxy.ok && body?.error) throw new Error(String(body.error));
+  }
+  return runWithoutApi(req);
 }

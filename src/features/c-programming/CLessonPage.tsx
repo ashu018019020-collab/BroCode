@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bug, CheckCircle2, FlaskConical, Lightbulb } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bug, CheckCircle2, FlaskConical, Lightbulb, Play } from 'lucide-react';
 import { useCAssessments, useCCourse } from '../../core/data/ccourse';
 import { addXp, recordAttempt, useStore } from '../../core/storage/store';
 import { checkpointKey, quizScore, testKey, wrongIndexes } from '../../core/learning/ccourse';
@@ -18,6 +18,9 @@ export default function CLessonPage() {
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   const [testAnswers, setTestAnswers] = useState<Record<number, number>>({});
   const [testSubmitted, setTestSubmitted] = useState(false);
+  const [tryCode, setTryCode] = useState<{ code: string; id: number } | null>(null);
+  const tryId = useRef(0);
+  const leftRef = useRef<HTMLElement | null>(null);
 
   const module = data?.modules.find((m) => m.id === moduleId) ?? null;
   const position = data && module ? data.modules.findIndex((m) => m.id === module.id) : -1;
@@ -42,6 +45,17 @@ export default function CLessonPage() {
     if (testScore.pct >= 60) addXp(20);
     setTestSubmitted(true);
   };
+  const sendToNotebook = (code: string) => {
+    tryId.current += 1;
+    setTryCode({ code, id: tryId.current });
+    leftRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  const TryBlock = ({ code }: { code: string }) => (
+    <div className="c-code">
+      <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12, margin: 0 }}><code>{code}</code></pre>
+      <button type="button" className="btn small c-code-try" onClick={() => sendToNotebook(code)}><Play size={11} /> Try this code</button>
+    </div>
+  );
   const finish = () => {
     if (!module.checkpoint.checks.every((_, i) => checked[i])) return;
     if (!done) { recordAttempt(checkpointKey(module.id), { done: true, score: 100 }); addXp(30); }
@@ -91,14 +105,16 @@ export default function CLessonPage() {
       </div>
 
       <div className="c-split">
-        <aside className="c-split-left">
-          <div className="card" style={{ padding: 12 }}>
+        <aside className="c-split-left" ref={leftRef}>
+          <div>
             <div className="row spread" style={{ marginBottom: 8, gap: 8 }}>
               <strong className="small">Coding notebook · {module.lab.title}</strong>
               <span className="chip small">C17 · GCC · no sign-in</span>
             </div>
             <CNotebook
               key={module.id}
+              source={tryCode}
+              height={360}
               initialSource={module.lab.starter}
               lab={{ ...module.lab, id: `lab-${module.id}`, module: module.id, objective: module.goal, level: module.level, category: 'module', xp: 20 }}
               storageKey={`brocode:c-lab:${module.id}`}
@@ -138,7 +154,7 @@ export default function CLessonPage() {
         <h3 style={{ marginTop: 0 }}>6 · Syntax and rules</h3>
         {module.syntax.map((s) => (
           <div key={s.code} style={{ marginBottom: 12 }}>
-            <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12 }}><code>{s.code}</code></pre>
+            <TryBlock code={s.code} />
             <p className="muted small" style={{ margin: 0 }}>{s.note}</p>
           </div>
         ))}
@@ -147,7 +163,7 @@ export default function CLessonPage() {
           <div key={t.title} style={{ marginBottom: 14 }}>
             <strong className="small">{t.title}</strong>
             <p className="small" style={{ margin: '4px 0' }}>{t.body}</p>
-            {t.code && <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12 }}><code>{t.code}</code></pre>}
+            {t.code && <TryBlock code={t.code} />}
             {t.memory?.length ? <ul className="muted small" style={{ margin: 0, paddingLeft: 18 }}>{t.memory.map((m) => <li key={m}>{m}</li>)}</ul> : null}
           </div>
         ))}
@@ -158,7 +174,7 @@ export default function CLessonPage() {
         {module.examples.map((ex) => (
           <div key={ex.title} style={{ marginBottom: 18 }}>
             <div className="row spread"><strong className="small">{ex.title}</strong><span className="chip small">{ex.level}</span></div>
-            <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12 }}><code>{ex.code}</code></pre>
+            <TryBlock code={ex.code} />
             <strong className="small">Actual output</strong>
             <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 10, overflow: 'auto', fontSize: 12 }}><code>{ex.output}</code></pre>
             <strong className="small">Line by line</strong>
@@ -196,11 +212,11 @@ export default function CLessonPage() {
         ))}
         <h3><Bug size={14} /> 10 · Debugging exercise</h3>
         <p className="small">{module.debug.brief}</p>
-        <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12 }}><code>{module.debug.code}</code></pre>
+        <TryBlock code={module.debug.code} />
         <p className="muted small">Expected: {module.debug.expected}</p>
         <details><summary className="small" style={{ cursor: 'pointer' }}>Hints and fix</summary>
           <ul className="muted small">{module.debug.hints.map((h) => <li key={h}>{h}</li>)}</ul>
-          <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12 }}><code>{module.debug.fix}</code></pre>
+          <TryBlock code={module.debug.fix} />
         </details>
         <h3><Lightbulb size={14} /> 11 · Best practices</h3>
         <ul className="muted small" style={{ margin: 0, paddingLeft: 18 }}>{module.best.map((b) => <li key={b}>{b}</li>)}</ul>
@@ -261,7 +277,7 @@ export default function CLessonPage() {
         <p className="muted small" style={{ marginTop: 0 }}>{module.lab.brief}</p>
         <p className="muted small">The notebook is pinned in the left column — it opens with this lab's starter, stdin and public tests.</p>
         <details className="card" style={{ marginTop: 10 }}><summary className="small" style={{ cursor: 'pointer' }}>Solution (open after you have tried)</summary>
-          <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12 }}><code>{module.lab.solution}</code></pre>
+          <TryBlock code={module.lab.solution} />
         </details>
       </section>
 
