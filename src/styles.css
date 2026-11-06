@@ -5631,3 +5631,84 @@ the skill's share of the selected source, and how many of its questions are alre
 .ai-sheet-mem { margin: 6px 0 0; }
 .ai-starters { display: grid; gap: 6px; margin: 8px 0 10px; }
 .ai-starters .btn { font-size: .74rem; }
+
+/* ---- the course journey: levels, headers and the continue card -------------- */
+.journey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 14px 0;
+}
+.journey-node { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.journey-num {
+  display: inline-grid; place-items: center;
+  width: 26px; height: 26px; border-radius: 8px;
+  font-size: .68rem; font-weight: 800; letter-spacing: .02em;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+}
+.journey-name { font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.journey-arrow { opacity: .45; }
+.continue-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; margin-bottom: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 137, 214, .32);
+  background: linear-gradient(120deg, rgba(0, 89, 156, .20), rgba(0, 0, 0, 0) 70%);
+  text-decoration: none; color: inherit;
+}
+.continue-card:hover { border-color: rgba(88, 190, 255, .58); }
+.continue-ic {
+  display: inline-grid; place-items: center; width: 32px; height: 32px;
+  border-radius: 9px; background: rgba(0, 137, 214, .22); color: var(--cyan); flex: none;
+}
+.continue-go { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; font-weight: 700; }
+
+.level-stack { display: grid; gap: 16px; }
+.level-block {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255,255,255,.015);
+}
+.level-head {
+  display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+  padding-bottom: 10px; margin-bottom: 12px;
+  border-bottom: 1px dashed rgba(255,255,255,.10);
+}
+.level-no {
+  font-size: .66rem; font-weight: 800; letter-spacing: .10em;
+  padding: 5px 8px; border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  white-space: nowrap;
+}
+.level-head h2 { font-size: 1.05rem; }
+.level-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+.level-stats > span { opacity: .8; }
+.level-pct { font-weight: 800; color: var(--cyan); }
+.level-pct.done { color: var(--green, #22c55e); }
+.level-bar {
+  display: block; flex-basis: 100%;
+  height: 4px; border-radius: 999px;
+  background: rgba(255,255,255,.08); overflow: hidden;
+}
+.level-bar > i { display: block; height: 100%; background: var(--cyan); border-radius: 999px; }
+
+/* ---- course card additions ------------------------------------------------- */
+.cc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cc-level {
+  font-size: .62rem; font-weight: 800; letter-spacing: .06em;
+  padding: 4px 7px; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  white-space: nowrap;
+}
+.cc-level.optional { opacity: .8; border-style: dashed; }
+.cc-desc { display: block; margin-top: 2px; line-height: 1.45; }
+.cc-prereq { display: inline-flex; align-items: center; gap: 4px; opacity: .72; margin-top: 2px; }
+.cc-opt {
+  font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  opacity: .7; margin-left: 4px;
+}
