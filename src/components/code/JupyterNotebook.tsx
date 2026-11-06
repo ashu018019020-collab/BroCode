@@ -241,6 +241,14 @@ interface Props {
   sectionId?: string;
   /** Hide the "open a published notebook here" shelf. */
   hideShelf?: boolean;
+  /**
+   * Leave the assistant card off this notebook.
+   *
+   * The split lesson already carries the assistant in its own column (and the footer dock has one
+   * on every page), so the card under the editor was a second copy taking the space the output
+   * needs. The notebook itself is unchanged — cells, run records and errors all still work.
+   */
+  hideAssistant?: boolean;
 }
 
 /**
@@ -252,6 +260,7 @@ const asLabel = (t?: string) => (t && t.length > 46 ? `${t.slice(0, 46).trimEnd(
 
 export function JupyterNotebook({
   storageKey, starter, solution, onComplete, compact, title, taskText, label, notes, sectionId, hideShelf,
+  hideAssistant,
 }: Props) {
   const [showSol, setShowSol] = useState(false);
   const [prefill, setPrefill] = useState({ code: '', nonce: 0 });
@@ -328,8 +337,11 @@ export function JupyterNotebook({
       {!hideShelf && <NotebookShelf sectionId={sectionId} compact={compact} />}
 
       {/* Last thing in the card, under the shelf: "while coding" is where help belongs, and the
-          shelf above it is only ever one collapsed line unless the learner opens it. */}
-      <AssistantCard embedded context={{ sectionId, where, code: cellError?.code, error: cellError?.error }} />
+          shelf above it is only ever one collapsed line unless the learner opens it. A caller that
+          already shows the assistant (the split lesson) turns this copy off. */}
+      {!hideAssistant && (
+        <AssistantCard embedded context={{ sectionId, where, code: cellError?.code, error: cellError?.error }} />
+      )}
     </div>
   );
 }

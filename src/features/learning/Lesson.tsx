@@ -482,6 +482,9 @@ function LearnStage({ sec, sel, onSel }: { sec: Section; sel: number; onSel: (i:
             taskText={cur.tip ? `💡 ${cur.tip}` : undefined}
             sectionId={sec.id}
             compact
+            /* The split column is narrow: the assistant below the code box pushed the cell's
+               output out of the scroll area, and the assistant is one click away in the dock. */
+            hideAssistant
             onComplete={() => recordAttempt(triedKey(sel), { done: true })}
           />
           <p className="small muted" style={{ marginTop: 8 }}>

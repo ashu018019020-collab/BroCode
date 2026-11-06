@@ -225,16 +225,10 @@ function CodeCell({ cell, value, run, execCount, cellIndex, busy, locked, score,
           {typeof score === 'number' && <Chip kind={score >= 100 ? 'easy' : 'hard'}>{score}%</Chip>}
           {cell.label && <span className="small muted">{cell.label}</span>}
         </span>
-        <span className="row">
-          <button className="btn small" onClick={onRun} disabled={busy || locked} aria-label="Run this cell" title="Ctrl+↵ to run · Shift+↵ to run and move to the next cell">
-            {busy ? <Loader size={12} /> : <Play size={12} />} Run
-          </button>
-          <button className="btn small" onClick={onReset} title="Restore the cell to its original code"><RotateCcw size={12} /> Reset</button>
-          <button className="btn small" onClick={() => void navigator.clipboard?.writeText(value).catch(() => {})}><Copy size={12} /> Copy</button>
-          <button className="btn small" onClick={onSave}><Save size={12} /> Save</button>
-        </span>
       </div>
 
+      {/* Run/Reset/Copy/Save live ONCE, in the code box's own chrome below (the `actions` prop).
+          A second copy in this header row was a duplicate toolbar stacked directly above it. */}
       <CodeBox
         value={value}
         onChange={onChange}

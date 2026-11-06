@@ -5747,3 +5747,17 @@ the skill's share of the selected source, and how many of its questions are alre
 /* A course the owner has stood down: still listed in the editor so it can be restored, dimmed so
    a missing student card is not mistaken for a broken row. Its page and progress are untouched. */
 .oce-row.is-hidden .oce-name { opacity: .55; text-decoration: line-through; }
+
+/* ---- split lesson: the code column scrolls so the cell OUTPUT is reachable ---- */
+/* A sticky column taller than the viewport pins its top and hides its bottom, and the cell's
+   output sits BELOW the editor. Give the column its own scroll, and let a stacked layout go back
+   to normal page scrolling. */
+.workbench .wb-side {
+  position: sticky; top: 12px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 1150px) {
+  .workbench .wb-side { position: static; max-height: none; overflow: visible; }
+}
