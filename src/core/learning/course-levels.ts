@@ -162,11 +162,52 @@ export const C_COMPLEMENT: CoursePlacement = {
   optional: true,
 };
 
+/** The built-in answer: the eleven catalog courses plus the optional C companion. */
+export const ALL_PLACEMENTS: CoursePlacement[] = [...COURSE_PLACEMENTS, C_COMPLEMENT];
+
+/** A database row that moves one course: the only fields an owner may change. */
+export interface PlacementOverride {
+  slug: string;
+  level: CourseLevelId;
+  order: number;
+  optional?: boolean;
+}
+
+export function isCourseLevelId(value: unknown): value is CourseLevelId {
+  return typeof value === 'string' && COURSE_LEVELS.some((level) => level.id === value);
+}
+
+/**
+ * Apply database overrides to the built-in journey.
+ *
+ * Unknown slugs and unknown levels are IGNORED rather than trusted: a hand-edited or stale row must
+ * never hide a course or invent a seventh level, and the built-in registry stays the floor. Blurbs
+ * and prerequisites are not editable through this table — they stay authored in code.
+ */
+export function mergePlacements(overrides: readonly PlacementOverride[]): CoursePlacement[] {
+  const bySlug = new Map<string, PlacementOverride>();
+  for (const row of overrides) {
+    if (!isCourseLevelId(row.level)) continue;
+    if (!Number.isFinite(row.order)) continue;
+    if (!ALL_PLACEMENTS.some((p) => p.slug === row.slug)) continue;
+    bySlug.set(row.slug, row);
+  }
+  return ALL_PLACEMENTS.map((base) => {
+    const row = bySlug.get(base.slug);
+    if (!row) return base;
+    return {
+      ...base,
+      level: row.level,
+      order: Math.max(1, Math.round(row.order)),
+      optional: row.optional ?? base.optional,
+    };
+  });
+}
+
 /** Every placed slug, in journey order (the complementary course included). */
-export const COURSE_ORDER: string[] =
-  [...COURSE_PLACEMENTS, C_COMPLEMENT]
-    .sort((a, b) => levelIndex(a.level) - levelIndex(b.level) || a.order - b.order)
-    .map((p) => p.slug);
+export const COURSE_ORDER: string[] = [...ALL_PLACEMENTS]
+  .sort((a, b) => levelIndex(a.level) - levelIndex(b.level) || a.order - b.order)
+  .map((p) => p.slug);
 
 export function levelIndex(id: CourseLevelId): number {
   return COURSE_LEVELS.findIndex((level) => level.id === id);
@@ -176,9 +217,8 @@ export function levelOf(id: CourseLevelId): CourseLevel {
   return COURSE_LEVELS[levelIndex(id)];
 }
 
-export function placementOf(slug: string): CoursePlacement | null {
-  return COURSE_PLACEMENTS.find((p) => p.slug === slug)
-    ?? (slug === C_COMPLEMENT.slug ? C_COMPLEMENT : null);
+export function placementOf(slug: string, list: readonly CoursePlacement[] = ALL_PLACEMENTS): CoursePlacement | null {
+  return list.find((p) => p.slug === slug) ?? null;
 }
 
 /**
@@ -186,15 +226,18 @@ export function placementOf(slug: string): CoursePlacement | null {
  * to the pack before it is placed here must still render (at the end, visibly unplaced), never
  * vanish from the page.
  */
-export function courseRank(slug: string): number {
-  const placement = placementOf(slug);
+export function courseRank(slug: string, list: readonly CoursePlacement[] = ALL_PLACEMENTS): number {
+  const placement = placementOf(slug, list);
   if (!placement) return Number.MAX_SAFE_INTEGER;
   return levelIndex(placement.level) * 100 + placement.order;
 }
 
 /** The explicit order, applied. Never alphabetical, never the generator's insertion order. */
-export function sortByCourseOrder<T extends { slug: string }>(cards: readonly T[]): T[] {
-  return [...cards].sort((a, b) => courseRank(a.slug) - courseRank(b.slug) || a.slug.localeCompare(b.slug));
+export function sortByCourseOrder<T extends { slug: string }>(
+  cards: readonly T[],
+  list: readonly CoursePlacement[] = ALL_PLACEMENTS,
+): T[] {
+  return [...cards].sort((a, b) => courseRank(a.slug, list) - courseRank(b.slug, list) || a.slug.localeCompare(b.slug));
 }
 
 export interface LevelGroup<T> {
@@ -208,10 +251,13 @@ export interface LevelGroup<T> {
  * Cards grouped into the six levels, each group in course order. An unknown slug joins the LAST
  * group so it is visible instead of dropped; `placementOf` can then be extended deliberately.
  */
-export function groupByLevel<T extends { slug: string }>(cards: readonly T[]): LevelGroup<T>[] {
+export function groupByLevel<T extends { slug: string }>(
+  cards: readonly T[],
+  list: readonly CoursePlacement[] = ALL_PLACEMENTS,
+): LevelGroup<T>[] {
   const groups: LevelGroup<T>[] = COURSE_LEVELS.map((level) => ({ level, cards: [], required: [] }));
-  for (const card of sortByCourseOrder(cards)) {
-    const placement = placementOf(card.slug);
+  for (const card of sortByCourseOrder(cards, list)) {
+    const placement = placementOf(card.slug, list);
     const at = placement ? levelIndex(placement.level) : COURSE_LEVELS.length - 1;
     groups[at].cards.push(card);
     if (!placement?.optional) groups[at].required.push(card);
@@ -220,8 +266,12 @@ export function groupByLevel<T extends { slug: string }>(cards: readonly T[]): L
 }
 
 /** Display names for a card's prerequisite slugs, skipping the ones that are not placed. */
-export function prerequisiteNames(slug: string, names: Record<string, string>): string[] {
-  const placement = placementOf(slug);
+export function prerequisiteNames(
+  slug: string,
+  names: Record<string, string>,
+  list: readonly CoursePlacement[] = ALL_PLACEMENTS,
+): string[] {
+  const placement = placementOf(slug, list);
   if (!placement) return [];
   return placement.prerequisites.map((pre) => names[pre]).filter((name): name is string => Boolean(name));
 }
@@ -230,9 +280,10 @@ export function prerequisiteNames(slug: string, names: Record<string, string>): 
 export function nextCourse<T extends { slug: string }>(
   cards: readonly T[],
   pctOf: (card: T) => number | null,
+  list: readonly CoursePlacement[] = ALL_PLACEMENTS,
 ): T | null {
-  for (const card of sortByCourseOrder(cards)) {
-    const placement = placementOf(card.slug);
+  for (const card of sortByCourseOrder(cards, list)) {
+    const placement = placementOf(card.slug, list);
     if (placement?.optional) continue;
     const pct = pctOf(card);
     if (pct === null || pct < 100) return card;

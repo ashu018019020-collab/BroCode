@@ -4,6 +4,7 @@ import { useI18n } from '../../app/i18n';
 import { CourseLogo } from '../../components/shared/CourseLogo';
 import { ProgressRing } from '../../components/ui/ui';
 import { useCourseIndex, useSectionPct } from '../../core/data/courses';
+import { useCoursePlacements } from '../../core/data/course-placement';
 import { sectionAvg } from '../../core/learning/courses';
 import {
   C_COMPLEMENT, COURSE_LEVELS, groupByLevel, levelOf, nextCourse, placementOf, prerequisiteNames,
@@ -32,6 +33,8 @@ export default function CoursesHome() {
   const cIndex = useCIndex();
   const store = useStore();
   const pctOf = useSectionPct();
+  /** Owner overrides when the database has them; the code-authored journey otherwise. */
+  const { placements } = useCoursePlacements();
   const courses = index?.courses ?? [];
   const steps = courses.reduce((a, c) => a + (c.steps?.length ?? 0), 0);
 
@@ -50,8 +53,8 @@ export default function CoursesHome() {
       + cIndex.stats.mcqs + cIndex.stats.interview + cIndex.stats.labs + cIndex.stats.projects
     : 0;
 
-  const groups = groupByLevel(courses);
-  const next = nextCourse(courses, pctFor);
+  const groups = groupByLevel(courses, placements);
+  const next = nextCourse(courses, pctFor, placements);
   const nextPct = next ? pctFor(next) : null;
 
   /**
@@ -67,9 +70,9 @@ export default function CoursesHome() {
   const renderCard = (card: CourseCard) => {
     const pct = pctFor(card);
     const sectionIds = Object.keys(card.sections ?? {});
-    const placement = placementOf(card.slug);
+    const placement = placementOf(card.slug, placements);
     const level = placement ? levelOf(placement.level) : COURSE_LEVELS[COURSE_LEVELS.length - 1];
-    const prereqs = prerequisiteNames(card.slug, names);
+    const prereqs = prerequisiteNames(card.slug, names, placements);
     return (
       <Link
         key={card.slug}
@@ -185,7 +188,7 @@ export default function CoursesHome() {
           <span style={{ minWidth: 0 }}>
             <b>Continue learning</b>
             <span className="small muted" style={{ display: 'block' }}>
-              {next.name} · Level {String(levelOf(placementOf(next.slug)?.level ?? 'beginner').no).padStart(2, '0')}
+              {next.name} · Level {String(levelOf(placementOf(next.slug, placements)?.level ?? 'beginner').no).padStart(2, '0')}
               {nextPct !== null ? ` · ${nextPct}% complete` : ''}
             </span>
           </span>

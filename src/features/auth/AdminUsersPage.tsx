@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { authApi, type AccountStatus, type AdminUserResult, type ManagedUser, type SignInProvider } from '../../core/auth/client';
 import { authErrorCopy } from '../../core/auth/messages';
+import CourseOrderEditor from './CourseOrderEditor';
 import { onlineOf, watchLive, type LiveStatus } from '../../core/auth/realtime';
 
 /**
@@ -208,6 +209,8 @@ export default function AdminUsersPage() {
           <article className="card"><span className="muted small">Signed in · last 30 days</span><strong>{result.summary.active30Days}</strong></article>
         </div>
       )}
+      <CourseOrderEditor />
+
       {result && (
         <div className="card auth-recent-signins">
           <h2>Recent sign-ins</h2>

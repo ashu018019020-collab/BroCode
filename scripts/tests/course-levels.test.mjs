@@ -81,3 +81,25 @@ test('levels: prerequisites are display-only and name real courses', () => {
   assert.deepEqual(levels.prerequisiteNames('agentic-ai', names), ['generative-ai']);
   assert.deepEqual(levels.prerequisiteNames('build-production', names), ['agentic-ai', 'data-engineering']);
 });
+
+test('levels: database overrides move a course and invalid rows are ignored', () => {
+  const merged = levels.mergePlacements([{ slug: 'python', level: 'professional', order: 1 }]);
+  assert.equal(levels.placementOf('python', merged).level, 'professional');
+  const groups = levels.groupByLevel([{ slug: 'python' }, { slug: 'sql' }], merged);
+  const professional = groups.find((g) => g.level.id === 'professional');
+  assert.deepEqual(professional.cards.map((c) => c.slug), ['python']);
+
+  // An unknown level, an unknown slug and a non-numeric order are ignored, never trusted.
+  const bad = levels.mergePlacements([
+    { slug: 'python', level: 'not-a-level', order: 1 },
+    { slug: 'not-a-course', level: 'beginner', order: 1 },
+    { slug: 'sql', level: 'beginner', order: Number.NaN },
+  ]);
+  assert.equal(levels.placementOf('python', bad).level, 'beginner');
+  assert.equal(levels.placementOf('sql', bad).level, 'foundations');
+  assert.equal(levels.placementOf('not-a-course', bad), null);
+
+  // The built-in journey is untouched by any merge call.
+  assert.equal(levels.placementOf('python').level, 'beginner');
+  assert.equal(levels.placementOf('c-programming').optional, true);
+});
