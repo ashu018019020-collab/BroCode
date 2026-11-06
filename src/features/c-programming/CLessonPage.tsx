@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bug, CheckCircle2, FlaskConical, Lightbulb, Play } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Briefcase, Bug, CheckCircle2, FlaskConical, Lightbulb, ListChecks, Play } from 'lucide-react';
 import { useCAssessments, useCCourse, useCLabs } from '../../core/data/ccourse';
 import { addXp, recordAttempt, useStore } from '../../core/storage/store';
 import { checkpointKey, quizScore, testKey, wrongIndexes } from '../../core/learning/ccourse';
@@ -84,7 +84,11 @@ export default function CLessonPage() {
     <div>
       <div className="row spread" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <Link className="btn small" to="/c-programming?tab=curriculum"><ArrowLeft size={13} /> C Programming</Link>
-        <span className="chip small">Module {String(module.no).padStart(2, '0')} · {module.level} · {module.hours}h</span>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <span className="chip small">Module {String(module.no).padStart(2, '0')} · {module.level} · {module.hours}h</span>
+          <Link className="btn small" to="/c-programming?tab=practice"><ListChecks size={12} /> Practice</Link>
+          <Link className="btn small" to="/c-programming?tab=career"><Briefcase size={12} /> Career</Link>
+        </div>
       </div>
 
       {params.get('tab') === 'test' && set && (
