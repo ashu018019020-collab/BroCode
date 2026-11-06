@@ -1,0 +1,967 @@
+{
+  "questions": [
+    {
+      "id": "c01-i0",
+      "module": "c01",
+      "level": "beginner",
+      "topic": "Introduction to C Programming",
+      "q": "C ko middle-level language kyun kehte hain?",
+      "a": "High-level syntax aur low-level memory access (pointers, bitwise ops) dono deta hai, isliye OS aur embedded dono me use hota hai.",
+      "followUp": "Hardware ke sabse kareeb cheez? — pointers aur volatile."
+    },
+    {
+      "id": "c01-i1",
+      "module": "c01",
+      "level": "beginner",
+      "topic": "Introduction to C Programming",
+      "q": "Compiler aur interpreter ka fark?",
+      "a": "Compiler pehle poora machine code banata hai, interpreter line-by-line chalta hai. C me errors runtime se pehle milte hain aur execution fast hoti hai.",
+      "followUp": "C runtime error example? — divide by zero, null dereference."
+    },
+    {
+      "id": "c01-i2",
+      "module": "c01",
+      "level": "beginner",
+      "topic": "Introduction to C Programming",
+      "q": "main() ka return value kahan jaata hai?",
+      "a": "OS ko exit status ke roop me: 0 success, non-zero failure. Shell me echo $? se dikhta hai.",
+      "followUp": "EXIT_SUCCESS kahan hai? — stdlib.h."
+    },
+    {
+      "id": "c02-i0",
+      "module": "c02",
+      "level": "beginner",
+      "topic": "C Development Environment",
+      "q": "Preprocessor compiler se alag kaise hai?",
+      "a": "Preprocessor text-level kaam karta hai: includes paste, macros replace, conditional blocks. Uske baad compiler grammar parse karta hai.",
+      "followUp": "Kaunsa flag sirf preprocess karta hai? — -E."
+    },
+    {
+      "id": "c02-i1",
+      "module": "c02",
+      "level": "beginner",
+      "topic": "C Development Environment",
+      "q": "Object file aur executable me fark?",
+      "a": "Object me compiled code + unresolved symbols ho sakte hain; executable me linker ne sab resolve kar diya hota hai.",
+      "followUp": "Static library kya hai? — .o files ka archive (.a)."
+    },
+    {
+      "id": "c02-i2",
+      "module": "c02",
+      "level": "beginner",
+      "topic": "C Development Environment",
+      "q": "AddressSanitizer kya pakadta hai?",
+      "a": "Out-of-bounds, use-after-free, double free, leaks — detailed runtime report ke saath.",
+      "followUp": "UBSan? — signed overflow, invalid shift jaise UB."
+    },
+    {
+      "id": "c03-i0",
+      "module": "c03",
+      "level": "beginner",
+      "topic": "Variables and Data Types",
+      "q": "float aur double me kya chuno?",
+      "a": "float 4 bytes ~7 significant digits, double 8 bytes ~15. Default double lo; float sirf memory-critical arrays me jab precision kaafi ho.",
+      "followUp": "long double? — extended precision, platform-dependent."
+    },
+    {
+      "id": "c03-i1",
+      "module": "c03",
+      "level": "beginner",
+      "topic": "Variables and Data Types",
+      "q": "static local variable ka use?",
+      "a": "Lifetime poore program ki hoti hai par scope block tak seemit; function calls ke beech value retain hoti hai (e.g. call counter). Thread-safe nahi.",
+      "followUp": "static global ka matlab? — internal linkage, sirf usi translation unit me dikhta hai."
+    },
+    {
+      "id": "c03-i2",
+      "module": "c03",
+      "level": "beginner",
+      "topic": "Variables and Data Types",
+      "q": "Type casting kab zaroori hai?",
+      "a": "Jab aap jaan-bujh kar conversion chahte ho (double→int truncation, void*→typed pointer) ya warning suppress karni ho. Implicit conversion par bharosa mat karo.",
+      "followUp": "Casting pointer ka risk? — galat type par dereference UB."
+    },
+    {
+      "id": "c04-i0",
+      "module": "c04",
+      "level": "beginner",
+      "topic": "Input and Output",
+      "q": "scanf aur fgets me kya safe hai?",
+      "a": "fgets buffer size leta hai, isliye overflow nahi hota; scanf %s unbounded hai jab tak width na do (%31s). Line input ke liye fgets better hai.",
+      "followUp": "fgets newline? — include karta hai, trim karo."
+    },
+    {
+      "id": "c04-i1",
+      "module": "c04",
+      "level": "beginner",
+      "topic": "Input and Output",
+      "q": "Format specifier mismatch ka result?",
+      "a": "Undefined behaviour: galat bytes padhe jaate hain, garbage ya crash. Compiler -Wformat warning deta hai.",
+      "followUp": "printf(\"%d\", 3.5) kyun galat? — double varargs me double hi jaata hai, %d int expect karta hai."
+    },
+    {
+      "id": "c04-i2",
+      "module": "c04",
+      "level": "beginner",
+      "topic": "Input and Output",
+      "q": "stdout aur stderr ka fark?",
+      "a": "stdout buffered hai (line ya full), stderr unbuffered — errors turant dikhte hain aur redirection se alag file me ja sakte hain.",
+      "followUp": "perror kahan likhta hai? — stderr."
+    },
+    {
+      "id": "c05-i0",
+      "module": "c05",
+      "level": "beginner",
+      "topic": "Operators and Expressions",
+      "q": "Short-circuit evaluation ka practical use?",
+      "a": "Null check ke saath dereference: if (p != NULL && p->value > 0) — pehla false ho to dereference hi nahi hota. Isi tarah divide-by-zero guard.",
+      "followUp": "Bitwise & se kyun nahi? — wo dono sides evaluate karta hai."
+    },
+    {
+      "id": "c05-i1",
+      "module": "c05",
+      "level": "beginner",
+      "topic": "Operators and Expressions",
+      "q": "Signed overflow aur unsigned overflow me fark?",
+      "a": "Signed overflow undefined behaviour hai (compiler assume kar sakta hai kabhi nahi hoga); unsigned arithmetic modulo 2^N wrap karti hai, defined hai.",
+      "followUp": "Overflow detect kaise? — __builtin_add_overflow ya wider type."
+    },
+    {
+      "id": "c05-i2",
+      "module": "c05",
+      "level": "beginner",
+      "topic": "Operators and Expressions",
+      "q": "Precedence table yaad rakhna zaroori hai?",
+      "a": "Core order yaad rakho (unary → multiplicative → additive → shift → relational → equality → bitwise → logical → conditional → assignment) aur baaki brackets se clear karo — galat precedence silent bug deta hai.",
+      "followUp": "a & b == 0 ka matlab? — == pehle chalta hai, isliye a & (b==0)."
+    },
+    {
+      "id": "c06-i0",
+      "module": "c06",
+      "level": "beginner",
+      "topic": "Conditional Statements",
+      "q": "if-else aur switch me kab kya?",
+      "a": "Discrete integral values (menu, state) ke liye switch readable hai aur compiler jump table bana sakta hai. Ranges, floats aur complex conditions ke liye if-else.",
+      "followUp": "switch me string? — C me nahi; if/strcmp use karo."
+    },
+    {
+      "id": "c06-i1",
+      "module": "c06",
+      "level": "beginner",
+      "topic": "Conditional Statements",
+      "q": "Dangling else kya hai?",
+      "a": "Bina braces ke else nearest unmatched if se judta hai, jo expected se alag ho sakta hai. Braces se ambiguity khatam karo.",
+      "followUp": "Compiler warning? — -Wdangling-else."
+    },
+    {
+      "id": "c06-i2",
+      "module": "c06",
+      "level": "beginner",
+      "topic": "Conditional Statements",
+      "q": "Fall-through kab useful hai?",
+      "a": "Jab multiple case labels ek hi code chalaते hain (case 3: case 4: ...). Warna break bhoolna bug hai; /* fallthrough */ comment likho.",
+      "followUp": "Kaunsa warning help karta hai? — -Wimplicit-fallthrough."
+    },
+    {
+      "id": "c07-i0",
+      "module": "c07",
+      "level": "beginner",
+      "topic": "Loops",
+      "q": "for aur while me kab kya?",
+      "a": "Jab iterations ki count pata ho to for; jab condition data-driven ho (EOF tak, sentinel tak) to while. Dono equivalent hain — readability decide karti hai.",
+      "followUp": "do-while ka best use? — menu jise kam se kam ek baar dikhana hai."
+    },
+    {
+      "id": "c07-i1",
+      "module": "c07",
+      "level": "beginner",
+      "topic": "Loops",
+      "q": "Loop me array ka size har baar calculate karna kyun bura hai?",
+      "a": "strlen O(n) hai; loop condition me call karne se total O(n^2). Ek baar len nikal lo. Compiler kuch cases optimize karta hai par bharosa mat karo.",
+      "followUp": "size_t loop ke saath warning? — signed/unsigned comparison warning; size_t use karo."
+    },
+    {
+      "id": "c07-i2",
+      "module": "c07",
+      "level": "beginner",
+      "topic": "Loops",
+      "q": "Infinite loop ko intentionally kaise likhte hain?",
+      "a": "for (;;) ya while (1) with a break. Embedded/event loops aise likhe jaate hain; exit condition clear honi chahiye.",
+      "followUp": "Compiler warning? — -Wunreachable-code se baad ka code pakda ja sakta hai."
+    },
+    {
+      "id": "c08-i0",
+      "module": "c08",
+      "level": "beginner",
+      "topic": "Pattern Programming",
+      "q": "Pattern program ka logic kaise todte ho?",
+      "a": "Row count nikalo, har row ke liye spaces aur characters ka formula likho, phir nested loops me wahi formula daalo. Dry run se verify karo.",
+      "followUp": "Hollow pattern ka trick? — border condition."
+    },
+    {
+      "id": "c08-i1",
+      "module": "c08",
+      "level": "beginner",
+      "topic": "Pattern Programming",
+      "q": "Patterns ka real use kya hai (sirf interview)?",
+      "a": "Nested loop aur coordinate thinking sikhate hain jo matrices, image processing aur canvas rendering me same tarah use hoti hai.",
+      "followUp": "Matrix printing? — same i/j loops."
+    },
+    {
+      "id": "c09-i0",
+      "module": "c09",
+      "level": "beginner",
+      "topic": "Functions",
+      "q": "Function overloading C me kyun nahi hai?",
+      "a": "C me name mangling nahi hoti; linker ke liye function ka naam hi identity hai. Same naam ke do functions duplicate symbol dete hain. C++ me mangling se overloading possible hai.",
+      "followUp": "C me alternative? — alag naam ya _Generic macro."
+    },
+    {
+      "id": "c09-i1",
+      "module": "c09",
+      "level": "beginner",
+      "topic": "Functions",
+      "q": "Array function me pass karne par size kyun nahi aata?",
+      "a": "Array parameter pointer me decay hota hai, isliye sizeof pointer ka size deta hai. Size alag parameter me bhejo.",
+      "followUp": "2D array? — columns ki width parameter me chahiye."
+    },
+    {
+      "id": "c09-i2",
+      "module": "c09",
+      "level": "beginner",
+      "topic": "Functions",
+      "q": "Function pointer ka use?",
+      "a": "Runtime par behaviour choose karna (callbacks, qsort comparator, menu dispatch). Syntax: int (*fp)(int,int) = add; fp(2,3).",
+      "followUp": "qsort comparator signature? — int (*)(const void*, const void*)."
+    },
+    {
+      "id": "c10-i0",
+      "module": "c10",
+      "level": "intermediate",
+      "topic": "Recursion",
+      "q": "Tail recursion kya hai?",
+      "a": "Recursive call function ka last operation ho aur result par koi kaam na bache. Kuch compilers ise loop me badal dete hain, par C standard guarantee nahi deta.",
+      "followUp": "C me guaranteed? — nahi, manually loop likho."
+    },
+    {
+      "id": "c10-i1",
+      "module": "c10",
+      "level": "intermediate",
+      "topic": "Recursion",
+      "q": "Fibonacci me memoization kyun?",
+      "a": "Naive recursion same subproblems dobara solve karta hai — O(2^n). Memo array se O(n) time, O(n) space.",
+      "followUp": "Bottom-up? — iterative DP O(1) space."
+    },
+    {
+      "id": "c11-i0",
+      "module": "c11",
+      "level": "beginner",
+      "topic": "Arrays",
+      "q": "Array aur pointer same hain?",
+      "a": "Nahi. Array ek object hai jiska size hota hai; expression me wo pehle element ke pointer me decay hota hai. sizeof array total bytes deta hai, sizeof pointer 8.",
+      "followUp": "Array assign? — nahi, copy ke liye memcpy/loop."
+    },
+    {
+      "id": "c11-i1",
+      "module": "c11",
+      "level": "beginner",
+      "topic": "Arrays",
+      "q": "VLA kya hai?",
+      "a": "Variable Length Array (C99): runtime size wala local array, e.g. int a[n]. C11 me optional hai; stack par banta hai — bada n stack overflow de sakta hai.",
+      "followUp": "Portable alternative? — malloc/free."
+    },
+    {
+      "id": "c12-i0",
+      "module": "c12",
+      "level": "beginner",
+      "topic": "Strings",
+      "q": "strtok ke nuksaan?",
+      "a": "Original string modify karta hai, static state rakhta hai (thread-safe nahi), aur consecutive delimiters handle karta hai. Reentrant version strtok_r hai.",
+      "followUp": "strtok_r signature? — strtok_r(s, delim, &saveptr)."
+    },
+    {
+      "id": "c12-i1",
+      "module": "c12",
+      "level": "beginner",
+      "topic": "Strings",
+      "q": "strncpy safe kyun nahi?",
+      "a": "Agar source length n se badi ho to null terminator copy nahi hota; agar chhoti ho to baaki buffer null se bhar deta hai (performance). Manually terminate karo ya snprintf lo.",
+      "followUp": "Best? — snprintf with size."
+    },
+    {
+      "id": "c13-i0",
+      "module": "c13",
+      "level": "intermediate",
+      "topic": "Pointers",
+      "q": "Dangling pointer kya hai?",
+      "a": "Wo pointer jo already free ho chuki ya scope se bahar gayi memory ko point karta hai. Dereference UB hai. Free ke baad NULL set karo.",
+      "followUp": "Detect? — ASan use-after-free report deta hai."
+    },
+    {
+      "id": "c13-i1",
+      "module": "c13",
+      "level": "intermediate",
+      "topic": "Pointers",
+      "q": "const int *p aur int *const p?",
+      "a": "const int *p: value read-only, pointer badal sakte ho. int *const p: pointer fix, value badal sakte ho. const int *const p: dono.",
+      "followUp": "Declaration kaise padhein? — right to left."
+    },
+    {
+      "id": "c14-i0",
+      "module": "c14",
+      "level": "advanced",
+      "topic": "Pointers, Arrays and Functions",
+      "q": "Array-pointer equivalence ka limit?",
+      "a": "a[i] == *(a+i) expression me, par array object nahi hai pointer: sizeof aur assignment alag behave karte hain.",
+      "followUp": "Pass by array? — C me sirf pointer pass hota hai."
+    },
+    {
+      "id": "c14-i1",
+      "module": "c14",
+      "level": "advanced",
+      "topic": "Pointers, Arrays and Functions",
+      "q": "qsort comparator kaise likhein?",
+      "a": "int cmp(const void *a, const void *b) { int x=*(const int*)a, y=*(const int*)b; return (x>y)-(x<y); }",
+      "followUp": "Descending? — return ulta karo."
+    },
+    {
+      "id": "c15-i0",
+      "module": "c15",
+      "level": "intermediate",
+      "topic": "Structures, Unions and Enums",
+      "q": "Struct padding kyun hoti hai?",
+      "a": "CPU aligned access fast karta hai; compiler members ko unke alignment par rakhta hai, beech me gaps chhodta hai. sizeof isliye sum se bada hota hai.",
+      "followUp": "Padding kam kaise? — members ko size ke descending order me rakho."
+    },
+    {
+      "id": "c15-i1",
+      "module": "c15",
+      "level": "intermediate",
+      "topic": "Structures, Unions and Enums",
+      "q": "Struct by value pass karna kab bura?",
+      "a": "Bade struct ki copy expensive hoti hai aur function original modify nahi kar sakta. const pointer bhejo.",
+      "followUp": "Return by value? — compiler often optimize karta hai (RVO)."
+    },
+    {
+      "id": "c16-i0",
+      "module": "c16",
+      "level": "advanced",
+      "topic": "Dynamic Memory Allocation",
+      "q": "Memory leak production me kaise pakdein?",
+      "a": "ASan/Valgrind se development me, heap profiler se production me, aur ownership review se. Har malloc ka ek clear free path hona chahiye.",
+      "followUp": "Valgrind command? — valgrind --leak-check=full ./app"
+    },
+    {
+      "id": "c16-i1",
+      "module": "c16",
+      "level": "advanced",
+      "topic": "Dynamic Memory Allocation",
+      "q": "realloc fail hone par kya hota hai?",
+      "a": "NULL return karta hai aur original block valid rehta hai. Isliye result tmp me lo, warna original pointer kho kar leak ho jaata hai.",
+      "followUp": "Size 0? — implementation-defined; free jaisa treat karo."
+    },
+    {
+      "id": "c17-i0",
+      "module": "c17",
+      "level": "intermediate",
+      "topic": "File Handling",
+      "q": "Text aur binary mode ka fark?",
+      "a": "Text mode newline translation kar sakta hai (Windows CRLF) aur Ctrl-Z ko EOF samajh sakta hai; binary mode raw bytes deta hai. Binary records ke liye \"b\" use karo.",
+      "followUp": "Portable records? — fixed-width types, endianness document karo."
+    },
+    {
+      "id": "c17-i1",
+      "module": "c17",
+      "level": "intermediate",
+      "topic": "File Handling",
+      "q": "fclose kyun zaroori hai?",
+      "a": "Buffered data flush hota hai, file descriptor free hota hai, aur write errors report hote hain. Leak se descriptors khatam ho jaate hain.",
+      "followUp": "Crash par buffer? — data lose ho sakta hai; fflush ya atomic rename."
+    },
+    {
+      "id": "c18-i0",
+      "module": "c18",
+      "level": "advanced",
+      "topic": "Preprocessor and Professional C",
+      "q": "Macro aur inline function?",
+      "a": "Macro text replace karta hai (type-agnostic, no scope, double evaluation risk); inline function type-checked hai aur debugger me dikhta hai. Default inline lo, macro sirf token pasting/#if ke liye.",
+      "followUp": "# stringize? — #x, ## concatenation."
+    },
+    {
+      "id": "c18-i1",
+      "module": "c18",
+      "level": "advanced",
+      "topic": "Preprocessor and Professional C",
+      "q": "-O2 aur -g saath kyun?",
+      "a": "Optimized binary debug symbols ke saath build hota hai; par optimized variables 'optimized out' ho sakte hain, isliye debugging ke liye -O0/-Og better.",
+      "followUp": "Release strip? — strip binary se symbols hataata hai."
+    },
+    {
+      "id": "c19-i0",
+      "module": "c19",
+      "level": "advanced",
+      "topic": "Algorithms and Problem Solving",
+      "q": "Quick sort worst case kab?",
+      "a": "Pivot hamesha smallest/largest ho (already sorted array with first/last pivot) to partitions unbalanced ho jaate hain — O(n^2). Random pivot ya median-of-three se avoid.",
+      "followUp": "Space? — average O(log n) recursion stack."
+    },
+    {
+      "id": "c19-i1",
+      "module": "c19",
+      "level": "advanced",
+      "topic": "Algorithms and Problem Solving",
+      "q": "Hash map se two-sum O(n) kaise?",
+      "a": "Ek pass me har element ke liye target - x dekho map me; mila to pair, warna x ko index ke saath store karo. Average O(n), O(n) space.",
+      "followUp": "Sorted array? — two pointers O(1) space."
+    },
+    {
+      "id": "c20-i0",
+      "module": "c20",
+      "level": "advanced",
+      "topic": "Data Structures with C",
+      "q": "Linked list kab array se better?",
+      "a": "Jab frequent insert/delete head/middle par ho aur random access ki zaroorat na ho; size dynamic ho. Array cache-friendly aur O(1) indexing deta hai.",
+      "followUp": "Real use? — LRU cache, adjacency list, undo."
+    },
+    {
+      "id": "c20-i1",
+      "module": "c20",
+      "level": "advanced",
+      "topic": "Data Structures with C",
+      "q": "Hash collision handle kaise?",
+      "a": "Chaining (same bucket me linked list) ya open addressing (linear/quadratic probing, double hashing). Load factor threshold par resize.",
+      "followUp": "Worst case? — O(n); balanced tree buckets se O(log n)."
+    },
+    {
+      "id": "bank-q001",
+      "module": null,
+      "level": "beginner",
+      "topic": "C basics",
+      "q": "Why is C called a compiled language?",
+      "a": "The whole source is translated to machine code before it runs, so errors surface at compile time and execution is fast.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q002",
+      "module": null,
+      "level": "beginner",
+      "topic": "C basics",
+      "q": "What does #include <stdio.h> do?",
+      "a": "It pastes the declarations of standard I/O functions (printf, scanf, FILE) so the compiler knows their signatures.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q003",
+      "module": null,
+      "level": "beginner",
+      "topic": "C basics",
+      "q": "Difference between declaration and definition?",
+      "a": "Declaration announces a type/signature; definition allocates storage or provides the body. A variable can be declared many times, defined once.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q004",
+      "module": null,
+      "level": "beginner",
+      "topic": "C basics",
+      "q": "What is the entry point of a C program?",
+      "a": "main(). Execution starts there; its return value becomes the process exit status.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q005",
+      "module": null,
+      "level": "beginner",
+      "topic": "Data types",
+      "q": "Why does sizeof(int) differ across platforms?",
+      "a": "The C standard only guarantees minimum ranges, not exact widths. Use sizeof and <stdint.h> for portability.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q006",
+      "module": null,
+      "level": "beginner",
+      "topic": "Data types",
+      "q": "What is integer overflow?",
+      "a": "A result outside the type's range. Signed overflow is undefined behaviour; unsigned wraps modulo 2^N and is defined.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q007",
+      "module": null,
+      "level": "beginner",
+      "topic": "Data types",
+      "q": "Why is 0.1 + 0.2 != 0.3?",
+      "a": "Binary floating point cannot represent 0.1/0.2 exactly, so the sum is slightly off. Compare with an epsilon.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q008",
+      "module": null,
+      "level": "beginner",
+      "topic": "I/O",
+      "q": "Why does scanf need & before an int?",
+      "a": "scanf must write into the variable, so it needs the address. Arrays already decay to an address, so no & for %s.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q009",
+      "module": null,
+      "level": "beginner",
+      "topic": "I/O",
+      "q": "Why is fgets safer than scanf(\"%s\")?",
+      "a": "fgets takes a buffer size and cannot overflow; bare %s has no bound and can write past the array.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q010",
+      "module": null,
+      "level": "beginner",
+      "topic": "Operators",
+      "q": "What is short-circuit evaluation?",
+      "a": "&& and || stop evaluating once the result is known, which lets you guard a dereference or a division.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q011",
+      "module": null,
+      "level": "beginner",
+      "topic": "Operators",
+      "q": "Difference between ++i and i++?",
+      "a": "Prefix increments then yields the new value; postfix yields the old value then increments.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q012",
+      "module": null,
+      "level": "beginner",
+      "topic": "Control flow",
+      "q": "Why prefer braces around if bodies?",
+      "a": "Without braces a second statement silently falls outside the condition, and the dangling else binds to the nearest if.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q013",
+      "module": null,
+      "level": "beginner",
+      "topic": "Control flow",
+      "q": "When is switch better than if-else?",
+      "a": "For discrete integral values (menu, state). Ranges and complex conditions need if-else.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q014",
+      "module": null,
+      "level": "beginner",
+      "topic": "Loops",
+      "q": "Difference between while and do-while?",
+      "a": "while tests before the body (may run zero times); do-while tests after (runs at least once).",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q015",
+      "module": null,
+      "level": "beginner",
+      "topic": "Loops",
+      "q": "How do you avoid an infinite loop?",
+      "a": "Guarantee progress inside the body (update the loop variable) and make the exit condition reachable.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q016",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Functions",
+      "q": "Why pass a struct by pointer?",
+      "a": "To avoid copying and to let the callee modify the original. Use const pointer when only reading.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q017",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Functions",
+      "q": "What is a function prototype for?",
+      "a": "It tells the compiler the signature before the call, enabling type checking and preventing implicit declarations.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q018",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Functions",
+      "q": "Can C return multiple values?",
+      "a": "Not directly. Return a struct or use pointer out-parameters.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q019",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Recursion",
+      "q": "When does recursion overflow the stack?",
+      "a": "When depth grows without a reachable base case, or the depth exceeds the thread's stack (large n).",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q020",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Recursion",
+      "q": "Why is naive Fibonacci slow?",
+      "a": "It recomputes the same subproblems, giving O(2^n). Memoization or iteration reduces it to O(n).",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q021",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Arrays",
+      "q": "Why doesn't sizeof give the array size inside a function?",
+      "a": "The array parameter decays to a pointer, so sizeof returns the pointer's size. Pass the length separately.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q022",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Arrays",
+      "q": "How is a 2D array laid out?",
+      "a": "Row-major: all columns of row 0, then row 1. Address = base + (i*cols + j)*element_size.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q023",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Strings",
+      "q": "Why must a string have a null terminator?",
+      "a": "Library functions (strlen, %s) stop at '\u0000'; without it they read past the buffer.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q024",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Strings",
+      "q": "Why is strncpy easy to misuse?",
+      "a": "It does not null-terminate when the source is too long, and pads with zeros when shorter. Set the terminator yourself or use snprintf.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q025",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Strings",
+      "q": "What does strcmp return?",
+      "a": "0 if equal, negative if the first is lexicographically smaller, positive if greater.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q026",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Pointers",
+      "q": "What is a dangling pointer?",
+      "a": "A pointer to memory that was freed or went out of scope. Dereferencing it is undefined behaviour.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q027",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Pointers",
+      "q": "What does pointer arithmetic p+1 mean?",
+      "a": "It advances by one element (sizeof *p bytes), not one byte.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q028",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Pointers",
+      "q": "Difference between const int *p and int *const p?",
+      "a": "The first makes the pointee read-only; the second makes the pointer itself read-only.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q029",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Pointers",
+      "q": "What is a void pointer used for?",
+      "a": "A generic address holder (malloc, callbacks). It cannot be dereferenced or used in arithmetic without a cast.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q030",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Structures",
+      "q": "Why does sizeof(struct) exceed the sum of members?",
+      "a": "Padding and alignment: the compiler inserts gaps so each member sits at a proper boundary.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q031",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Structures",
+      "q": "Union vs struct?",
+      "a": "A struct stores every member separately; a union shares one storage area, so only one member is valid at a time.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q032",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Files",
+      "q": "Why check the return value of fopen?",
+      "a": "It returns NULL on failure (missing file, permissions), and using NULL crashes.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q033",
+      "module": null,
+      "level": "intermediate",
+      "topic": "Files",
+      "q": "Difference between \"w\" and \"a\"?",
+      "a": "\"w\" truncates or creates; \"a\" appends without destroying existing content.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q034",
+      "module": null,
+      "level": "advanced",
+      "topic": "Memory",
+      "q": "Difference between malloc and calloc?",
+      "a": "malloc returns uninitialized bytes; calloc zeroes them and takes count and size.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q035",
+      "module": null,
+      "level": "advanced",
+      "topic": "Memory",
+      "q": "What happens if realloc fails?",
+      "a": "It returns NULL and the original block stays valid — assign to a temporary or you leak it.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q036",
+      "module": null,
+      "level": "advanced",
+      "topic": "Memory",
+      "q": "What is a double free?",
+      "a": "Calling free twice on the same pointer. It corrupts the allocator and is undefined behaviour.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q037",
+      "module": null,
+      "level": "advanced",
+      "topic": "Memory",
+      "q": "How do you detect memory leaks?",
+      "a": "AddressSanitizer or Valgrind in development, heap profilers in production, plus explicit ownership rules.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q038",
+      "module": null,
+      "level": "advanced",
+      "topic": "Memory",
+      "q": "Where do local variables live?",
+      "a": "On the stack, with automatic lifetime tied to the block. Large or runtime-sized data belongs on the heap.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q039",
+      "module": null,
+      "level": "advanced",
+      "topic": "Pointers",
+      "q": "What is a function pointer good for?",
+      "a": "Runtime dispatch and callbacks — qsort comparators, menu tables, event handlers.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q040",
+      "module": null,
+      "level": "advanced",
+      "topic": "Pointers",
+      "q": "Why can two pointers not be meaningfully compared across arrays?",
+      "a": "Only pointers into the same array object (plus one past the end) have defined ordering; anything else is unspecified.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q041",
+      "module": null,
+      "level": "advanced",
+      "topic": "Preprocessor",
+      "q": "Why are macros dangerous?",
+      "a": "Text substitution ignores scope and types, can double-evaluate arguments, and produces confusing errors. Prefer inline functions.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q042",
+      "module": null,
+      "level": "advanced",
+      "topic": "Preprocessor",
+      "q": "What is a header guard?",
+      "a": "#ifndef/#define/#endif around a header so multiple includes do not redefine its contents.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q043",
+      "module": null,
+      "level": "advanced",
+      "topic": "Preprocessor",
+      "q": "How do you build a multi-file project?",
+      "a": "Compile each .c to .o, then link: gcc main.c util.c -o app. Keep declarations in headers.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q044",
+      "module": null,
+      "level": "advanced",
+      "topic": "Algorithms",
+      "q": "Why is binary search O(log n)?",
+      "a": "Each comparison halves the remaining range, so the number of steps is logarithmic.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q045",
+      "module": null,
+      "level": "advanced",
+      "topic": "Algorithms",
+      "q": "Which sorts are stable?",
+      "a": "Merge sort, insertion sort, bubble sort (with strict comparison). Quick sort and selection sort are not stable by default.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q046",
+      "module": null,
+      "level": "advanced",
+      "topic": "Algorithms",
+      "q": "When does quick sort degrade to O(n^2)?",
+      "a": "When partitions are extremely unbalanced, e.g. always picking the first element of a sorted array as pivot.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q047",
+      "module": null,
+      "level": "advanced",
+      "topic": "Algorithms",
+      "q": "What is two-pointer technique?",
+      "a": "Walking two indices from ends or in the same direction to solve pair/window problems in O(n) on sorted or monotonic data.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q048",
+      "module": null,
+      "level": "advanced",
+      "topic": "Data structures",
+      "q": "Array vs linked list?",
+      "a": "Array gives O(1) indexing but O(n) insert/delete; a linked list gives O(1) insert/delete at a known node but O(n) access.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q049",
+      "module": null,
+      "level": "advanced",
+      "topic": "Data structures",
+      "q": "How do you detect a cycle in a linked list?",
+      "a": "Floyd's tortoise and hare: slow moves one node, fast two; they meet if a cycle exists.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q050",
+      "module": null,
+      "level": "advanced",
+      "topic": "Data structures",
+      "q": "Stack vs queue?",
+      "a": "Stack is LIFO (push/pop at top); queue is FIFO (enqueue at rear, dequeue at front).",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q051",
+      "module": null,
+      "level": "advanced",
+      "topic": "Data structures",
+      "q": "Why is a hash table average O(1)?",
+      "a": "The hash function maps a key directly to a bucket; with a low load factor collisions are rare.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q052",
+      "module": null,
+      "level": "advanced",
+      "topic": "Data structures",
+      "q": "What is the worst case for a BST?",
+      "a": "A skewed tree behaves like a linked list, so search becomes O(n). Balanced trees guarantee O(log n).",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q053",
+      "module": null,
+      "level": "advanced",
+      "topic": "Debugging",
+      "q": "What does a segmentation fault mean?",
+      "a": "The process accessed memory it does not own — NULL dereference, freed memory, or out-of-bounds access.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q054",
+      "module": null,
+      "level": "advanced",
+      "topic": "Debugging",
+      "q": "How does AddressSanitizer help?",
+      "a": "It instruments memory accesses and reports the exact line for overflow, use-after-free, double free and leaks.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q055",
+      "module": null,
+      "level": "advanced",
+      "topic": "Debugging",
+      "q": "What is undefined behaviour?",
+      "a": "Code the standard places no requirements on — signed overflow, out-of-bounds, uninitialized reads. The compiler may do anything.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q056",
+      "module": null,
+      "level": "advanced",
+      "topic": "Build",
+      "q": "What does -Wall -Wextra do?",
+      "a": "Enables a large set of useful compiler warnings; -Werror turns them into errors so they cannot be ignored.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q057",
+      "module": null,
+      "level": "advanced",
+      "topic": "Build",
+      "q": "What is the difference between -c and linking?",
+      "a": "-c compiles and assembles to an object file; linking resolves symbols and combines objects and libraries into an executable.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q058",
+      "module": null,
+      "level": "advanced",
+      "topic": "C semantics",
+      "q": "Why is `a[i]` the same as `*(a+i)`?",
+      "a": "Array subscripting is defined as pointer arithmetic on the decayed pointer; both forms are equivalent expressions.",
+      "followUp": ""
+    },
+    {
+      "id": "bank-q059",
+      "module": null,
+      "level": "advanced",
+      "topic": "C semantics",
+      "q": "Is `char *s = \"hi\"; s[0]='H';` legal?",
+      "a": "No. A string literal is read-only; modifying it is undefined behaviour. Use `char s[] = \"hi\";`.",
+      "followUp": ""
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "id": "c18",
+  "no": 18,
+  "title": "Preprocessor and Professional C",
+  "level": "advanced",
+  "hours": 5,
+  "goal": "Macros, header guards, multi-file build, Makefile, argc/argv, GDB aur sanitizers.",
+  "prereqs": [
+    "Module 2 aur 9: build aur functions"
+  ],
+  "definition": "Preprocessor compile se pehle text transformations karta hai: includes, macros, conditional compilation. Professional C me headers, build automation aur diagnostics ka discipline isi par khada hai.",
+  "explain": [
+    "#define PI 3.14159 object-like macro; #define SQ(x) ((x)*(x)) function-like macro — arguments ko brackets me rakho warna precedence bug. Macro me side effects (SQ(i++)) se bacho.",
+    "Header guards (#ifndef X_H / #define / #endif) ya #pragma once double inclusion se bachate hain. Declarations header me, definitions .c me.",
+    "Conditional compilation: #ifdef DEBUG, #if, #elif, #else, #endif. Build flags se logging on/off karo.",
+    "Command line arguments: int main(int argc, char *argv[]) — argv[0] program name, argc count. atoi/strtol se numbers, validation karo.",
+    "GDB: break, run, next, step, print, bt. Sanitizers: -fsanitize=address,undefined. Makefile: targets, dependencies, tabs."
+  ],
+  "analogy": "Preprocessor ek copy editor hai jo compile se pehle text badalta hai; compiler asli grammar baad me dekhta hai. Isliye macro errors weird dikhte hain.",
+  "why": "Professional projects multi-file hote hain; headers, build flags aur debugger ke bina 10k-line code maintain nahi hota. Interviews me macro pitfalls aur build process poochha jaata hai.",
+  "syntax": [
+    {
+      "code": "#ifndef UTIL_H\n#define UTIL_H\nint add(int a, int b);\n#endif",
+      "note": "Header guard double inclusion rokta hai."
+    },
+    {
+      "code": "#define MAX(a,b) ((a) > (b) ? (a) : (b))\n#define ARRAY_LEN(a) (sizeof (a) / sizeof (a)[0])\n#ifdef DEBUG\n#  define LOG(...) fprintf(stderr, __VA_ARGS__)\n#else\n#  define LOG(...) ((void)0)\n#endif",
+      "note": "Brackets aur __VA_ARGS__ macro ke core tricks."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Macros aur pitfalls",
+      "body": "Object-like vs function-like. Brackets, multiple evaluation, semicolon. Inline functions often better. #undef se macro hatao."
+    },
+    {
+      "title": "Headers aur multi-file",
+      "body": "Declarations .h me, definitions .c me. Include guards. extern globals. static file-private functions. Compile: gcc *.c -Iinclude -o app."
+    },
+    {
+      "title": "Conditional compilation",
+      "body": "#ifdef DEBUG, #if VERSION >= 2, #elif, #else, #endif. Platform-specific code. __FILE__, __LINE__, __func__ diagnostic macros."
+    },
+    {
+      "title": "Build, argv, tools",
+      "body": "Makefile target/deps/recipe. argc/argv parsing + validation. GDB breakpoints, backtrace. ASan/UBSan flags. -O2, -g, -Wall -Wextra -Werror."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Macros aur header guard",
+      "code": "#include <stdio.h>\n#define MAX(a,b) ((a) > (b) ? (a) : (b))\n#define ARRAY_LEN(a) (sizeof (a) / sizeof (a)[0])\nint main(void) {\n    int v[] = {3, 9, 4};\n    printf(\"%d %zu\\n\", MAX(v[0], v[2]), ARRAY_LEN(v));\n    return 0;\n}",
+      "output": "4 3\n",
+      "lines": [
+        "MAX macro brackets ke saath safe hai.",
+        "ARRAY_LEN sizeof trick ko macro banata hai.",
+        "%zu size_t ke liye."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "argc/argv aur validation",
+      "code": "#include <stdio.h>\n#include <stdlib.h>\nint main(int argc, char *argv[]) {\n    if (argc != 3) { printf(\"usage: %s A B\\n\", argv[0]); return 1; }\n    char *end;\n    long a = strtol(argv[1], &end, 10);\n    if (*end) { printf(\"bad number\\n\"); return 1; }\n    long b = strtol(argv[2], &end, 10);\n    if (*end) { printf(\"bad number\\n\"); return 1; }\n    printf(\"%ld\\n\", a + b);\n    return 0;\n}",
+      "output": "30\n",
+      "lines": [
+        "argc me program name bhi ginta hai.",
+        "strtol partial parse detect karta hai (end pointer).",
+        "Argument count validate kiya."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "Build pipeline (multi-file)",
+    "rows": [
+      "gcc -c util.c -o util.o",
+      "gcc -c main.c -o main.o",
+      "gcc main.o util.o -o app",
+      "# Makefile",
+      "app: main.o util.o",
+      "\tgcc main.o util.o -o app"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "#define SQ(x) x*x",
+      "right": "#define SQ(x) ((x)*(x))",
+      "why": "SQ(a+1) → a+1*a+1 galat precedence."
+    },
+    {
+      "wrong": "Header me function definition",
+      "right": "Declaration header me, definition .c me",
+      "why": "Multiple definition linker error."
+    },
+    {
+      "wrong": "argv[1] bina argc check",
+      "right": "argc pehle check karo",
+      "why": "Missing argument par NULL dereference."
+    }
+  ],
+  "debug": {
+    "brief": "Macro galat result de raha hai. Fix karo.",
+    "code": "#include <stdio.h>\n#define DOUBLE(x) x * 2\nint main(void){printf(\"%d\\n\", DOUBLE(3 + 1));return 0;}",
+    "expected": "8\n",
+    "hints": [
+      "Precedence dekho.",
+      "Poora argument brackets me lo."
+    ],
+    "fix": "#define DOUBLE(x) ((x) * 2)"
+  },
+  "best": [
+    "Macro arguments brackets me",
+    "Header guards lagao",
+    "Definitions .c me rakho",
+    "argv validate karo",
+    "-g + sanitizers se debug karo"
+  ],
+  "practice": [
+    {
+      "title": "Header banao",
+      "prompt": "mathx.h aur mathx.c banao, main se use karo.",
+      "level": "medium",
+      "hint": "Guard + prototype."
+    },
+    {
+      "title": "DEBUG macro",
+      "prompt": "DEBUG defined ho to log print karo.",
+      "level": "medium",
+      "hint": "#ifdef DEBUG."
+    },
+    {
+      "title": "Makefile",
+      "prompt": "Do file project ka Makefile likho.",
+      "level": "medium",
+      "hint": "Target, deps, tab recipe."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "Header guard kis liye?",
+      "options": [
+        "Speed",
+        "Double inclusion rokna",
+        "Memory",
+        "Debug"
+      ],
+      "answer": 1,
+      "explain": "Same header do baar include hone par duplicate definitions se bachata hai."
+    },
+    {
+      "q": "argv[0] kya hai?",
+      "options": [
+        "First arg",
+        "Program name",
+        "NULL",
+        "argc"
+      ],
+      "answer": 1,
+      "explain": "Program ka naam/path."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Macro aur inline function?",
+      "a": "Macro text replace karta hai (type-agnostic, no scope, double evaluation risk); inline function type-checked hai aur debugger me dikhta hai. Default inline lo, macro sirf token pasting/#if ke liye.",
+      "followUp": "# stringize? — #x, ## concatenation."
+    },
+    {
+      "q": "-O2 aur -g saath kyun?",
+      "a": "Optimized binary debug symbols ke saath build hota hai; par optimized variables 'optimized out' ho sakte hain, isliye debugging ke liye -O0/-Og better.",
+      "followUp": "Release strip? — strip binary se symbols hataata hai."
+    }
+  ],
+  "lab": {
+    "title": "Lab 18 — Multi-file app",
+    "brief": "greet.h + greet.c + main.c banao aur header guard ke saath link karo.",
+    "starter": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, C!\"; }\n\nint main(void) {\n    /* Print the greeting returned by greet(). */\n    return 0;\n}\n",
+    "expected": "Hello, C!\n",
+    "tests": [
+      {
+        "name": "greeting",
+        "stdin": "",
+        "stdout": "Hello, C!"
+      }
+    ],
+    "hints": [
+      "Declaration header me.",
+      "gcc main.c greet.c -o app."
+    ],
+    "solution": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, C!\"; }\n\nint main(void) {\n    printf(\"%s\\n\", greet());\n    return 0;\n}\n"
+  },
+  "checkpoint": {
+    "title": "Module 18 checkpoint",
+    "checks": [
+      "Macros safely likhe",
+      "Header guard lagaya",
+      "argc/argv parse kiya",
+      "Makefile ka structure pata hai",
+      "Sanitizers se debug kiya"
+    ]
+  }
+}

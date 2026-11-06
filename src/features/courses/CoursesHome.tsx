@@ -47,6 +47,20 @@ export default function CoursesHome() {
         </div>
       </div>
 
+      <div className="card glow fadeup" style={{ marginTop: 12 }}>
+        <div className="row spread" style={{ gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <div className="chip small" style={{ marginBottom: 6 }}>Programming Languages · ISO C17</div>
+            <h2 style={{ margin: 0 }}>C Programming</h2>
+            <p className="muted small" style={{ margin: '6px 0 0', maxWidth: 620 }}>
+              20 modules from your first printf to pointers, the heap and data structures — real GCC notebook,
+              40 labs, 15 projects and a 100+ question interview bank.
+            </p>
+          </div>
+          <Link className="btn small primary" to="/c-programming">Open C course</Link>
+        </div>
+      </div>
+
       {!index && (
         <div className="course-grid" aria-busy="true">
           {Array.from({ length: 6 }, (_, i) => <div key={i} className="skeleton" style={{ height: 168 }} />)}

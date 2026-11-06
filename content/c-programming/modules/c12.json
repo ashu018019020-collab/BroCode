@@ -1,0 +1,194 @@
+{
+  "id": "c12",
+  "no": 12,
+  "title": "Strings",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Character arrays, null terminator aur string library ko safely use karna.",
+  "prereqs": [
+    "Module 11: arrays"
+  ],
+  "definition": "C me built-in string type nahi hai. String char array hai jo null character '\\0' par khatam hoti hai.",
+  "explain": [
+    "'\\0' ke bina array sirf characters ka array hai, string nahi. strlen, printf %s sab null terminator par rukte hain — missing terminator out-of-bounds read karta hai.",
+    "String literal read-only memory me hota hai; char *s = \"hi\"; s[0]='H' UB hai. Modifiable chahiye to char s[] = \"hi\";.",
+    "Safe functions: strncpy, strncat, snprintf. strcpy/strcat destination capacity nahi jaante — overflow ka khatra.",
+    "strcmp 0 par equal deta hai (if (!strcmp(a,b))), lexicographic comparison. strtok original string ko modify karta hai (delimiters ko '\\0' banata hai)."
+  ],
+  "analogy": "String motar gaadiyon ki train hai jisme last coach par red flag (\\0) laga hai — functions wahin rukte hain. Flag hataya to train kabhi nahi rukti.",
+  "why": "Har text processing, input validation, parsing aur interview question strings par hai. Buffer overflow security bugs ka bada hissa yahin se aata hai.",
+  "syntax": [
+    {
+      "code": "char s[] = \"hello\";      /* 6 bytes: h e l l o \\0 */\nchar buf[16];\nstrncpy(buf, s, sizeof buf - 1);\nbuf[sizeof buf - 1] = '\\0';\nprintf(\"%zu %s\\n\", strlen(s), buf);",
+      "note": "strncpy null terminate nahi karta agar size kam ho — manually set karo."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Null terminator",
+      "body": "\"hello\" 6 bytes leta hai. sizeof s = 6, strlen(s) = 5. Array size hamesha length+1 rakho."
+    },
+    {
+      "title": "Library functions",
+      "body": "strlen, strcpy/strncpy, strcat/strncat, strcmp/strncmp, strchr, strstr, strtok, memset, memcpy. Har function ki capacity requirement aur return value pata honi chahiye."
+    },
+    {
+      "title": "Input aur safety",
+      "body": "fgets se input lo, newline trim karo. %s me width do. snprintf se formatted build karo. Concatenate se pehle available space check karo."
+    },
+    {
+      "title": "ctype.h",
+      "body": "isalpha, isdigit, isspace, isupper, tolower, toupper — unsigned char ya EOF par call karo. Manual ASCII comparisons bhi chalte hain par portable nahi."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Length, copy, compare",
+      "code": "#include <stdio.h>\n#include <string.h>\nint main(void) {\n    char a[] = \"BroCode\";\n    char b[16];\n    snprintf(b, sizeof b, \"%s\", a);\n    printf(\"len=%zu eq=%d\\n\", strlen(a), strcmp(a, b) == 0);\n    return 0;\n}",
+      "output": "len=7 eq=1\n",
+      "lines": [
+        "strlen null terminator se pehle ke characters ginta hai.",
+        "snprintf size leta hai — overflow nahi.",
+        "strcmp 0 deta hai jab strings equal hon."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Word count",
+      "code": "#include <stdio.h>\nint main(void) {\n    char s[] = \"C is fun to learn\";\n    int words = 0, in = 0;\n    for (int i = 0; s[i]; i++) {\n        if (s[i] == ' ') in = 0;\n        else if (!in) { in = 1; words++; }\n    }\n    printf(\"words=%d\\n\", words);\n    return 0;\n}",
+      "output": "words=5\n",
+      "lines": [
+        "Loop null terminator par rukta hai (s[i] == 0).",
+        "in flag word boundary track karta hai.",
+        "Space par in reset, non-space par naya word count."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "\"cat\\0\" in memory",
+    "rows": [
+      "index 0 1 2 3",
+      "char  c a t \\0",
+      "strlen = 3, sizeof = 4",
+      "strcpy(dst, src) 4 bytes copy karta hai"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "char s[3] = \"cat\";",
+      "right": "char s[4] = \"cat\";",
+      "why": "Null terminator ke liye ek extra byte chahiye."
+    },
+    {
+      "wrong": "strcpy(buf, input);",
+      "right": "snprintf(buf, sizeof buf, \"%s\", input);",
+      "why": "Input badi hui to overflow."
+    },
+    {
+      "wrong": "char *s = \"hi\"; s[0] = 'H';",
+      "right": "char s[] = \"hi\";",
+      "why": "String literal read-only hai; modify karna UB."
+    }
+  ],
+  "debug": {
+    "brief": "Program ke end me garbage characters aa rahe hain. Fix karo.",
+    "code": "#include <stdio.h>\n#include <string.h>\nint main(void){char s[4];strncpy(s,\"hello\",4);printf(\"[%s]\\n\",s);return 0;}",
+    "expected": "[hel]\n",
+    "hints": [
+      "strncpy 4 bytes copy karta hai par null nahi daalta.",
+      "s[3] = '\\0' karo."
+    ],
+    "fix": "char s[4]; strncpy(s, \"hel\", 3); s[3] = '\\0';"
+  },
+  "best": [
+    "Buffer size = length + 1",
+    "strncpy ke baad null terminate karo",
+    "fgets + trim se input lo",
+    "strcmp ka 0 equal hai — ! lagao"
+  ],
+  "practice": [
+    {
+      "title": "Palindrome",
+      "prompt": "String palindrome check karo.",
+      "level": "easy",
+      "hint": "Do pointers."
+    },
+    {
+      "title": "Vowel count",
+      "prompt": "String me vowels count karo.",
+      "level": "easy",
+      "hint": "tolower + switch."
+    },
+    {
+      "title": "Reverse words",
+      "prompt": "String ke words ka order reverse karo.",
+      "level": "hard",
+      "hint": "Tokenize + reverse array."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "\"cat\" ka sizeof?",
+      "options": [
+        "3",
+        "4",
+        "5",
+        "2"
+      ],
+      "answer": 1,
+      "explain": "Null terminator ke saath 4."
+    },
+    {
+      "q": "strcmp equal par kya deta hai?",
+      "options": [
+        "1",
+        "0",
+        "-1",
+        "true"
+      ],
+      "answer": 1,
+      "explain": "0 matlab equal."
+    }
+  ],
+  "interview": [
+    {
+      "q": "strtok ke nuksaan?",
+      "a": "Original string modify karta hai, static state rakhta hai (thread-safe nahi), aur consecutive delimiters handle karta hai. Reentrant version strtok_r hai.",
+      "followUp": "strtok_r signature? — strtok_r(s, delim, &saveptr)."
+    },
+    {
+      "q": "strncpy safe kyun nahi?",
+      "a": "Agar source length n se badi ho to null terminator copy nahi hota; agar chhoti ho to baaki buffer null se bhar deta hai (performance). Manually terminate karo ya snprintf lo.",
+      "followUp": "Best? — snprintf with size."
+    }
+  ],
+  "lab": {
+    "title": "Lab 12 — String toolkit",
+    "brief": "String input lo aur length, vowels aur palindrome status print karo.",
+    "starter": "#include <stdio.h>\n#include <string.h>\nint main(void){return 0;}",
+    "expected": "len=5 vowels=2 palindrome=yes\n",
+    "tests": [
+      {
+        "name": "stats",
+        "stdin": "madam\n",
+        "stdout": "len=5 vowels=2 palindrome=yes"
+      }
+    ],
+    "hints": [
+      "fgets use karo.",
+      "Palindrome ke liye i,j pointers."
+    ],
+    "solution": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main(void){char s[64];if(!fgets(s,sizeof s,stdin))return 1;s[strcspn(s,\"\\n\")]=0;int v=0,n=(int)strlen(s),p=1;for(int i=0;i<n;i++){char c=tolower((unsigned char)s[i]);if(c=='a'||c=='e'||c=='i'||c=='o'||c=='u')v++;}for(int i=0,j=n-1;i<j;i++,j--)if(s[i]!=s[j])p=0;printf(\"len=%d vowels=%d palindrome=%s\\n\",n,v,p?\"yes\":\"no\");return 0;}"
+  },
+  "checkpoint": {
+    "title": "Module 12 checkpoint",
+    "checks": [
+      "Null terminator ka role pata hai",
+      "strlen/strcmp/strcpy use kiye",
+      "strncpy/snprintf ki safety samajh aayi",
+      "fgets se input liya",
+      "Word/vowel count likha"
+    ]
+  }
+}

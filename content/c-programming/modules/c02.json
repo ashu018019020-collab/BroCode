@@ -1,0 +1,223 @@
+{
+  "id": "c02",
+  "no": 2,
+  "title": "C Development Environment",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "GCC toolchain chalana, compile flags samajhna, compile aur linker errors padh kar fix karna.",
+  "prereqs": [
+    "Module 1: pehla C program"
+  ],
+  "definition": "Development environment wo toolchain hai jo source ko executable banata hai: editor (VS Code), compiler (GCC/Clang), assembler, linker, debugger (GDB) aur build automation (Make).",
+  "explain": [
+    "C khud kuch nahi chalata — compiler chahiye. Linux/macOS par GCC/Clang; Windows par MSYS2/MinGW-w64 ya WSL sabse aasan rasta hai.",
+    "VS Code sirf editor hai, compiler nahi. C/C++ extension IntelliSense aur debug UI deta hai; asli compile gcc command karti hai.",
+    "gcc hello.c -o hello ka matlab: compile karo aur output ka naam hello rakho. -std=c17 standard fix karta hai, -Wall -Wextra warnings on karte hain.",
+    "Error me pehla line sabse important hota hai — baad ke errors often usi ke consequence hote hain. Line number aur column dhyan se dekho."
+  ],
+  "analogy": "Compiler translator hai: aap C me likhte ho, machine apni bhasha samajhti hai. Grammar galat hui to translator line number ke saath reject karta hai.",
+  "why": "Beginners ka 90% time environment me jaata hai: gcc nahi mila, file save nahi hui, path galat. Ye module us friction ko khatam karta hai.",
+  "syntax": [
+    {
+      "code": "gcc -std=c17 -Wall -Wextra hello.c -o hello\n./hello",
+      "note": "C17 + warnings ke saath compile, phir binary chalao. ./ Linux/macOS par zaroori hai."
+    },
+    {
+      "code": "gcc -E hello.c -o hello.i   # preprocess\ngcc -S hello.c -o hello.s   # assembly\ngcc -c hello.c -o hello.o   # object\ngcc hello.o -o hello        # link",
+      "note": "Har stage alag dekh sakte ho."
+    },
+    {
+      "code": "gcc -g -fsanitize=address,undefined hello.c -o hello\n./hello",
+      "note": "Debug symbols + ASan/UBSan: memory bugs aur UB turant pakadte hain."
+    }
+  ],
+  "topics": [
+    {
+      "title": "GCC/Clang install",
+      "body": "Ubuntu: sudo apt install build-essential. macOS: xcode-select --install. Windows: MSYS2 (pacman -S mingw-w64-ucrt-x86_64-gcc) ya WSL2. Clang commands lagbhag same hain."
+    },
+    {
+      "title": "Editor setup",
+      "body": "VS Code + C/C++ extension, auto-save on, tasks.json me build task. File save kiye bina compile karna #1 beginner galti hai."
+    },
+    {
+      "title": "Preprocessing",
+      "body": "#include file paste karta hai, #define text replace karta hai, #ifdef blocks include/exclude karta hai. Is stage par C syntax check nahi hota."
+    },
+    {
+      "title": "Compile, assemble, link",
+      "body": "Compiler C → assembly; assembler assembly → object (.o); linker objects + libraries → executable. 'undefined reference' linker ka error hai, compiler ka nahi."
+    },
+    {
+      "title": "Warnings aur debug cycle",
+      "body": "-Wall -Wextra -Wpedantic on rakho; -Werror warnings ko error banata hai. GDB ke liye -g; sanitizers development me on rakho. Ek baar me ek change karo."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Compile aur run",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Toolchain ready\\n\");\n    return 0;\n}",
+      "output": "Toolchain ready\n",
+      "lines": [
+        "gcc -std=c17 -Wall hello.c -o hello se compile.",
+        "Output na aaye to compile error padho, run error nahi.",
+        "./hello se chalao."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Multi-file build",
+      "code": "/* math_utils.c */\nint add(int a, int b) { return a + b; }\n\n/* main.c */\n#include <stdio.h>\nint add(int a, int b);\nint main(void) {\n    printf(\"%d\\n\", add(2, 3));\n    return 0;\n}\n/* gcc -std=c17 main.c math_utils.c -o app */",
+      "output": "5\n",
+      "lines": [
+        "math_utils.c me definition hai, main.c me prototype.",
+        "Linker dono object files ko jodta hai.",
+        "Sirf main.c compile karoge to undefined reference aayega."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "Four stages",
+    "rows": [
+      "hello.c --preprocess--> hello.i",
+      "hello.i --compile----> hello.s",
+      "hello.s --assemble---> hello.o",
+      "hello.o + libc --link-> hello",
+      "gcc hello.c -o hello = chaaron ek saath"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "gcc hello.c && hello",
+      "right": "gcc hello.c -o hello && ./hello",
+      "why": "Bina -o ke a.out banta hai; current directory PATH me nahi hoti."
+    },
+    {
+      "wrong": "File save kiye bina compile",
+      "right": "Ctrl+S phir compile",
+      "why": "Compiler disk ki purani file padhta hai."
+    },
+    {
+      "wrong": "Undefined reference ko syntax error samajhna",
+      "right": "Missing .c ya -lm add karo",
+      "why": "Ye linking stage ka error hai."
+    }
+  ],
+  "debug": {
+    "brief": "Compile fail ho raha hai: missing semicolon dhundo.",
+    "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Start\\n\")\n    printf(\"End\\n\");\n    return 0;\n}",
+    "expected": "Start\nEnd\n",
+    "hints": [
+      "Error kis line ko point karta hai?",
+      "Har statement ';' se khatam hoti hai."
+    ],
+    "fix": "printf(\"Start\\n\"); — semicolon lagao."
+  },
+  "best": [
+    "-std=c17 -Wall -Wextra hamesha",
+    "Build command README/Makefile me likho",
+    "Sanitizers development me on",
+    "Pehla error pehle fix karo"
+  ],
+  "practice": [
+    {
+      "title": "Version check",
+      "prompt": "gcc --version ka pehla line note karo.",
+      "level": "easy",
+      "hint": "Terminal me chalao."
+    },
+    {
+      "title": "Warnings dekho",
+      "prompt": "Unused variable bana kar -Wall warning trigger karo.",
+      "level": "easy",
+      "hint": "int unused = 0; use mat karo."
+    },
+    {
+      "title": "Stages",
+      "prompt": "gcc -E aur -S se .i aur .s file banao.",
+      "level": "medium",
+      "hint": "-o se output naam do."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "Object file banane ka flag?",
+      "options": [
+        "-E",
+        "-S",
+        "-c",
+        "-o"
+      ],
+      "answer": 2,
+      "explain": "-c compile + assemble karta hai, link nahi."
+    },
+    {
+      "q": "'undefined reference' kis stage ka error?",
+      "options": [
+        "Preprocessing",
+        "Compilation",
+        "Linking",
+        "Runtime"
+      ],
+      "answer": 2,
+      "explain": "Linker symbol resolve nahi kar paata."
+    },
+    {
+      "q": "C17 select karne ka flag?",
+      "options": [
+        "-std=c17",
+        "-std=c++17",
+        "-version=c17",
+        "-c17"
+      ],
+      "answer": 0,
+      "explain": "GCC/Clang: -std=c17."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Preprocessor compiler se alag kaise hai?",
+      "a": "Preprocessor text-level kaam karta hai: includes paste, macros replace, conditional blocks. Uske baad compiler grammar parse karta hai.",
+      "followUp": "Kaunsa flag sirf preprocess karta hai? — -E."
+    },
+    {
+      "q": "Object file aur executable me fark?",
+      "a": "Object me compiled code + unresolved symbols ho sakte hain; executable me linker ne sab resolve kar diya hota hai.",
+      "followUp": "Static library kya hai? — .o files ka archive (.a)."
+    },
+    {
+      "q": "AddressSanitizer kya pakadta hai?",
+      "a": "Out-of-bounds, use-after-free, double free, leaks — detailed runtime report ke saath.",
+      "followUp": "UBSan? — signed overflow, invalid shift jaise UB."
+    }
+  ],
+  "lab": {
+    "title": "Lab 2 — Two-file build",
+    "brief": "greet() ko alag file me rakho, dono ko alag compile karke link karo.",
+    "starter": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, BroCode!\"; }\n\nint main(void) {\n    /* Call greet() and print its result. */\n    return 0;\n}\n",
+    "expected": "Hello, BroCode!\n",
+    "tests": [
+      {
+        "name": "greeting",
+        "stdin": "",
+        "stdout": "Hello, BroCode!"
+      }
+    ],
+    "hints": [
+      "gcc -c greet.c aur gcc -c main.c.",
+      "Phir gcc main.o greet.o -o app."
+    ],
+    "solution": "#include <stdio.h>\n\n/* greet.c — in a real build this lives in its own file, declared in greet.h. */\nstatic const char *greet(void) { return \"Hello, BroCode!\"; }\n\nint main(void) {\n    printf(\"%s\\n\", greet());\n    return 0;\n}\n"
+  },
+  "checkpoint": {
+    "title": "Module 2 checkpoint",
+    "checks": [
+      "gcc --version chalta hai",
+      "-Wall -Wextra se compile kiya",
+      "Chaaron stages bata sakte ho",
+      "Compile vs linker error pata hai",
+      "Do-file program link hua"
+    ]
+  }
+}

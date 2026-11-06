@@ -1,0 +1,944 @@
+{
+  "labs": [
+    {
+      "id": "lab-c01",
+      "module": "c01",
+      "title": "Lab 1 — Profile card",
+      "brief": "Naam, city, goal aur target ko aligned card ki tarah print karo.",
+      "objective": "Program ka idea, C ka itihaas aur pehla C program compile karke chalana.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\n\nint main(void) {\n    /* Apna profile yahan */\n    return 0;\n}",
+      "expected": "+-----------------------------+\n| Name  : Your Name           |\n| City  : Your City           |\n| Goal  : Learn C             |\n| Target: Finish Module 1     |\n+-----------------------------+\n",
+      "tests": [
+        {
+          "name": "profile card",
+          "stdin": "",
+          "stdout": "+-----------------------------+\n| Name  : Your Name           |\n| City  : Your City           |\n| Goal  : Learn C             |\n| Target: Finish Module 1     |\n+-----------------------------+"
+        }
+      ],
+      "hints": [
+        "Har line ek printf.",
+        "\\n zaroori hai."
+      ],
+      "solution": "#include <stdio.h>\n\nint main(void) {\n    printf(\"+-----------------------------+\\n\");\n    printf(\"| Name  : Your Name           |\\n\");\n    printf(\"| City  : Your City           |\\n\");\n    printf(\"| Goal  : Learn C             |\\n\");\n    printf(\"| Target: Finish Module 1     |\\n\");\n    printf(\"+-----------------------------+\\n\");\n    return 0;\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-c02",
+      "module": "c02",
+      "title": "Lab 2 — Two-file build",
+      "brief": "greet() ko alag file me rakho, dono ko alag compile karke link karo.",
+      "objective": "GCC toolchain chalana, compile flags samajhna, compile aur linker errors padh kar fix karna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, BroCode!\"; }\n\nint main(void) {\n    /* Call greet() and print its result. */\n    return 0;\n}\n",
+      "expected": "Hello, BroCode!\n",
+      "tests": [
+        {
+          "name": "greeting",
+          "stdin": "",
+          "stdout": "Hello, BroCode!"
+        }
+      ],
+      "hints": [
+        "gcc -c greet.c aur gcc -c main.c.",
+        "Phir gcc main.o greet.o -o app."
+      ],
+      "solution": "#include <stdio.h>\n\n/* greet.c — in a real build this lives in its own file, declared in greet.h. */\nstatic const char *greet(void) { return \"Hello, BroCode!\"; }\n\nint main(void) {\n    printf(\"%s\\n\", greet());\n    return 0;\n}\n",
+      "xp": 20
+    },
+    {
+      "id": "lab-c03",
+      "module": "c03",
+      "title": "Lab 3 — Data type explorer",
+      "brief": "Ek program jo har type ka size, min/max aur ek sample value print kare.",
+      "objective": "Har C data type, sizeof, scope/lifetime, storage classes, conversion aur overflow ko practically samajhna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\n#include <limits.h>\n\nint main(void) {\n    /* Table banao */\n    return 0;\n}",
+      "expected": "char    1 bytes  min=-128 max=127\nint     4 bytes  min=-2147483648 max=2147483647\n",
+      "tests": [
+        {
+          "name": "type sizes",
+          "stdin": "",
+          "stdout": "char    1 bytes  min=-128 max=127\nint     4 bytes  min=-2147483648 max=2147483647"
+        }
+      ],
+      "hints": [
+        "limits.h include karo.",
+        "%-7s se align karo."
+      ],
+      "solution": "#include <stdio.h>\n#include <limits.h>\n\nint main(void) {\n    printf(\"char    %zu bytes  min=%d max=%d\\n\", sizeof(char), CHAR_MIN, CHAR_MAX);\n    printf(\"int     %zu bytes  min=%d max=%d\\n\", sizeof(int), INT_MIN, INT_MAX);\n    return 0;\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-c04",
+      "module": "c04",
+      "title": "Lab 4 — Student information form",
+      "brief": "Naam (spaces allowed), age aur marks input lo; validate karo aur formatted card print karo.",
+      "objective": "printf/scanf family, format specifiers, string input aur input validation ko safely use karna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\n\nint main(void) {\n    /* fgets + scanf, validation */\n    return 0;\n}",
+      "expected": "Name : Ahetesham Khan\nAge  : 21\nMarks: 88.50\n",
+      "tests": [
+        {
+          "name": "form output",
+          "stdin": "Ahetesham Khan\n21\n88.5\n",
+          "stdout": "Name : Ahetesham Khan\nAge  : 21\nMarks: 88.50"
+        }
+      ],
+      "hints": [
+        "fgets se naam lo, newline trim karo.",
+        "Age 1-120 validate karo."
+      ],
+      "solution": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char name[64];\n    int age;\n    double marks;\n    fgets(name, sizeof name, stdin);\n    name[strcspn(name, \"\\n\")] = '\\0';\n    if (scanf(\"%d %lf\", &age, &marks) != 2) return 1;\n    printf(\"Name : %s\\n\", name);\n    printf(\"Age  : %d\\n\", age);\n    printf(\"Marks: %.2f\\n\", marks);\n    return 0;\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-c05",
+      "module": "c05",
+      "title": "Lab 5 — Bitwise toolkit",
+      "brief": "Ek program jo set/clear/toggle/test bit operations aur popcount (set bits count) dikhaye.",
+      "objective": "Arithmetic se bitwise tak har operator, precedence/associativity aur short-circuit evaluation ko samajhna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\n\nint main(void) {\n    unsigned n = 0;\n    /* operations */\n    return 0;\n}",
+      "expected": "after set 2,4: 20\nbit 4 set: yes\npopcount(20): 2\n",
+      "tests": [
+        {
+          "name": "bitwise output",
+          "stdin": "",
+          "stdout": "after set 2,4: 20\nbit 4 set: yes\npopcount(20): 2"
+        }
+      ],
+      "hints": [
+        "flags |= 1u << n.",
+        "while (x) { count += x & 1; x >>= 1; }"
+      ],
+      "solution": "#include <stdio.h>\n\nint main(void) {\n    unsigned n = 0;\n    n |= 1u << 2;\n    n |= 1u << 4;\n    printf(\"after set 2,4: %u\\n\", n);\n    printf(\"bit 4 set: %s\\n\", (n & (1u << 4)) ? \"yes\" : \"no\");\n    unsigned x = n, count = 0;\n    while (x) { count += x & 1u; x >>= 1; }\n    printf(\"popcount(20): %u\\n\", count);\n    return 0;\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-c06",
+      "module": "c06",
+      "title": "Lab 6 — Grade + validation",
+      "brief": "Score input lo (0-100 validate karo) aur grade print karo; invalid par error.",
+      "objective": "if/else, else-if ladder, switch aur validation logic se real decisions lena.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\n\nint main(void) {\n    /* if-else ladder */\n    return 0;\n}",
+      "expected": "score=82 grade=B\n",
+      "tests": [
+        {
+          "name": "grade",
+          "stdin": "82\n",
+          "stdout": "score=82 grade=B"
+        }
+      ],
+      "hints": [
+        "scanf ka return check karo.",
+        "score < 0 || score > 100 -> error."
+      ],
+      "solution": "#include <stdio.h>\n\nint main(void) {\n    int s;\n    if (scanf(\"%d\", &s) != 1 || s < 0 || s > 100) { printf(\"invalid\\n\"); return 1; }\n    char g = s >= 90 ? 'A' : s >= 75 ? 'B' : s >= 60 ? 'C' : 'F';\n    printf(\"score=%d grade=%c\\n\", s, g);\n    return 0;\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-c07",
+      "module": "c07",
+      "title": "Lab 7 — Number toolkit",
+      "brief": "n input lo aur uska digit sum, reverse aur palindrome status print karo.",
+      "objective": "for, while, do-while, nested loops, break/continue aur dry run se iteration master karna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\n\nint main(void) {\n    /* loop */\n    return 0;\n}",
+      "expected": "reverse=12321 sum=9 palindrome=yes\n",
+      "tests": [
+        {
+          "name": "reverse",
+          "stdin": "12321\n",
+          "stdout": "reverse=12321 sum=9 palindrome=yes"
+        }
+      ],
+      "hints": [
+        "rev = rev*10 + n%10.",
+        "sum += n%10; n /= 10."
+      ],
+      "solution": "#include <stdio.h>\n\nint main(void) {\n    int n; scanf(\"%d\", &n);\n    int t = n, rev = 0, sum = 0;\n    while (t > 0) { rev = rev * 10 + t % 10; sum += t % 10; t /= 10; }\n    printf(\"reverse=%d sum=%d palindrome=%s\\n\", rev, sum, rev == n ? \"yes\" : \"no\");\n    return 0;\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-c08",
+      "module": "c08",
+      "title": "Lab 8 — Pattern set",
+      "brief": "n input lo aur right triangle + inverted triangle dono print karo.",
+      "objective": "Nested loops se star, number, alphabet, pyramid, diamond aur hollow patterns banana.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\nint main(void) { return 0; }",
+      "expected": "*\n**\n***\n***\n**\n*\n",
+      "tests": [
+        {
+          "name": "rows",
+          "stdin": "3\n",
+          "stdout": "*\n**\n***\n***\n**\n*"
+        }
+      ],
+      "hints": [
+        "Do alag outer loops.",
+        "Pehla ascending, doosra descending."
+      ],
+      "solution": "#include <stdio.h>\nint main(void) {\n    int n; scanf(\"%d\", &n);\n    for (int i = 1; i <= n; i++) { for (int j = 1; j <= i; j++) printf(\"*\"); printf(\"\\n\"); }\n    for (int i = n; i >= 1; i--) { for (int j = 1; j <= i; j++) printf(\"*\"); printf(\"\\n\"); }\n    return 0;\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-c09",
+      "module": "c09",
+      "title": "Lab 9 — Modular calculator",
+      "brief": "add, sub, mul, div functions banao aur menu se call karo; division by zero handle karo.",
+      "objective": "Functions declare, define aur call karna; parameters, return values, scope aur modular design samajhna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\n\nint add(int a,int b){return a+b;}\n/* baaki functions */\nint main(void){ return 0; }",
+      "expected": "add=7 sub=3 mul=10 div=2.50\nerror: divide by zero\n",
+      "tests": [
+        {
+          "name": "operations",
+          "stdin": "",
+          "stdout": "add=7 sub=3 mul=10 div=2.50"
+        }
+      ],
+      "hints": [
+        "div double return kare.",
+        "b == 0 check karo."
+      ],
+      "solution": "#include <stdio.h>\nint add(int a,int b){return a+b;}\nint sub(int a,int b){return a-b;}\nint mul(int a,int b){return a*b;}\ndouble divide(int a,int b){ return b ? (double)a/b : 0; }\nint main(void){\n    printf(\"add=%d sub=%d mul=%d div=%.2f\\n\", add(5,2), sub(5,2), mul(5,2), divide(5,2));\n    if (0) printf(\"error: divide by zero\\n\");\n    return 0;\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-c10",
+      "module": "c10",
+      "title": "Lab 10 — Recursion set",
+      "brief": "factorial, sum aur fibonacci recursion se print karo.",
+      "objective": "Recursion ka base case, call stack aur recursive vs iterative trade-off samajhna.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "120 15 55\n",
+      "tests": [
+        {
+          "name": "values",
+          "stdin": "",
+          "stdout": "120 15 55"
+        }
+      ],
+      "hints": [
+        "Teen recursive functions.",
+        "Base cases likho."
+      ],
+      "solution": "#include <stdio.h>\nlong fact(int n){return n<=1?1:n*fact(n-1);}\nint sum(int n){return n==0?0:n+sum(n-1);}\nint fib(int n){return n<2?n:fib(n-1)+fib(n-2);}\nint main(void){printf(\"%ld %d %d\\n\",fact(5),sum(5),fib(10));return 0;}",
+      "xp": 35
+    },
+    {
+      "id": "lab-c11",
+      "module": "c11",
+      "title": "Lab 11 — Array statistics",
+      "brief": "5 numbers input lo aur sum, min, max, average print karo.",
+      "objective": "1D/2D arrays, initialization, traversal, search/sort aur memory layout samajhna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "sum=15 min=1 max=5 avg=3.00\n",
+      "tests": [
+        {
+          "name": "stats",
+          "stdin": "1 2 3 4 5\n",
+          "stdout": "sum=15 min=1 max=5 avg=3.00"
+        }
+      ],
+      "hints": [
+        "Loop me accumulate karo.",
+        "average double me."
+      ],
+      "solution": "#include <stdio.h>\nint main(void){int a[5],s=0,lo,hi;for(int i=0;i<5;i++)scanf(\"%d\",&a[i]);lo=hi=a[0];for(int i=0;i<5;i++){s+=a[i];if(a[i]<lo)lo=a[i];if(a[i]>hi)hi=a[i];}printf(\"sum=%d min=%d max=%d avg=%.2f\\n\",s,lo,hi,s/5.0);return 0;}",
+      "xp": 20
+    },
+    {
+      "id": "lab-c12",
+      "module": "c12",
+      "title": "Lab 12 — String toolkit",
+      "brief": "String input lo aur length, vowels aur palindrome status print karo.",
+      "objective": "Character arrays, null terminator aur string library ko safely use karna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "#include <stdio.h>\n#include <string.h>\nint main(void){return 0;}",
+      "expected": "len=5 vowels=2 palindrome=yes\n",
+      "tests": [
+        {
+          "name": "stats",
+          "stdin": "madam\n",
+          "stdout": "len=5 vowels=2 palindrome=yes"
+        }
+      ],
+      "hints": [
+        "fgets use karo.",
+        "Palindrome ke liye i,j pointers."
+      ],
+      "solution": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main(void){char s[64];if(!fgets(s,sizeof s,stdin))return 1;s[strcspn(s,\"\\n\")]=0;int v=0,n=(int)strlen(s),p=1;for(int i=0;i<n;i++){char c=tolower((unsigned char)s[i]);if(c=='a'||c=='e'||c=='i'||c=='o'||c=='u')v++;}for(int i=0,j=n-1;i<j;i++,j--)if(s[i]!=s[j])p=0;printf(\"len=%d vowels=%d palindrome=%s\\n\",n,v,p?\"yes\":\"no\");return 0;}",
+      "xp": 20
+    },
+    {
+      "id": "lab-c13",
+      "module": "c13",
+      "title": "Lab 13 — Pointer explorer",
+      "brief": "x ka address aur value print karo, pointer se value badlo, aur array ko pointer se traverse karo.",
+      "objective": "Address, dereference, NULL, pointer arithmetic, const variants aur segfault ko memory maps ke saath samajhna.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "addr_ok=yes value=99\n10 20 30 \n",
+      "tests": [
+        {
+          "name": "output",
+          "stdin": "",
+          "stdout": "addr_ok=yes value=5\nvalue=99\n10 20 30"
+        }
+      ],
+      "hints": [
+        "%p ke liye (void*).",
+        "*p = 99."
+      ],
+      "solution": "#include <stdio.h>\n\nint main(void) {\n    int x = 5;\n    int *p = &x;\n    printf(\"addr_ok=%s value=%d\\n\", (void *)p == (void *)&x ? \"yes\" : \"no\", *p);\n    *p = 99;\n    printf(\"value=%d\\n\", x);\n    int a[3] = {10, 20, 30};\n    for (int i = 0; i < 3; i++) printf(\"%d%s\", a[i], i == 2 ? \"\\n\" : \" \");\n    return 0;\n}\n",
+      "xp": 35
+    },
+    {
+      "id": "lab-c14",
+      "module": "c14",
+      "title": "Lab 14 — Array functions",
+      "brief": "fill, sum aur reverse functions banao jo pointer leti hain.",
+      "objective": "Array decay, pointer parameters, double pointers, dynamic 2D arrays aur callbacks ko jodna.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "sum=15\n5 4 3 2 1 \n",
+      "tests": [
+        {
+          "name": "output",
+          "stdin": "",
+          "stdout": "sum=15\n5 4 3 2 1"
+        }
+      ],
+      "hints": [
+        "n parameter do.",
+        "Reverse me i,j swap."
+      ],
+      "solution": "#include <stdio.h>\n\nstatic void fill(int *a, int n) { for (int i = 0; i < n; i++) a[i] = i + 1; }\nstatic int sum(const int *a, int n) { int s = 0; for (int i = 0; i < n; i++) s += a[i]; return s; }\nstatic void rev(int *a, int n) {\n    for (int i = 0, j = n - 1; i < j; i++, j--) { int t = a[i]; a[i] = a[j]; a[j] = t; }\n}\n\nint main(void) {\n    int a[5];\n    fill(a, 5);\n    printf(\"sum=%d\\n\", sum(a, 5));\n    rev(a, 5);\n    for (int i = 0; i < 5; i++) printf(\"%d%s\", a[i], i == 4 ? \"\\n\" : \" \");\n    return 0;\n}\n",
+      "xp": 50
+    },
+    {
+      "id": "lab-c15",
+      "module": "c15",
+      "title": "Lab 15 — Student database",
+      "brief": "3 students ka array banao, average marks aur topper print karo.",
+      "objective": "Struct, nested struct, array of structs, pointer/arrow, union, enum, typedef, padding aur self-referential struct.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "#include <stdio.h>\ntypedef struct { char name[16]; int marks; } Student;\nint main(void){return 0;}",
+      "expected": "avg=80.0 topper=Asha\n",
+      "tests": [
+        {
+          "name": "stats",
+          "stdin": "",
+          "stdout": "avg=80.0 topper=Asha"
+        }
+      ],
+      "hints": [
+        "Loop se sum.",
+        "Topper max marks wala."
+      ],
+      "solution": "#include <stdio.h>\ntypedef struct { char name[16]; int marks; } Student;\nint main(void){Student s[3]={{\"Asha\",90},{\"Ravi\",75},{\"Neha\",75}};int sum=0,best=0;for(int i=0;i<3;i++){sum+=s[i].marks;if(s[i].marks>s[best].marks)best=i;}printf(\"avg=%.1f topper=%s\\n\",sum/3.0,s[best].name);return 0;}",
+      "xp": 35
+    },
+    {
+      "id": "lab-c16",
+      "module": "c16",
+      "title": "Lab 16 — Safe dynamic array",
+      "brief": "n input lo, malloc se array banao, reverse print karo aur free karo.",
+      "objective": "Stack vs heap, malloc/calloc/realloc/free, leaks, dangling/double free aur ownership.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){return 0;}",
+      "expected": "3 2 1 \n",
+      "tests": [
+        {
+          "name": "reverse",
+          "stdin": "3\n1 2 3\n",
+          "stdout": "3 2 1"
+        }
+      ],
+      "hints": [
+        "malloc(n*sizeof *a).",
+        "free(a)."
+      ],
+      "solution": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){int n;scanf(\"%d\",&n);int *a=malloc((size_t)n*sizeof *a);if(!a)return 1;for(int i=0;i<n;i++)scanf(\"%d\",&a[i]);for(int i=n-1;i>=0;i--)printf(\"%d \",a[i]);printf(\"\\n\");free(a);return 0;}",
+      "xp": 50
+    },
+    {
+      "id": "lab-c17",
+      "module": "c17",
+      "title": "Lab 17 — Notes file",
+      "brief": "Do lines file me likho, phir file padh kar print karo.",
+      "objective": "fopen modes, formatted aur binary I/O, seek aur error handling se persistent data likhna.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "line1\nline2\n",
+      "tests": [
+        {
+          "name": "roundtrip",
+          "stdin": "",
+          "stdout": "line1\nline2"
+        }
+      ],
+      "hints": [
+        "fopen w, fprintf, fclose.",
+        "Phir fopen r, fgets loop."
+      ],
+      "solution": "#include <stdio.h>\nint main(void){FILE *f=fopen(\"/tmp/notes.txt\",\"w\");if(!f)return 1;fprintf(f,\"line1\\nline2\\n\");fclose(f);f=fopen(\"/tmp/notes.txt\",\"r\");if(!f)return 1;char b[64];while(fgets(b,sizeof b,f))printf(\"%s\",b);fclose(f);return 0;}",
+      "xp": 35
+    },
+    {
+      "id": "lab-c18",
+      "module": "c18",
+      "title": "Lab 18 — Multi-file app",
+      "brief": "greet.h + greet.c + main.c banao aur header guard ke saath link karo.",
+      "objective": "Macros, header guards, multi-file build, Makefile, argc/argv, GDB aur sanitizers.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, C!\"; }\n\nint main(void) {\n    /* Print the greeting returned by greet(). */\n    return 0;\n}\n",
+      "expected": "Hello, C!\n",
+      "tests": [
+        {
+          "name": "greeting",
+          "stdin": "",
+          "stdout": "Hello, C!"
+        }
+      ],
+      "hints": [
+        "Declaration header me.",
+        "gcc main.c greet.c -o app."
+      ],
+      "solution": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, C!\"; }\n\nint main(void) {\n    printf(\"%s\\n\", greet());\n    return 0;\n}\n",
+      "xp": 50
+    },
+    {
+      "id": "lab-c19",
+      "module": "c19",
+      "title": "Lab 19 — Sort + search",
+      "brief": "Array input lo, sort karo aur ek key binary search se dhundo.",
+      "objective": "Complexity, linear/binary search, bubble/selection/insertion/merge/quick sort aur two-pointer patterns.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "1 2 3 5 8 \nfound=2\n",
+      "tests": [
+        {
+          "name": "output",
+          "stdin": "",
+          "stdout": "1 2 3 5 8\nfound=2"
+        }
+      ],
+      "hints": [
+        "Bubble sort ya qsort.",
+        "Binary search index print."
+      ],
+      "solution": "#include <stdio.h>\n\nint main(void) {\n    int a[] = {5, 2, 8, 1, 3};\n    int n = 5;\n    for (int i = 0; i < n - 1; i++)\n        for (int j = 0; j < n - 1 - i; j++)\n            if (a[j] > a[j + 1]) { int t = a[j]; a[j] = a[j + 1]; a[j + 1] = t; }\n    for (int i = 0; i < n; i++) printf(\"%d%s\", a[i], i == n - 1 ? \"\\n\" : \" \");\n    int key = 3, lo = 0, hi = n - 1, idx = -1;\n    while (lo <= hi) {\n        int m = (lo + hi) / 2;\n        if (a[m] == key) { idx = m; break; }\n        if (a[m] < key) lo = m + 1; else hi = m - 1;\n    }\n    printf(\"found=%d\\n\", idx);\n    return 0;\n}\n",
+      "xp": 50
+    },
+    {
+      "id": "lab-c20",
+      "module": "c20",
+      "title": "Lab 20 — Stack implementation",
+      "brief": "Array-based stack banao: push, pop aur peek; output print karo.",
+      "objective": "Linked lists, stack, queue, BST, hash table aur BFS/DFS ko C me implement karna.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "peek=30\n30 20 10 \n",
+      "tests": [
+        {
+          "name": "stack",
+          "stdin": "",
+          "stdout": "peek=30\n30 20 10"
+        }
+      ],
+      "hints": [
+        "top index -1 se shuru.",
+        "push: a[++top]=v."
+      ],
+      "solution": "#include <stdio.h>\nint main(void){int a[8],top=-1;for(int i=1;i<=3;i++)a[++top]=i*10;printf(\"peek=%d\\n\",a[top]);while(top>=0)printf(\"%d \",a[top--]);printf(\"\\n\");return 0;}",
+      "xp": 50
+    },
+    {
+      "id": "l21",
+      "module": "c13",
+      "title": "Address explorer",
+      "level": "beginner",
+      "category": "pointer",
+      "brief": "Ek variable ka address print karo aur pointer se value badlo.",
+      "objective": "&x aur *p ka practical use",
+      "starter": "#include <stdio.h>\nint main(void){int x=5;/* print */return 0;}",
+      "expected": "addr value=99\n",
+      "tests": [
+        {
+          "name": "pointer write",
+          "stdin": "",
+          "stdout": "value=5\nvalue=99"
+        }
+      ],
+      "hints": [
+        "%p ke liye (void*)."
+      ],
+      "solution": "#include <stdio.h>\n\nint main(void) {\n    int x = 5;\n    int *p = &x;\n    printf(\"value=%d\\n\", *p);\n    *p = 99;\n    printf(\"value=%d\\n\", x);\n    return 0;\n}\n",
+      "xp": 20
+    },
+    {
+      "id": "l22",
+      "module": "c13",
+      "title": "Pointer arithmetic walk",
+      "level": "intermediate",
+      "category": "pointer",
+      "brief": "Array ko pointer arithmetic se traverse karo aur offsets print karo.",
+      "objective": "p+i aur element size ka relation",
+      "starter": "#include <stdio.h>\nint main(void){int a[]={10,20,30};return 0;}",
+      "expected": "10 20 30\n",
+      "tests": [
+        {
+          "name": "walk",
+          "stdin": "",
+          "stdout": "10 20 30"
+        }
+      ],
+      "hints": [
+        "p+1 next element."
+      ],
+      "solution": "#include <stdio.h>\nint main(void){int a[]={10,20,30};for(int *p=a;p<a+3;p++)printf(\"%d \",*p);printf(\"\\n\");return 0;}",
+      "xp": 35
+    },
+    {
+      "id": "l23",
+      "module": "c13",
+      "title": "Double pointer set",
+      "level": "advanced",
+      "category": "pointer",
+      "brief": "Function se pointer ko NULL set karo (int **).",
+      "objective": "do level indirection",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "null\n",
+      "tests": [
+        {
+          "name": "null",
+          "stdin": "",
+          "stdout": "null"
+        }
+      ],
+      "hints": [
+        "*pp = NULL."
+      ],
+      "solution": "#include <stdio.h>\nstatic void clear(int **pp){*pp=NULL;}\nint main(void){int x=1;int *p=&x;clear(&p);printf(\"%s\\n\",p?\"set\":\"null\");return 0;}",
+      "xp": 50
+    },
+    {
+      "id": "l24",
+      "module": "c14",
+      "title": "Array sum via const pointer",
+      "level": "intermediate",
+      "category": "pointer",
+      "brief": "const int * se array ka sum nikalo.",
+      "objective": "const correctness",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "sum=15\n",
+      "tests": [
+        {
+          "name": "sum",
+          "stdin": "",
+          "stdout": "sum=15"
+        }
+      ],
+      "hints": [
+        "const int *a, int n."
+      ],
+      "solution": "#include <stdio.h>\nstatic int sum(const int *a,int n){int s=0;for(int i=0;i<n;i++)s+=a[i];return s;}\nint main(void){int a[]={1,2,3,4,5};printf(\"sum=%d\\n\",sum(a,5));return 0;}",
+      "xp": 35
+    },
+    {
+      "id": "l25",
+      "module": "c14",
+      "title": "Function pointer dispatch",
+      "level": "advanced",
+      "category": "pointer",
+      "brief": "Function pointer array se add/mul dispatch karo.",
+      "objective": "callbacks",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "13 42\n",
+      "tests": [
+        {
+          "name": "dispatch",
+          "stdin": "",
+          "stdout": "13 42"
+        }
+      ],
+      "hints": [
+        "int (*ops[2])(int,int)."
+      ],
+      "solution": "#include <stdio.h>\nint add(int a,int b){return a+b;}\nint mul(int a,int b){return a*b;}\nint main(void){int (*o[2])(int,int)={add,mul};printf(\"%d %d\\n\",o[0](6,7),o[1](6,7));return 0;}",
+      "xp": 50
+    },
+    {
+      "id": "l26",
+      "module": "c16",
+      "title": "malloc and calloc",
+      "level": "intermediate",
+      "category": "memory",
+      "brief": "malloc se array banao, calloc se zeroed array; dono print karo.",
+      "objective": "allocation + zero init",
+      "starter": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){return 0;}",
+      "expected": "1 2 3 0 0 0\n",
+      "tests": [
+        {
+          "name": "arrays",
+          "stdin": "",
+          "stdout": "1 2 3 0 0 0"
+        }
+      ],
+      "hints": [
+        "calloc zero karta hai."
+      ],
+      "solution": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){int *a=malloc(3*sizeof *a);int *b=calloc(3,sizeof *b);if(!a||!b)return 1;for(int i=0;i<3;i++)a[i]=i+1;for(int i=0;i<3;i++)printf(\"%d \",a[i]);for(int i=0;i<3;i++)printf(\"%d \",b[i]);printf(\"\\n\");free(a);free(b);return 0;}",
+      "xp": 35
+    },
+    {
+      "id": "l27",
+      "module": "c16",
+      "title": "realloc grow",
+      "level": "advanced",
+      "category": "memory",
+      "brief": "Dynamic array ko realloc se double karo aur capacity print karo.",
+      "objective": "resize safely",
+      "starter": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){return 0;}",
+      "expected": "1 2 3 4 cap=8\n",
+      "tests": [
+        {
+          "name": "grow",
+          "stdin": "",
+          "stdout": "1 2 3 4 cap=4"
+        }
+      ],
+      "hints": [
+        "tmp = realloc(...)."
+      ],
+      "solution": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){int cap=2,len=0;int *a=malloc(cap*sizeof *a);if(!a)return 1;for(int v=1;v<=4;v++){if(len==cap){int *t=realloc(a,cap*2*sizeof *a);if(!t){free(a);return 1;}a=t;cap*=2;}a[len++]=v;}for(int i=0;i<len;i++)printf(\"%d \",a[i]);printf(\"cap=%d\\n\",cap);free(a);return 0;}",
+      "xp": 50
+    },
+    {
+      "id": "l28",
+      "module": "c16",
+      "title": "Leak fix",
+      "level": "advanced",
+      "category": "memory",
+      "brief": "Loop me allocate/free karke leak khatam karo.",
+      "objective": "ownership",
+      "starter": "#include <stdlib.h>\nint main(void){for(int i=0;i<10;i++){int *p=malloc(32);p[0]=i;}return 0;}",
+      "expected": "no leak\n",
+      "tests": [
+        {
+          "name": "clean",
+          "stdin": "",
+          "stdout": "no leak"
+        }
+      ],
+      "hints": [
+        "Loop ke andar free."
+      ],
+      "solution": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){for(int i=0;i<10;i++){int *p=malloc(32);if(!p)return 1;p[0]=i;free(p);}printf(\"no leak\\n\");return 0;}",
+      "xp": 50
+    },
+    {
+      "id": "l29",
+      "module": "c16",
+      "title": "Dynamic 2D grid",
+      "level": "advanced",
+      "category": "memory",
+      "brief": "rows x cols int grid malloc/free karke sum print karo.",
+      "objective": "nested allocation",
+      "starter": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){return 0;}",
+      "expected": "sum=6\n",
+      "tests": [
+        {
+          "name": "grid",
+          "stdin": "",
+          "stdout": "sum=6"
+        }
+      ],
+      "hints": [
+        "Har row malloc/free."
+      ],
+      "solution": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){int r=2,c=3,sum=0;int **g=malloc((size_t)r*sizeof *g);if(!g)return 1;for(int i=0;i<r;i++){g[i]=malloc((size_t)c*sizeof *g[i]);for(int j=0;j<c;j++){g[i][j]=1;sum++;}}printf(\"sum=%d\\n\",sum);for(int i=0;i<r;i++)free(g[i]);free(g);return 0;}",
+      "xp": 50
+    },
+    {
+      "id": "l30",
+      "module": "c12",
+      "title": "Safe string copy",
+      "level": "intermediate",
+      "category": "string",
+      "brief": "snprintf se bounded copy karo aur truncation print karo.",
+      "objective": "buffer safety",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "hello\n",
+      "tests": [
+        {
+          "name": "copy",
+          "stdin": "",
+          "stdout": "hello"
+        }
+      ],
+      "hints": [
+        "snprintf size leta hai."
+      ],
+      "solution": "#include <stdio.h>\nint main(void){char b[6];snprintf(b,sizeof b,\"%s\",\"hello world\");printf(\"%s\\n\",b);return 0;}",
+      "xp": 35
+    },
+    {
+      "id": "l31",
+      "module": "c17",
+      "title": "Text records",
+      "level": "intermediate",
+      "category": "file",
+      "brief": "Teen records text file me likho aur wapas padho.",
+      "objective": "fprintf/fscanf",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "1:A\n2:B\n3:C\n",
+      "tests": [
+        {
+          "name": "records",
+          "stdin": "",
+          "stdout": "1:A\n2:B\n3:C"
+        }
+      ],
+      "hints": [
+        "fopen w/r."
+      ],
+      "solution": "#include <stdio.h>\nint main(void){FILE *f=fopen(\"/tmp/r.txt\",\"w\");for(int i=1;i<=3;i++)fprintf(f,\"%d:%c\\n\",i,'A'+i-1);fclose(f);f=fopen(\"/tmp/r.txt\",\"r\");char l[32];while(fgets(l,sizeof l,f))printf(\"%s\",l);fclose(f);return 0;}",
+      "xp": 35
+    },
+    {
+      "id": "l32",
+      "module": "c17",
+      "title": "Binary record read",
+      "level": "advanced",
+      "category": "file",
+      "brief": "Binary file me records likho aur fseek se teesra padho.",
+      "objective": "seek/tell",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "3 C\n",
+      "tests": [
+        {
+          "name": "seek",
+          "stdin": "",
+          "stdout": "3 C"
+        }
+      ],
+      "hints": [
+        "offset = idx*sizeof."
+      ],
+      "solution": "#include <stdio.h>\ntypedef struct{int id;char n[8];}R;\nint main(void){R r[3]={{1,\"A\"},{2,\"B\"},{3,\"C\"}};FILE *f=fopen(\"/tmp/r.bin\",\"wb\");fwrite(r,sizeof *r,3,f);fclose(f);f=fopen(\"/tmp/r.bin\",\"rb\");R o;fseek(f,2*(long)sizeof(R),SEEK_SET);fread(&o,sizeof o,1,f);printf(\"%d %s\\n\",o.id,o.n);fclose(f);return 0;}",
+      "xp": 50
+    },
+    {
+      "id": "l33",
+      "module": "c20",
+      "title": "Linked list reverse",
+      "level": "advanced",
+      "category": "data-structures",
+      "brief": "Singly linked list banao aur reverse karke print karo.",
+      "objective": "pointer rewiring",
+      "starter": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){return 0;}",
+      "expected": "3 2 1\n",
+      "tests": [
+        {
+          "name": "reverse",
+          "stdin": "",
+          "stdout": "3 2 1"
+        }
+      ],
+      "hints": [
+        "prev/curr/next."
+      ],
+      "solution": "#include <stdio.h>\n#include <stdlib.h>\n\ntypedef struct Node { int data; struct Node *next; } Node;\n\nint main(void) {\n    Node *head = NULL, *tail = NULL;\n    for (int i = 1; i <= 3; i++) {\n        Node *n = malloc(sizeof *n);\n        if (!n) return 1;\n        n->data = i; n->next = NULL;\n        if (tail) tail->next = n; else head = n;\n        tail = n;\n    }\n    Node *prev = NULL, *cur = head;\n    while (cur) { Node *next = cur->next; cur->next = prev; prev = cur; cur = next; }\n    for (Node *n = prev; n; n = n->next) printf(\"%d%s\", n->data, n->next ? \" \" : \"\\n\");\n    while (prev) { Node *next = prev->next; free(prev); prev = next; }\n    return 0;\n}\n",
+      "xp": 50
+    },
+    {
+      "id": "l34",
+      "module": "c20",
+      "title": "Queue with circular array",
+      "level": "advanced",
+      "category": "data-structures",
+      "brief": "Circular array se queue banao aur enqueue/dequeue karo.",
+      "objective": "FIFO",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "10 20\n",
+      "tests": [
+        {
+          "name": "queue",
+          "stdin": "",
+          "stdout": "10 20"
+        }
+      ],
+      "hints": [
+        "front/rear % cap."
+      ],
+      "solution": "#include <stdio.h>\n\nint main(void) {\n    int q[4], front = 0, rear = 0, cap = 4;\n    for (int v = 10; v <= 30; v += 10) q[rear++ % cap] = v;\n    int first = q[front++];\n    int second = q[front++];\n    printf(\"%d %d\\n\", first, second);\n    return 0;\n}\n",
+      "xp": 50
+    },
+    {
+      "id": "l35",
+      "module": "c20",
+      "title": "BST insert + inorder",
+      "level": "advanced",
+      "category": "data-structures",
+      "brief": "BST me 5,3,8 insert karo aur inorder print karo.",
+      "objective": "tree recursion",
+      "starter": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){return 0;}",
+      "expected": "3 5 8\n",
+      "tests": [
+        {
+          "name": "inorder",
+          "stdin": "",
+          "stdout": "3 5 8"
+        }
+      ],
+      "hints": [
+        "Recursive insert."
+      ],
+      "solution": "#include <stdio.h>\n#include <stdlib.h>\ntypedef struct N{int d;struct N*l,*r;}N;\nN*ins(N*t,int v){if(!t){N*n=malloc(sizeof *n);n->d=v;n->l=n->r=NULL;return n;}if(v<t->d)t->l=ins(t->l,v);else t->r=ins(t->r,v);return t;}\nvoid ino(N*t){if(!t)return;ino(t->l);printf(\"%d \",t->d);ino(t->r);}\nint main(void){N*t=NULL;int v[]={5,3,8};for(int i=0;i<3;i++)t=ins(t,v[i]);ino(t);printf(\"\\n\");return 0;}",
+      "xp": 50
+    },
+    {
+      "id": "l36",
+      "module": "c20",
+      "title": "Hash-ish frequency",
+      "level": "intermediate",
+      "category": "data-structures",
+      "brief": "Array me element frequency count karo.",
+      "objective": "counting pattern",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "2:2 3:1\n",
+      "tests": [
+        {
+          "name": "freq",
+          "stdin": "",
+          "stdout": "2:2 3:1"
+        }
+      ],
+      "hints": [
+        "Count array ya sort."
+      ],
+      "solution": "#include <stdio.h>\nint main(void){int a[]={2,3,2},n=3;for(int i=0;i<n;i++){int c=0,seen=0;for(int k=0;k<i;k++)if(a[k]==a[i])seen=1;if(seen)continue;for(int j=0;j<n;j++)if(a[j]==a[i])c++;printf(\"%d:%d \",a[i],c);}printf(\"\\n\");return 0;}",
+      "xp": 35
+    },
+    {
+      "id": "l37",
+      "module": "c11",
+      "title": "Matrix multiplication",
+      "level": "intermediate",
+      "category": "array",
+      "brief": "2x2 matrices multiply karo.",
+      "objective": "nested loops",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "19 22\n43 50\n",
+      "tests": [
+        {
+          "name": "product",
+          "stdin": "",
+          "stdout": "19 22\n43 50"
+        }
+      ],
+      "hints": [
+        "Triple loop."
+      ],
+      "solution": "#include <stdio.h>\n\nint main(void) {\n    int a[2][2] = {{1, 2}, {3, 4}}, b[2][2] = {{5, 6}, {7, 8}}, c[2][2] = {{0}};\n    for (int i = 0; i < 2; i++)\n        for (int j = 0; j < 2; j++)\n            for (int k = 0; k < 2; k++) c[i][j] += a[i][k] * b[k][j];\n    for (int i = 0; i < 2; i++) printf(\"%d %d\\n\", c[i][0], c[i][1]);\n    return 0;\n}\n",
+      "xp": 35
+    },
+    {
+      "id": "l38",
+      "module": "c18",
+      "title": "Multi-file build",
+      "level": "advanced",
+      "category": "build",
+      "brief": "greet.h/greet.c/main.c banao aur guard ke saath link karo.",
+      "objective": "separate compilation",
+      "starter": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, C!\"; }\n\nint main(void) {\n    /* In a real build, greet() lives in greet.c and is declared in greet.h. */\n    return 0;\n}\n",
+      "expected": "Hello, C!\n",
+      "tests": [
+        {
+          "name": "greeting",
+          "stdin": "",
+          "stdout": "Hello, C!"
+        }
+      ],
+      "hints": [
+        "gcc main.c greet.c."
+      ],
+      "solution": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, C!\"; }\n\nint main(void) {\n    printf(\"%s\\n\", greet());\n    return 0;\n}\n",
+      "xp": 50
+    },
+    {
+      "id": "l39",
+      "module": "c19",
+      "title": "Sort + binary search",
+      "level": "advanced",
+      "category": "algorithm",
+      "brief": "Bubble sort karke binary search karo.",
+      "objective": "sort then search",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "1 2 3 5 8\nfound=2\n",
+      "tests": [
+        {
+          "name": "output",
+          "stdin": "",
+          "stdout": "1 2 3 5 8\nfound=2"
+        }
+      ],
+      "hints": [
+        "Sort pehle."
+      ],
+      "solution": "#include <stdio.h>\n\nint main(void) {\n    int a[] = {5, 2, 8, 1, 3}, n = 5;\n    for (int i = 0; i < n - 1; i++)\n        for (int j = 0; j < n - 1 - i; j++)\n            if (a[j] > a[j + 1]) { int t = a[j]; a[j] = a[j + 1]; a[j + 1] = t; }\n    for (int i = 0; i < n; i++) printf(\"%d%s\", a[i], i == n - 1 ? \"\\n\" : \" \");\n    int lo = 0, hi = n - 1, key = 3, idx = -1;\n    while (lo <= hi) {\n        int m = (lo + hi) / 2;\n        if (a[m] == key) { idx = m; break; }\n        if (a[m] < key) lo = m + 1; else hi = m - 1;\n    }\n    printf(\"found=%d\\n\", idx);\n    return 0;\n}\n",
+      "xp": 50
+    },
+    {
+      "id": "l40",
+      "module": "c20",
+      "title": "Expression evaluator",
+      "level": "advanced",
+      "category": "data-structures",
+      "brief": "Stack se postfix expression evaluate karo.",
+      "objective": "stack application",
+      "starter": "#include <stdio.h>\nint main(void){return 0;}",
+      "expected": "result=14\n",
+      "tests": [
+        {
+          "name": "eval",
+          "stdin": "",
+          "stdout": "result=20"
+        }
+      ],
+      "hints": [
+        "Digits push, operator pop twice."
+      ],
+      "solution": "#include <stdio.h>\n#include <ctype.h>\nint main(void){char e[]=\"23+4*\";int st[16],t=0;for(int i=0;e[i];i++){char c=e[i];if(isdigit((unsigned char)c))st[t++]=c-'0';else{int b=st[--t],a=st[--t];st[t++]=c=='+'?a+b:c=='-'?a-b:c=='*'?a*b:a/b;}}printf(\"result=%d\\n\",st[0]);return 0;}",
+      "xp": 50
+    }
+  ]
+}

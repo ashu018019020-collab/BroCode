@@ -42,6 +42,8 @@ const AgenticLab = lazy(() => import('../features/labs/AgenticLab'));
 const NumPyPandasLab = lazy(() => import('../features/labs/NumPyPandasLab'));
 const DefensePage = lazy(() => import('../features/interview/DefensePage'));
 const PlaybookPage = lazy(() => import('../features/practice/Playbook'));
+const CCoursePage = lazy(() => import('../features/c-programming/CCoursePage'));
+const CLessonPage = lazy(() => import('../features/c-programming/CLessonPage'));
 const TrackOverview = lazy(() => import('../features/learning/TrackOverview'));
 const QuestionBank = lazy(() => import('../features/practice/QuestionBank'));
 const ProjectLab = lazy(() => import('../features/projects/ProjectLab'));
@@ -830,6 +832,8 @@ function Shell() {
                   without `Protect` is the ONLY way to re-open a door, which makes the omission
                   reviewable instead of invisible. */}
               <Route path="/courses" element={<Protect><CoursesHome /></Protect>} />
+              <Route path="/c-programming" element={<Protect><CCoursePage /></Protect>} />
+              <Route path="/c-programming/:moduleId" element={<Protect><CLessonPage /></Protect>} />
               <Route path="/course/:slug" element={<Protect><CoursePage /></Protect>} />
               <Route path="/course/:slug/:step" element={<Protect><StepPage /></Protect>} />
               <Route path="/practice" element={<Protect><PracticeHub /></Protect>} />

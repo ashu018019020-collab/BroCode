@@ -41,6 +41,7 @@ const APP_TSX = path.join(ROOT, 'src', 'app', 'App.tsx');
 const SECTIONS_JSON = path.join(ROOT, 'public', 'generated', 'curriculum', 'sections.json');
 const COURSES_INDEX = path.join(ROOT, 'public', 'generated', 'courses', 'index.json');
 const TRACKS_INDEX = path.join(ROOT, 'public', 'generated', 'tracks', 'index.json');
+const C_COURSE_INDEX = path.join(ROOT, 'public', 'generated', 'c-course', 'index.json');
 const OUT_PATH = path.join(ROOT, 'public', 'sitemap.xml');
 const ROBOTS_PATH = path.join(ROOT, 'public', 'robots.txt');
 
@@ -115,12 +116,13 @@ const readTrackSlugs = () => readJson(TRACKS_INDEX).map((t) => t.slug);
 const escapeXml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /** Every hash URL a parameterized route stands for, read from the same registries the app loads. */
-function expansions(tracks, sectionIds, courses) {
+function expansions(tracks, sectionIds, courses, cModules) {
   return {
     '/track/:trackSlug': tracks.map((slug) => `/track/${slug}`),
     '/lesson/:sid': sectionIds.map((sid) => `/lesson/${sid}`),
     '/course/:slug': courses.map((c) => `/course/${c.slug}`),
     '/course/:slug/:step': courses.flatMap((c) => c.steps.map((step) => `/course/${c.slug}/${step}`)),
+    '/c-programming/:moduleId': cModules.map((id) => `/c-programming/${id}`),
   };
 }
 
@@ -128,7 +130,12 @@ function expansions(tracks, sectionIds, courses) {
 function buildSitemap(base = DEFAULT_BASE) {
   const cleanBase = base.replace(/\/+$/, '');
   const appSrc = fs.readFileSync(APP_TSX, 'utf8');
-  const expanded = expansions(readTrackSlugs(), readJson(SECTIONS_JSON).map((s) => s.id), readJson(COURSES_INDEX).courses);
+  const expanded = expansions(
+    readTrackSlugs(),
+    readJson(SECTIONS_JSON).map((s) => s.id),
+    readJson(COURSES_INDEX).courses,
+    readJson(C_COURSE_INDEX).modules.map((m) => m.id),
+  );
 
   // A typo in PRIVATE would hide nothing while looking deliberate, so every entry must be a real
   // route. Failing here is the difference between "excluded on purpose" and "excluded by mistake".

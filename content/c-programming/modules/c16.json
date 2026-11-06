@@ -1,0 +1,200 @@
+{
+  "id": "c16",
+  "no": 16,
+  "title": "Dynamic Memory Allocation",
+  "level": "advanced",
+  "hours": 6,
+  "goal": "Stack vs heap, malloc/calloc/realloc/free, leaks, dangling/double free aur ownership.",
+  "prereqs": [
+    "Module 13-15: pointers aur structs"
+  ],
+  "definition": "Dynamic memory runtime par heap se allocate hoti hai: malloc, calloc, realloc aur free. Lifetime programmer ke control me hoti hai.",
+  "explain": [
+    "Stack automatic hai (scope se free), heap manual. malloc bytes leta hai aur uninitialized memory deta hai; calloc count*size leta hai aur zero karta hai; realloc resize karta hai (address badal sakta hai).",
+    "malloc NULL return kar sakta hai — hamesha check karo. free(NULL) safe hai; double free aur use-after-free UB hain.",
+    "Memory leak tab hota hai jab pointer kho jaata hai par memory free nahi hoti. Ownership ka rule likho: kis function ne allocate kiya aur kaun free karega.",
+    "sizeof *p pattern use karo: int *p = malloc(n * sizeof *p); type badalne par bhi sahi rehta hai."
+  ],
+  "analogy": "Heap ek library hai jahan aap kitabein mangwate ho (malloc) aur wapas karte ho (free). Wapas na karo to library bhar jaati hai; wapas karke dobara padho to invalid.",
+  "why": "Dynamic arrays, linked lists, trees, strings builder aur har real application heap use karti hai. Leak aur use-after-free production incidents ka common karan hain.",
+  "syntax": [
+    {
+      "code": "int *a = malloc(n * sizeof *a);\nif (!a) { /* handle */ }\nfor (int i=0;i<n;i++) a[i]=0;\nfree(a);\na = NULL;",
+      "note": "Check, use, free, NULL — chaar steps."
+    },
+    {
+      "code": "int *b = calloc(n, sizeof *b);      /* zeroed */\nb = realloc(b, 2 * n * sizeof *b);  /* may move */\nif (b) { /* use */ }\nfree(b);",
+      "note": "realloc ka return naye pointer me lo; fail par purana valid rehta hai."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Stack vs heap",
+      "body": "Stack fast, automatic, chhota (MBs). Heap bada, manual, slower. Large arrays aur runtime-size data heap par."
+    },
+    {
+      "title": "malloc/calloc/realloc/free",
+      "body": "malloc uninitialized, calloc zeroed. realloc content preserve karta hai naye size tak; fail par NULL aur original intact. free sirf malloc family ke pointer par."
+    },
+    {
+      "title": "Leaks aur invalid access",
+      "body": "Leak: ownership kho gayi. Dangling: free ke baad use. Double free: same pointer do baar free. Use-after-free: freed memory read/write. ASan teeno pakadta hai."
+    },
+    {
+      "title": "Ownership patterns",
+      "body": "Ek clear owner; transfer document karo. Cleanup ke liye goto cleanup pattern. Dynamic array struct {T *data; size_t len, cap;} ke saath grow karo."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "malloc aur free",
+      "code": "#include <stdio.h>\n#include <stdlib.h>\nint main(void) {\n    int n = 5;\n    int *a = malloc((size_t)n * sizeof *a);\n    if (!a) return 1;\n    for (int i = 0; i < n; i++) a[i] = i * i;\n    for (int i = 0; i < n; i++) printf(\"%d \", a[i]);\n    printf(\"\\n\");\n    free(a);\n    a = NULL;\n    return 0;\n}",
+      "output": "0 1 4 9 16 \n",
+      "lines": [
+        "sizeof *a type-safe size deta hai.",
+        "malloc fail par NULL — check kiya.",
+        "free ke baad NULL set kiya."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "realloc se dynamic array grow",
+      "code": "#include <stdio.h>\n#include <stdlib.h>\nint main(void) {\n    int cap = 2, len = 0;\n    int *a = malloc((size_t)cap * sizeof *a);\n    if (!a) return 1;\n    for (int v = 1; v <= 6; v++) {\n        if (len == cap) {\n            int *tmp = realloc(a, (size_t)(cap * 2) * sizeof *a);\n            if (!tmp) { free(a); return 1; }\n            a = tmp; cap *= 2;\n        }\n        a[len++] = v;\n    }\n    for (int i = 0; i < len; i++) printf(\"%d \", a[i]);\n    printf(\"cap=%d\\n\", cap);\n    free(a);\n    return 0;\n}",
+      "output": "1 2 3 4 5 6 cap=8\n",
+      "lines": [
+        "Capacity double hoti hai jab full ho.",
+        "realloc ka result tmp me liya — fail par a safe.",
+        "Aakhir me ek hi free."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "Heap lifecycle",
+    "rows": [
+      "int *p = malloc(4 * sizeof *p)  -> heap block 0x55a0...",
+      "p[0..3] valid",
+      "free(p) -> block free",
+      "p = NULL -> dangling pointer avoid",
+      "free(p) dubara -> double free UB"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "int *p = malloc(n * sizeof(int)); p = p + 1; free(p);",
+      "right": "free original pointer",
+      "why": "free ko malloc ka original address chahiye."
+    },
+    {
+      "wrong": "p = realloc(p, size);",
+      "right": "tmp = realloc(p, size); if (tmp) p = tmp;",
+      "why": "Fail par NULL se original kho jaata hai — leak."
+    },
+    {
+      "wrong": "char *s = malloc(10); strcpy(s, \"hello\");",
+      "right": "malloc(6)",
+      "why": "5 chars + null ke liye 6 bytes."
+    }
+  ],
+  "debug": {
+    "brief": "Loop me memory leak ho raha hai. Fix karo.",
+    "code": "#include <stdlib.h>\nint main(void){for(int i=0;i<3;i++){int *p=malloc(16);p[0]=i;/* use */}return 0;}",
+    "expected": "no leak\n",
+    "hints": [
+      "Har malloc ka free chahiye.",
+      "Loop ke end me free(p)."
+    ],
+    "fix": "for(...){int *p=malloc(16); p[0]=i; free(p);}"
+  },
+  "best": [
+    "sizeof *p pattern",
+    "malloc ka NULL check",
+    "free ke baad NULL",
+    "Ownership documented rakho",
+    "ASan/Valgrind se test karo"
+  ],
+  "practice": [
+    {
+      "title": "Dynamic array",
+      "prompt": "n input lekar malloc se array banao aur sum print karo.",
+      "level": "easy",
+      "hint": "free karna mat bhoolo."
+    },
+    {
+      "title": "String duplicate",
+      "prompt": "strdup jaisa function likho.",
+      "level": "medium",
+      "hint": "strlen+1 malloc, strcpy."
+    },
+    {
+      "title": "2D grid",
+      "prompt": "rows x cols int grid malloc/free karo.",
+      "level": "hard",
+      "hint": "Nested malloc/free."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "calloc aur malloc me fark?",
+      "options": [
+        "Speed",
+        "Zero-initialize",
+        "Size",
+        "Koi nahi"
+      ],
+      "answer": 1,
+      "explain": "calloc memory ko zero karta hai."
+    },
+    {
+      "q": "free ke baad pointer?",
+      "options": [
+        "Auto NULL",
+        "Dangling",
+        "Zero",
+        "Safe use"
+      ],
+      "answer": 1,
+      "explain": "Dangling; NULL manually set karo."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Memory leak production me kaise pakdein?",
+      "a": "ASan/Valgrind se development me, heap profiler se production me, aur ownership review se. Har malloc ka ek clear free path hona chahiye.",
+      "followUp": "Valgrind command? — valgrind --leak-check=full ./app"
+    },
+    {
+      "q": "realloc fail hone par kya hota hai?",
+      "a": "NULL return karta hai aur original block valid rehta hai. Isliye result tmp me lo, warna original pointer kho kar leak ho jaata hai.",
+      "followUp": "Size 0? — implementation-defined; free jaisa treat karo."
+    }
+  ],
+  "lab": {
+    "title": "Lab 16 — Safe dynamic array",
+    "brief": "n input lo, malloc se array banao, reverse print karo aur free karo.",
+    "starter": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){return 0;}",
+    "expected": "3 2 1 \n",
+    "tests": [
+      {
+        "name": "reverse",
+        "stdin": "3\n1 2 3\n",
+        "stdout": "3 2 1"
+      }
+    ],
+    "hints": [
+      "malloc(n*sizeof *a).",
+      "free(a)."
+    ],
+    "solution": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){int n;scanf(\"%d\",&n);int *a=malloc((size_t)n*sizeof *a);if(!a)return 1;for(int i=0;i<n;i++)scanf(\"%d\",&a[i]);for(int i=n-1;i>=0;i--)printf(\"%d \",a[i]);printf(\"\\n\");free(a);return 0;}"
+  },
+  "checkpoint": {
+    "title": "Module 16 checkpoint",
+    "checks": [
+      "Stack vs heap bata sakte ho",
+      "malloc/calloc/realloc/free use kiye",
+      "NULL check aur free ke baad NULL",
+      "Leak aur double free samajh aaye",
+      "Dynamic array grow kiya"
+    ]
+  }
+}

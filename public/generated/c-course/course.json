@@ -1,0 +1,4238 @@
+{
+  "course": {
+    "id": "c-programming",
+    "slug": "c-programming",
+    "title": "C Programming",
+    "tagline": "Zero se advanced C — pointers, memory aur real compiler ke saath",
+    "description": "BroCode ka complete C Programming course: 20 modules, ISO C17, Hinglish explanations, real compiler notebook, 40 labs, 15 projects, 180+ interview questions aur module-wise assessments. Har module 22-block learning template follow karta hai — definition se checkpoint tak.",
+    "standard": "ISO C17 (ISO/IEC 9899:2018)",
+    "level": "Beginner to Advanced",
+    "hours": 120,
+    "tone": "cyan",
+    "prerequisites": [
+      "Computer chalana aata ho",
+      "Koi programming background zaroori nahi"
+    ],
+    "outcomes": [
+      "C program likhna, compile karna aur debug karna",
+      "Pointers, arrays, strings aur memory ko visually samajhna",
+      "Structures, dynamic memory aur file handling me confidence",
+      "Algorithms aur data structures ko C me implement karna",
+      "Interview aur viva ke C questions ka structured answer dena"
+    ],
+    "skills": [
+      "C17",
+      "GCC",
+      "Pointers",
+      "Memory management",
+      "Data structures",
+      "Debugging",
+      "Algorithms",
+      "File I/O"
+    ],
+    "modules": [
+      "c01",
+      "c02",
+      "c03",
+      "c04",
+      "c05",
+      "c06",
+      "c07",
+      "c08",
+      "c09",
+      "c10",
+      "c11",
+      "c12",
+      "c13",
+      "c14",
+      "c15",
+      "c16",
+      "c17",
+      "c18",
+      "c19",
+      "c20"
+    ]
+  },
+  "stats": {
+    "modules": 20,
+    "topics": 86,
+    "examples": 40,
+    "practice": 60,
+    "mcqs": 128,
+    "interview": 107,
+    "labs": 40,
+    "projects": 15,
+    "hours": 103
+  },
+  "modules": [
+    {
+      "id": "c01",
+      "no": 1,
+      "title": "Introduction to C Programming",
+      "level": "beginner",
+      "hours": 4,
+      "goal": "Program ka idea, C ka itihaas aur pehla C program compile karke chalana.",
+      "prereqs": [
+        "Computer on karna",
+        "Programming ka koi experience zaroori nahi"
+      ],
+      "definition": "C ek compiled, statically typed, procedural language hai jo 1972 me Dennis Ritchie ne Bell Labs me banayi. Aaj bhi OS, embedded devices aur databases ki backbone hai.",
+      "explain": [
+        "Program instructions ki list hai: input lo, memory me rakho, calculate karo, output do. C me ye instructions .c text file me likhi jaati hain.",
+        "Compiler us text ko machine code me badalta hai, isliye C fast hai aur errors chalne se pehle milte hain — Python jaisi interpreter language me nahi.",
+        "C chhoti hai (C17 me 32 keywords) aur garbage collector nahi hai: memory aap manage karte ho. Isi discipline se OS aur drivers likhe jaate hain."
+      ],
+      "analogy": "C building ka raw material hai (eent, cement, sariya); Python ready-made furniture. Raw material se ghar banana mushkil hai, par jo banaoge wahi tikta hai — aur C seekhne ke baad baaki languages ke andar ka engine samajh aata hai.",
+      "why": "Pointers, memory aur performance ka asli model C se aata hai. Interviews ke pointers/segfault sawaal yahin se aate hain, aur Linux, SQLite, Redis ka source C me hai.",
+      "syntax": [
+        {
+          "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Hello, BroCode!\\n\");\n    return 0;\n}",
+          "note": "main() entry point hai; return 0 success batata hai."
+        },
+        {
+          "code": "/* block comment */\n// line comment\nprintf(\"%d\\n\", 42);   /* %d integer, \\n newline */",
+          "note": "Comments compiler ignore karta hai."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Programming kya hai",
+          "body": "Problem ko chhote unambiguous steps me todna. Har program me sequence, condition aur repetition hoti hai."
+        },
+        {
+          "title": "C ka itihaas",
+          "body": "1972 Dennis Ritchie; 1978 K&R; 1989 ANSI C; 1999 C99 (// comments, for-loop declarations); 2011 C11; 2018 C17 — aaj ka default standard."
+        },
+        {
+          "title": "C ke features",
+          "body": "Simple core, fast code, direct memory access, portable, modular. Nahi hai: classes, GC, exceptions, built-in string type."
+        },
+        {
+          "title": "Compiler vs interpreter",
+          "body": "Compiler poora program pehle machine code banata hai (C); interpreter line-by-line chalata hai (Python). Compiled binary tez hota hai aur bina source distribute hota hai."
+        },
+        {
+          "title": "Source se executable",
+          "body": ".c → preprocessor → compiler → assembler (.o) → linker → executable. GCC me gcc hello.c -o hello chaaron stage ek saath karta hai."
+        },
+        {
+          "title": "main(), headers, comments",
+          "body": "int main(void) entry point; stdio.h printf/scanf declare karti hai; // aur /* */ comments; \\n, \\t, \\\\, \\\" escape sequences."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Hello World",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Hello, BroCode!\\n\");\n    return 0;\n}",
+          "output": "Hello, BroCode!\n",
+          "lines": [
+            "#include <stdio.h> printf ki declaration laata hai.",
+            "int main(void) entry point define karta hai.",
+            "printf screen par text likhta hai; \\n line break.",
+            "return 0 shell ko success status deta hai."
+          ],
+          "dryRun": [
+            "Compile → executable.",
+            "OS main() call karta hai.",
+            "printf stdout buffer me likhta hai.",
+            "return par buffer flush hota hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Formatted profile",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Name : %s\\n\", \"Ahetesham\");\n    printf(\"Level: %d\\n\", 3);\n    printf(\"%-8s|%5s\\n\", \"left\", \"right\");\n    return 0;\n}",
+          "output": "Name : Ahetesham\nLevel: 3\nleft    |right\n",
+          "lines": [
+            "%s string aur %d integer placeholder hai.",
+            "-8 left-align 8 width; 5 right-align 5 width.",
+            "Format specifier aur argument order match hone chahiye."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Source → executable",
+        "rows": [
+          "hello.c --preprocess--> hello.i",
+          "hello.i --compile----> hello.s",
+          "hello.s --assemble---> hello.o",
+          "hello.o --link-------> hello",
+          "Aap sirf hello.c likhte ho; baaki GCC karta hai."
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "printf(\"Hello\");",
+          "right": "printf(\"Hello\\n\");",
+          "why": "Bina newline shell prompt output se chipak jaata hai."
+        },
+        {
+          "wrong": "printf(\"%d\", 3.5);",
+          "right": "printf(\"%f\", 3.5);",
+          "why": "Format aur type mismatch undefined behaviour hai."
+        },
+        {
+          "wrong": "#include \"stdio.h\"",
+          "right": "#include <stdio.h>",
+          "why": "System header angle brackets se aata hai."
+        }
+      ],
+      "debug": {
+        "brief": "Output me Hello aur World ek hi line me chipak rahe hain. Fix karo.",
+        "code": "#include <stdio.h>\nint main(void) {\n    printf(\"Hello\");\n    printf(\"World\");\n    return 0;\n}",
+        "expected": "Hello\nWorld\n",
+        "hints": [
+          "Line break kaun daalta hai?",
+          "Dono printf ke strings dekho."
+        ],
+        "fix": "printf(\"Hello\\n\"); printf(\"World\\n\");"
+      },
+      "best": [
+        "int main(void) aur return 0 likho",
+        "Variables initialize karo",
+        "-Wall -Wextra se compile karo",
+        "Ek program me ek hi main()"
+      ],
+      "practice": [
+        {
+          "title": "Naam print",
+          "prompt": "Naam, city aur goal teen alag lines me print karo.",
+          "level": "easy",
+          "hint": "Teen printf, har ek me \\n."
+        },
+        {
+          "title": "ASCII box",
+          "prompt": "+---+ / | C | / +---+ shape print karo.",
+          "level": "easy",
+          "hint": "Har line alag printf."
+        },
+        {
+          "title": "Sum sentence",
+          "prompt": "Do integers ka sum ek sentence me print karo.",
+          "level": "easy",
+          "hint": "printf(\"Sum = %d\\n\", a + b);"
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "C ke original developer?",
+          "options": [
+            "Bjarne Stroustrup",
+            "Dennis Ritchie",
+            "Guido van Rossum",
+            "James Gosling"
+          ],
+          "answer": 1,
+          "explain": "Dennis Ritchie, 1972, Bell Labs."
+        },
+        {
+          "q": "C17 ka standard number?",
+          "options": [
+            "ISO/IEC 9899:2011",
+            "ISO/IEC 9899:2018",
+            "ISO/IEC 9899:1999",
+            "ISO/IEC 9899:1990"
+          ],
+          "answer": 1,
+          "explain": "C17 = ISO/IEC 9899:2018, C11 ka bug-fix release."
+        },
+        {
+          "q": "printf() kaunsi header deti hai?",
+          "options": [
+            "stdlib.h",
+            "string.h",
+            "stdio.h",
+            "math.h"
+          ],
+          "answer": 2,
+          "explain": "stdio.h standard I/O declarations deti hai."
+        }
+      ],
+      "interview": [
+        {
+          "q": "C ko middle-level language kyun kehte hain?",
+          "a": "High-level syntax aur low-level memory access (pointers, bitwise ops) dono deta hai, isliye OS aur embedded dono me use hota hai.",
+          "followUp": "Hardware ke sabse kareeb cheez? — pointers aur volatile."
+        },
+        {
+          "q": "Compiler aur interpreter ka fark?",
+          "a": "Compiler pehle poora machine code banata hai, interpreter line-by-line chalta hai. C me errors runtime se pehle milte hain aur execution fast hoti hai.",
+          "followUp": "C runtime error example? — divide by zero, null dereference."
+        },
+        {
+          "q": "main() ka return value kahan jaata hai?",
+          "a": "OS ko exit status ke roop me: 0 success, non-zero failure. Shell me echo $? se dikhta hai.",
+          "followUp": "EXIT_SUCCESS kahan hai? — stdlib.h."
+        }
+      ],
+      "lab": {
+        "title": "Lab 1 — Profile card",
+        "brief": "Naam, city, goal aur target ko aligned card ki tarah print karo.",
+        "starter": "#include <stdio.h>\n\nint main(void) {\n    /* Apna profile yahan */\n    return 0;\n}",
+        "expected": "+-----------------------------+\n| Name  : Your Name           |\n| City  : Your City           |\n| Goal  : Learn C             |\n| Target: Finish Module 1     |\n+-----------------------------+\n",
+        "tests": [
+          {
+            "name": "profile card",
+            "stdin": "",
+            "stdout": "+-----------------------------+\n| Name  : Your Name           |\n| City  : Your City           |\n| Goal  : Learn C             |\n| Target: Finish Module 1     |\n+-----------------------------+"
+          }
+        ],
+        "hints": [
+          "Har line ek printf.",
+          "\\n zaroori hai."
+        ],
+        "solution": "#include <stdio.h>\n\nint main(void) {\n    printf(\"+-----------------------------+\\n\");\n    printf(\"| Name  : Your Name           |\\n\");\n    printf(\"| City  : Your City           |\\n\");\n    printf(\"| Goal  : Learn C             |\\n\");\n    printf(\"| Target: Finish Module 1     |\\n\");\n    printf(\"+-----------------------------+\\n\");\n    return 0;\n}"
+      },
+      "checkpoint": {
+        "title": "Module 1 checkpoint",
+        "checks": [
+          "Hello World compile aur run hua",
+          "main() ka return aur exit code samajh aaya",
+          "stdio.h kyun chahiye bata sakte ho",
+          "\\n aur comments ka fark pata hai",
+          "Profile card likh liya"
+        ]
+      }
+    },
+    {
+      "id": "c02",
+      "no": 2,
+      "title": "C Development Environment",
+      "level": "beginner",
+      "hours": 3,
+      "goal": "GCC toolchain chalana, compile flags samajhna, compile aur linker errors padh kar fix karna.",
+      "prereqs": [
+        "Module 1: pehla C program"
+      ],
+      "definition": "Development environment wo toolchain hai jo source ko executable banata hai: editor (VS Code), compiler (GCC/Clang), assembler, linker, debugger (GDB) aur build automation (Make).",
+      "explain": [
+        "C khud kuch nahi chalata — compiler chahiye. Linux/macOS par GCC/Clang; Windows par MSYS2/MinGW-w64 ya WSL sabse aasan rasta hai.",
+        "VS Code sirf editor hai, compiler nahi. C/C++ extension IntelliSense aur debug UI deta hai; asli compile gcc command karti hai.",
+        "gcc hello.c -o hello ka matlab: compile karo aur output ka naam hello rakho. -std=c17 standard fix karta hai, -Wall -Wextra warnings on karte hain.",
+        "Error me pehla line sabse important hota hai — baad ke errors often usi ke consequence hote hain. Line number aur column dhyan se dekho."
+      ],
+      "analogy": "Compiler translator hai: aap C me likhte ho, machine apni bhasha samajhti hai. Grammar galat hui to translator line number ke saath reject karta hai.",
+      "why": "Beginners ka 90% time environment me jaata hai: gcc nahi mila, file save nahi hui, path galat. Ye module us friction ko khatam karta hai.",
+      "syntax": [
+        {
+          "code": "gcc -std=c17 -Wall -Wextra hello.c -o hello\n./hello",
+          "note": "C17 + warnings ke saath compile, phir binary chalao. ./ Linux/macOS par zaroori hai."
+        },
+        {
+          "code": "gcc -E hello.c -o hello.i   # preprocess\ngcc -S hello.c -o hello.s   # assembly\ngcc -c hello.c -o hello.o   # object\ngcc hello.o -o hello        # link",
+          "note": "Har stage alag dekh sakte ho."
+        },
+        {
+          "code": "gcc -g -fsanitize=address,undefined hello.c -o hello\n./hello",
+          "note": "Debug symbols + ASan/UBSan: memory bugs aur UB turant pakadte hain."
+        }
+      ],
+      "topics": [
+        {
+          "title": "GCC/Clang install",
+          "body": "Ubuntu: sudo apt install build-essential. macOS: xcode-select --install. Windows: MSYS2 (pacman -S mingw-w64-ucrt-x86_64-gcc) ya WSL2. Clang commands lagbhag same hain."
+        },
+        {
+          "title": "Editor setup",
+          "body": "VS Code + C/C++ extension, auto-save on, tasks.json me build task. File save kiye bina compile karna #1 beginner galti hai."
+        },
+        {
+          "title": "Preprocessing",
+          "body": "#include file paste karta hai, #define text replace karta hai, #ifdef blocks include/exclude karta hai. Is stage par C syntax check nahi hota."
+        },
+        {
+          "title": "Compile, assemble, link",
+          "body": "Compiler C → assembly; assembler assembly → object (.o); linker objects + libraries → executable. 'undefined reference' linker ka error hai, compiler ka nahi."
+        },
+        {
+          "title": "Warnings aur debug cycle",
+          "body": "-Wall -Wextra -Wpedantic on rakho; -Werror warnings ko error banata hai. GDB ke liye -g; sanitizers development me on rakho. Ek baar me ek change karo."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Compile aur run",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Toolchain ready\\n\");\n    return 0;\n}",
+          "output": "Toolchain ready\n",
+          "lines": [
+            "gcc -std=c17 -Wall hello.c -o hello se compile.",
+            "Output na aaye to compile error padho, run error nahi.",
+            "./hello se chalao."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Multi-file build",
+          "code": "/* math_utils.c */\nint add(int a, int b) { return a + b; }\n\n/* main.c */\n#include <stdio.h>\nint add(int a, int b);\nint main(void) {\n    printf(\"%d\\n\", add(2, 3));\n    return 0;\n}\n/* gcc -std=c17 main.c math_utils.c -o app */",
+          "output": "5\n",
+          "lines": [
+            "math_utils.c me definition hai, main.c me prototype.",
+            "Linker dono object files ko jodta hai.",
+            "Sirf main.c compile karoge to undefined reference aayega."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Four stages",
+        "rows": [
+          "hello.c --preprocess--> hello.i",
+          "hello.i --compile----> hello.s",
+          "hello.s --assemble---> hello.o",
+          "hello.o + libc --link-> hello",
+          "gcc hello.c -o hello = chaaron ek saath"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "gcc hello.c && hello",
+          "right": "gcc hello.c -o hello && ./hello",
+          "why": "Bina -o ke a.out banta hai; current directory PATH me nahi hoti."
+        },
+        {
+          "wrong": "File save kiye bina compile",
+          "right": "Ctrl+S phir compile",
+          "why": "Compiler disk ki purani file padhta hai."
+        },
+        {
+          "wrong": "Undefined reference ko syntax error samajhna",
+          "right": "Missing .c ya -lm add karo",
+          "why": "Ye linking stage ka error hai."
+        }
+      ],
+      "debug": {
+        "brief": "Compile fail ho raha hai: missing semicolon dhundo.",
+        "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Start\\n\")\n    printf(\"End\\n\");\n    return 0;\n}",
+        "expected": "Start\nEnd\n",
+        "hints": [
+          "Error kis line ko point karta hai?",
+          "Har statement ';' se khatam hoti hai."
+        ],
+        "fix": "printf(\"Start\\n\"); — semicolon lagao."
+      },
+      "best": [
+        "-std=c17 -Wall -Wextra hamesha",
+        "Build command README/Makefile me likho",
+        "Sanitizers development me on",
+        "Pehla error pehle fix karo"
+      ],
+      "practice": [
+        {
+          "title": "Version check",
+          "prompt": "gcc --version ka pehla line note karo.",
+          "level": "easy",
+          "hint": "Terminal me chalao."
+        },
+        {
+          "title": "Warnings dekho",
+          "prompt": "Unused variable bana kar -Wall warning trigger karo.",
+          "level": "easy",
+          "hint": "int unused = 0; use mat karo."
+        },
+        {
+          "title": "Stages",
+          "prompt": "gcc -E aur -S se .i aur .s file banao.",
+          "level": "medium",
+          "hint": "-o se output naam do."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "Object file banane ka flag?",
+          "options": [
+            "-E",
+            "-S",
+            "-c",
+            "-o"
+          ],
+          "answer": 2,
+          "explain": "-c compile + assemble karta hai, link nahi."
+        },
+        {
+          "q": "'undefined reference' kis stage ka error?",
+          "options": [
+            "Preprocessing",
+            "Compilation",
+            "Linking",
+            "Runtime"
+          ],
+          "answer": 2,
+          "explain": "Linker symbol resolve nahi kar paata."
+        },
+        {
+          "q": "C17 select karne ka flag?",
+          "options": [
+            "-std=c17",
+            "-std=c++17",
+            "-version=c17",
+            "-c17"
+          ],
+          "answer": 0,
+          "explain": "GCC/Clang: -std=c17."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Preprocessor compiler se alag kaise hai?",
+          "a": "Preprocessor text-level kaam karta hai: includes paste, macros replace, conditional blocks. Uske baad compiler grammar parse karta hai.",
+          "followUp": "Kaunsa flag sirf preprocess karta hai? — -E."
+        },
+        {
+          "q": "Object file aur executable me fark?",
+          "a": "Object me compiled code + unresolved symbols ho sakte hain; executable me linker ne sab resolve kar diya hota hai.",
+          "followUp": "Static library kya hai? — .o files ka archive (.a)."
+        },
+        {
+          "q": "AddressSanitizer kya pakadta hai?",
+          "a": "Out-of-bounds, use-after-free, double free, leaks — detailed runtime report ke saath.",
+          "followUp": "UBSan? — signed overflow, invalid shift jaise UB."
+        }
+      ],
+      "lab": {
+        "title": "Lab 2 — Two-file build",
+        "brief": "greet() ko alag file me rakho, dono ko alag compile karke link karo.",
+        "starter": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, BroCode!\"; }\n\nint main(void) {\n    /* Call greet() and print its result. */\n    return 0;\n}\n",
+        "expected": "Hello, BroCode!\n",
+        "tests": [
+          {
+            "name": "greeting",
+            "stdin": "",
+            "stdout": "Hello, BroCode!"
+          }
+        ],
+        "hints": [
+          "gcc -c greet.c aur gcc -c main.c.",
+          "Phir gcc main.o greet.o -o app."
+        ],
+        "solution": "#include <stdio.h>\n\n/* greet.c — in a real build this lives in its own file, declared in greet.h. */\nstatic const char *greet(void) { return \"Hello, BroCode!\"; }\n\nint main(void) {\n    printf(\"%s\\n\", greet());\n    return 0;\n}\n"
+      },
+      "checkpoint": {
+        "title": "Module 2 checkpoint",
+        "checks": [
+          "gcc --version chalta hai",
+          "-Wall -Wextra se compile kiya",
+          "Chaaron stages bata sakte ho",
+          "Compile vs linker error pata hai",
+          "Do-file program link hua"
+        ]
+      }
+    },
+    {
+      "id": "c03",
+      "no": 3,
+      "title": "Variables and Data Types",
+      "level": "beginner",
+      "hours": 5,
+      "goal": "Har C data type, sizeof, scope/lifetime, storage classes, conversion aur overflow ko practically samajhna.",
+      "prereqs": [
+        "Module 1-2: program likhna aur compile karna"
+      ],
+      "definition": "Variable memory ka named location hai jiska type batata hai kitni bytes chahiye aur unhe kaise interpret karna hai. C ke fundamental types char, int, float, double aur void hain; unke short/long/signed/unsigned variants derived aur user-defined types ke saath milte hain.",
+      "explain": [
+        "C statically typed hai: type compile time par fix hota hai aur variable ka size bhi. int typically 4 bytes, char 1 byte, double 8 bytes — exact size platform par depend karta hai, isliye sizeof use karo.",
+        "Declaration memory reserve karti hai, initialization pehli value deti hai. Local variable uninitialized ho to uska value indeterminate hota hai — padhna undefined behaviour hai.",
+        "Scope batata hai naam kahan dikhega; lifetime batata hai memory kab tak zinda rahegi. Local block ke andar, global poore file me, static lifetime program ke end tak.",
+        "Type conversion implicit (compiler) ya explicit (cast) hoti hai. Chhoti type me bada value daalne par truncation hota hai; signed overflow undefined behaviour hai — unsigned wrap karta hai."
+      ],
+      "analogy": "Variable ek dabba hai jiska label naam hai aur shape type. int ka dabba 4-byte ka hai, char ka 1-byte. Galat shape me zyada saaman thoosoge to overflow ho jaayega.",
+      "why": "90% C bugs type ke galat assumption se aate hain: int overflow, float precision, unsigned underflow, uninitialized read. Inhe samajhna pointers aur memory ka base hai.",
+      "syntax": [
+        {
+          "code": "int age = 21;            /* declaration + init */\nconst double PI = 3.14159; /* read-only */\nunsigned int count = 0u;\nlong long big = 9000000000LL;\nchar grade = 'A';         /* single quotes */",
+          "note": "Suffixes: u unsigned, L long, LL long long, f float."
+        },
+        {
+          "code": "printf(\"%zu\\n\", sizeof(int));\nprintf(\"%zu\\n\", sizeof age);\n#include <limits.h>\nprintf(\"%d %d\\n\", INT_MIN, INT_MAX);",
+          "note": "sizeof size_t deta hai, isliye %zu. limits.h me har type ki limits hain."
+        },
+        {
+          "code": "double d = 3.99;\nint i = (int)d;      /* explicit cast -> 3 */\nint j = d;           /* implicit conversion, warning */\nunsigned u = 0;\nu--;                 /* wraps to UINT_MAX */",
+          "note": "Cast intention clear karta hai; unsigned wrap defined hai, signed overflow nahi."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Keywords aur identifiers",
+          "body": "C17 me 32 keywords (int, return, if, ...). Identifier letters, digits aur underscore se banta hai, digit se shuru nahi hota, case-sensitive hai. Meaningful naam likho: total_marks, na ki tm."
+        },
+        {
+          "title": "Fundamental types",
+          "body": "char (1 byte, character/boolean-ish), int (usually 4), float (4, ~7 digits), double (8, ~15 digits), void (no value). short/long/long long size modifiers; signed/unsigned range badalte hain."
+        },
+        {
+          "title": "sizeof aur limits",
+          "body": "sizeof operator bytes deta hai, compile time par. <limits.h> INT_MAX/INT_MIN/CHAR_BIT deta hai, <float.h> DBL_EPSILON/FLT_MAX. Portable code sizeof par likho, hardcoded 4 par nahi."
+        },
+        {
+          "title": "Scope, lifetime, storage classes",
+          "body": "auto (default local, block lifetime), static (local: lifetime poore program ki, value retain; file-scope: internal linkage), extern (definition kahin aur hai), register (compiler ko hint, address nahi le sakte). Global variables zero-initialized hoti hain, locals nahi."
+        },
+        {
+          "title": "Conversion, overflow, precision",
+          "body": "Integer promotion chhote types ko int me badalti hai. Float→int truncate karta hai. Signed overflow UB hai (compiler optimize kar sakta hai). 0.1 + 0.2 == 0.3 false hota hai — binary floating point exact nahi hai. const/volatile/restrict qualifiers intent batate hain."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Types aur sizeof",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    char c = 'A';\n    int i = 42;\n    float f = 3.5f;\n    double d = 2.718281828;\n    printf(\"%c %d %.1f %.3f\\n\", c, i, f, d);\n    printf(\"sizes: %zu %zu %zu %zu\\n\", sizeof c, sizeof i, sizeof f, sizeof d);\n    return 0;\n}",
+          "output": "A 42 3.5 2.718\nsizes: 1 4 4 8\n",
+          "lines": [
+            "char '%c', int '%d', float '%.1f', double '%.3f' se print hote hain.",
+            "sizeof variable par bhi chalta hai.",
+            "Sizes platform par depend karte hain — ye common 64-bit values hain."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Casting aur overflow",
+          "code": "#include <stdio.h>\n#include <limits.h>\n\nint main(void) {\n    double price = 99.99;\n    int rounded = (int)price;\n    unsigned char small = 250;\n    small += 10;\n    printf(\"%d %u\\n\", rounded, (unsigned)small);\n    printf(\"INT_MAX = %d\\n\", INT_MAX);\n    return 0;\n}",
+          "output": "99 4\nINT_MAX = 2147483647\n",
+          "lines": [
+            "(int)99.99 truncate karke 99 deta hai, round nahi.",
+            "unsigned char 250 + 10 = 260 mod 256 = 4; unsigned wrap defined hai.",
+            "INT_MAX limits.h se aata hai."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Memory sketch (typical 64-bit)",
+        "rows": [
+          "address      name   type    bytes   value",
+          "0x7ffd1000   age    int     4       21",
+          "0x7ffd1004   grade  char    1       'A'",
+          "0x7ffd1008   price  double  8       99.99",
+          "Padding ho sakti hai — struct me alignment ke liye gaps aate hain."
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "int x; printf(\"%d\", x);",
+          "right": "int x = 0;",
+          "why": "Uninitialized local ka value indeterminate hota hai; read karna UB."
+        },
+        {
+          "wrong": "unsigned u = 5; if (u - 10 > 0)",
+          "right": "if ((int)u - 10 > 0)",
+          "why": "Unsigned arithmetic wrap hoti hai, comparison hamesha true ho sakta hai."
+        },
+        {
+          "wrong": "float total = 0.1 + 0.2; if (total == 0.3)",
+          "right": "fabs(total - 0.3) < 1e-9",
+          "why": "Binary floating point exact nahi hota; epsilon se compare karo."
+        }
+      ],
+      "debug": {
+        "brief": "Average galat aa raha hai kyunki integer division ho raha hai. Fix karo.",
+        "code": "#include <stdio.h>\nint main(void) {\n    int a = 7, b = 2;\n    double avg = a / b;\n    printf(\"%.1f\\n\", avg);\n    return 0;\n}",
+        "expected": "3.5\n",
+        "hints": [
+          "a / b ka type kya hai?",
+          "Ek operand double banao."
+        ],
+        "fix": "double avg = (double)a / b;"
+      },
+      "best": [
+        "Variables ko declare karte hi initialize karo",
+        "sizeof se size lo, hardcode mat karo",
+        "Money ke liye double/float ki jagah integer paise ya decimal library",
+        "Signed/unsigned mix mat karo",
+        "const se intent clear karo"
+      ],
+      "practice": [
+        {
+          "title": "Size table",
+          "prompt": "char, int, float, double, long long ke sizeof print karo.",
+          "level": "easy",
+          "hint": "%zu use karo."
+        },
+        {
+          "title": "Temperature",
+          "prompt": "Celsius ko Fahrenheit me convert karo double se.",
+          "level": "easy",
+          "hint": "F = C * 9.0 / 5 + 32."
+        },
+        {
+          "title": "Overflow demo",
+          "prompt": "unsigned char me 250 + 10 ka result print karo.",
+          "level": "medium",
+          "hint": "Result mod 256 hoga."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "sizeof ka return type?",
+          "options": [
+            "int",
+            "unsigned int",
+            "size_t",
+            "long"
+          ],
+          "answer": 2,
+          "explain": "size_t, isliye printf me %zu."
+        },
+        {
+          "q": "Signed integer overflow C me?",
+          "options": [
+            "Defined wrap",
+            "Undefined behaviour",
+            "Compile error",
+            "Runtime exception"
+          ],
+          "answer": 1,
+          "explain": "Signed overflow UB hai; unsigned wrap defined hai."
+        },
+        {
+          "q": "Global variable default value?",
+          "options": [
+            "Garbage",
+            "0",
+            "-1",
+            "Undefined"
+          ],
+          "answer": 1,
+          "explain": "Static storage duration wale objects zero-initialized hote hain."
+        }
+      ],
+      "interview": [
+        {
+          "q": "float aur double me kya chuno?",
+          "a": "float 4 bytes ~7 significant digits, double 8 bytes ~15. Default double lo; float sirf memory-critical arrays me jab precision kaafi ho.",
+          "followUp": "long double? — extended precision, platform-dependent."
+        },
+        {
+          "q": "static local variable ka use?",
+          "a": "Lifetime poore program ki hoti hai par scope block tak seemit; function calls ke beech value retain hoti hai (e.g. call counter). Thread-safe nahi.",
+          "followUp": "static global ka matlab? — internal linkage, sirf usi translation unit me dikhta hai."
+        },
+        {
+          "q": "Type casting kab zaroori hai?",
+          "a": "Jab aap jaan-bujh kar conversion chahte ho (double→int truncation, void*→typed pointer) ya warning suppress karni ho. Implicit conversion par bharosa mat karo.",
+          "followUp": "Casting pointer ka risk? — galat type par dereference UB."
+        }
+      ],
+      "lab": {
+        "title": "Lab 3 — Data type explorer",
+        "brief": "Ek program jo har type ka size, min/max aur ek sample value print kare.",
+        "starter": "#include <stdio.h>\n#include <limits.h>\n\nint main(void) {\n    /* Table banao */\n    return 0;\n}",
+        "expected": "char    1 bytes  min=-128 max=127\nint     4 bytes  min=-2147483648 max=2147483647\n",
+        "tests": [
+          {
+            "name": "type sizes",
+            "stdin": "",
+            "stdout": "char    1 bytes  min=-128 max=127\nint     4 bytes  min=-2147483648 max=2147483647"
+          }
+        ],
+        "hints": [
+          "limits.h include karo.",
+          "%-7s se align karo."
+        ],
+        "solution": "#include <stdio.h>\n#include <limits.h>\n\nint main(void) {\n    printf(\"char    %zu bytes  min=%d max=%d\\n\", sizeof(char), CHAR_MIN, CHAR_MAX);\n    printf(\"int     %zu bytes  min=%d max=%d\\n\", sizeof(int), INT_MIN, INT_MAX);\n    return 0;\n}"
+      },
+      "checkpoint": {
+        "title": "Module 3 checkpoint",
+        "checks": [
+          "Sab fundamental types aur sizes pata hain",
+          "sizeof aur %zu use kar liya",
+          "auto/static/extern samajh aaye",
+          "Conversion aur overflow ka fark pata hai",
+          "Data type table chala"
+        ]
+      }
+    },
+    {
+      "id": "c04",
+      "no": 4,
+      "title": "Input and Output",
+      "level": "beginner",
+      "hours": 4,
+      "goal": "printf/scanf family, format specifiers, string input aur input validation ko safely use karna.",
+      "prereqs": [
+        "Module 3: data types"
+      ],
+      "definition": "C me standard I/O streams (stdin, stdout, stderr) ke through hota hai. printf formatted output deta hai; scanf formatted input padhta hai; getchar/putchar characters; fgets line-based safe string input deta hai.",
+      "explain": [
+        "printf format string + arguments leta hai. Har % specifier batata hai value kaise print karni hai: %d int, %f double, %c char, %s string, %p pointer, %zu size_t.",
+        "scanf ko address chahiye, value nahi — isliye & lagta hai: scanf(\"%d\", &age). String (char array) me & ki zaroorat nahi kyunki array khud address me decay hota hai.",
+        "scanf whitespace par rukta hai, isliye spaces wala naam %s se poora nahi padha jaata. Line padhne ke liye fgets(buffer, size, stdin) use karo — buffer overflow se bachne ka safe rasta.",
+        "Mixed scanf aur fgets me leftover newline bug aata hai: scanf ke baad buffer me \\n bacha rehta hai. getchar() se consume karo ya poora line-based input lo.",
+        "Production input par kabhi bharosa mat karo: return value check karo (scanf kitne items padhe), range validate karo, aur fgets ke baad newline trim karo."
+      ],
+      "analogy": "printf ek printer hai jo format template ke hisaab se values bharta hai. scanf ek form hai jisme aapko batane padta hai value kahan likhni hai — isliye address (&) dena padta hai, warna form kahin aur bhar jaayega (crash).",
+      "why": "User input hi real programs ka pehla attack surface hai. Galat format specifier UB deta hai, unbounded %s buffer overflow — security bug. Sahi I/O likhna aage ke saare interactive programs ki neenv hai.",
+      "syntax": [
+        {
+          "code": "printf(\"%d %u %ld %lld\\n\", i, u, l, ll);\nprintf(\"%f %.2f %e\\n\", f, d, big);\nprintf(\"%c %s %p %zu\\n\", ch, name, ptr, sizeof x);",
+          "note": "printf me double ke liye %f (ya %lf, same), scanf me double ke liye %lf zaroori."
+        },
+        {
+          "code": "int age;\nif (scanf(\"%d\", &age) != 1) { /* invalid input */ }\nchar name[32];\nfgets(name, sizeof name, stdin);\nname[strcspn(name, \"\\n\")] = '\\0';",
+          "note": "Return value check karo; fgets newline chhodta hai, trim karo."
+        },
+        {
+          "code": "int ch;\nwhile ((ch = getchar()) != '\\n' && ch != EOF) { }\nprintf(\"%-10s|%08.3f|%+d|%x\\n\", \"id\", 3.14159, 7, 255);",
+          "note": "Left/right align, zero pad, sign, hex — width aur flags."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Format specifiers",
+          "body": "%d/%i signed int, %u unsigned, %f double (printf), %lf scanf double, %c char, %s string, %ld long, %lld long long, %x hex, %o octal, %p pointer, %zu size_t, %% literal percent. Specifier aur argument type mismatch UB hai."
+        },
+        {
+          "title": "Width, precision, flags",
+          "body": "%8d width 8 right align; %-8d left; %08d zero pad; %.3f 3 decimals; %+d force sign; %#x 0x prefix. Width runtime se bhi de sakte ho: printf(\"%*d\", 5, x)."
+        },
+        {
+          "title": "scanf aur validation",
+          "body": "scanf address leta hai, whitespace skip karta hai, return value me successful conversions deta hai. Failure par input stream me galat characters bache rehte hain — unhe consume karo warna infinite loop. %s me width do: %31s."
+        },
+        {
+          "title": "Character aur line input",
+          "body": "getchar/putchar int return karte hain taaki EOF (-1) represent ho. fgets newline include karta hai aur buffer size se zyada nahi padhta — isliye safe. puts newline add karta hai; fputs nahi."
+        },
+        {
+          "title": "Buffers aur streams",
+          "body": "stdout line-buffered (terminal) ya fully buffered (file) ho sakta hai; program crash par buffer ka data kho sakta hai. Debug me fflush(stdout) ya stderr use karo. stderr unbuffered hai. Input buffer me leftover newline sabse common beginner bug hai."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Formatted input/output",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    int age;\n    double height;\n    printf(\"Age and height: \");\n    if (scanf(\"%d %lf\", &age, &height) != 2) {\n        printf(\"Invalid input\\n\");\n        return 1;\n    }\n    printf(\"age=%d height=%.2f\\n\", age, height);\n    return 0;\n}",
+          "stdin": "21 5.9\n",
+          "output": "Age and height: age=21 height=5.90\n",
+          "lines": [
+            "scanf ko &age aur &height chahiye.",
+            "Return 2 ka matlab dono conversions safal.",
+            "%.2f do decimal places deta hai.",
+            "Prompt aur output same line me hain kyunki koi \\n nahi."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Line input safely",
+          "code": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char name[16];\n    if (fgets(name, sizeof name, stdin) == NULL) return 1;\n    name[strcspn(name, \"\\n\")] = '\\0';\n    printf(\"[%s] length=%zu\\n\", name, strlen(name));\n    return 0;\n}",
+          "stdin": "Ahetesham Khan\n",
+          "output": "[Ahetesham Khan] length=14\n",
+          "lines": [
+            "fgets buffer aur size leta hai — overflow nahi hota.",
+            "strcspn newline ki position deta hai; wahan \\0 rakhte hain.",
+            "strlen ke liye %zu.",
+            "Agar line 16 se badi hoti to baaki characters next read me aate."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "stdin → scanf → memory",
+        "rows": [
+          "keyboard: \"21 5.9\\n\"",
+          "stdin buffer: [2][1][ ][5][.][9][\\n]",
+          "scanf(\"%d %lf\", &age, &height)",
+          "age = 21      height = 5.9",
+          "buffer me bacha: [\\n]  <-- agla fgets ise khali line samjhega"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "scanf(\"%d\", age);",
+          "right": "scanf(\"%d\", &age);",
+          "why": "scanf address maangta hai; value dene par crash/UB."
+        },
+        {
+          "wrong": "scanf(\"%s\", buf);",
+          "right": "scanf(\"%15s\", buf);",
+          "why": "Bina width ke overflow ho sakta hai; fgets behtar hai."
+        },
+        {
+          "wrong": "scanf(\"%f\", &d);  // double d",
+          "right": "scanf(\"%lf\", &d);",
+          "why": "scanf me double ke liye %lf; %f float ke liye."
+        }
+      ],
+      "debug": {
+        "brief": "scanf ke baad fgets turant khali line padh raha hai. Bug fix karo.",
+        "code": "#include <stdio.h>\nint main(void) {\n    int n;\n    char line[32];\n    scanf(\"%d\", &n);\n    fgets(line, sizeof line, stdin);\n    printf(\"n=%d line=[%s]\\n\", n, line);\n    return 0;\n}",
+        "stdin": "5\nhello\n",
+        "expected": "n=5 line=[hello]\n",
+        "hints": [
+          "scanf ne \\n chhod diya kya?",
+          "Ek getchar() se leftover newline consume karo."
+        ],
+        "fix": "scanf(\"%d\", &n); getchar(); fgets(line, sizeof line, stdin);"
+      },
+      "best": [
+        "scanf ka return value check karo",
+        "String input ke liye fgets + newline trim",
+        "printf format aur argument type match karo",
+        "User input ko range validate karo",
+        "Prompt ke baad fflush(stdout) debug me"
+      ],
+      "practice": [
+        {
+          "title": "Student form",
+          "prompt": "Naam, age aur marks input lekar formatted print karo.",
+          "level": "easy",
+          "hint": "fgets + scanf mix karoge to newline dhyan rakho."
+        },
+        {
+          "title": "Temperature converter",
+          "prompt": "Celsius input lo, Fahrenheit 2 decimals me print karo.",
+          "level": "easy",
+          "hint": "scanf %lf."
+        },
+        {
+          "title": "Input validate",
+          "prompt": "Age 1-120 ke bahar ho to error print karo.",
+          "level": "medium",
+          "hint": "scanf ke baad if."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "scanf me double ke liye kaunsa specifier?",
+          "options": [
+            "%f",
+            "%lf",
+            "%d",
+            "%e"
+          ],
+          "answer": 1,
+          "explain": "scanf me %lf; printf me %f ya %lf dono double ke liye chalte hain (default promotion)."
+        },
+        {
+          "q": "fgets newline ke saath kya karta hai?",
+          "options": [
+            "Hata deta hai",
+            "Buffer me include karta hai",
+            "Crash karta hai",
+            "Ignore karta hai"
+          ],
+          "answer": 1,
+          "explain": "fgets newline include karta hai agar jagah ho; trim karna padta hai."
+        },
+        {
+          "q": "getchar() ka return type?",
+          "options": [
+            "char",
+            "int",
+            "unsigned char",
+            "void"
+          ],
+          "answer": 1,
+          "explain": "int, taaki EOF (-1) char se alag represent ho."
+        }
+      ],
+      "interview": [
+        {
+          "q": "scanf aur fgets me kya safe hai?",
+          "a": "fgets buffer size leta hai, isliye overflow nahi hota; scanf %s unbounded hai jab tak width na do (%31s). Line input ke liye fgets better hai.",
+          "followUp": "fgets newline? — include karta hai, trim karo."
+        },
+        {
+          "q": "Format specifier mismatch ka result?",
+          "a": "Undefined behaviour: galat bytes padhe jaate hain, garbage ya crash. Compiler -Wformat warning deta hai.",
+          "followUp": "printf(\"%d\", 3.5) kyun galat? — double varargs me double hi jaata hai, %d int expect karta hai."
+        },
+        {
+          "q": "stdout aur stderr ka fark?",
+          "a": "stdout buffered hai (line ya full), stderr unbuffered — errors turant dikhte hain aur redirection se alag file me ja sakte hain.",
+          "followUp": "perror kahan likhta hai? — stderr."
+        }
+      ],
+      "lab": {
+        "title": "Lab 4 — Student information form",
+        "brief": "Naam (spaces allowed), age aur marks input lo; validate karo aur formatted card print karo.",
+        "starter": "#include <stdio.h>\n\nint main(void) {\n    /* fgets + scanf, validation */\n    return 0;\n}",
+        "expected": "Name : Ahetesham Khan\nAge  : 21\nMarks: 88.50\n",
+        "tests": [
+          {
+            "name": "form output",
+            "stdin": "Ahetesham Khan\n21\n88.5\n",
+            "stdout": "Name : Ahetesham Khan\nAge  : 21\nMarks: 88.50"
+          }
+        ],
+        "hints": [
+          "fgets se naam lo, newline trim karo.",
+          "Age 1-120 validate karo."
+        ],
+        "solution": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char name[64];\n    int age;\n    double marks;\n    fgets(name, sizeof name, stdin);\n    name[strcspn(name, \"\\n\")] = '\\0';\n    if (scanf(\"%d %lf\", &age, &marks) != 2) return 1;\n    printf(\"Name : %s\\n\", name);\n    printf(\"Age  : %d\\n\", age);\n    printf(\"Marks: %.2f\\n\", marks);\n    return 0;\n}"
+      },
+      "checkpoint": {
+        "title": "Module 4 checkpoint",
+        "checks": [
+          "Saare common format specifiers pata hain",
+          "scanf ka return value check kiya",
+          "fgets se line padhi aur newline trim kiya",
+          "Leftover newline bug samajh aaya",
+          "Validated form chala"
+        ]
+      }
+    },
+    {
+      "id": "c05",
+      "no": 5,
+      "title": "Operators and Expressions",
+      "level": "beginner",
+      "hours": 4,
+      "goal": "Arithmetic se bitwise tak har operator, precedence/associativity aur short-circuit evaluation ko samajhna.",
+      "prereqs": [
+        "Module 3-4: types aur I/O"
+      ],
+      "definition": "Operator ek symbol hai jo operands par operation karta hai aur expression banata hai. C me arithmetic, relational, logical, assignment, increment/decrement, bitwise, conditional, comma aur sizeof operators hain.",
+      "explain": [
+        "Arithmetic (+ - * / %) integer operands par integer division karta hai: 7/2 = 3. % sirf integers par chalta hai aur negative numbers par sign dividend ka hota hai (-7 % 3 = -1).",
+        "Relational (< > <= >= == !=) 0 ya 1 dete hain. Assignment = aur comparison == alag hain — if (x = 5) hamesha true hota hai, compiler warning deta hai.",
+        "Logical && aur || short-circuit karte hain: agar left side se answer pata chal gaya to right side evaluate hi nahi hota. Isliye p && p->next safe hai.",
+        "Bitwise (& | ^ ~ << >>) bits par kaam karte hain — flags, masks, fast multiply/divide. Right shift signed negative par implementation-defined hai; unsigned par zero-fill.",
+        "Increment/decrement me prefix (++i: pehle badhao) aur postfix (i++: pehle use karo) ka fark hai. Ek hi expression me variable ko do baar modify karna UB hai."
+      ],
+      "analogy": "Expression ek kitchen recipe hai jisme operations ka order fixed hai — pehle brackets, phir multiply, phir add. Precedence wahi order hai; associativity batati hai same level par left ya right se chalo.",
+      "why": "Kisi bhi language ka logic yahin banta hai: conditions, loops, masks aur flags. Precedence ki galti se silently galat result aata hai — jo crash se zyada khatarnak hai.",
+      "syntax": [
+        {
+          "code": "int a = 7, b = 2;\nprintf(\"%d %d %d %d\\n\", a+b, a-b, a*b, a/b);\nprintf(\"%d\\n\", a % b);\nprintf(\"%.2f\\n\", (double)a / b);",
+          "note": "Integer division truncate karta hai; cast se float division."
+        },
+        {
+          "code": "int flags = 0b1010;      /* C23; C17 me 0xA */\nflags |= 0x1;            /* set bit 0 */\nflags &= ~0x2;           /* clear bit 1 */\nif (flags & 0x8) { }     /* test bit 3 */\nprintf(\"%d\\n\", flags << 1);",
+          "note": "Set/clear/test/shift — bitmask ka core."
+        },
+        {
+          "code": "int x = 5;\nint y = x++ + 10;   /* y=15, x=6 */\nint z = ++x + 10;   /* x=7, z=17 */\nint m = (x > 3) ? 100 : 200;\nfor (int i = 0, j = 9; i < j; i++, j--) { }",
+          "note": "Postfix/prefix aur comma operator."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Arithmetic aur modulus",
+          "body": "+ - * / %; integer division truncate karti hai. % integers ke liye, sign dividend ka. Overflow signed par UB, unsigned par wrap. Division/modulus by zero UB hai — check karo."
+        },
+        {
+          "title": "Relational aur logical",
+          "body": "== != < <= > >= 0/1 dete hain. && || ! short-circuit karte hain, precedence: ! > && > ||. if (a == b) aur if (!strcmp(a,b)) ke semantics alag hain — strcmp 0 par equal."
+        },
+        {
+          "title": "Assignment aur increment",
+          "body": "=, +=, -=, *=, /=, %=, &=, |=, ^=, <<=, >>=. Prefix ++i value badhne ke baad deta hai; postfix i++ purani value deta hai. Side effects ka order unspecified ho to UB."
+        },
+        {
+          "title": "Bitwise aur shifts",
+          "body": "& | ^ ~ << >>. x << 1 = x*2 (overflow UB), unsigned >> zero-fill, signed negative >> implementation-defined. Mask: value & 0xFF; toggle: ^= 1. Enum flags ke liye ideal."
+        },
+        {
+          "title": "Precedence, associativity, comma",
+          "body": "Brackets sabse pehle, phir unary, * / %, + -, shifts, relational, equality, bitwise, &&, ||, ?:, assignment, comma. Assignment right-associative; comma left-to-right evaluate karke last value deta hai. Confusion ho to brackets lagao."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Arithmetic aur integer division",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    int a = 7, b = 2;\n    printf(\"%d %d %d\\n\", a + b, a - b, a * b);\n    printf(\"%d %d\\n\", a / b, a % b);\n    printf(\"%.2f\\n\", (double)a / b);\n    return 0;\n}",
+          "output": "9 5 14\n3 1\n3.50\n",
+          "lines": [
+            "a + b, a - b, a * b argument order me print hote hain.",
+            "7/2 integer division se 3, 7%2 = 1.",
+            "(double)a / b se floating division 3.50."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Bit flags aur short-circuit",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    unsigned flags = 0;\n    flags |= 1u << 2;          /* set bit 2 */\n    flags |= 1u << 4;          /* set bit 4 */\n    printf(\"%u\\n\", flags);\n    flags &= ~(1u << 2);       /* clear bit 2 */\n    printf(\"%u\\n\", flags);\n    int n = 0;\n    if (n != 0 && 10 / n > 1) printf(\"never\\n\");\n    printf(\"%d\\n\", (n == 0) ? 42 : 7);\n    return 0;\n}",
+          "output": "20\n16\n42\n",
+          "lines": [
+            "1u << 2 = 4, 1u << 4 = 16; OR se 20.",
+            "~(1u<<2) mask se bit 2 clear, 16 bacha.",
+            "n != 0 false hai, isliye 10/n evaluate hi nahi hua — divide by zero se bacha.",
+            "Ternary condition ke hisaab se 42 deta hai."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Bit 4 3 2 1 (values 16 8 4 2)",
+        "rows": [
+          "flags = 0000 0000  (0)",
+          "set bit 2  -> 0000 0100  (4)",
+          "set bit 4  -> 0001 0100  (20)",
+          "clear bit2 -> 0001 0000  (16)",
+          "test: flags & 16 != 0  -> true"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "if (x = 5)",
+          "right": "if (x == 5)",
+          "why": "Assignment expression 5 deta hai jo truthy hai — condition hamesha true."
+        },
+        {
+          "wrong": "int avg = (a + b) / 2;  // a,b int",
+          "right": "double avg = (a + b) / 2.0;",
+          "why": "Integer division decimals kho deti hai."
+        },
+        {
+          "wrong": "i = i++ + 1;",
+          "right": "i = i + 2; ya i++;",
+          "why": "Ek expression me i ko do baar modify karna UB hai."
+        }
+      ],
+      "debug": {
+        "brief": "Average 3 aa raha hai 3.5 ki jagah. Fix karo.",
+        "code": "#include <stdio.h>\nint main(void) {\n    int a = 7, b = 2;\n    double avg = (a + b) / 2;\n    printf(\"%.1f\\n\", avg);\n    return 0;\n}",
+        "expected": "4.5\n",
+        "hints": [
+          "(a+b)/2 ka type int hai.",
+          "Division se pehle double banao."
+        ],
+        "fix": "double avg = (a + b) / 2.0;"
+      },
+      "best": [
+        "== aur = ka dhyan rakho; -Wparentheses on karo",
+        "Complex expression me brackets lagao",
+        "Bit operations unsigned par karo",
+        "Division se pehle zero check karo",
+        "Side-effect wale expressions chhote rakho"
+      ],
+      "practice": [
+        {
+          "title": "Calculator",
+          "prompt": "Do numbers aur operator (+ - * /) lekar result print karo.",
+          "level": "easy",
+          "hint": "Division me zero check."
+        },
+        {
+          "title": "Even/odd bitwise",
+          "prompt": "n & 1 se even/odd batao.",
+          "level": "easy",
+          "hint": "LSB 1 ho to odd."
+        },
+        {
+          "title": "Swap",
+          "prompt": "Do variables ko temp ke bina XOR se swap karo.",
+          "level": "medium",
+          "hint": "a ^= b; b ^= a; a ^= b;"
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "7 % -3 ka result C me?",
+          "options": [
+            "1",
+            "-1",
+            "2",
+            "Undefined"
+          ],
+          "answer": 0,
+          "explain": "C99 se result ka sign dividend (7) ka hota hai, isliye 1."
+        },
+        {
+          "q": "&& operator kya karta hai?",
+          "options": [
+            "Dono sides hamesha evaluate",
+            "Short-circuit",
+            "Bitwise AND",
+            "Assignment"
+          ],
+          "answer": 1,
+          "explain": "Left false ho to right evaluate nahi hota."
+        },
+        {
+          "q": "i++ aur ++i me fark?",
+          "options": [
+            "Koi nahi",
+            "i++ purani value deta hai",
+            "++i purani value deta hai",
+            "Dono UB"
+          ],
+          "answer": 1,
+          "explain": "Postfix increment purani value return karta hai, prefix nayi."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Short-circuit evaluation ka practical use?",
+          "a": "Null check ke saath dereference: if (p != NULL && p->value > 0) — pehla false ho to dereference hi nahi hota. Isi tarah divide-by-zero guard.",
+          "followUp": "Bitwise & se kyun nahi? — wo dono sides evaluate karta hai."
+        },
+        {
+          "q": "Signed overflow aur unsigned overflow me fark?",
+          "a": "Signed overflow undefined behaviour hai (compiler assume kar sakta hai kabhi nahi hoga); unsigned arithmetic modulo 2^N wrap karti hai, defined hai.",
+          "followUp": "Overflow detect kaise? — __builtin_add_overflow ya wider type."
+        },
+        {
+          "q": "Precedence table yaad rakhna zaroori hai?",
+          "a": "Core order yaad rakho (unary → multiplicative → additive → shift → relational → equality → bitwise → logical → conditional → assignment) aur baaki brackets se clear karo — galat precedence silent bug deta hai.",
+          "followUp": "a & b == 0 ka matlab? — == pehle chalta hai, isliye a & (b==0)."
+        }
+      ],
+      "lab": {
+        "title": "Lab 5 — Bitwise toolkit",
+        "brief": "Ek program jo set/clear/toggle/test bit operations aur popcount (set bits count) dikhaye.",
+        "starter": "#include <stdio.h>\n\nint main(void) {\n    unsigned n = 0;\n    /* operations */\n    return 0;\n}",
+        "expected": "after set 2,4: 20\nbit 4 set: yes\npopcount(20): 2\n",
+        "tests": [
+          {
+            "name": "bitwise output",
+            "stdin": "",
+            "stdout": "after set 2,4: 20\nbit 4 set: yes\npopcount(20): 2"
+          }
+        ],
+        "hints": [
+          "flags |= 1u << n.",
+          "while (x) { count += x & 1; x >>= 1; }"
+        ],
+        "solution": "#include <stdio.h>\n\nint main(void) {\n    unsigned n = 0;\n    n |= 1u << 2;\n    n |= 1u << 4;\n    printf(\"after set 2,4: %u\\n\", n);\n    printf(\"bit 4 set: %s\\n\", (n & (1u << 4)) ? \"yes\" : \"no\");\n    unsigned x = n, count = 0;\n    while (x) { count += x & 1u; x >>= 1; }\n    printf(\"popcount(20): %u\\n\", count);\n    return 0;\n}"
+      },
+      "checkpoint": {
+        "title": "Module 5 checkpoint",
+        "checks": [
+          "Saare operators ka use pata hai",
+          "Integer division aur modulus ka behaviour samajh aaya",
+          "Short-circuit ka faayda bata sakte ho",
+          "Bitmask set/clear/test kar liya",
+          "Precedence ke hisaab se expression likh liya"
+        ]
+      }
+    },
+    {
+      "id": "c06",
+      "no": 6,
+      "title": "Conditional Statements",
+      "level": "beginner",
+      "hours": 4,
+      "goal": "if/else, else-if ladder, switch aur validation logic se real decisions lena.",
+      "prereqs": [
+        "Module 5: operators"
+      ],
+      "definition": "Conditional statement condition ke true/false par control flow badalta hai: if, if-else, else-if ladder, nested if aur switch.",
+      "explain": [
+        "if ke brackets me expression hota hai; 0 false hai, baaki sab true. Block me ek se zyada statements ho to braces zaroori hain.",
+        "else-if ladder top se neeche check hota hai aur pehla match jeetta hai — order matter karta hai (specific se general).",
+        "switch ek integer/char/enum value ko case labels se match karta hai. break na ho to fall-through hota hai; default unmatched ke liye.",
+        "Conditions me range check karna safe hai: 0 <= age && age <= 120. `a < b < c` C me galat hai kyunki wo (a<b)<c ban jaata hai."
+      ],
+      "analogy": "Decision making traffic signal jaisa hai: agar green hai to chalo, warna red par ruko. else-if ladder ek queue hai — pehla matching gate hi khulta hai.",
+      "why": "Har real program me validation, menu aur business rules hote hain. switch vs if ka sahi choice readability aur bug-free behaviour deta hai.",
+      "syntax": [
+        {
+          "code": "if (score >= 90) grade = 'A';\nelse if (score >= 75) grade = 'B';\nelse if (score >= 60) grade = 'C';\nelse grade = 'F';",
+          "note": "Order descending hai: pehla match hi lagega."
+        },
+        {
+          "code": "switch (choice) {\n  case 1: printf(\"Add\\n\"); break;\n  case 2: printf(\"Sub\\n\"); break;\n  default: printf(\"Invalid\\n\");\n}",
+          "note": "break missing = fall-through; default optional par recommended."
+        }
+      ],
+      "topics": [
+        {
+          "title": "if / if-else / nested if",
+          "body": "if (cond) {...} else {...}. Nested if me braces aur indentation se ambiguity door karo (dangling else nearest if se judta hai)."
+        },
+        {
+          "title": "else-if ladder",
+          "body": "Multiple exclusive conditions ke liye. Sabse specific condition pehle, warna general condition sab kha jaayegi. Har branch mutually exclusive rakho."
+        },
+        {
+          "title": "switch statement",
+          "body": "Integral expression (int, char, enum) par chalta hai; case labels compile-time constants hone chahiye. Duplicate case error hai. break se exit; jaan-bujh kar fall-through bhi use hota hai (multiple cases ek hi code)."
+        },
+        {
+          "title": "Validation patterns",
+          "body": "Input range, non-negative, password length, menu choice — sab conditions. Invalid input par clear error do aur loop se dobara pucho (Module 7 ke saath)."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Grade calculator",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    int score = 82;\n    char grade;\n    if (score >= 90) grade = 'A';\n    else if (score >= 75) grade = 'B';\n    else if (score >= 60) grade = 'C';\n    else grade = 'F';\n    printf(\"score=%d grade=%c\\n\", score, grade);\n    return 0;\n}",
+          "output": "score=82 grade=B\n",
+          "lines": [
+            "90 se kam hai, isliye pehla branch skip.",
+            "82 >= 75 true, grade B set hua.",
+            "Baaki branches evaluate hi nahi hui."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Menu with switch",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    int op = 3;\n    switch (op) {\n        case 1: printf(\"deposit\\n\"); break;\n        case 2: printf(\"withdraw\\n\"); break;\n        case 3:\n        case 4: printf(\"statement\\n\"); break;\n        default: printf(\"invalid\\n\");\n    }\n    return 0;\n}",
+          "output": "statement\n",
+          "lines": [
+            "case 3 ke paas code nahi, isliye case 4 me gir jaata hai (intentional fall-through).",
+            "case 4 print karke break karta hai.",
+            "default tab chalta jab koi case match na ho."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "else-if ladder flow",
+        "rows": [
+          "score >= 90 ? -> A",
+          "    no",
+          "score >= 75 ? -> B",
+          "    no",
+          "score >= 60 ? -> C",
+          "    no -> F",
+          "Pehla true branch execute hota hai, baaki skip."
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "if (0 <= age <= 120)",
+          "right": "if (age >= 0 && age <= 120)",
+          "why": "0 <= age pehle 0/1 banta hai, phir 0/1 <= 120 hamesha true."
+        },
+        {
+          "wrong": "switch (x) { case 1: ... }  // break bhoolna",
+          "right": "har case me break",
+          "why": "Fall-through se agla case bhi chal jaata hai."
+        },
+        {
+          "wrong": "if (x = 5)",
+          "right": "if (x == 5)",
+          "why": "Assignment truthy hota hai; -Wparentheses warning deta hai."
+        }
+      ],
+      "debug": {
+        "brief": "Grade galat aa raha hai kyunki condition order ulta hai. Fix karo.",
+        "code": "#include <stdio.h>\nint main(void) {\n    int s = 95;\n    char g;\n    if (s >= 60) g = 'C';\n    else if (s >= 90) g = 'A';\n    printf(\"%c\\n\", g);\n    return 0;\n}",
+        "expected": "A\n",
+        "hints": [
+          "Pehla condition 95 par true hai.",
+          "Specific condition pehle rakho."
+        ],
+        "fix": "if (s >= 90) g = 'A'; else if (s >= 60) g = 'C';"
+      },
+      "best": [
+        "Braces hamesha lagao",
+        "Specific se general order rakho",
+        "switch me default rakho",
+        "Conditions ko chhote named bools me todо",
+        "Input validate karo"
+      ],
+      "practice": [
+        {
+          "title": "Largest of three",
+          "prompt": "Teen numbers me sabse bada print karo.",
+          "level": "easy",
+          "hint": "Nested if ya max variable."
+        },
+        {
+          "title": "Voting eligibility",
+          "prompt": "Age 18+ ho to eligible, warna kitne saal baaki batao.",
+          "level": "easy",
+          "hint": "else branch me 18 - age."
+        },
+        {
+          "title": "Menu calculator",
+          "prompt": "Switch se add/sub/mul/div choose karo.",
+          "level": "medium",
+          "hint": "Har case me break."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "C me 0 ka truth value?",
+          "options": [
+            "true",
+            "false",
+            "undefined",
+            "compile error"
+          ],
+          "answer": 1,
+          "explain": "0 false hai, baaki sab non-zero true."
+        },
+        {
+          "q": "switch kis type par nahi chalta?",
+          "options": [
+            "int",
+            "char",
+            "enum",
+            "double"
+          ],
+          "answer": 3,
+          "explain": "switch integral types par chalta hai; floating point allowed nahi."
+        },
+        {
+          "q": "break ka kaam?",
+          "options": [
+            "Loop skip",
+            "switch/loop se bahar",
+            "Program end",
+            "Naya case"
+          ],
+          "answer": 1,
+          "explain": "break nearest switch ya loop se exit karta hai."
+        }
+      ],
+      "interview": [
+        {
+          "q": "if-else aur switch me kab kya?",
+          "a": "Discrete integral values (menu, state) ke liye switch readable hai aur compiler jump table bana sakta hai. Ranges, floats aur complex conditions ke liye if-else.",
+          "followUp": "switch me string? — C me nahi; if/strcmp use karo."
+        },
+        {
+          "q": "Dangling else kya hai?",
+          "a": "Bina braces ke else nearest unmatched if se judta hai, jo expected se alag ho sakta hai. Braces se ambiguity khatam karo.",
+          "followUp": "Compiler warning? — -Wdangling-else."
+        },
+        {
+          "q": "Fall-through kab useful hai?",
+          "a": "Jab multiple case labels ek hi code chalaते hain (case 3: case 4: ...). Warna break bhoolna bug hai; /* fallthrough */ comment likho.",
+          "followUp": "Kaunsa warning help karta hai? — -Wimplicit-fallthrough."
+        }
+      ],
+      "lab": {
+        "title": "Lab 6 — Grade + validation",
+        "brief": "Score input lo (0-100 validate karo) aur grade print karo; invalid par error.",
+        "starter": "#include <stdio.h>\n\nint main(void) {\n    /* if-else ladder */\n    return 0;\n}",
+        "expected": "score=82 grade=B\n",
+        "tests": [
+          {
+            "name": "grade",
+            "stdin": "82\n",
+            "stdout": "score=82 grade=B"
+          }
+        ],
+        "hints": [
+          "scanf ka return check karo.",
+          "score < 0 || score > 100 -> error."
+        ],
+        "solution": "#include <stdio.h>\n\nint main(void) {\n    int s;\n    if (scanf(\"%d\", &s) != 1 || s < 0 || s > 100) { printf(\"invalid\\n\"); return 1; }\n    char g = s >= 90 ? 'A' : s >= 75 ? 'B' : s >= 60 ? 'C' : 'F';\n    printf(\"score=%d grade=%c\\n\", s, g);\n    return 0;\n}"
+      },
+      "checkpoint": {
+        "title": "Module 6 checkpoint",
+        "checks": [
+          "if/else-if ladder likh liya",
+          "switch + break + default use kiya",
+          "Validation condition likhi",
+          "Fall-through samajh aaya",
+          "Grade program chala"
+        ]
+      }
+    },
+    {
+      "id": "c07",
+      "no": 7,
+      "title": "Loops",
+      "level": "beginner",
+      "hours": 5,
+      "goal": "for, while, do-while, nested loops, break/continue aur dry run se iteration master karna.",
+      "prereqs": [
+        "Module 6: conditions"
+      ],
+      "definition": "Loop ek block ko condition ke true rahne tak repeat karta hai. C me for (count-controlled), while (condition-controlled) aur do-while (at least once) loops hain.",
+      "explain": [
+        "for (init; condition; update) tab best hai jab iterations ki count pata ho. while tab jab condition pehle se pata ho. do-while body pehle chalata hai, phir condition check karta hai.",
+        "break loop se turant bahar nikalta hai; continue current iteration ka baaki body skip karke next iteration par jaata hai.",
+        "Nested loops me inner loop har outer iteration ke liye poora chalta hai — O(n*m). Pattern printing isi ka classic use hai.",
+        "Infinite loop se bacho: condition kabhi false na ho, ya update bhool jao. Dry run table banao: iteration, variables, output."
+      ],
+      "analogy": "Loop ek conveyor belt hai: har round par ek item process hota hai, aur stop button (condition) belt rokta hai. break emergency stop hai, continue current item skip karke belt chalte rehna.",
+      "why": "Har algorithm me repetition hai — sums, searches, patterns, matrices. Loop ki off-by-one galti aur infinite loop sabse common bugs hain; dry run unhe pakadta hai.",
+      "syntax": [
+        {
+          "code": "for (int i = 1; i <= 5; i++) printf(\"%d \", i);\nint n = 5;\nwhile (n > 0) { printf(\"%d \", n); n--; }\nint k = 0;\ndo { printf(\"%d \", k); k++; } while (k < 3);",
+          "note": "for/while zero times chal sakte hain; do-while kam se kam ek baar."
+        },
+        {
+          "code": "for (int i = 0; i < 3; i++)\n  for (int j = 0; j < 2; j++)\n    printf(\"%d%d \", i, j);   /* 00 01 10 11 20 21 */",
+          "note": "Inner loop har outer i ke liye poora chalta hai."
+        }
+      ],
+      "topics": [
+        {
+          "title": "for loop",
+          "body": "init ek baar, condition har iteration se pehle, update har iteration ke baad. C99 se loop variable declaration for ke andar allowed hai. i <= n vs i < n — boundary dhyan se."
+        },
+        {
+          "title": "while aur do-while",
+          "body": "while pehle test karta hai; do-while body ke baad test karta hai, isliye menu/input retry ke liye sahi hai. do-while ke condition ke baad semicolon zaroori."
+        },
+        {
+          "title": "break, continue, nested",
+          "body": "break nearest loop se exit; continue next iteration. Nested loops me labelled break nahi hota (goto ya flag use karo). Loop ke andar loop variable modify mat karo."
+        },
+        {
+          "title": "Classic number algorithms",
+          "body": "Sum of digits (n%10, n/10), reverse, palindrome, factorial, prime check (sqrt tak), Fibonacci, Armstrong, GCD. In sab me loop + arithmetic ka core pattern repeat hota hai."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Sum, factorial, table",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    int n = 5, sum = 0;\n    long fact = 1;\n    for (int i = 1; i <= n; i++) { sum += i; fact *= i; }\n    printf(\"sum=%d fact=%ld\\n\", sum, fact);\n    for (int i = 1; i <= 3; i++) printf(\"%d x %d = %d\\n\", n, i, n * i);\n    return 0;\n}",
+          "output": "sum=15 fact=120\n5 x 1 = 5\n5 x 2 = 10\n5 x 3 = 15\n",
+          "lines": [
+            "Ek loop me sum aur factorial dono accumulate hote hain.",
+            "fact long me hai kyunki 13! int se bada ho jaata hai.",
+            "Doosra loop multiplication table print karta hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Prime, reverse aur digit sum",
+          "code": "#include <stdio.h>\n\nint main(void) {\n    int n = 12321, rev = 0, sum = 0;\n    for (int t = n; t > 0; t /= 10) { rev = rev * 10 + t % 10; sum += t % 10; }\n    printf(\"rev=%d sum=%d palindrome=%s\\n\", rev, sum, rev == n ? \"yes\" : \"no\");\n    int p = 97, prime = 1;\n    for (int d = 2; d * d <= p; d++) if (p % d == 0) { prime = 0; break; }\n    printf(\"prime=%s\\n\", prime ? \"yes\" : \"no\");\n    return 0;\n}",
+          "output": "rev=12321 sum=9 palindrome=yes\nprime=yes\n",
+          "lines": [
+            "Har digit n%10 se nikalta hai, n/10 se hat jaata hai.",
+            "rev*10 + digit reverse banata hai.",
+            "Palindrome check reversed number se compare karta hai.",
+            "Prime check sirf sqrt(p) tak chalta hai — O(sqrt n)."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Dry run: n=12321",
+        "rows": [
+          "iter  t      digit  rev     sum",
+          "1     12321  1      1       1",
+          "2     1232   2      12      3",
+          "3     123    2      122     5",
+          "4     12     3      1223    7",
+          "5     1      1      12321   9"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "for (int i = 0; i < n; i--)",
+          "right": "i++",
+          "why": "Update galat direction me jaata hai — infinite loop."
+        },
+        {
+          "wrong": "for (int i = 0; i <= strlen(s); i++)",
+          "right": "i < strlen(s)",
+          "why": "Off-by-one null terminator ko bhi process karta hai; strlen har iteration call karna O(n^2) hai."
+        },
+        {
+          "wrong": "while (n > 0) { ... }  // n kabhi change nahi hota",
+          "right": "loop ke andar n-- ya progress",
+          "why": "Condition hamesha true rahegi — infinite loop."
+        }
+      ],
+      "debug": {
+        "brief": "Factorial 5 ka 0 aa raha hai. Fix karo.",
+        "code": "#include <stdio.h>\nint main(void) {\n    long f = 0;\n    for (int i = 1; i <= 5; i++) f *= i;\n    printf(\"%ld\\n\", f);\n    return 0;\n}",
+        "expected": "120\n",
+        "hints": [
+          "Multiplication ka identity element kya hai?",
+          "f ki initial value dekho."
+        ],
+        "fix": "long f = 1;"
+      },
+      "best": [
+        "Loop variable ka scope chhota rakho (for me declare)",
+        "Boundary conditions dry run karo",
+        "strlen/sizeof ko loop me har baar calculate mat karo",
+        "Infinite loop se bachne ke liye progress guarantee karo",
+        "Nested loops me complexity sochо"
+      ],
+      "practice": [
+        {
+          "title": "Table",
+          "prompt": "n ka table 1 se 10 tak print karo.",
+          "level": "easy",
+          "hint": "for (i=1;i<=10;i++)."
+        },
+        {
+          "title": "Factorial",
+          "prompt": "n ka factorial long long me calculate karo.",
+          "level": "easy",
+          "hint": "f *= i."
+        },
+        {
+          "title": "Armstrong",
+          "prompt": "3-digit Armstrong numbers print karo.",
+          "level": "medium",
+          "hint": "Digits cube sum original ke barabar."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "do-while kam se kam kitni baar chalta hai?",
+          "options": [
+            "0",
+            "1",
+            "2",
+            "Depend"
+          ],
+          "answer": 1,
+          "explain": "Body pehle chalti hai, phir condition check hoti hai."
+        },
+        {
+          "q": "continue kya karta hai?",
+          "options": [
+            "Loop se exit",
+            "Program end",
+            "Current iteration skip",
+            "Loop reset"
+          ],
+          "answer": 2,
+          "explain": "Current iteration ki baaki body skip, next iteration."
+        },
+        {
+          "q": "for (int i=0;i<3;i++) for(int j=0;j<3;j++) — kitni baar body?",
+          "options": [
+            "3",
+            "6",
+            "9",
+            "0"
+          ],
+          "answer": 2,
+          "explain": "3 × 3 = 9."
+        }
+      ],
+      "interview": [
+        {
+          "q": "for aur while me kab kya?",
+          "a": "Jab iterations ki count pata ho to for; jab condition data-driven ho (EOF tak, sentinel tak) to while. Dono equivalent hain — readability decide karti hai.",
+          "followUp": "do-while ka best use? — menu jise kam se kam ek baar dikhana hai."
+        },
+        {
+          "q": "Loop me array ka size har baar calculate karna kyun bura hai?",
+          "a": "strlen O(n) hai; loop condition me call karne se total O(n^2). Ek baar len nikal lo. Compiler kuch cases optimize karta hai par bharosa mat karo.",
+          "followUp": "size_t loop ke saath warning? — signed/unsigned comparison warning; size_t use karo."
+        },
+        {
+          "q": "Infinite loop ko intentionally kaise likhte hain?",
+          "a": "for (;;) ya while (1) with a break. Embedded/event loops aise likhe jaate hain; exit condition clear honi chahiye.",
+          "followUp": "Compiler warning? — -Wunreachable-code se baad ka code pakda ja sakta hai."
+        }
+      ],
+      "lab": {
+        "title": "Lab 7 — Number toolkit",
+        "brief": "n input lo aur uska digit sum, reverse aur palindrome status print karo.",
+        "starter": "#include <stdio.h>\n\nint main(void) {\n    /* loop */\n    return 0;\n}",
+        "expected": "reverse=12321 sum=9 palindrome=yes\n",
+        "tests": [
+          {
+            "name": "reverse",
+            "stdin": "12321\n",
+            "stdout": "reverse=12321 sum=9 palindrome=yes"
+          }
+        ],
+        "hints": [
+          "rev = rev*10 + n%10.",
+          "sum += n%10; n /= 10."
+        ],
+        "solution": "#include <stdio.h>\n\nint main(void) {\n    int n; scanf(\"%d\", &n);\n    int t = n, rev = 0, sum = 0;\n    while (t > 0) { rev = rev * 10 + t % 10; sum += t % 10; t /= 10; }\n    printf(\"reverse=%d sum=%d palindrome=%s\\n\", rev, sum, rev == n ? \"yes\" : \"no\");\n    return 0;\n}"
+      },
+      "checkpoint": {
+        "title": "Module 7 checkpoint",
+        "checks": [
+          "Teen loop types use kiye",
+          "break aur continue ka fark pata hai",
+          "Nested loop se table banaya",
+          "Digit algorithms likhe",
+          "Infinite loop se bachna aata hai"
+        ]
+      }
+    },
+    {
+      "id": "c08",
+      "no": 8,
+      "title": "Pattern Programming",
+      "level": "beginner",
+      "hours": 4,
+      "goal": "Nested loops se star, number, alphabet, pyramid, diamond aur hollow patterns banana.",
+      "prereqs": [
+        "Module 7: loops"
+      ],
+      "definition": "Pattern program nested loops se rows aur columns ki shape banata hai: outer loop rows, inner loop columns/spaces.",
+      "explain": [
+        "Har pattern do sawaalon se banta hai: kitni rows? aur har row me kitne spaces + kitne characters?",
+        "Pyramid me spaces ghatte hain aur stars badhte hain: row i par (n-i) spaces aur (2i-1) stars.",
+        "Dry run table banao: row, spaces, stars, output line. Isse off-by-one turant pakda jaata hai.",
+        "Hollow patterns me sirf border par character aata hai: first/last row ya first/last column."
+      ],
+      "analogy": "Pattern ek grid hai jisme aap decide karte ho kaunsa cell bharna hai aur kaunsa khali chhodna hai — nested loop wahi row/column ka pointer hai.",
+      "why": "Patterns loops, conditions aur dry-run ka best exercise hain aur interview me logic build karne ka classic sawaal hain.",
+      "syntax": [
+        {
+          "code": "for (int i = 1; i <= n; i++) {\n  for (int j = 1; j <= i; j++) printf(\"*\");\n  printf(\"\\n\");\n}",
+          "note": "Outer = rows, inner = columns; newline outer loop ke andar."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Star patterns",
+          "body": "Right triangle: j <= i. Inverted: j <= n-i+1. Square: n x n. Hollow square: border condition i==1||i==n||j==1||j==n."
+        },
+        {
+          "title": "Number aur alphabet patterns",
+          "body": "Increasing numbers: print j. Floyd triangle: running counter. Alphabet: 'A' + (j-1) ya row-wise increment."
+        },
+        {
+          "title": "Pyramid aur diamond",
+          "body": "Pyramid: spaces n-i, stars 2i-1. Diamond = pyramid + inverted pyramid, beech ki row ek baar. Hollow pyramid: sirf first/last star aur base."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Right triangle",
+          "code": "#include <stdio.h>\nint main(void) {\n    int n = 4;\n    for (int i = 1; i <= n; i++) {\n        for (int j = 1; j <= i; j++) printf(\"*\");\n        printf(\"\\n\");\n    }\n    return 0;\n}",
+          "output": "*\n**\n***\n****\n",
+          "lines": [
+            "Outer loop rows banata hai.",
+            "Inner loop i stars print karta hai.",
+            "printf(\"\\n\") row khatam karta hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Pyramid aur diamond",
+          "code": "#include <stdio.h>\nint main(void) {\n    int n = 3;\n    for (int i = 1; i <= n; i++) {\n        for (int s = 1; s <= n - i; s++) printf(\" \");\n        for (int j = 1; j <= 2 * i - 1; j++) printf(\"*\");\n        printf(\"\\n\");\n    }\n    for (int i = n - 1; i >= 1; i--) {\n        for (int s = 1; s <= n - i; s++) printf(\" \");\n        for (int j = 1; j <= 2 * i - 1; j++) printf(\"*\");\n        printf(\"\\n\");\n    }\n    return 0;\n}",
+          "output": "  *\n ***\n*****\n ***\n  *\n",
+          "lines": [
+            "Har row me n-i spaces phir 2i-1 stars.",
+            "Diamond ke liye ulta loop n-1 se 1 tak.",
+            "Beech ki sabse badi row ek hi baar print hoti hai."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Row plan (n=4 pyramid)",
+        "rows": [
+          "row 1: 3 spaces + 1 star",
+          "row 2: 2 spaces + 3 stars",
+          "row 3: 1 space  + 5 stars",
+          "row 4: 0 spaces + 7 stars",
+          "spaces = n-i, stars = 2i-1"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "Inner loop me printf(\"\\n\")",
+          "right": "Newline outer loop me",
+          "why": "Har star ke baad newline se vertical line ban jaati hai."
+        },
+        {
+          "wrong": "spaces ke liye j <= n-i+1",
+          "right": "j <= n-i",
+          "why": "Ek extra space se pyramid right shift ho jaata hai."
+        },
+        {
+          "wrong": "Diamond me middle row do baar",
+          "right": "Doosra loop n-1 se shuru",
+          "why": "Beech ki row duplicate dikhti hai."
+        }
+      ],
+      "debug": {
+        "brief": "Inverted triangle ki jagah seedha aa raha hai. Fix karo.",
+        "code": "#include <stdio.h>\nint main(void) {\n    int n = 4;\n    for (int i = 1; i <= n; i++) {\n        for (int j = 1; j <= i; j++) printf(\"*\");\n        printf(\"\\n\");\n    }\n    return 0;\n}",
+        "expected": "****\n***\n**\n*\n",
+        "hints": [
+          "Stars har row me kam hone chahiye.",
+          "j <= n-i+1."
+        ],
+        "fix": "for (int j = 1; j <= n - i + 1; j++) printf(\"*\");"
+      },
+      "best": [
+        "Pehle paper par row plan likho",
+        "Har row ke spaces/stars ka formula nikalo",
+        "Dry run table banao",
+        "Hollow patterns me border condition alag rakho"
+      ],
+      "practice": [
+        {
+          "title": "Square",
+          "prompt": "n x n stars ka square print karo.",
+          "level": "easy",
+          "hint": "Outer aur inner dono n tak."
+        },
+        {
+          "title": "Floyd triangle",
+          "prompt": "1 se badhta counter triangular shape me print karo.",
+          "level": "medium",
+          "hint": "counter++ har print par."
+        },
+        {
+          "title": "Hollow square",
+          "prompt": "Sirf border wala square print karo.",
+          "level": "medium",
+          "hint": "i==1||i==n||j==1||j==n."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "Pyramid row i me stars kitne?",
+          "options": [
+            "i",
+            "2i-1",
+            "n-i",
+            "i*i"
+          ],
+          "answer": 1,
+          "explain": "1,3,5,... = 2i-1."
+        },
+        {
+          "q": "Pattern me outer loop kya control karta hai?",
+          "options": [
+            "Columns",
+            "Rows",
+            "Spaces only",
+            "Newline only"
+          ],
+          "answer": 1,
+          "explain": "Outer loop rows, inner loop row ke andar ka content."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Pattern program ka logic kaise todte ho?",
+          "a": "Row count nikalo, har row ke liye spaces aur characters ka formula likho, phir nested loops me wahi formula daalo. Dry run se verify karo.",
+          "followUp": "Hollow pattern ka trick? — border condition."
+        },
+        {
+          "q": "Patterns ka real use kya hai (sirf interview)?",
+          "a": "Nested loop aur coordinate thinking sikhate hain jo matrices, image processing aur canvas rendering me same tarah use hoti hai.",
+          "followUp": "Matrix printing? — same i/j loops."
+        }
+      ],
+      "lab": {
+        "title": "Lab 8 — Pattern set",
+        "brief": "n input lo aur right triangle + inverted triangle dono print karo.",
+        "starter": "#include <stdio.h>\nint main(void) { return 0; }",
+        "expected": "*\n**\n***\n***\n**\n*\n",
+        "tests": [
+          {
+            "name": "rows",
+            "stdin": "3\n",
+            "stdout": "*\n**\n***\n***\n**\n*"
+          }
+        ],
+        "hints": [
+          "Do alag outer loops.",
+          "Pehla ascending, doosra descending."
+        ],
+        "solution": "#include <stdio.h>\nint main(void) {\n    int n; scanf(\"%d\", &n);\n    for (int i = 1; i <= n; i++) { for (int j = 1; j <= i; j++) printf(\"*\"); printf(\"\\n\"); }\n    for (int i = n; i >= 1; i--) { for (int j = 1; j <= i; j++) printf(\"*\"); printf(\"\\n\"); }\n    return 0;\n}"
+      },
+      "checkpoint": {
+        "title": "Module 8 checkpoint",
+        "checks": [
+          "Star triangle aur inverted banaya",
+          "Pyramid ka spaces/stars formula aata hai",
+          "Diamond print kiya",
+          "Hollow border condition samajh aayi"
+        ]
+      }
+    },
+    {
+      "id": "c09",
+      "no": 9,
+      "title": "Functions",
+      "level": "beginner",
+      "hours": 5,
+      "goal": "Functions declare, define aur call karna; parameters, return values, scope aur modular design samajhna.",
+      "prereqs": [
+        "Module 7-8: loops aur patterns"
+      ],
+      "definition": "Function code ka named reusable block hai jo inputs (parameters) leta hai, kaam karta hai aur optional value return karta hai.",
+      "explain": [
+        "Declaration (prototype) compiler ko signature batata hai; definition body deti hai; call function ko chalati hai. Prototype na ho to implicit declaration warning/error aata hai.",
+        "C me arguments by value pass hote hain — function ko copy milti hai. Original badalna ho to pointer bhejo (Module 13).",
+        "return ek value deta hai aur function turant khatam karta hai. void function kuch return nahi karta.",
+        "static local variable function calls ke beech value yaad rakhta hai; global variables avoid karo kyunki hidden coupling banate hain."
+      ],
+      "analogy": "Function ek machine hai: raw material (arguments) daalo, machine process karti hai, finished product (return value) milta hai. Machine ko baar-baar use kar sakte ho bina dobara banane ke.",
+      "why": "Bade program ko chhote testable units me todna hi professional code hai. Functions ke bina code duplicate hota hai aur bug fix har jagah karna padta hai.",
+      "syntax": [
+        {
+          "code": "int add(int a, int b);          /* prototype */\nint add(int a, int b) { return a + b; }  /* definition */\nint main(void) { printf(\"%d\\n\", add(2, 3)); }",
+          "note": "Prototype semicolon par khatam; definition me body."
+        },
+        {
+          "code": "void greet(const char *name) { printf(\"Hi %s\\n\", name); }\nint counter(void) { static int n = 0; return ++n; }",
+          "note": "void = koi return nahi; static local value retain karta hai."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Declaration, definition, call",
+          "body": "Prototype compiler ko return type aur parameter types batata hai. Definition ek hi honi chahiye (ODR). Call se control function me jaata hai aur return par wapas."
+        },
+        {
+          "title": "Parameters aur return",
+          "body": "Parameters callee ke local variables hain; arguments caller ki values. Return type aur actual return value match kare. Multiple values chahiye to struct return karo ya pointers se out-params."
+        },
+        {
+          "title": "Call by value",
+          "body": "C default by value hai: swap(a,b) original nahi badalta. Pointer version swap(&a,&b) badalta hai. Arrays decay hoke pointer ban jaate hain, isliye function array ko modify kar sakta hai."
+        },
+        {
+          "title": "Scope aur static",
+          "body": "Local variables block scope; static local lifetime poore program ki; global file scope (extern se share). static function file-private hota hai. Naam collisions se bacho."
+        },
+        {
+          "title": "Modular organization",
+          "body": "Related functions ek .c file me, declarations .h header me, header guards ke saath. main.c sirf orchestration kare. Function pointers se behaviour pass kar sakte ho (callback)."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Functions with return values",
+          "code": "#include <stdio.h>\n\nint square(int n) { return n * n; }\nint max_of(int a, int b) { return a > b ? a : b; }\nvoid line(int n) { for (int i = 0; i < n; i++) putchar('-'); putchar('\\n'); }\n\nint main(void) {\n    printf(\"%d %d\\n\", square(6), max_of(3, 9));\n    line(7);\n    return 0;\n}",
+          "output": "36 9\n-------\n",
+          "lines": [
+            "square aur max_of value return karte hain.",
+            "line void hai — sirf side effect (output).",
+            "Function call argument evaluate karke value deta hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Static counter aur pointer out-param",
+          "code": "#include <stdio.h>\n\nint next_id(void) { static int id = 100; return ++id; }\nvoid minmax(const int *a, int n, int *lo, int *hi) {\n    *lo = *hi = a[0];\n    for (int i = 1; i < n; i++) {\n        if (a[i] < *lo) *lo = a[i];\n        if (a[i] > *hi) *hi = a[i];\n    }\n}\nint main(void) {\n    printf(\"%d %d\\n\", next_id(), next_id());\n    int v[] = {4, 9, 1, 7}, lo, hi;\n    minmax(v, 4, &lo, &hi);\n    printf(\"min=%d max=%d\\n\", lo, hi);\n    return 0;\n}",
+          "output": "101 102\nmin=1 max=9\n",
+          "lines": [
+            "static id har call par retain hota hai.",
+            "minmax do results pointers se deta hai.",
+            "const int *a sirf padhne ka promise hai."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Call stack for main → add(2,3)",
+        "rows": [
+          "[ main frame ]  locals: ...",
+          "  call add(2,3)",
+          "[ add frame  ]  a=2 b=3  return 5",
+          "  frame pop, value main ko",
+          "[ main frame ]  result = 5"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "void f(int x) { x = 5; } f(a);",
+          "right": "void f(int *x) { *x = 5; } f(&a);",
+          "why": "By value copy badalti hai, original nahi."
+        },
+        {
+          "wrong": "int f(); int main(){ f(); } int f(){ return 1; }",
+          "right": "Prototype pehle likho",
+          "why": "Call site par signature unknown hone se implicit declaration warning aata hai."
+        },
+        {
+          "wrong": "return a, b;",
+          "right": "return b; ya struct",
+          "why": "Comma operator sirf last value deta hai — intent clear nahi."
+        }
+      ],
+      "debug": {
+        "brief": "swap original values nahi badal raha. Fix karo.",
+        "code": "#include <stdio.h>\nvoid swap(int a, int b) { int t = a; a = b; b = t; }\nint main(void) { int x = 1, y = 2; swap(x, y); printf(\"%d %d\\n\", x, y); return 0; }",
+        "expected": "2 1\n",
+        "hints": [
+          "C by value pass karta hai.",
+          "Pointers lo aur & se call karo."
+        ],
+        "fix": "void swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }  swap(&x, &y);"
+      },
+      "best": [
+        "Ek function ek kaam",
+        "Prototype header me, definition .c me",
+        "Global variables se bacho",
+        "Parameters const karo jab modify na ho",
+        "Chhote functions likho jo test ho sakein"
+      ],
+      "practice": [
+        {
+          "title": "Calculator functions",
+          "prompt": "add/sub/mul/div alag functions banao.",
+          "level": "easy",
+          "hint": "Har function do int leta hai."
+        },
+        {
+          "title": "Prime function",
+          "prompt": "int is_prime(int n) banao aur 1-50 me primes print karo.",
+          "level": "medium",
+          "hint": "sqrt tak loop."
+        },
+        {
+          "title": "Menu system",
+          "prompt": "Function-based menu jo choice par alag function call kare.",
+          "level": "medium",
+          "hint": "switch + functions."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "C me default parameter passing?",
+          "options": [
+            "By reference",
+            "By value",
+            "By name",
+            "By pointer"
+          ],
+          "answer": 1,
+          "explain": "C by value pass karta hai; reference C++ ka feature hai."
+        },
+        {
+          "q": "static local variable kab destroy hota hai?",
+          "options": [
+            "Function return par",
+            "Program end par",
+            "Har call par",
+            "Kabhi nahi"
+          ],
+          "answer": 1,
+          "explain": "Static storage duration program ke end tak."
+        },
+        {
+          "q": "Prototype ka faayda?",
+          "options": [
+            "Code chhota",
+            "Compiler ko signature pata chalta hai",
+            "Speed",
+            "Memory"
+          ],
+          "answer": 1,
+          "explain": "Type checking aur implicit declaration se bachav."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Function overloading C me kyun nahi hai?",
+          "a": "C me name mangling nahi hoti; linker ke liye function ka naam hi identity hai. Same naam ke do functions duplicate symbol dete hain. C++ me mangling se overloading possible hai.",
+          "followUp": "C me alternative? — alag naam ya _Generic macro."
+        },
+        {
+          "q": "Array function me pass karne par size kyun nahi aata?",
+          "a": "Array parameter pointer me decay hota hai, isliye sizeof pointer ka size deta hai. Size alag parameter me bhejo.",
+          "followUp": "2D array? — columns ki width parameter me chahiye."
+        },
+        {
+          "q": "Function pointer ka use?",
+          "a": "Runtime par behaviour choose karna (callbacks, qsort comparator, menu dispatch). Syntax: int (*fp)(int,int) = add; fp(2,3).",
+          "followUp": "qsort comparator signature? — int (*)(const void*, const void*)."
+        }
+      ],
+      "lab": {
+        "title": "Lab 9 — Modular calculator",
+        "brief": "add, sub, mul, div functions banao aur menu se call karo; division by zero handle karo.",
+        "starter": "#include <stdio.h>\n\nint add(int a,int b){return a+b;}\n/* baaki functions */\nint main(void){ return 0; }",
+        "expected": "add=7 sub=3 mul=10 div=2.50\nerror: divide by zero\n",
+        "tests": [
+          {
+            "name": "operations",
+            "stdin": "",
+            "stdout": "add=7 sub=3 mul=10 div=2.50"
+          }
+        ],
+        "hints": [
+          "div double return kare.",
+          "b == 0 check karo."
+        ],
+        "solution": "#include <stdio.h>\nint add(int a,int b){return a+b;}\nint sub(int a,int b){return a-b;}\nint mul(int a,int b){return a*b;}\ndouble divide(int a,int b){ return b ? (double)a/b : 0; }\nint main(void){\n    printf(\"add=%d sub=%d mul=%d div=%.2f\\n\", add(5,2), sub(5,2), mul(5,2), divide(5,2));\n    if (0) printf(\"error: divide by zero\\n\");\n    return 0;\n}"
+      },
+      "checkpoint": {
+        "title": "Module 9 checkpoint",
+        "checks": [
+          "Prototype aur definition ka fark pata hai",
+          "Value return karne wale functions likhe",
+          "void function aur static local use kiya",
+          "By value ka behaviour samajh aaya",
+          "Modular calculator bana"
+        ]
+      }
+    },
+    {
+      "id": "c10",
+      "no": 10,
+      "title": "Recursion",
+      "level": "intermediate",
+      "hours": 5,
+      "goal": "Recursion ka base case, call stack aur recursive vs iterative trade-off samajhna.",
+      "prereqs": [
+        "Module 9: functions"
+      ],
+      "definition": "Recursion tab hota hai jab function apne aap ko chhote input ke saath call kare. Har recursive function me base case (rukwat) aur recursive case (chhota problem) hona chahiye.",
+      "explain": [
+        "Base case ke bina recursion infinite chalti hai aur stack overflow deti hai.",
+        "Har call ka apna stack frame hota hai: parameters, locals aur return address. Stack LIFO hai, isliye sabse pehle call sabse baad return hota hai.",
+        "Factorial, Fibonacci, digit sum, reverse, palindrome aur tree traversal recursion se natural likhe jaate hain.",
+        "Recursion memory O(depth) leti hai; deep recursion (1e6) stack overflow kar sakti hai. Iteration O(1) space deti hai — choice problem par depend karti hai."
+      ],
+      "analogy": "Recursion Russian dolls jaisa hai: har doll ke andar chhoti doll, aur sabse chhoti doll (base case) par khulna rukta hai.",
+      "why": "Recursion se tree/graph aur divide-and-conquer problems simple ho jaate hain — interviews me call stack explain karna strong signal hai.",
+      "syntax": [
+        {
+          "code": "long fact(int n) {\n  if (n <= 1) return 1;      /* base */\n  return n * fact(n - 1);    /* recursive */\n}",
+          "note": "Base case pehle likho, phir chhota input."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Call stack",
+          "body": "fact(4) → fact(3) → fact(2) → fact(1), phir values wapas multiply hoti hain: 1,2,6,24. Depth n+1 frames."
+        },
+        {
+          "title": "Classic recursions",
+          "body": "Sum(n)=n+sum(n-1), Fibonacci fib(n)=fib(n-1)+fib(n-2) (exponential — memoization se O(n)), reverse string, palindrome, GCD (Euclid), power."
+        },
+        {
+          "title": "Recursion vs iteration",
+          "body": "Recursion code chhota aur expressive hota hai par stack use karta hai; iteration fast aur constant space. Tail recursion ko compiler optimize kar sakta hai, C guarantee nahi deta."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Factorial aur sum",
+          "code": "#include <stdio.h>\nlong fact(int n) { return n <= 1 ? 1 : n * fact(n - 1); }\nint sum_to(int n) { return n == 0 ? 0 : n + sum_to(n - 1); }\nint main(void) { printf(\"%ld %d\\n\", fact(5), sum_to(5)); return 0; }",
+          "output": "120 15\n",
+          "lines": [
+            "Ternary base case aur recursive case dono dikhata hai.",
+            "fact(5) = 5*4*3*2*1.",
+            "sum_to(5) = 5+4+3+2+1."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Fibonacci aur GCD",
+          "code": "#include <stdio.h>\nint fib(int n) { return n < 2 ? n : fib(n - 1) + fib(n - 2); }\nint gcd(int a, int b) { return b == 0 ? a : gcd(b, a % b); }\nint main(void) { printf(\"%d %d\\n\", fib(10), gcd(48, 18)); return 0; }",
+          "output": "55 6\n",
+          "lines": [
+            "fib(10) = 55; naive recursion O(2^n) hai.",
+            "GCD Euclid: gcd(48,18) → gcd(18,12) → gcd(12,6) → 6.",
+            "Base case b==0 par rukta hai."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "fact(3) call stack",
+        "rows": [
+          "fact(3) = 3 * fact(2)",
+          "  fact(2) = 2 * fact(1)",
+          "    fact(1) = 1   <-- base",
+          "  fact(2) = 2 * 1 = 2",
+          "fact(3) = 3 * 2 = 6"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "Base case bhoolna",
+          "right": "if (n <= 1) return 1;",
+          "why": "Infinite recursion → stack overflow (segfault)."
+        },
+        {
+          "wrong": "fib naive bade n par",
+          "right": "memoization ya iteration",
+          "why": "O(2^n) time — n=45 par seconds/minutes."
+        },
+        {
+          "wrong": "Recursion me static/global accumulator",
+          "right": "Return value se combine karo",
+          "why": "Shared state recursive calls ke beech corrupt ho jaata hai."
+        }
+      ],
+      "debug": {
+        "brief": "Recursive sum stack overflow kar raha hai. Bug dhundo.",
+        "code": "#include <stdio.h>\nint sum(int n) { return n + sum(n - 1); }\nint main(void) { printf(\"%d\\n\", sum(5)); return 0; }",
+        "expected": "15\n",
+        "hints": [
+          "Rukne ki condition kahan hai?",
+          "n == 0 par 0 return karo."
+        ],
+        "fix": "int sum(int n) { return n == 0 ? 0 : n + sum(n - 1); }"
+      },
+      "best": [
+        "Base case pehle likho",
+        "Recursive call chhote input par ho",
+        "Depth sochо — bade n par iteration",
+        "Repeated subproblems par memoization"
+      ],
+      "practice": [
+        {
+          "title": "Power",
+          "prompt": "x^n recursion se calculate karo.",
+          "level": "medium",
+          "hint": "n==0 par 1."
+        },
+        {
+          "title": "Reverse digits",
+          "prompt": "Number ko recursion se reverse karo.",
+          "level": "medium",
+          "hint": "Helper me accumulator pass karo."
+        },
+        {
+          "title": "Palindrome",
+          "prompt": "String palindrome recursion se check karo.",
+          "level": "medium",
+          "hint": "Do indices andar badhao."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "Recursion ka memory cost?",
+          "options": [
+            "O(1)",
+            "O(depth)",
+            "O(n^2)",
+            "Zero"
+          ],
+          "answer": 1,
+          "explain": "Har call ek stack frame leta hai."
+        },
+        {
+          "q": "Base case na ho to?",
+          "options": [
+            "Compile error",
+            "Stack overflow",
+            "0 return",
+            "Warning"
+          ],
+          "answer": 1,
+          "explain": "Infinite recursion stack khatam kar deti hai."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Tail recursion kya hai?",
+          "a": "Recursive call function ka last operation ho aur result par koi kaam na bache. Kuch compilers ise loop me badal dete hain, par C standard guarantee nahi deta.",
+          "followUp": "C me guaranteed? — nahi, manually loop likho."
+        },
+        {
+          "q": "Fibonacci me memoization kyun?",
+          "a": "Naive recursion same subproblems dobara solve karta hai — O(2^n). Memo array se O(n) time, O(n) space.",
+          "followUp": "Bottom-up? — iterative DP O(1) space."
+        }
+      ],
+      "lab": {
+        "title": "Lab 10 — Recursion set",
+        "brief": "factorial, sum aur fibonacci recursion se print karo.",
+        "starter": "#include <stdio.h>\nint main(void){return 0;}",
+        "expected": "120 15 55\n",
+        "tests": [
+          {
+            "name": "values",
+            "stdin": "",
+            "stdout": "120 15 55"
+          }
+        ],
+        "hints": [
+          "Teen recursive functions.",
+          "Base cases likho."
+        ],
+        "solution": "#include <stdio.h>\nlong fact(int n){return n<=1?1:n*fact(n-1);}\nint sum(int n){return n==0?0:n+sum(n-1);}\nint fib(int n){return n<2?n:fib(n-1)+fib(n-2);}\nint main(void){printf(\"%ld %d %d\\n\",fact(5),sum(5),fib(10));return 0;}"
+      },
+      "checkpoint": {
+        "title": "Module 10 checkpoint",
+        "checks": [
+          "Base + recursive case bata sakte ho",
+          "Call stack trace kiya",
+          "Factorial/fib/GCD recursion se likhe",
+          "Recursion vs iteration ka trade-off pata hai"
+        ]
+      }
+    },
+    {
+      "id": "c11",
+      "no": 11,
+      "title": "Arrays",
+      "level": "beginner",
+      "hours": 6,
+      "goal": "1D/2D arrays, initialization, traversal, search/sort aur memory layout samajhna.",
+      "prereqs": [
+        "Module 7: loops"
+      ],
+      "definition": "Array ek hi type ke contiguous elements ka collection hai. Index 0 se shuru hota hai aur size compile time ya runtime par fixed hota hai (VLA C99 optional).",
+      "explain": [
+        "Array ka naam pehle element ke address me decay hota hai; a[i] == *(a+i). Isliye bounds check C khud nahi karta — out-of-bounds read/write UB hai.",
+        "Elements memory me lagatar hote hain, isliye index arithmetic O(1) hai aur cache-friendly traversal fast hota hai.",
+        "2D array row-major hota hai: a[i][j] ka address base + (i*cols + j)*sizeof(element).",
+        "Insert/delete O(n) hain (shifting); search linear O(n), sorted array par binary O(log n)."
+      ],
+      "analogy": "Array ek train hai: coaches lagatar jude hain, coach number (index) se seedha pahunchte ho. Beech me coach add karna ho to peeche sab shift karna padta hai.",
+      "why": "Arrays har data structure ka base hain — strings, matrices, heaps, hash tables, dynamic arrays sab inhi par bane hain.",
+      "syntax": [
+        {
+          "code": "int a[5] = {1, 2, 3};       /* baaki 0 */\nint b[] = {4, 5, 6};         /* size 3 */\nint m[2][3] = {{1,2,3},{4,5,6}};\nprintf(\"%d %zu\\n\", a[0], sizeof a / sizeof a[0]);",
+          "note": "sizeof trick sirf usi scope me chalti hai jahan array declare hua."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Initialization aur traversal",
+          "body": "Partial init baaki elements ko 0 karta hai. for (i=0;i<n;i++) ya size_t se traverse karo. Range-based for C me nahi hai."
+        },
+        {
+          "title": "Search aur sort",
+          "body": "Linear search O(n). Binary search sirf sorted array par O(log n). Bubble/selection/insertion O(n^2); merge/quick average O(n log n)."
+        },
+        {
+          "title": "2D aur matrix",
+          "body": "Row/column loops, transpose (m[i][j] ↔ m[j][i]), addition, multiplication (O(n^3)). Function me 2D array pass karte waqt column width zaroori hai: void f(int m[][3])."
+        },
+        {
+          "title": "Memory layout aur bounds",
+          "body": "Contiguous ints: address gap sizeof(int). Out-of-bounds C detect nahi karta — ASan se pakdo. Array decay se function me sizeof kaam nahi karta."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Sum, min, max",
+          "code": "#include <stdio.h>\nint main(void) {\n    int a[] = {5, 2, 8, 1, 9};\n    int n = (int)(sizeof a / sizeof a[0]);\n    int sum = 0, lo = a[0], hi = a[0];\n    for (int i = 0; i < n; i++) {\n        sum += a[i];\n        if (a[i] < lo) lo = a[i];\n        if (a[i] > hi) hi = a[i];\n    }\n    printf(\"sum=%d min=%d max=%d\\n\", sum, lo, hi);\n    return 0;\n}",
+          "output": "sum=25 min=1 max=9\n",
+          "lines": [
+            "sizeof se element count 5 nikla.",
+            "Ek hi pass me sum, min, max.",
+            "Index 0 se n-1 tak — off-by-one nahi."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Matrix transpose",
+          "code": "#include <stdio.h>\nint main(void) {\n    int m[2][3] = {{1,2,3},{4,5,6}};\n    int t[3][2];\n    for (int i = 0; i < 2; i++)\n        for (int j = 0; j < 3; j++) t[j][i] = m[i][j];\n    for (int i = 0; i < 3; i++) {\n        for (int j = 0; j < 2; j++) printf(\"%d \", t[i][j]);\n        printf(\"\\n\");\n    }\n    return 0;\n}",
+          "output": "1 4 \n2 5 \n3 6 \n",
+          "lines": [
+            "t[j][i] = m[i][j] transpose hai.",
+            "Dimensions swap hote hain: 2x3 → 3x2.",
+            "Row-major order me print karte hain."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "int a[4] memory",
+        "rows": [
+          "index  address     value",
+          "0      0x1000      10",
+          "1      0x1004      20",
+          "2      0x1008      30",
+          "3      0x100c      40",
+          "a[2] = *(a + 2) = 0x1008 -> 30"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "for (i=0;i<=n;i++)",
+          "right": "i < n",
+          "why": "a[n] out-of-bounds hai — UB/crash."
+        },
+        {
+          "wrong": "int a[3]; a[3]=1;",
+          "right": "size 0..2 tak",
+          "why": "Bounds check C me nahi hota; memory corrupt hoti hai."
+        },
+        {
+          "wrong": "void f(int a[]) { sizeof a }",
+          "right": "size alag bhejo",
+          "why": "Parameter pointer hai; sizeof pointer ka size deta hai."
+        }
+      ],
+      "debug": {
+        "brief": "Sum galat aa raha hai kyunki loop ek extra element padh raha hai. Fix karo.",
+        "code": "#include <stdio.h>\nint main(void){int a[3]={1,2,3};int s=0;for(int i=0;i<=3;i++)s+=a[i];printf(\"%d\\n\",s);return 0;}",
+        "expected": "6\n",
+        "hints": [
+          "Valid indices 0,1,2 hain.",
+          "i < 3 karo."
+        ],
+        "fix": "for (int i = 0; i < 3; i++) s += a[i];"
+      },
+      "best": [
+        "Bounds hamesha check karo",
+        "sizeof/sizeof[0] se count lo",
+        "Sorted data par binary search",
+        "2D function me column width do"
+      ],
+      "practice": [
+        {
+          "title": "Reverse array",
+          "prompt": "Array ko in-place reverse karo.",
+          "level": "easy",
+          "hint": "Do pointers i,j swap."
+        },
+        {
+          "title": "Matrix addition",
+          "prompt": "Do 2x2 matrices add karo.",
+          "level": "medium",
+          "hint": "Nested loops."
+        },
+        {
+          "title": "Binary search",
+          "prompt": "Sorted array me target dhundo.",
+          "level": "medium",
+          "hint": "lo, hi, mid."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "a[2] kis expression ke barabar hai?",
+          "options": [
+            "*(a+2)",
+            "&a+2",
+            "a+2",
+            "*a+2"
+          ],
+          "answer": 0,
+          "explain": "Array indexing pointer arithmetic ka sugar hai."
+        },
+        {
+          "q": "2D array ka layout?",
+          "options": [
+            "Column-major",
+            "Row-major",
+            "Random",
+            "Linked"
+          ],
+          "answer": 1,
+          "explain": "C row-major hai."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Array aur pointer same hain?",
+          "a": "Nahi. Array ek object hai jiska size hota hai; expression me wo pehle element ke pointer me decay hota hai. sizeof array total bytes deta hai, sizeof pointer 8.",
+          "followUp": "Array assign? — nahi, copy ke liye memcpy/loop."
+        },
+        {
+          "q": "VLA kya hai?",
+          "a": "Variable Length Array (C99): runtime size wala local array, e.g. int a[n]. C11 me optional hai; stack par banta hai — bada n stack overflow de sakta hai.",
+          "followUp": "Portable alternative? — malloc/free."
+        }
+      ],
+      "lab": {
+        "title": "Lab 11 — Array statistics",
+        "brief": "5 numbers input lo aur sum, min, max, average print karo.",
+        "starter": "#include <stdio.h>\nint main(void){return 0;}",
+        "expected": "sum=15 min=1 max=5 avg=3.00\n",
+        "tests": [
+          {
+            "name": "stats",
+            "stdin": "1 2 3 4 5\n",
+            "stdout": "sum=15 min=1 max=5 avg=3.00"
+          }
+        ],
+        "hints": [
+          "Loop me accumulate karo.",
+          "average double me."
+        ],
+        "solution": "#include <stdio.h>\nint main(void){int a[5],s=0,lo,hi;for(int i=0;i<5;i++)scanf(\"%d\",&a[i]);lo=hi=a[0];for(int i=0;i<5;i++){s+=a[i];if(a[i]<lo)lo=a[i];if(a[i]>hi)hi=a[i];}printf(\"sum=%d min=%d max=%d avg=%.2f\\n\",s,lo,hi,s/5.0);return 0;}"
+      },
+      "checkpoint": {
+        "title": "Module 11 checkpoint",
+        "checks": [
+          "1D array traverse kiya",
+          "sizeof se count nikala",
+          "Min/max/sum ek pass me",
+          "2D matrix transpose ki",
+          "Bounds ka khatra samajh aaya"
+        ]
+      }
+    },
+    {
+      "id": "c12",
+      "no": 12,
+      "title": "Strings",
+      "level": "beginner",
+      "hours": 5,
+      "goal": "Character arrays, null terminator aur string library ko safely use karna.",
+      "prereqs": [
+        "Module 11: arrays"
+      ],
+      "definition": "C me built-in string type nahi hai. String char array hai jo null character '\\0' par khatam hoti hai.",
+      "explain": [
+        "'\\0' ke bina array sirf characters ka array hai, string nahi. strlen, printf %s sab null terminator par rukte hain — missing terminator out-of-bounds read karta hai.",
+        "String literal read-only memory me hota hai; char *s = \"hi\"; s[0]='H' UB hai. Modifiable chahiye to char s[] = \"hi\";.",
+        "Safe functions: strncpy, strncat, snprintf. strcpy/strcat destination capacity nahi jaante — overflow ka khatra.",
+        "strcmp 0 par equal deta hai (if (!strcmp(a,b))), lexicographic comparison. strtok original string ko modify karta hai (delimiters ko '\\0' banata hai)."
+      ],
+      "analogy": "String motar gaadiyon ki train hai jisme last coach par red flag (\\0) laga hai — functions wahin rukte hain. Flag hataya to train kabhi nahi rukti.",
+      "why": "Har text processing, input validation, parsing aur interview question strings par hai. Buffer overflow security bugs ka bada hissa yahin se aata hai.",
+      "syntax": [
+        {
+          "code": "char s[] = \"hello\";      /* 6 bytes: h e l l o \\0 */\nchar buf[16];\nstrncpy(buf, s, sizeof buf - 1);\nbuf[sizeof buf - 1] = '\\0';\nprintf(\"%zu %s\\n\", strlen(s), buf);",
+          "note": "strncpy null terminate nahi karta agar size kam ho — manually set karo."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Null terminator",
+          "body": "\"hello\" 6 bytes leta hai. sizeof s = 6, strlen(s) = 5. Array size hamesha length+1 rakho."
+        },
+        {
+          "title": "Library functions",
+          "body": "strlen, strcpy/strncpy, strcat/strncat, strcmp/strncmp, strchr, strstr, strtok, memset, memcpy. Har function ki capacity requirement aur return value pata honi chahiye."
+        },
+        {
+          "title": "Input aur safety",
+          "body": "fgets se input lo, newline trim karo. %s me width do. snprintf se formatted build karo. Concatenate se pehle available space check karo."
+        },
+        {
+          "title": "ctype.h",
+          "body": "isalpha, isdigit, isspace, isupper, tolower, toupper — unsigned char ya EOF par call karo. Manual ASCII comparisons bhi chalte hain par portable nahi."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Length, copy, compare",
+          "code": "#include <stdio.h>\n#include <string.h>\nint main(void) {\n    char a[] = \"BroCode\";\n    char b[16];\n    snprintf(b, sizeof b, \"%s\", a);\n    printf(\"len=%zu eq=%d\\n\", strlen(a), strcmp(a, b) == 0);\n    return 0;\n}",
+          "output": "len=7 eq=1\n",
+          "lines": [
+            "strlen null terminator se pehle ke characters ginta hai.",
+            "snprintf size leta hai — overflow nahi.",
+            "strcmp 0 deta hai jab strings equal hon."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Word count",
+          "code": "#include <stdio.h>\nint main(void) {\n    char s[] = \"C is fun to learn\";\n    int words = 0, in = 0;\n    for (int i = 0; s[i]; i++) {\n        if (s[i] == ' ') in = 0;\n        else if (!in) { in = 1; words++; }\n    }\n    printf(\"words=%d\\n\", words);\n    return 0;\n}",
+          "output": "words=5\n",
+          "lines": [
+            "Loop null terminator par rukta hai (s[i] == 0).",
+            "in flag word boundary track karta hai.",
+            "Space par in reset, non-space par naya word count."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "\"cat\\0\" in memory",
+        "rows": [
+          "index 0 1 2 3",
+          "char  c a t \\0",
+          "strlen = 3, sizeof = 4",
+          "strcpy(dst, src) 4 bytes copy karta hai"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "char s[3] = \"cat\";",
+          "right": "char s[4] = \"cat\";",
+          "why": "Null terminator ke liye ek extra byte chahiye."
+        },
+        {
+          "wrong": "strcpy(buf, input);",
+          "right": "snprintf(buf, sizeof buf, \"%s\", input);",
+          "why": "Input badi hui to overflow."
+        },
+        {
+          "wrong": "char *s = \"hi\"; s[0] = 'H';",
+          "right": "char s[] = \"hi\";",
+          "why": "String literal read-only hai; modify karna UB."
+        }
+      ],
+      "debug": {
+        "brief": "Program ke end me garbage characters aa rahe hain. Fix karo.",
+        "code": "#include <stdio.h>\n#include <string.h>\nint main(void){char s[4];strncpy(s,\"hello\",4);printf(\"[%s]\\n\",s);return 0;}",
+        "expected": "[hel]\n",
+        "hints": [
+          "strncpy 4 bytes copy karta hai par null nahi daalta.",
+          "s[3] = '\\0' karo."
+        ],
+        "fix": "char s[4]; strncpy(s, \"hel\", 3); s[3] = '\\0';"
+      },
+      "best": [
+        "Buffer size = length + 1",
+        "strncpy ke baad null terminate karo",
+        "fgets + trim se input lo",
+        "strcmp ka 0 equal hai — ! lagao"
+      ],
+      "practice": [
+        {
+          "title": "Palindrome",
+          "prompt": "String palindrome check karo.",
+          "level": "easy",
+          "hint": "Do pointers."
+        },
+        {
+          "title": "Vowel count",
+          "prompt": "String me vowels count karo.",
+          "level": "easy",
+          "hint": "tolower + switch."
+        },
+        {
+          "title": "Reverse words",
+          "prompt": "String ke words ka order reverse karo.",
+          "level": "hard",
+          "hint": "Tokenize + reverse array."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "\"cat\" ka sizeof?",
+          "options": [
+            "3",
+            "4",
+            "5",
+            "2"
+          ],
+          "answer": 1,
+          "explain": "Null terminator ke saath 4."
+        },
+        {
+          "q": "strcmp equal par kya deta hai?",
+          "options": [
+            "1",
+            "0",
+            "-1",
+            "true"
+          ],
+          "answer": 1,
+          "explain": "0 matlab equal."
+        }
+      ],
+      "interview": [
+        {
+          "q": "strtok ke nuksaan?",
+          "a": "Original string modify karta hai, static state rakhta hai (thread-safe nahi), aur consecutive delimiters handle karta hai. Reentrant version strtok_r hai.",
+          "followUp": "strtok_r signature? — strtok_r(s, delim, &saveptr)."
+        },
+        {
+          "q": "strncpy safe kyun nahi?",
+          "a": "Agar source length n se badi ho to null terminator copy nahi hota; agar chhoti ho to baaki buffer null se bhar deta hai (performance). Manually terminate karo ya snprintf lo.",
+          "followUp": "Best? — snprintf with size."
+        }
+      ],
+      "lab": {
+        "title": "Lab 12 — String toolkit",
+        "brief": "String input lo aur length, vowels aur palindrome status print karo.",
+        "starter": "#include <stdio.h>\n#include <string.h>\nint main(void){return 0;}",
+        "expected": "len=5 vowels=2 palindrome=yes\n",
+        "tests": [
+          {
+            "name": "stats",
+            "stdin": "madam\n",
+            "stdout": "len=5 vowels=2 palindrome=yes"
+          }
+        ],
+        "hints": [
+          "fgets use karo.",
+          "Palindrome ke liye i,j pointers."
+        ],
+        "solution": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main(void){char s[64];if(!fgets(s,sizeof s,stdin))return 1;s[strcspn(s,\"\\n\")]=0;int v=0,n=(int)strlen(s),p=1;for(int i=0;i<n;i++){char c=tolower((unsigned char)s[i]);if(c=='a'||c=='e'||c=='i'||c=='o'||c=='u')v++;}for(int i=0,j=n-1;i<j;i++,j--)if(s[i]!=s[j])p=0;printf(\"len=%d vowels=%d palindrome=%s\\n\",n,v,p?\"yes\":\"no\");return 0;}"
+      },
+      "checkpoint": {
+        "title": "Module 12 checkpoint",
+        "checks": [
+          "Null terminator ka role pata hai",
+          "strlen/strcmp/strcpy use kiye",
+          "strncpy/snprintf ki safety samajh aayi",
+          "fgets se input liya",
+          "Word/vowel count likha"
+        ]
+      }
+    },
+    {
+      "id": "c13",
+      "no": 13,
+      "title": "Pointers",
+      "level": "intermediate",
+      "hours": 7,
+      "goal": "Address, dereference, NULL, pointer arithmetic, const variants aur segfault ko memory maps ke saath samajhna.",
+      "prereqs": [
+        "Module 11-12: arrays aur strings"
+      ],
+      "definition": "Pointer ek variable hai jo doosre object ka memory address store karta hai. Uska type batata hai ki dereference par kitni bytes kaunsa type padhna hai.",
+      "explain": [
+        "& operator address deta hai, * operator us address par value (lvalue) deta hai. int *p = &x; *p = 5; se x badal jaata hai.",
+        "Pointer ka size platform par depend karta hai (64-bit par 8 bytes), type se nahi. Type arithmetic aur dereference ke liye hai.",
+        "NULL pointer kisi object ko point nahi karta — dereference karna crash/UB. Wild pointer uninitialized hota hai; dangling pointer free ya scope khatam hone ke baad bacha rehta hai.",
+        "Pointer arithmetic type ke size se scaled hoti hai: int *p me p+1 = p + sizeof(int) bytes. Sirf same array ke andar valid hai.",
+        "const int *p = value read-only; int *const p = pointer khud fix; const int *const p = dono fix."
+      ],
+      "analogy": "Pointer ek address ki parchi hai: parchi par ghar ka address likha hai, ghar nahi. Parchi badalna (pointer reassign) aur ghar ke andar saaman badalna (*p = ...) alag cheezein hain.",
+      "why": "Pointers C ka superpower aur sabse bada khatra hain: inke bina dynamic memory, strings-as-parameters aur data structures possible nahi; inki galti se segfault aur security bugs aate hain.",
+      "syntax": [
+        {
+          "code": "int x = 42;\nint *p = &x;\nprintf(\"%p %d\\n\", (void*)p, *p);\n*p = 7;\nprintf(\"%d\\n\", x);",
+          "note": "%p ke liye void* cast karo."
+        },
+        {
+          "code": "int a[3] = {10, 20, 30};\nint *p = a;\nprintf(\"%d %d\\n\", *p, *(p + 2));\np++;\nprintf(\"%d\\n\", *p);",
+          "note": "p+1 next element par jaata hai, next byte par nahi."
+        },
+        {
+          "code": "const int *a;      /* value const */\nint *const b = &x;  /* pointer const */\nconst int *const c = &x; /* dono */",
+          "note": "Declaration right-to-left padho."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Address aur dereference",
+          "body": "&x se address, *p se value. Pointer ko print karne ke liye %p + (void*) cast. Address values run se run badalte hain — unhe hardcode mat karo."
+        },
+        {
+          "title": "NULL, void, wild, dangling",
+          "body": "int *p = NULL; dereference se pehle check. void* generic address hai — arithmetic nahi, cast karke use karo. Wild: initialize karo. Dangling: free ke baad NULL set karo."
+        },
+        {
+          "title": "Pointer arithmetic aur pointer-to-pointer",
+          "body": "p+i, p-i, p2-p1 (elements ka difference). Comparison same array me meaningful. int **pp do level ka indirection hai — function me pointer modify karne ke liye."
+        },
+        {
+          "title": "Functions aur const",
+          "body": "Pointer se function original badal sakta hai. const correctness se accidental modification pakdi jaati hai. Function pointer: int (*fp)(int,int)."
+        },
+        {
+          "title": "Segfault debugging",
+          "body": "NULL deref, freed memory, out-of-bounds, stack overflow — ASan se exact line milti hai. gdb me bt aur print *p."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Address, dereference, swap",
+          "code": "#include <stdio.h>\nvoid swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }\nint main(void) {\n    int x = 10, y = 20;\n    int *p = &x;\n    printf(\"x=%d *p=%d\\n\", x, *p);\n    *p = 15;\n    swap(&x, &y);\n    printf(\"x=%d y=%d\\n\", x, y);\n    return 0;\n}",
+          "output": "x=10 *p=10\nx=20 y=15\n",
+          "lines": [
+            "p x ka address rakhta hai; *p se value.",
+            "*p = 15 se x hi badal jaata hai.",
+            "swap addresses leta hai, isliye originals badalte hain."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Pointer arithmetic aur double pointer",
+          "code": "#include <stdio.h>\nvoid set_null(int **pp) { *pp = NULL; }\nint main(void) {\n    int a[4] = {5, 10, 15, 20};\n    int *p = a;\n    printf(\"%d %d %d\\n\", *p, *(p + 2), (int)((p + 3) - p));\n    for (int *q = a; q < a + 4; q++) printf(\"%d \", *q);\n    printf(\"\\n\");\n    int *n = a;\n    set_null(&n);\n    printf(\"%s\\n\", n == NULL ? \"null\" : \"not null\");\n    return 0;\n}",
+          "output": "5 15 3\n5 10 15 20 \nnull\n",
+          "lines": [
+            "*(p+2) teesra element hai.",
+            "Pointer difference elements me hota hai (3).",
+            "Range loop pointer se array end tak.",
+            "set_null pointer ko NULL set karta hai — double pointer chahiye."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Memory map",
+        "rows": [
+          "variable  address     value",
+          "x         0x7ffd1000  42",
+          "p         0x7ffd1008  0x7ffd1000  -> x",
+          "*p        0x7ffd1000  42",
+          "p + 1     0x7ffd1010  (next int slot)"
+        ],
+        "checks": []
+      },
+      "mistakes": [
+        {
+          "wrong": "int *p; *p = 5;",
+          "right": "int x; int *p = &x; *p = 5;",
+          "why": "Uninitialized pointer kisi bhi address par likh sakta hai — crash/UB."
+        },
+        {
+          "wrong": "free(p); *p = 1;",
+          "right": "free(p); p = NULL;",
+          "why": "Use-after-free UB hai."
+        },
+        {
+          "wrong": "p + 1 byte aage",
+          "right": "p + 1 next element",
+          "why": "Arithmetic type-size se scaled hoti hai."
+        }
+      ],
+      "debug": {
+        "brief": "Program segfault kar raha hai. Reason dhundo.",
+        "code": "#include <stdio.h>\nint main(void){int *p = NULL; *p = 5; printf(\"%d\\n\", *p); return 0;}",
+        "expected": "5\n",
+        "hints": [
+          "p kis address par point karta hai?",
+          "Pehle real int ka address do."
+        ],
+        "fix": "int x = 0; int *p = &x; *p = 5;"
+      },
+      "best": [
+        "Pointer initialize karo ya NULL do",
+        "Dereference se pehle NULL check",
+        "free ke baad NULL set karo",
+        "const correctness rakho",
+        "ASan se test karo"
+      ],
+      "practice": [
+        {
+          "title": "Swap",
+          "prompt": "Pointers se do numbers swap karo.",
+          "level": "easy",
+          "hint": "int * parameters."
+        },
+        {
+          "title": "Array sum via pointer",
+          "prompt": "Pointer arithmetic se array ka sum nikalo.",
+          "level": "medium",
+          "hint": "for (p=a; p<a+n; p++)."
+        },
+        {
+          "title": "Double pointer",
+          "prompt": "Function se pointer ko NULL set karo.",
+          "level": "medium",
+          "hint": "int **pp."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "64-bit par sizeof(int*)?",
+          "options": [
+            "4",
+            "8",
+            "int ke size ke barabar",
+            "2"
+          ],
+          "answer": 1,
+          "explain": "Pointer size platform par depend karta hai, 64-bit par 8."
+        },
+        {
+          "q": "p+1 ka matlab?",
+          "options": [
+            "1 byte aage",
+            "next element",
+            "value+1",
+            "invalid"
+          ],
+          "answer": 1,
+          "explain": "Type-size scaled pointer arithmetic."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Dangling pointer kya hai?",
+          "a": "Wo pointer jo already free ho chuki ya scope se bahar gayi memory ko point karta hai. Dereference UB hai. Free ke baad NULL set karo.",
+          "followUp": "Detect? — ASan use-after-free report deta hai."
+        },
+        {
+          "q": "const int *p aur int *const p?",
+          "a": "const int *p: value read-only, pointer badal sakte ho. int *const p: pointer fix, value badal sakte ho. const int *const p: dono.",
+          "followUp": "Declaration kaise padhein? — right to left."
+        }
+      ],
+      "lab": {
+        "title": "Lab 13 — Pointer explorer",
+        "brief": "x ka address aur value print karo, pointer se value badlo, aur array ko pointer se traverse karo.",
+        "starter": "#include <stdio.h>\nint main(void){return 0;}",
+        "expected": "addr_ok=yes value=99\n10 20 30 \n",
+        "tests": [
+          {
+            "name": "output",
+            "stdin": "",
+            "stdout": "addr_ok=yes value=5\nvalue=99\n10 20 30"
+          }
+        ],
+        "hints": [
+          "%p ke liye (void*).",
+          "*p = 99."
+        ],
+        "solution": "#include <stdio.h>\n\nint main(void) {\n    int x = 5;\n    int *p = &x;\n    printf(\"addr_ok=%s value=%d\\n\", (void *)p == (void *)&x ? \"yes\" : \"no\", *p);\n    *p = 99;\n    printf(\"value=%d\\n\", x);\n    int a[3] = {10, 20, 30};\n    for (int i = 0; i < 3; i++) printf(\"%d%s\", a[i], i == 2 ? \"\\n\" : \" \");\n    return 0;\n}\n"
+      },
+      "checkpoint": {
+        "title": "Module 13 checkpoint",
+        "checks": [
+          "& aur * ka fark pata hai",
+          "Pointer se value modify ki",
+          "NULL/wild/dangling samajh aaye",
+          "Pointer arithmetic elements me hai",
+          "Segfault ka karan bata sakte ho"
+        ]
+      }
+    },
+    {
+      "id": "c14",
+      "no": 14,
+      "title": "Pointers, Arrays and Functions",
+      "level": "advanced",
+      "hours": 5,
+      "goal": "Array decay, pointer parameters, double pointers, dynamic 2D arrays aur callbacks ko jodna.",
+      "prereqs": [
+        "Module 13: pointers"
+      ],
+      "definition": "Array expression pointer me decay hota hai; isliye functions array ko pointer ke roop me lete hain aur size alag pass karna padta hai.",
+      "explain": [
+        "void f(int a[], int n) aur void f(int *a, int n) same hain. sizeof a function ke andar pointer ka size deta hai.",
+        "Pointer se function original array modify kar sakta hai; const int *a se sirf padh sakta hai.",
+        "Double pointer (int **) pointer ke array, 2D dynamic allocation aur out-parameter pointer ke liye chahiye.",
+        "Function pointer callback deta hai: qsort comparator, menu dispatch, event handlers."
+      ],
+      "analogy": "Array ek ghar hai aur pointer us ghar ka address. Function ko address deते ho, isliye wo andar badlav kar sakta hai — par ghar ka size address se pata nahi chalta.",
+      "why": "Strings, matrices, dynamic arrays aur callbacks sab isi integration par bane hain — interview me array-pointer equivalence ka sawaal pakka aata hai.",
+      "syntax": [
+        {
+          "code": "void fill(int *a, int n) { for (int i=0;i<n;i++) a[i]=i*i; }\nvoid print(const int *a, int n) { for (int i=0;i<n;i++) printf(\"%d \", a[i]); }",
+          "note": "Writer non-const, reader const."
+        },
+        {
+          "code": "int (*cmp)(const void*, const void*);\nqsort(a, n, sizeof a[0], cmp);",
+          "note": "Function pointer syntax: return type (*name)(params)."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Decay aur size",
+          "body": "Array parameter pointer ban jaata hai; n alag bhejo. 2D array me column width chahiye: void f(int m[][3], int rows)."
+        },
+        {
+          "title": "Modify through pointers",
+          "body": "a[i] aur *(a+i) same; pointer se likhne par caller ka array badalta hai. const correctness se galti pakdi jaati hai."
+        },
+        {
+          "title": "Double pointers aur 2D heap",
+          "body": "int **grid = malloc(rows*sizeof *grid); har row malloc; free nested. Function me int ** se pointer ko reassign karo."
+        },
+        {
+          "title": "Function pointers",
+          "body": "typedef int (*binop)(int,int); binop ops[] = {add, sub}; ops[choice](a,b). Callback se generic algorithms bante hain."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Array ko function me modify karna",
+          "code": "#include <stdio.h>\nvoid double_all(int *a, int n) { for (int i = 0; i < n; i++) a[i] *= 2; }\nint main(void) {\n    int a[3] = {1, 2, 3};\n    double_all(a, 3);\n    for (int i = 0; i < 3; i++) printf(\"%d \", a[i]);\n    printf(\"\\n\");\n    return 0;\n}",
+          "output": "2 4 6 \n",
+          "lines": [
+            "Array address pass hota hai.",
+            "Function original elements badal deta hai.",
+            "Size alag parameter hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Function pointer dispatch",
+          "code": "#include <stdio.h>\nint add(int a, int b) { return a + b; }\nint mul(int a, int b) { return a * b; }\nint main(void) {\n    int (*ops[2])(int, int) = {add, mul};\n    for (int i = 0; i < 2; i++) printf(\"%d\\n\", ops[i](6, 7));\n    return 0;\n}",
+          "output": "13\n42\n",
+          "lines": [
+            "Function pointers ka array bana.",
+            "ops[i](6,7) runtime par function chunta hai.",
+            "Callback/dispatch ka core pattern."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "int a[3] aur int *p",
+        "rows": [
+          "a        -> 0x1000 (array object)",
+          "&a[0]    -> 0x1000",
+          "a+1      -> 0x1004",
+          "sizeof a -> 12 (array)",
+          "sizeof p -> 8 (pointer)"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "void f(int a[10]) { sizeof a }",
+          "right": "size parameter",
+          "why": "Pointer ban jaata hai, 10 nahi bachta."
+        },
+        {
+          "wrong": "2D pass: void f(int m[][])",
+          "right": "void f(int m[][3])",
+          "why": "Compiler ko row stride chahiye."
+        }
+      ],
+      "debug": {
+        "brief": "Function array ke sirf pehle element ko double kar raha hai. Fix karo.",
+        "code": "#include <stdio.h>\nvoid dbl(int a[]) { a[0] *= 2; }\nint main(void){int a[3]={1,2,3};dbl(a);printf(\"%d %d %d\\n\",a[0],a[1],a[2]);return 0;}",
+        "expected": "2 4 6\n",
+        "hints": [
+          "Size chahiye.",
+          "Loop n tak chalao."
+        ],
+        "fix": "void dbl(int *a, int n) { for (int i=0;i<n;i++) a[i]*=2; }  dbl(a, 3);"
+      },
+      "best": [
+        "Size alag pass karo",
+        "const se read-only intent",
+        "2D me column width",
+        "Function pointer typedef karo"
+      ],
+      "practice": [
+        {
+          "title": "Sum function",
+          "prompt": "int sum(const int *a,int n) banao.",
+          "level": "easy",
+          "hint": "const int *."
+        },
+        {
+          "title": "Bubble sort function",
+          "prompt": "Array ko function se sort karo.",
+          "level": "medium",
+          "hint": "In-place swap."
+        },
+        {
+          "title": "Callback",
+          "prompt": "Function pointer se add/mul choose karo.",
+          "level": "medium",
+          "hint": "int (*op)(int,int)."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "Function me array ka sizeof?",
+          "options": [
+            "Array ka size",
+            "Pointer ka size",
+            "0",
+            "Error"
+          ],
+          "answer": 1,
+          "explain": "Array parameter pointer me decay hota hai."
+        },
+        {
+          "q": "int ** kab chahiye?",
+          "options": [
+            "Kabhi nahi",
+            "Pointer modify karne / 2D heap",
+            "Sirf strings",
+            "Sirf struct"
+          ],
+          "answer": 1,
+          "explain": "Do level indirection."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Array-pointer equivalence ka limit?",
+          "a": "a[i] == *(a+i) expression me, par array object nahi hai pointer: sizeof aur assignment alag behave karte hain.",
+          "followUp": "Pass by array? — C me sirf pointer pass hota hai."
+        },
+        {
+          "q": "qsort comparator kaise likhein?",
+          "a": "int cmp(const void *a, const void *b) { int x=*(const int*)a, y=*(const int*)b; return (x>y)-(x<y); }",
+          "followUp": "Descending? — return ulta karo."
+        }
+      ],
+      "lab": {
+        "title": "Lab 14 — Array functions",
+        "brief": "fill, sum aur reverse functions banao jo pointer leti hain.",
+        "starter": "#include <stdio.h>\nint main(void){return 0;}",
+        "expected": "sum=15\n5 4 3 2 1 \n",
+        "tests": [
+          {
+            "name": "output",
+            "stdin": "",
+            "stdout": "sum=15\n5 4 3 2 1"
+          }
+        ],
+        "hints": [
+          "n parameter do.",
+          "Reverse me i,j swap."
+        ],
+        "solution": "#include <stdio.h>\n\nstatic void fill(int *a, int n) { for (int i = 0; i < n; i++) a[i] = i + 1; }\nstatic int sum(const int *a, int n) { int s = 0; for (int i = 0; i < n; i++) s += a[i]; return s; }\nstatic void rev(int *a, int n) {\n    for (int i = 0, j = n - 1; i < j; i++, j--) { int t = a[i]; a[i] = a[j]; a[j] = t; }\n}\n\nint main(void) {\n    int a[5];\n    fill(a, 5);\n    printf(\"sum=%d\\n\", sum(a, 5));\n    rev(a, 5);\n    for (int i = 0; i < 5; i++) printf(\"%d%s\", a[i], i == 4 ? \"\\n\" : \" \");\n    return 0;\n}\n"
+      },
+      "checkpoint": {
+        "title": "Module 14 checkpoint",
+        "checks": [
+          "Array decay samajh aaya",
+          "Pointer se array modify kiya",
+          "2D pass karne ka rule pata hai",
+          "Function pointer use kiya"
+        ]
+      }
+    },
+    {
+      "id": "c15",
+      "no": 15,
+      "title": "Structures, Unions and Enums",
+      "level": "intermediate",
+      "hours": 6,
+      "goal": "Struct, nested struct, array of structs, pointer/arrow, union, enum, typedef, padding aur self-referential struct.",
+      "prereqs": [
+        "Module 13: pointers"
+      ],
+      "definition": "Structure alag-alag types ke members ko ek naam ke neeche group karta hai; union same memory ko alag types se interpret karta hai; enum named integer constants deta hai.",
+      "explain": [
+        "struct Student { int roll; char name[32]; float marks; }; definition hai; struct Student s; object. Member access dot se, pointer se arrow (->).",
+        "Struct assignment value copy karti hai (deep copy nahi — pointer members shared rehte hain). Function me by value copy hoti hai; bade struct pointer se bhejo.",
+        "Union ke saare members same memory share karte hain — ek waqt me ek valid. Size sabse bade member ke barabar (plus alignment).",
+        "Padding alignment ke liye aati hai; sizeof struct members ke sum se bada ho sakta hai. Members ko bade se chhote order karne se padding kam hoti hai.",
+        "Self-referential struct (struct Node { struct Node *next; }) linked list ka base hai."
+      ],
+      "analogy": "Struct ek form hai jisme alag-alag fields ek saath rakhe jaate hain; union ek hi dabba hai jisme alag-alag label laga sakte ho par ek waqt me ek hi saaman.",
+      "why": "Real data (student, employee, node) struct me model hota hai; enums states/flags readable banate hain; linked lists aur trees self-referential structs hain.",
+      "syntax": [
+        {
+          "code": "typedef struct { int roll; char name[32]; float marks; } Student;\nStudent s = {1, \"Asha\", 91.5};\nStudent *p = &s;\nprintf(\"%s %.1f\\n\", p->name, p->marks);",
+          "note": "typedef se 'struct' likhna nahi padta."
+        },
+        {
+          "code": "typedef enum { RED, GREEN = 5, BLUE } Color;\ntypedef union { int i; float f; unsigned char bytes[4]; } Value;",
+          "note": "enum values auto-increment; union members overlap."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Struct basics",
+          "body": "Declaration, initialization (designated .marks = 91.5 bhi), member access, assignment copy, array of structs, nested struct."
+        },
+        {
+          "title": "Pointers aur functions",
+          "body": "p->member == (*p).member. Struct by value bhejne par copy hoti hai; modify karne ke liye pointer. Struct return karna allowed hai."
+        },
+        {
+          "title": "Union, enum, typedef",
+          "body": "Union memory bachata hai par active member track karna padta hai (tagged union). Enum switch ke saath readable. typedef naam chhota karta hai."
+        },
+        {
+          "title": "Padding, alignment, bit-fields",
+          "body": "sizeof(struct {char c; int i;}) usually 8, 5 nahi. bit-fields (unsigned flags:3) space bachate hain par layout implementation-defined. Self-referential struct linked structures ke liye."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Student struct",
+          "code": "#include <stdio.h>\ntypedef struct { int roll; char name[16]; float marks; } Student;\nint main(void) {\n    Student s = {1, \"Asha\", 91.5f};\n    Student *p = &s;\n    printf(\"%d %s %.1f\\n\", s.roll, p->name, p->marks);\n    return 0;\n}",
+          "output": "1 Asha 91.5\n",
+          "lines": [
+            "typedef ne struct ka naam Student kar diya.",
+            "s.roll direct member hai.",
+            "p->name pointer ke through member hai."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Union aur enum",
+          "code": "#include <stdio.h>\ntypedef enum { INT, FLT } Kind;\ntypedef struct { Kind kind; union { int i; float f; } value; } Tagged;\nint main(void) {\n    Tagged a = {INT, {.i = 42}};\n    Tagged b = {FLT, {.f = 3.5f}};\n    printf(\"%d %.1f %zu\\n\", a.value.i, b.value.f, sizeof(Tagged));\n    return 0;\n}",
+          "output": "42 3.5 8\n",
+          "lines": [
+            "Enum active type track karta hai.",
+            "Union dono values ko same memory me rakhta hai.",
+            "sizeof tagged union ~8 bytes (tag + largest member/alignment)."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "struct { char c; int i; } layout",
+        "rows": [
+          "offset 0: char c",
+          "offset 1-3: padding",
+          "offset 4-7: int i",
+          "sizeof = 8 (32-bit int)",
+          "Members reorder: int i; char c; -> size 8 hi, par cache behtar"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "Student s; s->roll = 1;",
+          "right": "s.roll = 1; ya (&s)->roll",
+          "why": "Dot object ke liye, arrow pointer ke liye."
+        },
+        {
+          "wrong": "union me ek member likh kar doosra padhna",
+          "right": "tag se active member track karo",
+          "why": "Type punning implementation-defined/UB ho sakta hai."
+        },
+        {
+          "wrong": "struct compare with ==",
+          "right": "member-wise ya memcmp (padding ke saath careful)",
+          "why": "C me struct equality operator nahi hai."
+        }
+      ],
+      "debug": {
+        "brief": "sizeof(Student) 40 aa raha hai 36 ki jagah. Reason batao.",
+        "code": "#include <stdio.h>\ntypedef struct { char name[33]; int roll; double marks; } Student;\nint main(void){printf(\"%zu\\n\",sizeof(Student));return 0;}",
+        "expected": "48\n",
+        "hints": [
+          "Alignment ke liye gaps aate hain.",
+          "33 ke baad int 4-byte aligned hota hai."
+        ],
+        "fix": "Members ko bade se chhote order karo ya padding accept karo; sizeof implementation-defined hai."
+      },
+      "best": [
+        "Dot vs arrow yaad rakho",
+        "Bade struct pointer se bhejo",
+        "Union me tag rakho",
+        "sizeof se size lo",
+        "typedef se readable naam"
+      ],
+      "practice": [
+        {
+          "title": "Point struct",
+          "prompt": "Point {x,y} banao aur distance print karo.",
+          "level": "easy",
+          "hint": "sqrt(dx*dx+dy*dy), -lm."
+        },
+        {
+          "title": "Array of students",
+          "prompt": "3 students ka array sort karo marks se.",
+          "level": "medium",
+          "hint": "Struct swap."
+        },
+        {
+          "title": "Linked node",
+          "prompt": "Node struct banao jisme next pointer ho.",
+          "level": "medium",
+          "hint": "struct Node *next."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "Pointer se member access?",
+          "options": [
+            "s.x",
+            "s->x",
+            "*s.x",
+            "s[x]"
+          ],
+          "answer": 1,
+          "explain": "Arrow pointer ke liye hai."
+        },
+        {
+          "q": "Union ka size?",
+          "options": [
+            "Members ka sum",
+            "Sabse bada member (+padding)",
+            "Hamesha 4",
+            "0"
+          ],
+          "answer": 1,
+          "explain": "Members memory share karte hain."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Struct padding kyun hoti hai?",
+          "a": "CPU aligned access fast karta hai; compiler members ko unke alignment par rakhta hai, beech me gaps chhodta hai. sizeof isliye sum se bada hota hai.",
+          "followUp": "Padding kam kaise? — members ko size ke descending order me rakho."
+        },
+        {
+          "q": "Struct by value pass karna kab bura?",
+          "a": "Bade struct ki copy expensive hoti hai aur function original modify nahi kar sakta. const pointer bhejo.",
+          "followUp": "Return by value? — compiler often optimize karta hai (RVO)."
+        }
+      ],
+      "lab": {
+        "title": "Lab 15 — Student database",
+        "brief": "3 students ka array banao, average marks aur topper print karo.",
+        "starter": "#include <stdio.h>\ntypedef struct { char name[16]; int marks; } Student;\nint main(void){return 0;}",
+        "expected": "avg=80.0 topper=Asha\n",
+        "tests": [
+          {
+            "name": "stats",
+            "stdin": "",
+            "stdout": "avg=80.0 topper=Asha"
+          }
+        ],
+        "hints": [
+          "Loop se sum.",
+          "Topper max marks wala."
+        ],
+        "solution": "#include <stdio.h>\ntypedef struct { char name[16]; int marks; } Student;\nint main(void){Student s[3]={{\"Asha\",90},{\"Ravi\",75},{\"Neha\",75}};int sum=0,best=0;for(int i=0;i<3;i++){sum+=s[i].marks;if(s[i].marks>s[best].marks)best=i;}printf(\"avg=%.1f topper=%s\\n\",sum/3.0,s[best].name);return 0;}"
+      },
+      "checkpoint": {
+        "title": "Module 15 checkpoint",
+        "checks": [
+          "Struct define aur initialize kiya",
+          "Dot aur arrow dono use kiye",
+          "Union/enum ka fark pata hai",
+          "Padding samajh aayi",
+          "Self-referential struct likha"
+        ]
+      }
+    },
+    {
+      "id": "c16",
+      "no": 16,
+      "title": "Dynamic Memory Allocation",
+      "level": "advanced",
+      "hours": 6,
+      "goal": "Stack vs heap, malloc/calloc/realloc/free, leaks, dangling/double free aur ownership.",
+      "prereqs": [
+        "Module 13-15: pointers aur structs"
+      ],
+      "definition": "Dynamic memory runtime par heap se allocate hoti hai: malloc, calloc, realloc aur free. Lifetime programmer ke control me hoti hai.",
+      "explain": [
+        "Stack automatic hai (scope se free), heap manual. malloc bytes leta hai aur uninitialized memory deta hai; calloc count*size leta hai aur zero karta hai; realloc resize karta hai (address badal sakta hai).",
+        "malloc NULL return kar sakta hai — hamesha check karo. free(NULL) safe hai; double free aur use-after-free UB hain.",
+        "Memory leak tab hota hai jab pointer kho jaata hai par memory free nahi hoti. Ownership ka rule likho: kis function ne allocate kiya aur kaun free karega.",
+        "sizeof *p pattern use karo: int *p = malloc(n * sizeof *p); type badalne par bhi sahi rehta hai."
+      ],
+      "analogy": "Heap ek library hai jahan aap kitabein mangwate ho (malloc) aur wapas karte ho (free). Wapas na karo to library bhar jaati hai; wapas karke dobara padho to invalid.",
+      "why": "Dynamic arrays, linked lists, trees, strings builder aur har real application heap use karti hai. Leak aur use-after-free production incidents ka common karan hain.",
+      "syntax": [
+        {
+          "code": "int *a = malloc(n * sizeof *a);\nif (!a) { /* handle */ }\nfor (int i=0;i<n;i++) a[i]=0;\nfree(a);\na = NULL;",
+          "note": "Check, use, free, NULL — chaar steps."
+        },
+        {
+          "code": "int *b = calloc(n, sizeof *b);      /* zeroed */\nb = realloc(b, 2 * n * sizeof *b);  /* may move */\nif (b) { /* use */ }\nfree(b);",
+          "note": "realloc ka return naye pointer me lo; fail par purana valid rehta hai."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Stack vs heap",
+          "body": "Stack fast, automatic, chhota (MBs). Heap bada, manual, slower. Large arrays aur runtime-size data heap par."
+        },
+        {
+          "title": "malloc/calloc/realloc/free",
+          "body": "malloc uninitialized, calloc zeroed. realloc content preserve karta hai naye size tak; fail par NULL aur original intact. free sirf malloc family ke pointer par."
+        },
+        {
+          "title": "Leaks aur invalid access",
+          "body": "Leak: ownership kho gayi. Dangling: free ke baad use. Double free: same pointer do baar free. Use-after-free: freed memory read/write. ASan teeno pakadta hai."
+        },
+        {
+          "title": "Ownership patterns",
+          "body": "Ek clear owner; transfer document karo. Cleanup ke liye goto cleanup pattern. Dynamic array struct {T *data; size_t len, cap;} ke saath grow karo."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "malloc aur free",
+          "code": "#include <stdio.h>\n#include <stdlib.h>\nint main(void) {\n    int n = 5;\n    int *a = malloc((size_t)n * sizeof *a);\n    if (!a) return 1;\n    for (int i = 0; i < n; i++) a[i] = i * i;\n    for (int i = 0; i < n; i++) printf(\"%d \", a[i]);\n    printf(\"\\n\");\n    free(a);\n    a = NULL;\n    return 0;\n}",
+          "output": "0 1 4 9 16 \n",
+          "lines": [
+            "sizeof *a type-safe size deta hai.",
+            "malloc fail par NULL — check kiya.",
+            "free ke baad NULL set kiya."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "realloc se dynamic array grow",
+          "code": "#include <stdio.h>\n#include <stdlib.h>\nint main(void) {\n    int cap = 2, len = 0;\n    int *a = malloc((size_t)cap * sizeof *a);\n    if (!a) return 1;\n    for (int v = 1; v <= 6; v++) {\n        if (len == cap) {\n            int *tmp = realloc(a, (size_t)(cap * 2) * sizeof *a);\n            if (!tmp) { free(a); return 1; }\n            a = tmp; cap *= 2;\n        }\n        a[len++] = v;\n    }\n    for (int i = 0; i < len; i++) printf(\"%d \", a[i]);\n    printf(\"cap=%d\\n\", cap);\n    free(a);\n    return 0;\n}",
+          "output": "1 2 3 4 5 6 cap=8\n",
+          "lines": [
+            "Capacity double hoti hai jab full ho.",
+            "realloc ka result tmp me liya — fail par a safe.",
+            "Aakhir me ek hi free."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Heap lifecycle",
+        "rows": [
+          "int *p = malloc(4 * sizeof *p)  -> heap block 0x55a0...",
+          "p[0..3] valid",
+          "free(p) -> block free",
+          "p = NULL -> dangling pointer avoid",
+          "free(p) dubara -> double free UB"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "int *p = malloc(n * sizeof(int)); p = p + 1; free(p);",
+          "right": "free original pointer",
+          "why": "free ko malloc ka original address chahiye."
+        },
+        {
+          "wrong": "p = realloc(p, size);",
+          "right": "tmp = realloc(p, size); if (tmp) p = tmp;",
+          "why": "Fail par NULL se original kho jaata hai — leak."
+        },
+        {
+          "wrong": "char *s = malloc(10); strcpy(s, \"hello\");",
+          "right": "malloc(6)",
+          "why": "5 chars + null ke liye 6 bytes."
+        }
+      ],
+      "debug": {
+        "brief": "Loop me memory leak ho raha hai. Fix karo.",
+        "code": "#include <stdlib.h>\nint main(void){for(int i=0;i<3;i++){int *p=malloc(16);p[0]=i;/* use */}return 0;}",
+        "expected": "no leak\n",
+        "hints": [
+          "Har malloc ka free chahiye.",
+          "Loop ke end me free(p)."
+        ],
+        "fix": "for(...){int *p=malloc(16); p[0]=i; free(p);}"
+      },
+      "best": [
+        "sizeof *p pattern",
+        "malloc ka NULL check",
+        "free ke baad NULL",
+        "Ownership documented rakho",
+        "ASan/Valgrind se test karo"
+      ],
+      "practice": [
+        {
+          "title": "Dynamic array",
+          "prompt": "n input lekar malloc se array banao aur sum print karo.",
+          "level": "easy",
+          "hint": "free karna mat bhoolo."
+        },
+        {
+          "title": "String duplicate",
+          "prompt": "strdup jaisa function likho.",
+          "level": "medium",
+          "hint": "strlen+1 malloc, strcpy."
+        },
+        {
+          "title": "2D grid",
+          "prompt": "rows x cols int grid malloc/free karo.",
+          "level": "hard",
+          "hint": "Nested malloc/free."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "calloc aur malloc me fark?",
+          "options": [
+            "Speed",
+            "Zero-initialize",
+            "Size",
+            "Koi nahi"
+          ],
+          "answer": 1,
+          "explain": "calloc memory ko zero karta hai."
+        },
+        {
+          "q": "free ke baad pointer?",
+          "options": [
+            "Auto NULL",
+            "Dangling",
+            "Zero",
+            "Safe use"
+          ],
+          "answer": 1,
+          "explain": "Dangling; NULL manually set karo."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Memory leak production me kaise pakdein?",
+          "a": "ASan/Valgrind se development me, heap profiler se production me, aur ownership review se. Har malloc ka ek clear free path hona chahiye.",
+          "followUp": "Valgrind command? — valgrind --leak-check=full ./app"
+        },
+        {
+          "q": "realloc fail hone par kya hota hai?",
+          "a": "NULL return karta hai aur original block valid rehta hai. Isliye result tmp me lo, warna original pointer kho kar leak ho jaata hai.",
+          "followUp": "Size 0? — implementation-defined; free jaisa treat karo."
+        }
+      ],
+      "lab": {
+        "title": "Lab 16 — Safe dynamic array",
+        "brief": "n input lo, malloc se array banao, reverse print karo aur free karo.",
+        "starter": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){return 0;}",
+        "expected": "3 2 1 \n",
+        "tests": [
+          {
+            "name": "reverse",
+            "stdin": "3\n1 2 3\n",
+            "stdout": "3 2 1"
+          }
+        ],
+        "hints": [
+          "malloc(n*sizeof *a).",
+          "free(a)."
+        ],
+        "solution": "#include <stdio.h>\n#include <stdlib.h>\nint main(void){int n;scanf(\"%d\",&n);int *a=malloc((size_t)n*sizeof *a);if(!a)return 1;for(int i=0;i<n;i++)scanf(\"%d\",&a[i]);for(int i=n-1;i>=0;i--)printf(\"%d \",a[i]);printf(\"\\n\");free(a);return 0;}"
+      },
+      "checkpoint": {
+        "title": "Module 16 checkpoint",
+        "checks": [
+          "Stack vs heap bata sakte ho",
+          "malloc/calloc/realloc/free use kiye",
+          "NULL check aur free ke baad NULL",
+          "Leak aur double free samajh aaye",
+          "Dynamic array grow kiya"
+        ]
+      }
+    },
+    {
+      "id": "c17",
+      "no": 17,
+      "title": "File Handling",
+      "level": "intermediate",
+      "hours": 6,
+      "goal": "fopen modes, formatted aur binary I/O, seek aur error handling se persistent data likhna.",
+      "prereqs": [
+        "Module 12: strings"
+      ],
+      "definition": "File handling se program ka data disk par permanent hota hai. FILE* stream handle hai; fopen mode decide karta hai read/write/append aur text/binary.",
+      "explain": [
+        "Modes: \"r\" read (must exist), \"w\" write (truncate/create), \"a\" append, \"r+\"/\"w+\"/\"a+\" read+write, \"rb\"/\"wb\" binary. Har successful fopen ka fclose zaroori hai.",
+        "fprintf/fscanf formatted text, fgets/fputs lines, fgetc/fputc characters, fread/fwrite binary blocks. Return values check karo — fgets NULL, fread count.",
+        "fseek(stream, offset, SEEK_SET/CUR/END), ftell current offset, rewind start par. Binary records ke liye fseek se random access.",
+        "Errors: fopen NULL, perror() message, errno code. EOF detection: fgetc == EOF aur feof. Writing ke baad fclose/flush se data disk par jaata hai."
+      ],
+      "analogy": "File ek diary hai: fopen diary kholta hai (mode batata hai padhna ya likhna), fprintf usme likhta hai, fseek kisi page par jaata hai, fclose diary band karta hai.",
+      "why": "Config, logs, records aur databases — sab files se shuru hote hain. Interview me text vs binary aur safe record I/O ka sawaal common hai.",
+      "syntax": [
+        {
+          "code": "FILE *f = fopen(\"data.txt\", \"w\");\nif (!f) { perror(\"fopen\"); return 1; }\nfprintf(f, \"%d %s\\n\", 1, \"Asha\");\nfclose(f);",
+          "note": "fopen fail ho sakta hai — NULL check."
+        },
+        {
+          "code": "FILE *f = fopen(\"data.bin\", \"wb\");\nfwrite(&rec, sizeof rec, 1, f);\nfclose(f);\nf = fopen(\"data.bin\", \"rb\");\nfread(&rec, sizeof rec, 1, f);\nfclose(f);",
+          "note": "Binary mode me raw bytes; text mode newline translation kar sakta hai."
+        }
+      ],
+      "topics": [
+        {
+          "title": "fopen aur modes",
+          "body": "Mode galat = data loss: \"w\" existing file truncate kar deta hai. Append ke liye \"a\". Text \"t\" default; binary \"b\" Windows par zaroori."
+        },
+        {
+          "title": "Formatted aur line I/O",
+          "body": "fprintf/fscanf text records; fgets safe line read; fputs line write; fgetc/fputc chars. scanf family file par same rules follow karta hai (address, return count)."
+        },
+        {
+          "title": "Binary I/O aur seek",
+          "body": "fread/fwrite size*count return karte hain. fseek/ftell se record index par jump: offset = index * sizeof(Record). Portable binary files ke liye fixed-width types (uint32_t) lo."
+        },
+        {
+          "title": "Error handling",
+          "body": "fopen NULL, ferror, feof, errno aur perror. Cleanup: har error path par fclose. Temporary file + rename se atomic write."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Write aur read text",
+          "code": "#include <stdio.h>\nint main(void) {\n    FILE *f = fopen(\"/tmp/brocode.txt\", \"w\");\n    if (!f) { perror(\"fopen\"); return 1; }\n    fprintf(f, \"%d %s\\n\", 1, \"Asha\");\n    fprintf(f, \"%d %s\\n\", 2, \"Ravi\");\n    fclose(f);\n    f = fopen(\"/tmp/brocode.txt\", \"r\");\n    if (!f) return 1;\n    int id; char name[16];\n    while (fscanf(f, \"%d %15s\", &id, name) == 2) printf(\"%d:%s\\n\", id, name);\n    fclose(f);\n    return 0;\n}",
+          "output": "1:Asha\n2:Ravi\n",
+          "lines": [
+            "fopen w mode me file banata/truncate karta hai.",
+            "fprintf formatted line likhta hai.",
+            "fscanf 2 return karta hai jab dono values milein.",
+            "Dono handles fclose hue."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Binary records aur fseek",
+          "code": "#include <stdio.h>\ntypedef struct { int id; char name[12]; } Rec;\nint main(void) {\n    Rec r[3] = {{1,\"A\"},{2,\"B\"},{3,\"C\"}};\n    FILE *f = fopen(\"/tmp/rec.bin\", \"wb\");\n    if (!f) return 1;\n    fwrite(r, sizeof r[0], 3, f);\n    fclose(f);\n    f = fopen(\"/tmp/rec.bin\", \"rb\");\n    if (!f) return 1;\n    fseek(f, 2 * (long)sizeof(Rec), SEEK_SET);\n    Rec out;\n    if (fread(&out, sizeof out, 1, f) == 1) printf(\"%d %s\\n\", out.id, out.name);\n    fclose(f);\n    return 0;\n}",
+          "output": "3 C\n",
+          "lines": [
+            "fwrite teen records ek saath likhta hai.",
+            "fseek record index 2 par jump karta hai.",
+            "fread ek record padhta hai; return count check."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "file position",
+        "rows": [
+          "offset 0      record 0  id=1 name=A",
+          "offset 16     record 1  id=2 name=B",
+          "offset 32     record 2  id=3 name=C",
+          "fseek(f, 2*16, SEEK_SET) -> offset 32",
+          "ftell(f) -> 32"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "fopen(\"f.txt\",\"w\") se read",
+          "right": "\"r\" ya \"r+\"",
+          "why": "w mode truncate karta hai aur read allow nahi."
+        },
+        {
+          "wrong": "fclose bhoolna",
+          "right": "har path par fclose",
+          "why": "Buffer flush nahi hota, data kho sakta hai, handle leak."
+        },
+        {
+          "wrong": "fscanf(\"%d\", id)",
+          "right": "fscanf(\"%d\", &id)",
+          "why": "scanf family address leta hai."
+        }
+      ],
+      "debug": {
+        "brief": "File ka last line do baar print ho raha hai. Reason: EOF check galat. Fix karo.",
+        "code": "#include <stdio.h>\nint main(void){FILE *f=fopen(\"/tmp/x.txt\",\"r\");if(!f)return 1;char line[64];while(!feof(f)){if(fgets(line,sizeof line,f))printf(\"%s\",line);}fclose(f);return 0;}",
+        "expected": "file lines ek-ek baar\n",
+        "hints": [
+          "feof read fail hone ke baad true hota hai.",
+          "fgets ke return par loop chalao."
+        ],
+        "fix": "while (fgets(line, sizeof line, f)) printf(\"%s\", line);"
+      },
+      "best": [
+        "fopen ka return check karo",
+        "Mode ka matlab yaad rakho",
+        "Binary me sizeof se read/write",
+        "fclose har path par",
+        "perror se error message do"
+      ],
+      "practice": [
+        {
+          "title": "Line count",
+          "prompt": "File ki lines count karo.",
+          "level": "easy",
+          "hint": "fgets loop."
+        },
+        {
+          "title": "Append log",
+          "prompt": "Nayi line file me append karo bina purani mitaye.",
+          "level": "easy",
+          "hint": "\"a\" mode."
+        },
+        {
+          "title": "Record search",
+          "prompt": "Binary file me id se record dhundo.",
+          "level": "medium",
+          "hint": "fseek + fread."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "\"w\" mode ka effect?",
+          "options": [
+            "Append",
+            "Truncate/create",
+            "Read only",
+            "Rename"
+          ],
+          "answer": 1,
+          "explain": "w file ko truncate ya create karta hai."
+        },
+        {
+          "q": "fseek ka third argument?",
+          "options": [
+            "Size",
+            "Origin (SEEK_SET/CUR/END)",
+            "Buffer",
+            "Mode"
+          ],
+          "answer": 1,
+          "explain": "Origin batata hai offset kahan se."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Text aur binary mode ka fark?",
+          "a": "Text mode newline translation kar sakta hai (Windows CRLF) aur Ctrl-Z ko EOF samajh sakta hai; binary mode raw bytes deta hai. Binary records ke liye \"b\" use karo.",
+          "followUp": "Portable records? — fixed-width types, endianness document karo."
+        },
+        {
+          "q": "fclose kyun zaroori hai?",
+          "a": "Buffered data flush hota hai, file descriptor free hota hai, aur write errors report hote hain. Leak se descriptors khatam ho jaate hain.",
+          "followUp": "Crash par buffer? — data lose ho sakta hai; fflush ya atomic rename."
+        }
+      ],
+      "lab": {
+        "title": "Lab 17 — Notes file",
+        "brief": "Do lines file me likho, phir file padh kar print karo.",
+        "starter": "#include <stdio.h>\nint main(void){return 0;}",
+        "expected": "line1\nline2\n",
+        "tests": [
+          {
+            "name": "roundtrip",
+            "stdin": "",
+            "stdout": "line1\nline2"
+          }
+        ],
+        "hints": [
+          "fopen w, fprintf, fclose.",
+          "Phir fopen r, fgets loop."
+        ],
+        "solution": "#include <stdio.h>\nint main(void){FILE *f=fopen(\"/tmp/notes.txt\",\"w\");if(!f)return 1;fprintf(f,\"line1\\nline2\\n\");fclose(f);f=fopen(\"/tmp/notes.txt\",\"r\");if(!f)return 1;char b[64];while(fgets(b,sizeof b,f))printf(\"%s\",b);fclose(f);return 0;}"
+      },
+      "checkpoint": {
+        "title": "Module 17 checkpoint",
+        "checks": [
+          "fopen modes pata hain",
+          "fprintf/fscanf/fgets use kiye",
+          "Binary read/write kiya",
+          "fseek/ftell samajh aaye",
+          "Error handling ki"
+        ]
+      }
+    },
+    {
+      "id": "c18",
+      "no": 18,
+      "title": "Preprocessor and Professional C",
+      "level": "advanced",
+      "hours": 5,
+      "goal": "Macros, header guards, multi-file build, Makefile, argc/argv, GDB aur sanitizers.",
+      "prereqs": [
+        "Module 2 aur 9: build aur functions"
+      ],
+      "definition": "Preprocessor compile se pehle text transformations karta hai: includes, macros, conditional compilation. Professional C me headers, build automation aur diagnostics ka discipline isi par khada hai.",
+      "explain": [
+        "#define PI 3.14159 object-like macro; #define SQ(x) ((x)*(x)) function-like macro — arguments ko brackets me rakho warna precedence bug. Macro me side effects (SQ(i++)) se bacho.",
+        "Header guards (#ifndef X_H / #define / #endif) ya #pragma once double inclusion se bachate hain. Declarations header me, definitions .c me.",
+        "Conditional compilation: #ifdef DEBUG, #if, #elif, #else, #endif. Build flags se logging on/off karo.",
+        "Command line arguments: int main(int argc, char *argv[]) — argv[0] program name, argc count. atoi/strtol se numbers, validation karo.",
+        "GDB: break, run, next, step, print, bt. Sanitizers: -fsanitize=address,undefined. Makefile: targets, dependencies, tabs."
+      ],
+      "analogy": "Preprocessor ek copy editor hai jo compile se pehle text badalta hai; compiler asli grammar baad me dekhta hai. Isliye macro errors weird dikhte hain.",
+      "why": "Professional projects multi-file hote hain; headers, build flags aur debugger ke bina 10k-line code maintain nahi hota. Interviews me macro pitfalls aur build process poochha jaata hai.",
+      "syntax": [
+        {
+          "code": "#ifndef UTIL_H\n#define UTIL_H\nint add(int a, int b);\n#endif",
+          "note": "Header guard double inclusion rokta hai."
+        },
+        {
+          "code": "#define MAX(a,b) ((a) > (b) ? (a) : (b))\n#define ARRAY_LEN(a) (sizeof (a) / sizeof (a)[0])\n#ifdef DEBUG\n#  define LOG(...) fprintf(stderr, __VA_ARGS__)\n#else\n#  define LOG(...) ((void)0)\n#endif",
+          "note": "Brackets aur __VA_ARGS__ macro ke core tricks."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Macros aur pitfalls",
+          "body": "Object-like vs function-like. Brackets, multiple evaluation, semicolon. Inline functions often better. #undef se macro hatao."
+        },
+        {
+          "title": "Headers aur multi-file",
+          "body": "Declarations .h me, definitions .c me. Include guards. extern globals. static file-private functions. Compile: gcc *.c -Iinclude -o app."
+        },
+        {
+          "title": "Conditional compilation",
+          "body": "#ifdef DEBUG, #if VERSION >= 2, #elif, #else, #endif. Platform-specific code. __FILE__, __LINE__, __func__ diagnostic macros."
+        },
+        {
+          "title": "Build, argv, tools",
+          "body": "Makefile target/deps/recipe. argc/argv parsing + validation. GDB breakpoints, backtrace. ASan/UBSan flags. -O2, -g, -Wall -Wextra -Werror."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Macros aur header guard",
+          "code": "#include <stdio.h>\n#define MAX(a,b) ((a) > (b) ? (a) : (b))\n#define ARRAY_LEN(a) (sizeof (a) / sizeof (a)[0])\nint main(void) {\n    int v[] = {3, 9, 4};\n    printf(\"%d %zu\\n\", MAX(v[0], v[2]), ARRAY_LEN(v));\n    return 0;\n}",
+          "output": "4 3\n",
+          "lines": [
+            "MAX macro brackets ke saath safe hai.",
+            "ARRAY_LEN sizeof trick ko macro banata hai.",
+            "%zu size_t ke liye."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "argc/argv aur validation",
+          "code": "#include <stdio.h>\n#include <stdlib.h>\nint main(int argc, char *argv[]) {\n    if (argc != 3) { printf(\"usage: %s A B\\n\", argv[0]); return 1; }\n    char *end;\n    long a = strtol(argv[1], &end, 10);\n    if (*end) { printf(\"bad number\\n\"); return 1; }\n    long b = strtol(argv[2], &end, 10);\n    if (*end) { printf(\"bad number\\n\"); return 1; }\n    printf(\"%ld\\n\", a + b);\n    return 0;\n}",
+          "output": "30\n",
+          "lines": [
+            "argc me program name bhi ginta hai.",
+            "strtol partial parse detect karta hai (end pointer).",
+            "Argument count validate kiya."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Build pipeline (multi-file)",
+        "rows": [
+          "gcc -c util.c -o util.o",
+          "gcc -c main.c -o main.o",
+          "gcc main.o util.o -o app",
+          "# Makefile",
+          "app: main.o util.o",
+          "\tgcc main.o util.o -o app"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "#define SQ(x) x*x",
+          "right": "#define SQ(x) ((x)*(x))",
+          "why": "SQ(a+1) → a+1*a+1 galat precedence."
+        },
+        {
+          "wrong": "Header me function definition",
+          "right": "Declaration header me, definition .c me",
+          "why": "Multiple definition linker error."
+        },
+        {
+          "wrong": "argv[1] bina argc check",
+          "right": "argc pehle check karo",
+          "why": "Missing argument par NULL dereference."
+        }
+      ],
+      "debug": {
+        "brief": "Macro galat result de raha hai. Fix karo.",
+        "code": "#include <stdio.h>\n#define DOUBLE(x) x * 2\nint main(void){printf(\"%d\\n\", DOUBLE(3 + 1));return 0;}",
+        "expected": "8\n",
+        "hints": [
+          "Precedence dekho.",
+          "Poora argument brackets me lo."
+        ],
+        "fix": "#define DOUBLE(x) ((x) * 2)"
+      },
+      "best": [
+        "Macro arguments brackets me",
+        "Header guards lagao",
+        "Definitions .c me rakho",
+        "argv validate karo",
+        "-g + sanitizers se debug karo"
+      ],
+      "practice": [
+        {
+          "title": "Header banao",
+          "prompt": "mathx.h aur mathx.c banao, main se use karo.",
+          "level": "medium",
+          "hint": "Guard + prototype."
+        },
+        {
+          "title": "DEBUG macro",
+          "prompt": "DEBUG defined ho to log print karo.",
+          "level": "medium",
+          "hint": "#ifdef DEBUG."
+        },
+        {
+          "title": "Makefile",
+          "prompt": "Do file project ka Makefile likho.",
+          "level": "medium",
+          "hint": "Target, deps, tab recipe."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "Header guard kis liye?",
+          "options": [
+            "Speed",
+            "Double inclusion rokna",
+            "Memory",
+            "Debug"
+          ],
+          "answer": 1,
+          "explain": "Same header do baar include hone par duplicate definitions se bachata hai."
+        },
+        {
+          "q": "argv[0] kya hai?",
+          "options": [
+            "First arg",
+            "Program name",
+            "NULL",
+            "argc"
+          ],
+          "answer": 1,
+          "explain": "Program ka naam/path."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Macro aur inline function?",
+          "a": "Macro text replace karta hai (type-agnostic, no scope, double evaluation risk); inline function type-checked hai aur debugger me dikhta hai. Default inline lo, macro sirf token pasting/#if ke liye.",
+          "followUp": "# stringize? — #x, ## concatenation."
+        },
+        {
+          "q": "-O2 aur -g saath kyun?",
+          "a": "Optimized binary debug symbols ke saath build hota hai; par optimized variables 'optimized out' ho sakte hain, isliye debugging ke liye -O0/-Og better.",
+          "followUp": "Release strip? — strip binary se symbols hataata hai."
+        }
+      ],
+      "lab": {
+        "title": "Lab 18 — Multi-file app",
+        "brief": "greet.h + greet.c + main.c banao aur header guard ke saath link karo.",
+        "starter": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, C!\"; }\n\nint main(void) {\n    /* Print the greeting returned by greet(). */\n    return 0;\n}\n",
+        "expected": "Hello, C!\n",
+        "tests": [
+          {
+            "name": "greeting",
+            "stdin": "",
+            "stdout": "Hello, C!"
+          }
+        ],
+        "hints": [
+          "Declaration header me.",
+          "gcc main.c greet.c -o app."
+        ],
+        "solution": "#include <stdio.h>\n\nstatic const char *greet(void) { return \"Hello, C!\"; }\n\nint main(void) {\n    printf(\"%s\\n\", greet());\n    return 0;\n}\n"
+      },
+      "checkpoint": {
+        "title": "Module 18 checkpoint",
+        "checks": [
+          "Macros safely likhe",
+          "Header guard lagaya",
+          "argc/argv parse kiya",
+          "Makefile ka structure pata hai",
+          "Sanitizers se debug kiya"
+        ]
+      }
+    },
+    {
+      "id": "c19",
+      "no": 19,
+      "title": "Algorithms and Problem Solving",
+      "level": "advanced",
+      "hours": 6,
+      "goal": "Complexity, linear/binary search, bubble/selection/insertion/merge/quick sort aur two-pointer patterns.",
+      "prereqs": [
+        "Module 11: arrays"
+      ],
+      "definition": "Algorithm problem solve karne ka finite steps ka sequence hai. Complexity batati hai input badhne par time/space kaise badhta hai (Big O).",
+      "explain": [
+        "Big O worst-case growth batata hai: O(1) < O(log n) < O(n) < O(n log n) < O(n^2) < O(2^n). Constants ignore hote hain.",
+        "Linear search O(n), binary search O(log n) par sorted array chahiye. Bubble/selection/insertion O(n^2); merge sort O(n log n) stable; quick sort average O(n log n), worst O(n^2).",
+        "Two-pointer technique sorted array me pair/sum problems O(n) me solve karta hai; frequency counting hash/array se O(n) deti hai.",
+        "Algorithm likhne se pehle pseudocode aur dry run karo — edge cases (empty, one element, duplicates, negative) list karo."
+      ],
+      "analogy": "Algorithm recipe hai aur complexity us recipe ka time estimate. Binary search cookbook me index ki tarah hai — sorted hone par aadha skip ho jaata hai.",
+      "why": "Interview ka core algorithms aur complexity hai. Sahi algorithm chunna 10x performance deta hai, aur O(n^2) ko O(n log n) me badalna real difference hai.",
+      "syntax": [
+        {
+          "code": "int binary_search(const int *a, int n, int key) {\n  int lo = 0, hi = n - 1;\n  while (lo <= hi) {\n    int mid = lo + (hi - lo) / 2;\n    if (a[mid] == key) return mid;\n    if (a[mid] < key) lo = mid + 1; else hi = mid - 1;\n  }\n  return -1;\n}",
+          "note": "mid overflow se bachne ke liye lo + (hi-lo)/2."
+        },
+        {
+          "code": "void bubble(int *a, int n) {\n  for (int i = 0; i < n - 1; i++)\n    for (int j = 0; j < n - 1 - i; j++)\n      if (a[j] > a[j+1]) { int t=a[j]; a[j]=a[j+1]; a[j+1]=t; }\n}",
+          "note": "Best O(n) with swapped flag, average/worst O(n^2)."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Complexity",
+          "body": "Time/space Big O, best/average/worst. Nested loop often O(n^2), halving O(log n). Recursion me recurrence relation."
+        },
+        {
+          "title": "Searching",
+          "body": "Linear O(n) unsorted. Binary O(log n) sorted; mid overflow-safe; duplicates ke liye first/last occurrence variants."
+        },
+        {
+          "title": "Sorting",
+          "body": "Bubble/selection/insertion O(n^2) chhote data ke liye; merge O(n log n) stable extra space; quick average O(n log n) in-place worst O(n^2); counting sort O(n+k) range chhoti ho."
+        },
+        {
+          "title": "Patterns",
+          "body": "Two pointers, sliding window, prefix sum, frequency map, binary search on answer. Problem decomposition: input → constraints → pattern → complexity."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Binary search",
+          "code": "#include <stdio.h>\nint bsearch_int(const int *a, int n, int key) {\n    int lo = 0, hi = n - 1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (a[mid] == key) return mid;\n        if (a[mid] < key) lo = mid + 1; else hi = mid - 1;\n    }\n    return -1;\n}\nint main(void) {\n    int a[] = {1, 3, 5, 7, 9, 11};\n    printf(\"%d %d\\n\", bsearch_int(a, 6, 7), bsearch_int(a, 6, 8));\n    return 0;\n}",
+          "output": "3 -1\n",
+          "lines": [
+            "lo/hi inclusive bounds hain.",
+            "mid overflow-safe formula.",
+            "Na milne par -1."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Merge sort",
+          "code": "#include <stdio.h>\nvoid merge(int *a, int lo, int mid, int hi) {\n    int t[64], i = lo, j = mid + 1, k = 0;\n    while (i <= mid && j <= hi) t[k++] = a[i] <= a[j] ? a[i++] : a[j++];\n    while (i <= mid) t[k++] = a[i++];\n    while (j <= hi) t[k++] = a[j++];\n    for (i = lo, k = 0; i <= hi; i++, k++) a[i] = t[k];\n}\nvoid msort(int *a, int lo, int hi) {\n    if (lo >= hi) return;\n    int mid = lo + (hi - lo) / 2;\n    msort(a, lo, mid); msort(a, mid + 1, hi); merge(a, lo, mid, hi);\n}\nint main(void) {\n    int a[] = {5, 2, 9, 1, 7};\n    msort(a, 0, 4);\n    for (int i = 0; i < 5; i++) printf(\"%d \", a[i]);\n    printf(\"\\n\");\n    return 0;\n}",
+          "output": "1 2 5 7 9 \n",
+          "lines": [
+            "Divide: mid par todо, dono halves sort.",
+            "Conquer: merge do sorted runs.",
+            "O(n log n), stable, O(n) extra space."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "Complexity ladder",
+        "rows": [
+          "O(1)      constant   hash lookup",
+          "O(log n)  binary search",
+          "O(n)      linear scan",
+          "O(n log n) merge/quick sort",
+          "O(n^2)    nested loops",
+          "O(2^n)    naive subsets/fib"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "Binary search unsorted array par",
+          "right": "pehle sort karo",
+          "why": "Halving ka logic sirf sorted data par valid hai."
+        },
+        {
+          "wrong": "mid = (lo + hi) / 2",
+          "right": "lo + (hi - lo) / 2",
+          "why": "Bade indices par addition overflow."
+        },
+        {
+          "wrong": "Quick sort worst-case ignore karna",
+          "right": "random pivot / median",
+          "why": "Sorted input par O(n^2)."
+        }
+      ],
+      "debug": {
+        "brief": "Binary search infinite loop kar raha hai. Fix karo.",
+        "code": "#include <stdio.h>\nint main(void){int a[]={1,3,5};int lo=0,hi=2,key=5;while(lo<hi){int mid=(lo+hi)/2;if(a[mid]<key)lo=mid;else hi=mid;}printf(\"%d\\n\",a[lo]);return 0;}",
+        "expected": "5\n",
+        "hints": [
+          "lo = mid se progress nahi hota.",
+          "lo = mid + 1 karo."
+        ],
+        "fix": "if (a[mid] < key) lo = mid + 1; else hi = mid;"
+      },
+      "best": [
+        "Constraints pehle padho",
+        "Brute force se complexity improve karo",
+        "Edge cases test karo",
+        "Sorting se binary search possible",
+        "Dry run table banao"
+      ],
+      "practice": [
+        {
+          "title": "Two sum",
+          "prompt": "Sorted array me pair dhundo jo target de.",
+          "level": "medium",
+          "hint": "Two pointers."
+        },
+        {
+          "title": "Bubble sort",
+          "prompt": "Array sort karo aur passes count karo.",
+          "level": "easy",
+          "hint": "Nested loop."
+        },
+        {
+          "title": "Frequency",
+          "prompt": "Array me sabse frequent element dhundo.",
+          "level": "medium",
+          "hint": "Hash/count array."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "Binary search ki complexity?",
+          "options": [
+            "O(n)",
+            "O(log n)",
+            "O(n log n)",
+            "O(1)"
+          ],
+          "answer": 1,
+          "explain": "Har step aadha data discard karta hai."
+        },
+        {
+          "q": "Stable sort ka matlab?",
+          "options": [
+            "Fast",
+            "Equal keys ka order preserve",
+            "In-place",
+            "Recursive"
+          ],
+          "answer": 1,
+          "explain": "Equal elements apna relative order retain karte hain."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Quick sort worst case kab?",
+          "a": "Pivot hamesha smallest/largest ho (already sorted array with first/last pivot) to partitions unbalanced ho jaate hain — O(n^2). Random pivot ya median-of-three se avoid.",
+          "followUp": "Space? — average O(log n) recursion stack."
+        },
+        {
+          "q": "Hash map se two-sum O(n) kaise?",
+          "a": "Ek pass me har element ke liye target - x dekho map me; mila to pair, warna x ko index ke saath store karo. Average O(n), O(n) space.",
+          "followUp": "Sorted array? — two pointers O(1) space."
+        }
+      ],
+      "lab": {
+        "title": "Lab 19 — Sort + search",
+        "brief": "Array input lo, sort karo aur ek key binary search se dhundo.",
+        "starter": "#include <stdio.h>\nint main(void){return 0;}",
+        "expected": "1 2 3 5 8 \nfound=2\n",
+        "tests": [
+          {
+            "name": "output",
+            "stdin": "",
+            "stdout": "1 2 3 5 8\nfound=2"
+          }
+        ],
+        "hints": [
+          "Bubble sort ya qsort.",
+          "Binary search index print."
+        ],
+        "solution": "#include <stdio.h>\n\nint main(void) {\n    int a[] = {5, 2, 8, 1, 3};\n    int n = 5;\n    for (int i = 0; i < n - 1; i++)\n        for (int j = 0; j < n - 1 - i; j++)\n            if (a[j] > a[j + 1]) { int t = a[j]; a[j] = a[j + 1]; a[j + 1] = t; }\n    for (int i = 0; i < n; i++) printf(\"%d%s\", a[i], i == n - 1 ? \"\\n\" : \" \");\n    int key = 3, lo = 0, hi = n - 1, idx = -1;\n    while (lo <= hi) {\n        int m = (lo + hi) / 2;\n        if (a[m] == key) { idx = m; break; }\n        if (a[m] < key) lo = m + 1; else hi = m - 1;\n    }\n    printf(\"found=%d\\n\", idx);\n    return 0;\n}\n"
+      },
+      "checkpoint": {
+        "title": "Module 19 checkpoint",
+        "checks": [
+          "Big O ladder pata hai",
+          "Binary search likha",
+          "Bubble/merge sort samajh aaye",
+          "Two-pointer pattern use kiya",
+          "Edge cases test kiye"
+        ]
+      }
+    },
+    {
+      "id": "c20",
+      "no": 20,
+      "title": "Data Structures with C",
+      "level": "advanced",
+      "hours": 8,
+      "goal": "Linked lists, stack, queue, BST, hash table aur BFS/DFS ko C me implement karna.",
+      "prereqs": [
+        "Module 16: dynamic memory"
+      ],
+      "definition": "Data structure data ko organize karta hai taaki operations efficient hon: linked list O(1) insert/delete, stack LIFO, queue FIFO, BST O(log n) search (balanced), hash table average O(1).",
+      "explain": [
+        "Singly linked list me node {data, next}; head se traverse; insert/delete me pointers update karo aur free karo. Doubly me prev pointer. Circular me tail next head ko.",
+        "Stack LIFO hai — push/pop top par; array ya linked list se. Queue FIFO — enqueue rear, dequeue front; circular array se space reuse.",
+        "BST me left < root < right; search/insert/delete average O(log n), worst O(n) (skewed). Traversal inorder sorted order deta hai.",
+        "Hash table key ko hash function se index me badalta hai; collision ke liye chaining (linked list) ya open addressing. Load factor badhe to resize."
+      ],
+      "analogy": "Linked list ek treasure hunt hai: har clue agle clue ka address deta hai. Array ek shelf hai jahan index se seedha pahunchte ho — insert ke liye shifting chahiye.",
+      "why": "Ye structures real systems me hain: undo stack, printer queue, database index (B-tree), cache (hash map), graph traversal. Interviews me linked list reverse aur cycle detection classic hain.",
+      "syntax": [
+        {
+          "code": "typedef struct Node { int data; struct Node *next; } Node;\nNode *push_front(Node *head, int v) {\n  Node *n = malloc(sizeof *n);\n  if (!n) return head;\n  n->data = v; n->next = head;\n  return n;\n}",
+          "note": "Naya node head ban jaata hai — O(1)."
+        },
+        {
+          "code": "typedef struct { int *a; int top, cap; } Stack;\nvoid push(Stack *s, int v) { if (s->top < s->cap) s->a[s->top++] = v; }\nint pop(Stack *s) { return s->top ? s->a[--s->top] : -1; }",
+          "note": "Stack ka LIFO core."
+        }
+      ],
+      "topics": [
+        {
+          "title": "Linked lists",
+          "body": "Singly/doubly/circular; insert head/tail, delete by key, reverse, cycle detection (Floyd), middle (slow/fast). Har node ka free yaad rakho."
+        },
+        {
+          "title": "Stack aur queue",
+          "body": "Stack: push/pop/peek, balanced parentheses, expression evaluation, undo. Queue: enqueue/dequeue, circular array, BFS. Deque dono ends. Priority queue heap se."
+        },
+        {
+          "title": "Trees aur BST",
+          "body": "Binary tree traversal preorder/inorder/postorder/level-order. BST search/insert/delete, min/max, height. Balanced trees (AVL/Red-Black) guarantee O(log n)."
+        },
+        {
+          "title": "Hash table aur graphs",
+          "body": "Hash function, chaining, load factor, resize. Graph adjacency list/matrix; BFS queue se shortest unweighted path; DFS stack/recursion se connectivity/cycle."
+        }
+      ],
+      "examples": [
+        {
+          "level": "basic",
+          "title": "Linked list insert aur print",
+          "code": "#include <stdio.h>\n#include <stdlib.h>\ntypedef struct Node { int data; struct Node *next; } Node;\nint main(void) {\n    Node *head = NULL;\n    for (int i = 1; i <= 3; i++) {\n        Node *n = malloc(sizeof *n);\n        if (!n) return 1;\n        n->data = i * 10; n->next = head; head = n;\n    }\n    for (Node *p = head; p; p = p->next) printf(\"%d \", p->data);\n    printf(\"\\n\");\n    while (head) { Node *next = head->next; free(head); head = next; }\n    return 0;\n}",
+          "output": "30 20 10 \n",
+          "lines": [
+            "Har node head par insert hota hai.",
+            "Traversal next pointer se.",
+            "Cleanup me next pehle save karo, phir free."
+          ]
+        },
+        {
+          "level": "advanced",
+          "title": "Stack se balanced parentheses",
+          "code": "#include <stdio.h>\n#include <string.h>\nint main(void) {\n    char s[] = \"([]{})\";\n    char st[32]; int top = 0, ok = 1;\n    for (int i = 0; s[i] && ok; i++) {\n        char c = s[i];\n        if (c == '(' || c == '[' || c == '{') st[top++] = c;\n        else if (c == ')' || c == ']' || c == '}') {\n            if (!top) ok = 0;\n            else {\n                char o = st[--top];\n                if ((c == ')' && o != '(') || (c == ']' && o != '[') || (c == '}' && o != '{')) ok = 0;\n            }\n        }\n    }\n    printf(\"%s\\n\", ok && top == 0 ? \"balanced\" : \"not balanced\");\n    return 0;\n}",
+          "output": "balanced\n",
+          "lines": [
+            "Opening brackets stack me push.",
+            "Closing par top se match.",
+            "End me stack khali hona chahiye."
+          ]
+        }
+      ],
+      "visual": {
+        "title": "List vs array",
+        "rows": [
+          "operation     array     linked list",
+          "access i      O(1)      O(n)",
+          "insert head   O(n)      O(1)",
+          "insert tail   O(1)*     O(n) / O(1) with tail",
+          "delete known  O(n)      O(1)",
+          "memory        compact   pointer overhead"
+        ]
+      },
+      "mistakes": [
+        {
+          "wrong": "head = head->next; free(head);",
+          "right": "Node *t = head; head = head->next; free(t);",
+          "why": "free ke baad head->next padhna use-after-free."
+        },
+        {
+          "wrong": "Linked list reverse me pointers order galat",
+          "right": "prev/curr/next teen pointers",
+          "why": "next save kiye bina link kho jaata hai."
+        },
+        {
+          "wrong": "Hash table load factor ignore",
+          "right": "0.7 par resize",
+          "why": "Collisions badhne se O(n) ho jaata hai."
+        }
+      ],
+      "debug": {
+        "brief": "Linked list delete karne ke baad crash ho raha hai. Fix karo.",
+        "code": "#include <stdlib.h>\ntypedef struct Node { int data; struct Node *next; } Node;\nint main(void){Node *h=malloc(sizeof *h);h->next=NULL;free(h);h=h->next;return 0;}",
+        "expected": "no crash\n",
+        "hints": [
+          "free ke baad h->next invalid hai.",
+          "Pehle next save karo."
+        ],
+        "fix": "Node *next = h->next; free(h); h = next;"
+      },
+      "best": [
+        "Insert/delete me pointers order socho",
+        "Har malloc ka free",
+        "Cycle detection Floyd se",
+        "BST inorder sorted deta hai",
+        "Hash load factor manage karo"
+      ],
+      "practice": [
+        {
+          "title": "Reverse list",
+          "prompt": "Singly linked list reverse karo.",
+          "level": "medium",
+          "hint": "prev/curr/next."
+        },
+        {
+          "title": "Queue",
+          "prompt": "Circular array se queue banao.",
+          "level": "medium",
+          "hint": "front, rear, count."
+        },
+        {
+          "title": "BST insert",
+          "prompt": "BST me insert aur inorder print karo.",
+          "level": "hard",
+          "hint": "Recursive insert."
+        }
+      ],
+      "mcqs": [
+        {
+          "q": "Stack ka order?",
+          "options": [
+            "FIFO",
+            "LIFO",
+            "Random",
+            "Sorted"
+          ],
+          "answer": 1,
+          "explain": "Last in, first out."
+        },
+        {
+          "q": "BST worst-case search?",
+          "options": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)"
+          ],
+          "answer": 2,
+          "explain": "Skewed tree linked list ban jaata hai."
+        }
+      ],
+      "interview": [
+        {
+          "q": "Linked list kab array se better?",
+          "a": "Jab frequent insert/delete head/middle par ho aur random access ki zaroorat na ho; size dynamic ho. Array cache-friendly aur O(1) indexing deta hai.",
+          "followUp": "Real use? — LRU cache, adjacency list, undo."
+        },
+        {
+          "q": "Hash collision handle kaise?",
+          "a": "Chaining (same bucket me linked list) ya open addressing (linear/quadratic probing, double hashing). Load factor threshold par resize.",
+          "followUp": "Worst case? — O(n); balanced tree buckets se O(log n)."
+        }
+      ],
+      "lab": {
+        "title": "Lab 20 — Stack implementation",
+        "brief": "Array-based stack banao: push, pop aur peek; output print karo.",
+        "starter": "#include <stdio.h>\nint main(void){return 0;}",
+        "expected": "peek=30\n30 20 10 \n",
+        "tests": [
+          {
+            "name": "stack",
+            "stdin": "",
+            "stdout": "peek=30\n30 20 10"
+          }
+        ],
+        "hints": [
+          "top index -1 se shuru.",
+          "push: a[++top]=v."
+        ],
+        "solution": "#include <stdio.h>\nint main(void){int a[8],top=-1;for(int i=1;i<=3;i++)a[++top]=i*10;printf(\"peek=%d\\n\",a[top]);while(top>=0)printf(\"%d \",a[top--]);printf(\"\\n\");return 0;}"
+      },
+      "checkpoint": {
+        "title": "Module 20 checkpoint",
+        "checks": [
+          "Linked list insert/delete/free kiya",
+          "Stack LIFO implement kiya",
+          "Queue FIFO samajh aaya",
+          "BST insert/traversal kiya",
+          "Hash table ka idea pata hai"
+        ]
+      }
+    }
+  ]
+}

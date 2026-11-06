@@ -1,0 +1,218 @@
+{
+  "id": "c07",
+  "no": 7,
+  "title": "Loops",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "for, while, do-while, nested loops, break/continue aur dry run se iteration master karna.",
+  "prereqs": [
+    "Module 6: conditions"
+  ],
+  "definition": "Loop ek block ko condition ke true rahne tak repeat karta hai. C me for (count-controlled), while (condition-controlled) aur do-while (at least once) loops hain.",
+  "explain": [
+    "for (init; condition; update) tab best hai jab iterations ki count pata ho. while tab jab condition pehle se pata ho. do-while body pehle chalata hai, phir condition check karta hai.",
+    "break loop se turant bahar nikalta hai; continue current iteration ka baaki body skip karke next iteration par jaata hai.",
+    "Nested loops me inner loop har outer iteration ke liye poora chalta hai — O(n*m). Pattern printing isi ka classic use hai.",
+    "Infinite loop se bacho: condition kabhi false na ho, ya update bhool jao. Dry run table banao: iteration, variables, output."
+  ],
+  "analogy": "Loop ek conveyor belt hai: har round par ek item process hota hai, aur stop button (condition) belt rokta hai. break emergency stop hai, continue current item skip karke belt chalte rehna.",
+  "why": "Har algorithm me repetition hai — sums, searches, patterns, matrices. Loop ki off-by-one galti aur infinite loop sabse common bugs hain; dry run unhe pakadta hai.",
+  "syntax": [
+    {
+      "code": "for (int i = 1; i <= 5; i++) printf(\"%d \", i);\nint n = 5;\nwhile (n > 0) { printf(\"%d \", n); n--; }\nint k = 0;\ndo { printf(\"%d \", k); k++; } while (k < 3);",
+      "note": "for/while zero times chal sakte hain; do-while kam se kam ek baar."
+    },
+    {
+      "code": "for (int i = 0; i < 3; i++)\n  for (int j = 0; j < 2; j++)\n    printf(\"%d%d \", i, j);   /* 00 01 10 11 20 21 */",
+      "note": "Inner loop har outer i ke liye poora chalta hai."
+    }
+  ],
+  "topics": [
+    {
+      "title": "for loop",
+      "body": "init ek baar, condition har iteration se pehle, update har iteration ke baad. C99 se loop variable declaration for ke andar allowed hai. i <= n vs i < n — boundary dhyan se."
+    },
+    {
+      "title": "while aur do-while",
+      "body": "while pehle test karta hai; do-while body ke baad test karta hai, isliye menu/input retry ke liye sahi hai. do-while ke condition ke baad semicolon zaroori."
+    },
+    {
+      "title": "break, continue, nested",
+      "body": "break nearest loop se exit; continue next iteration. Nested loops me labelled break nahi hota (goto ya flag use karo). Loop ke andar loop variable modify mat karo."
+    },
+    {
+      "title": "Classic number algorithms",
+      "body": "Sum of digits (n%10, n/10), reverse, palindrome, factorial, prime check (sqrt tak), Fibonacci, Armstrong, GCD. In sab me loop + arithmetic ka core pattern repeat hota hai."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Sum, factorial, table",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    int n = 5, sum = 0;\n    long fact = 1;\n    for (int i = 1; i <= n; i++) { sum += i; fact *= i; }\n    printf(\"sum=%d fact=%ld\\n\", sum, fact);\n    for (int i = 1; i <= 3; i++) printf(\"%d x %d = %d\\n\", n, i, n * i);\n    return 0;\n}",
+      "output": "sum=15 fact=120\n5 x 1 = 5\n5 x 2 = 10\n5 x 3 = 15\n",
+      "lines": [
+        "Ek loop me sum aur factorial dono accumulate hote hain.",
+        "fact long me hai kyunki 13! int se bada ho jaata hai.",
+        "Doosra loop multiplication table print karta hai."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Prime, reverse aur digit sum",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    int n = 12321, rev = 0, sum = 0;\n    for (int t = n; t > 0; t /= 10) { rev = rev * 10 + t % 10; sum += t % 10; }\n    printf(\"rev=%d sum=%d palindrome=%s\\n\", rev, sum, rev == n ? \"yes\" : \"no\");\n    int p = 97, prime = 1;\n    for (int d = 2; d * d <= p; d++) if (p % d == 0) { prime = 0; break; }\n    printf(\"prime=%s\\n\", prime ? \"yes\" : \"no\");\n    return 0;\n}",
+      "output": "rev=12321 sum=9 palindrome=yes\nprime=yes\n",
+      "lines": [
+        "Har digit n%10 se nikalta hai, n/10 se hat jaata hai.",
+        "rev*10 + digit reverse banata hai.",
+        "Palindrome check reversed number se compare karta hai.",
+        "Prime check sirf sqrt(p) tak chalta hai — O(sqrt n)."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "Dry run: n=12321",
+    "rows": [
+      "iter  t      digit  rev     sum",
+      "1     12321  1      1       1",
+      "2     1232   2      12      3",
+      "3     123    2      122     5",
+      "4     12     3      1223    7",
+      "5     1      1      12321   9"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "for (int i = 0; i < n; i--)",
+      "right": "i++",
+      "why": "Update galat direction me jaata hai — infinite loop."
+    },
+    {
+      "wrong": "for (int i = 0; i <= strlen(s); i++)",
+      "right": "i < strlen(s)",
+      "why": "Off-by-one null terminator ko bhi process karta hai; strlen har iteration call karna O(n^2) hai."
+    },
+    {
+      "wrong": "while (n > 0) { ... }  // n kabhi change nahi hota",
+      "right": "loop ke andar n-- ya progress",
+      "why": "Condition hamesha true rahegi — infinite loop."
+    }
+  ],
+  "debug": {
+    "brief": "Factorial 5 ka 0 aa raha hai. Fix karo.",
+    "code": "#include <stdio.h>\nint main(void) {\n    long f = 0;\n    for (int i = 1; i <= 5; i++) f *= i;\n    printf(\"%ld\\n\", f);\n    return 0;\n}",
+    "expected": "120\n",
+    "hints": [
+      "Multiplication ka identity element kya hai?",
+      "f ki initial value dekho."
+    ],
+    "fix": "long f = 1;"
+  },
+  "best": [
+    "Loop variable ka scope chhota rakho (for me declare)",
+    "Boundary conditions dry run karo",
+    "strlen/sizeof ko loop me har baar calculate mat karo",
+    "Infinite loop se bachne ke liye progress guarantee karo",
+    "Nested loops me complexity sochо"
+  ],
+  "practice": [
+    {
+      "title": "Table",
+      "prompt": "n ka table 1 se 10 tak print karo.",
+      "level": "easy",
+      "hint": "for (i=1;i<=10;i++)."
+    },
+    {
+      "title": "Factorial",
+      "prompt": "n ka factorial long long me calculate karo.",
+      "level": "easy",
+      "hint": "f *= i."
+    },
+    {
+      "title": "Armstrong",
+      "prompt": "3-digit Armstrong numbers print karo.",
+      "level": "medium",
+      "hint": "Digits cube sum original ke barabar."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "do-while kam se kam kitni baar chalta hai?",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "Depend"
+      ],
+      "answer": 1,
+      "explain": "Body pehle chalti hai, phir condition check hoti hai."
+    },
+    {
+      "q": "continue kya karta hai?",
+      "options": [
+        "Loop se exit",
+        "Program end",
+        "Current iteration skip",
+        "Loop reset"
+      ],
+      "answer": 2,
+      "explain": "Current iteration ki baaki body skip, next iteration."
+    },
+    {
+      "q": "for (int i=0;i<3;i++) for(int j=0;j<3;j++) — kitni baar body?",
+      "options": [
+        "3",
+        "6",
+        "9",
+        "0"
+      ],
+      "answer": 2,
+      "explain": "3 × 3 = 9."
+    }
+  ],
+  "interview": [
+    {
+      "q": "for aur while me kab kya?",
+      "a": "Jab iterations ki count pata ho to for; jab condition data-driven ho (EOF tak, sentinel tak) to while. Dono equivalent hain — readability decide karti hai.",
+      "followUp": "do-while ka best use? — menu jise kam se kam ek baar dikhana hai."
+    },
+    {
+      "q": "Loop me array ka size har baar calculate karna kyun bura hai?",
+      "a": "strlen O(n) hai; loop condition me call karne se total O(n^2). Ek baar len nikal lo. Compiler kuch cases optimize karta hai par bharosa mat karo.",
+      "followUp": "size_t loop ke saath warning? — signed/unsigned comparison warning; size_t use karo."
+    },
+    {
+      "q": "Infinite loop ko intentionally kaise likhte hain?",
+      "a": "for (;;) ya while (1) with a break. Embedded/event loops aise likhe jaate hain; exit condition clear honi chahiye.",
+      "followUp": "Compiler warning? — -Wunreachable-code se baad ka code pakda ja sakta hai."
+    }
+  ],
+  "lab": {
+    "title": "Lab 7 — Number toolkit",
+    "brief": "n input lo aur uska digit sum, reverse aur palindrome status print karo.",
+    "starter": "#include <stdio.h>\n\nint main(void) {\n    /* loop */\n    return 0;\n}",
+    "expected": "reverse=12321 sum=9 palindrome=yes\n",
+    "tests": [
+      {
+        "name": "reverse",
+        "stdin": "12321\n",
+        "stdout": "reverse=12321 sum=9 palindrome=yes"
+      }
+    ],
+    "hints": [
+      "rev = rev*10 + n%10.",
+      "sum += n%10; n /= 10."
+    ],
+    "solution": "#include <stdio.h>\n\nint main(void) {\n    int n; scanf(\"%d\", &n);\n    int t = n, rev = 0, sum = 0;\n    while (t > 0) { rev = rev * 10 + t % 10; sum += t % 10; t /= 10; }\n    printf(\"reverse=%d sum=%d palindrome=%s\\n\", rev, sum, rev == n ? \"yes\" : \"no\");\n    return 0;\n}"
+  },
+  "checkpoint": {
+    "title": "Module 7 checkpoint",
+    "checks": [
+      "Teen loop types use kiye",
+      "break aur continue ka fark pata hai",
+      "Nested loop se table banaya",
+      "Digit algorithms likhe",
+      "Infinite loop se bachna aata hai"
+    ]
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "id": "c15",
+  "no": 15,
+  "title": "Structures, Unions and Enums",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Struct, nested struct, array of structs, pointer/arrow, union, enum, typedef, padding aur self-referential struct.",
+  "prereqs": [
+    "Module 13: pointers"
+  ],
+  "definition": "Structure alag-alag types ke members ko ek naam ke neeche group karta hai; union same memory ko alag types se interpret karta hai; enum named integer constants deta hai.",
+  "explain": [
+    "struct Student { int roll; char name[32]; float marks; }; definition hai; struct Student s; object. Member access dot se, pointer se arrow (->).",
+    "Struct assignment value copy karti hai (deep copy nahi — pointer members shared rehte hain). Function me by value copy hoti hai; bade struct pointer se bhejo.",
+    "Union ke saare members same memory share karte hain — ek waqt me ek valid. Size sabse bade member ke barabar (plus alignment).",
+    "Padding alignment ke liye aati hai; sizeof struct members ke sum se bada ho sakta hai. Members ko bade se chhote order karne se padding kam hoti hai.",
+    "Self-referential struct (struct Node { struct Node *next; }) linked list ka base hai."
+  ],
+  "analogy": "Struct ek form hai jisme alag-alag fields ek saath rakhe jaate hain; union ek hi dabba hai jisme alag-alag label laga sakte ho par ek waqt me ek hi saaman.",
+  "why": "Real data (student, employee, node) struct me model hota hai; enums states/flags readable banate hain; linked lists aur trees self-referential structs hain.",
+  "syntax": [
+    {
+      "code": "typedef struct { int roll; char name[32]; float marks; } Student;\nStudent s = {1, \"Asha\", 91.5};\nStudent *p = &s;\nprintf(\"%s %.1f\\n\", p->name, p->marks);",
+      "note": "typedef se 'struct' likhna nahi padta."
+    },
+    {
+      "code": "typedef enum { RED, GREEN = 5, BLUE } Color;\ntypedef union { int i; float f; unsigned char bytes[4]; } Value;",
+      "note": "enum values auto-increment; union members overlap."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Struct basics",
+      "body": "Declaration, initialization (designated .marks = 91.5 bhi), member access, assignment copy, array of structs, nested struct."
+    },
+    {
+      "title": "Pointers aur functions",
+      "body": "p->member == (*p).member. Struct by value bhejne par copy hoti hai; modify karne ke liye pointer. Struct return karna allowed hai."
+    },
+    {
+      "title": "Union, enum, typedef",
+      "body": "Union memory bachata hai par active member track karna padta hai (tagged union). Enum switch ke saath readable. typedef naam chhota karta hai."
+    },
+    {
+      "title": "Padding, alignment, bit-fields",
+      "body": "sizeof(struct {char c; int i;}) usually 8, 5 nahi. bit-fields (unsigned flags:3) space bachate hain par layout implementation-defined. Self-referential struct linked structures ke liye."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Student struct",
+      "code": "#include <stdio.h>\ntypedef struct { int roll; char name[16]; float marks; } Student;\nint main(void) {\n    Student s = {1, \"Asha\", 91.5f};\n    Student *p = &s;\n    printf(\"%d %s %.1f\\n\", s.roll, p->name, p->marks);\n    return 0;\n}",
+      "output": "1 Asha 91.5\n",
+      "lines": [
+        "typedef ne struct ka naam Student kar diya.",
+        "s.roll direct member hai.",
+        "p->name pointer ke through member hai."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Union aur enum",
+      "code": "#include <stdio.h>\ntypedef enum { INT, FLT } Kind;\ntypedef struct { Kind kind; union { int i; float f; } value; } Tagged;\nint main(void) {\n    Tagged a = {INT, {.i = 42}};\n    Tagged b = {FLT, {.f = 3.5f}};\n    printf(\"%d %.1f %zu\\n\", a.value.i, b.value.f, sizeof(Tagged));\n    return 0;\n}",
+      "output": "42 3.5 8\n",
+      "lines": [
+        "Enum active type track karta hai.",
+        "Union dono values ko same memory me rakhta hai.",
+        "sizeof tagged union ~8 bytes (tag + largest member/alignment)."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "struct { char c; int i; } layout",
+    "rows": [
+      "offset 0: char c",
+      "offset 1-3: padding",
+      "offset 4-7: int i",
+      "sizeof = 8 (32-bit int)",
+      "Members reorder: int i; char c; -> size 8 hi, par cache behtar"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "Student s; s->roll = 1;",
+      "right": "s.roll = 1; ya (&s)->roll",
+      "why": "Dot object ke liye, arrow pointer ke liye."
+    },
+    {
+      "wrong": "union me ek member likh kar doosra padhna",
+      "right": "tag se active member track karo",
+      "why": "Type punning implementation-defined/UB ho sakta hai."
+    },
+    {
+      "wrong": "struct compare with ==",
+      "right": "member-wise ya memcmp (padding ke saath careful)",
+      "why": "C me struct equality operator nahi hai."
+    }
+  ],
+  "debug": {
+    "brief": "sizeof(Student) 40 aa raha hai 36 ki jagah. Reason batao.",
+    "code": "#include <stdio.h>\ntypedef struct { char name[33]; int roll; double marks; } Student;\nint main(void){printf(\"%zu\\n\",sizeof(Student));return 0;}",
+    "expected": "48\n",
+    "hints": [
+      "Alignment ke liye gaps aate hain.",
+      "33 ke baad int 4-byte aligned hota hai."
+    ],
+    "fix": "Members ko bade se chhote order karo ya padding accept karo; sizeof implementation-defined hai."
+  },
+  "best": [
+    "Dot vs arrow yaad rakho",
+    "Bade struct pointer se bhejo",
+    "Union me tag rakho",
+    "sizeof se size lo",
+    "typedef se readable naam"
+  ],
+  "practice": [
+    {
+      "title": "Point struct",
+      "prompt": "Point {x,y} banao aur distance print karo.",
+      "level": "easy",
+      "hint": "sqrt(dx*dx+dy*dy), -lm."
+    },
+    {
+      "title": "Array of students",
+      "prompt": "3 students ka array sort karo marks se.",
+      "level": "medium",
+      "hint": "Struct swap."
+    },
+    {
+      "title": "Linked node",
+      "prompt": "Node struct banao jisme next pointer ho.",
+      "level": "medium",
+      "hint": "struct Node *next."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "Pointer se member access?",
+      "options": [
+        "s.x",
+        "s->x",
+        "*s.x",
+        "s[x]"
+      ],
+      "answer": 1,
+      "explain": "Arrow pointer ke liye hai."
+    },
+    {
+      "q": "Union ka size?",
+      "options": [
+        "Members ka sum",
+        "Sabse bada member (+padding)",
+        "Hamesha 4",
+        "0"
+      ],
+      "answer": 1,
+      "explain": "Members memory share karte hain."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Struct padding kyun hoti hai?",
+      "a": "CPU aligned access fast karta hai; compiler members ko unke alignment par rakhta hai, beech me gaps chhodta hai. sizeof isliye sum se bada hota hai.",
+      "followUp": "Padding kam kaise? — members ko size ke descending order me rakho."
+    },
+    {
+      "q": "Struct by value pass karna kab bura?",
+      "a": "Bade struct ki copy expensive hoti hai aur function original modify nahi kar sakta. const pointer bhejo.",
+      "followUp": "Return by value? — compiler often optimize karta hai (RVO)."
+    }
+  ],
+  "lab": {
+    "title": "Lab 15 — Student database",
+    "brief": "3 students ka array banao, average marks aur topper print karo.",
+    "starter": "#include <stdio.h>\ntypedef struct { char name[16]; int marks; } Student;\nint main(void){return 0;}",
+    "expected": "avg=80.0 topper=Asha\n",
+    "tests": [
+      {
+        "name": "stats",
+        "stdin": "",
+        "stdout": "avg=80.0 topper=Asha"
+      }
+    ],
+    "hints": [
+      "Loop se sum.",
+      "Topper max marks wala."
+    ],
+    "solution": "#include <stdio.h>\ntypedef struct { char name[16]; int marks; } Student;\nint main(void){Student s[3]={{\"Asha\",90},{\"Ravi\",75},{\"Neha\",75}};int sum=0,best=0;for(int i=0;i<3;i++){sum+=s[i].marks;if(s[i].marks>s[best].marks)best=i;}printf(\"avg=%.1f topper=%s\\n\",sum/3.0,s[best].name);return 0;}"
+  },
+  "checkpoint": {
+    "title": "Module 15 checkpoint",
+    "checks": [
+      "Struct define aur initialize kiya",
+      "Dot aur arrow dono use kiye",
+      "Union/enum ka fark pata hai",
+      "Padding samajh aayi",
+      "Self-referential struct likha"
+    ]
+  }
+}

@@ -1,0 +1,533 @@
+[
+  {
+    "id": "q001",
+    "level": "beginner",
+    "topic": "C basics",
+    "q": "Why is C called a compiled language?",
+    "a": "The whole source is translated to machine code before it runs, so errors surface at compile time and execution is fast.",
+    "explain": "The whole source is translated to machine code before it runs, so errors surface at compile time and execution is fast.",
+    "followUp": ""
+  },
+  {
+    "id": "q002",
+    "level": "beginner",
+    "topic": "C basics",
+    "q": "What does #include <stdio.h> do?",
+    "a": "It pastes the declarations of standard I/O functions (printf, scanf, FILE) so the compiler knows their signatures.",
+    "explain": "It pastes the declarations of standard I/O functions (printf, scanf, FILE) so the compiler knows their signatures.",
+    "followUp": ""
+  },
+  {
+    "id": "q003",
+    "level": "beginner",
+    "topic": "C basics",
+    "q": "Difference between declaration and definition?",
+    "a": "Declaration announces a type/signature; definition allocates storage or provides the body. A variable can be declared many times, defined once.",
+    "explain": "Declaration announces a type/signature; definition allocates storage or provides the body. A variable can be declared many times, defined once.",
+    "followUp": ""
+  },
+  {
+    "id": "q004",
+    "level": "beginner",
+    "topic": "C basics",
+    "q": "What is the entry point of a C program?",
+    "a": "main(). Execution starts there; its return value becomes the process exit status.",
+    "explain": "main(). Execution starts there; its return value becomes the process exit status.",
+    "followUp": ""
+  },
+  {
+    "id": "q005",
+    "level": "beginner",
+    "topic": "Data types",
+    "q": "Why does sizeof(int) differ across platforms?",
+    "a": "The C standard only guarantees minimum ranges, not exact widths. Use sizeof and <stdint.h> for portability.",
+    "explain": "The C standard only guarantees minimum ranges, not exact widths. Use sizeof and <stdint.h> for portability.",
+    "followUp": ""
+  },
+  {
+    "id": "q006",
+    "level": "beginner",
+    "topic": "Data types",
+    "q": "What is integer overflow?",
+    "a": "A result outside the type's range. Signed overflow is undefined behaviour; unsigned wraps modulo 2^N and is defined.",
+    "explain": "A result outside the type's range. Signed overflow is undefined behaviour; unsigned wraps modulo 2^N and is defined.",
+    "followUp": ""
+  },
+  {
+    "id": "q007",
+    "level": "beginner",
+    "topic": "Data types",
+    "q": "Why is 0.1 + 0.2 != 0.3?",
+    "a": "Binary floating point cannot represent 0.1/0.2 exactly, so the sum is slightly off. Compare with an epsilon.",
+    "explain": "Binary floating point cannot represent 0.1/0.2 exactly, so the sum is slightly off. Compare with an epsilon.",
+    "followUp": ""
+  },
+  {
+    "id": "q008",
+    "level": "beginner",
+    "topic": "I/O",
+    "q": "Why does scanf need & before an int?",
+    "a": "scanf must write into the variable, so it needs the address. Arrays already decay to an address, so no & for %s.",
+    "explain": "scanf must write into the variable, so it needs the address. Arrays already decay to an address, so no & for %s.",
+    "followUp": ""
+  },
+  {
+    "id": "q009",
+    "level": "beginner",
+    "topic": "I/O",
+    "q": "Why is fgets safer than scanf(\"%s\")?",
+    "a": "fgets takes a buffer size and cannot overflow; bare %s has no bound and can write past the array.",
+    "explain": "fgets takes a buffer size and cannot overflow; bare %s has no bound and can write past the array.",
+    "followUp": ""
+  },
+  {
+    "id": "q010",
+    "level": "beginner",
+    "topic": "Operators",
+    "q": "What is short-circuit evaluation?",
+    "a": "&& and || stop evaluating once the result is known, which lets you guard a dereference or a division.",
+    "explain": "&& and || stop evaluating once the result is known, which lets you guard a dereference or a division.",
+    "followUp": ""
+  },
+  {
+    "id": "q011",
+    "level": "beginner",
+    "topic": "Operators",
+    "q": "Difference between ++i and i++?",
+    "a": "Prefix increments then yields the new value; postfix yields the old value then increments.",
+    "explain": "Prefix increments then yields the new value; postfix yields the old value then increments.",
+    "followUp": ""
+  },
+  {
+    "id": "q012",
+    "level": "beginner",
+    "topic": "Control flow",
+    "q": "Why prefer braces around if bodies?",
+    "a": "Without braces a second statement silently falls outside the condition, and the dangling else binds to the nearest if.",
+    "explain": "Without braces a second statement silently falls outside the condition, and the dangling else binds to the nearest if.",
+    "followUp": ""
+  },
+  {
+    "id": "q013",
+    "level": "beginner",
+    "topic": "Control flow",
+    "q": "When is switch better than if-else?",
+    "a": "For discrete integral values (menu, state). Ranges and complex conditions need if-else.",
+    "explain": "For discrete integral values (menu, state). Ranges and complex conditions need if-else.",
+    "followUp": ""
+  },
+  {
+    "id": "q014",
+    "level": "beginner",
+    "topic": "Loops",
+    "q": "Difference between while and do-while?",
+    "a": "while tests before the body (may run zero times); do-while tests after (runs at least once).",
+    "explain": "while tests before the body (may run zero times); do-while tests after (runs at least once).",
+    "followUp": ""
+  },
+  {
+    "id": "q015",
+    "level": "beginner",
+    "topic": "Loops",
+    "q": "How do you avoid an infinite loop?",
+    "a": "Guarantee progress inside the body (update the loop variable) and make the exit condition reachable.",
+    "explain": "Guarantee progress inside the body (update the loop variable) and make the exit condition reachable.",
+    "followUp": ""
+  },
+  {
+    "id": "q016",
+    "level": "intermediate",
+    "topic": "Functions",
+    "q": "Why pass a struct by pointer?",
+    "a": "To avoid copying and to let the callee modify the original. Use const pointer when only reading.",
+    "explain": "To avoid copying and to let the callee modify the original. Use const pointer when only reading.",
+    "followUp": ""
+  },
+  {
+    "id": "q017",
+    "level": "intermediate",
+    "topic": "Functions",
+    "q": "What is a function prototype for?",
+    "a": "It tells the compiler the signature before the call, enabling type checking and preventing implicit declarations.",
+    "explain": "It tells the compiler the signature before the call, enabling type checking and preventing implicit declarations.",
+    "followUp": ""
+  },
+  {
+    "id": "q018",
+    "level": "intermediate",
+    "topic": "Functions",
+    "q": "Can C return multiple values?",
+    "a": "Not directly. Return a struct or use pointer out-parameters.",
+    "explain": "Not directly. Return a struct or use pointer out-parameters.",
+    "followUp": ""
+  },
+  {
+    "id": "q019",
+    "level": "intermediate",
+    "topic": "Recursion",
+    "q": "When does recursion overflow the stack?",
+    "a": "When depth grows without a reachable base case, or the depth exceeds the thread's stack (large n).",
+    "explain": "When depth grows without a reachable base case, or the depth exceeds the thread's stack (large n).",
+    "followUp": ""
+  },
+  {
+    "id": "q020",
+    "level": "intermediate",
+    "topic": "Recursion",
+    "q": "Why is naive Fibonacci slow?",
+    "a": "It recomputes the same subproblems, giving O(2^n). Memoization or iteration reduces it to O(n).",
+    "explain": "It recomputes the same subproblems, giving O(2^n). Memoization or iteration reduces it to O(n).",
+    "followUp": ""
+  },
+  {
+    "id": "q021",
+    "level": "intermediate",
+    "topic": "Arrays",
+    "q": "Why doesn't sizeof give the array size inside a function?",
+    "a": "The array parameter decays to a pointer, so sizeof returns the pointer's size. Pass the length separately.",
+    "explain": "The array parameter decays to a pointer, so sizeof returns the pointer's size. Pass the length separately.",
+    "followUp": ""
+  },
+  {
+    "id": "q022",
+    "level": "intermediate",
+    "topic": "Arrays",
+    "q": "How is a 2D array laid out?",
+    "a": "Row-major: all columns of row 0, then row 1. Address = base + (i*cols + j)*element_size.",
+    "explain": "Row-major: all columns of row 0, then row 1. Address = base + (i*cols + j)*element_size.",
+    "followUp": ""
+  },
+  {
+    "id": "q023",
+    "level": "intermediate",
+    "topic": "Strings",
+    "q": "Why must a string have a null terminator?",
+    "a": "Library functions (strlen, %s) stop at '\u0000'; without it they read past the buffer.",
+    "explain": "Library functions (strlen, %s) stop at '\u0000'; without it they read past the buffer.",
+    "followUp": ""
+  },
+  {
+    "id": "q024",
+    "level": "intermediate",
+    "topic": "Strings",
+    "q": "Why is strncpy easy to misuse?",
+    "a": "It does not null-terminate when the source is too long, and pads with zeros when shorter. Set the terminator yourself or use snprintf.",
+    "explain": "It does not null-terminate when the source is too long, and pads with zeros when shorter. Set the terminator yourself or use snprintf.",
+    "followUp": ""
+  },
+  {
+    "id": "q025",
+    "level": "intermediate",
+    "topic": "Strings",
+    "q": "What does strcmp return?",
+    "a": "0 if equal, negative if the first is lexicographically smaller, positive if greater.",
+    "explain": "0 if equal, negative if the first is lexicographically smaller, positive if greater.",
+    "followUp": ""
+  },
+  {
+    "id": "q026",
+    "level": "intermediate",
+    "topic": "Pointers",
+    "q": "What is a dangling pointer?",
+    "a": "A pointer to memory that was freed or went out of scope. Dereferencing it is undefined behaviour.",
+    "explain": "A pointer to memory that was freed or went out of scope. Dereferencing it is undefined behaviour.",
+    "followUp": ""
+  },
+  {
+    "id": "q027",
+    "level": "intermediate",
+    "topic": "Pointers",
+    "q": "What does pointer arithmetic p+1 mean?",
+    "a": "It advances by one element (sizeof *p bytes), not one byte.",
+    "explain": "It advances by one element (sizeof *p bytes), not one byte.",
+    "followUp": ""
+  },
+  {
+    "id": "q028",
+    "level": "intermediate",
+    "topic": "Pointers",
+    "q": "Difference between const int *p and int *const p?",
+    "a": "The first makes the pointee read-only; the second makes the pointer itself read-only.",
+    "explain": "The first makes the pointee read-only; the second makes the pointer itself read-only.",
+    "followUp": ""
+  },
+  {
+    "id": "q029",
+    "level": "intermediate",
+    "topic": "Pointers",
+    "q": "What is a void pointer used for?",
+    "a": "A generic address holder (malloc, callbacks). It cannot be dereferenced or used in arithmetic without a cast.",
+    "explain": "A generic address holder (malloc, callbacks). It cannot be dereferenced or used in arithmetic without a cast.",
+    "followUp": ""
+  },
+  {
+    "id": "q030",
+    "level": "intermediate",
+    "topic": "Structures",
+    "q": "Why does sizeof(struct) exceed the sum of members?",
+    "a": "Padding and alignment: the compiler inserts gaps so each member sits at a proper boundary.",
+    "explain": "Padding and alignment: the compiler inserts gaps so each member sits at a proper boundary.",
+    "followUp": ""
+  },
+  {
+    "id": "q031",
+    "level": "intermediate",
+    "topic": "Structures",
+    "q": "Union vs struct?",
+    "a": "A struct stores every member separately; a union shares one storage area, so only one member is valid at a time.",
+    "explain": "A struct stores every member separately; a union shares one storage area, so only one member is valid at a time.",
+    "followUp": ""
+  },
+  {
+    "id": "q032",
+    "level": "intermediate",
+    "topic": "Files",
+    "q": "Why check the return value of fopen?",
+    "a": "It returns NULL on failure (missing file, permissions), and using NULL crashes.",
+    "explain": "It returns NULL on failure (missing file, permissions), and using NULL crashes.",
+    "followUp": ""
+  },
+  {
+    "id": "q033",
+    "level": "intermediate",
+    "topic": "Files",
+    "q": "Difference between \"w\" and \"a\"?",
+    "a": "\"w\" truncates or creates; \"a\" appends without destroying existing content.",
+    "explain": "\"w\" truncates or creates; \"a\" appends without destroying existing content.",
+    "followUp": ""
+  },
+  {
+    "id": "q034",
+    "level": "advanced",
+    "topic": "Memory",
+    "q": "Difference between malloc and calloc?",
+    "a": "malloc returns uninitialized bytes; calloc zeroes them and takes count and size.",
+    "explain": "malloc returns uninitialized bytes; calloc zeroes them and takes count and size.",
+    "followUp": ""
+  },
+  {
+    "id": "q035",
+    "level": "advanced",
+    "topic": "Memory",
+    "q": "What happens if realloc fails?",
+    "a": "It returns NULL and the original block stays valid — assign to a temporary or you leak it.",
+    "explain": "It returns NULL and the original block stays valid — assign to a temporary or you leak it.",
+    "followUp": ""
+  },
+  {
+    "id": "q036",
+    "level": "advanced",
+    "topic": "Memory",
+    "q": "What is a double free?",
+    "a": "Calling free twice on the same pointer. It corrupts the allocator and is undefined behaviour.",
+    "explain": "Calling free twice on the same pointer. It corrupts the allocator and is undefined behaviour.",
+    "followUp": ""
+  },
+  {
+    "id": "q037",
+    "level": "advanced",
+    "topic": "Memory",
+    "q": "How do you detect memory leaks?",
+    "a": "AddressSanitizer or Valgrind in development, heap profilers in production, plus explicit ownership rules.",
+    "explain": "AddressSanitizer or Valgrind in development, heap profilers in production, plus explicit ownership rules.",
+    "followUp": ""
+  },
+  {
+    "id": "q038",
+    "level": "advanced",
+    "topic": "Memory",
+    "q": "Where do local variables live?",
+    "a": "On the stack, with automatic lifetime tied to the block. Large or runtime-sized data belongs on the heap.",
+    "explain": "On the stack, with automatic lifetime tied to the block. Large or runtime-sized data belongs on the heap.",
+    "followUp": ""
+  },
+  {
+    "id": "q039",
+    "level": "advanced",
+    "topic": "Pointers",
+    "q": "What is a function pointer good for?",
+    "a": "Runtime dispatch and callbacks — qsort comparators, menu tables, event handlers.",
+    "explain": "Runtime dispatch and callbacks — qsort comparators, menu tables, event handlers.",
+    "followUp": ""
+  },
+  {
+    "id": "q040",
+    "level": "advanced",
+    "topic": "Pointers",
+    "q": "Why can two pointers not be meaningfully compared across arrays?",
+    "a": "Only pointers into the same array object (plus one past the end) have defined ordering; anything else is unspecified.",
+    "explain": "Only pointers into the same array object (plus one past the end) have defined ordering; anything else is unspecified.",
+    "followUp": ""
+  },
+  {
+    "id": "q041",
+    "level": "advanced",
+    "topic": "Preprocessor",
+    "q": "Why are macros dangerous?",
+    "a": "Text substitution ignores scope and types, can double-evaluate arguments, and produces confusing errors. Prefer inline functions.",
+    "explain": "Text substitution ignores scope and types, can double-evaluate arguments, and produces confusing errors. Prefer inline functions.",
+    "followUp": ""
+  },
+  {
+    "id": "q042",
+    "level": "advanced",
+    "topic": "Preprocessor",
+    "q": "What is a header guard?",
+    "a": "#ifndef/#define/#endif around a header so multiple includes do not redefine its contents.",
+    "explain": "#ifndef/#define/#endif around a header so multiple includes do not redefine its contents.",
+    "followUp": ""
+  },
+  {
+    "id": "q043",
+    "level": "advanced",
+    "topic": "Preprocessor",
+    "q": "How do you build a multi-file project?",
+    "a": "Compile each .c to .o, then link: gcc main.c util.c -o app. Keep declarations in headers.",
+    "explain": "Compile each .c to .o, then link: gcc main.c util.c -o app. Keep declarations in headers.",
+    "followUp": ""
+  },
+  {
+    "id": "q044",
+    "level": "advanced",
+    "topic": "Algorithms",
+    "q": "Why is binary search O(log n)?",
+    "a": "Each comparison halves the remaining range, so the number of steps is logarithmic.",
+    "explain": "Each comparison halves the remaining range, so the number of steps is logarithmic.",
+    "followUp": ""
+  },
+  {
+    "id": "q045",
+    "level": "advanced",
+    "topic": "Algorithms",
+    "q": "Which sorts are stable?",
+    "a": "Merge sort, insertion sort, bubble sort (with strict comparison). Quick sort and selection sort are not stable by default.",
+    "explain": "Merge sort, insertion sort, bubble sort (with strict comparison). Quick sort and selection sort are not stable by default.",
+    "followUp": ""
+  },
+  {
+    "id": "q046",
+    "level": "advanced",
+    "topic": "Algorithms",
+    "q": "When does quick sort degrade to O(n^2)?",
+    "a": "When partitions are extremely unbalanced, e.g. always picking the first element of a sorted array as pivot.",
+    "explain": "When partitions are extremely unbalanced, e.g. always picking the first element of a sorted array as pivot.",
+    "followUp": ""
+  },
+  {
+    "id": "q047",
+    "level": "advanced",
+    "topic": "Algorithms",
+    "q": "What is two-pointer technique?",
+    "a": "Walking two indices from ends or in the same direction to solve pair/window problems in O(n) on sorted or monotonic data.",
+    "explain": "Walking two indices from ends or in the same direction to solve pair/window problems in O(n) on sorted or monotonic data.",
+    "followUp": ""
+  },
+  {
+    "id": "q048",
+    "level": "advanced",
+    "topic": "Data structures",
+    "q": "Array vs linked list?",
+    "a": "Array gives O(1) indexing but O(n) insert/delete; a linked list gives O(1) insert/delete at a known node but O(n) access.",
+    "explain": "Array gives O(1) indexing but O(n) insert/delete; a linked list gives O(1) insert/delete at a known node but O(n) access.",
+    "followUp": ""
+  },
+  {
+    "id": "q049",
+    "level": "advanced",
+    "topic": "Data structures",
+    "q": "How do you detect a cycle in a linked list?",
+    "a": "Floyd's tortoise and hare: slow moves one node, fast two; they meet if a cycle exists.",
+    "explain": "Floyd's tortoise and hare: slow moves one node, fast two; they meet if a cycle exists.",
+    "followUp": ""
+  },
+  {
+    "id": "q050",
+    "level": "advanced",
+    "topic": "Data structures",
+    "q": "Stack vs queue?",
+    "a": "Stack is LIFO (push/pop at top); queue is FIFO (enqueue at rear, dequeue at front).",
+    "explain": "Stack is LIFO (push/pop at top); queue is FIFO (enqueue at rear, dequeue at front).",
+    "followUp": ""
+  },
+  {
+    "id": "q051",
+    "level": "advanced",
+    "topic": "Data structures",
+    "q": "Why is a hash table average O(1)?",
+    "a": "The hash function maps a key directly to a bucket; with a low load factor collisions are rare.",
+    "explain": "The hash function maps a key directly to a bucket; with a low load factor collisions are rare.",
+    "followUp": ""
+  },
+  {
+    "id": "q052",
+    "level": "advanced",
+    "topic": "Data structures",
+    "q": "What is the worst case for a BST?",
+    "a": "A skewed tree behaves like a linked list, so search becomes O(n). Balanced trees guarantee O(log n).",
+    "explain": "A skewed tree behaves like a linked list, so search becomes O(n). Balanced trees guarantee O(log n).",
+    "followUp": ""
+  },
+  {
+    "id": "q053",
+    "level": "advanced",
+    "topic": "Debugging",
+    "q": "What does a segmentation fault mean?",
+    "a": "The process accessed memory it does not own — NULL dereference, freed memory, or out-of-bounds access.",
+    "explain": "The process accessed memory it does not own — NULL dereference, freed memory, or out-of-bounds access.",
+    "followUp": ""
+  },
+  {
+    "id": "q054",
+    "level": "advanced",
+    "topic": "Debugging",
+    "q": "How does AddressSanitizer help?",
+    "a": "It instruments memory accesses and reports the exact line for overflow, use-after-free, double free and leaks.",
+    "explain": "It instruments memory accesses and reports the exact line for overflow, use-after-free, double free and leaks.",
+    "followUp": ""
+  },
+  {
+    "id": "q055",
+    "level": "advanced",
+    "topic": "Debugging",
+    "q": "What is undefined behaviour?",
+    "a": "Code the standard places no requirements on — signed overflow, out-of-bounds, uninitialized reads. The compiler may do anything.",
+    "explain": "Code the standard places no requirements on — signed overflow, out-of-bounds, uninitialized reads. The compiler may do anything.",
+    "followUp": ""
+  },
+  {
+    "id": "q056",
+    "level": "advanced",
+    "topic": "Build",
+    "q": "What does -Wall -Wextra do?",
+    "a": "Enables a large set of useful compiler warnings; -Werror turns them into errors so they cannot be ignored.",
+    "explain": "Enables a large set of useful compiler warnings; -Werror turns them into errors so they cannot be ignored.",
+    "followUp": ""
+  },
+  {
+    "id": "q057",
+    "level": "advanced",
+    "topic": "Build",
+    "q": "What is the difference between -c and linking?",
+    "a": "-c compiles and assembles to an object file; linking resolves symbols and combines objects and libraries into an executable.",
+    "explain": "-c compiles and assembles to an object file; linking resolves symbols and combines objects and libraries into an executable.",
+    "followUp": ""
+  },
+  {
+    "id": "q058",
+    "level": "advanced",
+    "topic": "C semantics",
+    "q": "Why is `a[i]` the same as `*(a+i)`?",
+    "a": "Array subscripting is defined as pointer arithmetic on the decayed pointer; both forms are equivalent expressions.",
+    "explain": "Array subscripting is defined as pointer arithmetic on the decayed pointer; both forms are equivalent expressions.",
+    "followUp": ""
+  },
+  {
+    "id": "q059",
+    "level": "advanced",
+    "topic": "C semantics",
+    "q": "Is `char *s = \"hi\"; s[0]='H';` legal?",
+    "a": "No. A string literal is read-only; modifying it is undefined behaviour. Use `char s[] = \"hi\";`.",
+    "explain": "No. A string literal is read-only; modifying it is undefined behaviour. Use `char s[] = \"hi\";`.",
+    "followUp": ""
+  }
+]

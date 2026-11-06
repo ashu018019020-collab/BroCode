@@ -42,7 +42,7 @@ export interface IdeError { line: number; message: string; severity: 'error' | '
 
 interface Props {
   value: string;
-  language?: 'python' | 'javascript' | 'sql' | 'plaintext';
+  language?: 'python' | 'javascript' | 'sql' | 'plaintext' | 'cpp';
   onChange: (v: string) => void;
   onRun?: () => void;
   onSave?: () => void;

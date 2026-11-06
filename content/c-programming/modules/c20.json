@@ -1,0 +1,201 @@
+{
+  "id": "c20",
+  "no": 20,
+  "title": "Data Structures with C",
+  "level": "advanced",
+  "hours": 8,
+  "goal": "Linked lists, stack, queue, BST, hash table aur BFS/DFS ko C me implement karna.",
+  "prereqs": [
+    "Module 16: dynamic memory"
+  ],
+  "definition": "Data structure data ko organize karta hai taaki operations efficient hon: linked list O(1) insert/delete, stack LIFO, queue FIFO, BST O(log n) search (balanced), hash table average O(1).",
+  "explain": [
+    "Singly linked list me node {data, next}; head se traverse; insert/delete me pointers update karo aur free karo. Doubly me prev pointer. Circular me tail next head ko.",
+    "Stack LIFO hai — push/pop top par; array ya linked list se. Queue FIFO — enqueue rear, dequeue front; circular array se space reuse.",
+    "BST me left < root < right; search/insert/delete average O(log n), worst O(n) (skewed). Traversal inorder sorted order deta hai.",
+    "Hash table key ko hash function se index me badalta hai; collision ke liye chaining (linked list) ya open addressing. Load factor badhe to resize."
+  ],
+  "analogy": "Linked list ek treasure hunt hai: har clue agle clue ka address deta hai. Array ek shelf hai jahan index se seedha pahunchte ho — insert ke liye shifting chahiye.",
+  "why": "Ye structures real systems me hain: undo stack, printer queue, database index (B-tree), cache (hash map), graph traversal. Interviews me linked list reverse aur cycle detection classic hain.",
+  "syntax": [
+    {
+      "code": "typedef struct Node { int data; struct Node *next; } Node;\nNode *push_front(Node *head, int v) {\n  Node *n = malloc(sizeof *n);\n  if (!n) return head;\n  n->data = v; n->next = head;\n  return n;\n}",
+      "note": "Naya node head ban jaata hai — O(1)."
+    },
+    {
+      "code": "typedef struct { int *a; int top, cap; } Stack;\nvoid push(Stack *s, int v) { if (s->top < s->cap) s->a[s->top++] = v; }\nint pop(Stack *s) { return s->top ? s->a[--s->top] : -1; }",
+      "note": "Stack ka LIFO core."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Linked lists",
+      "body": "Singly/doubly/circular; insert head/tail, delete by key, reverse, cycle detection (Floyd), middle (slow/fast). Har node ka free yaad rakho."
+    },
+    {
+      "title": "Stack aur queue",
+      "body": "Stack: push/pop/peek, balanced parentheses, expression evaluation, undo. Queue: enqueue/dequeue, circular array, BFS. Deque dono ends. Priority queue heap se."
+    },
+    {
+      "title": "Trees aur BST",
+      "body": "Binary tree traversal preorder/inorder/postorder/level-order. BST search/insert/delete, min/max, height. Balanced trees (AVL/Red-Black) guarantee O(log n)."
+    },
+    {
+      "title": "Hash table aur graphs",
+      "body": "Hash function, chaining, load factor, resize. Graph adjacency list/matrix; BFS queue se shortest unweighted path; DFS stack/recursion se connectivity/cycle."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Linked list insert aur print",
+      "code": "#include <stdio.h>\n#include <stdlib.h>\ntypedef struct Node { int data; struct Node *next; } Node;\nint main(void) {\n    Node *head = NULL;\n    for (int i = 1; i <= 3; i++) {\n        Node *n = malloc(sizeof *n);\n        if (!n) return 1;\n        n->data = i * 10; n->next = head; head = n;\n    }\n    for (Node *p = head; p; p = p->next) printf(\"%d \", p->data);\n    printf(\"\\n\");\n    while (head) { Node *next = head->next; free(head); head = next; }\n    return 0;\n}",
+      "output": "30 20 10 \n",
+      "lines": [
+        "Har node head par insert hota hai.",
+        "Traversal next pointer se.",
+        "Cleanup me next pehle save karo, phir free."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Stack se balanced parentheses",
+      "code": "#include <stdio.h>\n#include <string.h>\nint main(void) {\n    char s[] = \"([]{})\";\n    char st[32]; int top = 0, ok = 1;\n    for (int i = 0; s[i] && ok; i++) {\n        char c = s[i];\n        if (c == '(' || c == '[' || c == '{') st[top++] = c;\n        else if (c == ')' || c == ']' || c == '}') {\n            if (!top) ok = 0;\n            else {\n                char o = st[--top];\n                if ((c == ')' && o != '(') || (c == ']' && o != '[') || (c == '}' && o != '{')) ok = 0;\n            }\n        }\n    }\n    printf(\"%s\\n\", ok && top == 0 ? \"balanced\" : \"not balanced\");\n    return 0;\n}",
+      "output": "balanced\n",
+      "lines": [
+        "Opening brackets stack me push.",
+        "Closing par top se match.",
+        "End me stack khali hona chahiye."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "List vs array",
+    "rows": [
+      "operation     array     linked list",
+      "access i      O(1)      O(n)",
+      "insert head   O(n)      O(1)",
+      "insert tail   O(1)*     O(n) / O(1) with tail",
+      "delete known  O(n)      O(1)",
+      "memory        compact   pointer overhead"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "head = head->next; free(head);",
+      "right": "Node *t = head; head = head->next; free(t);",
+      "why": "free ke baad head->next padhna use-after-free."
+    },
+    {
+      "wrong": "Linked list reverse me pointers order galat",
+      "right": "prev/curr/next teen pointers",
+      "why": "next save kiye bina link kho jaata hai."
+    },
+    {
+      "wrong": "Hash table load factor ignore",
+      "right": "0.7 par resize",
+      "why": "Collisions badhne se O(n) ho jaata hai."
+    }
+  ],
+  "debug": {
+    "brief": "Linked list delete karne ke baad crash ho raha hai. Fix karo.",
+    "code": "#include <stdlib.h>\ntypedef struct Node { int data; struct Node *next; } Node;\nint main(void){Node *h=malloc(sizeof *h);h->next=NULL;free(h);h=h->next;return 0;}",
+    "expected": "no crash\n",
+    "hints": [
+      "free ke baad h->next invalid hai.",
+      "Pehle next save karo."
+    ],
+    "fix": "Node *next = h->next; free(h); h = next;"
+  },
+  "best": [
+    "Insert/delete me pointers order socho",
+    "Har malloc ka free",
+    "Cycle detection Floyd se",
+    "BST inorder sorted deta hai",
+    "Hash load factor manage karo"
+  ],
+  "practice": [
+    {
+      "title": "Reverse list",
+      "prompt": "Singly linked list reverse karo.",
+      "level": "medium",
+      "hint": "prev/curr/next."
+    },
+    {
+      "title": "Queue",
+      "prompt": "Circular array se queue banao.",
+      "level": "medium",
+      "hint": "front, rear, count."
+    },
+    {
+      "title": "BST insert",
+      "prompt": "BST me insert aur inorder print karo.",
+      "level": "hard",
+      "hint": "Recursive insert."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "Stack ka order?",
+      "options": [
+        "FIFO",
+        "LIFO",
+        "Random",
+        "Sorted"
+      ],
+      "answer": 1,
+      "explain": "Last in, first out."
+    },
+    {
+      "q": "BST worst-case search?",
+      "options": [
+        "O(1)",
+        "O(log n)",
+        "O(n)",
+        "O(n log n)"
+      ],
+      "answer": 2,
+      "explain": "Skewed tree linked list ban jaata hai."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Linked list kab array se better?",
+      "a": "Jab frequent insert/delete head/middle par ho aur random access ki zaroorat na ho; size dynamic ho. Array cache-friendly aur O(1) indexing deta hai.",
+      "followUp": "Real use? — LRU cache, adjacency list, undo."
+    },
+    {
+      "q": "Hash collision handle kaise?",
+      "a": "Chaining (same bucket me linked list) ya open addressing (linear/quadratic probing, double hashing). Load factor threshold par resize.",
+      "followUp": "Worst case? — O(n); balanced tree buckets se O(log n)."
+    }
+  ],
+  "lab": {
+    "title": "Lab 20 — Stack implementation",
+    "brief": "Array-based stack banao: push, pop aur peek; output print karo.",
+    "starter": "#include <stdio.h>\nint main(void){return 0;}",
+    "expected": "peek=30\n30 20 10 \n",
+    "tests": [
+      {
+        "name": "stack",
+        "stdin": "",
+        "stdout": "peek=30\n30 20 10"
+      }
+    ],
+    "hints": [
+      "top index -1 se shuru.",
+      "push: a[++top]=v."
+    ],
+    "solution": "#include <stdio.h>\nint main(void){int a[8],top=-1;for(int i=1;i<=3;i++)a[++top]=i*10;printf(\"peek=%d\\n\",a[top]);while(top>=0)printf(\"%d \",a[top--]);printf(\"\\n\");return 0;}"
+  },
+  "checkpoint": {
+    "title": "Module 20 checkpoint",
+    "checks": [
+      "Linked list insert/delete/free kiya",
+      "Stack LIFO implement kiya",
+      "Queue FIFO samajh aaya",
+      "BST insert/traversal kiya",
+      "Hash table ka idea pata hai"
+    ]
+  }
+}

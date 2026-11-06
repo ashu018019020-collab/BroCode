@@ -1,0 +1,226 @@
+{
+  "id": "c05",
+  "no": 5,
+  "title": "Operators and Expressions",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "Arithmetic se bitwise tak har operator, precedence/associativity aur short-circuit evaluation ko samajhna.",
+  "prereqs": [
+    "Module 3-4: types aur I/O"
+  ],
+  "definition": "Operator ek symbol hai jo operands par operation karta hai aur expression banata hai. C me arithmetic, relational, logical, assignment, increment/decrement, bitwise, conditional, comma aur sizeof operators hain.",
+  "explain": [
+    "Arithmetic (+ - * / %) integer operands par integer division karta hai: 7/2 = 3. % sirf integers par chalta hai aur negative numbers par sign dividend ka hota hai (-7 % 3 = -1).",
+    "Relational (< > <= >= == !=) 0 ya 1 dete hain. Assignment = aur comparison == alag hain — if (x = 5) hamesha true hota hai, compiler warning deta hai.",
+    "Logical && aur || short-circuit karte hain: agar left side se answer pata chal gaya to right side evaluate hi nahi hota. Isliye p && p->next safe hai.",
+    "Bitwise (& | ^ ~ << >>) bits par kaam karte hain — flags, masks, fast multiply/divide. Right shift signed negative par implementation-defined hai; unsigned par zero-fill.",
+    "Increment/decrement me prefix (++i: pehle badhao) aur postfix (i++: pehle use karo) ka fark hai. Ek hi expression me variable ko do baar modify karna UB hai."
+  ],
+  "analogy": "Expression ek kitchen recipe hai jisme operations ka order fixed hai — pehle brackets, phir multiply, phir add. Precedence wahi order hai; associativity batati hai same level par left ya right se chalo.",
+  "why": "Kisi bhi language ka logic yahin banta hai: conditions, loops, masks aur flags. Precedence ki galti se silently galat result aata hai — jo crash se zyada khatarnak hai.",
+  "syntax": [
+    {
+      "code": "int a = 7, b = 2;\nprintf(\"%d %d %d %d\\n\", a+b, a-b, a*b, a/b);\nprintf(\"%d\\n\", a % b);\nprintf(\"%.2f\\n\", (double)a / b);",
+      "note": "Integer division truncate karta hai; cast se float division."
+    },
+    {
+      "code": "int flags = 0b1010;      /* C23; C17 me 0xA */\nflags |= 0x1;            /* set bit 0 */\nflags &= ~0x2;           /* clear bit 1 */\nif (flags & 0x8) { }     /* test bit 3 */\nprintf(\"%d\\n\", flags << 1);",
+      "note": "Set/clear/test/shift — bitmask ka core."
+    },
+    {
+      "code": "int x = 5;\nint y = x++ + 10;   /* y=15, x=6 */\nint z = ++x + 10;   /* x=7, z=17 */\nint m = (x > 3) ? 100 : 200;\nfor (int i = 0, j = 9; i < j; i++, j--) { }",
+      "note": "Postfix/prefix aur comma operator."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Arithmetic aur modulus",
+      "body": "+ - * / %; integer division truncate karti hai. % integers ke liye, sign dividend ka. Overflow signed par UB, unsigned par wrap. Division/modulus by zero UB hai — check karo."
+    },
+    {
+      "title": "Relational aur logical",
+      "body": "== != < <= > >= 0/1 dete hain. && || ! short-circuit karte hain, precedence: ! > && > ||. if (a == b) aur if (!strcmp(a,b)) ke semantics alag hain — strcmp 0 par equal."
+    },
+    {
+      "title": "Assignment aur increment",
+      "body": "=, +=, -=, *=, /=, %=, &=, |=, ^=, <<=, >>=. Prefix ++i value badhne ke baad deta hai; postfix i++ purani value deta hai. Side effects ka order unspecified ho to UB."
+    },
+    {
+      "title": "Bitwise aur shifts",
+      "body": "& | ^ ~ << >>. x << 1 = x*2 (overflow UB), unsigned >> zero-fill, signed negative >> implementation-defined. Mask: value & 0xFF; toggle: ^= 1. Enum flags ke liye ideal."
+    },
+    {
+      "title": "Precedence, associativity, comma",
+      "body": "Brackets sabse pehle, phir unary, * / %, + -, shifts, relational, equality, bitwise, &&, ||, ?:, assignment, comma. Assignment right-associative; comma left-to-right evaluate karke last value deta hai. Confusion ho to brackets lagao."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Arithmetic aur integer division",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    int a = 7, b = 2;\n    printf(\"%d %d %d\\n\", a + b, a - b, a * b);\n    printf(\"%d %d\\n\", a / b, a % b);\n    printf(\"%.2f\\n\", (double)a / b);\n    return 0;\n}",
+      "output": "9 5 14\n3 1\n3.50\n",
+      "lines": [
+        "a + b, a - b, a * b argument order me print hote hain.",
+        "7/2 integer division se 3, 7%2 = 1.",
+        "(double)a / b se floating division 3.50."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Bit flags aur short-circuit",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    unsigned flags = 0;\n    flags |= 1u << 2;          /* set bit 2 */\n    flags |= 1u << 4;          /* set bit 4 */\n    printf(\"%u\\n\", flags);\n    flags &= ~(1u << 2);       /* clear bit 2 */\n    printf(\"%u\\n\", flags);\n    int n = 0;\n    if (n != 0 && 10 / n > 1) printf(\"never\\n\");\n    printf(\"%d\\n\", (n == 0) ? 42 : 7);\n    return 0;\n}",
+      "output": "20\n16\n42\n",
+      "lines": [
+        "1u << 2 = 4, 1u << 4 = 16; OR se 20.",
+        "~(1u<<2) mask se bit 2 clear, 16 bacha.",
+        "n != 0 false hai, isliye 10/n evaluate hi nahi hua — divide by zero se bacha.",
+        "Ternary condition ke hisaab se 42 deta hai."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "Bit 4 3 2 1 (values 16 8 4 2)",
+    "rows": [
+      "flags = 0000 0000  (0)",
+      "set bit 2  -> 0000 0100  (4)",
+      "set bit 4  -> 0001 0100  (20)",
+      "clear bit2 -> 0001 0000  (16)",
+      "test: flags & 16 != 0  -> true"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "if (x = 5)",
+      "right": "if (x == 5)",
+      "why": "Assignment expression 5 deta hai jo truthy hai — condition hamesha true."
+    },
+    {
+      "wrong": "int avg = (a + b) / 2;  // a,b int",
+      "right": "double avg = (a + b) / 2.0;",
+      "why": "Integer division decimals kho deti hai."
+    },
+    {
+      "wrong": "i = i++ + 1;",
+      "right": "i = i + 2; ya i++;",
+      "why": "Ek expression me i ko do baar modify karna UB hai."
+    }
+  ],
+  "debug": {
+    "brief": "Average 3 aa raha hai 3.5 ki jagah. Fix karo.",
+    "code": "#include <stdio.h>\nint main(void) {\n    int a = 7, b = 2;\n    double avg = (a + b) / 2;\n    printf(\"%.1f\\n\", avg);\n    return 0;\n}",
+    "expected": "4.5\n",
+    "hints": [
+      "(a+b)/2 ka type int hai.",
+      "Division se pehle double banao."
+    ],
+    "fix": "double avg = (a + b) / 2.0;"
+  },
+  "best": [
+    "== aur = ka dhyan rakho; -Wparentheses on karo",
+    "Complex expression me brackets lagao",
+    "Bit operations unsigned par karo",
+    "Division se pehle zero check karo",
+    "Side-effect wale expressions chhote rakho"
+  ],
+  "practice": [
+    {
+      "title": "Calculator",
+      "prompt": "Do numbers aur operator (+ - * /) lekar result print karo.",
+      "level": "easy",
+      "hint": "Division me zero check."
+    },
+    {
+      "title": "Even/odd bitwise",
+      "prompt": "n & 1 se even/odd batao.",
+      "level": "easy",
+      "hint": "LSB 1 ho to odd."
+    },
+    {
+      "title": "Swap",
+      "prompt": "Do variables ko temp ke bina XOR se swap karo.",
+      "level": "medium",
+      "hint": "a ^= b; b ^= a; a ^= b;"
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "7 % -3 ka result C me?",
+      "options": [
+        "1",
+        "-1",
+        "2",
+        "Undefined"
+      ],
+      "answer": 0,
+      "explain": "C99 se result ka sign dividend (7) ka hota hai, isliye 1."
+    },
+    {
+      "q": "&& operator kya karta hai?",
+      "options": [
+        "Dono sides hamesha evaluate",
+        "Short-circuit",
+        "Bitwise AND",
+        "Assignment"
+      ],
+      "answer": 1,
+      "explain": "Left false ho to right evaluate nahi hota."
+    },
+    {
+      "q": "i++ aur ++i me fark?",
+      "options": [
+        "Koi nahi",
+        "i++ purani value deta hai",
+        "++i purani value deta hai",
+        "Dono UB"
+      ],
+      "answer": 1,
+      "explain": "Postfix increment purani value return karta hai, prefix nayi."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Short-circuit evaluation ka practical use?",
+      "a": "Null check ke saath dereference: if (p != NULL && p->value > 0) — pehla false ho to dereference hi nahi hota. Isi tarah divide-by-zero guard.",
+      "followUp": "Bitwise & se kyun nahi? — wo dono sides evaluate karta hai."
+    },
+    {
+      "q": "Signed overflow aur unsigned overflow me fark?",
+      "a": "Signed overflow undefined behaviour hai (compiler assume kar sakta hai kabhi nahi hoga); unsigned arithmetic modulo 2^N wrap karti hai, defined hai.",
+      "followUp": "Overflow detect kaise? — __builtin_add_overflow ya wider type."
+    },
+    {
+      "q": "Precedence table yaad rakhna zaroori hai?",
+      "a": "Core order yaad rakho (unary → multiplicative → additive → shift → relational → equality → bitwise → logical → conditional → assignment) aur baaki brackets se clear karo — galat precedence silent bug deta hai.",
+      "followUp": "a & b == 0 ka matlab? — == pehle chalta hai, isliye a & (b==0)."
+    }
+  ],
+  "lab": {
+    "title": "Lab 5 — Bitwise toolkit",
+    "brief": "Ek program jo set/clear/toggle/test bit operations aur popcount (set bits count) dikhaye.",
+    "starter": "#include <stdio.h>\n\nint main(void) {\n    unsigned n = 0;\n    /* operations */\n    return 0;\n}",
+    "expected": "after set 2,4: 20\nbit 4 set: yes\npopcount(20): 2\n",
+    "tests": [
+      {
+        "name": "bitwise output",
+        "stdin": "",
+        "stdout": "after set 2,4: 20\nbit 4 set: yes\npopcount(20): 2"
+      }
+    ],
+    "hints": [
+      "flags |= 1u << n.",
+      "while (x) { count += x & 1; x >>= 1; }"
+    ],
+    "solution": "#include <stdio.h>\n\nint main(void) {\n    unsigned n = 0;\n    n |= 1u << 2;\n    n |= 1u << 4;\n    printf(\"after set 2,4: %u\\n\", n);\n    printf(\"bit 4 set: %s\\n\", (n & (1u << 4)) ? \"yes\" : \"no\");\n    unsigned x = n, count = 0;\n    while (x) { count += x & 1u; x >>= 1; }\n    printf(\"popcount(20): %u\\n\", count);\n    return 0;\n}"
+  },
+  "checkpoint": {
+    "title": "Module 5 checkpoint",
+    "checks": [
+      "Saare operators ka use pata hai",
+      "Integer division aur modulus ka behaviour samajh aaya",
+      "Short-circuit ka faayda bata sakte ho",
+      "Bitmask set/clear/test kar liya",
+      "Precedence ke hisaab se expression likh liya"
+    ]
+  }
+}

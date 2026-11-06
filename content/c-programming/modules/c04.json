@@ -1,0 +1,230 @@
+{
+  "id": "c04",
+  "no": 4,
+  "title": "Input and Output",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "printf/scanf family, format specifiers, string input aur input validation ko safely use karna.",
+  "prereqs": [
+    "Module 3: data types"
+  ],
+  "definition": "C me standard I/O streams (stdin, stdout, stderr) ke through hota hai. printf formatted output deta hai; scanf formatted input padhta hai; getchar/putchar characters; fgets line-based safe string input deta hai.",
+  "explain": [
+    "printf format string + arguments leta hai. Har % specifier batata hai value kaise print karni hai: %d int, %f double, %c char, %s string, %p pointer, %zu size_t.",
+    "scanf ko address chahiye, value nahi — isliye & lagta hai: scanf(\"%d\", &age). String (char array) me & ki zaroorat nahi kyunki array khud address me decay hota hai.",
+    "scanf whitespace par rukta hai, isliye spaces wala naam %s se poora nahi padha jaata. Line padhne ke liye fgets(buffer, size, stdin) use karo — buffer overflow se bachne ka safe rasta.",
+    "Mixed scanf aur fgets me leftover newline bug aata hai: scanf ke baad buffer me \\n bacha rehta hai. getchar() se consume karo ya poora line-based input lo.",
+    "Production input par kabhi bharosa mat karo: return value check karo (scanf kitne items padhe), range validate karo, aur fgets ke baad newline trim karo."
+  ],
+  "analogy": "printf ek printer hai jo format template ke hisaab se values bharta hai. scanf ek form hai jisme aapko batane padta hai value kahan likhni hai — isliye address (&) dena padta hai, warna form kahin aur bhar jaayega (crash).",
+  "why": "User input hi real programs ka pehla attack surface hai. Galat format specifier UB deta hai, unbounded %s buffer overflow — security bug. Sahi I/O likhna aage ke saare interactive programs ki neenv hai.",
+  "syntax": [
+    {
+      "code": "printf(\"%d %u %ld %lld\\n\", i, u, l, ll);\nprintf(\"%f %.2f %e\\n\", f, d, big);\nprintf(\"%c %s %p %zu\\n\", ch, name, ptr, sizeof x);",
+      "note": "printf me double ke liye %f (ya %lf, same), scanf me double ke liye %lf zaroori."
+    },
+    {
+      "code": "int age;\nif (scanf(\"%d\", &age) != 1) { /* invalid input */ }\nchar name[32];\nfgets(name, sizeof name, stdin);\nname[strcspn(name, \"\\n\")] = '\\0';",
+      "note": "Return value check karo; fgets newline chhodta hai, trim karo."
+    },
+    {
+      "code": "int ch;\nwhile ((ch = getchar()) != '\\n' && ch != EOF) { }\nprintf(\"%-10s|%08.3f|%+d|%x\\n\", \"id\", 3.14159, 7, 255);",
+      "note": "Left/right align, zero pad, sign, hex — width aur flags."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Format specifiers",
+      "body": "%d/%i signed int, %u unsigned, %f double (printf), %lf scanf double, %c char, %s string, %ld long, %lld long long, %x hex, %o octal, %p pointer, %zu size_t, %% literal percent. Specifier aur argument type mismatch UB hai."
+    },
+    {
+      "title": "Width, precision, flags",
+      "body": "%8d width 8 right align; %-8d left; %08d zero pad; %.3f 3 decimals; %+d force sign; %#x 0x prefix. Width runtime se bhi de sakte ho: printf(\"%*d\", 5, x)."
+    },
+    {
+      "title": "scanf aur validation",
+      "body": "scanf address leta hai, whitespace skip karta hai, return value me successful conversions deta hai. Failure par input stream me galat characters bache rehte hain — unhe consume karo warna infinite loop. %s me width do: %31s."
+    },
+    {
+      "title": "Character aur line input",
+      "body": "getchar/putchar int return karte hain taaki EOF (-1) represent ho. fgets newline include karta hai aur buffer size se zyada nahi padhta — isliye safe. puts newline add karta hai; fputs nahi."
+    },
+    {
+      "title": "Buffers aur streams",
+      "body": "stdout line-buffered (terminal) ya fully buffered (file) ho sakta hai; program crash par buffer ka data kho sakta hai. Debug me fflush(stdout) ya stderr use karo. stderr unbuffered hai. Input buffer me leftover newline sabse common beginner bug hai."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Formatted input/output",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    int age;\n    double height;\n    printf(\"Age and height: \");\n    if (scanf(\"%d %lf\", &age, &height) != 2) {\n        printf(\"Invalid input\\n\");\n        return 1;\n    }\n    printf(\"age=%d height=%.2f\\n\", age, height);\n    return 0;\n}",
+      "stdin": "21 5.9\n",
+      "output": "Age and height: age=21 height=5.90\n",
+      "lines": [
+        "scanf ko &age aur &height chahiye.",
+        "Return 2 ka matlab dono conversions safal.",
+        "%.2f do decimal places deta hai.",
+        "Prompt aur output same line me hain kyunki koi \\n nahi."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Line input safely",
+      "code": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char name[16];\n    if (fgets(name, sizeof name, stdin) == NULL) return 1;\n    name[strcspn(name, \"\\n\")] = '\\0';\n    printf(\"[%s] length=%zu\\n\", name, strlen(name));\n    return 0;\n}",
+      "stdin": "Ahetesham Khan\n",
+      "output": "[Ahetesham Khan] length=14\n",
+      "lines": [
+        "fgets buffer aur size leta hai — overflow nahi hota.",
+        "strcspn newline ki position deta hai; wahan \\0 rakhte hain.",
+        "strlen ke liye %zu.",
+        "Agar line 16 se badi hoti to baaki characters next read me aate."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "stdin → scanf → memory",
+    "rows": [
+      "keyboard: \"21 5.9\\n\"",
+      "stdin buffer: [2][1][ ][5][.][9][\\n]",
+      "scanf(\"%d %lf\", &age, &height)",
+      "age = 21      height = 5.9",
+      "buffer me bacha: [\\n]  <-- agla fgets ise khali line samjhega"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "scanf(\"%d\", age);",
+      "right": "scanf(\"%d\", &age);",
+      "why": "scanf address maangta hai; value dene par crash/UB."
+    },
+    {
+      "wrong": "scanf(\"%s\", buf);",
+      "right": "scanf(\"%15s\", buf);",
+      "why": "Bina width ke overflow ho sakta hai; fgets behtar hai."
+    },
+    {
+      "wrong": "scanf(\"%f\", &d);  // double d",
+      "right": "scanf(\"%lf\", &d);",
+      "why": "scanf me double ke liye %lf; %f float ke liye."
+    }
+  ],
+  "debug": {
+    "brief": "scanf ke baad fgets turant khali line padh raha hai. Bug fix karo.",
+    "code": "#include <stdio.h>\nint main(void) {\n    int n;\n    char line[32];\n    scanf(\"%d\", &n);\n    fgets(line, sizeof line, stdin);\n    printf(\"n=%d line=[%s]\\n\", n, line);\n    return 0;\n}",
+    "stdin": "5\nhello\n",
+    "expected": "n=5 line=[hello]\n",
+    "hints": [
+      "scanf ne \\n chhod diya kya?",
+      "Ek getchar() se leftover newline consume karo."
+    ],
+    "fix": "scanf(\"%d\", &n); getchar(); fgets(line, sizeof line, stdin);"
+  },
+  "best": [
+    "scanf ka return value check karo",
+    "String input ke liye fgets + newline trim",
+    "printf format aur argument type match karo",
+    "User input ko range validate karo",
+    "Prompt ke baad fflush(stdout) debug me"
+  ],
+  "practice": [
+    {
+      "title": "Student form",
+      "prompt": "Naam, age aur marks input lekar formatted print karo.",
+      "level": "easy",
+      "hint": "fgets + scanf mix karoge to newline dhyan rakho."
+    },
+    {
+      "title": "Temperature converter",
+      "prompt": "Celsius input lo, Fahrenheit 2 decimals me print karo.",
+      "level": "easy",
+      "hint": "scanf %lf."
+    },
+    {
+      "title": "Input validate",
+      "prompt": "Age 1-120 ke bahar ho to error print karo.",
+      "level": "medium",
+      "hint": "scanf ke baad if."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "scanf me double ke liye kaunsa specifier?",
+      "options": [
+        "%f",
+        "%lf",
+        "%d",
+        "%e"
+      ],
+      "answer": 1,
+      "explain": "scanf me %lf; printf me %f ya %lf dono double ke liye chalte hain (default promotion)."
+    },
+    {
+      "q": "fgets newline ke saath kya karta hai?",
+      "options": [
+        "Hata deta hai",
+        "Buffer me include karta hai",
+        "Crash karta hai",
+        "Ignore karta hai"
+      ],
+      "answer": 1,
+      "explain": "fgets newline include karta hai agar jagah ho; trim karna padta hai."
+    },
+    {
+      "q": "getchar() ka return type?",
+      "options": [
+        "char",
+        "int",
+        "unsigned char",
+        "void"
+      ],
+      "answer": 1,
+      "explain": "int, taaki EOF (-1) char se alag represent ho."
+    }
+  ],
+  "interview": [
+    {
+      "q": "scanf aur fgets me kya safe hai?",
+      "a": "fgets buffer size leta hai, isliye overflow nahi hota; scanf %s unbounded hai jab tak width na do (%31s). Line input ke liye fgets better hai.",
+      "followUp": "fgets newline? — include karta hai, trim karo."
+    },
+    {
+      "q": "Format specifier mismatch ka result?",
+      "a": "Undefined behaviour: galat bytes padhe jaate hain, garbage ya crash. Compiler -Wformat warning deta hai.",
+      "followUp": "printf(\"%d\", 3.5) kyun galat? — double varargs me double hi jaata hai, %d int expect karta hai."
+    },
+    {
+      "q": "stdout aur stderr ka fark?",
+      "a": "stdout buffered hai (line ya full), stderr unbuffered — errors turant dikhte hain aur redirection se alag file me ja sakte hain.",
+      "followUp": "perror kahan likhta hai? — stderr."
+    }
+  ],
+  "lab": {
+    "title": "Lab 4 — Student information form",
+    "brief": "Naam (spaces allowed), age aur marks input lo; validate karo aur formatted card print karo.",
+    "starter": "#include <stdio.h>\n\nint main(void) {\n    /* fgets + scanf, validation */\n    return 0;\n}",
+    "expected": "Name : Ahetesham Khan\nAge  : 21\nMarks: 88.50\n",
+    "tests": [
+      {
+        "name": "form output",
+        "stdin": "Ahetesham Khan\n21\n88.5\n",
+        "stdout": "Name : Ahetesham Khan\nAge  : 21\nMarks: 88.50"
+      }
+    ],
+    "hints": [
+      "fgets se naam lo, newline trim karo.",
+      "Age 1-120 validate karo."
+    ],
+    "solution": "#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char name[64];\n    int age;\n    double marks;\n    fgets(name, sizeof name, stdin);\n    name[strcspn(name, \"\\n\")] = '\\0';\n    if (scanf(\"%d %lf\", &age, &marks) != 2) return 1;\n    printf(\"Name : %s\\n\", name);\n    printf(\"Age  : %d\\n\", age);\n    printf(\"Marks: %.2f\\n\", marks);\n    return 0;\n}"
+  },
+  "checkpoint": {
+    "title": "Module 4 checkpoint",
+    "checks": [
+      "Saare common format specifiers pata hain",
+      "scanf ka return value check kiya",
+      "fgets se line padhi aur newline trim kiya",
+      "Leftover newline bug samajh aaya",
+      "Validated form chala"
+    ]
+  }
+}

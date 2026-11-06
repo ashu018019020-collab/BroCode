@@ -3,6 +3,7 @@ import { createAiObservability } from './ai-observability.mjs';
 import { listAllAuthUsers } from './supabase.mjs';
 import { TTS_DEFAULT_TIMEOUT_MS, TTS_LANGS, TTS_MAX_CHARS, TtsError, createTtsEngine, voiceOverrides } from './tts.mjs';
 import { projectBrief } from './project-brief.mjs';
+import { CExecError, createCExecutor } from './c-runner.mjs';
 import {
   INTERVIEW_DEFAULT_MODEL,
   evaluateInterviewAnswer,
@@ -314,6 +315,7 @@ export function createAuthServer({
     return user;
   }
 
+  const cExecutor = createCExecutor({ logger });
   const realtimeHits = new Map();
   function realtimeAllowed(clientKey) {
     const at = now();
@@ -683,6 +685,32 @@ export function createAuthServer({
               && new Date(user.lastSignInAt).getTime() >= cutoff).length,
           },
         }, headers);
+        return;
+      }
+
+      if (request.method === 'GET' && url.pathname === '/api/c/status') {
+        json(response, 200, cExecutor.status(), headers);
+        return;
+      }
+
+      /**
+       * Compile + run C. The source is forwarded to Judge0, never executed in this process; a
+       * missing JUDGE0_URL is a 503 the UI renders honestly instead of pretending to compile.
+       */
+      if (request.method === 'POST' && url.pathname === '/api/c/execute') {
+        ensureSameOrigin(request, allowedOrigin);
+        const user = await requireUser(request);
+        const clientKey = `${user.profile.id}:${request.socket?.remoteAddress ?? 'unknown'}`;
+        if (!cExecutor.allow(clientKey)) {
+          throw new HttpError(429, 'Too many compile requests. Try again in a minute.');
+        }
+        const input = await readJson(request);
+        try {
+          json(response, 200, await cExecutor.run(input), headers);
+        } catch (cause) {
+          if (cause instanceof CExecError) throw new HttpError(cause.status, cause.message);
+          throw cause;
+        }
         return;
       }
 

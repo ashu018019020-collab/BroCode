@@ -1,0 +1,193 @@
+{
+  "id": "c14",
+  "no": 14,
+  "title": "Pointers, Arrays and Functions",
+  "level": "advanced",
+  "hours": 5,
+  "goal": "Array decay, pointer parameters, double pointers, dynamic 2D arrays aur callbacks ko jodna.",
+  "prereqs": [
+    "Module 13: pointers"
+  ],
+  "definition": "Array expression pointer me decay hota hai; isliye functions array ko pointer ke roop me lete hain aur size alag pass karna padta hai.",
+  "explain": [
+    "void f(int a[], int n) aur void f(int *a, int n) same hain. sizeof a function ke andar pointer ka size deta hai.",
+    "Pointer se function original array modify kar sakta hai; const int *a se sirf padh sakta hai.",
+    "Double pointer (int **) pointer ke array, 2D dynamic allocation aur out-parameter pointer ke liye chahiye.",
+    "Function pointer callback deta hai: qsort comparator, menu dispatch, event handlers."
+  ],
+  "analogy": "Array ek ghar hai aur pointer us ghar ka address. Function ko address deते ho, isliye wo andar badlav kar sakta hai — par ghar ka size address se pata nahi chalta.",
+  "why": "Strings, matrices, dynamic arrays aur callbacks sab isi integration par bane hain — interview me array-pointer equivalence ka sawaal pakka aata hai.",
+  "syntax": [
+    {
+      "code": "void fill(int *a, int n) { for (int i=0;i<n;i++) a[i]=i*i; }\nvoid print(const int *a, int n) { for (int i=0;i<n;i++) printf(\"%d \", a[i]); }",
+      "note": "Writer non-const, reader const."
+    },
+    {
+      "code": "int (*cmp)(const void*, const void*);\nqsort(a, n, sizeof a[0], cmp);",
+      "note": "Function pointer syntax: return type (*name)(params)."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Decay aur size",
+      "body": "Array parameter pointer ban jaata hai; n alag bhejo. 2D array me column width chahiye: void f(int m[][3], int rows)."
+    },
+    {
+      "title": "Modify through pointers",
+      "body": "a[i] aur *(a+i) same; pointer se likhne par caller ka array badalta hai. const correctness se galti pakdi jaati hai."
+    },
+    {
+      "title": "Double pointers aur 2D heap",
+      "body": "int **grid = malloc(rows*sizeof *grid); har row malloc; free nested. Function me int ** se pointer ko reassign karo."
+    },
+    {
+      "title": "Function pointers",
+      "body": "typedef int (*binop)(int,int); binop ops[] = {add, sub}; ops[choice](a,b). Callback se generic algorithms bante hain."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Array ko function me modify karna",
+      "code": "#include <stdio.h>\nvoid double_all(int *a, int n) { for (int i = 0; i < n; i++) a[i] *= 2; }\nint main(void) {\n    int a[3] = {1, 2, 3};\n    double_all(a, 3);\n    for (int i = 0; i < 3; i++) printf(\"%d \", a[i]);\n    printf(\"\\n\");\n    return 0;\n}",
+      "output": "2 4 6 \n",
+      "lines": [
+        "Array address pass hota hai.",
+        "Function original elements badal deta hai.",
+        "Size alag parameter hai."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Function pointer dispatch",
+      "code": "#include <stdio.h>\nint add(int a, int b) { return a + b; }\nint mul(int a, int b) { return a * b; }\nint main(void) {\n    int (*ops[2])(int, int) = {add, mul};\n    for (int i = 0; i < 2; i++) printf(\"%d\\n\", ops[i](6, 7));\n    return 0;\n}",
+      "output": "13\n42\n",
+      "lines": [
+        "Function pointers ka array bana.",
+        "ops[i](6,7) runtime par function chunta hai.",
+        "Callback/dispatch ka core pattern."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "int a[3] aur int *p",
+    "rows": [
+      "a        -> 0x1000 (array object)",
+      "&a[0]    -> 0x1000",
+      "a+1      -> 0x1004",
+      "sizeof a -> 12 (array)",
+      "sizeof p -> 8 (pointer)"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "void f(int a[10]) { sizeof a }",
+      "right": "size parameter",
+      "why": "Pointer ban jaata hai, 10 nahi bachta."
+    },
+    {
+      "wrong": "2D pass: void f(int m[][])",
+      "right": "void f(int m[][3])",
+      "why": "Compiler ko row stride chahiye."
+    }
+  ],
+  "debug": {
+    "brief": "Function array ke sirf pehle element ko double kar raha hai. Fix karo.",
+    "code": "#include <stdio.h>\nvoid dbl(int a[]) { a[0] *= 2; }\nint main(void){int a[3]={1,2,3};dbl(a);printf(\"%d %d %d\\n\",a[0],a[1],a[2]);return 0;}",
+    "expected": "2 4 6\n",
+    "hints": [
+      "Size chahiye.",
+      "Loop n tak chalao."
+    ],
+    "fix": "void dbl(int *a, int n) { for (int i=0;i<n;i++) a[i]*=2; }  dbl(a, 3);"
+  },
+  "best": [
+    "Size alag pass karo",
+    "const se read-only intent",
+    "2D me column width",
+    "Function pointer typedef karo"
+  ],
+  "practice": [
+    {
+      "title": "Sum function",
+      "prompt": "int sum(const int *a,int n) banao.",
+      "level": "easy",
+      "hint": "const int *."
+    },
+    {
+      "title": "Bubble sort function",
+      "prompt": "Array ko function se sort karo.",
+      "level": "medium",
+      "hint": "In-place swap."
+    },
+    {
+      "title": "Callback",
+      "prompt": "Function pointer se add/mul choose karo.",
+      "level": "medium",
+      "hint": "int (*op)(int,int)."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "Function me array ka sizeof?",
+      "options": [
+        "Array ka size",
+        "Pointer ka size",
+        "0",
+        "Error"
+      ],
+      "answer": 1,
+      "explain": "Array parameter pointer me decay hota hai."
+    },
+    {
+      "q": "int ** kab chahiye?",
+      "options": [
+        "Kabhi nahi",
+        "Pointer modify karne / 2D heap",
+        "Sirf strings",
+        "Sirf struct"
+      ],
+      "answer": 1,
+      "explain": "Do level indirection."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Array-pointer equivalence ka limit?",
+      "a": "a[i] == *(a+i) expression me, par array object nahi hai pointer: sizeof aur assignment alag behave karte hain.",
+      "followUp": "Pass by array? — C me sirf pointer pass hota hai."
+    },
+    {
+      "q": "qsort comparator kaise likhein?",
+      "a": "int cmp(const void *a, const void *b) { int x=*(const int*)a, y=*(const int*)b; return (x>y)-(x<y); }",
+      "followUp": "Descending? — return ulta karo."
+    }
+  ],
+  "lab": {
+    "title": "Lab 14 — Array functions",
+    "brief": "fill, sum aur reverse functions banao jo pointer leti hain.",
+    "starter": "#include <stdio.h>\nint main(void){return 0;}",
+    "expected": "sum=15\n5 4 3 2 1 \n",
+    "tests": [
+      {
+        "name": "output",
+        "stdin": "",
+        "stdout": "sum=15\n5 4 3 2 1"
+      }
+    ],
+    "hints": [
+      "n parameter do.",
+      "Reverse me i,j swap."
+    ],
+    "solution": "#include <stdio.h>\n\nstatic void fill(int *a, int n) { for (int i = 0; i < n; i++) a[i] = i + 1; }\nstatic int sum(const int *a, int n) { int s = 0; for (int i = 0; i < n; i++) s += a[i]; return s; }\nstatic void rev(int *a, int n) {\n    for (int i = 0, j = n - 1; i < j; i++, j--) { int t = a[i]; a[i] = a[j]; a[j] = t; }\n}\n\nint main(void) {\n    int a[5];\n    fill(a, 5);\n    printf(\"sum=%d\\n\", sum(a, 5));\n    rev(a, 5);\n    for (int i = 0; i < 5; i++) printf(\"%d%s\", a[i], i == 4 ? \"\\n\" : \" \");\n    return 0;\n}\n"
+  },
+  "checkpoint": {
+    "title": "Module 14 checkpoint",
+    "checks": [
+      "Array decay samajh aaya",
+      "Pointer se array modify kiya",
+      "2D pass karne ka rule pata hai",
+      "Function pointer use kiya"
+    ]
+  }
+}

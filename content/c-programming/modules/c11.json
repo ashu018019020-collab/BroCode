@@ -1,0 +1,196 @@
+{
+  "id": "c11",
+  "no": 11,
+  "title": "Arrays",
+  "level": "beginner",
+  "hours": 6,
+  "goal": "1D/2D arrays, initialization, traversal, search/sort aur memory layout samajhna.",
+  "prereqs": [
+    "Module 7: loops"
+  ],
+  "definition": "Array ek hi type ke contiguous elements ka collection hai. Index 0 se shuru hota hai aur size compile time ya runtime par fixed hota hai (VLA C99 optional).",
+  "explain": [
+    "Array ka naam pehle element ke address me decay hota hai; a[i] == *(a+i). Isliye bounds check C khud nahi karta — out-of-bounds read/write UB hai.",
+    "Elements memory me lagatar hote hain, isliye index arithmetic O(1) hai aur cache-friendly traversal fast hota hai.",
+    "2D array row-major hota hai: a[i][j] ka address base + (i*cols + j)*sizeof(element).",
+    "Insert/delete O(n) hain (shifting); search linear O(n), sorted array par binary O(log n)."
+  ],
+  "analogy": "Array ek train hai: coaches lagatar jude hain, coach number (index) se seedha pahunchte ho. Beech me coach add karna ho to peeche sab shift karna padta hai.",
+  "why": "Arrays har data structure ka base hain — strings, matrices, heaps, hash tables, dynamic arrays sab inhi par bane hain.",
+  "syntax": [
+    {
+      "code": "int a[5] = {1, 2, 3};       /* baaki 0 */\nint b[] = {4, 5, 6};         /* size 3 */\nint m[2][3] = {{1,2,3},{4,5,6}};\nprintf(\"%d %zu\\n\", a[0], sizeof a / sizeof a[0]);",
+      "note": "sizeof trick sirf usi scope me chalti hai jahan array declare hua."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Initialization aur traversal",
+      "body": "Partial init baaki elements ko 0 karta hai. for (i=0;i<n;i++) ya size_t se traverse karo. Range-based for C me nahi hai."
+    },
+    {
+      "title": "Search aur sort",
+      "body": "Linear search O(n). Binary search sirf sorted array par O(log n). Bubble/selection/insertion O(n^2); merge/quick average O(n log n)."
+    },
+    {
+      "title": "2D aur matrix",
+      "body": "Row/column loops, transpose (m[i][j] ↔ m[j][i]), addition, multiplication (O(n^3)). Function me 2D array pass karte waqt column width zaroori hai: void f(int m[][3])."
+    },
+    {
+      "title": "Memory layout aur bounds",
+      "body": "Contiguous ints: address gap sizeof(int). Out-of-bounds C detect nahi karta — ASan se pakdo. Array decay se function me sizeof kaam nahi karta."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Sum, min, max",
+      "code": "#include <stdio.h>\nint main(void) {\n    int a[] = {5, 2, 8, 1, 9};\n    int n = (int)(sizeof a / sizeof a[0]);\n    int sum = 0, lo = a[0], hi = a[0];\n    for (int i = 0; i < n; i++) {\n        sum += a[i];\n        if (a[i] < lo) lo = a[i];\n        if (a[i] > hi) hi = a[i];\n    }\n    printf(\"sum=%d min=%d max=%d\\n\", sum, lo, hi);\n    return 0;\n}",
+      "output": "sum=25 min=1 max=9\n",
+      "lines": [
+        "sizeof se element count 5 nikla.",
+        "Ek hi pass me sum, min, max.",
+        "Index 0 se n-1 tak — off-by-one nahi."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Matrix transpose",
+      "code": "#include <stdio.h>\nint main(void) {\n    int m[2][3] = {{1,2,3},{4,5,6}};\n    int t[3][2];\n    for (int i = 0; i < 2; i++)\n        for (int j = 0; j < 3; j++) t[j][i] = m[i][j];\n    for (int i = 0; i < 3; i++) {\n        for (int j = 0; j < 2; j++) printf(\"%d \", t[i][j]);\n        printf(\"\\n\");\n    }\n    return 0;\n}",
+      "output": "1 4 \n2 5 \n3 6 \n",
+      "lines": [
+        "t[j][i] = m[i][j] transpose hai.",
+        "Dimensions swap hote hain: 2x3 → 3x2.",
+        "Row-major order me print karte hain."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "int a[4] memory",
+    "rows": [
+      "index  address     value",
+      "0      0x1000      10",
+      "1      0x1004      20",
+      "2      0x1008      30",
+      "3      0x100c      40",
+      "a[2] = *(a + 2) = 0x1008 -> 30"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "for (i=0;i<=n;i++)",
+      "right": "i < n",
+      "why": "a[n] out-of-bounds hai — UB/crash."
+    },
+    {
+      "wrong": "int a[3]; a[3]=1;",
+      "right": "size 0..2 tak",
+      "why": "Bounds check C me nahi hota; memory corrupt hoti hai."
+    },
+    {
+      "wrong": "void f(int a[]) { sizeof a }",
+      "right": "size alag bhejo",
+      "why": "Parameter pointer hai; sizeof pointer ka size deta hai."
+    }
+  ],
+  "debug": {
+    "brief": "Sum galat aa raha hai kyunki loop ek extra element padh raha hai. Fix karo.",
+    "code": "#include <stdio.h>\nint main(void){int a[3]={1,2,3};int s=0;for(int i=0;i<=3;i++)s+=a[i];printf(\"%d\\n\",s);return 0;}",
+    "expected": "6\n",
+    "hints": [
+      "Valid indices 0,1,2 hain.",
+      "i < 3 karo."
+    ],
+    "fix": "for (int i = 0; i < 3; i++) s += a[i];"
+  },
+  "best": [
+    "Bounds hamesha check karo",
+    "sizeof/sizeof[0] se count lo",
+    "Sorted data par binary search",
+    "2D function me column width do"
+  ],
+  "practice": [
+    {
+      "title": "Reverse array",
+      "prompt": "Array ko in-place reverse karo.",
+      "level": "easy",
+      "hint": "Do pointers i,j swap."
+    },
+    {
+      "title": "Matrix addition",
+      "prompt": "Do 2x2 matrices add karo.",
+      "level": "medium",
+      "hint": "Nested loops."
+    },
+    {
+      "title": "Binary search",
+      "prompt": "Sorted array me target dhundo.",
+      "level": "medium",
+      "hint": "lo, hi, mid."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "a[2] kis expression ke barabar hai?",
+      "options": [
+        "*(a+2)",
+        "&a+2",
+        "a+2",
+        "*a+2"
+      ],
+      "answer": 0,
+      "explain": "Array indexing pointer arithmetic ka sugar hai."
+    },
+    {
+      "q": "2D array ka layout?",
+      "options": [
+        "Column-major",
+        "Row-major",
+        "Random",
+        "Linked"
+      ],
+      "answer": 1,
+      "explain": "C row-major hai."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Array aur pointer same hain?",
+      "a": "Nahi. Array ek object hai jiska size hota hai; expression me wo pehle element ke pointer me decay hota hai. sizeof array total bytes deta hai, sizeof pointer 8.",
+      "followUp": "Array assign? — nahi, copy ke liye memcpy/loop."
+    },
+    {
+      "q": "VLA kya hai?",
+      "a": "Variable Length Array (C99): runtime size wala local array, e.g. int a[n]. C11 me optional hai; stack par banta hai — bada n stack overflow de sakta hai.",
+      "followUp": "Portable alternative? — malloc/free."
+    }
+  ],
+  "lab": {
+    "title": "Lab 11 — Array statistics",
+    "brief": "5 numbers input lo aur sum, min, max, average print karo.",
+    "starter": "#include <stdio.h>\nint main(void){return 0;}",
+    "expected": "sum=15 min=1 max=5 avg=3.00\n",
+    "tests": [
+      {
+        "name": "stats",
+        "stdin": "1 2 3 4 5\n",
+        "stdout": "sum=15 min=1 max=5 avg=3.00"
+      }
+    ],
+    "hints": [
+      "Loop me accumulate karo.",
+      "average double me."
+    ],
+    "solution": "#include <stdio.h>\nint main(void){int a[5],s=0,lo,hi;for(int i=0;i<5;i++)scanf(\"%d\",&a[i]);lo=hi=a[0];for(int i=0;i<5;i++){s+=a[i];if(a[i]<lo)lo=a[i];if(a[i]>hi)hi=a[i];}printf(\"sum=%d min=%d max=%d avg=%.2f\\n\",s,lo,hi,s/5.0);return 0;}"
+  },
+  "checkpoint": {
+    "title": "Module 11 checkpoint",
+    "checks": [
+      "1D array traverse kiya",
+      "sizeof se count nikala",
+      "Min/max/sum ek pass me",
+      "2D matrix transpose ki",
+      "Bounds ka khatra samajh aaya"
+    ]
+  }
+}

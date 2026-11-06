@@ -1,0 +1,230 @@
+{
+  "id": "c01",
+  "no": 1,
+  "title": "Introduction to C Programming",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "Program ka idea, C ka itihaas aur pehla C program compile karke chalana.",
+  "prereqs": [
+    "Computer on karna",
+    "Programming ka koi experience zaroori nahi"
+  ],
+  "definition": "C ek compiled, statically typed, procedural language hai jo 1972 me Dennis Ritchie ne Bell Labs me banayi. Aaj bhi OS, embedded devices aur databases ki backbone hai.",
+  "explain": [
+    "Program instructions ki list hai: input lo, memory me rakho, calculate karo, output do. C me ye instructions .c text file me likhi jaati hain.",
+    "Compiler us text ko machine code me badalta hai, isliye C fast hai aur errors chalne se pehle milte hain — Python jaisi interpreter language me nahi.",
+    "C chhoti hai (C17 me 32 keywords) aur garbage collector nahi hai: memory aap manage karte ho. Isi discipline se OS aur drivers likhe jaate hain."
+  ],
+  "analogy": "C building ka raw material hai (eent, cement, sariya); Python ready-made furniture. Raw material se ghar banana mushkil hai, par jo banaoge wahi tikta hai — aur C seekhne ke baad baaki languages ke andar ka engine samajh aata hai.",
+  "why": "Pointers, memory aur performance ka asli model C se aata hai. Interviews ke pointers/segfault sawaal yahin se aate hain, aur Linux, SQLite, Redis ka source C me hai.",
+  "syntax": [
+    {
+      "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Hello, BroCode!\\n\");\n    return 0;\n}",
+      "note": "main() entry point hai; return 0 success batata hai."
+    },
+    {
+      "code": "/* block comment */\n// line comment\nprintf(\"%d\\n\", 42);   /* %d integer, \\n newline */",
+      "note": "Comments compiler ignore karta hai."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Programming kya hai",
+      "body": "Problem ko chhote unambiguous steps me todna. Har program me sequence, condition aur repetition hoti hai."
+    },
+    {
+      "title": "C ka itihaas",
+      "body": "1972 Dennis Ritchie; 1978 K&R; 1989 ANSI C; 1999 C99 (// comments, for-loop declarations); 2011 C11; 2018 C17 — aaj ka default standard."
+    },
+    {
+      "title": "C ke features",
+      "body": "Simple core, fast code, direct memory access, portable, modular. Nahi hai: classes, GC, exceptions, built-in string type."
+    },
+    {
+      "title": "Compiler vs interpreter",
+      "body": "Compiler poora program pehle machine code banata hai (C); interpreter line-by-line chalata hai (Python). Compiled binary tez hota hai aur bina source distribute hota hai."
+    },
+    {
+      "title": "Source se executable",
+      "body": ".c → preprocessor → compiler → assembler (.o) → linker → executable. GCC me gcc hello.c -o hello chaaron stage ek saath karta hai."
+    },
+    {
+      "title": "main(), headers, comments",
+      "body": "int main(void) entry point; stdio.h printf/scanf declare karti hai; // aur /* */ comments; \\n, \\t, \\\\, \\\" escape sequences."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Hello World",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Hello, BroCode!\\n\");\n    return 0;\n}",
+      "output": "Hello, BroCode!\n",
+      "lines": [
+        "#include <stdio.h> printf ki declaration laata hai.",
+        "int main(void) entry point define karta hai.",
+        "printf screen par text likhta hai; \\n line break.",
+        "return 0 shell ko success status deta hai."
+      ],
+      "dryRun": [
+        "Compile → executable.",
+        "OS main() call karta hai.",
+        "printf stdout buffer me likhta hai.",
+        "return par buffer flush hota hai."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Formatted profile",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    printf(\"Name : %s\\n\", \"Ahetesham\");\n    printf(\"Level: %d\\n\", 3);\n    printf(\"%-8s|%5s\\n\", \"left\", \"right\");\n    return 0;\n}",
+      "output": "Name : Ahetesham\nLevel: 3\nleft    |right\n",
+      "lines": [
+        "%s string aur %d integer placeholder hai.",
+        "-8 left-align 8 width; 5 right-align 5 width.",
+        "Format specifier aur argument order match hone chahiye."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "Source → executable",
+    "rows": [
+      "hello.c --preprocess--> hello.i",
+      "hello.i --compile----> hello.s",
+      "hello.s --assemble---> hello.o",
+      "hello.o --link-------> hello",
+      "Aap sirf hello.c likhte ho; baaki GCC karta hai."
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "printf(\"Hello\");",
+      "right": "printf(\"Hello\\n\");",
+      "why": "Bina newline shell prompt output se chipak jaata hai."
+    },
+    {
+      "wrong": "printf(\"%d\", 3.5);",
+      "right": "printf(\"%f\", 3.5);",
+      "why": "Format aur type mismatch undefined behaviour hai."
+    },
+    {
+      "wrong": "#include \"stdio.h\"",
+      "right": "#include <stdio.h>",
+      "why": "System header angle brackets se aata hai."
+    }
+  ],
+  "debug": {
+    "brief": "Output me Hello aur World ek hi line me chipak rahe hain. Fix karo.",
+    "code": "#include <stdio.h>\nint main(void) {\n    printf(\"Hello\");\n    printf(\"World\");\n    return 0;\n}",
+    "expected": "Hello\nWorld\n",
+    "hints": [
+      "Line break kaun daalta hai?",
+      "Dono printf ke strings dekho."
+    ],
+    "fix": "printf(\"Hello\\n\"); printf(\"World\\n\");"
+  },
+  "best": [
+    "int main(void) aur return 0 likho",
+    "Variables initialize karo",
+    "-Wall -Wextra se compile karo",
+    "Ek program me ek hi main()"
+  ],
+  "practice": [
+    {
+      "title": "Naam print",
+      "prompt": "Naam, city aur goal teen alag lines me print karo.",
+      "level": "easy",
+      "hint": "Teen printf, har ek me \\n."
+    },
+    {
+      "title": "ASCII box",
+      "prompt": "+---+ / | C | / +---+ shape print karo.",
+      "level": "easy",
+      "hint": "Har line alag printf."
+    },
+    {
+      "title": "Sum sentence",
+      "prompt": "Do integers ka sum ek sentence me print karo.",
+      "level": "easy",
+      "hint": "printf(\"Sum = %d\\n\", a + b);"
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "C ke original developer?",
+      "options": [
+        "Bjarne Stroustrup",
+        "Dennis Ritchie",
+        "Guido van Rossum",
+        "James Gosling"
+      ],
+      "answer": 1,
+      "explain": "Dennis Ritchie, 1972, Bell Labs."
+    },
+    {
+      "q": "C17 ka standard number?",
+      "options": [
+        "ISO/IEC 9899:2011",
+        "ISO/IEC 9899:2018",
+        "ISO/IEC 9899:1999",
+        "ISO/IEC 9899:1990"
+      ],
+      "answer": 1,
+      "explain": "C17 = ISO/IEC 9899:2018, C11 ka bug-fix release."
+    },
+    {
+      "q": "printf() kaunsi header deti hai?",
+      "options": [
+        "stdlib.h",
+        "string.h",
+        "stdio.h",
+        "math.h"
+      ],
+      "answer": 2,
+      "explain": "stdio.h standard I/O declarations deti hai."
+    }
+  ],
+  "interview": [
+    {
+      "q": "C ko middle-level language kyun kehte hain?",
+      "a": "High-level syntax aur low-level memory access (pointers, bitwise ops) dono deta hai, isliye OS aur embedded dono me use hota hai.",
+      "followUp": "Hardware ke sabse kareeb cheez? — pointers aur volatile."
+    },
+    {
+      "q": "Compiler aur interpreter ka fark?",
+      "a": "Compiler pehle poora machine code banata hai, interpreter line-by-line chalta hai. C me errors runtime se pehle milte hain aur execution fast hoti hai.",
+      "followUp": "C runtime error example? — divide by zero, null dereference."
+    },
+    {
+      "q": "main() ka return value kahan jaata hai?",
+      "a": "OS ko exit status ke roop me: 0 success, non-zero failure. Shell me echo $? se dikhta hai.",
+      "followUp": "EXIT_SUCCESS kahan hai? — stdlib.h."
+    }
+  ],
+  "lab": {
+    "title": "Lab 1 — Profile card",
+    "brief": "Naam, city, goal aur target ko aligned card ki tarah print karo.",
+    "starter": "#include <stdio.h>\n\nint main(void) {\n    /* Apna profile yahan */\n    return 0;\n}",
+    "expected": "+-----------------------------+\n| Name  : Your Name           |\n| City  : Your City           |\n| Goal  : Learn C             |\n| Target: Finish Module 1     |\n+-----------------------------+\n",
+    "tests": [
+      {
+        "name": "profile card",
+        "stdin": "",
+        "stdout": "+-----------------------------+\n| Name  : Your Name           |\n| City  : Your City           |\n| Goal  : Learn C             |\n| Target: Finish Module 1     |\n+-----------------------------+"
+      }
+    ],
+    "hints": [
+      "Har line ek printf.",
+      "\\n zaroori hai."
+    ],
+    "solution": "#include <stdio.h>\n\nint main(void) {\n    printf(\"+-----------------------------+\\n\");\n    printf(\"| Name  : Your Name           |\\n\");\n    printf(\"| City  : Your City           |\\n\");\n    printf(\"| Goal  : Learn C             |\\n\");\n    printf(\"| Target: Finish Module 1     |\\n\");\n    printf(\"+-----------------------------+\\n\");\n    return 0;\n}"
+  },
+  "checkpoint": {
+    "title": "Module 1 checkpoint",
+    "checks": [
+      "Hello World compile aur run hua",
+      "main() ka return aur exit code samajh aaya",
+      "stdio.h kyun chahiye bata sakte ho",
+      "\\n aur comments ka fark pata hai",
+      "Profile card likh liya"
+    ]
+  }
+}

@@ -14,6 +14,7 @@ export const PAGES: { title: string; detail: string; route: string }[] = [
   { title: 'Dashboard', detail: 'Mission, next best action, progress', route: '/' },
   { title: 'Start', detail: 'The front door — what this app is and where to begin', route: '/start' },
   { title: 'Courses', detail: '11 courses over the 36 roadmap steps, each with its own index', route: '/courses' },
+  { title: 'C Programming', detail: '20 modules, GCC notebook, 40 labs, 15 projects, interview bank', route: '/c-programming' },
   { title: 'Practice', detail: 'Question Bank, exams, review queue and mistakes', route: '/practice' },
   { title: 'Labs', detail: 'Every runnable lab: Python, SQL, NumPy + Pandas, AI, RAG, Agentic', route: '/labs' },
   { title: 'Interview', detail: 'Interview mode, mock rounds and project defense', route: '/interviews' },

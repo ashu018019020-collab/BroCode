@@ -1,0 +1,211 @@
+{
+  "id": "c13",
+  "no": 13,
+  "title": "Pointers",
+  "level": "intermediate",
+  "hours": 7,
+  "goal": "Address, dereference, NULL, pointer arithmetic, const variants aur segfault ko memory maps ke saath samajhna.",
+  "prereqs": [
+    "Module 11-12: arrays aur strings"
+  ],
+  "definition": "Pointer ek variable hai jo doosre object ka memory address store karta hai. Uska type batata hai ki dereference par kitni bytes kaunsa type padhna hai.",
+  "explain": [
+    "& operator address deta hai, * operator us address par value (lvalue) deta hai. int *p = &x; *p = 5; se x badal jaata hai.",
+    "Pointer ka size platform par depend karta hai (64-bit par 8 bytes), type se nahi. Type arithmetic aur dereference ke liye hai.",
+    "NULL pointer kisi object ko point nahi karta — dereference karna crash/UB. Wild pointer uninitialized hota hai; dangling pointer free ya scope khatam hone ke baad bacha rehta hai.",
+    "Pointer arithmetic type ke size se scaled hoti hai: int *p me p+1 = p + sizeof(int) bytes. Sirf same array ke andar valid hai.",
+    "const int *p = value read-only; int *const p = pointer khud fix; const int *const p = dono fix."
+  ],
+  "analogy": "Pointer ek address ki parchi hai: parchi par ghar ka address likha hai, ghar nahi. Parchi badalna (pointer reassign) aur ghar ke andar saaman badalna (*p = ...) alag cheezein hain.",
+  "why": "Pointers C ka superpower aur sabse bada khatra hain: inke bina dynamic memory, strings-as-parameters aur data structures possible nahi; inki galti se segfault aur security bugs aate hain.",
+  "syntax": [
+    {
+      "code": "int x = 42;\nint *p = &x;\nprintf(\"%p %d\\n\", (void*)p, *p);\n*p = 7;\nprintf(\"%d\\n\", x);",
+      "note": "%p ke liye void* cast karo."
+    },
+    {
+      "code": "int a[3] = {10, 20, 30};\nint *p = a;\nprintf(\"%d %d\\n\", *p, *(p + 2));\np++;\nprintf(\"%d\\n\", *p);",
+      "note": "p+1 next element par jaata hai, next byte par nahi."
+    },
+    {
+      "code": "const int *a;      /* value const */\nint *const b = &x;  /* pointer const */\nconst int *const c = &x; /* dono */",
+      "note": "Declaration right-to-left padho."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Address aur dereference",
+      "body": "&x se address, *p se value. Pointer ko print karne ke liye %p + (void*) cast. Address values run se run badalte hain — unhe hardcode mat karo."
+    },
+    {
+      "title": "NULL, void, wild, dangling",
+      "body": "int *p = NULL; dereference se pehle check. void* generic address hai — arithmetic nahi, cast karke use karo. Wild: initialize karo. Dangling: free ke baad NULL set karo."
+    },
+    {
+      "title": "Pointer arithmetic aur pointer-to-pointer",
+      "body": "p+i, p-i, p2-p1 (elements ka difference). Comparison same array me meaningful. int **pp do level ka indirection hai — function me pointer modify karne ke liye."
+    },
+    {
+      "title": "Functions aur const",
+      "body": "Pointer se function original badal sakta hai. const correctness se accidental modification pakdi jaati hai. Function pointer: int (*fp)(int,int)."
+    },
+    {
+      "title": "Segfault debugging",
+      "body": "NULL deref, freed memory, out-of-bounds, stack overflow — ASan se exact line milti hai. gdb me bt aur print *p."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Address, dereference, swap",
+      "code": "#include <stdio.h>\nvoid swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }\nint main(void) {\n    int x = 10, y = 20;\n    int *p = &x;\n    printf(\"x=%d *p=%d\\n\", x, *p);\n    *p = 15;\n    swap(&x, &y);\n    printf(\"x=%d y=%d\\n\", x, y);\n    return 0;\n}",
+      "output": "x=10 *p=10\nx=20 y=15\n",
+      "lines": [
+        "p x ka address rakhta hai; *p se value.",
+        "*p = 15 se x hi badal jaata hai.",
+        "swap addresses leta hai, isliye originals badalte hain."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Pointer arithmetic aur double pointer",
+      "code": "#include <stdio.h>\nvoid set_null(int **pp) { *pp = NULL; }\nint main(void) {\n    int a[4] = {5, 10, 15, 20};\n    int *p = a;\n    printf(\"%d %d %d\\n\", *p, *(p + 2), (int)((p + 3) - p));\n    for (int *q = a; q < a + 4; q++) printf(\"%d \", *q);\n    printf(\"\\n\");\n    int *n = a;\n    set_null(&n);\n    printf(\"%s\\n\", n == NULL ? \"null\" : \"not null\");\n    return 0;\n}",
+      "output": "5 15 3\n5 10 15 20 \nnull\n",
+      "lines": [
+        "*(p+2) teesra element hai.",
+        "Pointer difference elements me hota hai (3).",
+        "Range loop pointer se array end tak.",
+        "set_null pointer ko NULL set karta hai — double pointer chahiye."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "Memory map",
+    "rows": [
+      "variable  address     value",
+      "x         0x7ffd1000  42",
+      "p         0x7ffd1008  0x7ffd1000  -> x",
+      "*p        0x7ffd1000  42",
+      "p + 1     0x7ffd1010  (next int slot)"
+    ],
+    "checks": []
+  },
+  "mistakes": [
+    {
+      "wrong": "int *p; *p = 5;",
+      "right": "int x; int *p = &x; *p = 5;",
+      "why": "Uninitialized pointer kisi bhi address par likh sakta hai — crash/UB."
+    },
+    {
+      "wrong": "free(p); *p = 1;",
+      "right": "free(p); p = NULL;",
+      "why": "Use-after-free UB hai."
+    },
+    {
+      "wrong": "p + 1 byte aage",
+      "right": "p + 1 next element",
+      "why": "Arithmetic type-size se scaled hoti hai."
+    }
+  ],
+  "debug": {
+    "brief": "Program segfault kar raha hai. Reason dhundo.",
+    "code": "#include <stdio.h>\nint main(void){int *p = NULL; *p = 5; printf(\"%d\\n\", *p); return 0;}",
+    "expected": "5\n",
+    "hints": [
+      "p kis address par point karta hai?",
+      "Pehle real int ka address do."
+    ],
+    "fix": "int x = 0; int *p = &x; *p = 5;"
+  },
+  "best": [
+    "Pointer initialize karo ya NULL do",
+    "Dereference se pehle NULL check",
+    "free ke baad NULL set karo",
+    "const correctness rakho",
+    "ASan se test karo"
+  ],
+  "practice": [
+    {
+      "title": "Swap",
+      "prompt": "Pointers se do numbers swap karo.",
+      "level": "easy",
+      "hint": "int * parameters."
+    },
+    {
+      "title": "Array sum via pointer",
+      "prompt": "Pointer arithmetic se array ka sum nikalo.",
+      "level": "medium",
+      "hint": "for (p=a; p<a+n; p++)."
+    },
+    {
+      "title": "Double pointer",
+      "prompt": "Function se pointer ko NULL set karo.",
+      "level": "medium",
+      "hint": "int **pp."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "64-bit par sizeof(int*)?",
+      "options": [
+        "4",
+        "8",
+        "int ke size ke barabar",
+        "2"
+      ],
+      "answer": 1,
+      "explain": "Pointer size platform par depend karta hai, 64-bit par 8."
+    },
+    {
+      "q": "p+1 ka matlab?",
+      "options": [
+        "1 byte aage",
+        "next element",
+        "value+1",
+        "invalid"
+      ],
+      "answer": 1,
+      "explain": "Type-size scaled pointer arithmetic."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Dangling pointer kya hai?",
+      "a": "Wo pointer jo already free ho chuki ya scope se bahar gayi memory ko point karta hai. Dereference UB hai. Free ke baad NULL set karo.",
+      "followUp": "Detect? — ASan use-after-free report deta hai."
+    },
+    {
+      "q": "const int *p aur int *const p?",
+      "a": "const int *p: value read-only, pointer badal sakte ho. int *const p: pointer fix, value badal sakte ho. const int *const p: dono.",
+      "followUp": "Declaration kaise padhein? — right to left."
+    }
+  ],
+  "lab": {
+    "title": "Lab 13 — Pointer explorer",
+    "brief": "x ka address aur value print karo, pointer se value badlo, aur array ko pointer se traverse karo.",
+    "starter": "#include <stdio.h>\nint main(void){return 0;}",
+    "expected": "addr_ok=yes value=99\n10 20 30 \n",
+    "tests": [
+      {
+        "name": "output",
+        "stdin": "",
+        "stdout": "addr_ok=yes value=5\nvalue=99\n10 20 30"
+      }
+    ],
+    "hints": [
+      "%p ke liye (void*).",
+      "*p = 99."
+    ],
+    "solution": "#include <stdio.h>\n\nint main(void) {\n    int x = 5;\n    int *p = &x;\n    printf(\"addr_ok=%s value=%d\\n\", (void *)p == (void *)&x ? \"yes\" : \"no\", *p);\n    *p = 99;\n    printf(\"value=%d\\n\", x);\n    int a[3] = {10, 20, 30};\n    for (int i = 0; i < 3; i++) printf(\"%d%s\", a[i], i == 2 ? \"\\n\" : \" \");\n    return 0;\n}\n"
+  },
+  "checkpoint": {
+    "title": "Module 13 checkpoint",
+    "checks": [
+      "& aur * ka fark pata hai",
+      "Pointer se value modify ki",
+      "NULL/wild/dangling samajh aaye",
+      "Pointer arithmetic elements me hai",
+      "Segfault ka karan bata sakte ho"
+    ]
+  }
+}

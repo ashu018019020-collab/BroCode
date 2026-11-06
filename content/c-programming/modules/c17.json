@@ -1,0 +1,201 @@
+{
+  "id": "c17",
+  "no": 17,
+  "title": "File Handling",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "fopen modes, formatted aur binary I/O, seek aur error handling se persistent data likhna.",
+  "prereqs": [
+    "Module 12: strings"
+  ],
+  "definition": "File handling se program ka data disk par permanent hota hai. FILE* stream handle hai; fopen mode decide karta hai read/write/append aur text/binary.",
+  "explain": [
+    "Modes: \"r\" read (must exist), \"w\" write (truncate/create), \"a\" append, \"r+\"/\"w+\"/\"a+\" read+write, \"rb\"/\"wb\" binary. Har successful fopen ka fclose zaroori hai.",
+    "fprintf/fscanf formatted text, fgets/fputs lines, fgetc/fputc characters, fread/fwrite binary blocks. Return values check karo — fgets NULL, fread count.",
+    "fseek(stream, offset, SEEK_SET/CUR/END), ftell current offset, rewind start par. Binary records ke liye fseek se random access.",
+    "Errors: fopen NULL, perror() message, errno code. EOF detection: fgetc == EOF aur feof. Writing ke baad fclose/flush se data disk par jaata hai."
+  ],
+  "analogy": "File ek diary hai: fopen diary kholta hai (mode batata hai padhna ya likhna), fprintf usme likhta hai, fseek kisi page par jaata hai, fclose diary band karta hai.",
+  "why": "Config, logs, records aur databases — sab files se shuru hote hain. Interview me text vs binary aur safe record I/O ka sawaal common hai.",
+  "syntax": [
+    {
+      "code": "FILE *f = fopen(\"data.txt\", \"w\");\nif (!f) { perror(\"fopen\"); return 1; }\nfprintf(f, \"%d %s\\n\", 1, \"Asha\");\nfclose(f);",
+      "note": "fopen fail ho sakta hai — NULL check."
+    },
+    {
+      "code": "FILE *f = fopen(\"data.bin\", \"wb\");\nfwrite(&rec, sizeof rec, 1, f);\nfclose(f);\nf = fopen(\"data.bin\", \"rb\");\nfread(&rec, sizeof rec, 1, f);\nfclose(f);",
+      "note": "Binary mode me raw bytes; text mode newline translation kar sakta hai."
+    }
+  ],
+  "topics": [
+    {
+      "title": "fopen aur modes",
+      "body": "Mode galat = data loss: \"w\" existing file truncate kar deta hai. Append ke liye \"a\". Text \"t\" default; binary \"b\" Windows par zaroori."
+    },
+    {
+      "title": "Formatted aur line I/O",
+      "body": "fprintf/fscanf text records; fgets safe line read; fputs line write; fgetc/fputc chars. scanf family file par same rules follow karta hai (address, return count)."
+    },
+    {
+      "title": "Binary I/O aur seek",
+      "body": "fread/fwrite size*count return karte hain. fseek/ftell se record index par jump: offset = index * sizeof(Record). Portable binary files ke liye fixed-width types (uint32_t) lo."
+    },
+    {
+      "title": "Error handling",
+      "body": "fopen NULL, ferror, feof, errno aur perror. Cleanup: har error path par fclose. Temporary file + rename se atomic write."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Write aur read text",
+      "code": "#include <stdio.h>\nint main(void) {\n    FILE *f = fopen(\"/tmp/brocode.txt\", \"w\");\n    if (!f) { perror(\"fopen\"); return 1; }\n    fprintf(f, \"%d %s\\n\", 1, \"Asha\");\n    fprintf(f, \"%d %s\\n\", 2, \"Ravi\");\n    fclose(f);\n    f = fopen(\"/tmp/brocode.txt\", \"r\");\n    if (!f) return 1;\n    int id; char name[16];\n    while (fscanf(f, \"%d %15s\", &id, name) == 2) printf(\"%d:%s\\n\", id, name);\n    fclose(f);\n    return 0;\n}",
+      "output": "1:Asha\n2:Ravi\n",
+      "lines": [
+        "fopen w mode me file banata/truncate karta hai.",
+        "fprintf formatted line likhta hai.",
+        "fscanf 2 return karta hai jab dono values milein.",
+        "Dono handles fclose hue."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Binary records aur fseek",
+      "code": "#include <stdio.h>\ntypedef struct { int id; char name[12]; } Rec;\nint main(void) {\n    Rec r[3] = {{1,\"A\"},{2,\"B\"},{3,\"C\"}};\n    FILE *f = fopen(\"/tmp/rec.bin\", \"wb\");\n    if (!f) return 1;\n    fwrite(r, sizeof r[0], 3, f);\n    fclose(f);\n    f = fopen(\"/tmp/rec.bin\", \"rb\");\n    if (!f) return 1;\n    fseek(f, 2 * (long)sizeof(Rec), SEEK_SET);\n    Rec out;\n    if (fread(&out, sizeof out, 1, f) == 1) printf(\"%d %s\\n\", out.id, out.name);\n    fclose(f);\n    return 0;\n}",
+      "output": "3 C\n",
+      "lines": [
+        "fwrite teen records ek saath likhta hai.",
+        "fseek record index 2 par jump karta hai.",
+        "fread ek record padhta hai; return count check."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "file position",
+    "rows": [
+      "offset 0      record 0  id=1 name=A",
+      "offset 16     record 1  id=2 name=B",
+      "offset 32     record 2  id=3 name=C",
+      "fseek(f, 2*16, SEEK_SET) -> offset 32",
+      "ftell(f) -> 32"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "fopen(\"f.txt\",\"w\") se read",
+      "right": "\"r\" ya \"r+\"",
+      "why": "w mode truncate karta hai aur read allow nahi."
+    },
+    {
+      "wrong": "fclose bhoolna",
+      "right": "har path par fclose",
+      "why": "Buffer flush nahi hota, data kho sakta hai, handle leak."
+    },
+    {
+      "wrong": "fscanf(\"%d\", id)",
+      "right": "fscanf(\"%d\", &id)",
+      "why": "scanf family address leta hai."
+    }
+  ],
+  "debug": {
+    "brief": "File ka last line do baar print ho raha hai. Reason: EOF check galat. Fix karo.",
+    "code": "#include <stdio.h>\nint main(void){FILE *f=fopen(\"/tmp/x.txt\",\"r\");if(!f)return 1;char line[64];while(!feof(f)){if(fgets(line,sizeof line,f))printf(\"%s\",line);}fclose(f);return 0;}",
+    "expected": "file lines ek-ek baar\n",
+    "hints": [
+      "feof read fail hone ke baad true hota hai.",
+      "fgets ke return par loop chalao."
+    ],
+    "fix": "while (fgets(line, sizeof line, f)) printf(\"%s\", line);"
+  },
+  "best": [
+    "fopen ka return check karo",
+    "Mode ka matlab yaad rakho",
+    "Binary me sizeof se read/write",
+    "fclose har path par",
+    "perror se error message do"
+  ],
+  "practice": [
+    {
+      "title": "Line count",
+      "prompt": "File ki lines count karo.",
+      "level": "easy",
+      "hint": "fgets loop."
+    },
+    {
+      "title": "Append log",
+      "prompt": "Nayi line file me append karo bina purani mitaye.",
+      "level": "easy",
+      "hint": "\"a\" mode."
+    },
+    {
+      "title": "Record search",
+      "prompt": "Binary file me id se record dhundo.",
+      "level": "medium",
+      "hint": "fseek + fread."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "\"w\" mode ka effect?",
+      "options": [
+        "Append",
+        "Truncate/create",
+        "Read only",
+        "Rename"
+      ],
+      "answer": 1,
+      "explain": "w file ko truncate ya create karta hai."
+    },
+    {
+      "q": "fseek ka third argument?",
+      "options": [
+        "Size",
+        "Origin (SEEK_SET/CUR/END)",
+        "Buffer",
+        "Mode"
+      ],
+      "answer": 1,
+      "explain": "Origin batata hai offset kahan se."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Text aur binary mode ka fark?",
+      "a": "Text mode newline translation kar sakta hai (Windows CRLF) aur Ctrl-Z ko EOF samajh sakta hai; binary mode raw bytes deta hai. Binary records ke liye \"b\" use karo.",
+      "followUp": "Portable records? — fixed-width types, endianness document karo."
+    },
+    {
+      "q": "fclose kyun zaroori hai?",
+      "a": "Buffered data flush hota hai, file descriptor free hota hai, aur write errors report hote hain. Leak se descriptors khatam ho jaate hain.",
+      "followUp": "Crash par buffer? — data lose ho sakta hai; fflush ya atomic rename."
+    }
+  ],
+  "lab": {
+    "title": "Lab 17 — Notes file",
+    "brief": "Do lines file me likho, phir file padh kar print karo.",
+    "starter": "#include <stdio.h>\nint main(void){return 0;}",
+    "expected": "line1\nline2\n",
+    "tests": [
+      {
+        "name": "roundtrip",
+        "stdin": "",
+        "stdout": "line1\nline2"
+      }
+    ],
+    "hints": [
+      "fopen w, fprintf, fclose.",
+      "Phir fopen r, fgets loop."
+    ],
+    "solution": "#include <stdio.h>\nint main(void){FILE *f=fopen(\"/tmp/notes.txt\",\"w\");if(!f)return 1;fprintf(f,\"line1\\nline2\\n\");fclose(f);f=fopen(\"/tmp/notes.txt\",\"r\");if(!f)return 1;char b[64];while(fgets(b,sizeof b,f))printf(\"%s\",b);fclose(f);return 0;}"
+  },
+  "checkpoint": {
+    "title": "Module 17 checkpoint",
+    "checks": [
+      "fopen modes pata hain",
+      "fprintf/fscanf/fgets use kiye",
+      "Binary read/write kiya",
+      "fseek/ftell samajh aaye",
+      "Error handling ki"
+    ]
+  }
+}

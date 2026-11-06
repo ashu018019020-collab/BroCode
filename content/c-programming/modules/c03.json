@@ -1,0 +1,224 @@
+{
+  "id": "c03",
+  "no": 3,
+  "title": "Variables and Data Types",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Har C data type, sizeof, scope/lifetime, storage classes, conversion aur overflow ko practically samajhna.",
+  "prereqs": [
+    "Module 1-2: program likhna aur compile karna"
+  ],
+  "definition": "Variable memory ka named location hai jiska type batata hai kitni bytes chahiye aur unhe kaise interpret karna hai. C ke fundamental types char, int, float, double aur void hain; unke short/long/signed/unsigned variants derived aur user-defined types ke saath milte hain.",
+  "explain": [
+    "C statically typed hai: type compile time par fix hota hai aur variable ka size bhi. int typically 4 bytes, char 1 byte, double 8 bytes — exact size platform par depend karta hai, isliye sizeof use karo.",
+    "Declaration memory reserve karti hai, initialization pehli value deti hai. Local variable uninitialized ho to uska value indeterminate hota hai — padhna undefined behaviour hai.",
+    "Scope batata hai naam kahan dikhega; lifetime batata hai memory kab tak zinda rahegi. Local block ke andar, global poore file me, static lifetime program ke end tak.",
+    "Type conversion implicit (compiler) ya explicit (cast) hoti hai. Chhoti type me bada value daalne par truncation hota hai; signed overflow undefined behaviour hai — unsigned wrap karta hai."
+  ],
+  "analogy": "Variable ek dabba hai jiska label naam hai aur shape type. int ka dabba 4-byte ka hai, char ka 1-byte. Galat shape me zyada saaman thoosoge to overflow ho jaayega.",
+  "why": "90% C bugs type ke galat assumption se aate hain: int overflow, float precision, unsigned underflow, uninitialized read. Inhe samajhna pointers aur memory ka base hai.",
+  "syntax": [
+    {
+      "code": "int age = 21;            /* declaration + init */\nconst double PI = 3.14159; /* read-only */\nunsigned int count = 0u;\nlong long big = 9000000000LL;\nchar grade = 'A';         /* single quotes */",
+      "note": "Suffixes: u unsigned, L long, LL long long, f float."
+    },
+    {
+      "code": "printf(\"%zu\\n\", sizeof(int));\nprintf(\"%zu\\n\", sizeof age);\n#include <limits.h>\nprintf(\"%d %d\\n\", INT_MIN, INT_MAX);",
+      "note": "sizeof size_t deta hai, isliye %zu. limits.h me har type ki limits hain."
+    },
+    {
+      "code": "double d = 3.99;\nint i = (int)d;      /* explicit cast -> 3 */\nint j = d;           /* implicit conversion, warning */\nunsigned u = 0;\nu--;                 /* wraps to UINT_MAX */",
+      "note": "Cast intention clear karta hai; unsigned wrap defined hai, signed overflow nahi."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Keywords aur identifiers",
+      "body": "C17 me 32 keywords (int, return, if, ...). Identifier letters, digits aur underscore se banta hai, digit se shuru nahi hota, case-sensitive hai. Meaningful naam likho: total_marks, na ki tm."
+    },
+    {
+      "title": "Fundamental types",
+      "body": "char (1 byte, character/boolean-ish), int (usually 4), float (4, ~7 digits), double (8, ~15 digits), void (no value). short/long/long long size modifiers; signed/unsigned range badalte hain."
+    },
+    {
+      "title": "sizeof aur limits",
+      "body": "sizeof operator bytes deta hai, compile time par. <limits.h> INT_MAX/INT_MIN/CHAR_BIT deta hai, <float.h> DBL_EPSILON/FLT_MAX. Portable code sizeof par likho, hardcoded 4 par nahi."
+    },
+    {
+      "title": "Scope, lifetime, storage classes",
+      "body": "auto (default local, block lifetime), static (local: lifetime poore program ki, value retain; file-scope: internal linkage), extern (definition kahin aur hai), register (compiler ko hint, address nahi le sakte). Global variables zero-initialized hoti hain, locals nahi."
+    },
+    {
+      "title": "Conversion, overflow, precision",
+      "body": "Integer promotion chhote types ko int me badalti hai. Float→int truncate karta hai. Signed overflow UB hai (compiler optimize kar sakta hai). 0.1 + 0.2 == 0.3 false hota hai — binary floating point exact nahi hai. const/volatile/restrict qualifiers intent batate hain."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Types aur sizeof",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    char c = 'A';\n    int i = 42;\n    float f = 3.5f;\n    double d = 2.718281828;\n    printf(\"%c %d %.1f %.3f\\n\", c, i, f, d);\n    printf(\"sizes: %zu %zu %zu %zu\\n\", sizeof c, sizeof i, sizeof f, sizeof d);\n    return 0;\n}",
+      "output": "A 42 3.5 2.718\nsizes: 1 4 4 8\n",
+      "lines": [
+        "char '%c', int '%d', float '%.1f', double '%.3f' se print hote hain.",
+        "sizeof variable par bhi chalta hai.",
+        "Sizes platform par depend karte hain — ye common 64-bit values hain."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Casting aur overflow",
+      "code": "#include <stdio.h>\n#include <limits.h>\n\nint main(void) {\n    double price = 99.99;\n    int rounded = (int)price;\n    unsigned char small = 250;\n    small += 10;\n    printf(\"%d %u\\n\", rounded, (unsigned)small);\n    printf(\"INT_MAX = %d\\n\", INT_MAX);\n    return 0;\n}",
+      "output": "99 4\nINT_MAX = 2147483647\n",
+      "lines": [
+        "(int)99.99 truncate karke 99 deta hai, round nahi.",
+        "unsigned char 250 + 10 = 260 mod 256 = 4; unsigned wrap defined hai.",
+        "INT_MAX limits.h se aata hai."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "Memory sketch (typical 64-bit)",
+    "rows": [
+      "address      name   type    bytes   value",
+      "0x7ffd1000   age    int     4       21",
+      "0x7ffd1004   grade  char    1       'A'",
+      "0x7ffd1008   price  double  8       99.99",
+      "Padding ho sakti hai — struct me alignment ke liye gaps aate hain."
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "int x; printf(\"%d\", x);",
+      "right": "int x = 0;",
+      "why": "Uninitialized local ka value indeterminate hota hai; read karna UB."
+    },
+    {
+      "wrong": "unsigned u = 5; if (u - 10 > 0)",
+      "right": "if ((int)u - 10 > 0)",
+      "why": "Unsigned arithmetic wrap hoti hai, comparison hamesha true ho sakta hai."
+    },
+    {
+      "wrong": "float total = 0.1 + 0.2; if (total == 0.3)",
+      "right": "fabs(total - 0.3) < 1e-9",
+      "why": "Binary floating point exact nahi hota; epsilon se compare karo."
+    }
+  ],
+  "debug": {
+    "brief": "Average galat aa raha hai kyunki integer division ho raha hai. Fix karo.",
+    "code": "#include <stdio.h>\nint main(void) {\n    int a = 7, b = 2;\n    double avg = a / b;\n    printf(\"%.1f\\n\", avg);\n    return 0;\n}",
+    "expected": "3.5\n",
+    "hints": [
+      "a / b ka type kya hai?",
+      "Ek operand double banao."
+    ],
+    "fix": "double avg = (double)a / b;"
+  },
+  "best": [
+    "Variables ko declare karte hi initialize karo",
+    "sizeof se size lo, hardcode mat karo",
+    "Money ke liye double/float ki jagah integer paise ya decimal library",
+    "Signed/unsigned mix mat karo",
+    "const se intent clear karo"
+  ],
+  "practice": [
+    {
+      "title": "Size table",
+      "prompt": "char, int, float, double, long long ke sizeof print karo.",
+      "level": "easy",
+      "hint": "%zu use karo."
+    },
+    {
+      "title": "Temperature",
+      "prompt": "Celsius ko Fahrenheit me convert karo double se.",
+      "level": "easy",
+      "hint": "F = C * 9.0 / 5 + 32."
+    },
+    {
+      "title": "Overflow demo",
+      "prompt": "unsigned char me 250 + 10 ka result print karo.",
+      "level": "medium",
+      "hint": "Result mod 256 hoga."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "sizeof ka return type?",
+      "options": [
+        "int",
+        "unsigned int",
+        "size_t",
+        "long"
+      ],
+      "answer": 2,
+      "explain": "size_t, isliye printf me %zu."
+    },
+    {
+      "q": "Signed integer overflow C me?",
+      "options": [
+        "Defined wrap",
+        "Undefined behaviour",
+        "Compile error",
+        "Runtime exception"
+      ],
+      "answer": 1,
+      "explain": "Signed overflow UB hai; unsigned wrap defined hai."
+    },
+    {
+      "q": "Global variable default value?",
+      "options": [
+        "Garbage",
+        "0",
+        "-1",
+        "Undefined"
+      ],
+      "answer": 1,
+      "explain": "Static storage duration wale objects zero-initialized hote hain."
+    }
+  ],
+  "interview": [
+    {
+      "q": "float aur double me kya chuno?",
+      "a": "float 4 bytes ~7 significant digits, double 8 bytes ~15. Default double lo; float sirf memory-critical arrays me jab precision kaafi ho.",
+      "followUp": "long double? — extended precision, platform-dependent."
+    },
+    {
+      "q": "static local variable ka use?",
+      "a": "Lifetime poore program ki hoti hai par scope block tak seemit; function calls ke beech value retain hoti hai (e.g. call counter). Thread-safe nahi.",
+      "followUp": "static global ka matlab? — internal linkage, sirf usi translation unit me dikhta hai."
+    },
+    {
+      "q": "Type casting kab zaroori hai?",
+      "a": "Jab aap jaan-bujh kar conversion chahte ho (double→int truncation, void*→typed pointer) ya warning suppress karni ho. Implicit conversion par bharosa mat karo.",
+      "followUp": "Casting pointer ka risk? — galat type par dereference UB."
+    }
+  ],
+  "lab": {
+    "title": "Lab 3 — Data type explorer",
+    "brief": "Ek program jo har type ka size, min/max aur ek sample value print kare.",
+    "starter": "#include <stdio.h>\n#include <limits.h>\n\nint main(void) {\n    /* Table banao */\n    return 0;\n}",
+    "expected": "char    1 bytes  min=-128 max=127\nint     4 bytes  min=-2147483648 max=2147483647\n",
+    "tests": [
+      {
+        "name": "type sizes",
+        "stdin": "",
+        "stdout": "char    1 bytes  min=-128 max=127\nint     4 bytes  min=-2147483648 max=2147483647"
+      }
+    ],
+    "hints": [
+      "limits.h include karo.",
+      "%-7s se align karo."
+    ],
+    "solution": "#include <stdio.h>\n#include <limits.h>\n\nint main(void) {\n    printf(\"char    %zu bytes  min=%d max=%d\\n\", sizeof(char), CHAR_MIN, CHAR_MAX);\n    printf(\"int     %zu bytes  min=%d max=%d\\n\", sizeof(int), INT_MIN, INT_MAX);\n    return 0;\n}"
+  },
+  "checkpoint": {
+    "title": "Module 3 checkpoint",
+    "checks": [
+      "Sab fundamental types aur sizes pata hain",
+      "sizeof aur %zu use kar liya",
+      "auto/static/extern samajh aaye",
+      "Conversion aur overflow ka fark pata hai",
+      "Data type table chala"
+    ]
+  }
+}

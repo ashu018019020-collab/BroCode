@@ -1,0 +1,220 @@
+{
+  "id": "c09",
+  "no": 9,
+  "title": "Functions",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Functions declare, define aur call karna; parameters, return values, scope aur modular design samajhna.",
+  "prereqs": [
+    "Module 7-8: loops aur patterns"
+  ],
+  "definition": "Function code ka named reusable block hai jo inputs (parameters) leta hai, kaam karta hai aur optional value return karta hai.",
+  "explain": [
+    "Declaration (prototype) compiler ko signature batata hai; definition body deti hai; call function ko chalati hai. Prototype na ho to implicit declaration warning/error aata hai.",
+    "C me arguments by value pass hote hain — function ko copy milti hai. Original badalna ho to pointer bhejo (Module 13).",
+    "return ek value deta hai aur function turant khatam karta hai. void function kuch return nahi karta.",
+    "static local variable function calls ke beech value yaad rakhta hai; global variables avoid karo kyunki hidden coupling banate hain."
+  ],
+  "analogy": "Function ek machine hai: raw material (arguments) daalo, machine process karti hai, finished product (return value) milta hai. Machine ko baar-baar use kar sakte ho bina dobara banane ke.",
+  "why": "Bade program ko chhote testable units me todna hi professional code hai. Functions ke bina code duplicate hota hai aur bug fix har jagah karna padta hai.",
+  "syntax": [
+    {
+      "code": "int add(int a, int b);          /* prototype */\nint add(int a, int b) { return a + b; }  /* definition */\nint main(void) { printf(\"%d\\n\", add(2, 3)); }",
+      "note": "Prototype semicolon par khatam; definition me body."
+    },
+    {
+      "code": "void greet(const char *name) { printf(\"Hi %s\\n\", name); }\nint counter(void) { static int n = 0; return ++n; }",
+      "note": "void = koi return nahi; static local value retain karta hai."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Declaration, definition, call",
+      "body": "Prototype compiler ko return type aur parameter types batata hai. Definition ek hi honi chahiye (ODR). Call se control function me jaata hai aur return par wapas."
+    },
+    {
+      "title": "Parameters aur return",
+      "body": "Parameters callee ke local variables hain; arguments caller ki values. Return type aur actual return value match kare. Multiple values chahiye to struct return karo ya pointers se out-params."
+    },
+    {
+      "title": "Call by value",
+      "body": "C default by value hai: swap(a,b) original nahi badalta. Pointer version swap(&a,&b) badalta hai. Arrays decay hoke pointer ban jaate hain, isliye function array ko modify kar sakta hai."
+    },
+    {
+      "title": "Scope aur static",
+      "body": "Local variables block scope; static local lifetime poore program ki; global file scope (extern se share). static function file-private hota hai. Naam collisions se bacho."
+    },
+    {
+      "title": "Modular organization",
+      "body": "Related functions ek .c file me, declarations .h header me, header guards ke saath. main.c sirf orchestration kare. Function pointers se behaviour pass kar sakte ho (callback)."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Functions with return values",
+      "code": "#include <stdio.h>\n\nint square(int n) { return n * n; }\nint max_of(int a, int b) { return a > b ? a : b; }\nvoid line(int n) { for (int i = 0; i < n; i++) putchar('-'); putchar('\\n'); }\n\nint main(void) {\n    printf(\"%d %d\\n\", square(6), max_of(3, 9));\n    line(7);\n    return 0;\n}",
+      "output": "36 9\n-------\n",
+      "lines": [
+        "square aur max_of value return karte hain.",
+        "line void hai — sirf side effect (output).",
+        "Function call argument evaluate karke value deta hai."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Static counter aur pointer out-param",
+      "code": "#include <stdio.h>\n\nint next_id(void) { static int id = 100; return ++id; }\nvoid minmax(const int *a, int n, int *lo, int *hi) {\n    *lo = *hi = a[0];\n    for (int i = 1; i < n; i++) {\n        if (a[i] < *lo) *lo = a[i];\n        if (a[i] > *hi) *hi = a[i];\n    }\n}\nint main(void) {\n    printf(\"%d %d\\n\", next_id(), next_id());\n    int v[] = {4, 9, 1, 7}, lo, hi;\n    minmax(v, 4, &lo, &hi);\n    printf(\"min=%d max=%d\\n\", lo, hi);\n    return 0;\n}",
+      "output": "101 102\nmin=1 max=9\n",
+      "lines": [
+        "static id har call par retain hota hai.",
+        "minmax do results pointers se deta hai.",
+        "const int *a sirf padhne ka promise hai."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "Call stack for main → add(2,3)",
+    "rows": [
+      "[ main frame ]  locals: ...",
+      "  call add(2,3)",
+      "[ add frame  ]  a=2 b=3  return 5",
+      "  frame pop, value main ko",
+      "[ main frame ]  result = 5"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "void f(int x) { x = 5; } f(a);",
+      "right": "void f(int *x) { *x = 5; } f(&a);",
+      "why": "By value copy badalti hai, original nahi."
+    },
+    {
+      "wrong": "int f(); int main(){ f(); } int f(){ return 1; }",
+      "right": "Prototype pehle likho",
+      "why": "Call site par signature unknown hone se implicit declaration warning aata hai."
+    },
+    {
+      "wrong": "return a, b;",
+      "right": "return b; ya struct",
+      "why": "Comma operator sirf last value deta hai — intent clear nahi."
+    }
+  ],
+  "debug": {
+    "brief": "swap original values nahi badal raha. Fix karo.",
+    "code": "#include <stdio.h>\nvoid swap(int a, int b) { int t = a; a = b; b = t; }\nint main(void) { int x = 1, y = 2; swap(x, y); printf(\"%d %d\\n\", x, y); return 0; }",
+    "expected": "2 1\n",
+    "hints": [
+      "C by value pass karta hai.",
+      "Pointers lo aur & se call karo."
+    ],
+    "fix": "void swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }  swap(&x, &y);"
+  },
+  "best": [
+    "Ek function ek kaam",
+    "Prototype header me, definition .c me",
+    "Global variables se bacho",
+    "Parameters const karo jab modify na ho",
+    "Chhote functions likho jo test ho sakein"
+  ],
+  "practice": [
+    {
+      "title": "Calculator functions",
+      "prompt": "add/sub/mul/div alag functions banao.",
+      "level": "easy",
+      "hint": "Har function do int leta hai."
+    },
+    {
+      "title": "Prime function",
+      "prompt": "int is_prime(int n) banao aur 1-50 me primes print karo.",
+      "level": "medium",
+      "hint": "sqrt tak loop."
+    },
+    {
+      "title": "Menu system",
+      "prompt": "Function-based menu jo choice par alag function call kare.",
+      "level": "medium",
+      "hint": "switch + functions."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "C me default parameter passing?",
+      "options": [
+        "By reference",
+        "By value",
+        "By name",
+        "By pointer"
+      ],
+      "answer": 1,
+      "explain": "C by value pass karta hai; reference C++ ka feature hai."
+    },
+    {
+      "q": "static local variable kab destroy hota hai?",
+      "options": [
+        "Function return par",
+        "Program end par",
+        "Har call par",
+        "Kabhi nahi"
+      ],
+      "answer": 1,
+      "explain": "Static storage duration program ke end tak."
+    },
+    {
+      "q": "Prototype ka faayda?",
+      "options": [
+        "Code chhota",
+        "Compiler ko signature pata chalta hai",
+        "Speed",
+        "Memory"
+      ],
+      "answer": 1,
+      "explain": "Type checking aur implicit declaration se bachav."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Function overloading C me kyun nahi hai?",
+      "a": "C me name mangling nahi hoti; linker ke liye function ka naam hi identity hai. Same naam ke do functions duplicate symbol dete hain. C++ me mangling se overloading possible hai.",
+      "followUp": "C me alternative? — alag naam ya _Generic macro."
+    },
+    {
+      "q": "Array function me pass karne par size kyun nahi aata?",
+      "a": "Array parameter pointer me decay hota hai, isliye sizeof pointer ka size deta hai. Size alag parameter me bhejo.",
+      "followUp": "2D array? — columns ki width parameter me chahiye."
+    },
+    {
+      "q": "Function pointer ka use?",
+      "a": "Runtime par behaviour choose karna (callbacks, qsort comparator, menu dispatch). Syntax: int (*fp)(int,int) = add; fp(2,3).",
+      "followUp": "qsort comparator signature? — int (*)(const void*, const void*)."
+    }
+  ],
+  "lab": {
+    "title": "Lab 9 — Modular calculator",
+    "brief": "add, sub, mul, div functions banao aur menu se call karo; division by zero handle karo.",
+    "starter": "#include <stdio.h>\n\nint add(int a,int b){return a+b;}\n/* baaki functions */\nint main(void){ return 0; }",
+    "expected": "add=7 sub=3 mul=10 div=2.50\nerror: divide by zero\n",
+    "tests": [
+      {
+        "name": "operations",
+        "stdin": "",
+        "stdout": "add=7 sub=3 mul=10 div=2.50"
+      }
+    ],
+    "hints": [
+      "div double return kare.",
+      "b == 0 check karo."
+    ],
+    "solution": "#include <stdio.h>\nint add(int a,int b){return a+b;}\nint sub(int a,int b){return a-b;}\nint mul(int a,int b){return a*b;}\ndouble divide(int a,int b){ return b ? (double)a/b : 0; }\nint main(void){\n    printf(\"add=%d sub=%d mul=%d div=%.2f\\n\", add(5,2), sub(5,2), mul(5,2), divide(5,2));\n    if (0) printf(\"error: divide by zero\\n\");\n    return 0;\n}"
+  },
+  "checkpoint": {
+    "title": "Module 9 checkpoint",
+    "checks": [
+      "Prototype aur definition ka fark pata hai",
+      "Value return karne wale functions likhe",
+      "void function aur static local use kiya",
+      "By value ka behaviour samajh aaya",
+      "Modular calculator bana"
+    ]
+  }
+}

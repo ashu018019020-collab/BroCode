@@ -1,0 +1,218 @@
+{
+  "id": "c06",
+  "no": 6,
+  "title": "Conditional Statements",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "if/else, else-if ladder, switch aur validation logic se real decisions lena.",
+  "prereqs": [
+    "Module 5: operators"
+  ],
+  "definition": "Conditional statement condition ke true/false par control flow badalta hai: if, if-else, else-if ladder, nested if aur switch.",
+  "explain": [
+    "if ke brackets me expression hota hai; 0 false hai, baaki sab true. Block me ek se zyada statements ho to braces zaroori hain.",
+    "else-if ladder top se neeche check hota hai aur pehla match jeetta hai — order matter karta hai (specific se general).",
+    "switch ek integer/char/enum value ko case labels se match karta hai. break na ho to fall-through hota hai; default unmatched ke liye.",
+    "Conditions me range check karna safe hai: 0 <= age && age <= 120. `a < b < c` C me galat hai kyunki wo (a<b)<c ban jaata hai."
+  ],
+  "analogy": "Decision making traffic signal jaisa hai: agar green hai to chalo, warna red par ruko. else-if ladder ek queue hai — pehla matching gate hi khulta hai.",
+  "why": "Har real program me validation, menu aur business rules hote hain. switch vs if ka sahi choice readability aur bug-free behaviour deta hai.",
+  "syntax": [
+    {
+      "code": "if (score >= 90) grade = 'A';\nelse if (score >= 75) grade = 'B';\nelse if (score >= 60) grade = 'C';\nelse grade = 'F';",
+      "note": "Order descending hai: pehla match hi lagega."
+    },
+    {
+      "code": "switch (choice) {\n  case 1: printf(\"Add\\n\"); break;\n  case 2: printf(\"Sub\\n\"); break;\n  default: printf(\"Invalid\\n\");\n}",
+      "note": "break missing = fall-through; default optional par recommended."
+    }
+  ],
+  "topics": [
+    {
+      "title": "if / if-else / nested if",
+      "body": "if (cond) {...} else {...}. Nested if me braces aur indentation se ambiguity door karo (dangling else nearest if se judta hai)."
+    },
+    {
+      "title": "else-if ladder",
+      "body": "Multiple exclusive conditions ke liye. Sabse specific condition pehle, warna general condition sab kha jaayegi. Har branch mutually exclusive rakho."
+    },
+    {
+      "title": "switch statement",
+      "body": "Integral expression (int, char, enum) par chalta hai; case labels compile-time constants hone chahiye. Duplicate case error hai. break se exit; jaan-bujh kar fall-through bhi use hota hai (multiple cases ek hi code)."
+    },
+    {
+      "title": "Validation patterns",
+      "body": "Input range, non-negative, password length, menu choice — sab conditions. Invalid input par clear error do aur loop se dobara pucho (Module 7 ke saath)."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Grade calculator",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    int score = 82;\n    char grade;\n    if (score >= 90) grade = 'A';\n    else if (score >= 75) grade = 'B';\n    else if (score >= 60) grade = 'C';\n    else grade = 'F';\n    printf(\"score=%d grade=%c\\n\", score, grade);\n    return 0;\n}",
+      "output": "score=82 grade=B\n",
+      "lines": [
+        "90 se kam hai, isliye pehla branch skip.",
+        "82 >= 75 true, grade B set hua.",
+        "Baaki branches evaluate hi nahi hui."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Menu with switch",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    int op = 3;\n    switch (op) {\n        case 1: printf(\"deposit\\n\"); break;\n        case 2: printf(\"withdraw\\n\"); break;\n        case 3:\n        case 4: printf(\"statement\\n\"); break;\n        default: printf(\"invalid\\n\");\n    }\n    return 0;\n}",
+      "output": "statement\n",
+      "lines": [
+        "case 3 ke paas code nahi, isliye case 4 me gir jaata hai (intentional fall-through).",
+        "case 4 print karke break karta hai.",
+        "default tab chalta jab koi case match na ho."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "else-if ladder flow",
+    "rows": [
+      "score >= 90 ? -> A",
+      "    no",
+      "score >= 75 ? -> B",
+      "    no",
+      "score >= 60 ? -> C",
+      "    no -> F",
+      "Pehla true branch execute hota hai, baaki skip."
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "if (0 <= age <= 120)",
+      "right": "if (age >= 0 && age <= 120)",
+      "why": "0 <= age pehle 0/1 banta hai, phir 0/1 <= 120 hamesha true."
+    },
+    {
+      "wrong": "switch (x) { case 1: ... }  // break bhoolna",
+      "right": "har case me break",
+      "why": "Fall-through se agla case bhi chal jaata hai."
+    },
+    {
+      "wrong": "if (x = 5)",
+      "right": "if (x == 5)",
+      "why": "Assignment truthy hota hai; -Wparentheses warning deta hai."
+    }
+  ],
+  "debug": {
+    "brief": "Grade galat aa raha hai kyunki condition order ulta hai. Fix karo.",
+    "code": "#include <stdio.h>\nint main(void) {\n    int s = 95;\n    char g;\n    if (s >= 60) g = 'C';\n    else if (s >= 90) g = 'A';\n    printf(\"%c\\n\", g);\n    return 0;\n}",
+    "expected": "A\n",
+    "hints": [
+      "Pehla condition 95 par true hai.",
+      "Specific condition pehle rakho."
+    ],
+    "fix": "if (s >= 90) g = 'A'; else if (s >= 60) g = 'C';"
+  },
+  "best": [
+    "Braces hamesha lagao",
+    "Specific se general order rakho",
+    "switch me default rakho",
+    "Conditions ko chhote named bools me todо",
+    "Input validate karo"
+  ],
+  "practice": [
+    {
+      "title": "Largest of three",
+      "prompt": "Teen numbers me sabse bada print karo.",
+      "level": "easy",
+      "hint": "Nested if ya max variable."
+    },
+    {
+      "title": "Voting eligibility",
+      "prompt": "Age 18+ ho to eligible, warna kitne saal baaki batao.",
+      "level": "easy",
+      "hint": "else branch me 18 - age."
+    },
+    {
+      "title": "Menu calculator",
+      "prompt": "Switch se add/sub/mul/div choose karo.",
+      "level": "medium",
+      "hint": "Har case me break."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "C me 0 ka truth value?",
+      "options": [
+        "true",
+        "false",
+        "undefined",
+        "compile error"
+      ],
+      "answer": 1,
+      "explain": "0 false hai, baaki sab non-zero true."
+    },
+    {
+      "q": "switch kis type par nahi chalta?",
+      "options": [
+        "int",
+        "char",
+        "enum",
+        "double"
+      ],
+      "answer": 3,
+      "explain": "switch integral types par chalta hai; floating point allowed nahi."
+    },
+    {
+      "q": "break ka kaam?",
+      "options": [
+        "Loop skip",
+        "switch/loop se bahar",
+        "Program end",
+        "Naya case"
+      ],
+      "answer": 1,
+      "explain": "break nearest switch ya loop se exit karta hai."
+    }
+  ],
+  "interview": [
+    {
+      "q": "if-else aur switch me kab kya?",
+      "a": "Discrete integral values (menu, state) ke liye switch readable hai aur compiler jump table bana sakta hai. Ranges, floats aur complex conditions ke liye if-else.",
+      "followUp": "switch me string? — C me nahi; if/strcmp use karo."
+    },
+    {
+      "q": "Dangling else kya hai?",
+      "a": "Bina braces ke else nearest unmatched if se judta hai, jo expected se alag ho sakta hai. Braces se ambiguity khatam karo.",
+      "followUp": "Compiler warning? — -Wdangling-else."
+    },
+    {
+      "q": "Fall-through kab useful hai?",
+      "a": "Jab multiple case labels ek hi code chalaते hain (case 3: case 4: ...). Warna break bhoolna bug hai; /* fallthrough */ comment likho.",
+      "followUp": "Kaunsa warning help karta hai? — -Wimplicit-fallthrough."
+    }
+  ],
+  "lab": {
+    "title": "Lab 6 — Grade + validation",
+    "brief": "Score input lo (0-100 validate karo) aur grade print karo; invalid par error.",
+    "starter": "#include <stdio.h>\n\nint main(void) {\n    /* if-else ladder */\n    return 0;\n}",
+    "expected": "score=82 grade=B\n",
+    "tests": [
+      {
+        "name": "grade",
+        "stdin": "82\n",
+        "stdout": "score=82 grade=B"
+      }
+    ],
+    "hints": [
+      "scanf ka return check karo.",
+      "score < 0 || score > 100 -> error."
+    ],
+    "solution": "#include <stdio.h>\n\nint main(void) {\n    int s;\n    if (scanf(\"%d\", &s) != 1 || s < 0 || s > 100) { printf(\"invalid\\n\"); return 1; }\n    char g = s >= 90 ? 'A' : s >= 75 ? 'B' : s >= 60 ? 'C' : 'F';\n    printf(\"score=%d grade=%c\\n\", s, g);\n    return 0;\n}"
+  },
+  "checkpoint": {
+    "title": "Module 6 checkpoint",
+    "checks": [
+      "if/else-if ladder likh liya",
+      "switch + break + default use kiya",
+      "Validation condition likhi",
+      "Fall-through samajh aaya",
+      "Grade program chala"
+    ]
+  }
+}

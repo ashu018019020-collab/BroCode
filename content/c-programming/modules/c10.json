@@ -1,0 +1,190 @@
+{
+  "id": "c10",
+  "no": 10,
+  "title": "Recursion",
+  "level": "intermediate",
+  "hours": 5,
+  "goal": "Recursion ka base case, call stack aur recursive vs iterative trade-off samajhna.",
+  "prereqs": [
+    "Module 9: functions"
+  ],
+  "definition": "Recursion tab hota hai jab function apne aap ko chhote input ke saath call kare. Har recursive function me base case (rukwat) aur recursive case (chhota problem) hona chahiye.",
+  "explain": [
+    "Base case ke bina recursion infinite chalti hai aur stack overflow deti hai.",
+    "Har call ka apna stack frame hota hai: parameters, locals aur return address. Stack LIFO hai, isliye sabse pehle call sabse baad return hota hai.",
+    "Factorial, Fibonacci, digit sum, reverse, palindrome aur tree traversal recursion se natural likhe jaate hain.",
+    "Recursion memory O(depth) leti hai; deep recursion (1e6) stack overflow kar sakti hai. Iteration O(1) space deti hai — choice problem par depend karti hai."
+  ],
+  "analogy": "Recursion Russian dolls jaisa hai: har doll ke andar chhoti doll, aur sabse chhoti doll (base case) par khulna rukta hai.",
+  "why": "Recursion se tree/graph aur divide-and-conquer problems simple ho jaate hain — interviews me call stack explain karna strong signal hai.",
+  "syntax": [
+    {
+      "code": "long fact(int n) {\n  if (n <= 1) return 1;      /* base */\n  return n * fact(n - 1);    /* recursive */\n}",
+      "note": "Base case pehle likho, phir chhota input."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Call stack",
+      "body": "fact(4) → fact(3) → fact(2) → fact(1), phir values wapas multiply hoti hain: 1,2,6,24. Depth n+1 frames."
+    },
+    {
+      "title": "Classic recursions",
+      "body": "Sum(n)=n+sum(n-1), Fibonacci fib(n)=fib(n-1)+fib(n-2) (exponential — memoization se O(n)), reverse string, palindrome, GCD (Euclid), power."
+    },
+    {
+      "title": "Recursion vs iteration",
+      "body": "Recursion code chhota aur expressive hota hai par stack use karta hai; iteration fast aur constant space. Tail recursion ko compiler optimize kar sakta hai, C guarantee nahi deta."
+    }
+  ],
+  "examples": [
+    {
+      "level": "basic",
+      "title": "Factorial aur sum",
+      "code": "#include <stdio.h>\nlong fact(int n) { return n <= 1 ? 1 : n * fact(n - 1); }\nint sum_to(int n) { return n == 0 ? 0 : n + sum_to(n - 1); }\nint main(void) { printf(\"%ld %d\\n\", fact(5), sum_to(5)); return 0; }",
+      "output": "120 15\n",
+      "lines": [
+        "Ternary base case aur recursive case dono dikhata hai.",
+        "fact(5) = 5*4*3*2*1.",
+        "sum_to(5) = 5+4+3+2+1."
+      ]
+    },
+    {
+      "level": "advanced",
+      "title": "Fibonacci aur GCD",
+      "code": "#include <stdio.h>\nint fib(int n) { return n < 2 ? n : fib(n - 1) + fib(n - 2); }\nint gcd(int a, int b) { return b == 0 ? a : gcd(b, a % b); }\nint main(void) { printf(\"%d %d\\n\", fib(10), gcd(48, 18)); return 0; }",
+      "output": "55 6\n",
+      "lines": [
+        "fib(10) = 55; naive recursion O(2^n) hai.",
+        "GCD Euclid: gcd(48,18) → gcd(18,12) → gcd(12,6) → 6.",
+        "Base case b==0 par rukta hai."
+      ]
+    }
+  ],
+  "visual": {
+    "title": "fact(3) call stack",
+    "rows": [
+      "fact(3) = 3 * fact(2)",
+      "  fact(2) = 2 * fact(1)",
+      "    fact(1) = 1   <-- base",
+      "  fact(2) = 2 * 1 = 2",
+      "fact(3) = 3 * 2 = 6"
+    ]
+  },
+  "mistakes": [
+    {
+      "wrong": "Base case bhoolna",
+      "right": "if (n <= 1) return 1;",
+      "why": "Infinite recursion → stack overflow (segfault)."
+    },
+    {
+      "wrong": "fib naive bade n par",
+      "right": "memoization ya iteration",
+      "why": "O(2^n) time — n=45 par seconds/minutes."
+    },
+    {
+      "wrong": "Recursion me static/global accumulator",
+      "right": "Return value se combine karo",
+      "why": "Shared state recursive calls ke beech corrupt ho jaata hai."
+    }
+  ],
+  "debug": {
+    "brief": "Recursive sum stack overflow kar raha hai. Bug dhundo.",
+    "code": "#include <stdio.h>\nint sum(int n) { return n + sum(n - 1); }\nint main(void) { printf(\"%d\\n\", sum(5)); return 0; }",
+    "expected": "15\n",
+    "hints": [
+      "Rukne ki condition kahan hai?",
+      "n == 0 par 0 return karo."
+    ],
+    "fix": "int sum(int n) { return n == 0 ? 0 : n + sum(n - 1); }"
+  },
+  "best": [
+    "Base case pehle likho",
+    "Recursive call chhote input par ho",
+    "Depth sochо — bade n par iteration",
+    "Repeated subproblems par memoization"
+  ],
+  "practice": [
+    {
+      "title": "Power",
+      "prompt": "x^n recursion se calculate karo.",
+      "level": "medium",
+      "hint": "n==0 par 1."
+    },
+    {
+      "title": "Reverse digits",
+      "prompt": "Number ko recursion se reverse karo.",
+      "level": "medium",
+      "hint": "Helper me accumulator pass karo."
+    },
+    {
+      "title": "Palindrome",
+      "prompt": "String palindrome recursion se check karo.",
+      "level": "medium",
+      "hint": "Do indices andar badhao."
+    }
+  ],
+  "mcqs": [
+    {
+      "q": "Recursion ka memory cost?",
+      "options": [
+        "O(1)",
+        "O(depth)",
+        "O(n^2)",
+        "Zero"
+      ],
+      "answer": 1,
+      "explain": "Har call ek stack frame leta hai."
+    },
+    {
+      "q": "Base case na ho to?",
+      "options": [
+        "Compile error",
+        "Stack overflow",
+        "0 return",
+        "Warning"
+      ],
+      "answer": 1,
+      "explain": "Infinite recursion stack khatam kar deti hai."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Tail recursion kya hai?",
+      "a": "Recursive call function ka last operation ho aur result par koi kaam na bache. Kuch compilers ise loop me badal dete hain, par C standard guarantee nahi deta.",
+      "followUp": "C me guaranteed? — nahi, manually loop likho."
+    },
+    {
+      "q": "Fibonacci me memoization kyun?",
+      "a": "Naive recursion same subproblems dobara solve karta hai — O(2^n). Memo array se O(n) time, O(n) space.",
+      "followUp": "Bottom-up? — iterative DP O(1) space."
+    }
+  ],
+  "lab": {
+    "title": "Lab 10 — Recursion set",
+    "brief": "factorial, sum aur fibonacci recursion se print karo.",
+    "starter": "#include <stdio.h>\nint main(void){return 0;}",
+    "expected": "120 15 55\n",
+    "tests": [
+      {
+        "name": "values",
+        "stdin": "",
+        "stdout": "120 15 55"
+      }
+    ],
+    "hints": [
+      "Teen recursive functions.",
+      "Base cases likho."
+    ],
+    "solution": "#include <stdio.h>\nlong fact(int n){return n<=1?1:n*fact(n-1);}\nint sum(int n){return n==0?0:n+sum(n-1);}\nint fib(int n){return n<2?n:fib(n-1)+fib(n-2);}\nint main(void){printf(\"%ld %d %d\\n\",fact(5),sum(5),fib(10));return 0;}"
+  },
+  "checkpoint": {
+    "title": "Module 10 checkpoint",
+    "checks": [
+      "Base + recursive case bata sakte ho",
+      "Call stack trace kiya",
+      "Factorial/fib/GCD recursion se likhe",
+      "Recursion vs iteration ka trade-off pata hai"
+    ]
+  }
+}
