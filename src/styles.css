@@ -5494,3 +5494,12 @@ the skill's share of the selected source, and how many of its questions are alre
 .c-code { position: relative; margin-bottom: 10px; }
 .c-code pre { padding-top: 32px !important; }
 .c-code-try { position: absolute; top: 6px; right: 6px; }
+
+/* Question Bank section index: one box per course, each with its own mark and label, so a Python
+   section can never look like it belongs to C (or the other way round). */
+.qb-course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 12px; }
+.qb-course { border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: rgba(0, 0, 0, .18); min-width: 0; }
+.qb-course-head { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+.qb-course-head .who { flex: 1; min-width: 0; }
+.qb-course-rows { display: grid; gap: 2px; }
+.qb-course .file-row { width: 100%; text-align: left; }

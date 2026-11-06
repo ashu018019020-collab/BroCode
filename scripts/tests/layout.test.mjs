@@ -149,7 +149,7 @@ test('layout: on a phone the three clipping rows wrap instead of eating their ow
   assert.match(css, /@media \(max-width: 430px\) \{ \.ch-head > \.chip \{ display: none; \} \}/,
     'below 430px the page chip must yield to the name (the opened panel repeats it)');
 
-  const bank = read('src/features/practice/QuestionBank.tsx');
+  const bank = read('src/features/practice/CourseSections.tsx');
   assert.match(css, /\.file-row \.sec-name \{[^}]*text-overflow: ellipsis;[^}]*\}/,
     'the section name must truncate on a wide card, like the shelf label');
   assert.match(css, /@media \(max-width: 560px\) \{ \.file-row \.sec-name \{ white-space: normal; overflow-wrap: anywhere; \} \}/,

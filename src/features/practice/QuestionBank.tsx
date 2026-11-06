@@ -18,6 +18,9 @@ import { bankRedo } from '../../core/ai/coach';
 import { bankPractised } from '../../core/learning/coverage';
 import { JupyterNotebook } from '../../components/code/JupyterNotebook';
 import { AssistantCard } from '../../components/shared/AssistantCard';
+import { useCAssessments, useCIndex } from '../../core/data/ccourse';
+import CourseSections, { type CourseKey } from './CourseSections';
+import CQuiz from './CQuiz';
 
 const EMPTY_FILTER: BankFilter = { type: 'all', difficulty: 'all', search: '', includeDrafts: false };
 const XP_PER_CORRECT = 2;
@@ -105,7 +108,8 @@ export default function QuestionBank() {
   const manifest = useBankManifest();
   const state = useStore();
   const [selected, setSelected] = useState<string | null>(() => urlParams().get('section'));
-  const [sectionSearch, setSectionSearch] = useState('');
+  const [course, setCourse] = useState<CourseKey>(() => (urlParams().get('course') === 'c' ? 'c' : 'python'));
+  const [cModuleId, setCModuleId] = useState<string | null>(() => urlParams().get('module'));
   const [filter, setFilter] = useState<BankFilter>(() => {
     // `?type=interview` — the Interview hub's "interview questions" card deep-links here with the
     // type filter pre-set. Only a REAL question type is honoured: a garbage param would otherwise
@@ -148,6 +152,18 @@ export default function QuestionBank() {
 
   const bank = useBank(selected ?? undefined);
 
+  // C Programming's own bank: one MCQ set per module, titled by the module it belongs to.
+  const cIndex = useCIndex();
+  const cSets = useCAssessments();
+  const cModules = useMemo(() => (cIndex?.modules ?? []).map((m) => {
+    const set = cSets.find((s) => s.module === m.id);
+    return { id: m.id, no: m.no, title: m.title, level: m.level, brief: m.brief, mcqs: set?.questions ?? [] };
+  }), [cIndex, cSets]);
+  const cModule = cModules.find((m) => m.id === cModuleId) ?? cModules[0] ?? null;
+  const cQuestionCount = cModules.reduce((n, m) => n + m.mcqs.length, 0);
+  /** The index rows carry only a count; the full MCQ list stays with `CQuiz`. */
+  const cRows = useMemo(() => cModules.map((m) => ({ ...m, questions: m.mcqs.length })), [cModules]);
+
   // New section → reset view state so filters/answers never look stale.
   //
   // Keyed on the section actually CHANGING, not on "not the first run": a deep link
@@ -170,15 +186,12 @@ export default function QuestionBank() {
     setGroupShown({});
   }, [selected]);
 
-  const sectionList = useMemo(() => {
-    if (!manifest) return [];
-    const needle = sectionSearch.trim().toLowerCase();
-    return needle
-      ? manifest.sections.filter((s) => `${s.no} ${s.title}`.toLowerCase().includes(needle))
-      : manifest.sections;
-  }, [manifest, sectionSearch]);
-
   const attemptOf = (id: string) => state.attempts[bankAttempt(id)];
+  const pickCourse = (next: CourseKey, id: string) => {
+    setCourse(next);
+    if (next === 'c') setCModuleId(id);
+    else setSelected(id);
+  };
 
   const entry = manifest?.sections.find((s) => s.sectionId === selected) ?? null;
   const rows = useMemo(() => {
@@ -352,8 +365,9 @@ export default function QuestionBank() {
       <HubCrumb hub="/practice" hubLabel="Practice" page="Question Bank" />
       <h1 className="row" style={{ gap: 10 }}><Database size={22} /> Question Bank</h1>
       <p className="muted small">
-        Local content pack — <b>{manifest.published}</b> questions across <b>{manifest.sections.length}</b> sections.
-        Every question lives in its section and its stage. Write an answer (it saves automatically) or open the
+        Local content pack — <b>{manifest.published}</b> Python &amp; AI questions across <b>{manifest.sections.length}</b> sections,
+        plus <b>{cQuestionCount}</b> C Programming MCQs across <b>{cModules.length}</b> modules.
+        Every question lives in its own course box, its section/module and its stage. Write an answer (it saves automatically) or open the
         notebook for code, then grade yourself: you decide correct or wrong, and the app computes no score.
       </p>
 
@@ -425,59 +439,25 @@ export default function QuestionBank() {
           answer box was 300px wide, and the section list left the rest of the row empty. Stacked, the
           section rows become grid cells and the bank gets the whole width. */}
       <div className="qb-layout" style={{ display: 'grid', gap: 14, marginTop: 12 }}>
-        {/* Section index */}
-        <div className="card">
-          <div className="row spread">
-            <h2 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} /> Sections</h2>
-            <span className="small muted">{sectionList.length}</span>
-          </div>
-          <div className="row" style={{ margin: '10px 0', border: '1px solid var(--border)', borderRadius: 10, padding: '2px 8px', background: 'rgba(0,0,0,.3)' }}>
-            <Search size={14} />
-            <input
-              value={sectionSearch}
-              onChange={(e) => setSectionSearch(e.target.value)}
-              placeholder="Search sections…"
-              aria-label="Search sections"
-              style={{ border: 'none', background: 'transparent', flex: 1, padding: '6px 4px', minWidth: 0 }}
-            />
-          </div>
-          {/* One cell per section, so 29 sections stay a compact block instead of 29 stacked rows
-              pushing the questions off the screen. */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(272px, 100%), 1fr))', gap: 2 }}>
-            {sectionList.map((s) => {
-              const incomplete = s.flags.includes('CONTENT_INCOMPLETE');
-              const pct = Math.min(100, Math.round((s.published / manifest.baseline) * 100));
-              const sectionId = s.sectionId;
-              return (
-                <button
-                  key={s.sectionId}
-                  className={`file-row ${s.sectionId === selected ? 'on' : ''}`}
-                  data-agent-action={`qb:section:${sectionId}`}
-                  onClick={() => setSelected(s.sectionId)}
-                  style={{ width: '100%', textAlign: 'left', background: s.sectionId === selected ? undefined : 'transparent' }}
-                >
-                  <span className="mono small muted" style={{ flex: 'none' }}>{String(s.no).padStart(2, '0')}</span>
-                  {/* The name is a class, not an inline style, so the phone rule in styles.css can
-                      let it wrap — an inline `white-space` cannot be overridden by a media query. */}
-                  <span className="sec-name">{s.title}</span>
-                  <span className={`chip ${incomplete ? 'medium' : 'easy'}`} title={incomplete ? 'CONTENT_INCOMPLETE — baseline not authored yet' : 'complete'}>
-                    {pct}%
-                  </span>
-                </button>
-              );
-            })}
-            {!sectionList.length && <p className="muted small">No section matches “{sectionSearch}”.</p>}
-          </div>
-        </div>
+        <CourseSections
+          baseline={manifest.baseline}
+          python={manifest.sections}
+          cModules={cRows}
+          selected={course === 'c' ? cModule?.id ?? cModuleId : selected}
+          course={course}
+          onPick={pickCourse}
+        />
 
         {/* The bank itself — now the full width of the page. */}
         <div className="card">
-          {!entry ? (
+          {course === 'c' ? (
+            <CQuiz module={cModule} />
+          ) : !entry ? (
             <p className="muted small">Choose a section from the list above.</p>
           ) : (
             <>
               <div className="row spread">
-                <h3 style={{ margin: 0 }}>{String(entry.no).padStart(2, '0')} · {entry.title}</h3>
+                <h2 style={{ margin: 0, fontSize: '1.05rem' }}>{String(entry.no).padStart(2, '0')} · {entry.title}</h2>
                 <span className={`chip ${entry.flags.includes('CONTENT_INCOMPLETE') ? 'medium' : 'easy'}`}>
                   {entry.published}/{manifest.baseline} target
                 </span>
@@ -559,10 +539,10 @@ export default function QuestionBank() {
                   <div key={group.stage ?? 'flat'}>
                     {group.stage && (
                       <div className="row spread" style={{ margin: '12px 0 6px' }}>
-                        <h4 className="row" style={{ gap: 8, margin: 0 }}>
+                        <h3 className="row" style={{ gap: 8, margin: 0, fontSize: '1rem' }}>
                           {STAGE_QNA[group.stage]?.label ?? group.stage}
                           <span className="small muted">{group.items.length} of {group.total}</span>
-                        </h4>
+                        </h3>
                         <Link className="btn small" to={`/lesson/${entry.sectionId}/${group.stage}`}>
                           Open stage <ExternalLink size={12} />
                         </Link>
@@ -669,6 +649,7 @@ function QuestionCard({
       <div className="row spread" style={{ gap: 8 }}>
         <span className="row" style={{ gap: 6 }}>
           <span className={`chip ${q.type}`}>{TYPE_LABEL[q.type as QuestionType] ?? q.type}</span>
+          <span className="chip">Python</span>
           <span className={`chip ${q.difficulty}`}>{q.difficulty}</span>
           {isAuthored(q) && <span className="chip" title={t('badge.authoredHint')}>{t('badge.authored')}</span>}
           {(q.tags ?? []).includes('MUST-KNOW') && (
