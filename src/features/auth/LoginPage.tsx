@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../core/auth/AuthProvider';
 import AuthForm from './AuthForm';
+import OtpForm from './OtpForm';
 import type { AuthUser } from '../../core/auth/client';
 
 /**
@@ -17,6 +18,8 @@ import type { AuthUser } from '../../core/auth/client';
  */
 export default function LoginPage() {
   const { user } = useAuth();
+  /** Password vs emailed one-time code: two doors to the SAME account, one page. */
+  const [withCode, setWithCode] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const requestedPath = (location.state as { from?: unknown } | null)?.from;
@@ -56,10 +59,19 @@ export default function LoginPage() {
             ? 'An account is required to open that page. Sign in or create one — then you will land right where you were going.'
             : 'Sign in or create an account to open courses, lessons, practice, labs and your progress.'}
         </p>
-        <AuthForm
-          initialMode={cameFromProtected ? 'login' : 'register'}
-          onSuccess={(account) => navigate(destination(account), { replace: true })}
-        />
+        {withCode ? (
+          <OtpForm onSuccess={(account) => navigate(destination(account), { replace: true })} />
+        ) : (
+          <AuthForm
+            initialMode={cameFromProtected ? 'login' : 'register'}
+            onSuccess={(account) => navigate(destination(account), { replace: true })}
+          />
+        )}
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+          <button className="btn small" onClick={() => setWithCode((v) => !v)} type="button">
+            {withCode ? 'Use a password instead' : 'Sign in with an email code'}
+          </button>
+        </div>
         <p className="muted small auth-privacy">
           Your learning data is tied to your account and stays under your control.
         </p>

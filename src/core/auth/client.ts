@@ -443,6 +443,46 @@ export const authApi = {
   },
 
   /**
+   * Passwordless sign-in, step 1: email a one-time code.
+   *
+   * `shouldCreateUser: false` on purpose — this is a way back INTO an existing account, not a way
+   * to make one. A typo therefore gets "no account for this address" instead of quietly creating a
+   * second, empty learner. Supabase owns the code, its expiry and the attempt limit; the browser
+   * never sees a secret. Sending is subject to the project's email rate limit, which is why the
+   * form cools the button down like the confirmation resend does.
+   */
+  async requestEmailCode(email: string): Promise<void> {
+    const { error } = await getSupabaseClient().auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: false, emailRedirectTo: appBaseUrl() },
+    });
+    if (error) throw authError(error);
+  },
+
+  /**
+   * Passwordless sign-in, step 2: exchange the code for the same session a password would produce.
+   *
+   * Everything after `verifyOtp` is the login path verbatim — resolve the profile/role from the
+   * server, keep the remote resume position, record the sign-in — so an OTP session is not a
+   * second-class account: the owner role, progress and realtime presence all behave the same.
+   */
+  async verifyEmailCode(email: string, token: string): Promise<AuthUser> {
+    const { data, error } = await getSupabaseClient().auth.verifyOtp({
+      email: email.trim(),
+      token: token.trim(),
+      type: 'email',
+    });
+    if (error) throw authError(error);
+    if (!data.session) throw new Error('That code did not return an active session.');
+    const resolution = await fetchCurrentUser(data.session);
+    pendingResume = resolution.resume;
+    await authApi.recordSignIn(data.session, 'email').catch((cause: unknown) => {
+      console.error('Could not record email code sign-in activity.', cause);
+    });
+    return resolution.user;
+  },
+
+  /**
    * Create the account: NAME, email and password.
    *
    * The name is sent as `display_name` in the sign-up metadata, which is what the profile and the
