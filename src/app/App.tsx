@@ -293,6 +293,20 @@ function Shell() {
    */
   const lastSeenKey = `brocode:last-seen:v1:${user ? encodeURIComponent(user.id) : 'signed-out'}`;
   const mainRef = useRef<HTMLElement>(null);
+  /**
+   * The compact header follows the REAL scroll container.
+   *
+   * On desktop that is `.main` (a fixed-height column under the frozen shell), so the element's own
+   * `onScroll` still drives it. On a phone the document scrolls instead — the mobile block in
+   * `styles.css` deliberately stops `.main` being a nested scroller — and `.main` then never fires a
+   * scroll event, so the header would stay expanded forever. Listening on the window too keeps one
+   * state correct for both architectures; on desktop it simply never moves.
+   */
+  useEffect(() => {
+    const onWindowScroll = () => setScrolled(window.scrollY > 24);
+    window.addEventListener('scroll', onWindowScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onWindowScroll);
+  }, []);
   const handledRedirectError = useRef<string | null>(null);
 
   const signOut = async () => {

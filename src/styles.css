@@ -5815,3 +5815,48 @@ the skill's share of the selected source, and how many of its questions are alre
 .ocs-row select { padding: 6px 8px; border-radius: var(--radius-md); border: 1px solid var(--border); background-color: var(--panel2); color: inherit; font: inherit; }
 .ocs-name { flex: 1; min-width: 220px; }
 .ocs-row.is-archived .ocs-name { opacity: .6; }
+
+/* ---- mobile scroll architecture: ONE scroll container ------------------------ */
+/*
+ * On a phone the page scrolls with the DOCUMENT, not inside a fixed-height column.
+ *
+ * `.shell` is `100dvh` with `overflow: hidden` and `.main` is the scroller — the right shape on a
+ * desktop, wrong on a phone once a page adds scrollers of its own. Code Bro has several: the Monaco
+ * cell, the output/pre panes, the notebook list, the split-lesson column. A vertical swipe that
+ * starts on any of them is claimed by that inner scroller, so the page itself does not move and the
+ * content below the editor reads as unreachable. `100dvh` compounds it: it does not shrink with the
+ * on-screen keyboard or the collapsing address bar inside a nested scroller, so the last cells and
+ * the bottom navigation can end up outside the visible area with nothing to scroll them into view.
+ *
+ * Below 780px (the drawer breakpoint) the document becomes the single scroller again: the shell and
+ * the main column keep their natural height, sticky chrome (the topbar) sticks to the viewport, and
+ * only genuinely independent panes keep an inner scroll. Desktop is untouched — `.main` still owns
+ * the scroll there, which is what keeps the rail fixed.
+ */
+@media (max-width: 780px) {
+  html, body { height: auto; }
+  body { min-height: 100%; overscroll-behavior-y: auto; }
+  #root { height: auto; min-height: 100dvh; }
+  .shell, .main { height: auto; min-height: 100dvh; overflow: visible; }
+  /* The fixed bottom navigation must not cover the last row: 96px clears the bar, the safe-area
+     term clears an iPhone's home indicator. */
+  .content { padding-bottom: calc(96px + env(safe-area-inset-bottom)); overflow-x: clip; }
+  /* Panels that were sticky viewport-capped scrollers on desktop are ordinary blocks here. Left as
+     they were, `.c-split-left` and the notebook list each became a ~100vh inner scroller inside the
+     page — a second, invisible scrollbar on a screen that already has the editor's. */
+  .nb-listcard, .c-split-left {
+    position: static; max-height: none; overflow: visible; overscroll-behavior: auto;
+  }
+  /* A grid/flex child with a minimum content width is what pushes a phone sideways; the editor,
+     its chrome and the notebook column must all be allowed to shrink. */
+  .codebox, .jup, .jup-cell, .nb-main, .wb-main, .wb-side, .workbench { min-width: 0; max-width: 100%; }
+  .codebox { border-radius: var(--radius-sm); }
+  .codebox-bar { gap: 6px; padding: 5px 8px; }
+  /* A sheet taller than the visible area must scroll itself, and `dvh` tracks the keyboard. */
+  .modal { max-height: min(88dvh, 88vh); }
+}
+
+/* Touch scrolling for the panes that legitimately keep their own scrollbar. */
+.nb-editor, .jup-stdin, .codebox-problems, .nb-out, pre.codeblock {
+  -webkit-overflow-scrolling: touch;
+}
