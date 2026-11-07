@@ -22,8 +22,9 @@ const load = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 
 const {
   atsChecks, atsReport, careerWorkspace, keywordCoverage, nextChecklistAction,
-  resumeReadiness, roleKeywords, storedAnswers,
+  pitchWordSuggestion, resumeReadiness, roleKeywords, storedAnswers,
 } = await load('src/core/learning/career-workspace.ts');
+
 
 const skills = [{ id: 'python', label: 'Python', pct: 70 }, { id: 'data', label: 'NumPy + Pandas', pct: 40 }];
 
@@ -83,6 +84,21 @@ test('career workspace: role keywords come from the measured skills, not a hardc
   const coverage = keywordCoverage(['I used Python and numpy for the model.'], skills);
   assert.deepEqual(coverage, { matched: 2, total: 3, pct: 67 }, '2 of 3 keywords, honestly measured');
   assert.equal(keywordCoverage([], skills).pct, 0, 'no pitch, no coverage — never NaN');
+});
+
+test('career workspace: missingWordsSurface is empty when every strong-track word is present', () => {
+  const sug = pitchWordSuggestion({
+    answers: { 'resume:test:0': 'I shipped a Python pipeline.' },
+    skills: [{ id: 'x', label: 'Python', pct: 80 }],
+  });
+  assert.deepEqual(sug.missingKeywords, [], 'nothing missing to suggest');
+  assert.equal(sug.coverage.matched, 1);
+});
+
+test('career workspace: pitchWordSuggestion falls back cleanly when there are no measured skills', () => {
+  const sug = pitchWordSuggestion({ answers: {}, skills: [] });
+  assert.deepEqual(sug.missingKeywords, []);
+  assert.deepEqual(sug.coverage, { matched: 0, total: 0, pct: 0 });
 });
 
 test('career workspace: a check with no denominator is null, and null is excluded from the score', () => {

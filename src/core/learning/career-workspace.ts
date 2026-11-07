@@ -1,3 +1,4 @@
+"use strict";
 /**
  * THE CAREER WORKSPACE — resume readiness, local ATS checks and the next job-prep tick, in one
  * place, from records the learner already has.
@@ -140,6 +141,18 @@ export function keywordCoverage(answers: string[], skills: { label: string }[]):
   return { matched, total: words.length, pct: Math.round((matched / words.length) * 100) };
 }
 
+export function pitchWordSuggestion(input: {
+  answers: Record<string, string>;
+  skills: { label: string; pct: number }[];
+}): { missingKeywords: string[]; coverage: { matched: number; total: number; pct: number } } {
+  const stored = storedAnswers(input.answers);
+  const strong = input.skills.length > 0 ? input.skills.slice().sort((a, b) => b.pct - a.pct)[0] : null;
+  const words = roleKeywords(strong ? [strong] : []);
+  const coverage = keywordCoverage(stored, words.map((label) => ({ label })));
+  const missingKeywords = words.filter((w) => !stored.join(' ').toLowerCase().includes(w));
+  return { missingKeywords, coverage };
+}
+
 /**
  * The checks themselves, in the order a learner should fix them: finish the pitches, make them
  * substantive, put the role's words in them, ship three builds, be findable, remove filler.
@@ -241,7 +254,6 @@ export interface CareerWorkspace {
   /** True when no record exists at all — the page says so instead of printing a zero score. */
   cold: boolean;
 }
-
 export function careerWorkspace(input: CareerWorkspaceInput): CareerWorkspace {
   const stored = storedAnswers(input.answers).length;
   const ticks = Object.values(input.checklist ?? {}).filter(Boolean).length;

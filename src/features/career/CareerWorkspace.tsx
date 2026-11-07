@@ -13,6 +13,7 @@ import { stageAttempt } from '../../core/platform/keys';
 import { sectionProgress } from '../../core/learning/progress';
 import { bestRole, roleSkills, trackMastery } from '../../core/learning/career';
 import { careerWorkspace } from '../../core/learning/career-workspace';
+import { pitchWordSuggestion } from '../../core/learning/career-pitch-keywords';
 import { RESUME_ANSWER_TOTAL } from '../../core/assessment/defense';
 import { Bar, ProgressRing } from '../../components/ui/ui';
 
@@ -63,6 +64,7 @@ export default function CareerWorkspace() {
     };
   }, [sections, state.attempts]);
 
+  const words = useMemo(() => pitchWordSuggestion({ answers: state.defenseAnswers, skills: role.skills }), [state.defenseAnswers, role.skills]);
   const space = useMemo(() => careerWorkspace({
     answers: state.defenseAnswers,
     checklist: state.jobPrep,
