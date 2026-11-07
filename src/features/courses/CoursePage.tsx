@@ -123,6 +123,17 @@ export default function CoursePage() {
             </ul>
           </div>
         )}
+
+        {/* How the course CLOSES, from the authored `meta.assessment` — the same required field the
+            generators validate, printed beside the objectives so "should I take this?" includes the
+            work that finishes it. The page never invents a pass rule: whatever the plan says closes
+            the course is what a learner reads here. */}
+        {!!course.meta.assessment.trim() && (
+          <div className="course-obj">
+            <div className="small muted">{t('courses.assessment')}</div>
+            <p className="course-assessment">{course.meta.assessment}</p>
+          </div>
+        )}
       </div>
 
       <div className="sec-head"><h2><Target size={16} color="var(--accent)" /> {t('courses.stepsIndex')}</h2><span className="line" /></div>

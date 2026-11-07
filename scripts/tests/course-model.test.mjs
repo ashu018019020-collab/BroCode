@@ -171,6 +171,10 @@ test('course model: the metadata reaches the screens, and every level has a labe
   assert.match(page, /course\.meta\.prerequisites/, 'the course page header shows the prerequisites');
   // …and the course page answers "what will I be able to do?".
   assert.match(page, /course\.meta\.objectives\.map/, 'the course page lists the objectives');
+  // …and "what closes it?". `meta.assessment` is authored and required by the generators but was
+  // the one plan fact no screen read, so this pin is what keeps it surfaced.
+  assert.match(page, /course\.meta\.assessment/, 'the course page prints the authored assessment');
+  assert.match(page, /t\('courses\.assessment'\)/, 'under its own label, not as loose prose');
   // One helper formats the estimate for both surfaces, so the card and the header cannot drift.
   assert.match(home, /courseHours\(card\.meta\.minutes\)/, 'the card uses the shared hour helper');
   assert.match(page, /courseHours\(course\.meta\.minutes\)/, 'the course page uses the same helper');
