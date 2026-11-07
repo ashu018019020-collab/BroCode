@@ -413,14 +413,23 @@ test('layout: the header keeps all seven pillars at laptop widths instead of hid
   // 781px to 1180px, which made five of the seven doors unreachable exactly on laptop screens.
   assert.doesNotMatch(css, /\.topbar-nav-link:nth-child\(n \+ 3\)/, 'the header must not hide pillars by position');
 
-  const at = css.indexOf('@media (max-width: 1250px) and (min-width: 901px)');
-  assert.ok(at > 0, 'the laptop-width band must be explicit');
+  const at = css.indexOf('@media (max-width: 1250px) and (min-width: 781px)');
+  assert.ok(at > 0, 'the laptop/tablet band must be explicit and start at the phone handover');
   const band = css.slice(at, css.indexOf('@media', at + 10));
   assert.match(band, /\.topbar-nav-link > svg \{ display: block; \}/,
     'the icon carries the destination once the label is visually hidden');
   assert.match(band, /\.topbar-nav-link > span \{[^}]*clip-path: inset\(50%\)/,
     'the label is visually hidden, not removed — a screen reader still announces it');
   assert.doesNotMatch(band, /display: none/, 'no destination may be dropped in the laptop band');
+
+  // The tablet band below it must not undo the fix by hiding the row again — it pays for the
+  // seven icons with the search field's width, which already has an icon form.
+  const tabletAt = css.indexOf('@media (max-width: 900px) {');
+  const tablet = css.slice(tabletAt, css.indexOf('@media (max-width: 900px) and (min-width: 781px)', tabletAt));
+  assert.doesNotMatch(tablet, /\.topbar-nav \{ display: none; \}/,
+    'no width that still shows the header may drop the pillars');
+  assert.match(tablet, /\.topbar \.searchbox > span, \.topbar \.searchbox \.kbd \{ display: none; \}/,
+    'the search field collapses to its icon so the seven pillars keep their room');
 });
 
 test('layout: header and navigation dock keep the dark glass treatment and raised AI control', () => {
@@ -711,7 +720,7 @@ test('layout: header and footer controls compact cleanly across desktop, tablet 
   const app = read('src/app/App.tsx');
   // The density cut is ICONS, not deletions: at laptop/tablet widths every destination stays in
   // the header and only its label is visually hidden. Hiding items 3+ is what this replaced.
-  assert.match(css, /@media \(max-width: 1250px\) and \(min-width: 901px\) \{[^@]*?\.topbar-nav-link > span \{[^}]*?clip-path: inset\(50%\)/,
+  assert.match(css, /@media \(max-width: 1250px\) and \(min-width: 781px\) \{[^@]*?\.topbar-nav-link > span \{[^}]*?clip-path: inset\(50%\)/,
     'laptop/tablet header navigation must reduce to icons before the search and utility controls collide, without dropping a destination');
   assert.match(css, /@media \(max-width: 780px\)[\s\S]*?\.topbar-nav, \.topbar-right \.quickmenu,[\s\S]*?\.topbar \.searchbox \{[\s\S]*?width: 30px; min-width: 30px;/,
     'mobile header must retain compact search and priority utility controls');

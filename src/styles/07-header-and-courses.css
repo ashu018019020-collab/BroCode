@@ -153,14 +153,16 @@
   .topbar .profile-chip, .topbar .profile-chip .avatar { width: 36px; height: 36px; }
 }
 /*
- * Seven destinations do not become two. From 1250px down to 901px there is no room for seven
- * LABELS beside the search box and the utilities, so the row keeps every destination as an ICON:
- * the label stays in the markup (a screen reader announces it, `title` shows it on hover) and only
- * its paint is removed. The rule this replaced hid every pill from the third one on, which made
- * five of the seven doors unreachable from the header at exactly the widths laptops use — the
- * opposite of what a navigation fix should do.
+ * Seven destinations do not become two — not at any width where the header still shows the rail.
+ * From 1250px down to 781px there is no room for seven LABELS beside the search box and the
+ * utilities, so the row keeps every destination as an ICON: the label stays in the markup (a screen
+ * reader announces it, `title` shows it on hover) and only its paint is removed. The rule this
+ * replaced hid every pill from the third one on between 781px and 1180px, which made five of the
+ * seven doors unreachable from the header at exactly the widths laptops use — the opposite of what
+ * a navigation fix should do. 781px is the floor because that is where the header hands the same
+ * destinations over to the bottom dock and the drawer.
  */
-@media (max-width: 1250px) and (min-width: 901px) {
+@media (max-width: 1250px) and (min-width: 781px) {
   .topbar-nav-link { gap: 0; padding-inline: 8px; }
   .topbar-nav-link > svg { display: block; }
   .topbar-nav-link > span {
@@ -170,17 +172,22 @@
 }
 @media (max-width: 900px) {
   .topbar { gap: 7px; min-height: 62px; padding: 7px 9px; }
-  .topbar-nav { display: none; }
-  .topbar-nav-link { padding: 8px 7px; font-size: .72rem; }
-  .topbar .searchbox { flex-basis: 120px; height: 38px; padding-inline: 10px; gap: 7px; }
-  .topbar .searchbox .kbd { display: none; }
+  .topbar-nav-link { font-size: .72rem; }
+  /* The seven pillars stay; the search field is what gives up its width, collapsing to the icon
+     that already opens the same palette (the button keeps its aria-label). */
+  .topbar .searchbox {
+    flex: none; width: 36px; min-width: 36px; height: 36px; justify-content: center;
+    padding: 0; gap: 0; border-radius: 11px;
+  }
+  .topbar .searchbox > span, .topbar .searchbox .kbd { display: none; }
   .topbar-right { gap: 4px !important; }
   .topbar .icon-btn, .topbar .side-btn, .topbar .side-btn-desk,
   .topbar .profile-chip, .topbar .profile-chip .avatar { width: 32px; height: 32px; }
 }
 @media (max-width: 900px) and (min-width: 781px) {
   .topbar { gap: 4px; padding-inline: 7px; }
-  .topbar .searchbox { min-width: 120px; flex-basis: 120px; padding-inline: 8px; }
+  .topbar .topbar-nav { gap: 1px; }
+  .topbar .topbar-nav-link { padding-inline: 6px; }
   .topbar .icon-btn, .topbar .side-btn-desk, .topbar .profile-chip, .topbar .profile-chip .avatar {
     width: 30px; height: 30px;
   }
