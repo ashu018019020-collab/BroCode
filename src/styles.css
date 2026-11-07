@@ -5841,12 +5841,28 @@ the skill's share of the selected source, and how many of its questions are alre
   /* The fixed bottom navigation must not cover the last row: 96px clears the bar, the safe-area
      term clears an iPhone's home indicator. */
   .content { padding-bottom: calc(96px + env(safe-area-inset-bottom)); overflow-x: clip; }
-  /* Panels that were sticky viewport-capped scrollers on desktop are ordinary blocks here. Left as
-     they were, `.c-split-left` and the notebook list each became a ~100vh inner scroller inside the
-     page — a second, invisible scrollbar on a screen that already has the editor's. */
-  .nb-listcard, .c-split-left {
-    position: static; max-height: none; overflow: visible; overscroll-behavior: auto;
+  /* Panels that were sticky viewport-capped scrollers on desktop are ordinary blocks here: left as
+     they were, `.c-split-left` became a ~100vh inner scroller inside a page that already has the
+     editor's. */
+  .c-split-left { position: static; max-height: none; overflow: visible; overscroll-behavior: auto; }
+  /*
+   * The notebook picker is the ONE inner scroll a phone keeps, and it is deliberate.
+   *
+   * The reported bug: it was `position: sticky`, so while the page scrolled it pinned itself over
+   * the notebook — the library looked frozen, its options ended up under the bar, and the notebook it
+   * covered could not be read. So it is not sticky here.
+   *
+   * It is not a full-height block either: five library cards are taller than half a phone, so as a
+   * plain block they pushed the notebook a screen and a half down. A capped box that scrolls its own
+   * options is what a picker should be — and `overscroll-behavior` stays CHAINED (the default), so
+   * reaching the end of the list keeps scrolling the page instead of trapping the swipe.
+   */
+  .nb-listcard {
+    position: static; max-height: min(46dvh, 340px); overflow: hidden auto;
+    overscroll-behavior-y: auto; -webkit-overflow-scrolling: touch;
   }
+  /* The options keep their own height inside the box, so the box is what scrolls. */
+  .nb-listcard .nb-pick { flex: none; }
   /* A grid/flex child with a minimum content width is what pushes a phone sideways; the editor,
      its chrome and the notebook column must all be allowed to shrink. */
   .codebox, .jup, .jup-cell, .nb-main, .wb-main, .wb-side, .workbench { min-width: 0; max-width: 100%; }

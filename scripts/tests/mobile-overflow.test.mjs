@@ -190,7 +190,18 @@ test('mobile: the document is the single scroll container and the last row clear
   );
   assert.match(
     flat,
-    /\.nb-listcard, \.c-split-left \{ position: static; max-height: none; overflow: visible;/,
-    'viewport-capped sticky panels must become static blocks on phones',
+    /\.c-split-left \{ position: static; max-height: none; overflow: visible;/,
+    'the split lesson column must become a static block on phones',
+  );
+  /*
+   * The notebook picker is the exception, and both halves of it are the bug report: it used to be
+   * `sticky`, so it pinned itself over the notebook and its options were unreachable — and a plain
+   * full-height block pushed the notebook a screen down instead. It must stay static AND bounded, so
+   * the box scrolls its own options while the page keeps scrolling.
+   */
+  assert.match(
+    flat,
+    /\.nb-listcard \{ position: static; max-height: min\(46dvh, 340px\); overflow: hidden auto;/,
+    'the notebook picker must be a bounded, non-sticky scroller on phones',
   );
 });
