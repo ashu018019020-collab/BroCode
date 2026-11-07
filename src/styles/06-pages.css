@@ -1546,6 +1546,20 @@ the skill's share of the selected source, and how many of its questions are alre
 .cw-mark.fail { color: var(--red); }
 .cw-mark.idle { color: var(--muted); }
 .cw-fix { font-size: .72rem; white-space: nowrap; text-decoration: none; }
+
+/* Owner content & publishing: published counts as a compact stat grid, and one row per finding.
+   A dash in a stat means the registry has not loaded — never zero. */
+.oh-grid {
+  display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.oh-stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.oh-stat b { font-size: 1.15rem; }
+.oh-finding {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.oh-finding:last-child { border-bottom: 0; }
+.oh-go { font-size: .72rem; white-space: nowrap; text-decoration: none; }
 /* The course page's objectives — a short list, not a second subtitle. */
 .course-obj { margin-top: 12px; }
 .course-obj-list {

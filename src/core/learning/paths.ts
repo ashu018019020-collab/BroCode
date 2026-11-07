@@ -345,6 +345,7 @@ export const PATH_ROUTE_ALLOWLIST: string[] = [
   '/login',               // Supabase-backed account entry — the app's only front door
   '/reset-password',      // the emailed-recovery half of the account flow, reached from /login
   '/admin',               // server-authorized account management
+  '/admin/content',       // owner-only catalog health: a report, not a learner path
   '*',                    // fallback route
 ];
 

@@ -21,6 +21,7 @@ export const PAGES: { title: string; detail: string; route: string }[] = [
   { title: 'Labs', detail: 'Every runnable lab: Python, SQL, NumPy + Pandas, AI, RAG, Agentic', route: '/labs' },
   { title: 'Interview', detail: 'Interview mode, mock rounds and project defense', route: '/interviews' },
   { title: 'Career', detail: 'Job prep, defense and the progress record', route: '/career' },
+  { title: 'Content & Publishing', detail: 'Owner: published counts, content gaps and what to fix first', route: '/admin/content' },
   { title: 'Concepts', detail: 'Browse every concept in the curriculum', route: '/concepts' },
   { title: 'Review Queue', detail: 'Spaced repetition — due today', route: '/review' },
   { title: 'Mistake Tracker', detail: 'Your repeated mistakes and weak topics', route: '/mistakes' },

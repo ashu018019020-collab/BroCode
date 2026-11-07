@@ -197,7 +197,12 @@ export default function AdminUsersPage() {
             </span>
           </p>
         </div>
-        <Link className="btn small" to="/">Back to learning</Link>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          {/* The catalog view lives beside this dashboard, not in the rail: the owner area stays one
+              destination (`layout.test.mjs`), so this is how an owner finds it. */}
+          <Link className="btn small" to="/admin/content">Content &amp; publishing</Link>
+          <Link className="btn small" to="/">Back to learning</Link>
+        </div>
       </div>
       {error && <p className="auth-error" role="alert">{error}</p>}
       {result && (

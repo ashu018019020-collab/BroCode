@@ -85,6 +85,7 @@ const CoursePage = lazy(() => import('../features/courses/CoursePage'));
 const StepPage = lazy(() => import('../features/courses/StepPage'));
 const Workspace = lazy(() => import('../features/workspace/Workspace'));
 const CareerWorkspace = lazy(() => import('../features/career/CareerWorkspace'));
+const OwnerContentPage = lazy(() => import('../features/owner/OwnerContentPage'));
 
 type GroupKey = 'nav.pillars' | 'nav.tools' | 'nav.owner' | 'hidden';
 
@@ -188,6 +189,10 @@ export const NAV: NavItem[] = [
   // group only for an administrator, and the page behind it guards itself again (AdminUsersPage
   // redirects a non-admin), because a hidden link is not an authorization.
   { to: '/admin', icon: Shield, label: 'Owner Control Center', group: 'nav.owner', tone: 'amber' },
+  // The catalog view: published counts, real gaps and what to fix first. Registered so its label and
+  // icon exist for Ctrl+K and any card, but NOT a second row in the owner rail — `layout.test.mjs`
+  // pins that area to one destination, and `/admin` links this page instead.
+  { to: '/admin/content', icon: Activity, label: 'Content & Publishing', group: 'hidden', sidebar: false },
 
   //
   // Registered, deliberately NOT sidebar links. Each of these is now reached through the pillar
@@ -909,6 +914,7 @@ function Shell() {
               {/* The owner dashboard gates itself on the server-issued role; `Protect` only ensures
                   there IS a session to check. The role is never read from the client. */}
               <Route path="/admin" element={<Protect><AdminUsersPage /></Protect>} />
+              <Route path="/admin/content" element={<Protect><OwnerContentPage /></Protect>} />
               <Route path="/final-assessment" element={<Protect><FinalAssessment /></Protect>} />
               <Route path="/ai-lab" element={<Protect><AILab /></Protect>} />
               <Route path="/ai-mentor" element={<Protect><MentorHub /></Protect>} />
