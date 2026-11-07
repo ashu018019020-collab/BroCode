@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Database, Radio, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../core/auth/AuthProvider';
@@ -9,6 +9,7 @@ import { useNotebooks } from '../../core/data/notebooks';
 import { useOwnerCourses } from '../../core/data/owner-courses';
 import { contentHealth, type Severity } from '../../core/learning/content-health';
 import { STEPS } from '../../core/learning/roadmap';
+import { loadCourseAuditReport, type CourseAuditReport } from '../../core/data/course-audit';
 
 /**
  * /admin/content — the owner's content & publishing centre.
@@ -70,6 +71,11 @@ export default function OwnerContentPage() {
       ? owner.rows.map((row) => ({ slug: row.slug, name: row.name, hidden: row.hidden }))
       : null,
   }), [index, sections, banks, notebooks, owner.rows]);
+
+  const [audit, setAudit] = useState<CourseAuditReport | null>(null);
+  useEffect(() => {
+    setAudit(loadCourseAuditReport());
+  }, []);
 
   if (loading) {
     return (
@@ -139,6 +145,89 @@ export default function OwnerContentPage() {
         <p className="small muted" style={{ margin: '10px 0 0' }}>
           A dash means the registry has not loaded or could not be read — it never means zero.
         </p>
+      </div>
+
+      {/* ---------------------------- course audit report ---------------------------- */}
+      <div className="sec-head"><h2><Database size={16} color="var(--violet)" /> Course audit report</h2><span className="line" /></div>
+      <div className="card fadeup">
+        {audit ? (
+          <>
+            <div className="oh-grid">
+              <div className="oh-stat"><b>{audit.courses}</b><span className="small muted">courses</span></div>
+              <div className="oh-stat"><b>{audit.indexRange}</b><span className="small muted">index range</span></div>
+              <div className="oh-stat"><b>{audit.sourceItems.toLocaleString()}</b><span className="small muted">source items</span></div>
+              <div className="oh-stat"><b>{audit.migratedItems.toLocaleString()}</b><span className="small muted">migrated items</span></div>
+              <div className="oh-stat"><b>{audit.indexEntries.toLocaleString()}</b><span className="small muted">index entries</span></div>
+              <div className="oh-stat"><b>{audit.courseMinutes.toLocaleString()}</b><span className="small muted">course minutes</span></div>
+            </div>
+            <div className="oh-finding" style={{ marginTop: 12 }}>
+              <span className="chip">{audit.metaProblems === 0 ? 'clean' : 'metadata'}</span>
+              <div>
+                <b className="small row" style={{ gap: 6 }}><CheckCircle2 size={13} /> Course metadata completeness</b>
+                <div className="small muted">
+                  {audit.metaProblems === 0
+                    ? `${audit.courses}/${audit.courses} courses complete`
+                    : `${audit.courses - audit.metaProblems}/${audit.courses} courses complete · ${audit.metaProblems} problems`}
+                </div>
+              </div>
+            </div>
+            <div className="oh-finding">
+              <span className="chip">gaps</span>
+              <div>
+                <b className="small row" style={{ gap: 6 }}><ShieldAlert size={13} /> Roadmap index integrity</b>
+                <div className="small muted">
+                  index {audit.indexRange}
+                  {audit.indexGaps.length === 0 && audit.indexDuplicates.length === 0
+                    ? '· no gaps, no duplicate numbers'
+                    : `· gaps: ${audit.indexGaps.length || 'none'} · duplicates: ${audit.indexDuplicates.length || 'none'}`}
+                  {' · '}
+                  {audit.unmappedItems === 0 && audit.unsorted.length === 0
+                    ? 'every source item is mapped'
+                    : `${audit.unmappedItems} unmapped · ${audit.unsorted.length ? audit.unsorted.slice(0, 3).join(', ') : 'no unsorted'}`}
+                </div>
+              </div>
+            </div>
+            <div className="oh-finding">
+              <span className="chip">refs</span>
+              <div>
+                <b className="small row" style={{ gap: 6 }}><Radio size={13} /> Reference resolution</b>
+                <div className="small muted">
+                  unresolved refs: {audit.unresolvedRefs}
+                  {audit.unresolvedRefs === 0 ? '· all tagged refs resolve' : `· first: ${audit.unsorted[0] ?? '—'}`}
+                  {' · '}
+                  true duplicates removed: {audit.trueDuplicatesRemoved || 'none'}
+                  {' · '}
+                  orphan items: {audit.orphanItems || 'none'}
+                </div>
+              </div>
+            </div>
+            <div className="oh-finding">
+              <span className="chip">families</span>
+              <div>
+                <b className="small row" style={{ gap: 6 }}><Activity size={13} /> Published family counts</b>
+                <div className="small muted">
+                  steps {audit.families.steps}
+                  {' · '}sections {audit.families.sections}
+                  {' · '}tracks {audit.families.tracks}
+                  {' · '}playbook {audit.families.playbook}
+                  {' · '}questions {audit.families.questions.toLocaleString()}
+                  {' · '}notebooks {audit.families.notebooks}
+                  {' · '}projects {audit.families.projects}
+                  {' · '}interviewPrep {audit.families.interviewPrep}
+                </div>
+              </div>
+            </div>
+            <div className="small muted" style={{ margin: '12px 0 0' }}>
+              This report is published from `npm run audit:write` under `artifacts/course-audit-report.json`.
+              It is read at the data boundary so the owner centre shows exactly the same numbers the
+              course audit script prints.
+            </div>
+          </>
+        ) : (
+          <div className="small muted" style={{ marginTop: 8 }}>
+            Course audit report not loaded yet.
+          </div>
+        )}
       </div>
 
       {/* ------------------------------ attention ------------------------------ */}

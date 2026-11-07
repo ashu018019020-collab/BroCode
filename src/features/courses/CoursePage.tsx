@@ -79,8 +79,8 @@ export default function CoursePage() {
                 )}
               </div>
 
-              {/* Plan facts: level, the whole-course estimate and what to finish first. Same
-                  authored `meta` as the card, so the card and this page cannot disagree. */}
+              {/* Plan facts: all four authored fields in one place. Level, whole-course time, what to
+                  finish first, and how the course closes — so the card and this page cannot disagree. */}
               <div className="row small muted course-meta" style={{ gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
                 <span className="cc-level">{t(LEVEL_KEY[course.meta.level])}</span>
                 <span>{courseHours(course.meta.minutes)}h</span>
@@ -88,6 +88,12 @@ export default function CoursePage() {
                   <>
                     <span>·</span>
                     <span className="course-needs">{t('courses.needs')}: {needs.join(', ')}</span>
+                  </>
+                )}
+                {!!course.meta.assessment.trim() && (
+                  <>
+                    <span>·</span>
+                    <span className="course-needs">{t('courses.assessment')}: {course.meta.assessment}</span>
                   </>
                 )}
               </div>
@@ -124,16 +130,6 @@ export default function CoursePage() {
           </div>
         )}
 
-        {/* How the course CLOSES, from the authored `meta.assessment` — the same required field the
-            generators validate, printed beside the objectives so "should I take this?" includes the
-            work that finishes it. The page never invents a pass rule: whatever the plan says closes
-            the course is what a learner reads here. */}
-        {!!course.meta.assessment.trim() && (
-          <div className="course-obj">
-            <div className="small muted">{t('courses.assessment')}</div>
-            <p className="course-assessment">{course.meta.assessment}</p>
-          </div>
-        )}
       </div>
 
       <div className="sec-head"><h2><Target size={16} color="var(--accent)" /> {t('courses.stepsIndex')}</h2><span className="line" /></div>

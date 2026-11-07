@@ -13,6 +13,9 @@ import { isMastered } from '../../core/learning/progress';
 import { studyStreak } from '../../core/learning/study';
 import { today, useStore } from '../../core/storage/store';
 
+/** The workspace card's needs line is capped the same way as the catalog card: two names, then `+N`,
+ * full list kept in `title` so nothing is unreachable. */
+
 /**
  * /workspace — the screen a learner opens when they are not sure where they are.
  *
@@ -41,6 +44,11 @@ export default function Workspace() {
   /** Courses named by the prerequisites, so the card prints names instead of slugs. */
   const nameOf = useMemo(() => new Map(cards.map((c) => [c.slug, c.name] as const)), [cards]);
   const needs = card ? card.meta.prerequisites.map((slug) => nameOf.get(slug) ?? slug) : [];
+  /** Two names keep the line readable inside a narrow card; the course page still prints the whole
+   * list. `+N` is language-neutral, and the full clause rides in `title` so nothing is actually
+   * unreachable. */
+  const shownNeeds = needs.slice(0, 2);
+  const extraNeeds = needs.length - shownNeeds.length;
   const hours = card ? Math.max(1, Math.round(card.meta.minutes / 60)) : 0;
 
   const mastered = sections.filter((s) => isMastered(s, state)).length;
@@ -49,11 +57,9 @@ export default function Workspace() {
   const step = card ? STEPS.find((s) => s.no === target.step) ?? null : null;
   const stepHref = card ? `/course/${card.slug}/${target.step}?tab=lesson` : '/courses';
 
-  /**
-   * The one thing AFTER the step above, from the same card-only measures. A separate answer on
+  /** The one thing AFTER the step above, from the same card-only measures. A separate answer on
    * purpose: "Next step" is what to open now, this block is what to open once it is clear — so the
-   * two can never name the same step, and neither needs a course file.
-   */
+   * two can never name the same step, and neither needs a course file. */
   const after = useMemo(
     () => (card ? workspaceNextAction(cards, pctOf, target) : null),
     [card, cards, pctOf, target],
@@ -117,7 +123,13 @@ export default function Workspace() {
             </div>
 
             {!!needs.length && (
-              <p className="small muted ws-needs">{t('courses.needs')}: {needs.join(', ')}</p>
+              <p
+                className="small muted ws-needs"
+                title={`${t('courses.needs')}: ${needs.join(', ')}`}
+              >
+                {t('courses.needs')}: {shownNeeds.join(', ')}
+                {extraNeeds > 0 && <span className="cc-more"> +{extraNeeds}</span>}
+              </p>
             )}
 
             <Link className="btn small" to={`/course/${card.slug}`} style={{ marginTop: 10, alignSelf: 'flex-start' }}>
@@ -158,7 +170,7 @@ export default function Workspace() {
       )}
 
       {/* What comes after that step. One quiet row: the same measures, read from the steps AFTER
-          the one above, so it can never repeat it. */}
+       the one above, so it can never repeat it. */}
       {card && after?.kind === 'done' && (
         <p className="small muted ws-after-done">{t('workspace.journeyDone')}</p>
       )}
