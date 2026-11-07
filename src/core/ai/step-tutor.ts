@@ -32,6 +32,8 @@ export interface StepScope {
  */
 export interface BuildScope {
   name: string;
+  /** The curriculum section that owns the build — lets retrieval bias to its material. */
+  sectionId?: string;
   sectionTitle: string;
   tier: string;
   what: string;
@@ -69,6 +71,7 @@ export function buildTutorContext(scope: BuildScope): AssistantContext {
   const section = clean(scope.sectionTitle);
   const tier = clean(scope.tier);
   return {
+    sectionId: clean(scope.sectionId) || undefined,
     pageTitle: name || 'Project build',
     lessonTitle: section || undefined,
     where: ['Build', section, tier, name].filter(Boolean).join(' · '),

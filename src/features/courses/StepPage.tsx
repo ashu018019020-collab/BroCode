@@ -20,6 +20,7 @@ import {
   stepBriefing, stepTutorContext, stepTutorPrompts, type StepScope,
 } from '../../core/ai/step-tutor';
 import { ScopeTutor } from '../../components/shared/ScopeTutor';
+import { usePublishTutorScope } from '../../components/shared/tutorScope';
 import { NAV } from '../../app/App';
 import type { LocaleKey } from '../../app/i18n/locales';
 
@@ -93,6 +94,35 @@ export default function StepPage() {
   const validStep = Number.isInteger(no) && no >= 1 && no <= STEPS.length;
   const knownSlug = index ? index.courses.some((c) => c.slug === slug) : true;
 
+  /** The roadmap record for this step number — the same one the page prints below. */
+  const meta = STEPS.find((s) => s.no === no) ?? null;
+
+  /**
+   * What the tutor is told: this step, from the roadmap's own authored fields. The title, goal and
+   * topics come from `STEPS` — the same record this page prints — so a prompt can only name content
+   * the step actually teaches. Built ABOVE the guards below because its publish hook must run on
+   * every render: a not-found or loading render publishes nothing instead of skipping the hook.
+   */
+  const stepScope: StepScope = {
+    no,
+    title: meta?.title ?? `${t('courses.step')} ${no}`,
+    courseTitle: course?.name ?? '',
+    goal: meta?.goal,
+    topics: meta?.topics,
+    route: `/course/${course?.slug ?? slug}/${no}?tab=${tab}`,
+  };
+
+  /** Published to the footer dock, so the same step tutor is reachable without scrolling to its
+      block at the bottom of every tab. */
+  const tutorable = !!course && knownSlug && validStep && hasStep(course, no);
+  usePublishTutorScope(tutorable ? {
+    kind: 'step',
+    title: stepScope.title,
+    context: stepTutorContext(stepScope),
+    prompts: stepTutorPrompts(stepScope),
+    briefing: stepBriefing(stepScope),
+  } : null);
+
   /** One card for either wrong URL: the real reason, and the two sensible ways out. */
   const notFoundCard = (title: string, sub: string, courseHref?: string) => (
     <div className="card glow fadeup">
@@ -128,7 +158,6 @@ export default function StepPage() {
     return notFoundCard(t('courses.stepNotFound'), t('courses.stepNotFoundSub'), `/course/${course.slug}`);
   }
 
-  const meta = STEPS.find((s) => s.no === no) ?? null;
   const phase = phaseOf(no);
   const measure = measures.get(no) ?? null;
   const allItems = itemsOfStep(course.items, no);
@@ -149,19 +178,6 @@ export default function StepPage() {
   /** The learner's notes that belong to this step: written under one of its sections, or tagged with the course. */
   const notes = state.notes.filter((n) => (n.section && sectionSet.has(n.section)) || n.tags.includes(slug));
 
-  /**
-   * What the tutor is told: this step, from the roadmap's own authored fields. The title, goal and
-   * topics come from `STEPS` — the same record this page prints — so a prompt can only name content
-   * the step actually teaches. Nothing is fetched and nothing is invented.
-   */
-  const stepScope: StepScope = {
-    no,
-    title: meta?.title ?? `${t('courses.step')} ${no}`,
-    courseTitle: course.name,
-    goal: meta?.goal,
-    topics: meta?.topics,
-    route: `/course/${course.slug}/${no}?tab=${tab}`,
-  };
 
   const createNote = () => {
     upsertNote(newNote({

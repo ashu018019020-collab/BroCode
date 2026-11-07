@@ -150,3 +150,37 @@ test('scoped tutor: both pages hand the real authored fields to the tutor', () =
   assert.match(component, /seed=/, 'a prompt is asked through the card seed');
   assert.doesNotMatch(component + stepPage + projectPage, /fetch\(/, 'the tutor never reaches the network');
 });
+
+test('scoped tutor: the dock carries the page scope, so the entry needs no scroll', () => {
+  const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
+  const store = read('src/components/shared/tutorScope.ts');
+  const dock = read('src/components/shared/AiDock.tsx');
+  const card = read('src/components/shared/AssistantCard.tsx');
+  const stepPage = read('src/features/courses/StepPage.tsx');
+  const projectPage = read('src/features/projects/ProjectLab.tsx');
+
+  // One published scope, guarded so an unmounting surface cannot clear a newer one.
+  assert.match(store, /if \(current\?\.id !== id\) return;/, 'only the publisher clears its own scope');
+  assert.match(store, /useSyncExternalStore/, 'the dock subscribes to the same store');
+
+  // The dock hands the published scope to the ONE assistant card.
+  assert.match(dock, /useTutorScope\(\)/, 'the dock reads the published scope');
+  assert.match(dock, /tutor=\{scope \?\? undefined\}/, 'and passes it to the card');
+
+  // The card shows the authored briefing and starters, through its own ask path.
+  assert.match(card, /tutor\.prompts\.map/, 'the entry renders the page starters');
+  assert.match(card, /void ask\(prompt\);/, 'a starter takes the same path as a typed question');
+  assert.match(card, /ai-tutor-brief/, 'the authored briefing is shown, not summarised');
+
+  // Both surfaces publish exactly what their page block already builds.
+  assert.match(stepPage, /usePublishTutorScope\(/, 'the step page publishes its scope');
+  assert.match(stepPage, /kind: 'step'/, 'as a step');
+  assert.match(projectPage, /usePublishTutorScope\(/, 'the project page publishes its scope');
+  assert.match(projectPage, /kind: 'build'/, 'as a build');
+  assert.match(projectPage, /buildTutorContext\(buildScope\(/, 'from the same brief builder the block uses');
+});
+
+test('scoped tutor: a build carries its section, so retrieval stays on its own material', () => {
+  assert.equal(buildTutorContext({ ...build(), sectionId: 's18' }).sectionId, 's18');
+  assert.equal(buildTutorContext(build()).sectionId, undefined, 'no section means no invented one');
+});

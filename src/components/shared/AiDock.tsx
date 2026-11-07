@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { AssistantCard } from './AssistantCard';
+import { useTutorScope } from './tutorScope';
 
 /**
  * The footer AI dock — the assistant, reachable from every screen.
@@ -16,9 +17,14 @@ import { AssistantCard } from './AssistantCard';
  *
  * The dock draws no header of its own: the assistant card IS the panel, so its identity, live state
  * and close control live in one header instead of two stacked ones.
+ *
+ * A step page and an open build card publish their scoped tutor (see `tutorScope.ts`); the dock
+ * hands that scope to the card. So the entry — the authored briefing and its four starters — follows
+ * the learner to the top of the page, instead of waiting in a block they have to scroll back to.
  */
 export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const scope = useTutorScope();
 
   // Focus on desktop so typing is immediate. On phones this both opens the software keyboard and
   // scrolls the compact dock past its header/actions, so the learner taps the composer explicitly.
@@ -34,7 +40,7 @@ export function AiDock({ open, onClose }: { open: boolean; onClose: () => void }
 
   return (
     <div className="aidock fadeup" role="dialog" aria-modal="false" aria-label="AI assistant" ref={ref}>
-      <AssistantCard compact embedded onClose={onClose} />
+      <AssistantCard compact embedded onClose={onClose} tutor={scope ?? undefined} />
     </div>
   );
 }

@@ -497,7 +497,7 @@ test('layout: the AI assistant is a dark glass island with four responsive quick
     'the close button must stay at the right side of the dock header');
   assert.match(aiDock, /open && !window\.matchMedia\('\(max-width: 780px\)'\)\.matches/,
     'mobile dock opening must not auto-scroll its header and actions offscreen');
-  assert.match(aiDock, /<AssistantCard compact embedded onClose=\{onClose\} \/>/,
+  assert.match(aiDock, /<AssistantCard compact embedded onClose=\{onClose\}[^>]*\/>/,
     'the dock hands its close action to the assistant header it renders');
   assert.match(assistantCard, /onClick=\{onClose\} aria-label="Close the AI panel"/,
     'the sticky X button must still close the AI dock');

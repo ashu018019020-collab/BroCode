@@ -14,6 +14,8 @@ import {
   quickNext, quickScoreAnswer, quickStatus, type Answer, type AssistantContext,
 } from '../../core/ai/assistant';
 import { toast } from '../ui/Toast';
+import { useI18n } from '../../app/i18n';
+import type { TutorScope } from './tutorScope';
 import { accountStorageKey, subscribeStorageAccount } from '../../core/storage/account';
 import { useVoiceTutor } from './useVoiceTutor';
 import { VoiceBar } from './VoiceBar';
@@ -46,7 +48,7 @@ function loadLog(key: string): Turn[] {
  * to sit inside a notebook without shouting.
  */
 export function AssistantCard({
-  seed, compact = false, embedded = false, context, onClose,
+  seed, compact = false, embedded = false, context, onClose, tutor,
 }: {
   /** A question the page hands in (a module starter); asked once per nonce. */
   seed?: { text: string; nonce: number };
@@ -55,6 +57,8 @@ export function AssistantCard({
   context?: AssistantContext;
   /** Present only inside the dock: the panel's own close control, in its own header. */
   onClose?: () => void;
+  /** The scoped step/build tutor the current page published, when there is one. */
+  tutor?: TutorScope;
 }) {
   const logKey = useSyncExternalStore(
     subscribeStorageAccount,
@@ -70,12 +74,13 @@ export function AssistantCard({
       context={context}
       seed={seed}
       onClose={onClose}
+      tutor={tutor}
     />
   );
 }
 
 function AssistantCardSession({
-  seed, compact = false, embedded = false, context, logKey, onClose,
+  seed, compact = false, embedded = false, context, logKey, onClose, tutor,
 }: {
   /** A question the page hands in (a module starter); asked once per nonce. */
   seed?: { text: string; nonce: number };
@@ -84,8 +89,10 @@ function AssistantCardSession({
   context?: AssistantContext;
   logKey: string;
   onClose?: () => void;
+  tutor?: TutorScope;
 }) {
   const { sections } = useCurriculum();
+  const { t } = useI18n();
   const state = useStore();
   const location = useLocation();
   const [knowledge, setKnowledge] = useState<KnowledgeIndex | null>(null);
@@ -100,18 +107,21 @@ function AssistantCardSession({
   const voice = useVoiceTutor(busy);
   const contextForIndex = (index?: KnowledgeIndex | null): AssistantContext => {
     const pageContext = assistantContextForPage(location.pathname, location.search, sections, state, index);
+    /** The page's scoped tutor wins over the route, because it names the exact step/build. */
+    const scoped = tutor?.context;
     return {
       ...pageContext,
+      ...scoped,
       ...context,
-      sectionId: context?.sectionId ?? context?.question?.sectionId ?? pageContext.sectionId,
+      sectionId: scoped?.sectionId ?? context?.sectionId ?? context?.question?.sectionId ?? pageContext.sectionId,
       questionType: context?.questionType ?? context?.question?.type ?? pageContext.questionType,
-      where: context?.where ?? pageContext.where,
+      where: scoped?.where ?? context?.where ?? pageContext.where,
       route: pageContext.route,
-      pageTitle: pageContext.pageTitle,
+      pageTitle: scoped?.pageTitle ?? pageContext.pageTitle,
       courseSlug: pageContext.courseSlug,
       courseTitle: pageContext.courseTitle,
-      chapterTitle: pageContext.chapterTitle,
-      lessonTitle: pageContext.lessonTitle,
+      chapterTitle: scoped?.chapterTitle ?? pageContext.chapterTitle,
+      lessonTitle: scoped?.lessonTitle ?? pageContext.lessonTitle,
       learningLevel: pageContext.learningLevel,
       learningGoal: pageContext.learningGoal,
       progressSummary: pageContext.progressSummary,
@@ -119,7 +129,7 @@ function AssistantCardSession({
   };
   const activeContext = useMemo(
     () => contextForIndex(knowledge),
-    [location.pathname, location.search, sections, state, knowledge, context],
+    [location.pathname, location.search, sections, state, knowledge, context, tutor],
   );
 
   useEffect(() => {
@@ -320,6 +330,35 @@ function AssistantCardSession({
           )}
         </div>
       </div>
+
+      {/* The scoped tutor, carried in from the page that published it. Same briefing and starters
+          the page block shows, so the learner does not have to scroll back down to reach them. */}
+      {tutor && (
+        <div className="ai-tutor">
+          <div className="row spread" style={{ gap: 8 }}>
+            <b className="ai-tutor-head">
+              <Bot size={13} color="var(--cyan)" />
+              {t(tutor.kind === 'build' ? 'tutor.scope.buildTitle' : 'tutor.scope.title')}
+            </b>
+            <span className="small muted ai-tutor-title" title={tutor.title}>{tutor.title}</span>
+          </div>
+          <p className="ai-tutor-brief">{tutor.briefing}</p>
+          <div className="ai-tutor-prompts">
+            {tutor.prompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                className="btn small"
+                title={prompt}
+                onClick={() => { void ask(prompt); }}
+              >
+                <Sparkles size={11} />
+                {prompt.length > 46 ? `${prompt.slice(0, 45).trimEnd()}…` : prompt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="assistant-actions">
         <button className="assistant-action explain" onClick={() => reply(quickExplain(state, sections, activeContext), 'Explain')}>

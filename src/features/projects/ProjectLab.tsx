@@ -14,10 +14,35 @@ import { sectionProgress } from '../../core/learning/progress';
 import { portfolioTrio } from '../../core/learning/career';
 import { nextBuild, projectBriefs, projectSummary } from '../../core/learning/project-workspace';
 import type { ProjectBrief } from '../../core/learning/project-workspace';
-import { buildBriefing, buildTutorContext, buildTutorPrompts } from '../../core/ai/step-tutor';
+import { buildBriefing, buildTutorContext, buildTutorPrompts, type BuildScope } from '../../core/ai/step-tutor';
 import { ScopeTutor } from '../../components/shared/ScopeTutor';
+import { usePublishTutorScope } from '../../components/shared/tutorScope';
 import { Bar, ProgressRing } from '../../components/ui/ui';
 import { toast } from '../../components/ui/Toast';
+
+/**
+ * The authored fields of one brief, in the shape the scoped tutor takes.
+ *
+ * ONE builder for the page block and for the scope this page publishes to the footer dock, so the
+ * two surfaces can never describe different builds. `sectionId` is the curriculum id, which biases
+ * retrieval toward the section that actually teaches the build.
+ */
+function buildScope(p: ProjectBrief): BuildScope {
+  return {
+    name: p.name,
+    sectionId: p.sid,
+    sectionTitle: p.section,
+    tier: p.tier,
+    what: p.what,
+    files: p.files,
+    architecture: p.architecture,
+    buildTarget: p.buildTarget,
+    edgeCases: p.edgeCases,
+    steps: p.steps,
+    defenseQuestion: p.defenseQuestion,
+    route: p.route,
+  };
+}
 
 export default function ProjectLab() {
   const { sections } = useCurriculum();
@@ -45,6 +70,22 @@ export default function ProjectLab() {
   }, [sections, state]);
 
   const next = useMemo(() => nextBuild(projects, masteryOf), [projects, masteryOf]);
+
+  /** The build the learner is actually looking at: the open card, else the recommended one. */
+  const activeBuild = useMemo(
+    () => projects.find((p) => p.key === open) ?? next,
+    [projects, open, next],
+  );
+
+  /** The same scope the block below renders, published to the footer dock — so the tutor entry is
+      reachable from the top of the page instead of only from an expanded card. */
+  usePublishTutorScope(activeBuild ? {
+    kind: 'build',
+    title: activeBuild.name,
+    context: buildTutorContext(buildScope(activeBuild)),
+    prompts: buildTutorPrompts(buildScope(activeBuild)),
+    briefing: buildBriefing(buildScope(activeBuild)),
+  } : null);
 
   /** Only 3 projects can be "portfolio ready" at a time. The rule lives in the career engine and
       is shared with the Career hub, so both screens can only ever name the SAME three builds. */
@@ -195,45 +236,9 @@ export default function ProjectLab() {
                           brief above — nothing is summarised or invented. */}
                       <ScopeTutor
                         kind="build"
-                        context={buildTutorContext({
-                          name: p.name,
-                          sectionTitle: p.section,
-                          tier: p.tier,
-                          what: p.what,
-                          files: p.files,
-                          architecture: p.architecture,
-                          buildTarget: p.buildTarget,
-                          edgeCases: p.edgeCases,
-                          steps: p.steps,
-                          defenseQuestion: p.defenseQuestion,
-                          route: p.route,
-                        })}
-                        prompts={buildTutorPrompts({
-                          name: p.name,
-                          sectionTitle: p.section,
-                          tier: p.tier,
-                          what: p.what,
-                          files: p.files,
-                          architecture: p.architecture,
-                          buildTarget: p.buildTarget,
-                          edgeCases: p.edgeCases,
-                          steps: p.steps,
-                          defenseQuestion: p.defenseQuestion,
-                          route: p.route,
-                        })}
-                        briefing={buildBriefing({
-                          name: p.name,
-                          sectionTitle: p.section,
-                          tier: p.tier,
-                          what: p.what,
-                          files: p.files,
-                          architecture: p.architecture,
-                          buildTarget: p.buildTarget,
-                          edgeCases: p.edgeCases,
-                          steps: p.steps,
-                          defenseQuestion: p.defenseQuestion,
-                          route: p.route,
-                        })}
+                        context={buildTutorContext(buildScope(p))}
+                        prompts={buildTutorPrompts(buildScope(p))}
+                        briefing={buildBriefing(buildScope(p))}
                       />
                     </div>
                   )}
