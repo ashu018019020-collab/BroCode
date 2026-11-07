@@ -1483,8 +1483,8 @@ the skill's share of the selected source, and how many of its questions are alre
  */
 .cc-meta {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-  gap: 2px 6px; margin-top: 4px; max-width: 100%; min-width: 0;
-  font-size: .7rem; line-height: 1.45; color: var(--muted-foreground);
+  gap: 1px 5px; margin-top: 4px; max-width: 100%; min-width: 0;
+  font-size: .7rem; line-height: 1.35; color: var(--muted-foreground);
 }
 .cc-level {
   flex: none; padding: 0 6px; border: 1px solid var(--line-soft); border-radius: 999px;
@@ -1494,15 +1494,20 @@ the skill's share of the selected source, and how many of its questions are alre
 }
 /* The estimated time is one token ("10h") — it never breaks between the number and its unit. */
 .cc-meta > span:not(.cc-level):not(.cc-needs) { white-space: nowrap; }
-/* Prerequisites are the only part with variable length, so they wrap — and a long course name
-   ("Build, Production & System Design") breaks inside the word rather than pushing the card wide. */
-.cc-needs { opacity: .85; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+/* Prerequisites are the only part with variable length, so they wrap. `break-word`, not `anywhere`:
+   a name only breaks when a single word cannot fit, so "Statistics" stays a word instead of becoming
+   "Sta-tistics" beside a gap — at card width the difference is the whole line's legibility. The
+   component also caps the clause at two names and adds `+N`, so the worst case is two short lines. */
+.cc-needs { opacity: .85; min-width: 0; max-width: 100%; overflow-wrap: break-word; }
+/* The overflow marker is one token ("+2") and must never be split from its count. */
+.cc-more { flex: none; white-space: nowrap; }
 /* A narrow card stacks the line: level + time stay on one row, the needs clause takes its own
    full-width row instead of being squeezed into a two-word column. */
-@media (max-width: 620px) {
+@media (max-width: 720px) {
   .cc-meta { font-size: .66rem; gap: 2px 5px; }
   .cc-level { padding: 0 5px; font-size: .55rem; }
   .cc-needs { flex-basis: 100%; }
+  .cc-more { opacity: .9; }
 }
 /* The course page's plan facts — level, whole-course estimate, prerequisites — left-aligned in
    the header, from the same authored meta the cards print. */

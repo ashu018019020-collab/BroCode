@@ -84,6 +84,11 @@ export default function CoursesHome() {
    */
   const renderCard = (card: CourseCard) => {
     const needs = card.meta.prerequisites.map((slug) => nameBySlug.get(slug) ?? slug);
+    // A card is a chooser, not the course page: two names keep the line readable inside a narrow
+    // column, and the course page still prints the whole list. `+N` is language-neutral, and the
+    // full clause rides in `title` so nothing is actually unreachable.
+    const shownNeeds = needs.slice(0, 2);
+    const extraNeeds = needs.length - shownNeeds.length;
     return (
       <Link
         key={card.slug}
@@ -98,7 +103,12 @@ export default function CoursesHome() {
         <span className="cc-meta">
           <span className="cc-level">{t(LEVEL_KEY[card.meta.level])}</span>
           <span>{courseHours(card.meta.minutes)}h</span>
-          {!!needs.length && <span className="cc-needs">{t('courses.needs')}: {needs.join(', ')}</span>}
+          {!!needs.length && (
+            <span className="cc-needs" title={`${t('courses.needs')}: ${needs.join(', ')}`}>
+              {t('courses.needs')}: {shownNeeds.join(', ')}
+              {extraNeeds > 0 && <span className="cc-more"> +{extraNeeds}</span>}
+            </span>
+          )}
         </span>
       </Link>
     );

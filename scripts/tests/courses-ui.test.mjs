@@ -470,13 +470,23 @@ test('courses: the card meta line wraps instead of overflowing a narrow card', (
   assert.match(meta[0], /flex-wrap: wrap/, 'a narrow card wraps the line instead of clipping it');
   assert.match(meta[0], /min-width: 0/, 'the line must be allowed to shrink inside the card');
 
-  // Only the prerequisites have variable length, so only they get the break-inside-the-word rule.
-  assert.match(pages, /\.cc-needs \{[^}]*overflow-wrap: anywhere/,
+  // Only the prerequisites have variable length, so only they get the wrap rule — and `break-word`,
+  // not `anywhere`: a name breaks only when one word cannot fit, so "Statistics" is never chopped
+  // into "Sta-tistics" while half the line sits empty.
+  assert.match(pages, /\.cc-needs \{[^}]*overflow-wrap: break-word/,
     'a long prerequisite name must wrap, not push the card wider');
-  assert.match(pages, /\.cc-meta > span:not\(\.cc-level\):not\(\.cc-needs\) \{ white-space: nowrap; \}/,
-    'the estimated time stays one token');
-  assert.match(pages, /@media \(max-width: 620px\) \{[^@]*?\.cc-needs \{ flex-basis: 100%; \}/,
-    'on a phone-width card the needs clause takes its own row');
+  assert.doesNotMatch(pages, /\.cc-needs \{[^}]*overflow-wrap: anywhere/,
+    'the card clause no longer breaks words that fit');
+  assert.match(pages, /@media \(max-width: 720px\) \{[^@]*?\.cc-needs \{ flex-basis: 100%; \}/,
+    'on a narrow card the needs clause takes its own row');
+
+  // A card is a chooser: at most two prerequisite names plus a `+N` marker, with the full clause in
+  // `title`. The course page still prints every name, so nothing is lost, only shortened.
+  const home = read('src/features/courses/CoursesHome.tsx');
+  assert.match(home, /needs\.slice\(0, 2\)/, 'the card caps the names it prints');
+  assert.match(home, /\+\{extraNeeds\}/, 'the leftover names become a +N marker');
+  assert.match(home, /title=\{\`\$\{t\('courses\.needs'\)\}: \$\{needs\.join\(', '\)\}\`\}/,
+    'the full prerequisite list stays reachable on hover');
 
   // The legacy richer-card pill must not reach the simplified card: this layer loads after 06 and
   // a bare `.cc-level` here used to override it with a white-only border and 4px padding.
