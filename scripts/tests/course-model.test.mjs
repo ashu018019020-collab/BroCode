@@ -56,6 +56,44 @@ test('course model: every published course carries metadata a learner can act on
   }
 });
 
+test('course model: every published section belongs to exactly one course and one real step', () => {
+  const published = readJson('public/generated/curriculum/sections.json');
+  const sections = Array.isArray(published) ? published : published.sections;
+  const ids = new Set(sections.map((section) => section.id));
+  const seen = new Map();
+  const objectives = new Map();
+  let mapped = 0;
+
+  // The course page counts `Object.keys(course.sections)` and each step page lists
+  // `sectionsOfStep(course, no)`, so the map is the only thing that decides whether a section a
+  // learner needs is reachable at all. A typo'd step number or a section filed twice would show up as
+  // a missing chapter on one page and a duplicate on another, and nothing would throw.
+  for (const card of index.courses) {
+    const steps = new Set(card.steps);
+    for (const [sectionId, step] of Object.entries(card.sections ?? {})) {
+      mapped += 1;
+      assert.ok(ids.has(sectionId), `${card.slug}: section ${sectionId} is not published`);
+      assert.ok(!seen.has(sectionId), `${card.slug}: section ${sectionId} is already filed under ${seen.get(sectionId)}`);
+      assert.ok(
+        steps.has(step),
+        `${card.slug}: section ${sectionId} points at step ${step}, which is not a step of this course`,
+      );
+      seen.set(sectionId, card.slug);
+    }
+
+    // 3 objectives per course today, but the rule is "no two courses promise the same outcome" —
+    // a copied objective makes two different courses look interchangeable.
+    for (const objective of card.meta.objectives) {
+      const key = objective.trim().toLowerCase();
+      assert.ok(!objectives.has(key), `${card.slug}: objective "${objective}" is already used by ${objectives.get(key)}`);
+      objectives.set(key, card.slug);
+    }
+  }
+
+  assert.equal(mapped, ids.size, 'every published section is filed under exactly one course');
+  assert.equal(seen.size, sections.length, 'no section is published without a course to reach it');
+});
+
 test('course model: the spine is the 36-step plan exactly once, with no item left out', () => {
   const steps = [];
   const levels = {};
