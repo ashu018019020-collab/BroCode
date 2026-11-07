@@ -126,8 +126,16 @@ test('course model: the metadata reaches the screens, and every level has a labe
   assert.match(home, /card\.meta\.level/, 'the card shows the level');
   assert.match(home, /card\.meta\.minutes/, 'the card shows the estimated time');
   assert.match(home, /card\.meta\.prerequisites/, 'the card shows the prerequisites');
-  // The course page answers "what will I be able to do?".
+  // The course page header answers the same three questions the card does, from the same authored
+  // `meta` — level, whole-course estimate, prerequisites (by name).
+  assert.match(page, /course\.meta\.level/, 'the course page header shows the level');
+  assert.match(page, /course\.meta\.minutes/, 'the course page header shows the estimated time');
+  assert.match(page, /course\.meta\.prerequisites/, 'the course page header shows the prerequisites');
+  // …and the course page answers "what will I be able to do?".
   assert.match(page, /course\.meta\.objectives\.map/, 'the course page lists the objectives');
+  // One helper formats the estimate for both surfaces, so the card and the header cannot drift.
+  assert.match(home, /courseHours\(card\.meta\.minutes\)/, 'the card uses the shared hour helper');
+  assert.match(page, /courseHours\(course\.meta\.minutes\)/, 'the course page uses the same helper');
 
   for (const level of COURSE_LEVELS) {
     assert.ok(en[`courses.level.${level}`], `${level} needs a label in the English pack`);

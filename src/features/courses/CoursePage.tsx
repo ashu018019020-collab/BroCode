@@ -4,7 +4,9 @@ import { useI18n } from '../../app/i18n';
 import { CourseLogo } from '../../components/shared/CourseLogo';
 import { ProgressRing } from '../../components/ui/ui';
 import { useCourse, useCourseIndex, useCourseMeasures } from '../../core/data/courses';
-import { courseProgressFrom, nextStep, sectionsOfStep, stepsOf } from '../../core/learning/courses';
+import {
+  LEVEL_KEY, courseHours, courseProgressFrom, nextStep, sectionsOfStep, stepsOf,
+} from '../../core/learning/courses';
 import { STEPS, phaseOf } from '../../core/learning/roadmap';
 import type { LocaleKey } from '../../app/i18n/locales';
 
@@ -48,6 +50,14 @@ export default function CoursePage() {
   const progress = courseProgressFrom(measures);
   const target = nextStep(course, measures);
 
+  /**
+   * The same authored metadata the cards print, on the page it sends the learner to.
+   * Prerequisite slugs resolve to course NAMES from the index, so the header never shows
+   * `numpy-pandas` where a learner reads "NumPy + Pandas".
+   */
+  const names = new Map((index?.courses ?? []).map((c) => [c.slug, c.name] as const));
+  const needs = course.meta.prerequisites.map((slug) => names.get(slug) ?? slug);
+
   return (
     <div>
       <div className="course-head card glow fadeup tone-cyan">
@@ -65,6 +75,19 @@ export default function CoursePage() {
                   <>
                     <span>·</span>
                     <span>{Object.keys(course.sections).length} {t('courses.sectionsUnit')}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Plan facts: level, the whole-course estimate and what to finish first. Same
+                  authored `meta` as the card, so the card and this page cannot disagree. */}
+              <div className="row small muted course-meta" style={{ gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                <span className="cc-level">{t(LEVEL_KEY[course.meta.level])}</span>
+                <span>{courseHours(course.meta.minutes)}h</span>
+                {!!needs.length && (
+                  <>
+                    <span>·</span>
+                    <span className="course-needs">{t('courses.needs')}: {needs.join(', ')}</span>
                   </>
                 )}
               </div>

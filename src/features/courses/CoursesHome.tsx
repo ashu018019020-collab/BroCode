@@ -8,7 +8,7 @@ import { useOwnerCourses } from '../../core/data/owner-courses';
 import {
   ownerCourseCards, ownerCoursePlacements, visibleOwnerCards, type OwnerCourseCard,
 } from '../../core/learning/owner-courses';
-import { LEVEL_KEY, sectionAvg } from '../../core/learning/courses';
+import { LEVEL_KEY, courseHours, sectionAvg } from '../../core/learning/courses';
 import {
   ALL_PLACEMENTS, nextCourse, placementOf, sortByCourseOrder, withoutHidden,
 } from '../../core/learning/course-levels';
@@ -30,9 +30,6 @@ import { CLogo } from '../c-programming/CLogo';
  * C Programming is the twelfth card: it is its own course page, not a catalog record, so it is
  * drawn from the same registry (third position) and reads its own module progress.
  */
-/** Study time reads in hours on a card — `minutes` is exact, a card needs it scannable. */
-const hoursOf = (minutes: number) => `${Math.max(1, Math.round(minutes / 60))}h`;
-
 export default function CoursesHome() {
   const { t } = useI18n();
   const index = useCourseIndex();
@@ -100,7 +97,7 @@ export default function CoursesHome() {
         <b className="cc-name">{card.name}</b>
         <span className="cc-meta">
           <span className="cc-level">{t(LEVEL_KEY[card.meta.level])}</span>
-          <span>{hoursOf(card.meta.minutes)}</span>
+          <span>{courseHours(card.meta.minutes)}h</span>
           {!!needs.length && <span className="cc-needs">{t('courses.needs')}: {needs.join(', ')}</span>}
         </span>
       </Link>

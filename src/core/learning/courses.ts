@@ -103,6 +103,15 @@ export const LEVEL_KEY = {
 } as const;
 
 /**
+ * The whole-course estimate as a scannable hour count.
+ *
+ * `meta.minutes` stays the authored truth; a card and a page header both need the reader-friendly
+ * form, and two local copies are how the card ends up saying "6h" while the page says "7h".
+ * Never below 1h: a 40-minute course is "1h", not "0h".
+ */
+export const courseHours = (minutes: number) => Math.max(1, Math.round(minutes / 60));
+
+/**
  * The plan metadata every course publishes with its card.
  *
  * Authored in `content/courses/courses.json`, validated by `scripts/courses.cjs` and re-checked on
