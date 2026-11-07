@@ -17,6 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { readCss } from './_css.mjs';
 const read = (relative) => fs.readFileSync(path.join(ROOT, relative), 'utf8');
 
 /**
@@ -127,7 +128,7 @@ test('mobile overflow: the course header columns clamp instead of forcing the pa
 });
 
 test('mobile overflow: a stylesheet minimum wider than the budget is only for something that scrolls itself', () => {
-  const css = read('src/styles.css');
+  const css = readCss();
   /*
    * Two declarations are deliberately wider than the budget, and both are safe for a reason this
    * test also checks below — so the allowlist is not an escape hatch, it is a claim being verified:
@@ -170,7 +171,7 @@ test('mobile overflow: a stylesheet minimum wider than the budget is only for so
 });
 
 test('mobile: the document is the single scroll container and the last row clears the bottom nav', () => {
-  const flat = read('src/styles.css').replace(/\s+/g, ' ');
+  const flat = readCss().replace(/\s+/g, ' ');
   /*
    * The architecture, not a cosmetic rule: on a phone the page itself scrolls. `.shell` used to be a
    * fixed-height frame with `.main` as an inner scroller, which trapped touch gestures inside

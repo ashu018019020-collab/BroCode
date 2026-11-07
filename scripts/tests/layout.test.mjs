@@ -21,6 +21,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { readCss } from './_css.mjs';
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 // Pure (no React, no store) — the one place a track link is spelled is loadable from here.
@@ -66,7 +67,7 @@ for (const dir of ['src/features', 'src/components', 'src/app']) {
 const jn = read('src/components/code/JupyterNotebook.tsx');
 const nb = read('src/components/code/NotebookCells.tsx');
 const tw = read('src/components/learning/TopicWorkspace.tsx');
-const css = read('src/styles.css');
+const css = readCss();
 const assistantCard = read('src/components/shared/AssistantCard.tsx');
 const aiDock = read('src/components/shared/AiDock.tsx');
 
@@ -570,16 +571,20 @@ test('layout: an account is REQUIRED to learn — every private route is guarded
   assert.match(form, /to="\/reset-password"/, 'the form must offer a way to recover a forgotten password');
 });
 
-test('layout: the sidebar account block is the way in, the way out, and the route to /admin', () => {
+test('layout: the sidebar account block is the way in and the way out, and the owner area has its own section', () => {
   const app = read('src/app/App.tsx');
-  const styles = read('src/styles.css');
+  const styles = readCss();
   const footerStart = app.indexOf('<div className="side-foot">');
   const footerEnd = app.indexOf('</div>\n        </aside>', footerStart);
   assert.ok(footerStart >= 0 && footerEnd > footerStart, 'the sidebar footer must exist');
   const footer = app.slice(footerStart, footerEnd);
   assert.match(footer, /side-account-copy[\s\S]*user\.name \|\| user\.email/, 'the rail must name the signed-in account');
   assert.match(footer, /onClick=\{\(\) => void signOut\(\)\}[\s\S]{0,170}t\('acct\.signOut'\)/, 'the block must offer sign-out');
-  assert.match(footer, /user\.role === 'admin'[\s\S]{0,120}to="\/admin"/, 'an administrator gets a route to the owner dashboard');
+  // The owner area is NOT in this block any more. It is the one destination that is not part of the
+  // learner's seven, so it lives in its own labelled rail section, rendered only for an
+  // administrator — a learner's account block must not contain a door they cannot open.
+  assert.doesNotMatch(footer, /to="\/admin"/, 'the owner area must not sit in the learner account block');
+  assert.match(app, /user\?\.role === 'admin'[\s\S]{0,120}'nav\.owner'/, 'the owner section must be rendered only for an administrator');
   // Signed out: a state, not an identity. Two real doors, and the second one is a LINK to `/login`
   // because navigation to a fixed page is a link (see the dedicated test below).
   assert.match(footer, /t\('acct\.signedOut'\)/, 'a signed-out visitor must be described as signed out, not as a guest');
@@ -598,6 +603,46 @@ test('layout: the sidebar account block is the way in, the way out, and the rout
     assert.ok(hiBlock.includes(`'${key}':`), `${key} is missing from the Hinglish pack`);
   }
   assert.ok(!enBlock.includes("'acct.guest':"), 'the guest identity must be gone from the English pack');
+});
+
+test('layout: the learner rail is exactly seven items, and the owner area is a separate section', () => {
+  const app = read('src/app/App.tsx');
+  const start = app.indexOf('export const NAV: NavItem[] = [');
+  assert.ok(start > 0, 'the NAV list must exist');
+  const nav = app.slice(start, app.indexOf('/** Mobile bottom navigation'));
+
+  const rowsIn = (group) => nav.split('\n').filter((line) => line.includes(`group: '${group}'`));
+  const routeOf = (line) => /to: '([^']+)'/.exec(line)?.[1];
+
+  // Seven destinations, in the order a learner moves through them. One more pillar added "just this
+  // once" is how a rail becomes a filing cabinet again, so the list itself is the contract.
+  const pillars = rowsIn('nav.pillars').map(routeOf);
+  assert.deepEqual(
+    pillars,
+    ['/', '/courses', '/practice', '/projects', '/career', '/progress', '/settings'],
+    'the learner rail is seven destinations',
+  );
+
+  // The owner area is its own group, one destination, and never one of the seven.
+  const owner = rowsIn('nav.owner').map(routeOf);
+  assert.deepEqual(owner, ['/admin'], 'the owner area is one destination, in its own group');
+  for (const route of owner) assert.ok(!pillars.includes(route), 'the owner area must not be a learner pillar');
+
+  // Consolidating the rail moved the tools a band down; it did not retire a single route.
+  const tools = rowsIn('nav.tools').map(routeOf);
+  for (const route of ['/labs', '/interviews', '/ai-mentor', '/notes', '/cheat-sheets', '/pdf']) {
+    assert.ok(tools.includes(route), `${route} must remain reachable under TOOLS`);
+  }
+  for (const route of ['/', '/labs', '/interviews', '/ai-mentor', '/notes', '/cheat-sheets', '/pdf']) {
+    assert.ok(app.includes(`path="${route}"`), `${route} must still be a registered route`);
+  }
+
+  // The phone bar is a subset of the pillars, never a parallel vocabulary.
+  const bottom = /const BOTTOM = \[([^\]]+)\]/.exec(app);
+  assert.ok(bottom, 'the mobile bar must still be declared');
+  const bottomRoutes = [...bottom[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  assert.equal(bottomRoutes.length, 4, 'the phone bar carries four items');
+  for (const route of bottomRoutes) assert.ok(pillars.includes(route), `${route} on the phone bar is not a pillar`);
 });
 
 test('layout: the footer replaces the brand with a live local Last Seen and floating AI button', () => {

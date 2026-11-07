@@ -84,7 +84,7 @@ const CoursesHome = lazy(() => import('../features/courses/CoursesHome'));
 const CoursePage = lazy(() => import('../features/courses/CoursePage'));
 const StepPage = lazy(() => import('../features/courses/StepPage'));
 
-type GroupKey = 'nav.pillars' | 'nav.tools' | 'hidden';
+type GroupKey = 'nav.pillars' | 'nav.tools' | 'nav.owner' | 'hidden';
 
 /**
  * Wraps a route in the one authorization boundary. A thin alias so the route table below reads as
@@ -146,9 +146,11 @@ interface NavItem {
 }
 
 /**
- * Two sections, like the product spec: the eight learner pillars, then the tools. The pillar list
- * renders WITHOUT a heading — those eight entries ARE the navigation — so only TOOLS is labelled.
- * `hidden` is the bucket for the registered-but-not-in-the-sidebar entries below.
+ * The learner sections of the rail: the seven destinations, then the tools. The pillar list renders
+ * WITHOUT a heading — those seven entries ARE the navigation — so every later family is labelled.
+ * The owner area is deliberately NOT here: it is appended at render time, only for an administrator,
+ * so a learner's rail cannot carry a door they may not open. `hidden` is the bucket for the
+ * registered-but-not-in-the-sidebar entries below.
  */
 const GROUPS: ('nav.pillars' | 'nav.tools')[] = ['nav.pillars', 'nav.tools'];
 
@@ -158,25 +160,32 @@ const GROUPS: ('nav.pillars' | 'nav.tools')[] = ['nav.pillars', 'nav.tools'];
  * described two different ways if both surfaces read the same list.
  */
 export const NAV: NavItem[] = [
-  // The eight pillars — the sidebar IS the learning journey, not a filing system.
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', group: 'nav.pillars', tone: 'cyan' },
-  // Courses sits next to the Dashboard because it is the way IN: eleven courses over the same 36
-  // steps the Path orders. (The 8-section navbar restructure is a later phase; this is the one
-  // entry that makes the new surface reachable without moving anything else.)
+  // The seven learner destinations. The rail IS the journey, not a filing system: one row per
+  // decision a learner actually makes — where am I, what am I learning, what do I practise, what do
+  // I build, where am I going, how far did I get, who am I here as. Everything else (the labs, the
+  // interview drill, the assistant, notes, cheat sheets, PDFs) is one band down, under TOOLS.
+  { to: '/', icon: LayoutDashboard, label: 'Home', group: 'nav.pillars', tone: 'cyan' },
+  // Courses sits next to Home because it is the way IN: eleven courses over the same 36 steps the
+  // Path orders.
   { to: '/courses', icon: GraduationCap, label: 'Courses', group: 'nav.pillars', tone: 'blue' },
   { to: '/practice', icon: ListChecks, label: 'Practice', group: 'nav.pillars', tone: 'cyan' },
-  { to: '/labs', icon: FlaskConical, label: 'Labs', group: 'nav.pillars', tone: 'cyan' },
   { to: '/projects', icon: FolderGit2, label: 'Projects', group: 'nav.pillars', tone: 'blue' },
-  { to: '/interviews', icon: Mic2, label: 'Interview', group: 'nav.pillars', tone: 'violet' },
   { to: '/career', icon: Briefcase, label: 'Career', group: 'nav.pillars', tone: 'amber' },
-  { to: '/progress', icon: BarChart3, label: 'Progress', group: 'nav.pillars', tone: 'blue' },
+  { to: '/progress', icon: BarChart3, label: 'My Progress', group: 'nav.pillars', tone: 'blue' },
+  { to: '/settings', icon: SettingsIcon, label: 'Profile & Settings', group: 'nav.pillars', tone: 'slate' },
 
-  // Tools — reference material, one step below the plan.
+  // Tools — reference material and drills, one step below the plan.
+  { to: '/labs', icon: FlaskConical, label: 'Labs', group: 'nav.tools', tone: 'cyan' },
+  { to: '/interviews', icon: Mic2, label: 'Interview', group: 'nav.tools', tone: 'violet' },
   { to: '/ai-mentor', icon: Sparkles, label: 'AI Mentor', group: 'nav.tools', tone: 'violet' },
   { to: '/notes', icon: StickyNote, label: 'Notes', group: 'nav.tools', tone: 'blue' },
   { to: '/cheat-sheets', icon: BookMarked, label: 'Cheat Sheets', group: 'nav.tools', tone: 'blue' },
   { to: '/pdf', icon: FileText, label: 'PDF Reader', group: 'nav.tools', tone: 'rose' },
-  { to: '/settings', icon: SettingsIcon, label: 'Settings', group: 'nav.tools', tone: 'slate' },
+
+  // The owner area. Not a learner destination and never one of the seven: the rail renders this
+  // group only for an administrator, and the page behind it guards itself again (AdminUsersPage
+  // redirects a non-admin), because a hidden link is not an authorization.
+  { to: '/admin', icon: Shield, label: 'Owner Control Center', group: 'nav.owner', tone: 'amber' },
 
   //
   // Registered, deliberately NOT sidebar links. Each of these is now reached through the pillar
@@ -207,8 +216,12 @@ export const NAV: NavItem[] = [
   { to: '/job-prep', icon: ClipboardList, label: 'Job Prep', group: 'hidden', sidebar: false },
 ];
 
-/** Mobile bottom navigation — the four highest-frequency destinations. */
-const BOTTOM = ['/', '/courses', '/practice', '/notes'];
+/**
+ * Mobile bottom navigation — the four highest-frequency destinations, all taken from the seven
+ * pillars above. It holds ROUTES, not labels, so the phone bar cannot drift out of the rail's
+ * vocabulary (the AI control is inserted between the first and second item at render time).
+ */
+const BOTTOM = ['/', '/courses', '/practice', '/career'];
 
 /** The 8 reference tracks mapped onto the 29 PDF-derived sections (1-indexed). */
 export const TRACK_DEFS = [
@@ -564,11 +577,17 @@ function Shell() {
           </div>
 
           <nav>
-            {GROUPS.map((g) => (
+            {([
+              ...GROUPS,
+              // Appended, not filtered: the owner section exists only for an administrator, so a
+              // learner's rail is exactly the seven pillars plus TOOLS, and nothing has to be
+              // hidden from it at runtime.
+              ...(user?.role === 'admin' ? (['nav.owner'] as const) : []),
+            ] as GroupKey[]).map((g) => (
               <div key={g}>
-                {/* The eight pillars need no heading — they are the navigation. Only the tools
-                    get a label, and the rule above it separates the two families. */}
-                {g !== 'nav.pillars' && <div className="navsep">{t(g)}</div>}
+                {/* The seven pillars need no heading — they ARE the navigation. Only the later
+                    families (tools, owner) get a label, and the rule above it separates them. */}
+                {g !== 'nav.pillars' && <div className="navsep">{t(g as 'nav.tools' | 'nav.owner')}</div>}
                 {NAV.filter((n) => n.group === g && n.sidebar !== false).map((n) => {
                   const count = n.badge ? badges[n.badge] : 0;
                   return (
@@ -599,7 +618,8 @@ function Shell() {
              * The rail's account block. BroCode now REQUIRES an account for learning, so a signed-out
              * visitor is not a "Guest learner" with partial access — they are simply not signed in,
              * and the only useful thing this block can do is offer the two doors. Signed in it
-             * identifies the account, links the owner dashboard for an administrator, and is the way out.
+             * identifies the account and is the way out. The owner area has its own rail section now,
+             * so this block stays the account block.
              */}
             <div className="side-account">
               <span className="side-account-avatar" aria-hidden="true">
@@ -616,12 +636,6 @@ function Shell() {
             </div>
             {user ? (
               <>
-                {user.role === 'admin' && (
-                  <Link className="btn side-act" to="/admin">
-                    <Shield size={15} />
-                    <span>{t('acct.dashboard')}</span>
-                  </Link>
-                )}
                 <button className="btn side-act" disabled={signingOut} onClick={() => void signOut()} type="button">
                   <LogOut size={15} />
                   <span>{signingOut ? t('acct.signingOut') : t('acct.signOut')}</span>

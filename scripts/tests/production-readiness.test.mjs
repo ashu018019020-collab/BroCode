@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = path.join(ROOT, 'dist');
+import { readCss } from './_css.mjs';
 const read = (relative) => fs.readFileSync(path.join(ROOT, relative), 'utf8');
 const distBuilt = () => fs.existsSync(path.join(DIST, 'index.html'));
 
@@ -164,7 +165,7 @@ test('gate D: form errors are announced, and every input is labelled', () => {
 });
 
 test('gate D: reduced-motion is respected and focus is never removed without a replacement', () => {
-  const css = read('src/styles.css');
+  const css = readCss();
   assert.match(css, /prefers-reduced-motion:\s*reduce/, 'the stylesheet must honour reduced motion');
 
   // The baseline: every element a keyboard user lands on must have a focus treatment. One rule

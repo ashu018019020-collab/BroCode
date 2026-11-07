@@ -22,6 +22,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { readCss } from './_css.mjs';
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const load = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 
@@ -311,7 +312,7 @@ test('roadmap: the courses home draws no numbered rail of its own', () => {
     'the removed rail must not come back as a component nobody mounts');
   assert.ok(!/RoadmapRail/.test(read('src/features/courses/CoursesHome.tsx')),
     'the courses home must not mount it again');
-  assert.ok(!/rrail/.test(read('src/styles.css')), 'and no `.rrail*` rule may outlive it');
+  assert.ok(!/rrail/.test(readCss()), 'and no `.rrail*` rule may outlive it');
 
   // What the rail was for is not lost with it: every step still resolves to the one course that
   // teaches it, and the link it drew is the registered /course/:slug/:step route.

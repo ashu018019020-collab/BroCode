@@ -23,6 +23,7 @@ import { register } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { readCss } from './_css.mjs';
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const load = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 
@@ -223,7 +224,7 @@ test('notebook nav: previous/next sits under every notebook, from the shared eng
   assert.match(read('src/components/code/JupyterNotebook.tsx'), /nav=\{\{ prev: step\(-1\), next: step\(1\) \}\}/, 'the in-lesson shelf wires it');
   assert.match(read('src/features/labs/NotebookLab.tsx'), /nav=\{\{ prev: step\(-1\), next: step\(1\) \}\}/, 'the Notebook Lab wires it');
   assert.match(read('src/features/labs/NotebookLab.tsx'), /const step = \(d: -1 \| 1\)/, 'from its own ordered list');
-  assert.match(read('src/styles.css'), /^\.nb-nav \{/m, 'and the row has real styles');
+  assert.match(readCss(), /^\.nb-nav \{/m, 'and the row has real styles');
 });
 
 test('surfaces: a ring with nothing measured says so instead of drawing 0%', () => {

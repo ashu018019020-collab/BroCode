@@ -1,0 +1,492 @@
+/* ============================================================
+   DESIGN TOKENS — "Midnight Lab"
+
+   Black-first, and every surface above it is LIT: a blue-tinted hairline, a 1px highlight along
+   the top edge, a translucent gradient over the surface colour, and a deep shadow underneath. The
+   accents do the lighting (cyan → blue → violet); the surfaces stay near-black, which is what lets
+   a dense page look expensive instead of loud.
+
+   Two rules keep this maintainable:
+     · no rule below contains a colour literal — everything resolves from a token here, and
+     · the light theme overrides the SAME token names, so one edit can never fix one theme only.
+
+   LIGHT IS THE SHIPPED DEFAULT. The preference is `theme: 'light'`, and the attribute that selects
+   this block is written by the inline boot script in `index.html` BEFORE the first paint (see
+   `src/core/storage/ui.ts` for the rule it mirrors). The dark tokens still live here at `:root`
+   because the always-dark scopes — the rail, the console, the header, the assistant — resolve them,
+   and because a learner who picks dark re-declares only the handful that differ.
+   ============================================================ */
+:root {
+  /* `color-scheme` drives the native pieces (scrollbars, textarea resize handle, form controls)
+     so they follow the theme without a rule each. */
+  color-scheme: dark;
+
+  /* ---------- ink ---------- */
+  --background: #000000;
+  --background-2: #05070d;
+  --foreground: #e8eefc;
+  --muted-foreground: #93a2c4;
+
+  /* ---------- surfaces: each step is a real layer ---------- */
+  --card: #0a0d16;
+  --popover: #0d111c;
+  --sunken: #05070d;
+  --code: #04060b;
+  --secondary: rgba(255, 255, 255, 0.06);
+  --input-bg: rgba(255, 255, 255, 0.03);
+
+  /* the light that falls ON a surface */
+  --lift: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --lift-strong: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --panel-grad: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  --panel-grad-hi: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.022));
+
+  /* ---------- jewellery ---------- */
+  --cyan: #22d3ee;
+  --blue: #4f7cff;
+  --purple: #a78bfa;
+  --violet: #8b5cf6;
+  --pink: #f472b6;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --accent-grad: linear-gradient(135deg, #22d3ee, #4f7cff);
+  --accent-grad-hi: linear-gradient(135deg, #5ee7ff, #6b93ff);
+  --accent-grad-soft: linear-gradient(135deg, rgba(34, 211, 238, .22), rgba(79, 124, 255, .22));
+  --ink-on-accent: #04121f;
+  --destructive: #f87171;
+  --primary: #22d3ee;
+  --primary-foreground: #04121f;
+  /* Fallback tone, so any `rgb(var(--accent-rgb) / x)` resolves even without a `.tone-*` class. */
+  --accent-rgb: 34 211 238;
+
+  /* ---------- the light on a lit edge ----------
+     A 1px gradient hairline along the top of a surface: the OLED "edge light" that makes a box
+     read as a lit object instead of a painted rectangle. Painted with `background-size: 100% 1px`,
+     so it costs no pseudo-element and cannot affect layout. */
+  --edge-light: linear-gradient(90deg,
+    rgba(34, 211, 238, .62), rgba(79, 124, 255, .42) 34%, rgba(167, 139, 250, .30) 62%,
+    rgba(34, 211, 238, 0));
+  --edge-soft: linear-gradient(180deg, rgba(34, 211, 238, .05), transparent 58%);
+  /* The hero headline is gradient-clipped text, so its "colour" is a background image and no
+     `color` rule can rescue it in light mode — it needs its own token, like any other surface. */
+  --hero-ink: linear-gradient(92deg, #eaf0ff 26%, #8fd8ff 68%, #c4b5fd);
+
+  /* ---------- the pool of light that follows the pointer ----------
+     Five values, painted by each surface's own `::after` (see the SPOTLIGHT section at the end of
+     this file). `--spot-x` / `--spot-y` are the ONLY things JS writes, and they are written on the
+     hovered element itself — so one pointer move costs two custom-property writes and no React
+     render. They start far outside the box, so a surface that has never been hovered has nothing
+     pinned in its middle. */
+  --spot-rgb: 34 211 238;
+  --spot-a: .15;
+  --spot-a-mid: .05;
+  --spot-size: 280px;
+  --spot-x: -999px;
+  --spot-y: -999px;
+  /* On black a glow can only ADD light, so it screens; on white it can only TAKE light, so it
+     multiplies. One token, and neither theme can smear a dark wash across its own text. */
+  --spot-blend: screen;
+
+  /* ---------- borders: blue-tinted — this is what makes a surface read as lit ---------- */
+  --border: rgba(140, 170, 255, 0.14);
+  --border-strong: rgba(165, 195, 255, 0.24);
+  --input: rgba(150, 180, 255, 0.20);
+  --ring: rgba(34, 211, 238, 0.55);
+  --sidebar: rgba(4, 6, 12, 0.72);
+  --sidebar-accent: linear-gradient(90deg, rgba(34, 211, 238, .16), rgba(79, 124, 255, .05));
+  --sidebar-border: rgba(140, 170, 255, 0.12);
+  /* The rail panel's rim. The rail is the one surface that is dark in BOTH themes, so these four
+     values are never restated by the light theme — it re-declares them ON the panel instead, where
+     they override the light defaults for the whole subtree (see THE RAIL DOES NOT INVERT below). */
+  --sidebar-ring: rgba(34, 211, 238, 0.16);
+
+  /* ---------- radii — one base, every other radius a ratio of it ---------- */
+  --radius: 14px;
+  --radius-sm: calc(var(--radius) * 0.58);
+  --radius-md: calc(var(--radius) * 0.79);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.29);
+  --radius-2xl: calc(var(--radius) * 1.57);
+
+  /* ---------- elevation + ambient light ---------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+  --panel-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 18px 40px rgba(0, 0, 0, .55);
+  --glow: 0 0 24px rgba(34, 211, 238, 0.14);
+  --glow-strong: 0 14px 38px rgba(34, 211, 238, 0.24);
+  --glow-blue: 0 14px 38px rgba(79, 124, 255, 0.26);
+  --aura-1: radial-gradient(1100px 480px at 82% -12%, rgba(79, 124, 255, .10), transparent 62%);
+  --aura-2: radial-gradient(860px 420px at -6% 106%, rgba(167, 139, 250, .09), transparent 60%);
+  --grid-line: rgba(120, 150, 255, .028);
+
+  --mono: 'Cascadia Code', 'Consolas', 'SF Mono', ui-monospace, monospace;
+
+  /* --- flip tokens: the handful of values that invert with the theme ---
+     Everything else is a surface, an accent or a light above; these are the interactions (hover
+     fills, hover borders, hairlines, chrome glass) that cannot be expressed as one colour. */
+  --hover: rgba(255, 255, 255, .09);
+  --hover-border: rgba(165, 195, 255, .30);
+  --hover-soft: rgba(255, 255, 255, .04);
+  --line-soft: rgba(165, 195, 255, .16);
+  --line-strong: rgba(165, 195, 255, .42);
+  --hairline: rgba(140, 170, 255, .12);
+  --track: rgba(255, 255, 255, .08);
+  --shimmer-a: rgba(255, 255, 255, .05);
+  --shimmer-b: rgba(255, 255, 255, .12);
+  --sheen: rgba(255, 255, 255, .045);
+  --selection: rgba(34, 211, 238, .28);
+  --placeholder: rgba(147, 162, 196, .7);
+  --code-chip: rgba(140, 170, 255, .14);
+  --switch-off: rgba(255, 255, 255, .14);
+  --code-fg: #d7e4ff;
+  --scroll: rgba(140, 170, 255, .22);
+  --scroll-hover: rgba(140, 170, 255, .38);
+  --chrome: rgba(2, 4, 10, .70);
+  --chrome-strong: rgba(2, 4, 10, .86);
+  --popover-blur: rgba(6, 9, 18, .96);
+
+  /*
+   * GLASS CHROME — the shell's three fixed surfaces (header, footer, rail) and the phone's bottom
+   * bar. Same material recipe for all four: a dark translucent surface, a white hairline for the
+   * edge light, a soft shadow to lift it off the page, and cyan/violet used only as an accent.
+   *
+   * These are deliberately NOT theme tokens: the chrome does not invert with the page. In light
+   * mode the surfaces get MORE opaque (see the light-theme scope below) rather than white, exactly
+   * the way the rail and the console already work in this file.
+   */
+  --glass-1: rgba(10, 18, 35, .72);
+  --glass-2: rgba(7, 13, 27, .84);
+  --glass-line: rgba(255, 255, 255, .10);
+  --glass-hi: rgba(255, 255, 255, .07);
+  --glass-ink: #eaf2ff;
+  --glass-muted: #9fb2d0;
+  --glass-shadow: 0 14px 40px rgba(0, 0, 0, .42);
+  --glass-radius: 18px;
+  /* The rail's own wash: a cool navy at the top of the panel fading into the near-black base. */
+  --sidebar-grad: linear-gradient(180deg, rgba(28, 44, 78, .50), rgba(6, 10, 22, .06) 62%);
+
+  /* legacy aliases — every component still reads these names */
+  --bg: var(--background);
+  --bg2: var(--background-2);
+  --panel: rgba(255, 255, 255, 0.04);
+  --panel2: rgba(255, 255, 255, 0.07);
+  --text: var(--foreground);
+  --muted: var(--muted-foreground);
+}
+
+@property --chrome-glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/*
+ * LIGHT THEME
+ *
+ * Applied by `core/storage/ui.ts`, which sets `data-theme` on <html> before the first paint. Same token
+ * names, so every rule above gets a light value without a second set of rules: a soft blue-grey
+ * page, white panels with a real shadow, and accents one shade deeper because here they are text
+ * on white rather than on black.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --background: #f2f4fa;
+  --background-2: #e9edf7;
+  --foreground: #101426;
+  --muted-foreground: #5a6785;
+  --card: #ffffff;
+  --popover: #ffffff;
+  --sunken: #eef1f8;
+  --code: #f5f7fc;
+  --secondary: rgba(16, 20, 38, .05);
+  --input-bg: rgba(16, 20, 38, .03);
+  /* `--panel` / `--panel2` are white-alpha in the dark set. They must be restated here: a white
+     wash is invisible on a near-white page, which quietly erased every pill, active tab and hover
+     fill that reads from them. */
+  --panel: rgba(16, 20, 38, .04);
+  --panel2: rgba(16, 20, 38, .08);
+
+  --lift: inset 0 1px 0 rgba(255, 255, 255, .95);
+  --lift-strong: inset 0 1px 0 rgba(255, 255, 255, 1);
+  --panel-grad: linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(248, 250, 255, .65));
+  --panel-grad-hi: linear-gradient(180deg, #ffffff, #f6f9ff);
+
+  /* ACCENTS ARE TEXT COLOURS, so they are measured, not chosen by eye.
+     `--cyan`, `--green`, `--amber`, `--red` and `--pink` are used for small bold labels, pills and
+     inline emphasis on the PAGE (`#f2f4fa`) as well as on a card (`#ffffff`). The previous values
+     cleared 4.5:1 on white but not on the page, and `--amber` cleared neither (3.19:1) — amber is
+     the "this needs attention" colour, so it was the worst possible one to leave unreadable.
+     Restating them a shade deeper keeps the hue and puts every accent at >= 4.6:1 on BOTH surfaces
+     (verified with the WCAG relative-luminance formula; `scripts/tests/theme.test.mjs` pins the
+     floor so a later "brighter looks nicer" edit cannot silently undo it).
+     `--violet`, `--purple` and `--blue` already passed and are deliberately untouched. */
+  --cyan: #077894;
+  --blue: #2563eb;
+  --purple: #7c3aed;
+  --violet: #6d28d9;
+  --pink: #ce2570;
+  --green: #047e58;
+  --amber: #a55a05;
+  --red: #d52525;
+  --accent-grad: linear-gradient(135deg, #38bdf8, #4f7cff);
+  --accent-grad-hi: linear-gradient(135deg, #22d3ee, #3b82f6);
+  --accent-grad-soft: linear-gradient(135deg, rgba(56, 189, 248, .22), rgba(79, 124, 255, .18));
+  --destructive: #d52525;
+  --primary: #077894;
+  --accent-rgb: 7 120 148;
+  --edge-light: linear-gradient(90deg,
+    rgba(7, 120, 148, .55), rgba(37, 99, 235, .36) 34%, rgba(124, 58, 237, .24) 62%,
+    rgba(7, 120, 148, 0));
+  --edge-soft: linear-gradient(180deg, rgba(7, 120, 148, .05), transparent 58%);
+  --hero-ink: linear-gradient(92deg, #0b1220 18%, #1d4ed8 62%, #6d28d9 92%);
+
+  --spot-rgb: 7 120 148;
+  --spot-a: .13;
+  --spot-a-mid: .045;
+  --spot-blend: multiply;
+
+  --border: #dfe4f2;
+  --border-strong: #c6cfe6;
+  --input: #ccd5ea;
+  --ring: rgba(2, 132, 199, .55);
+  /* `--sidebar` and its three siblings are deliberately absent: the rail does not invert. Its dark
+     values are re-declared on `.sidebar` itself, further down, so they also cover the panel's ink,
+     borders and meters — a rail that went white here is what this whole file was reworked to stop. */
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, .10);
+  --shadow: 0 24px 50px rgba(16, 24, 40, .18);
+  --panel-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), 0 14px 30px rgba(16, 24, 40, .10);
+  --glow: 0 0 20px rgba(79, 124, 255, .18);
+  --glow-strong: 0 14px 32px rgba(79, 124, 255, .22);
+  --glow-blue: 0 14px 32px rgba(79, 124, 255, .22);
+  --aura-1: radial-gradient(1100px 480px at 82% -12%, rgba(79, 124, 255, .10), transparent 62%);
+  --aura-2: radial-gradient(860px 420px at -6% 106%, rgba(167, 139, 250, .10), transparent 60%);
+  --grid-line: rgba(79, 124, 255, .045);
+
+  --hover: rgba(16, 20, 38, .07);
+  --hover-border: rgba(79, 124, 255, .40);
+  --hover-soft: rgba(16, 20, 38, .035);
+  --line-soft: rgba(16, 20, 38, .12);
+  --line-strong: rgba(79, 124, 255, .45);
+  --hairline: rgba(16, 20, 38, .10);
+  --track: rgba(16, 20, 38, .10);
+  --shimmer-a: rgba(16, 20, 38, .05);
+  --shimmer-b: rgba(16, 20, 38, .10);
+  --sheen: rgba(255, 255, 255, .6);
+  --selection: rgba(2, 132, 199, .22);
+  --placeholder: rgba(90, 103, 133, .7);
+  --code-chip: rgba(2, 132, 199, .10);
+  --switch-off: rgba(16, 20, 38, .18);
+  --code-fg: #1b2338;
+  /* The bar you DRAG is not furniture: at `.18` a white-alpha thumb disappeared into the white
+     chrome it is supposed to move inside, so the light theme's thumb is near-black. */
+  --scroll: rgba(6, 10, 24, .45);
+  --scroll-hover: rgba(6, 10, 24, .68);
+  --chrome: rgba(255, 255, 255, .78);
+  --chrome-strong: rgba(255, 255, 255, .90);
+  --popover-blur: rgba(255, 255, 255, .97);
+}
+
+/*
+ * THE HEADER, THE FOOTER AND THE PHONE BAR DO NOT INVERT EITHER — light theme only.
+ *
+ * Same trick as the rail below and the console above: the dark token set is re-declared ON the
+ * surfaces. A white bar on a light page dissolves into it, and the glass stops reading as glass —
+ * the whole point of the material is the contrast between a light content area and dark navigation
+ * chrome. The surfaces go MORE opaque than the dark theme's values (a .72 black wash over
+ * `#f2f4fa` composites to a mid grey, not a dark panel) and keep the dark ink, so every control
+ * that already reads `--text` / `--muted` / `--secondary` / `--border` by name keeps working
+ * unchanged — the crumbs, the icon buttons, the search box, the avatar and the footer's XP cell.
+ */
+:root[data-theme='light'] .topbar,
+:root[data-theme='light'] .statusbar,
+:root[data-theme='light'] .bottomnav {
+  color: var(--glass-ink);
+  --glass-1: rgba(10, 18, 35, .88);
+  --glass-2: rgba(7, 13, 27, .94);
+  --foreground: #e8eefc;
+  --text: #e8eefc;
+  --muted: #93a2c4;
+  --card: #0a0d16;
+  --secondary: rgba(255, 255, 255, .06);
+  --panel: rgba(255, 255, 255, .05);
+  --panel2: rgba(255, 255, 255, .09);
+  --border: rgba(140, 170, 255, .16);
+  --input: rgba(165, 195, 255, .24);
+  --input-bg: rgba(255, 255, 255, .05);
+  --hover: rgba(255, 255, 255, .08);
+  --hover-border: rgba(34, 211, 238, .45);
+  --placeholder: rgba(147, 162, 196, .7);
+  --lift: inset 0 1px 0 rgba(255, 255, 255, .06);
+  --scroll: rgba(140, 170, 255, .22);
+}
+
+/*
+ * THE CONSOLE DOES NOT INVERT — light theme only.
+ *
+ * Two places are actively worse on white: the CODE and the ANSWER. A code well on a white page
+ * loses the only thing that makes it read as code — that it is a screen, not a card — and a plain
+ * written-answer box on white is indistinguishable from the card around it, so the learner cannot
+ * see where their own words live. The reference draws a dark well inside the light page for
+ * exactly this reason.
+ *
+ * The dark set is re-declared ON the surface instead of restyling each one. Custom properties
+ * inherit, so every existing rule that draws code and answers by name — `.codeblock`'s own colours,
+ * the green `.out` line, `.nb-label`, the chips and the focus ring INSIDE the well — keeps working
+ * unchanged, exactly as it does in the dark theme. `.console` is the same scope for surfaces that
+ * carry their own class in the markup: the plain `<textarea>` answer boxes.
+ *
+ * `--input-bg` is restated OPAQUE (`#05070e`, not a white wash) because a translucent light value
+ * would leave the answer box white on a white card — and `:focus` below has to undo the cyan focus
+ * wash for the same reason.
+ *
+ * Deliberately NOT in the scope: the Notes editor on /notes (a document, not a console) and the
+ * assistant's ask box in the topbar.
+ */
+:root[data-theme='light'] .codeblock,
+:root[data-theme='light'] .editor,
+:root[data-theme='light'] .nb-editor,
+:root[data-theme='light'] .console {
+  --code: #05070e;
+  --code-fg: #d7e4ff;
+  --code-chip: rgba(140, 170, 255, .14);
+  --sunken: #05070e;
+  --input-bg: #05070e;
+  --text: #e8eefc;
+  --muted: #93a2c4;
+  --border: rgba(140, 170, 255, .16);
+  --input: rgba(165, 195, 255, .26);
+  --hairline: rgba(140, 170, 255, .16);
+  --line-soft: rgba(165, 195, 255, .16);
+  --placeholder: rgba(147, 162, 196, .7);
+  --green: #34d399;
+  --cyan: #22d3ee;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --violet: #8b5cf6;
+}
+/* The focus wash is a translucent cyan: on white it would flip the answer box back to light. */
+:root[data-theme='light'] .console:focus { background-color: #05070e; }
+/* The meter stays dark with it — a pale grey track on a white card is not read as a meter. */
+:root[data-theme='light'] .bar,
+:root[data-theme='light'] .mini-bar { background: #0a0e18; }
+
+/*
+ * THE RAIL DOES NOT INVERT — light theme only.
+ *
+ * The sidebar is the app's one piece of chrome with a palette of its own: a near-black glass panel
+ * and a neon hue on every row's icon. On a light page a white rail loses both readings at once —
+ * the panel dissolves into the page it sits on and the per-row glow has no dark to glow against. So
+ * the rail keeps its dark token set in BOTH themes, the same way the console above does: the values
+ * are re-declared ON `.sidebar`, custom properties inherit, and every rule that already draws the
+ * rail by name — the neon rim, the active row's accent wash and lit left bar, the fold button, the
+ * account block, the rule above Tools — keeps working unchanged.
+ *
+ * `--sidebar` itself is restated MORE opaque than the dark theme's `.72`: a black wash at `.72` over
+ * the light page's `#f2f4fa` composites to about `#464a4d`, a mid grey that stops reading as dark at
+ * all. `.90` keeps it a black panel with the page only just visible through the blur.
+ *
+ * `color` is set on the panel, and that is load-bearing. The wordmark is plain text that inherits the
+ * document's ink, and in light mode that ink is `#101426` — black on black. One inherited declaration
+ * fixes the brand, and every descendant that already names a token is unaffected by it.
+ *
+ * Not in the scope, deliberately: `.sidebar-backdrop` (the phone drawer's scrim is a sibling of the
+ * panel, not a child) and `.side-btn` (the hamburger lives in the topbar, on the page).
+ */
+:root[data-theme='light'] .sidebar {
+  color: var(--text);
+  --sidebar: rgba(4, 6, 12, .90);
+  --sidebar-accent: linear-gradient(90deg, rgba(34, 211, 238, .16), rgba(79, 124, 255, .05));
+  --sidebar-border: rgba(140, 170, 255, .12);
+  --sidebar-ring: rgba(34, 211, 238, .16);
+
+  --foreground: #e8eefc;
+  --text: #e8eefc;
+  --muted: #93a2c4;
+  --placeholder: rgba(147, 162, 196, .7);
+  --card: #0a0d16;
+  --popover: #0d111c;
+  --sunken: #05070d;
+  --secondary: rgba(255, 255, 255, .06);
+  --panel: rgba(255, 255, 255, .04);
+  --panel2: rgba(255, 255, 255, .07);
+  --panel-grad: linear-gradient(180deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .012));
+  --lift: inset 0 1px 0 rgba(255, 255, 255, .05);
+  --lift-strong: inset 0 1px 0 rgba(255, 255, 255, .09);
+  --border: rgba(140, 170, 255, .14);
+  --border-strong: rgba(165, 195, 255, .24);
+  --input: rgba(150, 180, 255, .20);
+  --hairline: rgba(140, 170, 255, .12);
+  --line-soft: rgba(165, 195, 255, .16);
+  --line-strong: rgba(165, 195, 255, .42);
+  --hover: rgba(255, 255, 255, .09);
+  --hover-soft: rgba(255, 255, 255, .04);
+  --hover-border: rgba(165, 195, 255, .30);
+  --track: rgba(255, 255, 255, .08);
+  /* The bar you DRAG inside the rail: the light theme's near-black thumb is invisible against a
+     near-black panel, so the rail keeps the dark theme's blue-tinted one. */
+  --scroll: rgba(140, 170, 255, .22);
+  --scroll-hover: rgba(140, 170, 255, .38);
+  --selection: rgba(34, 211, 238, .28);
+  --shadow: 0 24px 60px rgba(0, 0, 0, .75);
+  --glow: 0 0 24px rgba(34, 211, 238, .14);
+
+  --accent-rgb: 34 211 238;
+  --primary-foreground: #04121f;
+  --cyan: #22d3ee;
+  --blue: #4f7cff;
+  --purple: #a78bfa;
+  --violet: #8b5cf6;
+  --pink: #f472b6;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --accent-grad: linear-gradient(135deg, #22d3ee, #4f7cff);
+  --accent-grad-soft: linear-gradient(135deg, rgba(34, 211, 238, .22), rgba(79, 124, 255, .22));
+}
+/* The meter rule above pins every `.bar` to `#0a0e18`; on the dark rail that is a black track on a
+   near-black card, so the panel's own bars fall back to the panel's own track token. Two classes
+   deeper, so it wins on specificity as well as order. */
+:root[data-theme='light'] .sidebar .bar { background: var(--track); }
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0; color: var(--text); background-color: var(--background);
+  font: 14px/1.55 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  /* The room, not the furniture: two warm/cool auras far apart so a long page is never flat black,
+     and a 42px grid at ~3% so a large empty area still has a surface to sit on. `fixed` keeps the
+     light still while the main column scrolls, which is what makes it read as ambient. */
+  background-image: var(--aura-1), var(--aura-2),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: auto, auto, 42px 42px, 42px 42px;
+  background-attachment: fixed;
+}
+#root { display: flex; flex-direction: column; }
+
+h1, h2, h3, h4 { margin: 0 0 .4rem; font-weight: 650; letter-spacing: -.018em; }
+h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; } h3 { font-size: .97rem; }
+/* The h1's exact look for non-title headings (loading/error branches, big stats) — see the
+   one-H1-per-page rule pinned in scripts/tests/layout.test.mjs. */
+.h1-look { margin: 0 0 .4rem; font-weight: 650; letter-spacing: -.018em; font-size: 1.4rem; }
+p { margin: .35rem 0; }
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre { font-family: var(--mono); }
+.muted { color: var(--muted); }
+.small { font-size: .8rem; }
+.mono { font-family: var(--mono); }
+
+/* The reference makes every enabled control a pointer; same rule, same reason. */
+button:not(:disabled), [role='button']:not(:disabled), label[for] { cursor: pointer; }
+::selection { background: var(--selection); }
+/* Thin neutral scrollbars, so the chrome stops being the loudest thing on the page. */
+* { scrollbar-width: thin; scrollbar-color: var(--scroll) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll); border: 3px solid transparent; background-clip: content-box; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scroll-hover); background-clip: content-box; }
+

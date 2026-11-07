@@ -21,6 +21,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { readCss } from './_css.mjs';
 const read = (relative) => fs.readFileSync(path.join(ROOT, relative), 'utf8');
 
 /* ------------------------------- WCAG contrast ------------------------------- */
@@ -68,7 +69,7 @@ function tokens(body) {
   return out;
 }
 
-const CSS = read('src/styles.css');
+const CSS = readCss();
 const LIGHT = tokens(block(CSS, ":root[data-theme='light'] {"));
 
 /* ---------------------------- light accent readability ---------------------------- */

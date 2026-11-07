@@ -15,6 +15,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { readCss } from './_css.mjs';
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 test('splash: the official mark is the first visual, unmodified and proportional', () => {
@@ -27,7 +28,7 @@ test('splash: the official mark is the first visual, unmodified and proportional
   assert.doesNotMatch(splash, /brocode-loading|brocode-pixel-loader/, 'retired hand-exported art is gone');
   assert.doesNotMatch(splash, /canvas|filter: |transform: scale\(1\.\d+\) .*img/i, 'the artwork is not re-rendered');
 
-  const css = read('src/styles.css');
+  const css = readCss();
   const art = css.slice(css.indexOf('.boot-art {'));
   assert.match(art.slice(0, 400), /object-fit: contain/, 'the illustration is contained, not cropped');
   assert.match(art.slice(0, 400), /max-height: 88vh/, 'desktop keeps it inside the viewport');

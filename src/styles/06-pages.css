@@ -1,0 +1,1532 @@
+/* ============================================================
+   SMART HEADER — breadcrumb, contextual action, quick actions
+   ============================================================ */
+/* One row, always: the search box absorbs the slack, the action cluster never wraps. */
+.topbar { flex-wrap: nowrap; transition: padding .16s ease, background-color .22s ease, border-color .22s ease, box-shadow .25s ease; }
+.topbar .searchbox { flex: 1 1 340px; min-width: 120px; max-width: 680px; flex-wrap: nowrap; }
+.searchbox span:first-of-type { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.searchbox .kbd { flex: none; }
+.topbar .topbar-right { flex: none; }
+.crumbs { flex: 0 1 auto; }
+.profile-chip { max-width: 200px; overflow: hidden; }
+.profile-chip .meta { min-width: 0; }
+.profile-chip .meta b,
+.profile-chip .meta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar.compact { padding: 6px 16px; background-color: var(--glass-2); }
+.topbar.compact .crumb-txt span { display: none; }
+.topbar.compact .searchbox { max-width: 320px; }
+
+.crumbs { display: flex; align-items: center; gap: 9px; min-width: 0; max-width: 260px; }
+.crumb-back {
+  flex: none; width: 26px; height: 26px; border-radius: var(--radius-sm); cursor: pointer;
+  border: 1px solid var(--border); background: var(--secondary); color: var(--muted); line-height: 1;
+}
+.crumb-back:hover { color: var(--text); background: var(--hover); border-color: var(--hover-border); }
+.crumb-ico {
+  flex: none; width: 30px; height: 30px; border-radius: var(--radius-md); display: grid; place-items: center;
+  background: var(--secondary);
+  border: 1px solid var(--border); font-size: 15px;
+}
+.crumb-txt { min-width: 0; }
+.crumb-txt b { display: block; font-size: .84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crumb-txt span { display: block; font-size: .68rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.smart-chip {
+  display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;
+  border: 1px solid var(--border); border-radius: var(--radius-md); padding: 5px 9px;
+  background: var(--panel2);
+  max-width: 230px; transition: border-color .15s ease, transform .12s ease, box-shadow .15s ease;
+}
+.smart-chip:hover { text-decoration: none; transform: translateY(-1px); box-shadow: var(--shadow-sm); border-color: var(--hover-border); }
+.smart-chip.warn { border-color: rgba(251, 191, 36, .35); background: rgba(251, 191, 36, .10); }
+.smart-chip .sc-ico { flex: none; display: grid; place-items: center; color: var(--cyan); }
+.smart-chip.warn .sc-ico { color: var(--amber); }
+.smart-chip .sc-txt { min-width: 0; }
+.smart-chip .sc-txt b { display: block; font-size: .76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.smart-chip .sc-txt span { display: block; font-size: .64rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.quickmenu { position: relative; }
+.quickmenu-panel {
+  position: absolute; right: 0; top: 40px; width: 268px; z-index: 62; padding: 8px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--popover);
+  backdrop-filter: blur(18px); box-shadow: var(--shadow), var(--glow-blue); animation: fadeUp .16s ease both;
+}
+.quickmenu-item {
+  width: 100%; display: flex; gap: 10px; align-items: center; text-align: left; cursor: pointer;
+  padding: 8px 9px; border-radius: var(--radius-md); border: 1px solid transparent; background: transparent; color: var(--text);
+}
+.quickmenu-item:hover { background: var(--hover-soft); border-color: var(--border); }
+.quickmenu-item .ico { flex: none; width: 28px; height: 28px; border-radius: var(--radius-sm); display: grid; place-items: center; background: var(--panel2); }
+.quickmenu-item b { display: block; font-size: .8rem; }
+.quickmenu-item span span { font-size: .68rem; color: var(--muted); }
+.lang-toggle button { padding: 7px 10px; min-width: 40px; }
+
+@media (max-width: 1180px) {
+  .smart-chip .sc-txt span { display: none; }
+  .smart-chip { max-width: 190px; }
+}
+@media (max-width: 980px) {
+  .crumbs { max-width: 170px; }
+  .smart-chip { display: none; }
+}
+@media (max-width: 780px) {
+  .crumbs { max-width: 150px; }
+  .topbar.compact { padding: 8px 12px; }
+}
+@media (max-width: 430px) {
+  .crumbs .crumb-txt { display: none; }
+  .quickmenu-panel { position: fixed; top: 58px; right: 10px; left: 10px; width: auto; }
+}
+
+/* header density ladder — controls drop away in order of usefulness */
+@media (max-width: 1400px) { .profile-chip .meta { display: none; } }
+@media (max-width: 1000px) { .crumbs .crumb-txt span { display: none; } }
+@media (max-width: 900px) { .crumbs { display: none; } }
+/* The progress cluster is the next thing to go: the sidebar's level card still carries the streak. */
+@media (max-width: 980px) { .hd-stats { display: none; } }
+@media (max-width: 430px) {
+  .topbar .searchbox span:not(.kbd) { display: none; }
+  /* min-width must be released too — it wins over max-width in CSS. */
+  .topbar .searchbox { flex: none; min-width: 0; max-width: 46px; justify-content: center; }
+  .topbar .kbd { display: none; }
+  .topbar .hide-xs { display: none; }
+  /*
+   * The standalone theme button is a duplicate of the theme row in the quick-actions menu (App.tsx),
+   * so it leaves the header here — and the language switch left the bar entirely, to the same
+   * menu. Measured at 320px: the
+   * row is `flex-wrap: nowrap` and its min-content is ~348px, so the header pushed `.main` 38px
+   * sideways on EVERY route; without this button the row needs ~306px and fits with room to spare.
+   */
+  .topbar .theme-toggle { display: none; }
+}
+
+/* ---------- small-screen hard stop ----------
+   Several pages set grid-template-columns inline for desktop layouts; inline
+   styles beat media queries, so multi-column grids must be forced here or the
+   content is silently clipped by the shell's overflow. */
+@media (max-width: 900px) {
+  .grid2, .grid3, .path-grid, .workbench, .ide-grid { grid-template-columns: 1fr !important; }
+  .path-rail { position: static !important; }
+}
+@media (max-width: 620px) {
+  .track-grid, .statgrid, .tool-row, .ach-grid { grid-template-columns: 1fr !important; }
+  .grid2, .grid3, .path-grid { gap: 10px; }
+}
+@media (max-width: 430px) {
+  /*
+   * The language switch lives in the quick-actions menu at this size (App.tsx). Measured at 375px:
+   * the header row is `flex-wrap: nowrap`, and with the toggle in it the cluster was 7px wider than
+   * the column — a 7px horizontal scroll on EVERY route (`.main` is overflow-x: auto), which is what
+   * a phone user feels as "the page slides sideways". The toggle is 82px wide; the menu entry that
+   * does the same thing is one tap away. 360px used to be the threshold, but the row overflows from
+   * 361px up, so the switch now leaves at the same point as the breadcrumb's own ladder.
+   */
+  .topbar .lang-toggle { display: none; }
+}
+
+/* ============================================================
+   LESSON COMMAND CENTRE
+   Accent tones + section hero + colour-coded stage rail +
+   utility strip + coach row.
+   ============================================================ */
+
+/* --- accent tones: one source of truth for every tinted surface ---
+   Each tone publishes a hex (--accent) and an rgb triplet (--accent-rgb) so
+   surfaces can be tinted with modern rgb(var(..) / alpha) syntax. */
+.tone-blue { --accent: #3b82f6; --accent-rgb: 59 130 246; }
+.tone-cyan { --accent: #38bdf8; --accent-rgb: 56 189 248; }
+.tone-violet { --accent: #a78bfa; --accent-rgb: 167 139 250; }
+.tone-fuchsia { --accent: #e879f9; --accent-rgb: 232 121 249; }
+.tone-red { --accent: #f87171; --accent-rgb: 248 113 113; }
+.tone-green { --accent: #34d399; --accent-rgb: 52 211 153; }
+.tone-amber { --accent: #fbbf24; --accent-rgb: 251 191 36; }
+.tone-orange { --accent: #fb923c; --accent-rgb: 251 146 60; }
+.tone-purple { --accent: #c4b5fd; --accent-rgb: 196 181 253; }
+.tone-gold { --accent: #facc15; --accent-rgb: 250 204 21; }
+/* The tenth family. The master roadmap has TEN stages and every stage carries its own colour, so
+   the list needed one more tone than the nine the rest of the app uses — `.tone-pink` is that tone,
+   not a new semantic. Red stays what it has always been on these pages: an error, never a stage. */
+.tone-pink { --accent: #f472b6; --accent-rgb: 244 114 182; }
+/* Light: the same ten tones one step deeper — here they are text, icons and stripes on a light page,
+   not on black. Every value below clears 4.6:1 on BOTH the page (#f2f4fa) and a card (#ffffff), which
+   the previous set did not: cyan/red/green/pink/orange/gold/fuchsia all sat between 3.2 and 4.6 on
+   white, and lower still on the page. Blue, violet and purple already passed and are unchanged.
+   These are read as TEXT in the path cards and the stage tiles, so "it is only a stripe" is not true
+   of them. `scripts/tests/theme.test.mjs` pins the floor. */
+:root[data-theme='light'] .tone-blue { --accent: #2563eb; --accent-rgb: 37 99 235; }
+:root[data-theme='light'] .tone-cyan { --accent: #0274af; --accent-rgb: 2 116 175; }
+:root[data-theme='light'] .tone-violet { --accent: #7c3aed; --accent-rgb: 124 58 237; }
+:root[data-theme='light'] .tone-fuchsia { --accent: #b624c8; --accent-rgb: 182 36 200; }
+:root[data-theme='light'] .tone-red { --accent: #d52525; --accent-rgb: 213 37 37; }
+:root[data-theme='light'] .tone-green { --accent: #047e58; --accent-rgb: 4 126 88; }
+:root[data-theme='light'] .tone-amber { --accent: #a55a05; --accent-rgb: 165 90 5; }
+:root[data-theme='light'] .tone-orange { --accent: #be470a; --accent-rgb: 190 71 10; }
+:root[data-theme='light'] .tone-purple { --accent: #9333ea; --accent-rgb: 147 51 234; }
+:root[data-theme='light'] .tone-gold { --accent: #936503; --accent-rgb: 147 101 3; }
+:root[data-theme='light'] .tone-pink { --accent: #ce2570; --accent-rgb: 206 37 112; }
+
+/* --- section hero --- */
+.hero-wrap { display: grid; grid-template-columns: 162px 1fr; gap: 12px; align-items: stretch; margin: 14px 0 4px; }
+.back-tile {
+  display: flex; gap: 10px; align-items: center; padding: 12px 14px; text-decoration: none;
+  border-radius: var(--radius-lg); border: 1px solid var(--border); color: inherit;
+  background-color: var(--card); background-image: var(--panel-grad);
+  cursor: pointer; text-align: left; font: inherit; box-shadow: var(--lift);
+  transition: border-color .16s ease, box-shadow .2s ease, transform .16s ease;
+}
+.back-tile:hover {
+  border-color: var(--hover-border); background-image: var(--panel-grad-hi);
+  transform: translateY(-1px); text-decoration: none; box-shadow: var(--lift-strong), var(--glow);
+}
+.back-tile .arrow {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+}
+.back-tile b { display: block; font-size: .84rem; }
+.back-tile span span, .back-tile > span > span { display: block; font-size: .7rem; color: var(--muted); }
+
+.hero-main { display: flex; gap: 16px; align-items: center; justify-content: space-between; margin: 0; flex-wrap: wrap; }
+.hero-main h1 { font-size: 1.5rem; }
+.hero-glyph {
+  width: 48px; height: 48px; border-radius: var(--radius-lg); display: grid; place-items: center; flex: none;
+  background: var(--secondary);
+  border: 1px solid var(--border); color: var(--accent);
+}
+.status-chip {
+  display: inline-flex; align-items: center; gap: 6px; font-size: .72rem; font-weight: 600;
+  padding: 3px 10px; border-radius: 99px; color: var(--text);
+  border: 1px solid rgb(var(--accent-rgb) / .45); background: rgb(var(--accent-rgb) / .12);
+}
+.status-chip i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+
+.hero-stats { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(146px, 1fr)); gap: 10px; }
+.stat-tile {
+  display: flex; gap: 10px; align-items: center; padding: 11px 13px; border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background-color: var(--card); background-image: var(--panel-grad);
+  color: inherit; text-decoration: none; min-width: 0; box-shadow: var(--lift);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .2s ease;
+}
+.stat-tile:hover {
+  transform: translateY(-1px); border-color: var(--hover-border); text-decoration: none;
+  box-shadow: var(--lift-strong), var(--glow);
+}
+.stat-tile .ic {
+  width: 32px; height: 32px; border-radius: var(--radius-md); display: grid; place-items: center; flex: none;
+  background: rgb(var(--accent-rgb) / .14); border: 1px solid rgb(var(--accent-rgb) / .28); color: var(--accent);
+}
+.stat-tile .n { display: block; font-weight: 650; font-size: 1rem; line-height: 1.15; }
+.stat-tile .l { display: block; font-size: .68rem; color: var(--muted); }
+
+/* --- colour-coded stage rail --- */
+.stage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; margin: 12px 0; }
+.stage-tile {
+  position: relative; text-align: left; cursor: pointer; color: var(--text); font: inherit;
+  padding: 11px 12px 10px; border-radius: var(--radius-lg);
+  border: 1px solid rgb(var(--accent-rgb) / .28);
+  background-color: var(--card);
+  background-image: linear-gradient(180deg, rgb(var(--accent-rgb) / .13), transparent 72%), var(--panel-grad);
+  box-shadow: var(--lift);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .2s ease;
+}
+.stage-tile:hover {
+  transform: translateY(-2px); border-color: rgb(var(--accent-rgb) / .6);
+  box-shadow: var(--lift-strong), 0 14px 30px rgb(var(--accent-rgb) / .2);
+}
+.stage-tile .no { display: block; font-size: .62rem; font-weight: 700; letter-spacing: .8px; color: var(--accent); opacity: .9; }
+.stage-tile .glyph {
+  width: 34px; height: 34px; border-radius: var(--radius-md); display: grid; place-items: center; margin: 7px 0 6px;
+  background: rgb(var(--accent-rgb) / .14); border: 1px solid rgb(var(--accent-rgb) / .28); color: var(--accent);
+}
+.stage-tile b { display: block; font-size: .82rem; }
+.stage-tile .sub { display: block; font-size: .66rem; color: var(--muted); min-height: 1.9em; }
+.stage-tile .mini-bar { display: block; margin-top: 7px; height: 4px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.stage-tile .mini-bar > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, rgb(var(--accent-rgb) / .7), var(--accent)); }
+.stage-tile.current {
+  border-color: var(--accent);
+  background: var(--panel2);
+}
+.stage-tile.done .st-check { position: absolute; top: 8px; right: 9px; color: var(--green); font-size: .8rem; }
+.stage-tile.ahead { opacity: .6; }
+.stage-tile.na { opacity: .42; }
+.stage-tile .st-na {
+  position: absolute; top: 8px; right: 9px; font-size: .56rem; text-transform: uppercase;
+  letter-spacing: .6px; color: var(--muted); border: 1px solid var(--border);
+  border-radius: 99px; padding: 0 5px;
+}
+
+/* auto-advance card: "✓ complete → next" with a cancellable countdown */
+.adv-card {
+  position: relative; overflow: hidden; margin: 10px 0; padding: 10px 12px;
+  border: 1px solid rgba(52, 211, 153, .35); border-radius: var(--radius-lg);
+  background: linear-gradient(120deg, rgba(52, 211, 153, .12), transparent 70%);
+}
+.adv-check {
+  width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+  font-size: .68rem; font-weight: 700; color: var(--green);
+  background: rgba(52, 211, 153, .18); border: 1px solid rgba(52, 211, 153, .5);
+}
+.adv-bar { margin-top: 8px; height: 4px; }
+.adv-bar > div { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+
+/* "Aage ka plan": the next steps laid out before anything is finished */
+.plan { margin: 12px 0 4px; }
+.plan-rows { display: grid; gap: 6px; margin-top: 7px; }
+.plan-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: var(--radius-lg); cursor: pointer; font: inherit; color: inherit;
+  border: 1px solid var(--border);
+  background-color: var(--input-bg); background-image: var(--panel-grad);
+  transition: border-color .16s ease, box-shadow .18s ease, transform .14s ease;
+}
+.plan-row:hover {
+  border-color: var(--hover-border); transform: translateX(2px);
+  box-shadow: var(--lift-strong), var(--glow);
+}
+.plan-row:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.plan-row .plan-no {
+  flex: none; width: 34px; padding: 3px 0; text-align: center; border-radius: 99px;
+  font-size: .58rem; font-weight: 800; letter-spacing: .6px; color: var(--muted);
+  border: 1px solid var(--border);
+}
+.plan-row .plan-glyph { flex: none; font-size: .95rem; line-height: 1; }
+.plan-row .plan-body { flex: 1; min-width: 0; }
+.plan-row .plan-body b { display: block; font-size: .82rem; }
+.plan-row .plan-hint { display: block; font-size: .68rem; color: var(--muted); margin-top: 2px; }
+.plan-row .plan-min { flex: none; white-space: nowrap; }
+.plan-row.now {
+  border-color: rgba(52, 211, 153, .5);
+  background: linear-gradient(120deg, rgba(52, 211, 153, .12), transparent 70%);
+}
+.plan-row.now .plan-no { color: var(--green); border-color: rgba(52, 211, 153, .55); font-size: .5rem; }
+.plan-row.exit { border-style: dashed; }
+.plan-row.exit .plan-no { color: var(--cyan); border-color: rgba(56, 189, 248, .4); font-size: .78rem; }
+.stage-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- utility strip --- */
+.utility-strip {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0;
+  padding: 9px 11px; border-radius: var(--radius-lg); border: 1px solid var(--border);
+  background-color: var(--card); background-image: var(--panel-grad);
+  box-shadow: var(--panel-shadow);
+}
+.util-tile {
+  display: flex; gap: 9px; align-items: center; padding: 7px 10px; border-radius: var(--radius-md);
+  border: 1px solid transparent; background: transparent; color: inherit; font: inherit;
+  text-decoration: none; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, transform .12s ease;
+}
+.util-tile:hover { background: var(--panel2); border-color: var(--hover-border); text-decoration: none; transform: translateY(-1px); }
+.util-tile .ic {
+  width: 28px; height: 28px; border-radius: var(--radius-md); display: grid; place-items: center; flex: none;
+  background: rgb(var(--accent-rgb) / .15); border: 1px solid rgb(var(--accent-rgb) / .28); color: var(--accent);
+}
+.util-tile b { display: block; font-size: .8rem; }
+.util-tile span span, .util-tile > span > span { display: block; font-size: .64rem; color: var(--muted); }
+.util-sep { width: 1px; align-self: stretch; background: var(--border); margin: 0 3px; }
+.switch { width: 38px; height: 21px; border-radius: 99px; background: var(--switch-off); position: relative; transition: background .18s ease; flex: none; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 15px; height: 15px; border-radius: 50%; background: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, .5); transition: transform .18s ease; }
+.switch.on { background-image: var(--accent-grad); box-shadow: 0 0 14px rgba(34, 211, 238, .35); }
+.switch.on i { transform: translateX(17px); background: var(--primary-foreground); }
+
+/* --- coach row --- */
+.coach-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 12px; margin: 12px 0; }
+.coach-card {
+  margin: 0; position: relative; overflow: hidden;
+  border-color: rgb(var(--accent-rgb) / .3);
+  background-image: var(--edge-light),
+    linear-gradient(160deg, rgb(var(--accent-rgb) / .12), transparent 62%), var(--panel-grad);
+  /* `.card` sizes layer 0 to the top 1px; this card has three layers, so it restates the box. */
+  background-size: 100% 1px, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, repeat, repeat;
+}
+.coach-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--accent), rgb(var(--accent-rgb) / .15));
+}
+.coach-card h2 { font-size: .92rem; }
+.count-pill {
+  display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 7px;
+  border-radius: 99px; font-size: .68rem; font-weight: 700; color: #fff; border: 1px solid var(--border);
+}
+
+/* --- track cards inherit their own accent (from a `.tone-*` class) --- */
+.track-card .num {
+  background: linear-gradient(135deg, rgb(var(--accent-rgb) / .3), rgb(var(--accent-rgb) / .08));
+  border-color: rgb(var(--accent-rgb) / .5); color: var(--accent);
+}
+.track-card .head .ic { background: rgb(var(--accent-rgb) / .14); border-color: rgb(var(--accent-rgb) / .32); }
+.track-card:hover { border-color: rgb(var(--accent-rgb) / .55); box-shadow: 0 14px 34px rgb(var(--accent-rgb) / .18); }
+.track-card .bar > div { background: linear-gradient(90deg, rgb(var(--accent-rgb) / .75), var(--accent)); }
+
+/* ---------- Learning Path: Playbook V15 layer + the extra path cards ---------- */
+/* The band reports what the second source contributed as a whole. Its per-track rows are gone:
+   each track now has its own box in the roadmap grid (`.track-card`, above), so the `.pb-row` /
+   `.pb-name` / `.pb-mid` / `.pb-links` / `.pb-none` rules and their 760px override went with them. */
+.pb-band { margin-top: 16px; }
+/* The band's six figures: a fixed 3×2 block, so 91 "method answers" never lands alone on a
+   third row the way an auto-fit column count made it. */
+.pb-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+@media (max-width: 620px) { .pb-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* `.pbline` is gone with the per-track V15 grid it belonged to. A track's V15 share is a panel
+   inside that track's own roadmap step now (`.rmap-pb`, in the TRACK ROADMAP block at the end of
+   this file), so the roadmap has one box per track instead of a link out to a second copy of it. */
+
+/* The capabilities band — everything the course USES, not steps of it.
+
+   These rows used to be drawn as numbered steps on the master rail (37 … 60), which said the
+   Question Bank and the labs were the 37th-to-60th steps of the same course. They are not: every
+   one of their 14,551 items is tagged to a course chapter (`npm run course:audit`), so the chapter
+   page is where the practice, the lab and the interview question are met. This band is the global
+   door to each capability — grouped by family, with real figures, and deliberately unnumbered.
+
+   NOT `.path-grid`: that name already means the Learning Path's own 1fr/300px two-column frame
+   (above), and re-declaring it here silently widened the right rail to fill the row. */
+.path-extra { margin-top: 16px; }
+.cap-grid { display: grid; gap: 12px; }
+.cap-group { display: flex; flex-direction: column; gap: 7px; }
+.cap-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cap-head .chip { color: var(--accent); border-color: rgb(var(--accent-rgb) / .35); }
+/* Whole rows, so a capability is one line of reading; the family decides the columns, and the tone
+   on `.path-card` is what makes four families read as four families. */
+.cap-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 8px; }
+.cap-rows .path-card { margin-bottom: 0; }
+/* A family is a phase of one road, not a new list: the divider is a ROW of the spine (the line runs
+   through it), so the numbering continues instead of restarting per group. */
+.rmap-group { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; }
+.rmap-group .rmap-rail { padding-top: 0; }
+.rmap-group-body { display: flex; gap: 8px; align-items: center; min-width: 0; padding: 12px 0 6px; }
+/* The line starts AT the first node: there is nothing above it to connect to. */
+.rmap-group:first-child .rmap-rail .rmap-line { display: none; }
+.path-card {
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap; min-width: 0;
+  padding: 8px 11px; margin-bottom: 8px; border-radius: var(--radius-lg);
+  border: 1px solid rgb(var(--accent-rgb) / .22);
+  background-color: var(--card);
+  background-image: var(--edge-light),
+    linear-gradient(120deg, rgb(var(--accent-rgb) / .09), transparent 55%), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%, 100% 100%; background-repeat: no-repeat, repeat, repeat;
+  color: var(--text); text-decoration: none; box-shadow: var(--lift);
+  transition: transform .14s ease, border-color .16s ease, box-shadow .18s ease;
+}
+.path-card:hover {
+  transform: translateY(-1px); border-color: rgb(var(--accent-rgb) / .5); text-decoration: none;
+  box-shadow: var(--lift), 0 10px 22px rgb(var(--accent-rgb) / .15);
+}
+.path-card .pc-ic {
+  width: 26px; height: 26px; flex: none; border-radius: var(--radius-sm); display: grid; place-items: center;
+  background: rgb(var(--accent-rgb) / .13); border: 1px solid rgb(var(--accent-rgb) / .3); color: var(--accent);
+}
+.path-card .pc-name { flex: 0 1 auto; min-width: 0; font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.path-card .pc-facts { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
+.path-card .pc-facts .chip { font-size: .64rem; padding: 1px 7px; }
+/* The right end of the row, held there even when the facts wrap onto a second line. */
+.path-card .pc-tail { display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto; }
+.path-card .pc-stat { font-size: .68rem; color: var(--muted); white-space: nowrap; }
+.path-card:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/*
+ * THE FIVE FAMILIES — the page's hierarchy, stated once.
+ *
+ * BroCode exposes 61 numbered surfaces and the honest first impression must not be "61 things". It
+ * is ONE master learning path (01–36) plus four support families around it — practice, labs &
+ * build, career, reference — and these five tiles are where that is said. Each tile carries the
+ * marks of the family it names, so the visual language of the cards below is introduced before the
+ * first card is read: the timer, the shield, the refresh appear here and again on the surfaces they
+ * identify. `--accent` comes from the `.tone-*` class, so a family is one colour everywhere.
+ */
+.fam-band { display: grid; gap: 10px; margin: 2px 0 14px; grid-template-columns: repeat(auto-fit, minmax(196px, 1fr)); }
+.fam-tile {
+  display: grid; gap: 3px; align-content: start; padding: 11px 12px 12px;
+  border-radius: var(--radius-lg); border: 1px solid rgb(var(--accent-rgb) / .26);
+  background-color: var(--card);
+  background-image: var(--edge-light),
+    linear-gradient(130deg, rgb(var(--accent-rgb) / .10), transparent 62%), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%, 100% 100%; background-repeat: no-repeat, repeat, repeat;
+  box-shadow: var(--lift);
+}
+/* The marks are the family's colour, with the same soft halo the rail's icons carry — one lighting
+   rule for every mark in the product, so no surface invents its own glow. */
+.fam-tile .fam-marks { display: flex; gap: 6px; align-items: center; color: var(--accent); margin-bottom: 3px; }
+.fam-tile .fam-marks svg { filter: drop-shadow(0 0 7px rgb(var(--accent-rgb) / .5)); }
+.fam-tile .fam-name { font-size: .84rem; letter-spacing: .1px; }
+.fam-tile .fam-span { font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* The stage divider's own mark, in the tone of the stage it opens. */
+.stage-mark {
+  width: 26px; height: 26px; flex: none; border-radius: 8px; display: grid; place-items: center;
+  color: var(--accent); border: 1px solid rgb(var(--accent-rgb) / .32);
+  background: rgb(var(--accent-rgb) / .12); box-shadow: var(--lift);
+}
+.stage-mark svg { filter: drop-shadow(0 0 8px rgb(var(--accent-rgb) / .45)); }
+/* A chapter row's mark: the stage's tone, quiet enough not to compete with the chapter title. */
+.tree-row .mark svg { color: var(--accent); opacity: .85; }
+/* The lab / project chips in an opened step: two marks on one line, so they stay small and aligned. */
+.step-panel .chip svg { vertical-align: -2px; margin-right: 3px; }
+
+@media (max-width: 900px) {
+  .hero-wrap { grid-template-columns: 1fr; }
+  .hero-main { align-items: flex-start; }
+}
+@media (max-width: 620px) {
+  .stage-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .coach-grid { grid-template-columns: 1fr; }
+  .utility-strip { gap: 6px; }
+  .util-tile span span, .util-tile > span > span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage-tile, .stat-tile, .util-tile, .back-tile, .track-card, .path-card { transition: none; }
+}
+
+/* ============================================================
+   DASHBOARD — the Progress page
+
+   The page is a reading of two different things that must never be confused: TIME (the study log,
+   measured by the tracker and stored per day) and MASTERY (what the curriculum thinks was learned).
+   The charts below are hand-built — flex columns, not a charting library — because the app ships
+   with no runtime dependencies and must work locally; a bar chart has no diagonal lines worth an
+   SVG viewBox, and divs re-lay out at any width instead of letterboxing.
+
+   Every colour resolves from a token, and the intensity ramps use `rgb(var(--accent-rgb) / x)`, so
+   the heat grid follows the theme instead of pinning a cyan that would glow on white.
+   ============================================================ */
+
+/* ---------- profile ---------- */
+.dash-hero { display: flex; gap: 18px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 16px 18px; }
+.dash-id { display: flex; gap: 14px; align-items: center; min-width: 0; flex: 1 1 320px; }
+/* NOT `.avatar`: that name is the header's 34px chip in `App.tsx`, and re-declaring it here would
+   have resized the topbar's avatar on every page. */
+.dash-avatar {
+  position: relative; flex: none; width: 72px; height: 72px; padding: 0; cursor: pointer;
+  border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+  font: inherit; font-size: 1.5rem; font-weight: 700; color: var(--text);
+  background-color: var(--card); background-image: var(--accent-grad-soft);
+  border: 1px solid rgb(var(--accent-rgb) / .38);
+  box-shadow: var(--lift), 0 0 22px rgb(var(--accent-rgb) / .16);
+}
+.dash-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dash-avatar .init { font-size: 1.6rem; font-weight: 700; }
+/* The badge only appears on hover or focus. Always-on, it reads as "no photo yet" even when there is
+   one, which is the opposite of what a profile picture is for. */
+.dash-avatar .pick {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 22px; display: grid; place-items: center;
+  background: var(--chrome-strong); color: var(--text); opacity: 0; transition: opacity .16s ease;
+}
+.dash-avatar:hover .pick, .dash-avatar:focus-visible .pick { opacity: 1; }
+.dash-avatar .pick-x { color: var(--red); }
+.dash-idtext { min-width: 0; }
+.dash-idtext h1 { margin: 0; font-size: 1.25rem; }
+.dash-target { display: flex; flex-direction: column; align-items: center; flex: none; gap: 2px; }
+
+/* ---------- KPI tiles ---------- */
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 10px; margin: 12px 0; }
+.kpi {
+  position: relative; display: flex; gap: 10px; align-items: center; min-width: 0;
+  padding: 12px 13px; border-radius: var(--radius-lg);
+  border: 1px solid rgb(var(--accent-rgb) / .24);
+  background-color: var(--card);
+  background-image: linear-gradient(135deg, rgb(var(--accent-rgb) / .10), transparent 60%), var(--panel-grad);
+  box-shadow: var(--lift);
+  transition: transform .14s ease, box-shadow .18s ease, border-color .16s ease;
+}
+.kpi:hover { transform: translateY(-1px); border-color: rgb(var(--accent-rgb) / .5); box-shadow: var(--lift), 0 10px 24px rgb(var(--accent-rgb) / .16); }
+.kpi .ic {
+  flex: none; width: 30px; height: 30px; border-radius: var(--radius-md); display: grid; place-items: center;
+  color: var(--accent); background: rgb(var(--accent-rgb) / .12); border: 1px solid rgb(var(--accent-rgb) / .26);
+}
+.kpi .n { font-size: 1.05rem; font-weight: 650; line-height: 1.15; }
+.kpi .l { font-size: .68rem; color: var(--muted); }
+
+/* ---------- the study-time chart ---------- */
+/* y labels and plot share ONE grid, so a label can never drift away from its gridline. */
+.chart-wrap { display: grid; grid-template-columns: 46px 1fr; gap: 6px 8px; margin-top: 12px; }
+.chart-y { display: flex; flex-direction: column; justify-content: space-between; text-align: right; font-size: .62rem; color: var(--muted); }
+.chart-plot { position: relative; height: 172px; }
+.chart-gridline { position: absolute; left: 0; right: 0; height: 1px; background: var(--hairline); }
+.chart-bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 4px; }
+.chart-col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
+.chart-bar {
+  width: 100%; border-radius: 4px 4px 2px 2px; transition: height .3s ease;
+  background-image: linear-gradient(180deg, var(--accent, var(--cyan)), rgb(var(--accent-rgb) / .3));
+  box-shadow: 0 0 10px rgb(var(--accent-rgb) / .22);
+}
+/* Today is the one bar that has not finished yet, so it is the one bar that is lit. */
+.chart-col.today .chart-bar { background-image: var(--accent-grad-hi); box-shadow: 0 0 16px rgb(var(--accent-rgb) / .5); }
+.chart-col:hover .chart-bar { filter: brightness(1.22); }
+/* A second, thinner measure under the same date axis: bars are time, this strip is XP. Two scales on
+   one axis would need a legend nobody reads; two strips need none. */
+.chart-xp { display: flex; gap: 4px; height: 22px; align-items: flex-end; }
+.chart-xp-col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
+.chart-xp-col > i { display: block; width: 100%; border-radius: 2px; background-image: linear-gradient(180deg, var(--amber), transparent); }
+.chart-x { display: flex; gap: 4px; font-size: .6rem; color: var(--muted); }
+.chart-x span { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; line-height: 1.25; }
+.chart-x span b { font-weight: 650; }
+.chart-x span.today { color: var(--text); }
+
+/* ---------- consistency: the year heat grid ---------- */
+/* The whole year is ONE grid: the weekday letters are a real first column (`--heat-gutter`) and the month
+   row is a real first row, so every label sits above its own week without a hand-tuned offset. 53 columns
+   at 12px + 3px is ~810px — it fills a desktop card, and scrolls inside THIS block on a narrow screen
+   because `.heat-wrap > *` already carries `min-width: 0` (layout.test.mjs pins that rule). */
+.heat-wrap { margin-top: 10px; overflow-x: auto; padding-bottom: 2px; }
+.heat-year {
+  --heat-gutter: 14px;
+  --heat-cell: 12px;
+  display: grid;
+  grid-template-rows: 12px repeat(7, var(--heat-cell));
+  gap: 3px;
+  width: max-content;
+  font-size: .56rem;
+  color: var(--muted);
+}
+.heat-month, .heat-daylabel { line-height: 12px; align-self: center; }
+/* The box is one week wide and the text runs past it to the right — which is why the engine never emits
+   two labels less than three weeks apart. */
+.heat-month { white-space: nowrap; }
+.heat-daylabel { justify-self: center; }
+/* A day with nothing on it still gets a cell — the empty squares ARE the information, which is why
+   the level ramp has to be visible against the page and not just against its neighbours. */
+.heat-cell { width: 12px; height: 12px; border-radius: 3px; background: var(--track); }
+.heat-cell.l1 { background: rgb(var(--accent-rgb) / .22); }
+.heat-cell.l2 { background: rgb(var(--accent-rgb) / .42); }
+.heat-cell.l3 { background: rgb(var(--accent-rgb) / .66); }
+.heat-cell.l4 { background: rgb(var(--accent-rgb) / .95); box-shadow: 0 0 10px rgb(var(--accent-rgb) / .45); }
+.heat-cell.future { opacity: .22; }
+
+.weekday-row { display: flex; gap: 8px; align-items: flex-end; }
+.weekday { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: .62rem; color: var(--muted); }
+.weekday .bar-v { width: 100%; height: 48px; border-radius: var(--radius-sm); background: var(--track); display: flex; align-items: flex-end; overflow: hidden; }
+.weekday .bar-v > i { display: block; width: 100%; border-radius: var(--radius-sm); background-image: linear-gradient(180deg, var(--accent, var(--cyan)), rgb(var(--accent-rgb) / .25)); }
+.sec-line { height: 1px; background: linear-gradient(90deg, var(--border), transparent); margin: 14px 0; }
+
+/* ---------- mastery rows, in each track's own tone ---------- */
+.tone-fill > div {
+  background-image: linear-gradient(90deg, rgb(var(--accent-rgb) / .7), var(--accent, var(--cyan)));
+  box-shadow: 0 0 12px rgb(var(--accent-rgb) / .3);
+}
+.dash-bottom { margin-top: 12px; align-items: start; }
+.manual-log input { font-size: .74rem; padding: 5px 8px; }
+.manual-log input[type='date'] { width: 134px; }
+
+@media (max-width: 780px) {
+  .chart-plot { height: 132px; }
+  .chart-y, .chart-x { font-size: .56rem; }
+  .dash-hero { padding: 14px; gap: 12px; }
+}
+
+/* ============================================================
+   SPOTLIGHT — the light that follows the pointer
+
+   A soft pool of accent light tracks the cursor across a card. It is painted by an `::after`
+   OVERLAY, not as one more `background-image` layer, and that is the whole design decision:
+
+     · A box's layer stack is rewritten by its states — `.tile:hover`, `.path-card:hover`,
+       `.stage-card:hover/.done/.current`, `.ach.earned`, `.coach-card`, `.stage-tile.current` — and
+       every one of those reassigns `background-image` wholesale, which is exactly how the 1px edge
+       light got lost three times already (see the note above `.path-card`). A background spot would
+       need restating in all of them, and would silently vanish in whichever one was missed. An
+       overlay is inherited by every state for free.
+     · It cannot cost layout: `inset: 0` on an absolutely positioned pseudo moves no box and no line
+       of text, so no surface gains a scrollbar.
+     · With no JS it is `opacity: 0` — there is no "missing element" state and no fallback branch.
+
+   The whole feature lives inside ONE media query, so a coarse pointer or a reduced-motion user pays
+   nothing at all: not a listener, not a box, not a composited layer. A pool of light chasing the
+   cursor is motion, which is precisely what `no-preference` asks to be opted in to.
+
+   `--spot-x` / `--spot-y` are written by `src/components/spotlight.ts`; keep this selector list in
+   step with its `HOSTS` array.
+   ============================================================ */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  /* The containing block the overlay is positioned against. None of these families declared a
+     `position`, and adding one is inert: no rule in this file uses them as a containing block. */
+  :is(.card, .glass, .stat, .stat-card, .stat-tile, .tile, .util-tile, .back-tile, .stage-card,
+      .stage-tile, .track-card, .path-card, .ach, .coach-card, .plan-row, .tree-ch) {
+    position: relative;
+  }
+  :is(.card, .glass, .stat, .stat-card, .stat-tile, .tile, .util-tile, .back-tile, .stage-card,
+      .stage-tile, .track-card, .path-card, .ach, .coach-card, .plan-row, .tree-ch)::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    /* Bright at the pointer, a faint mid stop, then nothing — three stops so the pool has no rim. */
+    background-image: radial-gradient(circle var(--spot-size) at var(--spot-x) var(--spot-y),
+      rgb(var(--spot-rgb) / var(--spot-a)),
+      rgb(var(--spot-rgb) / var(--spot-a-mid)) 45%,
+      rgb(var(--spot-rgb) / 0) 72%);
+    mix-blend-mode: var(--spot-blend);
+    opacity: 0; transition: opacity .3s ease;
+  }
+  :is(.card, .glass, .stat, .stat-card, .stat-tile, .tile, .util-tile, .back-tile, .stage-card,
+      .stage-tile, .track-card, .path-card, .ach, .coach-card, .plan-row, .tree-ch):hover::after {
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   INTERVIEW MODE — one lit tile per source, one section per skill
+
+   The page used to answer "which of these 46 categories?" with a single wrapping row of
+   `.stagepill` inside a 120px scroller. Two things were wrong with that, and only the second is
+   cosmetic:
+
+     · A category is a MEMBER of a skill, not a mode. `SQL` and `SQL + Databases` sat eight pills
+       apart in an alphabet that never said Python owned 17 of the 46. `engine/interview.ts` decides
+       the grouping (and is tested there); this block only draws it.
+     · Every pill looked the same, so the sole thing separating 46 choices was 46 words. Each
+       section now carries its own tone, and every surface here is tinted with
+       `rgb(var(--accent-rgb) / a)` rather than a literal hue — which is what makes it follow the
+       `.tone-*` class on its box, light theme included.
+
+   The lighting is the same language as `.ch-box` and `.kpi`: `--edge-light` along the top 1px, a
+   wash across the face, a stripe down the left edge, a lit icon well. States reassign
+   `background-image` LAYER BY LAYER and never through the `background` shorthand — the shorthand
+   silently drops the edge light, which is how it has been lost three times already (see
+   `.path-card`).
+
+   Neither `.im-src` nor `.im-skill` is a spotlight host: the stripe owns `::before`, and the
+   overlay owns `::after` on the hosts that have one.
+   ============================================================ */
+
+/* ---------- sources: three tiles, three tones ---------- */
+.im-src-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(208px, 1fr)); gap: 10px; margin: 12px 0 6px; }
+.im-src {
+  position: relative; display: flex; gap: 11px; align-items: center; min-width: 0; text-align: left;
+  padding: 10px 12px 10px 15px; border-radius: var(--radius-lg); cursor: pointer;
+  font: inherit; color: var(--text); box-shadow: var(--lift);
+  border: 1px solid rgb(var(--accent-rgb) / .24);
+  background-color: var(--card);
+  background-image: var(--edge-light),
+    linear-gradient(135deg, rgb(var(--accent-rgb) / .12), transparent 62%), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, repeat, repeat;
+  transition: transform .15s ease, border-color .16s ease, box-shadow .2s ease;
+}
+.im-src::before {
+  content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--accent); opacity: .7;
+}
+.im-src:hover {
+  transform: translateY(-1px); border-color: rgb(var(--accent-rgb) / .5);
+  box-shadow: var(--lift), 0 12px 28px rgb(var(--accent-rgb) / .16);
+}
+/* The chosen source is the lit one: brighter wash, a ring in its own hue, and the stripe switched
+   on. The ring is a 0-offset box-shadow and not a thicker border, so picking a tile cannot nudge
+   the two others sideways. */
+.im-src.on {
+  border-color: rgb(var(--accent-rgb) / .6);
+  background-image: var(--edge-light),
+    linear-gradient(135deg, rgb(var(--accent-rgb) / .26), rgb(var(--accent-rgb) / .04) 68%),
+    var(--panel-grad-hi);
+  box-shadow: var(--lift-strong), 0 0 0 1px rgb(var(--accent-rgb) / .3), 0 10px 26px rgb(var(--accent-rgb) / .22);
+}
+.im-src.on::before { opacity: 1; box-shadow: 0 0 12px rgb(var(--accent-rgb) / .8); }
+.im-src-ic {
+  flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radius-md);
+  color: var(--accent); background: rgb(var(--accent-rgb) / .12); border: 1px solid rgb(var(--accent-rgb) / .26);
+  transition: box-shadow .2s ease, background-color .16s ease;
+}
+.im-src.on .im-src-ic { background: rgb(var(--accent-rgb) / .2); box-shadow: 0 0 16px rgb(var(--accent-rgb) / .32); }
+.im-src-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.im-src-label { font-size: .88rem; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.im-src-sub { font-size: .68rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.im-src-n { flex: none; font-size: .82rem; font-weight: 750; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+/* ---------- the skills header ---------- */
+.im-filter-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 14px 0 8px; }
+/* The title doubles as the fold control, so the row is never a dead label. */
+.im-filter-toggle {
+  display: inline-flex; gap: 7px; align-items: center; padding: 4px 6px 4px 4px; border-radius: var(--radius-md);
+  cursor: pointer; font: inherit; color: var(--text); background: none; border: 1px solid transparent;
+}
+.im-filter-toggle:hover { border-color: var(--border); background: var(--panel); }
+.im-filter-toggle svg { color: var(--cyan); transition: transform .18s ease; }
+.im-filter-toggle svg.open { transform: rotate(0deg); }
+.im-filter-toggle svg:not(.open) { transform: rotate(-90deg); }
+.im-filter-title { font-size: .95rem; font-weight: 650; letter-spacing: -.01em; }
+.im-filter-span { font-size: .72rem; color: var(--muted); }
+/* Pushed to the far end: "clear the filter" is the escape hatch, not one more thing to read first. */
+.im-clear {
+  margin-left: auto; display: inline-flex; gap: 6px; align-items: center;
+  padding: 3px 11px; border-radius: 99px; cursor: pointer; font: inherit;
+  font-size: .68rem; font-weight: 700; letter-spacing: .04em; color: var(--muted);
+  background-color: var(--panel2); background-image: var(--panel-grad);
+  border: 1px solid var(--border); box-shadow: var(--lift);
+  transition: border-color .14s ease, color .14s ease, box-shadow .18s ease;
+}
+.im-clear:hover { border-color: var(--hover-border); color: var(--text); }
+.im-clear.on {
+  color: var(--accent); border-color: rgb(var(--accent-rgb) / .4);
+  background-color: rgb(var(--accent-rgb) / .1); box-shadow: var(--lift), 0 0 14px rgb(var(--accent-rgb) / .14);
+}
+
+/* ---------- one box per skill ---------- */
+/* `auto-fit` over a 300px floor: three or four sections across a desktop, one on a phone, and never
+   a track narrow enough for an unbreakable label to force it open. */
+/* ---------- the skills, as a SEQUENCE ---------- */
+/* These used to be eight cards in an auto-fit grid, and the grid stretched every row to its
+tallest card: Python's 17 topics are 13 rows of pills in a 300px column, so the four cards beside
+it each carried ~250px of empty card under their content, and the last row left a hole as wide as
+the page is. Two changes fix both, and they are the same change:
+
+  · one skill per ROW, on the roadmap's own rail (numbered node, line, arrowhead) — the order in
+    which the skills are learned becomes visible instead of implied by an alphabet of pills;
+  · the topics flow across the FULL width, which is where the empty space went: 4-6 pills per line
+    instead of one, so a row is as tall as its own topics need and nothing else.
+
+The space the header line does not need carries the two figures this page can actually compute:
+the skill's share of the selected source, and how many of its questions are already on record. */
+.im-skills { display: flex; flex-direction: column; }
+.im-skills > * { min-width: 0; }
+.im-skill {
+  position: relative; min-width: 0; margin-bottom: 8px; padding: 9px 11px 11px 14px; border-radius: var(--radius-lg);
+  border: 1px solid rgb(var(--accent-rgb) / .22);
+  background-color: var(--card);
+  background-image: var(--edge-light),
+    linear-gradient(150deg, rgb(var(--accent-rgb) / .08), transparent 56%), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, repeat, repeat;
+  box-shadow: var(--lift);
+  transition: border-color .16s ease, box-shadow .2s ease;
+}
+.im-skill::before {
+  content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--accent); opacity: .5;
+}
+/* An unselected section keeps its stripe dim: every box lit at once is a page with no focus. */
+.im-skill.on { border-color: rgb(var(--accent-rgb) / .55); box-shadow: var(--lift), 0 10px 26px rgb(var(--accent-rgb) / .16); }
+.im-skill.on::before { opacity: 1; box-shadow: 0 0 12px rgb(var(--accent-rgb) / .75); }
+.im-skill-head {
+  display: flex; gap: 9px; align-items: center; flex: 1 1 300px; min-width: 0;
+  padding: 1px 0; cursor: pointer; font: inherit; text-align: left; color: var(--text);
+  background: none; border: 0; border-radius: 0;
+}
+.im-skill-head:hover .im-skill-name { color: var(--accent); }
+.im-skill-ic {
+  flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--radius-sm);
+  color: var(--accent); background: rgb(var(--accent-rgb) / .13); border: 1px solid rgb(var(--accent-rgb) / .3);
+}
+.im-skill-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.im-skill-name { font-size: .86rem; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color .14s ease; }
+.im-skill-hint { font-size: .66rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.im-skill-n {
+  flex: none; padding: 1px 8px; border-radius: 99px; font-size: .72rem; font-weight: 750;
+  color: var(--accent); background: rgb(var(--accent-rgb) / .12); border: 1px solid rgb(var(--accent-rgb) / .26);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The header's spare width, spent on the two real figures of the row: how big this skill is, and
+   how much of it is already answered. Both are bars, so a 39-question skill and a 130-question one
+   are comparable at a glance rather than by reading two numbers. */
+/* One band: the identity button takes the width it needs, the two meters take the rest — and on a
+   narrow screen the band wraps, so the meters move under the title instead of squeezing it. */
+.im-skill-top { display: flex; gap: 8px 18px; align-items: center; flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px solid rgb(var(--accent-rgb) / .2); }
+.im-skill-meta { display: grid; grid-template-columns: repeat(2, minmax(118px, 1fr)); gap: 6px 14px; flex: 1 1 300px; max-width: 420px; }
+.im-meter { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.im-meter-l { font-size: .64rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.im-meter-bar { display: block; height: 4px; border-radius: 99px; overflow: hidden; background: rgb(var(--accent-rgb) / .16); }
+.im-meter-bar > i { display: block; height: 100%; border-radius: 99px; background: rgb(var(--accent-rgb) / .55); }
+/* The second meter is progress, so it is allowed to be the louder one when there is any. */
+.im-meter.m-done .im-meter-bar > i { background: var(--accent); box-shadow: 0 0 10px rgb(var(--accent-rgb) / .55); }
+
+/* ---------- the topics inside a skill ---------- */
+.im-cats { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+/* A pill may wrap onto a second line rather than push the card open: the longest label here is 43
+   characters ("Coding Patterns, Projects & Final Practice") and at 320px there is no room for it. */
+.im-cat {
+  display: inline-flex; gap: 6px; align-items: center; min-width: 0; max-width: 100%;
+  padding: 3px 9px; border-radius: 99px; cursor: pointer; font: inherit; font-size: .74rem;
+  color: var(--text); border: 1px solid rgb(var(--accent-rgb) / .26);
+  background-color: rgb(var(--accent-rgb) / .07); background-image: var(--panel-grad);
+  box-shadow: var(--lift);
+  transition: background-color .14s ease, border-color .14s ease, box-shadow .18s ease, transform .14s ease;
+}
+.im-cat:hover {
+  transform: translateY(-1px); background-color: rgb(var(--accent-rgb) / .16);
+  border-color: rgb(var(--accent-rgb) / .5); box-shadow: var(--lift), 0 6px 16px rgb(var(--accent-rgb) / .18);
+}
+.im-cat-n {
+  flex: none; padding: 0 6px; border-radius: 99px; font-size: .64rem; font-weight: 700;
+  color: var(--accent); background: rgb(var(--accent-rgb) / .14); font-variant-numeric: tabular-nums;
+}
+/* The active topic is the loudest thing in its own section — the same tone as its siblings, so it
+   stays legible as "this section, this topic" rather than as a second kind of control. */
+.im-cat.on {
+  font-weight: 650; border-color: rgb(var(--accent-rgb) / .75);
+  background-color: rgb(var(--accent-rgb) / .28);
+  background-image: linear-gradient(135deg, rgb(var(--accent-rgb) / .4), rgb(var(--accent-rgb) / .1));
+  box-shadow: var(--lift), 0 0 0 1px rgb(var(--accent-rgb) / .3), 0 0 16px rgb(var(--accent-rgb) / .34);
+}
+.im-cat.on .im-cat-n { color: var(--text); background: rgb(var(--accent-rgb) / .3); }
+.im-src:focus-visible, .im-skill-head:focus-visible, .im-cat:focus-visible, .im-clear:focus-visible {
+  outline: 2px solid var(--ring); outline-offset: 2px;
+}
+/* The sequence rail is 42px of a 1600px row and 30px of a 430px one; the hint line is the first
+   thing to go when the header runs out of width, because the label and the counts are the content. */
+@media (max-width: 640px) {
+  .im-skill-hint { display: none; }
+  .im-skill-meta { grid-template-columns: minmax(0, 1fr); max-width: none; }
+}
+
+/* ============================================================
+   TRACK ROADMAP — one line per track, with the V15 share inside the box
+
+   The 8 tracks used to be a grid of equal cards, and their V15 coverage a SECOND grid of eight
+   cards below it: same tracks, same icons, same tones, same order, numbered `V15 · 01…08` on top.
+   That is a copy of the roadmap with a different numbering, not a second section — so the two are
+   one box per track now, and a track's share of the second source is an inset panel inside it.
+
+   The sequence is drawn, not implied: a rail on the left carries the step number, a spine segment
+   in the step's own tone, and an arrowhead into the next node. Eight equal cards side by side said
+   "here are eight things" and nothing about the order they are meant to be done in.
+
+   The rail carries the STATE as well — not-started, in-progress, complete — on the node, the spine
+   and the arrow together (`.rmap-step.now` / `.rmap-step.done`), and the legend above names the
+   three states, because a colour with no key is decoration.
+
+   `.track-card` is reused rather than re-declared: it is shared with the Dashboard's track row, and
+   `.rmap-card` only overrides what the roadmap changes (the head's `margin-top`, which existed to
+   clear the old absolutely-positioned `.num` badge that now lives in the rail).
+   ============================================================ */
+
+.rmap-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 0 10px; }
+.rmap-head h2 { font-size: .95rem; }
+.rmap-legend { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-left: auto; font-size: .68rem; color: var(--muted); }
+.rmap-key { display: inline-flex; gap: 5px; align-items: center; }
+.rmap-key i { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--border); }
+.rmap-key i.k-now { background: rgb(var(--accent-rgb) / .5); border-color: rgb(var(--accent-rgb) / .8); }
+.rmap-key i.k-done { background: var(--green); border-color: var(--green); box-shadow: 0 0 8px rgba(52, 211, 153, .5); }
+
+.rmap { display: flex; flex-direction: column; }
+.rmap-step { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.rmap-rail { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 5px; }
+.rmap-dot {
+  flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font-size: .68rem; font-weight: 800; letter-spacing: .04em;
+  color: var(--accent); background-color: var(--card);
+  border: 1px solid rgb(var(--accent-rgb) / .45);
+  box-shadow: 0 0 14px rgb(var(--accent-rgb) / .16);
+}
+/* `flex: 1` and not a height: the segment is as long as its own card is tall, so a step with a big
+   V15 panel still connects to the next node instead of leaving a gap in the spine. */
+.rmap-line { flex: 1; width: 2px; min-height: 10px; border-radius: 2px; background-image: linear-gradient(180deg, rgb(var(--accent-rgb) / .5), rgb(var(--accent-rgb) / .1)); }
+.rmap-arrow {
+  flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+  color: var(--accent); background: rgb(var(--accent-rgb) / .14); border: 1px solid rgb(var(--accent-rgb) / .3);
+}
+.rmap-step.now .rmap-dot {
+  background-color: rgb(var(--accent-rgb) / .16); border-color: rgb(var(--accent-rgb) / .7);
+  box-shadow: 0 0 18px rgb(var(--accent-rgb) / .3);
+}
+.rmap-step.done .rmap-dot {
+  color: var(--green); background-color: rgba(52, 211, 153, .14);
+  border-color: rgba(52, 211, 153, .6); box-shadow: 0 0 18px rgba(52, 211, 153, .3);
+}
+.rmap-step.done .rmap-line { background-image: linear-gradient(180deg, rgba(52, 211, 153, .5), rgba(52, 211, 153, .08)); }
+.rmap-step.done .rmap-arrow { color: var(--green); background: rgba(52, 211, 153, .14); border-color: rgba(52, 211, 153, .3); }
+
+/* The gap lives on the card, not on the step, so the rail (which stretches to the row's height)
+   covers it and the arrowhead lands just above the next node rather than mid-card. */
+.rmap-card { margin-bottom: 12px; }
+.rmap-card .head { margin-top: 0; gap: 12px; }
+.rmap-title { flex: 1; min-width: 0; }
+.rmap-title h3 { margin: 0; }
+.rmap-desc { display: block; font-size: .74rem; color: var(--muted); margin-top: 2px; }
+.rmap-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 244px); gap: 14px; align-items: start; }
+.rmap-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+/* Natural width, not the base rule's `flex: 1`: two CTAs splitting 600px is a button as wide as a
+   paragraph, which reads as the card's main action rather than as two choices. */
+.rmap-main .actions .btn { flex: 0 0 auto; }
+/* The V15 share, in the track's own tone: a left rail and a wash, so it reads as part of this box
+   rather than as another card that happens to sit inside it. */
+.rmap-pb {
+  display: flex; flex-direction: column; gap: 7px; min-width: 0;
+  padding: 9px 11px; border-radius: var(--radius-md);
+  border: 1px solid rgb(var(--accent-rgb) / .22); border-left: 3px solid rgb(var(--accent-rgb) / .5);
+  background-color: rgb(var(--accent-rgb) / .06); background-image: var(--panel-grad);
+}
+.rmap-pb-head { display: inline-flex; gap: 6px; align-items: center; font-size: .68rem; font-weight: 700; letter-spacing: .02em; color: var(--accent); }
+.rmap-pb-note { font-size: .7rem; color: var(--muted); }
+.rmap-pb-note b { color: var(--text); font-weight: 650; }
+.rmap-pb .bar { height: 5px; }
+.rmap-pb .btn { justify-content: center; }
+
+/* ---------- the same spine over the Playbook's chapter index ---------- */
+/* `.tree` is already a flex column; `.rmap-doc` only takes its gap away, because a 4px gap between
+   two steps is a gap in the line. The spacing moves onto the box, where the rail's `flex: 1` line
+   stretches over it — the same arrangement the track steps use. */
+.rmap-doc { gap: 0; margin-top: 10px; }
+.rmap-doc-step .ch-box { margin-bottom: 6px; }
+/* An open chapter lights its own node: the spine answers the click, not only the box. */
+.rmap-doc-step.open .rmap-dot {
+  background-color: rgb(var(--accent-rgb) / .18); border-color: rgb(var(--accent-rgb) / .7);
+  box-shadow: 0 0 18px rgb(var(--accent-rgb) / .3);
+}
+/* The rail owns the left edge, so the box gives it the room back: the node sits outside the box
+   now, and the head's old 15px of left padding (which cleared the stripe) is no longer needed. */
+.rmap-doc-step .ch-head { padding-left: 13px; }
+
+/* ---------- the master roadmap: 36 steps, and the 8 tracks as a strip ---------- */
+/* The tracks used to be eight full-size boxes ABOVE this road, and the road below them repeated
+   the same eight subjects. A track is not a step of the journey — it is the SUBJECT a step belongs
+   to — so it is a strip of chips here, and the road keeps exactly one box per step. */
+.rmap-tracks { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 12px 0 2px; }
+.rmap-tracks > .small { margin-right: 2px; }
+.rmap-trackchip {
+  display: inline-flex; gap: 6px; align-items: center;
+  padding: 3px 10px; border-radius: 99px; text-decoration: none;
+  font-size: .72rem; color: var(--text);
+  border: 1px solid rgb(var(--accent-rgb) / .28);
+  background-color: rgb(var(--accent-rgb) / .08);
+  background-image: var(--edge-light);
+  background-size: 100% 1px; background-repeat: no-repeat;
+  transition: border-color .16s ease, background-color .16s ease, transform .14s ease;
+}
+.rmap-trackchip > svg { color: var(--accent); }
+.rmap-trackchip b { font-weight: 600; }
+.rmap-trackchip .pct { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+.rmap-trackchip:hover { transform: translateY(-1px); border-color: rgb(var(--accent-rgb) / .55); background-color: rgb(var(--accent-rgb) / .16); }
+.rmap-trackchip:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* A step's box: the rail owns the number, so the box starts at its glyph and the head gives back
+   the padding that cleared the old absolutely-positioned badge. */
+.step-box { margin-bottom: 6px; }
+.step-box .ch-head { padding-left: 13px; }
+.step-panel { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; }
+.step-goal { color: var(--text); }
+.step-goal b { color: var(--accent); }
+.step-topics { display: flex; flex-wrap: wrap; gap: 5px; }
+.step-topics .chip { font-size: .64rem; padding: 1px 7px; }
+.step-chs { display: flex; flex-direction: column; }
+.step-sections { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.step-sections .chip { font-size: .64rem; padding: 1px 7px; text-decoration: none; }
+.step-share, .step-track { display: flex; flex-direction: column; gap: 5px; }
+.step-share .bar, .step-track .bar { height: 5px; }
+.step-track { margin-top: 2px; }
+
+/* The chapter's step chip is the last thing to earn a place in the document's head row: at phone
+   width it already carries the title, the count and the PDF page, so the step link waits inside
+   the opened panel instead of squeezing the title out of the row. */
+@media (max-width: 560px) { .ch-step { display: none; } }
+
+/* Below 1080px the two columns of the card stack: the V15 panel is a subsection of the track, and
+   a 244px column beside a squeezed fact list is neither. */
+@media (max-width: 1080px) { .rmap-cols { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) {
+  .rmap-step, .rmap-group { grid-template-columns: 30px minmax(0, 1fr); gap: 8px; }
+  .rmap-dot { width: 26px; height: 26px; font-size: .6rem; }
+  .rmap-arrow { width: 16px; height: 16px; }
+  .rmap-legend { margin-left: 0; }
+}
+
+/* ---------- the Notebook Lab, as boxes ---------- */
+/* On the path a notebook is a peer of the track steps rather than one more pill under a lesson, so
+   it is drawn in the same box language. The tones only CYCLE (a notebook has no family to belong
+   to), and the dimmer stripe is the point: these are five peers, not a sequence. */
+.nb-boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(222px, 1fr)); gap: 10px; margin-top: 10px; }
+.nb-box {
+  position: relative; display: flex; flex-direction: column; gap: 5px; text-align: left;
+  padding: 10px 12px 10px 15px; border-radius: var(--radius-lg); cursor: pointer;
+  font: inherit; color: var(--text);
+  border: 1px solid rgb(var(--accent-rgb) / .26);
+  background-color: var(--card);
+  background-image: var(--edge-light),
+    linear-gradient(140deg, rgb(var(--accent-rgb) / .1), transparent 60%), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, repeat, repeat;
+  box-shadow: var(--lift);
+  transition: transform .15s ease, border-color .16s ease, box-shadow .2s ease;
+}
+.nb-box::before {
+  content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--accent); opacity: .7;
+}
+.nb-box:hover {
+  transform: translateY(-1px); border-color: rgb(var(--accent-rgb) / .5);
+  box-shadow: var(--lift), 0 12px 26px rgb(var(--accent-rgb) / .16);
+}
+.nb-box.on {
+  border-color: rgb(var(--accent-rgb) / .6);
+  background-image: var(--edge-light),
+    linear-gradient(140deg, rgb(var(--accent-rgb) / .22), rgb(var(--accent-rgb) / .04) 70%),
+    var(--panel-grad-hi);
+  box-shadow: var(--lift-strong), 0 0 0 1px rgb(var(--accent-rgb) / .3), 0 10px 24px rgb(var(--accent-rgb) / .2);
+}
+.nb-box.on::before { opacity: 1; box-shadow: 0 0 12px rgb(var(--accent-rgb) / .8); }
+.nb-box-ic {
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-sm);
+  color: var(--accent); background: rgb(var(--accent-rgb) / .13); border: 1px solid rgb(var(--accent-rgb) / .3);
+}
+.nb-box b { font-size: .84rem; line-height: 1.3; }
+.nb-box-sub { font-size: .68rem; color: var(--muted); }
+.nb-box-facts { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 2px; }
+.nb-box-facts .chip { font-size: .62rem; padding: 1px 7px; }
+.nb-box:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* ============================================================
+   DASHBOARD v2 — the live hero, the KPI row, the study rail, big badges
+   ============================================================
+   The page carried three numbers twice (level/streak/overall lived in the hero AND in the stat
+   row) and drew the 8 track bars right beside the 8 track cards. Between those it had ~800px of
+   dead space in the hero, an always-mounted empty Activity card and a 4-box "Quick Stats" panel
+   that was the KPI row again. What follows belongs to the RESTRUCTURE, not to a theme:
+
+     · `.snap-*`      — today at a glance, in the hero's wasted middle: study minutes from the
+                        real study log, this week, the streak, XP to the next level.
+     · `.kpi-*`       — one line of secondary text + a bar under the number (the base `.kpi`
+                        is shared with the Progress page, so only its children are extended).
+     · `.study-row3` / `.wk-strip` — the same log the Progress page charts, at a glance here.
+     · `.q-row`       — the queue (cards due, mistakes open, mocks, notebook cells): real counts
+                        that always exist, in place of the panel that rendered empty.
+     · `.achv-*`      — badges as BIG tiles (52px well, label, honest progress bar); earned ones
+                        are lit and sorted first.
+
+   Two rules kept from the rest of the app: no figure here is seeded or estimated, and colour only
+   ever means WHICH thing (the tone of a track, a phase, a badge) — never how good it is.
+   ============================================================ */
+
+/* Dashboard tags sit one step above the app default: on a page whose job is a short list of
+   numbers and calls to action, a 0.66rem tag reads as a caption rather than as a label. Scoped to
+   `.dash-page` on purpose — ~40 other files use the base `.chip`, and a global bump would re-wrap
+   rows that were measured to fit. Below 700px the extra width is worth more than the size. */
+.dash-page .chip { font-size: .73rem; padding: 3px 10px; }
+@media (max-width: 700px) { .dash-page .chip { font-size: .66rem; padding: 2px 8px; } }
+
+/* ---------- hero: who you are · today, live · how far along ---------- */
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.3fr) auto; gap: 20px; align-items: center; position: relative; }
+.hero-id { min-width: 0; }
+.hero-id h1 { margin: 2px 0 6px; }
+.dash-tags { flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.dash-tag {
+  display: inline-flex; gap: 6px; align-items: center;
+  font-size: .76rem; padding: 5px 12px; border-radius: 99px; color: var(--accent);
+  border: 1px solid rgb(var(--accent-rgb) / .34);
+  background-color: rgb(var(--accent-rgb) / .10);
+  background-image: var(--edge-light); background-size: 100% 1px; background-repeat: no-repeat;
+}
+.hero-snap { min-width: 0; }
+.snap-head { display: block; font-size: .66rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.snap-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.snap {
+  position: relative; min-width: 0; padding: 9px 11px 9px 13px; border-radius: var(--radius-lg);
+  display: flex; flex-direction: column; gap: 2px;
+  border: 1px solid rgb(var(--accent-rgb) / .22);
+  background-color: rgb(var(--accent-rgb) / .06);
+  background-image: var(--edge-light); background-size: 100% 1px; background-repeat: no-repeat;
+}
+.snap::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); opacity: .7; }
+.snap .l { font-size: .64rem; color: var(--muted); }
+.snap b { font-size: 1.02rem; font-weight: 680; line-height: 1.15; }
+.snap b small { font-size: .68rem; font-weight: 500; color: var(--muted); }
+.snap .sub { display: inline-flex; gap: 4px; align-items: center; font-size: .62rem; color: var(--muted); }
+.snap .sub svg { color: var(--accent); }
+.snap-bar { display: block; height: 4px; border-radius: 99px; background: rgb(var(--accent-rgb) / .18); overflow: hidden; margin-top: 4px; }
+.snap-bar > i { display: block; height: 100%; border-radius: 99px; background: var(--accent); box-shadow: 0 0 10px rgb(var(--accent-rgb) / .7); }
+.hero-ring { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; }
+
+/* ---------- KPI row ---------- */
+.kpi-body { flex: 1; min-width: 0; }
+.kpi .kpi-sub { font-size: .64rem; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kpi .bar { height: 4px; margin-top: 7px; }
+
+/* ---------- today's plan ---------- */
+/* Both cards take the row's full height; the tail of the shorter one absorbs the leftover, so the
+   row ends level instead of one card carrying an empty strip at the bottom. */
+.dash-plan { align-items: stretch; }
+.dash-plan > .card { display: flex; flex-direction: column; }
+.dash-plan > .card > h3:first-child { margin-top: 0; }
+
+.auth-page { display: flex; justify-content: center; padding: 18px 0; }
+.auth-card { width: min(100%, 520px); padding: clamp(18px, 4vw, 30px); }
+/* The dialog is the same card, lifted over the page a guest was reading — never a second form. */
+.auth-overlay {
+  position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 18px;
+  background: rgba(2, 4, 10, .68); backdrop-filter: blur(3px);
+  animation: fadeUp .18s ease both; overflow-y: auto; overscroll-behavior: contain;
+}
+.auth-dialog { position: relative; margin: auto; }
+.auth-dialog-close {
+  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 9px; color: var(--muted); background: var(--secondary);
+  font-size: 1.05rem; line-height: 1; cursor: pointer;
+}
+.auth-dialog-close:hover { color: var(--text); border-color: var(--hover-border); background: var(--hover); }
+.auth-card h1, .auth-admin-heading h1 { margin-top: 0; }
+/*
+ * ---------- the account form ----------
+ * Sign in and sign up are two TABS of one form, not two pages: the difference is which fields are
+ * shown, and everything else — providers, errors, the pending button — is shared.
+ */
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 18px; padding: 4px; border: 1px solid var(--border); border-radius: 13px; background: var(--secondary); }
+.auth-tab { padding: 8px 10px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: .83rem; font-weight: 600; cursor: pointer; transition: color .14s ease, background-color .14s ease, box-shadow .18s ease; }
+.auth-tab:hover { color: var(--text); }
+.auth-tab.active { color: var(--text); background-color: var(--card); background-image: var(--panel-grad); box-shadow: var(--lift); }
+.auth-tabs + .auth-form { margin-top: 14px; }
+.auth-field { display: grid; gap: 6px; }
+/* The caption above a field is a label, not body copy: quieter, smaller, consistent. */
+.auth-field > span:first-child { color: var(--muted); font-size: .78rem; font-weight: 600; }
+.auth-input-row { position: relative; display: block; }
+.auth-input-row input { padding-right: 42px; }
+.auth-reveal { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 9px; color: var(--muted); background: transparent; cursor: pointer; }
+.auth-reveal:hover { color: var(--text); background: var(--hover); }
+/* A rule, not an error: it says what the field wants before anything is wrong. */
+.auth-hint { color: var(--muted); font-size: .72rem; font-style: normal; }
+.auth-hint.ok { color: var(--green); }
+.auth-hint.error { color: var(--red); }
+.auth-form input.invalid { border-color: rgba(248, 113, 113, .5); }
+.auth-wide { width: 100%; justify-content: center; }
+.auth-foot { margin: 14px 0 0; text-align: center; }
+/* Waiting for a confirmation link is a state of the form, not a toast over it. */
+.auth-sent { display: grid; gap: 10px; justify-items: center; text-align: center; padding: 4px 0 2px; }
+.auth-sent-icon { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 17px; color: var(--cyan); border: 1px solid rgba(34, 211, 238, .3); background-color: rgba(34, 211, 238, .1); }
+.auth-sent h2 { margin: 2px 0 0; font-size: 1.06rem; }
+.auth-sent-email { color: var(--text); word-break: break-all; }
+.auth-form { display: grid; gap: 14px; margin-top: 20px; }
+.auth-form label { display: grid; gap: 6px; font-size: .88rem; }
+.auth-form .btn { justify-content: center; margin-top: 3px; }
+.auth-switch { justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+.auth-providers { display: grid; gap: 10px; margin-top: 20px; }
+.auth-provider { align-items: center; display: flex; gap: 10px; justify-content: center; font-weight: 600; }
+.auth-provider svg { flex: none; }
+.auth-divider { align-items: center; display: flex; gap: 12px; margin-top: 18px; color: var(--muted); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+.auth-divider::before, .auth-divider::after { background: var(--line); content: ''; flex: 1; height: 1px; }
+.auth-divider + .auth-form { margin-top: 12px; }
+/* Forgot-password: a quiet link under the submit button, where a learner looks when sign-in fails. */
+.auth-forgot { display: block; margin-top: 12px; text-align: center; font-size: .86rem; color: var(--cyan); text-decoration: none; }
+.auth-forgot:hover { text-decoration: underline; }
+.auth-privacy { margin: 14px 0 0; text-align: center; }
+/* What an account is FOR, said once next to the form rather than as a wall of small print. */
+.auth-required { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 16px; padding: 10px 12px; border-radius: var(--radius-md);
+  color: var(--cyan); background: rgba(34, 211, 238, .08); border: 1px solid rgba(34, 211, 238, .22); font-size: .86rem; }
+.auth-required svg { flex: none; margin-top: 2px; }
+
+/* ---------------------------------------------------------------------------
+   THE ROUTE GATE — the "checking your session" screen.
+
+   Visible for one session round-trip while `RequireAuth` decides, and the reason it is a skeleton
+   rather than a spinner: it stands in for the SHAPE of the page that is coming, so the layout does
+   not jump when the real content arrives. It reuses `.skeleton`, so it follows the theme.
+   --------------------------------------------------------------------------- */
+.route-gate { display: grid; gap: 12px; }
+.route-gate-note { color: var(--muted); font-size: .82rem; }
+.route-gate-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); height: 120px;
+  animation: pulse 1.6s ease-in-out infinite; }
+.route-gate-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.route-gate-kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); height: 76px;
+  animation: pulse 1.6s ease-in-out infinite; }
+.auth-error, .auth-message { padding: 10px 12px; border-radius: var(--radius-md); font-size: .88rem; }
+.auth-error { color: var(--red); background: rgba(248, 113, 113, .09); border: 1px solid rgba(248, 113, 113, .25); }
+.auth-message { color: var(--amber); background: rgba(251, 191, 36, .08); border: 1px solid rgba(251, 191, 36, .2); }
+.auth-admin-heading { align-items: flex-start; margin-bottom: 12px; }
+/* The heading's status line: one row of muted sentence + realtime chip, free to wrap. */
+.auth-admin-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.auth-live { flex: none; }
+.auth-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.auth-live.wait i { background: var(--amber); box-shadow: 0 0 7px rgba(251, 191, 36, .6); }
+.auth-live.on { color: var(--green); border-color: rgba(52, 211, 153, .34); background-color: rgba(52, 211, 153, .10); }
+.auth-live.on i { background: var(--green); box-shadow: 0 0 7px rgba(52, 211, 153, .7); animation: authLivePulse 1.6s ease-in-out infinite; }
+@keyframes authLivePulse { 50% { opacity: .4; } }
+/* Live reads lit, offline reads quiet — the roster's Online/Offline cell at a glance. */
+.auth-online { color: var(--green); font-weight: 650; }
+.auth-offline { color: var(--muted); }
+.auth-admin-stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 14px; }
+.auth-admin-stats .card { display: grid; gap: 8px; }
+.auth-admin-stats strong { font-size: 1.55rem; }
+.auth-recent-signins { margin-bottom: 14px; }
+.auth-recent-signins h2 { margin-top: 0; }
+/* The roster's own toolbar: a search on the left, the actions on the right, one line on a desktop
+   and a stack on a phone — the same shape as the heading row above it. */
+.auth-admin-tools { align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.auth-admin-search { flex: 1 1 240px; min-width: 0; }
+.auth-admin-search input { width: 100%; }
+.auth-table-wrap { overflow-x: auto; }
+.auth-table { width: 100%; min-width: 980px; border-collapse: collapse; text-align: left; }
+.auth-table th, .auth-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.auth-table th { color: var(--muted); font-size: .78rem; font-weight: 600; }
+.auth-table td { font-size: .88rem; }
+.auth-table select { min-width: 110px; }
+.dash-plan .mission-row .chip { flex: none; }
+/* The recommendation PANEL absorbs the row's leftover height rather than a `margin-top: auto`
+   pushing the tail down: a stretch of bordered panel reads as part of the card, while a stretch of
+   bare card reads as a hole (measured: 90px of nothing between the CTA and the tail). */
+.nba-box {
+  flex: 1;
+  display: flex; flex-direction: column; justify-content: center; padding: 12px 13px; border-radius: var(--radius-lg);
+  border: 1px solid rgb(var(--accent-rgb) / .22); border-left: 3px solid rgb(var(--accent-rgb) / .55);
+  background-color: rgb(var(--accent-rgb) / .06); background-image: var(--panel-grad);
+}
+.btn-block { width: 100%; justify-content: center; }
+.dash-plan .btn-block { margin-top: 10px; }
+
+/* ---------- rail ---------- */
+.dash-main { margin-top: 14px; }
+
+.study-row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+.sr3 { position: relative; min-width: 0; padding: 8px 9px 8px 11px; border-radius: var(--radius-md); border: 1px solid rgb(var(--accent-rgb) / .24); background-color: rgb(var(--accent-rgb) / .07); }
+.sr3::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 0 2px 2px 0; background: var(--accent); opacity: .65; }
+.sr3 b { display: block; font-size: .9rem; font-weight: 660; }
+.sr3 span { font-size: .6rem; color: var(--muted); }
+
+/* Seven real days, drawn as columns — the same log the Progress page charts, at a glance here.
+   The columns carry NO background on purpose: with a tinted cell behind every day, a week that was
+   studied once rendered as seven equal boxes and read as "a lot" (the first measurement of this
+   panel). A 2px minimum keeps an empty day visible as a mark on the baseline, and only real time
+   grows an actual bar, so one 31-minute day looks like one bar and six marks. */
+.wk-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; height: 44px; align-items: end; padding-bottom: 2px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+.wk-col { display: flex; align-items: flex-end; height: 100%; }
+.wk-col > i { display: block; width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; background: rgb(var(--accent-rgb) / .35); }
+.wk-col.on > i { background: var(--accent); box-shadow: 0 0 10px rgb(var(--accent-rgb) / .55); }
+
+.q-row { display: flex; gap: 10px; align-items: center; padding: 8px 0; text-decoration: none; color: inherit; border-bottom: 1px solid var(--border); font-size: .8rem; }
+.q-row:last-child { border-bottom: none; }
+.q-row .ic { flex: none; width: 26px; height: 26px; border-radius: var(--radius-sm); display: grid; place-items: center; color: var(--accent); background: rgb(var(--accent-rgb) / .12); border: 1px solid rgb(var(--accent-rgb) / .26); }
+.q-row .t { flex: 1; min-width: 0; }
+.q-row b { font-variant-numeric: tabular-nums; }
+.q-row > svg { flex: none; color: var(--muted); }
+.q-row:hover .t { color: var(--accent); }
+
+/* ---------- achievements, as big tiles ---------- */
+.dash-achrow { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; }
+.achv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(212px, 1fr)); gap: 10px; margin-top: 12px; }
+.achv {
+  position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 3px 11px; align-items: center;
+  padding: 11px 12px; border-radius: var(--radius-lg);
+  border: 1px solid var(--border); background-color: var(--card); background-image: var(--panel-grad);
+  box-shadow: var(--lift);
+  transition: border-color .16s ease, box-shadow .2s ease, transform .14s ease;
+}
+.achv:hover { transform: translateY(-1px); border-color: var(--hover-border); box-shadow: var(--lift-strong), var(--glow); }
+.achv-em {
+  grid-row: span 3; width: 52px; height: 52px; border-radius: var(--radius-md); display: grid; place-items: center;
+  font-size: 1.5rem; background-color: var(--panel2); border: 1px solid var(--border);
+  filter: grayscale(1); opacity: .5;
+}
+/* An earned badge is a lit trophy: gold rim, gold wash, gold light under it. */
+.achv.earned { border-color: rgba(251, 191, 36, .42); background-image: linear-gradient(150deg, rgba(251, 191, 36, .14), rgba(139, 92, 246, .07) 60%, transparent), var(--panel-grad); box-shadow: var(--lift), 0 0 22px rgba(251, 191, 36, .14); }
+.achv.earned .achv-em { filter: none; opacity: 1; border-color: rgba(251, 191, 36, .45); background-color: rgba(251, 191, 36, .12); box-shadow: 0 0 18px rgba(251, 191, 36, .22); }
+.achv-top { display: flex; gap: 6px; align-items: center; min-width: 0; }
+/* The badge name IS the tile, so it wraps to a second line when it does not fit its card instead of
+   losing its tail — measured on the real app at 320px ("Question Bank Runner" cut 25px short at one
+   column) and at 768px ("Warming Up", three columns). Where it fits, this renders exactly as the
+   single line it was: the ellipsis stays for a name with no space left to break at. */
+.achv-top b { font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: normal; overflow-wrap: break-word; }
+.achv-tag { flex: none; margin-left: auto; display: inline-flex; gap: 4px; align-items: center; font-size: .62rem; padding: 1px 7px; border-radius: 99px; color: var(--muted); border: 1px solid var(--border); background: var(--panel); }
+.achv-tag.earned { color: var(--amber); border-color: rgba(251, 191, 36, .4); background: rgba(251, 191, 36, .12); }
+.achv-hint { font-size: .68rem; color: var(--muted); overflow-wrap: anywhere; }
+.achv-bar { display: block; height: 4px; border-radius: 99px; background: var(--panel2); overflow: hidden; }
+.achv-bar > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--cyan), var(--violet)); }
+
+/* ---------- tools + the closing line ---------- */
+.dash-tools { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 9px; }
+.dash-tools .tile .ic { color: var(--accent); background: rgb(var(--accent-rgb) / .12); border-color: rgb(var(--accent-rgb) / .26); }
+.dash-tools .tile:hover { border-color: rgb(var(--accent-rgb) / .5); box-shadow: var(--lift-strong), 0 10px 24px rgb(var(--accent-rgb) / .16); }
+.dash-tools .tile > svg { flex: none; color: var(--muted); }
+.dash-tools .tile.on { border-color: rgb(var(--accent-rgb) / .55); background-image: var(--edge-light), var(--panel-grad-hi); }
+.dash-foot {
+  display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 18px; padding: 10px 14px;
+  border-radius: var(--radius-lg); border: 1px solid var(--border);
+  background-color: var(--card); background-image: var(--panel-grad);
+}
+.dash-foot > svg { flex: none; color: var(--violet); }
+
+@media (max-width: 1180px) {
+  .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .hero-ring { flex-direction: row; justify-content: center; gap: 12px; }
+}
+@media (max-width: 900px) { .dash-achrow { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) {
+  .sr3 b { font-size: .8rem; }
+  .sr3 span { display: none; }
+  .achv-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ============================================================
+   ALL-SCREEN PASS — phone, tablet, desktop and the touch layer
+
+   Everything the layout breakpoints above cannot fix, because none of it is a width problem:
+
+     · iOS Safari zooms the whole PAGE when a text field with a font-size under 16px takes focus.
+       `.btn`/`input` inherit the 14px body size, so tapping a filter field or the answer box
+       zoomed the viewport and left the learner panning a page they never asked to zoom — on the
+       one platform where the Question Bank's written-answer box is the main way to answer. The
+       16px guard is scoped to phone widths, and it is the one place here where a font size is
+       about the browser rather than about the design.
+
+     · A finger is not a cursor. `.mini-btn`, `.side-toggle`, `.crumb-back` and `.tabbtn` are
+       icon-sized controls (~18–26px), which is comfortable with a mouse and smaller than any touch
+       guideline. They grow ONLY under `pointer: coarse`, so the desktop density every measurement
+       in this file was taken at stays exactly as it was.
+
+     · Sticky chrome must never be the last thing on the screen: `.content` already reserves a
+       bottom pad for the fixed bottom navigation, and this keeps the toasts above it too.
+   ============================================================ */
+@media (max-width: 780px) {
+  input, textarea, select { font-size: 16px; }
+  /* The written-answer box is a `<textarea>` inside a card that is already full width on a phone. */
+  textarea { max-width: 100%; }
+}
+/* ============================================================
+   FOOTER AI DOCK — the assistant, on every screen
+
+   A panel pinned above the status bar rather than a modal: it does not cover the page, does not
+   trap focus and does not block the route underneath, because the usual reason to open it is to ask
+   about the screen you are looking at. `position: fixed` (not absolute against `.main`) so it stays
+   put while the page scrolls behind it.
+   ============================================================ */
+.aidock {
+  position: fixed; right: 14px; bottom: 46px; z-index: 70;
+  /* Tall enough for the context card, the four tiles, both record rows, the trust line AND the
+     composer in one view — the reference layout; a short screen still caps it and scrolls. */
+  width: min(452px, calc(100vw - 28px)); max-height: min(84vh, 768px); overflow-y: auto;
+  padding: 12px 12px 10px;
+  border: 1px solid rgba(102, 158, 224, .28); border-radius: var(--radius-xl);
+  color: #edf5ff; background-color: rgba(7, 15, 30, .97);
+  background-image: linear-gradient(155deg, rgba(16, 31, 53, .98), rgba(7, 15, 30, .98));
+  box-shadow: 0 20px 54px rgba(0, 0, 0, .48), 0 0 25px rgba(34, 211, 238, .10),
+    inset 0 1px 0 rgba(255, 255, 255, .08);
+  backdrop-filter: blur(20px) saturate(145%); -webkit-backdrop-filter: blur(20px) saturate(145%);
+}
+.aidock-head b { color: #f2f7ff; }
+.aidock .muted { color: #9aaccb; }
+.aidock .icon-btn { color: #c1d0e7; border-color: rgba(118, 158, 208, .18); background: rgba(255, 255, 255, .045); }
+/*
+ * A quick action is a fixed label in a wrapping row, so it must not be the item that shrinks: at
+ * 360px the row squeezed "Next Task" to 59px of its 74px content and the label was cut mid-word.
+ */
+.aidock .btn { flex: none; }
+/*
+ * The panel's ONLY header is the assistant's own: the dock draws no second bar, so its identity,
+ * live state and close control stay in one row. Sticky, so they remain reachable while a long
+ * answer scrolls instead of disappearing above the fold.
+ */
+.aidock .assistant .head {
+  position: sticky; top: -14px; z-index: 5;
+  padding: 6px 0 9px;
+  background: linear-gradient(180deg, rgba(9, 19, 36, .99) 72%, rgba(9, 19, 36, 0));
+}
+.aidock .assistant-close { flex: none; margin-left: auto; }
+/* Phone: a sheet across the bottom, above the bottom navigation, with the safe-area inset kept. */
+@media (max-width: 780px) {
+  .aidock {
+    left: 8px; right: 8px; width: auto;
+    /* The nav is a compact 29px capsule now; keep the dock just above it, inside the safe area. */
+    bottom: calc(32px + env(safe-area-inset-bottom));
+    max-height: min(52dvh, 430px); padding: 8px;
+  }
+  .aidock .assistant .head { top: -8px; padding: 2px 0 7px; }
+  .aidock .assistant { padding: 0; }
+  .aidock .assistant-subtitle { display: none; }
+  .aidock .assistant-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 9px;
+  }
+  .aidock .assistant-action {
+    min-height: 48px; flex-direction: row; align-items: center; justify-content: flex-start;
+    gap: 7px; padding: 6px 8px; border-radius: 12px;
+  }
+  .aidock .assistant-action-icon { width: 26px; height: 26px; flex: none; margin: 0; border-radius: 9px; }
+  .aidock .assistant-action b { font-size: .72rem; }
+  .aidock .assistant-action small, .aidock .assistant > p.small { display: none; }
+  .aidock .assistant-tools { gap: 4px; margin-top: 6px; }
+  .aidock .assistant .ask { margin-top: 9px; }
+  .aidock .assistant-input { min-height: 44px; }
+  .aidock .assistant-send { width: 34px; height: 34px; }
+}
+
+@media (pointer: coarse) {
+  .mini-btn { min-width: 34px; min-height: 34px; }
+  .side-toggle { width: 32px; height: 32px; }
+  .crumb-back { width: 32px; height: 32px; }
+  .tabbtn { padding: 8px 12px; }
+  /* `.btn.small` is a 29px row action (the Question Bank's "Check answer / Pichla / Agla"), which
+     is a comfortable mouse target and a fiddly thumb one. Height only, so no row can re-wrap. */
+  .btn.small { min-height: 34px; }
+}
+
+/* ============================================================
+   COURSES
+   The 11-course hub (/courses), a course's step index
+   (/course/:slug) and the 7-tab step page (/course/:slug/:step).
+   Cards and rows take their hue from the existing `.tone-*`
+   family, so a course and its stage read the same everywhere.
+   ============================================================ */
+
+.course-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px; margin-top: 12px;
+}
+.course-grid > * { min-width: 0; }
+
+/* The card is a real tile: logo on top, name under it, and the ring pinned to the bottom edge so
+   every card's foot lines up whatever the name's length. */
+.course-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
+  padding: 14px 14px 12px; text-decoration: none; color: inherit;
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background-color: var(--card); background-image: var(--edge-light), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat, repeat;
+  box-shadow: var(--lift);
+  transition: border-color .16s ease, box-shadow .18s ease, transform .14s ease;
+}
+.course-card:hover {
+  border-color: rgb(var(--accent-rgb) / .42); transform: translateY(-2px);
+  box-shadow: var(--lift-strong), 0 0 20px rgb(var(--accent-rgb) / .16);
+}
+.cc-logo { display: grid; place-items: center; width: 64px; height: 64px; }
+.course-logo { display: block; border-radius: 14px; }
+/* A broken/missing file falls back to the inline mark family — same box, no broken-image icon. */
+.course-logo.fallback {
+  display: grid; place-items: center; color: var(--accent);
+  background: rgb(var(--accent-rgb) / .12); border: 1px solid rgb(var(--accent-rgb) / .3);
+}
+.cc-name { font-size: .95rem; line-height: 1.25; }
+.cc-meta { font-variant-numeric: tabular-nums; }
+.cc-foot { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: auto; padding-top: 6px; }
+.cc-go { margin-left: auto; color: var(--muted); }
+.course-card:hover .cc-go { color: var(--accent); }
+
+/* --- one course: header + its own step index --- */
+.course-head { border-left: 3px solid var(--accent); }
+.course-steps { display: flex; flex-direction: column; gap: 8px; }
+.course-step {
+  display: grid; grid-template-columns: 46px minmax(0, 1fr) auto auto auto auto;
+  gap: 10px; align-items: center; padding: 10px 12px;
+  text-decoration: none; color: inherit;
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background-color: var(--card); background-image: var(--edge-light), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat, repeat;
+  box-shadow: var(--lift);
+  transition: border-color .16s ease, box-shadow .18s ease, transform .14s ease;
+}
+.course-step:hover {
+  border-color: rgb(var(--accent-rgb) / .42); transform: translateY(-1px);
+  box-shadow: var(--lift-strong), 0 0 18px rgb(var(--accent-rgb) / .14);
+}
+.course-step.active { border-color: rgb(var(--accent-rgb) / .38); }
+.course-step.clear { border-color: rgba(52, 211, 153, .38); }
+.cs-no {
+  font-family: var(--mono); font-size: .95rem; font-weight: 650; text-align: center;
+  color: var(--accent); background: rgb(var(--accent-rgb) / .1);
+  border: 1px solid rgb(var(--accent-rgb) / .3); border-radius: 10px; padding: 6px 0;
+}
+.cs-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cs-main b { font-size: .88rem; }
+.cs-status { display: flex; align-items: center; gap: 6px; }
+.cs-state.new { color: var(--muted); }
+.cs-state.active { color: var(--accent); border-color: rgb(var(--accent-rgb) / .35); }
+.cs-state.clear { color: var(--green); border-color: rgba(52, 211, 153, .35); background-color: rgba(52, 211, 153, .08); }
+
+/* --- the step page's seven tabs --- */
+.course-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.ctab { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.ctab-n { font-size: .68rem; opacity: .72; font-variant-numeric: tabular-nums; }
+.course-topics { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: .82rem; }
+.course-topics li { margin: 3px 0; }
+
+/* Phone: the row keeps its number, title and measure; the stage tag, state chip and chevron give
+   way so the numbers never wrap. The card grid drops to one column under 420px. */
+@media (max-width: 780px) {
+  .course-step { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .course-step .cs-tag, .course-step .cs-state, .course-step > svg { display: none; }
+  .course-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+}
+@media (max-width: 420px) {
+  .course-grid { grid-template-columns: 1fr; }
+}
+

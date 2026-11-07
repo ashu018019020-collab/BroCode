@@ -18,6 +18,7 @@ import { register } from 'node:module';
 register('./_ts-resolve.mjs', import.meta.url);
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { readCss } from './_css.mjs';
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 const owner = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/owner-courses.ts')).href);
 const levels = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/course-levels.ts')).href);
@@ -107,7 +108,7 @@ test('owner courses: every picker option exists in the app (no dead logo or tone
   for (const logo of owner.OWNER_LOGO_KEYS) {
     assert.ok(fs.existsSync(path.join(ROOT, `src/assets/logos/${logo}.svg`)), `${logo} logo is bundled`);
   }
-  const css = read('src/styles.css');
+  const css = readCss();
   for (const tone of owner.OWNER_TONES) {
     assert.match(css, new RegExp(`\\.tone-${tone}\\b`), `.tone-${tone} is defined in styles.css`);
   }

@@ -20,6 +20,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { readCss } from './_css.mjs';
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const load = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 
@@ -347,7 +348,7 @@ test('paths: the cards grid does not collide with the page layout class', () => 
   // `.path-grid` is the Learning Path's own 1fr/300px frame. Declaring the cards grid under that
   // name (later in the file, so it won) silently stretched the right rail from 300px to fill the
   // row — a layout bug with no error message, which is what this assertion exists to catch.
-  const css = read('src/styles.css');
+  const css = readCss();
   assert.match(css, /^\.path-grid \{ display: grid; grid-template-columns: 1fr 300px;/m,
     'the Learning Path must keep the two-column frame it had before this change');
   assert.match(css, /^\.path-extra \{ margin-top: 16px; \}/m, 'the extra-path spine needs its own class');

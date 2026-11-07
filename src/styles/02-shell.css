@@ -1,0 +1,515 @@
+/* ---------- shell ---------- */
+/* App shell: the sidebar stays put and only the main column scrolls, so the
+   navigation is always reachable no matter how far down the page you are. */
+/*
+ * `100dvh` after `100vh`: iOS Safari measures `100vh` against the layout viewport, which is TALLER
+ * than the area you can actually see while the URL bar is showing — so a `100vh` shell left the
+ * fixed bottom navigation partly behind Safari's own toolbar and the last row of a page under it.
+ * `dvh` is the visible height and tracks the bar as it collapses. The `vh` line stays as the
+ * fallback: an engine without `dvh` ignores the second declaration and behaves exactly as before.
+ */
+.shell { display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
+/*
+ * The rail is a PANEL, not a column: it floats inside the shell with its own rounded edge, a cool
+ * rim light and a deep shadow, so the navigation reads as a piece of the product rather than a
+ * strip of the window. The 10px margin and the matching height keep the panel's margin box exactly
+ * `100dvh` — the shell is `overflow: hidden`, so an oversized box would clip its bottom corners.
+ *
+ * `display: flex` is load-bearing: the brand and the level card are fixed and only `nav` scrolls,
+ * which is what keeps the fold control and the XP card on screen however long the rail gets.
+ */
+.sidebar {
+  width: 244px; flex: none; padding: 12px 10px 10px; margin: 10px 0 10px 10px;
+  position: sticky; top: 10px;
+  height: calc(100vh - 20px); height: calc(100dvh - 20px);
+  display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid var(--sidebar-ring); border-radius: 20px;
+  background-color: var(--sidebar);
+  background-image:
+    radial-gradient(320px 190px at 8% 4%, rgba(34, 211, 238, .10), transparent 70%),
+    radial-gradient(300px 210px at 96% 96%, rgba(139, 92, 246, .10), transparent 72%),
+    var(--sidebar-grad);
+  backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .55), 0 0 34px rgba(34, 211, 238, .07), inset 0 1px 0 rgba(255, 255, 255, .05);
+  transition: width .18s ease;
+}
+/* Only the destinations scroll; the brand and the level card stay put. */
+.sidebar nav { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow-y: auto; }
+/*
+ * Fluid, edge to edge. A centered `max-width: 1180px` used to leave ~340px of dead space on
+ * either side of a 1856px window, so every page read as a narrow column floating in an empty
+ * screen. The shell only pads; the cards and grids inside size themselves, and each one already
+ * uses 1fr / auto-fit tracks, so they absorb the extra width instead of stretching a single block.
+ * Padding scales with the viewport so a small laptop keeps its breathing room.
+ *
+ * `flex: 1 0 auto`, and the 1 is load-bearing. `.main` is a fixed-height flex column whose last
+ * child is the status bar, so without it a SHORT page (the pillar hubs — /practice, /labs,
+ * /interviews, /career) left the bar sitting mid-screen right under the last card, with dead space
+ * below it, while a long page scrolled the bar to the bottom. Growing the content absorbs that free
+ * space, so the footer sits flush with the bottom of the frame on every route. `flex-shrink: 0`,
+ * not the default 1, keeps a long page's natural height: shrinking it inside this scrolling
+ * container is how the page bottom (and the bar) would go missing.
+ */
+.content { flex: 1 0 auto; padding: 18px clamp(14px, 1.5vw, 30px) 60px; width: 100%; max-width: none; margin: 0; }
+
+.brand { display: flex; gap: 11px; align-items: flex-start; padding: 4px 4px 12px; flex: none; position: relative; }
+.brand .logo {
+  width: 36px; height: 36px; border-radius: var(--radius-md); display: grid; place-items: center; font-size: 18px;
+  background-image: var(--accent-grad-soft); background-color: var(--card);
+  border: 1px solid rgba(34, 211, 238, .28);
+  box-shadow: var(--glow), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+/*
+ * The tile is the real BroCode artwork now. That image draws its own rounded frame, neon edge and
+ * glow, so the CSS decoration above would stack a second frame on top of it — the picture variant
+ * drops the frame and lets the image be the tile. One class, so a glyph-based tile would still work.
+ */
+/* `flex: none` because a flex child shrinks by default: a 36px glyph tile absorbed that silently, but
+   a picture squashed to 29×40 letterboxes itself and looks cropped. */
+/* `overflow: visible` because the tile's glow is drawn OUTSIDE its box: clipping it there would
+   leave a flat sticker, while the mark itself is transparent-cornered and needs no crop. */
+.brand .logo.pic {
+  flex: none; width: 44px; height: 44px; background: none; border-color: transparent;
+  box-shadow: none; overflow: visible;
+}
+.brand .logo.pic img {
+  width: 100%; height: 100%; display: block; object-fit: contain;
+  /* The subtle cyan/violet bloom belongs to the shell, not to the asset: a glow baked into the PNG
+     would smear the tab icon and double up under the sidebar's own dark surface. */
+  filter: drop-shadow(0 0 9px rgba(34, 211, 238, .22)) drop-shadow(0 0 18px rgba(139, 92, 246, .16));
+}
+/* `padding-right` reserves the fold button's corner so the tagline wraps beside it, not under it. */
+.brand-txt { flex: 1; min-width: 0; padding-right: 26px; }
+.brand b { display: block; font-size: 1.22rem; letter-spacing: .2px; line-height: 1.15; }
+/* "Bro" takes the shell's ink and "Code" carries the mark's cyan → violet → fuchsia run, so the
+   wordmark and the tile beside it read as one brand instead of a label next to a sticker. */
+.brand b .grad {
+  background-image: linear-gradient(92deg, #22d3ee, #8b5cf6 55%, #e879f9);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brand .sub { font-size: .68rem; color: var(--muted); display: block; line-height: 1.35; margin-top: 3px; }
+/* The brand line reads as a stepper: the four verbs with a drawn dot between them instead of a
+   text arrow, so the journey scans at a glance. `.brand .brand-tag` outranks `.brand .sub`. */
+/* One line even in the narrow rail: the four verbs are short, so the stepper tightens rather than
+   wrapping "Master" onto a line of its own. */
+.brand .brand-tag { display: flex; align-items: center; flex-wrap: nowrap; gap: 0 4px; font-size: .63rem; letter-spacing: .01em; }
+.brand .brand-tag em { font-style: normal; }
+.brand .brand-tag i { width: 3px; height: 3px; border-radius: 99px; background: currentColor; opacity: .45; flex: none; }
+/* The fold control lives in the brand's top-right corner: the panel owns the control that folds it. */
+.side-fold {
+  position: absolute; top: 0; right: 0; width: 26px; height: 26px; flex: none;
+  display: grid; place-items: center; border-radius: 99px; cursor: pointer;
+  border: 1px solid var(--sidebar-ring); background: var(--secondary); color: var(--muted);
+  transition: color .14s ease, border-color .14s ease, background .14s ease;
+}
+.side-fold:hover { color: var(--text); border-color: var(--hover-border); background: var(--hover); }
+
+.navlink {
+  display: flex; gap: 11px; align-items: center; padding: 8px 11px; border-radius: 12px; position: relative;
+  color: var(--muted); font-size: .88rem; font-weight: 500; margin: 1px 0; border: 1px solid transparent;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .22s ease, transform .2s ease;
+}
+/* Hover is a brighter pane of the same glass, tinted toward the accent — not a filled row. */
+.navlink:hover {
+  background-color: rgba(255, 255, 255, .06);
+  background-image: linear-gradient(90deg, rgba(34, 211, 238, .10), rgba(139, 92, 246, .04));
+  border-color: rgba(34, 211, 238, .20);
+  color: var(--text); text-decoration: none; transform: translateX(1px);
+}
+/*
+ * The active row is lit from its left edge — one inset bar, no extra element, no layout shift —
+ * and the bar takes the row's OWN hue, so the lit row matches the icon that opened it.
+ */
+.navlink.active {
+  background-color: rgba(34, 211, 238, .10); background-image: var(--sidebar-accent); color: var(--text);
+  border-color: rgba(34, 211, 238, .30);
+  box-shadow: inset 3px 0 0 0 var(--tone, var(--cyan)), inset 0 1px 0 rgba(255, 255, 255, .07),
+    0 12px 26px rgba(34, 211, 238, .14);
+  transform: none;
+}
+/*
+ * Each destination's icon carries its hue plus a soft glow of the same colour, while the row text
+ * stays neutral — that is what keeps a 12-row rail from turning into a rainbow. The `--tone` pair
+ * is declared per `data-tone` below, and the light theme has no counterpart: these neon values are
+ * tuned for a dark panel, and the panel stays dark in both themes.
+ */
+.navlink .ico {
+  width: 22px; height: 22px; flex: none; display: grid; place-items: center;
+  color: var(--tone, var(--cyan)); filter: drop-shadow(0 0 7px var(--tone-glow, transparent));
+  transition: transform .2s ease, filter .22s ease;
+}
+/* The icon leans in with the row — a 6–8% scale, enough to feel responsive, never a bounce. */
+.navlink:hover .ico { transform: scale(1.08); }
+.navlink.active .ico { transform: scale(1.06); filter: drop-shadow(0 0 10px var(--tone-glow, transparent)); }
+.navlink .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.navlink .navchev { flex: none; display: grid; place-items: center; color: var(--muted); opacity: .5; transition: opacity .14s ease, transform .14s ease; }
+.navlink:hover .navchev { opacity: 1; transform: translateX(2px); }
+.navlink.active .navchev { opacity: .9; }
+.navlink[data-tone='cyan'] { --tone: #22d3ee; --tone-glow: rgba(34, 211, 238, .5); }
+.navlink[data-tone='blue'] { --tone: #4f7cff; --tone-glow: rgba(79, 124, 255, .5); }
+.navlink[data-tone='violet'] { --tone: #a855f7; --tone-glow: rgba(168, 85, 247, .5); }
+.navlink[data-tone='amber'] { --tone: #f5b942; --tone-glow: rgba(245, 185, 66, .45); }
+.navlink[data-tone='rose'] { --tone: #f4536d; --tone-glow: rgba(244, 83, 109, .45); }
+.navlink[data-tone='slate'] { --tone: #9aa8c4; --tone-glow: rgba(154, 168, 196, .3); }
+/* The tools get a rule above their label — the one place the rail changes families. */
+.navsep {
+  font-size: .62rem; text-transform: uppercase; letter-spacing: 1.6px; color: var(--muted); opacity: .75;
+  margin: 14px 8px 6px; padding-top: 13px; border-top: 1px solid var(--border);
+}
+
+/* ---------- cards & panels ---------- */
+/*
+ * The box everything else lives in — a real layer, not a flat rectangle.
+ *
+ * Four things make it read as lit: a translucent gradient over the surface colour (so a card on a
+ * card still separates), a blue-tinted hairline, a 1px highlight along its top edge, and a deep
+ * shadow under it. All four are tokens, so the light theme inherits the structure with its own
+ * values instead of a second set of rules.
+ */
+.card {
+  background-color: var(--card);
+  /* Layer 0 is the edge light, clamped to the top 1px row by `background-size`. */
+  background-image: var(--edge-light), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%;
+  background-repeat: no-repeat, repeat;
+  background-position: 0 0, 0 0;
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 14px 16px; margin: 10px 0;
+  box-shadow: var(--panel-shadow);
+}
+.card.glow { box-shadow: var(--panel-shadow), var(--glow); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+/*
+ * Grid items default to `min-width: auto` (min-content), so ONE long line inside a card — a
+ * notebook output, a cheat-sheet snippet, a rendered prompt — stretched its `1fr` track and gave
+ * the whole page a horizontal scrollbar, instead of scrolling inside the block that already has
+ * `overflow-x: auto`. Measured on the real app: /ai-lab carried 144px of sideways overflow, /cheat-sheets
+ * 120px (290px at 400px wide), /notebooks 189px. Letting the track child shrink hands the overflow
+ * to the scroller it already contains.
+ *
+ * The Question Bank builds its page frame with an inline `display: grid` and no class, so it never
+ * picked up this rule: at 320px the section-picker card refused to shrink below its min-content
+ * width and `.main` scrolled 100px sideways (289px before the picker's own 560px question grid got
+ * a `min()` track). A grid item's automatic minimum is the bug in both cases, so its wrapper is
+ * named and opted in.
+ */
+.grid2 > *, .grid3 > *, .statgrid > *, .stat-row > *, .track-grid > *,
+.hero-stats > *, .coach-grid > *, .path-grid > *, .stage-grid > *,
+.nb-layout > *, .workbench > *,
+.kpi-row > *, .chart-wrap > *, .heat-wrap > *, .im-skills > *,
+.rmap-step > *, .rmap-cols > *, .rmap-group > *, .nb-boxes > * { min-width: 0; }
+/* …and the Question Bank's frame, which is the rule above for the one page that builds its grid
+   with an inline style instead of a class (see the note above). Kept as its own rule so the
+   selector list above stays exactly the shape `scripts/tests/layout.test.mjs` pins. */
+.qb-layout > * { min-width: 0; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+
+/* ---------- buttons & inputs ---------- */
+.btn {
+  display: inline-flex; gap: 6px; align-items: center; cursor: pointer;
+  background-color: var(--panel2); background-image: var(--panel-grad);
+  color: var(--text); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 7px 13px; font-size: .84rem; font-weight: 500;
+  box-shadow: var(--lift);
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease,
+              transform .1s ease, box-shadow .18s ease;
+}
+.btn:hover { background-color: var(--hover); border-color: var(--hover-border); box-shadow: var(--lift-strong), 0 8px 22px rgba(0, 0, 0, .45); }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--ring); outline-offset: 2px;
+}
+/* The one loud control on a page: an accent gradient, dark ink, and a cyan aura under it. */
+.btn.primary {
+  background-image: var(--accent-grad); background-color: transparent;
+  color: var(--ink-on-accent); border-color: transparent; font-weight: 600;
+  box-shadow: 0 8px 22px rgba(34, 211, 238, .28), inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+.btn.primary:hover {
+  background-image: var(--accent-grad-hi);
+  box-shadow: 0 12px 30px rgba(34, 211, 238, .38), inset 0 1px 0 rgba(255, 255, 255, .45);
+}
+.btn.small { padding: 4px 9px; font-size: .76rem; border-radius: var(--radius-sm); }
+.btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+
+/*
+ * `max-width` belongs on the base rule, not on one screen's card: a `<select>` is as wide as its
+ * longest option, so `Goal`'s "Programming & Software Development" made the control 324px inside a
+ * 299px label and hung 25px past the card's edge on /settings (measured at 320 and 360). This caps
+ * every field, including one a future screen drops into a narrow column.
+ */
+input, textarea, select {
+  max-width: 100%;
+  background-color: var(--input-bg); color: var(--text); border: 1px solid var(--input);
+  border-radius: var(--radius-md); padding: 8px 10px; font: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03), inset 0 1px 3px rgba(0, 0, 0, .35);
+  transition: border-color .14s ease, box-shadow .18s ease, background-color .14s ease;
+}
+input:hover, textarea:hover, select:hover { border-color: var(--hover-border); }
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(34, 211, 238, .45); background-color: rgba(34, 211, 238, .03);
+  box-shadow: var(--glow), inset 0 1px 3px rgba(0, 0, 0, .35);
+}
+input::placeholder, textarea::placeholder { color: var(--placeholder); }
+textarea { width: 100%; }
+
+/* ---------- badges / chips ---------- */
+/* Badges: a lit pill — glassy fill, a hairline in the badge's own hue, a tint inside. */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px; font-size: .7rem; font-weight: 550; letter-spacing: .01em;
+  padding: 2px 9px; border-radius: 99px;
+  border: 1px solid var(--border); color: var(--muted);
+  background-color: var(--panel2); background-image: var(--panel-grad);
+  box-shadow: var(--lift);
+}
+.chip.easy { color: var(--green); border-color: rgba(52, 211, 153, .34); background-color: rgba(52, 211, 153, .10); box-shadow: var(--lift), 0 0 14px rgba(52, 211, 153, .12); }
+.chip.medium { color: var(--amber); border-color: rgba(251, 191, 36, .34); background-color: rgba(251, 191, 36, .10); box-shadow: var(--lift), 0 0 14px rgba(251, 191, 36, .12); }
+.chip.hard { color: var(--red); border-color: rgba(248, 113, 113, .36); background-color: rgba(248, 113, 113, .10); box-shadow: var(--lift), 0 0 14px rgba(248, 113, 113, .12); }
+.chip.debug, .chip.interview { color: var(--purple); border-color: rgba(167, 139, 250, .34); background-color: rgba(167, 139, 250, .12); box-shadow: var(--lift), 0 0 14px rgba(167, 139, 250, .12); }
+
+/* ---------- code blocks ---------- */
+/* A code well: darker than any panel, lit from its top edge, so code always reads as "inside". */
+.codeblock {
+  background-color: var(--code);
+  background-image: var(--edge-light), var(--edge-soft),
+    linear-gradient(90deg, rgba(34, 211, 238, .07), transparent 34%);
+  background-size: 100% 1px, 100% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 12px 14px; overflow-x: auto; font-size: .84rem; line-height: 1.55; white-space: pre; color: var(--code-fg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), inset 0 0 60px rgba(0, 0, 0, .55);
+}
+.codeblock .out { color: var(--green); }
+.editor {
+  min-height: 220px; color: var(--code-fg); border: 1px solid var(--input);
+  background-color: var(--code);
+  background-image: var(--edge-light), var(--edge-soft);
+  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat;
+  border-radius: var(--radius-md); padding: 12px; font-family: var(--mono); font-size: .88rem; line-height: 1.55;
+  tab-size: 4; resize: vertical;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), inset 0 0 60px rgba(0, 0, 0, .55);
+}
+.editor:focus-visible { border-color: rgba(34, 211, 238, .45); box-shadow: var(--glow), inset 0 1px 0 rgba(255, 255, 255, .05); }
+
+/* ---------- progress ---------- */
+.bar { height: 7px; border-radius: 99px; background: var(--track); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .5); }
+.bar > div {
+  position: relative; height: 100%; border-radius: 99px; background-image: var(--accent-grad);
+  box-shadow: 0 0 12px rgba(34, 211, 238, .45); transition: width .4s ease;
+}
+/* A bright leading edge on the fill, so the bar reads as a lit filament rather than a flat strip.
+   Static on purpose — an infinitely animating sheen on every bar on a page is a battery tax. */
+.bar > div::after {
+  content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 16px; border-radius: 99px;
+  background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, .38));
+}
+.ring { position: relative; display: inline-grid; place-items: center; }
+.ring svg { transform: rotate(-90deg); }
+.ring .val { position: absolute; font-size: .8rem; font-weight: 650; }
+
+/* ---------- stage pills ---------- */
+.stages { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 14px; }
+.stagepill {
+  display: flex; gap: 6px; align-items: center; padding: 5px 11px; border-radius: 99px;
+  border: 1px solid var(--border); background-color: var(--panel); color: var(--muted); font-size: .78rem; cursor: pointer;
+  box-shadow: var(--lift); transition: border-color .14s ease, color .14s ease, box-shadow .18s ease;
+}
+.stagepill:hover { border-color: var(--hover-border); color: var(--text); }
+.stagepill.active {
+  border-color: rgba(34, 211, 238, .38); background-image: var(--accent-grad-soft); color: var(--text);
+  box-shadow: var(--lift), var(--glow);
+}
+.stagepill.done { border-color: rgba(52, 211, 153, .38); background-color: rgba(52, 211, 153, .10); color: var(--green); box-shadow: var(--lift), 0 0 16px rgba(52, 211, 153, .14); }
+
+/* ---------- roadmap ---------- */
+.roadmap { display: flex; flex-direction: column; gap: 0; }
+.roadmap-node { position: relative; padding: 0 0 18px 34px; }
+.roadmap-node::before {
+  content: ''; position: absolute; left: 11px; top: 22px; bottom: 0; width: 2px;
+  background: linear-gradient(var(--border), transparent);
+}
+.roadmap-node:last-child::before { display: none; }
+.roadmap-dot {
+  position: absolute; left: 0; top: 2px; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; font-size: .7rem; font-weight: 700;
+  background-color: var(--bg2); border: 2px solid var(--border); color: var(--muted);
+  box-shadow: var(--lift);
+}
+.roadmap-node.done .roadmap-dot { border-color: var(--green); color: var(--green); }
+.roadmap-node.current .roadmap-dot { border-color: var(--primary); background: var(--panel2); color: var(--text); }
+
+/* ---------- misc ---------- */
+.kbd {
+  font-family: var(--mono); font-size: .72rem; border: 1px solid var(--border);
+  border-bottom-width: 2px; border-radius: var(--radius-sm); padding: 1px 6px;
+  background-color: var(--input-bg); color: var(--muted); box-shadow: var(--lift);
+}
+.curriculum-loader {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; overflow: auto;
+  padding: clamp(14px, 3vw, 32px);
+  background: radial-gradient(ellipse at 50% 42%, rgba(34, 211, 238, .08), transparent 62%);
+  opacity: 1; transition: opacity .52s ease;
+}
+.curriculum-loader.exiting { opacity: 0; pointer-events: none; }
+.curriculum-loader-panel {
+  width: min(100%, 620px); padding: clamp(14px, 2.6vw, 26px);
+  border: 1px solid color-mix(in srgb, var(--cyan) 22%, var(--border));
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .12),
+    0 0 36px rgba(34, 211, 238, .07);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+}
+.loader-art-frame {
+  position: relative; isolation: isolate; width: min(100%, 460px); aspect-ratio: 791 / 768; margin: 0 auto;
+}
+.loader-art {
+  position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: contain;
+  image-rendering: pixelated; filter: drop-shadow(0 12px 26px rgba(2, 12, 36, .2));
+  animation: loader-scene-float 4.8s ease-in-out infinite;
+}
+.loader-logo-aura {
+  position: absolute; z-index: 0; top: 6%; left: 27%; width: 46%; height: 30%; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(34, 211, 238, .3), rgba(79, 124, 255, .13) 42%, transparent 72%);
+  filter: blur(16px); animation: loader-logo-pulse 3.2s ease-in-out infinite;
+}
+.loader-progress-sweep {
+  position: absolute; z-index: 2; top: 33.5%; left: 28%; width: 44%; height: 11%;
+  overflow: hidden; border-radius: 999px; pointer-events: none;
+}
+.loader-progress-sweep::after {
+  content: ''; position: absolute; inset: -20% auto -20% -42%; width: 28%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .78), rgba(34, 211, 238, .45), transparent);
+  filter: blur(3px); transform: skewX(-18deg); animation: loader-bar-sweep 2.4s ease-in-out infinite;
+}
+.loader-particle {
+  position: absolute; z-index: 2; color: #9df6ff; font-size: clamp(11px, 2vw, 19px);
+  text-shadow: 0 0 10px rgba(34, 211, 238, .9), 0 0 20px rgba(79, 124, 255, .7);
+  pointer-events: none; animation: loader-sparkle 2.8s ease-in-out infinite;
+}
+.loader-particle.p1 { left: 12%; top: 38%; animation-delay: -.4s; }
+.loader-particle.p2 { left: 22%; top: 60%; font-size: 25px; animation-delay: -1.1s; }
+.loader-particle.p3 { right: 13%; top: 30%; animation-delay: -1.8s; }
+.loader-particle.p4 { right: 19%; top: 54%; font-size: 28px; animation-delay: -.8s; }
+.loader-particle.p5 { left: 40%; bottom: 10%; animation-delay: -2.2s; }
+.loader-particle.p6 { right: 36%; bottom: 20%; animation-delay: -1.4s; }
+.loader-copy {
+  display: flex; min-height: 42px; align-items: center; justify-content: center; gap: 10px;
+  margin-top: 5px; color: var(--foreground); font-size: clamp(.9rem, 2.5vw, 1.05rem); font-weight: 650;
+}
+.loader-status-light {
+  width: 8px; height: 8px; flex: none; border-radius: 50%; background: #34d399;
+  box-shadow: 0 0 12px rgba(52, 211, 153, .8); animation: loader-status-breathe 1.4s ease-in-out infinite;
+}
+.loader-message { animation: loader-copy-in .28s ease both; }
+.loader-stage-track {
+  position: absolute; width: min(100% - 48px, 340px); height: 2px; margin-top: 44px;
+  overflow: hidden; border-radius: 99px; background: var(--border);
+}
+.loader-stage-track i {
+  display: block; height: 100%; border-radius: inherit; background: var(--accent-grad);
+  box-shadow: 0 0 12px rgba(34, 211, 238, .55); transition: width .5s ease;
+}
+.loader-error { flex-direction: column; gap: 8px; text-align: center; }
+.loader-error span { max-width: 48ch; color: var(--muted-foreground); font-size: .8rem; font-weight: 400; }
+.loader-error .btn { margin-top: 4px; }
+@keyframes loader-scene-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(3px, -7px, 0); }
+}
+@keyframes loader-logo-pulse {
+  0%, 100% { opacity: .62; transform: scale(.94); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+@keyframes loader-bar-sweep {
+  0% { transform: translateX(0) skewX(-18deg); opacity: 0; }
+  16% { opacity: .9; }
+  76% { opacity: .8; }
+  100% { transform: translateX(520%) skewX(-18deg); opacity: 0; }
+}
+@keyframes loader-sparkle {
+  0%, 100% { transform: translate3d(0, 4px, 0) scale(.72) rotate(-12deg); opacity: .32; }
+  50% { transform: translate3d(3px, -9px, 0) scale(1.12) rotate(12deg); opacity: .95; }
+}
+@keyframes loader-status-breathe { 50% { opacity: .48; transform: scale(.82); } }
+@keyframes loader-copy-in { from { opacity: 0; transform: translateY(4px); } }
+@media (max-width: 560px) {
+  .curriculum-loader-panel { width: min(100%, 460px); padding: 12px; border-radius: 18px; }
+  .loader-art-frame { width: min(100%, 420px); }
+  .loader-progress-sweep { top: 33%; height: 12%; }
+  .loader-stage-track { width: min(100% - 36px, 280px); }
+}
+@media (max-height: 680px) {
+  .curriculum-loader-panel { width: min(100%, 440px); padding: 10px 18px; }
+  .loader-art-frame { width: min(100%, 330px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader-art, .loader-logo-aura, .loader-progress-sweep::after, .loader-particle, .loader-status-light, .loader-message {
+    animation: none;
+  }
+  .loader-stage-track i { transition: none; }
+  .curriculum-loader { transition-duration: .01ms; }
+}
+.hidden { display: none; }
+.modal-back {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, .7); backdrop-filter: blur(4px);
+  display: grid; place-items: center; z-index: 50; padding: 20px;
+}
+.modal {
+  width: min(720px, 96vw); max-height: 86vh; overflow-y: auto;
+  background-color: var(--popover); background-image: var(--edge-light), var(--panel-grad-hi);
+  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat, repeat;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-xl); padding: 18px 20px;
+  box-shadow: var(--shadow), var(--glow-blue);
+}
+.palette { width: min(640px, 94vw); }
+.palette input { width: 100%; font-size: 1rem; }
+.palette .results { margin-top: 8px; max-height: 50vh; overflow-y: auto; }
+.palette .result { padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; display: flex; gap: 10px; align-items: baseline; }
+.palette .result:hover, .palette .result.sel { background: var(--panel2); }
+/* The keyboard-selected row carries the same left light bar as the active nav row. */
+.palette .result.sel { box-shadow: inset 2px 0 0 0 var(--cyan); }
+.palette .result .kind { font-size: .68rem; color: var(--muted); min-width: 92px; }.mistake-item { border-left: 3px solid var(--red); padding-left: 12px; margin: 10px 0; }
+.mistake-item.fixed { border-left-color: var(--green); }
+.tablewrap { overflow-x: auto; }
+/* Data tables get the same treatment as a card: one rounded shell, hairline rows, a lit header. */
+table.data {
+  border-collapse: separate; border-spacing: 0; font-size: .82rem; width: 100%;
+  border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;
+  background-color: var(--card); box-shadow: var(--lift);
+}
+table.data th, table.data td { border: 0; border-bottom: 1px solid var(--hairline); padding: 7px 11px; text-align: left; white-space: nowrap; }
+table.data tr:last-child td { border-bottom: 0; }
+table.data th {
+  background-color: var(--secondary); background-image: var(--panel-grad); color: var(--muted);
+  font-weight: 600; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase;
+}
+table.data tbody tr:hover td { background-color: var(--hover-soft); }
+.statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.stat {
+  background-color: var(--card); background-image: var(--edge-light), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat, repeat;
+  border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 12px;
+  box-shadow: var(--panel-shadow);
+}
+.stat .n { font-size: 1.25rem; font-weight: 650; }
+.stat .l { font-size: .72rem; color: var(--muted); }
+.arch { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.arch .node {
+  border: 1px solid var(--border); background-color: var(--secondary); background-image: var(--panel-grad);
+  padding: 7px 16px; border-radius: var(--radius-md); box-shadow: var(--lift);
+  font-size: .8rem; cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .18s ease;
+}
+.arch .node:hover, .arch .node.open {
+  background-color: var(--hover); border-color: var(--line-strong); box-shadow: var(--lift-strong), var(--glow);
+}
+.arch .arrow { color: var(--muted); opacity: .6; font-size: .8rem; }
+.pdfbox iframe, .pdfbox canvas { max-width: 100%; }
+.hero { padding: 22px 0 6px; }
+.hero h1 { font-size: 1.55rem; letter-spacing: -.02em; }
+

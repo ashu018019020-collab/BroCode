@@ -25,6 +25,7 @@ import { register } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { readCss } from './_css.mjs';
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const load = (rel) => import(pathToFileURL(path.join(ROOT, rel)).href);
 
@@ -235,7 +236,7 @@ test('voice: nothing speaks on navigation — only a reply or an explicit action
 });
 
 test('voice: the speaking and listening states are visible, not implied', () => {
-  const css = read('src/styles.css');
+  const css = readCss();
   assert.match(css, /\.voice-state\.listening > i/);
   assert.match(css, /\.voice-state\.speaking > i/);
   assert.match(css, /\.voice-chip\.mic\.on \{ animation: voice-pulse/);

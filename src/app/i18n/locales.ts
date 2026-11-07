@@ -27,6 +27,7 @@ export const en = {
   'nav.build': 'BUILD',
   'nav.you': 'YOU',
   'nav.tools': 'TOOLS',
+  'nav.owner': 'OWNER',
   // dashboard
   'dash.welcome': 'Welcome back,',
   'dash.journey': 'Every step you finish makes the next one easier — Learn → Code → Build → Master.',
@@ -657,6 +658,7 @@ export const hinglish: Partial<Record<LocaleKey, string>> = {
   'nav.agents': 'AI & AGENTS',
   'nav.career': 'CAREER',
   'nav.tools': 'TOOLS',
+  'nav.owner': 'OWNER',
   'nav.collapse': 'Sidebar chhota karo',
   'nav.expand': 'Sidebar kholo',
   'nav.menu': 'Menu kholo',

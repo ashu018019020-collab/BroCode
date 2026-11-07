@@ -1,0 +1,639 @@
+/* ---------- responsive ---------- */
+@media (max-width: 980px) {
+  .grid3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 780px) {
+  .shell { flex-direction: column; }
+  .sidebar { position: static; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .content { padding: 14px 12px 50px; }
+}
+
+/* ---------- premium chrome (topbar, statusbar, lang toggle) ---------- */
+/* (--pink / --violet live with every other accent in the token block at the top.) */
+/*
+ * The command bar: a floating pane of glass, not a full-bleed strip.
+ *
+ * Margins on all four sides (plus the radius) are what separate it from the page; the surface is
+ * the dark glass token, the light comes from a hairline along the top edge and a cyan→violet line
+ * drawn by `::before`, and the shadow is deep and soft rather than hard. It stays `sticky` at a
+ * 10px offset, so it reads as detached even while it is pinned under a scroll.
+ */
+.topbar {
+  display: flex; gap: 14px; align-items: center; justify-content: space-between;
+  /* Left padding is tighter than the right so the sidebar toggle reads as attached to the
+     sidebar's edge rather than floating in the header. */
+  margin: 10px 12px 0; padding: 9px 14px 9px 10px;
+  border: 1px solid var(--glass-line); border-radius: var(--glass-radius);
+  background-color: var(--glass-1);
+  background-image: linear-gradient(180deg, var(--glass-hi), rgba(255, 255, 255, 0) 46%);
+  backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+  position: sticky; top: 10px; z-index: 30; flex-wrap: wrap;
+  transition: background-color .22s ease, border-color .22s ease, box-shadow .25s ease;
+}
+.searchbox {
+  display: flex; gap: 8px; align-items: center; flex: 1; min-width: 220px; max-width: 460px;
+  border: 1px solid var(--input); background-color: var(--input-bg); border-radius: var(--radius-md);
+  padding: 8px 12px; color: var(--muted); cursor: pointer; font: inherit; font-size: .84rem;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .35);
+  transition: border-color .16s ease, box-shadow .2s ease;
+}
+.searchbox:hover { box-shadow: inset 0 1px 2px rgba(0, 0, 0, .35), var(--glow); }
+.searchbox:hover { border-color: var(--hover-border); }
+.searchbox span:first-of-type { flex: 1; text-align: left; }
+.lang-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--panel2); }
+.lang-toggle button {
+  background: transparent; color: var(--muted); border: none; padding: 7px 14px; font-size: .8rem; cursor: pointer; font-weight: 550;
+}
+.lang-toggle button.on {
+  background-color: var(--card); background-image: var(--accent-grad-soft);
+  color: var(--text); box-shadow: var(--lift), var(--glow);
+}
+
+/* Tutor tab strip (Explain / Hints / Debug / Next / Coach) — five compact tabs. */
+.tutor-tabs { width: 100%; }
+.tutor-tabs button {
+  flex: 1 1 0; min-width: 0; padding: 7px 6px; font-size: .72rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/*
+ * Equal fifths only work while the widest label fits one of them. Measured at 360px: five tabs in a
+ * 299px strip gave each 59px, so "Next Task" (74px) ellipsised to "Next Ta…" next to a full "Coach".
+ * Sizing each tab to its own label instead of to an equal share — and letting the strip wrap when
+ * even that is too narrow (320px) — keeps every label whole. A scroller was rejected: a tab strip
+ * whose job is to show the five destinations at once must not put one of them off-screen.
+ * The ellipsis stays as the safety net for a longer i18n label.
+ */
+@media (max-width: 560px) {
+  .tutor-tabs { flex-wrap: wrap; }
+  /* Two classes on purpose: `.lang-toggle button` sets the padding later in this file and would win
+     the tie at one class each, leaving the tabs 20px wider than the labels need. */
+  .lang-toggle.tutor-tabs button { flex: 1 1 auto; padding: 7px 8px; }
+}
+/* Icon button — a lit square. Every header control (theme, focus, quick actions, notifications,
+   settings) uses this one look, so the cluster reads as a row of equal switches. */
+.icon-btn {
+  background-color: var(--secondary); background-image: var(--panel-grad);
+  border: 1px solid var(--border); color: var(--text);
+  border-radius: var(--radius-md); width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer;
+  box-shadow: var(--lift);
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease, box-shadow .18s ease;
+}
+.icon-btn:hover { background-color: var(--hover); border-color: var(--hover-border); box-shadow: var(--lift-strong), var(--glow); }
+.icon-btn[aria-pressed='true'] {
+  background-image: var(--accent-grad-soft); border-color: rgba(34, 211, 238, .35); color: var(--text);
+  box-shadow: var(--glow), inset 0 1px 0 rgba(255, 255, 255, .10);
+}
+/*
+ * The header's controls are cut from the same glass as the bar they sit on: a lighter pane, the
+ * same hairline border, and on hover a 1px lift with a cyan glow. Scoped to `.topbar` so the same
+ * `.icon-btn` used on a page keeps the page's own values — this is the chrome's material, not a
+ * global restyle. The `:hover` rules are longer selectors on purpose: `.topbar .icon-btn` and
+ * `.icon-btn:hover` tie on specificity, so the lift has to be stated on the hover selector itself.
+ */
+.topbar .icon-btn,
+.topbar .topbar-signin,
+.topbar .side-btn,
+.topbar .side-btn-desk,
+.topbar .crumb-back {
+  background-color: rgba(255, 255, 255, .05);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .02));
+  border-color: var(--glass-line); color: var(--glass-ink);
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .22s ease, transform .2s ease;
+}
+.topbar .icon-btn:hover,
+.topbar .topbar-signin:hover,
+.topbar .side-btn:hover,
+.topbar .side-btn-desk:hover,
+.topbar .crumb-back:hover {
+  background-color: rgba(255, 255, 255, .10); border-color: rgba(34, 211, 238, .45);
+  box-shadow: var(--lift), 0 0 18px rgba(34, 211, 238, .20); transform: translateY(-1px);
+}
+.topbar .icon-btn[aria-pressed='true'] {
+  border-color: rgba(34, 211, 238, .45);
+  box-shadow: 0 0 18px rgba(34, 211, 238, .22), inset 0 1px 0 rgba(255, 255, 255, .10);
+}
+.topbar .searchbox {
+  background-color: rgba(255, 255, 255, .05);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .01));
+  border-color: var(--glass-line); color: var(--glass-muted);
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .22s ease;
+}
+.topbar .searchbox:hover { background-color: rgba(255, 255, 255, .09); border-color: rgba(34, 211, 238, .42); box-shadow: 0 0 20px rgba(34, 211, 238, .18); }
+.topbar .crumb-txt b { color: var(--glass-ink); }
+.topbar .crumb-txt span { color: var(--glass-muted); }
+/*
+ * The page title in the crumb is the bar's one piece of INFORMATION; everything else up here is a
+ * control. On a wide screen it therefore wins its space from the search box rather than being
+ * ellipsised to "Dash…" — the squeeze is opt-in per width, because below 1200px the row is already
+ * tight and shrinking is what keeps it from scrolling sideways.
+ */
+@media (min-width: 1200px) {
+  .topbar .crumbs { flex: 0 0 auto; }
+  .topbar .searchbox { flex: 1 1 260px; }
+}
+/*
+ * The header's progress cluster: three glass pills — the streak, the review queue and the open
+ * mistakes — each a link into the page that owns its number. They wear the bar's own material (a
+ * lighter pane, the glass hairline, a tone-tinted icon) and lift 1px with a matching glow, exactly
+ * like the icon buttons beside them, so the whole cluster reads as one system rather than as chips.
+ * The tone comes from the shared `.tone-*` set, so a pill's accent is the same hue its page uses.
+ */
+.hd-stats { display: flex; align-items: center; gap: 6px; flex: none; }
+.hd-stat {
+  display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; border-radius: 12px;
+  border: 1px solid var(--glass-line); background-color: rgba(255, 255, 255, .05);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .01));
+  color: var(--glass-ink); text-decoration: none; font-size: .74rem; font-weight: 650; line-height: 1;
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .22s ease, transform .2s ease;
+}
+.hd-stat > svg { color: var(--accent, var(--cyan)); flex: none; }
+.hd-stat b { font-variant-numeric: tabular-nums; }
+.hd-stat:hover {
+  background-color: rgba(255, 255, 255, .10);
+  border-color: rgba(var(--accent-rgb, 34 211 238), .45);
+  box-shadow: var(--lift), 0 0 16px rgba(var(--accent-rgb, 34 211 238), .28);
+  transform: translateY(-1px);
+}
+/*
+ * The footer's version of the same shortcut: text-shaped rather than a pill, because the bar is a
+ * line of status text and a row of pills there would out-shout the page. Tone tint on the icon and
+ * a cyan lift on hover keep it in the same family as the header cluster.
+ */
+/*
+ * The offline banner: the shell's network STATUS. It appears on the browser's own online/offline
+ * events and names the tested offline contract from `core/platform/offline.ts`. Amber states
+ * "attention, not alarm": nothing is lost, some things merely wait.
+ */
+.net-banner {
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  background: rgba(250, 204, 21, 0.07);
+}
+
+.net-banner-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--amber, #fbbf24);
+}
+
+.net-banner-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px 20px;
+  margin-top: 8px;
+}
+
+.net-banner-cols ul { margin: 4px 0 0 16px; padding: 0; }
+.net-banner-cols li { margin: 3px 0; }
+.statusbar .sb-stat {
+  flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 3px 9px; border-radius: 99px; text-decoration: none; color: var(--glass-muted);
+  border: 1px solid transparent;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.statusbar .sb-stat > svg { color: var(--accent, var(--cyan)); flex: none; }
+.statusbar .sb-stat:hover {
+  color: var(--glass-ink); background-color: rgba(255, 255, 255, .07);
+  border-color: var(--glass-line); transform: translateY(-1px);
+}
+/* The mini level meter inside the profile chip — the sidebar card's bar, in miniature. */
+.profile-chip .pf-bar {
+  display: block; width: 100%; height: 3px; margin-top: 5px; border-radius: 99px;
+  background-color: rgba(255, 255, 255, .14); overflow: hidden;
+}
+.profile-chip .pf-bar > span {
+  display: block; height: 100%; border-radius: 99px;
+  background-image: linear-gradient(90deg, #22d3ee, #8b5cf6); transition: width .4s ease;
+}
+/*
+ * The bar's outer halo and its sheen. Two extra layers, both static: a whisper of cyan under the
+ * deep shadow so the pane reads as lit on a dark page, and one soft diagonal highlight across the
+ * upper half — the reflection that separates real glass from a flat grey rectangle. No animation is
+ * involved, so this costs nothing per frame.
+ */
+.topbar {
+  box-shadow: var(--glass-shadow), 0 0 28px rgba(34, 211, 238, .08), inset 0 1px 0 var(--glass-hi);
+}
+.topbar::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 44%),
+    radial-gradient(420px 120px at 88% -30%, rgba(139, 92, 246, .16), transparent 70%);
+}
+/*
+ * One moving multicolour rim, reused on exactly the three pieces of app chrome. The existing
+ * pseudo-elements are masked to their border so the light never washes over controls or content.
+ */
+.topbar::before,
+.sidebar::after,
+.statusbar::before,
+.bottomnav::before {
+  content: ''; position: absolute; inset: 0; padding: 1px; pointer-events: none;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--chrome-glow-angle),
+    transparent 0deg,
+    rgba(34, 211, 238, .95) 48deg,
+    rgba(79, 124, 255, .95) 95deg,
+    rgba(139, 92, 246, .95) 135deg,
+    rgba(244, 114, 182, .8) 165deg,
+    transparent 205deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 3px rgba(34, 211, 238, .75)) drop-shadow(0 0 6px rgba(139, 92, 246, .4));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .topbar::before,
+  .sidebar::after,
+  .statusbar::before {
+    animation: chrome-border-flow 8s linear infinite;
+  }
+}
+@media (max-width: 780px) and (prefers-reduced-motion: no-preference) {
+  .bottomnav::before { animation: chrome-border-flow 8s linear infinite; }
+}
+@keyframes chrome-border-flow { to { --chrome-glow-angle: 360deg; } }
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 650; font-size: .8rem;
+  background-image: var(--accent-grad-soft); background-color: var(--card); color: var(--text);
+  border: 1px solid rgba(34, 211, 238, .28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 0 18px rgba(34, 211, 238, .14);
+}
+/* The uploaded profile photo, in the header chip — `object-fit` so a non-square image cannot squash. */
+.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+/*
+ * `flex: none`, and it is load-bearing — the bar must keep its own height on every route.
+ *
+ * `.main` is a fixed-height flex column, so when a page is taller than the frame the flex algorithm
+ * is handed an overfull container and takes the difference out of whatever may shrink. `.content`
+ * cannot (it is `flex-shrink: 0`, see above), so the shrink landed entirely on this bar: measured at
+ * 1366x768 the status bar collapsed from its natural 35.8px to 11px on `/`, `/questions`,
+ * `/playbook`, `/concepts`, `/playground`, `/notebooks` and `/sql` — a clipped sliver with its text
+ * half cut off — while every short page drew the full bar. One footer, one height, every page.
+ */
+.statusbar {
+  position: sticky; bottom: 8px; flex: none; display: flex; gap: 9px; align-items: center; padding: 6px 12px;
+  margin: 0 12px 8px; border: 1px solid var(--glass-line); border-radius: var(--glass-radius);
+  background-color: var(--glass-2);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--glass-hi));
+  backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+  font-size: .72rem; color: var(--glass-muted); z-index: 25;
+  overflow: visible;
+  transition: border-color .22s ease, box-shadow .25s ease;
+}
+.sb-status-group {
+  display: flex; flex: 1 1 auto; align-items: center; gap: 9px; min-width: 0;
+}
+.sb-actions { display: flex; flex: none; align-items: center; gap: 10px; }
+/*
+ * One line, never two.
+ *
+ * Every cell keeps its own text on a single line and the ROW drops cells as it narrows, instead of
+ * each cell wrapping inside itself. Measured on a 375px phone: the old footer printed
+ * "Online · content update check" as two lines and "Python 3.12 (Pyodide)" as three, so the status
+ * bar was 45px of stacked fragments that read as broken markup.
+ */
+/*
+ * `flex: 0 1 auto` + `min-width: 0`, not `flex: none`.
+ *
+ * The row must be able to shrink BELOW its text: measured at 1024px, `nowrap` cells with
+ * `flex: none` were 786px wide inside a 758px bar, and because `.main` is `overflow-x: auto` that
+ * 28px turned into a horizontal scroll of the whole page (and a clipped status bar). A cell may now
+ * ellipsise; the AI button and the dots stay `flex: none`, so the control never shrinks away.
+ */
+.statusbar .sb-item { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.statusbar .sb-item > svg, .statusbar .sb-item > .dot { flex: none; }
+.sb-last-seen, .sb-sync-block {
+  display: inline-flex; align-items: center; gap: 7px; min-width: 0; flex: 0 1 auto;
+  white-space: nowrap; color: var(--glass-ink);
+}
+.sb-sync-block > span, .sb-xp-block > span:last-of-type {
+  display: grid; gap: 2px; min-width: 0;
+}
+.sb-last-seen b, .sb-sync-block b, .sb-xp-block b { font-size: .66rem; line-height: 1.05; }
+.sb-last-seen > span { font-size: .65rem; }
+.sb-last-seen small, .sb-sync-block small, .sb-xp-block small {
+  overflow: hidden; color: var(--glass-muted); font-size: .58rem; line-height: 1.05; text-overflow: ellipsis;
+}
+.sb-last-seen {
+  position: relative; padding: 3px 2px; cursor: help; outline: none;
+}
+.sb-last-seen::after {
+  content: attr(data-tooltip); position: absolute; z-index: 30; left: 0; bottom: calc(100% + 10px);
+  width: max-content; max-width: min(280px, 80vw); padding: 8px 10px; border: 1px solid var(--glass-line);
+  border-radius: 9px; background: var(--glass-2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--glass-shadow), 0 0 16px rgba(34, 211, 238, .16); color: var(--glass-ink);
+  font-size: .68rem; line-height: 1.3; white-space: normal; opacity: 0; pointer-events: none;
+  transform: translateY(4px); transition: opacity .16s ease, transform .16s ease;
+}
+.sb-last-seen:hover::after, .sb-last-seen:focus-visible::after { opacity: 1; transform: translateY(0); }
+.sb-last-seen:focus-visible { border-radius: 5px; box-shadow: 0 0 0 2px rgba(34, 211, 238, .55); }
+.sb-last-seen small { font-size: inherit; }
+.sb-last-seen > svg { flex: none; color: #a78bfa; filter: drop-shadow(0 0 6px rgba(139, 92, 246, .5)); }
+.sb-sync-block > svg { flex: none; color: #c084fc; }
+.sb-sync-block.syncing > svg { color: #22d3ee; animation: spin .9s linear infinite; }
+.sb-sync-block.offline > svg, .sb-sync-block.error > svg { color: #fbbf24; }
+.sb-divider { flex: none; width: 1px; height: 24px; background: var(--glass-line); }
+.statusbar .sb-stat { flex: none; gap: 5px; color: var(--glass-ink); font-size: .66rem; }
+.sb-xp-block {
+  display: inline-flex; align-items: center; gap: 6px; flex: none; color: var(--glass-ink);
+  text-decoration: none; font-variant-numeric: tabular-nums;
+}
+.sb-xp-block > span:first-child { font-size: 15px; }
+.sb-xp-block > i {
+  display: block; width: 46px; height: 6px; overflow: hidden; border-radius: 99px;
+  background: rgba(255, 255, 255, .18);
+}
+.sb-xp-block > i > i {
+  display: block; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, #22d3ee, #8b5cf6); transition: width .3s ease;
+}
+.sb-continue {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: none;
+  padding: 7px 11px; border-radius: 9px; background: var(--accent-grad);
+  box-shadow: 0 0 16px rgba(79, 124, 255, .32); color: #fff; font-size: .65rem; font-weight: 700;
+  text-decoration: none; white-space: nowrap; transition: box-shadow .18s ease, transform .18s ease;
+}
+.sb-continue:hover { box-shadow: 0 0 22px rgba(139, 92, 246, .52); transform: translateY(-1px); }
+.sb-ai {
+  position: relative; z-index: 2; align-self: stretch; display: flex; flex: 0 0 70px;
+  flex-direction: column; align-items: center; justify-content: flex-end; gap: 1px;
+  margin: 0 2px; padding: 23px 0 3px; border: 0; background: transparent;
+  color: #eef4ff; cursor: pointer; font: inherit; font-size: .72rem; font-weight: 800;
+  letter-spacing: .08em; text-shadow: 0 0 10px rgba(34, 211, 238, .8);
+}
+.sb-ai-orb {
+  position: absolute; top: -23px; left: 50%; display: grid; width: 49px; height: 49px;
+  place-items: center; border: 1px solid rgba(115, 205, 255, .9); border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 25%, rgba(255, 255, 255, .48), transparent 29%),
+    linear-gradient(145deg, rgba(34, 211, 238, .9), rgba(79, 70, 229, .96) 52%, rgba(147, 51, 234, .92));
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, .12), 0 0 17px rgba(34, 211, 238, .72),
+    0 0 30px rgba(139, 92, 246, .62), inset 0 1px 4px rgba(255, 255, 255, .64);
+  color: white; transform: translateX(-50%);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.sb-ai-orb::before {
+  content: ''; position: absolute; inset: 5px; border: 1px solid rgba(255, 255, 255, .42);
+  border-radius: inherit; pointer-events: none;
+}
+.sb-ai:hover .sb-ai-orb, .sb-ai.on .sb-ai-orb {
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, .18), 0 0 22px rgba(34, 211, 238, .92),
+    0 0 38px rgba(139, 92, 246, .82), inset 0 1px 5px rgba(255, 255, 255, .75);
+  transform: translateX(-50%) scale(1.06);
+}
+/* Keep every destination available while compacting only supporting labels on smaller desktops. */
+@media (max-width: 780px) { .statusbar { gap: 10px; padding: 5px 10px; } }
+@media (max-width: 1220px) {
+  .statusbar { gap: 6px; padding-inline: 9px; }
+  .sb-sync-block small, .sb-xp-block small { display: none; }
+  .sb-xp-block > i { display: none; }
+  .sb-divider.hide-sm { display: none; }
+}
+@media (max-width: 980px) {
+  .statusbar { gap: 6px; }
+  .sb-continue { padding: 7px; }
+  .sb-continue > span, .sb-continue > svg { display: none; }
+  .sb-ai { flex-basis: 56px; }
+}
+@media (max-width: 1100px) and (min-width: 781px) {
+  .statusbar { gap: 5px; padding: 5px 8px; }
+  .sb-status-group { gap: 5px; }
+  .sb-last-seen b, .sb-last-seen i { display: none; }
+  .sb-sync-block > span, .sb-xp-block small, .sb-xp-block > i { display: none; }
+  .sb-stat > span:last-child { display: none; }
+  .sb-xp-block { gap: 3px; }
+  .sb-actions { gap: 6px; }
+  .sb-ai { flex-basis: 48px; }
+  .sb-continue { padding: 6px 8px; font-size: .62rem; }
+  .sb-continue > span, .sb-continue > svg { display: inline; }
+}
+
+/* ---------- dashboard hero + stats ---------- */
+/* The hero is the one place a colour wash is allowed — it sets the mood for the whole page. */
+.hero-band {
+  position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-xl);
+  background-color: var(--card);
+  background-image:
+    radial-gradient(620px 240px at 88% -30%, rgba(34, 211, 238, .16), transparent 66%),
+    linear-gradient(120deg, rgba(79, 124, 255, .14), rgba(167, 139, 250, .09) 46%, rgba(34, 211, 238, .10)),
+    var(--panel-grad);
+  padding: 24px 26px 20px; margin: 14px 0;
+  box-shadow: var(--panel-shadow), 0 24px 60px rgba(34, 211, 238, .06);
+}
+.hero-band::after {
+  content: ''; position: absolute; right: -60px; top: -60px; width: 280px; height: 280px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(167, 139, 250, .22), transparent 70%); pointer-events: none;
+}
+.hero-band h1 {
+  font-size: 1.8rem; margin: 2px 0 4px; letter-spacing: -.025em;
+  background-image: var(--hero-ink);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero-band h1 span { color: inherit; }
+.hero-band .chip-line { margin-top: 12px; }
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 14px 0; }
+.stat-card {
+  display: flex; gap: 12px; align-items: center; border: 1px solid var(--border);
+  background-color: var(--card); background-image: var(--edge-light), var(--panel-grad);
+  background-size: 100% 1px, 100% 100%; background-repeat: no-repeat, repeat;
+  border-radius: var(--radius-lg); padding: 12px 16px; box-shadow: var(--panel-shadow);
+  transition: border-color .16s ease, box-shadow .2s ease, transform .14s ease;
+}
+.stat-card:hover {
+  border-color: var(--hover-border); transform: translateY(-1px);
+  box-shadow: var(--panel-shadow), var(--glow-strong);
+}
+/* The icon well keeps the caller's accent colour but gets its own light. */
+.stat-card .ic {
+  width: 38px; height: 38px; border-radius: var(--radius-md); display: grid; place-items: center;
+  background-color: var(--panel2); background-image: var(--panel-grad);
+  border: 1px solid var(--border); box-shadow: var(--lift), 0 0 18px currentColor;
+}
+.stat-card .ic svg { filter: drop-shadow(0 0 6px currentColor); }
+.stat-card .n { font-weight: 650; font-size: 1.05rem; }
+.stat-card .l { font-size: .72rem; color: var(--muted); }
+
+/* ============================================================
+   QUESTION BANK — four KPI cards: four tones, one animation language
+
+   The row was four identical grey boxes, so the only thing separating "13,865 published questions"
+   from "0 self-graded by you" was the sentence under the number. Each card now carries a `.tone-*`
+   accent of its own and animates the figure it already printed — a count-up for the number, a fill
+   for the rail, a travelling sheen and a breathing icon well for the light. The animation changes
+   how a number ARRIVES, never what it says.
+
+   Two constraints shaped the rules below:
+
+     · `.stat-card` is a spotlight host, so its `::after` belongs to the pool-of-light overlay —
+       the sheen owns `::before` only, and the card's own background layers are restated by name
+       (never through the `background` shorthand, which silently drops `--edge-light`).
+     · Everything is scoped to `.qb-stats`: other pages built on `.stat-card` must not start
+       animating because this one row does.
+
+   Motion is opt-out, not opt-in — the whole loop stops under `prefers-reduced-motion: reduce`,
+   and the entrance is skipped outright, leaving the true number simply in place.
+   ============================================================ */
+.qb-stats .stat-card {
+  position: relative; overflow: hidden;
+  /* Paint order = layer order: edge light, accent hairline, panel gradient, tone wash. */
+  background-image:
+    var(--edge-light),
+    linear-gradient(90deg, rgb(var(--accent-rgb) / .85), rgb(var(--accent-rgb) / 0) 62%),
+    var(--panel-grad),
+    linear-gradient(155deg, rgb(var(--accent-rgb) / .17), rgb(var(--accent-rgb) / 0) 56%);
+  background-size: 100% 1px, 100% 2px, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat, repeat, no-repeat;
+  animation: qb-rise .55s cubic-bezier(.22,.68,.24,1) both;
+  animation-delay: var(--qb-d, 0s);
+}
+/* The stagger: each card starts a beat after the one before, so the row assembles left to right
+   instead of snapping in as a block. One variable, read by every delay below. */
+.qb-stats .stat-card:nth-child(1) { --qb-d: 0s; }
+.qb-stats .stat-card:nth-child(2) { --qb-d: .09s; }
+.qb-stats .stat-card:nth-child(3) { --qb-d: .18s; }
+.qb-stats .stat-card:nth-child(4) { --qb-d: .27s; }
+
+/* The sheen: one soft band of the card's own accent crossing it every few seconds, staggered so the
+   row shimmers as a wave. Transform only — a repaint on four cards every frame would undo the care
+   the spotlight took to keep paint off the hot path. */
+.qb-stats .stat-card::before {
+  content: ''; position: absolute; top: -30%; bottom: -30%; left: 0; width: 46%;
+  background-image: linear-gradient(100deg, transparent, rgb(var(--accent-rgb) / .12) 50%, transparent);
+  transform: translateX(-170%); pointer-events: none;
+  animation: qb-sheen 6s cubic-bezier(.45,.05,.55,.95) infinite;
+  animation-delay: calc(var(--qb-d, 0s) + .45s);
+}
+.qb-stats .stat-card:hover::before { animation-duration: 1.8s; }
+
+/* The icon well breathes in its tone — the same light the rest of the app uses on hover, kept alive
+   so the row reads as lit rather than merely coloured. */
+.qb-stats .stat-card .ic {
+  color: var(--accent);
+  animation: qb-breathe 3.6s ease-in-out infinite;
+  animation-delay: calc(var(--qb-d, 0s) + .3s);
+}
+/* The number is cut from a tone → ink gradient, and `tabular-nums` + `fit-content` keep both the
+   width steady while the count runs and the gradient mapped onto the digits rather than onto the
+   wider label box beside them. */
+.qb-stats .stat-card .n {
+  width: fit-content; font-size: 1.3rem; font-variant-numeric: tabular-nums;
+  background-image: linear-gradient(100deg, var(--accent), var(--foreground) 165%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.qb-stats .stat-card .l { font-size: .74rem; }
+
+/* Hover leans into the card's own accent instead of the shared grey glow. */
+.qb-stats .stat-card:hover {
+  border-color: rgb(var(--accent-rgb) / .48);
+  box-shadow: var(--panel-shadow), 0 0 22px rgb(var(--accent-rgb) / .22);
+}
+
+/* The rail: a 3px track pinned to the card's bottom edge, filled in the card's tone. Absolute so the
+   row keeps the height it had — nothing under it shifts while the fill animates. */
+.qb-stats .qb-meter {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background-color: rgb(var(--accent-rgb) / .12); pointer-events: none;
+}
+.qb-stats .qb-meter b {
+  display: block; height: 100%; border-radius: 0 2px 2px 0;
+  background-image: linear-gradient(90deg, rgb(var(--accent-rgb) / .45), var(--accent));
+  box-shadow: 0 0 10px rgb(var(--accent-rgb) / .45);
+  animation: qb-fill 1s cubic-bezier(.22,.68,.24,1) both;
+  animation-delay: calc(var(--qb-d, 0s) + .25s);
+}
+@keyframes qb-rise { from { opacity: 0; transform: translateY(12px) scale(.985); } }
+@keyframes qb-sheen { from { transform: translateX(-170%); } to { transform: translateX(330%); } }
+@keyframes qb-breathe {
+  0%, 100% { box-shadow: var(--lift), 0 0 12px rgb(var(--accent-rgb) / .25); }
+  50% { box-shadow: var(--lift), 0 0 24px rgb(var(--accent-rgb) / .6); }
+}
+/* `width: 0` is the only keyframe: the end of the fill is the inline width the card's own number
+   produced, so the rail can never disagree with the figure above it. */
+@keyframes qb-fill { from { width: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .qb-stats .stat-card, .qb-stats .stat-card::before, .qb-stats .stat-card .ic, .qb-stats .qb-meter b {
+    animation: none;
+  }
+}
+.mission-row {
+  display: flex; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border);
+}
+.mission-row:last-child { border-bottom: none; }
+.mission-row .t { flex: 1; }
+.mission-row .t b { font-size: .86rem; font-weight: 600; }
+.track-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.track-card {
+  /* Default accent; a `.tone-*` class on the same element overrides both,
+     because the tone block is declared later in this file. */
+  --accent: #4f7cff; --accent-rgb: 79 124 255;
+  position: relative; border: 1px solid var(--border); border-radius: var(--radius-xl);
+  background-color: var(--card);
+  background-image: radial-gradient(420px 160px at 88% -20%, rgb(var(--accent-rgb) / .16), transparent 68%), var(--panel-grad);
+  padding: 18px; display: flex; flex-direction: column; gap: 10px; overflow: hidden;
+  box-shadow: var(--panel-shadow);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .22s ease;
+}
+.track-card:hover {
+  transform: translateY(-2px); border-color: rgb(var(--accent-rgb) / .5);
+  box-shadow: var(--panel-shadow), 0 18px 40px rgb(var(--accent-rgb) / .18);
+}
+.track-card .num {
+  position: absolute; top: 12px; left: 16px; font-size: .7rem; font-weight: 600; letter-spacing: .5px;
+  color: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px 8px;
+}
+.track-card .head { display: flex; gap: 12px; align-items: center; margin-top: 22px; }
+.track-card .head .ic {
+  width: 42px; height: 42px; border-radius: var(--radius-md); display: grid; place-items: center;
+  background: var(--panel2); border: 1px solid var(--border);
+}
+.track-card .head h3 { margin: 0; font-size: 1.02rem; }
+.track-card .desc { font-size: .8rem; color: var(--muted); flex: 1; }
+.track-card .meta { display: flex; gap: 12px; font-size: .72rem; color: var(--muted); flex-wrap: wrap; }
+.track-card .prereq { font-size: .72rem; display: flex; gap: 6px; align-items: center; color: var(--muted); }
+.track-card .prereq.ok { color: var(--green); }
+.track-card .actions { display: flex; gap: 8px; }
+.track-card .actions .btn { flex: 1; justify-content: center; }
+.track-card .ringwrap { margin-left: auto; }
+.path-grid { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.path-rail { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 74px; }
+.goalbar {
+  display: flex; gap: 0; align-items: stretch; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  overflow: hidden; margin-top: 14px; flex-wrap: wrap;
+  background-color: var(--card); background-image: var(--panel-grad); box-shadow: var(--panel-shadow);
+}
+.goalbar .stage {
+  flex: 1; display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-right: 1px solid var(--border);
+  background: transparent; min-width: 150px;
+}
+.goalbar .stage:last-child { border-right: none; }
+.goalbar .stage .stepnum {
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: .78rem; font-weight: 700;
+  background: var(--panel2); border: 1px solid var(--border);
+}
+.goalbar .stage.on .stepnum {
+  background-image: var(--accent-grad); color: var(--ink-on-accent); border-color: transparent;
+  box-shadow: 0 0 20px rgba(34, 211, 238, .4);
+}
+.goalbar .stage .lbl b { font-size: .84rem; display: block; }
+.goalbar .stage .lbl span { font-size: .68rem; color: var(--muted); }
+.activity-row { display: flex; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .82rem; }
+.activity-row:last-child { border-bottom: none; }
+.activity-row .adot { width: 8px; height: 8px; border-radius: 50%; }
+.activity-row time { margin-left: auto; font-size: .7rem; color: var(--muted); }
+
+@media (max-width: 1100px) { .path-grid { grid-template-columns: 1fr; } .path-rail { position: static; } }
+@media (max-width: 780px) {
+  .topbar { padding: 8px 12px; }
+  .searchbox { max-width: none; }
+}
+
