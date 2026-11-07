@@ -1476,6 +1476,28 @@ the skill's share of the selected source, and how many of its questions are alre
   background: rgb(var(--accent-rgb) / .12); border: 1px solid rgb(var(--accent-rgb) / .3);
 }
 .cc-name { font-size: .95rem; line-height: 1.25; }
+/*
+ * A course card's plan metadata: level, estimated time and prerequisites, on ONE line under the
+ * name. It is deliberately quiet — the mark and the name are still the card, this line only answers
+ * "is this my level, how long is it, and what should I already know?".
+ */
+.cc-meta {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 4px 8px; margin-top: 6px; max-width: 100%;
+  font-size: .72rem; line-height: 1.5; color: var(--muted-foreground);
+}
+.cc-level {
+  padding: 1px 7px; border: 1px solid var(--line-soft); border-radius: 999px;
+  background: var(--panel); font-size: .62rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--foreground);
+}
+.cc-needs { opacity: .85; min-width: 0; }
+/* The course page's objectives — a short list, not a second subtitle. */
+.course-obj { margin-top: 12px; }
+.course-obj-list {
+  display: grid; gap: 3px; margin: 6px 0 0; padding-left: 18px;
+  font-size: .82rem; line-height: 1.55; color: var(--muted-foreground);
+}
 .cc-meta { font-variant-numeric: tabular-nums; }
 .cc-foot { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: auto; padding-top: 6px; }
 .cc-go { margin-left: auto; color: var(--muted); }

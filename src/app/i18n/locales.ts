@@ -335,6 +335,11 @@ export const en = {
   'nb.offline': '✓ NumPy + Pandas bundled',
   // courses — the 11-course hub, the course step index and the 7-tab step page
   'courses.chip': 'COURSES',
+  'courses.level.beginner': 'Beginner',
+  'courses.level.intermediate': 'Intermediate',
+  'courses.level.advanced': 'Advanced',
+  'courses.needs': 'Needs',
+  'courses.objectives': 'What you can do after this course',
   'courses.title': 'Courses',
   'courses.subtitle': '11 courses over the same 36 steps. Open one and walk it line by line — lesson, practice, questions, interview, lab, PDF and your own notes, all filtered to the step you are on.',
   'courses.coursesUnit': 'courses',
@@ -727,6 +732,11 @@ export const hinglish: Partial<Record<LocaleKey, string>> = {
   'nb.offline': '✓ NumPy + Pandas bundled',
   // courses
   'courses.chip': 'COURSES',
+  'courses.level.beginner': 'Beginner',
+  'courses.level.intermediate': 'Intermediate',
+  'courses.level.advanced': 'Advanced',
+  'courses.needs': 'Needs',
+  'courses.objectives': 'What you can do after this course',
   'courses.title': 'Courses',
   'courses.subtitle': 'Wahi 36 steps, 11 courses me baante hue. Ek course kholo aur line-by-line chalo — lesson, practice, questions, interview, lab, PDF aur apni notes, sab sirf usi step ka.',
   'courses.coursesUnit': 'courses',

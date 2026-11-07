@@ -88,6 +88,18 @@ export default function CoursePage() {
             </Link>
           </div>
         </div>
+
+        {/* What the course lets you DO, from the authored `meta.objectives`. Printed once, here,
+            because this is the only page whose job is "should I take this course?" — the steps
+            below answer "what does it contain". */}
+        {!!course.meta.objectives.length && (
+          <div className="course-obj">
+            <div className="small muted">{t('courses.objectives')}</div>
+            <ul className="course-obj-list">
+              {course.meta.objectives.map((objective) => <li key={objective}>{objective}</li>)}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="sec-head"><h2><Target size={16} color="var(--accent)" /> {t('courses.stepsIndex')}</h2><span className="line" /></div>

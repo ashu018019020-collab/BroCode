@@ -30,6 +30,16 @@ import { CLogo } from '../c-programming/CLogo';
  * C Programming is the twelfth card: it is its own course page, not a catalog record, so it is
  * drawn from the same registry (third position) and reads its own module progress.
  */
+/** Level → its locale key. Literal keys, so `t()` stays typed and the packs stay checkable. */
+const LEVEL_KEY = {
+  beginner: 'courses.level.beginner',
+  intermediate: 'courses.level.intermediate',
+  advanced: 'courses.level.advanced',
+} as const;
+
+/** Study time reads in hours on a card — `minutes` is exact, a card needs it scannable. */
+const hoursOf = (minutes: number) => `${Math.max(1, Math.round(minutes / 60))}h`;
+
 export default function CoursesHome() {
   const { t } = useI18n();
   const index = useCourseIndex();
@@ -68,29 +78,41 @@ export default function CoursesHome() {
   const sequence = sortByCourseOrder(
     withoutHidden([...ALL_PLACEMENTS, ...ownerPlacements], journey), journey);
   const bySlug = new Map(visible.map((card) => [card.slug, card] as const));
+  /** Course names by slug, so a card can name the course it needs instead of printing a slug. */
+  const nameBySlug = new Map(courses.map((card) => [card.slug, card.name] as const));
   const placed = new Set(sequence.map((p) => p.slug));
   const unplaced = visible.filter((card) => !placed.has(card.slug));
 
   /**
-   * One card: the course's mark and its name. Nothing else.
+   * One card: the course's mark, its name, and — by explicit request — one line of plan metadata:
+   * level, estimated time, and the courses you should have finished first.
    *
-   * Levels, step/item counts, descriptions, prerequisite lines and the progress ring all came off
-   * at the owner's request — the grid is a chooser, and the course page is where the counts and
-   * progress live. The mark is bigger than it was, because it is now what the card is read by.
+   * Step/item counts, descriptions and the progress ring stay OFF the card: the grid is a chooser,
+   * and the course page is where the counts and progress live. The metadata is one compact line so
+   * the mark is still what the card is read by, and a course with no prerequisites prints no
+   * "Needs" clause at all rather than an empty one.
    */
-  const renderCard = (card: CourseCard) => (
-    <Link
-      key={card.slug}
-      to={`/course/${card.slug}`}
-      className={`course-card cc-simple tone-${card.tone}`}
-      data-agent-action={`course:${card.slug}`}
-      data-agent-label={card.name}
-      title={card.name}
-    >
-      <span className="cc-logo"><CourseLogo logo={card.logo} name={card.name} size={88} /></span>
-      <b className="cc-name">{card.name}</b>
-    </Link>
-  );
+  const renderCard = (card: CourseCard) => {
+    const needs = card.meta.prerequisites.map((slug) => nameBySlug.get(slug) ?? slug);
+    return (
+      <Link
+        key={card.slug}
+        to={`/course/${card.slug}`}
+        className={`course-card cc-simple tone-${card.tone}`}
+        data-agent-action={`course:${card.slug}`}
+        data-agent-label={card.name}
+        title={card.name}
+      >
+        <span className="cc-logo"><CourseLogo logo={card.logo} name={card.name} size={88} /></span>
+        <b className="cc-name">{card.name}</b>
+        <span className="cc-meta">
+          <span className="cc-level">{t(LEVEL_KEY[card.meta.level])}</span>
+          <span>{hoursOf(card.meta.minutes)}</span>
+          {!!needs.length && <span className="cc-needs">{t('courses.needs')}: {needs.join(', ')}</span>}
+        </span>
+      </Link>
+    );
+  };
 
   /**
    * An owner-created card. It owns no generated content, so it is a plain link to the internal page

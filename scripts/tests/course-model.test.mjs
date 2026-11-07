@@ -26,6 +26,7 @@ const readJson = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8
 const { courseSpine, COURSE_LEVELS } = await import(
   pathToFileURL(path.join(ROOT, 'src/core/learning/courses.ts')).href
 );
+const { en } = await import(pathToFileURL(path.join(ROOT, 'src/app/i18n/locales.ts')).href);
 
 const index = readJson('public/generated/courses/index.json');
 const files = index.courses.map((card) => readJson(`public/generated/courses/${card.slug}.json`));
@@ -115,4 +116,22 @@ test('course model: the spine is the 36-step plan exactly once, with no item lef
   );
   assert.equal(lessons, lessonItems, 'every lesson item appears once in the spine — none dropped, none doubled');
   assert.equal(Object.values(levels).reduce((sum, count) => sum + count, 0), 11, 'every course has a level');
+});
+
+test('course model: the metadata reaches the screens, and every level has a label', () => {
+  const home = fs.readFileSync(path.join(ROOT, 'src/features/courses/CoursesHome.tsx'), 'utf8');
+  const page = fs.readFileSync(path.join(ROOT, 'src/features/courses/CoursePage.tsx'), 'utf8');
+
+  // The card answers "is this my level, how long, what should I know first?".
+  assert.match(home, /card\.meta\.level/, 'the card shows the level');
+  assert.match(home, /card\.meta\.minutes/, 'the card shows the estimated time');
+  assert.match(home, /card\.meta\.prerequisites/, 'the card shows the prerequisites');
+  // The course page answers "what will I be able to do?".
+  assert.match(page, /course\.meta\.objectives\.map/, 'the course page lists the objectives');
+
+  for (const level of COURSE_LEVELS) {
+    assert.ok(en[`courses.level.${level}`], `${level} needs a label in the English pack`);
+  }
+  assert.ok(en['courses.needs'], 'the prerequisite clause needs a label');
+  assert.ok(en['courses.objectives'], 'the objectives block needs a heading');
 });
