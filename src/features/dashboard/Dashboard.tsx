@@ -4,7 +4,7 @@ import {
   Star, Flame, Target, Trophy, Code2, BookOpen, Sparkles, Brain, Mic2,
   Bug, FolderGit2, Flag, Play, ArrowRight, Zap, BarChart3, Percent, Clock,
   TrendingUp, ChevronRight, Award, NotebookPen, ListChecks, Layers,
-  CalendarCheck, Timer, Check, GraduationCap,
+  CalendarCheck, Timer, Check, GraduationCap, Briefcase,
 } from 'lucide-react';
 import { StickyNote, BookMarked, Moon, Repeat, Settings as SettingsIcon } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
@@ -301,7 +301,8 @@ export default function Dashboard() {
           { to: '/projects', icon: FolderGit2, label: 'Build a Project', sub: 'Project Lab', tag: 'Project', tone: 'violet' },
           { to: '/labs', icon: Sparkles, label: 'Run a Lab', sub: 'Python · SQL · AI', tag: 'Lab', tone: 'cyan' },
           { to: '/interviews', icon: Mic2, label: 'Mock Interview', sub: 'Answer, then defend', tag: 'Interview', tone: 'amber' },
-          { to: '/career', icon: Award, label: 'Sharpen the Portfolio', sub: 'Bullets + pitch', tag: 'Career', tone: 'green' },
+                  { to: '/career', icon: Award, label: 'Sharpen the Portfolio', sub: 'Bullets + pitch', tag: 'Career', tone: 'green' },
+          { to: '/career/workspace', icon: Briefcase, label: 'Review your CV', sub: 'Resume + ATS checks', tag: 'Career', tone: 'green' },
         ].map((r) => (
           <Link key={r.to} to={r.to} className="tile">
             <span className="ic"><r.icon size={17} /></span>

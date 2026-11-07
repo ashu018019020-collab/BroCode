@@ -182,6 +182,7 @@ export default function CareerHub() {
           </div>
           <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
             <span className="chip"><Rocket size={12} /> {ready.pct}% job-prep readiness</span>
+            <span className="chip"><Link to="/career/workspace" className="inline">Check your CV</Link></span>
             <span className="chip">Next step: {next.phase}</span>
             <span className="chip">Level {ctx.counts.level} · {ctx.counts.xp} XP</span>
           </div>
