@@ -52,7 +52,7 @@ export default function CoursePage() {
     <div>
       <div className="course-head card glow fadeup tone-cyan">
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 14, alignItems: 'flex-start' }}>
-          <div className="row" style={{ gap: 14, minWidth: 280 }}>
+          <div className="row" style={{ gap: 14, minWidth: 'min(280px, 100%)' }}>
             <CourseLogo logo={course.logo} name={course.name} size={64} />
             <div>
               <div className="chip" style={{ marginBottom: 6 }}>{t('courses.courseChip')}</div>

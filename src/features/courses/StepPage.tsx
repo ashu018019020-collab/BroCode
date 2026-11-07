@@ -161,7 +161,7 @@ export default function StepPage() {
     <div>
       <div className={`course-head card glow fadeup tone-${phase.tone}`}>
         <div className="row spread" style={{ flexWrap: 'wrap', gap: 14, alignItems: 'flex-start' }}>
-          <div className="row" style={{ gap: 14, minWidth: 280 }}>
+          <div className="row" style={{ gap: 14, minWidth: 'min(280px, 100%)' }}>
             <CourseLogo logo={course.logo} name={course.name} size={52} />
             <div>
               <div className="row small muted" style={{ gap: 6 }}>
