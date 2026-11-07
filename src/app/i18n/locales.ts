@@ -443,6 +443,22 @@ export const en = {
   'ai.onlineVoice.charges':
     'Optional and off by default on this device. Live sessions use the server\'s API credits and need a signed-in account; the local tutor never needs it.',
   'ai.onlineVoice.enable': 'Turn on Online AI Voice',
+  // /workspace — the learner's one-screen answer to "where am I, and what next?".
+  'workspace.chip': 'WORKSPACE',
+  'workspace.title': 'Your workspace',
+  'workspace.subtitle': 'One place: the course you are in, how far you have got, and exactly what to open next.',
+  'workspace.sectionsMastered': 'sections mastered',
+  'workspace.dayStreak': 'day streak',
+  'workspace.empty': 'No published course to show yet.',
+  'workspace.currentCourse': 'Current course',
+  'workspace.startHere': 'Start here',
+  'workspace.progress': 'Progress',
+  'workspace.stepsClear': 'steps clear',
+  'workspace.nextStep': 'Next step',
+  'workspace.nextHint': 'Keep going — open the step and start with the lesson.',
+  'workspace.noMeasure': 'This step has no measure on the card — open the course and look at its steps.',
+  'workspace.openCourse': 'Open course',
+  'workspace.openWorkspace': 'Open workspace',
 };
 
 export type LocaleKey = keyof typeof en;
@@ -450,6 +466,21 @@ export type LocaleKey = keyof typeof en;
 /** Natural Hinglish — human phrasing, not literal translation. */
 export const hinglish: Partial<Record<LocaleKey, string>> = {
   'app.tagline': 'Learn → Code → Build → Master',
+  'workspace.chip': 'WORKSPACE',
+  'workspace.title': 'Aapka workspace',
+  'workspace.subtitle': 'Ek jagah dekho: aap kaunse course me ho, kitna ho gaya hai, aur exactly kya kholna hai next.',
+  'workspace.sectionsMastered': 'sections mastered',
+  'workspace.dayStreak': 'din ka streak',
+  'workspace.empty': 'Abhi koi published course nahi hai.',
+  'workspace.currentCourse': 'Abhi ka course',
+  'workspace.startHere': 'Yahan se shuru karo',
+  'workspace.progress': 'Progress',
+  'workspace.stepsClear': 'steps clear',
+  'workspace.nextStep': 'Agla step',
+  'workspace.nextHint': 'Yahin se aage badho — step kholo aur lesson se shuru karo.',
+  'workspace.noMeasure': 'Is step ka measure card par nahi hai — poora course kholo aur uske steps dekho.',
+  'workspace.openCourse': 'Course kholo',
+  'workspace.openWorkspace': 'Workspace kholo',
   'acct.signedOut': 'Sign in nahi kiya',
   'acct.signInHint': 'Seekhne ke liye sign in karo',
   'acct.signIn': 'Sign in karo',

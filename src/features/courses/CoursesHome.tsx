@@ -8,7 +8,7 @@ import { useOwnerCourses } from '../../core/data/owner-courses';
 import {
   ownerCourseCards, ownerCoursePlacements, visibleOwnerCards, type OwnerCourseCard,
 } from '../../core/learning/owner-courses';
-import { sectionAvg } from '../../core/learning/courses';
+import { LEVEL_KEY, sectionAvg } from '../../core/learning/courses';
 import {
   ALL_PLACEMENTS, nextCourse, placementOf, sortByCourseOrder, withoutHidden,
 } from '../../core/learning/course-levels';
@@ -30,13 +30,6 @@ import { CLogo } from '../c-programming/CLogo';
  * C Programming is the twelfth card: it is its own course page, not a catalog record, so it is
  * drawn from the same registry (third position) and reads its own module progress.
  */
-/** Level → its locale key. Literal keys, so `t()` stays typed and the packs stay checkable. */
-const LEVEL_KEY = {
-  beginner: 'courses.level.beginner',
-  intermediate: 'courses.level.intermediate',
-  advanced: 'courses.level.advanced',
-} as const;
-
 /** Study time reads in hours on a card — `minutes` is exact, a card needs it scannable. */
 const hoursOf = (minutes: number) => `${Math.max(1, Math.round(minutes / 60))}h`;
 

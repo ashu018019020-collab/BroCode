@@ -90,6 +90,19 @@ export type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
 export const COURSE_LEVELS: CourseLevel[] = ['beginner', 'intermediate', 'advanced'];
 
 /**
+ * Level → its locale key, beside the type that defines the levels.
+ *
+ * It lives here so no screen has to keep its own copy: the cards and the workspace both label a
+ * level, and two literal maps are how one of them ends up saying "Intermediate" in Hinglish.
+ * Literal values on purpose — `t()` stays typed and the locale packs stay checkable.
+ */
+export const LEVEL_KEY = {
+  beginner: 'courses.level.beginner',
+  intermediate: 'courses.level.intermediate',
+  advanced: 'courses.level.advanced',
+} as const;
+
+/**
  * The plan metadata every course publishes with its card.
  *
  * Authored in `content/courses/courses.json`, validated by `scripts/courses.cjs` and re-checked on

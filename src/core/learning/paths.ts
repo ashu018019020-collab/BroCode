@@ -335,6 +335,7 @@ export const PATH_ROUTE_ALLOWLIST: string[] = [
   '/c-programming/:moduleId', // one C module — owned by the C course's curriculum tab
   '/course/:slug',        // one course's step index — owned by the /courses grid
   '/course/:slug/:step',  // one step, 7 tabs — owned by its course
+  '/workspace',           // the learner workspace: one course's plan, not a path card of its own
   '/pdf/:page',           // the guide's page-deep-link form of /pdf
   '/pdf/playbook/:page',  // …and the playbook's page-deep-link form of /pdf/playbook
   '/settings',            // setup, not a path

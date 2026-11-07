@@ -238,6 +238,9 @@ export default function Dashboard() {
             <div className="row dash-tags">
               <span className="dash-tag tone-violet"><Sparkles size={13} /> {t('dash.chip')}</span>
             </div>
+            <Link className="btn small" to="/workspace" style={{ marginTop: 10 }}>
+              {t('workspace.openWorkspace')}
+            </Link>
           </div>
 
           <div className="hero-snap">
