@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Compass, Play, Target } from 'lucide-react';
+import { ArrowRight, ChevronRight, Compass, Play, Target } from 'lucide-react';
 import { useI18n } from '../../app/i18n';
 import { CourseLogo } from '../../components/shared/CourseLogo';
 import { ProgressRing } from '../../components/ui/ui';
 import { useCourseIndex, useSectionPct } from '../../core/data/courses';
 import { useCurriculum } from '../../core/data/curriculum';
 import { LEVEL_KEY } from '../../core/learning/courses';
-import { workspaceTarget } from '../../core/learning/workspace';
+import { workspaceNextAction, workspaceTarget } from '../../core/learning/workspace';
 import { STEPS } from '../../core/learning/roadmap';
 import { isMastered } from '../../core/learning/progress';
 import { studyStreak } from '../../core/learning/study';
@@ -48,6 +48,22 @@ export default function Workspace() {
 
   const step = card ? STEPS.find((s) => s.no === target.step) ?? null : null;
   const stepHref = card ? `/course/${card.slug}/${target.step}?tab=lesson` : '/courses';
+
+  /**
+   * The one thing AFTER the step above, from the same card-only measures. A separate answer on
+   * purpose: "Next step" is what to open now, this block is what to open once it is clear — so the
+   * two can never name the same step, and neither needs a course file.
+   */
+  const after = useMemo(
+    () => (card ? workspaceNextAction(cards, pctOf, target) : null),
+    [card, cards, pctOf, target],
+  );
+  const afterStep = after?.kind === 'step' ? STEPS.find((s) => s.no === after.step) ?? null : null;
+  const afterHref = after?.course
+    ? after.kind === 'step'
+      ? `/course/${after.course.slug}/${after.step}?tab=lesson`
+      : `/course/${after.course.slug}`
+    : null;
 
   return (
     <div>
@@ -138,6 +154,41 @@ export default function Workspace() {
               <Play size={13} /> {target.certain ? t('courses.continue') : t('workspace.openCourse')}
             </Link>
           </div>
+        </div>
+      )}
+
+      {/* What comes after that step. One quiet row: the same measures, read from the steps AFTER
+          the one above, so it can never repeat it. */}
+      {card && after?.kind === 'done' && (
+        <p className="small muted ws-after-done">{t('workspace.journeyDone')}</p>
+      )}
+
+      {card && after && after.kind !== 'done' && afterHref && (
+        <div className="card ws-after">
+          <div className="chip">
+            <ArrowRight size={12} /> {t('workspace.nextAction')}
+          </div>
+          <div className="ws-after-main">
+            <span className="small muted">
+              {after.kind === 'step'
+                ? t('workspace.afterStep', { no: String(after.step).padStart(2, '0') })
+                : t('workspace.afterCourse')}
+            </span>
+            <b>
+              {after.kind === 'step'
+                ? (afterStep?.title ?? `${t('courses.step')} ${after.step}`)
+                : after.course?.name}
+            </b>
+          </div>
+          <Link
+            className="btn small ws-after-go"
+            to={afterHref}
+            data-agent-action={`workspace:after:${after.course?.slug ?? ''}`}
+            data-agent-label={t('workspace.nextAction')}
+          >
+            {after.kind === 'step' ? t('workspace.openNextStep') : t('workspace.openCourse')}
+            <ChevronRight size={13} />
+          </Link>
         </div>
       )}
     </div>

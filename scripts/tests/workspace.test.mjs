@@ -26,7 +26,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const load = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 
-const { workspaceTarget } = await load('src/core/learning/workspace.ts');
+const { workspaceNextAction, workspaceTarget } = await load('src/core/learning/workspace.ts');
 const { PAGES } = await load('src/core/platform/search.ts');
 const { PATH_ROUTE_ALLOWLIST } = await load('src/core/learning/paths.ts');
 const { en, hinglish } = await load('src/app/i18n/locales.ts');
@@ -40,6 +40,8 @@ const card = (slug, number, sections, steps) => ({
 const python = card('python', 3, { s01: 4, s02: 4 }, [4]);
 const sql = card('sql', 5, { s19: 8 }, [8]);
 const dataEngineering = card('data-engineering', 6, {}, [9, 10]);
+/** Three measured steps, all opening step 1 — the fixture the "after this step" rule is driven with. */
+const ladder = card('ladder', 3, { s01: 1, s02: 2, s03: 3 }, [1, 2, 3]);
 
 test('workspace: a fresh learner is sent to the first course, labelled as a start', () => {
   const target = workspaceTarget([python, sql], () => 0);
@@ -111,6 +113,57 @@ test('workspace: the page reads card-only measures and never fetches a course fi
   assert.match(page, /workspaceTarget\(cards, pctOf\)/, 'the decision lives in the pure resolver');
   assert.doesNotMatch(page, /useCourse\(|useCourseMeasures\(/,
     'a course file is up to 1.5 MB — the workspace must answer from index.json + stored mastery');
+});
+
+test('workspace next action: names the next step AFTER the one on screen, never the same one', () => {
+  const cards = [ladder];
+  const target = workspaceTarget(cards, () => 0);
+  assert.equal(target.step, 1);
+  const next = workspaceNextAction(cards, () => 0, target);
+  assert.equal(next.kind, 'step');
+  assert.equal(next.step, 2, 'the block must not repeat the step the page already names');
+  assert.equal(next.course.slug, 'ladder');
+  assert.equal(next.certain, true, 'a step with a real denominator is a proven action');
+});
+
+test('workspace next action: a step the card can prove is clear is skipped', () => {
+  const pct = (sid) => (sid === 's02' ? 100 : 0);
+  const target = workspaceTarget([ladder], pct);
+  assert.equal(target.step, 1);
+  const next = workspaceNextAction([ladder], pct, target);
+  assert.equal(next.kind, 'step');
+  assert.equal(next.step, 3, 'step 2 is already clear, so it is not something to do again');
+});
+
+test('workspace next action: after the last step the journey names the next course', () => {
+  const target = workspaceTarget([python, sql], () => 0);
+  assert.equal(target.card.slug, 'python');
+  const next = workspaceNextAction([python, sql], () => 0, target);
+  assert.equal(next.kind, 'course');
+  assert.equal(next.course.slug, 'sql', 'a course placed AFTER this one, never one earlier in the plan');
+});
+
+test('workspace next action: nothing left is an honest end, not an invented step', () => {
+  const target = workspaceTarget([python], () => 0);
+  const next = workspaceNextAction([python], () => 0, target);
+  assert.equal(next.kind, 'done');
+  assert.equal(next.course, null);
+});
+
+test('workspace next action: a step the card cannot measure is named, but not claimed', () => {
+  const target = workspaceTarget([dataEngineering], () => 0);
+  assert.equal(target.step, 9);
+  const next = workspaceNextAction([dataEngineering], () => 0, target);
+  assert.equal(next.kind, 'step');
+  assert.equal(next.step, 10);
+  assert.equal(next.certain, false, 'no denominator on the card means the page may not assert it');
+});
+
+test('workspace: the after-step block is one row fed by the pure resolver', () => {
+  const page = read('src/features/workspace/Workspace.tsx');
+  assert.match(page, /workspaceNextAction\(cards, pctOf, target\)/,
+    'the second decision is pure too, so it can be driven with fixtures');
+  assert.match(page, /className="card ws-after"/, 'a quiet row below the two cards, not a third card');
 });
 
 test('workspace: every string the page uses exists in both packs, and reads as Hinglish', () => {

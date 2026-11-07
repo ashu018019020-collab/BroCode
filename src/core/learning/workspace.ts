@@ -25,9 +25,11 @@ import {
   nextStep,
   sectionAvg,
   sectionsClear,
+  stepsOf,
   type CourseCard,
   type StepMeasure,
 } from './courses';
+import { courseRank, nextCourse } from './course-levels';
 
 export interface WorkspaceTarget {
   /** null only when nothing is published. */
@@ -77,4 +79,57 @@ export function workspaceTarget(cards: CourseCard[], pctOf: (sid: string) => num
     sectionsCleared: sectionsClear(card, pctOf),
     sectionsTotal: Object.keys(card.sections ?? {}).length,
   };
+}
+
+/* ------------------------- what comes AFTER that step ---------------------- */
+
+/**
+ * The workspace's second answer: the ONE thing to open once the step on screen is clear.
+ *
+ * Same rule as `nextStep`, read only from the steps AFTER the current one — so the block can never
+ * repeat the step the page is already telling the learner to open. A step the card can prove is
+ * clear is skipped (the learner does not need it again), and a step with no denominator on the card
+ * is kept: it is still the next thing in the course, and this page may not fetch a course file to
+ * know more, so `certain` says the card could not prove it either way.
+ *
+ * When nothing is left in this course, the journey's own ordering names the next course — the same
+ * `nextCourse` rule `/courses` uses, restricted to the courses placed AFTER this one. Nothing here
+ * creates a record, a plan or a ranking: every input is a card, a section percentage or the
+ * authored placement registry.
+ */
+export interface WorkspaceNextAction {
+  /** 'step' = another step of the same course; 'course' = the course is done; 'done' = nothing left. */
+  kind: 'step' | 'course' | 'done';
+  /** The step to open, when `kind === 'step'`; 0 otherwise. */
+  step: number;
+  /** The course the action belongs to; null only when nothing is left. */
+  course: CourseCard | null;
+  /** True when a real record backs the action (a measured step, or a placed course). */
+  certain: boolean;
+}
+
+export function workspaceNextAction(
+  cards: CourseCard[],
+  pctOf: (sid: string) => number,
+  target: WorkspaceTarget,
+): WorkspaceNextAction {
+  const card = target.card;
+  if (!card) return { kind: 'done', step: 0, course: null, certain: false };
+
+  const measures = cardMeasures(card, pctOf);
+  const after = stepsOf(card).filter((n) => n > target.step);
+  const step = after.find((n) => {
+    const m = measures.get(n);
+    return !m || m.pct === null || m.status !== 'clear';
+  });
+
+  if (typeof step === 'number') {
+    const m = measures.get(step);
+    return { kind: 'step', step, course: card, certain: !!m && m.pct !== null };
+  }
+
+  const later = cards.filter((c) => courseRank(c.slug) > courseRank(card.slug));
+  const next = nextCourse(later, (c) => sectionAvg(c, pctOf));
+  if (next) return { kind: 'course', step: 0, course: next, certain: true };
+  return { kind: 'done', step: 0, course: null, certain: true };
 }
