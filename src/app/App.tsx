@@ -84,6 +84,7 @@ const CoursesHome = lazy(() => import('../features/courses/CoursesHome'));
 const CoursePage = lazy(() => import('../features/courses/CoursePage'));
 const StepPage = lazy(() => import('../features/courses/StepPage'));
 const Workspace = lazy(() => import('../features/workspace/Workspace'));
+const CareerWorkspace = lazy(() => import('../features/career/CareerWorkspace'));
 
 type GroupKey = 'nav.pillars' | 'nav.tools' | 'nav.owner' | 'hidden';
 
@@ -218,6 +219,9 @@ export const NAV: NavItem[] = [
   // The learner workspace. Registered (so its label/icon exist for the palette and any card) but
   // not a rail row: the seven pillars stay seven, and the dashboard links it in the hero.
   { to: '/workspace', icon: LayoutDashboard, label: 'Workspace', group: 'hidden', sidebar: false },
+  // The CV view of the Career pillar: resume readiness, ATS checks and the next tick. A page under
+  // the pillar, not a ninth pillar — so it stays off the rail, like the learner workspace.
+  { to: '/career/workspace', icon: LayoutDashboard, label: 'Career Workspace', group: 'hidden', sidebar: false },
 ];
 
 /**
@@ -888,6 +892,7 @@ function Shell() {
               <Route path="/review" element={<Protect><ReviewPage /></Protect>} />
               <Route path="/progress" element={<Protect><ProgressPage /></Protect>} />
               <Route path="/workspace" element={<Protect><Workspace /></Protect>} />
+              <Route path="/career/workspace" element={<Protect><CareerWorkspace /></Protect>} />
               <Route path="/job-prep" element={<Protect><JobPrep /></Protect>} />
               <Route path="/notes" element={<Protect><NotesPage /></Protect>} />
               <Route path="/cheat-sheets" element={<Protect><CheatSheets /></Protect>} />

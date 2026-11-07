@@ -336,6 +336,7 @@ export const PATH_ROUTE_ALLOWLIST: string[] = [
   '/course/:slug',        // one course's step index — owned by the /courses grid
   '/course/:slug/:step',  // one step, 7 tabs — owned by its course
   '/workspace',           // the learner workspace: one course's plan, not a path card of its own
+  '/career/workspace',    // the Career pillar's CV view: resume readiness + ATS checks, not a new path
   '/pdf/:page',           // the guide's page-deep-link form of /pdf
   '/pdf/playbook/:page',  // …and the playbook's page-deep-link form of /pdf/playbook
   '/settings',            // setup, not a path
