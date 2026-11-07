@@ -457,3 +457,31 @@ test('courses: every courses.* string the screens use exists in BOTH language pa
     assert.ok(hiKeys.has(key), `Hinglish pack is missing "${key}"`);
   }
 });
+
+/* ------------------------------ the card meta ----------------------------- */
+
+test('courses: the card meta line wraps instead of overflowing a narrow card', () => {
+  const pages = read('src/styles/06-pages.css');
+  const mobile = read('src/styles/08-labs-and-mobile.css');
+
+  // The line is a wrapping row that may shrink: level + time + a variable-length needs clause.
+  const meta = pages.match(/\.cc-meta \{[^}]*\}/);
+  assert.ok(meta, 'the card meta line must be styled');
+  assert.match(meta[0], /flex-wrap: wrap/, 'a narrow card wraps the line instead of clipping it');
+  assert.match(meta[0], /min-width: 0/, 'the line must be allowed to shrink inside the card');
+
+  // Only the prerequisites have variable length, so only they get the break-inside-the-word rule.
+  assert.match(pages, /\.cc-needs \{[^}]*overflow-wrap: anywhere/,
+    'a long prerequisite name must wrap, not push the card wider');
+  assert.match(pages, /\.cc-meta > span:not\(\.cc-level\):not\(\.cc-needs\) \{ white-space: nowrap; \}/,
+    'the estimated time stays one token');
+  assert.match(pages, /@media \(max-width: 620px\) \{[^@]*?\.cc-needs \{ flex-basis: 100%; \}/,
+    'on a phone-width card the needs clause takes its own row');
+
+  // The legacy richer-card pill must not reach the simplified card: this layer loads after 06 and
+  // a bare `.cc-level` here used to override it with a white-only border and 4px padding.
+  assert.match(mobile, /\.cc-top \.cc-level \{/, 'the variant pill is scoped to its own top row');
+  assert.doesNotMatch(mobile, /^\.cc-level \{/m, 'no unscoped .cc-level may override the card pill');
+  assert.match(mobile, /\.course-card\.cc-simple \.cc-meta \{ margin-top: 0; \}/,
+    'the simplified card keeps the metadata tight under the name');
+});

@@ -832,14 +832,17 @@
 
 /* ---- course card additions ------------------------------------------------- */
 .cc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.cc-level {
+/* Scoped to the richer card's top row on purpose: this layer loads AFTER 06-pages.css, so a bare
+   `.cc-level` here overrode the simplified card's pill with a white-only border (invisible in the
+   light theme) and 4px padding. The simplified card keeps the 06 pill; this variant keeps its own. */
+.cc-top .cc-level {
   font-size: .62rem; font-weight: 800; letter-spacing: .06em;
   padding: 4px 7px; border-radius: 6px;
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.05);
   white-space: nowrap;
 }
-.cc-level.optional { opacity: .8; border-style: dashed; }
+.cc-top .cc-level.optional { opacity: .8; border-style: dashed; }
 .cc-desc { display: block; margin-top: 2px; line-height: 1.45; }
 .cc-prereq { display: inline-flex; align-items: center; gap: 4px; opacity: .72; margin-top: 2px; }
 .cc-opt {
@@ -904,10 +907,12 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 14px;
+  gap: 8px;
   min-height: 190px;
   padding: 18px 12px;
 }
+/* The metadata belongs to the name, not to the mark — it sits tight under it. */
+.course-card.cc-simple .cc-meta { margin-top: 0; }
 .course-card.cc-simple .cc-logo { width: 96px; height: 96px; border-radius: 20px; }
 .course-card.cc-simple .cc-logo img,
 .course-card.cc-simple .cc-logo .course-logo,
