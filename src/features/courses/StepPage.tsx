@@ -16,6 +16,10 @@ import {
   type CourseItem, type CourseTab, type PdfSource, pdfPages, pdfSourceOf,
 } from '../../core/learning/courses';
 import { STEPS, phaseOf } from '../../core/learning/roadmap';
+import {
+  stepBriefing, stepTutorContext, stepTutorPrompts, type StepScope,
+} from '../../core/ai/step-tutor';
+import { ScopeTutor } from '../../components/shared/ScopeTutor';
 import { NAV } from '../../app/App';
 import type { LocaleKey } from '../../app/i18n/locales';
 
@@ -144,6 +148,20 @@ export default function StepPage() {
 
   /** The learner's notes that belong to this step: written under one of its sections, or tagged with the course. */
   const notes = state.notes.filter((n) => (n.section && sectionSet.has(n.section)) || n.tags.includes(slug));
+
+  /**
+   * What the tutor is told: this step, from the roadmap's own authored fields. The title, goal and
+   * topics come from `STEPS` — the same record this page prints — so a prompt can only name content
+   * the step actually teaches. Nothing is fetched and nothing is invented.
+   */
+  const stepScope: StepScope = {
+    no,
+    title: meta?.title ?? `${t('courses.step')} ${no}`,
+    courseTitle: course.name,
+    goal: meta?.goal,
+    topics: meta?.topics,
+    route: `/course/${course.slug}/${no}?tab=${tab}`,
+  };
 
   const createNote = () => {
     upsertNote(newNote({
@@ -470,6 +488,16 @@ export default function StepPage() {
           </div>
         </>
       )}
+
+      {/* ------------------------------- tutor ------------------------------- */}
+      {/* The assistant already knows the app; this scope tells it which step, with the roadmap's
+          own goal and topics, so "explain this" can only mean the page in front of the learner. */}
+      <ScopeTutor
+        kind="step"
+        context={stepTutorContext(stepScope)}
+        prompts={stepTutorPrompts(stepScope)}
+        briefing={stepBriefing(stepScope)}
+      />
 
       {/* ------------------------------- footer ------------------------------ */}
       <div className={`card glow fadeup tone-${phase.tone}`} style={{ marginTop: 16 }}>

@@ -14,6 +14,8 @@ import { sectionProgress } from '../../core/learning/progress';
 import { portfolioTrio } from '../../core/learning/career';
 import { nextBuild, projectBriefs, projectSummary } from '../../core/learning/project-workspace';
 import type { ProjectBrief } from '../../core/learning/project-workspace';
+import { buildBriefing, buildTutorContext, buildTutorPrompts } from '../../core/ai/step-tutor';
+import { ScopeTutor } from '../../components/shared/ScopeTutor';
 import { Bar, ProgressRing } from '../../components/ui/ui';
 import { toast } from '../../components/ui/Toast';
 
@@ -187,6 +189,52 @@ export default function ProjectLab() {
                       {p.code && <pre className="codeblock">{p.code.slice(0, 900)}{p.code.length > 900 ? '\n# …' : ''}</pre>}
                       {p.output && <div className="small muted"><b>Expected output:</b> {p.output.slice(0, 120)}</div>}
                       {p.explanation && <p className="small muted">{p.explanation}</p>}
+
+                      {/* The same tutor as the step page, told which build is open: the files, the
+                          architecture, the done-when and the defense question all come from the
+                          brief above — nothing is summarised or invented. */}
+                      <ScopeTutor
+                        kind="build"
+                        context={buildTutorContext({
+                          name: p.name,
+                          sectionTitle: p.section,
+                          tier: p.tier,
+                          what: p.what,
+                          files: p.files,
+                          architecture: p.architecture,
+                          buildTarget: p.buildTarget,
+                          edgeCases: p.edgeCases,
+                          steps: p.steps,
+                          defenseQuestion: p.defenseQuestion,
+                          route: p.route,
+                        })}
+                        prompts={buildTutorPrompts({
+                          name: p.name,
+                          sectionTitle: p.section,
+                          tier: p.tier,
+                          what: p.what,
+                          files: p.files,
+                          architecture: p.architecture,
+                          buildTarget: p.buildTarget,
+                          edgeCases: p.edgeCases,
+                          steps: p.steps,
+                          defenseQuestion: p.defenseQuestion,
+                          route: p.route,
+                        })}
+                        briefing={buildBriefing({
+                          name: p.name,
+                          sectionTitle: p.section,
+                          tier: p.tier,
+                          what: p.what,
+                          files: p.files,
+                          architecture: p.architecture,
+                          buildTarget: p.buildTarget,
+                          edgeCases: p.edgeCases,
+                          steps: p.steps,
+                          defenseQuestion: p.defenseQuestion,
+                          route: p.route,
+                        })}
+                      />
                     </div>
                   )}
 

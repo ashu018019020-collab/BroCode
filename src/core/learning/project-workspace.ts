@@ -41,6 +41,8 @@ export interface ProjectBrief {
   what: string;
   files: string;
   architecture: string;
+  /** The authored definition of done — also the tutor's "Done when:" line. */
+  buildTarget: string;
   code: string;
   output: string;
   explanation: string;
@@ -131,6 +133,7 @@ export function projectBriefs(
         what: mini.what,
         files: mini.files,
         architecture: mini.architecture,
+        buildTarget: mini.buildTarget,
         code: mini.code,
         output: mini.output,
         explanation: mini.explanation,
@@ -164,6 +167,7 @@ export function projectBriefs(
         what: p.what,
         files: p.files,
         architecture: p.architecture,
+        buildTarget: p.buildTarget,
         code: p.code,
         output: '',
         explanation: p.followUp,

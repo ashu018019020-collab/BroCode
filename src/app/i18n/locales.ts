@@ -459,6 +459,11 @@ export const en = {
   'workspace.noMeasure': 'This step has no measure on the card — open the course and look at its steps.',
   'workspace.openCourse': 'Open course',
   'workspace.openWorkspace': 'Open workspace',
+  // The scoped tutor — the same assistant, told which step or build is on screen.
+  'tutor.scope.chip': 'TUTOR',
+  'tutor.scope.title': 'Ask the tutor about this step',
+  'tutor.scope.buildTitle': 'Ask the tutor about this build',
+  'tutor.scope.sub': 'Answers come from the material on this page — no invented steps.',
 };
 
 export type LocaleKey = keyof typeof en;
@@ -481,6 +486,10 @@ export const hinglish: Partial<Record<LocaleKey, string>> = {
   'workspace.noMeasure': 'Is step ka measure card par nahi hai — poora course kholo aur uske steps dekho.',
   'workspace.openCourse': 'Course kholo',
   'workspace.openWorkspace': 'Workspace kholo',
+  'tutor.scope.chip': 'TUTOR',
+  'tutor.scope.title': 'Is step par tutor se poocho',
+  'tutor.scope.buildTitle': 'Is build par tutor se poocho',
+  'tutor.scope.sub': 'Jawab is page ke material se aate hain — koi banana hua step nahi.',
   'acct.signedOut': 'Sign in nahi kiya',
   'acct.signInHint': 'Seekhne ke liye sign in karo',
   'acct.signIn': 'Sign in karo',
