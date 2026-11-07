@@ -1509,6 +1509,18 @@ the skill's share of the selected source, and how many of its questions are alre
 .course-meta { align-items: center; row-gap: 4px; }
 .course-meta .cc-level { font-size: .58rem; }
 .course-needs { min-width: 0; overflow-wrap: anywhere; }
+
+/* A project's authored build path, in reading order (files → architecture → done-when). The number
+   is the reading order, not a progress measure: `built` is the gate. */
+.pw-steps { display: grid; gap: 6px; margin-top: 6px; }
+.pw-step { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; }
+.pw-no {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  font-size: .6rem; font-weight: 800; color: var(--cyan);
+  border: 1px solid var(--border); background: var(--panel);
+}
+.pw-next { border-left: 3px solid var(--cyan); margin-top: 14px; }
 /* The course page's objectives — a short list, not a second subtitle. */
 .course-obj { margin-top: 12px; }
 .course-obj-list {
