@@ -66,6 +66,64 @@ export interface ProjectBrief {
   steps: ProjectStep[];
 }
 
+/**
+ * One section's defense gate, read from `st:<sid>:defense` — the record the lesson's own defense
+ * stage writes (`Lesson.tsx` scores it out of 100).
+ */
+export interface DefenseGate {
+  sid: string;
+  no: number;
+  section: string;
+  /** How many buildable projects the section owns (mini + Project Lab items). */
+  builds: number;
+  /** The gate record EXISTS — the same rule the build cards print, so a 40% defense is still "done". */
+  defended: boolean;
+  /** The stored score, or null when the defense was recorded without one. */
+  score: number | null;
+  route: string;
+}
+
+/**
+ * The ONE reading of a section's defense record. The build cards and the Defense page both call it,
+ * so a defense cannot read as done on one screen and pending on the other.
+ */
+export function defenseOf(
+  attempts: Record<string, Attempt>,
+  sid: string,
+): { defended: boolean; score: number | null } {
+  const record = attempts[stageAttempt(sid, 'defense')];
+  return { defended: !!record, score: record?.score ?? null };
+}
+
+/**
+ * Every section that owns a build, with the defense record its lesson stage stored.
+ *
+ * Sections with nothing to build are excluded rather than listed as "pending": a defense is only
+ * owed after a build, and a row for a section that never asked for one would be a denominator the
+ * curriculum does not have.
+ */
+export function buildDefenses(
+  sections: Section[],
+  attempts: Record<string, Attempt>,
+): DefenseGate[] {
+  const out: DefenseGate[] = [];
+  for (const s of sections) {
+    const builds = (s.mini?.what ? 1 : 0) + (s.projectLab ?? []).length;
+    if (!builds) continue;
+    const { defended, score } = defenseOf(attempts, s.id);
+    out.push({
+      sid: s.id,
+      no: s.no,
+      section: s.title,
+      builds,
+      defended,
+      score,
+      route: `/lesson/${s.id}/defense`,
+    });
+  }
+  return out;
+}
+
 export interface ProjectSummary {
   total: number;
   built: number;
@@ -117,8 +175,7 @@ export function projectBriefs(
   const out: ProjectBrief[] = [];
 
   for (const s of sections) {
-    const defended = !!attempts[stageAttempt(s.id, 'defense')];
-    const defenseScore = attempts[stageAttempt(s.id, 'defense')]?.score ?? null;
+    const { defended, score: defenseScore } = defenseOf(attempts, s.id);
 
     const mini = s.mini;
     if (mini?.what) {

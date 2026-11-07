@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { HubCrumb } from '../../components/learning/SectionChrome';
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ChevronRight, ShieldCheck } from 'lucide-react';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore, setState, addXp } from '../../core/storage/store';
 import { defenseScore, DEFENSE_QUESTIONS } from '../../core/assessment/evaluate';
 import { DEFENSE_PROJECTS } from '../../core/assessment/defense';
 import { resumeDefenseAnswer } from '../../core/platform/keys';
+import { buildDefenses } from '../../core/learning/project-workspace';
 import { ArchitectureDiagram } from '../../components/ui/ui';
 
 
@@ -22,6 +23,14 @@ export default function DefensePage() {
   const resumeSection = sections.find((s) => s.no === 29);
   const keyPoints = useMemo(() => resumeSection?.interview.slice(0, 4).map((q) => q.q) ?? [], [resumeSection]);
 
+  /**
+   * The per-section defense records, from the SAME reader the Project Lab uses (`defenseOf`): the
+   * gate is the stored `st:<sid>:defense` record, and its score is the one the lesson wrote. So a
+   * build marked defended on one screen cannot read as pending here.
+   */
+  const defenses = useMemo(() => buildDefenses(sections, state.attempts), [sections, state.attempts]);
+  const defendedCount = defenses.filter((d) => d.defended).length;
+
   const submitDefense = () => {
     const sc = defenseScore(answers);
     setScore(sc);
@@ -34,6 +43,34 @@ export default function DefensePage() {
       <HubCrumb hub="/interviews" hubLabel="Interview" page="Project Defense" />
       <h1>💼 Project Defense</h1>
       <p className="muted small">The PDF's capstone projects with pitches, architecture and a 10-question defense. Use only claims you can defend with evidence — never invent details under pressure.</p>
+
+      {/* Every build's defense, in curriculum order. This is the per-section record the Project
+          Lab prints — one reader (`defenseOf`), so the two screens cannot disagree. */}
+      <div className="sec-head"><h2><ShieldCheck size={16} color="var(--purple)" /> Build defenses</h2><span className="line" /></div>
+      <div className="card">
+        <div className="row spread small" style={{ marginBottom: 6, flexWrap: 'wrap', gap: 6 }}>
+          <span><b>{defendedCount}</b> / {defenses.length} build sections defended</span>
+          <span className="muted">Same record as the Project Lab</span>
+        </div>
+        {defenses.length === 0 && (
+          <p className="muted small" style={{ margin: 0 }}>
+            No section has a build yet — the capstone pitches below are still worth practising.
+          </p>
+        )}
+        {defenses.map((d) => (
+          <Link key={d.sid} className="q-row tone-purple" to={d.route}>
+            <span className="ic"><ShieldCheck size={14} /></span>
+            <span className="t">
+              {String(d.no).padStart(2, '0')} · {d.section}
+              <span className="small muted"> · {d.builds} {d.builds === 1 ? 'build' : 'builds'}</span>
+            </span>
+            {d.defended
+              ? <span className="chip easy">Defended{d.score !== null ? ` · ${d.score}%` : ''}</span>
+              : <span className="chip">Defense pending</span>}
+            <ChevronRight size={14} />
+          </Link>
+        ))}
+      </div>
 
       <div className="row" style={{ margin: '12px 0' }}>
         {DEFENSE_PROJECTS.map((p, i) => (

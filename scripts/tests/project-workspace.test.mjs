@@ -22,7 +22,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 /** Resolve from the project root: a bare relative specifier would resolve against scripts/tests. */
 const load = (p) => import(pathToFileURL(path.join(ROOT, p)).href);
 
-const { projectBriefs, nextBuild, projectSummary } = await load(
+const { projectBriefs, nextBuild, projectSummary, buildDefenses } = await load(
   'src/core/learning/project-workspace.ts',
 );
 
@@ -172,4 +172,42 @@ test('project workspace: the page renders the model instead of re-deriving the r
     /attempts\[stageKey\]\?\.done/,
     'the page must not read the gate as `.done` — a scored record would be dropped',
   );
+});
+
+test('project workspace: one defense record, read by both screens', () => {
+  const sections = [
+    section('s01', 1, { mini: mini(), projectLab: [lab()] }),
+    section('s02', 2),
+    section('s03', 3, { projectLab: [lab()] }),
+  ];
+  const gates = buildDefenses(sections, {
+    'st:s01:defense': { done: true, score: 82 },
+    'st:s03:defense': { score: 0 },
+  });
+
+  assert.deepEqual(gates.map((g) => g.sid), ['s01', 's03'], 'only sections that own a build appear');
+  assert.deepEqual(gates[0], {
+    sid: 's01',
+    no: 1,
+    section: 'Section 1',
+    builds: 2,
+    defended: true,
+    score: 82,
+    route: '/lesson/s01/defense',
+  });
+  assert.equal(gates[1].defended, true, 'a 0 score is still a stored gate record, exactly as the lab reads it');
+  assert.equal(gates[1].score, 0, 'and the real score is printed, not turned into "no score"');
+
+  // The lab's card flag and the page row come from the same helper, so they cannot drift.
+  const briefs = projectBriefs(sections, { 'st:s01:defense': { score: 82 } });
+  assert.equal(briefs[0].defended, gates[0].defended);
+  assert.equal(briefs[0].defenseScore, gates[0].score);
+});
+
+test('project workspace: the Defense page renders the shared build defenses', () => {
+  const page = fs.readFileSync(path.join(ROOT, 'src/features/interview/DefensePage.tsx'), 'utf8');
+  assert.match(page, /buildDefenses\(sections, state\.attempts\)/, 'the page reads the shared model');
+  assert.match(page, /Defense pending/, 'an open defense says so');
+  assert.match(page, /d\.score/, 'a defended section prints its stored score');
+  assert.match(page, /d\.route/, 'and links to that section\'s own defense stage');
 });
