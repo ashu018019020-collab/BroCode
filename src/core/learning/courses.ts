@@ -84,6 +84,29 @@ export interface CourseCounts {
   reference: number;
 }
 
+/** How deep in the plan a course sits. Authored, never inferred from its position. */
+export type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
+
+export const COURSE_LEVELS: CourseLevel[] = ['beginner', 'intermediate', 'advanced'];
+
+/**
+ * The plan metadata every course publishes with its card.
+ *
+ * Authored in `content/courses/courses.json`, validated by `scripts/courses.cjs` and re-checked on
+ * the published artifact by `course-audit.cjs`: a prerequisite that names no course, or one that
+ * comes later in the plan, is a course nobody can start. `minutes` is the estimated study time for
+ * the WHOLE course, not one step; `assessment` says what closes it.
+ */
+export interface CourseMeta {
+  level: CourseLevel;
+  /** Course slugs that come earlier in the plan; empty for an entry course. */
+  prerequisites: string[];
+  objectives: string[];
+  /** Estimated study minutes for the whole course. */
+  minutes: number;
+  assessment: string;
+}
+
 /** One course card: everything `index.json` carries (no items — those live in `<slug>.json`). */
 export interface CourseCard {
   slug: string;
@@ -91,6 +114,7 @@ export interface CourseCard {
   name: string;
   tone: string;
   logo: string;
+  meta: CourseMeta;
   steps: number[];
   /** sectionId → step, for the 29 curriculum sections this course owns. */
   sections: Record<string, number>;
@@ -133,6 +157,108 @@ export interface CourseFile extends CourseCard {
   /** Step number → curriculum-aware lab routes, derived from the authored course map. */
   lab_routes: Record<number, string[]>;
   items: CourseItem[];
+}
+
+/* ------------------------------ the course spine -------------------------- */
+
+/**
+ * Level → Chapter → Module → Lesson, DERIVED from the published items, never authored twice.
+ *
+ * The four names are the plan's own: LEVEL is the course, CHAPTER is the roadmap step it owns
+ * (`STEPS`, 1…36), MODULE is the curriculum section filed under that chapter, and LESSON is the
+ * `lesson` item that teaches it (a chapter that teaches no section keeps its overview lesson).
+ * Practice, question, interview, lab, project and reference items stay attached to their module as
+ * COUNTS — they are what you do with a lesson, not another level of it.
+ */
+export interface SpineLesson {
+  id: string;
+  title: string;
+  ref: CourseRef;
+}
+
+export interface SpineModule {
+  /** The curriculum section, or null for a chapter that teaches no section (a labs/playbook step). */
+  sectionId: string | null;
+  title: string;
+  lessons: SpineLesson[];
+  counts: CourseCounts;
+}
+
+export interface SpineChapter {
+  step: number;
+  title: string;
+  modules: SpineModule[];
+}
+
+export interface CourseSpine {
+  slug: string;
+  number: number;
+  level: CourseLevel;
+  chapters: SpineChapter[];
+}
+
+const emptyCounts = (): CourseCounts => ({
+  total: 0, lesson: 0, practice: 0, question: 0, interview: 0, lab: 0, project: 0, reference: 0,
+});
+
+/**
+ * Project a published course file onto the four-level spine.
+ *
+ * Chapters come from the items' own `chapter` numbers, so the spine cannot invent a step the course
+ * does not own; every item lands in exactly one chapter and one module, which is why the counts add
+ * up to the file's own item count. The chapter overview module (no section) sorts first, then the
+ * sections by id — the order the course page reads in.
+ */
+export function courseSpine(file: CourseFile): CourseSpine {
+  const byChapter = new Map<number, CourseItem[]>();
+  for (const item of file.items) {
+    const list = byChapter.get(item.chapter);
+    if (list) list.push(item);
+    else byChapter.set(item.chapter, [item]);
+  }
+
+  const chapters: SpineChapter[] = [];
+  for (const step of [...byChapter.keys()].sort((a, b) => a - b)) {
+    const items = [...byChapter.get(step)!].sort((a, b) => a.id.localeCompare(b.id));
+    const overview = items.find((item) => item.ref.kind === 'step');
+    const modules = new Map<string, SpineModule>();
+
+    for (const item of items) {
+      const sectionId = item.ref.kind === 'section' ? item.ref.id : (item.primary_section ?? null);
+      const key = sectionId ?? '';
+      let module = modules.get(key);
+      if (!module) {
+        const sectionLesson = sectionId
+          ? items.find((candidate) => candidate.ref.kind === 'section' && candidate.ref.id === sectionId)
+          : undefined;
+        module = {
+          sectionId,
+          title: sectionId ? (sectionLesson?.title ?? sectionId) : 'Chapter overview',
+          lessons: [],
+          counts: emptyCounts(),
+        };
+        modules.set(key, module);
+      }
+      module.counts.total += 1;
+      module.counts[item.type] += 1;
+      if (item.type === 'lesson') {
+        module.lessons.push({ id: item.id, title: item.title ?? item.id, ref: item.ref });
+      }
+    }
+
+    chapters.push({
+      step,
+      title: overview?.title ?? `Chapter ${step}`,
+      modules: [...modules.values()].sort((a, b) => {
+        if (a.sectionId === b.sectionId) return 0;
+        if (a.sectionId === null) return -1;
+        if (b.sectionId === null) return 1;
+        return a.sectionId.localeCompare(b.sectionId);
+      }),
+    });
+  }
+
+  return { slug: file.slug, number: file.number, level: file.meta.level, chapters };
 }
 
 /* --------------------------------- the tabs ------------------------------- */

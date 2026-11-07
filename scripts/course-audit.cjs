@@ -127,11 +127,41 @@ async function audit() {
   const gaps = Array.from({ length: 36 }, (_, i) => i + 1).filter((n) => !sorted.includes(n));
   const dupNo = sorted.filter((n, i) => i > 0 && sorted[i - 1] === n);
 
+  // The metadata is PUBLISHED data, so it is checked on the artifact and not only in the builder: a
+  // card that lost its `meta` (a stale generated file, a hand-edit) breaks the course page exactly
+  // the way a missing count would.
+  const LEVELS = ['beginner', 'intermediate', 'advanced'];
+  const levels = {};
+  const metaProblems = [];
+  let totalMinutes = 0;
+  for (const course of index.courses) {
+    const meta = course.meta;
+    if (!meta) { metaProblems.push(`${course.slug}: no metadata`); continue; }
+    if (!LEVELS.includes(meta.level)) metaProblems.push(`${course.slug}: unknown level ${meta.level}`);
+    if (!Array.isArray(meta.prerequisites)) {
+      metaProblems.push(`${course.slug}: prerequisites must be an array`);
+    } else {
+      for (const prerequisite of meta.prerequisites) {
+        const earlier = index.courses.find((candidate) => candidate.slug === prerequisite);
+        if (!earlier) metaProblems.push(`${course.slug}: prerequisite ${prerequisite} is not a course`);
+        else if (earlier.number >= course.number) metaProblems.push(`${course.slug}: prerequisite ${prerequisite} comes later in the plan`);
+      }
+    }
+    if (!Array.isArray(meta.objectives) || meta.objectives.length < 2) metaProblems.push(`${course.slug}: needs at least 2 objectives`);
+    if (!Number.isInteger(meta.minutes) || meta.minutes <= 0) metaProblems.push(`${course.slug}: minutes must be a positive integer`);
+    if (typeof meta.assessment !== 'string' || !meta.assessment.trim()) metaProblems.push(`${course.slug}: assessment is required`);
+    levels[meta.level] = (levels[meta.level] ?? 0) + 1;
+    totalMinutes += meta.minutes ?? 0;
+  }
+
   const report = {
     sourceItems: Object.entries(stats.families).reduce((sum, [, n]) => sum + n, 0),
     migratedItems: items,
     families: stats.families,
     courses: index.courses.length,
+    courseLevels: levels,
+    courseMinutes: totalMinutes,
+    metaProblems: metaProblems.length,
     indexEntries: items,
     indexRange: sorted.length ? `${sorted[0]}…${sorted[sorted.length - 1]}` : '-',
     indexGaps: gaps,
@@ -151,16 +181,18 @@ async function audit() {
   };
   report.brokenBefore = report.unresolvedRefs;
   report.brokenAfter = report.unresolvedRefs;
-  return { report, problems, unresolved, duplicates, orphans };
+  return { report, problems, unresolved, duplicates, orphans, metaProblems };
 }
 
-function print({ report, unresolved, duplicates, orphans }) {
+function print({ report, unresolved, duplicates, orphans, metaProblems }) {
   const line = (k, v) => console.log(`   ${String(k).padEnd(26)} ${v}`);
   console.log('\n— Course data audit (read-only) —\n');
   line('source items', report.sourceItems);
   line('migrated items', report.migratedItems);
   line('families', Object.entries(report.families).map(([k, v]) => `${k} ${v}`).join(' · '));
   line('courses', report.courses);
+  line('course metadata', `${report.courses - report.metaProblems}/${report.courses} complete · `
+    + `${Object.entries(report.courseLevels).map(([level, count]) => `${level} ${count}`).join(' · ')} · ${report.courseMinutes} min`);
   line('index entries', report.indexEntries);
   line('index range', report.indexRange);
   line('index gaps', report.indexGaps.length ? report.indexGaps.join(', ') : 'none');
@@ -188,6 +220,10 @@ function print({ report, unresolved, duplicates, orphans }) {
     console.log(`   first orphans:`);
     for (const item of orphans.slice(0, 10)) console.log(`     ${item.file} ${item.id} chapter ${item.chapter}`);
   }
+  if (metaProblems.length) {
+    console.log(`   metadata problems:`);
+    for (const problem of metaProblems.slice(0, 10)) console.log(`     ${problem}`);
+  }
   console.log('');
 }
 
@@ -197,7 +233,7 @@ async function main() {
   else print(result);
 
   const bad = result.report.unmappedItems + result.unresolved.length + result.duplicates.length + result.orphans.length
-    + result.report.indexGaps.length + result.report.indexDuplicates.length;
+    + result.report.indexGaps.length + result.report.indexDuplicates.length + result.report.metaProblems;
   if (bad > 0) {
     console.log(`\x1b[31m✕\x1b[0m ${bad} problem(s) — the course structure is not closed.\n`);
     process.exit(1);

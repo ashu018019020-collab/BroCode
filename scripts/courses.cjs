@@ -147,6 +147,64 @@ async function build() {
     if (!stepOwner.has(step)) problems.push(`step ${step} belongs to no course`);
   }
 
+  /* ---- 1b. the course spine's metadata: level, prerequisites, objectives, time, assessment ----
+   *
+   * Authored once per course and PUBLISHED with the card, because every consumer (the course page,
+   * Career, the AI tutor's plan) must describe a course the same way. Validated here rather than
+   * trusted: a prerequisite that names no course, or one that comes LATER in the plan, is a plan
+   * that cannot be followed — and a `minutes` of 0 is a number nobody measured.
+   */
+  const LEVELS = ['beginner', 'intermediate', 'advanced'];
+  const courseSlugs = new Set(courses.map((course) => course.slug));
+  const numberBySlug = new Map(courses.map((course) => [course.slug, course.number]));
+  const metaBySlug = new Map();
+
+  for (const course of courses) {
+    const meta = course.meta;
+    const where = `course ${course.slug}`;
+    if (!meta || typeof meta !== 'object') {
+      problems.push(`${where}: meta is required (level, prerequisites, objectives, minutes, assessment)`);
+      continue;
+    }
+    if (!LEVELS.includes(meta.level)) problems.push(`${where}: meta.level must be one of ${LEVELS.join(' / ')}`);
+
+    if (!Array.isArray(meta.prerequisites)) {
+      problems.push(`${where}: meta.prerequisites must be an array of course slugs`);
+    } else {
+      if (new Set(meta.prerequisites).size !== meta.prerequisites.length) problems.push(`${where}: meta.prerequisites repeats a course`);
+      for (const prerequisite of meta.prerequisites) {
+        if (prerequisite === course.slug) problems.push(`${where}: cannot require itself`);
+        else if (!courseSlugs.has(prerequisite)) problems.push(`${where}: prerequisite "${prerequisite}" is not a course slug`);
+        else if (numberBySlug.get(prerequisite) >= course.number) {
+          problems.push(`${where}: prerequisite "${prerequisite}" comes later in the plan, so it can never be met first`);
+        }
+      }
+    }
+
+    if (!Array.isArray(meta.objectives) || meta.objectives.length < 2) {
+      problems.push(`${where}: meta.objectives needs at least 2 entries`);
+    } else {
+      const seenObjective = new Set();
+      for (const objective of meta.objectives) {
+        if (typeof objective !== 'string' || !objective.trim()) problems.push(`${where}: every objective must be a non-empty string`);
+        else if (seenObjective.has(objective)) problems.push(`${where}: duplicate objective "${objective}"`);
+        else seenObjective.add(objective);
+      }
+    }
+
+    if (!Number.isInteger(meta.minutes) || meta.minutes <= 0) problems.push(`${where}: meta.minutes must be a positive integer`);
+    if (typeof meta.assessment !== 'string' || !meta.assessment.trim()) problems.push(`${where}: meta.assessment is required`);
+
+    // Fixed key order: the published JSON is byte-asserted against this builder.
+    metaBySlug.set(course.slug, {
+      level: meta.level,
+      prerequisites: [...(meta.prerequisites ?? [])],
+      objectives: [...(meta.objectives ?? [])],
+      minutes: meta.minutes,
+      assessment: meta.assessment,
+    });
+  }
+
   const labRoutesByCourse = new Map(courses.map((course) => [course.slug, {}]));
   for (const [rawStep, routes] of Object.entries(source.labRoutes ?? {})) {
     const step = Number(rawStep);
@@ -408,6 +466,7 @@ async function build() {
       name: course.name,
       tone: course.tone,
       logo: course.logo,
+      meta: metaBySlug.get(course.slug),
       steps: course.steps,
       sections: course.sections ?? {},
       lab_routes: labRoutesByCourse.get(course.slug),
@@ -427,6 +486,7 @@ async function build() {
       name: course.name,
       tone: course.tone,
       logo: course.logo,
+      meta: metaBySlug.get(course.slug),
       steps: course.steps,
       sections: course.sections ?? {},
       lab_routes: labRoutesByCourse.get(course.slug),
