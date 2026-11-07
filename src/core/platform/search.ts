@@ -11,7 +11,7 @@ export interface SearchItem {
 
 /** Every screen in the app, so Ctrl+K doubles as a command launcher. */
 export const PAGES: { title: string; detail: string; route: string }[] = [
-  { title: 'Dashboard', detail: 'Mission, next best action, progress', route: '/' },
+  { title: 'Home', detail: 'Mission, next best action, progress', route: '/' },
   { title: 'Start', detail: 'The front door — what this app is and where to begin', route: '/start' },
   { title: 'Courses', detail: '11 courses over the 36 roadmap steps, each with its own index', route: '/courses' },
   { title: 'C Programming', detail: '20 modules, GCC Code Bro, 40 labs, 15 projects, interview bank', route: '/c-programming' },
@@ -25,7 +25,7 @@ export const PAGES: { title: string; detail: string; route: string }[] = [
   { title: 'Interview Mode', detail: 'Answer aloud with structured feedback', route: '/interview-mode' },
   { title: 'Project Defense', detail: 'Explain your projects like an interview', route: '/defense' },
   { title: 'Code Playground', detail: 'Python IDE + AI tutor', route: '/playground' },
-  { title: 'Project Lab', detail: 'Mini and real projects with build steps', route: '/projects' },
+  { title: 'Projects', detail: 'Mini and real projects with build steps', route: '/projects' },
   { title: 'Question Bank', detail: 'Practice questions from every section, with self-grading', route: '/questions' },
   { title: 'Playbook V15', detail: 'Second source: 36 chapters, coding labs and mini projects, chapter-wise', route: '/playbook' },
   { title: 'Timed Exam', detail: 'Mock interview: timed paper, self-grade, file mistakes', route: '/exam' },
@@ -39,12 +39,32 @@ export const PAGES: { title: string; detail: string; route: string }[] = [
   { title: 'Final Assessment', detail: 'Everything, in one final gate', route: '/final-assessment' },
   { title: 'Mock Interviews', detail: 'Timed mock rounds with scoring', route: '/mock-interviews' },
   { title: 'Job Prep', detail: 'Application checklist and prep tracker', route: '/job-prep' },
-  { title: 'Progress', detail: 'Detailed analytics of your mastery', route: '/progress' },
+  { title: 'My Progress', detail: 'Detailed analytics of your mastery', route: '/progress' },
   { title: 'Notes', detail: 'Your own notes, tags and favourites', route: '/notes' },
   { title: 'Cheat Sheets', detail: 'Printable prompts built from the curriculum', route: '/cheat-sheets' },
   { title: 'PDF Reader', detail: 'The source book, bundled in the app', route: '/pdf' },
-  { title: 'Settings', detail: 'Language, motion, data export and import', route: '/settings' },
+  { title: 'Profile & Settings', detail: 'Language, motion, data export and import', route: '/settings' },
 ];
+
+/**
+ * The seven learner destinations, in rail order — the palette opens on these.
+ *
+ * Routes only: a label lives once, on its `PAGES` record above, so the palette and the sidebar can
+ * never disagree about what a place is called. `scripts/tests/nav-vocabulary.test.mjs` pins this
+ * list to the rail in `App.tsx`, because a second hand-written copy is exactly how the header came
+ * to say "Dashboard" for a page the rail called something else.
+ */
+export const QUICK_ROUTES = ['/', '/courses', '/practice', '/projects', '/career', '/progress', '/settings'] as const;
+
+/**
+ * The `PAGES` records behind `QUICK_ROUTES`, in the same order (a route nobody registered is
+ * skipped). The `pg:` id is minted HERE, next to the same id `searchAll` gives the page, so a
+ * component never has to spell a key family of its own.
+ */
+export const quickPages = () =>
+  QUICK_ROUTES.map((route) => PAGES.find((page) => page.route === route))
+    .filter((page): page is { title: string; detail: string; route: string } => !!page)
+    .map((page) => ({ id: `pg:${page.route}`, ...page }));
 
 const norm = (s: string) => (s ?? '').toLowerCase();
 

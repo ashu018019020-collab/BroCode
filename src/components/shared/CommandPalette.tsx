@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchItems, type SearchItem } from '../../core/platform/search';
+import { quickPages, searchItems, type SearchItem } from '../../core/platform/search';
 import { detailFor, kindOf, routeFor, searchBankIndex, type BankIndex } from '../../core/platform/searchindex';
 
 /** How many deep bank hits share the list with the curriculum results. */
@@ -28,18 +28,28 @@ export function CommandPalette({
   /** The merged list the keyboard walks: curriculum first (it is what the learner was browsing),
    *  then the deep bank hits, which carry their own route. */
   const rows = useMemo(
-    () => [
-      ...results.map((r) => ({ key: r.id, kind: r.kind, title: r.title, detail: r.detail, chip: r.page ? `p.${r.page}` : '', go: r.route })),
-      ...bankHits.map(({ row }) => ({
-        key: `bk:${row.id}`,
-        kind: kindOf(row),
-        title: row.text,
-        detail: detailFor(bank as BankIndex, row),
-        chip: 'Bank',
-        go: routeFor(row),
-      })),
-    ],
-    [results, bankHits, bank],
+    () => {
+      // With nothing typed the palette is a LAUNCHER: it opens on the rail's own seven destinations,
+      // in the rail's order and with the rail's names. A query takes the list over entirely, because
+      // then the learner is searching rather than choosing a door.
+      if (!q.trim()) {
+        return quickPages().map((page) => ({
+          key: page.id, kind: 'Page' as const, title: page.title, detail: page.detail, chip: '', go: page.route,
+        }));
+      }
+      return [
+        ...results.map((r) => ({ key: r.id, kind: r.kind, title: r.title, detail: r.detail, chip: r.page ? `p.${r.page}` : '', go: r.route })),
+        ...bankHits.map(({ row }) => ({
+          key: `bk:${row.id}`,
+          kind: kindOf(row),
+          title: row.text,
+          detail: detailFor(bank as BankIndex, row),
+          chip: 'Bank',
+          go: routeFor(row),
+        })),
+      ];
+    },
+    [q, results, bankHits, bank],
   );
 
   useEffect(() => { inputRef.current?.focus(); }, []);

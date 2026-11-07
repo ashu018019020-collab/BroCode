@@ -60,7 +60,8 @@ one way and behaves another.
 - **The app ships LIGHT, and the theme is decided in THREE places that must agree**: the product
   default in `src/core/storage/ui.ts`, the inline boot script in `index.html` (`<head>`, writes
   `data-theme` before the first paint so a light learner never sees a dark frame), and the CSS scope in
-  `styles.css`. They are kept in step by `scripts/tests/theme.test.mjs`, which also computes the WCAG
+  `src/styles/` (the layered stylesheet; `src/styles.css` is only the import manifest). They are kept in
+  step by `scripts/tests/theme.test.mjs`, which also computes the WCAG
   contrast of every light accent from the real stylesheet and fails below 4.6:1 — those accents are
   small bold text, so "it is only a stripe" is not true of them. A stored `{theme:'dark'}` with no
   `aiml:theme:choice` marker is the OLD default and resolves to light; a marked one is a real choice
@@ -243,7 +244,10 @@ one way and behaves another.
   sits on "Track load ho raha hai…" forever. Build every track link with `trackHref`
   (`src/core/learning/surfaces.ts`), take slugs from `public/generated/tracks/index.json` in scripts,
   and let `layout.test.mjs` / `surfaces.test.mjs` / `sitemap.test.mjs` (file-existence check) hold it.
-- The sidebar is 8 pillars + 4 tools; the pillar hubs (`/practice`, `/labs`, `/interviews`, `/career`)
+- The sidebar is seven learner pillars + six tools, plus an `OWNER` section rendered only for an
+  administrator (`NAV` group `nav.owner`, `/admin`); the header and the Ctrl+K launcher read the same
+  seven (`QUICK_ROUTES` in `core/platform/search.ts`), pinned by `nav-vocabulary.test.mjs`. The pillar
+  hubs (`/practice`, `/labs`, `/interviews`, `/career`)
   are *indexes over existing pages*, never merges — the underlying routes, engines and stored keys are
   unchanged, and `HubGrid` reads the same `EXTRA_PATHS` records `PathGrid` does.
 - 8 files import `NAV`/`TRACK_DEFS` **from `../app/App`** (`components/learning/PathGrid`,

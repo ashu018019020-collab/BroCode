@@ -679,15 +679,14 @@ function Shell() {
           <button className="side-btn" onClick={() => setDrawer(true)} aria-label={t('nav.menu')}><Menu size={17} /></button>
 
           <nav className="topbar-nav" aria-label="Main navigation">
-            {[
-              { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-              { to: '/courses', label: 'Courses', icon: BookOpen },
-              { to: '/projects', label: 'Projects', icon: FolderGit2 },
-              { to: '/questions', label: 'Quizzes', icon: ClipboardList },
-            ].map(({ to, label, icon: Icon, end }) => (
-              <NavLink key={to} to={to} end={end} className={({ isActive }) => `topbar-nav-link${isActive ? ' active' : ''}`}>
-                <Icon size={17} />
-                <span>{label}</span>
+            {/* The header is a window onto the rail, not a second navigation list. It renders the
+                seven pillars by REFERENCE, so a header link can never say something the sidebar
+                does not — and the destinations it no longer lists (Quizzes, for one) are still
+                reached exactly where they were: from Practice, the palette and the bank itself. */}
+            {NAV.filter((n) => n.group === 'nav.pillars').map((n) => (
+              <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => `topbar-nav-link${isActive ? ' active' : ''}`}>
+                <n.icon size={17} />
+                <span>{n.label}</span>
               </NavLink>
             ))}
           </nav>

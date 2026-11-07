@@ -389,9 +389,12 @@ test('layout: the redesigned header keeps search, focus, notifications and profi
   // the header keeps only navigation and utilities, and never a link that navigates to /login.
   assert.doesNotMatch(header, /topbar-account|topbar-signin|acct\.signIn|acct\.signOut/,
     'the header must not render account controls');
-  for (const [route, label] of [['/', 'Dashboard'], ['/courses', 'Courses'], ['/projects', 'Projects'], ['/questions', 'Quizzes']]) {
-    assert.match(app, new RegExp(`to: '${route.replace('/', '\\/')}', label: '${label}'`),
-      `the primary navigation must expose ${label} at ${route}`);
+  // The header is not a second navigation list any more: it renders the rail's own seven pillars,
+  // so a header link cannot say something the sidebar does not.
+  assert.match(header, /NAV\.filter\(\(n\) => n\.group === 'nav\.pillars'\)/, 'the header must render the rail pills');
+  assert.doesNotMatch(header, /\{ to: '\//, 'the header must not carry its own route/label array');
+  for (const label of ['Home', 'Courses', 'Practice', 'Projects', 'Career', 'My Progress', 'Profile & Settings']) {
+    assert.ok(app.includes(`label: '${label}'`), `the rail (the header's source) must name ${label}`);
   }
   assert.match(css, /:root\[data-theme='light'\] \.topbar,[\s\S]*?--glass-1: rgba\(10, 18, 35,/,
     'the header surface must remain dark in light mode');
