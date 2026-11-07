@@ -152,8 +152,21 @@
   .topbar .icon-btn, .topbar .side-btn, .topbar .side-btn-desk { width: 36px; height: 36px; }
   .topbar .profile-chip, .topbar .profile-chip .avatar { width: 36px; height: 36px; }
 }
-@media (max-width: 1180px) and (min-width: 781px) {
-  .topbar-nav-link:nth-child(n + 3) { display: none; }
+/*
+ * Seven destinations do not become two. From 1250px down to 901px there is no room for seven
+ * LABELS beside the search box and the utilities, so the row keeps every destination as an ICON:
+ * the label stays in the markup (a screen reader announces it, `title` shows it on hover) and only
+ * its paint is removed. The rule this replaced hid every pill from the third one on, which made
+ * five of the seven doors unreachable from the header at exactly the widths laptops use — the
+ * opposite of what a navigation fix should do.
+ */
+@media (max-width: 1250px) and (min-width: 901px) {
+  .topbar-nav-link { gap: 0; padding-inline: 8px; }
+  .topbar-nav-link > svg { display: block; }
+  .topbar-nav-link > span {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
 }
 @media (max-width: 900px) {
   .topbar { gap: 7px; min-height: 62px; padding: 7px 9px; }

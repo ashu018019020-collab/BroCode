@@ -684,7 +684,7 @@ function Shell() {
                 does not — and the destinations it no longer lists (Quizzes, for one) are still
                 reached exactly where they were: from Practice, the palette and the bank itself. */}
             {NAV.filter((n) => n.group === 'nav.pillars').map((n) => (
-              <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => `topbar-nav-link${isActive ? ' active' : ''}`}>
+              <NavLink key={n.to} to={n.to} end={n.to === '/'} title={n.label} className={({ isActive }) => `topbar-nav-link${isActive ? ' active' : ''}`}>
                 <n.icon size={17} />
                 <span>{n.label}</span>
               </NavLink>

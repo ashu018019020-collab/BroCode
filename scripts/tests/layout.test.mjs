@@ -402,6 +402,27 @@ test('layout: the redesigned header keeps search, focus, notifications and profi
     'the active route must have a dedicated highlighted treatment');
 });
 
+test('layout: the header keeps all seven pillars at laptop widths instead of hiding five', () => {
+  const app = read('src/app/App.tsx');
+  const start = app.indexOf('<nav className="topbar-nav"');
+  assert.ok(start > 0, 'the header navigation must exist');
+  const header = app.slice(start, app.indexOf('</nav>', start));
+  assert.match(header, /title=\{n\.label\}/, 'an icon-only pill must still name itself on hover');
+
+  // Hiding a destination is worse than shrinking it. The rule this replaced hid items 3+ from
+  // 781px to 1180px, which made five of the seven doors unreachable exactly on laptop screens.
+  assert.doesNotMatch(css, /\.topbar-nav-link:nth-child\(n \+ 3\)/, 'the header must not hide pillars by position');
+
+  const at = css.indexOf('@media (max-width: 1250px) and (min-width: 901px)');
+  assert.ok(at > 0, 'the laptop-width band must be explicit');
+  const band = css.slice(at, css.indexOf('@media', at + 10));
+  assert.match(band, /\.topbar-nav-link > svg \{ display: block; \}/,
+    'the icon carries the destination once the label is visually hidden');
+  assert.match(band, /\.topbar-nav-link > span \{[^}]*clip-path: inset\(50%\)/,
+    'the label is visually hidden, not removed — a screen reader still announces it');
+  assert.doesNotMatch(band, /display: none/, 'no destination may be dropped in the laptop band');
+});
+
 test('layout: header and navigation dock keep the dark glass treatment and raised AI control', () => {
   const chrome = css.slice(css.lastIndexOf('/* ---------- Header + navigation dock: dark glass chrome ---------- */'));
   assert.ok(chrome.length > 0, 'the scoped chrome refinements must remain identifiable');
@@ -688,8 +709,10 @@ test('layout: the footer replaces the brand with a live local Last Seen and floa
 
 test('layout: header and footer controls compact cleanly across desktop, tablet and mobile', () => {
   const app = read('src/app/App.tsx');
-  assert.match(css, /@media \(max-width: 1180px\) and \(min-width: 781px\)[\s\S]*?\.topbar-nav-link:nth-child\(n \+ 3\) \{ display: none; \}/,
-    'tablet header navigation must reduce density before the search and utility controls collide');
+  // The density cut is ICONS, not deletions: at laptop/tablet widths every destination stays in
+  // the header and only its label is visually hidden. Hiding items 3+ is what this replaced.
+  assert.match(css, /@media \(max-width: 1250px\) and \(min-width: 901px\) \{[^@]*?\.topbar-nav-link > span \{[^}]*?clip-path: inset\(50%\)/,
+    'laptop/tablet header navigation must reduce to icons before the search and utility controls collide, without dropping a destination');
   assert.match(css, /@media \(max-width: 780px\)[\s\S]*?\.topbar-nav, \.topbar-right \.quickmenu,[\s\S]*?\.topbar \.searchbox \{[\s\S]*?width: 30px; min-width: 30px;/,
     'mobile header must retain compact search and priority utility controls');
   assert.match(css, /@media \(max-width: 360px\)[\s\S]*?\.topbar-right \{ gap: 1px !important; \}[\s\S]*?width: 28px; min-width: 28px;/,
