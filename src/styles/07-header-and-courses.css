@@ -147,23 +147,27 @@
 }
 @media (max-width: 1080px) {
   .topbar-nav-link { padding-inline: 7px; }
-  .topbar-nav-link > svg { display: none; }
+  /* The icon is NOT hidden here. It used to be, with the 781–1250px band below switching it back on —
+     a cascade the two rules had to agree about, and the band lost that agreement the moment anyone
+     reordered a media query (an icon-less pill is then just padding). The band owns the treatment. */
   .topbar-right { gap: 6px !important; }
   .topbar .icon-btn, .topbar .side-btn, .topbar .side-btn-desk { width: 36px; height: 36px; }
   .topbar .profile-chip, .topbar .profile-chip .avatar { width: 36px; height: 36px; }
 }
 /*
  * Seven destinations do not become two — not at any width where the header still shows the rail.
- * From 1250px down to 781px there is no room for seven LABELS beside the search box and the
- * utilities, so the row keeps every destination as an ICON: the label stays in the markup (a screen
- * reader announces it, `title` shows it on hover) and only its paint is removed. The rule this
- * replaced hid every pill from the third one on between 781px and 1180px, which made five of the
- * seven doors unreachable from the header at exactly the widths laptops use — the opposite of what
- * a navigation fix should do. 781px is the floor because that is where the header hands the same
- * destinations over to the bottom dock and the drawer.
+ * Across 781–1180px (the laptop band this rule exists for) there is no room for seven LABELS beside
+ * the search box and the utilities, so the row keeps every destination as an ICON: the label stays in
+ * the markup (a screen reader announces it, `title` shows it on hover) and only its paint is removed.
+ * The rule this replaced hid every pill from the third one on in exactly that band, which made five of
+ * the seven doors unreachable from the header at the widths laptops use — the opposite of what a
+ * navigation fix should do. The icon is also a real hit target here (35×36px), not a 17px glyph, so
+ * seven doors stay usable on a touch laptop. 781px is the floor because that is where the header
+ * hands the same destinations over to the bottom dock and the drawer; 1250px is the ceiling because
+ * above it the full labels fit again.
  */
 @media (max-width: 1250px) and (min-width: 781px) {
-  .topbar-nav-link { gap: 0; padding-inline: 8px; }
+  .topbar-nav-link { gap: 0; padding-inline: 9px; min-width: 35px; min-height: 36px; }
   .topbar-nav-link > svg { display: block; }
   .topbar-nav-link > span {
     position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;

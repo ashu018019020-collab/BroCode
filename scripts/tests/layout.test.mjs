@@ -678,6 +678,23 @@ test('layout: the learner rail is exactly seven items, and the owner area is a s
   for (const route of bottomRoutes) assert.ok(pillars.includes(route), `${route} on the phone bar is not a pillar`);
 });
 
+test('layout: the header keeps all seven pillars between 781px and 1180px', () => {
+  const css = read('src/styles/07-header-and-courses.css');
+
+  // The rule this replaced hid every pill from the third one on in exactly this band, leaving five of
+  // the seven doors unreachable from the header at the widths laptops use. No header pill may ever be
+  // display:none again, and no rule may drop one by position:
+  assert.doesNotMatch(css, /\.topbar-nav-link[^{}]*\{[^{}]*display:\s*none/, 'a header pillar is never hidden');
+  assert.doesNotMatch(css, /topbar-nav-link:nth-child/, 'the band never drops a pillar by position');
+
+  const band = css.match(/@media \(max-width: 1250px\) and \(min-width: 781px\) \{([\s\S]*?)\n\}/);
+  assert.ok(band, 'the laptop band exists (781px is where the mobile dock takes over)');
+  assert.match(band[1], /\.topbar-nav-link > svg \{ display: block; \}/, 'every pillar keeps its icon');
+  assert.match(band[1], /min-width: 35px/, 'the icon-only pill stays a real hit target');
+  assert.match(band[1], /clip-path: inset\(50%\)/, 'the label stays in the markup for screen readers and title');
+  assert.doesNotMatch(band[1], /display:\s*none/, 'the band removes paint from the label, never a destination');
+});
+
 test('layout: the footer replaces the brand with a live local Last Seen and floating AI button', () => {
   const app = read('src/app/App.tsx');
   const start = app.indexOf('<footer className="statusbar"');
