@@ -47,7 +47,7 @@ const C_EMOJI = '⚙️';
  * accuracy tally the page already computed.
  */
 export default function CourseSections({
-  baseline, python, cModules, selected, course, track, answered = {}, cAnswered = {}, onPick, onPickTrack,
+  baseline, python, cModules, selected, course, track, answered = {}, accuracy = {}, cAnswered = {}, cCorrect = 0, onPick, onPickTrack,
 }: {
   baseline: number;
   python: PythonSectionRow[];
@@ -58,8 +58,19 @@ export default function CourseSections({
   track: string;
   /** Answers that exist per section id — the accuracy tally, not a click count. */
   answered?: Record<string, number>;
+  /**
+   * Graded answers per section id, and how many of them were right.
+   *
+   * `answered` alone cannot tell a learner who got everything right from one who got everything
+   * wrong, which is the figure this page exists to make visible. Accuracy is correct / GRADED —
+   * never correct / answered: an answer written but not graded yet is not a wrong one, and counting
+   * it in the denominator would drag the figure down for work the learner has not finished.
+   */
+  accuracy?: Record<string, { graded: number; correct: number }>;
   /** The same tally for C's MCQ sets, keyed by module id. */
   cAnswered?: Record<string, number>;
+  /** How many of C's answered MCQs were right — every pick is graded, so `cAnswered` is the denominator. */
+  cCorrect?: number;
   onPick: (course: CourseKey, id: string) => void;
   onPickTrack: (id: string) => void;
 }) {
@@ -82,6 +93,15 @@ export default function CourseSections({
 
   const questionsOf = (rows: PythonSectionRow[]) => rows.reduce((n, s) => n + s.published, 0);
   const answeredOf = (rows: PythonSectionRow[]) => rows.reduce((n, s) => n + (answered[s.sectionId] ?? 0), 0);
+  const gradedOf = (rows: PythonSectionRow[]) => rows.reduce((n, s) => n + (accuracy[s.sectionId]?.graded ?? 0), 0);
+  const correctOf = (rows: PythonSectionRow[]) => rows.reduce((n, s) => n + (accuracy[s.sectionId]?.correct ?? 0), 0);
+  /**
+   * Correct over GRADED, or null when nothing is graded.
+   *
+   * Null is the honest answer for a box nobody has graded: the box then says nothing about accuracy
+   * instead of printing "0%", which would read as "everything wrong".
+   */
+  const accPct = (graded: number, correct: number) => (graded > 0 ? Math.round((correct / graded) * 100) : null);
   /**
    * How much of a box the learner has actually answered, as a percentage.
    *
@@ -129,7 +149,7 @@ export default function CourseSections({
         onClick={() => onPickTrack(d.id)}
         data-agent-action={`qb:track:${d.id}`}
         aria-pressed={on}
-        title={`${name} — ${rows.length} lessons · ${questionsOf(rows)} questions · ${answeredOf(rows)} answered`}
+        title={`${name} — ${rows.length} lessons · ${questionsOf(rows)} questions · ${answeredOf(rows)} answered${accPct(gradedOf(rows), correctOf(rows)) !== null ? ` · ${accPct(gradedOf(rows), correctOf(rows))}% accuracy on ${gradedOf(rows)} graded` : ''}`}
       >
         <span className="cc-logo">
           <SubjectLogo id={d.id} name={name} size={72} />
@@ -152,6 +172,9 @@ export default function CourseSections({
             {answeredOf(rows) > 0
               ? `${pctOf(answeredOf(rows), questionsOf(rows))}% answered`
               : 'not started'}
+            {accPct(gradedOf(rows), correctOf(rows)) !== null && (
+              <> · <span className="qb-acc">{accPct(gradedOf(rows), correctOf(rows))}% accuracy</span></>
+            )}
           </span>
         </span>
       </button>
@@ -230,6 +253,9 @@ export default function CourseSections({
                 </span>
                 <span className="qb-progress-label">
                   {cDone > 0 ? `${pctOf(cDone, cQuestions)}% answered` : 'not started'}
+                  {accPct(cDone, cCorrect) !== null && (
+                    <> · <span className="qb-acc">{accPct(cDone, cCorrect)}% accuracy</span></>
+                  )}
                 </span>
               </span>
             </button>
@@ -246,7 +272,7 @@ export default function CourseSections({
                 <span className="small muted" style={{ display: 'block' }}>
                   {course === 'c'
                     ? `${cModules.length} modules · ${cQuestions} MCQs`
-                    : `${activeRows.length} lessons · ${questionsOf(activeRows)} questions${answeredOf(activeRows) > 0 ? ` · ${answeredOf(activeRows)} answered` : ''}`}
+                    : `${activeRows.length} lessons · ${questionsOf(activeRows)} questions${answeredOf(activeRows) > 0 ? ` · ${answeredOf(activeRows)} answered` : ''}${accPct(gradedOf(activeRows), correctOf(activeRows)) !== null ? ` · ${accPct(gradedOf(activeRows), correctOf(activeRows))}% accuracy` : ''}`}
                 </span>
               </span>
             </div>
@@ -282,7 +308,13 @@ export default function CourseSections({
                     >
                       <span className="mono small muted" style={{ flex: 'none' }}>{String(s.no).padStart(2, '0')}</span>
                       <span className="sec-name">{s.title}</span>
-                      {(answered[s.sectionId] ?? 0) > 0 && <span className="small muted">{answered[s.sectionId]} answered</span>}
+                      {(answered[s.sectionId] ?? 0) > 0 && (
+                        <span className="small muted">
+                          {answered[s.sectionId]} answered
+                          {accPct(accuracy[s.sectionId]?.graded ?? 0, accuracy[s.sectionId]?.correct ?? 0) !== null
+                            && ` · ${accPct(accuracy[s.sectionId]?.graded ?? 0, accuracy[s.sectionId]?.correct ?? 0)}%`}
+                        </span>
+                      )}
                       <span className={`chip ${incomplete ? 'medium' : 'easy'}`} title={incomplete ? 'CONTENT_INCOMPLETE — baseline not authored yet' : 'complete'}>
                         {pct}%
                       </span>

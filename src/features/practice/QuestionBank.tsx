@@ -183,6 +183,11 @@ export default function QuestionBank() {
     for (const m of cModules) out[m.id] = cQuizTally(state.attempts, m.id, m.mcqs.length).answered;
     return out;
   }, [cModules, state.attempts]);
+  /** C's right answers — every MCQ pick is graded (`done` true/false), so answered is the denominator. */
+  const cCorrectTotal = useMemo(
+    () => cModules.reduce((n, m) => n + cQuizTally(state.attempts, m.id, m.mcqs.length).correct, 0),
+    [cModules, state.attempts],
+  );
 
   // New section → reset view state so filters/answers never look stale.
   //
@@ -315,6 +320,15 @@ export default function QuestionBank() {
   const answeredBySection = useMemo(() => {
     const out: Record<string, number> = {};
     for (const [sid, a] of Object.entries(accBySection)) out[sid] = a.answered;
+    return out;
+  }, [accBySection]);
+  /**
+   * The same sections' graded/correct pair, so a box can print an accuracy instead of only a count.
+   * Taken from the one tally above: the box cannot disagree with the KPI card at the top of the page.
+   */
+  const accuracyBySection = useMemo(() => {
+    const out: Record<string, { graded: number; correct: number }> = {};
+    for (const [sid, a] of Object.entries(accBySection)) out[sid] = { graded: a.graded, correct: a.correct };
     return out;
   }, [accBySection]);
 
@@ -506,7 +520,9 @@ export default function QuestionBank() {
           course={course}
           track={track}
           answered={answeredBySection}
+          accuracy={accuracyBySection}
           cAnswered={cAnsweredByModule}
+          cCorrect={cCorrectTotal}
           onPick={pickCourse}
           onPickTrack={pickTrack}
         />
