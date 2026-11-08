@@ -10,7 +10,8 @@ import { StickyNote, BookMarked, Moon, Repeat, Settings as SettingsIcon } from '
 import { useCurriculum } from '../../core/data/curriculum';
 import { useStore } from '../../core/storage/store';
 import { useAuth } from '../../core/auth/AuthProvider';
-import { sectionProgress, currentSection, isMastered, nextBestAction, codingTasksDone, recentStageEvents } from '../../core/learning/progress';
+import { sectionProgress, currentSection, isMastered, nextBestAction, codingTasksDone, recentStageEvents, STAGE_META, type Stage } from '../../core/learning/progress';
+import { relativeParts } from '../../core/platform/last-seen';
 import { resumeTarget } from '../../core/learning/resume';
 import { dueReview, openMistakes } from '../../core/learning/review';
 import { bankAccuracy, pctText } from '../../core/assessment/accuracy';
@@ -74,7 +75,7 @@ export default function Dashboard() {
   const { sections } = useCurriculum();
   const state = useStore();
   const ui = useUi();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   // The local profile name, else the verified account's — never a seed value. See the hero heading.
   const { user } = useAuth();
   const greetingName = (state.profile.name || user?.name || '').trim();
@@ -144,10 +145,13 @@ export default function Dashboard() {
       at: ev.at,
       icon: MISSION_ICONS[ev.kind] ?? BookOpen,
       color: ev.kind === 'coding' ? 'var(--cyan)' : ev.kind === 'mini' || ev.kind === 'project' ? 'var(--violet)' : 'var(--green)',
-      label: `${ev.section.title} — ${ev.kind} ${ev.kind === 'read' ? '' : 'progress'}`.replace(/\s+/g, ' ').trim(),
+      // The stage's own label, never the stored key: the row used to read "… — learn progress"
+      // because `read` is not a stage name. `STAGE_META` owns the display name; this page only
+      // chooses the icon, the tone and the sentence.
+      label: `${ev.section.title} — ${t('dash.activityLine', { stage: STAGE_META[ev.kind as Stage]?.label ?? ev.kind })}`,
       to: `/lesson/${ev.section.id}/learn`,
     })),
-    [sections, state.attempts],
+    [sections, state.attempts, t],
   );
 
   const stage = mastered.length === 0 ? 1 : overall < 40 ? 2 : overall < 75 ? 3 : 4;
@@ -226,6 +230,23 @@ export default function Dashboard() {
       ? `/course/${courseTarget.slug}/${targetStepNo}?tab=lesson`
       : `/course/${courseTarget.slug}`;
 
+  /**
+   * How long ago, said in the learner's language. The bucket maths is `relativeParts` — the same
+   * function the header's last-seen line uses — so the two surfaces cannot disagree about when
+   * "just now" ends. This used to be an English-only helper on this page (`5m ago`).
+   */
+  const ago = (ts: number): string => {
+    const parts = relativeParts(ts, Date.now());
+    if (!parts) return '—';
+    if (parts.unit === 'now') return t('ago.justNow');
+    if (parts.unit === 'minute') return t('ago.minutes', { n: parts.value });
+    if (parts.unit === 'hour') return t('ago.hours', { n: parts.value });
+    if (parts.unit === 'yesterday') return t('ago.yesterday');
+    if (parts.unit === 'day') return t('ago.days', { n: parts.value });
+    return new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short' })
+      .format(parts.date as Date);
+  };
+
   return (
     <div className="dash-page">
       {/* 1 — HERO: identity on the left, LIVE numbers in the middle, the overall ring on the right. */}
@@ -275,7 +296,7 @@ export default function Dashboard() {
               <div className="snap tone-amber">
                 <span className="l">{t('dash.levelStreak')}</span>
                 <b>{streak}<small> {t('dash.days')}</small></b>
-                <span className="sub"><Flame size={11} /> Study streak</span>
+                <span className="sub"><Flame size={11} /> {t('dash.streakSub')}</span>
               </div>
               <div className="snap tone-green">
                 <span className="l">{t('top.level')} {level}</span>
@@ -324,11 +345,11 @@ export default function Dashboard() {
       <div className="sec-head"><h2>{t('dash.recommended')}</h2><span className="line" /></div>
       <div className="tile-grid">
         {[
-          { to: '/projects', icon: FolderGit2, label: 'Build a Project', sub: 'Project Lab', tag: 'Project', tone: 'violet' },
-          { to: '/labs', icon: Sparkles, label: 'Run a Lab', sub: 'Python · SQL · AI', tag: 'Lab', tone: 'cyan' },
-          { to: '/interviews', icon: Mic2, label: 'Mock Interview', sub: 'Answer, then defend', tag: 'Interview', tone: 'amber' },
-                  { to: '/career', icon: Award, label: 'Sharpen the Portfolio', sub: 'Bullets + pitch', tag: 'Career', tone: 'green' },
-          { to: '/career/workspace', icon: Briefcase, label: 'Review your CV', sub: 'Resume + ATS checks', tag: 'Career', tone: 'green' },
+          { to: '/projects', icon: FolderGit2, label: t('dash.recProject'), sub: t('dash.recProjectSub'), tag: t('dash.tagProject'), tone: 'violet' },
+          { to: '/labs', icon: Sparkles, label: t('dash.recLab'), sub: t('dash.recLabSub'), tag: t('dash.tagLab'), tone: 'cyan' },
+          { to: '/interviews', icon: Mic2, label: t('dash.recInterview'), sub: t('dash.recInterviewSub'), tag: t('dash.tagInterview'), tone: 'amber' },
+          { to: '/career', icon: Award, label: t('dash.recPortfolio'), sub: t('dash.recPortfolioSub'), tag: t('dash.tagCareer'), tone: 'green' },
+          { to: '/career/workspace', icon: Briefcase, label: t('dash.recCv'), sub: t('dash.recCvSub'), tag: t('dash.tagCareer'), tone: 'green' },
         ].map((r) => (
           <Link key={r.to} to={r.to} className="tile">
             <span className="ic"><r.icon size={17} /></span>
@@ -402,12 +423,12 @@ export default function Dashboard() {
                   className="course-chip tone-cyan"
                   data-agent-action="course:c-programming"
                   data-agent-label="C Programming"
-                  title={`C Programming — ${done}/${total} modules`}
+                  title={`C Programming — ${done}/${total} ${t('dash.modulesUnit')}`}
                 >
                   <CLogo size={28} />
                   <span className="dc-body">
                     <b>C Programming</b>
-                    <span className="dc-meta">{done}/{total} modules</span>
+                    <span className="dc-meta">{done}/{total} {t('dash.modulesUnit')}</span>
                   </span>
                   <ProgressRing pct={pct} size={30} />
                 </Link>
@@ -429,7 +450,7 @@ export default function Dashboard() {
         <div className="card fadeup">
           <div className="row spread">
             <h3 className="row" style={{ gap: 8 }}><Target size={17} color="var(--pink)" /> {t('dash.mission')}</h3>
-            <span className="chip"><CalendarCheck size={12} /> {new Date().toDateString().slice(0, 10)}</span>
+            <span className="chip"><CalendarCheck size={12} /> {new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', { weekday: 'short', day: '2-digit', month: 'short' }).format(new Date())}</span>
           </div>
           <p className="muted small">{t('dash.missionSub')}</p>
           {!mission.length && <p className="muted small">{t('dash.missionDone')}</p>}
@@ -442,7 +463,7 @@ export default function Dashboard() {
               <div key={m.id} className={`mission-row${isNext ? ' next' : ''}`}>
                 <span className="ic" style={{ color: isNext ? 'var(--green)' : 'var(--cyan)' }}><Icon size={16} /></span>
                 <span className="t">
-                  {isNext && <span className="chip easy" style={{ marginRight: 6 }}>NEXT</span>}
+                  {isNext && <span className="chip easy" style={{ marginRight: 6 }}>{t('dash.nextBadge')}</span>}
                   <b>{m.label}</b>
                 </span>
                 <span className="chip">{m.minutes} {t('dash.min')}</span>
@@ -592,11 +613,11 @@ export default function Dashboard() {
         {[
           { to: '/notes', icon: StickyNote, label: t('nav.notes'), sub: t('dash.toolsNotes'), tone: 'amber' },
           { to: '/cheat-sheets', icon: BookMarked, label: t('nav.cheats'), sub: t('dash.toolsResources'), tone: 'violet' },
-          { to: '/exam', icon: Timer, label: t('nav.exam'), sub: t('dash.toolsExam'), tone: 'cyan', badge: 'NEW' },
-          { to: '/playground', icon: Sparkles, label: 'AI Tutor', sub: t('dash.toolsTutor'), tone: 'cyan' },
-          { to: '/progress', icon: BarChart3, label: 'Progress', sub: t('dash.toolsProgress'), tone: 'green' },
+          { to: '/exam', icon: Timer, label: t('nav.exam'), sub: t('dash.toolsExam'), tone: 'cyan', badge: t('dash.badgeNew') },
+          { to: '/playground', icon: Sparkles, label: t('dash.toolsTutorTitle'), sub: t('dash.toolsTutor'), tone: 'cyan' },
+          { to: '/progress', icon: BarChart3, label: t('dash.toolsProgressTitle'), sub: t('dash.toolsProgress'), tone: 'green' },
           { to: '/job-prep', icon: Target, label: t('nav.jobprep'), sub: t('dash.toolsGoals'), tone: 'pink' },
-          { to: '/review', icon: Repeat, label: 'Review Queue', sub: t('dash.toolsReview'), tone: 'blue' },
+          { to: '/review', icon: Repeat, label: t('dash.toolsReviewTitle'), sub: t('dash.toolsReview'), tone: 'blue' },
           { to: '/settings', icon: SettingsIcon, label: t('top.settings'), sub: t('dash.toolsSettings'), tone: 'muted' },
         ].map((tile) => (
           <Link key={tile.to} to={tile.to} className={`tile tone-${tile.tone}`}>
@@ -614,7 +635,7 @@ export default function Dashboard() {
             <b>{t('top.focus')}</b>
             <span>{t('top.focusSub')}</span>
           </span>
-          <span className="badge" style={{ opacity: ui.focus ? 1 : .55 }}>{ui.focus ? 'ON' : 'OFF'}</span>
+          <span className="badge" style={{ opacity: ui.focus ? 1 : .55 }}>{ui.focus ? t('dash.focusOn') : t('dash.focusOff')}</span>
         </button>
       </div>
 
@@ -626,10 +647,3 @@ export default function Dashboard() {
   );
 }
 
-function ago(ts: number): string {
-  const s = Math.round((Date.now() - ts) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
-}
