@@ -296,7 +296,6 @@ export default function QuestionBank() {
   const gradedCount = bankPractised(state.attempts);
   const redo = bankRedo(state.mistakes);
   const redoPct = redo.open + redo.fixed > 0 ? Math.round((redo.open / (redo.open + redo.fixed)) * 100) : 0;
-  const shownPublished = useCountUp(manifest?.published ?? 0);
   const shownAccuracy = useCountUp(bankAcc.pct ?? 0);
   const shownGraded = useCountUp(gradedCount);
   const shownRedo = useCountUp(redo.open);
@@ -444,17 +443,13 @@ export default function QuestionBank() {
         you decide correct or wrong, and the app computes no score.
       </p>
 
-      {/* Four figures, four tones: each card publishes its own `--accent`, so the row reads as four
-          different measures instead of four copies of the same grey box. The rail along the bottom
+      {/* Three figures, three tones: each card publishes its own `--accent`, so the row reads as three
+          different measures instead of three copies of the same grey box. The rail along the bottom
           repeats the card's own number as a proportion — it is decoration for a figure already
-          printed, never a second, differently-computed claim. */}
+          printed, never a second, differently-computed claim. The bank's own size is deliberately NOT
+          one of these cards: it is content, not the learner's work, and the line above already prints
+          it — a four-slot row made the whole bank look like something the learner had done. */}
       <div className="stat-row qb-stats">
-        <div className="stat-card tone-cyan">
-          <div className="ic"><Database size={18} /></div>
-          <div><div className="n">{shownPublished}</div><div className="l">published questions</div></div>
-          {/* Full, because this figure IS the whole bank — not learner progress. */}
-          <i className="qb-meter" aria-hidden="true"><b style={{ width: '100%' }} /></i>
-        </div>
         {/* The one number the learner actually asks for: how right the answers are, in percent.
             It is real — correct self-grades over graded answers (engine/accuracy.ts). */}
         <div className="stat-card tone-green">
