@@ -1,9 +1,34 @@
+import { useEffect, useRef, useState } from 'react';
 import { useStore, setState, exportProgress, importProgress, defaultState } from '../../core/storage/store';
+import { DAILY_MINUTES, GOALS, LEVELS } from '../../core/learning/onboarding';
 import { LanguageToggle } from '../../components/ui/LanguageToggle';
 
 export default function SettingsPage() {
   const state = useStore();
   const p = state.profile;
+  /*
+   * The name is the one field that is TYPED, so it cannot write on every keystroke: `setState`
+   * re-serialises the whole progress record (measured at 1.18 MB and ~17 ms once the bank has been
+   * used) on every call. It is committed after a pause, on Enter, and on leaving the page.
+   */
+  const [name, setName] = useState(p.name);
+  const draft = useRef({ name, saved: p.name });
+  draft.current = { name, saved: p.name };
+  const commitName = (value: string) => setState((s) => (
+    s.profile.name === value ? s : { ...s, profile: { ...s.profile, name: value } }
+  ));
+
+  useEffect(() => {
+    if (name === p.name) return;
+    const timer = window.setTimeout(() => commitName(name), 400);
+    return () => window.clearTimeout(timer);
+  }, [name, p.name]);
+
+  // A typed name must survive leaving the page inside the debounce window too.
+  useEffect(() => () => {
+    const { name: typed, saved } = draft.current;
+    if (typed !== saved) setState((s) => ({ ...s, profile: { ...s.profile, name: typed } }));
+  }, []);
 
   return (
     <div>
@@ -19,21 +44,29 @@ export default function SettingsPage() {
         <h2>Profile</h2>
         <div className="grid2">
           <label className="small">Name
-            <input value={p.name} onChange={(e) => setState((s) => ({ ...s, profile: { ...s.profile, name: e.target.value } }))} />
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={() => commitName(name)}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitName(name); }}
+            />
           </label>
+          {/* The three pickers read the SAME lists onboarding offers (`core/learning/onboarding.ts`):
+              a duplicated array here once meant a new option could exist in onboarding and not in
+              Settings, where the select renders blank because no option carries the stored value. */}
           <label className="small">Goal
             <select value={p.goal} onChange={(e) => setState((s) => ({ ...s, profile: { ...s.profile, goal: e.target.value } }))}>
-              {['Programming & Software Development', 'AI & Machine Learning', 'Data Science & Analytics', 'Web Development', 'GenAI Engineering'].map((g) => <option key={g}>{g}</option>)}
+              {GOALS.map((g) => <option key={g}>{g}</option>)}
             </select>
           </label>
           <label className="small">Level
             <select value={p.level} onChange={(e) => setState((s) => ({ ...s, profile: { ...s.profile, level: e.target.value } }))}>
-              {['Beginner', 'Intermediate', 'Advanced'].map((g) => <option key={g}>{g}</option>)}
+              {LEVELS.map((g) => <option key={g}>{g}</option>)}
             </select>
           </label>
           <label className="small">Daily study time
             <select value={p.dailyMinutes} onChange={(e) => setState((s) => ({ ...s, profile: { ...s.profile, dailyMinutes: Number(e.target.value) } }))}>
-              {[30, 60, 90, 120].map((g) => <option key={g} value={g}>{g} min</option>)}
+              {DAILY_MINUTES.map((g) => <option key={g} value={g}>{g === 120 ? '120 min (2+ hours)' : `${g} min`}</option>)}
             </select>
           </label>
         </div>
@@ -82,11 +115,23 @@ export default function SettingsPage() {
           <button
             className="btn"
             style={{ borderColor: 'rgba(248,113,113,.5)', color: 'var(--red)' }}
-            onClick={() => { if (confirm('Reset ALL progress? Export first if unsure.')) setState(() => defaultState()); }}
+            onClick={() => {
+              if (confirm('Reset all course progress (XP, attempts, mistakes, study log, notes)? Export first if unsure.')) {
+                setState(() => defaultState());
+              }
+            }}
           >
-            Reset everything
+            Reset progress
           </button>
         </div>
+        {/* The reset writes `defaultState()`; it does not touch the device-local records that live
+            under their own keys (mentor transcript, mock reports, interview drafts, online-voice
+            consent). Saying "everything" made the button claim a sweep it never did. */}
+        <p className="small muted" style={{ margin: '8px 0 0' }}>
+          Reset clears this account&apos;s learning record only. Saved AI Mentor chats, mock-interview
+          reports, interview drafts and your voice consent are stored separately on this device and stay
+          where they are.
+        </p>
       </div>
 
       <div className="card">
