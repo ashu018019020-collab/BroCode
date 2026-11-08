@@ -93,6 +93,9 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
   /** 0 = no focus; otherwise one real curriculum section number. */
   const [focusSection, setFocusSection] = useState(0);
   const advancingRef = useRef(0);
+  // One Mistake Tracker row per question per round: pressing Check again (or Retry after a
+  // fallback) must not file the same weak answer over and over.
+  const filedMistakesRef = useRef<Set<string>>(new Set());
   const roundMinutes = minutesForQuestions(questionCount);
   const focus = focusSection > 0 ? [focusSection] : undefined;
 
@@ -261,6 +264,7 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
       toast(builtPlan.notes[0] ?? 'No question matches this selection. Choose another topic.', 'warning');
       return;
     }
+    filedMistakesRef.current = new Set();
     setPlan(builtPlan);
     setSession(createMockSession(builtPlan));
     setIndex(0);
@@ -293,7 +297,8 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
     setChecking(true);
     // A weak answer becomes a real revision task, filed under the section it came from. Authored
     // extras have no curriculum section to send the learner back to, so they are not filed.
-    if (question.sectionNo > 0 && rubric.overall !== null && rubric.overall < 60) {
+    if (question.sectionNo > 0 && rubric.overall !== null && rubric.overall < 60 && !filedMistakesRef.current.has(question.id)) {
+      filedMistakesRef.current.add(question.id);
       addMistake({
         section: question.sectionId,
         topic: question.sectionTitle,
@@ -634,7 +639,15 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
           </p>
           <h2 style={{ marginTop: 8 }}>{question.prompt}</h2>
           <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-            <button type="button" className="btn small" onClick={() => askQuestion(question)}><Volume2 size={12} /> Read question aloud</button>
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => askQuestion(question)}
+              disabled={!voice.supported.synthesis}
+              title={voice.supported.synthesis ? 'Read this question aloud' : 'This browser has no speech output — read the question on screen'}
+            >
+              <Volume2 size={12} /> Read question aloud
+            </button>
             {voice.speaking && (
               <button type="button" className="btn small" onClick={voice.stopSpeaking}><Square size={12} /> Stop speaking</button>
             )}
@@ -867,7 +880,9 @@ export function MockInterviewPanel({ initialPhase = 'setup' }: { initialPhase?: 
           <section className="card fadeup">
             <div className="row spread">
               <h2 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} /> Feedback for this answer</h2>
-              <span className="chip">{feedback.overall ?? 0}% overall</span>
+              <span className="chip">
+                {feedback.overall === null ? 'overall score unavailable' : `${feedback.overall}% overall`}
+              </span>
             </div>
             <div className="scoregrid" style={{ marginTop: 10 }}>
               <ScoreCell label="Technical correctness" value={feedback.technical} basis={feedback.basis.technical} />
