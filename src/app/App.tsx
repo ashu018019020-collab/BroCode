@@ -20,9 +20,13 @@ import { buildNotifications, unreadCount } from '../core/platform/notify';
 import { dueReview, openMistakes } from '../core/learning/review';
 import { studyStreak, today } from '../core/learning/study';
 import { formatLastSeen } from '../core/platform/last-seen';
-// Eager: the landing route, so the first paint has real content.
-import Dashboard from '../features/dashboard/Dashboard';
-// Lazy: every other route is code-split, keeping the initial bundle small.
+// Lazy: every route is code-split, keeping the initial bundle small.
+//
+// Dashboard used to be EAGER "so the first paint has real content", but `/` renders the Landing page
+// for a visitor — so every anonymous visit downloaded the whole learner dashboard it would never
+// show. The shell already paints a skeleton while the session restores, which is exactly the window
+// this chunk loads in.
+const Dashboard = lazy(() => import('../features/dashboard/Dashboard'));
 const ConceptHub = lazy(() => import('../features/learning/ConceptHub'));
 const Lesson = lazy(() => import('../features/learning/Lesson'));
 const Playground = lazy(() => import('../features/labs/Playground'));
