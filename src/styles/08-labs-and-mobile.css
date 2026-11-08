@@ -629,14 +629,30 @@
 .c-code pre { padding-top: 32px !important; }
 .c-code-try { position: absolute; top: 6px; right: 6px; }
 
-/* Question Bank section index: one box per course, each with its own mark and label, so a Python
-   section can never look like it belongs to C (or the other way round). */
-.qb-course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 12px; }
-.qb-course { border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: rgba(0, 0, 0, .18); min-width: 0; }
-.qb-course-head { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
-.qb-course-head .who { flex: 1; min-width: 0; }
-.qb-course-rows { display: grid; gap: 2px; }
-.qb-course .file-row { width: 100%; text-align: left; }
+/* Question Bank subject boxes: the course card's own design — mark, name, one quiet line of real
+   numbers — for the eight subjects, plus C Programming's. Each box holds only its own lessons, so a
+   Python lesson can never look like it belongs to C (or the other way round), and the open box's
+   list sits directly under the boxes: the index reads as the opened box's contents, not as another
+   card on the page. */
+.qb-tracks { margin-bottom: 12px; }
+/* The card is an `<a>` on the courses page and a `<button>` here (a box opens in place, it does not
+   navigate): a button inherits neither the font nor the text colour, and keeps its UA chrome. */
+.qb-track { font: inherit; color: inherit; text-align: center; cursor: pointer; position: relative; min-width: 0; }
+.qb-track.on {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent), var(--lift-strong);
+}
+.qb-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The emoji rides the mark's corner, so the name stays the card's one line of words. */
+.qb-track .cc-logo { position: relative; }
+.qb-emoji {
+  position: absolute; right: -4px; top: -4px; font-size: 1.05rem; line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .55));
+}
+.qb-index { border-top: 1px solid var(--border); padding-top: 10px; }
+.qb-index-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.qb-index-rows { display: grid; gap: 2px; margin-top: 8px; }
+.qb-index-rows .file-row { width: 100%; text-align: left; font: inherit; font-size: .82rem; }
 
 /* ---- the advanced code box: Playground-grade chrome around every editor ------ */
 /*

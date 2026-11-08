@@ -21,9 +21,15 @@ import { AssistantCard } from '../../components/shared/AssistantCard';
 import { useCAssessments, useCIndex } from '../../core/data/ccourse';
 import CourseSections, { type CourseKey } from './CourseSections';
 import CQuiz from './CQuiz';
+import { TRACK_DEFS } from '../../app/App';
+import { subjectsOf, type SubjectRange } from '../../core/learning/subjects';
 
 const EMPTY_FILTER: BankFilter = { type: 'all', difficulty: 'all', search: '', includeDrafts: false };
 const XP_PER_CORRECT = 2;
+
+/** The eight subject ranges, straight from the track registry — one owner, as the practice pillar.
+ *  A section's box is decided by `subjectsOf`, never by a second copy of the numbers. */
+const TRACK_RANGES: SubjectRange[] = TRACK_DEFS.map((d) => ({ id: d.id, from: d.from, to: d.to }));
 
 /**
  * How many rows of a stage group show before that group's own "Aur dikhao".
@@ -109,6 +115,9 @@ export default function QuestionBank() {
   const state = useStore();
   const [selected, setSelected] = useState<string | null>(() => urlParams().get('section'));
   const [course, setCourse] = useState<CourseKey>(() => (urlParams().get('course') === 'c' ? 'c' : 'python'));
+  // The open subject box. `?track=ml` deep-links one; without it the box follows the selected
+  // section (see the sync effect below), so a bare `?section=s23` still lands in Agentic AI's box.
+  const [track, setTrack] = useState<string>(() => urlParams().get('track') ?? 'python');
   const [cModuleId, setCModuleId] = useState<string | null>(() => urlParams().get('module'));
   const [filter, setFilter] = useState<BankFilter>(() => {
     // `?type=interview` — the Interview hub's "interview questions" card deep-links here with the
@@ -186,6 +195,37 @@ export default function QuestionBank() {
     setGroupShown({});
   }, [selected]);
 
+  /**
+   * The open box follows the section it opened with. A deep link can carry only `?section=s19`, and
+   * a lesson picked from the global subject search can live in a box that is not the open one — so
+   * the box is derived from the selection as well as clicked, instead of drifting out of sight of
+   * the lesson whose questions are showing below it.
+   */
+  useEffect(() => {
+    if (course === 'c') { setTrack('c'); return; }
+    const no = manifest?.sections.find((s) => s.sectionId === selected)?.no;
+    if (no === undefined) return;
+    const own = subjectsOf(no, TRACK_RANGES)[0]?.id;
+    if (own) setTrack(own);
+  }, [course, selected, manifest]);
+
+  /**
+   * Open a subject box: its own lessons list under the boxes, with the first of them loaded beside
+   * it (a box that opens onto an empty question panel reads as broken). A section that already
+   * belongs to the clicked box is left selected — the learner's place is not thrown away.
+   */
+  const pickTrack = (id: string) => {
+    if (id === 'c') {
+      setCourse('c');
+      setCModuleId((cur) => cur ?? cModules[0]?.id ?? null);
+      return;
+    }
+    setCourse('python');
+    setTrack(id);
+    const rows = (manifest?.sections ?? []).filter((s) => subjectsOf(s.no, TRACK_RANGES)[0]?.id === id);
+    if (!rows.some((s) => s.sectionId === selected)) setSelected(rows[0]?.sectionId ?? null);
+  };
+
   const attemptOf = (id: string) => state.attempts[bankAttempt(id)];
   const pickCourse = (next: CourseKey, id: string) => {
     setCourse(next);
@@ -260,6 +300,13 @@ export default function QuestionBank() {
    * answer was reported as a failure the learner never earned. `tally` already answers "graded",
    * "correct", and the share its percentage is built from — one source, one sentence.
    */
+  /** Answers per section id, for the subject boxes' own counts — from the tally above, not a recount. */
+  const answeredBySection = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const [sid, a] of Object.entries(accBySection)) out[sid] = a.answered;
+    return out;
+  }, [accBySection]);
+
   const secAcc = selected ? accBySection[selected] ?? null : null;
 
   const hasDrafts = useMemo(() => (bank ? bank.questions.some((q) => q.status !== 'PUBLISHED') : false), [bank]);
@@ -367,8 +414,9 @@ export default function QuestionBank() {
       <p className="muted small">
         Local content pack — <b>{manifest.published}</b> Python &amp; AI questions across <b>{manifest.sections.length}</b> sections,
         plus <b>{cQuestionCount}</b> C Programming MCQs across <b>{cModules.length}</b> modules.
-        Every question lives in its own course box, its section/module and its stage. Write an answer (it saves automatically) or open the
-        Code Bro for code, then grade yourself: you decide correct or wrong, and the app computes no score.
+        They sit in one box per subject — pick a subject and its own lessons open under the boxes; pick a lesson and its
+        questions open here. Write an answer (it saves automatically) or open the Code Bro for code, then grade yourself:
+        you decide correct or wrong, and the app computes no score.
       </p>
 
       {/* Four figures, four tones: each card publishes its own `--accent`, so the row reads as four
@@ -445,7 +493,10 @@ export default function QuestionBank() {
           cModules={cRows}
           selected={course === 'c' ? cModule?.id ?? cModuleId : selected}
           course={course}
+          track={track}
+          answered={answeredBySection}
           onPick={pickCourse}
+          onPickTrack={pickTrack}
         />
 
         {/* The bank itself — now the full width of the page. */}
