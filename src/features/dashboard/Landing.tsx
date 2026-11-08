@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, FlaskConical, ListChecks, Play, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, FlaskConical, ListChecks, Play, Sparkles, Code2, NotebookPen, Mic2, GraduationCap, FolderGit2 } from 'lucide-react';
 import { TRACK_DEFS } from '../../app/App';
 import { trackHref } from '../../core/learning/surfaces';
 import { AUTH_SIGN_IN_ACTION } from '../../core/ai/actions';
@@ -25,6 +25,11 @@ import { resumeTarget } from '../../core/learning/resume';
  *
  * Everything private is gone from it: no progress, no streak, no XP, no "continue learning". A
  * visitor must not be able to read another learner's data from the marketing page.
+ *
+ * The page answers four questions in order, and each band is a real link into the product rather
+ * than a claim about it: what this is (hero + figures), what I can learn (domains), where each part
+ * lives (pillars), how the loop works (four steps), what I actually open (the surfaces), and what a
+ * stranger reasonably asks next (FAQ). Nothing here promises a job, a salary or a user count.
  */
 const PILLARS: { to: string; label: string; sub: string }[] = [
   { to: '/courses', label: 'Courses', sub: '11 courses · the 36-step roadmap' },
@@ -34,6 +39,38 @@ const PILLARS: { to: string; label: string; sub: string }[] = [
   { to: '/interviews', label: 'Interview', sub: 'Mock + defense' },
   { to: '/career', label: 'Career', sub: 'Defense + job prep' },
   { to: '/progress', label: 'Progress', sub: 'Mastery analytics' },
+];
+
+/**
+ * The loop the product actually runs, in the order a learner meets it. Each step names the page it
+ * opens — a "how it works" band whose rows are not links is a diagram of nothing.
+ */
+const STEPS: { n: string; label: string; sub: string; to: string; icon: typeof BookOpen }[] = [
+  { n: '01', label: 'Learn the concept', sub: 'A numbered step with an objective, examples, line-by-line code and common mistakes.', to: '/courses', icon: BookOpen },
+  { n: '02', label: 'Practise it', sub: 'Graded questions from that exact section, with review and a mistake tracker.', to: '/practice', icon: ListChecks },
+  { n: '03', label: 'Build it', sub: 'Run the code in the browser, finish a lab, then ship a project step by step.', to: '/projects', icon: FolderGit2 },
+  { n: '04', label: 'Prove it', sub: 'Mock interviews, a project defense and a job-prep checklist that report real numbers.', to: '/interviews', icon: Mic2 },
+];
+
+/** The working surfaces, named the way the rail names them (one place, one name). */
+const SURFACES: { to: string; label: string; sub: string; icon: typeof BookOpen }[] = [
+  { to: '/playground', label: 'Code Playground', sub: 'A Python editor that runs in the browser, with error explanations and an AI coach.', icon: Code2 },
+  { to: '/notebooks', label: 'Code Bro Lab', sub: 'Notebook cells with a real kernel: run all, restart, and export your work.', icon: NotebookPen },
+  { to: '/labs', label: 'Labs', sub: 'Python, SQL, NumPy + Pandas, AI, RAG and agentic labs — datasets included.', icon: FlaskConical },
+  { to: '/ai-mentor', label: 'AI Mentor', sub: 'Ask about the lesson you are on, by voice or text, and get guided rather than handed the answer.', icon: Sparkles },
+];
+
+/**
+ * Honest answers only: what the product is, what it needs from you, and what it does not promise.
+ * The account answer is the same sentence the hero prints, because a visitor meets both.
+ */
+const FAQ: { q: string; a: string }[] = [
+  { q: 'Is BroCode free?', a: 'Yes. The courses, the practice bank and the labs are free to use. An account is required so your progress is saved to you rather than to this browser.' },
+  { q: 'Do I need an account?', a: 'Yes — an account is required to open courses, lessons, practice questions, labs and your progress. Creating one takes a minute.' },
+  { q: 'Do I need to install anything?', a: 'No. Python, SQL, the notebook and the editor run inside the page. The C course compiles on a connected compiler service and says so when it is not reachable.' },
+  { q: 'Does my progress follow me to another device?', a: 'Yes. Your progress snapshot is stored against your account, so signing in on a new device resumes where you stopped.' },
+  { q: 'Is there a Hinglish version?', a: 'Yes. The interface and the course names can switch between English and Hinglish from Profile & Settings.' },
+  { q: 'Will this get me a job?', a: 'It prepares you: real projects, interview practice, a project defense and a job-prep checklist. It does not promise or invent placements, and no employer is claimed as a partner.' },
 ];
 
 /**
@@ -90,7 +127,7 @@ export default function Landing() {
       <section className="card glow" style={{ padding: '26px 22px' }}>
         <div className="chip" style={{ marginBottom: 10 }}>BROCODE · COMPLETE TECHNOLOGY LEARNING PLATFORM</div>
         <h1 style={{ margin: '0 0 8px', fontSize: '1.9rem', lineHeight: 1.15 }}>
-          Learn Skills. Build Projects. Grow Your Career.
+          Learn. Practice. Build. Become job ready.
         </h1>
         <p className="muted small" style={{ margin: '0 0 16px', maxWidth: 640 }}>
           Interactive courses, hands-on practice, coding labs, real-world projects, interview
@@ -150,6 +187,63 @@ export default function Landing() {
           </Link>
         ))}
       </div>
+
+      {/* How the loop works — each row opens the page it names, so the band is a path, not a diagram. */}
+      <div className="sec-head"><h2>How BroCode works</h2><span className="line" /></div>
+      <div className="tile-grid">
+        {STEPS.map((s) => (
+          <Link key={s.n} to={s.to} className="tile">
+            <span className="ic"><s.icon size={16} /></span>
+            <span className="t" style={{ flex: 1, minWidth: 0 }}>
+              <b><span style={{ opacity: 0.6, fontVariantNumeric: 'tabular-nums' }}>{s.n}</span> · {s.label}</b>
+              <span>{s.sub}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      {/* The surfaces a learner actually opens, under the names the rail uses for them. */}
+      <div className="sec-head"><h2>Inside the platform</h2><span className="line" /></div>
+      <div className="tile-grid">
+        {SURFACES.map((s) => (
+          <Link key={s.to} to={s.to} className="tile">
+            <span className="ic"><s.icon size={16} /></span>
+            <span className="t" style={{ flex: 1, minWidth: 0 }}>
+              <b>{s.label}</b>
+              <span>{s.sub}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      {/* FAQ — native <details>, so it works with the keyboard and with no JavaScript of its own. */}
+      <div className="sec-head"><h2>Questions a beginner actually asks</h2><span className="line" /></div>
+      <div style={{ display: 'grid', gap: 8 }}>
+        {FAQ.map((f) => (
+          <details key={f.q} className="card" style={{ padding: '12px 14px' }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 600 }}>{f.q}</summary>
+            <p className="muted small" style={{ margin: '8px 0 0' }}>{f.a}</p>
+          </details>
+        ))}
+      </div>
+
+      <section className="card" style={{ padding: '18px 20px', marginTop: 16 }}>
+        <div className="row" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <GraduationCap size={18} color="var(--cyan)" aria-hidden="true" />
+          <b style={{ flex: 1, minWidth: 200 }}>
+            {signedIn ? 'Your next step is already picked.' : 'Start with the first course step — it is free once you sign in.'}
+          </b>
+          {signedIn ? (
+            <Link className="btn primary" to={resume.route} title={resume.reason}>
+              <Play size={14} /> Continue Learning
+            </Link>
+          ) : (
+            <Link className="btn primary" to="/login" state={{ from: '/courses' }}>
+              Create account <ArrowRight size={14} />
+            </Link>
+          )}
+        </div>
+      </section>
 
       <p className="small muted" style={{ marginTop: 14 }}>
         {signedIn
