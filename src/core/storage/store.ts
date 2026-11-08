@@ -399,7 +399,27 @@ export function takeAvatarNotice(): string | null {
   return notice;
 }
 
+/** Keeps only the finite numeric entries of a persisted map (see `importProgress`). */
+function numberMap(value: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return out;
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof v === 'number' && isFinite(v)) out[k] = v;
+  }
+  return out;
+}
+
 export async function importProgress(file: File) {
+  /**
+   * A progress export is one JSON document of counters; ours is about a megabyte at full bank use.
+   * Anything far past that is not an export, and parsing it would freeze the tab before the learner
+   * gets any answer at all — so it is refused by SIZE, with the number, before `JSON.parse` runs.
+   */
+  const IMPORT_MAX_BYTES = 8 * 1024 * 1024;
+  if (file.size > IMPORT_MAX_BYTES) {
+    const mb = (file.size / 1024 / 1024).toFixed(1);
+    throw new Error(`that file is ${mb} MB and a progress export is under 8 MB — nothing was changed`);
+  }
   const text = await file.text();
   const parsed = JSON.parse(text);
   if (typeof parsed !== 'object' || parsed === null || typeof parsed.attempts !== 'object' || parsed.attempts === null) throw new Error('Not a valid progress file (attempts missing)');
@@ -408,6 +428,34 @@ export async function importProgress(file: File) {
   for (const k of ['mistakes', 'bookmarks']) if (!Array.isArray(clean[k])) clean[k] = [];
   for (const k of ['attempts', 'review', 'interviewAnswers', 'defenseAnswers', 'savedCode', 'activity', 'study']) if (!clean[k] || typeof clean[k] !== 'object') clean[k] = {};
   if (!clean.profile || typeof clean.profile !== 'object') clean.profile = defaultState().profile;
+  if (!Array.isArray(clean.notes)) clean.notes = [];
+  if (!Array.isArray(clean.readNotifs)) clean.readNotifs = [];
+  /**
+   * The character maps are read as NUMBERS by every chart (`activity` → bar heights, `study` → the
+   * heat grid). A hand-edited or older file can carry a string there, which renders as `NaN%` and
+   * silently poisons totals, so the map is rebuilt from finite entries only.
+   */
+  for (const k of ['activity', 'study'] as const) clean[k] = numberMap(clean[k]);
+  /**
+   * Every profile field is read by a component that assumes its TYPE: `name.slice(...)` in the
+   * avatar initial, `goal` in a chip, `level` in the resume engine. React escapes strings, so this is
+   * not an injection fix — it is so a bad file cannot drop the whole app into its error boundary.
+   */
+  const base = defaultState().profile;
+  const incoming = clean.profile as Record<string, unknown>;
+  const text80 = (value: unknown) => (typeof value === 'string' ? value.slice(0, 80) : '');
+  const minutes = Number(incoming.dailyMinutes);
+  clean.profile = {
+    ...base,
+    name: text80(incoming.name),
+    goal: text80(incoming.goal) || base.goal,
+    level: text80(incoming.level) || base.level,
+    dailyMinutes: isFinite(minutes) && minutes > 0 ? Math.round(minutes) : base.dailyMinutes,
+    onboarded: incoming.onboarded === true,
+    // Carried through untyped on purpose: the avatar is not accepted from the file, it is CHECKED
+    // by `checkAvatar` on the very next line.
+    avatar: incoming.avatar as string | undefined,
+  };
   /**
    * The avatar is the ONE field in an imported file that is interpolated into markup rather than
    * counted, so it is the one field that has to be CHECKED instead of trusted. `checkAvatar` owns the
@@ -416,8 +464,8 @@ export async function importProgress(file: File) {
    * and never a reason to reject an otherwise valid progress file.
    */
   const avatar = checkAvatar(clean.profile.avatar);
-  clean.profile = { ...clean.profile };
-  if (avatar.ok) clean.profile.avatar = avatar.value;
+  const avatarOk = avatar.ok;
+  if (avatarOk) clean.profile.avatar = avatar.value;
   else {
     delete clean.profile.avatar;
     if (avatar.reason !== 'empty') avatarNotice = avatarRejection(avatar.reason);
