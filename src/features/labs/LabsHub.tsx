@@ -9,7 +9,8 @@ import { useCourseIndex } from '../../core/data/courses';
 import { useBankManifest } from '../../core/data/questions';
 import { useNotebooks, type NotebookMeta } from '../../core/data/notebooks';
 import { usePathCtx } from '../../core/data/paths';
-import { HubGrid } from '../../components/shared/HubGrid';
+import { HubGrid, pillarTone } from '../../components/shared/HubGrid';
+import { SurfaceLogo } from '../../components/shared/SurfaceLogo';
 import { notebookCellsRunFor } from '../../core/learning/coverage';
 import { EXTRA_PATHS } from '../../core/learning/paths';
 import { useCLabs } from '../../core/data/ccourse';
@@ -262,18 +263,24 @@ export default function LabsHub() {
       {!!notebooks?.length && (
         <>
           <div className="sec-head"><h2>All Code Bro</h2><span className="line" /></div>
-          <div className="tile-grid">
-            {notebooks.map((nb: NotebookMeta) => {
+          <div className="tile-grid tile-grid-pillar">
+            {notebooks.map((nb: NotebookMeta, i) => {
               const done = cellsRun(nb.file);
               const p = pct(done, nb.codeCells);
               return (
-                <Link key={nb.file} to={notebookHref(nb.file)} className="tile" data-agent-action={`lab:notebook:${nb.file}`}>
-                  <span className="ic"><BookOpen size={18} /></span>
-                  <span className="t" style={{ flex: 1, minWidth: 0 }}>
+                <Link
+                  key={nb.file}
+                  to={notebookHref(nb.file)}
+                  className={`tile tile-pillar ${pillarTone(i)}`}
+                  data-agent-action={`lab:notebook:${nb.file}`}
+                >
+                  <span className="ic"><SurfaceLogo id="notebook" size={26} /></span>
+                  <span className="t">
                     <b>{nb.title}</b>
-                    <span>{nb.topic} · {nb.codeCells} code cells{nb.section ? ` · ${nb.section.toUpperCase()}` : ''}</span>
+                    <span className="tile-facts">{nb.topic} · {nb.codeCells} code cells{nb.section ? ` · ${nb.section.toUpperCase()}` : ''}</span>
                     {p !== null && <span className="bar" style={{ marginTop: 6 }}><div style={{ width: `${p}%` }} /></span>}
                   </span>
+                  <ChevronRight size={16} className="muted" />
                 </Link>
               );
             })}

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Archive, ArrowRight, Dice5, ListChecks, Mic2, Play } from 'lucide-react';
+import { ArrowRight, ChevronRight, Dice5, Mic2, Play } from 'lucide-react';
 import { useI18n } from '../../app/i18n';
 import type { LocaleKey } from '../../app/i18n/locales';
 import { TRACK_DEFS } from '../../app/App';
@@ -12,7 +12,8 @@ import { subjectOf, type SubjectRange } from '../../core/learning/subjects';
 import {
   INTERVIEW_KINDS, KIND_BY_ID, kindCounts, kindProgress, lastInterviewTouch, SESSION_SIZES,
 } from '../../core/assessment/interview-room';
-import { HubGrid } from '../../components/shared/HubGrid';
+import { HubGrid, pillarTone } from '../../components/shared/HubGrid';
+import { SurfaceLogo } from '../../components/shared/SurfaceLogo';
 import { SubjectLogo } from '../../components/shared/SubjectLogo';
 import { Bar } from '../../components/ui/ui';
 
@@ -224,20 +225,22 @@ export default function InterviewsHub() {
       <HubGrid routes={ROUTES} />
 
       <div className="sec-head"><h2>Interview question banks</h2><span className="line" /></div>
-      <div className="tile-grid">
-        <Link to="/questions?type=interview" className="tile">
-          <span className="ic"><ListChecks size={18} /></span>
-          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+      <div className="tile-grid tile-grid-pillar">
+        <Link to="/questions?type=interview" className={`tile tile-pillar ${pillarTone(0)}`}>
+          <span className="ic"><SurfaceLogo id="questions" size={26} /></span>
+          <span className="t">
             <b>Interview questions</b>
-            <span>{manifest?.sections.reduce((a, s) => a + (s.byType.interview ?? 0), 0) ?? '…'} curated questions · every section</span>
+            <span className="tile-facts">{manifest?.sections.reduce((a, s) => a + (s.byType.interview ?? 0), 0) ?? '…'} curated questions · every section</span>
           </span>
+          <ChevronRight size={16} className="muted" />
         </Link>
-        <Link to="/playbook" className="tile">
-          <span className="ic"><Archive size={18} /></span>
-          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+        <Link to="/playbook" className={`tile tile-pillar ${pillarTone(1)}`}>
+          <span className="ic"><SurfaceLogo id="archive" size={26} /></span>
+          <span className="t">
             <b>Practice Archive</b>
-            <span>{ctx.playbook ? `${ctx.playbook.interview} interview items` : '…'} · written-answer drills</span>
+            <span className="tile-facts">{ctx.playbook ? `${ctx.playbook.interview} interview items` : '…'} · written-answer drills</span>
           </span>
+          <ChevronRight size={16} className="muted" />
         </Link>
       </div>
       <p className="small muted" style={{ marginTop: 8 }}>

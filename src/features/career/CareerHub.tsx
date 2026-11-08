@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, BookMarked, FlaskConical, FolderGit2, Mic2, Rocket } from 'lucide-react';
+import { ArrowRight, FolderGit2, Rocket } from 'lucide-react';
 import { useI18n } from '../../app/i18n';
 import type { LocaleKey } from '../../app/i18n/locales';
 import { TRACK_DEFS } from '../../app/App';
@@ -19,6 +19,7 @@ import {
   type CareerCounts, type PortfolioCard, type ReadinessState,
 } from '../../core/learning/career';
 import { HubGrid, pillarTone } from '../../components/shared/HubGrid';
+import { SurfaceLogo } from '../../components/shared/SurfaceLogo';
 import { Bar } from '../../components/ui/ui';
 
 /**
@@ -365,26 +366,26 @@ export default function CareerHub() {
       {/* The pillars this one is built ON: the labs that build the hands-on skill a role asks for,
           the interview/HR bank the readiness row drills from, and the archive of answer templates.
           Every count comes from the registry the linked page itself loads. */}
-      <div className="tile-grid" style={{ marginTop: 8 }}>
-        <Link to="/labs" className="tile">
-          <span className="ic"><FlaskConical size={18} /></span>
-          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+      <div className="tile-grid tile-grid-pillar" style={{ marginTop: 8 }}>
+        <Link to="/labs" className={`tile tile-pillar ${pillarTone(0)}`}>
+          <span className="ic"><SurfaceLogo id="code" size={26} /></span>
+          <span className="t">
             <b>Hands-on labs</b>
-            <span>{LAB_ROUTES.length} labs · {ctx.counts.notebookCells} notebook cells run</span>
+            <span className="tile-facts">{LAB_ROUTES.length} labs · {ctx.counts.notebookCells} notebook cells run</span>
           </span>
         </Link>
-        <Link to="/questions?type=interview" className="tile">
-          <span className="ic"><Mic2 size={18} /></span>
-          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+        <Link to="/questions?type=interview" className={`tile tile-pillar ${pillarTone(1)}`}>
+          <span className="ic"><SurfaceLogo id="interview" size={26} /></span>
+          <span className="t">
             <b>Interview + HR questions</b>
-            <span>{interviewQs === null ? 'bank pending' : `${interviewQs} curated questions`} · every section</span>
+            <span className="tile-facts">{interviewQs === null ? 'bank pending' : `${interviewQs} curated questions`} · every section</span>
           </span>
         </Link>
-        <Link to="/playbook" className="tile">
-          <span className="ic"><BookMarked size={18} /></span>
-          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+        <Link to="/playbook" className={`tile tile-pillar ${pillarTone(2)}`}>
+          <span className="ic"><SurfaceLogo id="archive" size={26} /></span>
+          <span className="t">
             <b>Practice Archive</b>
-            <span>{ctx.playbook ? `${ctx.playbook.methodAnswers} method answers` : '…'} · answer templates</span>
+            <span className="tile-facts">{ctx.playbook ? `${ctx.playbook.methodAnswers} method answers` : '…'} · answer templates</span>
           </span>
         </Link>
       </div>
