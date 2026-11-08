@@ -14,7 +14,7 @@ Measured 2026-10-05 with `curl` and the public GitHub API:
 
 | What | State | Evidence |
 | --- | --- | --- |
-| Canonical origin `https://ashu018019020-collab.github.io/BroCode/` | **404** | `curl` → `HTTP 404`; `/BroCode/sitemap.xml` 404; host-root `/robots.txt` 404 |
+| Canonical origin `https://mybrocode.vercel.app/` | **404** | `curl` → `HTTP 404`; `/BroCode/sitemap.xml` 404; host-root `/robots.txt` 404 |
 | GitHub Pages | **off** | `GET api.github.com/repos/ashu018019020-collab/BroCode` → `"has_pages": false` |
 | `package.json` `homepage` → `https://brocode-rouge.vercel.app` | **dead** | `curl` → `DEPLOYMENT_NOT_FOUND` ("The deployment could not be found on Vercel") |
 | Repo reachability | public, but bare | `"visibility": "public"`, `stars: 0`, `forks: 0`, `description: null`, `topics: []` |
@@ -87,7 +87,7 @@ are a permanent liability attached to the name.
 
 ## 4. The canonical trap — do not deploy to a third host
 
-Every crawl artifact currently names `https://ashu018019020-collab.github.io/BroCode/`:
+Every crawl artifact currently names `https://mybrocode.vercel.app/`:
 `index.html` (canonical, OG/Twitter, JSON-LD), `scripts/sitemap.cjs`'s `DEFAULT_BASE`, `public`
 (`sitemap.xml`, `robots.txt`). Meanwhile `package.json`'s `homepage` names a dead Vercel URL. If the
 app is next deployed somewhere *else* and nobody regenerates those files, the live pages tell Google
