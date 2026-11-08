@@ -1,7 +1,7 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { StickyNote, Plus, Trash2, Star, Search, Save, Eye, Pencil, Tag, Download } from 'lucide-react';
-import { useStore, upsertNote, deleteNote, toggleNoteFav, newNote } from '../../core/storage/store';
+import { useStore, upsertNote, deleteNote, toggleNoteFav, newNote, stateSnapshot } from '../../core/storage/store';
 import { useCurriculum } from '../../core/data/curriculum';
 import type { Note } from '../../types';
 import { toast } from '../../components/ui/Toast';
@@ -55,6 +55,84 @@ function renderMarkdown(src: string): ReactNode[] {
   return out;
 }
 
+interface NoteDraft { title: string; body: string; tags: string }
+
+const draftOf = (note: Note | undefined): NoteDraft => ({
+  title: note?.title ?? '',
+  body: note?.body ?? '',
+  tags: note?.tags.join(', ') ?? '',
+});
+
+/** "python, #sql," → ['python', 'sql'] — the same normalization every other note write used. */
+const tagsOf = (text: string) => text.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean);
+
+const SAVE_DEBOUNCE_MS = 400;
+
+/**
+ * The editor's text, held locally and committed on a debounce.
+ *
+ * It used to call `upsertNote` on every keystroke, and `setState` serializes the WHOLE state —
+ * notes, attempts, mistakes, ~1.18 MB at full bank use — and writes localStorage synchronously, so
+ * every letter cost a full JSON pass. 400 ms of idle is the trade `useSavedAnswer` already makes;
+ * the pending write is committed when the selection changes and when the page unmounts, so closing
+ * a tab mid-sentence still keeps what was typed.
+ */
+function useNoteDraft(note: Note | undefined) {
+  const noteId = note?.id ?? null;
+  const [draft, setDraft] = useState<NoteDraft>(() => draftOf(note));
+  const [saving, setSaving] = useState(false);
+  const draftRef = useRef(draft);
+  const scheduled = useRef<{ id: string; draft: NoteDraft } | null>(null);
+  const timer = useRef<number | undefined>(undefined);
+
+  /**
+   * Write the pending draft onto the note as it is stored NOW, not as it was when typing began —
+   * so changing the linked lesson meanwhile is not undone by the save. Only the three text fields
+   * travel: favourites and the lesson link are not the editor's to overwrite.
+   */
+  const flush = useCallback(() => {
+    if (timer.current !== undefined) { window.clearTimeout(timer.current); timer.current = undefined; }
+    const pending = scheduled.current;
+    scheduled.current = null;
+    if (!pending) return;
+    const base = stateSnapshot().notes.find((n) => n.id === pending.id);
+    if (!base) return; // the note was deleted — a flush must not resurrect it
+    const tags = tagsOf(pending.draft.tags);
+    const same = base.title === pending.draft.title
+      && base.body === pending.draft.body
+      && base.tags.length === tags.length && base.tags.every((t, i) => t === tags[i]);
+    if (same) return;
+    upsertNote({ ...base, title: pending.draft.title, body: pending.draft.body, tags });
+  }, []);
+
+  // A new selection is a new document: commit the old one, then load the new one's stored text.
+  useEffect(() => {
+    flush();
+    setSaving(false);
+    const next = draftOf(stateSnapshot().notes.find((n) => n.id === noteId));
+    draftRef.current = next;
+    setDraft(next);
+    // Keyed on the id alone: re-running on every store change would replace text still being typed
+    // with the last saved value.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noteId, flush]);
+
+  useEffect(() => () => flush(), [flush]);
+
+  const edit = useCallback((p: Partial<NoteDraft>) => {
+    if (!noteId) return;
+    const next = { ...draftRef.current, ...p };
+    draftRef.current = next;
+    setDraft(next);
+    setSaving(true);
+    scheduled.current = { id: noteId, draft: next };
+    if (timer.current !== undefined) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => { flush(); setSaving(false); }, SAVE_DEBOUNCE_MS);
+  }, [noteId, flush]);
+
+  return { draft, saving, edit, flush };
+}
+
 export default function NotesPage() {
   const state = useStore();
   const { sections } = useCurriculum();
@@ -65,6 +143,7 @@ export default function NotesPage() {
   const [preview, setPreview] = useState(false);
 
   const current: Note | undefined = state.notes.find((n) => n.id === sel);
+  const { draft, saving, edit, flush } = useNoteDraft(current);
   const allTags = useMemo(() => [...new Set(state.notes.flatMap((n) => n.tags))].sort(), [state.notes]);
 
   const list = useMemo(() => {
@@ -89,8 +168,22 @@ export default function NotesPage() {
     upsertNote({ ...current, ...p });
   };
 
+  /**
+   * Delete, then move on to the next visible note. Clearing the selection left the editor empty
+   * even when the learner still had notes left.
+   */
+  const remove = () => {
+    if (!current) return;
+    const next = list.find((n) => n.id !== current.id) ?? state.notes.find((n) => n.id !== current.id);
+    deleteNote(current.id);
+    setSel(next?.id ?? null);
+    setPreview(false);
+    toast('Note deleted.', 'info');
+  };
+
   const exportAll = () => {
-    const md = state.notes.map((n) => `# ${n.title || 'Untitled'}\n\n${n.tags.map((t) => `#${t}`).join(' ')}\n\n${n.body}\n`).join('\n---\n\n');
+    flush(); // an export must include text typed in the last debounce window
+    const md = stateSnapshot().notes.map((n) => `# ${n.title || 'Untitled'}\n\n${n.tags.map((t) => `#${t}`).join(' ')}\n\n${n.body}\n`).join('\n---\n\n');
     const blob = new Blob([md], { type: 'text/markdown' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -178,8 +271,8 @@ export default function NotesPage() {
             <div className="card">
               <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
                 <input
-                  value={current.title}
-                  onChange={(e) => patch({ title: e.target.value })}
+                  value={draft.title}
+                  onChange={(e) => edit({ title: e.target.value })}
                   placeholder="Note title…"
                   style={{ flex: 1, minWidth: 200, fontSize: '1rem', fontWeight: 650 }}
                   aria-label="Note title"
@@ -190,15 +283,15 @@ export default function NotesPage() {
                   <button className={`btn small ${current.fav ? 'primary' : ''}`} onClick={() => toggleNoteFav(current.id)} aria-pressed={current.fav}>
                     <Star size={12} /> {current.fav ? 'Favourite' : 'Add to favourites'}
                   </button>
-                  <button className="btn small danger" onClick={() => { deleteNote(current.id); setSel(null); toast('Note deleted.', 'info'); }}><Trash2 size={12} /> Delete</button>
+                  <button className="btn small danger" onClick={remove}><Trash2 size={12} /> Delete</button>
                 </div>
               </div>
 
               <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                 <span className="row small muted" style={{ gap: 5 }}><Tag size={12} /> Tags (comma-separated)</span>
                 <input
-                  value={current.tags.join(', ')}
-                  onChange={(e) => patch({ tags: e.target.value.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean) })}
+                  value={draft.tags}
+                  onChange={(e) => edit({ tags: e.target.value })}
                   placeholder="python, functions, interview"
                   style={{ flex: 1, minWidth: 180 }}
                   aria-label="Note tags"
@@ -219,8 +312,8 @@ export default function NotesPage() {
               ) : (
                 <textarea
                   rows={16}
-                  value={current.body}
-                  onChange={(e) => patch({ body: e.target.value })}
+                  value={draft.body}
+                  onChange={(e) => edit({ body: e.target.value })}
                   placeholder={'# Key idea\n- first point\n- second point\n\n```python\nprint("example")\n```'}
                   style={{ width: '100%', marginTop: 12, fontFamily: 'var(--mono)', fontSize: '.84rem' }}
                   aria-label="Note body"
@@ -228,8 +321,8 @@ export default function NotesPage() {
               )}
 
               <div className="row spread small muted" style={{ marginTop: 8 }}>
-                <span><Save size={12} /> Auto-save on — every keystroke is saved to localStorage.</span>
-                <span>{current.body.split(/\s+/).filter(Boolean).length} words</span>
+                <span role="status"><Save size={12} /> {saving ? 'Saving…' : 'Saved on this device — writes a moment after you stop typing.'}</span>
+                <span>{draft.body.split(/\s+/).filter(Boolean).length} words</span>
               </div>
             </div>
           )}

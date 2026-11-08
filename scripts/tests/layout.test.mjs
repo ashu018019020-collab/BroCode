@@ -367,6 +367,20 @@ test('layout: light mode keeps the console dark — code, notebook and answer su
   assert.doesNotMatch(read('src/features/tools/Notes.tsx'), /className="console"/, 'the Notes editor is not a console');
 });
 
+test('notes: the editor commits on a pause, not on every keystroke', () => {
+  const page = read('src/features/tools/Notes.tsx');
+  // Every store write serializes the whole state (~1.18 MB at full bank use) and writes
+  // localStorage synchronously, so an input must never call the store from its change handler.
+  // The lesson <select> may patch directly (a discrete choice); the text fields may not.
+  assert.doesNotMatch(page, /onChange=\{\(e\) => patch\(\{ (title|body|tags):/, 'typing must not write the store per keystroke');
+  assert.match(page, /window\.setTimeout\(\(\) => \{ flush\(\); setSaving\(false\); \}, SAVE_DEBOUNCE_MS\)/,
+    'the draft commits after a pause');
+  assert.match(page, /useEffect\(\(\) => \(\) => flush\(\), \[flush\]\)/, 'unmount flushes the pending write');
+  // Deleting used to clear the selection, leaving an empty editor with notes still on disk.
+  assert.match(page, /const next = list\.find\(\(n\) => n\.id !== current\.id\)/);
+  assert.match(page, /setSel\(next\?\.id \?\? null\)/);
+});
+
 test('layout: the redesigned header keeps search, focus, notifications and profile controls wired', () => {
   const app = read('src/app/App.tsx');
   assert.match(app, /Search courses, lessons, skills\.\.\./, 'the search capsule must show the requested prompt');
