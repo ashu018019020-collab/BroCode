@@ -87,6 +87,7 @@ const SKIPPED = {
  */
 const PRIVATE = {
   '/admin': 'the owner console — server-authorized, never advertised',
+  '/admin/content': 'the owner content console — server-authorized, never advertised',
   '/progress': 'the learner\'s own analytics — per-account data',
   '/notes': 'the learner\'s private notes',
   '/settings': 'per-account preferences, no public content',
