@@ -122,6 +122,15 @@ export default function Dashboard() {
   const mastered = sections.filter((s) => isMastered(s, state));
   const level = levelForXp(state.xp);
   const toNext = XP_PER_LEVEL - (state.xp % XP_PER_LEVEL);
+  /**
+   * The daily target is the learner's OWN answer from onboarding (or Settings), never a guessed 60.
+   * `study.today` is measured seconds, so the bar is a real ratio; a profile with no target (older
+   * stored state) gets `null` and the panel shows the studied time without inventing a denominator.
+   */
+  const dailyTarget = Math.max(0, Number(state.profile.dailyMinutes) || 0);
+  const targetPct = dailyTarget > 0
+    ? Math.min(100, Math.round((study.today / 60 / dailyTarget) * 100))
+    : null;
 
   const due = dueReview(state).length;
   const openMistakesList = openMistakes(state).length;
@@ -235,6 +244,13 @@ export default function Dashboard() {
               {t('dash.welcome')}{greetingName ? <> <span>{greetingName}.</span></> : null}
             </h1>
             <p className="muted small">{t('dash.journey')}</p>
+            {/* The goal the learner picked at onboarding, echoed back and one click from changing. */}
+            {state.profile.goal && (
+              <p className="muted small" style={{ margin: 0 }}>
+                {t('dash.yourGoal')}: <b>{state.profile.goal}</b>{' · '}
+                <Link to="/onboarding">{t('dash.editPlan')}</Link>
+              </p>
+            )}
             <div className="row dash-tags">
               <span className="dash-tag tone-violet"><Sparkles size={13} /> {t('dash.chip')}</span>
             </div>
@@ -274,6 +290,16 @@ export default function Dashboard() {
             <ProgressRing pct={overall} size={118} label={`${overall}%`} />
             <span className="muted small">{t('dash.overall')} · {sections.length} {t('dash.sectionsShort')}</span>
             <span className="chip">{state.xp} XP</span>
+            {/* Today against the learner's own daily target — both sides are real numbers. */}
+            {targetPct !== null && (
+              <div className="dash-target">
+                <span className="row spread small muted">
+                  <span>{t('dash.dailyTarget')}</span>
+                  <span>{formatDuration(study.today)} {t('dash.ofTarget', { n: dailyTarget })}</span>
+                </span>
+                <span className="snap-bar"><i style={{ width: `${targetPct}%` }} /></span>
+              </div>
+            )}
           </div>
         </div>
       </section>
