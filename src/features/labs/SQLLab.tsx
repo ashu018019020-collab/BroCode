@@ -25,12 +25,22 @@ export default function SQLLab() {
   const [q, setQ] = useState(state.savedCode[codeSlot.sqlLab] ?? EXAMPLES[0].q);
   const [res, setRes] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
+  /** Running is a real state: without it a double-click ran the query twice and nothing said "wait". */
+  const [busy, setBusy] = useState(false);
 
   const run = async () => {
+    if (busy) return;
+    setBusy(true);
     setErr(null); setRes(null);
-    const r = await runSQL(q, DATASETS.map(seedForSQL));
-    if (r.error) setErr(r.error); else setRes(r);
-    setState((s) => ({ ...s, savedCode: { ...s.savedCode, [codeSlot.sqlLab]: q } }));
+    try {
+      const r = await runSQL(q, DATASETS.map(seedForSQL));
+      if (r.error) setErr(r.error); else setRes(r);
+      setState((s) => ({ ...s, savedCode: { ...s.savedCode, [codeSlot.sqlLab]: q } }));
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
+    } finally {
+      setBusy(false);
+    }
   };
   const save = () => setState((s) => ({ ...s, savedCode: { ...s.savedCode, [codeSlot.sqlLab]: q } }));
 
@@ -82,7 +92,9 @@ export default function SQLLab() {
           />
         </Suspense>
       </div>
-      <button className="btn primary" style={{ margin: '8px 0' }} onClick={run}>▶ Run query <span className="kbd">Ctrl+↵</span></button>
+      <button className="btn primary" style={{ margin: '8px 0' }} onClick={run} disabled={busy} aria-busy={busy}>
+        {busy ? 'Running…' : '▶ Run query'} {!busy && <span className="kbd">Ctrl+↵</span>}
+      </button>
 
       {err && <pre className="codeblock" style={{ color: 'var(--red)' }}>{err}</pre>}
       {res && (

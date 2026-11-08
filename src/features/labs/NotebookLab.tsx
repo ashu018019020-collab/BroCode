@@ -57,6 +57,8 @@ export default function NotebookLab() {
   const [active, setActive] = useState<string | null>(null);
   const [nb, setNb] = useState<{ file: string; cells: NbCellSpec[] } | null>(null);
   const [failed, setFailed] = useState(false);
+  /** A retry counter: the fetch effect is keyed on `active`, so a re-fetch needs its own trigger. */
+  const [attempt, setAttempt] = useState(0);
 
   // Deep link first, then the first published notebook.
   useEffect(() => {
@@ -77,7 +79,7 @@ export default function NotebookLab() {
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d) => setNb({ file: active, cells: toSpecs(d) }))
       .catch(() => setFailed(true));
-  }, [active]);
+  }, [active, attempt]);
 
   const pick = (file: string) => {
     setActive(file);
@@ -149,7 +151,19 @@ export default function NotebookLab() {
         </aside>
 
         <main className="nb-main">
-          {failed && <div className="card" style={{ color: 'var(--red)' }}>Code Bro failed to load — check `public/notebooks/{active}`.</div>}
+          {failed && (
+            <div className="card" style={{ borderColor: 'rgba(248,113,113,.4)' }}>
+              <b>This notebook could not be loaded.</b>
+              <p className="small muted" style={{ margin: '4px 0 8px' }}>
+                It may not be cached on this device yet — reconnect once and retry. Nothing in your progress changed.
+              </p>
+              <div className="row">
+                <button className="btn small primary" onClick={() => setAttempt((a) => a + 1)}>Retry</button>
+                <button className="btn small" onClick={() => pick(manifest[0].file)}>Open the first file</button>
+              </div>
+              <p className="small muted" style={{ margin: '8px 0 0' }}>File: notebooks/{active}</p>
+            </div>
+          )}
           {!nb && !failed && <div className="card muted">Loading Code Bro…</div>}
           {nb && (
             <>

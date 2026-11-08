@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, lazy, Suspense } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useCallback, lazy, Suspense } from 'react';
 import { HubCrumb } from '../../components/learning/SectionChrome';
 import {
   Play, Square, RotateCcw, Copy, Save, FolderPlus, FilePlus2, Trash2, Bot,
@@ -93,16 +93,28 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
   const [hintLevel, setHintLevel] = useState(1);
   const [mistakeSaved, setMistakeSaved] = useState(false);
   const [newName, setNewName] = useState('');
-  const [pyReady, setPyReady] = useState(isPythonReady());
+  /**
+   * The runtime has THREE states, and the old two-state flag hid the third.
+   *
+   * `warmupPython()` can fail — an offline first visit whose service worker never cached
+   * `public/pyodide`, a blocked worker, a missing asset. Before, that left `pyReady` false and the
+   * chip said "Starting the Python runtime… 5–15s" forever: the learner waited for something that
+   * was never coming. `failed` is a real state with a Retry, and a run that fails while the runtime
+   * is still not up lands there too.
+   */
+  const [pyState, setPyState] = useState<'booting' | 'ready' | 'failed'>(isPythonReady() ? 'ready' : 'booting');
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   // Boot the in-browser Python runtime in the background so the first Run is instant.
+  const bootPython = useCallback(() => {
+    if (isPythonReady()) { setPyState('ready'); return; }
+    setPyState('booting');
+    warmupPython().then((ok) => setPyState(ok ? 'ready' : 'failed'));
+  }, []);
+
   useEffect(() => {
-    if (pyReady) return;
-    let alive = true;
-    warmupPython().then((ok) => { if (alive && ok) setPyReady(true); });
-    return () => { alive = false; };
-  }, [pyReady]);
+    if (!isPythonReady()) bootPython();
+  }, [bootPython]);
 
   const file = files.find((f) => f.name === openName) ?? files[0];
   const isPy = file?.name.endsWith('.py');
@@ -174,6 +186,9 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
       }
     } catch (e: any) {
       setOut({ ok: false, text: String(e?.message ?? e) });
+      // A run that cannot reach the runtime is the SAME failure the chip must report, not a
+      // silently "booting" state after the fact.
+      if (isPy && !isPythonReady()) setPyState('failed');
     }
     setBusy(false);
   };
@@ -344,9 +359,14 @@ function PlaygroundWorkspace({ workspaceKey }: { workspaceKey: string }) {
           <button className="btn" onClick={() => { setContent(saved ?? DEFAULT_FILES[0].content); setOut(null); }}><RotateCcw size={14} /> {t('pg.reset')}</button>
           <button className="btn" onClick={copyCode}><Copy size={14} /> {t('pg.copy')}</button>
           <button className="btn" onClick={save}><Save size={14} /> {t('pg.save')}</button>
-          {isPy && (pyReady
+          {isPy && (pyState === 'ready'
             ? <span className="chip easy">✓ Python ready</span>
-            : <span className="chip">Starting the Python runtime… 5–15s the first time</span>)}
+            : pyState === 'failed'
+              ? <span className="row" style={{ gap: 6 }}>
+                  <span className="chip hard">Python runtime unavailable on this device</span>
+                  <button className="btn small" onClick={bootPython}>Retry</button>
+                </span>
+              : <span className="chip">Starting the Python runtime… 5–15s the first time</span>)}
         </div>
 
         {/* PROGRAM INPUT */}
