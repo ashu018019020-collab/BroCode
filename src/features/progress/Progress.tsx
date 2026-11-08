@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { HubCrumb } from '../../components/learning/SectionChrome';
 import {
   Percent, Clock, Flame, Trophy, Camera, Trash2, Plus, BookOpenCheck, CalendarRange, Activity,
@@ -158,8 +159,13 @@ export default function ProgressPage() {
   const best = useMemo(() => topDays(study, 1)[0] ?? null, [study]);
 
   const todaySeconds = study[tKey] ?? 0;
-  const target = Math.max(15, state.profile.dailyMinutes || 60);
-  const targetPct = Math.round((Math.min(target * 60, todaySeconds) / (target * 60)) * 100);
+  // The learner's own target, or no denominator at all — the same rule the Dashboard uses. A guessed
+  // 60 minutes here made this page print "Today 0m / 60m target" with a 0% ring for a profile that
+  // never set one, which reads as a missed goal the learner never had.
+  const dailyTarget = Math.max(0, Number(state.profile.dailyMinutes) || 0);
+  const targetPct = dailyTarget > 0
+    ? Math.min(100, Math.round((todaySeconds / 60 / dailyTarget) * 100))
+    : null;
 
   const overall = Math.round(sections.reduce((a, s) => a + sectionProgress(s, state).masterPct, 0) / Math.max(1, sections.length));
   const bank = bankAccuracy(state);
@@ -247,10 +253,19 @@ export default function ProgressPage() {
         </div>
 
         <div className="dash-target">
-          <ProgressRing pct={targetPct} size={104} label={`Today ${formatDuration(todaySeconds)} / ${target}m target`} />
-          <div className="small muted" style={{ textAlign: 'center', marginTop: 4 }}>
-            Today {formatDuration(todaySeconds)} / {target}m target
-          </div>
+          {targetPct !== null ? (
+            <>
+              <ProgressRing pct={targetPct} size={104} label={`Today ${formatDuration(todaySeconds)} / ${dailyTarget}m target`} />
+              <div className="small muted" style={{ textAlign: 'center', marginTop: 4 }}>
+                Today {formatDuration(todaySeconds)} / {dailyTarget}m target
+              </div>
+            </>
+          ) : (
+            <div className="small muted" style={{ textAlign: 'center', maxWidth: 170, margin: '0 auto' }}>
+              <b>{formatDuration(todaySeconds)}</b> studied today · no daily target set.{' '}
+              <Link to="/onboarding" className="small">Set one in your plan</Link>
+            </div>
+          )}
           <div className="row small muted" style={{ gap: 6, justifyContent: 'center', marginTop: 6, flexWrap: 'wrap' }}>
             <span className="chip"><Flame size={11} /> {streak}-day streak</span>
             <span className="chip">Next level: {toNextLevel} XP</span>
