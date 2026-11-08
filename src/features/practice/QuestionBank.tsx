@@ -19,6 +19,7 @@ import { bankPractised } from '../../core/learning/coverage';
 import { JupyterNotebook } from '../../components/code/JupyterNotebook';
 import { AssistantCard } from '../../components/shared/AssistantCard';
 import { useCAssessments, useCIndex } from '../../core/data/ccourse';
+import { cQuizTally } from '../../core/learning/ccourse';
 import CourseSections, { type CourseKey } from './CourseSections';
 import CQuiz from './CQuiz';
 import { TRACK_DEFS } from '../../app/App';
@@ -30,6 +31,7 @@ const XP_PER_CORRECT = 2;
 /** The eight subject ranges, straight from the track registry — one owner, as the practice pillar.
  *  A section's box is decided by `subjectsOf`, never by a second copy of the numbers. */
 const TRACK_RANGES: SubjectRange[] = TRACK_DEFS.map((d) => ({ id: d.id, from: d.from, to: d.to }));
+
 
 /**
  * How many rows of a stage group show before that group's own "Aur dikhao".
@@ -172,6 +174,15 @@ export default function QuestionBank() {
   const cQuestionCount = cModules.reduce((n, m) => n + m.mcqs.length, 0);
   /** The index rows carry only a count; the full MCQ list stays with `CQuiz`. */
   const cRows = useMemo(() => cModules.map((m) => ({ ...m, questions: m.mcqs.length })), [cModules]);
+  /**
+   * C's answered count per module, read from the quiz's own attempt records (`cquiz:`) — the same tally
+   * the practice hub prints, so the C box's progress rail cannot disagree with the hub's figure.
+   */
+  const cAnsweredByModule = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const m of cModules) out[m.id] = cQuizTally(state.attempts, m.id, m.mcqs.length).answered;
+    return out;
+  }, [cModules, state.attempts]);
 
   // New section → reset view state so filters/answers never look stale.
   //
@@ -495,6 +506,7 @@ export default function QuestionBank() {
           course={course}
           track={track}
           answered={answeredBySection}
+          cAnswered={cAnsweredByModule}
           onPick={pickCourse}
           onPickTrack={pickTrack}
         />

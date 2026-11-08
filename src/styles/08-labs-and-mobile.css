@@ -649,6 +649,14 @@
   position: absolute; right: -4px; top: -4px; font-size: 1.05rem; line-height: 1;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .55));
 }
+/* The learner's own work on a subject box: a quiet rail under the plan line, plus the figure it
+   draws. Scoped here (not `.qb-meter`, which is the stat row's own absolute rail) because a course
+   card is a column of centred children — the bar is a child, not an overlay. */
+.qb-progress-block { display: grid; gap: 4px; width: 100%; max-width: 176px; margin-top: 2px; }
+.qb-progress { display: block; height: 4px; border-radius: 999px; background: var(--line-soft); overflow: hidden; }
+.qb-progress i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .3s ease; }
+.qb-progress-label { font-size: .64rem; color: var(--muted-foreground); }
+@media (prefers-reduced-motion: reduce) { .qb-progress i { transition: none; } }
 .qb-index { border-top: 1px solid var(--border); padding-top: 10px; }
 .qb-index-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .qb-index-rows { display: grid; gap: 2px; margin-top: 8px; }

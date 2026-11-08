@@ -47,7 +47,7 @@ const C_EMOJI = '⚙️';
  * accuracy tally the page already computed.
  */
 export default function CourseSections({
-  baseline, python, cModules, selected, course, track, answered = {}, onPick, onPickTrack,
+  baseline, python, cModules, selected, course, track, answered = {}, cAnswered = {}, onPick, onPickTrack,
 }: {
   baseline: number;
   python: PythonSectionRow[];
@@ -58,6 +58,8 @@ export default function CourseSections({
   track: string;
   /** Answers that exist per section id — the accuracy tally, not a click count. */
   answered?: Record<string, number>;
+  /** The same tally for C's MCQ sets, keyed by module id. */
+  cAnswered?: Record<string, number>;
   onPick: (course: CourseKey, id: string) => void;
   onPickTrack: (id: string) => void;
 }) {
@@ -80,10 +82,21 @@ export default function CourseSections({
 
   const questionsOf = (rows: PythonSectionRow[]) => rows.reduce((n, s) => n + s.published, 0);
   const answeredOf = (rows: PythonSectionRow[]) => rows.reduce((n, s) => n + (answered[s.sectionId] ?? 0), 0);
+  /**
+   * How much of a box the learner has actually answered, as a percentage.
+   *
+   * The denominator is the box's own published questions, so the figure means "of what this box
+   * holds, this much is done" — never a share of the whole bank, which would read as progress on a
+   * subject the learner has not opened. Clamped at 100: an answer is one per question, but a bank
+   * that shrinks between imports must not print 104%.
+   */
+  const pctOf = (done: number, total: number) => (total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0);
 
   const activeTrack = TRACK_DEFS.find((d) => d.id === track) ?? TRACK_DEFS[0];
   const activeRows = rowsByTrack.get(activeTrack.id) ?? [];
   const cQuestions = cModules.reduce((n, m) => n + m.questions, 0);
+  /** C's own tally, keyed by module id — the same rail, so the one course box is not a gap. */
+  const cDone = cModules.reduce((n, m) => n + (cAnswered[m.id] ?? 0), 0);
 
   const total = questionsOf(python) + cQuestions;
 
@@ -116,7 +129,7 @@ export default function CourseSections({
         onClick={() => onPickTrack(d.id)}
         data-agent-action={`qb:track:${d.id}`}
         aria-pressed={on}
-        title={`${name} — ${rows.length} lessons · ${questionsOf(rows)} questions`}
+        title={`${name} — ${rows.length} lessons · ${questionsOf(rows)} questions · ${answeredOf(rows)} answered`}
       >
         <span className="cc-logo">
           <SubjectLogo id={d.id} name={name} size={72} />
@@ -127,6 +140,19 @@ export default function CourseSections({
           <span className="cc-level">{rows.length} {rows.length === 1 ? 'lesson' : 'lessons'}</span>
           <span>{questionsOf(rows)} questions</span>
           {needed && <span className="cc-needs">Needs: {t(needed.nameKey as LocaleKey)}</span>}
+        </span>
+        {/* The learner's own work on this box, quiet under the plan line: a rail plus the figure it
+            draws. A box nobody has touched says so in words instead of showing a 0% rail that looks
+            like a broken measure. */}
+        <span className="qb-progress-block">
+          <span className="qb-progress" aria-hidden="true">
+            <i style={{ width: `${pctOf(answeredOf(rows), questionsOf(rows))}%` }} />
+          </span>
+          <span className="qb-progress-label">
+            {answeredOf(rows) > 0
+              ? `${pctOf(answeredOf(rows), questionsOf(rows))}% answered`
+              : 'not started'}
+          </span>
         </span>
       </button>
     );
@@ -197,6 +223,14 @@ export default function CourseSections({
               <span className="cc-meta">
                 <span className="cc-level">{cModules.length} modules</span>
                 <span>{cQuestions} questions</span>
+              </span>
+              <span className="qb-progress-block">
+                <span className="qb-progress" aria-hidden="true">
+                  <i style={{ width: `${pctOf(cDone, cQuestions)}%` }} />
+                </span>
+                <span className="qb-progress-label">
+                  {cDone > 0 ? `${pctOf(cDone, cQuestions)}% answered` : 'not started'}
+                </span>
               </span>
             </button>
           </div>
