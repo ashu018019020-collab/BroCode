@@ -531,4 +531,10 @@ test('courses: the course page and both cards read one plan metadata', () => {
     'the page wraps both clauses at a word boundary');
   assert.doesNotMatch(pages, /\.course-(needs|assessment) \{[^}]*overflow-wrap: anywhere/,
     'the page no longer chops words that fit');
+
+  // Exactly ONE rule may target the assessment clause. The block rule the removed objectives panel
+  // left behind matched the same class name and quietly restyled the header span with its own
+  // margin and font size — a second rule is that bug coming back.
+  assert.equal((pages.match(/\.course-assessment \{/g) ?? []).length, 1,
+    'the assessment clause is styled by exactly one rule');
 });
