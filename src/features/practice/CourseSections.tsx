@@ -103,6 +103,14 @@ export default function CourseSections({
    */
   const accPct = (graded: number, correct: number) => (graded > 0 ? Math.round((correct / graded) * 100) : null);
   /**
+   * Which band an accuracy figure falls in, so a weak subject is visible before its number is read.
+   *
+   * The cut-offs are the app's existing mastery gates — 75% ready, 40% building
+   * (`core/learning/career.ts`) — reused here instead of inventing a second pair of thresholds:
+   * two surfaces teaching two different ideas of "good" is how the word stops meaning anything.
+   */
+  const accBand = (pct: number) => (pct >= 75 ? 'strong' : pct >= 40 ? 'mid' : 'weak');
+  /**
    * How much of a box the learner has actually answered, as a percentage.
    *
    * The denominator is the box's own published questions, so the figure means "of what this box
@@ -117,6 +125,7 @@ export default function CourseSections({
   const cQuestions = cModules.reduce((n, m) => n + m.questions, 0);
   /** C's own tally, keyed by module id — the same rail, so the one course box is not a gap. */
   const cDone = cModules.reduce((n, m) => n + (cAnswered[m.id] ?? 0), 0);
+  const cAcc = accPct(cDone, cCorrect);
 
   const total = questionsOf(python) + cQuestions;
 
@@ -141,6 +150,7 @@ export default function CourseSections({
     const needs = (d as { prereq?: string[] }).prereq?.[0];
     const needed = needs ? TRACK_DEFS.find((x) => x.id === needs) : null;
     const name = t(d.nameKey as LocaleKey);
+    const acc = accPct(gradedOf(rows), correctOf(rows));
     return (
       <button
         key={d.id}
@@ -172,8 +182,8 @@ export default function CourseSections({
             {answeredOf(rows) > 0
               ? `${pctOf(answeredOf(rows), questionsOf(rows))}% answered`
               : 'not started'}
-            {accPct(gradedOf(rows), correctOf(rows)) !== null && (
-              <> · <span className="qb-acc">{accPct(gradedOf(rows), correctOf(rows))}% accuracy</span></>
+            {acc !== null && (
+              <> · <span className={`qb-acc qb-acc-${accBand(acc)}`} title={`${acc}% accuracy · ${accBand(acc)}`}>{acc}% accuracy</span></>
             )}
           </span>
         </span>
@@ -205,6 +215,12 @@ export default function CourseSections({
       <p className="muted small" style={{ margin: '0 0 10px' }}>
         One box per subject — pick a subject and its own lessons open right under the boxes; pick a
         lesson and its questions open below. Nothing is mixed between two subjects.
+      </p>
+      {/* The bands, spelled out where the colours are. A colour that means something only to the
+          person who wrote the CSS is decoration; one line decodes it. */}
+      <p className="small muted" style={{ margin: '-4px 0 10px' }}>
+        Accuracy is correct ÷ graded — <b className="qb-acc-strong">75%+ strong</b> ·{' '}
+        <b className="qb-acc-mid">40–74% building</b> · <b className="qb-acc-weak">below 40% weak</b>.
       </p>
 
       {needle ? (
@@ -253,8 +269,8 @@ export default function CourseSections({
                 </span>
                 <span className="qb-progress-label">
                   {cDone > 0 ? `${pctOf(cDone, cQuestions)}% answered` : 'not started'}
-                  {accPct(cDone, cCorrect) !== null && (
-                    <> · <span className="qb-acc">{accPct(cDone, cCorrect)}% accuracy</span></>
+                  {cAcc !== null && (
+                    <> · <span className={`qb-acc qb-acc-${accBand(cAcc)}`} title={`${cAcc}% accuracy · ${accBand(cAcc)}`}>{cAcc}% accuracy</span></>
                   )}
                 </span>
               </span>
@@ -299,6 +315,7 @@ export default function CourseSections({
                 {activeRows.map((s) => {
                   const incomplete = s.flags.includes('CONTENT_INCOMPLETE');
                   const pct = Math.min(100, Math.round((s.published / baseline) * 100));
+                  const acc = accPct(accuracy[s.sectionId]?.graded ?? 0, accuracy[s.sectionId]?.correct ?? 0);
                   return (
                     <button
                       key={s.sectionId}
@@ -311,8 +328,7 @@ export default function CourseSections({
                       {(answered[s.sectionId] ?? 0) > 0 && (
                         <span className="small muted">
                           {answered[s.sectionId]} answered
-                          {accPct(accuracy[s.sectionId]?.graded ?? 0, accuracy[s.sectionId]?.correct ?? 0) !== null
-                            && ` · ${accPct(accuracy[s.sectionId]?.graded ?? 0, accuracy[s.sectionId]?.correct ?? 0)}%`}
+                          {acc !== null && <> · <span className={`qb-acc qb-acc-${accBand(acc)}`}>{acc}%</span></>}
                         </span>
                       )}
                       <span className={`chip ${incomplete ? 'medium' : 'easy'}`} title={incomplete ? 'CONTENT_INCOMPLETE — baseline not authored yet' : 'complete'}>
