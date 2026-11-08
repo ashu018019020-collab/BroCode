@@ -319,6 +319,8 @@ function Shell() {
    */
   const lastSeenKey = `brocode:last-seen:v1:${user ? encodeURIComponent(user.id) : 'signed-out'}`;
   const mainRef = useRef<HTMLElement>(null);
+  /** The route's own container: the target of the skip link below. */
+  const contentRef = useRef<HTMLDivElement>(null);
   /**
    * The compact header follows the REAL scroll container.
    *
@@ -378,7 +380,7 @@ function Shell() {
       if (e.key === '/' && !(e.target instanceof HTMLElement && (
         e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)
       ))) { e.preventDefault(); setQuickOpen((open) => !open); }
-      if (e.key === 'Escape') { setPaletteOpen(false); setDrawer(false); setNotifOpen(false); setAiOpen(false); }
+      if (e.key === 'Escape') { setPaletteOpen(false); setDrawer(false); setNotifOpen(false); setQuickOpen(false); setAiOpen(false); }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
@@ -550,6 +552,23 @@ function Shell() {
 
   return (
     <div className={`shell ${drawer ? 'nav-open' : ''} ${onFocus ? 'focus' : ''}`}>
+      {/*
+       * A keyboard learner's FIRST stop. The rail holds ~30 links and the header seven more, so
+       * without this every page change costs a full tab walk before the page itself is reachable.
+       * It is a BUTTON, not `href="#content"`: this app routes on the hash, so a hash jump would
+       * navigate to a ``/content`` route instead of moving focus.
+       */}
+      <button
+        type="button"
+        className="skip-link"
+        onClick={() => {
+          setDrawer(false);
+          contentRef.current?.focus();
+          contentRef.current?.scrollIntoView({ block: 'start' });
+        }}
+      >
+        Skip to content
+      </button>
       {!onFocus && (
         <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`} aria-label="Primary">
           <div className="brand">
@@ -731,7 +750,7 @@ function Shell() {
                     <Plus size={17} />
                   </button>
                   {quickOpen && (
-                    <div className="quickmenu-panel" role="menu">
+                    <div className="quickmenu-panel" role="group" aria-label="Quick actions">
                       {[
                         { icon: StickyNote, label: 'New note', sub: 'Write in Notes', run: () => nav('/notes') },
                         { icon: FlaskConical, label: 'Playground', sub: 'Run Python', run: () => nav('/playground') },
@@ -741,7 +760,7 @@ function Shell() {
                         { icon: Download, label: 'Export progress', sub: 'JSON backup', run: () => { exportProgress(); toast('Progress file downloaded.', 'success'); } },
                         { icon: Languages, label: locale === 'hi' ? 'Switch to English' : 'Switch to Hinglish', sub: t('lang.label'), run: () => setLang(locale === 'hi' ? 'en' : 'hi') },
                       ].map((a) => (
-                        <button key={a.label} className="quickmenu-item" role="menuitem" onClick={() => { a.run(); setQuickOpen(false); }}>
+                        <button key={a.label} className="quickmenu-item" onClick={() => { a.run(); setQuickOpen(false); }}>
                           <span className="ico"><a.icon size={15} /></span>
                           <span><b>{a.label}</b><span>{a.sub}</span></span>
                         </button>
@@ -821,7 +840,7 @@ function Shell() {
         </header>
 
         <ErrorBoundary>
-          <div className="content">
+          <div className="content" ref={contentRef} tabIndex={-1}>
             {/* The offline banner is a STATUS, not an error: the browser's own online/offline
                 events drive it, it disappears on recovery, and every claim in it comes from the
                 tested contract in `core/platform/offline.ts` — never from ad-hoc copy here. */}

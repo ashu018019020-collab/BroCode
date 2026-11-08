@@ -222,6 +222,26 @@
 .btn:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
   outline: 2px solid var(--ring); outline-offset: 2px;
 }
+
+/*
+ * The skip link (first control in the shell). Off-screen until it is focused, so it takes no space
+ * from a pointer user, and `position: fixed` so the sticky topbar can never cover it. Colours come
+ * from the same accent tokens as `.btn.primary`, so it is legible in both themes.
+ */
+.skip-link {
+  position: fixed; top: 8px; left: 8px; z-index: 200;
+  transform: translateY(-180%);
+  padding: 9px 14px; border: 1px solid transparent; border-radius: var(--radius-md);
+  background-image: var(--accent-grad); color: var(--ink-on-accent);
+  font-size: .84rem; font-weight: 600; cursor: pointer;
+  box-shadow: 0 8px 22px rgba(34, 211, 238, .28);
+  transition: transform .12s ease;
+}
+.skip-link:focus, .skip-link:focus-visible {
+  transform: none; outline: 2px solid var(--ring); outline-offset: 2px;
+}
+/* The focused container is a landmark, not a control: no ring around the whole page. */
+.content:focus { outline: none; }
 /* The one loud control on a page: an accent gradient, dark ink, and a cyan aura under it. */
 .btn.primary {
   background-image: var(--accent-grad); background-color: transparent;
