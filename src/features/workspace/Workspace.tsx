@@ -6,15 +6,12 @@ import { CourseLogo } from '../../components/shared/CourseLogo';
 import { ProgressRing } from '../../components/ui/ui';
 import { useCourseIndex, useSectionPct } from '../../core/data/courses';
 import { useCurriculum } from '../../core/data/curriculum';
-import { LEVEL_KEY } from '../../core/learning/courses';
+import { LEVEL_KEY, courseHours } from '../../core/learning/courses';
 import { workspaceNextAction, workspaceTarget } from '../../core/learning/workspace';
 import { STEPS } from '../../core/learning/roadmap';
 import { isMastered } from '../../core/learning/progress';
 import { studyStreak } from '../../core/learning/study';
 import { today, useStore } from '../../core/storage/store';
-
-/** The workspace card's needs line is capped the same way as the catalog card: two names, then `+N`,
- * full list kept in `title` so nothing is unreachable. */
 
 /**
  * /workspace — the screen a learner opens when they are not sure where they are.
@@ -49,7 +46,8 @@ export default function Workspace() {
    * unreachable. */
   const shownNeeds = needs.slice(0, 2);
   const extraNeeds = needs.length - shownNeeds.length;
-  const hours = card ? Math.max(1, Math.round(card.meta.minutes / 60)) : 0;
+  /** The same estimate the catalog card prints — `courseHours`, never a second formula. */
+  const hours = card ? courseHours(card.meta.minutes) : 0;
 
   const mastered = sections.filter((s) => isMastered(s, state)).length;
   const streak = studyStreak(state.study ?? {}, today());

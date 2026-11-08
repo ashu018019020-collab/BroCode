@@ -1536,7 +1536,11 @@ the skill's share of the selected source, and how many of its questions are alre
    the header, from the same authored meta the cards print. */
 .course-meta { align-items: center; row-gap: 4px; }
 .course-meta .cc-level { font-size: .58rem; }
-.course-needs { min-width: 0; overflow-wrap: anywhere; }
+/* The page prints the FULL prerequisite list and the authored assessment, so both clauses wrap at a
+   word boundary. `break-word`, the card's own rule: `anywhere` chopped a name that could still fit,
+   and the two surfaces describing one course may not disagree about how a word breaks. */
+.course-needs,
+.course-assessment { min-width: 0; overflow-wrap: break-word; }
 
 /* A project's authored build path, in reading order (files → architecture → done-when). The number
    is the reading order, not a progress measure: `built` is the gate. */

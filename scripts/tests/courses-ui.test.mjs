@@ -495,3 +495,40 @@ test('courses: the card meta line wraps instead of overflowing a narrow card', (
   assert.match(mobile, /\.course-card\.cc-simple \.cc-meta \{ margin-top: 0; \}/,
     'the simplified card keeps the metadata tight under the name');
 });
+
+/* ------------------- one plan metadata, three surfaces -------------------- */
+
+/**
+ * The course page and the two cards describe the SAME authored meta, so the rules have to match:
+ *
+ *   · the page is the one surface with room for the whole plan — every prerequisite name and the
+ *     authored assessment — while a card caps the names at two plus `+N`;
+ *   · the level, the estimate and the needs clause all come from the same helpers, so a card can
+ *     never print hours the course page disagrees with;
+ *   · both clauses wrap at a word boundary (`break-word`, the card's rule), and the assessment is
+ *     not styled as if it were a prerequisite.
+ */
+test('courses: the course page and both cards read one plan metadata', () => {
+  const page = read('src/features/courses/CoursePage.tsx');
+  const workspace = read('src/features/workspace/Workspace.tsx');
+  const pages = read('src/styles/06-pages.css');
+
+  assert.match(page, /LEVEL_KEY\[course\.meta\.level\]/, 'the page prints the authored level');
+  assert.match(page, /courseHours\(course\.meta\.minutes\)/, 'the page prints the shared estimate');
+  assert.match(page, /course\.meta\.prerequisites\.map/, 'prerequisites resolve to course names, not slugs');
+  assert.doesNotMatch(page, /needs\.slice\(/, 'the page has room for every prerequisite, so it caps nothing');
+  assert.match(page, /course\.meta\.assessment/, 'the page prints how the course closes');
+  assert.match(page, /className="course-assessment"/, 'the assessment is not styled as a prerequisite');
+
+  // ONE estimate formula. The workspace card re-deriving it is how two cards for the same course
+  // come to print different hours after `courseHours` changes.
+  assert.match(workspace, /courseHours\(card\.meta\.minutes\)/,
+    'the workspace card takes its hours from courseHours');
+  assert.doesNotMatch(workspace, /Math\.(round|ceil|floor)\(card\.meta\.minutes/,
+    'the workspace card must not re-derive the estimate');
+
+  assert.match(pages, /\.course-needs,\s*\.course-assessment \{[^}]*overflow-wrap: break-word/,
+    'the page wraps both clauses at a word boundary');
+  assert.doesNotMatch(pages, /\.course-(needs|assessment) \{[^}]*overflow-wrap: anywhere/,
+    'the page no longer chops words that fit');
+});

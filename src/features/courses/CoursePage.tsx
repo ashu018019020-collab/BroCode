@@ -93,7 +93,7 @@ export default function CoursePage() {
                 {!!course.meta.assessment.trim() && (
                   <>
                     <span>·</span>
-                    <span className="course-needs">{t('courses.assessment')}: {course.meta.assessment}</span>
+                    <span className="course-assessment">{t('courses.assessment')}: {course.meta.assessment}</span>
                   </>
                 )}
               </div>
