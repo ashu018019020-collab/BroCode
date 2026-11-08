@@ -659,8 +659,31 @@
 @media (prefers-reduced-motion: reduce) { .qb-progress i { transition: none; } }
 .qb-index { border-top: 1px solid var(--border); padding-top: 10px; }
 .qb-index-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.qb-index-rows { display: grid; gap: 2px; margin-top: 8px; }
-.qb-index-rows .file-row { width: 100%; text-align: left; font: inherit; font-size: .82rem; }
+/* One column on a phone, two from 900px: sixteen lesson rows stacked in one 1600px-wide column made
+   every row a mostly-empty stripe with a chip stranded at the far edge. */
+.qb-index-rows { display: grid; gap: 6px; margin-top: 8px; }
+@media (min-width: 900px) { .qb-index-rows { grid-template-columns: 1fr 1fr; } }
+/*
+ * These rows are `<button>`s — a lesson loads its questions in place, it does not navigate.
+ * `.file-row` (04-learning-surfaces.css) was written for `<div>`s and never cleared the button's own
+ * background, so every row painted the UA's `buttonface`: the white/grey blocks that showed up in
+ * BOTH themes. `appearance: none` plus a transparent background hands the row back to the theme's
+ * tokens; the selected row keeps `.file-row.on`'s `--panel2` and gains an accent edge so the open
+ * lesson is visible from the number, not just from the panel below.
+ */
+.qb-index-rows .file-row {
+  width: 100%; min-width: 0; text-align: left; font: inherit; font-size: .82rem;
+  appearance: none; -webkit-appearance: none;
+  padding: 8px 10px; color: var(--muted);
+  background: transparent; border: 1px solid var(--border);
+}
+.qb-index-rows .file-row:hover { background: var(--hover-soft); border-color: var(--accent); color: var(--text); }
+.qb-index-rows .file-row.on {
+  background: var(--panel2); border-color: var(--accent); color: var(--text);
+  box-shadow: inset 2px 0 0 0 var(--accent);
+}
+.qb-index-rows .file-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.qb-index-rows .file-row > .mono { flex: none; font-variant-numeric: tabular-nums; opacity: .75; }
 
 /* ---- the advanced code box: Playground-grade chrome around every editor ------ */
 /*

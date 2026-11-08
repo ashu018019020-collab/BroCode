@@ -263,6 +263,7 @@ export default function CourseSections({
                     <span className="mono small muted" style={{ flex: 'none' }}>{String(m.no).padStart(2, '0')}</span>
                     <span className="sec-name">{m.title}</span>
                     <span className="chip small">{m.questions} Qs</span>
+                    <ChevronRight size={13} />
                   </button>
                 ))}
                 {!cModules.length && <p className="muted small">No C module is published yet.</p>}
