@@ -66,7 +66,7 @@ const RequireAuth = lazy(() => import('../features/auth/RequireAuth'));
 const ResetPassword = lazy(() => import('../features/auth/ResetPassword'));
 import { searchAll } from '../core/platform/search';
 import { CommandPalette } from '../components/shared/CommandPalette';
-import { useQuestionIndex } from '../core/data/searchindex';
+import { useQuestionIndex, useQuestionIndexState } from '../core/data/searchindex';
 import { useUi, setUi } from '../core/storage/ui';
 import { STAGE_META, type Stage } from '../core/learning/progress';
 import { resumeTarget } from '../core/learning/resume';
@@ -301,6 +301,9 @@ function Shell() {
   const { t, locale } = useI18n();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const bankIndex = useQuestionIndex(paletteOpen);
+  // `bankIndex === null` covers BOTH a fetch in flight and a fetch that failed; the palette needs to
+  // tell those apart to avoid claiming "loading" forever.
+  const bankIndexState = useQuestionIndexState();
   const prefs = useUi();
   const [drawer, setDrawer] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -1078,7 +1081,8 @@ function Shell() {
         <CommandPalette
           items={searchAll(sections, extras, state)}
           bank={bankIndex}
-          bankLoading={!bankIndex}
+          bankLoading={bankIndexState === 'idle' || bankIndexState === 'loading'}
+          bankFailed={bankIndexState === 'failed'}
           onClose={() => setPaletteOpen(false)}
         />
       )}
