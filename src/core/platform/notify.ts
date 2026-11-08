@@ -98,6 +98,10 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     if (s) out.push({ id: id('reviewed', sid), kind: 'success', title: `Reviewed: ${s.title}`, body: 'Recap done — keep going.', to: `/lesson/${sid}/learn` });
   }
 
+  // With no curriculum loaded there is no frontier to name: `currentSection([])` is `undefined`
+  // and `sectionProgress(undefined)` throws, so an empty curriculum must end the list here.
+  if (!sections.length) return out;
+
   // 6. Next unfinished step in the frontier section (a real "what's next" nudge).
   const cur = currentSection(sections, state);
   const p = sectionProgress(cur, state);

@@ -307,6 +307,8 @@ function Shell() {
   const prefs = useUi();
   const [drawer, setDrawer] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const notifBtnRef = useRef<HTMLButtonElement>(null);
+  const notifPanelRef = useRef<HTMLDivElement>(null);
   const [quickOpen, setQuickOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -392,6 +394,28 @@ function Shell() {
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, []);
+
+  /**
+   * The notification popover is a DISCLOSURE, not a modal: a press anywhere outside it closes it,
+   * and closing from inside (Escape, or a notification being chosen) hands focus back to the bell
+   * instead of dropping it onto `<body>`. Focusing the panel on open is what gives Escape a place
+   * to return FROM; the panel is not a control, so `tabIndex={-1}` carries no focus ring.
+   */
+  useEffect(() => {
+    if (!notifOpen) return;
+    const panel = notifPanelRef.current;
+    const bell = notifBtnRef.current;
+    const outside = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (target && !panel?.contains(target) && !bell?.contains(target)) setNotifOpen(false);
+    };
+    document.addEventListener('pointerdown', outside);
+    panel?.focus();
+    return () => {
+      document.removeEventListener('pointerdown', outside);
+      if (panel && panel.contains(document.activeElement)) bell?.focus();
+    };
+  }, [notifOpen]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(navigator.onLine);
@@ -793,22 +817,25 @@ function Shell() {
 
                 <div className="notif-wrap">
                   <button
+                    ref={notifBtnRef}
                     className="icon-btn"
                     onClick={() => setNotifOpen((v) => !v)}
                     title={t('top.notif')}
                     aria-label={`${t('top.notif')} (${unread})`}
                     aria-expanded={notifOpen}
+                    aria-haspopup="dialog"
+                    aria-controls="notif-panel"
                   >
                     <Bell size={17} />
                     {unread > 0 && <span className="notif-dot">{unread > 9 ? '9+' : unread}</span>}
                   </button>
                   {notifOpen && (
-                    <div className="notif-panel" role="dialog" aria-label={t('top.notif')}>
+                    <div className="notif-panel" id="notif-panel" ref={notifPanelRef} role="dialog" aria-label={t('top.notif')} tabIndex={-1}>
                       <div className="row spread" style={{ padding: '2px 4px 8px' }}>
                         <b className="small">{t('top.notif')}</b>
                         <div className="row" style={{ gap: 4 }}>
                           <button className="btn small ghost" onClick={() => markNotifsRead(notes.map((n) => n.id))}>{t('top.notifClear')}</button>
-                          <button className="btn small ghost" onClick={() => clearNotifs()}>Reset</button>
+                          <button className="btn small ghost" onClick={() => clearNotifs()}>{t('top.notifReset')}</button>
                         </div>
                       </div>
                       {!notes.length && <p className="muted small" style={{ padding: '6px 8px' }}>{t('top.notifEmpty')}</p>}

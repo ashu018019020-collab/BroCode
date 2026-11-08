@@ -162,6 +162,9 @@
 .notif-item .kind { width: 26px; height: 26px; border-radius: var(--radius-sm); display: grid; place-items: center; flex: none; background: var(--panel2); }
 .notif-item b { font-size: .82rem; display: block; }
 .notif-item span { font-size: .72rem; color: var(--muted); }
+/* The panel is a focus container (`tabIndex={-1}`) so Escape can hand focus back to the bell. It is
+   not itself a control, so it draws no focus ring — the first Tab lands on a real button. */
+.notif-panel:focus { outline: none; }
 
 /* --- lesson stage cards --- */
 .stage-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(122px, 1fr)); gap: 10px; margin: 12px 0; }

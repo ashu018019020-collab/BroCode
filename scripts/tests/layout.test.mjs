@@ -381,6 +381,16 @@ test('notes: the editor commits on a pause, not on every keystroke', () => {
   assert.match(page, /setSel\(next\?\.id \?\? null\)/);
 });
 
+test('notifications: the panel closes on an outside press and ships no raw English', () => {
+  const app = read('src/app/App.tsx');
+  // A disclosure that only closes from its own trigger or Escape is a panel the learner cannot
+  // dismiss by clicking the page they want instead.
+  assert.match(app, /document\.addEventListener\('pointerdown', outside\)/, 'an outside press closes the panel');
+  assert.match(app, /aria-controls="notif-panel"/, 'the bell names the panel it controls');
+  assert.match(app, /\{t\('top\.notifReset'\)\}/, 'the unread reset is translated');
+  assert.doesNotMatch(app, />Reset</, 'no raw English control in the shell');
+});
+
 test('layout: the redesigned header keeps search, focus, notifications and profile controls wired', () => {
   const app = read('src/app/App.tsx');
   assert.match(app, /Search courses, lessons, skills\.\.\./, 'the search capsule must show the requested prompt');
