@@ -290,7 +290,7 @@ export default function StepPage() {
               {bySubtype(items).map((group) => (
                 <Link key={group.key} className="q-row tone-violet" to="/playbook">
                   <span className="ic"><FlaskConical size={14} /></span>
-                  <span className="t">{group.key} · {group.items.length} {t('courses.itemsUnit')}</span>
+                  <span className="t">{subLabel(group.key)} · {group.items.length} {t('courses.itemsUnit')}</span>
                   <span className="small muted">{t('courses.openArchive')}</span>
                   <ChevronRight size={14} />
                 </Link>

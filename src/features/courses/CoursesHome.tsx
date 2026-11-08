@@ -8,7 +8,7 @@ import { useOwnerCourses } from '../../core/data/owner-courses';
 import {
   ownerCourseCards, ownerCoursePlacements, visibleOwnerCards, type OwnerCourseCard,
 } from '../../core/learning/owner-courses';
-import { LEVEL_KEY, courseHours, sectionAvg } from '../../core/learning/courses';
+import { LEVEL_KEY, courseHours, sectionAvg, activeCourse } from '../../core/learning/courses';
 import {
   ALL_PLACEMENTS, nextCourse, placementOf, sortByCourseOrder, withoutHidden,
 } from '../../core/learning/course-levels';
@@ -58,7 +58,14 @@ export default function CoursesHome() {
   const pctFor = (card: CourseCard) => sectionAvg(card, pctOf);
 
   const next = nextCourse(visible, pctFor, placements);
-  const nextPct = next ? pctFor(next) : null;
+  /**
+   * The course the learner is ACTUALLY in beats catalog order — the same `activeCourse` rule the
+   * Dashboard's continue card uses, so the two surfaces cannot send a learner to different courses.
+   * `nextCourse` stays the fallback for a learner who has not started anything yet.
+   */
+  const started = activeCourse(visible, pctOf);
+  const continueCourse = started ?? next;
+  const continuePct = continueCourse ? pctFor(continueCourse) : null;
 
   /**
    * The grid's sequence, from the ONE ordering registry. Cards are looked up by slug, so a course
@@ -169,22 +176,22 @@ export default function CoursesHome() {
         </div>
       </div>
 
-      {/* Continue: the first course on the critical path that is not finished. */}
-      {index && next && (
+      {/* Continue: the course the learner is in, else the first one on the critical path. */}
+      {index && continueCourse && (
         <Link
-          to={`/course/${next.slug}`}
+          to={`/course/${continueCourse.slug}`}
           className="continue-card"
-          data-agent-action={`continue:${next.slug}`}
+          data-agent-action={`continue:${continueCourse.slug}`}
         >
           <span className="continue-ic"><Play size={16} /></span>
           <span style={{ minWidth: 0 }}>
-            <b>Continue learning</b>
+            <b>{started ? t('courses.continueTitle') : t('courses.startTitle')}</b>
             <span className="small muted" style={{ display: 'block' }}>
-              {next.name}
-              {nextPct !== null ? ` · ${nextPct}% complete` : ''}
+              {continueCourse.name}
+              {continuePct !== null ? ` · ${t('courses.pctComplete', { n: continuePct })}` : ''}
             </span>
           </span>
-          <span className="continue-go"><Route size={15} /> Open <ChevronRight size={14} /></span>
+          <span className="continue-go"><Route size={15} /> {t('courses.open')} <ChevronRight size={14} /></span>
         </Link>
       )}
 
