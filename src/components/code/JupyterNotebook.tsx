@@ -192,7 +192,15 @@ export function NotebookShelf({ sectionId, compact, defaultOpen = false, boxes =
               </span>
               <span className="small muted">{activeMeta?.intro}</span>
             </div>
-            {err && <p className="small" style={{ color: 'var(--red)' }}>Code Bro failed to load — is the file in `public/notebooks/`?</p>}
+            {/* Learner-facing: a path into `public/notebooks/` is the author's problem, not theirs. */}
+            {err && (
+              <p className="small" style={{ color: 'var(--red)' }}>
+                This notebook could not be loaded — it may not be cached on this device yet. Reconnect once and retry.{' '}
+                {activeMeta && (
+                  <button className="btn small" onClick={() => void openNotebook(activeMeta)}>Retry</button>
+                )}
+              </p>
+            )}
             {!nb && !err && <p className="small muted"><Loader size={12} /> Loading Code Bro…</p>}
             {nb && (
               <NotebookCells
