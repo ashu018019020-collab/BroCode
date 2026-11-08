@@ -34,6 +34,17 @@ export type MentorIntent =
   | 'thanks'
   | 'unknown';
 
+/**
+ * Stable identity for ONE turn, so persisted feedback (the thumbs) can be attached to it.
+ *
+ * The conversation is an array that gets trimmed and filtered, so an index is not an identity: the
+ * panel filters turns by a search box, and `slice(-MAX_TURNS)` drops the oldest ones. A key built
+ * from the role and the text survives both — the same question asked twice still maps to the same
+ * turn, which is the behaviour a learner expects from their own feedback.
+ */
+export const turnVoteKey = (turn: Pick<MentorHistoryTurn, 'role' | 'text'>): string =>
+  `${turn.role}:${turn.text.length}:${turn.text.slice(0, 40)}`;
+
 export interface MentorHistoryTurn {
   role: 'learner' | 'mentor';
   text: string;

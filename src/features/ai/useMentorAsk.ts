@@ -5,7 +5,8 @@ import { loadKnowledgeIndex } from '../../core/data/knowledge';
 import type { KnowledgeIndex } from '../../core/ai/knowledge';
 import { askLocal, type Answer, type AssistantContext } from '../../core/ai/assistant';
 import {
-  isProjectQuestion, mentorTurn, projectOverview, type MentorHistoryTurn, type MentorReply,
+  isProjectQuestion, mentorTurn, projectOverview, turnVoteKey,
+  type MentorHistoryTurn, type MentorReply,
 } from '../../core/ai/mentor';
 import type { VoiceLangId } from '../../core/ai/voice';
 
@@ -22,6 +23,31 @@ import type { VoiceLangId } from '../../core/ai/voice';
  */
 
 const MAX_TURNS = 24;
+
+/**
+ * Thumbs feedback is PERSISTED beside the thread.
+ *
+ * The panel says "Feedback saved on this device." — before, the vote lived in one component's state,
+ * so a reload silently threw it away while the toast had already promised otherwise. Stored per
+ * account (the log key is already account-scoped) and keyed by `turnVoteKey`, not by position.
+ */
+type Vote = 'up' | 'down';
+const feedbackKey = (logKey: string) => `${logKey}:feedback`;
+
+function loadVotes(logKey: string): Record<string, Vote> {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(feedbackKey(logKey)) ?? '{}');
+    const out: Record<string, Vote> = {};
+    if (parsed && typeof parsed === 'object') {
+      for (const [key, value] of Object.entries(parsed)) {
+        if (value === 'up' || value === 'down') out[key] = value;
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
 /** The index is a 2.5 MB request; a network that never answers must not leave the panel "thinking". */
 const INDEX_TIMEOUT_MS = 12_000;
 
@@ -66,6 +92,9 @@ export interface MentorAsk {
   clear: () => void;
   /** How many hint-style asks this conversation has made — the existing hint ladder reads it. */
   askedHints: number;
+  /** Persisted thumbs, keyed by `turnVoteKey(turn)`. */
+  votes: Record<string, Vote>;
+  vote: (turn: MentorHistoryTurn, value: Vote) => void;
 }
 
 export function useMentorAsk(logKey: string, context?: AssistantContext): MentorAsk {
@@ -75,12 +104,22 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [knowledge, setKnowledge] = useState<KnowledgeIndex | null>(null);
+  const [votes, setVotes] = useState<Record<string, Vote>>(() => loadVotes(logKey));
   const turnsRef = useRef(turns);
   const contextRef = useRef(context);
   contextRef.current = context;
 
   useEffect(() => {
     setTurns(loadTurns(logKey));
+    setVotes(loadVotes(logKey));
+  }, [logKey]);
+
+  const vote = useCallback((turn: MentorHistoryTurn, value: Vote) => {
+    setVotes((current) => {
+      const next = { ...current, [turnVoteKey(turn)]: value };
+      try { localStorage.setItem(feedbackKey(logKey), JSON.stringify(next)); } catch { /* quota or blocked */ }
+      return next;
+    });
   }, [logKey]);
 
 
@@ -177,8 +216,13 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
   const clear = useCallback(() => {
     turnsRef.current = [];
     setTurns([]);
+    setVotes({});
     setError(null);
-    try { localStorage.removeItem(logKey); } catch { /* blocked */ }
+    try {
+      localStorage.removeItem(logKey);
+      // The votes belonged to the turns that just went; keeping them would orphan the map.
+      localStorage.removeItem(feedbackKey(logKey));
+    } catch { /* blocked */ }
   }, [logKey]);
 
   const dismissError = useCallback(() => setError(null), []);
@@ -191,5 +235,7 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
     ask,
     clear,
     askedHints: turns.filter((turn) => turn.role === 'learner' && /\b(hint|clue|madad|nudge)\b/i.test(turn.text)).length,
+    votes,
+    vote,
   };
 }

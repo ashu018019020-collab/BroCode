@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AudioLines, BookOpen, Code2, History, Mic2, Search, Sparkles, Trash2, Wand2,
 } from 'lucide-react';
@@ -53,6 +53,9 @@ export function MentorStudio() {
   const requested = params.get('tab');
   const tab: StudioTab = TABS.some((item) => item.id === requested) ? (requested as StudioTab) : 'mentor';
   const location = useLocation();
+  // Router navigation, not a raw `location.hash` write: setting the hash directly bypasses the
+  // router's own state and makes a same-page tool jump indistinguishable from a page load.
+  const navigate = useNavigate();
   const { sections } = useCurriculum();
   const state = useStore();
   const [query, setQuery] = useState('');
@@ -289,6 +292,8 @@ export function MentorStudio() {
             onDictationTaken={() => setDictation(null)}
             error={chat.error}
             onRetry={() => { if (lastLearner) void ask(lastLearner); }}
+            votes={chat.votes}
+            onVote={chat.vote}
             starters={STARTERS}
           />
 
@@ -303,7 +308,7 @@ export function MentorStudio() {
                 lang: voice.locale,
               }}
               onAsk={(prompt) => { void ask(prompt); }}
-              onRoute={(route) => { window.location.hash = `#${route}`; }}
+              onRoute={(route) => navigate(route)}
             />
           </aside>
         </div>
@@ -318,7 +323,7 @@ export function MentorStudio() {
               select('mentor');
               void ask(prompt);
             }}
-            onRoute={(route) => { window.location.hash = `#${route}`; }}
+            onRoute={(route) => navigate(route)}
           />
           <section className="rail-card glass wide">
             <span className="eyebrow">How these tools answer</span>

@@ -4,7 +4,7 @@ import {
   AlertTriangle, ArrowUp, BookOpen, Check, Code2, Copy, Eraser, Loader2, Mic2, MicOff,
   RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, Type, Volume2,
 } from 'lucide-react';
-import type { MentorHistoryTurn } from '../../../core/ai/mentor';
+import { turnVoteKey, type MentorHistoryTurn } from '../../../core/ai/mentor';
 import { toast } from '../../../components/ui/Toast';
 import { MentorText } from '../MentorText';
 
@@ -38,6 +38,9 @@ export interface ConversationPanelProps {
   /** The engine's own failure, shown IN the thread with a retry — never only as a toast. */
   error?: string | null;
   onRetry?: () => void;
+  /** Persisted thumbs by `turnVoteKey`, so the saved state survives a reload. */
+  votes?: Record<string, 'up' | 'down'>;
+  onVote?: (turn: MentorHistoryTurn, value: 'up' | 'down') => void;
 }
 
 const REVEAL_CHARS_PER_TICK = 3;
@@ -85,17 +88,18 @@ function copyText(text: string) {
 }
 
 function Bubble({
-  turn, newest, onReplay,
+  turn, newest, onReplay, vote, onVote,
 }: {
   turn: MentorHistoryTurn;
   newest: boolean;
   onReplay: (text: string) => void;
+  vote: 'up' | 'down' | null;
+  onVote?: (turn: MentorHistoryTurn, value: 'up' | 'down') => void;
 }) {
   const isMentor = turn.role === 'mentor';
   const revealed = useReveal(turn.text, isMentor && newest);
   const revealedRef = useRef(revealed);
   revealedRef.current = revealed;
-  const [vote, setVote] = useState<'up' | 'down' | null>(null);
   const [showSources, setShowSources] = useState(false);
   const sources = isMentor ? (turn.sources ?? []) : [];
 
@@ -144,7 +148,9 @@ function Bubble({
               className={vote === 'up' ? 'on' : ''}
               aria-pressed={vote === 'up'}
               onClick={() => {
-                setVote('up');
+                if (!onVote) return;
+                onVote(turn, 'up');
+                // True now: the vote is written to this account's storage, not a component's state.
                 toast('Feedback saved on this device.', 'success');
               }}
               title="This answer was useful"
@@ -156,7 +162,8 @@ function Bubble({
               className={vote === 'down' ? 'on' : ''}
               aria-pressed={vote === 'down'}
               onClick={() => {
-                setVote('down');
+                if (!onVote) return;
+                onVote(turn, 'down');
                 toast('Feedback saved on this device.', 'info');
               }}
               title="This answer was not useful"
@@ -172,7 +179,7 @@ function Bubble({
 
 export function ConversationPanel({
   turns, busy, interim, listening, locale, mode, onMode, onSend, onClear, onReplay, onMic, starters,
-  dictation, onDictationTaken, error, onRetry,
+  dictation, onDictationTaken, error, onRetry, votes, onVote,
 }: ConversationPanelProps) {
   const [draft, setDraft] = useState('');
   const [code, setCode] = useState('');
@@ -215,7 +222,7 @@ export function ConversationPanel({
         <div className="chat-title">
           <span className="avatar-chip"><Sparkles size={15} /></span>
           <div>
-            <h2>{locale === 'hi' ? 'AI Mentor' : 'AI Mentor'}</h2>
+            <h2>AI Mentor</h2>
             <p>
               Grounded in your bundled curriculum · {turns.filter((turn) => turn.role === 'learner').length} question
               {turns.filter((turn) => turn.role === 'learner').length === 1 ? '' : 's'} this thread
@@ -237,7 +244,15 @@ export function ConversationPanel({
         </div>
       </header>
 
-      <div className="chat-log" ref={scroller} aria-live="polite">
+      {/*
+        * NOT `aria-live` on the whole log: the newest answer is revealed a few characters at a time,
+        * so a live region here made a screen reader re-announce the answer on every tick. A separate
+        * status line speaks the two things that actually matter — searching, and answered.
+        */}
+      <span className="sr-only" role="status" aria-live="polite">
+        {busy ? 'Searching the bundled lessons…' : turns.length ? 'The mentor answered.' : ''}
+      </span>
+      <div className="chat-log" ref={scroller}>
         {!turns.length && !busy && (
           <div className="empty">
             <span className="empty-orb" aria-hidden="true"><Sparkles size={22} /></span>
@@ -262,6 +277,8 @@ export function ConversationPanel({
             turn={turn}
             newest={index === turns.length - 1}
             onReplay={onReplay}
+            vote={votes?.[turnVoteKey(turn)] ?? null}
+            onVote={onVote}
           />
         ))}
 
