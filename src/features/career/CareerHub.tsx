@@ -18,7 +18,7 @@ import {
   nextCareerAction, portfolioTrio, roleSkills, TARGET_ROLES, trackMastery,
   type CareerCounts, type PortfolioCard, type ReadinessState,
 } from '../../core/learning/career';
-import { HubGrid } from '../../components/shared/HubGrid';
+import { HubGrid, pillarTone } from '../../components/shared/HubGrid';
 import { Bar } from '../../components/ui/ui';
 
 /**
@@ -215,13 +215,13 @@ export default function CareerHub() {
 
       {/* ---------- 🧭 the roadmap: six phases, each with its own real denominator ---------- */}
       <div className="sec-head"><h2>Career roadmap</h2><span className="line" /></div>
-      <div className="tile-grid">
-        {roadmap.map((tile) => (
-          <Link key={tile.id} to={tile.to} className="tile">
-            <span className="ic" style={{ fontSize: 17 }} aria-hidden>{tile.emoji}</span>
-            <span className="t" style={{ flex: 1, minWidth: 0 }}>
+      <div className="tile-grid tile-grid-pillar">
+        {roadmap.map((tile, i) => (
+          <Link key={tile.id} to={tile.to} className={`tile tile-pillar ${pillarTone(i)}`}>
+            <span className="ic" style={{ fontSize: 22 }} aria-hidden>{tile.emoji}</span>
+            <span className="t">
               <b>{tile.label}{tile.pct !== null ? ` — ${tile.pct}%` : ''}</b>
-              <span>{tile.hint}</span>
+              <span className="tile-facts">{tile.hint}</span>
               {tile.pct !== null && <span className="bar" style={{ marginTop: 6 }}><div style={{ width: `${tile.pct}%` }} /></span>}
             </span>
           </Link>

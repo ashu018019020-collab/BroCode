@@ -9,7 +9,9 @@ import { useCurriculum } from '../../core/data/curriculum';
 import { dueReview, openMistakes } from '../../core/learning/review';
 import { openBySection, sourceLabel } from '../../core/ai/coach';
 import { usePathCtx } from '../../core/data/paths';
-import { HubGrid } from '../../components/shared/HubGrid';
+import { HubGrid, pillarTone } from '../../components/shared/HubGrid';
+import { SurfaceLogo } from '../../components/shared/SurfaceLogo';
+import type { GlyphId } from '../../core/learning/surfaces';
 import { useBankManifest, QUESTION_TYPES, TYPE_LABEL } from '../../core/data/questions';
 import { useCAssessments, useCIndex, useCLabs } from '../../core/data/ccourse';
 import { cQuizTally } from '../../core/learning/ccourse';
@@ -39,6 +41,15 @@ import {
  * stored key, which is the rule the architecture doc states and the engines test enforces.
  */
 const ROUTES = ['/questions', '/playbook', '/exam', '/final-assessment', '/review', '/mistakes'];
+
+/**
+ * One mark per question family, from the app's own glyph registry — the same grid the hub cards and
+ * the sidebar draw from, so "interview" is one drawing everywhere it appears.
+ */
+const TYPE_GLYPH: Record<QuestionType, GlyphId> = {
+  theory: 'bulb', interview: 'interview', coding: 'code', logic: 'cube',
+  debug: 'warning', solved: 'clipboard', defense: 'shield', checkpoint: 'target',
+};
 
 /** The bank page's own params, spelled once, so a link always carries the filter it promises. */
 const bankHref = (sectionId: string, type: QuestionType | 'all') =>
@@ -230,14 +241,20 @@ export default function PracticeHub() {
           deep link that carries the filter it promises. `QuestionBank` honours every real type and
           falls back to "all" for anything else, so a tile here can never open a blank list. */}
       <div className="sec-head"><h2>Question types</h2><span className="line" /></div>
-      <div className="tile-grid">
-        {QUESTION_TYPES.map((ty) => (
-          <Link key={ty} to={`/questions?type=${ty}`} className="tile" data-agent-action={`qb:type:${ty}`}>
-            <span className="ic"><ListChecks size={18} /></span>
-            <span className="t" style={{ flex: 1, minWidth: 0 }}>
+      <div className="tile-grid tile-grid-pillar">
+        {QUESTION_TYPES.map((ty, i) => (
+          <Link
+            key={ty}
+            to={`/questions?type=${ty}`}
+            className={`tile tile-pillar ${pillarTone(i)}`}
+            data-agent-action={`qb:type:${ty}`}
+          >
+            <span className="ic"><SurfaceLogo id={TYPE_GLYPH[ty]} size={26} /></span>
+            <span className="t">
               <b>{TYPE_LABEL[ty]}</b>
-              <span>{manifest ? `${byType[ty] ?? 0} questions` : '…'} · every section</span>
+              <span className="tile-facts">{manifest ? `${byType[ty] ?? 0} questions` : '…'} · every section</span>
             </span>
+            <ChevronRight size={16} className="muted" />
           </Link>
         ))}
       </div>
