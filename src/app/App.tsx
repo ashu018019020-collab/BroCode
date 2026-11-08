@@ -15,7 +15,7 @@ import { BrandMark } from '../components/shared/BrandMark';
 import { levelForXp, levelProgress, XP_PER_LEVEL } from '../core/platform/keys';
 import { offlineBannerCopy } from '../core/platform/offline';
 import { routeMeta } from '../core/platform/meta';
-import { I18nProvider, useI18n, setLang } from './i18n';
+import { I18nProvider, useI18n, setLang, type LocaleKey } from './i18n';
 import { buildNotifications, unreadCount } from '../core/platform/notify';
 import { dueReview, openMistakes } from '../core/learning/review';
 import { studyStreak, today } from '../core/learning/study';
@@ -850,8 +850,8 @@ function Shell() {
                           >
                             <span className="kind" style={{ color: NOTIF_COLOR[n.kind] }}><Icon size={14} /></span>
                             <span style={{ flex: 1, textAlign: 'left' }}>
-                              <b>{n.title}</b>
-                              <span>{n.body}</span>
+                              <b>{t(n.title.key as LocaleKey, n.title.vars)}</b>
+                              <span>{t(n.body.key as LocaleKey, n.body.vars)}</span>
                             </span>
                             <ChevronRight size={13} className="muted" />
                           </button>

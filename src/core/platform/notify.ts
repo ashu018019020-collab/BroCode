@@ -2,6 +2,11 @@
  * Notification centre — every entry is DERIVED from real learner state
  * (review schedule, mistakes, streak, mastery, XP milestones). Nothing here is
  * hardcoded or invented: if there is nothing worth saying, the list is empty.
+ *
+ * The engine returns COPY KEYS, not English prose. It has no business knowing which language the
+ * learner reads, and the bell panel lives inside a bilingual shell — every notification used to be
+ * the one English-only surface in it. The ids are unchanged, so a notification marked read before
+ * this change stays read.
  */
 import type { AppState, AppNotification, Section } from '../../types';
 import { dueReview, openMistakes } from '../learning/review';
@@ -25,8 +30,10 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     out.push({
       id: id('review', String(due.length)),
       kind: 'review',
-      title: `${due.length} review${due.length > 1 ? 's' : ''} due`,
-      body: first ? `Spaced repetition: review "${first.title}" first.` : 'The spaced-repetition queue is ready.',
+      title: { key: 'notif.reviewsDue', vars: { n: due.length } },
+      body: first
+        ? { key: 'notif.reviewsFirst', vars: { title: first.title } }
+        : { key: 'notif.reviewsReady' },
       to: '/review',
     });
   }
@@ -39,16 +46,16 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     out.push({
       id: id('weak', worst.topic),
       kind: 'warning',
-      title: `Weak topic: ${worst.topic}`,
-      body: `Missed ${worst.attempts} times — do targeted practice.`,
+      title: { key: 'notif.weakTopic', vars: { topic: worst.topic } },
+      body: { key: 'notif.weakBody', vars: { n: worst.attempts } },
       to: '/mistakes',
     });
   } else if (open.length) {
     out.push({
       id: id('open-mistakes', String(open.length)),
       kind: 'info',
-      title: `${open.length} open mistake${open.length > 1 ? 's' : ''}`,
-      body: 'Review them in the Mistake Tracker and mark them fixed.',
+      title: { key: 'notif.openMistakes', vars: { n: open.length } },
+      body: { key: 'notif.openMistakesBody' },
       to: '/mistakes',
     });
   }
@@ -59,10 +66,10 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     out.push({
       id: id('streak', t),
       kind: 'streak',
-      title: "Today's mission is still pending",
+      title: { key: 'notif.streakPending' },
       body: state.streak.current > 0
-        ? `Keep your ${state.streak.current}-day streak alive — complete one task.`
-        : 'Complete one small task to start a streak.',
+        ? { key: 'notif.streakKeep', vars: { n: state.streak.current } }
+        : { key: 'notif.streakStart' },
       to: '/',
     });
   }
@@ -73,8 +80,8 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     out.push({
       id: id('achievement', String(mastered.length)),
       kind: 'achievement',
-      title: `${mastered.length} section${mastered.length > 1 ? 's' : ''} mastered`,
-      body: `Most recent: "${mastered[mastered.length - 1].title}". Well done!`,
+      title: { key: 'notif.mastered', vars: { n: mastered.length } },
+      body: { key: 'notif.masteredBody', vars: { title: mastered[mastered.length - 1].title } },
       to: '/progress',
     });
   }
@@ -83,8 +90,8 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     out.push({
       id: id('level', String(level)),
       kind: 'success',
-      title: `Reached Level ${level}`,
-      body: `${state.xp} XP — stay consistent to reach the next level.`,
+      title: { key: 'notif.level', vars: { level } },
+      body: { key: 'notif.levelBody', vars: { xp: state.xp } },
       to: '/progress',
     });
   }
@@ -95,7 +102,15 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     .slice(0, 1);
   for (const [sid] of recent) {
     const s = byId.get(sid);
-    if (s) out.push({ id: id('reviewed', sid), kind: 'success', title: `Reviewed: ${s.title}`, body: 'Recap done — keep going.', to: `/lesson/${sid}/learn` });
+    if (s) {
+      out.push({
+        id: id('reviewed', sid),
+        kind: 'success',
+        title: { key: 'notif.reviewed', vars: { title: s.title } },
+        body: { key: 'notif.reviewedBody' },
+        to: `/lesson/${sid}/learn`,
+      });
+    }
   }
 
   // With no curriculum loaded there is no frontier to name: `currentSection([])` is `undefined`
@@ -109,8 +124,8 @@ export function buildNotifications(state: AppState, sections: Section[]): AppNot
     out.push({
       id: id('next', `${cur.id}:${p.masterPct}`),
       kind: 'info',
-      title: `Next: ${cur.title}`,
-      body: `${p.masterPct}% complete — open the next step and keep going.`,
+      title: { key: 'notif.next', vars: { title: cur.title } },
+      body: { key: 'notif.nextBody', vars: { pct: p.masterPct } },
       to: `/lesson/${cur.id}/learn`,
     });
   }

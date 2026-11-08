@@ -168,8 +168,20 @@ export interface Note {
   created: number; updated: number;
 }
 export type NotificationKind = 'success' | 'info' | 'warning' | 'review' | 'streak' | 'achievement';
+/** A translatable line: the locale key plus the values its placeholders take. */
+export interface NotificationCopy {
+  key: string;
+  vars?: Record<string, string | number>;
+}
+/**
+ * The engine names WHAT to say; the surface says it in the learner's language.
+ *
+ * These used to be English strings built in `core/platform/notify.ts`, which made the bell the one
+ * surface in a bilingual shell that could never change language. `id` is unchanged, so a
+ * notification marked read before this change stays read.
+ */
 export interface AppNotification {
-  id: string; kind: NotificationKind; title: string; body: string; to?: string;
+  id: string; kind: NotificationKind; title: NotificationCopy; body: NotificationCopy; to?: string;
 }
 export interface AppState {
   version: number;
