@@ -46,7 +46,7 @@ const OUT_PATH = path.join(ROOT, 'public', 'sitemap.xml');
 const ROBOTS_PATH = path.join(ROOT, 'public', 'robots.txt');
 
 /** Where the app really ships. Override with --base= for any host; the test pins this default. */
-const DEFAULT_BASE = 'https://ashu018019020-collab.github.io/BroCode';
+const DEFAULT_BASE = 'https://mybrocode.vercel.app';
 
 /**
  * The routes that stay out of the sitemap, each for a stated reason.

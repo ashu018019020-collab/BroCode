@@ -274,7 +274,7 @@ test('schema: the shell ships structured data naming the whole platform, not one
     ['EducationalOrganization', 'WebSite', 'WebApplication', 'ItemList'],
     'the graph is org → site → app → domains');
 
-  const BASE = 'https://ashu018019020-collab.github.io/BroCode';
+  const BASE = 'https://mybrocode.vercel.app';
   for (const n of nodes) {
     assert.ok(n['@id']?.startsWith(`${BASE}/#`), `node ${n['@type']} must be anchored at the deploy origin`);
     if (n.url) assert.ok(n.url.startsWith(BASE), `node ${n['@type']} points off the deploy origin`);
