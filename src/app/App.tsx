@@ -179,6 +179,8 @@ export const NAV: NavItem[] = [
 
   // Tools — reference material and drills, one step below the plan.
   { to: '/labs', icon: FlaskConical, label: 'Labs', group: 'nav.tools', tone: 'cyan' },
+  { to: '/playground', icon: Code2, label: 'Code Playground', group: 'nav.tools', tone: 'slate' },
+  { to: '/notebooks', icon: BookOpen, label: 'Code Bro Lab', group: 'nav.tools', tone: 'blue' },
   { to: '/interviews', icon: Mic2, label: 'Interview', group: 'nav.tools', tone: 'violet' },
   { to: '/ai-mentor', icon: Sparkles, label: 'AI Mentor', group: 'nav.tools', tone: 'violet' },
   { to: '/notes', icon: StickyNote, label: 'Notes', group: 'nav.tools', tone: 'blue' },
@@ -205,7 +207,6 @@ export const NAV: NavItem[] = [
   { to: '/mistakes', icon: Bug, label: 'Mistake Tracker', group: 'hidden', badge: 'mistakes', sidebar: false },
   { to: '/interview-mode', icon: Mic2, label: 'Interview Mode', group: 'hidden', sidebar: false },
   { to: '/defense', icon: Shield, label: 'Project Defense', group: 'hidden', sidebar: false },
-  { to: '/playground', icon: FlaskConical, label: 'Code Playground', group: 'hidden', sidebar: false },
   { to: '/questions', icon: ListChecks, label: 'Question Bank', group: 'hidden', sidebar: false },
   // Surface 37. Named for what it IS — 476 imported practice items the master path teaches — and
   // not "Playbook V15", which made a migration sound like a second product. Its provenance stays
@@ -213,7 +214,6 @@ export const NAV: NavItem[] = [
   { to: '/playbook', icon: Library, label: 'Practice Archive', group: 'hidden', sidebar: false },
   { to: '/exam', icon: Timer, label: 'Timed Exam', group: 'hidden', sidebar: false },
   { to: '/numpy-pandas', icon: Sigma, label: 'NumPy + Pandas Lab', group: 'hidden', sidebar: false },
-  { to: '/notebooks', icon: BookOpen, label: 'Code Bro Lab', group: 'hidden', sidebar: false },
   { to: '/sql', icon: Database, label: 'SQL Lab', group: 'hidden', sidebar: false },
   { to: '/ai-lab', icon: Sparkles, label: 'AI / GenAI Lab', group: 'hidden', sidebar: false },
   { to: '/agentic', icon: Bot, label: 'Agentic AI Lab', group: 'hidden', sidebar: false },

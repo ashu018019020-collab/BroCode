@@ -244,7 +244,7 @@ one way and behaves another.
   sits on "Track load ho raha hai…" forever. Build every track link with `trackHref`
   (`src/core/learning/surfaces.ts`), take slugs from `public/generated/tracks/index.json` in scripts,
   and let `layout.test.mjs` / `surfaces.test.mjs` / `sitemap.test.mjs` (file-existence check) hold it.
-- The sidebar is seven learner pillars + six tools, plus an `OWNER` section rendered only for an
+- The sidebar is seven learner pillars + eight tools, plus an `OWNER` section rendered only for an
   administrator (`NAV` group `nav.owner`, `/admin`); the header and the Ctrl+K launcher read the same
   seven (`QUICK_ROUTES` in `core/platform/search.ts`), pinned by `nav-vocabulary.test.mjs`. The pillar
   hubs (`/practice`, `/labs`, `/interviews`, `/career`)

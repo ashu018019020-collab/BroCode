@@ -57,7 +57,7 @@ Labs, Projects, Interview, Career, Progress), then a labelled **Tools** group (N
 PDF Reader, Settings). The five pillar hubs — `/practice`, `/labs`, `/interviews`, `/career` and the
 `/start` landing — are *indexes*, not merges: every underlying page still exists, still owns its
 route, and still reads the same engine data. `NAV` carries a `group`
-(`'nav.pillars' | 'nav.tools' | 'hidden'`) and 19 registered-but-hidden entries, because a page's
+(`'nav.pillars' | 'nav.tools' | 'hidden'`) and 17 registered-but-hidden entries, because a page's
 label and icon for the support-path cards, the hub grids and the command palette all come from
 `NAV` — deleting an entry prints a raw URL on a card.
 
