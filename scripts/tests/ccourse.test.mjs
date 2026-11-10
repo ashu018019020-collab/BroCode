@@ -21,6 +21,8 @@ import { register } from 'node:module';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const readJSON = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
+const cLesson = fs.readFileSync(path.join(ROOT, 'src/features/c-programming/CLessonPage.tsx'), 'utf8');
+const css = fs.readFileSync(path.join(ROOT, 'src/styles/08-labs-and-mobile.css'), 'utf8');
 register('./_ts-resolve.mjs', import.meta.url);
 const engine = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/ccourse.ts')).href);
 
@@ -144,6 +146,13 @@ test('progress rules: every module open, resume target, honest percentage', () =
   assert.equal(engine.nextModule(cards, new Set())?.id, 'c01');
   assert.equal(engine.nextModule(cards, new Set(['c01']))?.id, 'c02');
   assert.equal(engine.nextModule(cards, new Set(cards.map((m) => m.id))), null);
+});
+
+test('C lesson code boxes use theme tokens, not a hardcoded dark background', () => {
+  assert.doesNotMatch(cLesson, /background: '#0b0b0b'/);
+  assert.match(css, /\.c-code pre \{[^}]*background: var\(--panel2\)/s);
+  assert.match(css, /\.c-code pre \{[^}]*color: var\(--text\)/s);
+  assert.match(css, /\.c-output-pre \{[^}]*background: var\(--panel2\)/s);
 });
 
 test('quiz scoring counts correct answers, and reports what to review', () => {

@@ -626,7 +626,19 @@
 /* Every lesson example carries its own "Try this code" button, docked to the code block so the
    snippet itself stays uncluttered and the copy is still one click from the notebook. */
 .c-code { position: relative; margin-bottom: 10px; }
-.c-code pre { padding-top: 32px !important; }
+.c-code pre {
+  margin: 0;
+  padding: 10px;
+  padding-top: 32px !important;
+  background: var(--panel2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.c-code pre code { color: inherit; background: transparent; }
 .c-code-try { position: absolute; top: 6px; right: 6px; }
 
 /* Java lesson code boxes follow the theme instead of a hardcoded black surface. The old inline
@@ -646,7 +658,8 @@
   line-height: 1.55;
 }
 .j-code pre code { color: inherit; background: transparent; }
-.j-output-pre {
+.j-output-pre,
+.c-output-pre {
   background: var(--panel2);
   color: var(--text);
   border: 1px solid var(--border);

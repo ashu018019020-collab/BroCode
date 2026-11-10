@@ -76,6 +76,11 @@ test('java hub: the module test opens the checkpoint stage', () => {
   assert.doesNotMatch(hub, /\?tab=test/);
 });
 
+test('java workspace: only the completion record marks the checkpoint stage done', () => {
+  assert.match(lesson, /checkpoint: complete,/);
+  assert.doesNotMatch(lesson, /checkpoint: complete \|\| testPct >= 60/);
+});
+
 test('java workspace: code boxes use theme tokens, not a hardcoded dark background', () => {
   assert.match(css, /\.j-code pre \{[^}]*background: var\(--panel2\)/s);
   assert.match(css, /\.j-code pre \{[^}]*color: var\(--text\)/s);

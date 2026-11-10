@@ -170,7 +170,7 @@ export default function JLessonPage() {
     mini: labDone,
     project: selfDone('project'),
     defense: selfDone('defense') || complete,
-    checkpoint: complete || testPct >= 60,
+    checkpoint: complete,
   };
 
   const pct: Record<Stage, number> = {

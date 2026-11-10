@@ -119,7 +119,7 @@ export default function CLessonPage() {
   };
   const TryBlock = ({ code }: { code: string }) => (
     <div className="c-code">
-      <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 12, overflow: 'auto', fontSize: 12, margin: 0 }}><code>{code}</code></pre>
+      <pre><code>{code}</code></pre>
       <button type="button" className="btn small c-code-try" onClick={() => sendToNotebook(code)}><Play size={11} /> Try this code</button>
     </div>
   );
@@ -301,7 +301,7 @@ export default function CLessonPage() {
             <div className="row spread"><strong className="small">{ex.title}</strong><span className="chip small">{ex.level}</span></div>
             <TryBlock code={ex.code} />
             <strong className="small">Actual output</strong>
-            <pre style={{ background: '#0b0b0b', borderRadius: 10, padding: 10, overflow: 'auto', fontSize: 12 }}><code>{ex.output}</code></pre>
+            <pre className="c-output-pre"><code>{ex.output}</code></pre>
             <strong className="small">Line by line</strong>
             <ul className="muted small" style={{ margin: '4px 0', paddingLeft: 18 }}>{ex.lines.map((l) => <li key={l}>{l}</li>)}</ul>
             {ex.dryRun?.length ? <><strong className="small">Dry run</strong><ol className="muted small" style={{ margin: '4px 0', paddingLeft: 18 }}>{ex.dryRun.map((d) => <li key={d}>{d}</li>)}</ol></> : null}
