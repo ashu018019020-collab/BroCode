@@ -11,6 +11,19 @@ entries; for 27 modules it is 13,500. Shortfall: **9,032** (20-module basis). Ev
 
 Reproduce: `node scripts/java-coverage.cjs` (add `--check` to exit 1 while below target).
 
+## 27-module brief checkpoint (2026-11-10, after deploy `32f5222`)
+
+- Re-audited against the 27-module × 10-section × 50-entry brief. Measured: **20 modules, 968
+  entries** (Learn 423, Interview 120, Coding 100, Logic 0, Debug 70, Practice 60, Mini Project 15,
+  Project Lab 15, Defense 25, Checkpoint 140). Required: 13,500. Shortfall: 12,532.
+- Missing stand-alone modules: installation/setup, constructors/encapsulation, Maven/Gradle,
+  REST/Spring, JVM internals, design patterns/SOLID, testing/professional (content exists only
+  inside `j01`, `j09`, `j19`, `j20`).
+- No module was renamed, deleted or renumbered, so stored progress is intact.
+- Verification re-run: generator OK; Java acceptance 7/7; jcourse 8/8; full suite 954 pass.
+- Report: `JAVA_COURSE_FINAL_AUDIT.md`. Next batch remains the logic bank plus the 27-module
+  migration decision; no counts were padded.
+
 ## Master-prompt acceptance pass (2026-11-10)
 
 - Added `scripts/tests/java-acceptance.test.mjs` (6 tests): 20 numbered modules, course minimums
