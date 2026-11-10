@@ -4,6 +4,7 @@ import { listAllAuthUsers } from './supabase.mjs';
 import { TTS_DEFAULT_TIMEOUT_MS, TTS_LANGS, TTS_MAX_CHARS, TtsError, createTtsEngine, voiceOverrides } from './tts.mjs';
 import { projectBrief } from './project-brief.mjs';
 import { CExecError, createCExecutor } from './c-runner.mjs';
+import { JavaExecError, createJavaExecutor } from './j-runner.mjs';
 import {
   INTERVIEW_DEFAULT_MODEL,
   evaluateInterviewAnswer,
@@ -316,6 +317,7 @@ export function createAuthServer({
   }
 
   const cExecutor = createCExecutor({ logger });
+  const javaExecutor = createJavaExecutor({ logger });
   const realtimeHits = new Map();
   function realtimeAllowed(clientKey) {
     const at = now();
@@ -711,6 +713,32 @@ export function createAuthServer({
           json(response, 200, await cExecutor.run(input), headers);
         } catch (cause) {
           if (cause instanceof CExecError) throw new HttpError(cause.status, cause.message);
+          throw cause;
+        }
+        return;
+      }
+
+      if (request.method === 'GET' && url.pathname === '/api/java/status') {
+        json(response, 200, javaExecutor.status(), headers);
+        return;
+      }
+
+      /**
+       * Compile + run Java. Same contract as C: forwarded to Judge0, never executed in-process, and a
+       * missing compiler is a 503 the UI renders honestly.
+       */
+      if (request.method === 'POST' && url.pathname === '/api/java/execute') {
+        ensureSameOrigin(request, allowedOrigin);
+        const user = await requireUser(request).catch(() => null);
+        const clientKey = `${user?.profile?.id ?? 'anon'}:${request.socket?.remoteAddress ?? 'unknown'}`;
+        if (!javaExecutor.allow(clientKey)) {
+          throw new HttpError(429, 'Too many compile requests. Try again in a minute.');
+        }
+        const input = await readJson(request);
+        try {
+          json(response, 200, await javaExecutor.run(input), headers);
+        } catch (cause) {
+          if (cause instanceof JavaExecError) throw new HttpError(cause.status, cause.message);
           throw cause;
         }
         return;

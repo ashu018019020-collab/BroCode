@@ -48,6 +48,8 @@ const DefensePage = lazy(() => import('../features/interview/DefensePage'));
 const PlaybookPage = lazy(() => import('../features/practice/Playbook'));
 const CCoursePage = lazy(() => import('../features/c-programming/CCoursePage'));
 const CLessonPage = lazy(() => import('../features/c-programming/CLessonPage'));
+const JCoursePage = lazy(() => import('../features/java-programming/JCoursePage'));
+const JLessonPage = lazy(() => import('../features/java-programming/JLessonPage'));
 const TrackOverview = lazy(() => import('../features/learning/TrackOverview'));
 const QuestionBank = lazy(() => import('../features/practice/QuestionBank'));
 const ProjectLab = lazy(() => import('../features/projects/ProjectLab'));
@@ -927,6 +929,8 @@ function Shell() {
               <Route path="/courses" element={<Protect><CoursesHome /></Protect>} />
               <Route path="/c-programming" element={<Protect><CCoursePage /></Protect>} />
               <Route path="/c-programming/:moduleId" element={<Protect><CLessonPage /></Protect>} />
+              <Route path="/java" element={<Protect><JCoursePage /></Protect>} />
+              <Route path="/java/:moduleId" element={<Protect><JLessonPage /></Protect>} />
               <Route path="/course/:slug" element={<Protect><CoursePage /></Protect>} />
               <Route path="/course/:slug/:step" element={<Protect><StepPage /></Protect>} />
               <Route path="/practice" element={<Protect><PracticeHub /></Protect>} />

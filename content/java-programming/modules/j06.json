@@ -1,0 +1,186 @@
+{
+  "id": "j06",
+  "no": 6,
+  "title": "Number Logic and Recursion",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Prime, palindrome, fibonacci jaise number problems aur recursion ka call stack.",
+  "prereqs": ["Module 05: loops"],
+  "objectives": [
+    "Test primality in O(sqrt n) and explain why that is enough",
+    "Solve digit problems with division and modulo",
+    "Write a recursive method with a correct base case",
+    "Trace the call stack of a recursive method and compare it with iteration"
+  ],
+  "definition": "Number logic problems manipulate digits and divisors with loops and modulo. Recursion is a method calling itself on a smaller input, with a base case that stops the calls; each pending call waits on the stack until the smaller calls return.",
+  "explain": [
+    "Most number problems are digit arithmetic: n % 10 gives the last digit, n / 10 removes it. Repeating that pair lets you sum digits, reverse a number, or check a palindrome without converting to text.",
+    "Primality only needs divisors up to the square root: if n = a × b and both factors were bigger than sqrt(n), their product would exceed n. Checking 2 and then odd numbers up to sqrt(n) is enough — and it is the difference between a solution that passes and one that times out.",
+    "Recursion splits a problem into a smaller copy of itself. factorial(5) needs factorial(4), which needs factorial(3), down to factorial(0) — the base case. Without a base case the calls never stop and the stack overflows. Each waiting call keeps its own local variables, which is exactly what the call stack picture shows."
+  ],
+  "hinglish": [
+    "Number problems me do operations ka jodi kaam karti hai: n % 10 last digit deta hai, n / 10 usse hata deta hai. Isse digit sum, reverse aur palindrome bina String banaye ho jaate hain.",
+    "Prime check ke liye sirf sqrt(n) tak divide dekhna kaafi hai: agar n = a × b aur dono sqrt(n) se bade ho, to product n se bada ho jaayega. Recursion me base case sabse zaroori hai — bina uske StackOverflowError aata hai, kyunki har call apna frame stack par rakhti hai."
+  ],
+  "analogy": "Recursion Russian dolls jaisa hai: sabse chhoti doll (base case) milte hi aap wapas bade dolls band karte ho. Har doll ke andar wali doll ka result bahar wali ko chahiye, isliye sab frames stack par wait karte hain.",
+  "why": "Placement tests and interviews are full of number and recursion questions because they test loops, boundaries and the call stack at once. Recursion also underpins trees, graphs, divide-and-conquer and the Stream API's reduce.",
+  "syntax": [
+    {
+      "code": "static boolean isPrime(int n) {\n    if (n < 2) return false;\n    for (int d = 2; (long) d * d <= n; d++) {\n        if (n % d == 0) return false;\n    }\n    return true;\n}",
+      "note": "(long) d * d avoids int overflow near Integer.MAX_VALUE. Returning early keeps the loop simple."
+    },
+    {
+      "code": "static int factorial(int n) {\n    if (n <= 1) return 1;      // base case\n    return n * factorial(n - 1); // smaller subproblem\n}",
+      "note": "Every recursive method needs a base case and an argument that moves toward it."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Prime numbers",
+      "body": "n is prime when it has exactly two divisors: 1 and itself. Handle n < 2 first, then test divisors from 2 to sqrt(n). Checking every number up to n - 1 is correct but too slow for large inputs."
+    },
+    {
+      "title": "Palindrome, Armstrong and perfect numbers",
+      "body": "A palindrome number reads the same reversed. An Armstrong number equals the sum of its digits each raised to the number of digits (153 = 1³ + 5³ + 3³). A perfect number equals the sum of its proper divisors (6 = 1 + 2 + 3). All three are digit/divisor loops."
+    },
+    {
+      "title": "Fibonacci and factorial",
+      "body": "Fibonacci: each term is the sum of the previous two, with 0 and 1 as seeds. Factorial: n! = n × (n-1)!, with 0! = 1. Iterative versions use O(1) extra space; naive recursive Fibonacci recomputes the same values exponentially."
+    },
+    {
+      "title": "GCD and LCM",
+      "body": "Euclid's algorithm: gcd(a, b) = gcd(b, a % b) until b is 0. lcm(a, b) = a / gcd(a, b) * b — divide first to reduce overflow risk. Both are short enough to memorise and are asked often."
+    },
+    {
+      "title": "Digits: sum, count and reverse",
+      "body": "While n > 0: digit = n % 10, then n /= 10. Accumulate sum, count or reversed = reversed * 10 + digit. Negative inputs need Math.abs or a sign flag; zero needs its own handling in some problems."
+    },
+    {
+      "title": "Recursion, base cases and the stack",
+      "body": "A recursive call pushes a frame holding parameters and locals; returning pops it. The base case stops the descent. Too deep a recursion throws StackOverflowError — that is a design limit, not a random crash."
+    },
+    {
+      "title": "Recursion versus iteration",
+      "body": "Recursion is clearer for trees, divide-and-conquer and backtracking. Iteration is cheaper in memory and avoids stack limits for simple loops. Anything recursive can be rewritten iteratively with an explicit stack."
+    }
+  ],
+  "examples": [
+    {
+      "level": "intermediate",
+      "title": "Prime check up to sqrt(n)",
+      "code": "public class Main {\n    static boolean isPrime(int n) {\n        if (n < 2) return false;\n        for (int d = 2; (long) d * d <= n; d++) {\n            if (n % d == 0) return false;\n        }\n        return true;\n    }\n\n    public static void main(String[] args) {\n        int[] nums = {1, 2, 9, 17, 25};\n        for (int n : nums) {\n            System.out.println(n + \" -> \" + isPrime(n));\n        }\n    }\n}",
+      "output": "1 -> false\n2 -> true\n9 -> false\n17 -> true\n25 -> false",
+      "lines": [
+        "isPrime rejects everything below 2, which handles 0, 1 and negatives in one check.",
+        "The loop stops at sqrt(n) because a larger divisor would need a matching factor below it.",
+        "9 is divisible by 3, 25 by 5, so both return false early.",
+        "17 has no divisor up to 4, so it returns true."
+      ],
+      "dryRun": ["n = 9: d = 2 → 9 % 2 != 0; d = 3 → 9 % 3 == 0 → false", "n = 17: d = 2, 3, 4 → no divisor; loop ends → true", "n = 25: d = 2..4; d = 5 → 25 % 5 == 0 → false", "Each result is printed with its verdict"]
+    },
+    {
+      "level": "advanced",
+      "title": "Recursive factorial and its call stack",
+      "code": "public class Main {\n    static int factorial(int n) {\n        if (n <= 1) return 1;\n        return n * factorial(n - 1);\n    }\n\n    public static void main(String[] args) {\n        System.out.println(factorial(5));\n        System.out.println(factorial(0));\n    }\n}",
+      "output": "120\n1",
+      "lines": [
+        "factorial(5) cannot multiply until factorial(4) returns, so five frames stack up.",
+        "factorial(1) hits the base case and returns 1 without another call.",
+        "The frames unwind: 2×1=2, 3×2=6, 4×6=24, 5×24=120.",
+        "factorial(0) also returns 1, because the base case is n <= 1."
+      ],
+      "dryRun": ["factorial(5) → 5 * factorial(4)", "→ 5 * (4 * factorial(3))", "→ 5 * 4 * 3 * 2 * factorial(1)", "→ 5 * 4 * 3 * 2 * 1 = 120"],
+      "memory": ["Stack bottom: factorial(5)", "Then factorial(4), factorial(3), factorial(2)", "Top: factorial(1) returns 1", "Frames pop in reverse order"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "for (int d = 2; d < n; d++) if (n % d == 0) return false;",
+      "right": "for (int d = 2; (long) d * d <= n; d++) if (n % d == 0) return false;",
+      "why": "Checking every divisor is O(n) and times out; sqrt(n) is enough. Casting to long prevents overflow when squaring."
+    },
+    {
+      "wrong": "static int fact(int n) { return n * fact(n - 1); }",
+      "right": "static int fact(int n) { if (n <= 1) return 1; return n * fact(n - 1); }",
+      "why": "Without a base case the recursion never stops and the stack overflows."
+    }
+  ],
+  "debug": {
+    "brief": "This factorial should print 120 but crashes with StackOverflowError. Add the missing base case.",
+    "code": "public class Main {\n    static int factorial(int n) {\n        return n * factorial(n - 1);\n    }\n\n    public static void main(String[] args) {\n        System.out.println(factorial(5));\n    }\n}",
+    "expected": "120",
+    "hints": ["What should factorial return when n reaches 1?", "Stop the recursion before it goes below 1."],
+    "fix": "public class Main {\n    static int factorial(int n) {\n        if (n <= 1) return 1;\n        return n * factorial(n - 1);\n    }\n\n    public static void main(String[] args) {\n        System.out.println(factorial(5));\n    }\n}"
+  },
+  "best": [
+    "Validate the input at the top: negative, zero and 1 break naive digit loops.",
+    "Use long for factorial, Fibonacci and sums that grow quickly.",
+    "Memoise or iterate for Fibonacci; the naive recursion is exponential.",
+    "Write the base case first, then the recursive step, then trace n = 0, 1, 2."
+  ],
+  "tip": "When you write a recursive answer in an interview, say the base case, the recursive relation and the stack depth out loud. Interviewers are checking that you know why it terminates, not just that it compiles.",
+  "revision": [
+    "Prime check only needs divisors up to sqrt(n).",
+    "Digits: % 10 peels the last digit, / 10 removes it.",
+    "Euclid: gcd(a,b) = gcd(b, a % b).",
+    "Recursion needs a base case and an argument that shrinks."
+  ],
+  "practice": [
+    { "title": "Armstrong numbers", "prompt": "Print all Armstrong numbers between 1 and 999 (for example 153).", "level": "intermediate", "hint": "Count digits, then sum digit^count." },
+    { "title": "GCD and LCM", "prompt": "Read two integers and print their GCD and LCM on two lines.", "level": "intermediate", "hint": "lcm = a / gcd * b; use long for the multiplication." },
+    { "title": "Recursive sum of digits", "prompt": "Write sumDigits(n) recursively and print sumDigits(9876).", "level": "intermediate", "hint": "Base case n == 0 → 0; else n % 10 + sumDigits(n / 10)." }
+  ],
+  "mcqs": [
+    {
+      "q": "Why is it enough to test divisors up to sqrt(n)?",
+      "options": ["Because sqrt is faster", "Because any factor pair has one factor <= sqrt(n)", "Because primes are odd", "Because n % sqrt(n) is always 0"],
+      "answer": 1,
+      "explain": "If n = a × b with a <= b, then a <= sqrt(n); testing up to sqrt(n) finds every composite."
+    },
+    {
+      "q": "What happens if a recursive method has no base case?",
+      "options": ["It returns 0", "It compiles but throws StackOverflowError at runtime", "It becomes a loop", "The compiler rejects it"],
+      "answer": 1,
+      "explain": "Each call pushes a frame until the stack is exhausted; the JVM throws StackOverflowError."
+    },
+    {
+      "q": "What does 153 % 10 give?",
+      "options": ["15", "3", "1", "0"],
+      "answer": 1,
+      "explain": "% is the remainder: 153 divided by 10 leaves 3."
+    }
+  ],
+  "interview": [
+    {
+      "q": "How would you improve a naive recursive Fibonacci?",
+      "a": "Naive recursion is O(2ⁿ) because it recomputes the same subproblems. Memoise results in an array or map for O(n), or iterate with two variables for O(n) time and O(1) space.",
+      "followUp": "What is the space complexity of the recursive version? (O(n) stack depth.)"
+    },
+    {
+      "q": "When would you choose recursion over a loop?",
+      "a": "When the data is naturally recursive — trees, nested structures, divide-and-conquer, backtracking — because the code mirrors the structure. For simple repetition, a loop is cheaper and avoids stack limits.",
+      "followUp": "How do you convert recursion to iteration? (Keep an explicit stack or track the state in variables.)"
+    }
+  ],
+  "lab": {
+    "title": "Reverse the digits",
+    "brief": "Read an integer and print its digits reversed. Keep the sign for negative numbers (for example -123 → -321).",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        // TODO: reverse the digits and print the result\n    }\n}",
+    "expected": "321",
+    "tests": [
+      { "name": "123", "stdin": "123\n", "stdout": "321" },
+      { "name": "-456", "stdin": "-456\n", "stdout": "-654" },
+      { "name": "1200", "stdin": "1200\n", "stdout": "21" }
+    ],
+    "hints": ["Take the sign out first with Math.abs, then put it back.", "reversed = reversed * 10 + n % 10; n /= 10."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int input = sc.nextInt();\n        int n = Math.abs(input);\n        int reversed = 0;\n        while (n > 0) {\n            reversed = reversed * 10 + n % 10;\n            n /= 10;\n        }\n        System.out.println(input < 0 ? -reversed : reversed);\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Numbers and recursion rehearsed?",
+    "checks": [
+      "I can explain the sqrt(n) bound for primality",
+      "I can trace a recursive method's stack down to its base case",
+      "I handled negative and zero inputs in a digit problem"
+    ]
+  }
+}

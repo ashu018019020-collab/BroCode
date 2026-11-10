@@ -44,6 +44,7 @@ const trackSlugs = JSON.parse(read('public/generated/tracks/index.json')).map((t
 const sections = JSON.parse(read('public/generated/curriculum/sections.json'));
 const courses = JSON.parse(read('public/generated/courses/index.json')).courses;
 const cModules = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/generated/c-course/index.json'), 'utf8')).modules;
+const jModules = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/generated/java-course/index.json'), 'utf8')).modules;
 
 test('sitemap: the committed file IS the build output, byte for byte', () => {
   // Same contract as the search index: no timestamp, no hand edits — regenerating over unchanged
@@ -69,7 +70,7 @@ test('sitemap: every registered route is represented — expanded, or deliberate
   }
 
   // And every route is accounted for: static, expanded, or skipped with a stated reason.
-  const expanded = new Set(['/track/:trackSlug', '/lesson/:sid', '/course/:slug', '/course/:slug/:step', '/c-programming/:moduleId']);
+  const expanded = new Set(['/track/:trackSlug', '/lesson/:sid', '/course/:slug', '/course/:slug/:step', '/c-programming/:moduleId', '/java/:moduleId']);
   for (const route of routes) {
     assert.ok(!route.includes(':') || expanded.has(route) || SKIPPED[route] !== undefined || PRIVATE[route] !== undefined,
       `route ${route} is neither expanded nor skipped — teach scripts/sitemap.cjs about it`);
@@ -108,7 +109,7 @@ test('sitemap: no duplicates, no placeholders, no within-document positions', ()
   }
   const privateStaticRoutes = staticRoutes.filter((r) => PRIVATE[r]);
   const expected = staticRoutes.length - privateStaticRoutes.length + trackSlugs.length + sections.length + courses.length
-    + courses.reduce((a, c) => a + c.steps.length, 0) + cModules.length;
+    + courses.reduce((a, c) => a + c.steps.length, 0) + cModules.length + jModules.length;
   assert.equal(locs.length, expected, 'the sitemap must hold exactly the route table’s real pages');
 });
 

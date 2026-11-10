@@ -629,6 +629,18 @@
 .c-code pre { padding-top: 32px !important; }
 .c-code-try { position: absolute; top: 6px; right: 6px; }
 
+/* Java course at phone widths. The notebook is a full-width textarea, every compiler/output block
+   is its own horizontal scroller, and the hub's ten section tabs wrap instead of forcing the page
+   sideways. 320px is the narrowest viewport the product supports and 390px is the common small
+   phone; both budgets are pinned by `mobile-overflow.test.mjs`. */
+.j-notebook, .j-code, .j-tabs { min-width: 0; max-width: 100%; }
+.j-notebook pre, .j-code pre { max-width: 100%; overflow: auto; overscroll-behavior-x: contain; }
+.j-tabs { flex-wrap: wrap; }
+@media (max-width: 430px) {
+  .j-notebook pre, .j-code pre { padding: 8px; font-size: 11px; }
+  .j-tabs .btn { min-width: 0; }
+}
+
 /* Question Bank subject boxes: the course card's own design — mark, name, one quiet line of real
    numbers — for the eight subjects, plus C Programming's. Each box holds only its own lessons, so a
    Python lesson can never look like it belongs to C (or the other way round), and the open box's

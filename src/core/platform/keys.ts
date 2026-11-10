@@ -151,6 +151,33 @@ export const C_LAB_PREFIX = 'clab:';
  */
 export const ASSISTANT_MODULE_KEY = 'aiml:assistant:module';
 
+// ---- the Java course's records ----
+/**
+ * One record per answered Java module MCQ: `jquiz:<module>:<index>`, with the chosen option in
+ * `answer`. Its own family on purpose — the Python bank (`qb:`) and the C course (`cquiz:`) must
+ * never count a Java answer they did not serve.
+ */
+export const jQuizAttempt = (moduleId: string, i: number) => `jquiz:${moduleId}:${i}`;
+export const J_QUIZ_PREFIX = 'jquiz:';
+/** One module's question family, e.g. `jQuizFamily('j03')` -> `'jquiz:j03:'`. */
+export const jQuizFamily = (moduleId: string) => `jquiz:${moduleId}:`;
+/**
+ * The Java course's lab verdict: one record per module, written when that module's lab passes every
+ * public test. Its own family so a passed Java lab is never mistaken for a C lab (`clab:`) or for
+ * a module checkpoint.
+ */
+export const jLabDone = (moduleId: string) => `jlab:${moduleId}`;
+export const J_LAB_PREFIX = 'jlab:';
+/** One coding-bank attempt: `jcoding:<questionId>`; `score` is the share of tests that passed. */
+export const jCodingAttempt = (questionId: string) => `jcoding:${questionId}`;
+export const J_CODING_PREFIX = 'jcoding:';
+/** One debugging-lab attempt: `jdebug:<challengeId>`; `done: true` only when the fixed code passes. */
+export const jDebugAttempt = (challengeId: string) => `jdebug:${challengeId}`;
+export const J_DEBUG_PREFIX = 'jdebug:';
+/** The course certificate and the final assessment are records too — not a printed badge. */
+export const jFinalKey = () => 'jcourse:final:assessment';
+export const jCertificateKey = () => 'jcourse:certificate';
+
 // ---- gamification policy ----
 export const XP_PER_LEVEL = 50;
 export const levelForXp = (xp: number) => Math.floor(Math.sqrt(xp / XP_PER_LEVEL)) + 1;

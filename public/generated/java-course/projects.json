@@ -1,0 +1,1169 @@
+{
+  "projects": [
+    {
+      "id": "jp01",
+      "level": "beginner",
+      "module": "j14",
+      "title": "CLI Expense Manager",
+      "summary": "A menu-driven console app that records expenses, groups them by category and prints monthly totals.",
+      "useCase": "Personal budgeting without a spreadsheet: add an expense, review category totals, spot the biggest spending area.",
+      "architecture": "Single-file Main with an Expense record, an ArrayList<Expense> store and a command loop. Categories are aggregated with a TreeMap at report time.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Model and store",
+          "tasks": [
+            "Create a record Expense(String category, int amount)",
+            "Keep a List<Expense> and an add command",
+            "Validate that the amount is positive"
+          ]
+        },
+        {
+          "title": "Report",
+          "tasks": [
+            "Aggregate by category with TreeMap",
+            "Print category=total then the grand total",
+            "Sort categories alphabetically"
+          ]
+        },
+        {
+          "title": "Polish",
+          "tasks": [
+            "Add a monthly filter",
+            "Handle unknown commands without crashing"
+          ]
+        }
+      ],
+      "objectives": [
+        "Practise records and collections",
+        "Aggregate data with Map.merge",
+        "Design a small command loop"
+      ],
+      "prereqs": [
+        "j04",
+        "j13",
+        "j14"
+      ],
+      "requirements": [
+        "Read commands until end",
+        "Print totals with no trailing spaces",
+        "Reject negative amounts"
+      ],
+      "features": [
+        "add category amount",
+        "report",
+        "month filter",
+        "input validation"
+      ],
+      "structure": [
+        "Main.java",
+        "Expense.java (optional)",
+        "README.md"
+      ],
+      "testing": [
+        "Add two expenses in one category and check the total",
+        "Add a zero amount and confirm it is rejected",
+        "Report an empty store without an exception"
+      ],
+      "errors": [
+        "NumberFormatException on a non-numeric amount",
+        "Negative totals from unvalidated input"
+      ],
+      "extensions": [
+        "Persist to CSV",
+        "Add a budget limit warning",
+        "Export a monthly summary"
+      ],
+      "readme": [
+        "Build: javac Main.java",
+        "Run: java Main",
+        "Commands: add food 250, report, end"
+      ]
+    },
+    {
+      "id": "jp02",
+      "level": "beginner",
+      "module": "j13",
+      "title": "Student Result Portal",
+      "summary": "Store students and marks, compute grades, class average and the topper.",
+      "useCase": "A teacher needs a printable result sheet for a class of 40 students.",
+      "architecture": "Student class with name and marks, a ResultService holding a List<Student>, and a Main that reads input and prints a formatted table.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Domain",
+          "tasks": [
+            "Create Student with name and marks",
+            "Add a grade() method with documented boundaries"
+          ]
+        },
+        {
+          "title": "Aggregation",
+          "tasks": [
+            "Compute average with double division",
+            "Find the topper by comparing marks"
+          ]
+        },
+        {
+          "title": "Output",
+          "tasks": [
+            "Print a fixed-width table",
+            "Format the average to two decimals"
+          ]
+        }
+      ],
+      "objectives": [
+        "Model a small domain",
+        "Separate data from reporting",
+        "Format console output"
+      ],
+      "prereqs": [
+        "j13",
+        "j14"
+      ],
+      "requirements": [
+        "Support 1..1000 students",
+        "Print grades A/B/C/F",
+        "Print average with 2 decimals"
+      ],
+      "features": [
+        "grade calculation",
+        "topper",
+        "class average",
+        "sorted output"
+      ],
+      "structure": [
+        "Main.java",
+        "Student.java",
+        "ResultService.java"
+      ],
+      "testing": [
+        "Boundary marks 89, 90, 75, 60",
+        "Single student class",
+        "Empty class handling"
+      ],
+      "errors": [
+        "Integer division in the average",
+        "Null name fields"
+      ],
+      "extensions": [
+        "Subject-wise marks",
+        "CSV import",
+        "Rank list"
+      ],
+      "readme": [
+        "Input: n then name marks",
+        "Output: per-student grade, average, topper"
+      ]
+    },
+    {
+      "id": "jp03",
+      "level": "intermediate",
+      "module": "j13",
+      "title": "Bank Management System",
+      "summary": "Multiple accounts with deposits, withdrawals, transfers and a transaction log.",
+      "useCase": "A small cooperative bank needs a console prototype before building a real service.",
+      "architecture": "Account objects with encapsulated balance, a Map<Integer, Account> registry, and a Transaction record appended to an in-memory log.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Accounts",
+          "tasks": [
+            "Encapsulate balance behind deposit/withdraw",
+            "Reject overdrafts with a clear message"
+          ]
+        },
+        {
+          "title": "Transfers",
+          "tasks": [
+            "Validate both accounts",
+            "Make transfer all-or-nothing"
+          ]
+        },
+        {
+          "title": "Audit",
+          "tasks": [
+            "Record every transaction",
+            "Print a statement sorted by time"
+          ]
+        }
+      ],
+      "objectives": [
+        "Apply encapsulation",
+        "Handle failure without corrupting state",
+        "Design an audit trail"
+      ],
+      "prereqs": [
+        "j11",
+        "j13",
+        "j14"
+      ],
+      "requirements": [
+        "Unique account ids",
+        "No negative balances",
+        "Statement per account"
+      ],
+      "features": [
+        "open account",
+        "deposit",
+        "withdraw",
+        "transfer",
+        "statement"
+      ],
+      "structure": [
+        "Main.java",
+        "Account.java",
+        "Transaction.java",
+        "Bank.java"
+      ],
+      "testing": [
+        "Withdraw more than the balance",
+        "Transfer to a missing account",
+        "Statement after several operations"
+      ],
+      "errors": [
+        "Partial transfer when the second step fails",
+        "Double spending through unvalidated state"
+      ],
+      "extensions": [
+        "Interest calculation",
+        "File-backed persistence",
+        "Daily withdrawal limits"
+      ],
+      "readme": [
+        "Commands: open 1, deposit 1 500, transfer 1 2 100, statement 1"
+      ]
+    },
+    {
+      "id": "jp04",
+      "level": "intermediate",
+      "module": "j14",
+      "title": "Library Management System",
+      "summary": "Catalogue books, members and loans with search and due-date tracking.",
+      "useCase": "A school library wants to replace a paper register with a console system.",
+      "architecture": "Book, Member and Loan entities, a Library service with maps keyed by id, and a search index over titles.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "schema": "CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT NOT NULL, author TEXT, copies INTEGER NOT NULL DEFAULT 1);\nCREATE TABLE members (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nCREATE TABLE loans (id INTEGER PRIMARY KEY, book_id INTEGER REFERENCES books(id), member_id INTEGER REFERENCES members(id), due_date TEXT NOT NULL, returned INTEGER NOT NULL DEFAULT 0);",
+      "steps": [
+        {
+          "title": "Catalogue",
+          "tasks": [
+            "Add and search books by title or author",
+            "Track available copies"
+          ]
+        },
+        {
+          "title": "Loans",
+          "tasks": [
+            "Issue a loan only when a copy is available",
+            "Return a loan and restore the copy"
+          ]
+        },
+        {
+          "title": "Reports",
+          "tasks": [
+            "List overdue loans",
+            "Print member borrowing history"
+          ]
+        }
+      ],
+      "objectives": [
+        "Model relationships between entities",
+        "Enforce invariants",
+        "Design searchable collections"
+      ],
+      "prereqs": [
+        "j13",
+        "j14",
+        "j18"
+      ],
+      "requirements": [
+        "No loan without an available copy",
+        "Due date 14 days after issue",
+        "Overdue report"
+      ],
+      "features": [
+        "add book",
+        "search",
+        "issue",
+        "return",
+        "overdue report"
+      ],
+      "structure": [
+        "Main.java",
+        "Book.java",
+        "Member.java",
+        "Loan.java",
+        "Library.java"
+      ],
+      "testing": [
+        "Issue the last copy twice",
+        "Return an unknown loan",
+        "Search with mixed case"
+      ],
+      "errors": [
+        "Copy count drifting below zero",
+        "Loans referencing deleted books"
+      ],
+      "extensions": [
+        "SQLite persistence",
+        "Reservation queue",
+        "Fine calculation"
+      ],
+      "readme": [
+        "Commands: add 1 Clean Code, issue 1 2, return 1, overdue"
+      ]
+    },
+    {
+      "id": "jp05",
+      "level": "intermediate",
+      "module": "j17",
+      "title": "Inventory and Billing System",
+      "summary": "Track stock, price items and generate an invoice with tax.",
+      "useCase": "A small shop needs a billing counter that also updates stock.",
+      "architecture": "Product records in a TreeMap, an Invoice builder, and stream-based totals with a tax rate.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Stock",
+          "tasks": [
+            "Add and restock products",
+            "Reject sales beyond available stock"
+          ]
+        },
+        {
+          "title": "Billing",
+          "tasks": [
+            "Build an invoice from line items",
+            "Apply an 18% tax and round to 2 decimals"
+          ]
+        },
+        {
+          "title": "Reporting",
+          "tasks": [
+            "Print low-stock items",
+            "Summarise daily revenue"
+          ]
+        }
+      ],
+      "objectives": [
+        "Use streams for aggregation",
+        "Keep stock consistent with sales",
+        "Format money correctly"
+      ],
+      "prereqs": [
+        "j13",
+        "j14",
+        "j17"
+      ],
+      "requirements": [
+        "Quantities never negative",
+        "Invoice totals with 2 decimals",
+        "Low-stock threshold configurable"
+      ],
+      "features": [
+        "add product",
+        "sell",
+        "invoice",
+        "low stock",
+        "revenue report"
+      ],
+      "structure": [
+        "Main.java",
+        "Product.java",
+        "Invoice.java",
+        "Inventory.java"
+      ],
+      "testing": [
+        "Sell more than stock",
+        "Invoice rounding",
+        "Restock after a sale"
+      ],
+      "errors": [
+        "Floating-point rounding errors",
+        "Selling from an unknown product"
+      ],
+      "extensions": [
+        "Barcode lookup",
+        "CSV export",
+        "Multiple tax slabs"
+      ],
+      "readme": [
+        "Commands: add pen 10 5, sell pen 2, invoice, lowstock 3"
+      ]
+    },
+    {
+      "id": "jp06",
+      "level": "intermediate",
+      "module": "j18",
+      "title": "Contact Manager with File Persistence",
+      "summary": "A contact book that survives restarts by reading and writing a CSV file.",
+      "useCase": "A salesperson needs a simple local address book without a database.",
+      "architecture": "Contact records, a CsvStore using Files.readAllLines/writeString inside try-with-resources, and a service layer for add/find/list.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Model",
+          "tasks": [
+            "Create Contact(name, phone, email)",
+            "Validate the phone format"
+          ]
+        },
+        {
+          "title": "Storage",
+          "tasks": [
+            "Load contacts at startup",
+            "Write the whole file atomically after each change"
+          ]
+        },
+        {
+          "title": "Search",
+          "tasks": [
+            "Find by partial name",
+            "List sorted by name"
+          ]
+        }
+      ],
+      "objectives": [
+        "Practise file I/O",
+        "Handle malformed rows",
+        "Separate storage from business logic"
+      ],
+      "prereqs": [
+        "j14",
+        "j18"
+      ],
+      "requirements": [
+        "File path configurable",
+        "Malformed rows skipped with a warning",
+        "No data loss on write failure"
+      ],
+      "features": [
+        "add",
+        "find",
+        "list",
+        "delete",
+        "persistent CSV"
+      ],
+      "structure": [
+        "Main.java",
+        "Contact.java",
+        "CsvStore.java"
+      ],
+      "testing": [
+        "Reload after adding",
+        "Row with a missing field",
+        "Empty file at first run"
+      ],
+      "errors": [
+        "Leaking readers",
+        "Corrupting the file on a partial write"
+      ],
+      "extensions": [
+        "JSON format",
+        "Backup rotation",
+        "Import from phone export"
+      ],
+      "readme": [
+        "Run: java Main contacts.csv",
+        "Commands: add Aman 9999999999 aman@x.com, find am, list"
+      ]
+    },
+    {
+      "id": "jp07",
+      "level": "beginner",
+      "module": "j04",
+      "title": "Console Quiz Application",
+      "summary": "Ask multiple-choice questions, score answers and show a result summary.",
+      "useCase": "A trainer wants a quick practice quiz for a workshop.",
+      "architecture": "Question records with options and the correct index, a Quiz runner that reads answers, and a score report.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Questions",
+          "tasks": [
+            "Model Question with 4 options",
+            "Store a small question bank"
+          ]
+        },
+        {
+          "title": "Runner",
+          "tasks": [
+            "Print each question and read a choice",
+            "Validate the choice range"
+          ]
+        },
+        {
+          "title": "Result",
+          "tasks": [
+            "Track the score",
+            "Show the correct answer for mistakes"
+          ]
+        }
+      ],
+      "objectives": [
+        "Practise control flow and arrays",
+        "Handle invalid input",
+        "Design a simple data model"
+      ],
+      "prereqs": [
+        "j04",
+        "j06",
+        "j13"
+      ],
+      "requirements": [
+        "At least 5 questions",
+        "Choices 1..4 only",
+        "Final score out of total"
+      ],
+      "features": [
+        "question bank",
+        "answer validation",
+        "score",
+        "review"
+      ],
+      "structure": [
+        "Main.java",
+        "Question.java",
+        "Quiz.java"
+      ],
+      "testing": [
+        "Answer all correctly",
+        "Enter an out-of-range choice",
+        "Skip a question"
+      ],
+      "errors": [
+        "InputMismatchException on a letter",
+        "Off-by-one when mapping choices to indices"
+      ],
+      "extensions": [
+        "Randomise order",
+        "Timer per question",
+        "Persist high scores"
+      ],
+      "readme": [
+        "Run: java Main",
+        "Answer with 1-4"
+      ]
+    },
+    {
+      "id": "jp08",
+      "level": "intermediate",
+      "module": "j12",
+      "title": "Employee Payroll System",
+      "summary": "Model employees with different salary rules and run monthly payroll.",
+      "useCase": "HR needs a payroll prototype with developers, managers and interns.",
+      "architecture": "Abstract Employee with an abstract monthlyPay(), subclasses per role, and a Payroll service that totals and prints payslips.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Hierarchy",
+          "tasks": [
+            "Create an abstract Employee",
+            "Implement Developer, Manager and Intern"
+          ]
+        },
+        {
+          "title": "Payroll",
+          "tasks": [
+            "Compute gross and deductions",
+            "Print one payslip per employee"
+          ]
+        },
+        {
+          "title": "Reporting",
+          "tasks": [
+            "Total payroll by department",
+            "Highest paid employee"
+          ]
+        }
+      ],
+      "objectives": [
+        "Apply inheritance and polymorphism",
+        "Override methods correctly",
+        "Format currency output"
+      ],
+      "prereqs": [
+        "j12",
+        "j13",
+        "j17"
+      ],
+      "requirements": [
+        "No duplicated salary logic",
+        "Deduction rate per role",
+        "Payslip with 2 decimals"
+      ],
+      "features": [
+        "roles",
+        "gross pay",
+        "deductions",
+        "department totals"
+      ],
+      "structure": [
+        "Main.java",
+        "Employee.java",
+        "Developer.java",
+        "Manager.java",
+        "Payroll.java"
+      ],
+      "testing": [
+        "Manager bonus path",
+        "Intern stipend path",
+        "Zero-employee payroll"
+      ],
+      "errors": [
+        "Forgetting super(...) in subclass constructors",
+        "Using == for role names"
+      ],
+      "extensions": [
+        "Attendance-based deductions",
+        "Tax slabs",
+        "PDF payslips"
+      ],
+      "readme": [
+        "Input: n then role base",
+        "Output: payslips and totals"
+      ]
+    },
+    {
+      "id": "jp09",
+      "level": "advanced",
+      "module": "j14",
+      "title": "URL Shortener Service",
+      "summary": "Generate short codes, resolve them, and track hit counts with expiry.",
+      "useCase": "A marketing team needs short links for campaigns and wants click statistics.",
+      "architecture": "A Map<String, Link> keyed by code, a base62 encoder over an AtomicLong sequence, and expiry checks on resolve.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Encoding",
+          "tasks": [
+            "Encode a numeric id in base62",
+            "Handle collisions deterministically"
+          ]
+        },
+        {
+          "title": "Storage",
+          "tasks": [
+            "Store target URL, creation time and hits",
+            "Resolve only unexpired links"
+          ]
+        },
+        {
+          "title": "Statistics",
+          "tasks": [
+            "Increment hits on resolve",
+            "Print the top links by hits"
+          ]
+        }
+      ],
+      "objectives": [
+        "Design a small service",
+        "Use concurrent collections correctly",
+        "Handle expiry logic"
+      ],
+      "prereqs": [
+        "j14",
+        "j17",
+        "j20"
+      ],
+      "requirements": [
+        "Codes unique",
+        "Expired links return not found",
+        "Hit counts accurate under concurrency"
+      ],
+      "features": [
+        "shorten",
+        "resolve",
+        "expiry",
+        "stats"
+      ],
+      "structure": [
+        "Main.java",
+        "UrlService.java",
+        "Link.java"
+      ],
+      "testing": [
+        "Resolve unknown code",
+        "Expired link",
+        "Hits increment on each resolve"
+      ],
+      "errors": [
+        "Race on hit counters",
+        "Code collisions after restart"
+      ],
+      "extensions": [
+        "Custom aliases",
+        "Rate limiting",
+        "Redirect HTTP server"
+      ],
+      "readme": [
+        "Commands: shorten https://example.com, resolve a, stats"
+      ]
+    },
+    {
+      "id": "jp10",
+      "level": "advanced",
+      "module": "j20",
+      "title": "Task Scheduler",
+      "summary": "Run submitted tasks with priorities, delayed execution and a worker pool.",
+      "useCase": "A background job runner needs to execute queued reports without blocking the request thread.",
+      "architecture": "PriorityBlockingQueue of ScheduledTask, a fixed ExecutorService, and a dispatcher thread that releases tasks when due.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Task model",
+          "tasks": [
+            "Task with priority and delay",
+            "Comparable ordering by due time then priority"
+          ]
+        },
+        {
+          "title": "Dispatcher",
+          "tasks": [
+            "Poll due tasks",
+            "Submit to the executor"
+          ]
+        },
+        {
+          "title": "Lifecycle",
+          "tasks": [
+            "Graceful shutdown",
+            "Report completed and failed tasks"
+          ]
+        }
+      ],
+      "objectives": [
+        "Apply concurrency utilities",
+        "Design graceful shutdown",
+        "Handle failures per task"
+      ],
+      "prereqs": [
+        "j15",
+        "j20"
+      ],
+      "requirements": [
+        "No busy-wait loop",
+        "Tasks never run twice",
+        "Shutdown drains the queue"
+      ],
+      "features": [
+        "submit with delay",
+        "priority order",
+        "retry on failure",
+        "metrics"
+      ],
+      "structure": [
+        "Main.java",
+        "ScheduledTask.java",
+        "Scheduler.java"
+      ],
+      "testing": [
+        "Two tasks with the same due time",
+        "Task throwing an exception",
+        "Shutdown with pending work"
+      ],
+      "errors": [
+        "Lost wake-ups",
+        "Executor threads preventing JVM exit"
+      ],
+      "extensions": [
+        "Cron expressions",
+        "Persistent queue",
+        "Dead-letter queue"
+      ],
+      "readme": [
+        "Submit: submit 1000 HIGH report",
+        "Then: shutdown"
+      ]
+    },
+    {
+      "id": "jp11",
+      "level": "advanced",
+      "module": "j20",
+      "title": "Multi-client Chat Simulation",
+      "summary": "Simulate several clients sending messages to a shared room with history.",
+      "useCase": "Understand fan-out and thread safety before building a real WebSocket server.",
+      "architecture": "A thread-safe message bus (CopyOnWriteArrayList of listeners), client threads producing messages, and a room that stores bounded history.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Bus",
+          "tasks": [
+            "Register and unregister listeners",
+            "Broadcast without holding a lock during callbacks"
+          ]
+        },
+        {
+          "title": "Clients",
+          "tasks": [
+            "Produce messages on separate threads",
+            "Include sender and sequence number"
+          ]
+        },
+        {
+          "title": "History",
+          "tasks": [
+            "Keep the last N messages",
+            "Replay history to a new client"
+          ]
+        }
+      ],
+      "objectives": [
+        "Practise producer/consumer thinking",
+        "Avoid deadlocks in callbacks",
+        "Bound memory usage"
+      ],
+      "prereqs": [
+        "j14",
+        "j20"
+      ],
+      "requirements": [
+        "Thread-safe registration",
+        "Bounded history",
+        "Deterministic test output"
+      ],
+      "features": [
+        "broadcast",
+        "history",
+        "join/leave",
+        "message ordering per sender"
+      ],
+      "structure": [
+        "Main.java",
+        "MessageBus.java",
+        "ChatRoom.java",
+        "Client.java"
+      ],
+      "testing": [
+        "Two clients receive each other's messages",
+        "Listener removed mid-broadcast",
+        "History capped at N"
+      ],
+      "errors": [
+        "ConcurrentModificationException in listeners",
+        "Unbounded history growth"
+      ],
+      "extensions": [
+        "Private messages",
+        "Slow-consumer backpressure",
+        "Reconnect replay"
+      ],
+      "readme": [
+        "Run: java Main",
+        "Output: ordered message log"
+      ]
+    },
+    {
+      "id": "jp12",
+      "level": "intermediate",
+      "module": "j12",
+      "title": "E-commerce Cart and Checkout",
+      "summary": "Add products to a cart, apply discounts and complete a checkout.",
+      "useCase": "A storefront prototype needs cart rules before the UI is built.",
+      "architecture": "Product, CartItem, Cart with pricing rules, and pluggable Discount strategies.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Cart",
+          "tasks": [
+            "Add, update and remove items",
+            "Merge duplicate products"
+          ]
+        },
+        {
+          "title": "Pricing",
+          "tasks": [
+            "Subtotal, discount and tax",
+            "Apply a percentage discount strategy"
+          ]
+        },
+        {
+          "title": "Checkout",
+          "tasks": [
+            "Validate stock",
+            "Produce an order summary"
+          ]
+        }
+      ],
+      "objectives": [
+        "Apply composition and strategy",
+        "Keep money arithmetic exact",
+        "Separate pricing from cart storage"
+      ],
+      "prereqs": [
+        "j12",
+        "j13"
+      ],
+      "requirements": [
+        "No negative quantities",
+        "Discounts composable",
+        "Total rounded once at the end"
+      ],
+      "features": [
+        "cart operations",
+        "discount codes",
+        "tax",
+        "order summary"
+      ],
+      "structure": [
+        "Main.java",
+        "Product.java",
+        "Cart.java",
+        "Discount.java"
+      ],
+      "testing": [
+        "Duplicate product merge",
+        "Discount on an empty cart",
+        "Rounding of 33.335"
+      ],
+      "errors": [
+        "double rounding drift",
+        "Discount applied before subtotal"
+      ],
+      "extensions": [
+        "Coupon expiry",
+        "Inventory reservation",
+        "Order persistence"
+      ],
+      "readme": [
+        "Commands: add pen 2 10, discount 10, checkout"
+      ]
+    },
+    {
+      "id": "jp13",
+      "level": "advanced",
+      "module": "j17",
+      "title": "Log Analyzer",
+      "summary": "Parse application logs and report error counts, top messages and time buckets.",
+      "useCase": "An on-call engineer needs a quick summary of a large log file.",
+      "architecture": "Streaming line reader, a parser producing LogEntry, and stream collectors for counts by level, message and minute.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Parsing",
+          "tasks": [
+            "Split timestamp, level and message",
+            "Skip malformed lines and count them"
+          ]
+        },
+        {
+          "title": "Aggregation",
+          "tasks": [
+            "Count entries per level",
+            "Top 5 messages by frequency"
+          ]
+        },
+        {
+          "title": "Time analysis",
+          "tasks": [
+            "Bucket by minute",
+            "Find the busiest minute"
+          ]
+        }
+      ],
+      "objectives": [
+        "Process data with streams",
+        "Handle malformed input",
+        "Produce a useful report"
+      ],
+      "prereqs": [
+        "j17",
+        "j18"
+      ],
+      "requirements": [
+        "Stream the file, do not load it fully",
+        "Deterministic top-5 ordering",
+        "Report skipped lines"
+      ],
+      "features": [
+        "level counts",
+        "top messages",
+        "per-minute buckets",
+        "malformed count"
+      ],
+      "structure": [
+        "Main.java",
+        "LogEntry.java",
+        "LogAnalyzer.java"
+      ],
+      "testing": [
+        "Empty file",
+        "All malformed lines",
+        "Ties in frequency"
+      ],
+      "errors": [
+        "Splitting on the wrong delimiter",
+        "Loading a huge file into memory"
+      ],
+      "extensions": [
+        "Regex parsing",
+        "CSV output",
+        "Alert thresholds"
+      ],
+      "readme": [
+        "Run: java Main app.log",
+        "Output: counts and top messages"
+      ]
+    },
+    {
+      "id": "jp14",
+      "level": "advanced",
+      "module": "j18",
+      "title": "HTTP API Client with Retries",
+      "summary": "Call a JSON API with timeouts, retries with backoff and response caching.",
+      "useCase": "Integrate a third-party service that occasionally returns 503.",
+      "architecture": "A client interface, an HTTP implementation using java.net.http.HttpClient, a retry decorator, and an in-memory cache keyed by URL.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Client",
+          "tasks": [
+            "Send GET with a timeout",
+            "Parse a minimal JSON response"
+          ]
+        },
+        {
+          "title": "Resilience",
+          "tasks": [
+            "Retry only idempotent GETs",
+            "Exponential backoff with jitter",
+            "Cap attempts"
+          ]
+        },
+        {
+          "title": "Caching",
+          "tasks": [
+            "Cache successful responses with a TTL",
+            "Serve cached data on failure"
+          ]
+        }
+      ],
+      "objectives": [
+        "Practise HTTP and exceptions",
+        "Design retry semantics",
+        "Apply caching carefully"
+      ],
+      "prereqs": [
+        "j11",
+        "j18",
+        "j20"
+      ],
+      "requirements": [
+        "Never retry POST blindly",
+        "Timeouts on every request",
+        "Cache keyed by URL and TTL"
+      ],
+      "features": [
+        "GET",
+        "retry",
+        "backoff",
+        "cache",
+        "structured errors"
+      ],
+      "structure": [
+        "Main.java",
+        "ApiClient.java",
+        "RetryPolicy.java",
+        "Cache.java"
+      ],
+      "testing": [
+        "Simulated 503 then success",
+        "Timeout path",
+        "Cache hit"
+      ],
+      "errors": [
+        "Retrying non-idempotent calls",
+        "Ignoring InterruptedException"
+      ],
+      "extensions": [
+        "Circuit breaker",
+        "Metrics",
+        "Async requests"
+      ],
+      "readme": [
+        "Run with a mock server URL",
+        "Show attempts and final response"
+      ]
+    },
+    {
+      "id": "jp15",
+      "level": "advanced",
+      "module": "j19",
+      "title": "Mini REST Service Blueprint",
+      "summary": "A layered Java service design with DTOs, a generic repository and validation.",
+      "useCase": "Design the backend skeleton for a student API before choosing a framework.",
+      "architecture": "Controller → Service → Repository interfaces, generic Repository<T, ID>, DTO records, and a custom ValidationException mapped to 400 responses.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n    }\n}",
+      "steps": [
+        {
+          "title": "Contracts",
+          "tasks": [
+            "Define DTO records for requests and responses",
+            "Define a generic Repository<T, ID>"
+          ]
+        },
+        {
+          "title": "Layering",
+          "tasks": [
+            "Implement an in-memory repository",
+            "Keep business rules in the service, not the controller"
+          ]
+        },
+        {
+          "title": "Errors",
+          "tasks": [
+            "Validate input and throw a typed exception",
+            "Map exceptions to status codes in one place"
+          ]
+        }
+      ],
+      "objectives": [
+        "Design clean layering",
+        "Use generics for reuse",
+        "Centralise error handling"
+      ],
+      "prereqs": [
+        "j13",
+        "j19",
+        "j20"
+      ],
+      "requirements": [
+        "No framework dependency in the core",
+        "Repository replaceable by a database implementation",
+        "Validation messages are specific"
+      ],
+      "features": [
+        "CRUD endpoints",
+        "validation",
+        "error mapping",
+        "generic repository"
+      ],
+      "structure": [
+        "Main.java",
+        "StudentDto.java",
+        "StudentService.java",
+        "Repository.java",
+        "InMemoryRepository.java"
+      ],
+      "testing": [
+        "Create and read a student",
+        "Invalid payload returns 400",
+        "Duplicate id rejected"
+      ],
+      "errors": [
+        "Leaking entities into the API layer",
+        "Catching Exception at every layer"
+      ],
+      "extensions": [
+        "Wire into Spring Boot",
+        "Add D1/SQL persistence",
+        "Pagination"
+      ],
+      "readme": [
+        "Build: javac *.java",
+        "Run the demo main to exercise the service"
+      ]
+    }
+  ]
+}

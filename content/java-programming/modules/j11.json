@@ -1,0 +1,184 @@
+{
+  "id": "j11",
+  "no": 11,
+  "title": "Abstraction and Interfaces",
+  "level": "intermediate",
+  "hours": 7,
+  "goal": "Abstract classes, interfaces, default methods aur SOLID ka practical use.",
+  "prereqs": ["Module 10: inheritance and overriding"],
+  "objectives": [
+    "Choose between an abstract class and an interface with a reason",
+    "Implement multiple interfaces in one class",
+    "Use default and static interface methods without abusing them",
+    "Explain the first SOLID principles with a code example"
+  ],
+  "definition": "Abstraction exposes what an object does while hiding how. An abstract class can hold state and partly implemented behaviour but cannot be instantiated. An interface declares a contract; a class can implement many interfaces, and interfaces may provide default and static methods.",
+  "explain": [
+    "An abstract class is a partially built class: it can have fields, constructors and concrete methods, plus abstract methods that subclasses must implement. It expresses a shared identity with shared code. You extend one.",
+    "An interface expresses a capability — Comparable, Runnable, List. A class can implement several, which is how Java gets multiple-type behaviour without multiple inheritance. Since Java 8 interfaces can carry default methods (so old implementers do not break) and static helpers.",
+    "Program to the interface, not the implementation. A method that takes List<String> works with ArrayList, LinkedList or a test double. That is the dependency-inversion idea behind Spring injection, and it is why interfaces make code testable."
+  ],
+  "hinglish": [
+    "Abstract class adhuri class hai: fields, constructor, concrete methods aur kuch abstract methods. Subclass ko extend karte ho — sirf ek. Interface capability batata hai (Runnable, Comparable), aur ek class kai interfaces implement kar sakti hai.",
+    "Interface ke against code likho, implementation ke against nahi. Method List<String> le to ArrayList, LinkedList ya test double — sab chalenge. Yahi idea Spring ki dependency injection aur testability ka base hai."
+  ],
+  "analogy": "Interface ek job description hai: 'drive a car' — kis car se, ye implementation decide karti hai. Abstract class ek training program hai jisme kuch modules already complete hote hain aur kuch trainee ko khud karne hote hain.",
+  "why": "Every serious Java codebase is organised around interfaces: repositories, services, listeners, comparators. Interviews ask abstract class versus interface immediately, and SOLID questions assume you can apply the answer to real code.",
+  "syntax": [
+    {
+      "code": "abstract class Payment {\n    protected final double amount;\n    Payment(double amount) { this.amount = amount; }\n    abstract void pay();            // subclass must implement\n    String receipt() { return \"Paid \" + amount; } // shared code\n}",
+      "note": "An abstract class may mix state, shared behaviour and abstract methods. It cannot be instantiated with new."
+    },
+    {
+      "code": "interface Notifier {\n    void send(String message);\n    default String channel() { return \"generic\"; }\n    static Notifier console() { return msg -> System.out.println(msg); }\n}",
+      "note": "Interfaces can have abstract, default and static methods. Fields are implicitly public static final."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Abstract classes and methods",
+      "body": "A class with an abstract method must be abstract; it cannot be instantiated. Subclasses either implement every abstract method or are abstract themselves. Abstract classes are ideal for a template with shared state and partial implementation."
+    },
+    {
+      "title": "Interfaces",
+      "body": "An interface declares method signatures (and constants). Implementing classes supply the bodies. A reference typed as the interface can point at any implementation, which is the basis of substitutability and mocking."
+    },
+    {
+      "title": "Multiple interface implementation",
+      "body": "A class can implement several interfaces, so it can be Runnable, Comparable and AutoCloseable at once. If two interfaces provide the same default method, the class must override it and can call InterfaceName.super.method()."
+    },
+    {
+      "title": "Default and static methods",
+      "body": "Default methods let an interface evolve without breaking implementers; they should be small and optional. Static interface methods are utility factories scoped to the interface."
+    },
+    {
+      "title": "Functional interfaces",
+      "body": "An interface with exactly one abstract method is functional and can be implemented with a lambda: Runnable, Comparator, Predicate, Function. @FunctionalInterface makes the compiler enforce the single-method rule."
+    },
+    {
+      "title": "Interface vs abstract class",
+      "body": "Use an interface for a capability shared by unrelated types, and for the API boundary. Use an abstract class when implementations share state or substantial code and belong to one family. A class can implement many interfaces but extend only one class."
+    },
+    {
+      "title": "Encapsulation, abstraction and SOLID",
+      "body": "Encapsulation hides data; abstraction hides implementation behind a contract. S: one reason to change. O: extend without editing. L: a subtype must honour the parent's contract. I: small interfaces. D: depend on abstractions, not concretions."
+    }
+  ],
+  "examples": [
+    {
+      "level": "intermediate",
+      "title": "Abstract template with shared code",
+      "code": "public class Main {\n    static abstract class Report {\n        protected final String title;\n        Report(String title) { this.title = title; }\n        abstract String body();\n        String render() { return \"== \" + title + \" ==\\n\" + body(); }\n    }\n\n    static class SalesReport extends Report {\n        SalesReport() { super(\"Sales\"); }\n        @Override String body() { return \"total: 4200\"; }\n    }\n\n    public static void main(String[] args) {\n        Report r = new SalesReport();\n        System.out.println(r.render());\n    }\n}",
+      "output": "== Sales ==\ntotal: 4200",
+      "lines": [
+        "Report owns the title and the render format, which every report shares.",
+        "body() is abstract, so each report supplies only its own content.",
+        "SalesReport passes its title through super and implements body().",
+        "render() calls body() polymorphically, producing the final two lines."
+      ],
+      "dryRun": ["new SalesReport() → Report title = Sales", "r.render() → \"== Sales ==\\n\" + body()", "body() dispatches to SalesReport → total: 4200", "Printed as two lines"]
+    },
+    {
+      "level": "advanced",
+      "title": "Two interfaces, one class",
+      "code": "public class Main {\n    interface Readable { String read(); }\n    interface Writable { void write(String text); }\n\n    static class Notebook implements Readable, Writable {\n        private String text = \"\";\n        @Override public String read() { return text; }\n        @Override public void write(String value) { text += value; }\n    }\n\n    public static void main(String[] args) {\n        Notebook n = new Notebook();\n        n.write(\"Java \");\n        n.write(\"interfaces\");\n        Readable r = n;\n        System.out.println(r.read());\n        System.out.println(n instanceof Writable);\n    }\n}",
+      "output": "Java interfaces\ntrue",
+      "lines": [
+        "Notebook implements both contracts, so it can be used wherever either type is required.",
+        "write appends to the private buffer; read exposes it.",
+        "The Readable reference only sees read(), which is enough for printing.",
+        "instanceof confirms the object also satisfies Writable at runtime."
+      ],
+      "dryRun": ["write(\"Java \") → text = \"Java \"", "write(\"interfaces\") → text = \"Java interfaces\"", "r.read() → \"Java interfaces\"", "n instanceof Writable → true"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "abstract class Shape { abstract double area(); }  Shape s = new Shape();",
+      "right": "Shape s = new Circle(2);",
+      "why": "An abstract class cannot be instantiated; the compiler rejects new Shape(). Use a concrete subclass."
+    },
+    {
+      "wrong": "interface Repo { void save(); default void saveAll(List<Item> items) { for (Item i : items) save(); } }",
+      "right": "Keep default methods small and optional; put required behaviour in the interface contract.",
+      "why": "Default methods are for compatible evolution. Heavy logic in an interface hides dependencies and is hard to override cleanly."
+    }
+  ],
+  "debug": {
+    "brief": "This class does not compile because it does not honour its interface. Implement the missing method.",
+    "code": "public class Main {\n    interface Greeter { String greet(String name); }\n\n    static class EnglishGreeter implements Greeter {\n        // missing method\n    }\n\n    public static void main(String[] args) {\n        System.out.println(new EnglishGreeter().greet(\"Aman\"));\n    }\n}",
+    "expected": "Hello Aman",
+    "hints": ["A concrete class must implement every abstract interface method.", "Add public String greet(String name) and return the text."],
+    "fix": "public class Main {\n    interface Greeter { String greet(String name); }\n\n    static class EnglishGreeter implements Greeter {\n        @Override public String greet(String name) { return \"Hello \" + name; }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(new EnglishGreeter().greet(\"Aman\"));\n    }\n}"
+  },
+  "best": [
+    "Program to interfaces in method parameters and fields.",
+    "Keep interfaces small and purpose-specific (interface segregation).",
+    "Use @FunctionalInterface when the interface is meant for a lambda.",
+    "Do not add a default method just to avoid changing implementers — fix the design instead."
+  ],
+  "tip": "The abstract-class-versus-interface answer lands when you add a use case: 'a Payment abstract class for shared amount/validation, a Refundable interface because not every payment is refundable'. That shows the design reasoning interviewers listen for.",
+  "revision": [
+    "Abstract class: shared state/code, one parent, cannot instantiate.",
+    "Interface: contract/capability, many implementations, default and static methods.",
+    "One abstract method = functional interface = lambda-compatible.",
+    "Depend on abstractions (D in SOLID) to keep code testable."
+  ],
+  "practice": [
+    { "title": "Shape interface", "prompt": "Define Shape with area() and perimeter(); implement Circle and Rectangle; print from a Shape[].", "level": "intermediate", "hint": "Only the interface type belongs in the loop variable." },
+    { "title": "Functional greeting", "prompt": "Create a functional interface Formatter with format(String) and implement it twice with lambdas.", "level": "intermediate", "hint": "Assign a lambda to a Formatter variable, then call format." },
+    { "title": "Refactor to an interface", "prompt": "Take a service class that news up a repository and refactor it to depend on a Repository interface.", "level": "advanced", "hint": "Constructor-inject the interface; pass a fake in a test." }
+  ],
+  "mcqs": [
+    {
+      "q": "How many classes can a Java class extend?",
+      "options": ["Zero", "One", "Two", "Unlimited"],
+      "answer": 1,
+      "explain": "Java allows single class inheritance; multiple interfaces provide the rest."
+    },
+    {
+      "q": "An interface with exactly one abstract method can be…",
+      "options": ["instantiated", "implemented with a lambda", "extended only", "made final"],
+      "answer": 1,
+      "explain": "That is a functional interface, the target type for a lambda."
+    },
+    {
+      "q": "Which SOLID principle says depend on abstractions?",
+      "options": ["Single responsibility", "Open/closed", "Liskov substitution", "Dependency inversion"],
+      "answer": 3,
+      "explain": "Dependency inversion: high-level modules depend on abstractions, not concrete implementations."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Abstract class vs interface — how do you decide?",
+      "a": "Use an interface for a capability or API boundary shared by unrelated types, and when multiple implementations must be substitutable. Use an abstract class when implementations genuinely share state or a template algorithm. A class can implement many interfaces but extend only one class.",
+      "followUp": "Can an abstract class have no abstract methods? (Yes, but then an interface is usually the clearer design.)"
+    },
+    {
+      "q": "What is the Liskov substitution principle?",
+      "a": "A subtype must be usable wherever the supertype is expected without breaking correctness: it must honour the parent's contract, not strengthen preconditions or weaken postconditions. A Square that changes Rectangle's setWidth behaviour violates it.",
+      "followUp": "How do you fix a Liskov violation? (Change the hierarchy — often composition instead of inheritance — rather than adding instanceof checks.)"
+    }
+  ],
+  "lab": {
+    "title": "Payment through an interface",
+    "brief": "Read a payment method (upi or card) and an amount. Print '<method> paid <amount>' with two decimals.",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    interface Payment {\n        String pay(double amount);\n    }\n\n    // TODO: implement UpiPayment and CardPayment\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        double amount = sc.nextDouble();\n        Payment p = kind.equals(\"upi\") ? null : null;\n        // TODO: pick the implementation and print p.pay(amount)\n    }\n}",
+    "expected": "upi paid 250.00",
+    "tests": [
+      { "name": "upi", "stdin": "upi 250\n", "stdout": "upi paid 250.00" },
+      { "name": "card", "stdin": "card 99.5\n", "stdout": "card paid 99.50" }
+    ],
+    "hints": ["Use String.format(\"%s paid %.2f\", name, amount).", "Assign the right implementation to the Payment variable."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    interface Payment {\n        String pay(double amount);\n    }\n\n    static class UpiPayment implements Payment {\n        @Override public String pay(double amount) { return String.format(\"upi paid %.2f\", amount); }\n    }\n\n    static class CardPayment implements Payment {\n        @Override public String pay(double amount) { return String.format(\"card paid %.2f\", amount); }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        double amount = sc.nextDouble();\n        Payment p = kind.equals(\"upi\") ? new UpiPayment() : new CardPayment();\n        System.out.println(p.pay(amount));\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Abstractions chosen deliberately?",
+    "checks": [
+      "I can justify an interface over an abstract class with a real case",
+      "I have implemented two interfaces in one class",
+      "I can name all five SOLID principles in one line each"
+    ]
+  }
+}

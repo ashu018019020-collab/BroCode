@@ -1,0 +1,185 @@
+{
+  "id": "j07",
+  "no": 7,
+  "title": "Methods",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Methods likhna, parameters pass karna, return values aur overloading samajhna.",
+  "prereqs": ["Module 06: recursion"],
+  "objectives": [
+    "Declare and call a method with parameters and a return value",
+    "Explain why Java passes arguments by value, including object references",
+    "Overload a method on purpose, not by accident",
+    "Decide between static and instance methods"
+  ],
+  "definition": "A method is a named block of code with a parameter list and a return type. Calling it runs the block with the arguments you pass. void means it returns nothing. Overloading means several methods share a name but differ in parameter types or count.",
+  "explain": [
+    "Methods turn a long main into named steps. A method signature is the name plus the parameter types; that is what the compiler uses to pick the right method. The return type is not part of the signature, which is why two methods cannot differ only by return type.",
+    "Java is strictly pass-by-value. For primitives, the method receives a copy of the value. For objects, it receives a copy of the reference — so the method can change the object's state, but cannot make the caller's variable point at a different object.",
+    "A static method belongs to the class and is called without an object; an instance method belongs to an object and can read its fields. Overloading lets println handle ints, doubles and Strings with one name; the compiler chooses the version from the argument types at compile time."
+  ],
+  "hinglish": [
+    "Method lambi main ko named steps me todta hai. Signature = name + parameter types; compiler isi se decide karta hai kaunsa method chalega. Return type signature ka part nahi hai, isliye sirf return type badal kar overload nahi kar sakte.",
+    "Java pass-by-value hai. Primitive ki copy jaati hai; object ka reference copy hota hai — matlab method object ka state badal sakta hai, par caller ka variable kisi naye object ko point nahi karwa sakta. static method class ka hota hai, instance method object ka."
+  ],
+  "analogy": "Method ek kitchen appliance jaisa hai: input daalo (arguments), button dabao (call), output lo (return value). Same appliance ke alag-alag attachments (overloading) ho sakte hain — naam ek, kaam input ke type se decide hota hai.",
+  "why": "Methods are the unit of reuse, testing and readability. Every framework you will use — JUnit, Spring, Streams — is built on method calls, and interviewers judge your code by whether it is decomposed into small, named, testable methods.",
+  "syntax": [
+    {
+      "code": "static int add(int a, int b) {\n    return a + b;\n}\n\nstatic void greet(String name) {\n    System.out.println(\"Hello, \" + name);\n}\n\npublic static void main(String[] args) {\n    int total = add(3, 4);\n    greet(\"Aman\");\n    System.out.println(total);\n}",
+      "note": "static methods are called by class name (or directly inside the same class). void methods are called for their effect, not a value."
+    },
+    {
+      "code": "static double area(double side) { return side * side; }\nstatic double area(double length, double width) { return length * width; }\nstatic double area(double radius, boolean circle) { return circle ? Math.PI * radius * radius : 0; }",
+      "note": "Overloads must differ in parameter types or count. Choosing a boolean flag to distinguish a circle is a design smell — a separate method name is clearer."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Declaration, call and signature",
+      "body": "A declaration names the method, its parameters and its return type. A call supplies arguments that must be assignable to the parameter types. Signature = name + parameter types; return type alone cannot overload."
+    },
+    {
+      "title": "Parameters, arguments and return values",
+      "body": "Parameters are the variables in the declaration; arguments are the values at the call site. A non-void method must return a value of its declared type on every path, which the compiler checks."
+    },
+    {
+      "title": "void methods",
+      "body": "A void method performs an effect — printing, updating an object, saving a file. It can still use return; with no value to exit early. Prefer returning a value and printing at the call site when you want the method testable."
+    },
+    {
+      "title": "Method overloading",
+      "body": "Same name, different parameter lists. The compiler picks the most specific applicable overload. Beware ambiguity with null arguments and autoboxing: overloads that differ only by Integer versus int can surprise you."
+    },
+    {
+      "title": "static versus instance",
+      "body": "Static methods belong to the class and cannot touch instance fields directly. Instance methods belong to an object and can read or change its state. Utility functions are static; behaviour tied to data is an instance method."
+    },
+    {
+      "title": "Scope and varargs",
+      "body": "A parameter and any local declared in a block exist only in that block. Varargs (String... names) accepts zero or more arguments and arrives as an array, so it must be the last parameter."
+    },
+    {
+      "title": "Recursion through methods",
+      "body": "A method may call itself or another method that calls back. Recursion is method calls on the stack; the base case and the shrinking argument are what make it terminate."
+    }
+  ],
+  "examples": [
+    {
+      "level": "beginner",
+      "title": "Overloaded area, chosen by argument types",
+      "code": "public class Main {\n    static int area(int side) {\n        return side * side;\n    }\n\n    static int area(int length, int width) {\n        return length * width;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(area(4));\n        System.out.println(area(4, 5));\n    }\n}",
+      "output": "16\n20",
+      "lines": [
+        "The first overload takes one int: a square's area.",
+        "The second takes two ints: a rectangle's area.",
+        "area(4) matches the one-parameter version, so it returns 16.",
+        "area(4, 5) matches the two-parameter version and returns 20."
+      ],
+      "dryRun": ["Call area(4) → one-arg overload → 4 * 4 = 16", "Call area(4, 5) → two-arg overload → 4 * 5 = 20", "println prints each result on its own line"]
+    },
+    {
+      "level": "intermediate",
+      "title": "Varargs and a value-returning method",
+      "code": "public class Main {\n    static double average(int... marks) {\n        if (marks.length == 0) return 0;\n        int sum = 0;\n        for (int mark : marks) sum += mark;\n        return (double) sum / marks.length;\n    }\n\n    public static void main(String[] args) {\n        System.out.printf(\"%.2f%n\", average(80, 90, 70));\n        System.out.println(average());\n    }\n}",
+      "output": "80.00\n0.0",
+      "lines": [
+        "int... marks accepts any number of ints and exposes them as an array.",
+        "The empty case returns 0 before dividing, so there is no divide-by-zero.",
+        "The cast to double makes the division produce a decimal.",
+        "printf formats the first result to two decimals; println prints 0.0 for the empty call."
+      ],
+      "dryRun": ["average(80, 90, 70): sum = 240, length = 3 → 80.0", "average(): marks.length = 0 → returns 0", "Printed: 80.00 then 0.0"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "static void add(int a, int b) { int sum = a + b; }",
+      "right": "static int add(int a, int b) { return a + b; }",
+      "why": "The sum is a local that disappears when the method returns. Return it, or the caller gets nothing."
+    },
+    {
+      "wrong": "static int area(int side) { return side * side; }\nstatic double area(int side) { return side * side; }",
+      "right": "Use different names, or different parameter lists.",
+      "why": "Return type is not part of the signature, so these two declarations are a duplicate-method compile error."
+    }
+  ],
+  "debug": {
+    "brief": "This method should return the larger number but does not compile. Fix it.",
+    "code": "public class Main {\n    static int max(int a, int b) {\n        if (a > b) {\n            return a;\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(max(3, 9));\n    }\n}",
+    "expected": "9",
+    "hints": ["What does the method return when a is not greater than b?", "A non-void method must return on every path."],
+    "fix": "public class Main {\n    static int max(int a, int b) {\n        if (a > b) {\n            return a;\n        }\n        return b;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(max(3, 9));\n    }\n}"
+  },
+  "best": [
+    "One method, one job; name it after what it returns or does.",
+    "Prefer returning a value over printing inside the method — it is testable.",
+    "Keep parameter lists short; a long list usually wants an object.",
+    "Do not overload with boolean flags to switch behaviour — use a clearer name."
+  ],
+  "tip": "A standard screen question is 'is Java pass-by-reference?'. Say no, explain pass-by-value with an object reference, and give the swap example: swapping two object references inside a method does not affect the caller.",
+  "revision": [
+    "Signature = name + parameter types; return type is not part of it.",
+    "Java passes everything by value; objects pass a copy of the reference.",
+    "Overloading is compile-time; overriding is runtime.",
+    "Varargs must be the last parameter and arrives as an array."
+  ],
+  "practice": [
+    { "title": "Calculator methods", "prompt": "Write add, subtract, multiply and divide methods returning double, then call them from main.", "level": "beginner", "hint": "Guard division by zero before dividing." },
+    { "title": "Overloaded greet", "prompt": "Write greet(String) and greet(String, int) where the second repeats the greeting n times.", "level": "beginner", "hint": "Loop inside the two-argument overload." },
+    { "title": "Prime method", "prompt": "Extract the prime check from module 06 into isPrime(int) and call it for 1 to 20.", "level": "intermediate", "hint": "Return a boolean; print at the call site." }
+  ],
+  "mcqs": [
+    {
+      "q": "Which is NOT part of a method signature?",
+      "options": ["method name", "parameter types", "return type", "parameter order"],
+      "answer": 2,
+      "explain": "The signature is the name plus parameter types. Return type is not part of it for overload resolution."
+    },
+    {
+      "q": "What does a void method return?",
+      "options": ["null", "0", "Nothing", "Its last expression"],
+      "answer": 2,
+      "explain": "void means no value is returned; a bare return; only exits early."
+    },
+    {
+      "q": "Java parameter passing is…",
+      "options": ["pass-by-reference", "pass-by-value", "pass-by-name", "copy-on-write"],
+      "answer": 1,
+      "explain": "Java always passes values. For objects, the value is a copy of the reference."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Can you overload a method by changing only its return type?",
+      "a": "No. The compiler resolves overloads from the name and parameter types; return type alone produces a duplicate-method error. Change the parameter list or the method name.",
+      "followUp": "Can you overload with varargs? (Yes, but it can create ambiguity with fixed-arity overloads; the compiler prefers the fixed version.)"
+    },
+    {
+      "q": "What is the difference between static and instance methods?",
+      "a": "Static methods belong to the class, have no this reference and cannot access instance fields directly. Instance methods belong to an object and can read and modify its state. Utility code is static; behaviour over data is an instance method.",
+      "followUp": "Can a static method call an instance method directly? (Not without an object.)"
+    }
+  ],
+  "lab": {
+    "title": "Largest of three, with a method",
+    "brief": "Read three integers and print the largest one using a max3 method — not Math.max.",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    static int max3(int a, int b, int c) {\n        // TODO: return the largest\n        return a;\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        int c = sc.nextInt();\n        System.out.println(max3(a, b, c));\n    }\n}",
+    "expected": "9",
+    "tests": [
+      { "name": "3 9 2", "stdin": "3 9 2\n", "stdout": "9" },
+      { "name": "10 10 1", "stdin": "10 10 1\n", "stdout": "10" },
+      { "name": "negative", "stdin": "-5 -2 -9\n", "stdout": "-2" }
+    ],
+    "hints": ["Find the max of a and b, then compare that with c.", "Return the answer from the method and print in main."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    static int max3(int a, int b, int c) {\n        int max = a > b ? a : b;\n        return max > c ? max : c;\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        int c = sc.nextInt();\n        System.out.println(max3(a, b, c));\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Methods in your hands?",
+    "checks": [
+      "I can declare a method with parameters and a return value",
+      "I can explain pass-by-value with an object reference",
+      "I know why two methods cannot differ only by return type"
+    ]
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "id": "j14",
+  "no": 14,
+  "title": "Collection Framework",
+  "level": "advanced",
+  "hours": 9,
+  "goal": "List, Set, Map, Queue aur unke trade-offs ko complexity ke saath samajhna.",
+  "prereqs": ["Module 12: records and enums", "Module 13: exceptions"],
+  "objectives": [
+    "Pick the right collection for a task from its complexity and ordering guarantees",
+    "Use List, Set, Map, Deque and PriorityQueue correctly",
+    "Iterate safely and avoid ConcurrentModificationException",
+    "Sort with Comparable and Comparator"
+  ],
+  "definition": "The Collection Framework is a set of interfaces and implementations for groups of objects. Collection extends Iterable; List keeps order and allows duplicates; Set forbids duplicates; Queue/Deque model processing order; Map stores key-value pairs and is not a Collection.",
+  "explain": [
+    "Choose by the question you are answering. Need order and duplicates? List (ArrayList for fast indexing, LinkedList for frequent ends). Need uniqueness? Set (HashSet for speed, LinkedHashSet for insertion order, TreeSet for sorted order). Need lookup by key? Map.",
+    "HashMap gives average O(1) get/put using hashCode and equals; a bad hashCode turns it into O(n). TreeMap and TreeSet keep keys sorted in O(log n). ArrayDeque is the modern stack/queue; PriorityQueue always returns the smallest (or comparator-first) element.",
+    "Never modify a collection structurally inside a for-each loop — the iterator detects it and throws ConcurrentModificationException. Use iterator.remove(), removeIf, or collect into a new collection. For sorting, Comparable is the natural order and Comparator is an external, composable order."
+  ],
+  "hinglish": [
+    "Collection choose karne ka rule sawaal se aata hai: order aur duplicates chahiye to List; uniqueness chahiye to Set; key se lookup chahiye to Map. ArrayList indexing me fast hai, LinkedList ends par fast, HashSet unique + fast, TreeSet sorted.",
+    "for-each ke andar collection ko structurally modify karoge to ConcurrentModificationException aata hai. iterator.remove(), removeIf ya nayi list use karo. Comparable natural order hai, Comparator bahar se diya gaya order — dono interview favourites hain."
+  ],
+  "analogy": "List ek queue hai jahan log line me khade hain (duplicates allowed), Set ek guest list hai jahan ek naam ek baar, Map ek dictionary hai jahan word se meaning milti hai, aur PriorityQueue hospital ki triage line hai — sabse urgent pehle.",
+  "why": "Almost every Java program stores more than one value, and interviews ask ArrayList vs LinkedList, HashMap internals and Comparable vs Comparator. Choosing the wrong collection is a common silent performance bug.",
+  "syntax": [
+    {
+      "code": "List<String> names = new ArrayList<>();\nnames.add(\"Aman\");\nnames.add(\"Priya\");\nnames.add(0, \"Ravi\");\nSystem.out.println(names.get(1));\n\nMap<String, Integer> stock = new HashMap<>();\nstock.put(\"pen\", 10);\nstock.merge(\"pen\", 5, Integer::sum);\nSystem.out.println(stock.getOrDefault(\"book\", 0));",
+      "note": "Program to the interface (List, Map) and instantiate the implementation (ArrayList, HashMap). getOrDefault avoids a null check."
+    },
+    {
+      "code": "List<String> words = new ArrayList<>(List.of(\"bb\", \"a\", \"ccc\"));\nwords.sort(Comparator.comparingInt(String::length).thenComparing(Comparator.naturalOrder()));\nSystem.out.println(words);",
+      "note": "Comparator composes: shortest first, then alphabetical. sort mutates the list in place."
+    }
+  ],
+  "topics": [
+    {
+      "title": "The hierarchy",
+      "body": "Iterable → Collection → List, Set, Queue. Map sits beside Collection and maps keys to values. Each interface promises behaviour; the implementation chooses the performance."
+    },
+    {
+      "title": "List: ArrayList and LinkedList",
+      "body": "ArrayList is a growable array: O(1) random access, O(n) insert/remove in the middle, amortised O(1) append. LinkedList is a doubly linked list: O(1) at both ends, O(n) get(i), more memory per element. Vector is synchronised legacy — prefer ArrayList or CopyOnWriteArrayList."
+    },
+    {
+      "title": "Set: HashSet, LinkedHashSet, TreeSet",
+      "body": "HashSet: average O(1), no order. LinkedHashSet: insertion order, slightly more memory. TreeSet: sorted, O(log n), needs Comparable or a Comparator. Duplicate detection is the point of every Set."
+    },
+    {
+      "title": "Map: HashMap, LinkedHashMap, TreeMap",
+      "body": "HashMap: average O(1), key order unspecified. LinkedHashMap: insertion (or access) order. TreeMap: sorted keys, O(log n). Hashtable is legacy and synchronised; ConcurrentHashMap is the concurrent choice."
+    },
+    {
+      "title": "Queue, Deque and PriorityQueue",
+      "body": "Queue offers/ polls from the head. ArrayDeque is the preferred stack and queue (push/pop, offer/poll). PriorityQueue returns the least element by natural order or a Comparator, with O(log n) insert and O(log n) poll — not a sorted list."
+    },
+    {
+      "title": "Iteration and fail-fast behaviour",
+      "body": "for-each uses an Iterator. Structural modification during iteration makes the iterator fail fast with ConcurrentModificationException. Remove through iterator.remove(), removeIf, or build a new collection."
+    },
+    {
+      "title": "Comparable and Comparator",
+      "body": "Comparable<T>.compareTo defines the natural order inside the class. Comparator<T> defines external orders and composes with comparing, thenComparing, reversed and nullsFirst. Use Comparator for multiple sort orders."
+    },
+    {
+      "title": "Collections utility and complexity",
+      "body": "Collections.sort, unmodifiableList, singletonList, emptyList, reverse, shuffle, frequency, max/min. Know the table: ArrayList get O(1); HashMap get/put O(1) average; TreeMap O(log n); LinkedList get O(n)."
+    }
+  ],
+  "examples": [
+    {
+      "level": "advanced",
+      "title": "Frequency map with deterministic output",
+      "code": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> words = List.of(\"java\", \"sql\", \"java\", \"api\", \"java\");\n        Map<String, Integer> freq = new TreeMap<>();\n        for (String w : words) freq.merge(w, 1, Integer::sum);\n        for (Map.Entry<String, Integer> e : freq.entrySet()) {\n            System.out.println(e.getKey() + \"=\" + e.getValue());\n        }\n        System.out.println(freq.containsKey(\"sql\"));\n    }\n}",
+      "output": "api=1\njava=3\nsql=1\ntrue",
+      "lines": [
+        "TreeMap keeps keys sorted, so the output order is stable without a separate sort.",
+        "merge inserts 1 the first time and adds 1 on later occurrences.",
+        "entrySet lets us read key and value together without a second lookup.",
+        "containsKey checks membership in average O(1) for a hash map and O(log n) here."
+      ],
+      "dryRun": ["java → {java=1}", "sql → {java=1, sql=1}", "java → {java=2, sql=1}", "api and java again → {api=1, java=3, sql=1}"]
+    },
+    {
+      "level": "advanced",
+      "title": "Comparable and a composed Comparator",
+      "code": "import java.util.*;\n\npublic class Main {\n    record Employee(String name, int salary) implements Comparable<Employee> {\n        @Override public int compareTo(Employee other) {\n            return Integer.compare(salary, other.salary);\n        }\n    }\n\n    public static void main(String[] args) {\n        List<Employee> staff = new ArrayList<>(List.of(\n            new Employee(\"Aman\", 40000), new Employee(\"Priya\", 55000), new Employee(\"Ravi\", 40000)));\n        Collections.sort(staff);\n        System.out.println(staff.get(0).name());\n        staff.sort(Comparator.comparingInt(Employee::salary).reversed().thenComparing(Employee::name));\n        System.out.println(staff.get(0).name() + \" \" + staff.get(0).salary());\n    }\n}",
+      "output": "Aman\nPriya 55000",
+      "lines": [
+        "compareTo defines the natural order: ascending salary.",
+        "After Collections.sort, the lowest salary (Aman or Ravi, both 40000) is first — a stable sort keeps Aman before Ravi.",
+        "The composed Comparator sorts by salary descending, then by name ascending.",
+        "Priya has the highest salary, so she is first after the second sort."
+      ],
+      "dryRun": ["Natural order: Aman(40000), Ravi(40000), Priya(55000)", "First element name = Aman", "Descending salary: Priya 55000, then Aman/Ravi 40000 sorted by name", "First element = Priya 55000"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "for (String s : list) { if (s.isEmpty()) list.remove(s); }",
+      "right": "list.removeIf(String::isEmpty);",
+      "why": "Removing through the list during a for-each invalidates the iterator and throws ConcurrentModificationException."
+    },
+    {
+      "wrong": "Map<Person, String> map = new HashMap<>(); class Person { }",
+      "right": "Override equals and hashCode consistently on Person.",
+      "why": "HashMap finds a key by hashCode then equals. Without both, equal-looking keys land in different buckets and lookups miss."
+    }
+  ],
+  "debug": {
+    "brief": "This code should remove the empty strings but throws ConcurrentModificationException. Fix it.",
+    "code": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> items = new ArrayList<>(List.of(\"a\", \"\", \"b\", \"\"));\n        for (String item : items) {\n            if (item.isEmpty()) items.remove(item);\n        }\n        System.out.println(items.size());\n    }\n}",
+    "expected": "2",
+    "hints": ["The for-each iterator notices that the list changed.", "Use removeIf, or iterator.remove()."],
+    "fix": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> items = new ArrayList<>(List.of(\"a\", \"\", \"b\", \"\"));\n        items.removeIf(String::isEmpty);\n        System.out.println(items.size());\n    }\n}"
+  },
+  "best": [
+    "Declare variables as List/Set/Map and construct the implementation at one place.",
+    "Use ArrayDeque rather than Stack for new stack code.",
+    "Use Map.merge and computeIfAbsent instead of get/null checks.",
+    "Return List.copyOf or Collections.unmodifiableList from APIs that must not be mutated."
+  ],
+  "tip": "For 'HashMap internal working', describe buckets by hashCode, collision handling (linked list then tree at 8 entries in one bucket), resize at load factor 0.75, and why equals/hashCode must agree. That level of detail is what is being tested.",
+  "revision": [
+    "List keeps order and duplicates; Set unique; Map key-value; Queue order of processing.",
+    "ArrayList O(1) get, LinkedList O(1) ends, HashSet/HashMap O(1) average, TreeSet/TreeMap O(log n).",
+    "Never structurally modify during for-each; use removeIf or an iterator.",
+    "Comparable = natural order, Comparator = external/composed order."
+  ],
+  "practice": [
+    { "title": "Duplicate finder", "prompt": "Read n words and print the first word that appears twice, or 'none'.", "level": "intermediate", "hint": "A HashSet add() returns false when the value already exists." },
+    { "title": "Top scorer", "prompt": "Store name→marks in a HashMap and print the highest scorer, breaking ties alphabetically.", "level": "advanced", "hint": "Stream over entrySet and sort with a composed Comparator." },
+    { "title": "Task queue", "prompt": "Use a PriorityQueue to process tasks by priority number and print their names in order.", "level": "advanced", "hint": "Comparator.comparingInt(Task::priority)." }
+  ],
+  "mcqs": [
+    {
+      "q": "Which collection keeps insertion order and rejects duplicates?",
+      "options": ["HashSet", "LinkedHashSet", "ArrayList", "TreeMap"],
+      "answer": 1,
+      "explain": "LinkedHashSet preserves insertion order and enforces uniqueness."
+    },
+    {
+      "q": "Average complexity of HashMap.get?",
+      "options": ["O(1)", "O(log n)", "O(n)", "O(n log n)"],
+      "answer": 0,
+      "explain": "Hashing gives average constant-time lookup; worst case degrades with collisions."
+    },
+    {
+      "q": "Which interface provides compareTo for natural ordering?",
+      "options": ["Comparator", "Comparable", "Iterable", "Cloneable"],
+      "answer": 1,
+      "explain": "Comparable is implemented by the class itself; Comparator is external."
+    }
+  ],
+  "interview": [
+    {
+      "q": "ArrayList vs LinkedList?",
+      "a": "ArrayList is an array: O(1) random access, O(n) insert/remove in the middle, better cache locality. LinkedList is a doubly linked list: O(1) at the ends, O(n) access by index, more memory per node. In practice ArrayList wins for most workloads.",
+      "followUp": "When is LinkedList actually better? (When you repeatedly insert/remove at the head through a ListIterator, or use it as a Deque — though ArrayDeque is usually faster.)"
+    },
+    {
+      "q": "How does HashMap work internally?",
+      "a": "Keys are hashed, spread and mapped to a bucket. Equal hashCodes share a bucket, compared with equals. Buckets start as a linked list and convert to a balanced tree when they grow beyond eight entries (with a sufficiently large table). The table resizes at load factor 0.75. get/put are O(1) average, O(n) worst case.",
+      "followUp": "What happens if you override equals but not hashCode? (Equal keys can hash differently, so lookups miss and duplicates appear.)"
+    }
+  ],
+  "lab": {
+    "title": "Word frequency, sorted",
+    "brief": "Read n, then n words. Print each distinct word and its count as word=count, sorted alphabetically.",
+    "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        Map<String, Integer> freq = new TreeMap<>();\n        // TODO: count the words, then print sorted word=count lines\n    }\n}",
+    "expected": "api=1\njava=2\nsql=1",
+    "tests": [
+      { "name": "mixed", "stdin": "4\njava sql java api\n", "stdout": "api=1\njava=2\nsql=1" },
+      { "name": "single", "stdin": "1\nhello\n", "stdout": "hello=1" }
+    ],
+    "hints": ["freq.merge(word, 1, Integer::sum) counts in one line.", "TreeMap already sorts keys alphabetically."],
+    "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        Map<String, Integer> freq = new TreeMap<>();\n        for (int i = 0; i < n; i++) {\n            String word = sc.next();\n            freq.merge(word, 1, Integer::sum);\n        }\n        for (Map.Entry<String, Integer> e : freq.entrySet()) {\n            System.out.println(e.getKey() + \"=\" + e.getValue());\n        }\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Collections chosen by evidence?",
+    "checks": [
+      "I can pick a collection from its ordering, uniqueness and complexity",
+      "I know why ConcurrentModificationException happens and how to avoid it",
+      "I can sort the same data two different ways with Comparator"
+    ]
+  }
+}

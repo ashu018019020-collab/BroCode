@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Database, Radio, ShieldAlert } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, BookOpen, CheckCircle2, Database, Radio, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { useCurriculum } from '../../core/data/curriculum';
 import { useCourseIndex } from '../../core/data/courses';
@@ -10,6 +10,8 @@ import { useOwnerCourses } from '../../core/data/owner-courses';
 import { contentHealth, type Severity } from '../../core/learning/content-health';
 import { STEPS } from '../../core/learning/roadmap';
 import { loadCourseAuditReport, type CourseAuditReport } from '../../core/data/course-audit';
+import { useJIndex } from '../../core/data/jcourse';
+import { useCIndex } from '../../core/data/ccourse';
 
 /**
  * /admin/content — the owner's content & publishing centre.
@@ -41,6 +43,8 @@ export default function OwnerContentPage() {
   const banks = useBankManifest();
   const notebooks = useNotebooks();
   const owner = useOwnerCourses();
+  const java = useJIndex();
+  const cCourse = useCIndex();
 
   const health = useMemo(() => contentHealth({
     courses: (index?.courses ?? []).map((course) => ({
@@ -228,6 +232,30 @@ export default function OwnerContentPage() {
             Course audit report not loaded yet.
           </div>
         )}
+      </div>
+
+      {/* --------------------------- language courses --------------------------- */}
+      <div className="sec-head"><h2><BookOpen size={16} color="var(--green)" /> Language courses</h2><span className="line" /></div>
+      <div className="card fadeup">
+        <p className="small muted" style={{ marginTop: 0 }}>
+          Java and C are file-published courses: content is authored under <code>content/</code>, then
+          validated and written to <code>public/generated/</code> by their generators. These are the
+          published artifacts a learner loads — not a separate report. A dash means the artifact has
+          not loaded, never that it is empty.
+        </p>
+        <div className="oh-grid">
+          <div className="oh-stat"><b>{java ? java.stats.modules : '—'}</b><span className="small muted">Java modules</span></div>
+          <div className="oh-stat"><b>{java ? java.stats.coding : '—'}</b><span className="small muted">Java coding questions</span></div>
+          <div className="oh-stat"><b>{java ? java.stats.debugging : '—'}</b><span className="small muted">Java debug labs</span></div>
+          <div className="oh-stat"><b>{cCourse ? cCourse.stats.modules : '—'}</b><span className="small muted">C modules</span></div>
+          <div className="oh-stat"><b>{cCourse ? cCourse.stats.labs : '—'}</b><span className="small muted">C labs</span></div>
+          <div className="oh-stat"><b>{cCourse ? cCourse.stats.interview : '—'}</b><span className="small muted">C interview Qs</span></div>
+        </div>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+          <Link className="btn small" to="/java">Open Java course <ArrowRight size={11} /></Link>
+          <Link className="btn small" to="/c-programming">Open C course <ArrowRight size={11} /></Link>
+          <span className="chip small">Publish: npm run java-course:write · npm run c-course:write</span>
+        </div>
       </div>
 
       {/* ------------------------------ attention ------------------------------ */}

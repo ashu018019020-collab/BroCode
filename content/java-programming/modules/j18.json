@@ -1,0 +1,187 @@
+{
+  "id": "j18",
+  "no": 18,
+  "title": "Multithreading and Concurrency",
+  "level": "advanced",
+  "hours": 9,
+  "goal": "Threads, race conditions, synchronization, executors aur CompletableFuture.",
+  "prereqs": ["Module 17: functional Java (lambdas)"],
+  "objectives": [
+    "Create threads with Runnable and run work on an ExecutorService",
+    "Explain a race condition and fix it with the right primitive",
+    "Use CompletableFuture to compose asynchronous steps",
+    "Recognise deadlock and avoid shared mutable state"
+  ],
+  "definition": "A thread is an independent path of execution inside one process, sharing that process's heap. Concurrency is managing multiple threads safely: without coordination, interleaved reads and writes cause race conditions. Java provides synchronized, volatile, atomics, locks, concurrent collections and executors for this.",
+  "explain": [
+    "Every Java program starts with the main thread. You create another by implementing Runnable and passing it to a Thread, but production code submits tasks to an ExecutorService so threads are pooled and reused instead of created per request.",
+    "A race condition happens when two threads read-modify-write the same variable and the interleaving loses an update. count++ is three steps, not one. synchronized makes a block atomic and establishes visibility; AtomicInteger uses a compare-and-set loop; volatile only guarantees visibility, not atomicity of compound actions.",
+    "Deadlock happens when threads wait on locks in opposite orders forever. Prevent it by locking in one global order, keeping critical sections small, using timeouts (tryLock) and avoiding nested locks. CompletableFuture composes asynchronous work without blocking a thread on every step; virtual threads (Java 21) make blocking code cheap, but they are an implementation option, not a replacement for understanding shared state."
+  ],
+  "hinglish": [
+    "Program main thread se shuru hota hai. Naya kaam Thread + Runnable se ho sakta hai, par production me ExecutorService use karte hain taaki threads pool se reuse hon. count++ teen steps hai, isliye do threads beech me ghus kar update kho sakte hain — yahi race condition hai.",
+    "synchronized block ko atomic banata hai aur visibility deta hai; AtomicInteger compare-and-set use karta hai; volatile sirf visibility deta hai, compound action atomic nahi karta. Deadlock tab hota hai jab threads ulte order me locks maangte hain — lock order fix karo, critical section chhota rakho."
+  ],
+  "analogy": "Ek process ek kitchen hai aur threads usme kaam karne wale cooks. Shared counter fridge par laga board hai: do cooks ek saath padhein, dono +1 likhein, to ek update kho jaata hai. synchronized ka matlab hai board par ek waqt me ek hi cook likhega.",
+  "why": "Servers handle many requests at once, and concurrency bugs are the hardest to reproduce. Interviews ask about thread lifecycle, synchronized vs volatile, executors and CompletableFuture because those are the tools every Java backend uses daily.",
+  "syntax": [
+    {
+      "code": "Thread t = new Thread(() -> System.out.println(\"worker\"));\nt.start();\nt.join(); // wait for it to finish\nSystem.out.println(\"main done\");",
+      "note": "start() creates the new path of execution; run() would run it on the current thread. join() makes the caller wait."
+    },
+    {
+      "code": "ExecutorService pool = Executors.newFixedThreadPool(2);\ntry {\n    Future<Integer> f = pool.submit(() -> 6 * 7);\n    System.out.println(f.get());\n} finally {\n    pool.shutdown();\n}",
+      "note": "submit returns a Future for the result; always shut the pool down or the JVM may keep running."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Process vs thread",
+      "body": "A process has its own memory; threads share the process heap but have their own stack and program counter. Sharing makes communication cheap and race conditions possible."
+    },
+    {
+      "title": "Thread lifecycle and creation",
+      "body": "NEW → RUNNABLE → (BLOCKED/WAITING/TIMED_WAITING) → TERMINATED. Create with Runnable (preferred) or by extending Thread. start() schedules; run() is just a method call."
+    },
+    {
+      "title": "ExecutorService and thread pools",
+      "body": "Pools bound the number of threads and reuse them. submit returns Future; invokeAll runs a batch. shutdown lets queued work finish, shutdownNow interrupts. Never create a thread per request in a server."
+    },
+    {
+      "title": "Synchronization and race conditions",
+      "body": "synchronized(lock) makes a block mutually exclusive and publishes writes. Use one lock object consistently. Keep the critical section small; never call unknown code (or I/O) while holding a lock."
+    },
+    {
+      "title": "volatile, atomics and locks",
+      "body": "volatile guarantees visibility of a single variable but not atomicity. AtomicInteger/AtomicLong/LongAdder handle counters lock-free. ReentrantLock adds tryLock timeouts and fairness. Prefer the simplest tool that is correct."
+    },
+    {
+      "title": "wait/notify and concurrent collections",
+      "body": "wait/notify coordinate on an object's monitor but are easy to misuse; prefer BlockingQueue for producer-consumer. ConcurrentHashMap, CopyOnWriteArrayList and BlockingQueue are the thread-safe collections."
+    },
+    {
+      "title": "CompletableFuture and deadlock",
+      "body": "CompletableFuture composes async steps with thenApply/thenCompose/thenCombine and handles errors with exceptionally. Deadlock: two threads hold one lock each and wait for the other — fix the lock order or use timeouts."
+    },
+    {
+      "title": "Virtual threads (Java 21)",
+      "body": "Virtual threads are lightweight threads scheduled by the JVM, so blocking code can scale to many tasks. They reduce the cost of thread-per-task designs; they do not make shared mutable state safe."
+    }
+  ],
+  "examples": [
+    {
+      "level": "advanced",
+      "title": "Two threads, one safe counter",
+      "code": "public class Main {\n    static class Counter {\n        private int value = 0;\n        synchronized void increment() { value++; }\n        synchronized int get() { return value; }\n    }\n\n    public static void main(String[] args) throws Exception {\n        Counter counter = new Counter();\n        Runnable task = () -> { for (int i = 0; i < 1000; i++) counter.increment(); };\n        Thread a = new Thread(task);\n        Thread b = new Thread(task);\n        a.start();\n        b.start();\n        a.join();\n        b.join();\n        System.out.println(counter.get());\n    }\n}",
+      "output": "2000",
+      "lines": [
+        "Both threads share one Counter object, so they share the counter state.",
+        "increment is synchronized, so the read-modify-write cannot interleave.",
+        "join makes main wait for both workers before reading the total.",
+        "1000 + 1000 increments are all counted: 2000."
+      ],
+      "dryRun": ["counter.value = 0", "thread a and b each loop 1000 times", "each increment is atomic under the monitor", "main joins both, then prints 2000"]
+    },
+    {
+      "level": "advanced",
+      "title": "ExecutorService and futures",
+      "code": "import java.util.*;\nimport java.util.concurrent.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        ExecutorService pool = Executors.newFixedThreadPool(2);\n        try {\n            List<Callable<Integer>> jobs = List.of(() -> 2 + 3, () -> 4 * 5, () -> 9 - 1);\n            List<Future<Integer>> futures = pool.invokeAll(jobs);\n            int total = 0;\n            for (Future<Integer> f : futures) total += f.get();\n            System.out.println(total);\n        } finally {\n            pool.shutdown();\n        }\n    }\n}",
+      "output": "33",
+      "lines": [
+        "A fixed pool of two threads runs three tasks, reusing threads.",
+        "invokeAll submits every callable and returns futures in the same order.",
+        "get() blocks until that task's result is available.",
+        "2+3=5, 4*5=20, 9-1=8, total 33; shutdown releases the pool."
+      ],
+      "dryRun": ["pool created with 2 threads", "jobs: 5, 20, 8", "futures collected in order", "sum = 33; pool shut down"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "private int count; void inc() { count++; }",
+      "right": "private final AtomicInteger count = new AtomicInteger(); void inc() { count.incrementAndGet(); }",
+      "why": "count++ is not atomic; two threads can read the same value and lose an update. Use atomics or synchronize the whole operation."
+    },
+    {
+      "wrong": "synchronized (a) { synchronized (b) { … } }  // other thread locks b then a",
+      "right": "Always acquire locks in the same global order, or use one lock.",
+      "why": "Opposite lock orders are the classic deadlock recipe."
+    }
+  ],
+  "debug": {
+    "brief": "This program throws IllegalThreadStateException because it starts the same thread twice. Fix it.",
+    "code": "public class Main {\n    public static void main(String[] args) throws Exception {\n        Thread t = new Thread(() -> System.out.println(\"worker\"));\n        t.start();\n        t.start();\n        t.join();\n        System.out.println(\"done\");\n    }\n}",
+    "expected": "worker\ndone",
+    "hints": ["A Thread can be started only once.", "Create a new thread for the second run, or start it once."],
+    "fix": "public class Main {\n    public static void main(String[] args) throws Exception {\n        Thread t = new Thread(() -> System.out.println(\"worker\"));\n        t.start();\n        t.join();\n        System.out.println(\"done\");\n    }\n}"
+  },
+  "best": [
+    "Prefer executors and concurrent collections over raw threads and wait/notify.",
+    "Keep shared mutable state minimal; immutable objects need no locks.",
+    "Never call blocking I/O or unknown code while holding a lock.",
+    "Use timeouts and a consistent lock order to make deadlock unlikely and detectable."
+  ],
+  "tip": "For 'synchronized vs volatile', say synchronized gives mutual exclusion plus visibility, volatile gives visibility only. Then give the counter example: volatile count++ is still broken.",
+  "revision": [
+    "Threads share the heap; each has its own stack.",
+    "Race condition = interleaved read-modify-write; fix with synchronization or atomics.",
+    "Executors pool threads; Futures return results.",
+    "CompletableFuture composes async steps; virtual threads make blocking cheap."
+  ],
+  "practice": [
+    { "title": "Thread-safe counter", "prompt": "Run four threads incrementing an AtomicInteger 1000 times each and print the total.", "level": "advanced", "hint": "Join every thread before reading the value." },
+    { "title": "Producer-consumer", "prompt": "Use a BlockingQueue with one producer and one consumer; print consumed items in order.", "level": "advanced", "hint": "put/take block automatically." },
+    { "title": "Async chain", "prompt": "Use CompletableFuture.supplyAsync to double a number, then thenApply to add 1, and print the result.", "level": "advanced", "hint": "join() waits for the final stage." }
+  ],
+  "mcqs": [
+    {
+      "q": "What does synchronized guarantee?",
+      "options": ["Speed", "Mutual exclusion and visibility", "Thread creation", "Immortality of the object"],
+      "answer": 1,
+      "explain": "Only one thread executes the block at a time, and writes are visible to the next holder."
+    },
+    {
+      "q": "Which is safe for a shared counter?",
+      "options": ["volatile int", "int with count++", "AtomicInteger", "a local int"],
+      "answer": 2,
+      "explain": "AtomicInteger performs the increment as one atomic operation."
+    },
+    {
+      "q": "What causes deadlock?",
+      "options": ["Too many threads", "Threads waiting on locks held by each other in a cycle", "Using join", "A small thread pool"],
+      "answer": 1,
+      "explain": "A circular wait on locks is the classic cause."
+    }
+  ],
+  "interview": [
+    {
+      "q": "volatile vs synchronized?",
+      "a": "volatile makes reads and writes of one variable visible across threads and prevents reordering, but a compound action like count++ is still unsafe. synchronized provides mutual exclusion plus visibility, so it protects multi-step invariants.",
+      "followUp": "When is volatile enough? (A single-writer status flag or a reference published once, where no compound update is needed.)"
+    },
+    {
+      "q": "How would you prevent deadlock?",
+      "a": "Acquire locks in a global order, avoid nested locks, keep critical sections small, use tryLock with a timeout, and prefer lock-free structures or a single lock when contention is low.",
+      "followUp": "Can you recover from a deadlock? (Not reliably; you can detect it with thread dumps and restart, which is why prevention matters.)"
+    }
+  ],
+  "lab": {
+    "title": "Thread-safe total",
+    "brief": "Start two threads that each increment a shared counter 1000 times. Join both and print the final value (2000).",
+    "starter": "public class Main {\n    static int count = 0;\n\n    public static void main(String[] args) throws Exception {\n        Runnable task = () -> {\n            for (int i = 0; i < 1000; i++) {\n                // TODO: increment safely\n            }\n        };\n        Thread a = new Thread(task);\n        Thread b = new Thread(task);\n        a.start(); b.start();\n        a.join(); b.join();\n        System.out.println(count);\n    }\n}",
+    "expected": "2000",
+    "tests": [
+      { "name": "two threads", "stdin": "", "stdout": "2000" }
+    ],
+    "hints": ["Use AtomicInteger or a synchronized block around count++.", "Join both threads before printing."],
+    "solution": "import java.util.concurrent.atomic.AtomicInteger;\n\npublic class Main {\n    static AtomicInteger count = new AtomicInteger();\n\n    public static void main(String[] args) throws Exception {\n        Runnable task = () -> {\n            for (int i = 0; i < 1000; i++) count.incrementAndGet();\n        };\n        Thread a = new Thread(task);\n        Thread b = new Thread(task);\n        a.start(); b.start();\n        a.join(); b.join();\n        System.out.println(count.get());\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Concurrency reasoned about?",
+    "checks": [
+      "I can explain why count++ is not atomic",
+      "I know the difference between volatile and synchronized",
+      "I shut down every executor I create"
+    ]
+  }
+}

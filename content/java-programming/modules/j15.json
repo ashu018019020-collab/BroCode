@@ -1,0 +1,184 @@
+{
+  "id": "j15",
+  "no": 15,
+  "title": "Generics and Wrapper Classes",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Type-safe generic code, bounds, wildcards aur autoboxing ke traps.",
+  "prereqs": ["Module 14: collections"],
+  "objectives": [
+    "Write a generic class and a generic method with a bounded type",
+    "Use wildcards to accept a family of types without unsafe casts",
+    "Explain autoboxing, unboxing and the null trap",
+    "Read a type-erasure warning and remove it properly"
+  ],
+  "definition": "Generics let a class or method work over a type chosen by the caller while the compiler checks usage. Type parameters are erased at runtime but enforced at compile time. Wrapper classes (Integer, Double, Character, Boolean…) turn primitives into objects so they can live in collections.",
+  "explain": [
+    "Before generics, a List held Object and every read needed a cast that could fail at runtime. With List<String>, the compiler rejects adding an Integer and read results need no cast. The type parameter is a promise the compiler verifies.",
+    "Bounds restrict a type parameter: <T extends Comparable<T>> lets the method call compareTo. Wildcards describe a family: ? extends Number accepts List<Integer> and List<Double> for reading; ? super Integer accepts lists you can write Integers into. The get/put rule — extends for reading, super for writing — is the practical version.",
+    "Generics are erased at runtime, so you cannot create new T(), check instanceof List<String>, or overload on type parameters. Wrapper classes bridge primitives and objects: autoboxing converts int to Integer automatically, unboxing the reverse. Unboxing a null Integer throws NullPointerException, which is the classic trap."
+  ],
+  "hinglish": [
+    "Generics se List<String> likhte ho aur compiler check karta hai — galat type daalne par compile error, runtime ClassCastException nahi. Bound (<T extends Number>) se T ke methods use kar sakte ho. Wildcard family batata hai: extends reading ke liye, super writing ke liye.",
+    "Runtime par generics erase ho jaate hain, isliye new T() ya instanceof List<String> nahi kar sakte. Wrapper classes primitives ko objects banati hain taaki collections me aa sakein. null Integer ko unbox karoge to NullPointerException — classic trap."
+  ],
+  "analogy": "Generic class ek labelled container hai: 'Box<String>' par label laga hai, isliye usme sirf String hi jaata hai aur nikalte waqt type pata hota hai. Erasure ka matlab: runtime par label mit jaata hai, par compile time par chipping ho chuki hoti hai.",
+  "why": "All modern Java APIs are generic: List<T>, Optional<T>, Stream<T>, Map<K,V>. Framework code and interviews expect you to read <T extends Comparable<? super T>> without fear, and the autoboxing null trap causes real production NPEs.",
+  "syntax": [
+    {
+      "code": "class Box<T> {\n    private T value;\n    Box(T value) { this.value = value; }\n    T get() { return value; }\n    <R> Box<R> map(java.util.function.Function<T, R> fn) { return new Box<>(fn.apply(value)); }\n}\n\nBox<String> b = new Box<>(\"java\");\nBox<Integer> len = b.map(String::length);\nSystem.out.println(len.get());",
+      "note": "A generic class can declare its own type parameter, and a generic method can add another (<R>). Type inference lets the diamond <> fill in the rest."
+    },
+    {
+      "code": "static double sum(java.util.List<? extends Number> nums) {\n    double total = 0;\n    for (Number n : nums) total += n.doubleValue();\n    return total;\n}\n\nSystem.out.println(sum(java.util.List.of(1, 2.5, 3)));",
+      "note": "? extends Number accepts a list of any Number subtype; reading is safe, writing is not allowed."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Generic classes",
+      "body": "Declare <T> after the class name and use T as a field, parameter and return type. The compiler substitutes the type argument at each use and rejects incompatible operations."
+    },
+    {
+      "title": "Generic methods",
+      "body": "A method declares its own type parameter before the return type: static <T> T first(List<T> items). Inference usually lets callers omit the explicit type argument."
+    },
+    {
+      "title": "Bounded types",
+      "body": "<T extends Comparable<T>> or <T extends Number> restricts T and gives access to the bound's methods. Multiple bounds are allowed with &, with a class first: <T extends Number & Comparable<T>>."
+    },
+    {
+      "title": "Wildcards and the PECS rule",
+      "body": "? extends T is a producer (read from it), ? super T is a consumer (write to it): Producer Extends, Consumer Super. An unbounded ? means 'some unknown type', so you can only read as Object."
+    },
+    {
+      "title": "Wrapper classes and autoboxing",
+      "body": "Integer, Long, Double, Character, Boolean and friends wrap primitives. Autoboxing inserts Integer.valueOf; unboxing calls intValue. Integer caches -128..127, so == can be true for small values and false for larger ones — always compare with equals."
+    },
+    {
+      "title": "Type erasure and type safety",
+      "body": "Generic type arguments disappear at runtime; the compiler inserts casts. That is why new T[], instanceof List<String> and overloads differing only by type argument are illegal. Raw types disable the checks and should be avoided."
+    },
+    {
+      "title": "Generics in collections",
+      "body": "List<String>, Map<String, List<Integer>> and Set<T> carry the type through method signatures. Prefer these over raw types in every API so callers cannot add the wrong value."
+    }
+  ],
+  "examples": [
+    {
+      "level": "intermediate",
+      "title": "A generic pair and a bounded maximum",
+      "code": "public class Main {\n    record Pair<A, B>(A first, B second) {}\n\n    static <T extends Comparable<T>> T max(T a, T b) {\n        return a.compareTo(b) >= 0 ? a : b;\n    }\n\n    public static void main(String[] args) {\n        Pair<String, Integer> p = new Pair<>(\"age\", 21);\n        System.out.println(p.first() + \"=\" + p.second());\n        System.out.println(max(3, 9));\n        System.out.println(max(\"apple\", \"mango\"));\n    }\n}",
+      "output": "age=21\n9\nmango",
+      "lines": [
+        "Pair declares two independent type parameters, so a String and an Integer can travel together.",
+        "max requires T to be Comparable, which is what allows compareTo.",
+        "max(3, 9) infers T = Integer and compares numerically.",
+        "max(\"apple\", \"mango\") infers T = String and compares alphabetically."
+      ],
+      "dryRun": ["new Pair<>(\"age\", 21) → first=age, second=21", "max(3, 9): 3.compareTo(9) < 0 → 9", "max(\"apple\", \"mango\"): apple < mango → mango", "Three lines printed"]
+    },
+    {
+      "level": "advanced",
+      "title": "Wildcards and the autoboxing trap",
+      "code": "import java.util.*;\n\npublic class Main {\n    static double total(List<? extends Number> values) {\n        double sum = 0;\n        for (Number n : values) sum += n.doubleValue();\n        return sum;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(total(List.of(1, 2, 3)));\n        System.out.println(total(List.of(1.5, 2.5)));\n        Integer a = 127, b = 127, c = 1000, d = 1000;\n        System.out.println(a == b);\n        System.out.println(c == d);\n        System.out.println(c.equals(d));\n        Integer missing = null;\n        try {\n            int x = missing;\n            System.out.println(x);\n        } catch (NullPointerException e) {\n            System.out.println(\"unboxing null failed\");\n        }\n    }\n}",
+      "output": "6.0\n4.0\ntrue\nfalse\ntrue\nunboxing null failed",
+      "lines": [
+        "The wildcard accepts a List<Integer> and a List<Double> with one method.",
+        "Values are read as Number and converted with doubleValue().",
+        "Integers in the -128..127 cache are the same object, so == is true; 1000 is not cached, so == is false although equals is true.",
+        "Assigning a null Integer to int unboxes it and throws NullPointerException, caught here."
+      ],
+      "dryRun": ["total([1,2,3]) = 6.0", "total([1.5,2.5]) = 4.0", "127 == 127 → true; 1000 == 1000 → false; equals → true", "int x = null → NPE → catch prints message"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "List list = new ArrayList(); list.add(\"text\"); int n = (int) list.get(0);",
+      "right": "List<String> list = new ArrayList<>(); String s = list.get(0);",
+      "why": "Raw types disable checking, so the mistake becomes a runtime ClassCastException instead of a compile error."
+    },
+    {
+      "wrong": "Integer count = null; if (count > 0) …",
+      "right": "if (count != null && count > 0) …",
+      "why": "The comparison unboxes count, so a null value throws NullPointerException."
+    }
+  ],
+  "debug": {
+    "brief": "This generic method should return the larger of two numbers but does not compile. Fix the bound.",
+    "code": "public class Main {\n    static <T> T max(T a, T b) {\n        return a.compareTo(b) >= 0 ? a : b;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(max(4, 9));\n    }\n}",
+    "expected": "9",
+    "hints": ["compareTo exists only on Comparable types.", "Restrict T with extends Comparable<T>."],
+    "fix": "public class Main {\n    static <T extends Comparable<T>> T max(T a, T b) {\n        return a.compareTo(b) >= 0 ? a : b;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(max(4, 9));\n    }\n}"
+  },
+  "best": [
+    "Use generics everywhere instead of raw types or Object.",
+    "Remember PECS: extends for reading, super for writing.",
+    "Compare wrappers with equals, never ==.",
+    "Prefer primitive types for hot numeric loops; autoboxing allocates."
+  ],
+  "tip": "If asked why Java generics are invariant (List<Integer> is not a List<Number>), explain that allowing it would permit adding a Double to a list of Integers. Then show that ? extends Number permits reading safely.",
+  "revision": [
+    "Generics move type errors from runtime to compile time.",
+    "Bounded types expose methods of the bound.",
+    "PECS: Producer Extends, Consumer Super.",
+    "Autoboxing caches small Integers; == compares references, equals compares values."
+  ],
+  "practice": [
+    { "title": "Generic stack", "prompt": "Implement a Stack<T> with push, pop and isEmpty using an ArrayList<T>.", "level": "intermediate", "hint": "pop should throw IllegalStateException when empty." },
+    { "title": "Bounded count", "prompt": "Write countGreaterThan(List<? extends Comparable<T>>, T) — or a simpler bounded version — and test with Strings.", "level": "advanced", "hint": "Read values, compare with compareTo > 0." },
+    { "title": "Sum any numbers", "prompt": "Write total(List<? extends Number>) and print results for Integer, Double and Long lists.", "level": "intermediate", "hint": "Accumulate with doubleValue()." }
+  ],
+  "mcqs": [
+    {
+      "q": "What does <T extends Comparable<T>> allow?",
+      "options": ["Any type", "Only Comparable types", "Only numbers", "Only classes"],
+      "answer": 1,
+      "explain": "The bound restricts T to types implementing Comparable<T> and permits compareTo."
+    },
+    {
+      "q": "Which wildcard is for writing into a structure?",
+      "options": ["? extends T", "? super T", "? ", "T"],
+      "answer": 1,
+      "explain": "Consumer Super: ? super T accepts values of type T."
+    },
+    {
+      "q": "Why can == fail for Integer values above 127?",
+      "options": ["Integers are mutable", "The cache only covers -128..127", "equals is broken", "Autoboxing is disabled"],
+      "answer": 1,
+      "explain": "Only cached values share objects; larger values are distinct objects, so == compares references."
+    }
+  ],
+  "interview": [
+    {
+      "q": "What is type erasure and what does it prevent?",
+      "a": "Generic type arguments are removed at runtime; the compiler inserts casts. It prevents new T(), instanceof List<String>, generic arrays and overloads that differ only by type argument, because those types no longer exist at runtime.",
+      "followUp": "How do frameworks still know the type? (They capture it in a superclass generic signature or take a Class<T> token.)"
+    },
+    {
+      "q": "Why must equals and hashCode be consistent for wrapper keys?",
+      "a": "HashMap locates a key by hashCode, then confirms with equals. If equal values produce different hashes, the map looks in the wrong bucket and the key appears missing. For wrappers this is already correct; the rule matters for your own key classes.",
+      "followUp": "What about mutable keys? (Mutating a field used in hashCode makes the entry unreachable — use immutable keys.)"
+    }
+  ],
+  "lab": {
+    "title": "Generic maximum",
+    "brief": "Read n then n integers. Print the largest using a generic <T extends Comparable<T>> max method.",
+    "starter": "import java.util.*;\n\npublic class Main {\n    static <T extends Comparable<T>> T max(List<T> values) {\n        // TODO: return the largest value\n        return values.get(0);\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        List<Integer> nums = new ArrayList<>();\n        for (int i = 0; i < n; i++) nums.add(sc.nextInt());\n        System.out.println(max(nums));\n    }\n}",
+    "expected": "9",
+    "tests": [
+      { "name": "2 9 4", "stdin": "3\n2 9 4\n", "stdout": "9" },
+      { "name": "negatives", "stdin": "3\n-5 -2 -9\n", "stdout": "-2" }
+    ],
+    "hints": ["Start with values.get(0) and compare each element with compareTo.", "Return the element whose compareTo is greater."],
+    "solution": "import java.util.*;\n\npublic class Main {\n    static <T extends Comparable<T>> T max(List<T> values) {\n        T best = values.get(0);\n        for (T value : values) {\n            if (value.compareTo(best) > 0) best = value;\n        }\n        return best;\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        List<Integer> nums = new ArrayList<>();\n        for (int i = 0; i < n; i++) nums.add(sc.nextInt());\n        System.out.println(max(nums));\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Type-safe and box-aware?",
+    "checks": [
+      "I can write a generic method with a bound",
+      "I can explain PECS without reciting the acronym only",
+      "I know why Integer == can be true at 127 and false at 1000"
+    ]
+  }
+}

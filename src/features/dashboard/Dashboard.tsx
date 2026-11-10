@@ -28,6 +28,9 @@ import { useCourseIndex, useSectionPct } from '../../core/data/courses';
 import { useCIndex } from '../../core/data/ccourse';
 import { checkpointKey } from '../../core/learning/ccourse';
 import { CLogo } from '../c-programming/CLogo';
+import { JLogo } from '../java-programming/JLogo';
+import { useJIndex } from '../../core/data/jcourse';
+import { checkpointKey as jCheckpointKey } from '../../core/learning/jcourse';
 import { activeCourse, cardMeasures, nextStep, sectionAvg, sectionsClear, type StepMeasure } from '../../core/learning/courses';
 import { STEPS } from '../../core/learning/roadmap';
 import { CourseLogo } from '../../components/shared/CourseLogo';
@@ -202,6 +205,7 @@ export default function Dashboard() {
    */
   const courseIndex = useCourseIndex();
   const cIndex = useCIndex();
+  const jIndex = useJIndex();
   const sectionPct = useSectionPct();
   /**
    * The dashboard's own "Continue" control uses the same resume resolver as the footer and the
@@ -428,6 +432,28 @@ export default function Dashboard() {
                   <CLogo size={28} />
                   <span className="dc-body">
                     <b>C Programming</b>
+                    <span className="dc-meta">{done}/{total} {t('dash.modulesUnit')}</span>
+                  </span>
+                  <ProgressRing pct={pct} size={30} />
+                </Link>
+              );
+            })()}
+
+            {jIndex && (() => {
+              const total = jIndex.modules.length;
+              const done = jIndex.modules.filter((m) => state.attempts[jCheckpointKey(m.id)]?.done).length;
+              const pct = total ? Math.round((done / total) * 100) : 0;
+              return (
+                <Link
+                  to="/java"
+                  className="course-chip tone-amber"
+                  data-agent-action="course:java-programming"
+                  data-agent-label="Java Programming"
+                  title={`Java Programming — ${done}/${total} ${t('dash.modulesUnit')}`}
+                >
+                  <JLogo size={28} />
+                  <span className="dc-body">
+                    <b>Java Programming</b>
                     <span className="dc-meta">{done}/{total} {t('dash.modulesUnit')}</span>
                   </span>
                   <ProgressRing pct={pct} size={30} />

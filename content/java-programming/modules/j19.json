@@ -1,0 +1,188 @@
+{
+  "id": "j19",
+  "no": 19,
+  "title": "Database and Backend Development",
+  "level": "advanced",
+  "hours": 10,
+  "goal": "JDBC, SQL integration, Maven/Gradle, REST concepts aur Spring Boot ka mental model.",
+  "prereqs": ["Module 16: I/O and resources", "Module 18: concurrency basics"],
+  "objectives": [
+    "Describe the JDBC call flow and why PreparedStatement prevents injection",
+    "Model CRUD and a transaction with commit and rollback",
+    "Explain Maven/Gradle, HTTP verbs and JSON in a Java backend",
+    "Explain dependency injection and what Spring Boot adds"
+  ],
+  "definition": "JDBC is the standard Java API for relational databases: a driver implements Connection, PreparedStatement and ResultSet. Backend services expose HTTP endpoints, validate input, call a repository, and return JSON. Spring Boot wires these layers together with dependency injection and auto-configuration.",
+  "explain": [
+    "JDBC follows a fixed flow: load a driver (automatic since JDBC 4), open a Connection, prepare a statement, execute, read the ResultSet, close everything. A PreparedStatement sends SQL and values separately, so user input can never change the query structure — that is the defence against SQL injection.",
+    "A transaction groups statements so they all commit or all roll back. Set autoCommit(false), do the work, commit() on success, rollback() in the catch, and always close resources. Isolation levels control which concurrent anomalies are visible; most services start with READ_COMMITTED.",
+    "A backend is layered: controller (HTTP), service (rules, transactions), repository (SQL), domain (records/entities). Maven or Gradle resolves dependencies and builds the jar. Spring Boot adds an embedded server, dependency injection and starters, but the layers and the SQL still decide correctness."
+  ],
+  "hinglish": [
+    "JDBC ka flow fix hai: Connection kholo, PreparedStatement banao, execute karo, ResultSet padho, sab close karo. PreparedStatement SQL aur values alag bhejta hai, isliye user input query ka structure nahi badal sakta — SQL injection ka asli defence yahi hai.",
+    "Transaction me sab statements ek saath commit ya rollback hote hain: autoCommit(false), kaam, success par commit, catch me rollback. Backend layers: controller → service → repository → database. Spring Boot wiring aur server deta hai, par SQL aur rules aap hi likhte ho."
+  ],
+  "analogy": "JDBC ek courier service jaisa hai: Connection phone line hai, PreparedStatement sealed envelope hai jisme address aur content alag hote hain, ResultSet delivery hai. Transaction ek 'all or nothing' parcel hai — kuch bhi fail hua to poora wapas.",
+  "why": "Most Java jobs are backend jobs: REST APIs over a relational database. Interviewers expect the JDBC flow, PreparedStatement versus Statement, transaction boundaries, and how Spring's dependency injection fits the layers you already know.",
+  "syntax": [
+    {
+      "code": "try (Connection c = DriverManager.getConnection(url, user, pass);\n     PreparedStatement ps = c.prepareStatement(\"SELECT name FROM student WHERE id = ?\")) {\n    ps.setInt(1, id);\n    try (ResultSet rs = ps.executeQuery()) {\n        if (rs.next()) System.out.println(rs.getString(\"name\"));\n    }\n}",
+      "note": "Requires a JDBC driver on the classpath. Placeholders are bound with setX, never concatenated."
+    },
+    {
+      "code": "c.setAutoCommit(false);\ntry {\n    debit(ps, from, amount);\n    credit(ps, to, amount);\n    c.commit();\n} catch (SQLException e) {\n    c.rollback();\n    throw e;\n} finally {\n    c.setAutoCommit(true);\n}",
+      "note": "Both statements succeed together or neither does. The catch preserves the original failure."
+    }
+  ],
+  "topics": [
+    {
+      "title": "JDBC architecture and drivers",
+      "body": "The app talks to java.sql interfaces; the vendor driver implements them. DriverManager.getConnection uses a JDBC URL. Drivers are loaded automatically via the service loader when they are on the classpath."
+    },
+    {
+      "title": "Connection, Statement and PreparedStatement",
+      "body": "Statement concatenates SQL — unsafe and slower to reuse. PreparedStatement uses ? placeholders, binds typed values, is precompiled/cached and blocks injection. Always prefer it."
+    },
+    {
+      "title": "ResultSet and CRUD",
+      "body": "executeQuery returns rows; rs.next() advances and returns false at the end. Read columns by name. executeUpdate returns affected rows for INSERT/UPDATE/DELETE. Map rows to records or entities."
+    },
+    {
+      "title": "Transactions and isolation",
+      "body": "autoCommit(false), commit/rollback, and a finally that restores the flag. Isolation levels trade consistency for concurrency: READ_COMMITTED avoids dirty reads; SERIALIZABLE is strict and slower."
+    },
+    {
+      "title": "Maven and Gradle",
+      "body": "Maven uses pom.xml with a fixed lifecycle; Gradle uses build.gradle with a flexible task graph. Both resolve dependencies, compile, test and package. Pin versions, keep the build reproducible, and never commit credentials."
+    },
+    {
+      "title": "REST, HTTP and JSON",
+      "body": "GET reads, POST creates, PUT replaces, PATCH updates, DELETE removes. Status codes carry meaning: 200/201, 400 validation, 401 unauthenticated, 403 forbidden, 404 missing, 409 conflict, 500 server error. JSON is the usual body format; validate and serialise with a library, never string concatenation."
+    },
+    {
+      "title": "Spring Boot, DI and JPA",
+      "body": "Dependency injection supplies collaborators through constructors instead of new-ing them, which makes testing and configuration possible. Spring Boot auto-configures an embedded server, a DataSource and JSON support from starters. JPA/Hibernate maps entities to tables and manages transactions; JDBC remains the layer underneath."
+    },
+    {
+      "title": "Backend architecture",
+      "body": "Controller → service → repository, with DTOs at the boundary and domain objects inside. Keep SQL in repositories, transactions in services, and HTTP concerns in controllers. Log with correlation ids; never leak stack traces to clients."
+    }
+  ],
+  "examples": [
+    {
+      "level": "advanced",
+      "title": "Repository CRUD without a database",
+      "code": "import java.util.*;\n\npublic class Main {\n    record Student(int id, String name) {}\n\n    static class StudentRepository {\n        private final Map<Integer, Student> rows = new LinkedHashMap<>();\n        void save(Student s) { rows.put(s.id(), s); }\n        Optional<Student> find(int id) { return Optional.ofNullable(rows.get(id)); }\n        boolean delete(int id) { return rows.remove(id) != null; }\n        List<Student> all() { return new ArrayList<>(rows.values()); }\n    }\n\n    public static void main(String[] args) {\n        StudentRepository repo = new StudentRepository();\n        repo.save(new Student(2, \"Priya\"));\n        repo.save(new Student(1, \"Aman\"));\n        System.out.println(repo.find(1).map(Student::name).orElse(\"missing\"));\n        System.out.println(repo.delete(9));\n        System.out.println(repo.all().size());\n    }\n}",
+      "output": "Aman\nfalse\n2",
+      "lines": [
+        "The repository hides the Map, exactly as a JDBC repository hides SQL.",
+        "find returns Optional, so a missing row is explicit rather than null.",
+        "delete returns whether a row was actually removed; 9 is absent, so false.",
+        "all returns a copy, so callers cannot mutate the repository's internals."
+      ],
+      "dryRun": ["save 2/Priya, 1/Aman → two rows", "find(1) → Aman", "delete(9) → false", "all().size() = 2"]
+    },
+    {
+      "level": "advanced",
+      "title": "Transaction semantics, simulated",
+      "code": "import java.util.*;\n\npublic class Main {\n    static class Ledger {\n        private final Map<String, Integer> balances = new HashMap<>(Map.of(\"A\", 100, \"B\", 0));\n\n        void transfer(String from, String to, int amount, boolean failAfterDebit) {\n            int fromBefore = balances.get(from);\n            int toBefore = balances.get(to);\n            try {\n                if (fromBefore < amount) throw new IllegalStateException(\"insufficient\");\n                balances.put(from, fromBefore - amount);\n                if (failAfterDebit) throw new IllegalStateException(\"network\");\n                balances.put(to, toBefore + amount);\n                System.out.println(\"committed\");\n            } catch (RuntimeException e) {\n                balances.put(from, fromBefore);\n                balances.put(to, toBefore);\n                System.out.println(\"rolled back: \" + e.getMessage());\n            }\n        }\n    }\n\n    public static void main(String[] args) {\n        Ledger ledger = new Ledger();\n        ledger.transfer(\"A\", \"B\", 30, false);\n        ledger.transfer(\"A\", \"B\", 20, true);\n        System.out.println(ledger.balances);\n    }\n}",
+      "output": "committed\nrolled back: network\n{A=70, B=30}",
+      "lines": [
+        "The first transfer debits A and credits B, then commits.",
+        "The second debits A and then simulates a failure before crediting B.",
+        "The catch restores both balances, which is what rollback does in a database.",
+        "The final map shows only the committed transfer: A=70, B=30."
+      ],
+      "dryRun": ["A=100,B=0 → transfer 30 → A=70,B=30 committed", "transfer 20 → debit A to 50 → failure", "rollback restores A=70,B=30", "print {A=70, B=30}"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "\"SELECT * FROM users WHERE name = '\" + name + \"'\"",
+      "right": "\"SELECT * FROM users WHERE name = ?\" with ps.setString(1, name)",
+      "why": "Concatenation lets input such as ' OR '1'='1 change the query. A placeholder keeps SQL and data separate."
+    },
+    {
+      "wrong": "Connection c = DriverManager.getConnection(url); … // never closed",
+      "right": "try (Connection c = …; PreparedStatement ps = …) { … }",
+      "why": "Leaked connections exhaust the pool and take the service down under load."
+    }
+  ],
+  "debug": {
+    "brief": "This query builder is vulnerable to injection. Reject dangerous input and print 'blocked'.",
+    "code": "public class Main {\n    static String findUser(String name) {\n        return \"SELECT * FROM users WHERE name = '\" + name + \"'\";\n    }\n\n    public static void main(String[] args) {\n        String input = \"x' OR '1'='1\";\n        System.out.println(findUser(input));\n    }\n}",
+    "expected": "blocked",
+    "hints": ["A value containing a quote cannot be trusted in a concatenated query.", "In real JDBC, use a ? placeholder — here, reject the input to show the check."],
+    "fix": "public class Main {\n    static String findUser(String name) {\n        if (name == null || name.contains(\"'\")) return \"blocked\";\n        return \"SELECT * FROM users WHERE name = ?\";\n    }\n\n    public static void main(String[] args) {\n        String input = \"x' OR '1'='1\";\n        System.out.println(findUser(input));\n    }\n}"
+  },
+  "best": [
+    "Use PreparedStatement for every value; never build SQL by concatenation.",
+    "Keep transactions short and put the boundary in the service layer.",
+    "Close connections, statements and result sets with try-with-resources.",
+    "Return DTOs, not entities, from controllers; validate input at the boundary."
+  ],
+  "tip": "When asked 'how does Spring Boot help?', do not list annotations. Describe what it removes: manual wiring (DI), manual server setup (embedded Tomcat), manual DataSource/JSON configuration (starters), while you still own the SQL, transactions and validation.",
+  "revision": [
+    "JDBC flow: Connection → PreparedStatement → ResultSet → close.",
+    "PreparedStatement binds values and prevents injection.",
+    "Transactions: autoCommit(false), commit on success, rollback on failure.",
+    "REST: verbs + status codes + JSON; Spring Boot wires layers with DI."
+  ],
+  "practice": [
+    { "title": "Repository interface", "prompt": "Write StudentRepository with save/findAll/findById/delete over a Map, then swap the implementation without touching the caller.", "level": "advanced", "hint": "Program to the interface; inject it into a service." },
+    { "title": "HTTP status map", "prompt": "Given an outcome string (created, invalid, missing, error), print the matching HTTP status code.", "level": "intermediate", "hint": "201, 400, 404, 500." },
+    { "title": "Transaction drill", "prompt": "Simulate a transfer that fails after the debit and prove both balances are restored.", "level": "advanced", "hint": "Capture before-values and restore them in catch." }
+  ],
+  "mcqs": [
+    {
+      "q": "Which prevents SQL injection?",
+      "options": ["Statement with escaping", "PreparedStatement with placeholders", "A bigger VARCHAR", "try-with-resources"],
+      "answer": 1,
+      "explain": "Placeholders send SQL and data separately, so input cannot change the query structure."
+    },
+    {
+      "q": "Which HTTP method usually creates a resource?",
+      "options": ["GET", "POST", "DELETE", "HEAD"],
+      "answer": 1,
+      "explain": "POST creates; GET reads; PUT replaces; DELETE removes."
+    },
+    {
+      "q": "What does rollback do?",
+      "options": ["Deletes the table", "Undoes uncommitted work in the transaction", "Restarts the server", "Commits twice"],
+      "answer": 1,
+      "explain": "Rollback discards changes made since the transaction began."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Statement vs PreparedStatement?",
+      "a": "Statement builds SQL as a string, so input can alter the query and every execution re-parses. PreparedStatement uses placeholders, binds typed values, is typically cached and prevents injection. Use it for any value that comes from outside the program.",
+      "followUp": "Are PreparedStatements always faster? (Often, because of caching, but the security property is the reason to always use them.)"
+    },
+    {
+      "q": "What is dependency injection and why does it matter?",
+      "a": "A class receives its collaborators through its constructor or a container instead of creating them itself. That decouples it from concrete implementations, makes configuration central, and lets tests pass fakes without a database.",
+      "followUp": "Constructor vs field injection? (Constructor injection makes dependencies explicit and supports immutability; field injection hides them and needs reflection in tests.)"
+    }
+  ],
+  "lab": {
+    "title": "Repository CRUD",
+    "brief": "Read n, then n 'id name' pairs. Print the number of rows, then the rows sorted by id as id=name.",
+    "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        Map<Integer, String> rows = new TreeMap<>();\n        // TODO: read pairs, store, print count and sorted id=name lines\n    }\n}",
+    "expected": "2\n1=Aman\n2=Priya",
+    "tests": [
+      { "name": "two rows", "stdin": "2\n2 Priya\n1 Aman\n", "stdout": "2\n1=Aman\n2=Priya" },
+      { "name": "one row", "stdin": "1\n7 Ravi\n", "stdout": "1\n7=Ravi" }
+    ],
+    "hints": ["TreeMap keeps ids sorted automatically.", "Print the size first, then each entry."],
+    "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        Map<Integer, String> rows = new TreeMap<>();\n        for (int i = 0; i < n; i++) rows.put(sc.nextInt(), sc.next());\n        System.out.println(rows.size());\n        for (Map.Entry<Integer, String> e : rows.entrySet()) {\n            System.out.println(e.getKey() + \"=\" + e.getValue());\n        }\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Backend layers understood?",
+    "checks": [
+      "I can describe the JDBC call flow and close every resource",
+      "I can explain why PreparedStatement is mandatory for user input",
+      "I know what commit and rollback protect"
+    ]
+  }
+}

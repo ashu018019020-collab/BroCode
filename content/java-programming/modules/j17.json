@@ -1,0 +1,184 @@
+{
+  "id": "j17",
+  "no": 17,
+  "title": "Functional Java",
+  "level": "advanced",
+  "hours": 8,
+  "goal": "Lambdas, functional interfaces, Streams aur Optional se data pipelines banana.",
+  "prereqs": ["Module 14: collections", "Module 15: generics"],
+  "objectives": [
+    "Write lambdas against the right functional interface",
+    "Build a stream pipeline with intermediate and terminal operations",
+    "Use collect, reduce and Optional without null checks everywhere",
+    "Explain when a parallel stream helps and when it hurts"
+  ],
+  "definition": "A lambda is an anonymous function assigned to a functional interface. The Stream API processes a sequence declaratively: intermediate operations (filter, map, sorted) are lazy and return a new stream, and a terminal operation (collect, forEach, reduce, count) triggers the work exactly once.",
+  "explain": [
+    "A functional interface has one abstract method, so the compiler can infer the lambda's shape: Predicate<T> is T → boolean, Function<T,R> is T → R, Consumer<T> is T → void, Supplier<T> is () → T. Method references (String::length) are shorthand when an existing method already fits.",
+    "Streams are lazy: filter and map describe work, but nothing runs until a terminal operation asks for a result. That lets the implementation fuse steps and stop early with findFirst. A stream can be consumed once; reusing it throws IllegalStateException.",
+    "collect(Collectors.toList()), groupingBy and joining turn streams back into collections and strings. Optional models a value that may be absent, forcing you to handle the empty case instead of risking a NullPointerException. Parallel streams split work across threads but only pay off for large, CPU-bound, easily splittable work — and they must not touch shared mutable state."
+  ],
+  "hinglish": [
+    "Functional interface me ek abstract method hota hai, isliye lambda ka shape compiler infer kar leta hai: Predicate T→boolean, Function T→R, Consumer T→void, Supplier ()→T. Method reference tab use karo jab koi existing method exactly fit ho.",
+    "Stream lazy hai: filter/map sirf describe karte hain, kaam tab hota hai jab terminal operation aata hai. Ek stream sirf ek baar consume hoti hai — dobara use karoge to IllegalStateException. Optional absent value ko represent karta hai, taaki null checks ki jagah explicit handling ho."
+  ],
+  "analogy": "Stream ek assembly line hai: filter ek quality-check station, map ek transformation station, aur collect truck hai jo end par maal uthata hai. Jab tak truck nahi aata, line start hi nahi hoti — isliye laziness se kaam bachta hai.",
+  "why": "Modern Java codebases read like stream pipelines, and interviews test whether you know laziness, collectors and Optional. Writing a loop is fine, but knowing when a pipeline is clearer and safer is a senior-level signal.",
+  "syntax": [
+    {
+      "code": "List<String> names = List.of(\"Aman\", \"Priya\", \"Ravi\");\nList<String> upper = names.stream()\n    .filter(n -> n.length() > 3)\n    .map(String::toUpperCase)\n    .sorted()\n    .collect(Collectors.toList());\nSystem.out.println(upper);",
+      "note": "Each step returns a new stream; collect is the terminal operation that runs the pipeline."
+    },
+    {
+      "code": "Optional<String> found = names.stream().filter(n -> n.startsWith(\"P\")).findFirst();\nSystem.out.println(found.orElse(\"none\"));\nSystem.out.println(found.map(String::length).orElse(0));",
+      "note": "findFirst returns Optional. orElse gives a fallback; map transforms only when a value is present."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Lambdas and functional interfaces",
+      "body": "A lambda is (params) -> expression or a block. It implements a functional interface. @FunctionalInterface documents and enforces the single-method rule. Lambdas capture effectively final locals only."
+    },
+    {
+      "title": "The four core interfaces",
+      "body": "Predicate<T> (test), Function<T,R> (apply), Consumer<T> (accept), Supplier<T> (get). BiFunction, UnaryOperator, BiConsumer and primitive specialisations (IntPredicate, ToIntFunction) avoid boxing in hot code."
+    },
+    {
+      "title": "Method references",
+      "body": "Four forms: Type::staticMethod, instance::method, Type::instanceMethod (on a parameter) and Type::new. Use one when the lambda would only forward its argument."
+    },
+    {
+      "title": "Stream sources and intermediate operations",
+      "body": "Sources: collection.stream(), Arrays.stream, Stream.of, Files.lines, IntStream.range. Intermediate: filter, map, flatMap, distinct, sorted, limit, skip, peek. They are lazy and may be reordered by the implementation."
+    },
+    {
+      "title": "Terminal operations and collecting",
+      "body": "Terminal: forEach, count, anyMatch/allMatch/noneMatch, findFirst, reduce, collect, toList. Collectors.toList/toSet/toMap, joining, groupingBy, partitioningBy, counting, summingInt cover most reporting needs."
+    },
+    {
+      "title": "Optional",
+      "body": "Optional<T> is a container that may be empty. Use map/flatMap/filter/orElse/orElseGet/orElseThrow/ifPresent. Do not use it for fields or method parameters in most designs, and never call get() without checking."
+    },
+    {
+      "title": "Parallel streams and performance",
+      "body": "parallelStream splits work with the common ForkJoinPool. It helps for large CPU-bound independent work and hurts for small data, I/O, ordered output or shared mutable state. Measure before claiming a speedup."
+    }
+  ],
+  "examples": [
+    {
+      "level": "advanced",
+      "title": "Filter, map, sort and collect",
+      "code": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<String> names = List.of(\"Aman\", \"Priya\", \"Ravi\", \"Anita\");\n        List<String> result = names.stream()\n            .filter(n -> n.startsWith(\"A\"))\n            .map(String::toUpperCase)\n            .sorted()\n            .collect(Collectors.toList());\n        System.out.println(result);\n        System.out.println(names.stream().mapToInt(String::length).summaryStatistics().getMax());\n        Map<Character, Long> grouped = names.stream()\n            .collect(Collectors.groupingBy(n -> n.charAt(0), TreeMap::new, Collectors.counting()));\n        System.out.println(grouped);\n    }\n}",
+      "output": "[AMAN, ANITA]\n5\n{A=2, P=1, R=1}",
+      "lines": [
+        "filter keeps names starting with A: Aman and Anita.",
+        "map converts each to upper case and sorted orders them alphabetically.",
+        "mapToInt avoids boxing and summaryStatistics reports the maximum length (Priya, 5).",
+        "groupingBy counts names by their first character, giving A=2, P=1, R=1."
+      ],
+      "dryRun": ["Aman → Aman (starts with A) → AMAN", "Priya filtered out; Ravi filtered out; Anita → ANITA", "sorted → [AMAN, ANITA]", "Max length = 5; grouping counts by first letter"]
+    },
+    {
+      "level": "advanced",
+      "title": "Optional, map and reduce",
+      "code": "import java.util.*;\n\npublic class Main {\n    static Optional<Integer> parse(String text) {\n        try {\n            return Optional.of(Integer.parseInt(text));\n        } catch (NumberFormatException e) {\n            return Optional.empty();\n        }\n    }\n\n    public static void main(String[] args) {\n        List<String> raw = List.of(\"4\", \"x\", \"6\");\n        int total = raw.stream()\n            .map(Main::parse)\n            .flatMap(Optional::stream)\n            .reduce(0, Integer::sum);\n        System.out.println(total);\n        System.out.println(parse(\"x\").orElse(-1));\n        System.out.println(parse(\"7\").map(n -> n * 2).orElse(0));\n    }\n}",
+      "output": "10\n-1\n14",
+      "lines": [
+        "parse returns Optional.empty for invalid text instead of throwing to the caller.",
+        "flatMap(Optional::stream) drops the empty optionals and keeps the numbers.",
+        "reduce sums 4 + 6 = 10.",
+        "orElse supplies -1 for the invalid value, and map doubles the present 7 to 14."
+      ],
+      "dryRun": ["parse(\"4\") = Optional[4]", "parse(\"x\") = empty; parse(\"6\") = Optional[6]", "reduce → 10", "orElse(-1) → -1; 7*2 → 14"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "Stream<String> s = list.stream(); s.count(); s.forEach(System.out::println);",
+      "right": "Use each stream once; recreate it with list.stream() for a second pass.",
+      "why": "A stream is consumed by its terminal operation; reusing it throws IllegalStateException."
+    },
+    {
+      "wrong": "list.stream().forEach(x -> total += x);",
+      "right": "int total = list.stream().mapToInt(Integer::intValue).sum();",
+      "why": "A lambda may not modify a local variable, and shared mutable state breaks under parallel streams. Use reduce or a collector."
+    }
+  ],
+  "debug": {
+    "brief": "This pipeline is meant to print the count of even numbers, but throws IllegalStateException. Fix the reuse.",
+    "code": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> nums = List.of(1, 2, 3, 4);\n        Stream<Integer> s = nums.stream().filter(n -> n % 2 == 0);\n        System.out.println(s.count());\n        System.out.println(s.count());\n    }\n}",
+    "expected": "2\n2",
+    "hints": ["count() is a terminal operation and consumes the stream.", "Create the pipeline twice, or collect it once and reuse the list."],
+    "fix": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> nums = List.of(1, 2, 3, 4);\n        System.out.println(nums.stream().filter(n -> n % 2 == 0).count());\n        System.out.println(nums.stream().filter(n -> n % 2 == 0).count());\n    }\n}"
+  },
+  "best": [
+    "Keep pipelines short; extract a named method when a step needs a comment.",
+    "Prefer mapToInt/mapToDouble for numeric work to avoid boxing.",
+    "Return Optional from search methods, not null.",
+    "Measure before parallelising; shared mutable state makes it wrong, not just slow."
+  ],
+  "tip": "When asked 'why are streams lazy?', connect it to short-circuiting: findFirst on an infinite stream can finish because intermediate steps only run when the terminal asks. Then mention that a stream is single-use.",
+  "revision": [
+    "Lambda implements a functional interface; method reference is shorthand.",
+    "Intermediate operations are lazy; a terminal operation runs the pipeline.",
+    "collect/Collectors turn results back into collections and strings.",
+    "Optional models absence; parallel only for large independent CPU work."
+  ],
+  "practice": [
+    { "title": "Long names", "prompt": "From a list of names, print the upper-cased names longer than 4 characters, sorted.", "level": "intermediate", "hint": "filter → map → sorted → toList." },
+    { "title": "Group by length", "prompt": "Group words by their length and print each length with its words.", "level": "advanced", "hint": "Collectors.groupingBy(String::length)." },
+    { "title": "Optional chain", "prompt": "Write findUser(id) returning Optional<String>, then print the upper-cased name or 'unknown'.", "level": "advanced", "hint": "map(String::toUpperCase).orElse(\"unknown\")." }
+  ],
+  "mcqs": [
+    {
+      "q": "Which is a terminal operation?",
+      "options": ["filter", "map", "collect", "sorted"],
+      "answer": 2,
+      "explain": "collect consumes the stream and produces a result; the others are lazy intermediate steps."
+    },
+    {
+      "q": "Predicate<T> represents…",
+      "options": ["T → T", "T → boolean", "T → void", "() → T"],
+      "answer": 1,
+      "explain": "test(T) returns a boolean, which is why filter takes a Predicate."
+    },
+    {
+      "q": "What happens when you reuse a consumed stream?",
+      "options": ["It restarts", "It returns empty", "IllegalStateException", "It compiles but hangs"],
+      "answer": 2,
+      "explain": "Streams are single-use; the second terminal operation throws IllegalStateException."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Stream vs for loop — when do you use which?",
+      "a": "Streams read better for filter/map/group pipelines and are easy to parallelise, but have overhead and can obscure index-dependent or stateful logic. A loop is clearer for early exits with complex control flow or for hot inner loops. Choose the readable one and measure if performance matters.",
+      "followUp": "Are streams always slower? (Not necessarily; for large data the difference is small, and parallel streams can win — measure.)"
+    },
+    {
+      "q": "What is Optional for, and what is it not for?",
+      "a": "Optional is a return type that makes absence explicit and composable. It is not a general null replacement: avoid it for fields, method parameters and collections, and never call get() without a presence check.",
+      "followUp": "Optional.of vs ofNullable? (of throws on null; ofNullable returns empty.)"
+    }
+  ],
+  "lab": {
+    "title": "Sum of squares of evens",
+    "brief": "Read n then n integers. Print the sum of the squares of the even numbers, using a stream.",
+    "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        List<Integer> nums = new ArrayList<>();\n        for (int i = 0; i < n; i++) nums.add(sc.nextInt());\n        // TODO: stream, filter evens, square, sum, print\n    }\n}",
+    "expected": "20",
+    "tests": [
+      { "name": "1 2 3 4", "stdin": "4\n1 2 3 4\n", "stdout": "20" },
+      { "name": "no evens", "stdin": "3\n1 3 5\n", "stdout": "0" }
+    ],
+    "hints": ["filter(n -> n % 2 == 0).mapToInt(n -> n * n).sum().", "mapToInt avoids boxing and gives sum() directly."],
+    "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        List<Integer> nums = new ArrayList<>();\n        for (int i = 0; i < n; i++) nums.add(sc.nextInt());\n        int total = nums.stream()\n            .filter(v -> v % 2 == 0)\n            .mapToInt(v -> v * v)\n            .sum();\n        System.out.println(total);\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Pipelines readable and correct?",
+    "checks": [
+      "I can name the four core functional interfaces and their shapes",
+      "I know which operations are lazy and which run the pipeline",
+      "I never reuse a stream or mutate shared state in a lambda"
+    ]
+  }
+}

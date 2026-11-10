@@ -1,0 +1,189 @@
+{
+  "id": "j02",
+  "no": 2,
+  "title": "Java Fundamentals",
+  "level": "beginner",
+  "hours": 6,
+  "goal": "Variables, primitive types, operators, input/output aur type conversion ko confidently use karna.",
+  "prereqs": ["Module 01: a program that compiles and runs"],
+  "objectives": [
+    "Choose the right primitive type for a value",
+    "Predict the result of arithmetic, comparison and logical expressions",
+    "Read input with Scanner and format output with printf",
+    "Explain implicit conversion versus explicit casting"
+  ],
+  "definition": "Java has eight primitive types (byte, short, int, long, float, double, char, boolean) that store raw values, and reference types that store the address of an object. Variables are typed containers; operators combine values; Scanner reads input and System.out writes output.",
+  "explain": [
+    "A variable is a named box with a fixed type. int holds whole numbers, double holds decimals, boolean holds true/false, char holds one character. The type decides how much memory the box takes and which operations are legal.",
+    "Java converts smaller types to larger ones automatically (int to long, int to double). Going the other way needs a cast, because information can be lost: (int) 9.7 becomes 9, not 10. Integer division also surprises beginners: 7 / 2 is 3, because both operands are int.",
+    "Scanner parses text from an input stream into typed values: nextInt(), nextDouble(), nextLine(). printf formats output with placeholders, which is how you print money, tables and aligned reports without manual padding."
+  ],
+  "hinglish": [
+    "Variable ek dabba hai jiska type fix hota hai. int me pure number, double me decimal, boolean me true/false, char me ek character. Type se hi decide hota hai ki kaun se operations allowed hain.",
+    "Chhote type se bade type me conversion automatic hoti hai (int → double), bade se chhote me cast lagana padta hai aur data kat sakta hai. Aur haan: 7 / 2 Java me 3 hota hai, kyunki dono int hain — decimal chahiye to 7.0 / 2 likho."
+  ],
+  "analogy": "Types alag-alag size ke containers hain: byte ek chhoti dabbi, int ek normal box, long ek bada trunk, double ek measuring cup jisme decimals aate hain. Aap paani bade vessel me bina nuksan daal sakte ho, par chhoti dabbi me daalne se overflow ho jata hai.",
+  "why": "Every Java bug you will ever debug starts with a value of the wrong type, a wrong operator or a lost decimal. Getting these right makes later topics — methods, arrays, collections — dramatically easier, and numeric questions are a standard interview warm-up.",
+  "syntax": [
+    {
+      "code": "int age = 21;\ndouble price = 199.99;\nboolean passed = true;\nchar grade = 'A';\nlong population = 8_000_000_000L;\nfinal double GST = 0.18;",
+      "note": "Literals: int is the default whole number, double the default decimal. Use L for long, f for float. final means the value cannot be reassigned."
+    },
+    {
+      "code": "int a = 7, b = 2;\nSystem.out.println(a / b);        // 3  integer division\nSystem.out.println(a % b);        // 1  remainder\nSystem.out.println((double) a / b); // 3.5\nSystem.out.printf(\"Total: %.2f%n\", 199.996);",
+      "note": "Cast one operand to double to get decimal division. %.2f rounds to two decimals; %n is the newline."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Variables and constants",
+      "body": "Declare with type name = value. A variable can be reassigned; a final variable cannot. Constants are final and conventionally UPPER_SNAKE_CASE. Local variables must be initialised before use."
+    },
+    {
+      "title": "The eight primitive types",
+      "body": "byte (8-bit), short (16), int (32), long (64), float (32-bit decimal), double (64-bit decimal), char (16-bit Unicode), boolean. int and double cover most everyday work."
+    },
+    {
+      "title": "Reference types",
+      "body": "String, arrays and objects store a reference to data, not the data itself. A reference can be null, which is why calling a method on an uninitialised object throws NullPointerException."
+    },
+    {
+      "title": "Type conversion and casting",
+      "body": "Widening (int → long → double) is automatic. Narrowing (double → int) needs an explicit cast and truncates the fraction. Casting an out-of-range value wraps around, so validate before you cast."
+    },
+    {
+      "title": "Operators",
+      "body": "Arithmetic + - * / %, relational == != < > <= >=, logical && || !, assignment = += -= *= /= %=, and increment/decrement ++ --. && and || short-circuit: the right side may not run."
+    },
+    {
+      "title": "Precedence and integer division",
+      "body": "Multiplicative beats additive, comparison beats logical, and assignment comes last. Parenthesise when unsure. Division of two ints truncates; use a double operand for a decimal result."
+    },
+    {
+      "title": "Scanner input",
+      "body": "new Scanner(System.in) reads tokens. nextInt() and nextDouble() leave the newline behind, so call nextLine() once after them before reading a full line. Close the scanner when done."
+    },
+    {
+      "title": "Output and formatted output",
+      "body": "print writes without a newline, println adds one, printf formats with %d, %s, %f, %.2f, %b and %n. String.format returns the same text instead of printing it."
+    }
+  ],
+  "examples": [
+    {
+      "level": "beginner",
+      "title": "Bill with tax, correctly rounded",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        int quantity = 3;\n        double price = 149.5;\n        final double GST = 0.18;\n        double subtotal = quantity * price;\n        double total = subtotal + subtotal * GST;\n        System.out.printf(\"Subtotal: %.2f%n\", subtotal);\n        System.out.printf(\"Total with GST: %.2f%n\", total);\n    }\n}",
+      "output": "Subtotal: 448.50\nTotal with GST: 529.23",
+      "lines": [
+        "quantity and price are inputs; GST is a final constant so it cannot change later.",
+        "quantity * price is int * double, so Java widens quantity to double automatically.",
+        "subtotal * GST computes tax; adding it to subtotal gives the gross total.",
+        "printf prints each value with exactly two decimal places."
+      ],
+      "dryRun": ["quantity = 3, price = 149.5", "subtotal = 3 * 149.5 = 448.5", "tax = 448.5 * 0.18 = 80.73", "total = 529.23 → printed as 529.23"]
+    },
+    {
+      "level": "intermediate",
+      "title": "Scanner input with a clean prompt",
+      "code": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        System.out.print(\"Name: \");\n        String name = sc.nextLine();\n        System.out.print(\"Age: \");\n        int age = sc.nextInt();\n        System.out.println(name + \" will be \" + (age + 1) + \" next year.\");\n        sc.close();\n    }\n}",
+      "output": "Name: Age: Aman will be 22 next year.",
+      "stdin": "Aman\n21\n",
+      "lines": [
+        "Scanner wraps System.in so you can read typed values instead of raw bytes.",
+        "nextLine() reads the whole first line, spaces included.",
+        "nextInt() parses the next integer token; (age + 1) is computed before concatenation because of the parentheses.",
+        "close() releases the underlying stream."
+      ],
+      "dryRun": ["Input line 1: Aman → name = \"Aman\"", "Input line 2: 21 → age = 21", "Age + 1 = 22, joined into the sentence", "Output: Aman will be 22 next year."]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "int average = (90 + 80) / 3;",
+      "right": "double average = (90 + 80) / 3.0;",
+      "why": "Integer division truncates: 170 / 3 is 56, not 56.67. Making one operand a double keeps the fraction."
+    },
+    {
+      "wrong": "int price = 199.99;",
+      "right": "double price = 199.99;",
+      "why": "A decimal literal is a double and cannot be stored in an int without an explicit cast, which would also drop the decimals."
+    }
+  ],
+  "debug": {
+    "brief": "This program should print 3.5 but prints 3. Fix the division.",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int total = 7;\n        int count = 2;\n        double average = total / count;\n        System.out.println(average);\n    }\n}",
+    "expected": "3.5",
+    "hints": ["The division happens before the assignment, and both operands are int.", "Cast one operand: (double) total / count."],
+    "fix": "public class Main {\n    public static void main(String[] args) {\n        int total = 7;\n        int count = 2;\n        double average = (double) total / count;\n        System.out.println(average);\n    }\n}"
+  },
+  "best": [
+    "Use double for money calculations in exercises, but BigDecimal for real currency.",
+    "Avoid magic numbers: name constants with final and a clear identifier.",
+    "Parenthesise arithmetic you had to think about for more than a second.",
+    "Never compare doubles with ==; compare Math.abs(a - b) < 0.000001."
+  ],
+  "tip": "A favourite warm-up is 'what does 7 / 2 print, and what about 7 % 2?'. Say 3 and 1, then mention that using 7.0 / 2 gives 3.5 — it shows you know both operators and type promotion.",
+  "revision": [
+    "Eight primitives; int and double cover most work.",
+    "Widening is automatic, narrowing needs a cast.",
+    "Integer division truncates; cast an operand to double for decimals.",
+    "Scanner reads tokens; printf formats output with %d, %s, %.2f, %n."
+  ],
+  "practice": [
+    { "title": "Swap two numbers", "prompt": "Read two integers and print them swapped, first with a temporary variable and then without one using arithmetic.", "level": "beginner", "hint": "Without a temp: a = a + b; b = a - b; a = a - b;" },
+    { "title": "Simple interest", "prompt": "Read principal, rate and years, then print the interest and the total amount with two decimals.", "level": "beginner", "hint": "interest = principal * rate * years / 100." },
+    { "title": "Even or odd with a ternary", "prompt": "Read one integer and print Even or Odd using the conditional operator instead of if-else.", "level": "beginner", "hint": "System.out.println(n % 2 == 0 ? \"Even\" : \"Odd\");" }
+  ],
+  "mcqs": [
+    {
+      "q": "What is the value of 7 / 2 in Java?",
+      "options": ["3.5", "3", "4", "1"],
+      "answer": 1,
+      "explain": "Both operands are int, so integer division truncates to 3. Make one operand a double for 3.5."
+    },
+    {
+      "q": "Which type stores a single character?",
+      "options": ["String", "char", "byte", "boolean"],
+      "answer": 1,
+      "explain": "char holds one UTF-16 code unit in single quotes, e.g. 'A'. String is a reference type for text."
+    },
+    {
+      "q": "What does (int) 9.99 produce?",
+      "options": ["10", "9", "9.99", "Compile error"],
+      "answer": 1,
+      "explain": "Casting double to int truncates the fractional part; it does not round."
+    }
+  ],
+  "interview": [
+    {
+      "q": "What is the difference between primitive types and reference types?",
+      "a": "A primitive variable stores the value directly (int, double, boolean…). A reference variable stores the address of an object on the heap; the object itself lives elsewhere and the reference can be null.",
+      "followUp": "Where do primitives live? (As fields, with their object; as locals, in the stack frame. The language does not guarantee storage location — the JVM decides.)"
+    },
+    {
+      "q": "Why does == sometimes fail for Strings?",
+      "a": "For reference types == compares the reference, not the text. Two equal strings may be different objects, so use equals() to compare contents.",
+      "followUp": "When does == work for Strings? (For compile-time string literals that land in the string pool, which is an implementation detail, not a rule to rely on.)"
+    }
+  ],
+  "lab": {
+    "title": "Swap the numbers",
+    "brief": "Read two integers and print them swapped on one line, separated by a space.",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        // TODO: swap a and b, then print \"a b\"\n    }\n}",
+    "expected": "9 4",
+    "tests": [
+      { "name": "4 and 9", "stdin": "4 9\n", "stdout": "9 4" },
+      { "name": "negative values", "stdin": "-1 5\n", "stdout": "5 -1" }
+    ],
+    "hints": ["Use a temporary int to hold one value while you move the other.", "Print with a space between the numbers."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        int temp = a;\n        a = b;\n        b = temp;\n        System.out.println(a + \" \" + b);\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Fundamentals locked in?",
+    "checks": [
+      "I can pick int, double, boolean or char for a value without guessing",
+      "I can explain why 7 / 2 is 3 and how to get 3.5",
+      "I read input with Scanner and formatted output with printf"
+    ]
+  }
+}

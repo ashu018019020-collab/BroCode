@@ -1,0 +1,184 @@
+{
+  "id": "j03",
+  "no": 3,
+  "title": "Strings",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "String immutability, pool, comparison aur StringBuilder ko theek se samajhna.",
+  "prereqs": ["Module 02: variables, operators and output"],
+  "objectives": [
+    "Explain why a String cannot be changed after creation",
+    "Choose between == and equals() and say what each compares",
+    "Use the common String methods without guessing their return values",
+    "Pick StringBuilder for repeated concatenation and say why"
+  ],
+  "definition": "String is an immutable reference type representing a sequence of UTF-16 characters. Every method that appears to modify a String returns a new String. StringBuilder and StringBuffer are mutable alternatives used for repeated changes.",
+  "explain": [
+    "A String is immutable: once created, its characters never change. Calling toUpperCase() returns a new String; the original is untouched. That sounds wasteful, but immutability makes strings safe to share, cache and use as HashMap keys.",
+    "Because equal string literals are shared in the string pool, two literals with the same text usually point at the same object, so == may look like it works. It does not compare text — it compares references. Always use equals() for content, and equalsIgnoreCase() when case should not matter.",
+    "When you concatenate inside a loop, each + creates a new String, which is O(n²) work. StringBuilder keeps a growable buffer and appends in place, so it is the right tool. StringBuffer is the thread-safe, slower sibling."
+  ],
+  "hinglish": [
+    "String immutable hota hai: ek baar ban gaya to uske characters badal nahi sakte. toUpperCase() original ko nahi badalta, naya String return karta hai. Isi wajah se String ko safely share kar sakte ho aur HashMap ki key bana sakte ho.",
+    "String pool ki wajah se same literal wale strings ek hi object ko point kar sakte hain, isliye == kabhi kabhi sahi lagta hai — par wo text compare nahi karta, reference compare karta hai. Content compare karne ke liye hamesha equals() use karo. Loop me concatenation ke liye StringBuilder."
+  ],
+  "analogy": "String ek printed page jaisa hai: usme kuch badalna ho to naya page print hota hai, purana waisa hi rehta hai. StringBuilder ek whiteboard hai — usi board par likhte, mitate aur append karte ho, isliye baar-baar naya page nahi banta.",
+  "why": "Text is everywhere: names, JSON, logs, SQL, user input. String comparison bugs are among the most common production defects, and interviewers ask about immutability and the pool in almost every Java screening.",
+  "syntax": [
+    {
+      "code": "String a = \"Java\";\nString b = new String(\"Java\");\nSystem.out.println(a == b);        // false: different objects\nSystem.out.println(a.equals(b));   // true: same characters\nSystem.out.println(a.length());    // 4\nSystem.out.println(a.substring(1)); // ava",
+      "note": "Use equals() for content. length() is a method on String (arrays use the length field)."
+    },
+    {
+      "code": "StringBuilder sb = new StringBuilder();\nfor (int i = 1; i <= 3; i++) {\n    sb.append(i).append(' ');\n}\nSystem.out.println(sb.toString().trim()); // 1 2 3",
+      "note": "append returns the same builder, so calls chain. toString() gives you the finished String."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Creating strings",
+      "body": "A literal (\"Java\") reuses the string pool. new String(\"Java\") forces a fresh heap object. Prefer literals: they are cheaper and easier to compare correctly with equals()."
+    },
+    {
+      "title": "Immutability",
+      "body": "charAt, substring, replace, trim and toUpperCase all return new Strings. This makes strings thread-safe, hashable and safe to share, at the cost of extra objects when you modify repeatedly."
+    },
+    {
+      "title": "String pool and interning",
+      "body": "The JVM caches literal strings in a pool so identical literals share one object. intern() returns the pooled instance. Do not rely on pooling for correctness — compare with equals()."
+    },
+    {
+      "title": "equals() versus ==",
+      "body": "== compares references (or primitive values). equals() compares content when the class overrides it, as String does. Use Objects.equals(a, b) when either side may be null, or \"literal\".equals(variable) to avoid a NullPointerException."
+    },
+    {
+      "title": "The methods you actually use",
+      "body": "length, charAt, substring(begin, end), indexOf, contains, startsWith, endsWith, replace, split, trim, strip, toLowerCase, toUpperCase, isEmpty, isBlank, repeat, join, valueOf."
+    },
+    {
+      "title": "Concatenation, StringBuilder and StringBuffer",
+      "body": "The compiler turns a single expression's + into a StringBuilder internally, but a loop of + creates a builder per iteration. StringBuilder is mutable and fast, not thread-safe; StringBuffer synchronises every method and is slower."
+    },
+    {
+      "title": "Formatting, parsing and Character",
+      "body": "String.format and printf share placeholders. Integer.parseInt, Double.parseDouble and String.valueOf convert between text and numbers; a malformed value throws NumberFormatException. Character.isDigit, isLetter, isUpperCase and toUpperCase handle single characters."
+    }
+  ],
+  "examples": [
+    {
+      "level": "beginner",
+      "title": "Clean a name and compare it safely",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        String raw = \"  aman kumar  \";\n        String name = raw.trim();\n        String[] parts = name.split(\" \");\n        System.out.println(name.length());\n        System.out.println(parts.length);\n        System.out.println(name.startsWith(\"aman\"));\n        System.out.println(\"AMAN\".equalsIgnoreCase(parts[0]));\n    }\n}",
+      "output": "10\n2\ntrue\ntrue",
+      "lines": [
+        "trim() removes leading and trailing spaces, not the space in the middle, so the name is 10 characters.",
+        "split(\" \") cuts on a single space and returns two parts: aman and kumar.",
+        "startsWith checks the prefix of the cleaned name.",
+        "equalsIgnoreCase compares the first part with AMAN without caring about case."
+      ],
+      "dryRun": ["raw = \"  aman kumar  \"", "trim → \"aman kumar\" (10 chars)", "split → [\"aman\", \"kumar\"] (2 parts)", "startsWith(\"aman\") → true; equalsIgnoreCase(\"AMAN\",\"aman\") → true"]
+    },
+    {
+      "level": "intermediate",
+      "title": "Reverse with StringBuilder",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        String word = \"BroCode\";\n        String reversed = new StringBuilder(word).reverse().toString();\n        System.out.println(reversed);\n        System.out.println(word.equals(reversed) ? \"palindrome\" : \"not palindrome\");\n        System.out.println(word.length() == reversed.length());\n    }\n}",
+      "output": "edoCorB\nnot palindrome\ntrue",
+      "lines": [
+        "new StringBuilder(word) copies the characters into a mutable buffer.",
+        "reverse() reverses that buffer in place and returns it.",
+        "toString() produces the final String, which is compared with equals.",
+        "Both strings have seven characters, so the length comparison is true."
+      ],
+      "dryRun": ["word = BroCode", "buffer = [B,r,o,C,o,d,e]", "reverse → [e,d,o,C,o,r,B]", "reversed = edoCorB; equals(BroCode) false"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "if (role == \"admin\") { }",
+      "right": "if (\"admin\".equals(role)) { }",
+      "why": "== compares references, so a role read from input or built at runtime may be a different object. The literal-first form is also null-safe."
+    },
+    {
+      "wrong": "String s = \"\"; for (String w : words) s += w + \",\";",
+      "right": "StringBuilder sb = new StringBuilder(); for (String w : words) sb.append(w).append(',');",
+      "why": "Each += creates a new String, so the loop allocates O(n²) characters. StringBuilders append in place."
+    }
+  ],
+  "debug": {
+    "brief": "This program prints 'different' even though both words are Java. Fix the comparison.",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        String a = \"Java\";\n        String b = new String(\"Java\");\n        if (a == b) {\n            System.out.println(\"same\");\n        } else {\n            System.out.println(\"different\");\n        }\n    }\n}",
+    "expected": "same",
+    "hints": ["What does == compare for reference types?", "equals() compares the characters."],
+    "fix": "public class Main {\n    public static void main(String[] args) {\n        String a = \"Java\";\n        String b = new String(\"Java\");\n        if (a.equals(b)) {\n            System.out.println(\"same\");\n        } else {\n            System.out.println(\"different\");\n        }\n    }\n}"
+  },
+  "best": [
+    "Compare text with equals(); put the literal first when the other side may be null.",
+    "Use StringBuilder inside loops, String for values that do not change.",
+    "Use isBlank() rather than trim().isEmpty() to detect whitespace-only input.",
+    "Never build SQL or JSON by concatenating user input — use parameters and libraries."
+  ],
+  "tip": "When asked 'why is String immutable?', give three consequences: safe sharing and pooling, safe hash keys, and thread safety without locks. Then mention that this is why string concatenation in a loop is expensive.",
+  "revision": [
+    "Strings are immutable; methods return new Strings.",
+    "== compares references, equals() compares content.",
+    "StringBuilder for repeated changes, StringBuffer when shared across threads.",
+    "parseInt/parseDouble convert text, String.valueOf converts values to text."
+  ],
+  "practice": [
+    { "title": "Vowel count", "prompt": "Read a line and count how many vowels it contains, ignoring case.", "level": "beginner", "hint": "Loop over chars and test \"aeiouAEIOU\".indexOf(c) >= 0." },
+    { "title": "Palindrome check", "prompt": "Read a word and print true if it reads the same backwards, ignoring case.", "level": "beginner", "hint": "Compare the word with new StringBuilder(word).reverse().toString()." },
+    { "title": "Initials", "prompt": "Read a full name and print initials like A. K. for Aman Kumar.", "level": "intermediate", "hint": "split(\" \"), then charAt(0) of each part." }
+  ],
+  "mcqs": [
+    {
+      "q": "What does \"Java\".substring(1) return?",
+      "options": ["J", "ava", "Java", "av"],
+      "answer": 1,
+      "explain": "substring(1) starts at index 1 and goes to the end, so it returns ava."
+    },
+    {
+      "q": "Which comparison checks the characters of two Strings?",
+      "options": ["==", "equals()", "compare()", "hashCode()"],
+      "answer": 1,
+      "explain": "equals() compares content for String; == compares references."
+    },
+    {
+      "q": "Why prefer StringBuilder in a loop?",
+      "options": ["It is immutable", "It avoids creating a new String per iteration", "It is thread-safe", "It sorts characters"],
+      "answer": 1,
+      "explain": "String concatenation creates a new object each time; StringBuilder mutates one buffer."
+    }
+  ],
+  "interview": [
+    {
+      "q": "What is the String constant pool?",
+      "a": "A JVM-managed area where identical string literals are stored once and reused. new String(\"x\") creates a separate heap object, which is why == can fail while equals() succeeds.",
+      "followUp": "What does intern() do? (Returns the pooled instance for that text.)"
+    },
+    {
+      "q": "StringBuilder vs StringBuffer?",
+      "a": "Both are mutable. StringBuilder is faster and not thread-safe; StringBuffer synchronises its methods, so it is safe across threads but slower. Use StringBuilder unless the buffer is genuinely shared.",
+      "followUp": "Is String concatenation with + always slow? (No — a single expression compiles to one StringBuilder; only repeated concatenation in a loop is the problem.)"
+    }
+  ],
+  "lab": {
+    "title": "Count the vowels",
+    "brief": "Read one line and print how many vowels (a, e, i, o, u — either case) it contains.",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String line = sc.nextLine();\n        // TODO: count vowels and print the count\n    }\n}",
+    "expected": "4",
+    "tests": [
+      { "name": "BroCode Academy", "stdin": "BroCode Academy\n", "stdout": "6" },
+      { "name": "rhythm", "stdin": "rhythm\n", "stdout": "0" }
+    ],
+    "hints": ["Lowercase the line first, then only check a, e, i, o, u.", "Use a counter int and a for loop over line.length()."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String line = sc.nextLine().toLowerCase();\n        int vowels = 0;\n        for (int i = 0; i < line.length(); i++) {\n            char c = line.charAt(i);\n            if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u') vowels++;\n        }\n        System.out.println(vowels);\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Strings under control?",
+    "checks": [
+      "I use equals() rather than == for text",
+      "I can explain what immutability means with an example",
+      "I know when to reach for StringBuilder"
+    ]
+  }
+}

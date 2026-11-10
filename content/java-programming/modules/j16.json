@@ -1,0 +1,184 @@
+{
+  "id": "j16",
+  "no": 16,
+  "title": "File Handling and Java I/O",
+  "level": "intermediate",
+  "hours": 7,
+  "goal": "Files, streams, readers/writers, NIO aur try-with-resources se safe I/O.",
+  "prereqs": ["Module 13: exceptions and try-with-resources"],
+  "objectives": [
+    "Read and write text files with the Files API",
+    "Choose between byte streams and character streams",
+    "Buffer I/O for performance and close resources automatically",
+    "Handle missing files and I/O failures without crashing"
+  ],
+  "definition": "Java I/O moves bytes through InputStream/OutputStream and characters through Reader/Writer. The NIO.2 Files API wraps paths with convenient static methods (readString, writeString, lines, copy, move, delete) and reports failures as IOException.",
+  "explain": [
+    "A Path locates a file; Files performs operations on it. Files.readString/readAllLines load text, Files.writeString/write create or overwrite, and Files.lines streams a large file line by line without loading it all into memory.",
+    "Byte streams handle binary data (images, PDFs); character streams handle text and apply an encoding. Always specify UTF-8 explicitly rather than relying on the platform default, or the same file will read differently on another machine.",
+    "Buffering batches small reads and writes into larger ones, which is dramatically faster for many small operations. Resources must be closed; try-with-resources does that for you even when an exception is thrown, and keeps the original exception if close also fails."
+  ],
+  "hinglish": [
+    "Path file ka address hai, Files uspar kaam karta hai. readString poori file padhta hai, Files.lines badi file ko line-by-line stream karta hai bina sab memory me load kiye. Text ke liye encoding hamesha UTF-8 likho.",
+    "Byte streams binary ke liye, character streams text ke liye. Buffering chhote reads/writes ko batch karke speed badhata hai. Resource close karna zaroori hai — try-with-resources exception ke baad bhi close karta hai."
+  ],
+  "analogy": "File ek almirah hai, Path uski chabi ka label, aur Files API haath. Buffered reader ek trolley hai — ek-ek item le jaane ke bajaye poora rack ek baar me le aata hai.",
+  "why": "Every backend reads configuration, writes logs, imports CSV and exports reports. Getting encoding, closing and error handling right prevents data corruption and file-handle leaks that only appear under load.",
+  "syntax": [
+    {
+      "code": "Path path = Path.of(\"notes.txt\");\nFiles.writeString(path, \"line one\\nline two\\n\", StandardCharsets.UTF_8);\nString text = Files.readString(path, StandardCharsets.UTF_8);\nSystem.out.println(text.lines().count());\nFiles.deleteIfExists(path);",
+      "note": "writeString creates or truncates the file. deleteIfExists avoids an exception when the file is already gone."
+    },
+    {
+      "code": "try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {\n    String line;\n    while ((line = reader.readLine()) != null) {\n        System.out.println(line);\n    }\n}",
+      "note": "try-with-resources closes the reader on every path, including an exception."
+    }
+  ],
+  "topics": [
+    {
+      "title": "File and Path",
+      "body": "java.io.File is the legacy abstraction; java.nio.file.Path is the modern one. Path.of, resolve, getParent, toAbsolutePath and Files.exists cover most path work. Paths are immutable values."
+    },
+    {
+      "title": "Reading and writing text",
+      "body": "Files.readString/readAllLines for small files, Files.writeString/write for output, Files.lines for a lazy stream over a large file. Always pass StandardCharsets.UTF_8."
+    },
+    {
+      "title": "BufferedReader and BufferedWriter",
+      "body": "Buffering reduces system calls. readLine returns null at end of file; newLine writes the platform line separator. Wrap FileReader/FileWriter or use Files.newBufferedReader/newBufferedWriter."
+    },
+    {
+      "title": "Byte streams",
+      "body": "InputStream/OutputStream move raw bytes. Use them for images, archives and binary protocols; layer a Reader/Writer with an explicit charset when the bytes are text. Files.newInputStream/newOutputStream are the NIO entry points."
+    },
+    {
+      "title": "NIO.2 utilities",
+      "body": "Files.copy, move, delete, createDirectories, walk and list make filesystem work short. Files.walk returns a Stream<Path> that must be closed (try-with-resources)."
+    },
+    {
+      "title": "Serialization and its limits",
+      "body": "Java serialization (Serializable, ObjectOutputStream) persists object graphs but is brittle across versions and unsafe for untrusted input. Prefer JSON/CSV for data exchange and a schema you control."
+    },
+    {
+      "title": "Resource management",
+      "body": "Close streams, readers and channels. try-with-resources closes in reverse order and suppresses secondary exceptions. Never close a stream you did not open (for example System.out)."
+    }
+  ],
+  "examples": [
+    {
+      "level": "intermediate",
+      "title": "Write, read and count lines",
+      "code": "import java.nio.charset.StandardCharsets;\nimport java.nio.file.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Path file = Files.createTempFile(\"brocode\", \".txt\");\n        try {\n            Files.writeString(file, \"alpha\\nbeta\\ngamma\\n\", StandardCharsets.UTF_8);\n            String text = Files.readString(file, StandardCharsets.UTF_8);\n            System.out.println(text.lines().count());\n            System.out.println(text.lines().findFirst().orElse(\"empty\"));\n        } finally {\n            Files.deleteIfExists(file);\n        }\n    }\n}",
+      "output": "3\nalpha",
+      "lines": [
+        "createTempFile gives a unique path so the program never overwrites a real file.",
+        "writeString stores the three lines as UTF-8 bytes.",
+        "readString returns the text; lines() splits it lazily and count() returns 3.",
+        "findFirst returns the first line, and deleteIfExists cleans up even if reading failed."
+      ],
+      "dryRun": ["temp file created", "content = \"alpha\\nbeta\\ngamma\\n\"", "lines → 3, first → alpha", "finally deletes the file"]
+    },
+    {
+      "level": "advanced",
+      "title": "Buffered reading with try-with-resources",
+      "code": "import java.nio.charset.StandardCharsets;\nimport java.nio.file.*;\nimport java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Path file = Files.createTempFile(\"brocode\", \".txt\");\n        try {\n            Files.writeString(file, \"java io\\nfile handling\\n\", StandardCharsets.UTF_8);\n            int lines = 0;\n            int words = 0;\n            try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {\n                String line;\n                while ((line = reader.readLine()) != null) {\n                    lines++;\n                    words += line.split(\"\\\\s+\").length;\n                }\n            }\n            System.out.println(\"lines=\" + lines);\n            System.out.println(\"words=\" + words);\n        } finally {\n            Files.deleteIfExists(file);\n        }\n    }\n}",
+      "output": "lines=2\nwords=4",
+      "lines": [
+        "The file holds two lines, written with an explicit UTF-8 charset.",
+        "newBufferedReader returns a reader that closes with the try block.",
+        "readLine returns null at end of file, which ends the loop.",
+        "Each line is split on whitespace to count words: 2 + 2 = 4."
+      ],
+      "dryRun": ["content: java io / file handling", "line 1: lines=1, words=2", "line 2: lines=2, words=4", "reader closed; file deleted in finally"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "FileReader reader = new FileReader(\"data.txt\"); String s = reader.read() + \"\";",
+      "right": "try (BufferedReader r = Files.newBufferedReader(Path.of(\"data.txt\"), StandardCharsets.UTF_8)) { … }",
+      "why": "An unclosed reader leaks a file handle, and the platform default charset makes the text machine-dependent."
+    },
+    {
+      "wrong": "Files.writeString(path, text); // called inside a loop for every line",
+      "right": "Build the text with StringBuilder and write once, or use BufferedWriter.",
+      "why": "Each write opens and closes the file; batching is dramatically faster."
+    }
+  ],
+  "debug": {
+    "brief": "This program writes a file and then reads it, but prints an empty line because the writer was never closed. Fix it with try-with-resources.",
+    "code": "import java.io.*;\nimport java.nio.file.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Path file = Files.createTempFile(\"brocode\", \".txt\");\n        BufferedWriter writer = Files.newBufferedWriter(file);\n        writer.write(\"data\");\n        System.out.println(Files.readString(file));\n        writer.close();\n        Files.deleteIfExists(file);\n    }\n}",
+    "expected": "data",
+    "hints": ["The buffer has not been flushed when the read happens.", "Close (or flush) the writer before reading — try-with-resources does it for you."],
+    "fix": "import java.io.*;\nimport java.nio.file.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Path file = Files.createTempFile(\"brocode\", \".txt\");\n        try (BufferedWriter writer = Files.newBufferedWriter(file)) {\n            writer.write(\"data\");\n        }\n        System.out.println(Files.readString(file));\n        Files.deleteIfExists(file);\n    }\n}"
+  },
+  "best": [
+    "Specify UTF-8 explicitly on every text read and write.",
+    "Use try-with-resources for every stream, reader, writer and channel.",
+    "Stream large files with Files.lines instead of loading everything.",
+    "Never build file paths by string concatenation; use Path.resolve."
+  ],
+  "tip": "A common interview question is 'byte stream vs character stream'. Answer with what they carry, then add that a character stream is a byte stream plus a charset — and that choosing the wrong charset corrupts text without any exception.",
+  "revision": [
+    "Path locates, Files operates; NIO.2 is the modern API.",
+    "Byte streams for binary, character streams for text with a charset.",
+    "Buffer for performance; close with try-with-resources.",
+    "Files.lines streams a file lazily and must be closed."
+  ],
+  "practice": [
+    { "title": "Line counter", "prompt": "Write a program that writes three lines to a temp file and prints the line count.", "level": "beginner", "hint": "Files.writeString then text.lines().count()." },
+    { "title": "Copy a file", "prompt": "Copy a temp file to a second path with Files.copy and verify both exist.", "level": "intermediate", "hint": "Pass StandardCopyOption.REPLACE_EXISTING." },
+    { "title": "Word frequency from a file", "prompt": "Read a temp file line by line and print the most frequent word.", "level": "advanced", "hint": "Use a HashMap<String,Integer> with merge." }
+  ],
+  "mcqs": [
+    {
+      "q": "Which reads a whole small text file in one call?",
+      "options": ["Files.readString", "FileReader.read()", "InputStream.read()", "Files.walk"],
+      "answer": 0,
+      "explain": "Files.readString reads all characters into a String with a chosen charset."
+    },
+    {
+      "q": "What does BufferedReader.readLine return at end of file?",
+      "options": ["\"\"", "null", "-1", "It throws"],
+      "answer": 1,
+      "explain": "null signals end of stream; an empty line is still a non-null String."
+    },
+    {
+      "q": "Why specify UTF-8 explicitly?",
+      "options": ["It is faster", "The platform default varies between machines", "It compresses files", "It is required by Java"],
+      "answer": 1,
+      "explain": "Without an explicit charset, text is decoded with the machine default and can corrupt."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Byte stream vs character stream?",
+      "a": "InputStream/OutputStream move raw bytes and suit binary data. Reader/Writer move characters and apply a charset, so they suit text. A Reader is essentially a byte stream plus decoding.",
+      "followUp": "Which would you use for a PDF? (A byte stream — a PDF is binary, not text.)"
+    },
+    {
+      "q": "What does try-with-resources guarantee?",
+      "a": "Every declared resource is closed when the block exits, in reverse declaration order, whether it completed normally or threw. Close failures become suppressed exceptions on the primary failure, so the original cause is not lost.",
+      "followUp": "What must a resource implement? (AutoCloseable.)"
+    }
+  ],
+  "lab": {
+    "title": "Save the lines",
+    "brief": "Read n, then n lines from input. Write them to a temp file, read the file back, and print 'saved N lines'.",
+    "starter": "import java.nio.charset.StandardCharsets;\nimport java.nio.file.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Scanner sc = new Scanner(System.in);\n        int n = Integer.parseInt(sc.nextLine().trim());\n        List<String> lines = new ArrayList<>();\n        for (int i = 0; i < n; i++) lines.add(sc.nextLine());\n        // TODO: write, read back, print \"saved N lines\"\n    }\n}",
+    "expected": "saved 2 lines",
+    "tests": [
+      { "name": "two lines", "stdin": "2\nhello\nworld\n", "stdout": "saved 2 lines" },
+      { "name": "one line", "stdin": "1\njava\n", "stdout": "saved 1 lines" }
+    ],
+    "hints": ["Files.write(path, lines, StandardCharsets.UTF_8).", "Count with Files.readAllLines(file).size()."],
+    "solution": "import java.nio.charset.StandardCharsets;\nimport java.nio.file.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Scanner sc = new Scanner(System.in);\n        int n = Integer.parseInt(sc.nextLine().trim());\n        List<String> lines = new ArrayList<>();\n        for (int i = 0; i < n; i++) lines.add(sc.nextLine());\n        Path file = Files.createTempFile(\"brocode\", \".txt\");\n        try {\n            Files.write(file, lines, StandardCharsets.UTF_8);\n            int saved = Files.readAllLines(file, StandardCharsets.UTF_8).size();\n            System.out.println(\"saved \" + saved + \" lines\");\n        } finally {\n            Files.deleteIfExists(file);\n        }\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Files handled safely?",
+    "checks": [
+      "I use Path/Files rather than raw File where possible",
+      "I always specify UTF-8 and close resources",
+      "I can explain byte versus character streams"
+    ]
+  }
+}

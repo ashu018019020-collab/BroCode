@@ -1,0 +1,184 @@
+{
+  "id": "j10",
+  "no": 10,
+  "title": "Inheritance and Polymorphism",
+  "level": "intermediate",
+  "hours": 7,
+  "goal": "extends, super, method overriding aur runtime polymorphism ka asli behaviour.",
+  "prereqs": ["Module 09: classes, constructors and encapsulation"],
+  "objectives": [
+    "Model an is-a relationship with extends and call the parent constructor with super",
+    "Override a method and explain dynamic dispatch",
+    "Tell compile-time (overloading) from runtime (overriding) polymorphism",
+    "Choose composition when inheritance is the wrong tool"
+  ],
+  "definition": "Inheritance lets a subclass reuse and specialise a superclass (is-a). Overriding replaces an inherited method with the same signature; the JVM chooses the override at runtime based on the object's actual class (dynamic dispatch). Overloading is a compile-time choice based on argument types.",
+  "explain": [
+    "A subclass inherits accessible fields and methods and can add its own. super(...) calls the parent constructor and must be the first statement; super.method() calls the parent's version. Constructors are not inherited.",
+    "When a superclass reference points at a subclass object, the method that runs is the subclass's override. That is dynamic dispatch, decided at runtime from the object, not the variable's type. Fields do not behave this way — field access is resolved from the reference type, which is why overriding methods is safer than hiding fields.",
+    "Inheritance is a strong coupling: a subclass depends on the parent's implementation. Use it when the subtype genuinely is a specialised parent; otherwise compose — hold the other object as a field and delegate. final on a class blocks subclassing, and final on a method blocks overriding."
+  ],
+  "hinglish": [
+    "Subclass parent ke accessible fields/methods inherit karta hai. super(...) parent constructor call karta hai aur pehla statement hona chahiye. Parent reference agar child object ko point kare, to runtime par child ka override chalta hai — isi ko dynamic dispatch kehte hain.",
+    "Inheritance strong coupling hai: child parent ke implementation par depend karta hai. Sirf tab use karo jab sach me is-a relationship ho; warna composition better hai — doosre object ko field ki tarah rakho aur kaam delegate karo. final class ko extend hone se rokta hai."
+  ],
+  "analogy": "Parent class ek generic smartphone hai; subclass ek camera-focused model hai jo sab kuch inherit karta hai aur camera app ko apne tareeke se override karta hai. Aap 'phone' bolkar bhi camera model chala sakte ho — jo actual device hai wahi behaviour chalega.",
+  "why": "Frameworks are built on polymorphism: Spring injects an interface, tests replace it with a fake, and your code calls the same method either way. Interviewers test the difference between overriding and overloading because it exposes whether you understand compile-time versus runtime binding.",
+  "syntax": [
+    {
+      "code": "class Animal {\n    void speak() { System.out.println(\"some sound\"); }\n}\n\nclass Dog extends Animal {\n    @Override\n    void speak() { System.out.println(\"woof\"); }\n}\n\nAnimal a = new Dog();\na.speak(); // woof — the object decides, not the variable type",
+      "note": "@Override is checked by the compiler: if the signature does not override anything, it fails instead of silently overloading."
+    },
+    {
+      "code": "class Employee {\n    final String name;\n    Employee(String name) { this.name = name; }\n    double pay() { return 30_000; }\n}\n\nclass Manager extends Employee {\n    Manager(String name) { super(name); }\n    @Override double pay() { return super.pay() + 10_000; }\n}",
+      "note": "super(name) runs the parent constructor; super.pay() reuses the parent calculation instead of duplicating it."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Inheritance shapes",
+      "body": "Single: one parent. Multilevel: A → B → C. Hierarchical: several subclasses share one parent. Java allows only single class inheritance to avoid the diamond ambiguity; interfaces provide the multiple-type behaviour."
+    },
+    {
+      "title": "super",
+      "body": "super(...) invokes a parent constructor and must be first. super.method() calls the parent implementation. If you do not call super(...), the compiler inserts super() and fails if no no-argument parent constructor exists."
+    },
+    {
+      "title": "Overriding rules",
+      "body": "Same name, same parameter list, compatible (covariant) return type, and no more restrictive access. private, static and final methods cannot be overridden. Use @Override so the compiler verifies your intent."
+    },
+    {
+      "title": "Runtime polymorphism and dynamic dispatch",
+      "body": "The JVM selects the override from the object's runtime class. This is what lets a List<Shape> call area() on circles and rectangles without an if-else chain."
+    },
+    {
+      "title": "Compile-time polymorphism",
+      "body": "Overloading is resolved by the compiler from the declared argument types. It is not dispatch: the choice is fixed in the bytecode."
+    },
+    {
+      "title": "final and the Object class",
+      "body": "final class cannot be extended; final method cannot be overridden; final field is assigned once. Every class extends Object, which supplies toString, equals, hashCode and getClass — override toString for readable output and equals/hashCode together for value equality."
+    },
+    {
+      "title": "Composition versus inheritance",
+      "body": "Composition holds another object and delegates. It avoids fragile base classes, keeps APIs small and lets you change behaviour at runtime. Prefer it unless the subtype really is a parent."
+    }
+  ],
+  "examples": [
+    {
+      "level": "intermediate",
+      "title": "Dynamic dispatch through a parent reference",
+      "code": "public class Main {\n    static class Animal {\n        String name;\n        Animal(String name) { this.name = name; }\n        String speak() { return name + \" makes a sound\"; }\n    }\n\n    static class Dog extends Animal {\n        Dog(String name) { super(name); }\n        @Override String speak() { return name + \" barks\"; }\n    }\n\n    static class Cat extends Animal {\n        Cat(String name) { super(name); }\n        @Override String speak() { return name + \" meows\"; }\n    }\n\n    public static void main(String[] args) {\n        Animal[] pets = { new Dog(\"Bruno\"), new Cat(\"Milo\") };\n        for (Animal pet : pets) System.out.println(pet.speak());\n    }\n}",
+      "output": "Bruno barks\nMilo meows",
+      "lines": [
+        "Dog and Cat both extend Animal and call super(name) to set the inherited field.",
+        "Each subclass overrides speak with its own message.",
+        "The array is typed Animal, but each element is a Dog or Cat object.",
+        "At runtime the JVM calls the override belonging to the actual object, so two different lines print."
+      ],
+      "dryRun": ["pets[0] = Dog(\"Bruno\")", "pet.speak() → Dog.speak → Bruno barks", "pets[1] = Cat(\"Milo\")", "pet.speak() → Cat.speak → Milo meows"]
+    },
+    {
+      "level": "advanced",
+      "title": "super, final and toString",
+      "code": "public class Main {\n    static class Employee {\n        private final String name;\n        Employee(String name) { this.name = name; }\n        double pay() { return 30_000; }\n        @Override public String toString() { return name + \":\" + pay(); }\n    }\n\n    static class Manager extends Employee {\n        Manager(String name) { super(name); }\n        @Override double pay() { return super.pay() + 10_000; }\n        @Override public String toString() { return \"Manager \" + super.toString(); }\n    }\n\n    public static void main(String[] args) {\n        Employee e = new Manager(\"Aman\");\n        System.out.println(e);\n        System.out.println(e.pay());\n    }\n}",
+      "output": "Manager Aman:40000.0\n40000.0",
+      "lines": [
+        "Manager's constructor delegates to Employee's constructor with super(name).",
+        "Manager.pay() adds the bonus to super.pay() instead of hardcoding 40,000.",
+        "Manager.toString() reuses the parent's formatting with super.toString().",
+        "println uses toString(); e.pay() dispatches to Manager.pay() even through an Employee reference."
+      ],
+      "dryRun": ["new Manager(\"Aman\") → Employee name = Aman", "e.pay(): Manager.pay → 30000 + 10000 = 40000.0", "e.toString(): \"Manager \" + \"Aman:40000.0\"", "Printed: Manager Aman:40000.0 then 40000.0"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "class Dog extends Animal { void Speak() { } }",
+      "right": "class Dog extends Animal { @Override void speak() { } }",
+      "why": "Java is case-sensitive, so Speak overloads instead of overriding. @Override would have reported the mistake at compile time."
+    },
+    {
+      "wrong": "class Manager extends Employee { Manager() { } }",
+      "right": "class Manager extends Employee { Manager() { super(); } }",
+      "why": "If the parent has no no-argument constructor, the implicit super() call cannot compile; you must call the parent constructor explicitly."
+    }
+  ],
+  "debug": {
+    "brief": "This code should print 'Dog barks' but prints the parent message. Find why the override is not used.",
+    "code": "public class Main {\n    static class Animal {\n        String speak() { return \"Animal sound\"; }\n    }\n\n    static class Dog extends Animal {\n        String speaks() { return \"Dog barks\"; }\n    }\n\n    public static void main(String[] args) {\n        Animal a = new Dog();\n        System.out.println(a.speak());\n    }\n}",
+    "expected": "Dog barks",
+    "hints": ["Compare the method names character by character.", "An override must have exactly the same name and parameters."],
+    "fix": "public class Main {\n    static class Animal {\n        String speak() { return \"Animal sound\"; }\n    }\n\n    static class Dog extends Animal {\n        @Override String speak() { return \"Dog barks\"; }\n    }\n\n    public static void main(String[] args) {\n        Animal a = new Dog();\n        System.out.println(a.speak());\n    }\n}"
+  },
+  "best": [
+    "Always add @Override so a signature typo becomes a compile error.",
+    "Keep the parent's contract in mind: an override must not weaken it.",
+    "Prefer composition when the relationship is has-a or when you only want to reuse code.",
+    "Override toString for readable logs; override equals and hashCode together."
+  ],
+  "tip": "If asked 'what is polymorphism?', give both forms with one line each — overloading resolved at compile time, overriding dispatched at runtime — and add a concrete example of a parent reference calling a child override.",
+  "revision": [
+    "extends inherits accessible members; constructors are not inherited.",
+    "super(...) must be the first statement; super.method() reuses parent logic.",
+    "Overriding is runtime dispatch; overloading is compile-time selection.",
+    "final blocks inheritance/override; composition is usually safer than deep hierarchies."
+  ],
+  "practice": [
+    { "title": "Shape hierarchy", "prompt": "Create Shape with area(), then Circle and Rectangle. Print areas from a Shape[] without if-else.", "level": "intermediate", "hint": "Call shape.area() inside the loop; the object decides." },
+    { "title": "Employee payroll", "prompt": "Employee.pay() returns base; Manager adds a bonus; Intern returns half. Print all from an Employee[].", "level": "intermediate", "hint": "Use super.pay() in each override." },
+    { "title": "Composition rewrite", "prompt": "Rewrite a subclass that only wanted to reuse code as a class holding the old object and delegating.", "level": "advanced", "hint": "Replace extends with a private field plus forwarding methods." }
+  ],
+  "mcqs": [
+    {
+      "q": "Which method is called by Animal a = new Dog(); a.speak();?",
+      "options": ["Animal.speak", "Dog.speak", "Both", "Neither — compile error"],
+      "answer": 1,
+      "explain": "Dynamic dispatch uses the object's runtime class, which is Dog."
+    },
+    {
+      "q": "Overloading is resolved…",
+      "options": ["at runtime", "at compile time", "by the JVM's GC", "by equals()"],
+      "answer": 1,
+      "explain": "The compiler picks the overload from the declared argument types."
+    },
+    {
+      "q": "What does @Override do?",
+      "options": ["Makes the method run faster", "Asks the compiler to verify it overrides a superclass method", "Allows multiple inheritance", "Makes the method final"],
+      "answer": 1,
+      "explain": "It is a compile-time check that prevents accidental overloads from looking like overrides."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Overloading vs overriding?",
+      "a": "Overloading: same method name, different parameter lists, in the same class or a subclass, resolved at compile time. Overriding: same signature in a subclass, replaces the parent behaviour, resolved at runtime by dynamic dispatch.",
+      "followUp": "Can you override a static method? (No. A static method is hidden, not overridden, and the reference type decides which one is called.)"
+    },
+    {
+      "q": "Why prefer composition over inheritance?",
+      "a": "Inheritance couples a subclass to the parent's implementation, so parent changes can break children (the fragile base class problem). Composition exposes only the delegated API, keeps coupling low and allows behaviour to change at runtime.",
+      "followUp": "When is inheritance right? (When the subtype truly is a specialised parent and the parent was designed for extension.)"
+    }
+  ],
+  "lab": {
+    "title": "Polymorphic areas",
+    "brief": "Read a shape type then its dimensions: 'circle r' or 'rect w h'. Print the area with two decimals.",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    static abstract class Shape {\n        abstract double area();\n    }\n\n    static class Circle extends Shape {\n        double r;\n        Circle(double r) { this.r = r; }\n        // TODO: override area()\n    }\n\n    static class Rect extends Shape {\n        double w, h;\n        Rect(double w, double h) { this.w = w; this.h = h; }\n        // TODO: override area()\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        Shape s = kind.equals(\"circle\") ? new Circle(sc.nextDouble()) : new Rect(sc.nextDouble(), sc.nextDouble());\n        System.out.printf(\"%.2f%n\", s.area());\n    }\n}",
+    "expected": "12.57",
+    "tests": [
+      { "name": "circle 2", "stdin": "circle 2\n", "stdout": "12.57" },
+      { "name": "rect 2 3", "stdin": "rect 2 3\n", "stdout": "6.00" }
+    ],
+    "hints": ["Circle area = Math.PI * r * r.", "Rect area = w * h; mark both methods @Override."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    static abstract class Shape {\n        abstract double area();\n    }\n\n    static class Circle extends Shape {\n        double r;\n        Circle(double r) { this.r = r; }\n        @Override double area() { return Math.PI * r * r; }\n    }\n\n    static class Rect extends Shape {\n        double w, h;\n        Rect(double w, double h) { this.w = w; this.h = h; }\n        @Override double area() { return w * h; }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        Shape s = kind.equals(\"circle\") ? new Circle(sc.nextDouble()) : new Rect(sc.nextDouble(), sc.nextDouble());\n        System.out.printf(\"%.2f%n\", s.area());\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Polymorphism understood?",
+    "checks": [
+      "I can explain why the object, not the variable type, chooses an override",
+      "I use @Override on every override",
+      "I can name a case where composition is the better design"
+    ]
+  }
+}

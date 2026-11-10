@@ -1,0 +1,184 @@
+{
+  "id": "j09",
+  "no": 9,
+  "title": "Object-Oriented Programming",
+  "level": "intermediate",
+  "hours": 8,
+  "goal": "Class, object, constructor, encapsulation aur object lifecycle par solid foundation.",
+  "prereqs": ["Module 07: methods", "Module 08: arrays"],
+  "objectives": [
+    "Design a class with private fields, a constructor and behaviour",
+    "Explain what this refers to and when a constructor runs",
+    "Tell static state apart from instance state",
+    "Protect invariants with encapsulation and validation"
+  ],
+  "definition": "A class is a blueprint: it declares fields (state) and methods (behaviour). An object is an instance of that class created with new. A constructor initialises a new object. Encapsulation keeps fields private and exposes controlled access through methods so the object's invariants stay true.",
+  "explain": [
+    "A class groups the data and the operations that belong together. Each object gets its own copy of the instance fields; methods describe what every instance can do. Creating an object with new runs a constructor, which is where required state is set up.",
+    "this is the current object's reference. It disambiguates a field from a parameter with the same name (this.balance = balance), lets one constructor call another (this(0)), and passes the object to another method.",
+    "Encapsulation means fields are private and can only change through methods that enforce the rules. A balance cannot go negative if deposit and withdraw are the only ways to change it. Static fields belong to the class — one copy shared by every instance — which is why they are useful for counters but dangerous for mutable shared state."
+  ],
+  "hinglish": [
+    "Class blueprint hai, object us blueprint se bana actual instance. Har object ke apne instance fields hote hain, aur methods batate hain ki us object ke saath kya kaam ho sakta hai. new karte hi constructor chalta hai, jahan required state set hoti hai.",
+    "this current object ko point karta hai — field aur parameter ka naam same ho to this.balance = balance likhte hain. Encapsulation ka matlab: fields private, aur unhe badalne ka sirf ek controlled raasta. static field class ka hota hai, saare objects ek hi copy share karte hain."
+  ],
+  "analogy": "Class ek car ka design document hai; object us design se bani actual car. Har car ka apna odometer (instance field) hota hai, par factory ka total-produced counter (static field) sab cars ke liye ek hi hota hai.",
+  "why": "Java is object-oriented at its core, and every framework you will touch — Spring, JPA, JUnit — is built from classes with constructors and injected dependencies. Encapsulation is also what makes code safe to change: callers depend on methods, not on private representation.",
+  "syntax": [
+    {
+      "code": "class Account {\n    private double balance;\n\n    Account(double opening) {\n        if (opening < 0) throw new IllegalArgumentException(\"negative\");\n        this.balance = opening;\n    }\n\n    void deposit(double amount) {\n        if (amount <= 0) return;\n        balance += amount;\n    }\n\n    double getBalance() { return balance; }\n}",
+      "note": "Private field, validating constructor, behaviour that enforces the rule, and a getter for reading. No setter for balance: it can only move through deposit/withdraw."
+    },
+    {
+      "code": "class Counter {\n    static int created = 0;  // one copy for the class\n    int id;                  // one copy per object\n\n    Counter() {\n        created++;\n        id = created;\n    }\n}\n\nCounter a = new Counter();\nCounter b = new Counter();\nSystem.out.println(a.id + \" \" + b.id + \" \" + Counter.created); // 1 2 2",
+      "note": "Static members are read through the class name. Instance members are read through a reference."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Classes, objects, fields and methods",
+      "body": "A class declares state and behaviour. new creates an object on the heap and returns a reference. Instance fields hold per-object state; methods read and change it."
+    },
+    {
+      "title": "Constructors",
+      "body": "A constructor has the class name and no return type. If you write none, Java supplies a no-argument default constructor; once you write one, the default is no longer generated. Constructors can be overloaded and can call each other with this(...)."
+    },
+    {
+      "title": "The this keyword",
+      "body": "this is the current instance. It resolves field/parameter name clashes, chains constructors, and passes the object onward. You cannot use this in a static context, because there is no instance."
+    },
+    {
+      "title": "Static versus instance state",
+      "body": "Static fields and methods belong to the class and are shared; instance members belong to one object. Static mutable state is global state — convenient for counters, risky for anything else, especially in multithreaded code."
+    },
+    {
+      "title": "Access modifiers and encapsulation",
+      "body": "private (class only), package-private (same package, the default), protected (package plus subclasses), public (everywhere). Keep fields private; expose the smallest API that callers need."
+    },
+    {
+      "title": "Getters, setters and invariants",
+      "body": "A getter reads state; a setter should validate before assigning. Prefer behaviour methods (deposit) over raw setters when a rule exists, so the object cannot be put into an invalid state."
+    },
+    {
+      "title": "Object lifecycle",
+      "body": "An object is created by new, becomes reachable through a reference, and is garbage-collected once nothing reachable points at it. Java has no deterministic destructor; try-with-resources or close() handles external resources."
+    }
+  ],
+  "examples": [
+    {
+      "level": "intermediate",
+      "title": "An encapsulated account",
+      "code": "public class Main {\n    static class Account {\n        private double balance;\n\n        Account(double opening) {\n            if (opening < 0) throw new IllegalArgumentException(\"opening must be >= 0\");\n            this.balance = opening;\n        }\n\n        void deposit(double amount) {\n            if (amount <= 0) return;\n            balance += amount;\n        }\n\n        boolean withdraw(double amount) {\n            if (amount <= 0 || amount > balance) return false;\n            balance -= amount;\n            return true;\n        }\n\n        double getBalance() { return balance; }\n    }\n\n    public static void main(String[] args) {\n        Account acc = new Account(100);\n        acc.deposit(50);\n        System.out.println(acc.withdraw(200));\n        System.out.println(acc.withdraw(120));\n        System.out.printf(\"%.2f%n\", acc.getBalance());\n    }\n}",
+      "output": "false\ntrue\n30.00",
+      "lines": [
+        "balance is private, so no caller can set it directly to an invalid value.",
+        "The constructor rejects a negative opening balance.",
+        "withdraw(200) returns false and changes nothing, because 200 > 100 + 50.",
+        "withdraw(120) succeeds, leaving 30.00, printed with two decimals."
+      ],
+      "dryRun": ["new Account(100): balance = 100", "deposit(50): balance = 150", "withdraw(200): 200 > 150 → false", "withdraw(120): balance = 30 → true", "getBalance() = 30 → 30.00"]
+    },
+    {
+      "level": "advanced",
+      "title": "Static counter, instance identity",
+      "code": "public class Main {\n    static class Employee {\n        private static int created = 0;\n        private final int id;\n        private final String name;\n\n        Employee(String name) {\n            this.name = name;\n            this.id = ++created;\n        }\n\n        String label() { return \"#\" + id + \" \" + name; }\n    }\n\n    public static void main(String[] args) {\n        Employee a = new Employee(\"Aman\");\n        Employee b = new Employee(\"Priya\");\n        System.out.println(a.label());\n        System.out.println(b.label());\n        System.out.println(Employee.created);\n    }\n}",
+      "output": "#1 Aman\n#2 Priya\n2",
+      "lines": [
+        "created is static: one counter shared by every Employee.",
+        "id is final: it is assigned once in the constructor and never changes.",
+        "++created increments first, so the first employee gets id 1.",
+        "Employee.created is read through the class name; it is 2 after two objects."
+      ],
+      "dryRun": ["new Employee(\"Aman\"): created 0→1, id=1", "new Employee(\"Priya\"): created 1→2, id=2", "a.label() = #1 Aman; b.label() = #2 Priya", "Employee.created = 2"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "class User { public String name; public int age; }",
+      "right": "class User { private String name; private int age; public String getName() { return name; } }",
+      "why": "Public fields let any caller set invalid values (negative age, null name). Private fields plus validating methods keep the object valid."
+    },
+    {
+      "wrong": "void Account(double opening) { balance = opening; }",
+      "right": "Account(double opening) { balance = opening; }",
+      "why": "A return type turns the constructor into an ordinary method, so new Account(100) would use the default constructor and leave balance at 0."
+    }
+  ],
+  "debug": {
+    "brief": "This class is meant to say hello from an object, but main does not compile. Fix the constructor/method call.",
+    "code": "public class Main {\n    static class Greeter {\n        String greet() {\n            return \"Hello from object\";\n        }\n    }\n\n    public static void main(String[] args) {\n        Greeter g = new Greeter();\n        System.out.println(Greeter.greet());\n    }\n}",
+    "expected": "Hello from object",
+    "hints": ["greet is an instance method, not static.", "Call it on the object you created."],
+    "fix": "public class Main {\n    static class Greeter {\n        String greet() {\n            return \"Hello from object\";\n        }\n    }\n\n    public static void main(String[] args) {\n        Greeter g = new Greeter();\n        System.out.println(g.greet());\n    }\n}"
+  },
+  "best": [
+    "Keep fields private and make the class's invariants explicit in its methods.",
+    "Validate constructor arguments and fail fast with IllegalArgumentException.",
+    "Prefer final fields for values that should not change after construction.",
+    "Avoid static mutable state unless it is genuinely class-wide (a counter, a cache with care)."
+  ],
+  "tip": "When asked 'what is encapsulation?', do not stop at 'private fields'. Add that the object protects its invariants and that callers depend on behaviour, so the representation can change without breaking them.",
+  "revision": [
+    "Class = blueprint, object = instance, constructor = initialiser.",
+    "this refers to the current object and chains constructors.",
+    "static = one copy for the class; instance = one per object.",
+    "Encapsulation keeps fields private and rules in methods."
+  ],
+  "practice": [
+    { "title": "Rectangle class", "prompt": "Create Rectangle with private width/height, a validating constructor, area() and perimeter().", "level": "beginner", "hint": "Reject non-positive dimensions in the constructor." },
+    { "title": "Bank account", "prompt": "Add deposit, withdraw and a transaction count kept in a static field.", "level": "intermediate", "hint": "Increment the static counter inside each successful operation." },
+    { "title": "Student report", "prompt": "Model Student with name and marks array, plus average() and a grade() method.", "level": "intermediate", "hint": "Keep the marks array private and copy it in the constructor." }
+  ],
+  "mcqs": [
+    {
+      "q": "What does this refer to in an instance method?",
+      "options": ["The class", "The current object", "The superclass", "A static field"],
+      "answer": 1,
+      "explain": "this is the reference to the object the method was called on."
+    },
+    {
+      "q": "When is the default no-argument constructor provided?",
+      "options": ["Always", "Only when no constructor is declared", "Only for abstract classes", "Never"],
+      "answer": 1,
+      "explain": "Once you declare any constructor, the compiler no longer adds the default one."
+    },
+    {
+      "q": "A static field belongs to…",
+      "options": ["each object", "the class", "the JVM", "the method"],
+      "answer": 1,
+      "explain": "Static members are class-level and shared by all instances."
+    }
+  ],
+  "interview": [
+    {
+      "q": "What is encapsulation and why does it matter?",
+      "a": "Encapsulation hides an object's representation behind a controlled API: fields are private and methods enforce the rules. It matters because invalid states become impossible to create, and the internal representation can change without breaking callers.",
+      "followUp": "Does a getter/setter pair always mean encapsulation? (No — a blind setter exposes state just as much as a public field.)"
+    },
+    {
+      "q": "Can a constructor be private?",
+      "a": "Yes. A private constructor prevents external instantiation, which is how singletons and utility classes work. Static factory methods can still create instances internally.",
+      "followUp": "How does that interact with inheritance? (A subclass cannot call a private constructor, so the class cannot be subclassed unless it exposes another accessible constructor.)"
+    }
+  ],
+  "lab": {
+    "title": "Rectangle with behaviour",
+    "brief": "Read width and height, then print area and perimeter using a Rectangle class.",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    static class Rectangle {\n        private final double width;\n        private final double height;\n\n        Rectangle(double width, double height) {\n            this.width = width;\n            this.height = height;\n        }\n\n        // TODO: add area() and perimeter()\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        Rectangle r = new Rectangle(sc.nextDouble(), sc.nextDouble());\n        // TODO: print area then perimeter\n    }\n}",
+    "expected": "24.0\n20.0",
+    "tests": [
+      { "name": "4 by 6", "stdin": "4 6\n", "stdout": "24.0\n20.0" },
+      { "name": "2.5 by 4", "stdin": "2.5 4\n", "stdout": "10.0\n13.0" }
+    ],
+    "hints": ["area = width * height; perimeter = 2 * (width + height).", "Print the doubles directly; Java prints 24.0."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    static class Rectangle {\n        private final double width;\n        private final double height;\n\n        Rectangle(double width, double height) {\n            this.width = width;\n            this.height = height;\n        }\n\n        double area() { return width * height; }\n        double perimeter() { return 2 * (width + height); }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        Rectangle r = new Rectangle(sc.nextDouble(), sc.nextDouble());\n        System.out.println(r.area());\n        System.out.println(r.perimeter());\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Objects modelled properly?",
+    "checks": [
+      "I can write a constructor that validates its arguments",
+      "I know when to use this and why static cannot use it",
+      "My fields are private and my invariants are enforced in methods"
+    ]
+  }
+}

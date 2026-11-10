@@ -1,0 +1,1169 @@
+{
+  "labs": [
+    {
+      "id": "lab-j01",
+      "module": "j01",
+      "title": "Hello, Java Learner",
+      "brief": "Read a name from standard input and print a greeting using that name.",
+      "objective": "Java kya hai, kaise chalta hai, aur apna pehla program compile karke chalana.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "public class Main {\n    public static void main(String[] args) {\n        java.util.Scanner sc = new java.util.Scanner(System.in);\n        String name = sc.nextLine();\n        // TODO: print Hello, <name>!\n    }\n}",
+      "expected": "Hello, Aman!",
+      "tests": [
+        {
+          "name": "Aman",
+          "stdin": "Aman\n",
+          "stdout": "Hello, Aman!"
+        },
+        {
+          "name": "Priya",
+          "stdin": "Priya\n",
+          "stdout": "Hello, Priya!"
+        }
+      ],
+      "hints": [
+        "Use System.out.println with string concatenation.",
+        "The greeting needs a comma and an exclamation mark exactly."
+      ],
+      "solution": "public class Main {\n    public static void main(String[] args) {\n        java.util.Scanner sc = new java.util.Scanner(System.in);\n        String name = sc.nextLine();\n        System.out.println(\"Hello, \" + name + \"!\");\n    }\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-j02",
+      "module": "j02",
+      "title": "Swap the numbers",
+      "brief": "Read two integers and print them swapped on one line, separated by a space.",
+      "objective": "Variables, primitive types, operators, input/output aur type conversion ko confidently use karna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        // TODO: swap a and b, then print \"a b\"\n    }\n}",
+      "expected": "9 4",
+      "tests": [
+        {
+          "name": "4 and 9",
+          "stdin": "4 9\n",
+          "stdout": "9 4"
+        },
+        {
+          "name": "negative values",
+          "stdin": "-1 5\n",
+          "stdout": "5 -1"
+        }
+      ],
+      "hints": [
+        "Use a temporary int to hold one value while you move the other.",
+        "Print with a space between the numbers."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        int temp = a;\n        a = b;\n        b = temp;\n        System.out.println(a + \" \" + b);\n    }\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-j03",
+      "module": "j03",
+      "title": "Count the vowels",
+      "brief": "Read one line and print how many vowels (a, e, i, o, u — either case) it contains.",
+      "objective": "String immutability, pool, comparison aur StringBuilder ko theek se samajhna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String line = sc.nextLine();\n        // TODO: count vowels and print the count\n    }\n}",
+      "expected": "4",
+      "tests": [
+        {
+          "name": "BroCode Academy",
+          "stdin": "BroCode Academy\n",
+          "stdout": "6"
+        },
+        {
+          "name": "rhythm",
+          "stdin": "rhythm\n",
+          "stdout": "0"
+        }
+      ],
+      "hints": [
+        "Lowercase the line first, then only check a, e, i, o, u.",
+        "Use a counter int and a for loop over line.length()."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String line = sc.nextLine().toLowerCase();\n        int vowels = 0;\n        for (int i = 0; i < line.length(); i++) {\n            char c = line.charAt(i);\n            if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u') vowels++;\n        }\n        System.out.println(vowels);\n    }\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-j04",
+      "module": "j04",
+      "title": "Grade calculator",
+      "brief": "Read marks (0-100). Print A for 90+, B for 75+, C for 60+, D for 40+, else F. Print Invalid for values outside 0-100.",
+      "objective": "if, else-if, switch aur modern switch expressions se decisions lena.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int marks = sc.nextInt();\n        // TODO: print the grade, or Invalid\n    }\n}",
+      "expected": "B",
+      "tests": [
+        {
+          "name": "78 is B",
+          "stdin": "78\n",
+          "stdout": "B"
+        },
+        {
+          "name": "91 is A",
+          "stdin": "91\n",
+          "stdout": "A"
+        },
+        {
+          "name": "negative is Invalid",
+          "stdin": "-5\n",
+          "stdout": "Invalid"
+        }
+      ],
+      "hints": [
+        "Check the invalid range before the grade bands.",
+        "Test the highest band first."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int marks = sc.nextInt();\n        if (marks < 0 || marks > 100) {\n            System.out.println(\"Invalid\");\n        } else if (marks >= 90) {\n            System.out.println(\"A\");\n        } else if (marks >= 75) {\n            System.out.println(\"B\");\n        } else if (marks >= 60) {\n            System.out.println(\"C\");\n        } else if (marks >= 40) {\n            System.out.println(\"D\");\n        } else {\n            System.out.println(\"F\");\n        }\n    }\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-j05",
+      "module": "j05",
+      "title": "Sum of first n numbers",
+      "brief": "Read a positive integer n and print the sum 1 + 2 + … + n using a loop.",
+      "objective": "for, while, do-while, nested loops aur break/continue par command.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        // TODO: loop and print the sum\n    }\n}",
+      "expected": "15",
+      "tests": [
+        {
+          "name": "n = 5",
+          "stdin": "5\n",
+          "stdout": "15"
+        },
+        {
+          "name": "n = 1",
+          "stdin": "1\n",
+          "stdout": "1"
+        },
+        {
+          "name": "n = 100",
+          "stdin": "100\n",
+          "stdout": "5050"
+        }
+      ],
+      "hints": [
+        "Keep an int sum starting at 0.",
+        "Use long if you test values above 65,535 — the sum grows fast."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        long sum = 0;\n        for (int i = 1; i <= n; i++) {\n            sum += i;\n        }\n        System.out.println(sum);\n    }\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-j06",
+      "module": "j06",
+      "title": "Reverse the digits",
+      "brief": "Read an integer and print its digits reversed. Keep the sign for negative numbers (for example -123 → -321).",
+      "objective": "Prime, palindrome, fibonacci jaise number problems aur recursion ka call stack.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        // TODO: reverse the digits and print the result\n    }\n}",
+      "expected": "321",
+      "tests": [
+        {
+          "name": "123",
+          "stdin": "123\n",
+          "stdout": "321"
+        },
+        {
+          "name": "-456",
+          "stdin": "-456\n",
+          "stdout": "-654"
+        },
+        {
+          "name": "1200",
+          "stdin": "1200\n",
+          "stdout": "21"
+        }
+      ],
+      "hints": [
+        "Take the sign out first with Math.abs, then put it back.",
+        "reversed = reversed * 10 + n % 10; n /= 10."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int input = sc.nextInt();\n        int n = Math.abs(input);\n        int reversed = 0;\n        while (n > 0) {\n            reversed = reversed * 10 + n % 10;\n            n /= 10;\n        }\n        System.out.println(input < 0 ? -reversed : reversed);\n    }\n}",
+      "xp": 35
+    },
+    {
+      "id": "lab-j07",
+      "module": "j07",
+      "title": "Largest of three, with a method",
+      "brief": "Read three integers and print the largest one using a max3 method — not Math.max.",
+      "objective": "Methods likhna, parameters pass karna, return values aur overloading samajhna.",
+      "level": "beginner",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    static int max3(int a, int b, int c) {\n        // TODO: return the largest\n        return a;\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        int c = sc.nextInt();\n        System.out.println(max3(a, b, c));\n    }\n}",
+      "expected": "9",
+      "tests": [
+        {
+          "name": "3 9 2",
+          "stdin": "3 9 2\n",
+          "stdout": "9"
+        },
+        {
+          "name": "10 10 1",
+          "stdin": "10 10 1\n",
+          "stdout": "10"
+        },
+        {
+          "name": "negative",
+          "stdin": "-5 -2 -9\n",
+          "stdout": "-2"
+        }
+      ],
+      "hints": [
+        "Find the max of a and b, then compare that with c.",
+        "Return the answer from the method and print in main."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    static int max3(int a, int b, int c) {\n        int max = a > b ? a : b;\n        return max > c ? max : c;\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        int c = sc.nextInt();\n        System.out.println(max3(a, b, c));\n    }\n}",
+      "xp": 20
+    },
+    {
+      "id": "lab-j08",
+      "module": "j08",
+      "title": "Array sum and maximum",
+      "brief": "Read n, then n integers. Print the sum and the maximum on two lines.",
+      "objective": "Arrays declare, traverse, search, sort aur 2D arrays handle karna.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int[] nums = new int[n];\n        for (int i = 0; i < n; i++) nums[i] = sc.nextInt();\n        // TODO: print sum then maximum\n    }\n}",
+      "expected": "12\n6",
+      "tests": [
+        {
+          "name": "three values",
+          "stdin": "3\n2 4 6\n",
+          "stdout": "12\n6"
+        },
+        {
+          "name": "negatives",
+          "stdin": "4\n-5 -2 -9 -1\n",
+          "stdout": "-17\n-1"
+        },
+        {
+          "name": "single value",
+          "stdin": "1\n7\n",
+          "stdout": "7\n7"
+        }
+      ],
+      "hints": [
+        "Start max at nums[0], not 0 — otherwise all-negative arrays fail.",
+        "Use a long sum if n can be large."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int[] nums = new int[n];\n        for (int i = 0; i < n; i++) nums[i] = sc.nextInt();\n        long sum = 0;\n        int max = nums[0];\n        for (int value : nums) {\n            sum += value;\n            if (value > max) max = value;\n        }\n        System.out.println(sum);\n        System.out.println(max);\n    }\n}",
+      "xp": 35
+    },
+    {
+      "id": "lab-j09",
+      "module": "j09",
+      "title": "Rectangle with behaviour",
+      "brief": "Read width and height, then print area and perimeter using a Rectangle class.",
+      "objective": "Class, object, constructor, encapsulation aur object lifecycle par solid foundation.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    static class Rectangle {\n        private final double width;\n        private final double height;\n\n        Rectangle(double width, double height) {\n            this.width = width;\n            this.height = height;\n        }\n\n        // TODO: add area() and perimeter()\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        Rectangle r = new Rectangle(sc.nextDouble(), sc.nextDouble());\n        // TODO: print area then perimeter\n    }\n}",
+      "expected": "24.0\n20.0",
+      "tests": [
+        {
+          "name": "4 by 6",
+          "stdin": "4 6\n",
+          "stdout": "24.0\n20.0"
+        },
+        {
+          "name": "2.5 by 4",
+          "stdin": "2.5 4\n",
+          "stdout": "10.0\n13.0"
+        }
+      ],
+      "hints": [
+        "area = width * height; perimeter = 2 * (width + height).",
+        "Print the doubles directly; Java prints 24.0."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    static class Rectangle {\n        private final double width;\n        private final double height;\n\n        Rectangle(double width, double height) {\n            this.width = width;\n            this.height = height;\n        }\n\n        double area() { return width * height; }\n        double perimeter() { return 2 * (width + height); }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        Rectangle r = new Rectangle(sc.nextDouble(), sc.nextDouble());\n        System.out.println(r.area());\n        System.out.println(r.perimeter());\n    }\n}",
+      "xp": 35
+    },
+    {
+      "id": "lab-j10",
+      "module": "j10",
+      "title": "Polymorphic areas",
+      "brief": "Read a shape type then its dimensions: 'circle r' or 'rect w h'. Print the area with two decimals.",
+      "objective": "extends, super, method overriding aur runtime polymorphism ka asli behaviour.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    static abstract class Shape {\n        abstract double area();\n    }\n\n    static class Circle extends Shape {\n        double r;\n        Circle(double r) { this.r = r; }\n        // TODO: override area()\n    }\n\n    static class Rect extends Shape {\n        double w, h;\n        Rect(double w, double h) { this.w = w; this.h = h; }\n        // TODO: override area()\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        Shape s = kind.equals(\"circle\") ? new Circle(sc.nextDouble()) : new Rect(sc.nextDouble(), sc.nextDouble());\n        System.out.printf(\"%.2f%n\", s.area());\n    }\n}",
+      "expected": "12.57",
+      "tests": [
+        {
+          "name": "circle 2",
+          "stdin": "circle 2\n",
+          "stdout": "12.57"
+        },
+        {
+          "name": "rect 2 3",
+          "stdin": "rect 2 3\n",
+          "stdout": "6.00"
+        }
+      ],
+      "hints": [
+        "Circle area = Math.PI * r * r.",
+        "Rect area = w * h; mark both methods @Override."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    static abstract class Shape {\n        abstract double area();\n    }\n\n    static class Circle extends Shape {\n        double r;\n        Circle(double r) { this.r = r; }\n        @Override double area() { return Math.PI * r * r; }\n    }\n\n    static class Rect extends Shape {\n        double w, h;\n        Rect(double w, double h) { this.w = w; this.h = h; }\n        @Override double area() { return w * h; }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        Shape s = kind.equals(\"circle\") ? new Circle(sc.nextDouble()) : new Rect(sc.nextDouble(), sc.nextDouble());\n        System.out.printf(\"%.2f%n\", s.area());\n    }\n}",
+      "xp": 35
+    },
+    {
+      "id": "lab-j11",
+      "module": "j11",
+      "title": "Payment through an interface",
+      "brief": "Read a payment method (upi or card) and an amount. Print '<method> paid <amount>' with two decimals.",
+      "objective": "Abstract classes, interfaces, default methods aur SOLID ka practical use.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    interface Payment {\n        String pay(double amount);\n    }\n\n    // TODO: implement UpiPayment and CardPayment\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        double amount = sc.nextDouble();\n        Payment p = kind.equals(\"upi\") ? null : null;\n        // TODO: pick the implementation and print p.pay(amount)\n    }\n}",
+      "expected": "upi paid 250.00",
+      "tests": [
+        {
+          "name": "upi",
+          "stdin": "upi 250\n",
+          "stdout": "upi paid 250.00"
+        },
+        {
+          "name": "card",
+          "stdin": "card 99.5\n",
+          "stdout": "card paid 99.50"
+        }
+      ],
+      "hints": [
+        "Use String.format(\"%s paid %.2f\", name, amount).",
+        "Assign the right implementation to the Payment variable."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    interface Payment {\n        String pay(double amount);\n    }\n\n    static class UpiPayment implements Payment {\n        @Override public String pay(double amount) { return String.format(\"upi paid %.2f\", amount); }\n    }\n\n    static class CardPayment implements Payment {\n        @Override public String pay(double amount) { return String.format(\"card paid %.2f\", amount); }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        double amount = sc.nextDouble();\n        Payment p = kind.equals(\"upi\") ? new UpiPayment() : new CardPayment();\n        System.out.println(p.pay(amount));\n    }\n}",
+      "xp": 35
+    },
+    {
+      "id": "lab-j12",
+      "module": "j12",
+      "title": "Day type with an enum",
+      "brief": "Read a day number 1-7. Print WEEKEND for 6 and 7, WEEKDAY for 1-5, INVALID otherwise. Use an enum and a switch expression.",
+      "objective": "Packages, enums, records, sealed types, annotations aur generics ka first look.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    enum DayType { WEEKDAY, WEEKEND, INVALID }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int day = sc.nextInt();\n        // TODO: map day to DayType and print it\n    }\n}",
+      "expected": "WEEKEND",
+      "tests": [
+        {
+          "name": "Saturday",
+          "stdin": "6\n",
+          "stdout": "WEEKEND"
+        },
+        {
+          "name": "Monday",
+          "stdin": "1\n",
+          "stdout": "WEEKDAY"
+        },
+        {
+          "name": "invalid",
+          "stdin": "9\n",
+          "stdout": "INVALID"
+        }
+      ],
+      "hints": [
+        "A switch expression over day can return the enum constant.",
+        "Group days with case 1, 2, 3, 4, 5 -> DayType.WEEKDAY."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    enum DayType { WEEKDAY, WEEKEND, INVALID }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int day = sc.nextInt();\n        DayType type = switch (day) {\n            case 1, 2, 3, 4, 5 -> DayType.WEEKDAY;\n            case 6, 7 -> DayType.WEEKEND;\n            default -> DayType.INVALID;\n        };\n        System.out.println(type);\n    }\n}",
+      "xp": 50
+    },
+    {
+      "id": "lab-j13",
+      "module": "j13",
+      "title": "Safe division",
+      "brief": "Read two integers. Print a / b. If b is zero, print 'cannot divide by zero' instead of crashing.",
+      "objective": "Checked/unchecked exceptions, try/catch/finally aur custom exceptions ko theek se use karna.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        // TODO: print a / b, or the message when b is 0\n    }\n}",
+      "expected": "5",
+      "tests": [
+        {
+          "name": "10 / 2",
+          "stdin": "10 2\n",
+          "stdout": "5"
+        },
+        {
+          "name": "5 / 0",
+          "stdin": "5 0\n",
+          "stdout": "cannot divide by zero"
+        }
+      ],
+      "hints": [
+        "Wrap the division in try/catch ArithmeticException.",
+        "You may also check b == 0 first — say which approach you chose and why."
+      ],
+      "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        try {\n            System.out.println(a / b);\n        } catch (ArithmeticException e) {\n            System.out.println(\"cannot divide by zero\");\n        }\n    }\n}",
+      "xp": 35
+    },
+    {
+      "id": "lab-j14",
+      "module": "j14",
+      "title": "Word frequency, sorted",
+      "brief": "Read n, then n words. Print each distinct word and its count as word=count, sorted alphabetically.",
+      "objective": "List, Set, Map, Queue aur unke trade-offs ko complexity ke saath samajhna.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        Map<String, Integer> freq = new TreeMap<>();\n        // TODO: count the words, then print sorted word=count lines\n    }\n}",
+      "expected": "api=1\njava=2\nsql=1",
+      "tests": [
+        {
+          "name": "mixed",
+          "stdin": "4\njava sql java api\n",
+          "stdout": "api=1\njava=2\nsql=1"
+        },
+        {
+          "name": "single",
+          "stdin": "1\nhello\n",
+          "stdout": "hello=1"
+        }
+      ],
+      "hints": [
+        "freq.merge(word, 1, Integer::sum) counts in one line.",
+        "TreeMap already sorts keys alphabetically."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        Map<String, Integer> freq = new TreeMap<>();\n        for (int i = 0; i < n; i++) {\n            String word = sc.next();\n            freq.merge(word, 1, Integer::sum);\n        }\n        for (Map.Entry<String, Integer> e : freq.entrySet()) {\n            System.out.println(e.getKey() + \"=\" + e.getValue());\n        }\n    }\n}",
+      "xp": 50
+    },
+    {
+      "id": "lab-j15",
+      "module": "j15",
+      "title": "Generic maximum",
+      "brief": "Read n then n integers. Print the largest using a generic <T extends Comparable<T>> max method.",
+      "objective": "Type-safe generic code, bounds, wildcards aur autoboxing ke traps.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "import java.util.*;\n\npublic class Main {\n    static <T extends Comparable<T>> T max(List<T> values) {\n        // TODO: return the largest value\n        return values.get(0);\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        List<Integer> nums = new ArrayList<>();\n        for (int i = 0; i < n; i++) nums.add(sc.nextInt());\n        System.out.println(max(nums));\n    }\n}",
+      "expected": "9",
+      "tests": [
+        {
+          "name": "2 9 4",
+          "stdin": "3\n2 9 4\n",
+          "stdout": "9"
+        },
+        {
+          "name": "negatives",
+          "stdin": "3\n-5 -2 -9\n",
+          "stdout": "-2"
+        }
+      ],
+      "hints": [
+        "Start with values.get(0) and compare each element with compareTo.",
+        "Return the element whose compareTo is greater."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    static <T extends Comparable<T>> T max(List<T> values) {\n        T best = values.get(0);\n        for (T value : values) {\n            if (value.compareTo(best) > 0) best = value;\n        }\n        return best;\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        List<Integer> nums = new ArrayList<>();\n        for (int i = 0; i < n; i++) nums.add(sc.nextInt());\n        System.out.println(max(nums));\n    }\n}",
+      "xp": 35
+    },
+    {
+      "id": "lab-j16",
+      "module": "j16",
+      "title": "Save the lines",
+      "brief": "Read n, then n lines from input. Write them to a temp file, read the file back, and print 'saved N lines'.",
+      "objective": "Files, streams, readers/writers, NIO aur try-with-resources se safe I/O.",
+      "level": "intermediate",
+      "category": "module",
+      "starter": "import java.nio.charset.StandardCharsets;\nimport java.nio.file.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Scanner sc = new Scanner(System.in);\n        int n = Integer.parseInt(sc.nextLine().trim());\n        List<String> lines = new ArrayList<>();\n        for (int i = 0; i < n; i++) lines.add(sc.nextLine());\n        // TODO: write, read back, print \"saved N lines\"\n    }\n}",
+      "expected": "saved 2 lines",
+      "tests": [
+        {
+          "name": "two lines",
+          "stdin": "2\nhello\nworld\n",
+          "stdout": "saved 2 lines"
+        },
+        {
+          "name": "one line",
+          "stdin": "1\njava\n",
+          "stdout": "saved 1 lines"
+        }
+      ],
+      "hints": [
+        "Files.write(path, lines, StandardCharsets.UTF_8).",
+        "Count with Files.readAllLines(file).size()."
+      ],
+      "solution": "import java.nio.charset.StandardCharsets;\nimport java.nio.file.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Scanner sc = new Scanner(System.in);\n        int n = Integer.parseInt(sc.nextLine().trim());\n        List<String> lines = new ArrayList<>();\n        for (int i = 0; i < n; i++) lines.add(sc.nextLine());\n        Path file = Files.createTempFile(\"brocode\", \".txt\");\n        try {\n            Files.write(file, lines, StandardCharsets.UTF_8);\n            int saved = Files.readAllLines(file, StandardCharsets.UTF_8).size();\n            System.out.println(\"saved \" + saved + \" lines\");\n        } finally {\n            Files.deleteIfExists(file);\n        }\n    }\n}",
+      "xp": 35
+    },
+    {
+      "id": "lab-j17",
+      "module": "j17",
+      "title": "Sum of squares of evens",
+      "brief": "Read n then n integers. Print the sum of the squares of the even numbers, using a stream.",
+      "objective": "Lambdas, functional interfaces, Streams aur Optional se data pipelines banana.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        List<Integer> nums = new ArrayList<>();\n        for (int i = 0; i < n; i++) nums.add(sc.nextInt());\n        // TODO: stream, filter evens, square, sum, print\n    }\n}",
+      "expected": "20",
+      "tests": [
+        {
+          "name": "1 2 3 4",
+          "stdin": "4\n1 2 3 4\n",
+          "stdout": "20"
+        },
+        {
+          "name": "no evens",
+          "stdin": "3\n1 3 5\n",
+          "stdout": "0"
+        }
+      ],
+      "hints": [
+        "filter(n -> n % 2 == 0).mapToInt(n -> n * n).sum().",
+        "mapToInt avoids boxing and gives sum() directly."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        List<Integer> nums = new ArrayList<>();\n        for (int i = 0; i < n; i++) nums.add(sc.nextInt());\n        int total = nums.stream()\n            .filter(v -> v % 2 == 0)\n            .mapToInt(v -> v * v)\n            .sum();\n        System.out.println(total);\n    }\n}",
+      "xp": 50
+    },
+    {
+      "id": "lab-j18",
+      "module": "j18",
+      "title": "Thread-safe total",
+      "brief": "Start two threads that each increment a shared counter 1000 times. Join both and print the final value (2000).",
+      "objective": "Threads, race conditions, synchronization, executors aur CompletableFuture.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "public class Main {\n    static int count = 0;\n\n    public static void main(String[] args) throws Exception {\n        Runnable task = () -> {\n            for (int i = 0; i < 1000; i++) {\n                // TODO: increment safely\n            }\n        };\n        Thread a = new Thread(task);\n        Thread b = new Thread(task);\n        a.start(); b.start();\n        a.join(); b.join();\n        System.out.println(count);\n    }\n}",
+      "expected": "2000",
+      "tests": [
+        {
+          "name": "two threads",
+          "stdin": "",
+          "stdout": "2000"
+        }
+      ],
+      "hints": [
+        "Use AtomicInteger or a synchronized block around count++.",
+        "Join both threads before printing."
+      ],
+      "solution": "import java.util.concurrent.atomic.AtomicInteger;\n\npublic class Main {\n    static AtomicInteger count = new AtomicInteger();\n\n    public static void main(String[] args) throws Exception {\n        Runnable task = () -> {\n            for (int i = 0; i < 1000; i++) count.incrementAndGet();\n        };\n        Thread a = new Thread(task);\n        Thread b = new Thread(task);\n        a.start(); b.start();\n        a.join(); b.join();\n        System.out.println(count.get());\n    }\n}",
+      "xp": 50
+    },
+    {
+      "id": "lab-j19",
+      "module": "j19",
+      "title": "Repository CRUD",
+      "brief": "Read n, then n 'id name' pairs. Print the number of rows, then the rows sorted by id as id=name.",
+      "objective": "JDBC, SQL integration, Maven/Gradle, REST concepts aur Spring Boot ka mental model.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        Map<Integer, String> rows = new TreeMap<>();\n        // TODO: read pairs, store, print count and sorted id=name lines\n    }\n}",
+      "expected": "2\n1=Aman\n2=Priya",
+      "tests": [
+        {
+          "name": "two rows",
+          "stdin": "2\n2 Priya\n1 Aman\n",
+          "stdout": "2\n1=Aman\n2=Priya"
+        },
+        {
+          "name": "one row",
+          "stdin": "1\n7 Ravi\n",
+          "stdout": "1\n7=Ravi"
+        }
+      ],
+      "hints": [
+        "TreeMap keeps ids sorted automatically.",
+        "Print the size first, then each entry."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        Map<Integer, String> rows = new TreeMap<>();\n        for (int i = 0; i < n; i++) rows.put(sc.nextInt(), sc.next());\n        System.out.println(rows.size());\n        for (Map.Entry<Integer, String> e : rows.entrySet()) {\n            System.out.println(e.getKey() + \"=\" + e.getValue());\n        }\n    }\n}",
+      "xp": 50
+    },
+    {
+      "id": "lab-j20",
+      "module": "j20",
+      "title": "Discount strategy",
+      "brief": "Read a strategy (festival or none) and an amount. Print the final amount with two decimals: festival gives 10% off, none gives no change.",
+      "objective": "JVM internals, design patterns, clean code, testing aur interview readiness.",
+      "level": "advanced",
+      "category": "module",
+      "starter": "import java.util.*;\nimport java.util.function.DoubleUnaryOperator;\n\npublic class Main {\n    static double checkout(double amount, DoubleUnaryOperator discount) {\n        return discount.applyAsDouble(amount);\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        double amount = sc.nextDouble();\n        // TODO: choose the strategy and print with %.2f\n    }\n}",
+      "expected": "900.00",
+      "tests": [
+        {
+          "name": "festival",
+          "stdin": "festival 1000\n",
+          "stdout": "900.00"
+        },
+        {
+          "name": "none",
+          "stdin": "none 250\n",
+          "stdout": "250.00"
+        }
+      ],
+      "hints": [
+        "Use a -> a * 0.9 for festival and a -> a for none.",
+        "Print with System.out.printf(\"%.2f%n\", result)."
+      ],
+      "solution": "import java.util.*;\nimport java.util.function.DoubleUnaryOperator;\n\npublic class Main {\n    static double checkout(double amount, DoubleUnaryOperator discount) {\n        return discount.applyAsDouble(amount);\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        double amount = sc.nextDouble();\n        DoubleUnaryOperator discount = kind.equals(\"festival\") ? a -> a * 0.9 : a -> a;\n        System.out.printf(\"%.2f%n\", checkout(amount, discount));\n    }\n}",
+      "xp": 50
+    },
+    {
+      "id": "lab-expense",
+      "module": "j14",
+      "level": "beginner",
+      "category": "collections",
+      "title": "Expense tracker by category",
+      "brief": "Group expenses by category, total them, and print a sorted report.",
+      "objective": "Practise HashMap/TreeMap aggregation and formatted totals.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: read n, then n lines \"category amount\"\n        // Print category=total sorted by category, then Total=sum\n    }\n}",
+      "expected": "food=120\ntravel=50\nTotal=170",
+      "tests": [
+        {
+          "name": "two categories",
+          "stdin": "3\nfood 100\ntravel 50\nfood 20\n",
+          "stdout": "food=120\ntravel=50\nTotal=170"
+        },
+        {
+          "name": "single expense",
+          "stdin": "1\nrent 500\n",
+          "stdout": "rent=500\nTotal=500"
+        }
+      ],
+      "hints": [
+        "TreeMap gives sorted keys.",
+        "merge(category, amount, Integer::sum) accumulates."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        Map<String, Integer> totals = new TreeMap<>();\n        int grand = 0;\n        for (int i = 0; i < n; i++) {\n            String category = sc.next();\n            int amount = sc.nextInt();\n            totals.merge(category, amount, Integer::sum);\n            grand += amount;\n        }\n        for (Map.Entry<String, Integer> e : totals.entrySet())\n            System.out.println(e.getKey() + \"=\" + e.getValue());\n        System.out.println(\"Total=\" + grand);\n    }\n}"
+    },
+    {
+      "id": "lab-todo",
+      "module": "j14",
+      "level": "beginner",
+      "category": "collections",
+      "title": "Command-line to-do list",
+      "brief": "Implement add, done and list commands for an in-memory task list.",
+      "objective": "Practise List operations, index handling and loop-driven menus.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: add <text>, done <index>, list, end\n    }\n}",
+      "expected": "- [x] buy milk\n- [ ] call mom",
+      "tests": [
+        {
+          "name": "add done list",
+          "stdin": "add buy milk\nadd call mom\ndone 1\nlist\nend\n",
+          "stdout": "- [x] buy milk\n- [ ] call mom"
+        },
+        {
+          "name": "empty list",
+          "stdin": "list\nend\n",
+          "stdout": ""
+        }
+      ],
+      "hints": [
+        "Read add text with nextLine().",
+        "Track done flags in a parallel List<Boolean> or a Task class."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    static class Task {\n        final String text;\n        boolean done;\n        Task(String text) { this.text = text; }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        List<Task> tasks = new ArrayList<>();\n        while (sc.hasNextLine()) {\n            String line = sc.nextLine().trim();\n            if (line.equals(\"end\")) break;\n            if (line.equals(\"list\")) {\n                for (Task t : tasks) System.out.println(\"- [\" + (t.done ? \"x\" : \" \") + \"] \" + t.text);\n            } else if (line.startsWith(\"add \")) {\n                tasks.add(new Task(line.substring(4)));\n            } else if (line.startsWith(\"done \")) {\n                int index = Integer.parseInt(line.substring(5)) - 1;\n                if (index >= 0 && index < tasks.size()) tasks.get(index).done = true;\n            }\n        }\n    }\n}"
+    },
+    {
+      "id": "lab-gradebook",
+      "module": "j13",
+      "level": "beginner",
+      "category": "oop",
+      "title": "Student gradebook",
+      "brief": "Print each student's letter grade and the class average.",
+      "objective": "Practise classes, records and formatted output.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: read n, then \"name marks\"\n    }\n}",
+      "expected": "Aman: A\nPriya: B\nRavi: F\nAverage: 68.33",
+      "tests": [
+        {
+          "name": "three students",
+          "stdin": "3\nAman 90\nPriya 75\nRavi 40\n",
+          "stdout": "Aman: A\nPriya: B\nRavi: F\nAverage: 68.33"
+        },
+        {
+          "name": "one student",
+          "stdin": "1\nNeha 60\n",
+          "stdout": "Neha: C\nAverage: 60.00"
+        }
+      ],
+      "hints": [
+        "90+ A, 75+ B, 60+ C, else F.",
+        "Use printf(Locale.ROOT, \"%.2f%n\", avg)."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    static String grade(int marks) {\n        if (marks >= 90) return \"A\";\n        if (marks >= 75) return \"B\";\n        if (marks >= 60) return \"C\";\n        return \"F\";\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int total = 0;\n        for (int i = 0; i < n; i++) {\n            String name = sc.next();\n            int marks = sc.nextInt();\n            total += marks;\n            System.out.println(name + \": \" + grade(marks));\n        }\n        System.out.printf(Locale.ROOT, \"Average: %.2f%n\", (double) total / n);\n    }\n}"
+    },
+    {
+      "id": "lab-bank",
+      "module": "j13",
+      "level": "intermediate",
+      "category": "oop",
+      "title": "Multi-account bank",
+      "brief": "Open accounts, deposit, withdraw and print balances.",
+      "objective": "Practise encapsulation across several objects and command parsing.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: open/deposit/withdraw/balance commands\n    }\n}",
+      "expected": "300.00",
+      "tests": [
+        {
+          "name": "deposit and withdraw",
+          "stdin": "open 1\ndeposit 1 500\nwithdraw 1 200\nbalance 1\nend\n",
+          "stdout": "300.00"
+        },
+        {
+          "name": "two accounts",
+          "stdin": "open 1\nopen 2\ndeposit 1 100\ndeposit 2 50\nbalance 2\nend\n",
+          "stdout": "50.00"
+        }
+      ],
+      "hints": [
+        "Map<Integer, Account> keyed by account id.",
+        "Validate withdrawals inside the Account class."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    static class Account {\n        double balance;\n        void deposit(double amount) { if (amount > 0) balance += amount; }\n        void withdraw(double amount) { if (amount > 0 && amount <= balance) balance -= amount; }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        Map<Integer, Account> accounts = new HashMap<>();\n        while (sc.hasNext()) {\n            String cmd = sc.next();\n            if (cmd.equals(\"end\")) break;\n            int id = sc.nextInt();\n            if (cmd.equals(\"open\")) accounts.put(id, new Account());\n            else if (cmd.equals(\"balance\")) System.out.printf(Locale.ROOT, \"%.2f%n\", accounts.get(id).balance);\n            else {\n                double amount = sc.nextDouble();\n                Account account = accounts.get(id);\n                if (cmd.equals(\"deposit\")) account.deposit(amount);\n                else account.withdraw(amount);\n            }\n        }\n    }\n}"
+    },
+    {
+      "id": "lab-library",
+      "module": "j14",
+      "level": "intermediate",
+      "category": "collections",
+      "title": "Library catalogue search",
+      "brief": "Add titles, search by keyword and count the catalogue.",
+      "objective": "Practise lists, case-insensitive search and string handling.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: add <title>, find <keyword>, count, end\n    }\n}",
+      "expected": "Effective Java\n2",
+      "tests": [
+        {
+          "name": "find and count",
+          "stdin": "add Clean Code\nadd Effective Java\nfind Java\ncount\nend\n",
+          "stdout": "Effective Java\n2"
+        },
+        {
+          "name": "no match",
+          "stdin": "add Clean Code\nfind Python\ncount\nend\n",
+          "stdout": "1"
+        }
+      ],
+      "hints": [
+        "Store titles in an ArrayList<String>.",
+        "Use toLowerCase().contains(keyword.toLowerCase())."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        List<String> titles = new ArrayList<>();\n        while (sc.hasNextLine()) {\n            String line = sc.nextLine().trim();\n            if (line.equals(\"end\")) break;\n            if (line.equals(\"count\")) System.out.println(titles.size());\n            else if (line.startsWith(\"add \")) titles.add(line.substring(4));\n            else if (line.startsWith(\"find \")) {\n                String key = line.substring(5).toLowerCase();\n                for (String t : titles) if (t.toLowerCase().contains(key)) System.out.println(t);\n            }\n        }\n    }\n}"
+    },
+    {
+      "id": "lab-wordfreq",
+      "module": "j17",
+      "level": "intermediate",
+      "category": "streams",
+      "title": "Word frequency report",
+      "brief": "Print words by descending frequency, ties alphabetically.",
+      "objective": "Practise stream grouping, comparators and formatting.",
+      "starter": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: read a line and print word=count\n    }\n}",
+      "expected": "the=3\ncat=1\ndog=1",
+      "tests": [
+        {
+          "name": "counts",
+          "stdin": "the cat the dog the\n",
+          "stdout": "the=3\ncat=1\ndog=1"
+        },
+        {
+          "name": "single word",
+          "stdin": "java\n",
+          "stdout": "java=1"
+        }
+      ],
+      "hints": [
+        "split(\"\\\\s+\") gives the words.",
+        "Sort entries by count desc, then key asc."
+      ],
+      "solution": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String[] words = sc.nextLine().trim().split(\"\\\\s+\");\n        Map<String, Long> freq = Arrays.stream(words)\n            .collect(Collectors.groupingBy(w -> w, Collectors.counting()));\n        List<Map.Entry<String, Long>> entries = new ArrayList<>(freq.entrySet());\n        entries.sort((a, b) -> {\n            int byCount = Long.compare(b.getValue(), a.getValue());\n            return byCount != 0 ? byCount : a.getKey().compareTo(b.getKey());\n        });\n        for (Map.Entry<String, Long> e : entries)\n            System.out.println(e.getKey() + \"=\" + e.getValue());\n    }\n}"
+    },
+    {
+      "id": "lab-temp",
+      "module": "j02",
+      "level": "beginner",
+      "category": "basics",
+      "title": "Celsius to Fahrenheit table",
+      "brief": "Print a conversion table from start to end in steps.",
+      "objective": "Practise loops, arithmetic and formatted output.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: read start end step and print \"C -> F\"\n    }\n}",
+      "expected": "0 -> 32.0\n10 -> 50.0\n20 -> 68.0",
+      "tests": [
+        {
+          "name": "zero to twenty",
+          "stdin": "0 20 10\n",
+          "stdout": "0 -> 32.0\n10 -> 50.0\n20 -> 68.0"
+        },
+        {
+          "name": "single row",
+          "stdin": "100 100 5\n",
+          "stdout": "100 -> 212.0"
+        }
+      ],
+      "hints": [
+        "F = C * 9 / 5 + 32.",
+        "Use double for the result."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int start = sc.nextInt(), end = sc.nextInt(), step = sc.nextInt();\n        for (int c = start; c <= end; c += step)\n            System.out.println(c + \" -> \" + (c * 9.0 / 5 + 32));\n    }\n}"
+    },
+    {
+      "id": "lab-password",
+      "module": "j03",
+      "level": "beginner",
+      "category": "strings",
+      "title": "Password validator",
+      "brief": "Check length, digit and uppercase rules and list every violation.",
+      "objective": "Practise String methods and multiple conditions.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: print OK or each failed rule\n    }\n}",
+      "expected": "OK",
+      "tests": [
+        {
+          "name": "valid",
+          "stdin": "Abcdef12\n",
+          "stdout": "OK"
+        },
+        {
+          "name": "all failures",
+          "stdin": "abc\n",
+          "stdout": "Too short\nNo digit\nNo uppercase"
+        }
+      ],
+      "hints": [
+        "Character.isDigit and Character.isUpperCase.",
+        "Print violations in the documented order."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String p = sc.next();\n        boolean digit = false, upper = false;\n        for (char c : p.toCharArray()) {\n            if (Character.isDigit(c)) digit = true;\n            if (Character.isUpperCase(c)) upper = true;\n        }\n        boolean ok = true;\n        if (p.length() < 8) { System.out.println(\"Too short\"); ok = false; }\n        if (!digit) { System.out.println(\"No digit\"); ok = false; }\n        if (!upper) { System.out.println(\"No uppercase\"); ok = false; }\n        if (ok) System.out.println(\"OK\");\n    }\n}"
+    },
+    {
+      "id": "lab-palindrome",
+      "module": "j03",
+      "level": "beginner",
+      "category": "strings",
+      "title": "Palindrome sentence",
+      "brief": "Ignore case and spaces and decide whether the sentence reads the same backwards.",
+      "objective": "Practise StringBuilder and normalisation.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO\n    }\n}",
+      "expected": "Palindrome",
+      "tests": [
+        {
+          "name": "palindrome",
+          "stdin": "Never odd or even\n",
+          "stdout": "Palindrome"
+        },
+        {
+          "name": "not palindrome",
+          "stdin": "java programming\n",
+          "stdout": "Not palindrome"
+        }
+      ],
+      "hints": [
+        "Remove spaces and lowercase first.",
+        "new StringBuilder(clean).reverse().toString()."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String clean = sc.nextLine().toLowerCase().replace(\" \", \"\");\n        String reversed = new StringBuilder(clean).reverse().toString();\n        System.out.println(clean.equals(reversed) ? \"Palindrome\" : \"Not palindrome\");\n    }\n}"
+    },
+    {
+      "id": "lab-sieve",
+      "module": "j07",
+      "level": "intermediate",
+      "category": "algorithms",
+      "title": "Prime sieve",
+      "brief": "Print all primes up to n with the sieve of Eratosthenes.",
+      "objective": "Practise arrays, nested loops and boolean flags.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO\n    }\n}",
+      "expected": "2 3 5 7",
+      "tests": [
+        {
+          "name": "up to ten",
+          "stdin": "10\n",
+          "stdout": "2 3 5 7"
+        },
+        {
+          "name": "up to two",
+          "stdin": "2\n",
+          "stdout": "2"
+        }
+      ],
+      "hints": [
+        "Start with every number assumed prime.",
+        "Mark multiples of each prime as composite."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        boolean[] composite = new boolean[n + 1];\n        StringBuilder sb = new StringBuilder();\n        for (int i = 2; i <= n; i++) {\n            if (composite[i]) continue;\n            if (sb.length() > 0) sb.append(' ');\n            sb.append(i);\n            for (long j = (long) i * i; j <= n; j += i) composite[(int) j] = true;\n        }\n        System.out.println(sb);\n    }\n}"
+    },
+    {
+      "id": "lab-gcd",
+      "module": "j05",
+      "level": "beginner",
+      "category": "basics",
+      "title": "GCD and LCM calculator",
+      "brief": "Print the greatest common divisor and least common multiple of two numbers.",
+      "objective": "Practise loops, modulo and long arithmetic.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO\n    }\n}",
+      "expected": "GCD=6 LCM=36",
+      "tests": [
+        {
+          "name": "twelve and eighteen",
+          "stdin": "12 18\n",
+          "stdout": "GCD=6 LCM=36"
+        },
+        {
+          "name": "coprime",
+          "stdin": "7 5\n",
+          "stdout": "GCD=1 LCM=35"
+        }
+      ],
+      "hints": [
+        "Euclid: gcd(a,b) = gcd(b, a%b).",
+        "lcm = a / gcd * b to avoid overflow."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        long a = sc.nextLong(), b = sc.nextLong();\n        long x = a, y = b;\n        while (y != 0) { long t = x % y; x = y; y = t; }\n        long gcd = x;\n        System.out.println(\"GCD=\" + gcd + \" LCM=\" + (a / gcd * b));\n    }\n}"
+    },
+    {
+      "id": "lab-matrix",
+      "module": "j08",
+      "level": "intermediate",
+      "category": "arrays",
+      "title": "Matrix calculator",
+      "brief": "Add or multiply two n×n matrices based on the operation.",
+      "objective": "Practise 2D arrays, nested loops and command input.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: read op, n, then two matrices\n    }\n}",
+      "expected": "6 8\n10 12",
+      "tests": [
+        {
+          "name": "addition",
+          "stdin": "add 2\n1 2\n3 4\n5 6\n7 8\n",
+          "stdout": "6 8\n10 12"
+        },
+        {
+          "name": "multiplication",
+          "stdin": "multiply 2\n1 2\n3 4\n5 6\n7 8\n",
+          "stdout": "19 22\n43 50"
+        }
+      ],
+      "hints": [
+        "Read both matrices before computing.",
+        "Multiplication needs a third loop over the shared dimension."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String op = sc.next();\n        int n = sc.nextInt();\n        int[][] a = new int[n][n], b = new int[n][n];\n        for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) a[i][j] = sc.nextInt();\n        for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) b[i][j] = sc.nextInt();\n        for (int i = 0; i < n; i++) {\n            StringBuilder line = new StringBuilder();\n            for (int j = 0; j < n; j++) {\n                int value = op.equals(\"add\") ? a[i][j] + b[i][j] : 0;\n                if (!op.equals(\"add\"))\n                    for (int k = 0; k < n; k++) value += a[i][k] * b[k][j];\n                if (j > 0) line.append(' ');\n                line.append(value);\n            }\n            System.out.println(line);\n        }\n    }\n}"
+    },
+    {
+      "id": "lab-binarystrings",
+      "module": "j10",
+      "level": "intermediate",
+      "category": "recursion",
+      "title": "Generate binary strings",
+      "brief": "Print every binary string of length n in lexicographic order using recursion.",
+      "objective": "Practise recursive backtracking.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO\n    }\n}",
+      "expected": "00\n01\n10\n11",
+      "tests": [
+        {
+          "name": "length two",
+          "stdin": "2\n",
+          "stdout": "00\n01\n10\n11"
+        },
+        {
+          "name": "length one",
+          "stdin": "1\n",
+          "stdout": "0\n1"
+        }
+      ],
+      "hints": [
+        "Append '0', recurse, then append '1' and recurse.",
+        "Print when the prefix length equals n."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    static void generate(int n, String prefix) {\n        if (prefix.length() == n) { System.out.println(prefix); return; }\n        generate(n, prefix + \"0\");\n        generate(n, prefix + \"1\");\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        generate(sc.nextInt(), \"\");\n    }\n}"
+    },
+    {
+      "id": "lab-contacts",
+      "module": "j14",
+      "level": "beginner",
+      "category": "collections",
+      "title": "Contact book",
+      "brief": "Add contacts, look one up by name and list them sorted.",
+      "objective": "Practise TreeMap put/get and iteration.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: add <name> <phone>, find <name>, list, end\n    }\n}",
+      "expected": "Aman=123\nAman=123\nRavi=456",
+      "tests": [
+        {
+          "name": "find and list",
+          "stdin": "add Aman 123\nadd Ravi 456\nfind Aman\nlist\nend\n",
+          "stdout": "123\nAman=123\nRavi=456"
+        },
+        {
+          "name": "missing contact",
+          "stdin": "find Zoya\nlist\nend\n",
+          "stdout": "not found"
+        }
+      ],
+      "hints": [
+        "TreeMap<String,String> sorts names.",
+        "find prints the phone or not found."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        Map<String, String> contacts = new TreeMap<>();\n        while (sc.hasNext()) {\n            String cmd = sc.next();\n            if (cmd.equals(\"end\")) break;\n            if (cmd.equals(\"add\")) contacts.put(sc.next(), sc.next());\n            else if (cmd.equals(\"find\")) {\n                String name = sc.next();\n                System.out.println(contacts.getOrDefault(name, \"not found\"));\n            } else if (cmd.equals(\"list\")) {\n                for (Map.Entry<String, String> e : contacts.entrySet())\n                    System.out.println(e.getKey() + \"=\" + e.getValue());\n            }\n        }\n    }\n}"
+    },
+    {
+      "id": "lab-cart",
+      "module": "j13",
+      "level": "intermediate",
+      "category": "oop",
+      "title": "Shopping cart total",
+      "brief": "Add items with quantity and price, then print the cart total.",
+      "objective": "Practise object modelling and double arithmetic.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: add <name> <qty> <price>, total, end\n    }\n}",
+      "expected": "70.00",
+      "tests": [
+        {
+          "name": "two items",
+          "stdin": "add pen 2 10\nadd book 1 50\ntotal\nend\n",
+          "stdout": "70.00"
+        },
+        {
+          "name": "empty cart",
+          "stdin": "total\nend\n",
+          "stdout": "0.00"
+        }
+      ],
+      "hints": [
+        "Keep a running double total.",
+        "Format with printf(Locale.ROOT, \"%.2f%n\", total)."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        double total = 0;\n        while (sc.hasNext()) {\n            String cmd = sc.next();\n            if (cmd.equals(\"end\")) break;\n            if (cmd.equals(\"total\")) System.out.printf(Locale.ROOT, \"%.2f%n\", total);\n            else {\n                sc.next();\n                int qty = sc.nextInt();\n                double price = sc.nextDouble();\n                total += qty * price;\n            }\n        }\n    }\n}"
+    },
+    {
+      "id": "lab-sales",
+      "module": "j17",
+      "level": "intermediate",
+      "category": "streams",
+      "title": "Sales revenue report",
+      "brief": "Aggregate revenue per product and print it sorted with 2 decimals.",
+      "objective": "Practise stream grouping and summingDouble.",
+      "starter": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: read n rows \"product units price\"\n    }\n}",
+      "expected": "book=50.00\npen=30.00",
+      "tests": [
+        {
+          "name": "two products",
+          "stdin": "2\npen 3 10\nbook 1 50\n",
+          "stdout": "book=50.00\npen=30.00"
+        },
+        {
+          "name": "repeat product",
+          "stdin": "2\npen 1 10\npen 2 10\n",
+          "stdout": "pen=30.00"
+        }
+      ],
+      "hints": [
+        "Multiply units by price before grouping.",
+        "summingDouble with TreeMap::new."
+      ],
+      "solution": "import java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        List<String[]> rows = new ArrayList<>();\n        for (int i = 0; i < n; i++) rows.add(new String[]{sc.next(), sc.next(), sc.next()});\n        Map<String, Double> revenue = rows.stream().collect(Collectors.groupingBy(\n            r -> r[0], TreeMap::new,\n            Collectors.summingDouble(r -> Integer.parseInt(r[1]) * Double.parseDouble(r[2]))));\n        for (Map.Entry<String, Double> e : revenue.entrySet())\n            System.out.printf(Locale.ROOT, \"%s=%.2f%n\", e.getKey(), e.getValue());\n    }\n}"
+    },
+    {
+      "id": "lab-csv",
+      "module": "j18",
+      "level": "intermediate",
+      "category": "files",
+      "title": "CSV summary with file I/O",
+      "brief": "Write rows to a CSV file, read them back and report the row count and top score.",
+      "objective": "Practise Files.writeString/readAllLines and try-with-resources discipline.",
+      "starter": "import java.util.*;\nimport java.nio.file.*;\nimport java.io.IOException;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        Scanner sc = new Scanner(System.in);\n        // TODO: write n \"name,score\" rows to a temp file, read them back\n    }\n}",
+      "expected": "rows=3\nmax=Ravi:90",
+      "tests": [
+        {
+          "name": "three rows",
+          "stdin": "3\nAman,80\nPriya,55\nRavi,90\n",
+          "stdout": "rows=3\nmax=Ravi:90"
+        },
+        {
+          "name": "single row",
+          "stdin": "1\nNeha,70\n",
+          "stdout": "rows=1\nmax=Neha:70"
+        }
+      ],
+      "hints": [
+        "Build the CSV text with a StringBuilder.",
+        "Track the best row while parsing."
+      ],
+      "solution": "import java.util.*;\nimport java.nio.file.*;\nimport java.io.IOException;\n\npublic class Main {\n    public static void main(String[] args) throws IOException {\n        Scanner sc = new Scanner(System.in);\n        int n = Integer.parseInt(sc.nextLine().trim());\n        StringBuilder csv = new StringBuilder();\n        for (int i = 0; i < n; i++) csv.append(sc.nextLine().trim()).append('\\n');\n        Path file = Files.createTempFile(\"scores\", \".csv\");\n        Files.writeString(file, csv.toString());\n        List<String> lines = Files.readAllLines(file);\n        Files.deleteIfExists(file);\n        String best = \"\";\n        int bestScore = -1;\n        for (String line : lines) {\n            if (line.isBlank()) continue;\n            String[] parts = line.split(\",\");\n            int score = Integer.parseInt(parts[1]);\n            if (score > bestScore) { bestScore = score; best = parts[0] + \":\" + score; }\n        }\n        System.out.println(\"rows=\" + lines.size());\n        System.out.println(\"max=\" + best);\n    }\n}"
+    },
+    {
+      "id": "lab-threads",
+      "module": "j20",
+      "level": "advanced",
+      "category": "concurrency",
+      "title": "Threaded sum of squares",
+      "brief": "Split the array across four threads and print the combined sum of squares.",
+      "objective": "Practise threads, joins and safe result collection.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Scanner sc = new Scanner(System.in);\n        // TODO\n    }\n}",
+      "expected": "30",
+      "tests": [
+        {
+          "name": "four values",
+          "stdin": "4\n1 2 3 4\n",
+          "stdout": "30"
+        },
+        {
+          "name": "two values",
+          "stdin": "2\n3 4\n",
+          "stdout": "25"
+        }
+      ],
+      "hints": [
+        "Give each thread a slice of the array.",
+        "Sum per-thread results after join(), or use AtomicLong."
+      ],
+      "solution": "import java.util.*;\nimport java.util.concurrent.atomic.AtomicLong;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        long[] values = new long[n];\n        for (int i = 0; i < n; i++) values[i] = sc.nextLong();\n        int threads = Math.min(4, n);\n        AtomicLong total = new AtomicLong();\n        Thread[] workers = new Thread[threads];\n        for (int t = 0; t < threads; t++) {\n            final int start = t * n / threads, end = (t + 1) * n / threads;\n            workers[t] = new Thread(() -> {\n                long local = 0;\n                for (int i = start; i < end; i++) local += values[i] * values[i];\n                total.addAndGet(local);\n            });\n            workers[t].start();\n        }\n        for (Thread w : workers) w.join();\n        System.out.println(total.get());\n    }\n}"
+    },
+    {
+      "id": "lab-genericstack",
+      "module": "j19",
+      "level": "advanced",
+      "category": "generics",
+      "title": "Generic stack",
+      "brief": "Implement a generic stack and run push/pop/peek/size commands on strings.",
+      "objective": "Practise generic classes and ArrayDeque.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    static class Stack<T> {\n        // TODO\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO\n    }\n}",
+      "expected": "b\n1",
+      "tests": [
+        {
+          "name": "push pop size",
+          "stdin": "push a\npush b\npop\nsize\nend\n",
+          "stdout": "b\n1"
+        },
+        {
+          "name": "peek",
+          "stdin": "push x\npeek\nend\n",
+          "stdout": "x"
+        }
+      ],
+      "hints": [
+        "Wrap a Deque<T> and delegate.",
+        "pop on the head keeps LIFO order."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    static class Stack<T> {\n        private final Deque<T> items = new ArrayDeque<>();\n        void push(T item) { items.push(item); }\n        T pop() { return items.pop(); }\n        T peek() { return items.peek(); }\n        int size() { return items.size(); }\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        Stack<String> stack = new Stack<>();\n        while (sc.hasNext()) {\n            String cmd = sc.next();\n            if (cmd.equals(\"end\")) break;\n            if (cmd.equals(\"push\")) stack.push(sc.next());\n            else if (cmd.equals(\"pop\")) System.out.println(stack.pop());\n            else if (cmd.equals(\"peek\")) System.out.println(stack.peek());\n            else if (cmd.equals(\"size\")) System.out.println(stack.size());\n        }\n    }\n}"
+    },
+    {
+      "id": "lab-quiz",
+      "module": "j13",
+      "level": "beginner",
+      "category": "oop",
+      "title": "Quiz scoring engine",
+      "brief": "Compare given answers with the correct ones and print the score.",
+      "objective": "Practise string comparison, loops and simple class design.",
+      "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: read n, then n pairs \"correct given\"\n    }\n}",
+      "expected": "Score: 2/3",
+      "tests": [
+        {
+          "name": "two of three",
+          "stdin": "3\nA A\nB C\nC C\n",
+          "stdout": "Score: 2/3"
+        },
+        {
+          "name": "perfect",
+          "stdin": "2\nA A\nB B\n",
+          "stdout": "Score: 2/2"
+        }
+      ],
+      "hints": [
+        "Compare with equalsIgnoreCase.",
+        "Print correct/total."
+      ],
+      "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int score = 0;\n        for (int i = 0; i < n; i++) {\n            String correct = sc.next();\n            String given = sc.next();\n            if (correct.equalsIgnoreCase(given)) score++;\n        }\n        System.out.println(\"Score: \" + score + \"/\" + n);\n    }\n}"
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "id": "j12",
+  "no": 12,
+  "title": "Packages and Advanced Java Syntax",
+  "level": "advanced",
+  "hours": 7,
+  "goal": "Packages, enums, records, sealed types, annotations aur generics ka first look.",
+  "prereqs": ["Module 11: interfaces"],
+  "objectives": [
+    "Organise classes into packages and use imports correctly",
+    "Model fixed sets with enums and data carriers with records",
+    "Restrict a hierarchy with sealed interfaces",
+    "Read an annotation and explain what it does at compile or run time"
+  ],
+  "definition": "A package is a namespace and directory that groups related classes. Enums model a fixed set of constants. Records are compact immutable data carriers. Sealed types restrict which classes may implement or extend them. Annotations attach metadata that tools and frameworks read.",
+  "explain": [
+    "Packages prevent name collisions and express ownership: com.brocode.shop.model, com.brocode.shop.service. The package statement must match the directory path, and import brings a type into scope without copying it.",
+    "An enum is a type with a fixed set of instances — perfect for statuses, roles and directions. A record declares its components once and generates a constructor, accessors, equals, hashCode and toString. Both remove a large class of hand-written bugs.",
+    "A sealed interface names its permitted subtypes, so a switch over them can be exhaustive and the compiler knows the complete set. Annotations such as @Override, @FunctionalInterface and @Deprecated are checked by the compiler; framework annotations such as @Entity or @Service are read at runtime."
+  ],
+  "hinglish": [
+    "Package namespace aur folder structure hai — com.brocode.shop.model jaise. Isse naam clash nahi hote aur ownership clear hoti hai. Enum fixed set of values ke liye, record immutable data carrier ke liye — dono boilerplate hataate hain.",
+    "Sealed interface batata hai kaun kaun implement kar sakta hai, isliye switch exhaustive ho sakta hai. Annotation metadata hai: @Override compiler check karta hai, @Entity jaisi annotations frameworks runtime par padhte hain."
+  ],
+  "analogy": "Package ek building ka floor hai jahan related departments baithte hain; import intercom hai jisse doosre floor se baat karte ho. Record ek pre-printed form hai — fields ek baar bharo, baaki details system bhar deta hai.",
+  "why": "Real Java projects are organised by package, and records/enums/sealed types are the modern way to model data precisely. Framework annotations are how Spring and JPA find your classes, so reading them is a daily skill.",
+  "syntax": [
+    {
+      "code": "package com.brocode.shop.model;\n\npublic record Product(String name, double price) {\n    public Product {\n        if (price < 0) throw new IllegalArgumentException(\"price\");\n    }\n}\n\nProduct p = new Product(\"Pen\", 20);\nSystem.out.println(p.name() + \" \" + p.price());",
+      "note": "A record's accessors are name() and price(), not getName(). The compact constructor validates before fields are assigned."
+    },
+    {
+      "code": "enum Status { NEW, PAID, SHIPPED }\n\nsealed interface Shape permits Circle, Square {}\nrecord Circle(double r) implements Shape {}\nrecord Square(double side) implements Shape {}\n\nStatus s = Status.PAID;\nSystem.out.println(switch (s) {\n    case NEW -> \"waiting\";\n    case PAID -> \"ready\";\n    case SHIPPED -> \"done\";\n});",
+      "note": "The enum switch expression is exhaustive without a default. A sealed interface limits who may implement it."
+    }
+  ],
+  "topics": [
+    {
+      "title": "Packages and imports",
+      "body": "package declares the namespace and must match the folder path. import brings one type (or a whole package with *) into scope; java.lang is imported automatically. Use fully qualified names when two packages share a class name."
+    },
+    {
+      "title": "Access control across packages",
+      "body": "private is class-only, package-private (no modifier) is same-package, protected adds subclasses, public is everywhere. A public class must live in a file with the same name."
+    },
+    {
+      "title": "Nested and anonymous classes",
+      "body": "A static nested class is a namespaced helper. An inner class keeps a link to its outer instance. An anonymous class implements an interface on the spot — still useful when a lambda cannot express state or multiple methods."
+    },
+    {
+      "title": "Enums",
+      "body": "Enums are classes with a fixed set of instances; they can have fields, constructors and methods. values(), valueOf() and switch make them ideal for statuses. Compare with ==, which is safe for enum constants."
+    },
+    {
+      "title": "Records",
+      "body": "record Point(int x, int y) generates a canonical constructor, accessors, equals, hashCode and toString. Records are shallowly immutable and cannot extend a class. Add validation in a compact constructor."
+    },
+    {
+      "title": "Sealed classes and interfaces",
+      "body": "sealed … permits Sub1, Sub2 restricts the hierarchy, which makes exhaustive switches possible and models closed domains such as payment results or shapes."
+    },
+    {
+      "title": "Annotations and documentation",
+      "body": "@Override, @Deprecated, @SuppressWarnings and @FunctionalInterface are compile-time checks. Framework annotations configure runtime behaviour. Javadoc comments (/** … */) with @param and @return generate API documentation."
+    }
+  ],
+  "examples": [
+    {
+      "level": "advanced",
+      "title": "Record validation and an enum switch",
+      "code": "public class Main {\n    enum Status { NEW, PAID, SHIPPED }\n\n    record Order(String id, double amount, Status status) {\n        Order {\n            if (amount < 0) throw new IllegalArgumentException(\"amount\");\n        }\n    }\n\n    public static void main(String[] args) {\n        Order o = new Order(\"A-1\", 499.0, Status.PAID);\n        System.out.println(o);\n        System.out.println(switch (o.status()) {\n            case NEW -> \"waiting for payment\";\n            case PAID -> \"packing\";\n            case SHIPPED -> \"on the way\";\n        });\n        try {\n            new Order(\"A-2\", -1, Status.NEW);\n        } catch (IllegalArgumentException e) {\n            System.out.println(\"rejected: \" + e.getMessage());\n        }\n    }\n}",
+      "output": "Order[id=A-1, amount=499.0, status=PAID]\npacking\nrejected: amount",
+      "lines": [
+        "The record declaration generates the constructor and accessors for all three components.",
+        "The compact constructor validates amount before the record is created.",
+        "toString is generated, so printing the record shows every component.",
+        "The switch expression over the enum is exhaustive; the invalid order throws and is caught."
+      ],
+      "dryRun": ["new Order(\"A-1\", 499.0, PAID) → validation passes", "o.status() = PAID → switch → packing", "new Order(\"A-2\", -1, NEW) → IllegalArgumentException", "catch prints rejected: amount"]
+    },
+    {
+      "level": "advanced",
+      "title": "Sealed hierarchy and a nested class",
+      "code": "public class Main {\n    sealed interface Shape permits Circle, Square {}\n    record Circle(double r) implements Shape {}\n    record Square(double side) implements Shape {}\n\n    static double area(Shape s) {\n        if (s instanceof Circle c) return Math.PI * c.r() * c.r();\n        Square sq = (Square) s;\n        return sq.side() * sq.side();\n    }\n\n    static class Formatter {\n        static String money(double v) { return String.format(\"%.2f\", v); }\n    }\n\n    public static void main(String[] args) {\n        Shape[] shapes = { new Circle(1), new Square(2) };\n        for (Shape s : shapes) System.out.println(Formatter.money(area(s)));\n    }\n}",
+      "output": "3.14\n4.00",
+      "lines": [
+        "The sealed interface permits exactly two record implementations.",
+        "circle area uses PI r²; the cast is safe because the hierarchy is closed.",
+        "Formatter is a static nested helper class, called through its class name.",
+        "Both areas are formatted to two decimals by the nested helper."
+      ],
+      "dryRun": ["Circle r=1 → 3.14159 → 3.14", "Square side=2 → 4 → 4.00", "Formatter.money applies %.2f to each"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "record Point(int x, int y) {}\nPoint p = new Point(1, 2);\np.getX();",
+      "right": "p.x()",
+      "why": "Record accessors are named after the components, without a get prefix."
+    },
+    {
+      "wrong": "enum Status { NEW, PAID };  if (status.equals(\"PAID\")) …",
+      "right": "if (status == Status.PAID) …",
+      "why": "Enum constants are objects of the enum type, not Strings. Comparing to a String is always false, and == is the correct, null-safe comparison for enums."
+    }
+  ],
+  "debug": {
+    "brief": "This record is used with JavaBean accessors, so it does not compile. Fix the calls.",
+    "code": "public class Main {\n    record Point(int x, int y) {}\n\n    public static void main(String[] args) {\n        Point p = new Point(3, 4);\n        System.out.println(p.getX() + \",\" + p.getY());\n    }\n}",
+    "expected": "3,4",
+    "hints": ["Records generate accessors named after the components.", "There is no getX() method on a record."],
+    "fix": "public class Main {\n    record Point(int x, int y) {}\n\n    public static void main(String[] args) {\n        Point p = new Point(3, 4);\n        System.out.println(p.x() + \",\" + p.y());\n    }\n}"
+  },
+  "best": [
+    "Organise by feature or layer, and keep package names lowercase.",
+    "Use records for immutable data transfer; do not add mutable state to them.",
+    "Use enums instead of String/int constants for fixed sets.",
+    "Seal a hierarchy when the set of subtypes is genuinely closed."
+  ],
+  "tip": "If an interviewer asks 'record vs class', mention the generated members, immutability (shallow), the compact constructor, and that records cannot extend a class — then give a DTO or API-response use case.",
+  "revision": [
+    "Packages are namespaces tied to directories; import brings types into scope.",
+    "Enums are fixed instance sets; compare with ==.",
+    "Records generate constructor, accessors, equals, hashCode, toString.",
+    "Sealed types restrict subtypes; annotations add checked metadata."
+  ],
+  "practice": [
+    { "title": "Record inventory", "prompt": "Create record Item(String name, int qty, double price) with validation and print its values.", "level": "advanced", "hint": "Use a compact constructor to reject negative qty." },
+    { "title": "Enum with fields", "prompt": "Give enum Priority a level field and a label() method; print labels for all constants.", "level": "advanced", "hint": "Enum constructors are implicitly private." },
+    { "title": "Sealed result", "prompt": "Model Success and Failure records implementing a sealed Result, then switch over them with instanceof checks.", "level": "advanced", "hint": "Java 17 supports sealed types; use if/else instanceof for exhaustiveness without pattern switch." }
+  ],
+  "mcqs": [
+    {
+      "q": "Which members does a record generate?",
+      "options": ["Only getters", "Constructor, accessors, equals, hashCode, toString", "Setters", "A builder"],
+      "answer": 1,
+      "explain": "That is the record contract; accessors are named after the components."
+    },
+    {
+      "q": "What does sealed permit?",
+      "options": ["Any class to extend", "Only listed subtypes", "Multiple inheritance", "Runtime modification"],
+      "answer": 1,
+      "explain": "sealed … permits restricts the hierarchy to the named subtypes."
+    },
+    {
+      "q": "How should two enum constants be compared?",
+      "options": ["equals(\"VALUE\")", "== on the constants", "compareTo(String)", "hashCode()"],
+      "answer": 1,
+      "explain": "There is exactly one instance per constant, so == is correct and null-safe."
+    }
+  ],
+  "interview": [
+    {
+      "q": "When would you use a record instead of a normal class?",
+      "a": "For immutable data carriers where the state is the whole API: DTOs, API responses, value objects, composite map keys. Records remove boilerplate and make equality and printing correct by default. Use a class when you need mutable state, inheritance from a class, or behaviour that dominates the data.",
+      "followUp": "Are records deep-immutable? (No — components holding mutable objects are still mutable; copy defensively.)"
+    },
+    {
+      "q": "What problem do sealed classes solve?",
+      "a": "They let a library author declare the complete set of subtypes, so consumers and the compiler can reason exhaustively — switches become checkable and adding a subtype becomes a deliberate, visible change.",
+      "followUp": "How does that relate to pattern matching? (An exhaustive switch over a sealed hierarchy needs no default branch.)"
+    }
+  ],
+  "lab": {
+    "title": "Day type with an enum",
+    "brief": "Read a day number 1-7. Print WEEKEND for 6 and 7, WEEKDAY for 1-5, INVALID otherwise. Use an enum and a switch expression.",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    enum DayType { WEEKDAY, WEEKEND, INVALID }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int day = sc.nextInt();\n        // TODO: map day to DayType and print it\n    }\n}",
+    "expected": "WEEKEND",
+    "tests": [
+      { "name": "Saturday", "stdin": "6\n", "stdout": "WEEKEND" },
+      { "name": "Monday", "stdin": "1\n", "stdout": "WEEKDAY" },
+      { "name": "invalid", "stdin": "9\n", "stdout": "INVALID" }
+    ],
+    "hints": ["A switch expression over day can return the enum constant.", "Group days with case 1, 2, 3, 4, 5 -> DayType.WEEKDAY."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    enum DayType { WEEKDAY, WEEKEND, INVALID }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int day = sc.nextInt();\n        DayType type = switch (day) {\n            case 1, 2, 3, 4, 5 -> DayType.WEEKDAY;\n            case 6, 7 -> DayType.WEEKEND;\n            default -> DayType.INVALID;\n        };\n        System.out.println(type);\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Modern Java syntax in place?",
+    "checks": [
+      "I can write a validating record and use its accessors",
+      "I can switch over an enum exhaustively",
+      "I can explain what sealed permits and why it helps"
+    ]
+  }
+}

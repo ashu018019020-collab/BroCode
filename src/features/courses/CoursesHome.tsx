@@ -15,6 +15,7 @@ import {
 import type { CourseCard } from '../../core/learning/courses';
 import { useCIndex } from '../../core/data/ccourse';
 import { CLogo } from '../c-programming/CLogo';
+import { JLogo } from '../java-programming/JLogo';
 
 /**
  * /courses — ONE grid of course cards, in the learning sequence.
@@ -27,8 +28,9 @@ import { CLogo } from '../c-programming/CLogo';
  * a course with no sections (Data Engineering) shows its real counts instead of an invented
  * percentage.
  *
- * C Programming is the twelfth card: it is its own course page, not a catalog record, so it is
- * drawn from the same registry (third position) and reads its own module progress.
+ * C Programming and Java Programming are their own course pages, not catalog records. Both are
+ * drawn with the same card design: C from the registry's third position, Java as the language
+ * course beside it, each reading its own module progress.
  */
 export default function CoursesHome() {
   const { t } = useI18n();
@@ -168,7 +170,9 @@ export default function CoursesHome() {
           </div>
           {index && (
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-              <span className="chip">{visible.length + (cHidden ? 0 : 1) + ownerVisible.length} {t('courses.coursesUnit')}</span>
+              {/* Java is a real card in the grid below, so it is counted here too — the header may
+                  never say 12 while 13 cards are on screen. */}
+              <span className="chip">{visible.length + (cHidden ? 0 : 1) + 1 + ownerVisible.length} {t('courses.coursesUnit')}</span>
               <span className="chip">{steps} {t('courses.stepsUnit')}</span>
               <span className="chip">{index.totals.items} {t('courses.itemsUnit')}</span>
             </div>
@@ -205,6 +209,16 @@ export default function CoursesHome() {
           Continue strip are untouched by ordering — only the cards' positions change. */}
       {index && (
         <div className="course-grid">
+          <Link
+            to="/java"
+            className="course-card cc-simple tone-amber"
+            data-agent-action="course:java-programming"
+            data-agent-label="Java Programming"
+            title="Java Programming"
+          >
+            <span className="cc-logo"><JLogo size={88} /></span>
+            <b className="cc-name">Java Programming</b>
+          </Link>
           {sequence.map(({ slug }) => {
             if (slug === 'c-programming') return renderC();
             const card = bySlug.get(slug);

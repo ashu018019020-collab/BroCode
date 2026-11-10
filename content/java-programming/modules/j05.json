@@ -1,0 +1,181 @@
+{
+  "id": "j05",
+  "no": 5,
+  "title": "Loops",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "for, while, do-while, nested loops aur break/continue par command.",
+  "prereqs": ["Module 04: conditions"],
+  "objectives": [
+    "Choose for, while or do-while for a given repetition",
+    "Trace a nested loop and predict how many times the body runs",
+    "Use break and continue without creating unreadable control flow",
+    "Recognise and fix an infinite loop"
+  ],
+  "definition": "A loop repeats a block while a condition holds. for groups initialisation, condition and update in one line; while checks before each iteration; do-while checks after, so it always runs at least once. break exits the loop, continue skips to the next iteration.",
+  "explain": [
+    "Use for when you know how many times to repeat or you are walking an index range. Use while when the repetition depends on something that changes inside the loop, such as reading until input ends. Use do-while when the body must run at least once, like showing a menu before checking whether the user wants to quit.",
+    "Nested loops multiply: an outer loop of n iterations with an inner loop of m iterations runs the inner body n × m times. That is exactly how pattern printing works, and also why an accidental n² loop on 100,000 items is a performance bug.",
+    "An infinite loop happens when the condition never becomes false. Common causes: forgetting to update the counter, updating in the wrong direction, or a condition that can never be true. Add a print or a debugger breakpoint inside the loop to see the variable that is not moving."
+  ],
+  "hinglish": [
+    "Jab repetitions ki count pata ho ya index ke saath kaam ho, for loop use karo. Jab condition kuch andar badalne par depend kare, while. Aur jab body kam se kam ek baar chalni hi chahiye, do-while — jaise menu pehle dikhana, phir poochna ki quit karna hai kya.",
+    "Nested loop me kaam multiply hota hai: outer n baar, inner m baar → body n × m baar. Patterns isi se bante hain. Aur infinite loop tab hota hai jab counter update hi nahi hota ya galat direction me hota hai — loop ke andar variable print karke dekho."
+  ],
+  "analogy": "Loop ek gym circuit jaisa hai: for me aapko pata hai 3 rounds karne hain; while me aap tab tak karte ho jab tak energy hai; do-while me aap pehle ek round karte ho, phir decide karte ho ki aur karna hai ya nahi.",
+  "why": "Loops are how programs process collections, files and user input. Pattern questions and complexity questions in interviews both assume you can trace a nested loop precisely — and most infinite-loop incidents in production come from a condition that never changes.",
+  "syntax": [
+    {
+      "code": "for (int i = 1; i <= 5; i++) {\n    System.out.print(i + \" \");\n}\n\nint n = 5;\nwhile (n > 0) {\n    System.out.print(n + \" \");\n    n--;\n}\n\nint attempt = 0;\ndo {\n    attempt++;\n} while (attempt < 1);",
+      "note": "for declares its counter in the loop; while needs the variable outside; do-while always runs once."
+    },
+    {
+      "code": "for (int i = 1; i <= 5; i++) {\n    if (i == 3) continue; // skip 3\n    if (i == 5) break;    // stop before 5\n    System.out.print(i + \" \");\n}",
+      "note": "continue jumps to the update step of a for loop; break leaves the loop entirely."
+    }
+  ],
+  "topics": [
+    {
+      "title": "The for loop",
+      "body": "for (init; condition; update). Initialisation runs once, condition is checked before each iteration, update runs after the body. Declare the counter inside the parentheses unless you need it after the loop."
+    },
+    {
+      "title": "while and do-while",
+      "body": "while may run zero times. do-while runs the body first and then checks, so it runs at least once — the usual shape for a menu or a retry loop."
+    },
+    {
+      "title": "Nested loops",
+      "body": "The inner loop finishes completely for each outer iteration. Row and column loops print grids; two independent nested loops over n give O(n²) work, which matters as data grows."
+    },
+    {
+      "title": "break and continue",
+      "body": "break exits the nearest loop (or switch). continue skips the rest of the current iteration. Both affect only the innermost loop — to leave two levels, use a labelled break, which should be rare and clearly commented."
+    },
+    {
+      "title": "Patterns",
+      "body": "Star and number patterns are nested loops with a formula per row: print spaces, then symbols, then a newline. Writing the row formula on paper first is faster than guessing in code."
+    },
+    {
+      "title": "Infinite loops and debugging",
+      "body": "If a loop never ends, check that the update actually changes the condition variable and moves toward the exit. A for(;;) loop is legal and is sometimes intentional with a break; an accidental while(true) is a bug."
+    }
+  ],
+  "examples": [
+    {
+      "level": "beginner",
+      "title": "Multiplication table",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        int table = 7;\n        for (int i = 1; i <= 5; i++) {\n            System.out.println(table + \" x \" + i + \" = \" + (table * i));\n        }\n    }\n}",
+      "output": "7 x 1 = 7\n7 x 2 = 14\n7 x 3 = 21\n7 x 4 = 28\n7 x 5 = 35",
+      "lines": [
+        "table holds the value being multiplied; i is the loop counter.",
+        "The condition i <= 5 keeps the loop running for i = 1..5.",
+        "The body prints one line per iteration; the multiplication is in parentheses so it happens before concatenation.",
+        "i++ moves toward the exit condition."
+      ],
+      "dryRun": ["i = 1 → print 7 x 1 = 7", "i = 2 → print 7 x 2 = 14", "… i = 5 → print 7 x 5 = 35", "i becomes 6; 6 <= 5 false; loop ends"]
+    },
+    {
+      "level": "intermediate",
+      "title": "Star triangle with nested loops",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        int rows = 4;\n        for (int r = 1; r <= rows; r++) {\n            for (int c = 1; c <= r; c++) {\n                System.out.print(\"*\");\n            }\n            System.out.println();\n        }\n    }\n}",
+      "output": "*\n**\n***\n****",
+      "lines": [
+        "The outer loop controls the row number r, from 1 to 4.",
+        "The inner loop prints exactly r stars, because its condition is c <= r.",
+        "print writes stars without a newline; println after the inner loop ends the row.",
+        "Total stars printed: 1 + 2 + 3 + 4 = 10."
+      ],
+      "dryRun": ["r = 1 → inner prints 1 star, newline", "r = 2 → 2 stars, newline", "r = 3 → 3 stars, newline", "r = 4 → 4 stars, newline; outer ends"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "for (int i = 0; i < 5; i--) { }",
+      "right": "for (int i = 0; i < 5; i++) { }",
+      "why": "The counter moves away from the exit condition, so the loop never ends."
+    },
+    {
+      "wrong": "for (int i = 0; i <= arr.length; i++) sum += arr[i];",
+      "right": "for (int i = 0; i < arr.length; i++) sum += arr[i];",
+      "why": "The last valid index is length - 1. Using <= reads past the end and throws ArrayIndexOutOfBoundsException."
+    }
+  ],
+  "debug": {
+    "brief": "This loop should print 1 to 5 but never stops. Fix the update.",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        for (int i = 1; i <= 5; i--) {\n            System.out.println(i);\n        }\n    }\n}",
+    "expected": "1\n2\n3\n4\n5",
+    "hints": ["Which direction is the counter moving?", "It must move toward 6 to make the condition false."],
+    "fix": "public class Main {\n    public static void main(String[] args) {\n        for (int i = 1; i <= 5; i++) {\n            System.out.println(i);\n        }\n    }\n}"
+  },
+  "best": [
+    "Prefer for-each (`for (int x : nums)`) when you do not need the index.",
+    "Keep the loop body to one job; extract a method if it grows.",
+    "Avoid changing the counter inside the body — it makes tracing much harder.",
+    "If a loop needs a comment to explain its exit condition, rewrite the condition."
+  ],
+  "tip": "A classic interview question is 'how many times does this nested loop run?'. Count outer iterations × inner iterations, then state the complexity: n × m, or O(n²) when both are n. Show the arithmetic, do not just say 'n squared'.",
+  "revision": [
+    "for = known count, while = condition-driven, do-while = at least once.",
+    "Nested loops multiply their iteration counts.",
+    "break exits the nearest loop; continue skips one iteration.",
+    "An infinite loop means the condition variable never reaches its exit value."
+  ],
+  "practice": [
+    { "title": "Sum 1 to n", "prompt": "Read n and print the sum 1 + 2 + … + n with a loop, then check it against n*(n+1)/2.", "level": "beginner", "hint": "Accumulate in an int/long; for n up to 10^9 use long or the formula." },
+    { "title": "Reverse a table", "prompt": "Print the 5 times table from 10 down to 1 using a single for loop.", "level": "beginner", "hint": "Start at 10 and decrement." },
+    { "title": "Pyramid", "prompt": "Print a centred pyramid of stars for n rows: spaces, then stars, then a newline.", "level": "intermediate", "hint": "Row r needs n-r spaces and 2r-1 stars." }
+  ],
+  "mcqs": [
+    {
+      "q": "How many times does the body run? for (int i = 0; i < 4; i++)",
+      "options": ["3", "4", "5", "Infinite"],
+      "answer": 1,
+      "explain": "i takes the values 0, 1, 2, 3 — four iterations."
+    },
+    {
+      "q": "Which loop always executes its body at least once?",
+      "options": ["for", "while", "do-while", "for-each"],
+      "answer": 2,
+      "explain": "do-while checks its condition after the body, so the first pass always happens."
+    },
+    {
+      "q": "What does continue do inside a for loop?",
+      "options": ["Exits the loop", "Skips to the update step", "Restarts the program", "Skips the whole method"],
+      "answer": 1,
+      "explain": "continue skips the remaining body and jumps to the loop's update expression."
+    }
+  ],
+  "interview": [
+    {
+      "q": "What is the time complexity of two nested loops over n items?",
+      "a": "O(n²) when the inner loop also runs up to n times, because the inner body executes n × n times. If the inner loop runs a constant number of times, the whole thing is still O(n).",
+      "followUp": "How do you make it faster? (Use a hash structure to replace the inner search, turning it into O(n) average time.)"
+    },
+    {
+      "q": "How would you break out of two nested loops?",
+      "a": "Use a labelled break (outer: for … { break outer; }), or refactor so the inner work is a method that returns a boolean. The labelled break works but is easy to misread; extraction is usually clearer.",
+      "followUp": "Why does an unlabelled break not work? (It exits only the innermost loop or switch.)"
+    }
+  ],
+  "lab": {
+    "title": "Sum of first n numbers",
+    "brief": "Read a positive integer n and print the sum 1 + 2 + … + n using a loop.",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        // TODO: loop and print the sum\n    }\n}",
+    "expected": "15",
+    "tests": [
+      { "name": "n = 5", "stdin": "5\n", "stdout": "15" },
+      { "name": "n = 1", "stdin": "1\n", "stdout": "1" },
+      { "name": "n = 100", "stdin": "100\n", "stdout": "5050" }
+    ],
+    "hints": ["Keep an int sum starting at 0.", "Use long if you test values above 65,535 — the sum grows fast."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        long sum = 0;\n        for (int i = 1; i <= n; i++) {\n            sum += i;\n        }\n        System.out.println(sum);\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Loops traced?",
+    "checks": [
+      "I can pick for, while or do-while and justify it",
+      "I can count nested-loop iterations without running the code",
+      "I have fixed an infinite loop by finding the counter that did not move"
+    ]
+  }
+}

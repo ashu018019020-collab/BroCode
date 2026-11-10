@@ -1,0 +1,180 @@
+{
+  "id": "j13",
+  "no": 13,
+  "title": "Exception Handling",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Checked/unchecked exceptions, try/catch/finally aur custom exceptions ko theek se use karna.",
+  "prereqs": ["Module 11: interfaces and abstraction"],
+  "objectives": [
+    "Tell checked exceptions from unchecked ones and Errors",
+    "Write try/catch/finally and explain the execution order",
+    "Use throw/throws and custom exceptions for domain failures",
+    "Avoid swallowing exceptions or using them for control flow"
+  ],
+  "definition": "An exception is an object describing an abnormal event. Checked exceptions must be caught or declared; unchecked exceptions (RuntimeException and subclasses) are programming errors the compiler does not force you to handle. Errors indicate serious JVM problems. finally always runs, which makes it the place for cleanup.",
+  "explain": [
+    "When a method cannot complete normally it throws an exception. The JVM unwinds the stack looking for a matching catch. If none is found, the thread terminates and prints a stack trace. Catching lets you recover, translate or add context.",
+    "Checked exceptions (IOException, SQLException) represent recoverable external failures, so the compiler requires catch or throws. Unchecked ones (NullPointerException, IllegalArgumentException, ArithmeticException) usually mean a bug or invalid input. Do not catch RuntimeException to hide a bug.",
+    "finally runs whether the try succeeded, threw or returned. try-with-resources is the modern form for anything closeable: it closes resources automatically, in reverse order, without a finally block. Custom exceptions should carry meaning and context, not just a message."
+  ],
+  "hinglish": [
+    "Jab method normally complete nahi ho sakta to exception throw hoti hai. JVM stack unwind karke matching catch dhoondta hai; na mile to thread terminate ho jaata hai. Checked exceptions (IOException) compiler handle karwata hai, unchecked (NullPointerException) bugs batati hain.",
+    "finally har haal me chalta hai — success, exception ya return. Closeable resources ke liye try-with-resources better hai: automatic close, reverse order, finally ki zaroorat nahi. Custom exception me context rakho, sirf message nahi."
+  ],
+  "analogy": "Exception handling fire drill jaisa hai: alarm (throw), nearest exit plan (catch), aur drill ke baad sab kuch band karna (finally). Agar koi exit plan nahi mila to building khali hoti hai aur poori report (stack trace) print hoti hai.",
+  "why": "Production Java fails at the boundaries: files, networks, databases and user input. Well-handled exceptions turn a crash into a clear error; poorly handled ones hide bugs for months. Spring's whole error model is built on exceptions and handlers.",
+  "syntax": [
+    {
+      "code": "try {\n    int result = 10 / divisor;\n    System.out.println(result);\n} catch (ArithmeticException e) {\n    System.out.println(\"cannot divide by zero\");\n} finally {\n    System.out.println(\"done\");\n}",
+      "note": "Catch the specific type you can handle. finally runs even when the catch returns."
+    },
+    {
+      "code": "class InsufficientBalance extends Exception {\n    InsufficientBalance(String message) { super(message); }\n}\n\nvoid withdraw(double amount) throws InsufficientBalance {\n    if (amount > balance) throw new InsufficientBalance(\"balance too low\");\n    balance -= amount;\n}",
+      "note": "A checked custom exception extends Exception; the method declares throws, so callers must handle it."
+    }
+  ],
+  "topics": [
+    {
+      "title": "What exceptions are and where they come from",
+      "body": "An exception is an object created at the failure point and thrown up the call stack. The stack trace names the exact line and the chain of calls, which is the first thing to read when debugging."
+    },
+    {
+      "title": "Errors versus exceptions",
+      "body": "Error (OutOfMemoryError, StackOverflowError) signals a JVM-level problem you generally cannot recover from. Exceptions represent conditions a program can detect; handle those, and let Errors surface."
+    },
+    {
+      "title": "Checked versus unchecked",
+      "body": "Checked: must be caught or declared (IOException, SQLException, custom checked types). Unchecked: RuntimeException subclasses (NullPointerException, IllegalArgumentException, ArithmeticException). Use checked exceptions for recoverable external failures, unchecked for programming errors."
+    },
+    {
+      "title": "try, catch, finally",
+      "body": "One try can have several catches, ordered from specific to general. finally runs on success, failure and return. Never put a return in finally — it overrides earlier returns and hides failures."
+    },
+    {
+      "title": "throw, throws and propagation",
+      "body": "throw raises an instance; throws declares what a method may raise. If a method cannot handle a checked exception, it declares it and lets the caller decide. Wrapping adds context: throw new ServiceException(\"loading user \" + id, cause)."
+    },
+    {
+      "title": "Custom exceptions and best practices",
+      "body": "Create a domain exception when callers need to distinguish a specific failure. Preserve the cause, use clear messages, and never catch and ignore. Return values or Optional are often better than exceptions for expected outcomes."
+    }
+  ],
+  "examples": [
+    {
+      "level": "intermediate",
+      "title": "Catch, finally and a clean message",
+      "code": "public class Main {\n    static int divide(int a, int b) {\n        return a / b;\n    }\n\n    public static void main(String[] args) {\n        try {\n            System.out.println(divide(10, 2));\n            System.out.println(divide(5, 0));\n            System.out.println(\"not reached\");\n        } catch (ArithmeticException e) {\n            System.out.println(\"cannot divide by zero\");\n        } finally {\n            System.out.println(\"cleanup done\");\n        }\n        System.out.println(\"program continues\");\n    }\n}",
+      "output": "5\ncannot divide by zero\ncleanup done\nprogram continues",
+      "lines": [
+        "divide(10, 2) returns 5 and prints it.",
+        "divide(5, 0) throws ArithmeticException before the next line runs.",
+        "The catch prints a clear message instead of a stack trace.",
+        "finally runs before control leaves the try, then the program continues after the block."
+      ],
+      "dryRun": ["divide(10, 2) → 5 printed", "divide(5, 0) → ArithmeticException", "Jump to catch → message printed", "finally prints cleanup done; next println runs"]
+    },
+    {
+      "level": "advanced",
+      "title": "Custom checked exception",
+      "code": "public class Main {\n    static class InsufficientBalance extends Exception {\n        InsufficientBalance(String message) { super(message); }\n    }\n\n    static double withdraw(double balance, double amount) throws InsufficientBalance {\n        if (amount <= 0) throw new IllegalArgumentException(\"amount must be positive\");\n        if (amount > balance) throw new InsufficientBalance(\"need \" + (amount - balance) + \" more\");\n        return balance - amount;\n    }\n\n    public static void main(String[] args) {\n        try {\n            System.out.println(withdraw(100, 40));\n            System.out.println(withdraw(100, 150));\n        } catch (InsufficientBalance e) {\n            System.out.println(\"Declined: \" + e.getMessage());\n        } catch (IllegalArgumentException e) {\n            System.out.println(\"Invalid: \" + e.getMessage());\n        }\n    }\n}",
+      "output": "60.0\nDeclined: need 50.0 more",
+      "lines": [
+        "InsufficientBalance extends Exception, so it is checked and must be declared.",
+        "withdraw declares throws, making the failure part of its contract.",
+        "The first call succeeds and prints 60.0.",
+        "The second throws the checked exception, caught by the specific catch block."
+      ],
+      "dryRun": ["withdraw(100, 40): amount <= balance → returns 60.0", "withdraw(100, 150): 150 > 100 → throws InsufficientBalance", "catch message: need 50.0 more", "Second catch is not used"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "try { risky(); } catch (Exception e) { }",
+      "right": "try { risky(); } catch (IOException e) { log and handle }",
+      "why": "Catching Exception and doing nothing hides every failure, including bugs. Catch what you can handle and keep the cause."
+    },
+    {
+      "wrong": "try { read(); } catch (IOException e) { throw new RuntimeException(e.getMessage()); }",
+      "right": "catch (IOException e) { throw new UncheckedIOException(\"reading config\", e); }",
+      "why": "Dropping the cause loses the stack trace that explains why it failed. Always pass the cause."
+    }
+  ],
+  "debug": {
+    "brief": "This program should print 'bad number' for non-numeric input, but it crashes. Catch the right exception.",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        String text = \"abc\";\n        try {\n            System.out.println(Integer.parseInt(text));\n        } catch (ArithmeticException e) {\n            System.out.println(\"bad number\");\n        }\n    }\n}",
+    "expected": "bad number",
+    "hints": ["What does Integer.parseInt throw for non-numeric text?", "It is a NumberFormatException, a RuntimeException."],
+    "fix": "public class Main {\n    public static void main(String[] args) {\n        String text = \"abc\";\n        try {\n            System.out.println(Integer.parseInt(text));\n        } catch (NumberFormatException e) {\n            System.out.println(\"bad number\");\n        }\n    }\n}"
+  },
+  "best": [
+    "Catch the most specific exception you can actually handle.",
+    "Never swallow: log with context or translate with the cause attached.",
+    "Use try-with-resources for files, streams and connections.",
+    "Do not use exceptions for ordinary control flow; validate first."
+  ],
+  "tip": "A frequent question is 'checked vs unchecked — when do you create which?'. Answer with recoverability: a caller can plausibly recover from a checked failure (retry, ask for another file); an unchecked exception signals a programming error the caller cannot fix.",
+  "revision": [
+    "Checked must be caught/declared; unchecked signal bugs.",
+    "finally always runs; try-with-resources closes for you.",
+    "throw raises, throws declares, and the cause must be preserved.",
+    "Catch specific types; never leave an empty catch block."
+  ],
+  "practice": [
+    { "title": "Safe parse", "prompt": "Read a string and print its integer value, or 'not a number' on failure.", "level": "beginner", "hint": "Catch NumberFormatException around parseInt." },
+    { "title": "Custom age check", "prompt": "Throw an InvalidAgeException (checked) for age < 0 and handle it in main.", "level": "intermediate", "hint": "Extend Exception and declare throws." },
+    { "title": "Resource cleanup", "prompt": "Write a class implementing AutoCloseable and show that try-with-resources closes it even after an exception.", "level": "advanced", "hint": "close() prints a line; throw inside try to prove it still runs." }
+  ],
+  "mcqs": [
+    {
+      "q": "Which exception is unchecked?",
+      "options": ["IOException", "SQLException", "NullPointerException", "FileNotFoundException"],
+      "answer": 2,
+      "explain": "NullPointerException extends RuntimeException, so it is unchecked."
+    },
+    {
+      "q": "When does finally NOT run?",
+      "options": ["After a return", "After a caught exception", "When the JVM exits via System.exit", "Always runs"],
+      "answer": 2,
+      "explain": "System.exit terminates the JVM before finally blocks complete."
+    },
+    {
+      "q": "What does throws declare?",
+      "options": ["That a method may raise a checked exception", "That an exception was thrown here", "A try block", "A custom error"],
+      "answer": 0,
+      "explain": "throws is part of the method contract; throw actually raises an instance."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Difference between throw and throws?",
+      "a": "throw raises an exception object at a point in the code. throws is a method declaration listing the checked exceptions it may propagate, so callers know what they must handle.",
+      "followUp": "Can you throw a checked exception without declaring it? (Not out of the method — it must be caught locally or declared.)"
+    },
+    {
+      "q": "Why is try-with-resources better than finally?",
+      "a": "It closes AutoCloseable resources automatically, in reverse order, even when the body throws, and it suppresses secondary close exceptions instead of losing the original. There is no risk of forgetting the null check or the close call.",
+      "followUp": "What happens if close() throws? (It is attached as a suppressed exception to the primary one.)"
+    }
+  ],
+  "lab": {
+    "title": "Safe division",
+    "brief": "Read two integers. Print a / b. If b is zero, print 'cannot divide by zero' instead of crashing.",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        // TODO: print a / b, or the message when b is 0\n    }\n}",
+    "expected": "5",
+    "tests": [
+      { "name": "10 / 2", "stdin": "10 2\n", "stdout": "5" },
+      { "name": "5 / 0", "stdin": "5 0\n", "stdout": "cannot divide by zero" }
+    ],
+    "hints": ["Wrap the division in try/catch ArithmeticException.", "You may also check b == 0 first — say which approach you chose and why."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        try {\n            System.out.println(a / b);\n        } catch (ArithmeticException e) {\n            System.out.println(\"cannot divide by zero\");\n        }\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Failures handled, not hidden?",
+    "checks": [
+      "I can classify an exception as checked or unchecked",
+      "I know exactly when finally runs",
+      "My catch blocks keep the original cause and a useful message"
+    ]
+  }
+}

@@ -16,6 +16,8 @@ import { useBankManifest, QUESTION_TYPES, TYPE_LABEL } from '../../core/data/que
 import { useCAssessments, useCIndex, useCLabs } from '../../core/data/ccourse';
 import { cQuizTally } from '../../core/learning/ccourse';
 import { CLogo } from '../c-programming/CLogo';
+import { JLogo } from '../java-programming/JLogo';
+import { useJIndex } from '../../core/data/jcourse';
 import { SubjectLogo } from '../../components/shared/SubjectLogo';
 import type { QuestionType } from '../../core/data/schema';
 import { bankAccuracyBySection } from '../../core/assessment/accuracy';
@@ -75,6 +77,7 @@ export default function PracticeHub() {
    * own mark and its own box here instead of being squeezed into a track range it does not have.
    */
   const cIndex = useCIndex();
+  const jIndex = useJIndex();
   const cSets = useCAssessments();
   const cLabs = useCLabs();
   const cModules = cIndex?.modules ?? [];
@@ -219,6 +222,16 @@ export default function PracticeHub() {
             <span>
               {cIndex ? `${cAnswered}/${cMcqs} MCQs answered · ${cModules.length} modules` : '…'}
               {cLabModules > 0 ? ` · ${cLabModules} lab modules` : ''}
+            </span>
+          </span>
+        </Link>
+        {/* The Java course, with its real mark and published counts. */}
+        <Link to="/java?tab=tests" className="tile tech" data-agent-action="course:java">
+          <span className="ic"><JLogo size={32} /></span>
+          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+            <b>Java Programming</b>
+            <span>
+              {jIndex ? `${jIndex.stats.mcqs} MCQs · ${jIndex.stats.coding} coding Qs · ${jIndex.stats.modules} modules` : '…'}
             </span>
           </span>
         </Link>

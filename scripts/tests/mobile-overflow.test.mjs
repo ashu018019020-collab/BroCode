@@ -170,6 +170,64 @@ test('mobile overflow: a stylesheet minimum wider than the budget is only for so
   assert.match(flat, /\.course-continue \{ min-width: 0;[^}]*max-width: 100%/, 'the course strip card must be released below 780px');
 });
 
+/**
+ * The Java course at phone widths.
+ *
+ * The course is its own workspace (a source textarea, compiler/output blocks and a ten-tab section
+ * bar), so it gets its own checks instead of relying on the generic component scan alone. Both
+ * budgets are real: 320px is the narrowest viewport the product supports, 390px is the common small
+ * phone, and each is what is LEFT after the shell's gutter and the card's padding.
+ */
+const JAVA_DIR = path.join(ROOT, 'src', 'features', 'java-programming');
+const BUDGET_390 = 390 - CONTENT_GUTTER * 2 - CARD_PADDING * 2; // 342
+
+test('mobile overflow: Java notebook, code blocks and section tabs fit 320px and 390px', () => {
+  const offenders = [];
+  for (const file of walk(JAVA_DIR)) {
+    const source = fs.readFileSync(file, 'utf8');
+    const relative = path.relative(ROOT, file).split(path.sep).join('/');
+    for (const match of source.matchAll(/\b(minWidth|width)\s*:\s*(\d+)\b/g)) {
+      const value = Number(match[2]);
+      if (value > BUDGET_390) {
+        offenders.push(`${relative}:${lineOf(source, match.index)} — ${match[1]}: ${value} is wider than the ${BUDGET_390}px a 390px phone gives its content`);
+      } else if (value > BUDGET) {
+        offenders.push(`${relative}:${lineOf(source, match.index)} — ${match[1]}: ${value} is wider than the ${BUDGET}px a 320px phone gives its content`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `A fixed width in the Java course cannot shrink, so the page scrolls sideways on a small phone. ` +
+      `Clamp it with a string such as min(<n>px, 100%) or use 100%:\n${offenders.join('\n')}`,
+  );
+
+  const notebook = read('src/features/java-programming/JNotebook.tsx');
+  const lesson = read('src/features/java-programming/JLessonPage.tsx');
+  const hub = read('src/features/java-programming/JCoursePage.tsx');
+  const css = readCss().replace(/\s+/g, ' ');
+
+  // The notebook is a bounded, full-width box; its compiler and output blocks scroll themselves.
+  assert.match(notebook, /className="j-notebook"/, 'the Java notebook needs its containment class');
+  assert.match(notebook, /aria-label="Java source code"/, 'the Java source editor must stay labelled');
+  const notebookPres = notebook.match(/<pre\b/g) ?? [];
+  assert.ok(notebookPres.length >= 2, `compiler and output blocks must be <pre> (found ${notebookPres.length})`);
+
+  // Every lesson code block carries the Java scroller class, and the tab bar keeps all ten tabs.
+  assert.match(lesson, /className="c-code j-code"/, 'Java lesson code blocks need the j-code scroller');
+  assert.match(hub, /className="row j-tabs"/, 'the Java hub tab bar needs its containing class');
+
+  const rules = css;
+  assert.match(rules, /\.j-notebook, \.j-code, \.j-tabs \{ min-width: 0; max-width: 100%; \}/);
+  assert.match(rules, /\.j-notebook pre, \.j-code pre \{ max-width: 100%; overflow: auto; overscroll-behavior-x: contain; \}/);
+  assert.match(rules, /\.j-tabs \{ flex-wrap: wrap; \}/);
+  assert.match(
+    rules,
+    /@media \(max-width: 430px\) \{ \.j-notebook pre, \.j-code pre \{ padding: 8px; font-size: 11px; \} \.j-tabs \.btn \{ min-width: 0; \} \}/,
+    'the 390px breakpoint must relax Java code padding and tab buttons',
+  );
+});
+
 test('mobile: the document is the single scroll container and the last row clears the bottom nav', () => {
   const flat = readCss().replace(/\s+/g, ' ');
   /*

@@ -1,0 +1,104 @@
+{
+  "sets": [
+    {"id":"jset-j01","module":"j01","title":"Java Introduction checkpoint","questions":[
+      {"q":"Which component actually executes Java bytecode?","options":["JVM","JDK","javac","JRE installer"],"answer":0,"explain":"The JVM loads and executes bytecode; the JDK adds tools such as javac."},
+      {"q":"What does javac produce from a .java file?","options":[".class bytecode","A native .exe","An interpreted script","A JAR automatically"],"answer":0,"explain":"javac compiles source to platform-independent .class bytecode."},
+      {"q":"Which signature is a valid entry point?","options":["public static void main(String[] args)","public void main()","static int main()","public main(String args)"],"answer":0,"explain":"The launcher looks for public static void main with a String[] parameter."},
+      {"q":"Java is best described as…","options":["Compiled to bytecode, then JIT-compiled by the JVM","Purely interpreted like a shell script","Compiled directly to machine code by javac","Runs only inside a browser"],"answer":0,"explain":"Source compiles to bytecode, which the JVM interprets and JIT-compiles."}]},
+    {"id":"jset-j02","module":"j02","title":"Java Fundamentals checkpoint","questions":[
+      {"q":"What is the value of 7 / 2 in Java?","options":["3","3.5","4","3.0"],"answer":0,"explain":"int / int is integer division; the fraction is discarded."},
+      {"q":"Which type holds a single Unicode character?","options":["char","String","byte","char[]"],"answer":0,"explain":"char is a 16-bit unsigned primitive for one character."},
+      {"q":"What does (int) 9.99 produce?","options":["9","10","9.99","A compile error"],"answer":0,"explain":"A narrowing cast to int truncates toward zero."},
+      {"q":"Which declaration creates a constant?","options":["final int MAX = 10;","static int MAX = 10;","const int MAX = 10;","int final MAX = 10;"],"answer":0,"explain":"final prevents reassignment; const is not a Java keyword."}]},
+    {"id":"jset-j03","module":"j03","title":"Strings checkpoint","questions":[
+      {"q":"What does \"java\".substring(1, 3) return?","options":["av","jav","va","ava"],"answer":0,"explain":"The end index is exclusive, so characters 1 and 2 are returned."},
+      {"q":"Why does new String(\"java\") == \"java\" evaluate to false?","options":["== compares references and new String creates a distinct object","String is immutable","The literal is null","equals was overridden"],"answer":0,"explain":"== compares references; equals compares content."},
+      {"q":"Which is the mutable, non-synchronized string builder?","options":["StringBuilder","StringBuffer","String","CharBuffer"],"answer":0,"explain":"StringBuilder is mutable and unsynchronized; StringBuffer is synchronized."},
+      {"q":"What does \"  hi \".strip() return?","options":["\"hi\"","\" hi\"","\"hi \"","\"  hi \""],"answer":0,"explain":"strip removes leading and trailing whitespace, including Unicode whitespace."}]},
+    {"id":"jset-j04","module":"j04","title":"Conditional Statements checkpoint","questions":[
+      {"q":"What is printed by int x = 5; if (x > 3) System.out.print(\"A\"); else System.out.print(\"B\");","options":["A","B","AB","Nothing"],"answer":0,"explain":"5 > 3 is true, so the if branch runs."},
+      {"q":"Which switch label avoids fall-through?","options":["case 1 ->","case 1:","case 1 =>","case 1 then"],"answer":0,"explain":"Arrow labels do not fall through; colon labels do unless you add break."},
+      {"q":"What is the result of true && false || true?","options":["true","false","Compile error","null"],"answer":0,"explain":"&& binds tighter: (true && false) || true is true."},
+      {"q":"A switch expression over an enum must be…","options":["Exhaustive","Non-generic","Synchronized","Inside a loop"],"answer":0,"explain":"Every enum constant must be covered, or a default supplied."}]},
+    {"id":"jset-j05","module":"j05","title":"Loops checkpoint","questions":[
+      {"q":"How many times does for (int i = 0; i < 5; i++) run?","options":["5","4","6","Infinite"],"answer":0,"explain":"i takes 0,1,2,3,4 — five iterations."},
+      {"q":"What does continue do?","options":["Skips to the next iteration","Exits the loop","Exits the method","Restarts the program"],"answer":0,"explain":"continue skips the rest of the body for the current iteration."},
+      {"q":"Which loop always runs its body at least once?","options":["do-while","while","for","for-each"],"answer":0,"explain":"do-while checks the condition after the body."},
+      {"q":"What usually causes an infinite while loop?","options":["The loop variable is never updated toward the exit condition","Using break","Using continue","Declaring the counter as int"],"answer":0,"explain":"Without progress, the condition stays true forever."}]},
+    {"id":"jset-j06","module":"j06","title":"Number Logic and Recursion checkpoint","questions":[
+      {"q":"Which condition identifies a prime number n > 1?","options":["No divisor from 2 to sqrt(n)","n is odd","n % 2 == 1","n has more than two factors"],"answer":0,"explain":"Testing divisors up to sqrt(n) is sufficient and efficient."},
+      {"q":"What is gcd(12, 18) using Euclid's algorithm?","options":["6","3","36","2"],"answer":0,"explain":"gcd(18,12)=gcd(12,6)=gcd(6,0)=6."},
+      {"q":"What is missing if a recursive method throws StackOverflowError?","options":["A base case","A return type","A static modifier","An import"],"answer":0,"explain":"Without a base case the recursion never stops."},
+      {"q":"Which value is an Armstrong number?","options":["153","150","123","200"],"answer":0,"explain":"1^3 + 5^3 + 3^3 = 153."}]},
+    {"id":"jset-j07","module":"j07","title":"Methods checkpoint","questions":[
+      {"q":"What is a valid overload of int add(int a, int b)?","options":["double add(double a, double b)","int add(int x, int y)","long add(int a, int b)","void add(int a, int b)"],"answer":0,"explain":"Overloading needs a different parameter list, not just a different return type."},
+      {"q":"What does a void method return?","options":["Nothing","null","0","The caller"],"answer":0,"explain":"void means no value is returned."},
+      {"q":"Can a static method use this?","options":["No","Yes","Only in main","Only with a cast"],"answer":0,"explain":"this refers to an instance, which a static context does not have."},
+      {"q":"What is the signature of a method?","options":["Name plus parameter types","Name plus return type","Return type plus body","Name only"],"answer":0,"explain":"Return type and parameter names are not part of the signature."}]},
+    {"id":"jset-j08","module":"j08","title":"Arrays checkpoint","questions":[
+      {"q":"What is the last valid index of new int[5]?","options":["4","5","0","-1"],"answer":0,"explain":"Indices run from 0 to length - 1."},
+      {"q":"How do you copy array contents?","options":["Arrays.copyOf(a, a.length)","int[] b = a","a.clone","Both Arrays.copyOf and clone copy contents"],"answer":3,"explain":"Arrays.copyOf and clone both create a new array with copied elements; plain assignment copies the reference."},
+      {"q":"Which sort is stable and O(n log n) in the worst case for objects?","options":["TimSort (Arrays.sort for objects)","Bubble sort","Selection sort","Quick sort with a fixed pivot"],"answer":0,"explain":"Arrays.sort for objects uses a stable TimSort."},
+      {"q":"In a 2D array int[][] m = new int[3][4], what is m.length?","options":["3","4","12","0"],"answer":0,"explain":"m.length is the number of rows."}]},
+    {"id":"jset-j09","module":"j09","title":"Object-Oriented Programming checkpoint","questions":[
+      {"q":"What runs when you write new Student()?","options":["The matching constructor","Only field initialisers","Nothing until a method is called","The static block only"],"answer":0,"explain":"new allocates the object and invokes the matching constructor."},
+      {"q":"Which access modifier hides a field from other classes?","options":["private","public","protected","static"],"answer":0,"explain":"private limits access to the declaring class."},
+      {"q":"What does this refer to?","options":["The current object","The superclass","The class loader","The main method"],"answer":0,"explain":"this is a reference to the instance whose method is running."},
+      {"q":"Why prefer private fields with getters?","options":["They preserve invariants and allow validation","They make code longer","They improve compilation speed","They disable inheritance"],"answer":0,"explain":"Encapsulation keeps state valid and lets the representation change."}]},
+    {"id":"jset-j10","module":"j10","title":"Inheritance and Polymorphism checkpoint","questions":[
+      {"q":"Which call is resolved at runtime?","options":["An overridden instance method","A static method","An overloaded method","A private method"],"answer":0,"explain":"Dynamic dispatch selects the override based on the actual object type."},
+      {"q":"What must a subclass constructor call when the parent has no no-arg constructor?","options":["super(...) with arguments","this() only","Nothing","The parent's static block"],"answer":0,"explain":"The subclass must invoke an existing parent constructor."},
+      {"q":"Can a final method be overridden?","options":["No","Yes, with @Override","Only in the same package","Only if it is static"],"answer":0,"explain":"final prevents overriding."},
+      {"q":"What does @Override do?","options":["Makes a signature mismatch a compile error","Overrides at runtime only","Makes the method final","Skips the parent constructor"],"answer":0,"explain":"The annotation is checked by the compiler."}]},
+    {"id":"jset-j11","module":"j11","title":"Abstraction and Interfaces checkpoint","questions":[
+      {"q":"How many interfaces can a class implement?","options":["Any number","One","Two","Only with abstract"],"answer":0,"explain":"Java allows multiple interface implementation."},
+      {"q":"What is a functional interface?","options":["An interface with exactly one abstract method","An interface with no methods","An abstract class","Any interface with a default method"],"answer":0,"explain":"One abstract method makes it a lambda target."},
+      {"q":"When is an abstract class better than an interface?","options":["When subclasses share state and partial implementation","When you need multiple inheritance of type","When you need constants only","When you need a lambda"],"answer":0,"explain":"Abstract classes can hold fields and implemented methods."},
+      {"q":"What does a default method allow?","options":["Adding behaviour to an interface without breaking implementors","Overriding Object methods","Multiple inheritance of state","Compiling without a JVM"],"answer":0,"explain":"Default methods provide an implementation that implementors inherit."}]},
+    {"id":"jset-j12","module":"j12","title":"Packages and Advanced Syntax checkpoint","questions":[
+      {"q":"What does a record generate?","options":["Constructor, accessors, equals, hashCode and toString","Only getters","A builder","A no-arg constructor"],"answer":0,"explain":"Records generate the canonical members for their components."},
+      {"q":"What does sealed permit?","options":["Only listed types may extend or implement","Any class may extend","The class cannot be instantiated","Fields become final"],"answer":0,"explain":"Sealed restricts the subtype hierarchy."},
+      {"q":"Which retention policy keeps an annotation available at runtime?","options":["RetentionPolicy.RUNTIME","RetentionPolicy.CLASS","RetentionPolicy.SOURCE","RetentionPolicy.DEFAULT"],"answer":0,"explain":"Reflection reads only RUNTIME annotations."},
+      {"q":"What is an enum constant actually?","options":["A public static final instance of the enum type","An int constant","A string literal","A class loader"],"answer":0,"explain":"Each constant is a singleton instance of the enum."}]},
+    {"id":"jset-j13","module":"j13","title":"Exception Handling checkpoint","questions":[
+      {"q":"Which exception is checked?","options":["IOException","NullPointerException","IllegalArgumentException","ArithmeticException"],"answer":0,"explain":"IOException extends Exception but not RuntimeException."},
+      {"q":"When does finally run?","options":["Always, after try and catch","Only on success","Only on failure","Only with a return"],"answer":0,"explain":"finally runs whether or not an exception occurred."},
+      {"q":"What should a catch block avoid?","options":["Swallowing the exception silently","Logging with context","Rethrowing a wrapped exception","Using try-with-resources"],"answer":0,"explain":"Silent catches hide failures."},
+      {"q":"What does try-with-resources require?","options":["AutoCloseable resources","Checked exceptions only","A finally block","A static main"],"answer":0,"explain":"Declared resources must implement AutoCloseable."}]},
+    {"id":"jset-j14","module":"j14","title":"Collection Framework checkpoint","questions":[
+      {"q":"Which collection keeps keys sorted?","options":["TreeMap","HashMap","LinkedHashMap","IdentityHashMap"],"answer":0,"explain":"TreeMap orders keys by their natural order or a Comparator."},
+      {"q":"What is the average lookup complexity of HashMap?","options":["O(1)","O(log n)","O(n)","O(n log n)"],"answer":0,"explain":"Hashing gives constant-time average lookup."},
+      {"q":"Which Set preserves insertion order?","options":["LinkedHashSet","HashSet","TreeSet","EnumSet"],"answer":0,"explain":"LinkedHashSet maintains insertion order."},
+      {"q":"Which interface should you use for a FIFO queue?","options":["Deque","List","Set","Map"],"answer":0,"explain":"Deque supports addLast/removeFirst queue operations."}]},
+    {"id":"jset-j15","module":"j15","title":"Generics and Wrappers checkpoint","questions":[
+      {"q":"What does List<? extends Number> allow?","options":["Reading Number values","Adding any Number","Adding Integer values","Adding null only"],"answer":0,"explain":"A extends wildcard is a producer: you can read but not add (except null)."},
+      {"q":"Why can't you create new T()?","options":["Type erasure removes T at runtime","Generics are primitives","Constructors are private","T is always abstract"],"answer":0,"explain":"The runtime type parameter is erased."},
+      {"q":"What happens when you unbox a null Integer?","options":["NullPointerException","It becomes 0","It becomes -1","A compile error"],"answer":0,"explain":"intValue() on null throws NPE."},
+      {"q":"Which is true about wrapper cache values?","options":["Integer caches -128..127","All Integers are cached","Doubles are cached","Caching is disabled by default"],"answer":0,"explain":"Integer.valueOf caches the small range."}]},
+    {"id":"jset-j16","module":"j16","title":"File Handling and I/O checkpoint","questions":[
+      {"q":"Which class reads text efficiently line by line?","options":["BufferedReader","FileOutputStream","RandomAccessFile","PrintStream"],"answer":0,"explain":"BufferedReader buffers characters and offers readLine."},
+      {"q":"What does Files.readString do?","options":["Reads the whole file into a String","Reads one line","Writes a file","Lists a directory"],"answer":0,"explain":"It is a convenience method for small files."},
+      {"q":"What is the risk of default Java serialization?","options":["Fragile compatibility and deserialization attacks","It is too fast","It cannot write bytes","It requires NIO"],"answer":0,"explain":"Serialized forms are brittle and unsafe for untrusted input."},
+      {"q":"Which construct closes a file automatically?","options":["try-with-resources","A while loop","A static block","A finally without close"],"answer":0,"explain":"try-with-resources calls close on AutoCloseable resources."}]},
+    {"id":"jset-j17","module":"j17","title":"Functional Java checkpoint","questions":[
+      {"q":"Which is a terminal operation?","options":["collect","filter","map","sorted"],"answer":0,"explain":"collect drives the pipeline and produces a result."},
+      {"q":"What does map do?","options":["Transforms each element one-to-one","Flattens nested streams","Filters elements","Sorts elements"],"answer":0,"explain":"map applies a function to each element."},
+      {"q":"Why can't a stream be reused?","options":["It is a one-shot pipeline","It is immutable","It is synchronized","It holds the collection lock"],"answer":0,"explain":"After a terminal operation the stream is consumed."},
+      {"q":"What is the safe way to handle an absent Optional?","options":["orElse / orElseGet","get() without a check","Null check on the Optional reference","Casting to null"],"answer":0,"explain":"orElse supplies a fallback instead of throwing."}]},
+    {"id":"jset-j18","module":"j18","title":"Multithreading checkpoint","questions":[
+      {"q":"Which type makes an increment atomic?","options":["AtomicInteger","volatile int","int with synchronized getter","static int"],"answer":0,"explain":"AtomicInteger provides atomic read-modify-write operations."},
+      {"q":"What does volatile guarantee?","options":["Visibility and ordering for one variable","Atomicity of count++","Mutual exclusion","Thread creation"],"answer":0,"explain":"volatile does not make compound operations atomic."},
+      {"q":"Why must an ExecutorService be shut down?","options":["Pool threads are non-daemon and keep the JVM alive","It frees the heap","It closes files","It commits transactions"],"answer":0,"explain":"Without shutdown the application may never exit."},
+      {"q":"How do you prevent a lock-order deadlock?","options":["Acquire locks in one global order","Use more threads","Use volatile everywhere","Increase the thread pool size"],"answer":0,"explain":"A consistent order removes the circular wait."}]},
+    {"id":"jset-j19","module":"j19","title":"Database and Backend checkpoint","questions":[
+      {"q":"Which JDBC type prevents SQL injection?","options":["PreparedStatement","Statement","CallableStatement with concatenation","DriverManager"],"answer":0,"explain":"PreparedStatement binds parameters instead of concatenating SQL."},
+      {"q":"What does a Connection transaction require?","options":["setAutoCommit(false), then commit or rollback","Only executeQuery","A new DriverManager call per statement","A static block"],"answer":0,"explain":"Disabling auto-commit groups statements into one transaction."},
+      {"q":"What is dependency injection?","options":["Supplying collaborators from outside instead of constructing them inside","Importing a package","Compiling with Maven","Generating SQL"],"answer":0,"explain":"DI inverts control of object creation, improving testability."},
+      {"q":"Which HTTP status means the request was invalid?","options":["400","200","302","500"],"answer":0,"explain":"400 Bad Request signals client-side validation failure."}]},
+    {"id":"jset-j20","module":"j20","title":"Professional Java checkpoint","questions":[
+      {"q":"What does the JIT do?","options":["Compiles hot bytecode to native code","Interprets every line once","Deletes unused classes","Manages database connections"],"answer":0,"explain":"The JIT profiles and optimises hot code paths."},
+      {"q":"Which is a memory-leak cause in Java?","options":["A static collection that never evicts","Using ArrayList","Calling System.gc()","Declaring a local variable"],"answer":0,"explain":"Unbounded reachable collections keep objects alive."},
+      {"q":"Which pattern lets you swap algorithms at runtime?","options":["Strategy","Singleton","Builder","Adapter"],"answer":0,"explain":"Strategy encapsulates interchangeable algorithms behind an interface."},
+      {"q":"What should a unit test avoid?","options":["Real network and database dependencies","Assertions","Mocking","Descriptive names"],"answer":0,"explain":"Unit tests isolate the unit under test with test doubles."}]}
+  ]
+}

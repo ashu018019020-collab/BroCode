@@ -1,0 +1,188 @@
+{
+  "id": "j20",
+  "no": 20,
+  "title": "Professional Java and Career Preparation",
+  "level": "advanced",
+  "hours": 9,
+  "goal": "JVM internals, design patterns, clean code, testing aur interview readiness.",
+  "prereqs": ["Module 18: concurrency", "Module 19: database and backend"],
+  "objectives": [
+    "Explain stack, heap, garbage collection and class loading at a working level",
+    "Apply singleton, factory, builder and strategy where they fit",
+    "Write a unit-testable class and describe how JUnit and Mockito are used",
+    "Prepare a structured answer for a Java developer interview"
+  ],
+  "definition": "Professional Java is the discipline around the language: understanding how the JVM manages memory, choosing patterns that reduce coupling, writing clean testable code, and using the build, test and version-control tools a team shares.",
+  "explain": [
+    "The JVM stores each thread's call frames on its stack and objects on the heap. The garbage collector reclaims objects that are no longer reachable; you influence it by allocating less and releasing references, not by calling System.gc(). Class loading happens once per class loader: load, link, initialise.",
+    "Design patterns are named solutions to recurring design problems. Singleton gives one instance, Factory hides construction, Builder tames many constructor parameters, Strategy swaps an algorithm behind an interface. Used deliberately they reduce coupling; used everywhere they add indirection.",
+    "Clean code and tests are what make a codebase maintainable: small methods with intention-revealing names, no duplicated rules, dependencies injected so a test can substitute them. JUnit runs @Test methods with assertions; Mockito supplies controlled fake collaborators. Git records why a change happened, not just what changed."
+  ],
+  "hinglish": [
+    "JVM har thread ke call frames stack par aur objects heap par rakhta hai. GC un objects ko hataata hai jinka koi reachable reference nahi bacha — aap allocation kam karke aur references chhod kar madad karte ho, System.gc() se nahi. Class loading load → link → initialise ek baar hoti hai.",
+    "Design patterns recurring problems ke named solutions hain: Singleton, Factory, Builder, Strategy. Soch-samajh kar use karo, warna indirection badh jaata hai. Clean code + tests maintainability dete hain: chhote methods, clear names, injected dependencies, JUnit assertions aur Mockito fakes."
+  ],
+  "analogy": "JVM ek factory hai: stack har worker ka kaam ka tray hai, heap central store hai, aur GC wo saaman hataata hai jise koi worker use nahi kar raha. Design patterns factory ke standard procedures hain — har kaam ke liye ek proven tarika.",
+  "why": "Interviews for Java roles test JVM memory, GC, patterns and testing because those decide whether code survives production. The capstone and your GitHub projects are the evidence recruiters actually read.",
+  "syntax": [
+    {
+      "code": "final class Config {\n    private static final Config INSTANCE = new Config();\n    private Config() { }\n    static Config get() { return INSTANCE; }\n}\n\n// Builder for many optional fields\nrecord User(String name, int age, String city) {\n    static Builder builder(String name) { return new Builder(name); }\n    static final class Builder {\n        private final String name;\n        private int age;\n        private String city = \"unknown\";\n        Builder(String name) { this.name = name; }\n        Builder age(int age) { this.age = age; return this; }\n        Builder city(String city) { this.city = city; return this; }\n        User build() { return new User(name, age, city); }\n    }\n}",
+      "note": "A private constructor plus a static instance is the simplest thread-safe singleton. A builder keeps construction readable when there are many optional values."
+    },
+    {
+      "code": "interface Discount { double apply(double amount); }\n\nstatic double checkout(double amount, Discount discount) {\n    return discount.apply(amount);\n}\n\nSystem.out.println(checkout(1000, a -> a * 0.9));\nSystem.out.println(checkout(1000, a -> a - 100));",
+      "note": "Strategy: the algorithm is a parameter, so new rules do not edit checkout(). Lambdas make small strategies concise."
+    }
+  ],
+  "topics": [
+    {
+      "title": "JVM internals: stack, heap and GC",
+      "body": "Each thread has a stack of frames; objects and arrays live on the shared heap. Young generation collects short-lived objects cheaply; old generation holds survivors. G1 is the default collector on modern JDKs. Memory leaks in Java are unintended strong references, not forgotten frees."
+    },
+    {
+      "title": "Class loading and JIT",
+      "body": "Classes are loaded by bootstrap, platform and application class loaders, then linked (verify, prepare, resolve) and initialised. The JIT compiles hot bytecode to native code; that is why a warmed-up JVM is faster than its first run."
+    },
+    {
+      "title": "Performance and memory leaks",
+      "body": "Measure with a profiler before optimising. Common leaks: static collections that grow forever, listeners never removed, ThreadLocals in pooled threads, caches without eviction. Prefer bounded caches and explicit lifecycle."
+    },
+    {
+      "title": "Design patterns",
+      "body": "Creational: singleton, factory, builder. Structural: adapter, decorator, facade. Behavioural: strategy, observer, template method. Know one real use for each rather than reciting definitions."
+    },
+    {
+      "title": "SOLID and clean code",
+      "body": "Small classes with one reason to change, extension without modification, substitutable subtypes, small interfaces, dependencies on abstractions. Names should say intent; comments should explain why, not what."
+    },
+    {
+      "title": "Unit testing with JUnit and Mockito",
+      "body": "JUnit 5 runs @Test methods; assertEquals/assertThrows express the expectation. Mockito creates fakes and verifies interactions. Test behaviour through public APIs and keep tests fast and independent."
+    },
+    {
+      "title": "Git, debugging and architecture",
+      "body": "Commit small, explain why, review diffs. Debug with breakpoints, watches and conditional breakpoints before adding prints. Architecture is layering plus dependency direction: HTTP at the edge, rules in services, persistence in repositories."
+    },
+    {
+      "title": "Interview preparation and the capstone",
+      "body": "Prepare a two-minute project story: problem, design, trade-off, result. Revise collections complexity, equals/hashCode, exceptions, threads and SQL. The capstone must run, have a README and tests, and you must be able to defend every choice."
+    }
+  ],
+  "examples": [
+    {
+      "level": "advanced",
+      "title": "Singleton and Builder together",
+      "code": "public class Main {\n    static final class Config {\n        private static final Config INSTANCE = new Config();\n        private Config() { }\n        static Config get() { return INSTANCE; }\n        String env() { return \"prod\"; }\n    }\n\n    record User(String name, int age, String city) {\n        static Builder builder(String name) { return new Builder(name); }\n        static final class Builder {\n            private final String name;\n            private int age;\n            private String city = \"unknown\";\n            Builder(String name) { this.name = name; }\n            Builder age(int age) { this.age = age; return this; }\n            Builder city(String city) { this.city = city; return this; }\n            User build() { return new User(name, age, city); }\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(Config.get() == Config.get());\n        User u = User.builder(\"Aman\").age(21).build();\n        System.out.println(u);\n    }\n}",
+      "output": "true\nUser[name=Aman, age=21, city=unknown]",
+      "lines": [
+        "Config holds one static instance and a private constructor, so nobody can create a second.",
+        "Two get() calls return the same reference, which is what == confirms.",
+        "The builder starts with a required name and defaults city to unknown.",
+        "build() creates an immutable record, printed with its generated toString."
+      ],
+      "dryRun": ["Config.get() called twice → same INSTANCE → true", "builder(\"Aman\") → name=Aman", ".age(21) → age=21; city stays unknown", "build() → User[name=Aman, age=21, city=unknown]"]
+    },
+    {
+      "level": "advanced",
+      "title": "Strategy with lambdas, and a real assertion",
+      "code": "import java.util.function.DoubleUnaryOperator;\n\npublic class Main {\n    static double checkout(double amount, DoubleUnaryOperator discount) {\n        if (amount < 0) throw new IllegalArgumentException(\"amount\");\n        return discount.applyAsDouble(amount);\n    }\n\n    public static void main(String[] args) {\n        System.out.println(checkout(1000, a -> a * 0.9));\n        System.out.println(checkout(1000, a -> a - 100));\n        try {\n            checkout(-1, a -> a);\n        } catch (IllegalArgumentException e) {\n            System.out.println(\"rejected: \" + e.getMessage());\n        }\n    }\n}",
+      "output": "900.0\n900.0\nrejected: amount",
+      "lines": [
+        "checkout takes a discount function instead of hardcoding rules.",
+        "The 10% strategy returns 900.0.",
+        "The flat-100 strategy also returns 900.0 — different rules, same interface.",
+        "Negative amounts fail fast before the strategy runs."
+      ],
+      "dryRun": ["checkout(1000, *0.9) = 900.0", "checkout(1000, -100) = 900.0", "checkout(-1) → IllegalArgumentException", "catch prints rejected: amount"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "class Config { public static Config instance = new Config(); }",
+      "right": "private static final Config INSTANCE; private Config() { }",
+      "why": "A public mutable instance lets any code replace it, and a public constructor defeats the single-instance rule entirely."
+    },
+    {
+      "wrong": "static List<Order> cache = new ArrayList<>(); // adds forever",
+      "right": "A bounded cache with eviction, or no static cache at all.",
+      "why": "A static collection is reachable forever, so the GC cannot reclaim it — the classic Java memory leak."
+    }
+  ],
+  "debug": {
+    "brief": "This singleton can be created more than once. Fix it so get() always returns the same instance.",
+    "code": "public class Main {\n    static class Config {\n        Config() { }\n        static Config get() { return new Config(); }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(Config.get() == Config.get() ? \"same\" : \"different\");\n    }\n}",
+    "expected": "same",
+    "hints": ["get() creates a new object on every call.", "Store one instance statically and make the constructor private."],
+    "fix": "public class Main {\n    static class Config {\n        private static final Config INSTANCE = new Config();\n        private Config() { }\n        static Config get() { return INSTANCE; }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(Config.get() == Config.get() ? \"same\" : \"different\");\n    }\n}"
+  },
+  "best": [
+    "Name things for what they mean, not how they are stored.",
+    "Inject dependencies so behaviour can be tested without a database or network.",
+    "Use a pattern only when the problem it solves is actually present.",
+    "Measure performance with a profiler; do not guess."
+  ],
+  "tip": "Close the interview with a project you can defend: state the problem, the design, one trade-off you made, and the result. Interviewers remember a clear trade-off story far longer than a list of technologies.",
+  "revision": [
+    "Stack per thread, heap shared, GC reclaims unreachable objects.",
+    "Patterns: singleton, factory, builder, strategy — know a real use for each.",
+    "JUnit asserts behaviour; Mockito supplies controlled collaborators.",
+    "A defensible capstone beats ten unfinished tutorials."
+  ],
+  "practice": [
+    { "title": "Factory", "prompt": "Write a NotificationFactory that returns Email or Sms implementations from a string, with an unknown-type fallback.", "level": "advanced", "hint": "Return the interface type; throw for unknown input." },
+    { "title": "Testable service", "prompt": "Refactor a service that news up a repository to accept the repository through its constructor.", "level": "advanced", "hint": "Then write a fake repository in main and assert the output." },
+    { "title": "Complexity review", "prompt": "Take one of your coding-bank solutions and state its time and space complexity with a one-line justification.", "level": "advanced", "hint": "Count loop iterations and extra storage." }
+  ],
+  "mcqs": [
+    {
+      "q": "Where do objects live in a running JVM?",
+      "options": ["Stack", "Heap", "Registers", "Class file"],
+      "answer": 1,
+      "explain": "Objects and arrays are allocated on the shared heap; frames and locals live on thread stacks."
+    },
+    {
+      "q": "Which pattern swaps an algorithm behind an interface?",
+      "options": ["Singleton", "Builder", "Strategy", "Factory"],
+      "answer": 2,
+      "explain": "Strategy encapsulates interchangeable algorithms behind a common interface."
+    },
+    {
+      "q": "What does a static collection usually cause in a long-running app?",
+      "options": ["Faster GC", "A memory leak", "A compile error", "Thread safety"],
+      "answer": 1,
+      "explain": "It stays reachable forever, so its contents cannot be collected."
+    }
+  ],
+  "interview": [
+    {
+      "q": "How does garbage collection decide what to free?",
+      "a": "It starts from GC roots (stack references, static fields, JNI references) and marks everything reachable. Unreachable objects are reclaimed; modern collectors then compact or copy survivors. You cannot force a collection, and calling System.gc() is only a hint.",
+      "followUp": "Can Java leak memory? (Yes — unintended references such as static caches, listeners or ThreadLocals keep objects reachable.)"
+    },
+    {
+      "q": "How do you unit-test a class that talks to a database?",
+      "a": "Depend on an interface (repository) and inject it. In the test, pass a fake or a Mockito mock, then assert the service's behaviour and the interactions that matter. Integration tests cover the real SQL separately.",
+      "followUp": "What should a unit test avoid? (Real network, real database, sleeps and shared mutable state.)"
+    }
+  ],
+  "lab": {
+    "title": "Discount strategy",
+    "brief": "Read a strategy (festival or none) and an amount. Print the final amount with two decimals: festival gives 10% off, none gives no change.",
+    "starter": "import java.util.*;\nimport java.util.function.DoubleUnaryOperator;\n\npublic class Main {\n    static double checkout(double amount, DoubleUnaryOperator discount) {\n        return discount.applyAsDouble(amount);\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        double amount = sc.nextDouble();\n        // TODO: choose the strategy and print with %.2f\n    }\n}",
+    "expected": "900.00",
+    "tests": [
+      { "name": "festival", "stdin": "festival 1000\n", "stdout": "900.00" },
+      { "name": "none", "stdin": "none 250\n", "stdout": "250.00" }
+    ],
+    "hints": ["Use a -> a * 0.9 for festival and a -> a for none.", "Print with System.out.printf(\"%.2f%n\", result)."],
+    "solution": "import java.util.*;\nimport java.util.function.DoubleUnaryOperator;\n\npublic class Main {\n    static double checkout(double amount, DoubleUnaryOperator discount) {\n        return discount.applyAsDouble(amount);\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        String kind = sc.next();\n        double amount = sc.nextDouble();\n        DoubleUnaryOperator discount = kind.equals(\"festival\") ? a -> a * 0.9 : a -> a;\n        System.out.printf(\"%.2f%n\", checkout(amount, discount));\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Professional baseline reached?",
+    "checks": [
+      "I can explain stack, heap and GC without hand-waving",
+      "I can name a pattern and the problem it solves",
+      "I have a capstone I can explain in two minutes"
+    ]
+  }
+}

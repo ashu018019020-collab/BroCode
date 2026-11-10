@@ -15,6 +15,8 @@ import { notebookCellsRunFor } from '../../core/learning/coverage';
 import { EXTRA_PATHS } from '../../core/learning/paths';
 import { useCLabs } from '../../core/data/ccourse';
 import { CLogo } from '../c-programming/CLogo';
+import { JLogo } from '../java-programming/JLogo';
+import { useJIndex } from '../../core/data/jcourse';
 import { SubjectLogo } from '../../components/shared/SubjectLogo';
 import {
   continueLab, courseRoutes, labSummary, labTopics, routesOfSteps, stepOfSections,
@@ -58,6 +60,7 @@ export default function LabsHub() {
 
   /** The C course runs its own labs and projects outside the eight Python/AI tracks. */
   const cLabs = useCLabs();
+  const jIndex = useJIndex();
   const cLabModules = useMemo(() => new Set(cLabs.map((l) => l.module)).size, [cLabs]);
 
   /** Every count of a notebook's progress comes from the family the Notebook Lab itself writes. */
@@ -160,6 +163,16 @@ export default function LabsHub() {
             <b>C Programming</b>
             <span>
               {cLabs.length ? `${cLabs.length} labs · ${cLabModules} modules · GCC` : '…'}
+            </span>
+          </span>
+        </Link>
+        {/* The Java course's labs: real counts from its published index. */}
+        <Link to="/java?tab=labs" className="tile tech" data-agent-action="lab:course:java">
+          <span className="ic"><JLogo size={32} /></span>
+          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+            <b>Java Programming</b>
+            <span>
+              {jIndex ? `${jIndex.stats.labs} labs · ${jIndex.stats.modules} modules · JDK 17` : '…'}
             </span>
           </span>
         </Link>

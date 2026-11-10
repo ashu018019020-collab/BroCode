@@ -333,6 +333,8 @@ export const PATH_ROUTE_ALLOWLIST: string[] = [
   '/courses',             // the 11-course hub: a list of courses, not a path card
   '/c-programming',       // the C course hub owns its own curriculum, labs and notebook
   '/c-programming/:moduleId', // one C module — owned by the C course's curriculum tab
+  '/java',                // the Java course hub owns its own curriculum, labs and notebook
+  '/java/:moduleId',      // one Java module — owned by the Java course's curriculum tab
   '/course/:slug',        // one course's step index — owned by the /courses grid
   '/course/:slug/:step',  // one step, 7 tabs — owned by its course
   '/workspace',           // the learner workspace: one course's plan, not a path card of its own

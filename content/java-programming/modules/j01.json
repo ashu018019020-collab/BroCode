@@ -1,0 +1,193 @@
+{
+  "id": "j01",
+  "no": 1,
+  "title": "Java Introduction",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Java kya hai, kaise chalta hai, aur apna pehla program compile karke chalana.",
+  "prereqs": ["Computer on karna", "Programming ka koi experience zaroori nahi"],
+  "objectives": [
+    "Explain what Java is and why bytecode makes it platform independent",
+    "Tell JDK, JRE and JVM apart and say which one you install",
+    "Write, compile and run a Java program from the command line",
+    "Read a compiler error and fix the line it names"
+  ],
+  "definition": "Java is a compiled, statically typed, object-oriented programming language. Source code (.java) is compiled by javac into bytecode (.class), which any JVM runs — so the same program works on Windows, Linux and macOS without recompiling.",
+  "explain": [
+    "A program is a list of instructions: take input, store values, calculate, print a result. In Java those instructions live inside a class, and execution starts at a method with the exact signature public static void main(String[] args).",
+    "Java is compiled but not to machine code directly. javac turns your text into bytecode, a portable instruction set. The JVM (Java Virtual Machine) translates that bytecode for the machine it is running on. That extra step is why Java is called 'write once, run anywhere'.",
+    "Java is also statically typed: every variable has a type that is checked before the program runs. The compiler catches many mistakes that a Python program would only hit at runtime, which is a big reason large backends are written in Java."
+  ],
+  "hinglish": [
+    "Simple words me: aap .java file me code likhte ho, javac usko .class bytecode me badalta hai, aur JVM us bytecode ko chalata hai. Isliye same .class file har OS par chalti hai — bas us machine par JVM hona chahiye.",
+    "Java me sab kuch class ke andar hota hai, aur program main() method se shuru hota hai. Type checking compile time par hoti hai, isliye galtiyan chalne se pehle pakdi jaati hain — bade backend systems isi wajah se Java choose karte hain."
+  ],
+  "analogy": "Java bytecode ek PDF file jaisa hai: aap ek hi PDF bhejte ho aur har device ka reader use khol leta hai. Machine code native video jaisa hai — sirf usi device par chalega. JVM har device ka PDF reader hai.",
+  "why": "Java backend engineering ki default language hai — banking, Android, big data (Kafka, Spark) aur enterprise services. Interviews me JVM, memory aur collections ke questions isi foundation se aate hain, aur Java ka OOP model baaki languages samajhne me bhi help karta hai.",
+  "syntax": [
+    {
+      "code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, BroCode!\");\n    }\n}",
+      "note": "public class Main file ka naam Main.java hona chahiye. main() entry point hai; String[] args command-line arguments rakhta hai."
+    },
+    {
+      "code": "// single-line comment\n/* block comment, multiple lines */\n\nclass Naming {\n    int studentCount = 3;      // camelCase for variables\n    static final int MAX = 10; // UPPER_SNAKE_CASE for constants\n    void printTotal() { }      // camelCase for methods\n}",
+      "note": "Classes PascalCase, methods aur variables camelCase, constants UPPER_SNAKE_CASE. Comments compiler ignore karta hai."
+    }
+  ],
+  "topics": [
+    {
+      "title": "What is Java",
+      "body": "A general-purpose, class-based, object-oriented language designed for portability, readability and long-running services. It runs on the JVM, ships a huge standard library, and has automatic garbage collection."
+    },
+    {
+      "title": "History in one minute",
+      "body": "James Gosling's team at Sun Microsystems released Java in 1995. Java 8 (2014) added lambdas and streams; Java 11, 17 and 21 are LTS releases. Java 21 is the LTS this course uses, with records, sealed classes and virtual threads — all final features, no preview flags."
+    },
+    {
+      "title": "Features that matter",
+      "body": "Platform independence through bytecode, strong static typing, object orientation, automatic memory management, built-in multithreading, a rich standard library, and a mature ecosystem (Maven, Gradle, Spring)."
+    },
+    {
+      "title": "Java vs Python vs C++ vs JavaScript",
+      "body": "Python is interpreted, dynamically typed and shorter to write; Java is compiled to bytecode, statically typed and faster for large services. C++ compiles to native code and gives manual memory control. JavaScript runs in the browser and on Node.js. Java sits between raw speed and developer safety."
+    },
+    {
+      "title": "JDK, JRE and JVM",
+      "body": "JVM runs bytecode. JRE = JVM + core libraries needed to run Java programs. JDK = JRE + compiler (javac) + tools needed to DEVELOP Java. You install the JDK; it contains everything else."
+    },
+    {
+      "title": "Bytecode and the execution pipeline",
+      "body": "Main.java --javac--> Main.class (bytecode) --JVM--> machine instructions. The JVM verifies the bytecode, loads classes, and the JIT compiler turns hot methods into native code while the program runs."
+    },
+    {
+      "title": "Install, JAVA_HOME and IDE",
+      "body": "Install an LTS JDK (Temurin 21, Oracle JDK 21 or your OS package). Set JAVA_HOME to the JDK folder and add its bin directory to PATH, then check with java -version and javac -version. Use IntelliJ IDEA Community, VS Code with the Java pack, or Eclipse."
+    },
+    {
+      "title": "main(), comments and naming",
+      "body": "public static void main(String[] args) is the entry point: public so the JVM can call it, static so no object is needed, void because it returns nothing. Comments are // and /* */. Follow camelCase, PascalCase and UPPER_SNAKE_CASE conventions so other Java developers can read your code."
+    }
+  ],
+  "examples": [
+    {
+      "level": "beginner",
+      "title": "Your first Java program",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, BroCode!\");\n        System.out.println(\"Java version: 21 LTS\");\n    }\n}",
+      "output": "Hello, BroCode!\nJava version: 21 LTS",
+      "lines": [
+        "public class Main — declares a class; the file must be named Main.java because the class is public.",
+        "public static void main(String[] args) — the JVM looks for exactly this method to start the program.",
+        "System.out.println(...) — prints text and moves to a new line; System.out is the standard output stream.",
+        "The closing braces close main() first, then the class."
+      ],
+      "dryRun": [
+        "javac Main.java compiles the file and writes Main.class.",
+        "java Main starts the JVM with Main as the entry class.",
+        "The JVM calls main(), which prints two lines and returns.",
+        "The program exits with status 0."
+      ]
+    },
+    {
+      "level": "intermediate",
+      "title": "Command-line arguments and formatted output",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        String name = args.length > 0 ? args[0] : \"learner\";\n        int modules = 20;\n        System.out.printf(\"Welcome, %s! Course has %d modules.%n\", name, modules);\n    }\n}",
+      "output": "Welcome, learner! Course has 20 modules.",
+      "lines": [
+        "args is a String array of command-line arguments; args.length is how many were given.",
+        "The ternary expression picks args[0] or a default, so the program never crashes on no arguments.",
+        "printf uses %s for text, %d for integers, and %n for a platform-correct newline.",
+        "The program prints one formatted line and exits."
+      ],
+      "dryRun": ["Run as: java Main Aman", "args = [\"Aman\"], args.length = 1, name = \"Aman\"", "%s → Aman, %d → 20, %n → newline", "Output: Welcome, Aman! Course has 20 modules."]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "A public class named Student declared in a file called student.java",
+      "right": "Put public class Student in Student.java",
+      "why": "javac requires a public class's file name to match the class name exactly, including case."
+    },
+    {
+      "wrong": "public static void main() { }",
+      "right": "public static void main(String[] args) { }",
+      "why": "Without the String[] parameter the JVM does not recognise an entry point and fails with 'Main method not found'."
+    }
+  ],
+  "debug": {
+    "brief": "This program should print a welcome line but does not compile. Find the missing piece.",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Welcome to Java\")\n    }\n}",
+    "expected": "Welcome to Java",
+    "hints": ["Read the compiler's line number. What ends every statement in Java?", "Compare the println line with the line above it."],
+    "fix": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Welcome to Java\");\n    }\n}"
+  },
+  "best": [
+    "Name the file after the public class — always.",
+    "Keep main short: parse input, call a method, print the result.",
+    "Run javac after small changes instead of writing 100 lines and then compiling.",
+    "Read compiler errors from the FIRST line: later errors are often caused by the first one."
+  ],
+  "tip": "Interviewers open with 'why is Java platform independent?' Answer with bytecode plus JVM, and add that the JVM itself is platform-specific — that second half is what separates a memorised answer from an understood one.",
+  "revision": [
+    "JDK contains JRE contains JVM; you install the JDK.",
+    "javac compiles .java to .class bytecode; java runs it on the JVM.",
+    "Every Java program starts at public static void main(String[] args).",
+    "Classes are PascalCase, methods and variables camelCase, constants UPPER_SNAKE_CASE."
+  ],
+  "practice": [
+    { "title": "Three-line introduction", "prompt": "Write a program that prints your name, your city and 'Learning Java 21' on three separate lines.", "level": "beginner", "hint": "Three System.out.println statements, each with its own semicolon." },
+    { "title": "Read the error", "prompt": "Compile a program with a missing semicolon, then copy the exact error line and explain what javac is telling you.", "level": "beginner", "hint": "javac prints file:line: error: ... — read the symbol it expected." },
+    { "title": "JVM vs JDK", "prompt": "Explain in five sentences which of JDK, JRE and JVM you need to (a) run a .class file and (b) compile a .java file.", "level": "beginner", "hint": "Running needs a JVM plus libraries; compiling needs the JDK's javac." }
+  ],
+  "mcqs": [
+    {
+      "q": "Which command compiles Main.java?",
+      "options": ["java Main.java", "javac Main.java", "jvm Main.java", "javac Main"],
+      "answer": 1,
+      "explain": "javac compiles source to bytecode (Main.class); java runs the compiled class."
+    },
+    {
+      "q": "What does the JVM actually execute?",
+      "options": ["Java source code", "Bytecode", "C++ object files", "Python bytecode"],
+      "answer": 1,
+      "explain": "javac produces bytecode in .class files; the JVM executes that bytecode."
+    },
+    {
+      "q": "Which method signature is a valid Java entry point?",
+      "options": ["public void main(String[] args)", "public static void main(String[] args)", "static int main()", "public static main(String args)"],
+      "answer": 1,
+      "explain": "It must be public, static, void, and take a String[] parameter to be recognised by the JVM."
+    }
+  ],
+  "interview": [
+    {
+      "q": "Why is Java called platform independent?",
+      "a": "Because javac compiles source to a standard bytecode, and every platform runs that bytecode through its own JVM. The bytecode does not change; only the JVM implementation differs per operating system.",
+      "followUp": "Is the JVM itself platform independent? (No — each OS has its own JVM build.)"
+    },
+    {
+      "q": "What is the difference between JDK, JRE and JVM?",
+      "a": "The JVM executes bytecode. The JRE is the JVM plus the core libraries needed to run programs. The JDK is the JRE plus development tools such as javac, javadoc and jdb. Developers install the JDK.",
+      "followUp": "Which one would a production server need? (A JRE or a JDK with a runtime image; modern deployments often ship a custom jlink runtime.)"
+    }
+  ],
+  "lab": {
+    "title": "Hello, Java Learner",
+    "brief": "Read a name from standard input and print a greeting using that name.",
+    "starter": "public class Main {\n    public static void main(String[] args) {\n        java.util.Scanner sc = new java.util.Scanner(System.in);\n        String name = sc.nextLine();\n        // TODO: print Hello, <name>!\n    }\n}",
+    "expected": "Hello, Aman!",
+    "tests": [
+      { "name": "Aman", "stdin": "Aman\n", "stdout": "Hello, Aman!" },
+      { "name": "Priya", "stdin": "Priya\n", "stdout": "Hello, Priya!" }
+    ],
+    "hints": ["Use System.out.println with string concatenation.", "The greeting needs a comma and an exclamation mark exactly."],
+    "solution": "public class Main {\n    public static void main(String[] args) {\n        java.util.Scanner sc = new java.util.Scanner(System.in);\n        String name = sc.nextLine();\n        System.out.println(\"Hello, \" + name + \"!\");\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Ready to write Java?",
+    "checks": [
+      "I can explain what bytecode is and why the JVM exists",
+      "I compiled and ran a program with javac and java",
+      "I can name the three parts of public static void main(String[] args)"
+    ]
+  }
+}

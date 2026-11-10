@@ -1,0 +1,181 @@
+{
+  "id": "j04",
+  "no": 4,
+  "title": "Conditional Statements",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "if, else-if, switch aur modern switch expressions se decisions lena.",
+  "prereqs": ["Module 02: operators", "Module 03: comparing strings"],
+  "objectives": [
+    "Write an if / else-if chain whose branches are mutually exclusive",
+    "Use a switch statement and a switch expression correctly",
+    "Choose the ternary operator for a single expression, not for side effects",
+    "Avoid fall-through and assignment-in-condition bugs"
+  ],
+  "definition": "Conditional statements choose which block runs based on a boolean expression. Java has if/else, switch statements (with explicit break or arrow labels), switch expressions that return a value, and the ternary operator for a two-way choice inside an expression.",
+  "explain": [
+    "An if statement evaluates a boolean and runs its block only when that boolean is true. else runs when it is false, and else-if chains let you test conditions in order — the first true branch wins, and the rest are skipped.",
+    "A switch compares one value against constant labels. Old-style labels need break, otherwise execution falls through into the next case. Arrow labels (case 1 -> ...) never fall through. A switch expression must produce a value on every path, which the compiler checks — a default branch or an exhaustive enum keeps it safe.",
+    "Conditions should read like a rule: check the invalid cases first and return early, then handle the happy path. That keeps nesting shallow and makes each branch obvious."
+  ],
+  "hinglish": [
+    "if me boolean expression decide karta hai kaunsa block chalega. else-if chain me pehla true branch jeetta hai aur baaki skip ho jaate hain — isliye order matter karta hai.",
+    "Switch ek value ko constant labels se compare karta hai. Purane style me break bhoolne par fall-through ho jata hai; arrow labels me fall-through nahi hota. Switch expression har path par value deta hai, aur compiler usko check karta hai."
+  ],
+  "analogy": "Conditions railway junction hain: signal (boolean) decide karta hai train kaunsi patti par jaayegi. else-if chain ek sequence of signals hai — pehla green signal milte hi train aage badh jaati hai, baaki signals dekhe hi nahi jaate.",
+  "why": "Every real program validates input and branches on state: login success or failure, grade bands, discount rules, HTTP status handling. Getting branch order and boundaries right is the difference between a correct report and a silent off-by-one.",
+  "syntax": [
+    {
+      "code": "int marks = 78;\nif (marks >= 90) {\n    System.out.println(\"A\");\n} else if (marks >= 75) {\n    System.out.println(\"B\");\n} else if (marks >= 60) {\n    System.out.println(\"C\");\n} else {\n    System.out.println(\"Work harder\");\n}",
+      "note": "Order matters: check the highest band first. Once a branch matches, the rest are skipped."
+    },
+    {
+      "code": "int day = 6;\nString type = switch (day) {\n    case 1, 2, 3, 4, 5 -> \"Weekday\";\n    case 6, 7 -> \"Weekend\";\n    default -> \"Invalid\";\n};\nSystem.out.println(type);",
+      "note": "A switch expression returns a value. Arrow labels never fall through; default makes it exhaustive for any int."
+    }
+  ],
+  "topics": [
+    {
+      "title": "if, else and else-if",
+      "body": "A boolean expression in parentheses, then a block. else-if chains are evaluated top to bottom; put the narrowest or highest-priority case first so it is not swallowed by a broader one."
+    },
+    {
+      "title": "Nested conditions and early return",
+      "body": "Nesting is sometimes necessary, but guard clauses usually read better: test the invalid case, return or throw, then continue with the normal path at the top level of the method."
+    },
+    {
+      "title": "Switch statements",
+      "body": "Switch works on int-compatible types, String, enums and (with patterns) reference types. Classic cases need break to avoid fall-through. Multiple labels can share a branch with case 1, 2, 3:."
+    },
+    {
+      "title": "Modern switch expressions",
+      "body": "case X -> value has no fall-through and returns a value. Use yield inside a block when the branch needs several statements. The compiler enforces exhaustiveness, so an enum switch with every constant needs no default."
+    },
+    {
+      "title": "Ternary and logical conditions",
+      "body": "condition ? a : b chooses one of two values. && requires both sides true and short-circuits; || needs one true and also short-circuits; ! negates. Prefer && and || over bitwise & and | in conditions."
+    },
+    {
+      "title": "Boundaries and real-world rules",
+      "body": "Write the edge values down: 59/60, 0, negative, null, empty string. Then test those with a quick main. Most conditional bugs are boundary bugs or a missing invalid-input branch."
+    }
+  ],
+  "examples": [
+    {
+      "level": "beginner",
+      "title": "Grade bands with else-if",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        int marks = 78;\n        if (marks >= 90) {\n            System.out.println(\"A\");\n        } else if (marks >= 75) {\n            System.out.println(\"B\");\n        } else if (marks >= 60) {\n            System.out.println(\"C\");\n        } else {\n            System.out.println(\"D\");\n        }\n    }\n}",
+      "output": "B",
+      "lines": [
+        "78 >= 90 is false, so the first branch is skipped.",
+        "78 >= 75 is true, so the B branch runs.",
+        "Because a branch already ran, the remaining else-if tests are skipped.",
+        "The else acts as the fallback for every lower mark."
+      ],
+      "dryRun": ["marks = 78", "78 >= 90 → false", "78 >= 75 → true → print B", "Stop the chain; output B"]
+    },
+    {
+      "level": "intermediate",
+      "title": "Switch expression over a code",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        String code = \"PRIORITY\";\n        int days = switch (code) {\n            case \"LOW\" -> 7;\n            case \"NORMAL\" -> 4;\n            case \"PRIORITY\" -> 2;\n            default -> 5;\n        };\n        System.out.println(code + \" ships in \" + days + \" days\");\n        System.out.println(days <= 2 ? \"Fast track\" : \"Standard track\");\n    }\n}",
+      "output": "PRIORITY ships in 2 days\nFast track",
+      "lines": [
+        "The switch expression matches PRIORITY and produces 2.",
+        "days receives that value; default guarantees a result for any other code.",
+        "The concatenation builds the first output line.",
+        "The ternary checks days <= 2 and prints Fast track."
+      ],
+      "dryRun": ["code = PRIORITY", "switch → 2", "days = 2", "Output line 1; 2 <= 2 → Fast track"]
+    }
+  ],
+  "mistakes": [
+    {
+      "wrong": "switch (day) { case 1: System.out.println(\"Mon\"); case 2: System.out.println(\"Tue\"); }",
+      "right": "switch (day) { case 1 -> System.out.println(\"Mon\"); case 2 -> System.out.println(\"Tue\"); }",
+      "why": "Classic cases fall through without break, so day 1 prints both lines. Arrow labels do not fall through."
+    },
+    {
+      "wrong": "if (marks >= 60) { ... } else if (marks >= 90) { ... }",
+      "right": "if (marks >= 90) { ... } else if (marks >= 60) { ... }",
+      "why": "The highest band must be tested first; otherwise a mark of 95 matches >= 60 and the A branch is unreachable."
+    }
+  ],
+  "debug": {
+    "brief": "This menu should print Only tea for choice 1, but prints both lines. Fix the switch.",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int choice = 1;\n        switch (choice) {\n            case 1:\n                System.out.println(\"Only tea\");\n            case 2:\n                System.out.println(\"Only coffee\");\n        }\n    }\n}",
+    "expected": "Only tea",
+    "hints": ["Execution falls into the next case when a case does not end.", "Add break after each classic case, or switch to arrow labels."],
+    "fix": "public class Main {\n    public static void main(String[] args) {\n        int choice = 1;\n        switch (choice) {\n            case 1:\n                System.out.println(\"Only tea\");\n                break;\n            case 2:\n                System.out.println(\"Only coffee\");\n                break;\n        }\n    }\n}"
+  },
+  "best": [
+    "Check invalid or empty input first, then the normal path (guard clauses).",
+    "Prefer switch expressions when every branch produces a value.",
+    "Keep conditions as named booleans when the expression is long.",
+    "Test boundaries explicitly: 0, 1, max, max + 1, and the exact pass mark."
+  ],
+  "tip": "Interviewers often ask for a switch on an enum with no default. The correct answer is a switch expression over all constants: the compiler proves exhaustiveness, and adding a new constant becomes a compile error instead of a silent bug.",
+  "revision": [
+    "First matching branch wins; order bands from highest to lowest.",
+    "Classic switch falls through without break; arrow labels never do.",
+    "Switch expressions return a value and must be exhaustive.",
+    "Ternary picks a value; do not hide side effects inside it."
+  ],
+  "practice": [
+    { "title": "Leap year", "prompt": "Read a year and print Leap or Not leap using the divisible-by-4/100/400 rule.", "level": "beginner", "hint": "(y % 4 == 0 && y % 100 != 0) || y % 400 == 0" },
+    { "title": "Largest of three", "prompt": "Read three integers and print the largest without using Math.max.", "level": "beginner", "hint": "Compare a against b, then the winner against c." },
+    { "title": "Menu with switch expression", "prompt": "Map codes 1-3 to Starter, Main and Dessert; print Unknown for anything else, using a switch expression.", "level": "intermediate", "hint": "case 1 -> \"Starter\"; … default -> \"Unknown\";" }
+  ],
+  "mcqs": [
+    {
+      "q": "What happens when a classic switch case has no break?",
+      "options": ["Compile error", "Execution falls through into the next case", "The switch restarts", "The default runs first"],
+      "answer": 1,
+      "explain": "Without break, control continues into the following case's statements."
+    },
+    {
+      "q": "Which operator must guard a nullable String before calling equals on it?",
+      "options": ["Put the literal first: \"x\".equals(value)", "Use == instead", "Use !value", "Nothing — equals handles null"],
+      "answer": 0,
+      "explain": "Calling value.equals(...) on null throws; a literal-first equals returns false safely."
+    },
+    {
+      "q": "A switch expression over all enum constants without a default…",
+      "options": ["fails to compile", "is exhaustive and compiles", "needs a break", "returns null"],
+      "answer": 1,
+      "explain": "The compiler verifies that every enum constant is covered, so no default is required."
+    }
+  ],
+  "interview": [
+    {
+      "q": "switch vs if-else — when do you choose which?",
+      "a": "Switch is clearer and faster for equality against a fixed set of constants (enums, codes). if-else handles ranges and compound boolean conditions. With switch expressions the compiler also checks exhaustiveness, which is a correctness win.",
+      "followUp": "What types can switch on? (int-compatible types, String, enums; patterns extend this in modern Java.)"
+    },
+    {
+      "q": "What is fall-through and when is it intentional?",
+      "a": "Fall-through is execution continuing into the next case because there is no break. It is occasionally used to share setup between several labels, but arrow labels or deliberate grouped labels are clearer and safer.",
+      "followUp": "How do arrow labels change it? (They never fall through, and each branch is its own scope.)"
+    }
+  ],
+  "lab": {
+    "title": "Grade calculator",
+    "brief": "Read marks (0-100). Print A for 90+, B for 75+, C for 60+, D for 40+, else F. Print Invalid for values outside 0-100.",
+    "starter": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int marks = sc.nextInt();\n        // TODO: print the grade, or Invalid\n    }\n}",
+    "expected": "B",
+    "tests": [
+      { "name": "78 is B", "stdin": "78\n", "stdout": "B" },
+      { "name": "91 is A", "stdin": "91\n", "stdout": "A" },
+      { "name": "negative is Invalid", "stdin": "-5\n", "stdout": "Invalid" }
+    ],
+    "hints": ["Check the invalid range before the grade bands.", "Test the highest band first."],
+    "solution": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int marks = sc.nextInt();\n        if (marks < 0 || marks > 100) {\n            System.out.println(\"Invalid\");\n        } else if (marks >= 90) {\n            System.out.println(\"A\");\n        } else if (marks >= 75) {\n            System.out.println(\"B\");\n        } else if (marks >= 60) {\n            System.out.println(\"C\");\n        } else if (marks >= 40) {\n            System.out.println(\"D\");\n        } else {\n            System.out.println(\"F\");\n        }\n    }\n}"
+  },
+  "checkpoint": {
+    "title": "Decisions clear?",
+    "checks": [
+      "I order else-if bands so no branch is unreachable",
+      "I know why classic switch needs break and arrow labels do not",
+      "I tested the boundary values, not just the happy path"
+    ]
+  }
+}
