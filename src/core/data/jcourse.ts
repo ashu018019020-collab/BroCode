@@ -8,6 +8,7 @@
  * reach it is reported as a failure.
  */
 import { useEffect, useState } from 'react';
+import { prepareJavaSource } from '../../../shared/java-source.mjs';
 import type {
   JAssessmentSet, JCodingQuestion, JCourseFile, JDebugChallenge, JIndex, JInterviewItem, JLab, JProject,
 } from '../learning/jcourse';
@@ -78,6 +79,8 @@ export interface JRunRequest {
   stdin?: string;
   args?: string;
   tests?: { name?: string; stdin?: string; stdout: string }[];
+  /** Aborting stops this tab waiting; the remote sandbox may still finish its own run. */
+  signal?: AbortSignal;
 }
 export interface JRunResult {
   status: string;
@@ -115,9 +118,11 @@ function shapeRun(body: any, expected?: string): JRunResult & { pass?: boolean }
   };
 }
 
-async function judgeRun(source: string, stdin: string, args: string): Promise<any> {
+async function judgeRun(source: string, stdin: string, args: string, signal?: AbortSignal): Promise<any> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), COMPILER_TIMEOUT_MS);
+  const abort = () => controller.abort();
+  signal?.addEventListener('abort', abort, { once: true });
   try {
     const res = await fetch(`${PUBLIC_COMPILER}/submissions?base64_encoded=false&wait=true`, {
       method: 'POST',
@@ -138,11 +143,12 @@ async function judgeRun(source: string, stdin: string, args: string): Promise<an
     return await res.json();
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('The compiler took too long. Try a smaller program.');
+      throw new Error(signal?.aborted ? 'Execution stopped.' : 'The compiler took too long. Try a smaller program.');
     }
     throw error instanceof Error ? error : new Error('The Java compiler is unreachable right now.');
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener('abort', abort);
   }
 }
 
@@ -150,13 +156,14 @@ async function runWithoutApi(req: JRunRequest): Promise<JRunResult> {
   const stdin = req.stdin ?? '';
   const args = req.args ?? '';
   const tests = req.tests ?? [];
+  const source = prepareJavaSource(req.source).source;
   if (Array.isArray((req as { files?: unknown[] }).files) && (req as { files?: unknown[] }).files?.length) {
     throw new Error('Java Code Bro compiles one file. Keep every class in the same file.');
   }
-  if (!tests.length) return shapeRun(await judgeRun(req.source, stdin, args));
+  if (!tests.length) return shapeRun(await judgeRun(source, stdin, args, req.signal));
   const results = [];
   for (const [i, test] of tests.entries()) {
-    const shaped = shapeRun(await judgeRun(req.source, test.stdin ?? stdin, args), test.stdout);
+    const shaped = shapeRun(await judgeRun(source, test.stdin ?? stdin, args, req.signal), test.stdout);
     results.push({ name: test.name || `Test ${i + 1}`, pass: shaped.pass === true, expected: test.stdout, actual: shaped.stdout });
     // The free instance asks for a little breathing room between submissions.
     if (i < tests.length - 1) await new Promise((resolve) => setTimeout(resolve, 400));
@@ -171,11 +178,16 @@ async function runWithoutApi(req: JRunRequest): Promise<JRunResult> {
 }
 
 export async function runJava(req: JRunRequest): Promise<JRunResult> {
+  const { signal } = req;
   const proxy = await fetch('api/java/execute', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
-  }).catch(() => null);
+    signal,
+  }).catch((error) => {
+    if (signal?.aborted) throw new Error('Execution stopped.');
+    return null;
+  });
   if (proxy) {
     const raw = await proxy.text().catch(() => '');
     let body: any = null;

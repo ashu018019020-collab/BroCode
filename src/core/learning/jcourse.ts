@@ -125,6 +125,10 @@ export interface JProject {
 /** The one completion rule: a module is complete when its checkpoint record exists. */
 export function checkpointKey(moduleId: string): string { return `jcourse:${moduleId}:checkpoint`; }
 export function testKey(moduleId: string): string { return `jcourse:${moduleId}:test`; }
+/** One module MCQ record, in the family `jQuizTally` counts. */
+export function jQuizKey(moduleId: string, index: number): string { return `${jQuizFamily(moduleId)}${index}`; }
+/** A self-marked reading stage (learn, interview, practice, project, defense). */
+export function jStageKey(moduleId: string, stage: string): string { return `jstage:${moduleId}:${stage}`; }
 /** The module's assessment record, kept apart from the checkpoint so a score is never a pass. */
 export function assessmentKey(moduleId: string): string { return `jcourse:${moduleId}:checkpoint:assessment`; }
 

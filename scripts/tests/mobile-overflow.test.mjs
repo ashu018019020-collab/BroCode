@@ -208,8 +208,8 @@ test('mobile overflow: Java notebook, code blocks and section tabs fit 320px and
   const css = readCss().replace(/\s+/g, ' ');
 
   // The notebook is a bounded, full-width box; its compiler and output blocks scroll themselves.
-  assert.match(notebook, /className="j-notebook"/, 'the Java notebook needs its containment class');
-  assert.match(notebook, /aria-label="Java source code"/, 'the Java source editor must stay labelled');
+  assert.match(notebook, /className="j-notebook/, 'the Java notebook needs its containment class');
+  assert.match(notebook, /aria-label="Java source code/, 'the Java source editor must stay labelled');
   const notebookPres = notebook.match(/<pre\b/g) ?? [];
   assert.ok(notebookPres.length >= 2, `compiler and output blocks must be <pre> (found ${notebookPres.length})`);
 

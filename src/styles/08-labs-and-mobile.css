@@ -629,6 +629,85 @@
 .c-code pre { padding-top: 32px !important; }
 .c-code-try { position: absolute; top: 6px; right: 6px; }
 
+/* ------------------------------- Java workspace ------------------------------- */
+/* The module page is the ten-stage workspace, not one long scroll: a topic column and a sticky
+   Code Bro column on desktop, stacked with the reading first on a phone. Every colour is a theme
+   token so light/dark/system all inherit the same surfaces. */
+.j-workspace { min-width: 0; }
+.j-topic-tools { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin: 4px 0 10px; }
+.j-topic-tools .muted { margin-right: auto; }
+.j-note-panel { display: grid; gap: 8px; margin-bottom: 12px; }
+.j-note-panel textarea { width: 100%; min-height: 110px; resize: vertical; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel2); color: var(--text); font: inherit; }
+.j-topic-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); gap: 12px; align-items: start; }
+.j-topic-main { display: grid; gap: 12px; min-width: 0; }
+.j-topic-side { position: sticky; top: 12px; display: grid; gap: 12px; min-width: 0; }
+.j-stage-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 12px; align-items: start; }
+.j-stage-grid > .card { min-width: 0; }
+.j-output-pre { background: var(--code-bg, #0b0b0b); color: #d7e4ff; border-radius: 10px; padding: 10px; overflow: auto; font-size: 12px; }
+.j-option { display: block; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+.j-option:hover { background: var(--hover-soft); }
+.j-pick-list { display: grid; gap: 6px; max-height: 300px; overflow: auto; padding-right: 2px; }
+.j-pick { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; cursor: pointer; }
+.j-pick:hover { border-color: var(--accent); background: var(--hover-soft); }
+.j-pick.on { border-color: var(--accent); background: var(--panel2); box-shadow: inset 2px 0 0 var(--accent); }
+.j-pick > span:not(.mono) { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.j-pick b { font-size: .8rem; }
+.j-pick .mono { color: var(--muted); }
+.j-pick svg { margin-left: auto; color: var(--green); flex: none; }
+
+/* The playground: one card per cell, one dark code surface in both themes (the same rule as the
+   console and the shared codebox), and a toolbar that wraps instead of forcing a phone sideways. */
+.j-play { display: grid; gap: 8px; min-width: 0; }
+.j-play-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 7px 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel2); }
+.j-play-status { margin-left: auto; line-height: 1.35; }
+.j-play-status b { color: var(--text); }
+.j-cells { display: grid; gap: 10px; }
+.j-cell { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--panel); min-width: 0; }
+.j-cell.on { border-color: rgba(56, 189, 248, .55); box-shadow: 0 0 0 1px rgba(56, 189, 248, .12); }
+.j-cell.running { border-color: rgba(251, 191, 36, .55); }
+.j-cell.error { border-color: rgba(248, 113, 113, .48); }
+.j-cell.ok { border-color: rgba(52, 211, 153, .42); }
+.j-cell-bar { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; padding: 5px 8px; background: var(--panel2); border-bottom: 1px solid var(--border); }
+.j-cell-no { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: .7rem; cursor: pointer; padding: 2px 4px; }
+.j-cell-no:hover { color: var(--text); }
+.j-cell-actions { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-left: auto; }
+.j-cell-actions .btn { padding: 3px 7px; font-size: .68rem; }
+.j-cell textarea { display: block; width: 100%; min-width: 0; resize: vertical; border: 0; border-radius: 0; padding: 11px 12px; background: #0b0b0b; color: #e5e7eb; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; line-height: 1.55; tab-size: 4; }
+.j-cell textarea:focus { outline: 2px solid rgba(56, 189, 248, .55); outline-offset: -2px; }
+.j-cell-foot { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; padding: 5px 9px; border-top: 1px solid var(--border); background: var(--panel); }
+.j-cell-state { font-size: .7rem; font-weight: 650; color: var(--muted); }
+.j-cell-state.ok { color: var(--green); }
+.j-cell-state.error { color: var(--red); }
+.j-cell-state.running { color: var(--amber); }
+.j-cell-state.stopped, .j-cell-state.skipped { color: var(--muted); }
+.j-cell-nav { display: inline-flex; gap: 3px; margin-left: auto; }
+.j-cell-nav .btn { padding: 1px 6px; }
+.j-cell-nav-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.j-out { border-top: 1px solid var(--border); padding: 8px 10px; background: #0b0b0b; color: #d7e4ff; min-width: 0; }
+.j-out.bad { background: #170b0b; border-top-color: rgba(248, 113, 113, .35); }
+.j-out strong { display: block; font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; color: #9fb0c9; margin-bottom: 4px; }
+.j-out pre { margin: 0; max-height: 240px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11.5px; line-height: 1.5; }
+.j-tests { display: grid; gap: 5px; padding: 8px 10px; border-top: 1px solid var(--border); }
+.j-test { display: flex; flex-direction: column; gap: 1px; padding: 5px 7px; border-radius: 8px; border: 1px solid var(--border); font-size: .7rem; }
+.j-test.pass { border-color: rgba(52, 211, 153, .35); }
+.j-test.fail { border-color: rgba(248, 113, 113, .38); }
+.j-test span { color: var(--muted); overflow-wrap: anywhere; }
+.j-stdin { display: grid; gap: 4px; padding: 8px 9px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel); }
+.j-stdin textarea { width: 100%; min-height: 62px; resize: vertical; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: #0b0b0b; color: #e5e7eb; font-family: ui-monospace, monospace; font-size: 12px; }
+.j-note { color: var(--amber); margin: 4px 0 0; }
+
+@media (max-width: 1100px) {
+  .j-topic-grid, .j-stage-grid { grid-template-columns: 1fr; }
+  .j-topic-side { position: static; }
+}
+@media (max-width: 640px) {
+  .j-play-bar { gap: 4px; }
+  .j-play-status { width: 100%; margin-left: 0; }
+  .j-cell-actions { width: 100%; margin-left: 0; }
+  .j-cell-actions .btn { flex: 1 1 auto; justify-content: center; }
+  .j-cell textarea { font-size: 12px; padding: 9px; }
+}
+
 /* Java course at phone widths. The notebook is a full-width textarea, every compiler/output block
    is its own horizontal scroller, and the hub's ten section tabs wrap instead of forcing the page
    sideways. 320px is the narrowest viewport the product supports and 390px is the common small

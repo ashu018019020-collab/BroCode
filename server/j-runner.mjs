@@ -1,3 +1,5 @@
+import { prepareJavaSource } from '../shared/java-source.mjs';
+
 /**
  * Java execution proxy.
  *
@@ -117,11 +119,14 @@ export function createJavaExecutor(options = {}) {
     if (!baseUrl) {
       throw new JavaExecError(503, 'The Java compiler is not connected. Set JUDGE0_URL on the server to run code.');
     }
-    const source = typeof input?.source === 'string' ? input.source : '';
-    if (!source.trim()) throw new JavaExecError(400, 'Write some Java code first.');
-    if (Buffer.byteLength(source, 'utf8') > maxSourceBytes) {
+    const rawSource = typeof input?.source === 'string' ? input.source : '';
+    if (!rawSource.trim()) throw new JavaExecError(400, 'Write some Java code first.');
+    if (Buffer.byteLength(rawSource, 'utf8') > maxSourceBytes) {
       throw new JavaExecError(413, `Keep the program under ${maxSourceBytes} bytes.`);
     }
+    // Judge0 compiles one file as Main.java. Rename a different public class, or wrap a bare
+    // statement snippet, so a valid learning example does not fail for a filename technicality.
+    const source = prepareJavaSource(rawSource).source;
     if (Array.isArray(input?.files) && input.files.length) {
       throw new JavaExecError(400, 'Java Code Bro compiles one file. Keep every class in the same file.');
     }

@@ -282,7 +282,7 @@ export default function JCoursePage() {
             <div className="card" key={set.id}>
               <div className="row spread"><strong>{set.title}</strong><span className="chip small">{set.questions.length} MCQs</span></div>
               <p className="muted small">Module {set.module.toUpperCase()} checkpoint test · explanations after submit</p>
-              <Link className="btn small primary" to={`/java/${set.module}?tab=test`}>Start test</Link>
+              <Link className="btn small primary" to={`/java/${set.module}?stage=checkpoint`}>Start test</Link>
             </div>
           ))}
         </div>
