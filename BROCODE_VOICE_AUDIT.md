@@ -111,7 +111,7 @@ contrast, mobile layout and theme switching during an active session are NOT TES
 | 10. Mobile/responsive | **NOT TESTED** | No browser/device session |
 | 11. Automated tests | **COMPLETED for voice units** | 107 existing voice tests + 10 new handler tests pass; browser TTS/STT tests NOT TESTED |
 | 12. Performance | **NOT TESTED** | No latency measurements made or claimed |
-| 13. Deployment verification | **PARTIALLY COMPLETED** | Local typecheck/tests/build pass; live verification after push documented below |
+| 13. Deployment verification | **COMPLETED for the deployment surface** | Local typecheck/tests/build pass; live probes below confirm the new routes are published; premium audio still BLOCKED on keys |
 
 ---
 
@@ -129,6 +129,27 @@ node --test scripts/tests/realtime-functions.test.mjs \
 npm run typecheck
 → exit 0
 ```
+
+### Live production verification after commit `37588c3`
+
+Vercel published the commit while the probe retried; the route changed from 404 to 200 without any
+other action.
+
+```
+GET  https://mybrocode.vercel.app/api/voice/realtime/status
+→ 200 {"configured":false,"enabled":true}          (previously 404)
+
+GET  https://mybrocode.vercel.app/api/voice/status
+→ 200 {"configured":false,"engine":"azure",...}   (unchanged: no Azure key)
+
+POST https://mybrocode.vercel.app/api/voice/realtime/session
+     Origin: https://mybrocode.vercel.app, valid JSON, no account
+→ 401 {"code":"AUTH_REQUIRED","message":"Sign in to continue."}   (previously 404)
+```
+
+The 401 is the correct signed-out result, not a failure: it proves the session route is deployed and
+reaches account verification. A real session still returns 503 `REALTIME_UNCONFIGURED` until
+`OPENAI_API_KEY` is set; that path is covered by unit tests, not by a live paid call.
 
 Not run or not claimable:
 
