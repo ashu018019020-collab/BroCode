@@ -76,6 +76,13 @@ test('java hub: the module test opens the checkpoint stage', () => {
   assert.doesNotMatch(hub, /\?tab=test/);
 });
 
+test('java workspace: code boxes use theme tokens, not a hardcoded dark background', () => {
+  assert.match(css, /\.j-code pre \{[^}]*background: var\(--panel2\)/s);
+  assert.match(css, /\.j-code pre \{[^}]*color: var\(--text\)/s);
+  assert.match(css, /\.j-output-pre \{[^}]*background: var\(--panel2\)/s);
+  assert.doesNotMatch(css, /\{\s*background: #0b0b0b;\s*border-radius: 10px;\s*padding: 12px/);
+});
+
 test('java workspace: responsive rules keep the editor and cards inside the viewport', () => {
   assert.match(css, /\.j-topic-grid/);
   assert.match(css, /\.j-stage-grid/);

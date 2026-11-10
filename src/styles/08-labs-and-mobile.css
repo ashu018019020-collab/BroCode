@@ -629,6 +629,33 @@
 .c-code pre { padding-top: 32px !important; }
 .c-code-try { position: absolute; top: 6px; right: 6px; }
 
+/* Java lesson code boxes follow the theme instead of a hardcoded black surface. The old inline
+   `#0b0b0b` stayed black in light mode while the text inherited the dark theme colour, so the
+   code looked invisible. `--panel2`/`--text` are the same tokens every card uses, which keeps the
+   block readable in light, dark and system mode. */
+.j-code pre {
+  margin: 0;
+  padding: 12px;
+  padding-top: 34px !important;
+  background: var(--panel2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.j-code pre code { color: inherit; background: transparent; }
+.j-output-pre {
+  background: var(--panel2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  overflow: auto;
+  font-size: 12px;
+}
+
 /* ------------------------------- Java workspace ------------------------------- */
 /* The module page is the ten-stage workspace, not one long scroll: a topic column and a sticky
    Code Bro column on desktop, stacked with the reading first on a phone. Every colour is a theme
@@ -643,7 +670,6 @@
 .j-topic-side { position: sticky; top: 12px; display: grid; gap: 12px; min-width: 0; }
 .j-stage-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 12px; align-items: start; }
 .j-stage-grid > .card { min-width: 0; }
-.j-output-pre { background: var(--code-bg, #0b0b0b); color: #d7e4ff; border-radius: 10px; padding: 10px; overflow: auto; font-size: 12px; }
 .j-option { display: block; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
 .j-option:hover { background: var(--hover-soft); }
 .j-pick-list { display: grid; gap: 6px; max-height: 300px; overflow: auto; padding-right: 2px; }
