@@ -40,8 +40,12 @@ export interface NEntry {
   q?: string;
   body?: string;
   task?: string;
+  statement?: string;
   code?: string;
   starter?: string;
+  /** Independent authored task with a hidden check, vs a guided practice entry built from a topic. */
+  kind?: 'topic' | 'task';
+  check?: string;
   output?: string;
   answer?: string;
   solution?: string;

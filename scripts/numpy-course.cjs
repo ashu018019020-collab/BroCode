@@ -60,6 +60,27 @@ for (const [id, pack] of Object.entries(deepening)) {
   target.debug.push(...pack.debug);
 }
 
+/*
+ * `tasks.json` is the independence layer: per module, coding tasks posed with their own data and a
+ * hidden check, so copying the taught snippet cannot pass. `scripts/numpy-fill-outputs.cjs` executes
+ * each solution + check and stores what the reference prints.
+ */
+const TASKS = path.join(SRC, 'tasks.json');
+const tasks = fs.existsSync(TASKS) ? readJSON(TASKS) : {};
+for (const [id, list] of Object.entries(tasks)) {
+  const target = modules.find((m) => m.id === id);
+  if (!target) {
+    fail(`tasks: unknown module ${id}`);
+    continue;
+  }
+  for (const task of list) {
+    if (!task.title || !task.statement || !task.solution) fail(`${id}: task needs title/statement/solution`);
+    if (!task.check) fail(`${id}: task "${task.title}" needs a hidden check`);
+    if (!task.expected) fail(`${id}: task "${task.title}" has no executed output — run node scripts/numpy-fill-outputs.cjs`);
+  }
+  target.tasks = list;
+}
+
 const SECTIONS = [
   ['learn', 'Learn'], ['interview', 'Interview'], ['coding', 'Coding Lab'], ['logic', 'Logic'],
   ['debug', 'Debug'], ['practice', 'Practice Solutions'], ['miniProject', 'Mini Project'],
@@ -105,6 +126,7 @@ modules.forEach((m, index) => {
     if (!d.title || !d.broken || !d.fix || !d.error) fail(`${m.id}: debug challenge needs title/broken/fix/error`);
     if (d.fix === d.broken) fail(`${m.id}: debug "${d.title}" fix equals broken code`);
   }
+  if (!Array.isArray(m.tasks) || m.tasks.length < 1) fail(`${m.id}: needs 1+ independent coding task`);
   if (!m.mini?.title || !m.mini?.brief || !m.mini.steps?.length) fail(`${m.id}: mini project incomplete`);
   if (!m.lab?.title || !m.lab?.brief || !m.lab.milestones?.length) fail(`${m.id}: project lab incomplete`);
 });
@@ -129,11 +151,19 @@ function buildSections(m) {
         code: t.code, answer: t.output, difficulty: i === topics.length - 1 ? 'hard' : 'medium',
       },
     ]),
-    coding: topics.map((t, i) => ({
-      id: id('coding', i), title: `Write: ${t.title}`, statement: t.body,
-      starter: 'import numpy as np\n\n# your code here\n', solution: t.code, expected: t.output,
-      difficulty: difficultyAt(i),
-    })),
+    coding: [
+      ...topics.map((t, i) => ({
+        id: id('coding', i), title: `Write: ${t.title}`, statement: t.body, kind: 'topic',
+        starter: 'import numpy as np\n\n# your code here\n', solution: t.code, expected: t.output,
+        difficulty: difficultyAt(i),
+      })),
+      ...(m.tasks || []).map((t, i) => ({
+        id: id('coding', `t${i}`), title: t.title, statement: t.statement, kind: 'task',
+        starter: 'import numpy as np\n\n# read the task, then store your answer in `result`\n',
+        solution: t.solution, expected: t.expected, check: t.check,
+        difficulty: difficultyAt(i),
+      })),
+    ],
     logic: topics.map((t, i) => ({
       id: id('logic', i), q: `Predict the exact output of this ${t.title.toLowerCase()} code before you run it.`, code: t.code, answer: t.output,
       difficulty: difficultyAt(i),

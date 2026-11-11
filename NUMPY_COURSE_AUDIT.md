@@ -32,7 +32,10 @@ Audited before any file was added, so the course reuses the platform instead of 
   sections, and a debug challenge whose fix equals its broken code.
 - `scripts/numpy-fill-outputs.cjs` — executes every depth-layer sample and stores the real stdout, so
   no published output is hand-typed.
-- `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **2,260 entries**.
+- `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **2,340 entries**.
+- `content/numpy-mastery/tasks.json` — 80 independent coding tasks (4/module) with a hidden check
+  each; the grader runs learner code, then the check in the same kernel namespace, so a copied
+  lesson snippet fails. Their reference outputs are executed, not typed.
 - Coding Lab is graded at runtime: `outputMatches` (`src/core/learning/ncourse.ts`) compares the
   learner's printed output with the module's executed output in a per-task Pyodide kernel. The
   expectations are checked against numpy 1.26.4 + pandas 2.2.0 (what the bundled browser runtime

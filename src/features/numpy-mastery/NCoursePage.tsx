@@ -35,6 +35,7 @@ function EntryCard({ entry, done, onDone }: { entry: NEntry; done: boolean; onDo
     <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
       <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
         <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
+        {entry.kind === 'task' && <span className="chip">independent task · hidden check</span>}
         <span className="row" style={{ gap: 6 }}>
           {done && <span className="chip easy"><Check size={11} /> done</span>}
           <button type="button" className="btn small ghost" onClick={onDone} disabled={done}>
@@ -97,8 +98,18 @@ function CodingEntryCard({ entry, done, onPass }: { entry: NEntry; done: boolean
       const { runPython, resetKernel } = await import('../coding/runners');
       resetKernel(scope);
       const run = await runPython(code, '', scope);
-      const pass = run.ok && outputMatches(expected, run.output);
-      setResult({ pass, output: run.output, error: run.error });
+      let pass = run.ok;
+      let failure = run.error;
+      if (pass && entry.check) {
+        // The hidden check runs in the learner's own namespace: a copied lesson snippet defines
+        // nothing it asserts on, so it fails instead of passing on matching output.
+        const check = await runPython(entry.check, '', scope);
+        pass = check.ok;
+        if (!pass) failure = check.error ?? 'the hidden check did not pass';
+      } else if (!entry.check) {
+        pass = pass && outputMatches(expected, run.output);
+      }
+      setResult({ pass, output: run.output, error: failure });
       if (pass) onPass();
     } catch (error) {
       setResult({ pass: false, output: '', error: String((error as Error)?.message ?? error) });
@@ -111,6 +122,7 @@ function CodingEntryCard({ entry, done, onPass }: { entry: NEntry; done: boolean
     <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
       <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
         <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
+        {entry.kind === 'task' && <span className="chip">independent task · hidden check</span>}
         <span className="row" style={{ gap: 6 }}>
           {done && <span className="chip easy"><Check size={11} /> done</span>}
           <button type="button" className="btn small ghost" onClick={onPass} disabled={done}>
@@ -120,6 +132,9 @@ function CodingEntryCard({ entry, done, onPass }: { entry: NEntry; done: boolean
       </div>
       <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{entry.title ?? entry.q ?? ''}</strong>
       {entry.body && <p className="small muted" style={{ margin: '0 0 8px' }}>{entry.body}</p>}
+      {entry.kind === 'task' && entry.statement && (
+        <p className="small" style={{ margin: '0 0 8px' }}>{entry.statement}</p>
+      )}
       <textarea
         value={code}
         onChange={(e) => setCode(e.target.value)}

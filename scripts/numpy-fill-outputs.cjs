@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Fill the `output` of every authored code sample in the NumPy deepening pack.
+ * Fill the `output` of every authored code sample in the NumPy deepening pack, and the reference
+ * output of every independent coding task (`tasks.json`) by running its solution + hidden check.
  *
  * The output is **printed by the real interpreter**, never typed by hand: each topic's `code` is run
  * with Python + numpy in a throwaway directory and its stdout is stored verbatim (trailing blank
@@ -59,10 +60,40 @@ for (const file of FILES) {
   if (changed) fs.writeFileSync(file, `${JSON.stringify(deep, null, 2)}\n`);
 }
 
+/* Independent tasks: the reference output is what the solution prints, and the hidden check must
+ * accept that solution — a task whose own reference fails its check is not publishable. */
+const TASKS_FILE = path.join(SRC, 'tasks.json');
+if (fs.existsSync(TASKS_FILE)) {
+  const tasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
+  let changed = false;
+  for (const [id, list] of Object.entries(tasks)) {
+    for (const task of list) {
+      const run = spawnSync('python3', ['-c', `${task.solution}\n${task.check}`], { cwd: workdir, encoding: 'utf8' });
+      if (run.status !== 0) {
+        failures.push(`tasks ${id} :: ${task.title}\n  its own solution fails the hidden check: ${(run.stderr || '').trim().split('\n').slice(-1)[0]}`);
+        continue;
+      }
+      const output = run.stdout.replace(/\s+$/, '');
+      if (!output) {
+        failures.push(`tasks ${id} :: ${task.title}\n  the reference solution printed nothing`);
+        continue;
+      }
+      if (task.expected !== output) {
+        task.expected = output;
+        filled += 1;
+        changed = true;
+      } else {
+        skipped += 1;
+      }
+    }
+  }
+  if (changed) fs.writeFileSync(TASKS_FILE, `${JSON.stringify(tasks, null, 2)}\n`);
+}
+
 if (failures.length) {
   console.error(`numpy-fill-outputs: ${failures.length} sample(s) failed`);
   for (const f of failures) console.error(`  · ${f}`);
   process.exit(1);
 }
 
-console.log(`numpy-fill-outputs: filled ${filled}, already verified ${skipped} across ${FILES.length} layer(s)`);
+console.log(`numpy-fill-outputs: filled ${filled}, already verified ${skipped} across ${FILES.length} layer(s) + tasks`);
