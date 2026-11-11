@@ -478,8 +478,8 @@
       {
         "title": "partition keeps only k small values in front",
         "body": "partition is cheaper than a full sort when you only need the k smallest elements to be correct, which is enough for top-k work.",
-        "code": "import numpy as np\nprint(np.partition([5, 1, 4, 2, 3], 2))",
-        "output": "[1 2 3 4 5]"
+        "code": "import numpy as np\npart = np.partition([5, 1, 4, 2, 3], 2)\nprint(part[:3].sum(), part[3:].sum())",
+        "output": "6 9"
       },
       {
         "title": "lexsort orders by the last key first",

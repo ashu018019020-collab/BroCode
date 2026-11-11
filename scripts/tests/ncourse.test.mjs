@@ -97,6 +97,16 @@ test('numpy course: every deepening sample carries an executed output', () => {
   }
 });
 
+test('numpy course: coding output is graded on the printed text, not on whitespace noise', () => {
+  assert.equal(engine.normalizeOutput('a\r\nb  \n\n'), 'a\nb');
+  assert.equal(engine.normalizeOutput('[1 2]'), '[1 2]');
+
+  assert.equal(engine.outputMatches('[1 2]\n', '[1 2]'), true, 'a trailing newline is not a difference');
+  assert.equal(engine.outputMatches('[1 2]', '[1  2]'), false, 'internal spacing is a real difference');
+  assert.equal(engine.outputMatches('[1 2]', '[2 1]'), false, 'order matters');
+  assert.equal(engine.outputMatches('True', 'true'), false, 'case matters');
+});
+
 test('numpy course: a module is complete only when all ten sections are recorded', () => {
   const modules = [{ id: 'n01' }];
   assert.equal(engine.isModuleComplete('n01', {}), false);

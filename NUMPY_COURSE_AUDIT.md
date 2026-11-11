@@ -33,6 +33,10 @@ Audited before any file was added, so the course reuses the platform instead of 
 - `scripts/numpy-fill-outputs.cjs` — executes every depth-layer sample and stores the real stdout, so
   no published output is hand-typed.
 - `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **2,260 entries**.
+- Coding Lab is graded at runtime: `outputMatches` (`src/core/learning/ncourse.ts`) compares the
+  learner's printed output with the module's executed output in a per-task Pyodide kernel. The
+  expectations are checked against numpy 1.26.4 + pandas 2.2.0 (what the bundled browser runtime
+  ships) as well as numpy 2.x.
 - `src/core/learning/ncourse.ts` — types, section registry, progress rules (pure, tested).
 - `src/core/data/ncourse.ts` — loader only.
 - `src/features/numpy-mastery/{NLogo,NCoursePage}.tsx` — mark + course/module workspace.

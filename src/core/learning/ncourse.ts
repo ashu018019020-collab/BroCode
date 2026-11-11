@@ -41,6 +41,7 @@ export interface NEntry {
   body?: string;
   task?: string;
   code?: string;
+  starter?: string;
   output?: string;
   answer?: string;
   solution?: string;
@@ -77,6 +78,25 @@ export interface NCourseFile {
     targetTotal: number;
   };
   modules: NModule[];
+}
+
+/**
+ * What a graded run compares: the output a learner's code printed against the module's expected
+ * output. Trailing spaces on a line, CRLF line endings and trailing blank lines are noise — a
+ * solution is not wrong because the last line has no newline — so both sides are normalised first.
+ * Everything else (internal spacing, order, case) must match exactly.
+ */
+export function normalizeOutput(text: string): string {
+  return String(text ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+$/, ''))
+    .join('\n')
+    .replace(/\n+$/, '');
+}
+
+export function outputMatches(expected: string, actual: string): boolean {
+  return normalizeOutput(expected) === normalizeOutput(actual);
 }
 
 /** One completion record: the section of a module was worked through. */

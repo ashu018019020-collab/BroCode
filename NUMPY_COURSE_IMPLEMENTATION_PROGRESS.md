@@ -1,27 +1,42 @@
 # NumPy Mastery — implementation progress
 
 Honest ledger. Counts below are **records that shipped**, not targets. The target from the brief is
-50 entries per section (500 per module, 10,000 total). Phases 1 and 2 delivered the architecture plus
-two depth passes; volume is tracked openly below.
+50 entries per section (500 per module, 10,000 total). Phases 1–3 delivered the architecture, two
+depth passes and a grader; volume is tracked openly below.
 
 ## Shipped so far
 
-| Measure | Phase 0 | Phase 1 | Phase 2 (now) |
-|---|---|---|---|
-| Modules | 20 | 20 | 20 |
-| Sections per module | 10 | 10 | 10 |
-| Entries published | 620 | 1,540 | **2,260** |
-| Authored topics | 60 (3/module) | 160 (8/module) | **240 (12/module)** |
-| Debug challenges | 40 (2/module) | 60 (3/module) | 60 (3/module) |
-| Mini projects | 20 | 20 | 20 |
-| Project-lab milestones | 20 | 20 | 20 |
-| Code/output pairs executed against numpy 2.5 | 60 | 160 | **240 (240/240 match)** |
-| Generator validation | passes | passes | passes |
+| Measure | Phase 0 | Phase 1 | Phase 2 | Phase 3 (now) |
+|---|---|---|---|---|
+| Modules | 20 | 20 | 20 | 20 |
+| Sections per module | 10 | 10 | 10 | 10 |
+| Entries published | 620 | 1,540 | 2,260 | **2,260** |
+| Authored topics | 60 (3/module) | 160 | 240 (12/module) | 240 |
+| Debug challenges | 40 | 60 | 60 | 60 |
+| Mini projects | 20 | 20 | 20 | 20 |
+| Project-lab milestones | 20 | 20 | 20 | 20 |
+| Code/output pairs executed against numpy | 60 | 160 | 240 | 240 |
+| Coding Lab graded | no | no | no | **yes — 240 tasks** |
+| Generator validation | passes | passes | passes | passes |
 
 Depth lives in `content/numpy-mastery/deepening*.json`, applied in phase order by the generator
 (`deepening.json`, then `deepening-2.json`). `scripts/numpy-fill-outputs.cjs` **runs each sample and
-stores the real stdout**, skipping the ones already verified: 180/180 new samples executed cleanly in
-this pass.
+stores the real stdout**.
+
+### Phase 3 — the grader
+
+- `outputMatches(expected, actual)` in `core/learning/ncourse.ts` normalises CRLF, trailing spaces
+  per line and trailing blank lines, then requires an exact match — order, case and internal spacing
+  are real differences.
+- The Coding Lab card runs the learner's code in the app's bundled Pyodide worker (the same one Code
+  Bro uses, so numpy is real and offline), in a **per-task kernel that is reset before every run**, so
+  a leftover name cannot make code pass.
+- A run that raises is never a pass, even if it printed the correct text before failing. Passing
+  writes the same `nmod:<module>:coding` record every other section writes; a failure shows the
+  expected and actual output side by side.
+- The 240 expected outputs were re-executed against **numpy 1.26.4 + pandas 2.2.0**, the versions the
+  browser runtime actually ships, as well as numpy 2.5 on the authoring machine. That check found
+  one version-unstable sample (`np.partition` ordering), which was rewritten to print sums.
 
 ### Per section (course total)
 
@@ -53,12 +68,14 @@ easy → medium → hard, so no section is single-difficulty.
   `scripts/tests/ncourse.test.mjs` re-checks the published artifact against the merged source.
 - All 240 Learn code samples are executed against real NumPy by the test suite whenever Python is
   present (it reports a skip, never a pass, when it is not).
+- Coding Lab grades a real run against the module's executed output.
 - Progress: a module is complete only when all ten sections have a record.
 
-## Remaining work (phases 3+)
+## Remaining work (phases 4+)
 
-1. Give Coding Lab a real grader: an authored test case per task (stdin/expected) instead of a
-   reference solution, so a learner's code can pass or fail.
+1. Make Coding Lab tasks *produce* the output rather than repeat the taught snippet: many statements
+   currently mirror the topic, so a learner can copy the reference and pass. Authored input/output
+   cases per task would separate practice from copying.
 2. Author the interview and defense banks to 50 independent answers per module. They are currently
    derived from topics, so one topic body reappears in Learn, Interview, Practice and Defense.
 3. Author 50 debug challenges per module (currently 3) and 50 mini-project variants (currently 1).

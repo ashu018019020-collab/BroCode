@@ -6,7 +6,7 @@ import {
 import { useNumpyCourse } from '../../core/data/ncourse';
 import { useStore, recordAttempt } from '../../core/storage/store';
 import {
-  N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection,
+  N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, outputMatches,
   type NEntry, type NModule, type NSectionKey,
 } from '../../core/learning/ncourse';
 import { NLogo } from './NLogo';
@@ -73,6 +73,115 @@ function EntryCard({ entry, done, onDone }: { entry: NEntry; done: boolean; onDo
   );
 }
 
+/**
+ * Coding Lab: the learner writes the code, not reads it.
+ *
+ * The starter runs in the app's bundled Python runtime (the same Pyodide worker Code Bro uses, so
+ * numpy is real and offline), and the printed output is compared with the module's executed output.
+ * A run that raises is never a pass, even if it printed the right thing before failing. Passing
+ * records the section, the same record every other section writes.
+ */
+function CodingEntryCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPass: () => void }) {
+  const [code, setCode] = useState(entry.starter ?? 'import numpy as np\n\n# your code here\n');
+  const [result, setResult] = useState<{ pass: boolean; output: string; error?: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [showSolution, setShowSolution] = useState(false);
+  const expected = entry.expected ?? '';
+  /** One kernel per task, cleared before every run, so a leftover name can never make code pass. */
+  const scope = `numpy:${entry.id}`;
+
+  async function grade() {
+    setBusy(true);
+    setResult(null);
+    try {
+      const { runPython, resetKernel } = await import('../coding/runners');
+      resetKernel(scope);
+      const run = await runPython(code, '', scope);
+      const pass = run.ok && outputMatches(expected, run.output);
+      setResult({ pass, output: run.output, error: run.error });
+      if (pass) onPass();
+    } catch (error) {
+      setResult({ pass: false, output: '', error: String((error as Error)?.message ?? error) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
+      <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
+        <span className="row" style={{ gap: 6 }}>
+          {done && <span className="chip easy"><Check size={11} /> done</span>}
+          <button type="button" className="btn small ghost" onClick={onPass} disabled={done}>
+            {done ? 'Recorded' : 'Mark done'}
+          </button>
+        </span>
+      </div>
+      <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{entry.title ?? entry.q ?? ''}</strong>
+      {entry.body && <p className="small muted" style={{ margin: '0 0 8px' }}>{entry.body}</p>}
+      <textarea
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        spellCheck={false}
+        aria-label={`Code for ${entry.title ?? entry.id}`}
+        style={{
+          width: '100%', minHeight: 140, padding: 10, borderRadius: 10, resize: 'vertical',
+          border: '1px solid var(--line, #d6dbe4)', background: 'var(--bg2, #fff)', color: 'inherit',
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 13, lineHeight: 1.45,
+        }}
+      />
+      <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+        <button type="button" className="btn small primary" onClick={grade} disabled={busy}>
+          <Play size={12} /> {busy ? 'Running…' : 'Run & grade'}
+        </button>
+        <button type="button" className="btn small ghost" onClick={() => { setCode(entry.starter ?? ''); setResult(null); }} disabled={busy}>
+          Reset code
+        </button>
+        {entry.solution && (
+          <button type="button" className="btn small ghost" onClick={() => setShowSolution((v) => !v)}>
+            {showSolution ? 'Hide solution' : 'Show solution'}
+          </button>
+        )}
+      </div>
+      {busy && <p className="small muted" style={{ margin: '8px 0 0' }}>Python loads once (~10s) and then runs locally — your code never leaves this browser.</p>}
+      {result && (
+        <div
+          className="card"
+          style={{
+            margin: '8px 0 0', padding: 10,
+            borderColor: result.pass ? 'var(--green, #177245)' : 'var(--red, #b42318)',
+          }}
+        >
+          <b className="small" style={{ color: result.pass ? 'var(--green, #177245)' : 'var(--red, #b42318)' }}>
+            {result.pass ? 'Passed — the output matches' : 'Not graded — the output differs'}
+          </b>
+          {result.error && <pre className="codeblock" style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap' }}>{result.error}</pre>}
+          {!result.pass && (
+            <div className="grid2" style={{ gap: 8, marginTop: 8 }}>
+              <div>
+                <span className="small muted">Expected</span>
+                <pre className="codeblock" style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{expected || '(nothing)'}</pre>
+              </div>
+              <div>
+                <span className="small muted">Your output</span>
+                <pre className="codeblock" style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{result.output.trim() || '(nothing printed)'}</pre>
+              </div>
+            </div>
+          )}
+          {result.pass && <p className="small muted" style={{ margin: '6px 0 0' }}>No differences to show — this section is recorded.</p>}
+        </div>
+      )}
+      {showSolution && entry.solution && (
+        <div style={{ marginTop: 8 }}>
+          <span className="small muted">Reference solution</span>
+          <pre className="codeblock" style={{ margin: '4px 0 0' }}>{entry.solution}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** The module workspace: ten section tabs over the entries that section really holds. */
 function ModuleView({ module, onBack }: { module: NModule; onBack: () => void }) {
   const state = useStore();
@@ -128,15 +237,21 @@ function ModuleView({ module, onBack }: { module: NModule; onBack: () => void })
         </button>
       </div>
 
+      {section === 'coding' && (
+        <p className="small muted" style={{ margin: '0 2px 8px' }}>
+          Each task is graded: your code runs in the bundled Python runtime and its printed output is
+          compared with the module's verified output. A run that raises is not a pass.
+        </p>
+      )}
+
       <div className="grid2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', alignItems: 'start' }}>
-        {entries.map((entry) => (
-          <EntryCard
-            key={entry.id}
-            entry={entry}
-            done={Boolean(state.attempts[nSectionKey(module.id, section)])}
-            onDone={() => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 })}
-          />
-        ))}
+        {entries.map((entry) => {
+          const done = Boolean(state.attempts[nSectionKey(module.id, section)]);
+          const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
+          return section === 'coding'
+            ? <CodingEntryCard key={entry.id} entry={entry} done={done} onPass={onDone} />
+            : <EntryCard key={entry.id} entry={entry} done={done} onDone={onDone} />;
+        })}
       </div>
     </div>
   );
