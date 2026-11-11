@@ -194,6 +194,20 @@ print(json.dumps({'problems': problems, 'raised': raised, 'differed': differed})
   assert.equal(report.raised + report.differed, cases.length, 'every challenge must be exercised');
 });
 
+test('numpy course: every checkpoint quiz offers three distinct options including the answer', () => {
+  let quizzes = 0;
+  for (const m of artifact.modules) {
+    for (const e of m.sections.checkpoint) {
+      if (!e.options) continue;
+      quizzes += 1;
+      assert.equal(e.options.length, 3, `${e.id}: a quiz offers three options`);
+      assert.equal(new Set(e.options).size, 3, `${e.id}: options must be distinct`);
+      assert.ok(e.options.includes(e.answer), `${e.id}: the answer must be one of the options`);
+    }
+  }
+  assert.ok(quizzes >= 200, `expected checkpoint quizzes, found ${quizzes}`);
+});
+
 test('numpy course: every Coding Lab entry is an independent graded task', () => {
   for (const m of artifact.modules) {
     assert.equal(m.sections.coding.length, (tasks[m.id] || []).length, `${m.id}: Coding Lab is exactly the task bank`);

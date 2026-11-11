@@ -1138,6 +1138,11 @@
       "q": "Checkpoint: predict the output of this code about create your first array.",
       "code": "import numpy as np\na = np.array([10, 20, 30, 40])\nprint(a, a.mean(), a.shape)",
       "answer": "[10 20 30 40] 25.0 (4,)",
+      "options": [
+       "[0 2 4 6 8]",
+       "int64 8 24",
+       "[10 20 30 40] 25.0 (4,)"
+      ],
       "difficulty": "easy"
      },
      {
@@ -1151,6 +1156,11 @@
       "q": "Checkpoint: predict the output of this code about vectorised arithmetic.",
       "code": "import numpy as np\na = np.arange(5)\nprint(a * 2)",
       "answer": "[0 2 4 6 8]",
+      "options": [
+       "[0 2 4 6 8]",
+       "[10 20 30 40] 25.0 (4,)",
+       "int64 8 24"
+      ],
       "difficulty": "medium"
      },
      {
@@ -1164,6 +1174,11 @@
       "q": "Checkpoint: predict the output of this code about typed memory, not a python list.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a.dtype, a.itemsize, a.nbytes)",
       "answer": "int64 8 24",
+      "options": [
+       "[10 20 30 40] 25.0 (4,)",
+       "int64 8 24",
+       "[0 2 4 6 8]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -1177,6 +1192,11 @@
       "q": "Checkpoint: predict the output of this code about two arrays combine elementwise.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nb = np.array([10, 20, 30])\nprint(a + b)",
       "answer": "[11 22 33]",
+      "options": [
+       "[11 22 33]",
+       "[10 20 30 40] 25.0 (4,)",
+       "[0 2 4 6 8]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -1190,6 +1210,11 @@
       "q": "Checkpoint: predict the output of this code about indexing starts at zero.",
       "code": "import numpy as np\na = np.array([5, 6, 7])\nprint(a[0], a[-1])",
       "answer": "5 7",
+      "options": [
+       "[10 20 30 40] 25.0 (4,)",
+       "[0 2 4 6 8]",
+       "5 7"
+      ],
       "difficulty": "medium"
      },
      {
@@ -1203,6 +1228,11 @@
       "q": "Checkpoint: predict the output of this code about methods return plain results.",
       "code": "import numpy as np\na = np.array([4, 1, 9])\nprint(a.sum(), a.max(), a.min())",
       "answer": "14 9 1",
+      "options": [
+       "[10 20 30 40] 25.0 (4,)",
+       "14 9 1",
+       "[0 2 4 6 8]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -1216,6 +1246,11 @@
       "q": "Checkpoint: predict the output of this code about convert back to a python list.",
       "code": "import numpy as np\na = np.array([4, 1, 9])\nprint(a.tolist())",
       "answer": "[4, 1, 9]",
+      "options": [
+       "[10 20 30 40] 25.0 (4,)",
+       "[0 2 4 6 8]",
+       "[4, 1, 9]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -1229,6 +1264,11 @@
       "q": "Checkpoint: predict the output of this code about integers and floats carry different dtypes.",
       "code": "import numpy as np\nprint(np.array([1, 2]).dtype, np.array([1.0, 2.0]).dtype)",
       "answer": "int64 float64",
+      "options": [
+       "int64 float64",
+       "[10 20 30 40] 25.0 (4,)",
+       "[0 2 4 6 8]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -1242,6 +1282,11 @@
       "q": "Checkpoint: predict the output of this code about add a scalar to every element.",
       "code": "import numpy as np\n\na = np.array([1, 2, 3])\nprint(a + 10)",
       "answer": "[11 12 13]",
+      "options": [
+       "[10 20 30 40] 25.0 (4,)",
+       "[0 2 4 6 8]",
+       "[11 12 13]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -1255,6 +1300,11 @@
       "q": "Checkpoint: predict the output of this code about compare an array with a scalar.",
       "code": "import numpy as np\n\nprint(np.array([1, 5, 9]) > 4)",
       "answer": "[False  True  True]",
+      "options": [
+       "[False  True  True]",
+       "[10 20 30 40] 25.0 (4,)",
+       "[0 2 4 6 8]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -1268,6 +1318,11 @@
       "q": "Checkpoint: predict the output of this code about a python loop still works over an array.",
       "code": "import numpy as np\n\ntotal = 0\nfor value in np.array([2, 4, 6]):\n    total += int(value)\nprint(total)",
       "answer": "12",
+      "options": [
+       "12",
+       "[10 20 30 40] 25.0 (4,)",
+       "[0 2 4 6 8]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -1281,6 +1336,11 @@
       "q": "Checkpoint: predict the output of this code about every array reports its own type.",
       "code": "import numpy as np\n\nprint(type(np.array([1, 2])).__name__)",
       "answer": "ndarray",
+      "options": [
+       "[10 20 30 40] 25.0 (4,)",
+       "[0 2 4 6 8]",
+       "ndarray"
+      ],
       "difficulty": "hard"
      },
      {
@@ -2375,6 +2435,11 @@
       "q": "Checkpoint: predict the output of this code about shape, size and ndim.",
       "code": "import numpy as np\na = np.array([[1, 2, 3], [4, 5, 6]])\nprint(a.shape, a.size, a.ndim)",
       "answer": "(2, 3) 6 2",
+      "options": [
+       "int64 8",
+       "[4 6] [3 7]",
+       "(2, 3) 6 2"
+      ],
       "difficulty": "easy"
      },
      {
@@ -2388,6 +2453,11 @@
       "q": "Checkpoint: predict the output of this code about dtype and itemsize.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a.dtype, a.itemsize)",
       "answer": "int64 8",
+      "options": [
+       "int64 8",
+       "(2, 3) 6 2",
+       "[4 6] [3 7]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -2401,6 +2471,11 @@
       "q": "Checkpoint: predict the output of this code about axis means the direction that is collapsed.",
       "code": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a.sum(axis=0), a.sum(axis=1))",
       "answer": "[4 6] [3 7]",
+      "options": [
+       "[4 6] [3 7]",
+       "(2, 3) 6 2",
+       "int64 8"
+      ],
       "difficulty": "hard"
      },
      {
@@ -2414,6 +2489,11 @@
       "q": "Checkpoint: predict the output of this code about len counts the first axis only.",
       "code": "import numpy as np\na = np.ones((3, 4))\nprint(len(a), a.size)",
       "answer": "3 12",
+      "options": [
+       "3 12",
+       "(2, 3) 6 2",
+       "int64 8"
+      ],
       "difficulty": "easy"
      },
      {
@@ -2427,6 +2507,11 @@
       "q": "Checkpoint: predict the output of this code about transpose swaps the shape.",
       "code": "import numpy as np\na = np.ones((3, 4))\nprint(a.T.shape)",
       "answer": "(4, 3)",
+      "options": [
+       "(2, 3) 6 2",
+       "(4, 3)",
+       "int64 8"
+      ],
       "difficulty": "medium"
      },
      {
@@ -2440,6 +2525,11 @@
       "q": "Checkpoint: predict the output of this code about mixed literals promote to float.",
       "code": "import numpy as np\nprint(np.array([1, 2.5]).dtype)",
       "answer": "float64",
+      "options": [
+       "(2, 3) 6 2",
+       "float64",
+       "int64 8"
+      ],
       "difficulty": "hard"
      },
      {
@@ -2453,6 +2543,11 @@
       "q": "Checkpoint: predict the output of this code about a zero-dimensional array has no axes.",
       "code": "import numpy as np\ns = np.array(7)\nprint(s.ndim, s.shape)",
       "answer": "0 ()",
+      "options": [
+       "0 ()",
+       "(2, 3) 6 2",
+       "int64 8"
+      ],
       "difficulty": "easy"
      },
      {
@@ -2466,6 +2561,11 @@
       "q": "Checkpoint: predict the output of this code about bytes are shape times itemsize.",
       "code": "import numpy as np\na = np.zeros((2, 3), dtype=np.float32)\nprint(a.nbytes)",
       "answer": "24",
+      "options": [
+       "24",
+       "(2, 3) 6 2",
+       "int64 8"
+      ],
       "difficulty": "medium"
      },
      {
@@ -2479,6 +2579,11 @@
       "q": "Checkpoint: predict the output of this code about ndim counts the axes.",
       "code": "import numpy as np\n\na = np.zeros((2, 3, 4))\nprint(a.ndim, a.size)",
       "answer": "3 24",
+      "options": [
+       "(2, 3) 6 2",
+       "int64 8",
+       "3 24"
+      ],
       "difficulty": "hard"
      },
      {
@@ -2492,6 +2597,11 @@
       "q": "Checkpoint: predict the output of this code about ten zeros are one dimension.",
       "code": "import numpy as np\n\nprint(np.zeros(10).shape)",
       "answer": "(10,)",
+      "options": [
+       "(10,)",
+       "(2, 3) 6 2",
+       "int64 8"
+      ],
       "difficulty": "easy"
      },
      {
@@ -2505,6 +2615,11 @@
       "q": "Checkpoint: predict the output of this code about shape is a tuple you can index.",
       "code": "import numpy as np\n\na = np.ones((2, 2))\nprint(a.shape[0], a.shape[1])",
       "answer": "2 2",
+      "options": [
+       "2 2",
+       "(2, 3) 6 2",
+       "int64 8"
+      ],
       "difficulty": "medium"
      },
      {
@@ -2518,6 +2633,11 @@
       "q": "Checkpoint: predict the output of this code about a matrix of one row still has two axes.",
       "code": "import numpy as np\n\nprint(np.array([[7, 8]]).shape)",
       "answer": "(1, 2)",
+      "options": [
+       "(2, 3) 6 2",
+       "int64 8",
+       "(1, 2)"
+      ],
       "difficulty": "hard"
      },
      {
@@ -3612,6 +3732,11 @@
       "q": "Checkpoint: predict the output of this code about zeros, ones and full.",
       "code": "import numpy as np\nprint(np.zeros(3), np.ones((2, 2)), np.full(3, 7))",
       "answer": "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+      "options": [
+       "[0 2 4 6 8] [0.  0.5 1. ]",
+       "[[1. 0.]\n [0. 1.]] [[1 0]\n [0 2]]",
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -3625,6 +3750,11 @@
       "q": "Checkpoint: predict the output of this code about arange and linspace.",
       "code": "import numpy as np\nprint(np.arange(0, 10, 2), np.linspace(0, 1, 3))",
       "answer": "[0 2 4 6 8] [0.  0.5 1. ]",
+      "options": [
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[0 2 4 6 8] [0.  0.5 1. ]",
+       "[[1. 0.]\n [0. 1.]] [[1 0]\n [0 2]]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -3638,6 +3768,11 @@
       "q": "Checkpoint: predict the output of this code about identity and diagonal matrices.",
       "code": "import numpy as np\nprint(np.eye(2), np.diag([1, 2]))",
       "answer": "[[1. 0.]\n [0. 1.]] [[1 0]\n [0 2]]",
+      "options": [
+       "[[1. 0.]\n [0. 1.]] [[1 0]\n [0 2]]",
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[0 2 4 6 8] [0.  0.5 1. ]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -3651,6 +3786,11 @@
       "q": "Checkpoint: predict the output of this code about zeros_like copies a shape.",
       "code": "import numpy as np\na = np.arange(4)\nprint(np.zeros_like(a), np.ones_like(a, dtype=int))",
       "answer": "[0 0 0 0] [1 1 1 1]",
+      "options": [
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[0 0 0 0] [1 1 1 1]",
+       "[0 2 4 6 8] [0.  0.5 1. ]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -3664,6 +3804,11 @@
       "q": "Checkpoint: predict the output of this code about linspace can exclude the endpoint.",
       "code": "import numpy as np\nprint(np.linspace(0, 1, 4, endpoint=False))",
       "answer": "[0.   0.25 0.5  0.75]",
+      "options": [
+       "[0.   0.25 0.5  0.75]",
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[0 2 4 6 8] [0.  0.5 1. ]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -3677,6 +3822,11 @@
       "q": "Checkpoint: predict the output of this code about arange accepts a fractional step.",
       "code": "import numpy as np\nprint(np.arange(0, 1, 0.25))",
       "answer": "[0.   0.25 0.5  0.75]",
+      "options": [
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[0 2 4 6 8] [0.  0.5 1. ]",
+       "[0.   0.25 0.5  0.75]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -3690,6 +3840,11 @@
       "q": "Checkpoint: predict the output of this code about ones can take an integer dtype.",
       "code": "import numpy as np\nprint(np.ones(3, dtype=int))",
       "answer": "[1 1 1]",
+      "options": [
+       "[1 1 1]",
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[0 2 4 6 8] [0.  0.5 1. ]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -3703,6 +3858,11 @@
       "q": "Checkpoint: predict the output of this code about full repeats any value.",
       "code": "import numpy as np\nprint(np.full((2, 2), 3, dtype=int))",
       "answer": "[[3 3]\n [3 3]]",
+      "options": [
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[[3 3]\n [3 3]]",
+       "[0 2 4 6 8] [0.  0.5 1. ]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -3716,6 +3876,11 @@
       "q": "Checkpoint: predict the output of this code about empty allocates without setting values.",
       "code": "import numpy as np\n\na = np.empty(3)\nprint(a.shape, a.dtype)",
       "answer": "(3,) float64",
+      "options": [
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[0 2 4 6 8] [0.  0.5 1. ]",
+       "(3,) float64"
+      ],
       "difficulty": "hard"
      },
      {
@@ -3729,6 +3894,11 @@
       "q": "Checkpoint: predict the output of this code about identity builds an identity matrix.",
       "code": "import numpy as np\n\nprint(np.identity(2))",
       "answer": "[[1. 0.]\n [0. 1.]]",
+      "options": [
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[[1. 0.]\n [0. 1.]]",
+       "[0 2 4 6 8] [0.  0.5 1. ]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -3742,6 +3912,11 @@
       "q": "Checkpoint: predict the output of this code about arange counts down with a negative step.",
       "code": "import numpy as np\n\nprint(np.arange(5, 0, -1))",
       "answer": "[5 4 3 2 1]",
+      "options": [
+       "[5 4 3 2 1]",
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[0 2 4 6 8] [0.  0.5 1. ]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -3755,6 +3930,11 @@
       "q": "Checkpoint: predict the output of this code about linspace controls the step you get.",
       "code": "import numpy as np\n\nprint(np.linspace(0, 1, 5))",
       "answer": "[0.   0.25 0.5  0.75 1.  ]",
+      "options": [
+       "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
+       "[0.   0.25 0.5  0.75 1.  ]",
+       "[0 2 4 6 8] [0.  0.5 1. ]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -4849,6 +5029,11 @@
       "q": "Checkpoint: predict the output of this code about converting with astype.",
       "code": "import numpy as np\na = np.array([1.7, 2.9])\nprint(a.astype(int))",
       "answer": "[1 2]",
+      "options": [
+       "[4]",
+       "[1 2]",
+       "float32 12"
+      ],
       "difficulty": "easy"
      },
      {
@@ -4862,6 +5047,11 @@
       "q": "Checkpoint: predict the output of this code about overflow is silent.",
       "code": "import numpy as np\na = np.array([250], dtype=np.uint8)\nprint(a + 10)",
       "answer": "[4]",
+      "options": [
+       "[4]",
+       "[1 2]",
+       "float32 12"
+      ],
       "difficulty": "medium"
      },
      {
@@ -4875,6 +5065,11 @@
       "q": "Checkpoint: predict the output of this code about smaller dtype, smaller memory.",
       "code": "import numpy as np\na = np.array([1, 2, 3], dtype=np.float32)\nprint(a.dtype, a.nbytes)",
       "answer": "float32 12",
+      "options": [
+       "[1 2]",
+       "[4]",
+       "float32 12"
+      ],
       "difficulty": "hard"
      },
      {
@@ -4888,6 +5083,11 @@
       "q": "Checkpoint: predict the output of this code about astype truncates toward zero.",
       "code": "import numpy as np\nprint(np.array([1.9, -1.9]).astype(int))",
       "answer": "[ 1 -1]",
+      "options": [
+       "[1 2]",
+       "[ 1 -1]",
+       "[4]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -4901,6 +5101,11 @@
       "q": "Checkpoint: predict the output of this code about text becomes a number with astype.",
       "code": "import numpy as np\nprint(np.array([\"1\", \"2\"]).astype(float))",
       "answer": "[1. 2.]",
+      "options": [
+       "[1. 2.]",
+       "[1 2]",
+       "[4]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -4914,6 +5119,11 @@
       "q": "Checkpoint: predict the output of this code about division always yields floats.",
       "code": "import numpy as np\nprint((np.array([1, 2]) / 2).dtype)",
       "answer": "float64",
+      "options": [
+       "[1 2]",
+       "[4]",
+       "float64"
+      ],
       "difficulty": "hard"
      },
      {
@@ -4927,6 +5137,11 @@
       "q": "Checkpoint: predict the output of this code about numbers become booleans by truthiness.",
       "code": "import numpy as np\nprint(np.array([0, 1, 2]).astype(bool))",
       "answer": "[False  True  True]",
+      "options": [
+       "[1 2]",
+       "[False  True  True]",
+       "[4]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -4940,6 +5155,11 @@
       "q": "Checkpoint: predict the output of this code about count with a boolean array.",
       "code": "import numpy as np\nm = np.array([True, False, True])\nprint(m.sum())",
       "answer": "2",
+      "options": [
+       "[1 2]",
+       "[4]",
+       "2"
+      ],
       "difficulty": "medium"
      },
      {
@@ -4953,6 +5173,11 @@
       "q": "Checkpoint: predict the output of this code about dtype reports the element type.",
       "code": "import numpy as np\n\nprint(np.array([1, 2]).dtype, np.array([1.0]).dtype)",
       "answer": "int64 float64",
+      "options": [
+       "int64 float64",
+       "[1 2]",
+       "[4]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -4966,6 +5191,11 @@
       "q": "Checkpoint: predict the output of this code about a float array prints a decimal point.",
       "code": "import numpy as np\n\nprint(np.array([1, 2], dtype=float))",
       "answer": "[1. 2.]",
+      "options": [
+       "[1. 2.]",
+       "[1 2]",
+       "[4]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -4979,6 +5209,11 @@
       "q": "Checkpoint: predict the output of this code about each dtype has a size in bytes.",
       "code": "import numpy as np\n\nprint(np.dtype('int64').itemsize, np.dtype('int32').itemsize)",
       "answer": "8 4",
+      "options": [
+       "8 4",
+       "[1 2]",
+       "[4]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -4992,6 +5227,11 @@
       "q": "Checkpoint: predict the output of this code about a comparison produces booleans.",
       "code": "import numpy as np\n\nprint((np.array([1, 2, 3]) > 1).dtype)",
       "answer": "bool",
+      "options": [
+       "bool",
+       "[1 2]",
+       "[4]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -6086,6 +6326,11 @@
       "q": "Checkpoint: predict the output of this code about positive and negative indexing.",
       "code": "import numpy as np\na = np.array([10, 20, 30, 40])\nprint(a[0], a[-1])",
       "answer": "10 40",
+      "options": [
+       "10 40",
+       "6 [1 2 3]",
+       "[10 30]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -6099,6 +6344,11 @@
       "q": "Checkpoint: predict the output of this code about rows and cells in 2-d.",
       "code": "import numpy as np\na = np.array([[1, 2, 3], [4, 5, 6]])\nprint(a[1, 2], a[0])",
       "answer": "6 [1 2 3]",
+      "options": [
+       "6 [1 2 3]",
+       "10 40",
+       "[10 30]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -6112,6 +6362,11 @@
       "q": "Checkpoint: predict the output of this code about fancy indexing with an index array.",
       "code": "import numpy as np\na = np.array([10, 20, 30, 40])\nprint(a[[0, 2]])",
       "answer": "[10 30]",
+      "options": [
+       "10 40",
+       "[10 30]",
+       "6 [1 2 3]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -6125,6 +6380,11 @@
       "q": "Checkpoint: predict the output of this code about index with a coordinate pair.",
       "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a[1, 2])",
       "answer": "5",
+      "options": [
+       "10 40",
+       "5",
+       "6 [1 2 3]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -6138,6 +6398,11 @@
       "q": "Checkpoint: predict the output of this code about one index drops a dimension.",
       "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a[0].shape)",
       "answer": "(3,)",
+      "options": [
+       "(3,)",
+       "10 40",
+       "6 [1 2 3]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -6151,6 +6416,11 @@
       "q": "Checkpoint: predict the output of this code about select a whole column.",
       "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a[:, 1])",
       "answer": "[1 4]",
+      "options": [
+       "[1 4]",
+       "10 40",
+       "6 [1 2 3]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -6164,6 +6434,11 @@
       "q": "Checkpoint: predict the output of this code about fancy indexing picks rows.",
       "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a[[0, 1, 0]])",
       "answer": "[[0 1 2]\n [3 4 5]\n [0 1 2]]",
+      "options": [
+       "10 40",
+       "[[0 1 2]\n [3 4 5]\n [0 1 2]]",
+       "6 [1 2 3]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -6177,6 +6452,11 @@
       "q": "Checkpoint: predict the output of this code about take works along an axis.",
       "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(np.take(a, [2, 0], axis=1))",
       "answer": "[[2 0]\n [5 3]]",
+      "options": [
+       "[[2 0]\n [5 3]]",
+       "10 40",
+       "6 [1 2 3]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -6190,6 +6470,11 @@
       "q": "Checkpoint: predict the output of this code about negative indices count from the end.",
       "code": "import numpy as np\n\na = np.array([10, 20, 30])\nprint(a[-1], a[-2])",
       "answer": "30 20",
+      "options": [
+       "10 40",
+       "6 [1 2 3]",
+       "30 20"
+      ],
       "difficulty": "hard"
      },
      {
@@ -6203,6 +6488,11 @@
       "q": "Checkpoint: predict the output of this code about slice columns of a matrix.",
       "code": "import numpy as np\n\na = np.arange(6).reshape(2, 3)\nprint(a[:, 1])",
       "answer": "[1 4]",
+      "options": [
+       "10 40",
+       "[1 4]",
+       "6 [1 2 3]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -6216,6 +6506,11 @@
       "q": "Checkpoint: predict the output of this code about a boolean mask filters one dimension.",
       "code": "import numpy as np\n\na = np.array([5, 6, 7])\nprint(a[a > 5])",
       "answer": "[6 7]",
+      "options": [
+       "[6 7]",
+       "10 40",
+       "6 [1 2 3]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -6229,6 +6524,11 @@
       "q": "Checkpoint: predict the output of this code about index with paired row and column lists.",
       "code": "import numpy as np\n\na = np.arange(9).reshape(3, 3)\nprint(a[[0, 2], [1, 2]])",
       "answer": "[1 8]",
+      "options": [
+       "10 40",
+       "6 [1 2 3]",
+       "[1 8]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -7323,6 +7623,11 @@
       "q": "Checkpoint: predict the output of this code about slice with a step.",
       "code": "import numpy as np\na = np.arange(10)\nprint(a[2:8:2])",
       "answer": "[2 4 6]",
+      "options": [
+       "[[1 2]\n [4 5]]",
+       "[ 0 99  2  3  4]",
+       "[2 4 6]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -7336,6 +7641,11 @@
       "q": "Checkpoint: predict the output of this code about slice rows and columns.",
       "code": "import numpy as np\na = np.arange(9).reshape(3, 3)\nprint(a[:2, 1:])",
       "answer": "[[1 2]\n [4 5]]",
+      "options": [
+       "[2 4 6]",
+       "[[1 2]\n [4 5]]",
+       "[ 0 99  2  3  4]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -7349,6 +7659,11 @@
       "q": "Checkpoint: predict the output of this code about a slice is a view.",
       "code": "import numpy as np\na = np.arange(5)\nb = a[1:3]\nb[0] = 99\nprint(a)",
       "answer": "[ 0 99  2  3  4]",
+      "options": [
+       "[2 4 6]",
+       "[[1 2]\n [4 5]]",
+       "[ 0 99  2  3  4]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -7362,6 +7677,11 @@
       "q": "Checkpoint: predict the output of this code about reverse a row with a negative step.",
       "code": "import numpy as np\na = np.arange(4)\nprint(a[::-1])",
       "answer": "[3 2 1 0]",
+      "options": [
+       "[2 4 6]",
+       "[3 2 1 0]",
+       "[[1 2]\n [4 5]]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -7375,6 +7695,11 @@
       "q": "Checkpoint: predict the output of this code about slice assignment writes through.",
       "code": "import numpy as np\na = np.arange(4)\na[0:2] = 0\nprint(a)",
       "answer": "[0 0 2 3]",
+      "options": [
+       "[2 4 6]",
+       "[0 0 2 3]",
+       "[[1 2]\n [4 5]]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -7388,6 +7713,11 @@
       "q": "Checkpoint: predict the output of this code about step in both dimensions.",
       "code": "import numpy as np\na = np.arange(16).reshape(4, 4)\nprint(a[::2, ::2])",
       "answer": "[[ 0  2]\n [ 8 10]]",
+      "options": [
+       "[2 4 6]",
+       "[[1 2]\n [4 5]]",
+       "[[ 0  2]\n [ 8 10]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -7401,6 +7731,11 @@
       "q": "Checkpoint: predict the output of this code about copy breaks the view link.",
       "code": "import numpy as np\na = np.arange(3)\nb = a[:].copy()\nb[0] = 9\nprint(a, b)",
       "answer": "[0 1 2] [9 1 2]",
+      "options": [
+       "[2 4 6]",
+       "[0 1 2] [9 1 2]",
+       "[[1 2]\n [4 5]]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -7414,6 +7749,11 @@
       "q": "Checkpoint: predict the output of this code about slices clamp instead of failing.",
       "code": "import numpy as np\na = np.arange(3)\nprint(a[0:100])",
       "answer": "[0 1 2]",
+      "options": [
+       "[2 4 6]",
+       "[0 1 2]",
+       "[[1 2]\n [4 5]]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -7427,6 +7767,11 @@
       "q": "Checkpoint: predict the output of this code about the end of a slice is exclusive.",
       "code": "import numpy as np\n\na = np.arange(10)\nprint(a[2:5])",
       "answer": "[2 3 4]",
+      "options": [
+       "[2 4 6]",
+       "[2 3 4]",
+       "[[1 2]\n [4 5]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -7440,6 +7785,11 @@
       "q": "Checkpoint: predict the output of this code about omit a bound to keep it open.",
       "code": "import numpy as np\n\na = np.arange(5)\nprint(a[:2], a[3:])",
       "answer": "[0 1] [3 4]",
+      "options": [
+       "[2 4 6]",
+       "[0 1] [3 4]",
+       "[[1 2]\n [4 5]]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -7453,6 +7803,11 @@
       "q": "Checkpoint: predict the output of this code about a step of two skips elements.",
       "code": "import numpy as np\n\nprint(np.arange(10)[::2])",
       "answer": "[0 2 4 6 8]",
+      "options": [
+       "[2 4 6]",
+       "[0 2 4 6 8]",
+       "[[1 2]\n [4 5]]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -7466,6 +7821,11 @@
       "q": "Checkpoint: predict the output of this code about slice rows and columns at once.",
       "code": "import numpy as np\n\na = np.arange(9).reshape(3, 3)\nprint(a[1:, :2])",
       "answer": "[[3 4]\n [6 7]]",
+      "options": [
+       "[[3 4]\n [6 7]]",
+       "[2 4 6]",
+       "[[1 2]\n [4 5]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -8560,6 +8920,11 @@
       "q": "Checkpoint: predict the output of this code about reshape.",
       "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a)",
       "answer": "[[0 1 2]\n [3 4 5]]",
+      "options": [
+       "[1 2 3 4] [[1 3]\n [2 4]]",
+       "[[0 1 2]\n [3 4 5]]",
+       "[1 2 1 2] (2, 2)"
+      ],
       "difficulty": "easy"
      },
      {
@@ -8573,6 +8938,11 @@
       "q": "Checkpoint: predict the output of this code about ravel and transpose.",
       "code": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a.ravel(), a.T)",
       "answer": "[1 2 3 4] [[1 3]\n [2 4]]",
+      "options": [
+       "[[0 1 2]\n [3 4 5]]",
+       "[1 2 3 4] [[1 3]\n [2 4]]",
+       "[1 2 1 2] (2, 2)"
+      ],
       "difficulty": "medium"
      },
      {
@@ -8586,6 +8956,11 @@
       "q": "Checkpoint: predict the output of this code about concatenate and stack.",
       "code": "import numpy as np\na = np.array([1, 2])\nprint(np.concatenate([a, a]), np.stack([a, a]).shape)",
       "answer": "[1 2 1 2] (2, 2)",
+      "options": [
+       "[1 2 1 2] (2, 2)",
+       "[[0 1 2]\n [3 4 5]]",
+       "[1 2 3 4] [[1 3]\n [2 4]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -8599,6 +8974,11 @@
       "q": "Checkpoint: predict the output of this code about reshape with -1 infers the size.",
       "code": "import numpy as np\na = np.arange(6)\nprint(a.reshape(-1, 2))",
       "answer": "[[0 1]\n [2 3]\n [4 5]]",
+      "options": [
+       "[[0 1 2]\n [3 4 5]]",
+       "[[0 1]\n [2 3]\n [4 5]]",
+       "[1 2 3 4] [[1 3]\n [2 4]]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -8612,6 +8992,11 @@
       "q": "Checkpoint: predict the output of this code about newaxis makes a column.",
       "code": "import numpy as np\nprint(np.arange(3)[:, np.newaxis].shape)",
       "answer": "(3, 1)",
+      "options": [
+       "[[0 1 2]\n [3 4 5]]",
+       "(3, 1)",
+       "[1 2 3 4] [[1 3]\n [2 4]]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -8625,6 +9010,11 @@
       "q": "Checkpoint: predict the output of this code about stack adds a new axis.",
       "code": "import numpy as np\nprint(np.stack([np.zeros(2), np.ones(2)]).shape)",
       "answer": "(2, 2)",
+      "options": [
+       "(2, 2)",
+       "[[0 1 2]\n [3 4 5]]",
+       "[1 2 3 4] [[1 3]\n [2 4]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -8638,6 +9028,11 @@
       "q": "Checkpoint: predict the output of this code about split cuts an array into pieces.",
       "code": "import numpy as np\nprint(np.split(np.arange(4), 2))",
       "answer": "[array([0, 1]), array([2, 3])]",
+      "options": [
+       "[[0 1 2]\n [3 4 5]]",
+       "[array([0, 1]), array([2, 3])]",
+       "[1 2 3 4] [[1 3]\n [2 4]]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -8651,6 +9046,11 @@
       "q": "Checkpoint: predict the output of this code about flatten always copies.",
       "code": "import numpy as np\na = np.arange(4)\nf = a.flatten()\nf[0] = 9\nprint(a[0])",
       "answer": "0",
+      "options": [
+       "0",
+       "[[0 1 2]\n [3 4 5]]",
+       "[1 2 3 4] [[1 3]\n [2 4]]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -8664,6 +9064,11 @@
       "q": "Checkpoint: predict the output of this code about ravel flattens without copying when it can.",
       "code": "import numpy as np\n\na = np.arange(6).reshape(2, 3)\nprint(a.ravel().base is a)",
       "answer": "False",
+      "options": [
+       "False",
+       "[[0 1 2]\n [3 4 5]]",
+       "[1 2 3 4] [[1 3]\n [2 4]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -8677,6 +9082,11 @@
       "q": "Checkpoint: predict the output of this code about reshape turns a vector into a column.",
       "code": "import numpy as np\n\na = np.arange(4)\nprint(a.reshape(4, 1))",
       "answer": "[[0]\n [1]\n [2]\n [3]]",
+      "options": [
+       "[[0]\n [1]\n [2]\n [3]]",
+       "[[0 1 2]\n [3 4 5]]",
+       "[1 2 3 4] [[1 3]\n [2 4]]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -8690,6 +9100,11 @@
       "q": "Checkpoint: predict the output of this code about vstack stacks arrays into rows.",
       "code": "import numpy as np\n\nprint(np.vstack([np.array([1, 2]), np.array([3, 4])]))",
       "answer": "[[1 2]\n [3 4]]",
+      "options": [
+       "[[1 2]\n [3 4]]",
+       "[[0 1 2]\n [3 4 5]]",
+       "[1 2 3 4] [[1 3]\n [2 4]]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -8703,6 +9118,11 @@
       "q": "Checkpoint: predict the output of this code about transpose swaps the axes.",
       "code": "import numpy as np\n\na = np.arange(6).reshape(2, 3)\nprint(a.T.shape)",
       "answer": "(3, 2)",
+      "options": [
+       "(3, 2)",
+       "[[0 1 2]\n [3 4 5]]",
+       "[1 2 3 4] [[1 3]\n [2 4]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -9797,6 +10217,11 @@
       "q": "Checkpoint: predict the output of this code about arithmetic is elementwise.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a + 1, a ** 2)",
       "answer": "[2 3 4] [1 4 9]",
+      "options": [
+       "3.0 1.0 0.0",
+       "[2 3 4] [1 4 9]",
+       "[False  True  True] [5 3]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -9810,6 +10235,11 @@
       "q": "Checkpoint: predict the output of this code about math ufuncs.",
       "code": "import numpy as np\nprint(np.sqrt(9), np.exp(0), np.log(1))",
       "answer": "3.0 1.0 0.0",
+      "options": [
+       "[2 3 4] [1 4 9]",
+       "[False  True  True] [5 3]",
+       "3.0 1.0 0.0"
+      ],
       "difficulty": "medium"
      },
      {
@@ -9823,6 +10253,11 @@
       "q": "Checkpoint: predict the output of this code about comparisons produce masks.",
       "code": "import numpy as np\na = np.array([1, 5, 3])\nprint(a > 2, a[a > 2])",
       "answer": "[False  True  True] [5 3]",
+      "options": [
+       "[2 3 4] [1 4 9]",
+       "[False  True  True] [5 3]",
+       "3.0 1.0 0.0"
+      ],
       "difficulty": "hard"
      },
      {
@@ -9836,6 +10271,11 @@
       "q": "Checkpoint: predict the output of this code about sqrt of perfect squares is exact.",
       "code": "import numpy as np\nprint(np.sqrt([4, 9, 25]))",
       "answer": "[2. 3. 5.]",
+      "options": [
+       "[2 3 4] [1 4 9]",
+       "3.0 1.0 0.0",
+       "[2. 3. 5.]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -9849,6 +10289,11 @@
       "q": "Checkpoint: predict the output of this code about reduce sums, accumulate keeps running totals.",
       "code": "import numpy as np\nprint(np.add.reduce([1, 2, 3]), np.add.accumulate([1, 2, 3]))",
       "answer": "6 [1 3 6]",
+      "options": [
+       "[2 3 4] [1 4 9]",
+       "3.0 1.0 0.0",
+       "6 [1 3 6]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -9862,6 +10307,11 @@
       "q": "Checkpoint: predict the output of this code about clip limits every element.",
       "code": "import numpy as np\nprint(np.clip([0, 5, 10], 1, 8))",
       "answer": "[1 5 8]",
+      "options": [
+       "[2 3 4] [1 4 9]",
+       "[1 5 8]",
+       "3.0 1.0 0.0"
+      ],
       "difficulty": "hard"
      },
      {
@@ -9875,6 +10325,11 @@
       "q": "Checkpoint: predict the output of this code about round, floor and ceil differ.",
       "code": "import numpy as np\nprint(np.round([1.5, 2.4]), np.floor([1.5, 2.4]), np.ceil([1.5, 2.4]))",
       "answer": "[2. 2.] [1. 2.] [2. 3.]",
+      "options": [
+       "[2 3 4] [1 4 9]",
+       "[2. 2.] [1. 2.] [2. 3.]",
+       "3.0 1.0 0.0"
+      ],
       "difficulty": "easy"
      },
      {
@@ -9888,6 +10343,11 @@
       "q": "Checkpoint: predict the output of this code about sign tells you direction.",
       "code": "import numpy as np\nprint(np.sign([-3, 0, 5]))",
       "answer": "[-1  0  1]",
+      "options": [
+       "[-1  0  1]",
+       "[2 3 4] [1 4 9]",
+       "3.0 1.0 0.0"
+      ],
       "difficulty": "medium"
      },
      {
@@ -9901,6 +10361,11 @@
       "q": "Checkpoint: predict the output of this code about exponentiation uses the ** operator.",
       "code": "import numpy as np\n\nprint(np.array([2, 3]) ** 2)",
       "answer": "[4 9]",
+      "options": [
+       "[2 3 4] [1 4 9]",
+       "3.0 1.0 0.0",
+       "[4 9]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -9914,6 +10379,11 @@
       "q": "Checkpoint: predict the output of this code about abs works on whole arrays.",
       "code": "import numpy as np\n\nprint(np.abs(np.array([-3, 4])))",
       "answer": "[3 4]",
+      "options": [
+       "[2 3 4] [1 4 9]",
+       "[3 4]",
+       "3.0 1.0 0.0"
+      ],
       "difficulty": "easy"
      },
      {
@@ -9927,6 +10397,11 @@
       "q": "Checkpoint: predict the output of this code about cumsum keeps every running total.",
       "code": "import numpy as np\n\nprint(np.cumsum(np.array([1, 2, 3])))",
       "answer": "[1 3 6]",
+      "options": [
+       "[2 3 4] [1 4 9]",
+       "3.0 1.0 0.0",
+       "[1 3 6]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -9940,6 +10415,11 @@
       "q": "Checkpoint: predict the output of this code about log and exp invert each other.",
       "code": "import numpy as np\n\nvalues = np.array([1.0, 10.0])\nprint(np.allclose(np.exp(np.log(values)), values))",
       "answer": "True",
+      "options": [
+       "[2 3 4] [1 4 9]",
+       "3.0 1.0 0.0",
+       "True"
+      ],
       "difficulty": "hard"
      },
      {
@@ -11034,6 +11514,11 @@
       "q": "Checkpoint: predict the output of this code about scalar broadcasting.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a + 10)",
       "answer": "[11 12 13]",
+      "options": [
+       "[[ 10  40  90]\n [ 40 100 180]]",
+       "[11 12 13]",
+       "broadcast error"
+      ],
       "difficulty": "easy"
      },
      {
@@ -11047,6 +11532,11 @@
       "q": "Checkpoint: predict the output of this code about row and column broadcasting.",
       "code": "import numpy as np\na = np.array([[1, 2, 3], [4, 5, 6]])\nw = np.array([10, 20, 30])\nprint(a * w)",
       "answer": "[[ 10  40  90]\n [ 40 100 180]]",
+      "options": [
+       "[[ 10  40  90]\n [ 40 100 180]]",
+       "[11 12 13]",
+       "broadcast error"
+      ],
       "difficulty": "medium"
      },
      {
@@ -11060,6 +11550,11 @@
       "q": "Checkpoint: predict the output of this code about incompatible shapes fail loudly.",
       "code": "import numpy as np\na = np.ones((2, 3))\nb = np.ones((2, 2))\ntry:\n    a + b\nexcept ValueError:\n    print('broadcast error')",
       "answer": "broadcast error",
+      "options": [
+       "[11 12 13]",
+       "broadcast error",
+       "[[ 10  40  90]\n [ 40 100 180]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -11073,6 +11568,11 @@
       "q": "Checkpoint: predict the output of this code about a vector broadcasts across rows.",
       "code": "import numpy as np\na = np.ones((2, 3), dtype=int)\nprint(a + np.array([1, 2, 3]))",
       "answer": "[[2 3 4]\n [2 3 4]]",
+      "options": [
+       "[11 12 13]",
+       "[[2 3 4]\n [2 3 4]]",
+       "[[ 10  40  90]\n [ 40 100 180]]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -11086,6 +11586,11 @@
       "q": "Checkpoint: predict the output of this code about a column broadcasts down.",
       "code": "import numpy as np\na = np.ones((2, 3), dtype=int)\nprint(a + np.array([[10], [20]]))",
       "answer": "[[11 11 11]\n [21 21 21]]",
+      "options": [
+       "[[11 11 11]\n [21 21 21]]",
+       "[11 12 13]",
+       "[[ 10  40  90]\n [ 40 100 180]]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -11099,6 +11604,11 @@
       "q": "Checkpoint: predict the output of this code about outer product uses two new axes.",
       "code": "import numpy as np\na = np.array([1, 2])\nb = np.array([3, 4])\nprint(a[:, None] * b[None, :])",
       "answer": "[[3 4]\n [6 8]]",
+      "options": [
+       "[11 12 13]",
+       "[[3 4]\n [6 8]]",
+       "[[ 10  40  90]\n [ 40 100 180]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -11112,6 +11622,11 @@
       "q": "Checkpoint: predict the output of this code about comparison broadcasts too.",
       "code": "import numpy as np\na = np.array([[3, 1, 2], [6, 5, 4]])\nprint(a > a.mean(axis=0))",
       "answer": "[[False False False]\n [ True  True  True]]",
+      "options": [
+       "[11 12 13]",
+       "[[False False False]\n [ True  True  True]]",
+       "[[ 10  40  90]\n [ 40 100 180]]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -11125,6 +11640,11 @@
       "q": "Checkpoint: predict the output of this code about reshape prepares a strip for broadcasting.",
       "code": "import numpy as np\nv = np.arange(3)\nprint((v.reshape(3, 1) + np.zeros((1, 2))).shape)",
       "answer": "(3, 2)",
+      "options": [
+       "[11 12 13]",
+       "[[ 10  40  90]\n [ 40 100 180]]",
+       "(3, 2)"
+      ],
       "difficulty": "medium"
      },
      {
@@ -11138,6 +11658,11 @@
       "q": "Checkpoint: predict the output of this code about a row array broadcasts across rows.",
       "code": "import numpy as np\n\na = np.ones((2, 3))\nprint((a + np.array([1, 2, 3])).shape)",
       "answer": "(2, 3)",
+      "options": [
+       "[11 12 13]",
+       "(2, 3)",
+       "[[ 10  40  90]\n [ 40 100 180]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -11151,6 +11676,11 @@
       "q": "Checkpoint: predict the output of this code about a scalar is the smallest broadcast.",
       "code": "import numpy as np\n\nprint((np.ones((2, 2)) * 3).tolist())",
       "answer": "[[3.0, 3.0], [3.0, 3.0]]",
+      "options": [
+       "[11 12 13]",
+       "[[3.0, 3.0], [3.0, 3.0]]",
+       "[[ 10  40  90]\n [ 40 100 180]]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -11164,6 +11694,11 @@
       "q": "Checkpoint: predict the output of this code about broadcast a column against a row.",
       "code": "import numpy as np\n\nprint((np.array([[1], [2]]) * np.array([10, 20])).tolist())",
       "answer": "[[10, 20], [20, 40]]",
+      "options": [
+       "[11 12 13]",
+       "[[ 10  40  90]\n [ 40 100 180]]",
+       "[[10, 20], [20, 40]]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -11177,6 +11712,11 @@
       "q": "Checkpoint: predict the output of this code about a size of one stretches automatically.",
       "code": "import numpy as np\n\nprint((np.zeros((3, 1)) + np.ones(4)).shape)",
       "answer": "(3, 4)",
+      "options": [
+       "[11 12 13]",
+       "(3, 4)",
+       "[[ 10  40  90]\n [ 40 100 180]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -12271,6 +12811,11 @@
       "q": "Checkpoint: predict the output of this code about mean along an axis.",
       "code": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a.mean(), a.mean(axis=1))",
       "answer": "2.5 [1.5 3.5]",
+      "options": [
+       "2.5 [1.5 3.5]",
+       "1.118033988749895 1.25",
+       "1 [3 4 6]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -12284,6 +12829,11 @@
       "q": "Checkpoint: predict the output of this code about standard deviation and variance.",
       "code": "import numpy as np\na = np.array([1, 2, 3, 4])\nprint(a.std(), a.var())",
       "answer": "1.118033988749895 1.25",
+      "options": [
+       "2.5 [1.5 3.5]",
+       "1.118033988749895 1.25",
+       "1 [3 4 6]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -12297,6 +12847,11 @@
       "q": "Checkpoint: predict the output of this code about position and running totals.",
       "code": "import numpy as np\na = np.array([3, 1, 2])\nprint(a.argmin(), a.cumsum())",
       "answer": "1 [3 4 6]",
+      "options": [
+       "1 [3 4 6]",
+       "2.5 [1.5 3.5]",
+       "1.118033988749895 1.25"
+      ],
       "difficulty": "hard"
      },
      {
@@ -12310,6 +12865,11 @@
       "q": "Checkpoint: predict the output of this code about median is not the mean.",
       "code": "import numpy as np\nprint(np.median([1, 2, 100]), np.mean([1, 2, 100]))",
       "answer": "2.0 34.333333333333336",
+      "options": [
+       "2.5 [1.5 3.5]",
+       "2.0 34.333333333333336",
+       "1.118033988749895 1.25"
+      ],
       "difficulty": "easy"
      },
      {
@@ -12323,6 +12883,11 @@
       "q": "Checkpoint: predict the output of this code about keepdims keeps a column.",
       "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a.mean(axis=1, keepdims=True).shape)",
       "answer": "(2, 1)",
+      "options": [
+       "2.5 [1.5 3.5]",
+       "1.118033988749895 1.25",
+       "(2, 1)"
+      ],
       "difficulty": "medium"
      },
      {
@@ -12336,6 +12901,11 @@
       "q": "Checkpoint: predict the output of this code about average can weight values.",
       "code": "import numpy as np\nprint(np.average([1, 2], weights=[1, 3]))",
       "answer": "1.75",
+      "options": [
+       "2.5 [1.5 3.5]",
+       "1.75",
+       "1.118033988749895 1.25"
+      ],
       "difficulty": "hard"
      },
      {
@@ -12349,6 +12919,11 @@
       "q": "Checkpoint: predict the output of this code about any and all answer yes/no.",
       "code": "import numpy as np\nm = np.array([True, False])\nprint(m.any(), m.all())",
       "answer": "True False",
+      "options": [
+       "2.5 [1.5 3.5]",
+       "True False",
+       "1.118033988749895 1.25"
+      ],
       "difficulty": "easy"
      },
      {
@@ -12362,6 +12937,11 @@
       "q": "Checkpoint: predict the output of this code about prod multiplies the elements.",
       "code": "import numpy as np\nprint(np.prod(np.array([1, 2, 3, 4])))",
       "answer": "24",
+      "options": [
+       "2.5 [1.5 3.5]",
+       "24",
+       "1.118033988749895 1.25"
+      ],
       "difficulty": "medium"
      },
      {
@@ -12375,6 +12955,11 @@
       "q": "Checkpoint: predict the output of this code about mean of a matrix returns one number.",
       "code": "import numpy as np\n\nprint(np.array([[1, 2], [3, 4]]).mean())",
       "answer": "2.5",
+      "options": [
+       "2.5 [1.5 3.5]",
+       "1.118033988749895 1.25",
+       "2.5"
+      ],
       "difficulty": "hard"
      },
      {
@@ -12388,6 +12973,11 @@
       "q": "Checkpoint: predict the output of this code about axis=1 reduces each row.",
       "code": "import numpy as np\n\nprint(np.array([[1, 2, 3], [4, 5, 6]]).sum(axis=1).tolist())",
       "answer": "[6, 15]",
+      "options": [
+       "2.5 [1.5 3.5]",
+       "1.118033988749895 1.25",
+       "[6, 15]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -12401,6 +12991,11 @@
       "q": "Checkpoint: predict the output of this code about std measures spread in the same units.",
       "code": "import numpy as np\n\nprint(np.array([2, 4, 4, 4, 5, 5, 7, 9]).std())",
       "answer": "2.0",
+      "options": [
+       "2.5 [1.5 3.5]",
+       "2.0",
+       "1.118033988749895 1.25"
+      ],
       "difficulty": "medium"
      },
      {
@@ -12414,6 +13009,11 @@
       "q": "Checkpoint: predict the output of this code about the maximum and where it lives.",
       "code": "import numpy as np\n\na = np.array([3, 9, 4])\nprint(a.max(), a.argmax())",
       "answer": "9 1",
+      "options": [
+       "9 1",
+       "2.5 [1.5 3.5]",
+       "1.118033988749895 1.25"
+      ],
       "difficulty": "hard"
      },
      {
@@ -13508,6 +14108,11 @@
       "q": "Checkpoint: predict the output of this code about filter with a mask.",
       "code": "import numpy as np\na = np.array([55, 72, 38])\nprint(a[a >= 60])",
       "answer": "[72]",
+      "options": [
+       "[72]",
+       "['small' 'big' 'big']",
+       "[False  True False  True]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -13521,6 +14126,11 @@
       "q": "Checkpoint: predict the output of this code about np.where chooses without a loop.",
       "code": "import numpy as np\na = np.array([1, 5, 3])\nprint(np.where(a > 2, 'big', 'small'))",
       "answer": "['small' 'big' 'big']",
+      "options": [
+       "[72]",
+       "['small' 'big' 'big']",
+       "[False  True False  True]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -13534,6 +14144,11 @@
       "q": "Checkpoint: predict the output of this code about membership with isin.",
       "code": "import numpy as np\na = np.array([1, 2, 3, 4])\nprint(np.isin(a, [2, 4]))",
       "answer": "[False  True False  True]",
+      "options": [
+       "[72]",
+       "['small' 'big' 'big']",
+       "[False  True False  True]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -13547,6 +14162,11 @@
       "q": "Checkpoint: predict the output of this code about combine masks with & and |.",
       "code": "import numpy as np\na = np.arange(6)\nprint(a[(a > 1) & (a < 4)])",
       "answer": "[2 3]",
+      "options": [
+       "[72]",
+       "['small' 'big' 'big']",
+       "[2 3]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -13560,6 +14180,11 @@
       "q": "Checkpoint: predict the output of this code about invert a mask with ~.",
       "code": "import numpy as np\na = np.arange(6)\nprint(a[~(a > 1)])",
       "answer": "[0 1]",
+      "options": [
+       "[72]",
+       "['small' 'big' 'big']",
+       "[0 1]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -13573,6 +14198,11 @@
       "q": "Checkpoint: predict the output of this code about assign through a mask.",
       "code": "import numpy as np\na = np.array([-1, 4, -5])\na[a < 0] = 0\nprint(a)",
       "answer": "[0 4 0]",
+      "options": [
+       "[0 4 0]",
+       "[72]",
+       "['small' 'big' 'big']"
+      ],
       "difficulty": "hard"
      },
      {
@@ -13586,6 +14216,11 @@
       "q": "Checkpoint: predict the output of this code about count how many match.",
       "code": "import numpy as np\na = np.arange(10)\nprint((a % 2 == 0).sum())",
       "answer": "5",
+      "options": [
+       "[72]",
+       "['small' 'big' 'big']",
+       "5"
+      ],
       "difficulty": "easy"
      },
      {
@@ -13599,6 +14234,11 @@
       "q": "Checkpoint: predict the output of this code about filter rows by one column.",
       "code": "import numpy as np\na = np.array([[1, 9], [2, 3]])\nprint(a[a[:, 1] > 5])",
       "answer": "[[1 9]]",
+      "options": [
+       "[72]",
+       "[[1 9]]",
+       "['small' 'big' 'big']"
+      ],
       "difficulty": "medium"
      },
      {
@@ -13612,6 +14252,11 @@
       "q": "Checkpoint: predict the output of this code about a mask keeps the shape of its array.",
       "code": "import numpy as np\n\na = np.arange(5)\nprint((a % 2 == 0).shape)",
       "answer": "(5,)",
+      "options": [
+       "[72]",
+       "['small' 'big' 'big']",
+       "(5,)"
+      ],
       "difficulty": "hard"
      },
      {
@@ -13625,6 +14270,11 @@
       "q": "Checkpoint: predict the output of this code about where chooses between two values.",
       "code": "import numpy as np\n\nprint(np.where(np.array([1, 5, 2]) > 3, 'big', 'small').tolist())",
       "answer": "['small', 'big', 'small']",
+      "options": [
+       "[72]",
+       "['small' 'big' 'big']",
+       "['small', 'big', 'small']"
+      ],
       "difficulty": "easy"
      },
      {
@@ -13638,6 +14288,11 @@
       "q": "Checkpoint: predict the output of this code about sum the mask to count matches.",
       "code": "import numpy as np\n\nprint(int((np.arange(10) > 5).sum()))",
       "answer": "4",
+      "options": [
+       "[72]",
+       "['small' 'big' 'big']",
+       "4"
+      ],
       "difficulty": "medium"
      },
      {
@@ -13651,6 +14306,11 @@
       "q": "Checkpoint: predict the output of this code about filter a matrix elementwise.",
       "code": "import numpy as np\n\na = np.arange(6).reshape(2, 3)\nprint(a[a % 2 == 0].tolist())",
       "answer": "[0, 2, 4]",
+      "options": [
+       "[0, 2, 4]",
+       "[72]",
+       "['small' 'big' 'big']"
+      ],
       "difficulty": "hard"
      },
      {
@@ -14745,6 +15405,11 @@
       "q": "Checkpoint: predict the output of this code about sort and argsort.",
       "code": "import numpy as np\na = np.array([3, 1, 2])\nprint(np.sort(a), np.argsort(a))",
       "answer": "[1 2 3] [1 2 0]",
+      "options": [
+       "2",
+       "[1 2 3] [1 2 0]",
+       "[1 2 3] [2]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -14758,6 +15423,11 @@
       "q": "Checkpoint: predict the output of this code about searchsorted.",
       "code": "import numpy as np\na = np.array([1, 3, 5])\nprint(np.searchsorted(a, 4))",
       "answer": "2",
+      "options": [
+       "2",
+       "[1 2 3] [1 2 0]",
+       "[1 2 3] [2]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -14771,6 +15441,11 @@
       "q": "Checkpoint: predict the output of this code about unique values and set operations.",
       "code": "import numpy as np\na = np.array([1, 2, 2, 3])\nprint(np.unique(a), np.intersect1d(a, [2, 4]))",
       "answer": "[1 2 3] [2]",
+      "options": [
+       "[1 2 3] [1 2 0]",
+       "2",
+       "[1 2 3] [2]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -14784,6 +15459,11 @@
       "q": "Checkpoint: predict the output of this code about sort each row separately.",
       "code": "import numpy as np\na = np.array([[3, 1, 2], [9, 7, 8]])\nprint(np.sort(a, axis=1))",
       "answer": "[[1 2 3]\n [7 8 9]]",
+      "options": [
+       "[[1 2 3]\n [7 8 9]]",
+       "[1 2 3] [1 2 0]",
+       "2"
+      ],
       "difficulty": "easy"
      },
      {
@@ -14797,6 +15477,11 @@
       "q": "Checkpoint: predict the output of this code about reverse a sorted array for descending order.",
       "code": "import numpy as np\nprint(np.sort([3, 1, 2])[::-1])",
       "answer": "[3 2 1]",
+      "options": [
+       "[1 2 3] [1 2 0]",
+       "[3 2 1]",
+       "2"
+      ],
       "difficulty": "medium"
      },
      {
@@ -14810,6 +15495,11 @@
       "q": "Checkpoint: predict the output of this code about partition keeps only k small values in front.",
       "code": "import numpy as np\npart = np.partition([5, 1, 4, 2, 3], 2)\nprint(part[:3].sum(), part[3:].sum())",
       "answer": "6 9",
+      "options": [
+       "[1 2 3] [1 2 0]",
+       "2",
+       "6 9"
+      ],
       "difficulty": "hard"
      },
      {
@@ -14823,6 +15513,11 @@
       "q": "Checkpoint: predict the output of this code about lexsort orders by the last key first.",
       "code": "import numpy as np\nnames = np.array(['b', 'a', 'b', 'a'])\nscores = np.array([2, 2, 1, 1])\norder = np.lexsort((scores, names))\nprint(names[order], scores[order])",
       "answer": "['a' 'a' 'b' 'b'] [1 2 1 2]",
+      "options": [
+       "['a' 'a' 'b' 'b'] [1 2 1 2]",
+       "[1 2 3] [1 2 0]",
+       "2"
+      ],
       "difficulty": "easy"
      },
      {
@@ -14836,6 +15531,11 @@
       "q": "Checkpoint: predict the output of this code about argmax finds the best position.",
       "code": "import numpy as np\nprint(np.argmax([3, 9, 5]))",
       "answer": "1",
+      "options": [
+       "1",
+       "[1 2 3] [1 2 0]",
+       "2"
+      ],
       "difficulty": "medium"
      },
      {
@@ -14849,6 +15549,11 @@
       "q": "Checkpoint: predict the output of this code about argsort returns the order, not the values.",
       "code": "import numpy as np\n\nprint(np.argsort(np.array([3, 1, 2])).tolist())",
       "answer": "[1, 2, 0]",
+      "options": [
+       "[1 2 3] [1 2 0]",
+       "2",
+       "[1, 2, 0]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -14862,6 +15567,11 @@
       "q": "Checkpoint: predict the output of this code about sort can work in place.",
       "code": "import numpy as np\n\na = np.array([[3, 1], [2, 4]])\na.sort(axis=1)\nprint(a.tolist())",
       "answer": "[[1, 3], [2, 4]]",
+      "options": [
+       "[1 2 3] [1 2 0]",
+       "[[1, 3], [2, 4]]",
+       "2"
+      ],
       "difficulty": "easy"
      },
      {
@@ -14875,6 +15585,11 @@
       "q": "Checkpoint: predict the output of this code about unique removes repeats and sorts.",
       "code": "import numpy as np\n\nprint(np.unique(np.array([3, 1, 3, 2])).tolist())",
       "answer": "[1, 2, 3]",
+      "options": [
+       "[1 2 3] [1 2 0]",
+       "2",
+       "[1, 2, 3]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -14888,6 +15603,11 @@
       "q": "Checkpoint: predict the output of this code about argmin finds the smallest position.",
       "code": "import numpy as np\n\nprint(np.argmin(np.array([4, 2, 8])))",
       "answer": "1",
+      "options": [
+       "[1 2 3] [1 2 0]",
+       "1",
+       "2"
+      ],
       "difficulty": "hard"
      },
      {
@@ -15982,6 +16702,11 @@
       "q": "Checkpoint: predict the output of this code about view shares, copy does not.",
       "code": "import numpy as np\na = np.arange(4)\nv = a.view()\nc = a.copy()\nv[0] = 9\nprint(a, c)",
       "answer": "[9 1 2 3] [0 1 2 3]",
+      "options": [
+       "True False",
+       "(24, 8)",
+       "[9 1 2 3] [0 1 2 3]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -15995,6 +16720,11 @@
       "q": "Checkpoint: predict the output of this code about prove sharing with shares_memory.",
       "code": "import numpy as np\na = np.arange(4)\nprint(np.shares_memory(a, a[1:3]), np.shares_memory(a, a.copy()))",
       "answer": "True False",
+      "options": [
+       "[9 1 2 3] [0 1 2 3]",
+       "(24, 8)",
+       "True False"
+      ],
       "difficulty": "medium"
      },
      {
@@ -16008,6 +16738,11 @@
       "q": "Checkpoint: predict the output of this code about strides describe memory steps.",
       "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a.strides)",
       "answer": "(24, 8)",
+      "options": [
+       "[9 1 2 3] [0 1 2 3]",
+       "True False",
+       "(24, 8)"
+      ],
       "difficulty": "hard"
      },
      {
@@ -16021,6 +16756,11 @@
       "q": "Checkpoint: predict the output of this code about reshape usually returns a view.",
       "code": "import numpy as np\na = np.arange(6)\nb = a.reshape(2, 3)\nprint(np.shares_memory(a, b))",
       "answer": "True",
+      "options": [
+       "True",
+       "[9 1 2 3] [0 1 2 3]",
+       "True False"
+      ],
       "difficulty": "easy"
      },
      {
@@ -16034,6 +16774,11 @@
       "q": "Checkpoint: predict the output of this code about base points at the source array.",
       "code": "import numpy as np\na = np.arange(4)\nprint(a[1:].base is a)",
       "answer": "True",
+      "options": [
+       "[9 1 2 3] [0 1 2 3]",
+       "True",
+       "True False"
+      ],
       "difficulty": "medium"
      },
      {
@@ -16047,6 +16792,11 @@
       "q": "Checkpoint: predict the output of this code about transpose is a view with new strides.",
       "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a.T.strides)",
       "answer": "(8, 24)",
+      "options": [
+       "(8, 24)",
+       "[9 1 2 3] [0 1 2 3]",
+       "True False"
+      ],
       "difficulty": "hard"
      },
      {
@@ -16060,6 +16810,11 @@
       "q": "Checkpoint: predict the output of this code about a reversed slice has negative strides.",
       "code": "import numpy as np\nprint(np.arange(4)[::-1].strides)",
       "answer": "(-8,)",
+      "options": [
+       "[9 1 2 3] [0 1 2 3]",
+       "(-8,)",
+       "True False"
+      ],
       "difficulty": "easy"
      },
      {
@@ -16073,6 +16828,11 @@
       "q": "Checkpoint: predict the output of this code about copy owns its memory.",
       "code": "import numpy as np\na = np.arange(3)\nprint(a.copy().flags['OWNDATA'])",
       "answer": "True",
+      "options": [
+       "[9 1 2 3] [0 1 2 3]",
+       "True False",
+       "True"
+      ],
       "difficulty": "medium"
      },
      {
@@ -16086,6 +16846,11 @@
       "q": "Checkpoint: predict the output of this code about a slice is a view into the source.",
       "code": "import numpy as np\n\na = np.arange(4)\nb = a[:2]\nb[0] = 99\nprint(a.tolist())",
       "answer": "[99, 1, 2, 3]",
+      "options": [
+       "[99, 1, 2, 3]",
+       "[9 1 2 3] [0 1 2 3]",
+       "True False"
+      ],
       "difficulty": "hard"
      },
      {
@@ -16099,6 +16864,11 @@
       "q": "Checkpoint: predict the output of this code about a copy stops the sharing.",
       "code": "import numpy as np\n\na = np.arange(4)\nb = a[:2].copy()\nb[0] = 99\nprint(a.tolist())",
       "answer": "[0, 1, 2, 3]",
+      "options": [
+       "[0, 1, 2, 3]",
+       "[9 1 2 3] [0 1 2 3]",
+       "True False"
+      ],
       "difficulty": "easy"
      },
      {
@@ -16112,6 +16882,11 @@
       "q": "Checkpoint: predict the output of this code about strides describe how memory is walked.",
       "code": "import numpy as np\n\nprint(np.arange(6).reshape(2, 3).strides)",
       "answer": "(24, 8)",
+      "options": [
+       "[9 1 2 3] [0 1 2 3]",
+       "(24, 8)",
+       "True False"
+      ],
       "difficulty": "medium"
      },
      {
@@ -16125,6 +16900,11 @@
       "q": "Checkpoint: predict the output of this code about a reshape can stay a view.",
       "code": "import numpy as np\n\na = np.arange(6)\nb = a.reshape(2, 3)\nprint(b.base is a)",
       "answer": "True",
+      "options": [
+       "[9 1 2 3] [0 1 2 3]",
+       "True",
+       "True False"
+      ],
       "difficulty": "hard"
      },
      {
@@ -17219,6 +17999,11 @@
       "q": "Checkpoint: predict the output of this code about default_rng and reproducibility.",
       "code": "import numpy as np\nrng = np.random.default_rng(0)\na = rng.integers(0, 10, 3)\nprint(len(a), a.min() >= 0, a.max() < 10)",
       "answer": "3 True True",
+      "options": [
+       "(2,)",
+       "3 True True",
+       "2"
+      ],
       "difficulty": "easy"
      },
      {
@@ -17232,6 +18017,11 @@
       "q": "Checkpoint: predict the output of this code about normal draws.",
       "code": "import numpy as np\nrng = np.random.default_rng(42)\nprint(rng.normal(0, 1, 2).shape)",
       "answer": "(2,)",
+      "options": [
+       "(2,)",
+       "3 True True",
+       "2"
+      ],
       "difficulty": "medium"
      },
      {
@@ -17245,6 +18035,11 @@
       "q": "Checkpoint: predict the output of this code about choice and shuffle.",
       "code": "import numpy as np\nrng = np.random.default_rng(7)\nprint(len(np.unique(rng.choice([1, 2, 3], 2, replace=False))))",
       "answer": "2",
+      "options": [
+       "2",
+       "3 True True",
+       "(2,)"
+      ],
       "difficulty": "hard"
      },
      {
@@ -17258,6 +18053,11 @@
       "q": "Checkpoint: predict the output of this code about integers draw inside a half-open range.",
       "code": "import numpy as np\nrng = np.random.default_rng(42)\nprint(rng.integers(1, 7, 5))",
       "answer": "[1 5 4 3 3]",
+      "options": [
+       "3 True True",
+       "(2,)",
+       "[1 5 4 3 3]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -17271,6 +18071,11 @@
       "q": "Checkpoint: predict the output of this code about random floats sit between 0 and 1.",
       "code": "import numpy as np\nrng = np.random.default_rng(1)\nprint(rng.random(3).round(3))",
       "answer": "[0.512 0.95  0.144]",
+      "options": [
+       "[0.512 0.95  0.144]",
+       "3 True True",
+       "(2,)"
+      ],
       "difficulty": "medium"
      },
      {
@@ -17284,6 +18089,11 @@
       "q": "Checkpoint: predict the output of this code about the same seed gives the same numbers.",
       "code": "import numpy as np\na = np.random.default_rng(7).normal(size=2)\nb = np.random.default_rng(7).normal(size=2)\nprint(np.allclose(a, b))",
       "answer": "True",
+      "options": [
+       "True",
+       "3 True True",
+       "(2,)"
+      ],
       "difficulty": "hard"
      },
      {
@@ -17297,6 +18107,11 @@
       "q": "Checkpoint: predict the output of this code about size controls the shape of a draw.",
       "code": "import numpy as np\nrng = np.random.default_rng(0)\nprint(rng.normal(size=(2, 3)).shape)",
       "answer": "(2, 3)",
+      "options": [
+       "(2, 3)",
+       "3 True True",
+       "(2,)"
+      ],
       "difficulty": "easy"
      },
      {
@@ -17310,6 +18125,11 @@
       "q": "Checkpoint: predict the output of this code about permutation shuffles a copy.",
       "code": "import numpy as np\nrng = np.random.default_rng(3)\nprint(np.sort(rng.permutation(5)))",
       "answer": "[0 1 2 3 4]",
+      "options": [
+       "[0 1 2 3 4]",
+       "3 True True",
+       "(2,)"
+      ],
       "difficulty": "medium"
      },
      {
@@ -17323,6 +18143,11 @@
       "q": "Checkpoint: predict the output of this code about integers excludes the high value.",
       "code": "import numpy as np\n\nrng = np.random.default_rng(0)\nprint(rng.integers(0, 2, size=5).max() <= 1)",
       "answer": "True",
+      "options": [
+       "3 True True",
+       "(2,)",
+       "True"
+      ],
       "difficulty": "hard"
      },
      {
@@ -17336,6 +18161,11 @@
       "q": "Checkpoint: predict the output of this code about the seed decides the whole stream.",
       "code": "import numpy as np\n\nfirst = np.random.default_rng(42).random(3).round(3).tolist()\nsecond = np.random.default_rng(42).random(3).round(3).tolist()\nprint(first == second)",
       "answer": "True",
+      "options": [
+       "True",
+       "3 True True",
+       "(2,)"
+      ],
       "difficulty": "easy"
      },
      {
@@ -17349,6 +18179,11 @@
       "q": "Checkpoint: predict the output of this code about choice samples without replacement.",
       "code": "import numpy as np\n\nrng = np.random.default_rng(1)\ndraw = rng.choice(5, 3, replace=False)\nprint(len(set(draw.tolist())) == 3)",
       "answer": "True",
+      "options": [
+       "3 True True",
+       "True",
+       "(2,)"
+      ],
       "difficulty": "medium"
      },
      {
@@ -17362,6 +18197,11 @@
       "q": "Checkpoint: predict the output of this code about normal draws cluster around the mean.",
       "code": "import numpy as np\n\nrng = np.random.default_rng(7)\nsample = rng.normal(0, 1, 10000)\nprint(abs(sample.mean()) < 0.05)",
       "answer": "True",
+      "options": [
+       "True",
+       "3 True True",
+       "(2,)"
+      ],
       "difficulty": "hard"
      },
      {
@@ -18456,6 +19296,11 @@
       "q": "Checkpoint: predict the output of this code about matrix multiplication.",
       "code": "import numpy as np\nA = np.array([[1, 2], [3, 4]])\nB = np.eye(2)\nprint(A @ B)",
       "answer": "[[1. 2.]\n [3. 4.]]",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]",
+       "6.0 [2. 3.]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -18469,6 +19314,11 @@
       "q": "Checkpoint: predict the output of this code about solve instead of invert.",
       "code": "import numpy as np\nA = np.array([[2., 1.], [1., 3.]])\nb = np.array([5., 10.])\nprint(np.linalg.solve(A, b))",
       "answer": "[1. 3.]",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "6.0 [2. 3.]",
+       "[1. 3.]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -18482,6 +19332,11 @@
       "q": "Checkpoint: predict the output of this code about determinant and eigenvalues.",
       "code": "import numpy as np\nA = np.array([[2., 0.], [0., 3.]])\nprint(np.linalg.det(A), np.linalg.eigvals(A).real)",
       "answer": "6.0 [2. 3.]",
+      "options": [
+       "6.0 [2. 3.]",
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -18495,6 +19350,11 @@
       "q": "Checkpoint: predict the output of this code about dot product of two vectors is a scalar.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nb = np.array([4, 5, 6])\nprint(a @ b)",
       "answer": "32",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]",
+       "32"
+      ],
       "difficulty": "easy"
      },
      {
@@ -18508,6 +19368,11 @@
       "q": "Checkpoint: predict the output of this code about matrix times vector keeps the rows.",
       "code": "import numpy as np\nA = np.array([[1, 2], [3, 4]])\nv = np.array([1, 1])\nprint(A @ v)",
       "answer": "[3 7]",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[3 7]",
+       "[1. 3.]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -18521,6 +19386,11 @@
       "q": "Checkpoint: predict the output of this code about solve then verify.",
       "code": "import numpy as np\nA = np.array([[2., 1.], [1., 3.]])\nb = np.array([3., 5.])\nx = np.linalg.solve(A, b)\nprint(x, np.allclose(A @ x, b))",
       "answer": "[0.8 1.4] True",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]",
+       "[0.8 1.4] True"
+      ],
       "difficulty": "hard"
      },
      {
@@ -18534,6 +19404,11 @@
       "q": "Checkpoint: predict the output of this code about norm measures length.",
       "code": "import numpy as np\nprint(np.linalg.norm([3, 4]))",
       "answer": "5.0",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]",
+       "5.0"
+      ],
       "difficulty": "easy"
      },
      {
@@ -18547,6 +19422,11 @@
       "q": "Checkpoint: predict the output of this code about lstsq also fits inconsistent systems.",
       "code": "import numpy as np\nA = np.array([[1., 0.], [0., 1.], [1., 1.]])\nb = np.array([1., 2., 3.])\nx = np.linalg.lstsq(A, b, rcond=None)[0]\nprint(np.allclose(A @ x, b))",
       "answer": "True",
+      "options": [
+       "True",
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -18560,6 +19440,11 @@
       "q": "Checkpoint: predict the output of this code about identity is the matrix version of one.",
       "code": "import numpy as np\n\nA = np.array([[2.0, 0.0], [0.0, 3.0]])\nprint(np.allclose(A @ np.identity(2), A))",
       "answer": "True",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "True",
+       "[1. 3.]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -18573,6 +19458,11 @@
       "q": "Checkpoint: predict the output of this code about transpose flips a matrix product.",
       "code": "import numpy as np\n\nA = np.array([[1.0, 2.0], [3.0, 4.0]])\nB = np.array([[0.0, 1.0], [1.0, 0.0]])\nprint(np.allclose((A @ B).T, B.T @ A.T))",
       "answer": "True",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]",
+       "True"
+      ],
       "difficulty": "easy"
      },
      {
@@ -18586,6 +19476,11 @@
       "q": "Checkpoint: predict the output of this code about a zero determinant means no unique solution.",
       "code": "import numpy as np\n\nprint(round(float(np.linalg.det(np.array([[1.0, 2.0], [2.0, 4.0]]))), 6))",
       "answer": "0.0",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "0.0",
+       "[1. 3.]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -18599,6 +19494,11 @@
       "q": "Checkpoint: predict the output of this code about trace sums the diagonal.",
       "code": "import numpy as np\n\nprint(np.trace(np.array([[1, 2], [3, 4]])))",
       "answer": "5",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]",
+       "5"
+      ],
       "difficulty": "hard"
      },
      {
@@ -19693,6 +20593,11 @@
       "q": "Checkpoint: predict the output of this code about save and load.",
       "code": "import numpy as np\nnp.save('/tmp/a.npy', np.arange(3))\nprint(np.load('/tmp/a.npy'))",
       "answer": "[0 1 2]",
+      "options": [
+       "[1. 2.]",
+       "[0 1 2]",
+       "['x']"
+      ],
       "difficulty": "easy"
      },
      {
@@ -19706,6 +20611,11 @@
       "q": "Checkpoint: predict the output of this code about text and csv round-trip.",
       "code": "import numpy as np\nnp.savetxt('/tmp/a.txt', np.array([1, 2]))\nprint(np.loadtxt('/tmp/a.txt'))",
       "answer": "[1. 2.]",
+      "options": [
+       "[0 1 2]",
+       "['x']",
+       "[1. 2.]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -19719,6 +20629,11 @@
       "q": "Checkpoint: predict the output of this code about several arrays in one npz.",
       "code": "import numpy as np\nnp.savez('/tmp/a.npz', x=np.arange(2))\nprint(list(np.load('/tmp/a.npz').keys()))",
       "answer": "['x']",
+      "options": [
+       "[0 1 2]",
+       "['x']",
+       "[1. 2.]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -19732,6 +20647,11 @@
       "q": "Checkpoint: predict the output of this code about skiprows ignores a header line.",
       "code": "import numpy as np, os, tempfile\np = os.path.join(tempfile.gettempdir(), 'np_head.csv')\nopen(p, 'w').write('x,y\\n1,2\\n3,4\\n')\nprint(np.loadtxt(p, delimiter=',', skiprows=1))",
       "answer": "[[1. 2.]\n [3. 4.]]",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[0 1 2]",
+       "[1. 2.]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -19745,6 +20665,11 @@
       "q": "Checkpoint: predict the output of this code about genfromtxt fills missing values.",
       "code": "import numpy as np, os, tempfile\np = os.path.join(tempfile.gettempdir(), 'np_gap.csv')\nopen(p, 'w').write('1,2\\n3,\\n')\nprint(np.genfromtxt(p, delimiter=','))",
       "answer": "[[ 1.  2.]\n [ 3. nan]]",
+      "options": [
+       "[0 1 2]",
+       "[[ 1.  2.]\n [ 3. nan]]",
+       "[1. 2.]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -19758,6 +20683,11 @@
       "q": "Checkpoint: predict the output of this code about npz stores several arrays.",
       "code": "import numpy as np, os, tempfile\np = os.path.join(tempfile.gettempdir(), 'np_bundle.npz')\nnp.savez(p, a=np.arange(2), b=np.ones(3))\nd = np.load(p)\nprint(sorted(d.files), d['a'])",
       "answer": "['a', 'b'] [0 1]",
+      "options": [
+       "[0 1 2]",
+       "['a', 'b'] [0 1]",
+       "[1. 2.]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -19771,6 +20701,11 @@
       "q": "Checkpoint: predict the output of this code about memmap reads without loading everything.",
       "code": "import numpy as np, os, tempfile\np = os.path.join(tempfile.gettempdir(), 'np_raw.bin')\nnp.arange(10, dtype='float64').tofile(p)\nm = np.memmap(p, dtype='float64', mode='r', shape=(2, 5))\nprint(m.shape, m[1, 0])",
       "answer": "(2, 5) 5.0",
+      "options": [
+       "(2, 5) 5.0",
+       "[0 1 2]",
+       "[1. 2.]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -19784,6 +20719,11 @@
       "q": "Checkpoint: predict the output of this code about savetxt writes formatted text.",
       "code": "import numpy as np, os, tempfile\np = os.path.join(tempfile.gettempdir(), 'np_out.csv')\nnp.savetxt(p, np.array([[1, 2], [3, 4]]), delimiter=',', fmt='%d')\nprint(open(p).read().strip())",
       "answer": "1,2\n3,4",
+      "options": [
+       "[0 1 2]",
+       "[1. 2.]",
+       "1,2\n3,4"
+      ],
       "difficulty": "medium"
      },
      {
@@ -19797,6 +20737,11 @@
       "q": "Checkpoint: predict the output of this code about save one array and load it back.",
       "code": "import os\nimport tempfile\nimport numpy as np\n\npath = os.path.join(tempfile.gettempdir(), 'np_roundtrip.npy')\nnp.save(path, np.array([1, 2, 3]))\nprint(np.load(path))",
       "answer": "[1 2 3]",
+      "options": [
+       "[0 1 2]",
+       "[1 2 3]",
+       "[1. 2.]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -19810,6 +20755,11 @@
       "q": "Checkpoint: predict the output of this code about genfromtxt reads named columns.",
       "code": "import numpy as np\nfrom io import StringIO\n\ntext = 'a,b\\n1,2\\n3,4'\ndata = np.genfromtxt(StringIO(text), delimiter=',', names=True)\nprint(data['a'].tolist())",
       "answer": "[1.0, 3.0]",
+      "options": [
+       "[1.0, 3.0]",
+       "[0 1 2]",
+       "[1. 2.]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -19823,6 +20773,11 @@
       "q": "Checkpoint: predict the output of this code about loadtxt skips comment lines.",
       "code": "import numpy as np\nfrom io import StringIO\n\nprint(np.loadtxt(StringIO('# n\\n1\\n2\\n'), dtype=int))",
       "answer": "[1 2]",
+      "options": [
+       "[1 2]",
+       "[0 1 2]",
+       "[1. 2.]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -19836,6 +20791,11 @@
       "q": "Checkpoint: predict the output of this code about an npz file exposes its arrays by key.",
       "code": "import os\nimport tempfile\nimport numpy as np\n\npath = os.path.join(tempfile.gettempdir(), 'np_keys.npz')\nnp.savez(path, a=np.arange(2), b=np.arange(3))\nprint(sorted(np.load(path)))",
       "answer": "['a', 'b']",
+      "options": [
+       "[0 1 2]",
+       "['a', 'b']",
+       "[1. 2.]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -20930,6 +21890,11 @@
       "q": "Checkpoint: predict the output of this code about structured arrays.",
       "code": "import numpy as np\na = np.array([(1, 2.5)], dtype=[('id', 'i4'), ('score', 'f4')])\nprint(a['score'])",
       "answer": "[2.5]",
+      "options": [
+       "['2026-01-02']",
+       "['NUM' 'PY']",
+       "[2.5]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -20943,6 +21908,11 @@
       "q": "Checkpoint: predict the output of this code about datetime64 arithmetic.",
       "code": "import numpy as np\nd = np.array(['2026-01-01'], dtype='datetime64[D]')\nprint(d + 1)",
       "answer": "['2026-01-02']",
+      "options": [
+       "['2026-01-02']",
+       "[2.5]",
+       "['NUM' 'PY']"
+      ],
       "difficulty": "medium"
      },
      {
@@ -20956,6 +21926,11 @@
       "q": "Checkpoint: predict the output of this code about vectorised string operations.",
       "code": "import numpy as np\na = np.array(['num', 'py'])\nprint(np.char.upper(a))",
       "answer": "['NUM' 'PY']",
+      "options": [
+       "[2.5]",
+       "['NUM' 'PY']",
+       "['2026-01-02']"
+      ],
       "difficulty": "hard"
      },
      {
@@ -20969,6 +21944,11 @@
       "q": "Checkpoint: predict the output of this code about fixed-width strings truncate.",
       "code": "import numpy as np\nprint(np.array([\"abcd\"], dtype=\"U2\"))",
       "answer": "['ab']",
+      "options": [
+       "[2.5]",
+       "['ab']",
+       "['2026-01-02']"
+      ],
       "difficulty": "easy"
      },
      {
@@ -20982,6 +21962,11 @@
       "q": "Checkpoint: predict the output of this code about object dtype keeps python objects.",
       "code": "import numpy as np\na = np.array([1, \"x\", None], dtype=object)\nprint(a.dtype, a[1])",
       "answer": "object x",
+      "options": [
+       "object x",
+       "[2.5]",
+       "['2026-01-02']"
+      ],
       "difficulty": "medium"
      },
      {
@@ -20995,6 +21980,11 @@
       "q": "Checkpoint: predict the output of this code about timedelta64 tells the gap.",
       "code": "import numpy as np\nprint(np.datetime64('2024-01-03') - np.datetime64('2024-01-01'))",
       "answer": "2 days",
+      "options": [
+       "[2.5]",
+       "2 days",
+       "['2026-01-02']"
+      ],
       "difficulty": "hard"
      },
      {
@@ -21008,6 +21998,11 @@
       "q": "Checkpoint: predict the output of this code about divide a timedelta to get a count.",
       "code": "import numpy as np\nd = np.datetime64('2024-01-03') - np.datetime64('2024-01-01')\nprint(d / np.timedelta64(1, 'D'))",
       "answer": "2.0",
+      "options": [
+       "2.0",
+       "[2.5]",
+       "['2026-01-02']"
+      ],
       "difficulty": "easy"
      },
      {
@@ -21021,6 +22016,11 @@
       "q": "Checkpoint: predict the output of this code about fields are read by name.",
       "code": "import numpy as np\na = np.array([(1, 2.5), (2, 3.5)], dtype=[('id', 'i4'), ('price', 'f4')])\nprint(a['price'].sum())",
       "answer": "6.0",
+      "options": [
+       "[2.5]",
+       "['2026-01-02']",
+       "6.0"
+      ],
       "difficulty": "medium"
      },
      {
@@ -21034,6 +22034,11 @@
       "q": "Checkpoint: predict the output of this code about char functions work elementwise on text.",
       "code": "import numpy as np\n\nprint(np.char.upper(np.array(['np', 'ai'])).tolist())",
       "answer": "['NP', 'AI']",
+      "options": [
+       "['NP', 'AI']",
+       "[2.5]",
+       "['2026-01-02']"
+      ],
       "difficulty": "hard"
      },
      {
@@ -21047,6 +22052,11 @@
       "q": "Checkpoint: predict the output of this code about str_len counts characters.",
       "code": "import numpy as np\n\nprint(np.char.str_len(np.array(['ab', 'cde'])).tolist())",
       "answer": "[2, 3]",
+      "options": [
+       "[2.5]",
+       "[2, 3]",
+       "['2026-01-02']"
+      ],
       "difficulty": "easy"
      },
      {
@@ -21060,6 +22070,11 @@
       "q": "Checkpoint: predict the output of this code about datetime differences are timedeltas.",
       "code": "import numpy as np\n\nstart = np.datetime64('2026-01-01')\nend = np.datetime64('2026-01-11')\nprint((end - start) / np.timedelta64(1, 'D'))",
       "answer": "10.0",
+      "options": [
+       "[2.5]",
+       "['2026-01-02']",
+       "10.0"
+      ],
       "difficulty": "medium"
      },
      {
@@ -21073,6 +22088,11 @@
       "q": "Checkpoint: predict the output of this code about a structured array reads fields by name.",
       "code": "import numpy as np\n\ndtype = np.dtype([('name', 'U4'), ('score', 'i4')])\nrows = np.array([('ada', 91)], dtype=dtype)\nprint(rows['score'].tolist())",
       "answer": "[91]",
+      "options": [
+       "[91]",
+       "[2.5]",
+       "['2026-01-02']"
+      ],
       "difficulty": "hard"
      },
      {
@@ -22167,6 +23187,11 @@
       "q": "Checkpoint: predict the output of this code about nan is not equal to anything.",
       "code": "import numpy as np\na = np.array([1.0, np.nan, 3.0])\nprint(np.isnan(a), np.nanmean(a))",
       "answer": "[False  True False] 2.0",
+      "options": [
+       "[False  True]",
+       "[False  True False] 2.0",
+       "2.0"
+      ],
       "difficulty": "easy"
      },
      {
@@ -22180,6 +23205,11 @@
       "q": "Checkpoint: predict the output of this code about infinity is a value, not a missing one.",
       "code": "import numpy as np\nprint(np.isinf(np.array([1.0, np.inf])))",
       "answer": "[False  True]",
+      "options": [
+       "[False  True False] 2.0",
+       "2.0",
+       "[False  True]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -22193,6 +23223,11 @@
       "q": "Checkpoint: predict the output of this code about masked arrays carry their own mask.",
       "code": "import numpy.ma as ma\na = ma.masked_array([1, 2, 3], mask=[0, 1, 0])\nprint(a.mean())",
       "answer": "2.0",
+      "options": [
+       "[False  True False] 2.0",
+       "2.0",
+       "[False  True]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -22206,6 +23241,11 @@
       "q": "Checkpoint: predict the output of this code about isnan builds the mask.",
       "code": "import numpy as np\na = np.array([1., np.nan])\nprint(np.isnan(a))",
       "answer": "[False  True]",
+      "options": [
+       "[False  True]",
+       "[False  True False] 2.0",
+       "2.0"
+      ],
       "difficulty": "easy"
      },
      {
@@ -22219,6 +23259,11 @@
       "q": "Checkpoint: predict the output of this code about nanmean ignores missing values.",
       "code": "import numpy as np\na = np.array([1., np.nan, 3.])\nprint(np.mean(a), np.nanmean(a))",
       "answer": "nan 2.0",
+      "options": [
+       "nan 2.0",
+       "[False  True False] 2.0",
+       "[False  True]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -22232,6 +23277,11 @@
       "q": "Checkpoint: predict the output of this code about nan_to_num replaces nan and infinity.",
       "code": "import numpy as np\nprint(np.nan_to_num(np.array([np.nan, np.inf, -np.inf])))",
       "answer": "[ 0.00000000e+000  1.79769313e+308 -1.79769313e+308]",
+      "options": [
+       "[ 0.00000000e+000  1.79769313e+308 -1.79769313e+308]",
+       "[False  True False] 2.0",
+       "[False  True]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -22245,6 +23295,11 @@
       "q": "Checkpoint: predict the output of this code about allclose can treat nan as equal.",
       "code": "import numpy as np\nprint(np.allclose([np.nan], [np.nan], equal_nan=True), np.allclose([np.nan], [np.nan]))",
       "answer": "True False",
+      "options": [
+       "[False  True False] 2.0",
+       "True False",
+       "[False  True]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -22258,6 +23313,11 @@
       "q": "Checkpoint: predict the output of this code about nanargmax skips nan.",
       "code": "import numpy as np\nprint(np.nanargmax([1., np.nan, 3.]))",
       "answer": "2",
+      "options": [
+       "[False  True False] 2.0",
+       "2",
+       "[False  True]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -22271,6 +23331,11 @@
       "q": "Checkpoint: predict the output of this code about nan never equals itself.",
       "code": "import numpy as np\n\nprint(np.nan == np.nan)",
       "answer": "False",
+      "options": [
+       "[False  True False] 2.0",
+       "[False  True]",
+       "False"
+      ],
       "difficulty": "hard"
      },
      {
@@ -22284,6 +23349,11 @@
       "q": "Checkpoint: predict the output of this code about isnan finds missing values.",
       "code": "import numpy as np\n\nprint(np.isnan(np.array([1.0, np.nan, 3.0])).tolist())",
       "answer": "[False, True, False]",
+      "options": [
+       "[False  True False] 2.0",
+       "[False  True]",
+       "[False, True, False]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -22297,6 +23367,11 @@
       "q": "Checkpoint: predict the output of this code about nanstd ignores the gaps.",
       "code": "import numpy as np\n\nprint(round(float(np.nanstd(np.array([1.0, np.nan, 3.0]))), 6))",
       "answer": "1.0",
+      "options": [
+       "[False  True False] 2.0",
+       "[False  True]",
+       "1.0"
+      ],
       "difficulty": "medium"
      },
      {
@@ -22310,6 +23385,11 @@
       "q": "Checkpoint: predict the output of this code about mask nan, then reduce.",
       "code": "import numpy as np\n\na = np.array([1.0, np.nan, 3.0])\nprint(a[~np.isnan(a)].mean())",
       "answer": "2.0",
+      "options": [
+       "2.0",
+       "[False  True False] 2.0",
+       "[False  True]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -23404,6 +24484,11 @@
       "q": "Checkpoint: predict the output of this code about vectorised reduction.",
       "code": "import numpy as np\na = np.arange(1_000_000)\nprint(int((a * 2).sum()))",
       "answer": "999999000000",
+      "options": [
+       "[2 4 6]",
+       "45",
+       "999999000000"
+      ],
       "difficulty": "easy"
      },
      {
@@ -23417,6 +24502,11 @@
       "q": "Checkpoint: predict the output of this code about reuse a buffer with out=.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nout = np.empty_like(a)\nnp.multiply(a, 2, out=out)\nprint(out)",
       "answer": "[2 4 6]",
+      "options": [
+       "[2 4 6]",
+       "999999000000",
+       "45"
+      ],
       "difficulty": "medium"
      },
      {
@@ -23430,6 +24520,11 @@
       "q": "Checkpoint: predict the output of this code about chunk large work.",
       "code": "import numpy as np\na = np.arange(10)\nprint(sum(int(chunk.sum()) for chunk in np.array_split(a, 2)))",
       "answer": "45",
+      "options": [
+       "999999000000",
+       "45",
+       "[2 4 6]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -23443,6 +24538,11 @@
       "q": "Checkpoint: predict the output of this code about einsum replaces a triple loop.",
       "code": "import numpy as np\na = np.arange(3.)\nprint(np.einsum('i,i->', a, a))",
       "answer": "5.0",
+      "options": [
+       "999999000000",
+       "[2 4 6]",
+       "5.0"
+      ],
       "difficulty": "easy"
      },
      {
@@ -23456,6 +24556,11 @@
       "q": "Checkpoint: predict the output of this code about dot and @ agree.",
       "code": "import numpy as np\nA = np.arange(4.).reshape(2, 2)\nB = np.eye(2)\nprint(np.allclose(np.dot(A, B), A @ B))",
       "answer": "True",
+      "options": [
+       "True",
+       "999999000000",
+       "[2 4 6]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -23469,6 +24574,11 @@
       "q": "Checkpoint: predict the output of this code about bincount counts integer categories.",
       "code": "import numpy as np\nprint(np.bincount(np.array([0, 1, 1, 3])))",
       "answer": "[1 2 0 1]",
+      "options": [
+       "999999000000",
+       "[1 2 0 1]",
+       "[2 4 6]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -23482,6 +24592,11 @@
       "q": "Checkpoint: predict the output of this code about vectorize wraps a python function.",
       "code": "import numpy as np\nf = np.vectorize(lambda x: x * x)\nprint(f(np.array([1, 2, 3])))",
       "answer": "[1 4 9]",
+      "options": [
+       "[1 4 9]",
+       "999999000000",
+       "[2 4 6]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -23495,6 +24610,11 @@
       "q": "Checkpoint: predict the output of this code about sum in chunks instead of one huge temporary.",
       "code": "import numpy as np\na = np.arange(10)\nprint(sum(a[i:i + 4].sum() for i in range(0, 10, 4)))",
       "answer": "45",
+      "options": [
+       "999999000000",
+       "45",
+       "[2 4 6]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -23508,6 +24628,11 @@
       "q": "Checkpoint: predict the output of this code about add.reduce sums along an axis.",
       "code": "import numpy as np\n\nprint(np.add.reduce(np.arange(5)))",
       "answer": "10",
+      "options": [
+       "999999000000",
+       "[2 4 6]",
+       "10"
+      ],
       "difficulty": "hard"
      },
      {
@@ -23521,6 +24646,11 @@
       "q": "Checkpoint: predict the output of this code about einsum can read a diagonal.",
       "code": "import numpy as np\n\nA = np.array([[1, 2], [3, 4]])\nprint(np.einsum('ii->', A))",
       "answer": "5",
+      "options": [
+       "999999000000",
+       "[2 4 6]",
+       "5"
+      ],
       "difficulty": "easy"
      },
      {
@@ -23534,6 +24664,11 @@
       "q": "Checkpoint: predict the output of this code about bincount needs non-negative integers.",
       "code": "import numpy as np\n\nprint(np.bincount(np.array([0, 1, 1, 3])).tolist())",
       "answer": "[1, 2, 0, 1]",
+      "options": [
+       "[1, 2, 0, 1]",
+       "999999000000",
+       "[2 4 6]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -23547,6 +24682,11 @@
       "q": "Checkpoint: predict the output of this code about dot on matrices is a matrix product.",
       "code": "import numpy as np\n\nprint(np.dot(np.array([[1, 0], [0, 1]]), np.array([2, 3])).tolist())",
       "answer": "[2, 3]",
+      "options": [
+       "999999000000",
+       "[2 4 6]",
+       "[2, 3]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -24641,6 +25781,11 @@
       "q": "Checkpoint: predict the output of this code about pandas is built on arrays.",
       "code": "import pandas as pd\ns = pd.Series([1, 2])\nprint(s.to_numpy(), s.to_numpy().mean())",
       "answer": "[1 2] 1.5",
+      "options": [
+       "(2,)",
+       "[1 2] 1.5",
+       "(2, 2, 3) uint8"
+      ],
       "difficulty": "easy"
      },
      {
@@ -24654,6 +25799,11 @@
       "q": "Checkpoint: predict the output of this code about feature matrices are 2-d arrays.",
       "code": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a.mean(axis=0).shape)",
       "answer": "(2,)",
+      "options": [
+       "[1 2] 1.5",
+       "(2,)",
+       "(2, 2, 3) uint8"
+      ],
       "difficulty": "medium"
      },
      {
@@ -24667,6 +25817,11 @@
       "q": "Checkpoint: predict the output of this code about images are (height, width, channels).",
       "code": "import numpy as np\nimg = np.zeros((2, 2, 3), dtype=np.uint8)\nprint(img.shape, img.dtype)",
       "answer": "(2, 2, 3) uint8",
+      "options": [
+       "(2, 2, 3) uint8",
+       "[1 2] 1.5",
+       "(2,)"
+      ],
       "difficulty": "hard"
      },
      {
@@ -24680,6 +25835,11 @@
       "q": "Checkpoint: predict the output of this code about standardise each column.",
       "code": "import numpy as np\nX = np.array([[1., 2.], [3., 4.]])\nZ = (X - X.mean(axis=0)) / X.std(axis=0)\nprint(Z.round(2))",
       "answer": "[[-1. -1.]\n [ 1.  1.]]",
+      "options": [
+       "[1 2] 1.5",
+       "(2,)",
+       "[[-1. -1.]\n [ 1.  1.]]"
+      ],
       "difficulty": "easy"
      },
      {
@@ -24693,6 +25853,11 @@
       "q": "Checkpoint: predict the output of this code about one-hot encode with eye.",
       "code": "import numpy as np\nlabels = np.array([0, 2, 1])\nprint(np.eye(3, dtype=int)[labels])",
       "answer": "[[1 0 0]\n [0 0 1]\n [0 1 0]]",
+      "options": [
+       "[1 2] 1.5",
+       "(2,)",
+       "[[1 0 0]\n [0 0 1]\n [0 1 0]]"
+      ],
       "difficulty": "medium"
      },
      {
@@ -24706,6 +25871,11 @@
       "q": "Checkpoint: predict the output of this code about images are uint8 arrays.",
       "code": "import numpy as np\nimg = np.array([[0, 128], [255, 64]], dtype=np.uint8)\nbright = np.clip(img.astype(int) + 40, 0, 255).astype(np.uint8)\nprint(bright)",
       "answer": "[[ 40 168]\n [255 104]]",
+      "options": [
+       "[1 2] 1.5",
+       "(2,)",
+       "[[ 40 168]\n [255 104]]"
+      ],
       "difficulty": "hard"
      },
      {
@@ -24719,6 +25889,11 @@
       "q": "Checkpoint: predict the output of this code about a moving average is a convolution.",
       "code": "import numpy as np\nv = np.array([1., 2., 3., 4.])\nprint(np.convolve(v, np.ones(2) / 2, mode='valid'))",
       "answer": "[1.5 2.5 3.5]",
+      "options": [
+       "[1.5 2.5 3.5]",
+       "[1 2] 1.5",
+       "(2,)"
+      ],
       "difficulty": "easy"
      },
      {
@@ -24732,6 +25907,11 @@
       "q": "Checkpoint: predict the output of this code about round only for display.",
       "code": "import numpy as np\nprint(np.round(2.675, 2), np.round(0.1 + 0.2, 2))",
       "answer": "2.68 0.3",
+      "options": [
+       "[1 2] 1.5",
+       "2.68 0.3",
+       "(2,)"
+      ],
       "difficulty": "medium"
      },
      {
@@ -24745,6 +25925,11 @@
       "q": "Checkpoint: predict the output of this code about scale each row by its own maximum.",
       "code": "import numpy as np\n\na = np.array([[1.0, 2.0], [3.0, 6.0]])\nprint((a / a.max(axis=1, keepdims=True)).round(3).tolist())",
       "answer": "[[0.5, 1.0], [0.5, 1.0]]",
+      "options": [
+       "[[0.5, 1.0], [0.5, 1.0]]",
+       "[1 2] 1.5",
+       "(2,)"
+      ],
       "difficulty": "hard"
      },
      {
@@ -24758,6 +25943,11 @@
       "q": "Checkpoint: predict the output of this code about diff gives step-to-step change.",
       "code": "import numpy as np\n\nprint(np.diff(np.array([100.0, 110.0, 99.0])).round(3).tolist())",
       "answer": "[10.0, -11.0]",
+      "options": [
+       "[10.0, -11.0]",
+       "[1 2] 1.5",
+       "(2,)"
+      ],
       "difficulty": "easy"
      },
      {
@@ -24771,6 +25961,11 @@
       "q": "Checkpoint: predict the output of this code about digitize buckets values into bins.",
       "code": "import numpy as np\n\nprint(np.digitize(np.array([0.1, 0.5, 1.5]), [0.5, 1.0]).tolist())",
       "answer": "[0, 1, 2]",
+      "options": [
+       "[0, 1, 2]",
+       "[1 2] 1.5",
+       "(2,)"
+      ],
       "difficulty": "medium"
      },
      {
@@ -24784,6 +25979,11 @@
       "q": "Checkpoint: predict the output of this code about build a confusion matrix with bincount.",
       "code": "import numpy as np\n\ntruth = np.array([1, 0, 1])\npredicted = np.array([1, 1, 1])\ncounts = np.bincount(truth * 2 + predicted, minlength=4)\nprint(counts.reshape(2, 2).tolist())",
       "answer": "[[0, 1], [0, 2]]",
+      "options": [
+       "[1 2] 1.5",
+       "(2,)",
+       "[[0, 1], [0, 2]]"
+      ],
       "difficulty": "hard"
      },
      {

@@ -53,6 +53,8 @@ export interface NEntry {
   error?: string;
   fix?: string;
   steps?: string[];
+  /** A checkpoint quiz offers three real, distinct outputs; the answer is one of them. */
+  options?: string[];
   difficulty: 'easy' | 'medium' | 'hard';
 }
 

@@ -197,6 +197,58 @@ function CodingEntryCard({ entry, done, onPass }: { entry: NEntry; done: boolean
   );
 }
 
+/**
+ * A checkpoint quiz: three real outputs, one of which the shown code prints.
+ *
+ * The distractors are other executed outputs from the same module, so nothing here is invented prose.
+ * Choosing the right option records the section; a wrong choice keeps the question open.
+ */
+function CheckpointCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPass: () => void }) {
+  const [picked, setPicked] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const answer = entry.answer ?? '';
+  const right = picked === answer;
+
+  return (
+    <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
+      <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
+        {done && <span className="chip easy"><Check size={11} /> done</span>}
+      </div>
+      <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{entry.q}</strong>
+      {entry.code && <pre className="codeblock" style={{ margin: '6px 0' }}>{entry.code}</pre>}
+      <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+        {entry.options?.map((option) => {
+          const tone = picked === null ? '' : option === answer ? ' easy' : option === picked ? ' hard' : '';
+          return (
+            <button
+              key={option}
+              type="button"
+              className={`chip${tone}`}
+              style={{ cursor: 'pointer', whiteSpace: 'pre-wrap', textAlign: 'left', fontFamily: 'ui-monospace, monospace' }}
+              onClick={() => { setPicked(option); if (option === answer) onPass(); }}
+              aria-pressed={picked === option}
+            >
+              {option}
+            </button>
+          );
+        })}
+      </div>
+      {picked !== null && (
+        <p className="small" style={{ margin: '8px 0 0', color: right ? 'var(--green, #177245)' : 'var(--red, #b42318)' }}>
+          {right ? 'Correct — this section is recorded.' : 'Not this one — try another option.'}
+        </p>
+      )}
+      {picked !== null && !right && (
+        <button type="button" className="btn small ghost" style={{ marginTop: 6 }} onClick={() => setRevealed((v) => !v)}>
+          {revealed ? 'Hide answer' : 'Show answer'}
+        </button>
+      )}
+      {revealed && <pre className="codeblock" style={{ margin: '6px 0 0' }}>{answer}</pre>}
+    </div>
+  );
+}
+
 /** The module workspace: ten section tabs over the entries that section really holds. */
 function ModuleView({ module, onBack }: { module: NModule; onBack: () => void }) {
   const state = useStore();
@@ -263,9 +315,9 @@ function ModuleView({ module, onBack }: { module: NModule; onBack: () => void })
         {entries.map((entry) => {
           const done = Boolean(state.attempts[nSectionKey(module.id, section)]);
           const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
-          return section === 'coding'
-            ? <CodingEntryCard key={entry.id} entry={entry} done={done} onPass={onDone} />
-            : <EntryCard key={entry.id} entry={entry} done={done} onDone={onDone} />;
+          if (section === 'coding') return <CodingEntryCard key={entry.id} entry={entry} done={done} onPass={onDone} />;
+          if (entry.options?.length) return <CheckpointCard key={entry.id} entry={entry} done={done} onPass={onDone} />;
+          return <EntryCard key={entry.id} entry={entry} done={done} onDone={onDone} />;
         })}
       </div>
     </div>

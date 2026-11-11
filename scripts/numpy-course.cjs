@@ -139,6 +139,28 @@ modules.forEach((m, index) => {
 if (modules.length !== 20) fail(`expected 20 modules, found ${modules.length}`);
 
 /* -------------------------------- sections ------------------------------- */
+/**
+ * Three choices for a checkpoint: the real output plus two other topics' real outputs from the same
+ * module. Distractors are executed records, never invented text, and the correct answer is always
+ * present — a quiz with hand-typed distractors could not be checked. Position rotates with the title
+ * so the answer is not always first.
+ */
+function checkpointOptions(title, answer, topics) {
+  const seen = new Set([String(answer).trim()]);
+  const pool = [];
+  for (const t of topics) {
+    if (t.title === title) continue;
+    const out = String(t.output).trim();
+    if (!out || seen.has(out)) continue;
+    seen.add(out);
+    pool.push(out);
+  }
+  if (pool.length < 2) return undefined;
+  const options = pool.slice(0, 2);
+  options.splice(title.length % 3, 0, answer);
+  return options;
+}
+
 function buildSections(m) {
   const topics = m.topics;
   const id = (section, i) => `${m.id}:${section}:${i}`;
@@ -188,7 +210,10 @@ function buildSections(m) {
       answer: t.body, code: t.code, difficulty: difficultyAt(i),
     })),
     checkpoint: topics.flatMap((t, i) => [
-      { id: id('checkpoint', i * 2), q: `Checkpoint: predict the output of this code about ${t.title.toLowerCase()}.`, code: t.code, answer: t.output, difficulty: difficultyAt(i) },
+      {
+        id: id('checkpoint', i * 2), q: `Checkpoint: predict the output of this code about ${t.title.toLowerCase()}.`, code: t.code, answer: t.output,
+        options: checkpointOptions(t.title, t.output, topics), difficulty: difficultyAt(i),
+      },
       { id: id('checkpoint', i * 2 + 1), q: `In your own words: what does ${t.title.toLowerCase()} do?`, answer: t.body, difficulty: i === 0 ? 'easy' : 'medium' },
     ]),
   };
@@ -206,6 +231,12 @@ const published = modules.map((m) => {
     }
     const questions = list.map((e) => e.q || e.title || '').filter(Boolean);
     if (new Set(questions).size !== questions.length) fail(`${m.id}/${label}: duplicate question text`);
+  }
+  for (const entry of sections.checkpoint) {
+    if (!entry.options) continue;
+    if (entry.options.length !== 3) fail(`${entry.id}: a checkpoint quiz needs 3 options`);
+    if (new Set(entry.options).size !== 3) fail(`${entry.id}: checkpoint options must be distinct`);
+    if (!entry.options.includes(entry.answer)) fail(`${entry.id}: the options must include the answer`);
   }
   const counts = Object.fromEntries(SECTIONS.map(([key]) => [key, sections[key].length]));
   return { ...m, sections, counts, entries: Object.values(counts).reduce((a, b) => a + b, 0) };
