@@ -16,8 +16,8 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
-const FILE = path.join(ROOT, 'content', 'numpy-mastery', 'deepening.json');
-const deep = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+const SRC = path.join(ROOT, 'content', 'numpy-mastery');
+const FILES = fs.readdirSync(SRC).filter((f) => /^deepening.*\.json$/.test(f)).sort().map((f) => path.join(SRC, f));
 
 const probe = spawnSync('python3', ['-c', 'import numpy; print(numpy.__version__)'], { encoding: 'utf8' });
 if (probe.status !== 0) {
@@ -30,22 +30,33 @@ console.log(`numpy-fill-outputs: verifying against numpy ${probe.stdout.trim()}`
 const workdir = fs.mkdtempSync(path.join(os.tmpdir(), 'npy-out-'));
 const failures = [];
 let filled = 0;
+let skipped = 0;
 
-for (const [id, pack] of Object.entries(deep)) {
-  for (const topic of pack.topics || []) {
-    const run = spawnSync('python3', ['-c', topic.code], { cwd: workdir, encoding: 'utf8' });
-    if (run.status !== 0) {
-      failures.push(`${id} :: ${topic.title}\n  ${(run.stderr || '').trim().split('\n').slice(-1)[0]}`);
-      continue;
+for (const file of FILES) {
+  const deep = JSON.parse(fs.readFileSync(file, 'utf8'));
+  let changed = false;
+  for (const [id, pack] of Object.entries(deep)) {
+    for (const topic of pack.topics || []) {
+      if (topic.output) {
+        skipped += 1;
+        continue;
+      }
+      const run = spawnSync('python3', ['-c', topic.code], { cwd: workdir, encoding: 'utf8' });
+      if (run.status !== 0) {
+        failures.push(`${path.basename(file)} ${id} :: ${topic.title}\n  ${(run.stderr || '').trim().split('\n').slice(-1)[0]}`);
+        continue;
+      }
+      const output = run.stdout.replace(/\s+$/, '');
+      if (!output) {
+        failures.push(`${path.basename(file)} ${id} :: ${topic.title}\n  printed nothing`);
+        continue;
+      }
+      topic.output = output;
+      filled += 1;
+      changed = true;
     }
-    const output = run.stdout.replace(/\s+$/, '');
-    if (!output) {
-      failures.push(`${id} :: ${topic.title}\n  printed nothing`);
-      continue;
-    }
-    topic.output = output;
-    filled += 1;
   }
+  if (changed) fs.writeFileSync(file, `${JSON.stringify(deep, null, 2)}\n`);
 }
 
 if (failures.length) {
@@ -54,5 +65,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-fs.writeFileSync(FILE, `${JSON.stringify(deep, null, 2)}\n`);
-console.log(`numpy-fill-outputs: filled ${filled} outputs → content/numpy-mastery/deepening.json`);
+console.log(`numpy-fill-outputs: filled ${filled}, already verified ${skipped} across ${FILES.length} layer(s)`);

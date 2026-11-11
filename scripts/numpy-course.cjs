@@ -28,27 +28,37 @@ const course = readJSON(path.join(SRC, 'course.json')).course;
 const moduleFiles = fs.readdirSync(SRC).filter((f) => /^modules-.*\.json$/.test(f)).sort();
 const modules = moduleFiles.flatMap((f) => readJSON(path.join(SRC, f)));
 
+const problems = [];
+const fail = (m) => problems.push(m);
+
 /*
- * `deepening.json` is the depth layer: extra topics and debug challenges per module, appended to the
- * authored module so a module can grow without rewriting the file it lives in. Its code samples are
- * executed by `scripts/numpy-fill-outputs.cjs`; a missing output here is a failure, not an empty card.
+ * `deepening*.json` is the depth layer: extra topics and debug challenges per module, appended to the
+ * authored module so a module can grow without rewriting the file it lives in. Layers are applied in
+ * phase order (`deepening.json`, then `deepening-2.json`, ...). Their code samples are executed by
+ * `scripts/numpy-fill-outputs.cjs`; a missing output here is a failure, not an empty card.
  */
-const DEEPENING = path.join(SRC, 'deepening.json');
-const deepening = fs.existsSync(DEEPENING) ? readJSON(DEEPENING) : {};
+const layerOrder = (f) => (f === 'deepening.json' ? 0 : Number((f.match(/deepening-(\d+)/) || [])[1] || 0));
+const deepeningFiles = fs.readdirSync(SRC).filter((f) => /^deepening.*\.json$/.test(f)).sort((a, b) => layerOrder(a) - layerOrder(b));
+const deepening = {};
+for (const file of deepeningFiles) {
+  for (const [id, pack] of Object.entries(readJSON(path.join(SRC, file)))) {
+    const into = deepening[id] || (deepening[id] = { topics: [], debug: [] });
+    into.topics.push(...(pack.topics || []));
+    if (pack.debug) into.debug.push(...pack.debug);
+  }
+}
 for (const [id, pack] of Object.entries(deepening)) {
   const target = modules.find((m) => m.id === id);
   if (!target) {
-    problems.push(`deepening: unknown module ${id}`);
+    fail(`deepening: unknown module ${id}`);
     continue;
   }
-  for (const topic of pack.topics || []) {
-    if (!topic.output) problems.push(`${id}: deepening topic "${topic.title}" has no verified output — run node scripts/numpy-fill-outputs.cjs`);
+  for (const topic of pack.topics) {
+    if (!topic.output) fail(`${id}: deepening topic "${topic.title}" has no verified output — run node scripts/numpy-fill-outputs.cjs`);
     target.topics.push(topic);
   }
-  if (pack.debug) target.debug.push(...pack.debug);
+  target.debug.push(...pack.debug);
 }
-const problems = [];
-const fail = (m) => problems.push(m);
 
 const SECTIONS = [
   ['learn', 'Learn'], ['interview', 'Interview'], ['coding', 'Coding Lab'], ['logic', 'Logic'],

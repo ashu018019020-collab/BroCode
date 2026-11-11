@@ -25,8 +25,15 @@ const engine = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/nco
 const SRC = path.join(ROOT, 'content', 'numpy-mastery');
 const authored = fs.readdirSync(SRC).filter((f) => /^modules-.*\.json$/.test(f)).sort()
   .flatMap((f) => readJSON(path.join('content', 'numpy-mastery', f)));
-/** The depth layer is part of the authored source, so the artifact is compared against the merge. */
-const deepening = readJSON('content/numpy-mastery/deepening.json');
+/** The depth layers are part of the authored source, so the artifact is compared against the merge. */
+const deepening = {};
+for (const file of fs.readdirSync(SRC).filter((f) => /^deepening.*\.json$/.test(f))) {
+  for (const [id, pack] of Object.entries(readJSON(path.join('content', 'numpy-mastery', file)))) {
+    const into = deepening[id] || (deepening[id] = { topics: [], debug: [] });
+    into.topics.push(...(pack.topics || []));
+    if (pack.debug) into.debug.push(...pack.debug);
+  }
+}
 const sourceOf = (id) => {
   const base = authored.find((m) => m.id === id);
   const extra = deepening[id] || {};
