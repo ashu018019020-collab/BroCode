@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, BookOpen, Check, ChevronRight, Code2, GraduationCap, Play, ShieldCheck, Target, Trophy,
@@ -168,8 +168,6 @@ function ModuleView({ module, onBack }: { module: NModule; onBack: () => void })
   const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
   const entry = entries[Math.min(picked, Math.max(0, entries.length - 1))];
 
-  // Switching section or module is a new list: open its first slip, never a stale index.
-  useEffect(() => { setPicked(0); }, [module.id, section]);
 
   return (
     <div>
@@ -199,7 +197,7 @@ function ModuleView({ module, onBack }: { module: NModule; onBack: () => void })
               className={`chip${on ? ' on' : ''}`}
               style={{ cursor: 'pointer' }}
               aria-pressed={on}
-              onClick={() => setSection(s.key)}
+              onClick={() => { setSection(s.key); setPicked(0); }}
               title={s.blurb}
             >
               {done ? '✓ ' : ''}{s.label} {module.sections[s.key]?.length ?? 0}
@@ -237,7 +235,13 @@ function ModuleView({ module, onBack }: { module: NModule; onBack: () => void })
                 : <NCodeWorkbench key={entry.id} entry={entry} scope={`numpy:${module.id}:${entry.id}`} done={done} onDone={onDone} />
           )}
         </div>
-        <NSlipRail entries={entries} picked={picked} onPick={setPicked} done={done} />
+        <NSlipRail
+          groups={N_SECTIONS.map((s) => ({ key: s.key, label: s.label, entries: module.sections[s.key] ?? [] }))}
+          activeKey={section}
+          picked={picked}
+          onPick={(key, i) => { setSection(key); setPicked(i); }}
+          done={done}
+        />
       </div>
     </div>
   );

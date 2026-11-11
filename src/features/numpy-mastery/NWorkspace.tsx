@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Code2, Copy, Eye, EyeOff, Play, RotateCcw, Wand2 } from 'lucide-react';
-import { outputMatches, type NEntry } from '../../core/learning/ncourse';
+import { outputMatches, type NEntry, type NSectionKey } from '../../core/learning/ncourse';
 import type { RunResult } from '../coding/runners';
 
 const DIFF_TONE: Record<NEntry['difficulty'], string> = { easy: 'easy', medium: 'medium', hard: 'hard' };
@@ -227,38 +227,64 @@ export function NCodeWorkbench({
  * workbench on narrow ones, so the code box always keeps the larger share of the width.
  */
 export function NSlipRail({
-  entries, picked, onPick, done,
-}: { entries: NEntry[]; picked: number; onPick: (i: number) => void; done: boolean }) {
+  groups, activeKey, picked, onPick, done,
+}: {
+  groups: { key: NSectionKey; label: string; entries: NEntry[] }[];
+  activeKey: NSectionKey;
+  picked: number;
+  onPick: (key: NSectionKey, index: number) => void;
+  done: boolean;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const current = groups.find((g) => g.key === activeKey);
+  const total = groups.reduce((n, g) => n + g.entries.length, 0);
+
+  const slip = (e: NEntry, i: number, key: NSectionKey, active: boolean) => (
+    <button
+      key={`${key}:${e.id}`}
+      type="button"
+      onClick={() => onPick(key, i)}
+      aria-pressed={active}
+      className={`chip${active ? ' on' : ''}`}
+      style={{
+        display: 'block', textAlign: 'left', cursor: 'pointer', whiteSpace: 'normal',
+        padding: '8px 10px', lineHeight: 1.35, borderRadius: 10, width: '100%',
+      }}
+    >
+      <span style={{ opacity: 0.6, marginRight: 6, fontVariantNumeric: 'tabular-nums' }}>
+        {String(i + 1).padStart(2, '0')}
+      </span>
+      <span>{e.title ?? e.q ?? e.id}</span>
+      <span className="small muted" style={{ display: 'block', marginTop: 2, marginLeft: 22 }}>
+        {e.kind === 'task' ? 'task' : e.options ? 'quiz' : e.rubric ? 'written' : e.difficulty}
+      </span>
+    </button>
+  );
+
   return (
     <aside style={{ flex: '1 1 300px', minWidth: 'min(260px, 100%)', maxWidth: 360, position: 'sticky', top: 12 }}>
       <div className="card" style={{ margin: 0, padding: 10, maxHeight: '72vh', overflowY: 'auto' }}>
         <div className="row spread small" style={{ marginBottom: 8 }}>
           <b>Topics</b>
-          <span className="muted">{entries.length} slips{done ? ' · ✓' : ''}</span>
+          <button type="button" className="btn small ghost" onClick={() => setShowAll((v) => !v)} title="Every record in this module, grouped by section">
+            {showAll ? 'This section' : `All ${total}`}
+          </button>
         </div>
-        <div style={{ display: 'grid', gap: 6 }}>
-          {entries.map((e, i) => (
-            <button
-              key={e.id}
-              type="button"
-              onClick={() => onPick(i)}
-              aria-pressed={i === picked}
-              className={`chip${i === picked ? ' on' : ''}`}
-              style={{
-                display: 'block', textAlign: 'left', cursor: 'pointer', whiteSpace: 'normal',
-                padding: '8px 10px', lineHeight: 1.35, borderRadius: 10, width: '100%',
-              }}
-            >
-              <span style={{ opacity: 0.6, marginRight: 6, fontVariantNumeric: 'tabular-nums' }}>
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <span>{e.title ?? e.q ?? e.id}</span>
-              <span className="small muted" style={{ display: 'block', marginTop: 2, marginLeft: 22 }}>
-                {e.kind === 'task' ? 'task' : e.options ? 'quiz' : e.rubric ? 'written' : e.difficulty}
-              </span>
-            </button>
-          ))}
-        </div>
+        {showAll ? groups.map((g) => (
+          <div key={g.key} style={{ marginBottom: 10 }}>
+            <div className="row spread small muted" style={{ margin: '4px 2px' }}>
+              <span>{g.label}{g.key === activeKey && done ? ' ✓' : ''}</span>
+              <span>{g.entries.length}</span>
+            </div>
+            <div style={{ display: 'grid', gap: 6 }}>
+              {g.entries.map((e, i) => slip(e, i, g.key, g.key === activeKey && i === picked))}
+            </div>
+          </div>
+        )) : (
+          <div style={{ display: 'grid', gap: 6 }}>
+            {(current?.entries ?? []).map((e, i) => slip(e, i, activeKey, i === picked))}
+          </div>
+        )}
       </div>
     </aside>
   );
