@@ -1,0 +1,642 @@
+{
+  "n01": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "Why does the dtype belong to the array rather than to each element?",
+        "answer": "One dtype per array lets NumPy store raw values in a typed buffer and pick a compiled loop for arithmetic. Per-element types would mean per-element checks, which is exactly the list overhead NumPy removes."
+      },
+      {
+        "q": "How does slicing a large array avoid copying memory?",
+        "answer": "A slice only stores an offset, a shape and strides over the same buffer. No values move, so slicing a gigabyte costs a few numbers."
+      },
+      {
+        "q": "Why does `np.array([1, 2.0])` contain floats?",
+        "answer": "A single array needs one dtype, and NumPy promotes the integers to the common type float64 rather than keeping mixed values."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend using NumPy for a signal that must be filtered many times.",
+        "answer": "The filter runs as vectorised arithmetic over one buffer, and repeated passes avoid per-element Python overhead. The same array can be reused without re-wrapping values."
+      },
+      {
+        "q": "Two arrays print the same numbers but behave differently. Explain why dtype is the reason.",
+        "answer": "One may be integer and the other float, so division, overflow and equality all differ. Printing hides the dtype that decides those results."
+      },
+      {
+        "q": "Defend choosing an ndarray over a DataFrame for a single numeric column.",
+        "answer": "There is nothing to label or align, so the frame only adds index bookkeeping. An array is smaller and its operations are the primitive ones the frame calls anyway."
+      }
+    ]
+  },
+  "n02": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "How do you read a shape of `(2, 3, 4)` in words?",
+        "answer": "Two blocks, each holding three rows of four values. Reading right to left gives the fastest-varying axis first."
+      },
+      {
+        "q": "What is `size` in terms of `shape`?",
+        "answer": "The product of the shape entries. An empty axis makes the product zero."
+      },
+      {
+        "q": "Why is `len(arr)` not the number of elements?",
+        "answer": "`len` reports the length of the first axis only, so a `(2, 3)` array has `len` 2 and size 6."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend asserting `ndim` at a function boundary.",
+        "answer": "A function written for 2-D input silently misbehaves on 3-D data by reducing the wrong axis. The assertion turns that into an immediate error."
+      },
+      {
+        "q": "Explain why a 3-D array is not \"three lists\".",
+        "answer": "It is one buffer addressed by three strides, so it can be sliced, transposed and broadcast as a single object. Three lists would be three objects with no shared shape."
+      },
+      {
+        "q": "Defend naming axes in comments instead of using bare axis numbers.",
+        "answer": "`axis=1` is meaningless without the shape in mind, and a wrong axis is a silent wrong answer. A comment such as `# axis 1 = features` is the cheapest guard."
+      }
+    ]
+  },
+  "n03": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "Why does `np.full` take a shape but `np.full_like` does not?",
+        "answer": "`full_like` copies the shape and dtype from an existing array, which is why it takes that array instead of a shape."
+      },
+      {
+        "q": "What does `np.arange(5).reshape(1, -1)` produce?",
+        "answer": "A single row with five columns: the `1` fixes the row count and `-1` infers the columns."
+      },
+      {
+        "q": "Why is `np.zeros` slower than `np.empty`?",
+        "answer": "`zeros` writes every element; `empty` only allocates, leaving whatever bytes were there."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend `linspace` for a fixed number of dashboard points.",
+        "answer": "The chart needs exactly N points across a closed range, and `linspace` guarantees the count and both endpoints without floating-step drift."
+      },
+      {
+        "q": "Why does `np.eye(3)` print floats?",
+        "answer": "The default dtype is float64, because an identity is usually used in floating-point algebra. Pass `dtype=int` for an integer one."
+      },
+      {
+        "q": "Defend building an index array once and reusing it.",
+        "answer": "Positions rarely change while data does, so recomputing them wastes work and risks drift. One array documents the layout the rest of the code assumes."
+      }
+    ]
+  },
+  "n04": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What do you gain and lose with `dtype=\"int8\"`?",
+        "answer": "Four times less memory than int64, at the cost of a range of only -128 to 127, so overflow becomes possible."
+      },
+      {
+        "q": "What happens to a float array cast to `int32`?",
+        "answer": "Each value is truncated toward zero, losing the fractional part without warning."
+      },
+      {
+        "q": "Why is `0.1 + 0.2` not exactly `0.3` in float64?",
+        "answer": "Neither decimal is representable exactly in binary, so the stored approximations add to a value one bit away from the nearest 0.3."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend float64 until a calculation reaches a money boundary.",
+        "answer": "Intermediate work needs precision, and rounding should happen once, deliberately, at the boundary. Rounded intermediate values compound error."
+      },
+      {
+        "q": "Explain why `int + float` promoting to float64 surprises people.",
+        "answer": "The dtype changes silently, so later integer division or exact equality no longer behaves as before. The promotion is correct, but it is not obvious."
+      },
+      {
+        "q": "Defend stating a dtype contract in a data loader.",
+        "answer": "Every downstream step inherits the dtype, so declaring it once prevents implicit promotions and documents the memory budget."
+      }
+    ]
+  },
+  "n05": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What does a negative index select?",
+        "answer": "A position counted from the end, so `-1` is the last element and `-len` is the first."
+      },
+      {
+        "q": "How do you select a diagonal with two index arrays?",
+        "answer": "Pass the same positions twice, `arr[np.arange(n), np.arange(n)]`, which pairs them elementwise."
+      },
+      {
+        "q": "Why is `arr[mask]` a copy while `arr[1:3]` is not?",
+        "answer": "A boolean mask selects arbitrary positions, so the result cannot be described with strides. A basic slice can."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend `arr[:, None]` when keeping a selected column 2-D.",
+        "answer": "It preserves the column axis as length 1, so the result still broadcasts across columns. Dropping to 1-D silently changes what later arithmetic aligns with."
+      },
+      {
+        "q": "Explain why a row-selection mask must be 1-D.",
+        "answer": "It selects positions along axis 0, one boolean per row. A 2-D mask would select cells, which is a different operation."
+      },
+      {
+        "q": "Defend fancy indexing for drawing a shuffled batch.",
+        "answer": "An integer array of row positions gathers exactly those rows in the requested order, with no loop and no assumption about contiguity."
+      }
+    ]
+  },
+  "n06": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What is the difference between `arr[::2]` and `arr[1::2]`?",
+        "answer": "The first takes even positions starting at 0; the second starts at 1 and takes every second value after it."
+      },
+      {
+        "q": "How do you reverse only the rows of a 2-D array?",
+        "answer": "Use `arr[::-1]`, which flips axis 0 and leaves the columns in order."
+      },
+      {
+        "q": "Why does `arr[2:2]` return an empty array instead of raising?",
+        "answer": "A slice with equal bounds is a legal empty selection, not an error, which keeps loop code simple."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend clamping slice bounds in a parser.",
+        "answer": "Input lengths vary, and Python slicing already clamps, so explicit `min(n, len(a))` documents the intent without changing behaviour."
+      },
+      {
+        "q": "Explain why writing to `arr[:, 0]` changes every reference to that array.",
+        "answer": "The column is a view on the shared buffer, so assignment writes real memory rather than a copy. Any other name for that array sees it."
+      },
+      {
+        "q": "Defend a negative-step slice over `np.flip` when trimming.",
+        "answer": "It expresses the reversal without a function call and returns a view, so it is cheaper when no copy is needed."
+      }
+    ]
+  },
+  "n07": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What does `reshape` require about the element count?",
+        "answer": "The target shape must hold exactly the same number of elements, or NumPy raises instead of padding."
+      },
+      {
+        "q": "How do you add a batch axis to one sample?",
+        "answer": "`sample[np.newaxis, ...]` or `expand_dims(sample, 0)`, giving shape `(1, ...)` that a batched model accepts."
+      },
+      {
+        "q": "Why does `ravel()` sometimes copy?",
+        "answer": "When the memory layout cannot be traversed in the requested order with strides, it must materialise a contiguous copy."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend `reshape(-1)` at the end of a feature pipeline.",
+        "answer": "It states that the flattened length is whatever the data implies, so a changed batch size does not break the call."
+      },
+      {
+        "q": "Explain why `concatenate` needs matching ranks.",
+        "answer": "It joins along an existing axis, so every operand must have the same number of axes and match on the others. `stack` is the operation that adds an axis."
+      },
+      {
+        "q": "Defend storing images as `(N, H, W, C)`.",
+        "answer": "Channels last keeps each pixel's channels adjacent, which matches how most image decoders write memory and what many frameworks accept."
+      }
+    ]
+  },
+  "n08": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "Is `np.add(a, b)` different from `a + b`?",
+        "answer": "No: `+` calls the same ufunc. The explicit form matters when you need ufunc methods or an `out` buffer."
+      },
+      {
+        "q": "How do you apply a ufunc per row instead of globally?",
+        "answer": "Apply it elementwise as usual, then reduce with the ufunc's method, for example `np.add.reduce(arr, axis=1)`."
+      },
+      {
+        "q": "Why does `np.divide` return `inf` on a zero denominator instead of raising?",
+        "answer": "A ufunc processes a whole buffer and cannot abort on one element, so it follows IEEE semantics and warns."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend wrapping a risky division in `np.errstate`.",
+        "answer": "It states that division by zero is expected here, so the warning is suppressed deliberately rather than flooding logs. The handling stays local."
+      },
+      {
+        "q": "Explain why `np.abs` on a boolean array is meaningless.",
+        "answer": "A boolean has no magnitude beyond true or false, so the operation either errors or silently converts. Use the values you actually mean."
+      },
+      {
+        "q": "Defend `np.clip` over an `if` per element.",
+        "answer": "One vectorised call replaces a Python loop and handles both bounds consistently, including for non-finite inputs."
+      }
+    ]
+  },
+  "n09": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What happens when a `(2, 3)` array is added to a `(3,)` array?",
+        "answer": "The vector aligns with the trailing axis and is reused for both rows, producing `(2, 3)`."
+      },
+      {
+        "q": "Why can a scalar broadcast against any shape?",
+        "answer": "It has no axes to conflict with, so it applies to every element."
+      },
+      {
+        "q": "How do you build an outer product with broadcasting?",
+        "answer": "Make one operand a column and the other a row, `a[:, None] * b[None, :]`, and the result is the full grid."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend writing shapes in comments beside broadcast arithmetic.",
+        "answer": "The same expression means different things for `(n,)` and `(n, 1)`, and a comment makes the intended axis explicit for the next reader."
+      },
+      {
+        "q": "Explain why a column times a row is not a dot product.",
+        "answer": "Broadcasting multiplies every pair and keeps both axes, while a dot product contracts the shared axis into one number."
+      },
+      {
+        "q": "Defend reshaping explicitly before an operation that relies on broadcasting.",
+        "answer": "An explicit shape states which axis is being aligned, so a later data change fails loudly instead of broadcasting in the wrong direction."
+      }
+    ]
+  },
+  "n10": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What does `keepdims=True` preserve, and why does it help?",
+        "answer": "It keeps the reduced axis as length 1, so the result still broadcasts against the original array."
+      },
+      {
+        "q": "How do you normalise each row by its own mean in one expression?",
+        "answer": "`arr - arr.mean(axis=1, keepdims=True)`, which aligns the row means with the rows."
+      },
+      {
+        "q": "Why is `argmin` ambiguous on ties?",
+        "answer": "It returns the first occurrence by position, so several equal minima report only one index."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend reporting mean together with standard deviation.",
+        "answer": "A mean alone hides spread, and two datasets with the same mean can behave completely differently. The pair is the minimum honest summary."
+      },
+      {
+        "q": "Explain why a percentile is not a mean band.",
+        "answer": "A percentile is a position in the sorted data and tolerates skew; mean plus standard deviation assumes a roughly symmetric spread."
+      },
+      {
+        "q": "Defend naming the axis that disappears when you choose `axis`.",
+        "answer": "Axis errors are silent, and saying \"rows collapse\" out loud makes `axis=0` the obvious choice rather than a guess."
+      }
+    ]
+  },
+  "n11": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What is the difference between `arr > 5` and `arr[arr > 5]`?",
+        "answer": "The first is the boolean mask; the second applies it and returns only the selected values."
+      },
+      {
+        "q": "How do you invert a boolean mask?",
+        "answer": "Use `~mask`, the elementwise negation, which keeps the array shape."
+      },
+      {
+        "q": "Why do mask expressions need parentheses?",
+        "answer": "`&` binds tighter than comparison, so `a > 1 & a < 3` compares against the result of the bitwise operation. Parenthesise each comparison."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend `np.where` over assignment through a mask for three-way choices.",
+        "answer": "`where` returns a complete new array from two branches, so no element is left in an intermediate state and the intent is one expression."
+      },
+      {
+        "q": "Explain why a mask of the wrong length raises.",
+        "answer": "The mask maps one-to-one onto positions of an axis, so a different length has no defined alignment. Failing is better than guessing."
+      },
+      {
+        "q": "Defend `np.isin` for filtering against a whitelist.",
+        "answer": "It answers the whole array in one operation and stays fast for large lists, unlike a per-element Python membership loop."
+      }
+    ]
+  },
+  "n12": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "How do you sort a 2-D array by its second column?",
+        "answer": "Take the order from `np.argsort(arr[:, 1])` and apply it, `arr[order]`, which reorders whole rows."
+      },
+      {
+        "q": "What does `argsort` do with equal values by default?",
+        "answer": "It uses an unstable algorithm, so tied values may come back in any order unless you request `kind=\"stable\"`."
+      },
+      {
+        "q": "Why is searching a sorted array faster?",
+        "answer": "A sorted array supports binary search, so the position is found in logarithmically many steps instead of a linear scan."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend `np.sort` over `list.sort` for a numeric column.",
+        "answer": "`np.sort` works on the typed buffer with no Python comparisons and returns an array ready for further vectorised work."
+      },
+      {
+        "q": "Explain why `np.unique` returns sorted values.",
+        "answer": "Sorting is how it detects duplicates efficiently, and a sorted result is deterministic and searchable afterwards."
+      },
+      {
+        "q": "Defend keeping the index array returned by `argsort`.",
+        "answer": "Sorting values alone loses which row they came from. The index array is what lets labels and features stay aligned."
+      }
+    ]
+  },
+  "n13": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What does `arr.base` tell you?",
+        "answer": "It points at the array whose buffer this one borrows, and is `None` when this array owns its data."
+      },
+      {
+        "q": "Why do C and Fortran order have different strides?",
+        "answer": "C order walks the last axis fastest, Fortran the first, so the byte step per axis differs even for the same shape."
+      },
+      {
+        "q": "How can a copy hide a memory bug?",
+        "answer": "A copy breaks the link between two names, so a write that should be visible through an alias silently is not."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend copying a function argument before mutating it.",
+        "answer": "Callers pass views and expect their data intact; mutating in place makes the function's effect depend on aliasing they cannot see."
+      },
+      {
+        "q": "Explain why a transpose followed by a reshape may copy.",
+        "answer": "After the transpose, the logical order no longer matches memory order, so flattening needs a real copy to produce the requested sequence."
+      },
+      {
+        "q": "Defend checking `nbytes` before loading a file.",
+        "answer": "The size on disk predicts the memory the array needs, and discovering a 20 GB allocation at load time is worse than refusing early."
+      }
+    ]
+  },
+  "n14": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What is a generator's state, and why pass one around?",
+        "answer": "It is the internal position in the random stream. Passing the object keeps draws reproducible and independent of any global state."
+      },
+      {
+        "q": "How do you draw reproducible batches in a training loop?",
+        "answer": "Create one seeded generator and keep calling it; each batch advances the same stream in a fixed order."
+      },
+      {
+        "q": "Why are `random` floats in `[0, 1)` and not `[0, 1]`?",
+        "answer": "The upper bound is exclusive so the result is uniform over a half-open interval and never equals 1.0, which scaling relies on."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend fixed seeds in tests but varying seeds in training.",
+        "answer": "Tests need identical inputs to be meaningful, while training benefits from different sampling each run. Both follow from owning the generator explicitly."
+      },
+      {
+        "q": "Explain why `shuffle` changes the caller's array.",
+        "answer": "It permutes in place, so every reference to that buffer sees the new order. Use `permutation` when a new array is wanted."
+      },
+      {
+        "q": "Defend `choice` with probabilities for weighted sampling.",
+        "answer": "It states the weights directly and samples accordingly, instead of building a duplicated pool whose size can explode."
+      }
+    ]
+  },
+  "n15": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What shapes does `np.dot` require for matrices?",
+        "answer": "The inner dimensions must match: `(m, k)` with `(k, n)` gives `(m, n)`."
+      },
+      {
+        "q": "Why is `@` preferred to `np.dot` for matrix products?",
+        "answer": "It is the dedicated matrix operator, it reads like the maths, and it does not change meaning for higher-rank inputs the way `dot` does."
+      },
+      {
+        "q": "What does `np.linalg.norm` measure with no arguments?",
+        "answer": "The Euclidean (Frobenius for matrices) norm, the square root of the sum of squares."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend verifying a solve with `allclose` rather than equality.",
+        "answer": "Floating-point factorisation introduces rounding, so exact equality fails even for a correct answer. A tolerance states the accuracy expected."
+      },
+      {
+        "q": "Explain why an identity matrix is used to test a multiplication.",
+        "answer": "Multiplying by the identity must return the operand, so any deviation isolates a bug in the multiplication or the shape handling."
+      },
+      {
+        "q": "Defend storing a factorisation instead of an inverse.",
+        "answer": "The factorisation is stable, can be reused for many right-hand sides, and never forms the numerically worse inverse."
+      }
+    ]
+  },
+  "n16": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What does `np.save` add to the file name you give it?",
+        "answer": "It appends `.npy` when the name does not already end in it, which is why a later `open` of the bare name fails."
+      },
+      {
+        "q": "How do you store several arrays in one file under names?",
+        "answer": "Use `np.savez` or `np.savez_compressed` with keyword arguments, then read them back by key from the loaded archive."
+      },
+      {
+        "q": "Why does `np.load` require `allow_pickle=False` on untrusted files?",
+        "answer": "Pickled payloads can execute constructors, so loading becomes code execution. Array-only files need no pickle at all."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend storing a checksum beside a saved array.",
+        "answer": "Binary corruption is silent until the numbers are wrong, so a checksum turns a bad file into a clear failure at load time."
+      },
+      {
+        "q": "Explain why CSV is a poor intermediate format.",
+        "answer": "It loses dtype and exact precision, costs parsing time, and cannot represent several arrays in one file without conventions."
+      },
+      {
+        "q": "Defend `usecols` when reading a wide CSV.",
+        "answer": "Reading only the needed columns saves both parse time and memory, and it documents which fields the pipeline actually depends on."
+      }
+    ]
+  },
+  "n17": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "How do you read one field of a structured array?",
+        "answer": "Index it by name, `arr[\"qty\"]`, which returns a typed array for that field."
+      },
+      {
+        "q": "What does a unit of `\"M\"` in a `datetime64` mean?",
+        "answer": "The value is stored as a count of whole months, so day-level information is not available at that unit."
+      },
+      {
+        "q": "Why do string arrays have a fixed width?",
+        "answer": "The dtype fixes each element to a number of characters so the buffer can stay contiguous; longer strings are truncated."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend parsing dates at the boundary rather than mid-pipeline.",
+        "answer": "One parse converts text to a typed value that arithmetic understands, and later stages never re-guess formats."
+      },
+      {
+        "q": "Explain why a structured array is not a DataFrame.",
+        "answer": "It stores typed records but has no index, alignment, or per-column methods. It is the compact storage a frame may build on."
+      },
+      {
+        "q": "Defend `object` dtype as a last resort.",
+        "answer": "It stores Python pointers, so it loses the buffer and vectorised speed. It is acceptable only for genuinely heterogeneous values."
+      }
+    ]
+  },
+  "n18": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What is the difference between NaN and None in an array?",
+        "answer": "NaN is a float value that means \"not a number\" and propagates through arithmetic; None is a Python object that forces an object dtype and does not."
+      },
+      {
+        "q": "Why does `nanmean` warn on an all-NaN slice?",
+        "answer": "There is no value left to average, so it returns NaN and warns that the result is not a real mean."
+      },
+      {
+        "q": "How do you detect infinity?",
+        "answer": "Use `np.isinf`, optionally with `np.isfinite` to count only usable values."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend failing loudly on unexpected NaN in a metric.",
+        "answer": "A NaN silently poisons an average or a comparison, and a metric that reports NaN late is harder to trace than a guard at the start."
+      },
+      {
+        "q": "Explain why `nan_to_num` needs explicit replacement values.",
+        "answer": "Any default is a modelling decision; stating the value records what missing data became instead of leaving it implicit."
+      },
+      {
+        "q": "Defend tracking missing-value counts as a metric.",
+        "answer": "The count reveals ingestion problems that an imputed value would hide, and it is cheap to compute alongside the data."
+      }
+    ]
+  },
+  "n19": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What does `np.vectorize` actually do?",
+        "answer": "It loops in Python and calls your function per element, adding broadcasting as a convenience. It does not compile anything."
+      },
+      {
+        "q": "Why is `np.einsum` often the clearest tensor operation?",
+        "answer": "It names the indices once, so the contraction, transpose and sum are all visible in one short string instead of three calls."
+      },
+      {
+        "q": "How does `out=` interact with broadcasting?",
+        "answer": "The output must already have the broadcast result shape; NumPy writes into it and never resizes it."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend choosing clarity over a hand-tuned ufunc.",
+        "answer": "An unmeasured optimisation trades readability for an unknown gain. Clarity first, then profile and optimise the hot path."
+      },
+      {
+        "q": "Explain why `np.vectorize` does not make code fast.",
+        "answer": "The Python call still happens once per element, so the interpreter overhead that dominated the loop remains."
+      },
+      {
+        "q": "Defend setting a memory budget when choosing a vectorised path.",
+        "answer": "Several vectorised routes compute the same answer with very different peak memory, and the fastest one can still exhaust RAM."
+      }
+    ]
+  },
+  "n20": {
+    "topics": [],
+    "debug": [],
+    "interview": [
+      {
+        "q": "What does a model expect from `X.shape`?",
+        "answer": "Two dimensions: `(n_samples, n_features)`, so each row is one example and each column one feature."
+      },
+      {
+        "q": "Why keep a validation split as an index array?",
+        "answer": "The same positions can select from features, labels and any aligned table, so the split stays consistent without copying data."
+      },
+      {
+        "q": "Why might converting a DataFrame to an array copy?",
+        "answer": "Columns with one dtype in one block can be viewed; mixed dtypes must be gathered into a new buffer, which is a copy."
+      }
+    ],
+    "defense": [
+      {
+        "q": "Defend NumPy arrays as the interchange format between pipeline stages.",
+        "answer": "Every stage does numeric work and every framework accepts an array, so a typed contiguous block avoids conversions at each hop."
+      },
+      {
+        "q": "Explain why plotting code should receive arrays rather than frames.",
+        "answer": "A plot needs x and y vectors, not labels or indexes; passing arrays makes the shape contract explicit and avoids re-parsing the frame."
+      },
+      {
+        "q": "Defend measuring end-to-end time before optimising one stage.",
+        "answer": "A stage that looks slow may be dominated by loading or conversion elsewhere. Measurement prevents optimising the wrong thing."
+      }
+    ]
+  }
+}
