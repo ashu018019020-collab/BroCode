@@ -248,7 +248,7 @@ function buildSections(m) {
         options: checkpointOptions(t.title, t.output, topics), difficulty: difficultyAt(i),
       },
       {
-        id: id('checkpoint', i * 2 + 1), q: `In your own words: what does this code about ${t.title.toLowerCase()} do?`, answer: t.body,
+        id: id('checkpoint', i * 2 + 1), q: `Short answer: state what this ${t.title.toLowerCase()} code computes, and why the printed result looks the way it does.`, answer: t.body,
         rubric: writtenRubric(t), difficulty: i === 0 ? 'easy' : 'medium',
       },
     ]),

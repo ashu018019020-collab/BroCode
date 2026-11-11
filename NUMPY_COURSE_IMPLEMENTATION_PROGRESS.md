@@ -67,7 +67,8 @@ Every module ships **127 entries**: 12 Learn, 21 Interview (12 output questions 
 - All 500 coding reference solutions and hidden checks are executed on numpy 2.x and on the 1.26
   build the browser runtime ships.
 - All 200 debug challenges are executed on both runtimes: 193 raise, 7 are wrong-output lessons.
-- Every quiz offers three distinct real outputs; every written checkpoint has three real criteria.
+- Every quiz offers three distinct real outputs; every written checkpoint asks a specific short-answer
+  question and grades it against three authored criteria, with the model answer gated behind writing.
 - Written drafts and rubric ticks are stored per entry and survive a refresh.
 
 ## Remaining work (phases 17+)

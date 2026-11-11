@@ -1,252 +1,24 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import {
-  ArrowLeft, BookOpen, Check, ChevronRight, Code2, GraduationCap, Play, ShieldCheck, Target, Trophy,
-} from 'lucide-react';
+import { BookOpen, ChevronRight, GraduationCap, Play, ShieldCheck, Target, Trophy } from 'lucide-react';
 import { useNumpyCourse } from '../../core/data/ncourse';
-import { useStore, recordAttempt, useSavedAnswer } from '../../core/storage/store';
-import {
-  N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey,
-  nWrittenAnswerKey, nWrittenTicksKey, nextSection,
-  type NEntry, type NModule, type NSectionKey,
-} from '../../core/learning/ncourse';
+import { useStore } from '../../core/storage/store';
+import { N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection } from '../../core/learning/ncourse';
 import { NLogo } from './NLogo';
-import { NCodeWorkbench, NSlipRail } from './NWorkspace';
+import { NModuleWorkspace } from './NWorkspace';
 import { Bar } from '../../components/ui/ui';
 
 /**
  * The NumPy Mastery course.
  *
- * One course, twenty modules, ten learning sections inside EVERY module. The course page is an
- * index and the module view is the workspace; both read ONE generated artifact
- * (`public/generated/numpy-course/index.json`) and ONE pure rules module
- * (`core/learning/ncourse.ts`), so no count here can disagree with the content that shipped.
+ * One course, twenty modules, ten learning sections inside EVERY module. The course page is an index
+ * and the module view is the split workspace (`NWorkspace.tsx`); both read ONE generated artifact
+ * (`public/generated/numpy-course/index.json`) and ONE pure rules module (`core/learning/ncourse.ts`),
+ * so no count here can disagree with the content that shipped.
  *
  * Progress is stored per module AND section (`nmod:<module>:<section>`). A module counts as complete
  * only when all ten sections have a record — a checkpoint score alone never marks it done.
  */
-
-const DIFF_TONE: Record<NEntry['difficulty'], string> = { easy: 'easy', medium: 'medium', hard: 'hard' };
-
-/**
- * A checkpoint quiz: three real outputs, one of which the shown code prints.
- *
- * The distractors are other executed outputs from the same module, so nothing here is invented prose.
- * Choosing the right option records the section; a wrong choice keeps the question open.
- */
-function CheckpointCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPass: () => void }) {
-  const [picked, setPicked] = useState<string | null>(null);
-  const [revealed, setRevealed] = useState(false);
-  const answer = entry.answer ?? '';
-  const right = picked === answer;
-
-  return (
-    <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
-      <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
-        <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
-        {done && <span className="chip easy"><Check size={11} /> done</span>}
-      </div>
-      <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{entry.q}</strong>
-      {entry.code && <pre className="codeblock" style={{ margin: '6px 0' }}>{entry.code}</pre>}
-      <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-        {entry.options?.map((option) => {
-          const tone = picked === null ? '' : option === answer ? ' easy' : option === picked ? ' hard' : '';
-          return (
-            <button
-              key={option}
-              type="button"
-              className={`chip${tone}`}
-              style={{ cursor: 'pointer', whiteSpace: 'pre-wrap', textAlign: 'left', fontFamily: 'ui-monospace, monospace' }}
-              onClick={() => { setPicked(option); if (option === answer) onPass(); }}
-              aria-pressed={picked === option}
-            >
-              {option}
-            </button>
-          );
-        })}
-      </div>
-      {picked !== null && (
-        <p className="small" style={{ margin: '8px 0 0', color: right ? 'var(--green, #177245)' : 'var(--red, #b42318)' }}>
-          {right ? 'Correct — this section is recorded.' : 'Not this one — try another option.'}
-        </p>
-      )}
-      {picked !== null && !right && (
-        <button type="button" className="btn small ghost" style={{ marginTop: 6 }} onClick={() => setRevealed((v) => !v)}>
-          {revealed ? 'Hide answer' : 'Show answer'}
-        </button>
-      )}
-      {revealed && <pre className="codeblock" style={{ margin: '6px 0 0' }}>{answer}</pre>}
-    </div>
-  );
-}
-
-/**
- * A written checkpoint: explain the concept in your own words, then self-assess against three real
- * criteria. The answer stays hidden until something has actually been written, and the section is
- * only recorded once every criterion is ticked — writing nothing and peeking does not count.
- *
- * The draft and its ticks are per-entry store records, not component state, so a refresh or a trip
- * to another module and back keeps what was written. One card per entry means one debounced write.
- */
-function WrittenCheckpointCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPass: () => void }) {
-  const rubric = entry.rubric ?? [];
-  const [text, setText] = useSavedAnswer(nWrittenAnswerKey(entry.id));
-  const [rawTicks, setRawTicks] = useSavedAnswer(nWrittenTicksKey(entry.id));
-  const ticks = useMemo(() => decodeTicks(rawTicks, rubric.length), [rawTicks, rubric.length]);
-  const [revealed, setRevealed] = useState(false);
-  const enough = text.trim().length >= 20;
-  const allTicked = rubric.length > 0 && ticks.every(Boolean);
-  const toggle = (i: number, on: boolean) =>
-    setRawTicks(encodeTicks(ticks.map((value, j) => (j === i ? on : value))));
-
-  return (
-    <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
-      <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
-        <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
-        <span className="row" style={{ gap: 6 }}>
-          {done && <span className="chip easy"><Check size={11} /> done</span>}
-          <span className="chip">written · self-assessed</span>
-        </span>
-      </div>
-      <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{entry.q}</strong>
-      {entry.code && <pre className="codeblock" style={{ margin: '6px 0' }}>{entry.code}</pre>}
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Explain what this code does and why, in two sentences or more."
-        aria-label={`Your answer for ${entry.id}`}
-        style={{
-          width: '100%', minHeight: 90, padding: 10, borderRadius: 10, resize: 'vertical',
-          border: '1px solid var(--line, #d6dbe4)', background: 'var(--bg2, #fff)', color: 'inherit',
-          fontSize: 13, lineHeight: 1.45,
-        }}
-      />
-      <p className="small muted" style={{ margin: '6px 0 0' }}>
-        {enough ? 'Now check your answer against the three criteria.' : 'Write at least a sentence before revealing the answer.'}
-        {text.trim() && !done ? ' · draft saved' : ''}
-      </p>
-      <ol className="small" style={{ margin: '8px 0 0', paddingLeft: 18 }}>
-        {rubric.map((line, i) => (
-          <li key={line} style={{ marginBottom: 4 }}>
-            <label className="row" style={{ gap: 6, alignItems: 'flex-start', cursor: enough ? 'pointer' : 'default' }}>
-              <input
-                type="checkbox"
-                checked={ticks[i] ?? false}
-                disabled={!enough}
-                onChange={(e) => toggle(i, e.target.checked)}
-              />
-              <span className="muted">{line}</span>
-            </label>
-          </li>
-        ))}
-      </ol>
-      <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-        <button type="button" className="btn small ghost" disabled={!enough} onClick={() => setRevealed((v) => !v)}>
-          {revealed ? 'Hide model answer' : 'Show model answer'}
-        </button>
-        <button type="button" className="btn small primary" disabled={!enough || !allTicked || done} onClick={onPass}>
-          <Check size={12} /> {done ? 'Recorded' : 'Mark section done'}
-        </button>
-      </div>
-      {revealed && (
-        <p className="small" style={{ margin: '8px 0 0' }}>
-          <b>Model answer: </b>
-          <span className="muted" style={{ whiteSpace: 'pre-wrap' }}>{entry.answer}</span>
-        </p>
-      )}
-    </div>
-  );
-}
-
-/** The module workspace: ten section tabs over the entries that section really holds. */
-function ModuleView({ module, onBack }: { module: NModule; onBack: () => void }) {
-  const state = useStore();
-  const [section, setSection] = useState<NSectionKey>('learn');
-  const [picked, setPicked] = useState(0);
-  const entries = module.sections[section] ?? [];
-  const done = Boolean(state.attempts[nSectionKey(module.id, section)]);
-  const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
-  const entry = entries[Math.min(picked, Math.max(0, entries.length - 1))];
-
-
-  return (
-    <div>
-      <div className="row spread" style={{ flexWrap: 'wrap', gap: 10 }}>
-        <div className="row" style={{ gap: 10, minWidth: 0 }}>
-          <span className="cc-logo"><NLogo size={44} /></span>
-          <div style={{ minWidth: 0 }}>
-            <b style={{ fontSize: '1.05rem' }}>{String(module.no).padStart(2, '0')} · {module.title}</b>
-            <span className="small muted" style={{ display: 'block' }}>{module.level} · {module.hours}h · {module.entries} entries</span>
-          </div>
-        </div>
-        <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-          <button type="button" className="btn small ghost" onClick={onBack}><ArrowLeft size={13} /> All modules</button>
-          <Link className="btn small" to="/notebooks"><BookOpen size={13} /> Code Bro</Link>
-        </div>
-      </div>
-      <p className="small muted" style={{ margin: '8px 0 10px' }}>{module.goal}</p>
-
-      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-        {N_SECTIONS.map((s) => {
-          const on = s.key === section;
-          const done = Boolean(state.attempts[nSectionKey(module.id, s.key)]);
-          return (
-            <button
-              key={s.key}
-              type="button"
-              className={`chip${on ? ' on' : ''}`}
-              style={{ cursor: 'pointer' }}
-              aria-pressed={on}
-              onClick={() => { setSection(s.key); setPicked(0); }}
-              title={s.blurb}
-            >
-              {done ? '✓ ' : ''}{s.label} {module.sections[s.key]?.length ?? 0}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="row spread" style={{ margin: '10px 0 6px', gap: 8, flexWrap: 'wrap' }}>
-        <b className="small">{N_SECTION_LABEL[section]}</b>
-        <button
-          type="button"
-          className="btn small primary"
-          onClick={() => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 })}
-          disabled={Boolean(state.attempts[nSectionKey(module.id, section)])}
-        >
-          <Check size={12} /> {state.attempts[nSectionKey(module.id, section)] ? 'Section recorded' : 'Mark section done'}
-        </button>
-      </div>
-
-      {section === 'coding' && (
-        <p className="small muted" style={{ margin: '0 2px 8px' }}>
-          Each task is graded: your code runs in the bundled Python runtime and its printed output is
-          compared with the module's verified output. A run that raises is not a pass.
-        </p>
-      )}
-
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap', marginTop: 10 }}>
-        <div style={{ flex: '3 1 440px', minWidth: 'min(320px, 100%)' }}>
-          {entry && (
-            entry.options?.length
-              ? <CheckpointCard key={entry.id} entry={entry} done={done} onPass={onDone} />
-              : entry.rubric?.length
-                ? <WrittenCheckpointCard key={entry.id} entry={entry} done={done} onPass={onDone} />
-                : <NCodeWorkbench key={entry.id} entry={entry} scope={`numpy:${module.id}:${entry.id}`} done={done} onDone={onDone} />
-          )}
-        </div>
-        <NSlipRail
-          groups={N_SECTIONS.map((s) => ({ key: s.key, label: s.label, entries: module.sections[s.key] ?? [] }))}
-          activeKey={section}
-          picked={picked}
-          onPick={(key, i) => { setSection(key); setPicked(i); }}
-          done={done}
-        />
-      </div>
-    </div>
-  );
-}
-
 export default function NCoursePage() {
   const file = useNumpyCourse();
   const state = useStore();
@@ -273,7 +45,7 @@ export default function NCoursePage() {
   if (open) {
     return (
       <div>
-        <ModuleView
+        <NModuleWorkspace
           module={open}
           onBack={() => {
             const p = new URLSearchParams(params);
