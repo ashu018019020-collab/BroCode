@@ -84,7 +84,9 @@ test('java workspace: only the completion record marks the checkpoint stage done
 test('java workspace: code boxes use theme tokens, not a hardcoded dark background', () => {
   assert.match(css, /\.j-code pre \{[^}]*background: var\(--panel2\)/s);
   assert.match(css, /\.j-code pre \{[^}]*color: var\(--text\)/s);
-  assert.match(css, /\.j-output-pre \{[^}]*background: var\(--panel2\)/s);
+  // The output box shares its rule with C's (`.j-output-pre, .c-output-pre`), so the assertion
+  // accepts the grouped selector instead of pinning a shape the stylesheet no longer uses.
+  assert.match(css, /\.j-output-pre,\s*\.c-output-pre \{[^}]*background: var\(--panel2\)/s);
   assert.doesNotMatch(css, /\{\s*background: #0b0b0b;\s*border-radius: 10px;\s*padding: 12px/);
 });
 

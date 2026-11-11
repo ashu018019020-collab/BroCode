@@ -49,6 +49,7 @@ const PlaybookPage = lazy(() => import('../features/practice/Playbook'));
 const CCoursePage = lazy(() => import('../features/c-programming/CCoursePage'));
 const CLessonPage = lazy(() => import('../features/c-programming/CLessonPage'));
 const JCoursePage = lazy(() => import('../features/java-programming/JCoursePage'));
+const NumpyCoursePage = lazy(() => import('../features/numpy-mastery/NCoursePage'));
 const JLessonPage = lazy(() => import('../features/java-programming/JLessonPage'));
 const TrackOverview = lazy(() => import('../features/learning/TrackOverview'));
 const QuestionBank = lazy(() => import('../features/practice/QuestionBank'));
@@ -930,6 +931,7 @@ function Shell() {
               <Route path="/c-programming" element={<Protect><CCoursePage /></Protect>} />
               <Route path="/c-programming/:moduleId" element={<Protect><CLessonPage /></Protect>} />
               <Route path="/java" element={<Protect><JCoursePage /></Protect>} />
+              <Route path="/numpy" element={<Protect><NumpyCoursePage /></Protect>} />
               <Route path="/java/:moduleId" element={<Protect><JLessonPage /></Protect>} />
               <Route path="/course/:slug" element={<Protect><CoursePage /></Protect>} />
               <Route path="/course/:slug/:step" element={<Protect><StepPage /></Protect>} />

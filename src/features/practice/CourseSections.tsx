@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronRight, ListChecks, Search } from 'lucide-react';
 import { SubjectLogo } from '../../components/shared/SubjectLogo';
 import { CLogo } from '../c-programming/CLogo';
+import { JLogo } from '../java-programming/JLogo';
 import { TRACK_DEFS } from '../../app/App';
 import { useI18n } from '../../app/i18n';
 import type { LocaleKey } from '../../app/i18n/locales';
@@ -47,11 +49,20 @@ const C_EMOJI = '⚙️';
  * accuracy tally the page already computed.
  */
 export default function CourseSections({
-  baseline, python, cModules, selected, course, track, answered = {}, accuracy = {}, cAnswered = {}, cCorrect = 0, onPick, onPickTrack,
+  baseline, python, cModules, java, selected, course, track, answered = {}, accuracy = {}, cAnswered = {}, cCorrect = 0, onPick, onPickTrack,
 }: {
   baseline: number;
   python: PythonSectionRow[];
   cModules: CModuleRow[];
+  /**
+   * The Java course's own bank, as a box that opens it.
+   *
+   * Java is a course like C, but its module tests are written under the course's own `jquiz:`
+   * records (the keys its lesson tests and progress already read). Answering them a second time
+   * here would collide with those records, so this box LINKS to the Java test bank instead of
+   * rendering a competing pane — and prints the length of the published file it opens.
+   */
+  java: { modules: number; questions: number };
   selected: string | null;
   course: CourseKey;
   /** The open subject box (a track id, or `'c'`). */
@@ -127,7 +138,7 @@ export default function CourseSections({
   const cDone = cModules.reduce((n, m) => n + (cAnswered[m.id] ?? 0), 0);
   const cAcc = accPct(cDone, cCorrect);
 
-  const total = questionsOf(python) + cQuestions;
+  const total = questionsOf(python) + cQuestions + java.questions;
 
   /**
    * Search is GLOBAL on purpose. A box holds one subject, but a learner looking for "Tuples" does
@@ -196,7 +207,7 @@ export default function CourseSections({
       <div className="row spread">
         <h2 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} /> Subjects</h2>
         <span className="small muted">
-          {TRACK_DEFS.length + 1} boxes · {total} questions
+          {TRACK_DEFS.length + 2} boxes · {total} questions
         </span>
       </div>
       <div className="row" style={{ margin: '10px 0', border: '1px solid var(--border)', borderRadius: 10, padding: '2px 8px', background: 'rgba(0,0,0,.3)' }}>
@@ -275,6 +286,27 @@ export default function CourseSections({
                 </span>
               </span>
             </button>
+            {/* Java, the second course box: same card, its own mark, and the real total of the
+                questions its test bank holds. */}
+            <Link
+              className="course-card cc-simple qb-track tone-amber"
+              to="/java?tab=tests"
+              data-agent-action="qb:track:java"
+              title={`Java Programming — ${java.modules || '…'} modules · ${java.questions || '…'} test questions`}
+            >
+              <span className="cc-logo">
+                <JLogo size={72} />
+                <span className="qb-emoji" aria-hidden="true">☕</span>
+              </span>
+              <b className="cc-name">Java Programming</b>
+              <span className="cc-meta">
+                <span className="cc-level">{java.modules || '…'} modules</span>
+                <span>{java.questions || '…'} questions</span>
+              </span>
+              <span className="qb-progress-block">
+                <span className="qb-progress-label">Open the Java test bank →</span>
+              </span>
+            </Link>
           </div>
 
           {/* The open subject's own index, directly under its boxes. */}

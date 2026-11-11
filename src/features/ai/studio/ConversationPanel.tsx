@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle, ArrowUp, BookOpen, Check, Code2, Copy, Eraser, Loader2, Mic2, MicOff,
-  RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, Type, Volume2,
+  RotateCcw, Send, Sparkles, Square, ThumbsDown, ThumbsUp, Type, Volume2, VolumeX,
 } from 'lucide-react';
 import { turnVoteKey, type MentorHistoryTurn } from '../../../core/ai/mentor';
 import { toast } from '../../../components/ui/Toast';
@@ -28,6 +28,19 @@ export interface ConversationPanelProps {
   onClear: () => void;
   onReplay: (text: string) => void;
   onMic: () => void;
+  /**
+   * The speaker switch, rendered under the composer.
+   *
+   * It is ONE control for "read answers aloud", independent of the Voice/Text mode (which is about
+   * how the learner ASKS). The state is the voice hook's persisted `enabled`, not component state, so
+   * a reload keeps the choice and a silenced mentor really cannot be heard — `speak()` itself returns
+   * early when it is off.
+   */
+  voiceOn: boolean;
+  /** True while an answer is actually playing, so the bar can offer Stop. */
+  speaking?: boolean;
+  onVoiceToggle: () => void;
+  onStopSpeaking?: () => void;
   starters: string[];
   /**
    * A finished dictation waiting for review. It lands in the composer — editable — instead of being
@@ -179,6 +192,7 @@ function Bubble({
 
 export function ConversationPanel({
   turns, busy, interim, listening, locale, mode, onMode, onSend, onClear, onReplay, onMic, starters,
+  voiceOn, speaking, onVoiceToggle, onStopSpeaking,
   dictation, onDictationTaken, error, onRetry, votes, onVote,
 }: ConversationPanelProps) {
   const [draft, setDraft] = useState('');
@@ -368,10 +382,30 @@ export function ConversationPanel({
 
         <div className="composer-foot">
           <span>
-            {mode === 'voice' ? <><Mic2 size={11} /> Voice mode — answers are read aloud.</> : <><Type size={11} /> Text mode — speak with the button on the right.</>}
+            {mode === 'voice' ? <><Mic2 size={11} /> Voice mode — ask by mic, or type.</> : <><Type size={11} /> Text mode — type your question.</>}
           </span>
           {lastLearnerCode && <span className="ok"><Check size={11} /> Code detected</span>}
           <span className="hint">Enter sends · Shift + Enter adds a line</span>
+        </div>
+
+        {/* The speaker switch. Its label states the effect in both directions, and Stop only appears
+            while there is something to stop. */}
+        <div className="voice-bar">
+          <button
+            type="button"
+            className={`voice-toggle${voiceOn ? ' on' : ''}`}
+            onClick={onVoiceToggle}
+            aria-pressed={voiceOn}
+            title={voiceOn ? 'Turn the spoken answers off' : 'Turn the spoken answers on'}
+          >
+            {voiceOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            <span>{voiceOn ? 'Voice on — answers are read aloud' : 'Voice off — press to hear answers'}</span>
+          </button>
+          {voiceOn && speaking && onStopSpeaking && (
+            <button type="button" className="voice-stop" onClick={onStopSpeaking} title="Stop reading this answer">
+              <Square size={11} /> Stop
+            </button>
+          )}
         </div>
       </form>
     </section>

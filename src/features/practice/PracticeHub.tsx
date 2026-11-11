@@ -17,7 +17,7 @@ import { useCAssessments, useCIndex, useCLabs } from '../../core/data/ccourse';
 import { cQuizTally } from '../../core/learning/ccourse';
 import { CLogo } from '../c-programming/CLogo';
 import { JLogo } from '../java-programming/JLogo';
-import { useJIndex } from '../../core/data/jcourse';
+import { useJAssessments, useJIndex } from '../../core/data/jcourse';
 import { SubjectLogo } from '../../components/shared/SubjectLogo';
 import type { QuestionType } from '../../core/data/schema';
 import { bankAccuracyBySection } from '../../core/assessment/accuracy';
@@ -78,6 +78,8 @@ export default function PracticeHub() {
    */
   const cIndex = useCIndex();
   const jIndex = useJIndex();
+  const jSets = useJAssessments();
+  const jTests = useMemo(() => jSets.reduce((n, s) => n + s.questions.length, 0), [jSets]);
   const cSets = useCAssessments();
   const cLabs = useCLabs();
   const cModules = cIndex?.modules ?? [];
@@ -231,7 +233,7 @@ export default function PracticeHub() {
           <span className="t" style={{ flex: 1, minWidth: 0 }}>
             <b>Java Programming</b>
             <span>
-              {jIndex ? `${jIndex.stats.mcqs} MCQs · ${jIndex.stats.coding} coding Qs · ${jIndex.stats.modules} modules` : '…'}
+              {jIndex ? `${jTests} test Qs · ${jIndex.stats.coding} coding Qs · ${jIndex.stats.modules} modules` : '…'}
             </span>
           </span>
         </Link>

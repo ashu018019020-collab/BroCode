@@ -373,6 +373,31 @@
 .composer-foot .hint { margin-left: auto; opacity: 0.8; }
 .composer-foot .ok { color: #7ff0cf; }
 
+/* The speaker switch under the composer: one control for reading answers aloud. */
+.voice-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.voice-toggle {
+  display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px;
+  border-radius: 10px; border: 1px solid var(--ms-line-2, var(--ms-line));
+  background: transparent; color: var(--ms-ink); cursor: pointer;
+  font: inherit; font-size: 11.5px; font-weight: 650;
+  transition: background .16s ease, border-color .16s ease, color .16s ease;
+}
+.voice-toggle:hover { background: rgba(126, 165, 255, .12); border-color: var(--ms-cyan); }
+.voice-toggle.on { color: #04101f; background: var(--ms-cyan); border-color: transparent; }
+.voice-toggle.on:hover { background: #8fe7ff; }
+.voice-toggle:focus-visible { outline: 2px solid var(--ms-cyan); outline-offset: 2px; }
+.voice-stop {
+  display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px;
+  border-radius: 9px; border: 1px solid rgba(248, 113, 113, .45);
+  background: rgba(248, 113, 113, .1); color: #ffc4c4; cursor: pointer;
+  font: inherit; font-size: 10.5px; font-weight: 600;
+}
+.voice-stop:hover { background: rgba(248, 113, 113, .18); }
+.voice-stop:focus-visible { outline: 2px solid rgba(248, 113, 113, .6); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .voice-toggle { width: 100%; justify-content: center; }
+}
+
 .code-drawer {
   display: grid; gap: 6px;
   padding: 8px 10px;

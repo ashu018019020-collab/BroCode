@@ -1,0 +1,242 @@
+[
+  {
+    "id": "n01", "no": 1, "title": "NumPy Introduction and Fundamentals", "level": "beginner", "hours": 5,
+    "goal": "Understand what NumPy is, why ndarrays beat Python lists for numeric work, and run your first array program.",
+    "topics": [
+      {
+        "title": "Create your first array",
+        "body": "np.array turns a Python list into an ndarray: one typed block of memory that supports vectorised maths, so mean() and shape are properties of the data rather than a loop you write.",
+        "code": "import numpy as np\na = np.array([10, 20, 30, 40])\nprint(a, a.mean(), a.shape)",
+        "output": "[10 20 30 40] 25.0 (4,)"
+      },
+      {
+        "title": "Vectorised arithmetic",
+        "body": "An operation between an array and a scalar is applied to every element by compiled code, which is why `a * 2` needs no loop and returns a new array instead of mutating `a`.",
+        "code": "import numpy as np\na = np.arange(5)\nprint(a * 2)",
+        "output": "[0 2 4 6 8]"
+      },
+      {
+        "title": "Typed memory, not a Python list",
+        "body": "Every ndarray has one dtype and a fixed itemsize, so nbytes tells you the real memory it occupies; a Python list stores pointers to separate objects and cannot answer that question.",
+        "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a.dtype, a.itemsize, a.nbytes)",
+        "output": "int64 8 24"
+      }
+    ],
+    "debug": [
+      {
+        "title": "The alias was never imported",
+        "broken": "import numpy\nprint(np.arange(3))",
+        "fix": "import numpy as np\nprint(np.arange(3))",
+        "error": "NameError: name 'np' is not defined"
+      },
+      {
+        "title": "Assignment inside print",
+        "broken": "import numpy as np\na = np.array([1, 2, 3])\nprint(a += 1)",
+        "fix": "import numpy as np\na = np.array([1, 2, 3])\na += 1\nprint(a)",
+        "error": "SyntaxError: invalid syntax"
+      }
+    ],
+    "mini": {
+      "title": "Marks summary tool",
+      "brief": "Read five marks, build an ndarray and print total, average and the highest mark without writing a loop.",
+      "steps": ["Build the array with np.array", "Use sum() and mean()", "Use max() and print all three figures"]
+    },
+    "lab": {
+      "title": "Array warm-up",
+      "brief": "Prove that NumPy works in this runtime and that an ndarray reports a real shape and dtype.",
+      "milestones": ["Import numpy and print its major version", "Create a 1-D array and print shape", "Print the mean of the array"]
+    }
+  },
+  {
+    "id": "n02", "no": 2, "title": "ndarray Fundamentals", "level": "beginner", "hours": 6,
+    "goal": "Read an array's shape, size, ndim, dtype and axes correctly before writing any operation on it.",
+    "topics": [
+      {
+        "title": "shape, size and ndim",
+        "body": "shape is one number per axis, size is the product of those numbers and ndim is how many axes exist — the three answers every shape error is really about.",
+        "code": "import numpy as np\na = np.array([[1, 2, 3], [4, 5, 6]])\nprint(a.shape, a.size, a.ndim)",
+        "output": "(2, 3) 6 2"
+      },
+      {
+        "title": "dtype and itemsize",
+        "body": "The dtype decides how the bytes are interpreted and itemsize is the bytes per element; together they explain both the values you get and the memory you pay.",
+        "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a.dtype, a.itemsize)",
+        "output": "int64 8"
+      },
+      {
+        "title": "Axis means the direction that is collapsed",
+        "body": "Reducing along axis 0 collapses rows (one result per column) and axis 1 collapses columns (one result per row); reading the output length tells you which axis was reduced.",
+        "code": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a.sum(axis=0), a.sum(axis=1))",
+        "output": "[4 6] [3 7]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "Reshape with the wrong element count",
+        "broken": "import numpy as np\na = np.arange(5).reshape(2, 3)\nprint(a)",
+        "fix": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a)",
+        "error": "ValueError: cannot reshape array of size 5 into shape (2,3)"
+      },
+      {
+        "title": "An axis that does not exist",
+        "broken": "import numpy as np\na = np.ones((2, 2))\nprint(a.sum(axis=2))",
+        "fix": "import numpy as np\na = np.ones((2, 2))\nprint(a.sum(axis=1))",
+        "error": "AxisError: axis 2 is out of bounds for array of dimension 2"
+      }
+    ],
+    "mini": {
+      "title": "Dataset inspector",
+      "brief": "For a 3-D array of sensor readings, print shape, ndim, size and dtype, then total each axis.",
+      "steps": ["Build a (2, 3, 4) array", "Print shape, ndim, size, dtype", "Sum along axis 0 and explain the result length"]
+    },
+    "lab": {
+      "title": "Shape detective",
+      "brief": "Given a target shape, construct an array with that shape and prove it with .shape.",
+      "milestones": ["Create an array with shape (4, 2)", "Print .size and .ndim", "Explain why size is 8"]
+    }
+  },
+  {
+    "id": "n03", "no": 3, "title": "Array Creation and Initialization", "level": "beginner", "hours": 6,
+    "goal": "Create arrays with zeros, ones, full, arange, linspace, eye and diag, and pick the right constructor for a dataset.",
+    "topics": [
+      {
+        "title": "zeros, ones and full",
+        "body": "These allocate a new array of a given shape and fill it: zeros and ones are the common starting points, full repeats any value and needs the fill value explicitly.",
+        "code": "import numpy as np\nprint(np.zeros(3), np.ones((2, 2)), np.full(3, 7))",
+        "output": "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]"
+      },
+      {
+        "title": "arange and linspace",
+        "body": "arange builds a range by step (the stop is excluded, like range) while linspace builds a fixed number of evenly spaced points including both ends — the safer choice for float grids.",
+        "code": "import numpy as np\nprint(np.arange(0, 10, 2), np.linspace(0, 1, 3))",
+        "output": "[0 2 4 6 8] [0.  0.5 1. ]"
+      },
+      {
+        "title": "Identity and diagonal matrices",
+        "body": "eye builds an identity matrix of any shape and diag builds a square matrix from a 1-D vector (or extracts the diagonal from a 2-D one).",
+        "code": "import numpy as np\nprint(np.eye(2), np.diag([1, 2]))",
+        "output": "[[1. 0.]\n [0. 1.]] [[1 0]\n [0 2]]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "full without its fill value",
+        "broken": "import numpy as np\nprint(np.full(3))",
+        "fix": "import numpy as np\nprint(np.full(3, 0))",
+        "error": "TypeError: full() missing 1 required positional argument: 'fill_value'"
+      },
+      {
+        "title": "Two diagonals of different sizes",
+        "broken": "import numpy as np\nprint(np.diag([1, 2]) + np.diag([1, 2, 3]))",
+        "fix": "import numpy as np\nprint(np.diag([1, 2]) + np.diag([1, 2]))",
+        "error": "ValueError: operands could not be broadcast together with shapes (2,2) (3,3)"
+      }
+    ],
+    "mini": {
+      "title": "Matrix maker",
+      "brief": "Build a 3x3 identity, a 2x4 zero matrix and five evenly spaced values from 0 to 1 in one script.",
+      "steps": ["Use np.eye(3)", "Use np.zeros((2, 4))", "Use np.linspace(0, 1, 5) and print each shape"]
+    },
+    "lab": {
+      "title": "Initialize a dataset",
+      "brief": "Create a temperature grid of shape (7, 24) filled with a sentinel value, then prove its shape.",
+      "milestones": ["Use np.full with shape (7, 24)", "Print .shape and .dtype", "Replace the sentinel with 0 using a slice"]
+    }
+  },
+  {
+    "id": "n04", "no": 4, "title": "Data Types and Type Conversion", "level": "beginner", "hours": 6,
+    "goal": "Choose an explicit dtype, convert safely with astype and understand overflow, precision and memory cost.",
+    "topics": [
+      {
+        "title": "Converting with astype",
+        "body": "astype returns a NEW array with the requested dtype and truncates floats toward zero, so 1.7 becomes 1; the original array is untouched.",
+        "code": "import numpy as np\na = np.array([1.7, 2.9])\nprint(a.astype(int))",
+        "output": "[1 2]"
+      },
+      {
+        "title": "Overflow is silent",
+        "body": "Integer dtypes wrap around on overflow instead of raising, so uint8 arithmetic can turn a large result into a small one — use a wider dtype when the range is not guaranteed.",
+        "code": "import numpy as np\na = np.array([250], dtype=np.uint8)\nprint(a + 10)",
+        "output": "[4]"
+      },
+      {
+        "title": "Smaller dtype, smaller memory",
+        "body": "float32 uses four bytes per element against eight for float64; choosing it deliberately cuts memory and bandwidth in half, at the cost of precision.",
+        "code": "import numpy as np\na = np.array([1, 2, 3], dtype=np.float32)\nprint(a.dtype, a.nbytes)",
+        "output": "float32 12"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A dtype name NumPy 2 removed",
+        "broken": "import numpy as np\nprint(np.array([1, 2, 3], dtype='float'))",
+        "fix": "import numpy as np\nprint(np.array([1, 2, 3], dtype=np.float64))",
+        "error": "TypeError: data type 'float' not understood"
+      },
+      {
+        "title": "Converting text that is not a number",
+        "broken": "import numpy as np\nprint(np.array(['1', 'x']).astype(int))",
+        "fix": "import numpy as np\nprint(np.array(['1', '2']).astype(int))",
+        "error": "ValueError: invalid literal for int() with base 10: 'x'"
+      }
+    ],
+    "mini": {
+      "title": "Memory saver",
+      "brief": "Store one million marks in the smallest safe integer dtype and print the memory saved against int64.",
+      "steps": ["Create np.arange(1_000_000)", "Print nbytes for int64", "Convert to int32 and compare nbytes"]
+    },
+    "lab": {
+      "title": "dtype audit",
+      "brief": "Given three columns (id, score, flag), assign int32, float32 and bool, and report total bytes.",
+      "milestones": ["Build each column with an explicit dtype", "Print dtype and nbytes per column", "Sum the three nbytes values"]
+    }
+  },
+  {
+    "id": "n05", "no": 5, "title": "Array Indexing and Selection", "level": "beginner", "hours": 6,
+    "goal": "Select single values, rows and columns with basic, negative and fancy indexing, and read IndexError correctly.",
+    "topics": [
+      {
+        "title": "Positive and negative indexing",
+        "body": "Index 0 is the first element and -1 is the last, so negative indices count from the end without needing the length.",
+        "code": "import numpy as np\na = np.array([10, 20, 30, 40])\nprint(a[0], a[-1])",
+        "output": "10 40"
+      },
+      {
+        "title": "Rows and cells in 2-D",
+        "body": "The first index selects the row and the second the column; one index alone returns that whole row as a 1-D array.",
+        "code": "import numpy as np\na = np.array([[1, 2, 3], [4, 5, 6]])\nprint(a[1, 2], a[0])",
+        "output": "6 [1 2 3]"
+      },
+      {
+        "title": "Fancy indexing with an index array",
+        "body": "Passing a list of positions returns a new array of those elements in the order you asked for, which is how you reorder or sample rows.",
+        "code": "import numpy as np\na = np.array([10, 20, 30, 40])\nprint(a[[0, 2]])",
+        "output": "[10 30]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "Off-by-one on a 1-D array",
+        "broken": "import numpy as np\na = np.array([10, 20, 30])\nprint(a[3])",
+        "fix": "import numpy as np\na = np.array([10, 20, 30])\nprint(a[2])",
+        "error": "IndexError: index 3 is out of bounds for axis 0 with size 3"
+      },
+      {
+        "title": "Column index outside the row",
+        "broken": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a[0, 2])",
+        "fix": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a[0, 1])",
+        "error": "IndexError: index 2 is out of bounds for axis 1 with size 2"
+      }
+    ],
+    "mini": {
+      "title": "Student marks lookup",
+      "brief": "Store marks for two students in a 2x3 array and print one student's row, one subject's column and the highest cell.",
+      "steps": ["Build the 2x3 array", "Select row 0 and column 1", "Print the maximum value with a[1, 2] style access"]
+    },
+    "lab": {
+      "title": "Index practice",
+      "brief": "Fetch the same value three ways: positive index, negative index and fancy indexing.",
+      "milestones": ["Create a length-5 array", "Print element 3 with a[3]", "Print it again with a[-2]"]
+    }
+  }
+]

@@ -8,6 +8,10 @@ import { TRACK_DEFS } from '../../app/App';
 import { useI18n } from '../../app/i18n';
 import type { LocaleKey } from '../../app/i18n/locales';
 import { SubjectLogo } from '../../components/shared/SubjectLogo';
+import { CLogo } from '../c-programming/CLogo';
+import { JLogo } from '../java-programming/JLogo';
+import { useCIndex, useCProjects } from '../../core/data/ccourse';
+import { useJIndex, useJProjects } from '../../core/data/jcourse';
 import { useStore, recordAttempt, addXp, setState, today } from '../../core/storage/store';
 import { codeSlot } from '../../core/platform/keys';
 import { sectionProgress } from '../../core/learning/progress';
@@ -52,6 +56,12 @@ export default function ProjectLab() {
   const [open, setOpen] = useState<string | null>(null);
   // 116 project cards at once is needless DOM — page them instead.
   const [limit, setLimit] = useState(36);
+
+  /** C and Java build their own projects outside the eight Python/AI tracks. */
+  const cProjects = useCProjects();
+  const jProjects = useJProjects();
+  const cIndex = useCIndex();
+  const jIndex = useJIndex();
 
   /** Every brief, its real gate and its section's defense status — one pure model, one source. */
   const projects = useMemo(() => projectBriefs(sections, state.attempts), [sections, state.attempts]);
@@ -128,6 +138,35 @@ export default function ProjectLab() {
             <div>{Math.max(0, 3 - summary.built)} more for a full portfolio</div>
           </div>
         </div>
+      </div>
+
+      {/* C and Java keep their build paths in their courses, so they get their own boxes here
+          rather than being squeezed into a section range they do not have. Each count is the
+          length of the published file the box opens. */}
+      <div className="sec-head"><h2><FolderGit2 size={16} color="var(--violet)" /> Course projects</h2><span className="line" /></div>
+      <div className="tile-grid tile-grid-lg" style={{ marginBottom: 12 }}>
+        <Link to="/c-programming?tab=projects" className="tile tech" data-agent-action="project:course:c">
+          <span className="ic"><CLogo size={32} /></span>
+          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+            <b>C Programming Projects</b>
+            <span>
+              {cProjects.length
+                ? `${cProjects.length} builds · ${cIndex?.modules.length ?? 20} modules · GCC`
+                : '…'}
+            </span>
+          </span>
+        </Link>
+        <Link to="/java?tab=projects" className="tile tech" data-agent-action="project:course:java">
+          <span className="ic"><JLogo size={32} /></span>
+          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+            <b>Java Programming Projects</b>
+            <span>
+              {jProjects.length
+                ? `${jProjects.length} builds · ${jIndex?.modules.length ?? 20} modules · JDK 17`
+                : '…'}
+            </span>
+          </span>
+        </Link>
       </div>
 
       {next ? (

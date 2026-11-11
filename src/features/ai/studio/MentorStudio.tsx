@@ -178,6 +178,28 @@ export function MentorStudio() {
   const handleTranscriptRef = useRef(handleTranscript);
   handleTranscriptRef.current = handleTranscript;
 
+  /**
+   * The speaker switch under the composer.
+   *
+   * ON also turns Auto speak on: the two switches used to be able to disagree ("Voice on" while
+   * Text mode silently suppressed every answer). OFF interrupts whatever is playing — a pause button
+   * that keeps talking is not a pause button.
+   */
+  const toggleVoice = useCallback(() => {
+    if (voice.enabled) {
+      voice.interrupt();
+      voice.setEnabled(false);
+      toast('Voice off — answers will stay text-only.', 'info');
+      return;
+    }
+    voice.setEnabled(true);
+    voice.setAutoSpeak(true);
+    try { voice.prime(); } catch (cause) {
+      console.warn('BroCode voice: could not unlock speech; text answers still work.', cause);
+    }
+    toast('Voice on — answers will be read aloud.', 'success');
+  }, [voice]);
+
   const toggleMic = useCallback(() => {
     if (!voice.recognitionSupported) {
       toast('Voice input needs Chrome or Edge — this browser cannot listen. You can still type.', 'warning');
@@ -280,13 +302,24 @@ export function MentorStudio() {
             locale={voice.locale}
             mode={mode}
             onMode={(next) => {
+              // The mode is about how the learner ASKS; reading answers aloud is the speaker switch
+              // below the composer. Switching to text must not silently mute a voice they turned on.
               setMode(next);
-              voice.setAutoSpeak(next === 'voice');
               if (next === 'voice') voice.prime();
             }}
             onSend={(text) => { void ask(text); }}
             onClear={() => { voice.interrupt(); chat.clear(); }}
-            onReplay={(text) => speakFinal(text, [], false)}
+            onReplay={(text) => {
+              if (!voice.enabled) {
+                toast('Voice is off — turn the speaker on below to hear answers.', 'info');
+                return;
+              }
+              speakFinal(text, [], false);
+            }}
+            voiceOn={voice.enabled}
+            speaking={voice.speaking}
+            onVoiceToggle={toggleVoice}
+            onStopSpeaking={() => voice.interrupt()}
             onMic={toggleMic}
             dictation={dictation}
             onDictationTaken={() => setDictation(null)}

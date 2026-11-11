@@ -14,8 +14,10 @@ import {
 } from '../../core/learning/course-levels';
 import type { CourseCard } from '../../core/learning/courses';
 import { useCIndex } from '../../core/data/ccourse';
+import { useNumpyCourse } from '../../core/data/ncourse';
 import { CLogo } from '../c-programming/CLogo';
 import { JLogo } from '../java-programming/JLogo';
+import { NLogo } from '../numpy-mastery/NLogo';
 
 /**
  * /courses — ONE grid of course cards, in the learning sequence.
@@ -36,6 +38,7 @@ export default function CoursesHome() {
   const { t } = useI18n();
   const index = useCourseIndex();
   const cIndex = useCIndex();
+  const nCourse = useNumpyCourse();
   const pctOf = useSectionPct();
   /** Owner overrides when the database has them; the code-authored journey otherwise. */
   const { placements } = useCoursePlacements();
@@ -157,6 +160,26 @@ export default function CoursesHome() {
     );
   };
 
+  /**
+   * NumPy Mastery is its own course page like C and Java: a real card in the same grid, drawn with
+   * its own mark, and present only once its published artifact has loaded.
+   */
+  const renderN = () => {
+    if (!nCourse) return null;
+    return (
+      <Link
+        to="/numpy"
+        className="course-card cc-simple tone-blue"
+        data-agent-action="course:numpy-mastery"
+        data-agent-label="NumPy Mastery"
+        title="NumPy Mastery"
+      >
+        <span className="cc-logo"><NLogo size={88} /></span>
+        <b className="cc-name">NumPy Mastery</b>
+      </Link>
+    );
+  };
+
   return (
     <div>
       <div className="card glow fadeup">
@@ -172,7 +195,7 @@ export default function CoursesHome() {
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
               {/* Java is a real card in the grid below, so it is counted here too — the header may
                   never say 12 while 13 cards are on screen. */}
-              <span className="chip">{visible.length + (cHidden ? 0 : 1) + 1 + ownerVisible.length} {t('courses.coursesUnit')}</span>
+              <span className="chip">{visible.length + (cHidden ? 0 : 1) + 1 + (nCourse ? 1 : 0) + ownerVisible.length} {t('courses.coursesUnit')}</span>
               <span className="chip">{steps} {t('courses.stepsUnit')}</span>
               <span className="chip">{index.totals.items} {t('courses.itemsUnit')}</span>
             </div>
@@ -209,6 +232,7 @@ export default function CoursesHome() {
           Continue strip are untouched by ordering — only the cards' positions change. */}
       {index && (
         <div className="course-grid">
+          {renderN()}
           <Link
             to="/java"
             className="course-card cc-simple tone-amber"

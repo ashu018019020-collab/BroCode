@@ -1,0 +1,242 @@
+[
+  {
+    "id": "n06", "no": 6, "title": "Slicing and Array Views", "level": "beginner", "hours": 5,
+    "goal": "Slice arrays with start/stop/step, slice rows and columns, and know when a slice shares memory.",
+    "topics": [
+      {
+        "title": "Slice with a step",
+        "body": "A slice is start:stop:step and the stop is excluded; a step of 2 skips every other element, which is the fast way to downsample a series.",
+        "code": "import numpy as np\na = np.arange(10)\nprint(a[2:8:2])",
+        "output": "[2 4 6]"
+      },
+      {
+        "title": "Slice rows and columns",
+        "body": "In 2-D the first slice selects rows and the second columns; `1:` keeps every column from index 1 onward.",
+        "code": "import numpy as np\na = np.arange(9).reshape(3, 3)\nprint(a[:2, 1:])",
+        "output": "[[1 2]\n [4 5]]"
+      },
+      {
+        "title": "A slice is a view",
+        "body": "Basic slicing returns a view, so writing into the slice writes into the original array — the most common source of \"my data changed by itself\".",
+        "code": "import numpy as np\na = np.arange(5)\nb = a[1:3]\nb[0] = 99\nprint(a)",
+        "output": "[ 0 99  2  3  4]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A slice step of zero",
+        "broken": "import numpy as np\na = np.arange(5)\nprint(a[::0])",
+        "fix": "import numpy as np\na = np.arange(5)\nprint(a[::1])",
+        "error": "ValueError: slice step cannot be zero"
+      },
+      {
+        "title": "Column index past the last column",
+        "broken": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a[:, 3])",
+        "fix": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a[:, 2])",
+        "error": "IndexError: index 3 is out of bounds for axis 1 with size 3"
+      }
+    ],
+    "mini": {
+      "title": "Extract a date range",
+      "brief": "Take a 30-day series and print week 2 and every third day without copying the data first.",
+      "steps": ["Build np.arange(30)", "Slice days 7:14", "Slice with step 3 and compare shapes"]
+    },
+    "lab": {
+      "title": "Slice a matrix",
+      "brief": "From a 4x4 matrix, print the top-left 2x2 block and the last column.",
+      "milestones": ["Build np.arange(16).reshape(4, 4)", "Print a[:2, :2]", "Print a[:, -1]"]
+    }
+  },
+  {
+    "id": "n07", "no": 7, "title": "Array Reshaping and Manipulation", "level": "intermediate", "hours": 6,
+    "goal": "Reshape, flatten, transpose, combine and split arrays so data fits the shape an operation needs.",
+    "topics": [
+      {
+        "title": "reshape",
+        "body": "reshape changes the shape without changing the data or its order; the element count must stay the same, so 6 values can become (2, 3) but never (4, 2).",
+        "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a)",
+        "output": "[[0 1 2]\n [3 4 5]]"
+      },
+      {
+        "title": "ravel and transpose",
+        "body": "ravel flattens to one dimension (often as a view) and .T swaps rows with columns; together they move a matrix between the two layouts most libraries expect.",
+        "code": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a.ravel(), a.T)",
+        "output": "[1 2 3 4] [[1 3]\n [2 4]]"
+      },
+      {
+        "title": "concatenate and stack",
+        "body": "concatenate joins along an existing axis and stack creates a NEW axis, which is why two length-2 arrays stack into a (2, 2) matrix.",
+        "code": "import numpy as np\na = np.array([1, 2])\nprint(np.concatenate([a, a]), np.stack([a, a]).shape)",
+        "output": "[1 2 1 2] (2, 2)"
+      }
+    ],
+    "debug": [
+      {
+        "title": "Reshape that keeps the element count wrong",
+        "broken": "import numpy as np\na = np.arange(6)\nprint(a.reshape(4, 2))",
+        "fix": "import numpy as np\na = np.arange(6)\nprint(a.reshape(3, 2))",
+        "error": "ValueError: cannot reshape array of size 6 into shape (4,2)"
+      },
+      {
+        "title": "Stacking arrays of different shapes",
+        "broken": "import numpy as np\na = np.zeros((2, 2))\nb = np.zeros((2, 3))\nprint(np.stack([a, b]))",
+        "fix": "import numpy as np\na = np.zeros((2, 2))\nb = np.zeros((2, 2))\nprint(np.stack([a, b]))",
+        "error": "ValueError: all input arrays must have the same shape"
+      }
+    ],
+    "mini": {
+      "title": "Model input matrix",
+      "brief": "Turn a flat list of 12 readings into a (3, 4) feature matrix, then transpose it for a column-oriented model.",
+      "steps": ["Build np.arange(12)", "reshape(3, 4)", "Print .T and both shapes"]
+    },
+    "lab": {
+      "title": "Reshape a dataset",
+      "brief": "Combine two (2, 2) blocks into one (4, 2) dataset and split it back.",
+      "milestones": ["Build two blocks", "concatenate along axis 0", "Split with np.split into two halves"]
+    }
+  },
+  {
+    "id": "n08", "no": 8, "title": "Array Operations and Universal Functions", "level": "intermediate", "hours": 7,
+    "goal": "Use arithmetic, math and comparison ufuncs elementwise, and read a ufunc type error correctly.",
+    "topics": [
+      {
+        "title": "Arithmetic is elementwise",
+        "body": "Operators on arrays are universal functions applied element by element; `a + 1` adds to every element and `a ** 2` squares each one.",
+        "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a + 1, a ** 2)",
+        "output": "[2 3 4] [1 4 9]"
+      },
+      {
+        "title": "Math ufuncs",
+        "body": "sqrt, exp and log are the same elementwise functions for arrays and scalars, so one call replaces a comprehension.",
+        "code": "import numpy as np\nprint(np.sqrt(9), np.exp(0), np.log(1))",
+        "output": "3.0 1.0 0.0"
+      },
+      {
+        "title": "Comparisons produce masks",
+        "body": "A comparison returns a boolean array of the same shape, and indexing the array with that mask keeps only the True positions.",
+        "code": "import numpy as np\na = np.array([1, 5, 3])\nprint(a > 2, a[a > 2])",
+        "output": "[False  True  True] [5 3]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "Adding text to numbers",
+        "broken": "import numpy as np\na = np.array([1, 2, 3])\nprint(a + 'x')",
+        "fix": "import numpy as np\na = np.array([1, 2, 3])\nprint(a + 1)",
+        "error": "UFuncTypeError: ufunc 'add' did not contain a loop with signature matching types"
+      },
+      {
+        "title": "A ufunc that cannot take text",
+        "broken": "import numpy as np\nprint(np.exp('2'))",
+        "fix": "import numpy as np\nprint(np.exp(2.0))",
+        "error": "TypeError: ufunc 'exp' not supported for the input types"
+      }
+    ],
+    "mini": {
+      "title": "Financial growth",
+      "brief": "Given 12 monthly rates, compute growth factors with one ufunc and the compounded value of 1000.",
+      "steps": ["Build the rate array", "Compute 1 + rates", "Use .prod() for compounding"]
+    },
+    "lab": {
+      "title": "Vectorised calculator",
+      "brief": "Compute square root, square and absolute value of one array in three lines.",
+      "milestones": ["Build np.array([-4, 9, 16])", "Print np.abs(a)", "Print np.sqrt(np.abs(a))"]
+    }
+  },
+  {
+    "id": "n09", "no": 9, "title": "Broadcasting", "level": "intermediate", "hours": 7,
+    "goal": "Apply the broadcasting rules to scalars, rows and columns, and fix incompatible-shape errors.",
+    "topics": [
+      {
+        "title": "Scalar broadcasting",
+        "body": "A scalar is stretched across every element without being copied, which is why `a + 10` is both simple and memory-cheap.",
+        "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a + 10)",
+        "output": "[11 12 13]"
+      },
+      {
+        "title": "Row and column broadcasting",
+        "body": "Shapes are compared from the right: (2, 3) with (3,) lines up the 3s, so each column is scaled by its own weight.",
+        "code": "import numpy as np\na = np.array([[1, 2, 3], [4, 5, 6]])\nw = np.array([10, 20, 30])\nprint(a * w)",
+        "output": "[[ 10  40  90]\n [ 40 100 180]]"
+      },
+      {
+        "title": "Incompatible shapes fail loudly",
+        "body": "If two sizes disagree and neither is 1, NumPy raises ValueError instead of guessing; that error is the rule working, not a bug.",
+        "code": "import numpy as np\na = np.ones((2, 3))\nb = np.ones((2, 2))\ntry:\n    a + b\nexcept ValueError:\n    print('broadcast error')",
+        "output": "broadcast error"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A (2,) vector against (2, 3)",
+        "broken": "import numpy as np\na = np.ones((2,))\nb = np.ones((2, 3))\nprint(a + b)",
+        "fix": "import numpy as np\na = np.ones((2, 1))\nb = np.ones((2, 3))\nprint(a + b)",
+        "error": "ValueError: operands could not be broadcast together with shapes (2,) (2,3)"
+      },
+      {
+        "title": "Transposed shape by mistake",
+        "broken": "import numpy as np\na = np.zeros((2, 3))\nb = np.zeros((3, 2))\nprint(a * b)",
+        "fix": "import numpy as np\na = np.zeros((2, 3))\nb = np.zeros((3, 2))\nprint(a * b.T)",
+        "error": "ValueError: operands could not be broadcast together with shapes (2,3) (3,2)"
+      }
+    ],
+    "mini": {
+      "title": "Normalise a matrix",
+      "brief": "Subtract each column's mean and divide by its standard deviation using broadcasting only.",
+      "steps": ["Build a (3, 4) matrix", "Compute means with axis=0 and keepdims=True", "Subtract and divide without loops"]
+    },
+    "lab": {
+      "title": "Broadcast a batch",
+      "brief": "Apply three per-feature weights to a (4, 3) batch and prove the output shape stays (4, 3).",
+      "milestones": ["Build the batch", "Multiply by a (3,) weight vector", "Print the resulting shape"]
+    }
+  },
+  {
+    "id": "n10", "no": 10, "title": "Aggregation and Statistics", "level": "intermediate", "hours": 7,
+    "goal": "Summarise arrays with sum, mean, std, argmin and cumulative functions along a chosen axis.",
+    "topics": [
+      {
+        "title": "Mean along an axis",
+        "body": "Without an axis every element is reduced to one number; with axis=1 each ROW is reduced, so a (2, 2) array gives two means.",
+        "code": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a.mean(), a.mean(axis=1))",
+        "output": "2.5 [1.5 3.5]"
+      },
+      {
+        "title": "Standard deviation and variance",
+        "body": "var is the mean squared deviation and std is its square root; both use ddof=0 by default, which is the population form.",
+        "code": "import numpy as np\na = np.array([1, 2, 3, 4])\nprint(a.std(), a.var())",
+        "output": "1.118033988749895 1.25"
+      },
+      {
+        "title": "Position and running totals",
+        "body": "argmin returns WHERE the smallest value is (not the value) and cumsum returns the running total at every position.",
+        "code": "import numpy as np\na = np.array([3, 1, 2])\nprint(a.argmin(), a.cumsum())",
+        "output": "1 [3 4 6]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "Reducing a 1-D array along axis 1",
+        "broken": "import numpy as np\na = np.array([1, 2, 3])\nprint(a.argmax(axis=1))",
+        "fix": "import numpy as np\na = np.array([1, 2, 3])\nprint(a.argmax())",
+        "error": "AxisError: axis 1 is out of bounds for array of dimension 1"
+      },
+      {
+        "title": "Average with zero total weight",
+        "broken": "import numpy as np\nprint(np.average([1, 2], weights=[0, 0]))",
+        "fix": "import numpy as np\nprint(np.average([1, 2]))",
+        "error": "ZeroDivisionError: Weights sum to zero, can't be normalized"
+      }
+    ],
+    "mini": {
+      "title": "Result analytics",
+      "brief": "For a (10, 3) marks matrix print class mean, per-subject mean, highest scorer's index and a running total.",
+      "steps": ["Build the matrix", "Compute mean() and mean(axis=0)", "Print argmax(axis=1) and cumsum(axis=0)"]
+    },
+    "lab": {
+      "title": "Statistics report",
+      "brief": "Produce a five-number summary (min, mean, median, std, max) for one array.",
+      "milestones": ["Build a 20-value array", "Print min and max", "Print mean, median and std"]
+    }
+  }
+]

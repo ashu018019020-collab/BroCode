@@ -18,6 +18,7 @@ export const PAGES: { title: string; detail: string; route: string }[] = [
   { title: 'Career Workspace', detail: 'Resume readiness, local ATS checks and the next job-prep action', route: '/career/workspace' },
   { title: 'C Programming', detail: '20 modules, GCC Code Bro, 40 labs, 15 projects, interview bank', route: '/c-programming' },
   { title: 'Java Programming', detail: '20 modules, javac Code Bro, 100 coding questions, 50 debug labs, 15 projects', route: '/java' },
+  { title: 'NumPy Mastery', detail: '20 modules, 10 sections each, runnable arrays, broadcasting and linear algebra', route: '/numpy' },
   { title: 'Practice', detail: 'Question Bank, exams, review queue and mistakes', route: '/practice' },
   { title: 'Labs', detail: 'Every runnable lab: Python, SQL, NumPy + Pandas, AI, RAG, Agentic', route: '/labs' },
   { title: 'Interview', detail: 'Interview mode, mock rounds and project defense', route: '/interviews' },

@@ -19,6 +19,7 @@ import { bankPractised } from '../../core/learning/coverage';
 import { JupyterNotebook } from '../../components/code/JupyterNotebook';
 import { AssistantCard } from '../../components/shared/AssistantCard';
 import { useCAssessments, useCIndex } from '../../core/data/ccourse';
+import { useJAssessments, useJIndex } from '../../core/data/jcourse';
 import { cQuizTally } from '../../core/learning/ccourse';
 import CourseSections, { type CourseKey } from './CourseSections';
 import CQuiz from './CQuiz';
@@ -172,6 +173,14 @@ export default function QuestionBank() {
   }), [cIndex, cSets]);
   const cModule = cModules.find((m) => m.id === cModuleId) ?? cModules[0] ?? null;
   const cQuestionCount = cModules.reduce((n, m) => n + m.mcqs.length, 0);
+  /**
+   * Java's test bank, counted from the published assessment sets — the same file its Tests tab
+   * renders. The generated `index.json` summary overstates it (165 MCQs), so the box prints what
+   * the file actually holds instead.
+   */
+  const jIndex = useJIndex();
+  const jSets = useJAssessments();
+  const jQuestionCount = useMemo(() => jSets.reduce((n, s) => n + s.questions.length, 0), [jSets]);
   /** The index rows carry only a count; the full MCQ list stays with `CQuiz`. */
   const cRows = useMemo(() => cModules.map((m) => ({ ...m, questions: m.mcqs.length })), [cModules]);
   /**
@@ -437,7 +446,8 @@ export default function QuestionBank() {
       <h1 className="row" style={{ gap: 10 }}><Database size={22} /> Question Bank</h1>
       <p className="muted small">
         Local content pack — <b>{manifest.published}</b> Python &amp; AI questions across <b>{manifest.sections.length}</b> sections,
-        plus <b>{cQuestionCount}</b> C Programming MCQs across <b>{cModules.length}</b> modules.
+        plus <b>{cQuestionCount}</b> C Programming MCQs across <b>{cModules.length}</b> modules, and <b>{jQuestionCount}</b> Java
+        test questions across <b>{jIndex?.modules.length ?? '…'}</b> modules.
         They sit in one box per subject — pick a subject and its own lessons open under the boxes; pick a lesson and its
         questions open here. Write an answer (it saves automatically) or open the Code Bro for code, then grade yourself:
         you decide correct or wrong, and the app computes no score.
@@ -511,6 +521,7 @@ export default function QuestionBank() {
           baseline={manifest.baseline}
           python={manifest.sections}
           cModules={cRows}
+          java={{ modules: jIndex?.modules.length ?? 0, questions: jQuestionCount }}
           selected={course === 'c' ? cModule?.id ?? cModuleId : selected}
           course={course}
           track={track}

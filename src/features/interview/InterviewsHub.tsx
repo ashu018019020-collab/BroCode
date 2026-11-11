@@ -15,6 +15,10 @@ import {
 import { HubGrid, pillarTone } from '../../components/shared/HubGrid';
 import { SurfaceLogo } from '../../components/shared/SurfaceLogo';
 import { SubjectLogo } from '../../components/shared/SubjectLogo';
+import { CLogo } from '../c-programming/CLogo';
+import { JLogo } from '../java-programming/JLogo';
+import { useCIndex, useCInterview } from '../../core/data/ccourse';
+import { useJIndex, useJInterview } from '../../core/data/jcourse';
 import { Bar } from '../../components/ui/ui';
 
 /**
@@ -37,6 +41,16 @@ export default function InterviewsHub() {
   const state = useStore();
   const manifest = useBankManifest();
   const [params, setParams] = useSearchParams();
+
+  /**
+   * C and Java are courses, not one of the eight Python/AI tracks: their interview banks live in
+   * their own published files, so each box prints the length of the file it opens rather than a
+   * generated summary that could overstate it.
+   */
+  const cInterview = useCInterview();
+  const jInterview = useJInterview();
+  const cIndex = useCIndex();
+  const jIndex = useJIndex();
 
   const entries = manifest?.sections ?? [];
   const ranges: SubjectRange[] = useMemo(() => TRACK_DEFS.map((d) => ({ id: d.id, from: d.from, to: d.to })), []);
@@ -170,6 +184,29 @@ export default function InterviewsHub() {
             </Link>
           );
         })}
+        {/* C and Java, beside the tracks: each opens that course's own interview bank. */}
+        <Link to="/c-programming?tab=interview" className="tile tech" data-agent-action="interview:course:c">
+          <span className="ic"><CLogo size={32} /></span>
+          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+            <b>C Programming Interview</b>
+            <span>
+              {cInterview.length
+                ? `${cInterview.length} interview questions · ${cIndex?.modules.length ?? 20} modules`
+                : '…'}
+            </span>
+          </span>
+        </Link>
+        <Link to="/java?tab=interview" className="tile tech" data-agent-action="interview:course:java">
+          <span className="ic"><JLogo size={32} /></span>
+          <span className="t" style={{ flex: 1, minWidth: 0 }}>
+            <b>Java Programming Interview</b>
+            <span>
+              {jInterview.length
+                ? `${jInterview.length} interview questions · ${jIndex?.modules.length ?? 20} modules`
+                : '…'}
+            </span>
+          </span>
+        </Link>
       </div>
 
       {subjectView && (

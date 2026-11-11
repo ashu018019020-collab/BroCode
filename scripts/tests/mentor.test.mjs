@@ -165,6 +165,43 @@ test('mentor: a greeting can name the page, and never invents one when there is 
   assert.match(hindi.text, /Abhi tum SQL joins par ho/);
 });
 
+test('mentor: paragraphs the four blocks did not use come back as one grounded list', () => {
+  const long = {
+    text: [
+      '**Generators**',
+      '',
+      'A generator produces values one at a time instead of building a whole list.',
+      '',
+      'It is lazy because the body pauses at each yield, since nothing is computed until the next value is asked for.',
+      '',
+      'Common errors include consuming a generator twice and expecting the items to still be there.',
+    ].join('\n'),
+    sources: [{ title: 'Python generators', route: '/lesson/s12/learn' }],
+  };
+  const turn = mentor.mentorTurn('what is a generator', long, { lang: 'en-IN' });
+  const more = turn.blocks.find((block) => block.kind === 'more');
+  assert.ok(more, 'a paragraph left over by the other blocks is not dropped');
+  assert.equal(more.label, 'More from this lesson');
+  assert.match(more.text, /consuming a generator twice/, 'the line is the lesson text, not a summary');
+  assert.ok(turn.text.includes('consuming a generator twice'), 'the screen shows it too');
+  assert.ok(turn.spoken.includes('consuming a generator twice'), 'and the voice reads it');
+});
+
+test('mentor: follow-up chips name the topic the passage is about', () => {
+  const turn = mentor.mentorTurn('what is a list', answer, { lang: 'en-IN' });
+  assert.match(turn.followUps[0], /Lists/, 'the first chip carries the real title');
+  assert.ok(turn.followUps.every((chip) => typeof chip === 'string' && chip.length > 0));
+
+  const hindi = mentor.mentorTurn('list samjhao', answer, { lang: 'hi-IN' });
+  assert.match(hindi.followUps[0], /Lists/);
+  assert.match(hindi.followUps[0], /detail/);
+
+  // A long title is left generic instead of being pasted in as a wall of text.
+  const longTitle = { text: `**${'Very long topic '.repeat(6)}**\n\nA body sentence.`, sources: [] };
+  const generic = mentor.mentorTurn('what is x', longTitle, { lang: 'en-IN' });
+  assert.ok(generic.followUps.every((chip) => chip.length <= 90));
+});
+
 /* ------------------------- retrieved practice items ------------------------- */
 
 test('mentor: a practice item with no authored answer is refused, not read as the lesson', () => {

@@ -53,7 +53,7 @@ export interface MentorHistoryTurn {
   intent?: MentorIntent;
 }
 
-export type MentorBlockKind = 'simple' | 'why' | 'example' | 'where' | 'refusal';
+export type MentorBlockKind = 'simple' | 'why' | 'example' | 'more' | 'where' | 'refusal';
 
 export interface MentorBlock {
   kind: MentorBlockKind;
@@ -87,6 +87,7 @@ interface Copy {
   simple: string;
   why: string;
   example: string;
+  more: string;
   where: string;
   noExample: string;
   noReason: string;
@@ -120,6 +121,7 @@ const COPY: Record<'en' | 'hi', Copy> = {
     simple: 'In simple words',
     why: 'Why it works',
     example: 'Example',
+    more: 'More from this lesson',
     where: 'Where this comes from',
     noExample:
       'The lesson for this topic does not contain a code example, so I will not make one up. Open the source below to see the exact wording.',
@@ -154,6 +156,7 @@ const COPY: Record<'en' | 'hi', Copy> = {
     simple: 'Simple bhasha mein',
     why: 'Kyun aisa hota hai',
     example: 'Example',
+    more: 'Lesson se aur',
     where: 'Yeh kahan se aaya',
     noExample:
       'Is topic ke lesson mein code example nahi hai, isliye main bana kar nahi bataunga. Neeche source kholo aur exact wording padho.',
@@ -340,16 +343,33 @@ export function teachingBlocks(answer: Answer | null | undefined, lang: VoiceLan
     blocks.push({ kind: 'why', label: copy.why, text: firstSentences(whyParagraph, 420) });
   }
 
+  // Found even when a fenced example exists: the sentence that introduces the code is not a second
+  // explanation, and it must not come back in the "more" list below as if it were.
+  const exampleParagraph = findParagraph(
+    parsed.bodyParagraphs,
+    /^(example|for example|for instance|e\.g\.|jaise|udaharan)|(\bexample:)/i,
+  );
   if (parsed.code) {
     blocks.push({ kind: 'example', label: copy.example, text: parsed.code, code: true });
-  } else {
-    const exampleParagraph = findParagraph(
-      parsed.bodyParagraphs,
-      /^(example|for example|for instance|e\.g\.|jaise|udaharan)|(\bexample:)/i,
-    );
-    if (exampleParagraph && exampleParagraph !== simpleSource) {
-      blocks.push({ kind: 'example', label: copy.example, text: firstSentences(exampleParagraph, 420) });
-    }
+  } else if (exampleParagraph && exampleParagraph !== simpleSource) {
+    blocks.push({ kind: 'example', label: copy.example, text: firstSentences(exampleParagraph, 420) });
+  }
+
+  /**
+   * Every paragraph the four blocks above did not use.
+   *
+   * Dropping them is why a four-paragraph passage came back as two sentences: the first paragraph
+   * became "In simple words", a causal one became "Why it works", and the rest vanished. They return
+   * as ONE list block, each line a contiguous slice of the retrieved text — the lesson's own words,
+   * never a summary, so nothing here can be wrong about the source.
+   */
+  const used = new Set<string>([simpleSource]);
+  if (whyParagraph) used.add(whyParagraph);
+  if (exampleParagraph) used.add(exampleParagraph);
+  const rest = parsed.bodyParagraphs.filter((paragraph) => !used.has(paragraph));
+  if (rest.length) {
+    const text = rest.map((paragraph) => `• ${firstSentences(paragraph, 320)}`).join('\n');
+    if (text.trim()) blocks.push({ kind: 'more', label: copy.more, text });
   }
 
   const source = answer?.sources?.find((s) => s.title?.trim());
@@ -368,18 +388,19 @@ function hasBlock(blocks: MentorBlock[], kind: MentorBlockKind): boolean {
 }
 
 /** One vocabulary for the follow-up chips, keyed by the intent that produced them. */
-function followUpsFor(copy: Copy, intent: MentorIntent): string[] {
-  switch (intent) {
-    case 'greeting': return copy.followUps.greeting;
-    case 'example': return copy.followUps.example;
-    case 'why': return copy.followUps.why;
-    case 'simpler': return copy.followUps.shorter;
-    case 'repeat': return copy.followUps.shorter;
-    case 'practice': return copy.followUps.practice;
-    case 'next': return copy.followUps.practice;
-    case 'hint': return copy.followUps.shorter;
-    default: return copy.followUps.explain;
-  }
+/**
+ * Follow-up chips that NAME the topic when the passage gave one.
+ *
+ * The generic chips still work, but "Explain decorators in more detail" is a better next ask than a
+ * bare "Explain in simpler words" — and `useMentorAsk` resolves the named topic back through the
+ * retrieval engine, so the chip leads to the answer it promises. A long title is left generic rather
+ * than pasted in as a 200-character question.
+ */
+function withTopic(chips: string[], lang: VoiceLangId, title: string): string[] {
+  const clean = String(title ?? '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
+  if (!clean || clean.length > 56) return chips;
+  const template = lang === 'hi-IN' ? '{topic} ko aur detail mein samjhao' : 'Explain {topic} in more detail';
+  return [template.replace('{topic}', clean), ...chips.slice(0, 3)];
 }
 
 function renderText(title: string, blocks: MentorBlock[], lead: string, closing: string): string {
@@ -511,7 +532,13 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
   const passageTitle = answer ? parseAnswer(answer.text).title : '';
   const title = (passageTitle || answer?.sources?.[0]?.title || opts.topic || '').trim();
   const blocks = teachingBlocks(answer, opts.lang);
-  const followUps = followUpsFor(copy, intent);
+  /**
+   * Follow-up chips for a family of next asks, named with the passage's own title when it has one.
+   * The family still follows the intent (a why answer offers why-shaped next asks); the title only
+   * supplies the subject, so the chip reads as the next question about THIS lesson.
+   */
+  const chips = (key: 'explain' | 'shorter' | 'example' | 'why' | 'practice') =>
+    title ? withTopic(copy.followUps[key], opts.lang, title) : copy.followUps[key];
 
   if (intent === 'greeting' || intent === 'thanks') {
     const text = intent === 'greeting' ? mentorGreeting(opts.where, opts.lang).text : copy.thanks;
@@ -560,7 +587,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
         text: renderText(heading, [block], lead, copy.closing),
         spoken: `${lead} ${questionText}`,
         blocks: [block],
-        followUps: copy.followUps.practice,
+        followUps: chips('practice'),
         repeat: false,
         topic: heading || undefined,
       };
@@ -572,7 +599,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
       text: renderText(heading, [refusal], lead, copy.closing),
       spoken: `${lead} ${copy.practiceOnly}`,
       blocks: [refusal],
-      followUps: copy.followUps.explain,
+      followUps: chips('explain'),
       repeat: false,
       topic: heading || undefined,
     };
@@ -590,7 +617,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
       text: renderText(title, shown, lead, copy.closing),
       spoken: speechFrom(lead, shown, ''),
       blocks: shown,
-      followUps: copy.followUps.shorter,
+      followUps: chips('shorter'),
       repeat: true,
       topic: title || undefined,
     };
@@ -603,7 +630,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
       text: renderText(title, [short], copy.shortLead, copy.closing),
       spoken: speechFrom(copy.shortLead, [short], ''),
       blocks: [short],
-      followUps: copy.followUps.shorter,
+      followUps: chips('shorter'),
       repeat: false,
       topic: title || undefined,
     };
@@ -616,7 +643,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
       text: renderText(title, [short], copy.hintLead, copy.closing),
       spoken: speechFrom(copy.hintLead, [short], copy.closing),
       blocks: [short],
-      followUps: copy.followUps.shorter,
+      followUps: chips('shorter'),
       repeat: false,
       topic: title || undefined,
     };
@@ -631,7 +658,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
         text: renderText(title, [refusal], copy.exampleLead, copy.closing),
         spoken: `${copy.exampleLead} ${copy.noExample}`,
         blocks: [refusal],
-        followUps: copy.followUps.why,
+        followUps: chips('why'),
         repeat: false,
         topic: title || undefined,
       };
@@ -641,7 +668,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
       text: renderText(title, [example], copy.exampleLead, copy.closing),
       spoken: speechFrom(copy.exampleLead, [example], ''),
       blocks: [example],
-      followUps: copy.followUps.example,
+      followUps: chips('example'),
       repeat: false,
       topic: title || undefined,
     };
@@ -656,7 +683,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
         text: renderText(title, [refusal], copy.whyLead, copy.closing),
         spoken: `${copy.whyLead} ${copy.noReason}`,
         blocks: [refusal],
-        followUps: copy.followUps.why,
+        followUps: chips('why'),
         repeat: false,
         topic: title || undefined,
       };
@@ -666,7 +693,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
       text: renderText(title, [why], copy.whyLead, copy.closing),
       spoken: speechFrom(copy.whyLead, [why], ''),
       blocks: [why],
-      followUps: copy.followUps.why,
+      followUps: chips('why'),
       repeat: false,
       topic: title || undefined,
     };
@@ -687,7 +714,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
       text: renderText(title, shown, lead, copy.closing),
       spoken: speechFrom(lead, shown.filter((b) => b.kind !== 'where'), ''),
       blocks: shown,
-      followUps: copy.followUps.practice,
+      followUps: chips('practice'),
       repeat: false,
       topic: title || undefined,
     };
@@ -718,7 +745,7 @@ export function mentorTurn(input: string, answer: Answer | null, opts: MentorTur
     text: renderText(title, full, copy.explainLead, copy.closing),
     spoken: speechFrom(copy.explainLead, full, copy.closing),
     blocks: full,
-    followUps: copy.followUps.explain,
+    followUps: chips('explain'),
     repeat: false,
     topic: title || undefined,
   };

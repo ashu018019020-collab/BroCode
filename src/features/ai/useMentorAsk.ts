@@ -5,8 +5,8 @@ import { loadKnowledgeIndex } from '../../core/data/knowledge';
 import type { KnowledgeIndex } from '../../core/ai/knowledge';
 import { askLocal, type Answer, type AssistantContext } from '../../core/ai/assistant';
 import {
-  isProjectQuestion, mentorTurn, projectOverview, turnVoteKey,
-  type MentorHistoryTurn, type MentorReply,
+  classifyMentorIntent, isProjectQuestion, mentorTurn, normalizeAsk, projectOverview, turnVoteKey,
+  type MentorHistoryTurn, type MentorIntent, type MentorReply,
 } from '../../core/ai/mentor';
 import type { VoiceLangId } from '../../core/ai/voice';
 
@@ -23,6 +23,18 @@ import type { VoiceLangId } from '../../core/ai/voice';
  */
 
 const MAX_TURNS = 24;
+
+/**
+ * Asks that carry an INTENT but no subject.
+ *
+ * "example do", "why?", "samjha nahi" name what to do with the last answer, not a topic — so
+ * retrieving on their literal words found nothing and the mentor replied "I could not find this
+ * topic" for a lesson that was already on screen. These reuse the previous question as the search
+ * subject; the learner's own words still decide the intent and the wording of the turn.
+ */
+const FOLLOW_UP_INTENTS: ReadonlySet<MentorIntent> = new Set<MentorIntent>([
+  'example', 'why', 'simpler', 'repeat', 'hint', 'next', 'practice',
+]);
 
 /**
  * Thumbs feedback is PERSISTED beside the thread.
@@ -165,7 +177,13 @@ export function useMentorAsk(logKey: string, context?: AssistantContext): Mentor
         }
       }
       const askedHints = history.filter((turn) => turn.role === 'learner' && /\b(hint|clue|madad|nudge)\b/i.test(turn.text)).length;
-      const answer = askLocal(question, sections, state, contextRef.current, askedHints, index ?? undefined);
+      const intent = classifyMentorIntent(question);
+      const previousAsk = [...history].reverse().find((turn) => turn.role === 'learner')?.text ?? '';
+      const words = normalizeAsk(question).split(' ').filter(Boolean).length;
+      const retrieval = FOLLOW_UP_INTENTS.has(intent) && previousAsk && words <= 8
+        ? `${previousAsk} ${question}`
+        : question;
+      const answer = askLocal(retrieval, sections, state, contextRef.current, askedHints, index ?? undefined);
       const reply = mentorTurn(question, answer, {
         lang,
         history,
