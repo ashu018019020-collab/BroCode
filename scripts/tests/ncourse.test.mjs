@@ -222,6 +222,31 @@ test('numpy course: every written checkpoint has three real rubric criteria', ()
   assert.ok(written >= 200, `expected written checkpoints, found ${written}`);
 });
 
+test('numpy course: a written answer and its ticks are stored per entry, not per section', () => {
+  const answer = engine.nWrittenAnswerKey('n01-checkpoint-1');
+  const ticks = engine.nWrittenTicksKey('n01-checkpoint-1');
+  assert.equal(answer, 'nans:n01-checkpoint-1');
+  assert.equal(ticks, 'ntick:n01-checkpoint-1');
+  assert.notEqual(answer, engine.nSectionKey('n01', 'checkpoint'));
+  assert.notEqual(answer, ticks);
+  assert.ok(!answer.startsWith('nmod:'), 'a draft must not be readable as a completed section');
+});
+
+test('numpy course: self-assessment ticks round-trip and pad to the rubric length', () => {
+  assert.equal(engine.encodeTicks([true, false, true]), '1,0,1');
+  assert.deepEqual(engine.decodeTicks('1,0,1', 3), [true, false, true]);
+  assert.deepEqual(engine.decodeTicks('', 3), [false, false, false]);
+  assert.deepEqual(engine.decodeTicks('1', 3), [true, false, false]);
+  assert.deepEqual(engine.decodeTicks('1,0,1,1,1', 3), [true, false, true]);
+  for (const m of artifact.modules) {
+    for (const e of m.sections.checkpoint) {
+      if (!e.rubric) continue;
+      const picked = e.rubric.map((_, i) => i % 2 === 0);
+      assert.deepEqual(engine.decodeTicks(engine.encodeTicks(picked), e.rubric.length), picked, e.id);
+    }
+  }
+});
+
 test('numpy course: every Coding Lab entry is an independent graded task', () => {
   for (const m of artifact.modules) {
     assert.equal(m.sections.coding.length, (tasks[m.id] || []).length, `${m.id}: Coding Lab is exactly the task bank`);

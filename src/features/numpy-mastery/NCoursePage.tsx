@@ -4,9 +4,10 @@ import {
   ArrowLeft, BookOpen, Check, ChevronRight, Code2, GraduationCap, Play, ShieldCheck, Target, Trophy,
 } from 'lucide-react';
 import { useNumpyCourse } from '../../core/data/ncourse';
-import { useStore, recordAttempt } from '../../core/storage/store';
+import { useStore, recordAttempt, useSavedAnswer } from '../../core/storage/store';
 import {
-  N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, outputMatches,
+  N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey,
+  nWrittenAnswerKey, nWrittenTicksKey, nextSection, outputMatches,
   type NEntry, type NModule, type NSectionKey,
 } from '../../core/learning/ncourse';
 import { NLogo } from './NLogo';
@@ -253,14 +254,20 @@ function CheckpointCard({ entry, done, onPass }: { entry: NEntry; done: boolean;
  * A written checkpoint: explain the concept in your own words, then self-assess against three real
  * criteria. The answer stays hidden until something has actually been written, and the section is
  * only recorded once every criterion is ticked — writing nothing and peeking does not count.
+ *
+ * The draft and its ticks are per-entry store records, not component state, so a refresh or a trip
+ * to another module and back keeps what was written. One card per entry means one debounced write.
  */
 function WrittenCheckpointCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPass: () => void }) {
   const rubric = entry.rubric ?? [];
-  const [text, setText] = useState('');
-  const [ticks, setTicks] = useState<boolean[]>(() => rubric.map(() => false));
+  const [text, setText] = useSavedAnswer(nWrittenAnswerKey(entry.id));
+  const [rawTicks, setRawTicks] = useSavedAnswer(nWrittenTicksKey(entry.id));
+  const ticks = useMemo(() => decodeTicks(rawTicks, rubric.length), [rawTicks, rubric.length]);
   const [revealed, setRevealed] = useState(false);
   const enough = text.trim().length >= 20;
   const allTicked = rubric.length > 0 && ticks.every(Boolean);
+  const toggle = (i: number, on: boolean) =>
+    setRawTicks(encodeTicks(ticks.map((value, j) => (j === i ? on : value))));
 
   return (
     <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
@@ -286,6 +293,7 @@ function WrittenCheckpointCard({ entry, done, onPass }: { entry: NEntry; done: b
       />
       <p className="small muted" style={{ margin: '6px 0 0' }}>
         {enough ? 'Now check your answer against the three criteria.' : 'Write at least a sentence before revealing the answer.'}
+        {text.trim() && !done ? ' · draft saved' : ''}
       </p>
       <ol className="small" style={{ margin: '8px 0 0', paddingLeft: 18 }}>
         {rubric.map((line, i) => (
@@ -295,7 +303,7 @@ function WrittenCheckpointCard({ entry, done, onPass }: { entry: NEntry; done: b
                 type="checkbox"
                 checked={ticks[i] ?? false}
                 disabled={!enough}
-                onChange={(e) => setTicks((prev) => prev.map((v, j) => (j === i ? e.target.checked : v)))}
+                onChange={(e) => toggle(i, e.target.checked)}
               />
               <span className="muted">{line}</span>
             </label>

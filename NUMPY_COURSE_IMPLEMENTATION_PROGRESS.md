@@ -34,6 +34,20 @@ every debug challenge.
 - The generator rejects a rubric with fewer than three lines or a blank line; a test re-checks all of
   them.
 
+### Phase 11 — written answers survive a refresh
+
+- A written checkpoint's draft and its three rubric ticks are stored **per entry** (`nans:<entry>`,
+  `ntick:<entry>`), in the store's single written-answer field (`Attempt.answer`) with the existing
+  400 ms debounce and a flush on unmount. Nothing new was invented for storage and no migration was
+  needed.
+- Reloading, switching section or leaving the module and coming back restores both the text and which
+  criteria were ticked, so a half-written explanation is no longer lost.
+- The families are separate from `nmod:<module>:<section>` on purpose: a draft is not a completed
+  section, and a test pins that a draft key can never be read as one. A second test round-trips the
+  tick codec against every real rubric length.
+- Answers stay on the device (this VM's local store), like every other written answer in the app;
+  they are not part of the course artifact and never leave the browser.
+
 ### Per section (course total)
 
 | Section | Entries | Target | Remaining |
@@ -72,7 +86,6 @@ written with rubrics).
 2. Author the interview and defense banks to 50 independent answers per module. They are still derived
    from topics, so one topic body reappears in Learn, Interview, Practice and Defense.
 3. Raise Debug from 7 to 20+ per module; each new one is execution-verified the same way.
-4. Persist written checkpoint answers per entry instead of only marking the section complete.
 5. Raise authored topics beyond 12 per module and split the hardest modules.
 6. Wire per-module notebooks for Code Bro when a lab needs a starter file.
 

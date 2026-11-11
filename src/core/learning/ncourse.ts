@@ -5,6 +5,7 @@
  * tally can count another course's records:
  *
  *   · `nmod:<module>:<section>` — one entry was completed (a checkpoint answer, a lab milestone…)
+ *   · `nans:<entry>` / `ntick:<entry>` — a written checkpoint's draft answer and its rubric ticks
  *   · the module is complete when every one of its ten sections has at least one record
  *
  * Everything here is pure: no React, no store, no fetch, so the arithmetic is driven with fixtures
@@ -110,6 +111,38 @@ export function outputMatches(expected: string, actual: string): boolean {
 /** One completion record: the section of a module was worked through. */
 export function nSectionKey(moduleId: string, section: NSectionKey): string {
   return `nmod:${moduleId}:${section}`;
+}
+
+/**
+ * A written checkpoint's own records: the drafted explanation and the learner's self-assessment.
+ *
+ * They are per ENTRY, not per section, on purpose — a section key says "done", and the draft has to
+ * survive a refresh, so the text cannot live in component state. Both use the store's single
+ * written-answer field (`Attempt.answer`), so nothing new was invented for storage; the ticks are
+ * one compact `1,0,1` string. The families are distinct from `nmod:` so no tally can count a draft
+ * as a completed section, and distinct from each other so a codec bug cannot overwrite an answer.
+ */
+export const N_WRITTEN_ANSWER_PREFIX = 'nans:';
+export const N_WRITTEN_TICKS_PREFIX = 'ntick:';
+export function nWrittenAnswerKey(entryId: string): string {
+  return `${N_WRITTEN_ANSWER_PREFIX}${entryId}`;
+}
+export function nWrittenTicksKey(entryId: string): string {
+  return `${N_WRITTEN_TICKS_PREFIX}${entryId}`;
+}
+
+/** Self-assessment ticks as a compact record; the store holds text, not booleans. */
+export function encodeTicks(ticks: boolean[]): string {
+  return ticks.map((t) => (t ? '1' : '0')).join(',');
+}
+
+/**
+ * Read ticks back against the rubric length: missing entries are unticked, and an older or shorter
+ * record never grows the list — the rubric is the source of truth for how many criteria exist.
+ */
+export function decodeTicks(raw: string | undefined, count: number): boolean[] {
+  const parts = String(raw ?? '').split(',');
+  return Array.from({ length: Math.max(0, count) }, (_, i) => parts[i] === '1');
 }
 
 /** A module is complete when all ten sections have a record — never from a score. */
