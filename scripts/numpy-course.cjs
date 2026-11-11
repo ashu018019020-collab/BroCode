@@ -141,7 +141,7 @@ modules.forEach((m, index) => {
     if (d.fix === d.broken) fail(`${m.id}: debug "${d.title}" fix equals broken code`);
   }
   if (!Array.isArray(m.tasks) || m.tasks.length < 1) fail(`${m.id}: needs 1+ independent coding task`);
-  for (const [bank, min] of [['interviewBank', 3], ['defenseBank', 3]]) {
+  for (const [bank, min] of [['interviewBank', 9], ['defenseBank', 9]]) {
     const list = m[bank] || [];
     if (list.length < min) fail(`${m.id}: needs ${min}+ authored ${bank} entries`);
     for (const q of list) if (!q.q || !q.answer) fail(`${m.id}: ${bank} entry needs a question and an answer`);
@@ -196,17 +196,16 @@ function buildSections(m) {
     learn: topics.map((t, i) => ({
       id: id('learn', i), title: t.title, body: t.body, code: t.code, output: t.output, difficulty: difficultyAt(i),
     })),
+    /*
+     * Interview publishes VERIFIED-OUTPUT questions plus the authored bank. The old "what is X?"
+     * pair copied `t.body` as its answer, so one Learn sentence answered a lesson, an interview
+     * question, a practice brief and a defense prompt. That entry is gone, not rewritten.
+     */
     interview: [
-      ...topics.flatMap((t, i) => [
-        {
-          id: id('interview', i * 2), q: `What is ${t.title.toLowerCase()}, and when would you use it?`,
-          answer: t.body, difficulty: difficultyAt(i),
-        },
-        {
-          id: id('interview', i * 2 + 1), q: `What does this ${t.title.toLowerCase()} snippet print, and why?`,
-          code: t.code, answer: t.output, difficulty: i === topics.length - 1 ? 'hard' : 'medium',
-        },
-      ]),
+      ...topics.map((t, i) => ({
+        id: id('interview', i), q: `What does this ${t.title.toLowerCase()} snippet print, and why?`,
+        code: t.code, answer: t.output, difficulty: i === topics.length - 1 ? 'hard' : 'medium',
+      })),
       ...(m.interviewBank || []).map((q, i) => ({
         id: id('interview', 'a' + i), q: q.q, answer: q.answer, code: q.code,
         difficulty: difficultyAt(i + topics.length),
@@ -239,16 +238,10 @@ function buildSections(m) {
     projectLab: [{
       id: id('projectLab', 0), title: m.lab.title, body: m.lab.brief, steps: m.lab.milestones, difficulty: 'hard',
     }],
-    defense: [
-      ...topics.map((t, i) => ({
-        id: id('defense', i), q: `Explain ${t.title.toLowerCase()} to an interviewer, then defend the dtype and axis choices in your code.`,
-        answer: t.body, code: t.code, difficulty: difficultyAt(i),
-      })),
-      ...(m.defenseBank || []).map((q, i) => ({
-        id: id('defense', 'a' + i), q: q.q, answer: q.answer, steps: q.steps,
-        difficulty: difficultyAt(i + topics.length),
-      })),
-    ],
+    /* Defense is authored only: a prompt produced from a topic only ever restated the topic. */
+    defense: (m.defenseBank || []).map((q, i) => ({
+      id: id('defense', 'a' + i), q: q.q, answer: q.answer, steps: q.steps, difficulty: difficultyAt(i),
+    })),
     checkpoint: topics.flatMap((t, i) => [
       {
         id: id('checkpoint', i * 2), q: `Checkpoint: predict the output of this code about ${t.title.toLowerCase()}.`, code: t.code, answer: t.output,

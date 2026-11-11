@@ -224,6 +224,23 @@ test('numpy course: authored interview and defense answers ship instead of copie
   assert.ok(total >= 100, `expected 100+ authored interview/defense answers, found ${total}`);
 });
 
+test('numpy course: interview and defense never repeat a Learn body', () => {
+  let checked = 0;
+  for (const m of artifact.modules) {
+    const bodies = new Set(m.sections.learn.map((e) => e.body));
+    for (const bank of ['interview', 'defense']) {
+      for (const e of m.sections[bank]) {
+        assert.ok(e.answer, `${e.id}: needs an answer`);
+        assert.ok(!bodies.has(e.answer), `${e.id}: the answer is a copied Learn body`);
+        checked += 1;
+      }
+    }
+    assert.equal(m.sections.defense.length, (authoredBanks[m.id]?.defense ?? []).length,
+      `${m.id}: defense must publish the authored bank only`);
+  }
+  assert.ok(checked >= 400, `expected 400+ interview/defense records, found ${checked}`);
+});
+
 test('numpy course: every checkpoint quiz offers three distinct options including the answer', () => {
   let quizzes = 0;
   for (const m of artifact.modules) {

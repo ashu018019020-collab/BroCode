@@ -1,64 +1,67 @@
 # NumPy Mastery — implementation progress
 
-Honest ledger. Counts below are **records that shipped**, not targets. The target from the brief is
-50 entries per section (500 per module, 10,000 total). Phases 1–15 delivered the architecture, two
-depth passes, a grader, independent task banks, a verified debug lab, interactive checkpoints,
-written checkpoints with rubrics, and two authored interview/defense passes.
+Honest ledger. Counts are **records that shipped**, not targets. The brief's target is 50 entries per
+section (500 per module, 10,000 total). Phases 1–16 built the architecture, two depth passes, a
+grader, independent task banks, a verified debug lab, interactive and written checkpoints, three
+authored interview/defense passes, and removed every entry that quoted a Learn body.
 
 ## Shipped so far
 
-| Measure | Phase 11 | Phase 12 | Phase 13 | Phase 14 | Phase 15 (now) |
+| Measure | Phase 12 | Phase 13 | Phase 14 | Phase 15 | Phase 16 (now) |
 |---|---|---|---|---|---|
 | Modules | 20 | 20 | 20 | 20 | 20 |
 | Sections per module | 10 | 10 | 10 | 10 | 10 |
-| Entries published | 2,440 | 2,600 | 2,660 | 2,780 | **2,900** |
-| Independent coding tasks | 340 | 500 | 500 | 500 | 500 |
-| Debug challenges per module | 7 | 7 | 10 | 10 | 10 |
-| Authored interview answers | 0 | 0 | 0 | 60 | **90** |
-| Authored defense answers | 0 | 0 | 0 | 60 | **90** |
+| Entries published | 2,600 | 2,660 | 2,780 | 2,900 | **2,540** |
+| Independent coding tasks | 500 | 500 | 500 | 500 | 500 |
+| Debug challenges per module | 7 | 10 | 10 | 10 | 10 |
+| Authored interview answers per module | 0 | 0 | 3 | 6 | **9** |
+| Authored defense answers per module | 0 | 0 | 3 | 6 | **9** |
+| Answers copied from a Learn body | 480 | 480 | 420 | 360 | **0** |
 | Checkpoint quizzes / written | 240 / 240 | 240 / 240 | 240 / 240 | 240 / 240 | 240 / 240 |
-| Written drafts persisted per entry | yes | yes | yes | yes | yes |
 | Generator validation | passes | passes | passes | passes | passes |
 
-### Phase 15 — a second authored interview and defense pass
+### Phase 16 — the body-copying entries are gone
 
-- `content/numpy-mastery/deepening-6.json` adds **three more questions and three more defenses per
-  module** — 120 answers, taking authored coverage to 6 interview and 6 defense answers per module
-  (90 + 90 across the course).
-- The new questions probe judgement rather than definitions: *"What do you gain and lose with
-  `int8`?"*, *"Why does a slice avoid copying memory?"*, *"Is `np.add(a, b)` different from `a + b`?"*,
-  *"How do you draw reproducible batches in a loop?"*.
-- The defenses force a position and a cost: *"Defend copying a function argument before mutating it"*,
-  *"Explain why `np.vectorize` does not make code fast"*, *"Defend storing a factorisation instead of
-  an inverse"*, *"Defend a memory budget when choosing a vectorised path"*.
-- They merge through the same deepening layer, so no generator change was needed; the existing test
-  still enforces that every authored answer is published and is never a copied Learn body.
+- The generator used to publish two entries per topic whose **answer was the Learn body**: an
+  interview "What is X, and when would you use it?" and a defense "Explain X…". That is why one
+  sentence appeared in Learn, Interview, Practice and Defense.
+- Both derivations are **removed** from `scripts/numpy-course.cjs`, not rewritten. Interview now
+  publishes only the verified-output question per topic ("What does this snippet print, and why?",
+  answer = the executed stdout) plus the authored bank. Defense publishes **authored answers only**.
+- A third authored pass, `content/numpy-mastery/deepening-7.json` (3 interview + 3 defense per
+  module, 120 answers), brings the authored bank to **9 interview and 9 defense answers per module**
+  so neither section shrinks to a stub after the removal.
+- Measured on the published artifact: **0 of 600 interview/defense answers equals any Learn body.** A
+  test asserts that for every record and also that Defense publishes exactly the authored bank.
+- The count moved **down** by design: 2,900 → 2,540. 180 interview records and 120 defense records
+  were deleted because they were duplicates, and 120 authored answers were added. The ledger records
+  the loss rather than hiding it.
 
 ### Per section (course total)
 
 | Section | Entries | Target | Remaining |
 |---|---|---|---|
 | Learn | 240 | 1,000 | 760 |
-| Interview | 600 | 1,000 | 400 |
+| Interview | 420 | 1,000 | 580 |
 | Coding Lab | 500 | 1,000 | 500 |
 | Logic | 240 | 1,000 | 760 |
 | Debug | 200 | 1,000 | 800 |
 | Practice Solutions | 240 | 1,000 | 760 |
 | Mini Project | 20 | 1,000 | 980 |
 | Project Lab | 20 | 1,000 | 980 |
-| Defense | 360 | 1,000 | 640 |
+| Defense | 180 | 1,000 | 820 |
 | Checkpoint | 480 | 1,000 | 520 |
-| **Total** | **2,900** | **10,000** | **7,100** |
+| **Total** | **2,540** | **10,000** | **7,460** |
 
 ### Per module
 
-Every module ships **145 entries**: 12 Learn, 30 Interview (24 topic-backed + 6 authored), 25 Coding
-(all independent), 12 Logic, 10 Debug, 12 Practice, 1 Mini Project, 1 Project Lab, 18 Defense (12
-topic-backed + 6 authored), 24 Checkpoint (12 quizzes, 12 written with rubrics).
+Every module ships **127 entries**: 12 Learn, 21 Interview (12 output questions + 9 authored),
+25 Coding (all independent), 12 Logic, 10 Debug, 12 Practice, 1 Mini Project, 1 Project Lab,
+9 authored Defense, 24 Checkpoint (12 quizzes, 12 written with rubrics).
 
 ## What is real today
 
-- Every entry is module-specific and projected from authored material.
+- Every entry is module-specific; no interview or defense answer repeats a Learn body.
 - Duplicate ids, duplicate debug titles per module and duplicate question text are rejected by the
   generator; task titles are scanned across all banks.
 - All 500 coding reference solutions and hidden checks are executed on numpy 2.x and on the 1.26
@@ -66,13 +69,14 @@ topic-backed + 6 authored), 24 Checkpoint (12 quizzes, 12 written with rubrics).
 - All 200 debug challenges are executed on both runtimes: 193 raise, 7 are wrong-output lessons.
 - Every quiz offers three distinct real outputs; every written checkpoint has three real criteria.
 - Written drafts and rubric ticks are stored per entry and survive a refresh.
-- Authored interview and defense answers are verified to differ from Learn bodies.
 
-## Remaining work (phases 16+)
+## Remaining work (phases 17+)
 
-1. Replace the remaining topic-backed interview and defense questions with authored answers.
+1. Grow the authored interview and defense banks past 9 per module (the topics still hold 12 more
+   verified-output questions each).
 2. Raise Debug from 10 to 20+ per module.
-3. Raise authored topics beyond 12 per module and split the hardest modules.
+3. Raise authored topics beyond 12 per module and split the hardest modules; Practice still projects
+   the topic body as its brief.
 4. Grow Mini Project and Project Lab beyond one record per module.
 5. Wire per-module notebooks for Code Bro when a lab needs a starter file.
 
