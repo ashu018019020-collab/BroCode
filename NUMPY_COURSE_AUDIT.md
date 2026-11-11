@@ -32,14 +32,20 @@ Audited before any file was added, so the course reuses the platform instead of 
   sections, and a debug challenge whose fix equals its broken code.
 - `scripts/numpy-fill-outputs.cjs` — executes every depth-layer sample and stores the real stdout, so
   no published output is hand-typed.
-- `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **2,440 entries**.
+- `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **2,600 entries**.
 - Coding Lab publishes independent tasks only: the guided, topic-copied entries were removed in
   phase 7, so every coding record carries its own data and a hidden check.
 - `content/numpy-mastery/deepening-3.json` — 80 debug challenges whose broken code is executed and
   required to raise, with the stored error taken from the interpreter and the fix required to run.
-- `content/numpy-mastery/tasks*.json` — 340 independent coding tasks (17/module) with a hidden check
+- `content/numpy-mastery/tasks*.json` — 500 independent coding tasks (25/module) with a hidden check
   each; the grader runs learner code, then the check in the same kernel namespace, so a copied
-  lesson snippet fails. Their reference outputs are executed, not typed.
+  lesson snippet fails. Their reference outputs are executed, not typed, on numpy 2.x and on the
+  1.26 build the browser runtime ships.
+- Checkpoint publishes two kinds of record per topic: a multiple-choice quiz whose three options are
+  real executed outputs from the same module (the generator refuses one without its answer or with a
+  repeated option), and a written prompt with three rubric criteria derived from the topic's title and
+  executed output. Written drafts and their ticks are stored per entry (`nans:` / `ntick:`) and
+  survive a refresh; the model answer is gated behind actually writing something.
 - Coding Lab is graded at runtime: `outputMatches` (`src/core/learning/ncourse.ts`) compares the
   learner's printed output with the module's executed output in a per-task Pyodide kernel. The
   expectations are checked against numpy 1.26.4 + pandas 2.2.0 (what the bundled browser runtime
