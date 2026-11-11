@@ -32,7 +32,7 @@ Audited before any file was added, so the course reuses the platform instead of 
   sections, and a debug challenge whose fix equals its broken code.
 - `scripts/numpy-fill-outputs.cjs` — executes every depth-layer sample and stores the real stdout, so
   no published output is hand-typed.
-- `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **2,660 entries**.
+- `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **2,780 entries**.
 - Coding Lab publishes independent tasks only: the guided, topic-copied entries were removed in
   phase 7, so every coding record carries its own data and a hidden check. Phase 12 grew the bank to
   500 tasks (25/module); phase 13 grew Debug to 200 challenges (10/module), each executed on both
@@ -43,6 +43,9 @@ Audited before any file was added, so the course reuses the platform instead of 
   each; the grader runs learner code, then the check in the same kernel namespace, so a copied
   lesson snippet fails. Their reference outputs are executed, not typed, on numpy 2.x and on the
   1.26 build the browser runtime ships.
+- Interview and Defense carry authored answers in `deepening-5.json` (3 per module each, merged
+  through the deepening layer), so those sections no longer only reuse Learn bodies; a test asserts
+  an authored answer never equals a Learn body. The topic-backed questions remain alongside them.
 - Checkpoint publishes two kinds of record per topic: a multiple-choice quiz whose three options are
   real executed outputs from the same module (the generator refuses one without its answer or with a
   repeated option), and a written prompt with three rubric criteria derived from the topic's title and

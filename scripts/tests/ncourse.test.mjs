@@ -194,6 +194,36 @@ print(json.dumps({'problems': problems, 'raised': raised, 'differed': differed})
   assert.equal(report.raised + report.differed, cases.length, 'every challenge must be exercised');
 });
 
+const authoredBanks = {};
+for (const file of fs.readdirSync(SRC).filter((f) => /^deepening.*\.json$/.test(f))) {
+  for (const [id, pack] of Object.entries(readJSON(path.join('content', 'numpy-mastery', file)))) {
+    for (const bank of ['interview', 'defense']) {
+      if (!pack[bank]) continue;
+      const into = authoredBanks[id] || (authoredBanks[id] = { interview: [], defense: [] });
+      into[bank].push(...pack[bank]);
+    }
+  }
+}
+
+test('numpy course: authored interview and defense answers ship instead of copied topic bodies', () => {
+  let total = 0;
+  for (const m of artifact.modules) {
+    const banks = authoredBanks[m.id] ?? { interview: [], defense: [] };
+    const bodies = new Set(m.sections.learn.map((e) => e.body));
+    for (const bank of ['interview', 'defense']) {
+      for (const q of banks[bank]) {
+        assert.ok(q.q && q.answer, `${m.id}: a ${bank} entry needs a question and an answer`);
+        assert.ok(!bodies.has(q.answer), `${m.id}: an authored ${bank} answer must not be a copied Learn body`);
+        const published = m.sections[bank].find((e) => e.q === q.q);
+        assert.ok(published, `${m.id}: authored ${bank} question "${q.q}" must be published`);
+        assert.equal(published.answer, q.answer, `${m.id}: the published answer must be the authored one`);
+        total += 1;
+      }
+    }
+  }
+  assert.ok(total >= 100, `expected 100+ authored interview/defense answers, found ${total}`);
+});
+
 test('numpy course: every checkpoint quiz offers three distinct options including the answer', () => {
   let quizzes = 0;
   for (const m of artifact.modules) {
