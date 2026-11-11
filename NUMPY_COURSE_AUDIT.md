@@ -32,9 +32,11 @@ Audited before any file was added, so the course reuses the platform instead of 
   sections, and a debug challenge whose fix equals its broken code.
 - `scripts/numpy-fill-outputs.cjs` — executes every depth-layer sample and stores the real stdout, so
   no published output is hand-typed.
-- `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **2,600 entries**.
+- `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **2,660 entries**.
 - Coding Lab publishes independent tasks only: the guided, topic-copied entries were removed in
-  phase 7, so every coding record carries its own data and a hidden check.
+  phase 7, so every coding record carries its own data and a hidden check. Phase 12 grew the bank to
+  500 tasks (25/module); phase 13 grew Debug to 200 challenges (10/module), each executed on both
+  numpy 2.x and 1.26 with the recorded error taken from the interpreter.
 - `content/numpy-mastery/deepening-3.json` — 80 debug challenges whose broken code is executed and
   required to raise, with the stored error taken from the interpreter and the fix required to run.
 - `content/numpy-mastery/tasks*.json` — 500 independent coding tasks (25/module) with a hidden check
