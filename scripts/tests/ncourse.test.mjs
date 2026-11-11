@@ -194,6 +194,16 @@ print(json.dumps({'problems': problems, 'raised': raised, 'differed': differed})
   assert.equal(report.raised + report.differed, cases.length, 'every challenge must be exercised');
 });
 
+test('numpy course: every Coding Lab entry is an independent graded task', () => {
+  for (const m of artifact.modules) {
+    assert.equal(m.sections.coding.length, (tasks[m.id] || []).length, `${m.id}: Coding Lab is exactly the task bank`);
+    for (const e of m.sections.coding) {
+      assert.equal(e.kind, 'task', `${e.id}: guided coding entries are not published`);
+      assert.ok(e.check, `${e.id}: every Coding Lab entry needs a hidden check`);
+    }
+  }
+});
+
 test('numpy course: coding output is graded on the printed text, not on whitespace noise', () => {
   assert.equal(engine.normalizeOutput('a\r\nb  \n\n'), 'a\nb');
   assert.equal(engine.normalizeOutput('[1 2]'), '[1 2]');

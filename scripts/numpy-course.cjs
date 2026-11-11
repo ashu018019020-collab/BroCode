@@ -156,19 +156,16 @@ function buildSections(m) {
         code: t.code, answer: t.output, difficulty: i === topics.length - 1 ? 'hard' : 'medium',
       },
     ]),
-    coding: [
-      ...topics.map((t, i) => ({
-        id: id('coding', i), title: `Write: ${t.title}`, statement: t.body, kind: 'topic',
-        starter: 'import numpy as np\n\n# your code here\n', solution: t.code, expected: t.output,
-        difficulty: difficultyAt(i),
-      })),
-      ...(m.tasks || []).map((t, i) => ({
-        id: id('coding', `t${i}`), title: t.title, statement: t.statement, kind: 'task',
-        starter: 'import numpy as np\n\n# read the task, then store your answer in `result`\n',
-        solution: t.solution, expected: t.expected, check: t.check,
-        difficulty: difficultyAt(i),
-      })),
-    ],
+    /*
+     * Coding Lab is independent tasks only: a guided entry copied the taught snippet, so it could be
+     * passed by pasting the lesson. The lesson still ships in Learn, Practice and Checkpoint.
+     */
+    coding: (m.tasks || []).map((t, i) => ({
+      id: id('coding', 't' + i), title: t.title, statement: t.statement, kind: 'task',
+      starter: 'import numpy as np\n\n# read the task, then store your answer in `result`\n',
+      solution: t.solution, expected: t.expected, check: t.check,
+      difficulty: difficultyAt(i),
+    })),
     logic: topics.map((t, i) => ({
       id: id('logic', i), q: `Predict the exact output of this ${t.title.toLowerCase()} code before you run it.`, code: t.code, answer: t.output,
       difficulty: difficultyAt(i),
