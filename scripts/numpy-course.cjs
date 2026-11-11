@@ -65,8 +65,13 @@ for (const [id, pack] of Object.entries(deepening)) {
  * hidden check, so copying the taught snippet cannot pass. `scripts/numpy-fill-outputs.cjs` executes
  * each solution + check and stores what the reference prints.
  */
-const TASKS = path.join(SRC, 'tasks.json');
-const tasks = fs.existsSync(TASKS) ? readJSON(TASKS) : {};
+const taskFiles = fs.readdirSync(SRC).filter((f) => /^tasks.*\.json$/.test(f)).sort();
+const tasks = {};
+for (const file of taskFiles) {
+  for (const [id, list] of Object.entries(readJSON(path.join(SRC, file)))) {
+    (tasks[id] || (tasks[id] = [])).push(...list);
+  }
+}
 for (const [id, list] of Object.entries(tasks)) {
   const target = modules.find((m) => m.id === id);
   if (!target) {

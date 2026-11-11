@@ -1,6 +1,10 @@
 [
   {
-    "id": "n01", "no": 1, "title": "NumPy Introduction and Fundamentals", "level": "beginner", "hours": 5,
+    "id": "n01",
+    "no": 1,
+    "title": "NumPy Introduction and Fundamentals",
+    "level": "beginner",
+    "hours": 5,
     "goal": "Understand what NumPy is, why ndarrays beat Python lists for numeric work, and run your first array program.",
     "topics": [
       {
@@ -39,16 +43,28 @@
     "mini": {
       "title": "Marks summary tool",
       "brief": "Read five marks, build an ndarray and print total, average and the highest mark without writing a loop.",
-      "steps": ["Build the array with np.array", "Use sum() and mean()", "Use max() and print all three figures"]
+      "steps": [
+        "Build the array with np.array",
+        "Use sum() and mean()",
+        "Use max() and print all three figures"
+      ]
     },
     "lab": {
       "title": "Array warm-up",
       "brief": "Prove that NumPy works in this runtime and that an ndarray reports a real shape and dtype.",
-      "milestones": ["Import numpy and print its major version", "Create a 1-D array and print shape", "Print the mean of the array"]
+      "milestones": [
+        "Import numpy and print its major version",
+        "Create a 1-D array and print shape",
+        "Print the mean of the array"
+      ]
     }
   },
   {
-    "id": "n02", "no": 2, "title": "ndarray Fundamentals", "level": "beginner", "hours": 6,
+    "id": "n02",
+    "no": 2,
+    "title": "ndarray Fundamentals",
+    "level": "beginner",
+    "hours": 6,
     "goal": "Read an array's shape, size, ndim, dtype and axes correctly before writing any operation on it.",
     "topics": [
       {
@@ -87,16 +103,28 @@
     "mini": {
       "title": "Dataset inspector",
       "brief": "For a 3-D array of sensor readings, print shape, ndim, size and dtype, then total each axis.",
-      "steps": ["Build a (2, 3, 4) array", "Print shape, ndim, size, dtype", "Sum along axis 0 and explain the result length"]
+      "steps": [
+        "Build a (2, 3, 4) array",
+        "Print shape, ndim, size, dtype",
+        "Sum along axis 0 and explain the result length"
+      ]
     },
     "lab": {
       "title": "Shape detective",
       "brief": "Given a target shape, construct an array with that shape and prove it with .shape.",
-      "milestones": ["Create an array with shape (4, 2)", "Print .size and .ndim", "Explain why size is 8"]
+      "milestones": [
+        "Create an array with shape (4, 2)",
+        "Print .size and .ndim",
+        "Explain why size is 8"
+      ]
     }
   },
   {
-    "id": "n03", "no": 3, "title": "Array Creation and Initialization", "level": "beginner", "hours": 6,
+    "id": "n03",
+    "no": 3,
+    "title": "Array Creation and Initialization",
+    "level": "beginner",
+    "hours": 6,
     "goal": "Create arrays with zeros, ones, full, arange, linspace, eye and diag, and pick the right constructor for a dataset.",
     "topics": [
       {
@@ -135,16 +163,28 @@
     "mini": {
       "title": "Matrix maker",
       "brief": "Build a 3x3 identity, a 2x4 zero matrix and five evenly spaced values from 0 to 1 in one script.",
-      "steps": ["Use np.eye(3)", "Use np.zeros((2, 4))", "Use np.linspace(0, 1, 5) and print each shape"]
+      "steps": [
+        "Use np.eye(3)",
+        "Use np.zeros((2, 4))",
+        "Use np.linspace(0, 1, 5) and print each shape"
+      ]
     },
     "lab": {
       "title": "Initialize a dataset",
       "brief": "Create a temperature grid of shape (7, 24) filled with a sentinel value, then prove its shape.",
-      "milestones": ["Use np.full with shape (7, 24)", "Print .shape and .dtype", "Replace the sentinel with 0 using a slice"]
+      "milestones": [
+        "Use np.full with shape (7, 24)",
+        "Print .shape and .dtype",
+        "Replace the sentinel with 0 using a slice"
+      ]
     }
   },
   {
-    "id": "n04", "no": 4, "title": "Data Types and Type Conversion", "level": "beginner", "hours": 6,
+    "id": "n04",
+    "no": 4,
+    "title": "Data Types and Type Conversion",
+    "level": "beginner",
+    "hours": 6,
     "goal": "Choose an explicit dtype, convert safely with astype and understand overflow, precision and memory cost.",
     "topics": [
       {
@@ -168,10 +208,10 @@
     ],
     "debug": [
       {
-        "title": "A dtype name NumPy 2 removed",
-        "broken": "import numpy as np\nprint(np.array([1, 2, 3], dtype='float'))",
+        "title": "A dtype alias NumPy removed",
+        "broken": "import numpy as np\nprint(np.array([1, 2, 3], dtype=np.float))",
         "fix": "import numpy as np\nprint(np.array([1, 2, 3], dtype=np.float64))",
-        "error": "TypeError: data type 'float' not understood"
+        "error": "AttributeError: module 'numpy' has no attribute 'float'."
       },
       {
         "title": "Converting text that is not a number",
@@ -183,16 +223,28 @@
     "mini": {
       "title": "Memory saver",
       "brief": "Store one million marks in the smallest safe integer dtype and print the memory saved against int64.",
-      "steps": ["Create np.arange(1_000_000)", "Print nbytes for int64", "Convert to int32 and compare nbytes"]
+      "steps": [
+        "Create np.arange(1_000_000)",
+        "Print nbytes for int64",
+        "Convert to int32 and compare nbytes"
+      ]
     },
     "lab": {
       "title": "dtype audit",
       "brief": "Given three columns (id, score, flag), assign int32, float32 and bool, and report total bytes.",
-      "milestones": ["Build each column with an explicit dtype", "Print dtype and nbytes per column", "Sum the three nbytes values"]
+      "milestones": [
+        "Build each column with an explicit dtype",
+        "Print dtype and nbytes per column",
+        "Sum the three nbytes values"
+      ]
     }
   },
   {
-    "id": "n05", "no": 5, "title": "Array Indexing and Selection", "level": "beginner", "hours": 6,
+    "id": "n05",
+    "no": 5,
+    "title": "Array Indexing and Selection",
+    "level": "beginner",
+    "hours": 6,
     "goal": "Select single values, rows and columns with basic, negative and fancy indexing, and read IndexError correctly.",
     "topics": [
       {
@@ -231,12 +283,20 @@
     "mini": {
       "title": "Student marks lookup",
       "brief": "Store marks for two students in a 2x3 array and print one student's row, one subject's column and the highest cell.",
-      "steps": ["Build the 2x3 array", "Select row 0 and column 1", "Print the maximum value with a[1, 2] style access"]
+      "steps": [
+        "Build the 2x3 array",
+        "Select row 0 and column 1",
+        "Print the maximum value with a[1, 2] style access"
+      ]
     },
     "lab": {
       "title": "Index practice",
       "brief": "Fetch the same value three ways: positive index, negative index and fancy indexing.",
-      "milestones": ["Create a length-5 array", "Print element 3 with a[3]", "Print it again with a[-2]"]
+      "milestones": [
+        "Create a length-5 array",
+        "Print element 3 with a[3]",
+        "Print it again with a[-2]"
+      ]
     }
   }
 ]

@@ -57,14 +57,35 @@ for (const file of FILES) {
       changed = true;
     }
   }
+  /* Debug challenges: the broken code must really raise, and its error line is captured from the
+   * interpreter; the fix must really run. A challenge whose broken code succeeds is not a challenge. */
+  for (const [id, pack] of Object.entries(deep)) {
+    for (const challenge of pack.debug || []) {
+      if (!challenge.error) {
+        const broken = spawnSync('python3', ['-c', challenge.broken], { cwd: workdir, encoding: 'utf8' });
+        if (broken.status === 0) {
+          failures.push(`${path.basename(file)} ${id} :: ${challenge.title}\n  the broken code did not raise`);
+          continue;
+        }
+        const line = (broken.stderr || '').trim().split('\n').filter(Boolean).pop() ?? 'error';
+        challenge.error = line;
+        filled += 1;
+        changed = true;
+      }
+      const fixed = spawnSync('python3', ['-c', challenge.fix], { cwd: workdir, encoding: 'utf8' });
+      if (fixed.status !== 0) {
+        failures.push(`${path.basename(file)} ${id} :: ${challenge.title}\n  the fix does not run: ${(fixed.stderr || '').trim().split('\n').slice(-1)[0]}`);
+      }
+    }
+  }
   if (changed) fs.writeFileSync(file, `${JSON.stringify(deep, null, 2)}\n`);
 }
 
 /* Independent tasks: the reference output is what the solution prints, and the hidden check must
  * accept that solution — a task whose own reference fails its check is not publishable. */
-const TASKS_FILE = path.join(SRC, 'tasks.json');
-if (fs.existsSync(TASKS_FILE)) {
-  const tasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
+const taskFiles = fs.readdirSync(SRC).filter((f) => /^tasks.*\.json$/.test(f)).sort().map((f) => path.join(SRC, f));
+for (const taskFile of taskFiles) {
+  const tasks = JSON.parse(fs.readFileSync(taskFile, 'utf8'));
   let changed = false;
   for (const [id, list] of Object.entries(tasks)) {
     for (const task of list) {
@@ -87,7 +108,7 @@ if (fs.existsSync(TASKS_FILE)) {
       }
     }
   }
-  if (changed) fs.writeFileSync(TASKS_FILE, `${JSON.stringify(tasks, null, 2)}\n`);
+  if (changed) fs.writeFileSync(taskFile, `${JSON.stringify(tasks, null, 2)}\n`);
 }
 
 if (failures.length) {

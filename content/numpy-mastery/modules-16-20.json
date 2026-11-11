@@ -1,6 +1,10 @@
 [
   {
-    "id": "n16", "no": 16, "title": "NumPy File Input and Output", "level": "intermediate", "hours": 6,
+    "id": "n16",
+    "no": 16,
+    "title": "NumPy File Input and Output",
+    "level": "intermediate",
+    "hours": 6,
     "goal": "Persist arrays with save/load, read text and CSV data, and pack several arrays into one NPZ file.",
     "topics": [
       {
@@ -25,9 +29,9 @@
     "debug": [
       {
         "title": "Loading a file that does not exist",
-        "broken": "import numpy as np\nprint(np.load('/tmp/missing.npy'))",
-        "fix": "import numpy as np\nnp.save('/tmp/missing.npy', np.arange(2))\nprint(np.load('/tmp/missing.npy'))",
-        "error": "FileNotFoundError: [Errno 2] No such file or directory: '/tmp/missing.npy'"
+        "broken": "import numpy as np\nprint(np.load('/tmp/np-never-created/missing.npy'))",
+        "fix": "import os\nimport numpy as np\nos.makedirs('/tmp/np-demo16', exist_ok=True)\nnp.save('/tmp/np-demo16/missing.npy', np.arange(2))\nprint(np.load('/tmp/np-demo16/missing.npy'))",
+        "error": "FileNotFoundError: [Errno 2] No such file or directory: '/tmp/np-never-created/missing.npy'"
       },
       {
         "title": "save appends .npy",
@@ -39,16 +43,28 @@
     "mini": {
       "title": "Save and reload a dataset",
       "brief": "Write a (5, 2) dataset to NPY, reload it and prove the values and dtype survived.",
-      "steps": ["Build the dataset", "np.save to a temp path", "np.load and compare with np.array_equal"]
+      "steps": [
+        "Build the dataset",
+        "np.save to a temp path",
+        "np.load and compare with np.array_equal"
+      ]
     },
     "lab": {
       "title": "Numeric file round-trip",
       "brief": "Write the same array as .npy and as .txt, then compare load speeds and dtypes.",
-      "milestones": ["Create a 1,000-value array", "Save both formats", "Print dtype from each load"]
+      "milestones": [
+        "Create a 1,000-value array",
+        "Save both formats",
+        "Print dtype from each load"
+      ]
     }
   },
   {
-    "id": "n17", "no": 17, "title": "Advanced Data Types and Special Arrays", "level": "advanced", "hours": 6,
+    "id": "n17",
+    "no": 17,
+    "title": "Advanced Data Types and Special Arrays",
+    "level": "advanced",
+    "hours": 6,
     "goal": "Use structured dtypes, datetime64 and vectorised string operations for real records.",
     "topics": [
       {
@@ -87,16 +103,28 @@
     "mini": {
       "title": "Student records",
       "brief": "Store id, score and grade in one structured array, then print the scores of all students above 70.",
-      "steps": ["Declare a structured dtype", "Build two records", "Mask with a['score'] > 70"]
+      "steps": [
+        "Declare a structured dtype",
+        "Build two records",
+        "Mask with a['score'] > 70"
+      ]
     },
     "lab": {
       "title": "Date series",
       "brief": "Create seven consecutive dates and the difference in days between the first and last.",
-      "milestones": ["Build datetime64[D] from 2026-01-01", "Add np.arange(7)", "Subtract the first from the last"]
+      "milestones": [
+        "Build datetime64[D] from 2026-01-01",
+        "Add np.arange(7)",
+        "Subtract the first from the last"
+      ]
     }
   },
   {
-    "id": "n18", "no": 18, "title": "Masked Arrays and Numerical Robustness", "level": "advanced", "hours": 6,
+    "id": "n18",
+    "no": 18,
+    "title": "Masked Arrays and Numerical Robustness",
+    "level": "advanced",
+    "hours": 6,
     "goal": "Detect and handle NaN and infinity honestly, and choose masked arrays or nan-aware functions deliberately.",
     "topics": [
       {
@@ -135,16 +163,28 @@
     "mini": {
       "title": "Sensor cleanup",
       "brief": "Given readings with NaN gaps, print the valid count, the mean of valid values and the filled array.",
-      "steps": ["Build a float array with NaNs", "Count valid with ~np.isnan(a)", "Fill with np.nan_to_num or a column mean"]
+      "steps": [
+        "Build a float array with NaNs",
+        "Count valid with ~np.isnan(a)",
+        "Fill with np.nan_to_num or a column mean"
+      ]
     },
     "lab": {
       "title": "Robust statistics",
       "brief": "Compare mean, nanmean and masked mean on the same array with two missing values.",
-      "milestones": ["Build the array", "Print all three means", "Explain which one you would ship"]
+      "milestones": [
+        "Build the array",
+        "Print all three means",
+        "Explain which one you would ship"
+      ]
     }
   },
   {
-    "id": "n19", "no": 19, "title": "Performance and Vectorization", "level": "advanced", "hours": 7,
+    "id": "n19",
+    "no": 19,
+    "title": "Performance and Vectorization",
+    "level": "advanced",
+    "hours": 7,
     "goal": "Replace Python loops with vectorised code, reuse buffers with out= and benchmark changes honestly.",
     "topics": [
       {
@@ -183,16 +223,28 @@
     "mini": {
       "title": "Loop vs vector",
       "brief": "Compute squares of 1,000,000 numbers with a list comprehension and with NumPy, and print both totals.",
-      "steps": ["Build the range", "Sum squares with a loop", "Sum with np.arange and compare the results"]
+      "steps": [
+        "Build the range",
+        "Sum squares with a loop",
+        "Sum with np.arange and compare the results"
+      ]
     },
     "lab": {
       "title": "Benchmark honestly",
       "brief": "Time three ways to sum an array and report which is fastest on this device.",
-      "milestones": ["Create a large array", "Use time.perf_counter around each method", "Print the ratios, not just the winner"]
+      "milestones": [
+        "Create a large array",
+        "Use time.perf_counter around each method",
+        "Print the ratios, not just the winner"
+      ]
     }
   },
   {
-    "id": "n20", "no": 20, "title": "NumPy Ecosystem and Real-World Applications", "level": "advanced", "hours": 7,
+    "id": "n20",
+    "no": 20,
+    "title": "NumPy Ecosystem and Real-World Applications",
+    "level": "advanced",
+    "hours": 7,
     "goal": "Move arrays between NumPy, Pandas, plots and model inputs, and know which layer owns which job.",
     "topics": [
       {
@@ -231,12 +283,20 @@
     "mini": {
       "title": "ML feature prep",
       "brief": "Turn a 100-sample, 3-feature DataFrame into a float32 array, standardise it and print the means.",
-      "steps": ["Build or load a DataFrame", "Convert with .to_numpy(dtype=np.float32)", "Subtract mean and divide by std per column"]
+      "steps": [
+        "Build or load a DataFrame",
+        "Convert with .to_numpy(dtype=np.float32)",
+        "Subtract mean and divide by std per column"
+      ]
     },
     "lab": {
       "title": "Image array pipeline",
       "brief": "Create a small image array, crop a region, and print the mean brightness per channel.",
-      "milestones": ["Build a (4, 4, 3) uint8 array", "Slice a 2x2 region", "Print mean along axis (0, 1)"]
+      "milestones": [
+        "Build a (4, 4, 3) uint8 array",
+        "Slice a 2x2 region",
+        "Print mean along axis (0, 1)"
+      ]
     }
   }
 ]

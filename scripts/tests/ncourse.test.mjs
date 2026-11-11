@@ -97,7 +97,12 @@ test('numpy course: every deepening sample carries an executed output', () => {
   }
 });
 
-const tasks = readJSON('content/numpy-mastery/tasks.json');
+const tasks = {};
+for (const file of fs.readdirSync(SRC).filter((f) => /^tasks.*\.json$/.test(f))) {
+  for (const [id, list] of Object.entries(readJSON(path.join('content', 'numpy-mastery', file)))) {
+    (tasks[id] || (tasks[id] = [])).push(...list);
+  }
+}
 
 test('numpy course: every module ships independent tasks with a hidden check', () => {
   for (const m of artifact.modules) {
@@ -146,6 +151,47 @@ print(json.dumps(bad))
   assert.equal(run.status, 0, run.stderr);
   const bad = JSON.parse(run.stdout.trim() || '[]');
   assert.deepEqual(bad, [], `task failures: ${JSON.stringify(bad.slice(0, 3))}`);
+});
+
+test('numpy course: every debug fix runs, and broken code raises or prints something else', (t) => {
+  const probe = spawnSync('python3', ['-c', 'import numpy'], { encoding: 'utf8' });
+  if (probe.status !== 0) {
+    t.skip('python3 with numpy is not installed on this machine');
+    return;
+  }
+  const cases = artifact.modules.flatMap((m) => m.sections.debug.map((e) => ({ id: e.id, broken: e.code, fix: e.fix })));
+  const script = `
+import json, io, contextlib, sys
+cases = json.load(sys.stdin)
+problems, raised, differed = [], 0, 0
+def run(code):
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf):
+            exec(code, {})
+        return True, buf.getvalue().strip()
+    except Exception:
+        return False, buf.getvalue().strip()
+for c in cases:
+    ok_broken, out_broken = run(c['broken'])
+    ok_fix, out_fix = run(c['fix'])
+    if not ok_fix:
+        problems.append({'id': c['id'], 'why': 'the fix raises'})
+        continue
+    if ok_broken:
+        if out_broken == out_fix:
+            problems.append({'id': c['id'], 'why': 'broken code behaves exactly like the fix'})
+        else:
+            differed += 1
+    else:
+        raised += 1
+print(json.dumps({'problems': problems, 'raised': raised, 'differed': differed}))
+`;
+  const run = spawnSync('python3', ['-c', script], { input: JSON.stringify(cases), encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  const report = JSON.parse(run.stdout.trim());
+  assert.deepEqual(report.problems, [], `debug problems: ${JSON.stringify(report.problems.slice(0, 3))}`);
+  assert.equal(report.raised + report.differed, cases.length, 'every challenge must be exercised');
 });
 
 test('numpy course: coding output is graded on the printed text, not on whitespace noise', () => {

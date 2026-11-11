@@ -665,9 +665,9 @@
     "debug": [
       {
         "title": "Loading a file that was never saved",
-        "broken": "import numpy as np\nprint(np.load('data.npy'))",
-        "fix": "import numpy as np\nnp.save('data.npy', np.arange(3))\nprint(np.load('data.npy'))",
-        "error": "FileNotFoundError: [Errno 2] No such file or directory: 'data.npy'"
+        "broken": "import numpy as np\nprint(np.load('/tmp/np-never-created/never-saved.npy'))",
+        "fix": "import os\nimport numpy as np\nos.makedirs('/tmp/np-demo16', exist_ok=True)\nnp.save('/tmp/np-demo16/never-saved.npy', np.arange(3))\nprint(np.load('/tmp/np-demo16/never-saved.npy'))",
+        "error": "FileNotFoundError: [Errno 2] No such file or directory: '/tmp/np-never-created/never-saved.npy'"
       }
     ]
   },

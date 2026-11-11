@@ -1,0 +1,582 @@
+{
+  "n01": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "The array was never built",
+        "broken": "import numpy as np\nprint(arr.mean())",
+        "error": "NameError: name 'arr' is not defined",
+        "fix": "import numpy as np\narr = np.array([1, 2, 3])\nprint(arr.mean())"
+      },
+      {
+        "title": "Text meets numbers",
+        "broken": "import numpy as np\nprint(np.array([1, 2]) + '3')",
+        "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+        "fix": "import numpy as np\nprint(np.array([1, 2]) + 3)"
+      },
+      {
+        "title": "A method name with a typo",
+        "broken": "import numpy as np\nprint(np.array([1, 2]).meen())",
+        "error": "AttributeError: 'numpy.ndarray' object has no attribute 'meen'. Did you mean: 'mean'?",
+        "fix": "import numpy as np\nprint(np.array([1, 2]).mean())"
+      },
+      {
+        "title": "Three values will not fit a 2x2",
+        "broken": "import numpy as np\nprint(np.array([1, 2, 3]).reshape(2, 2))",
+        "error": "ValueError: cannot reshape array of size 3 into shape (2,2)",
+        "fix": "import numpy as np\nprint(np.array([1, 2, 3, 4]).reshape(2, 2))"
+      }
+    ]
+  },
+  "n02": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "shape is not a function",
+        "broken": "import numpy as np\na = np.ones((2, 3))\nprint(a.shape())",
+        "error": "TypeError: 'tuple' object is not callable",
+        "fix": "import numpy as np\na = np.ones((2, 3))\nprint(a.shape)"
+      },
+      {
+        "title": "A second axis that does not exist",
+        "broken": "import numpy as np\na = np.ones((2, 3))\nprint(a.shape[2])",
+        "error": "IndexError: tuple index out of range",
+        "fix": "import numpy as np\na = np.ones((2, 3))\nprint(a.shape[1])"
+      },
+      {
+        "title": "A negative dimension",
+        "broken": "import numpy as np\nprint(np.zeros((2, -1)))",
+        "error": "ValueError: negative dimensions are not allowed",
+        "fix": "import numpy as np\nprint(np.zeros((2, 1)))"
+      },
+      {
+        "title": "len of a scalar array",
+        "broken": "import numpy as np\nprint(len(np.array(5)))",
+        "error": "TypeError: len() of unsized object",
+        "fix": "import numpy as np\nprint(np.array(5).size)"
+      }
+    ]
+  },
+  "n03": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "A float number of elements",
+        "broken": "import numpy as np\nprint(np.zeros(2.5))",
+        "error": "TypeError: expected a sequence of integers or a single integer, got '2.5'",
+        "fix": "import numpy as np\nprint(np.zeros(2))"
+      },
+      {
+        "title": "A negative number of points",
+        "broken": "import numpy as np\nprint(np.linspace(0, 1, -1))",
+        "error": "ValueError: Number of samples, -1, must be non-negative.",
+        "fix": "import numpy as np\nprint(np.linspace(0, 1, 5))"
+      },
+      {
+        "title": "full without a value",
+        "broken": "import numpy as np\nprint(np.full(3))",
+        "error": "TypeError: full() missing 1 required positional argument: 'fill_value'",
+        "fix": "import numpy as np\nprint(np.full(3, 0))"
+      },
+      {
+        "title": "An identity with no size",
+        "broken": "import numpy as np\nprint(np.eye(-1))",
+        "error": "ValueError: negative dimensions are not allowed",
+        "fix": "import numpy as np\nprint(np.eye(2))"
+      }
+    ]
+  },
+  "n04": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "Letters are not numbers",
+        "broken": "import numpy as np\nprint(np.array(['a', 'b']).astype(int))",
+        "error": "ValueError: invalid literal for int() with base 10: np.str_('a')",
+        "fix": "import numpy as np\nprint(np.array(['1', '2']).astype(int))"
+      },
+      {
+        "title": "Three hundred does not fit int8",
+        "broken": "import numpy as np\nprint(np.array([300], dtype=np.int8))",
+        "error": "OverflowError: Python integer 300 out of bounds for int8",
+        "fix": "import numpy as np\nprint(np.array([30], dtype=np.int8))"
+      },
+      {
+        "title": "itemsize is a number, not a method",
+        "broken": "import numpy as np\nprint(np.dtype('float64').itemsize())",
+        "error": "TypeError: 'int' object is not callable",
+        "fix": "import numpy as np\nprint(np.dtype('float64').itemsize)"
+      },
+      {
+        "title": "A dtype name is a string",
+        "broken": "import numpy as np\nprint(np.array([1]).dtype.name())",
+        "error": "TypeError: 'str' object is not callable",
+        "fix": "import numpy as np\nprint(np.array([1]).dtype.name)"
+      }
+    ]
+  },
+  "n05": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "A row that is not there",
+        "broken": "import numpy as np\na = np.arange(9).reshape(3, 3)\nprint(a[5])",
+        "error": "IndexError: index 5 is out of bounds for axis 0 with size 3",
+        "fix": "import numpy as np\na = np.arange(9).reshape(3, 3)\nprint(a[2])"
+      },
+      {
+        "title": "One index too many",
+        "broken": "import numpy as np\na = np.arange(9).reshape(3, 3)\nprint(a[0, 0, 0])",
+        "error": "IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed",
+        "fix": "import numpy as np\na = np.arange(9).reshape(3, 3)\nprint(a[0, 0])"
+      },
+      {
+        "title": "A mask that is too short",
+        "broken": "import numpy as np\na = np.arange(4)\nprint(a[np.array([True, False])])",
+        "error": "IndexError: boolean index did not match indexed array along axis 0; size of axis is 4 but size of corresponding boolean axis is 2",
+        "fix": "import numpy as np\na = np.arange(4)\nprint(a[np.array([True, False, True, False])])"
+      },
+      {
+        "title": "A float index",
+        "broken": "import numpy as np\na = np.arange(4)\nprint(a[1.5])",
+        "error": "IndexError: only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and integer or boolean arrays are valid indices",
+        "fix": "import numpy as np\na = np.arange(4)\nprint(a[1])"
+      }
+    ]
+  },
+  "n06": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "A step of zero",
+        "broken": "import numpy as np\nprint(np.arange(5)[::0])",
+        "error": "ValueError: slice step cannot be zero",
+        "fix": "import numpy as np\nprint(np.arange(5)[::1])"
+      },
+      {
+        "title": "A block assigned the wrong width",
+        "broken": "import numpy as np\na = np.zeros((2, 3))\na[0:2] = np.zeros(2)",
+        "error": "ValueError: could not broadcast input array from shape (2,) into shape (2,3)",
+        "fix": "import numpy as np\na = np.zeros((2, 3))\na[0, 0:2] = 0"
+      },
+      {
+        "title": "An undefined array in the slice",
+        "broken": "import numpy as np\nprint(values[0:2])",
+        "error": "NameError: name 'values' is not defined",
+        "fix": "import numpy as np\nvalues = np.arange(4)\nprint(values[0:2])"
+      },
+      {
+        "title": "Reading past the end",
+        "broken": "import numpy as np\nprint(np.arange(3)[5])",
+        "error": "IndexError: index 5 is out of bounds for axis 0 with size 3",
+        "fix": "import numpy as np\nprint(np.arange(3)[2])"
+      }
+    ]
+  },
+  "n07": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "Eight values cannot fill nine cells",
+        "broken": "import numpy as np\nprint(np.arange(8).reshape(3, 3))",
+        "error": "ValueError: cannot reshape array of size 8 into shape (3,3)",
+        "fix": "import numpy as np\nprint(np.arange(9).reshape(3, 3))"
+      },
+      {
+        "title": "An ambiguous inferred axis",
+        "broken": "import numpy as np\nprint(np.arange(6).reshape(0, -1))",
+        "error": "ValueError: cannot reshape array of size 6 into shape (0,newaxis)",
+        "fix": "import numpy as np\nprint(np.arange(6).reshape(2, -1))"
+      },
+      {
+        "title": "Two rows of different widths",
+        "broken": "import numpy as np\nprint(np.vstack([np.arange(2), np.arange(3)]))",
+        "error": "ValueError: all the input array dimensions except for the concatenation axis must match exactly, but along dimension 1, the array at index 0 has size 2 and the array at index 1 has size 3",
+        "fix": "import numpy as np\nprint(np.vstack([np.arange(2), np.arange(4, 6)]))"
+      },
+      {
+        "title": "Transpose is a property",
+        "broken": "import numpy as np\nprint(np.arange(4).reshape(2, 2).T())",
+        "error": "TypeError: 'numpy.ndarray' object is not callable",
+        "fix": "import numpy as np\nprint(np.arange(4).reshape(2, 2).T)"
+      }
+    ]
+  },
+  "n08": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "sqrt cannot take text",
+        "broken": "import numpy as np\nprint(np.sqrt('a'))",
+        "error": "TypeError: ufunc 'sqrt' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''",
+        "fix": "import numpy as np\nprint(np.sqrt(4))"
+      },
+      {
+        "title": "An axis that does not exist",
+        "broken": "import numpy as np\nprint(np.add.reduce([1, 2, 3], axis=5))",
+        "error": "numpy.exceptions.AxisError: axis 5 is out of bounds for array of dimension 1",
+        "fix": "import numpy as np\nprint(np.add.reduce([1, 2, 3], axis=0))"
+      },
+      {
+        "title": "abs needs numbers",
+        "broken": "import numpy as np\nprint(np.abs('a'))",
+        "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'absolute' did not contain a loop with signature matching types <class 'numpy.dtypes.StrDType'> -> None",
+        "fix": "import numpy as np\nprint(np.abs(-1))"
+      },
+      {
+        "title": "An output array of the wrong shape",
+        "broken": "import numpy as np\nprint(np.power(2, np.array([1, 2]), out=np.zeros(1)))",
+        "error": "ValueError: non-broadcastable output operand with shape (1,) doesn't match the broadcast shape (2,)",
+        "fix": "import numpy as np\nprint(np.power(2, np.array([1, 2]), out=np.zeros(2)))"
+      }
+    ]
+  },
+  "n09": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "Three values against two",
+        "broken": "import numpy as np\nprint(np.ones(3) + np.ones(2))",
+        "error": "ValueError: operands could not be broadcast together with shapes (3,) (2,)",
+        "fix": "import numpy as np\nprint(np.ones(3) + np.ones(3))"
+      },
+      {
+        "title": "Rows and columns swapped",
+        "broken": "import numpy as np\nprint(np.ones((2, 3)) + np.ones((3, 2)))",
+        "error": "ValueError: operands could not be broadcast together with shapes (2,3) (3,2)",
+        "fix": "import numpy as np\nprint(np.ones((2, 3)) + np.ones((2, 3)))"
+      },
+      {
+        "title": "Columns that cannot stretch",
+        "broken": "import numpy as np\nprint(np.ones((2, 1)) + np.ones((3, 1)))",
+        "error": "ValueError: operands could not be broadcast together with shapes (2,1) (3,1)",
+        "fix": "import numpy as np\nprint(np.ones((2, 1)) + np.ones((2, 1)))"
+      },
+      {
+        "title": "In-place add into a smaller array",
+        "broken": "import numpy as np\na = np.ones((2, 2))\na += np.ones((2, 3))",
+        "error": "ValueError: operands could not be broadcast together with shapes (2,2) (2,3) (2,2)",
+        "fix": "import numpy as np\na = np.ones((2, 3))\na += np.ones((2, 3))"
+      }
+    ]
+  },
+  "n10": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "A reduction axis of three",
+        "broken": "import numpy as np\na = np.ones((2, 2))\nprint(a.mean(axis=3))",
+        "error": "numpy.exceptions.AxisError: axis 3 is out of bounds for array of dimension 2",
+        "fix": "import numpy as np\na = np.ones((2, 2))\nprint(a.mean(axis=1))"
+      },
+      {
+        "title": "Weights of the wrong length",
+        "broken": "import numpy as np\nprint(np.average([1, 2], weights=[1, 2, 3]))",
+        "error": "TypeError: Axis must be specified when shapes of a and weights differ.",
+        "fix": "import numpy as np\nprint(np.average([1, 2], weights=[1, 3]))"
+      },
+      {
+        "title": "An axis number that is too large",
+        "broken": "import numpy as np\nprint(np.sum([1, 2], axis='x'))",
+        "error": "TypeError: 'str' object cannot be interpreted as an integer",
+        "fix": "import numpy as np\nprint(np.sum([1, 2], axis=0))"
+      },
+      {
+        "title": "The maximum of nothing",
+        "broken": "import numpy as np\nprint(np.max(np.array([])))",
+        "error": "ValueError: zero-size array to reduction operation maximum which has no identity",
+        "fix": "import numpy as np\nprint(np.max(np.array([1])))"
+      }
+    ]
+  },
+  "n11": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "A mask of the wrong length",
+        "broken": "import numpy as np\na = np.arange(4)\nprint(a[np.array([True, False])])",
+        "error": "IndexError: boolean index did not match indexed array along axis 0; size of axis is 4 but size of corresponding boolean axis is 2",
+        "fix": "import numpy as np\na = np.arange(4)\nprint(a[a < 2])"
+      },
+      {
+        "title": "and joins two arrays",
+        "broken": "import numpy as np\na = np.arange(3)\nb = np.arange(3)\nprint(a and b)",
+        "error": "ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()",
+        "fix": "import numpy as np\na = np.arange(3)\nb = np.arange(3)\nprint((a > 0) & (b > 0))"
+      },
+      {
+        "title": "Two rows by an index that does not exist",
+        "broken": "import numpy as np\na = np.arange(9).reshape(3, 3)\nprint(a[[0, 5]])",
+        "error": "IndexError: index 5 is out of bounds for axis 0 with size 3",
+        "fix": "import numpy as np\na = np.arange(9).reshape(3, 3)\nprint(a[[0, 2]])"
+      },
+      {
+        "title": "where without a value",
+        "broken": "import numpy as np\nprint(np.where(np.arange(3) > 0, 1))",
+        "error": "ValueError: either both or neither of x and y should be given",
+        "fix": "import numpy as np\nprint(np.where(np.arange(3) > 0, 1, 0))"
+      }
+    ]
+  },
+  "n12": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "Sorting along a third axis",
+        "broken": "import numpy as np\na = np.ones((2, 2))\nprint(np.sort(a, axis=2))",
+        "error": "numpy.exceptions.AxisError: axis 2 is out of bounds for array of dimension 2",
+        "fix": "import numpy as np\na = np.ones((2, 2))\nprint(np.sort(a, axis=1))"
+      },
+      {
+        "title": "A sort kind that does not exist",
+        "broken": "import numpy as np\nprint(np.sort([3, 1], kind='bogus'))",
+        "error": "ValueError: sort kind must be one of 'quick', 'heap', or 'stable' (got 'bogus')",
+        "fix": "import numpy as np\nprint(np.sort([3, 1], kind='quicksort'))"
+      },
+      {
+        "title": "Searching for text in a number array",
+        "broken": "import numpy as np\nprint(np.searchsorted(np.array([1, 2]), 1, sorter=np.array([0])))",
+        "error": "ValueError: sorter.size must equal a.size",
+        "fix": "import numpy as np\nprint(np.searchsorted(np.array([1, 2]), 1, sorter=np.array([0, 1])))"
+      },
+      {
+        "title": "argmax of nothing",
+        "broken": "import numpy as np\nprint(np.argmax(np.array([])))",
+        "error": "ValueError: attempt to get argmax of an empty sequence",
+        "fix": "import numpy as np\nprint(np.argmax(np.array([1])))"
+      }
+    ]
+  },
+  "n13": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "Six values will not fill eight cells",
+        "broken": "import numpy as np\nprint(np.arange(6).reshape(4, 2))",
+        "error": "ValueError: cannot reshape array of size 6 into shape (4,2)",
+        "fix": "import numpy as np\nprint(np.arange(8).reshape(4, 2))"
+      },
+      {
+        "title": "strides has no singular",
+        "broken": "import numpy as np\nprint(np.arange(3).stride)",
+        "error": "AttributeError: 'numpy.ndarray' object has no attribute 'stride'. Did you mean: 'strides'?",
+        "fix": "import numpy as np\nprint(np.arange(3).strides)"
+      },
+      {
+        "title": "Calling a method that does not exist",
+        "broken": "import numpy as np\nprint(np.arange(3).copy_())",
+        "error": "AttributeError: 'numpy.ndarray' object has no attribute 'copy_'. Did you mean: 'copy'?",
+        "fix": "import numpy as np\nprint(np.arange(3).copy())"
+      },
+      {
+        "title": "Strides cannot be assigned",
+        "broken": "import numpy as np\na = np.arange(3)\na.strides[0] = 1",
+        "error": "TypeError: 'tuple' object does not support item assignment",
+        "fix": "import numpy as np\na = np.arange(3)\nprint(a.strides[0])"
+      }
+    ]
+  },
+  "n14": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "A seed that is not a number",
+        "broken": "import numpy as np\nrng = np.random.default_rng(seed='x')",
+        "error": "TypeError: SeedSequence expects int or sequence of ints for entropy not x",
+        "fix": "import numpy as np\nrng = np.random.default_rng(seed=0)\nprint(rng.random(1))"
+      },
+      {
+        "title": "Low is above high",
+        "broken": "import numpy as np\nrng = np.random.default_rng(0)\nprint(rng.integers(5, 1, size=3))",
+        "error": "ValueError: low >= high",
+        "fix": "import numpy as np\nrng = np.random.default_rng(0)\nprint(rng.integers(1, 5, size=3))"
+      },
+      {
+        "title": "Five picks from three values",
+        "broken": "import numpy as np\nrng = np.random.default_rng(0)\nprint(rng.choice(3, 5, replace=False))",
+        "error": "ValueError: Cannot take a larger sample than population when replace is False",
+        "fix": "import numpy as np\nrng = np.random.default_rng(0)\nprint(rng.choice(3, 2, replace=False))"
+      },
+      {
+        "title": "The old rand method",
+        "broken": "import numpy as np\nrng = np.random.default_rng(0)\nprint(rng.rand(2))",
+        "error": "AttributeError: 'numpy.random._generator.Generator' object has no attribute 'rand'. Did you mean: 'random'?",
+        "fix": "import numpy as np\nrng = np.random.default_rng(0)\nprint(rng.random(2))"
+      }
+    ]
+  },
+  "n15": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "Solving a system with a zero determinant",
+        "broken": "import numpy as np\nprint(np.linalg.solve(np.array([[1.0, 1.0], [1.0, 1.0]]), np.array([1.0, 2.0])))",
+        "error": "numpy.linalg.LinAlgError: Singular matrix",
+        "fix": "import numpy as np\nprint(np.linalg.solve(np.array([[2.0, 0.0], [0.0, 2.0]]), np.array([2.0, 4.0])))"
+      },
+      {
+        "title": "Inverting zeros",
+        "broken": "import numpy as np\nprint(np.linalg.inv(np.zeros((2, 2))))",
+        "error": "numpy.linalg.LinAlgError: Singular matrix",
+        "fix": "import numpy as np\nprint(np.linalg.inv(np.identity(2)))"
+      },
+      {
+        "title": "A right-hand side of the wrong length",
+        "broken": "import numpy as np\nA = np.identity(2)\nprint(np.linalg.solve(A, np.array([1.0, 2.0, 3.0])))",
+        "error": "ValueError: solve1: Input operand 1 has a mismatch in its core dimension 0, with gufunc signature (m,m),(m)->(m) (size 3 is different from 2)",
+        "fix": "import numpy as np\nA = np.identity(2)\nprint(np.linalg.solve(A, np.array([1.0, 2.0])))"
+      },
+      {
+        "title": "A determinant needs a square matrix",
+        "broken": "import numpy as np\nprint(np.linalg.det(np.ones((2, 3))))",
+        "error": "numpy.linalg.LinAlgError: Last 2 dimensions of the array must be square",
+        "fix": "import numpy as np\nprint(np.linalg.det(np.ones((2, 2))))"
+      }
+    ]
+  },
+  "n16": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "A file that is not there",
+        "broken": "import numpy as np\nprint(np.loadtxt('definitely-missing-np.csv'))",
+        "error": "FileNotFoundError: definitely-missing-np.csv not found.",
+        "fix": "import io\nimport numpy as np\nprint(np.loadtxt(io.StringIO('1\\n2\\n')))"
+      },
+      {
+        "title": "Text that is not a number",
+        "broken": "import numpy as np\nfrom io import StringIO\nprint(np.loadtxt(StringIO('a\\nb')))",
+        "error": "ValueError: could not convert string 'a' to float64 at row 0, column 1.",
+        "fix": "import numpy as np\nfrom io import StringIO\nprint(np.loadtxt(StringIO('1\\n2')))"
+      },
+      {
+        "title": "A key that is not in the archive",
+        "broken": "import io\nimport numpy as np\nbuf = io.BytesIO()\nnp.savez(buf, a=np.arange(2))\nbuf.seek(0)\nprint(np.load(buf)['zzz'])",
+        "error": "KeyError: 'zzz is not a file in the archive'",
+        "fix": "import io\nimport numpy as np\nbuf = io.BytesIO()\nnp.savez(buf, a=np.arange(2))\nbuf.seek(0)\nprint(np.load(buf)['a'])"
+      },
+      {
+        "title": "Saving into a folder that does not exist",
+        "broken": "import numpy as np\nnp.save('/no-such-folder-np/x.npy', np.arange(2))",
+        "error": "FileNotFoundError: [Errno 2] No such file or directory: '/no-such-folder-np/x.npy'",
+        "fix": "import io\nimport numpy as np\nbuf = io.BytesIO()\nnp.save(buf, np.arange(2))"
+      }
+    ]
+  },
+  "n17": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "A date string that does not parse",
+        "broken": "import numpy as np\nprint(np.datetime64('not-a-date'))",
+        "error": "ValueError: Error parsing datetime string \"not-a-date\" at position 0",
+        "fix": "import numpy as np\nprint(np.datetime64('2026-01-01'))"
+      },
+      {
+        "title": "Upper-case on numbers",
+        "broken": "import numpy as np\nprint(np.char.upper(np.array([1, 2])))",
+        "error": "TypeError: string operation on non-string array",
+        "fix": "import numpy as np\nprint(np.char.upper(np.array(['a', 'b'])))"
+      },
+      {
+        "title": "Two dates cannot be added",
+        "broken": "import numpy as np\nprint(np.datetime64('2026-01-01') + np.datetime64('2026-01-02'))",
+        "error": "numpy._core._exceptions._UFuncBinaryResolutionError: ufunc 'add' cannot use operands with types dtype('<M8[D]') and dtype('<M8[D]')",
+        "fix": "import numpy as np\nprint(np.datetime64('2026-01-01') + np.timedelta64(1, 'D'))"
+      },
+      {
+        "title": "A field name with a typo",
+        "broken": "import numpy as np\ndtype = np.dtype([('qty', 'i4')])\nrows = np.array([(2,)], dtype=dtype)\nprint(rows['qtty'])",
+        "error": "ValueError: no field of name qtty",
+        "fix": "import numpy as np\ndtype = np.dtype([('qty', 'i4')])\nrows = np.array([(2,)], dtype=dtype)\nprint(rows['qty'])"
+      }
+    ]
+  },
+  "n18": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "Missing-value test on text",
+        "broken": "import numpy as np\nprint(np.isnan(np.array(['a'])))",
+        "error": "TypeError: ufunc 'isnan' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''",
+        "fix": "import numpy as np\nprint(np.isnan(np.array([1.0, np.nan])))"
+      },
+      {
+        "title": "A mean of text values",
+        "broken": "import numpy as np\nprint(np.nanmean(np.array(['a'])))",
+        "error": "TypeError: the resolved dtypes are not compatible with add.reduce. Resolved (dtype('<U1'), dtype('<U1'), dtype('<U2'))",
+        "fix": "import numpy as np\nprint(np.nanmean(np.array([1.0, np.nan])))"
+      },
+      {
+        "title": "nanmax of nothing",
+        "broken": "import numpy as np\nprint(np.nanmax(np.array([])))",
+        "error": "ValueError: zero-size array to reduction operation fmax which has no identity",
+        "fix": "import numpy as np\nprint(np.nanmax(np.array([1.0, 2.0])))"
+      },
+      {
+        "title": "argmax when every value is NaN",
+        "broken": "import numpy as np\nprint(np.nanargmax(np.array([np.nan, np.nan])))",
+        "error": "ValueError: All-NaN slice encountered",
+        "fix": "import numpy as np\nprint(np.nanargmax(np.array([np.nan, 3.0])))"
+      }
+    ]
+  },
+  "n19": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "bincount needs integers",
+        "broken": "import numpy as np\nprint(np.bincount(np.array([1.5])))",
+        "error": "TypeError: Cannot cast array data from dtype('float64') to dtype('int64') according to the rule 'safe'",
+        "fix": "import numpy as np\nprint(np.bincount(np.array([1])))"
+      },
+      {
+        "title": "bincount cannot count negatives",
+        "broken": "import numpy as np\nprint(np.bincount(np.array([-1])))",
+        "error": "ValueError: 'list' argument must have no negative elements",
+        "fix": "import numpy as np\nprint(np.bincount(np.array([0])))"
+      },
+      {
+        "title": "Inner sizes do not match",
+        "broken": "import numpy as np\nprint(np.dot(np.ones((2, 3)), np.ones((2, 3))))",
+        "error": "ValueError: shapes (2,3) and (2,3) not aligned: 3 (dim 1) != 2 (dim 0)",
+        "fix": "import numpy as np\nprint(np.dot(np.ones((2, 3)), np.ones((3, 2))))"
+      },
+      {
+        "title": "An einsum label out of range",
+        "broken": "import numpy as np\nprint(np.einsum('ij->ik', np.ones((2, 2))))",
+        "error": "ValueError: einstein sum subscripts string included output subscript 'k' which never appeared in an input",
+        "fix": "import numpy as np\nprint(np.einsum('ij->ji', np.ones((2, 2))))"
+      }
+    ]
+  },
+  "n20": {
+    "topics": [],
+    "debug": [
+      {
+        "title": "A convolution mode that does not exist",
+        "broken": "import numpy as np\nprint(np.convolve([1, 2], [1, 2], mode='bogus'))",
+        "error": "ValueError: mode must be one of 'valid', 'same', or 'full' (got 'bogus')",
+        "fix": "import numpy as np\nprint(np.convolve([1, 2], [1, 2], mode='same'))"
+      },
+      {
+        "title": "Bins must be one-dimensional",
+        "broken": "import numpy as np\nprint(np.digitize([1.0], [[1.0], [2.0]]))",
+        "error": "ValueError: object too deep for desired array",
+        "fix": "import numpy as np\nprint(np.digitize([1.0], [1.0, 2.0]))"
+      },
+      {
+        "title": "Selecting a row that does not exist",
+        "broken": "import numpy as np\nprint(np.eye(3)[[0, 5]])",
+        "error": "IndexError: index 5 is out of bounds for axis 0 with size 3",
+        "fix": "import numpy as np\nprint(np.eye(3)[[0, 2]])"
+      },
+      {
+        "title": "A percentile above one hundred",
+        "broken": "import numpy as np\nprint(np.percentile([1, 2], 150))",
+        "error": "ValueError: Percentiles must be in the range [0, 100]",
+        "fix": "import numpy as np\nprint(np.percentile([1, 2], 50))"
+      }
+    ]
+  }
+}

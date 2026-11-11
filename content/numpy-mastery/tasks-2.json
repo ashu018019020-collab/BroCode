@@ -1,0 +1,652 @@
+{
+  "n01": [
+    {
+      "title": "Mean of four readings",
+      "statement": "Store the mean of `np.array([2, 4, 6, 8])` as a float in `result`.",
+      "solution": "import numpy as np\nresult = float(np.array([2, 4, 6, 8]).mean())\nprint(result)",
+      "check": "assert result == 5.0, f'expected 5.0, got {result!r}'",
+      "expected": "5.0"
+    },
+    {
+      "title": "How many above one",
+      "statement": "Count how many elements of `np.array([0, 1, 2, 3])` are greater than 1 and store the count as an int in `result`.",
+      "solution": "import numpy as np\nresult = int((np.array([0, 1, 2, 3]) > 1).sum())\nprint(result)",
+      "check": "assert result == 2, f'expected 2, got {result!r}'",
+      "expected": "2"
+    },
+    {
+      "title": "Gap between largest and smallest",
+      "statement": "Store the difference between the largest and smallest value of `np.array([3, 10, 7])`, as an int, in `result`.",
+      "solution": "import numpy as np\na = np.array([3, 10, 7])\nresult = int(a.max() - a.min())\nprint(result)",
+      "check": "assert result == 7, f'expected 7, got {result!r}'",
+      "expected": "7"
+    },
+    {
+      "title": "ints become floats on request",
+      "statement": "Build a float array from `[1, 2]` and store it in `result`.",
+      "solution": "import numpy as np\nresult = np.array([1, 2], dtype=float)\nprint(result)",
+      "check": "assert result.dtype == np.float64 and np.allclose(result, [1.0, 2.0]), f'got {result!r} as {result.dtype}'",
+      "expected": "[1. 2.]"
+    },
+    {
+      "title": "Text keeps its values",
+      "statement": "Store `np.array(['a', 'b'])` as a plain list in `result`.",
+      "solution": "import numpy as np\nresult = np.array(['a', 'b']).tolist()\nprint(result)",
+      "check": "assert result == ['a', 'b'], f'got {result!r}'",
+      "expected": "['a', 'b']"
+    },
+    {
+      "title": "Shape of a nested list",
+      "statement": "Store the shape of the array built from `[[1, 2], [3, 4]]` in `result`.",
+      "solution": "import numpy as np\nresult = np.array([[1, 2], [3, 4]]).shape\nprint(result)",
+      "check": "assert result == (2, 2), f'got {result!r}'",
+      "expected": "(2, 2)"
+    },
+    {
+      "title": "Read the last value",
+      "statement": "Store the last value of `np.array([5, 6, 7])`, as an int, in `result`.",
+      "solution": "import numpy as np\nresult = int(np.array([5, 6, 7])[-1])\nprint(result)",
+      "check": "assert result == 7, f'expected 7, got {result!r}'",
+      "expected": "7"
+    },
+    {
+      "title": "Squares of a range",
+      "statement": "Store the squares of 0, 1, 2 and 3 as a list in `result`.",
+      "solution": "import numpy as np\nresult = (np.arange(4) ** 2).tolist()\nprint(result)",
+      "check": "assert result == [0, 1, 4, 9], f'got {result!r}'",
+      "expected": "[0, 1, 4, 9]"
+    },
+    {
+      "title": "Product of three values",
+      "statement": "Store the product of `np.array([2, 3, 4])`, as an int, in `result`.",
+      "solution": "import numpy as np\nresult = int(np.array([2, 3, 4]).prod())\nprint(result)",
+      "check": "assert result == 24, f'expected 24, got {result!r}'",
+      "expected": "24"
+    }
+  ],
+  "n02": [
+    {
+      "title": "Axes of a vector",
+      "statement": "Store how many axes `np.zeros(7)` has, as an int, in `result`.",
+      "solution": "import numpy as np\nresult = int(np.zeros(7).ndim)\nprint(result)",
+      "check": "assert result == 1, f'expected 1, got {result!r}'",
+      "expected": "1"
+    },
+    {
+      "title": "Rows and columns of a grid",
+      "statement": "Store the shape of `np.ones((6, 2))` in `result`.",
+      "solution": "import numpy as np\nresult = np.ones((6, 2)).shape\nprint(result)",
+      "check": "assert result == (6, 2), f'got {result!r}'",
+      "expected": "(6, 2)"
+    },
+    {
+      "title": "Kind of a float dtype",
+      "statement": "Store the dtype kind character of `np.ones(2)` in `result`.",
+      "solution": "import numpy as np\nresult = np.ones(2).dtype.kind\nprint(result)",
+      "check": "assert result == 'f', f'expected \"f\", got {result!r}'",
+      "expected": "f"
+    },
+    {
+      "title": "Elements in three axes",
+      "statement": "Store the total element count of `np.ones((2, 3, 4))`, as an int, in `result`.",
+      "solution": "import numpy as np\nresult = int(np.ones((2, 3, 4)).size)\nprint(result)",
+      "check": "assert result == 24, f'expected 24, got {result!r}'",
+      "expected": "24"
+    },
+    {
+      "title": "Shape after flattening",
+      "statement": "Store the shape of `np.arange(6).reshape(2, 3)` after `ravel()` in `result`.",
+      "solution": "import numpy as np\nresult = np.arange(6).reshape(2, 3).ravel().shape\nprint(result)",
+      "check": "assert result == (6,), f'got {result!r}'",
+      "expected": "(6,)"
+    },
+    {
+      "title": "A scalar has no axes",
+      "statement": "Store how many axes `np.array(5)` has, as an int, in `result`.",
+      "solution": "import numpy as np\nresult = int(np.array(5).ndim)\nprint(result)",
+      "check": "assert result == 0, f'expected 0, got {result!r}'",
+      "expected": "0"
+    },
+    {
+      "title": "Shape of a column",
+      "statement": "Store the shape of `np.array([[1], [2]])` in `result`.",
+      "solution": "import numpy as np\nresult = np.array([[1], [2]]).shape\nprint(result)",
+      "check": "assert result == (2, 1), f'got {result!r}'",
+      "expected": "(2, 1)"
+    },
+    {
+      "title": "Compare shapes with ==",
+      "statement": "Store `True` in `result` if `np.zeros((2, 3))` has shape `(2, 3)`, otherwise `False`.",
+      "solution": "import numpy as np\nresult = np.zeros((2, 3)).shape == (2, 3)\nprint(result)",
+      "check": "assert result is True, f'got {result!r}'",
+      "expected": "True"
+    },
+    {
+      "title": "An empty axis holds nothing",
+      "statement": "Store the element count of `np.zeros((0, 5))`, as an int, in `result`.",
+      "solution": "import numpy as np\nresult = int(np.zeros((0, 5)).size)\nprint(result)",
+      "check": "assert result == 0, f'expected 0, got {result!r}'",
+      "expected": "0"
+    }
+  ],
+  "n03": [
+    {
+      "title": "Integer zeros",
+      "statement": "Store a 2x2 integer array of zeros in `result`.",
+      "solution": "import numpy as np\nresult = np.zeros((2, 2), dtype=int)\nprint(result)",
+      "check": "assert result.dtype.kind == 'i' and np.array_equal(result, [[0, 0], [0, 0]]), f'got {result!r}'",
+      "expected": "[[0 0]\n [0 0]]"
+    },
+    {
+      "title": "A row of ones",
+      "statement": "Store a one-dimensional array of three ones in `result`.",
+      "solution": "import numpy as np\nresult = np.ones(3)\nprint(result)",
+      "check": "assert result.shape == (3,) and np.allclose(result, [1, 1, 1]), f'got {result!r}'",
+      "expected": "[1. 1. 1.]"
+    },
+    {
+      "title": "Four copies of 2.5",
+      "statement": "Store an array of four values, each 2.5, in `result`.",
+      "solution": "import numpy as np\nresult = np.full(4, 2.5)\nprint(result)",
+      "check": "assert np.allclose(result, [2.5, 2.5, 2.5, 2.5]), f'got {result!r}'",
+      "expected": "[2.5 2.5 2.5 2.5]"
+    },
+    {
+      "title": "Count by fives",
+      "statement": "Store the multiples of 5 from 5 to 25 inclusive in `result`.",
+      "solution": "import numpy as np\nresult = np.arange(5, 26, 5)\nprint(result)",
+      "check": "assert np.array_equal(result, [5, 10, 15, 20, 25]), f'got {result!r}'",
+      "expected": "[ 5 10 15 20 25]"
+    },
+    {
+      "title": "Twenty points from -1 to 1",
+      "statement": "Store twenty evenly spaced values from -1 to 1, both ends included, in `result`.",
+      "solution": "import numpy as np\nresult = np.linspace(-1, 1, 20)\nprint(result.shape)",
+      "check": "assert len(result) == 20 and result[0] == -1 and result[-1] == 1, f'got {result!r}'",
+      "expected": "(20,)"
+    },
+    {
+      "title": "Identity as floats",
+      "statement": "Store a 2x2 identity matrix of dtype float in `result`.",
+      "solution": "import numpy as np\nresult = np.identity(2)\nprint(result)",
+      "check": "assert result.dtype == np.float64 and np.array_equal(result, [[1, 0], [0, 1]]), f'got {result!r}'",
+      "expected": "[[1. 0.]\n [0. 1.]]"
+    },
+    {
+      "title": "Repeat a row twice",
+      "statement": "Tile `[1, 2]` twice and store the result in `result`.",
+      "solution": "import numpy as np\nresult = np.tile([1, 2], 2)\nprint(result)",
+      "check": "assert np.array_equal(result, [1, 2, 1, 2]), f'got {result!r}'",
+      "expected": "[1 2 1 2]"
+    },
+    {
+      "title": "zeros_like copies shape and dtype",
+      "statement": "Store an integer array of zeros shaped like `np.ones((2, 3), dtype=int)` in `result`.",
+      "solution": "import numpy as np\nresult = np.zeros_like(np.ones((2, 3), dtype=int))\nprint(result)",
+      "check": "assert result.shape == (2, 3) and result.dtype.kind == 'i' and not result.any(), f'got {result!r}'",
+      "expected": "[[0 0 0]\n [0 0 0]]"
+    },
+    {
+      "title": "arange excludes its stop",
+      "statement": "Store the values of `np.arange(1, 4)` as a list in `result`.",
+      "solution": "import numpy as np\nresult = np.arange(1, 4).tolist()\nprint(result)",
+      "check": "assert result == [1, 2, 3], f'got {result!r}'",
+      "expected": "[1, 2, 3]"
+    }
+  ],
+  "n04": [
+    {
+      "title": "Casting truncates toward zero",
+      "statement": "Cast `np.array([1.9, -1.9])` to integers and store it in `result`.",
+      "solution": "import numpy as np\nresult = np.array([1.9, -1.9]).astype(int)\nprint(result)",
+      "check": "assert np.array_equal(result, [1, -1]), f'got {result!r}'",
+      "expected": "[ 1 -1]"
+    },
+    {
+      "title": "Adding a float promotes",
+      "statement": "Add 0.0 to `np.array([1, 2])` and store the result in `result`.",
+      "solution": "import numpy as np\nresult = np.array([1, 2]) + 0.0\nprint(result)",
+      "check": "assert result.dtype == np.float64 and np.allclose(result, [1.0, 2.0]), f'got {result!r} as {result.dtype}'",
+      "expected": "[1. 2.]"
+    },
+    {
+      "title": "Booleans to ints",
+      "statement": "Cast `np.array([True, False])` to ints and store it in `result`.",
+      "solution": "import numpy as np\nresult = np.array([True, False]).astype(int)\nprint(result)",
+      "check": "assert np.array_equal(result, [1, 0]), f'got {result!r}'",
+      "expected": "[1 0]"
+    },
+    {
+      "title": "float32 stays float32",
+      "statement": "Multiply a `float32` array holding 1.0 by 2 and store it in `result`.",
+      "solution": "import numpy as np\nresult = np.array([1.0], dtype=np.float32) * 2\nprint(result.dtype)",
+      "check": "assert result.dtype == np.float32 and np.allclose(result, [2.0]), f'got {result!r} as {result.dtype}'",
+      "expected": "float32"
+    },
+    {
+      "title": "Kind of an int16 dtype",
+      "statement": "Store the dtype kind character of `np.dtype('int16')` in `result`.",
+      "solution": "import numpy as np\nresult = np.dtype('int16').kind\nprint(result)",
+      "check": "assert result == 'i', f'expected \"i\", got {result!r}'",
+      "expected": "i"
+    },
+    {
+      "title": "Name of a float dtype",
+      "statement": "Store the dtype name of `np.array([1.0])` in `result`.",
+      "solution": "import numpy as np\nresult = np.array([1.0]).dtype.name\nprint(result)",
+      "check": "assert result == 'float64', f'expected \"float64\", got {result!r}'",
+      "expected": "float64"
+    },
+    {
+      "title": "Zeros become False",
+      "statement": "Cast `np.array([0, 2, 0])` to booleans and store it in `result`.",
+      "solution": "import numpy as np\nresult = np.array([0, 2, 0]).astype(bool)\nprint(result)",
+      "check": "assert result.dtype == bool and np.array_equal(result, [False, True, False]), f'got {result!r}'",
+      "expected": "[False  True False]"
+    },
+    {
+      "title": "Text decimals to floats",
+      "statement": "Cast `np.array(['1.5', '2.5'])` to floats and store it in `result`.",
+      "solution": "import numpy as np\nresult = np.array(['1.5', '2.5']).astype(float)\nprint(result)",
+      "check": "assert np.allclose(result, [1.5, 2.5]), f'got {result!r}'",
+      "expected": "[1.5 2.5]"
+    },
+    {
+      "title": "Bytes in a float64",
+      "statement": "Store the itemsize of `np.dtype('float64')`, as an int, in `result`.",
+      "solution": "import numpy as np\nresult = int(np.dtype('float64').itemsize)\nprint(result)",
+      "check": "assert result == 8, f'expected 8, got {result!r}'",
+      "expected": "8"
+    }
+  ],
+  "n05": [
+    {
+      "title": "Value at row two, column two",
+      "statement": "Store the value at row 2, column 2 of `np.arange(16).reshape(4, 4)`, as an int, in `result`.",
+      "solution": "import numpy as np\na = np.arange(16).reshape(4, 4)\nresult = int(a[2, 2])\nprint(result)",
+      "check": "assert result == 10, f'expected 10, got {result!r}'",
+      "expected": "10"
+    },
+    {
+      "title": "Rows one and two",
+      "statement": "Store rows 1 and 2 of `np.arange(20).reshape(4, 5)` in `result`.",
+      "solution": "import numpy as np\na = np.arange(20).reshape(4, 5)\nresult = a[1:3]\nprint(result)",
+      "check": "assert result.shape == (2, 5) and np.array_equal(result, [[5, 6, 7, 8, 9], [10, 11, 12, 13, 14]]), f'got {result!r}'",
+      "expected": "[[ 5  6  7  8  9]\n [10 11 12 13 14]]"
+    },
+    {
+      "title": "Columns one and two",
+      "statement": "Store columns 1 and 2 of `np.arange(20).reshape(4, 5)` in `result`.",
+      "solution": "import numpy as np\na = np.arange(20).reshape(4, 5)\nresult = a[:, 1:3]\nprint(result.shape)",
+      "check": "assert result.shape == (4, 2) and np.array_equal(result[:, 0], [1, 6, 11, 16]), f'got {result!r}'",
+      "expected": "(4, 2)"
+    },
+    {
+      "title": "The last column",
+      "statement": "Store the last column of `np.arange(20).reshape(4, 5)` in `result`.",
+      "solution": "import numpy as np\na = np.arange(20).reshape(4, 5)\nresult = a[:, -1]\nprint(result)",
+      "check": "assert np.array_equal(result, [4, 9, 14, 19]), f'got {result!r}'",
+      "expected": "[ 4  9 14 19]"
+    },
+    {
+      "title": "The diagonal by paired indices",
+      "statement": "Store the diagonal of `np.arange(9).reshape(3, 3)` using two index arrays in `result`.",
+      "solution": "import numpy as np\na = np.arange(9).reshape(3, 3)\nresult = a[[0, 1, 2], [0, 1, 2]]\nprint(result)",
+      "check": "assert np.array_equal(result, [0, 4, 8]), f'got {result!r}'",
+      "expected": "[0 4 8]"
+    },
+    {
+      "title": "Rows whose first column is big",
+      "statement": "From `np.arange(20).reshape(4, 5)`, keep the rows whose first column is greater than 3 and store them in `result`.",
+      "solution": "import numpy as np\na = np.arange(20).reshape(4, 5)\nresult = a[a[:, 0] > 3]\nprint(result)",
+      "check": "assert result.shape == (3, 5) and np.array_equal(result[:, 0], [5, 10, 15]), f'got {result!r}'",
+      "expected": "[[ 5  6  7  8  9]\n [10 11 12 13 14]\n [15 16 17 18 19]]"
+    },
+    {
+      "title": "Rows in a chosen order",
+      "statement": "Store rows 2 and 0 of `np.arange(9).reshape(3, 3)`, in that order, in `result`.",
+      "solution": "import numpy as np\na = np.arange(9).reshape(3, 3)\nresult = a[[2, 0]]\nprint(result)",
+      "check": "assert np.array_equal(result, [[6, 7, 8], [0, 1, 2]]), f'got {result!r}'",
+      "expected": "[[6 7 8]\n [0 1 2]]"
+    },
+    {
+      "title": "Every other row",
+      "statement": "Store rows 0 and 2 of `np.arange(20).reshape(4, 5)` in `result`.",
+      "solution": "import numpy as np\na = np.arange(20).reshape(4, 5)\nresult = a[::2]\nprint(result)",
+      "check": "assert result.shape == (2, 5) and np.array_equal(result[:, 0], [0, 10]), f'got {result!r}'",
+      "expected": "[[ 0  1  2  3  4]\n [10 11 12 13 14]]"
+    },
+    {
+      "title": "Take the second column",
+      "statement": "Store the second column of `np.arange(9).reshape(3, 3)` using `take` in `result`.",
+      "solution": "import numpy as np\na = np.arange(9).reshape(3, 3)\nresult = a.take(1, axis=1)\nprint(result)",
+      "check": "assert np.array_equal(result, [1, 4, 7]), f'got {result!r}'",
+      "expected": "[1 4 7]"
+    }
+  ],
+  "n06": [
+    {
+      "title": "Top-left two by three block",
+      "statement": "From `np.arange(20).reshape(4, 5)`, store rows 0-1 and columns 0-2 in `result`.",
+      "solution": "import numpy as np\na = np.arange(20).reshape(4, 5)\nresult = a[:2, :3]\nprint(result)",
+      "check": "assert np.array_equal(result, [[0, 1, 2], [5, 6, 7]]), f'got {result!r}'",
+      "expected": "[[0 1 2]\n [5 6 7]]"
+    },
+    {
+      "title": "Last column from the bottom up",
+      "statement": "From `np.arange(20).reshape(4, 5)`, store the last column with its rows reversed in `result`.",
+      "solution": "import numpy as np\na = np.arange(20).reshape(4, 5)\nresult = a[::-1, -1]\nprint(result)",
+      "check": "assert np.array_equal(result, [19, 14, 9, 4]), f'got {result!r}'",
+      "expected": "[19 14  9  4]"
+    },
+    {
+      "title": "The last three values",
+      "statement": "From `np.arange(10)`, store the last three values in `result`.",
+      "solution": "import numpy as np\nresult = np.arange(10)[-3:]\nprint(result)",
+      "check": "assert np.array_equal(result, [7, 8, 9]), f'got {result!r}'",
+      "expected": "[7 8 9]"
+    },
+    {
+      "title": "An empty slice",
+      "statement": "Store how many values `np.arange(5)[2:2]` holds, as an int, in `result`.",
+      "solution": "import numpy as np\nresult = int(np.arange(5)[2:2].size)\nprint(result)",
+      "check": "assert result == 0, f'expected 0, got {result!r}'",
+      "expected": "0"
+    },
+    {
+      "title": "Counting down by two",
+      "statement": "Store `np.arange(10)` read backwards in steps of two in `result`.",
+      "solution": "import numpy as np\nresult = np.arange(10)[::-2]\nprint(result)",
+      "check": "assert np.array_equal(result, [9, 7, 5, 3, 1]), f'got {result!r}'",
+      "expected": "[9 7 5 3 1]"
+    },
+    {
+      "title": "Write zeros into a row block",
+      "statement": "Start from `np.ones((2, 4), dtype=int)`, set the first two columns of row 0 to zero, and store the array in `result`.",
+      "solution": "import numpy as np\na = np.ones((2, 4), dtype=int)\na[0, :2] = 0\nresult = a\nprint(result)",
+      "check": "assert np.array_equal(result[0], [0, 0, 1, 1]) and np.array_equal(result[1], [1, 1, 1, 1]), f'got {result!r}'",
+      "expected": "[[0 0 1 1]\n [1 1 1 1]]"
+    },
+    {
+      "title": "A one-row slice keeps two axes",
+      "statement": "Store the shape of `np.zeros((3, 4))[1:2]` in `result`.",
+      "solution": "import numpy as np\nresult = np.zeros((3, 4))[1:2].shape\nprint(result)",
+      "check": "assert result == (1, 4), f'got {result!r}'",
+      "expected": "(1, 4)"
+    },
+    {
+      "title": "Reverse then copy",
+      "statement": "Store `True` in `result` if reversing `np.arange(6)` and copying that reversed slice hold the same values, otherwise `False`.",
+      "solution": "import numpy as np\na = np.arange(6)\nresult = np.array_equal(a[::-1], a[::-1].copy())\nprint(result)",
+      "check": "assert result is True, f'got {result!r}'",
+      "expected": "True"
+    },
+    {
+      "title": "Every other row of a block",
+      "statement": "From `np.arange(20).reshape(4, 5)`, store every other row starting at row 0 in `result`.",
+      "solution": "import numpy as np\na = np.arange(20).reshape(4, 5)\nresult = a[::2]\nprint(result.shape)",
+      "check": "assert result.shape == (2, 5) and np.array_equal(result[0], [0, 1, 2, 3, 4]), f'got {result!r}'",
+      "expected": "(2, 5)"
+    }
+  ],
+  "n07": [
+    {
+      "title": "Four by four from sixteen",
+      "statement": "Store the shape of `np.arange(16).reshape(4, 4)` in `result`.",
+      "solution": "import numpy as np\nresult = np.arange(16).reshape(4, 4).shape\nprint(result)",
+      "check": "assert result == (4, 4), f'got {result!r}'",
+      "expected": "(4, 4)"
+    },
+    {
+      "title": "Three axes from twenty-four",
+      "statement": "Store the shape of `np.arange(24).reshape(2, 3, 4)` in `result`.",
+      "solution": "import numpy as np\nresult = np.arange(24).reshape(2, 3, 4).shape\nprint(result)",
+      "check": "assert result == (2, 3, 4), f'got {result!r}'",
+      "expected": "(2, 3, 4)"
+    },
+    {
+      "title": "Flatten in row order",
+      "statement": "Store `np.array([[1, 2], [3, 4]])` flattened in row order as a list in `result`.",
+      "solution": "import numpy as np\nresult = np.array([[1, 2], [3, 4]]).ravel().tolist()\nprint(result)",
+      "check": "assert result == [1, 2, 3, 4], f'got {result!r}'",
+      "expected": "[1, 2, 3, 4]"
+    },
+    {
+      "title": "Flatten in column order",
+      "statement": "Store `np.array([[1, 2], [3, 4]])` flattened in column order as a list in `result`.",
+      "solution": "import numpy as np\nresult = np.array([[1, 2], [3, 4]]).ravel(order='F').tolist()\nprint(result)",
+      "check": "assert result == [1, 3, 2, 4], f'got {result!r}'",
+      "expected": "[1, 3, 2, 4]"
+    },
+    {
+      "title": "flatten returns a copy",
+      "statement": "Store `True` in `result` if `flatten()` on `np.arange(4).reshape(2, 2)` returns an array with no base, otherwise `False`.",
+      "solution": "import numpy as np\nresult = np.arange(4).reshape(2, 2).flatten().base is None\nprint(result)",
+      "check": "assert result is True, f'got {result!r}'",
+      "expected": "True"
+    },
+    {
+      "title": "Join two rows side by side",
+      "statement": "Join `np.array([1, 2])` and `np.array([3])` into one row and store it in `result`.",
+      "solution": "import numpy as np\nresult = np.hstack([np.array([1, 2]), np.array([3])])\nprint(result)",
+      "check": "assert np.array_equal(result, [1, 2, 3]), f'got {result!r}'",
+      "expected": "[1 2 3]"
+    },
+    {
+      "title": "Column-wise stacking",
+      "statement": "Stack `[1, 2]` and `[3, 4]` as columns and store the shape in `result`.",
+      "solution": "import numpy as np\nresult = np.column_stack([[1, 2], [3, 4]]).shape\nprint(result)",
+      "check": "assert result == (2, 2), f'got {result!r}'",
+      "expected": "(2, 2)"
+    },
+    {
+      "title": "Infer the rows",
+      "statement": "Reshape `np.arange(6)` with three columns and let NumPy infer the row count; store the shape in `result`.",
+      "solution": "import numpy as np\nresult = np.arange(6).reshape(-1, 3).shape\nprint(result)",
+      "check": "assert result == (2, 3), f'got {result!r}'",
+      "expected": "(2, 3)"
+    },
+    {
+      "title": "vstack of two vectors",
+      "statement": "Stack `np.array([1, 2])` and `np.array([3, 4])` vertically and store the shape in `result`.",
+      "solution": "import numpy as np\nresult = np.vstack([np.array([1, 2]), np.array([3, 4])]).shape\nprint(result)",
+      "check": "assert result == (2, 2), f'got {result!r}'",
+      "expected": "(2, 2)"
+    }
+  ],
+  "n08": [
+    {
+      "title": "Exponential of zeros",
+      "statement": "Store `np.exp` of three zeros in `result`.",
+      "solution": "import numpy as np\nresult = np.exp(np.zeros(3))\nprint(result)",
+      "check": "assert np.allclose(result, [1, 1, 1]), f'got {result!r}'",
+      "expected": "[1. 1. 1.]"
+    },
+    {
+      "title": "Absolute difference",
+      "statement": "Store the absolute difference between `np.array([1, -2])` and `np.array([-3, 4])` in `result`.",
+      "solution": "import numpy as np\nresult = np.abs(np.array([1, -2]) - np.array([-3, 4]))\nprint(result)",
+      "check": "assert np.array_equal(result, [4, 6]), f'got {result!r}'",
+      "expected": "[4 6]"
+    },
+    {
+      "title": "Floor and ceil",
+      "statement": "Store the floor of `1.7` and the ceiling of `1.2`, as a list, in `result`.",
+      "solution": "import numpy as np\nresult = [float(np.floor(1.7)), float(np.ceil(1.2))]\nprint(result)",
+      "check": "assert result == [1.0, 2.0], f'got {result!r}'",
+      "expected": "[1.0, 2.0]"
+    },
+    {
+      "title": "Powers of two",
+      "statement": "Store 2 raised to the powers 1, 2 and 3 in `result`.",
+      "solution": "import numpy as np\nresult = np.power(2, np.array([1, 2, 3]))\nprint(result)",
+      "check": "assert np.array_equal(result, [2, 4, 8]), f'got {result!r}'",
+      "expected": "[2 4 8]"
+    },
+    {
+      "title": "Log of ones",
+      "statement": "Store the natural log of two ones in `result`.",
+      "solution": "import numpy as np\nresult = np.log(np.ones(2))\nprint(result)",
+      "check": "assert np.allclose(result, [0, 0]), f'got {result!r}'",
+      "expected": "[0. 0.]"
+    },
+    {
+      "title": "Clip only the lower side",
+      "statement": "Clip `np.array([1, 2, 3])` from below at 2, leaving the top open, and store it in `result`.",
+      "solution": "import numpy as np\nresult = np.clip(np.array([1, 2, 3]), 2, None)\nprint(result)",
+      "check": "assert np.array_equal(result, [2, 2, 3]), f'got {result!r}'",
+      "expected": "[2 2 3]"
+    },
+    {
+      "title": "Rounding at the half",
+      "statement": "Round `np.array([0.5, 1.5])` to whole numbers and store it in `result`.",
+      "solution": "import numpy as np\nresult = np.round(np.array([0.5, 1.5]))\nprint(result)",
+      "check": "assert np.allclose(result, [0, 2]), f'got {result!r}'",
+      "expected": "[0. 2.]"
+    },
+    {
+      "title": "Signs of three values",
+      "statement": "Store the sign of each value in `np.array([-3, 0, 4])` in `result`.",
+      "solution": "import numpy as np\nresult = np.sign(np.array([-3, 0, 4]))\nprint(result)",
+      "check": "assert np.array_equal(result, [-1, 0, 1]), f'got {result!r}'",
+      "expected": "[-1  0  1]"
+    },
+    {
+      "title": "Square root of zero",
+      "statement": "Store `True` in `result` if the square root of 0.0 is exactly 0.0, otherwise `False`.",
+      "solution": "import numpy as np\nresult = float(np.sqrt(0.0)) == 0.0\nprint(result)",
+      "check": "assert result is True, f'got {result!r}'",
+      "expected": "True"
+    }
+  ],
+  "n09": [
+    {
+      "title": "Row minus column",
+      "statement": "Subtract `np.array([[1], [2]])` from `np.array([[10, 20]])` and store the 2x2 result in `result`.",
+      "solution": "import numpy as np\nresult = np.array([[10, 20]]) - np.array([[1], [2]])\nprint(result)",
+      "check": "assert np.array_equal(result, [[9, 19], [8, 18]]), f'got {result!r}'",
+      "expected": "[[ 9 19]\n [ 8 18]]"
+    },
+    {
+      "title": "Multiply by a zero-dimensional array",
+      "statement": "Multiply `np.ones((2, 2))` by `np.array(3)` and store the list form in `result`.",
+      "solution": "import numpy as np\nresult = (np.ones((2, 2)) * np.array(3)).tolist()\nprint(result)",
+      "check": "assert result == [[3.0, 3.0], [3.0, 3.0]], f'got {result!r}'",
+      "expected": "[[3.0, 3.0], [3.0, 3.0]]"
+    },
+    {
+      "title": "A size-one column stretches",
+      "statement": "Store the shape of `np.ones((2, 3)) + np.ones((2, 1))` in `result`.",
+      "solution": "import numpy as np\nresult = (np.ones((2, 3)) + np.ones((2, 1))).shape\nprint(result)",
+      "check": "assert result == (2, 3), f'got {result!r}'",
+      "expected": "(2, 3)"
+    },
+    {
+      "title": "Centre each row",
+      "statement": "Subtract each row's mean from `np.array([[1.0, 3.0], [10.0, 20.0]])` and store the result in `result`.",
+      "solution": "import numpy as np\na = np.array([[1.0, 3.0], [10.0, 20.0]])\nresult = a - a.mean(axis=1, keepdims=True)\nprint(result)",
+      "check": "assert np.allclose(result, [[-1, 1], [-5, 5]]), f'got {result!r}'",
+      "expected": "[[-1.  1.]\n [-5.  5.]]"
+    },
+    {
+      "title": "Outer difference",
+      "statement": "Subtract the row `np.array([1, 2])` from the column `np.array([[1], [2]])` and store the result in `result`.",
+      "solution": "import numpy as np\nresult = np.array([[1], [2]]) - np.array([1, 2])\nprint(result)",
+      "check": "assert np.array_equal(result, [[0, -1], [1, 0]]), f'got {result!r}'",
+      "expected": "[[ 0 -1]\n [ 1  0]]"
+    },
+    {
+      "title": "Weight the columns",
+      "statement": "Multiply `np.array([[1, 2], [3, 4]])` by the weights `np.array([1, 10])` and store the result in `result`.",
+      "solution": "import numpy as np\nresult = np.array([[1, 2], [3, 4]]) * np.array([1, 10])\nprint(result)",
+      "check": "assert np.array_equal(result, [[1, 20], [3, 40]]), f'got {result!r}'",
+      "expected": "[[ 1 20]\n [ 3 40]]"
+    },
+    {
+      "title": "Compare column to row",
+      "statement": "Store the boolean grid of `np.array([[1], [5]]) > np.array([2, 4, 6])` as a list in `result`.",
+      "solution": "import numpy as np\nresult = (np.array([[1], [5]]) > np.array([2, 4, 6])).tolist()\nprint(result)",
+      "check": "assert result == [[False, False, False], [True, True, False]], f'got {result!r}'",
+      "expected": "[[False, False, False], [True, True, False]]"
+    },
+    {
+      "title": "Shape of a three-axis broadcast",
+      "statement": "Store the shape of `np.zeros((3, 1, 4)) + np.ones((2, 1))` in `result`.",
+      "solution": "import numpy as np\nresult = (np.zeros((3, 1, 4)) + np.ones((2, 1))).shape\nprint(result)",
+      "check": "assert result == (3, 2, 4), f'got {result!r}'",
+      "expected": "(3, 2, 4)"
+    },
+    {
+      "title": "Standardise each row",
+      "statement": "Standardise each row of `np.array([[1.0, 3.0], [10.0, 20.0]])` by its own mean and standard deviation, and store the result in `result`.",
+      "solution": "import numpy as np\na = np.array([[1.0, 3.0], [10.0, 20.0]])\nresult = (a - a.mean(axis=1, keepdims=True)) / a.std(axis=1, keepdims=True)\nprint(result)",
+      "check": "assert np.allclose(result, [[-1, 1], [-1, 1]]), f'got {result!r}'",
+      "expected": "[[-1.  1.]\n [-1.  1.]]"
+    }
+  ],
+  "n10": [
+    {
+      "title": "Mean of each column",
+      "statement": "Store the mean of each column of `np.array([[1, 2], [3, 6]])` in `result`.",
+      "solution": "import numpy as np\nresult = np.array([[1, 2], [3, 6]]).mean(axis=0)\nprint(result)",
+      "check": "assert np.allclose(result, [2, 4]), f'got {result!r}'",
+      "expected": "[2. 4.]"
+    },
+    {
+      "title": "Smallest value per row",
+      "statement": "Store the smallest value of each row of `np.array([[4, 2, 9], [7, 1, 5]])` in `result`.",
+      "solution": "import numpy as np\nresult = np.array([[4, 2, 9], [7, 1, 5]]).min(axis=1)\nprint(result)",
+      "check": "assert np.array_equal(result, [2, 1]), f'got {result!r}'",
+      "expected": "[2 1]"
+    },
+    {
+      "title": "Percentile fifty is the median",
+      "statement": "Store `True` in `result` if the 50th percentile of `np.array([1, 5, 9])` equals its median, otherwise `False`.",
+      "solution": "import numpy as np\na = np.array([1, 5, 9])\nresult = bool(np.percentile(a, 50) == np.median(a))\nprint(result)",
+      "check": "assert result is True, f'got {result!r}'",
+      "expected": "True"
+    },
+    {
+      "title": "Population variance",
+      "statement": "Store the variance of `np.array([1, 2, 3])` in `result`.",
+      "solution": "import numpy as np\nresult = float(np.var(np.array([1, 2, 3])))\nprint(result)",
+      "check": "assert abs(result - 2 / 3) < 1e-9, f'got {result!r}'",
+      "expected": "0.6666666666666666"
+    },
+    {
+      "title": "Sample std is larger",
+      "statement": "Store `True` in `result` if the sample standard deviation of `np.array([1, 2, 3, 4])` is larger than its population standard deviation, otherwise `False`.",
+      "solution": "import numpy as np\na = np.array([1, 2, 3, 4])\nresult = bool(np.std(a, ddof=1) > np.std(a))\nprint(result)",
+      "check": "assert result is True, f'got {result!r}'",
+      "expected": "True"
+    },
+    {
+      "title": "Does any value exceed nine",
+      "statement": "Store whether any value of `np.array([1, 9, 3])` is greater than 9, as a bool, in `result`.",
+      "solution": "import numpy as np\nresult = bool(np.any(np.array([1, 9, 3]) > 9))\nprint(result)",
+      "check": "assert result is False, f'got {result!r}'",
+      "expected": "False"
+    },
+    {
+      "title": "Are all values positive",
+      "statement": "Store whether every value of `np.array([1, 2, 3])` is greater than zero, as a bool, in `result`.",
+      "solution": "import numpy as np\nresult = bool(np.all(np.array([1, 2, 3]) > 0))\nprint(result)",
+      "check": "assert result is True, f'got {result!r}'",
+      "expected": "True"
+    },
+    {
+      "title": "Weighted average",
+      "statement": "Store the weighted average of `[1, 2]` with weights `[1, 3]` in `result`.",
+      "solution": "import numpy as np\nresult = float(np.average([1, 2], weights=[1, 3]))\nprint(result)",
+      "check": "assert abs(result - 1.75) < 1e-9, f'got {result!r}'",
+      "expected": "1.75"
+    },
+    {
+      "title": "Cumulative product",
+      "statement": "Store the cumulative products of `np.array([1, 2, 3])` in `result`.",
+      "solution": "import numpy as np\nresult = np.cumprod(np.array([1, 2, 3]))\nprint(result)",
+      "check": "assert np.array_equal(result, [1, 2, 6]), f'got {result!r}'",
+      "expected": "[1 2 6]"
+    }
+  ]
+}
