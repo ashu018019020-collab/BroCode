@@ -55,6 +55,8 @@ export interface NEntry {
   steps?: string[];
   /** A checkpoint quiz offers three real, distinct outputs; the answer is one of them. */
   options?: string[];
+  /** A written checkpoint is self-assessed against three criteria built from real content. */
+  rubric?: string[];
   difficulty: 'easy' | 'medium' | 'hard';
 }
 

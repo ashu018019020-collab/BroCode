@@ -161,6 +161,20 @@ function checkpointOptions(title, answer, topics) {
   return options;
 }
 
+/**
+ * A written checkpoint is self-assessed, so it needs criteria a learner can check their own answer
+ * against. The lines come from the topic's own title and executed output: the second one quotes the
+ * real printed result, so ticking it means "I said what actually prints", not "I reworded the prompt".
+ */
+function writtenRubric(t) {
+  const first = String(t.output).trim().split('\n')[0];
+  return [
+    `Names the operation, not just the output: ${t.title}.`,
+    `Mentions the concrete values or shape involved (${first}).`,
+    'Explains why the dtype, axis or shape is what it is, not only what the code prints.',
+  ];
+}
+
 function buildSections(m) {
   const topics = m.topics;
   const id = (section, i) => `${m.id}:${section}:${i}`;
@@ -214,7 +228,10 @@ function buildSections(m) {
         id: id('checkpoint', i * 2), q: `Checkpoint: predict the output of this code about ${t.title.toLowerCase()}.`, code: t.code, answer: t.output,
         options: checkpointOptions(t.title, t.output, topics), difficulty: difficultyAt(i),
       },
-      { id: id('checkpoint', i * 2 + 1), q: `In your own words: what does ${t.title.toLowerCase()} do?`, answer: t.body, difficulty: i === 0 ? 'easy' : 'medium' },
+      {
+        id: id('checkpoint', i * 2 + 1), q: `In your own words: what does this code about ${t.title.toLowerCase()} do?`, answer: t.body,
+        rubric: writtenRubric(t), difficulty: i === 0 ? 'easy' : 'medium',
+      },
     ]),
   };
 }
@@ -233,10 +250,15 @@ const published = modules.map((m) => {
     if (new Set(questions).size !== questions.length) fail(`${m.id}/${label}: duplicate question text`);
   }
   for (const entry of sections.checkpoint) {
-    if (!entry.options) continue;
-    if (entry.options.length !== 3) fail(`${entry.id}: a checkpoint quiz needs 3 options`);
-    if (new Set(entry.options).size !== 3) fail(`${entry.id}: checkpoint options must be distinct`);
-    if (!entry.options.includes(entry.answer)) fail(`${entry.id}: the options must include the answer`);
+    if (entry.options) {
+      if (entry.options.length !== 3) fail(`${entry.id}: a checkpoint quiz needs 3 options`);
+      if (new Set(entry.options).size !== 3) fail(`${entry.id}: checkpoint options must be distinct`);
+      if (!entry.options.includes(entry.answer)) fail(`${entry.id}: the options must include the answer`);
+    }
+    if (entry.rubric) {
+      if (entry.rubric.length !== 3) fail(`${entry.id}: a written checkpoint needs 3 rubric lines`);
+      if (entry.rubric.some((line) => typeof line !== 'string' || !line.trim())) fail(`${entry.id}: rubric lines must be non-empty`);
+    }
   }
   const counts = Object.fromEntries(SECTIONS.map(([key]) => [key, sections[key].length]));
   return { ...m, sections, counts, entries: Object.values(counts).reduce((a, b) => a + b, 0) };

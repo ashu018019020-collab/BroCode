@@ -208,6 +208,20 @@ test('numpy course: every checkpoint quiz offers three distinct options includin
   assert.ok(quizzes >= 200, `expected checkpoint quizzes, found ${quizzes}`);
 });
 
+test('numpy course: every written checkpoint has three real rubric criteria', () => {
+  let written = 0;
+  for (const m of artifact.modules) {
+    for (const e of m.sections.checkpoint) {
+      if (!e.rubric) continue;
+      written += 1;
+      assert.equal(e.rubric.length, 3, `${e.id}: three criteria`);
+      assert.ok(e.rubric.every((line) => typeof line === 'string' && line.trim()), `${e.id}: criteria must not be blank`);
+      assert.ok(e.answer, `${e.id}: a written checkpoint still needs a model answer`);
+    }
+  }
+  assert.ok(written >= 200, `expected written checkpoints, found ${written}`);
+});
+
 test('numpy course: every Coding Lab entry is an independent graded task', () => {
   for (const m of artifact.modules) {
     assert.equal(m.sections.coding.length, (tasks[m.id] || []).length, `${m.id}: Coding Lab is exactly the task bank`);

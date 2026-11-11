@@ -249,6 +249,77 @@ function CheckpointCard({ entry, done, onPass }: { entry: NEntry; done: boolean;
   );
 }
 
+/**
+ * A written checkpoint: explain the concept in your own words, then self-assess against three real
+ * criteria. The answer stays hidden until something has actually been written, and the section is
+ * only recorded once every criterion is ticked — writing nothing and peeking does not count.
+ */
+function WrittenCheckpointCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPass: () => void }) {
+  const rubric = entry.rubric ?? [];
+  const [text, setText] = useState('');
+  const [ticks, setTicks] = useState<boolean[]>(() => rubric.map(() => false));
+  const [revealed, setRevealed] = useState(false);
+  const enough = text.trim().length >= 20;
+  const allTicked = rubric.length > 0 && ticks.every(Boolean);
+
+  return (
+    <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
+      <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
+        <span className="row" style={{ gap: 6 }}>
+          {done && <span className="chip easy"><Check size={11} /> done</span>}
+          <span className="chip">written · self-assessed</span>
+        </span>
+      </div>
+      <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{entry.q}</strong>
+      {entry.code && <pre className="codeblock" style={{ margin: '6px 0' }}>{entry.code}</pre>}
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Explain what this code does and why, in two sentences or more."
+        aria-label={`Your answer for ${entry.id}`}
+        style={{
+          width: '100%', minHeight: 90, padding: 10, borderRadius: 10, resize: 'vertical',
+          border: '1px solid var(--line, #d6dbe4)', background: 'var(--bg2, #fff)', color: 'inherit',
+          fontSize: 13, lineHeight: 1.45,
+        }}
+      />
+      <p className="small muted" style={{ margin: '6px 0 0' }}>
+        {enough ? 'Now check your answer against the three criteria.' : 'Write at least a sentence before revealing the answer.'}
+      </p>
+      <ol className="small" style={{ margin: '8px 0 0', paddingLeft: 18 }}>
+        {rubric.map((line, i) => (
+          <li key={line} style={{ marginBottom: 4 }}>
+            <label className="row" style={{ gap: 6, alignItems: 'flex-start', cursor: enough ? 'pointer' : 'default' }}>
+              <input
+                type="checkbox"
+                checked={ticks[i] ?? false}
+                disabled={!enough}
+                onChange={(e) => setTicks((prev) => prev.map((v, j) => (j === i ? e.target.checked : v)))}
+              />
+              <span className="muted">{line}</span>
+            </label>
+          </li>
+        ))}
+      </ol>
+      <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+        <button type="button" className="btn small ghost" disabled={!enough} onClick={() => setRevealed((v) => !v)}>
+          {revealed ? 'Hide model answer' : 'Show model answer'}
+        </button>
+        <button type="button" className="btn small primary" disabled={!enough || !allTicked || done} onClick={onPass}>
+          <Check size={12} /> {done ? 'Recorded' : 'Mark section done'}
+        </button>
+      </div>
+      {revealed && (
+        <p className="small" style={{ margin: '8px 0 0' }}>
+          <b>Model answer: </b>
+          <span className="muted" style={{ whiteSpace: 'pre-wrap' }}>{entry.answer}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** The module workspace: ten section tabs over the entries that section really holds. */
 function ModuleView({ module, onBack }: { module: NModule; onBack: () => void }) {
   const state = useStore();
@@ -317,6 +388,7 @@ function ModuleView({ module, onBack }: { module: NModule; onBack: () => void })
           const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
           if (section === 'coding') return <CodingEntryCard key={entry.id} entry={entry} done={done} onPass={onDone} />;
           if (entry.options?.length) return <CheckpointCard key={entry.id} entry={entry} done={done} onPass={onDone} />;
+          if (entry.rubric?.length) return <WrittenCheckpointCard key={entry.id} entry={entry} done={done} onPass={onDone} />;
           return <EntryCard key={entry.id} entry={entry} done={done} onDone={onDone} />;
         })}
       </div>
