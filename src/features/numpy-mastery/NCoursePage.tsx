@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, BookOpen, Check, ChevronRight, Code2, GraduationCap, Play, ShieldCheck, Target, Trophy,
@@ -7,10 +7,11 @@ import { useNumpyCourse } from '../../core/data/ncourse';
 import { useStore, recordAttempt, useSavedAnswer } from '../../core/storage/store';
 import {
   N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey,
-  nWrittenAnswerKey, nWrittenTicksKey, nextSection, outputMatches,
+  nWrittenAnswerKey, nWrittenTicksKey, nextSection,
   type NEntry, type NModule, type NSectionKey,
 } from '../../core/learning/ncourse';
 import { NLogo } from './NLogo';
+import { NCodeWorkbench, NSlipRail } from './NWorkspace';
 import { Bar } from '../../components/ui/ui';
 
 /**
@@ -26,177 +27,6 @@ import { Bar } from '../../components/ui/ui';
  */
 
 const DIFF_TONE: Record<NEntry['difficulty'], string> = { easy: 'easy', medium: 'medium', hard: 'hard' };
-
-/** One learning entry: the question/concept, its code, and a reveal for the answer or fix. */
-function EntryCard({ entry, done, onDone }: { entry: NEntry; done: boolean; onDone: () => void }) {
-  const [shown, setShown] = useState(false);
-  const answer = entry.answer ?? entry.solution ?? entry.fix ?? entry.expected ?? '';
-  const prompt = entry.q ?? entry.title ?? '';
-  return (
-    <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
-      <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
-        <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
-        {entry.kind === 'task' && <span className="chip">independent task · hidden check</span>}
-        <span className="row" style={{ gap: 6 }}>
-          {done && <span className="chip easy"><Check size={11} /> done</span>}
-          <button type="button" className="btn small ghost" onClick={onDone} disabled={done}>
-            {done ? 'Recorded' : 'Mark done'}
-          </button>
-        </span>
-      </div>
-      {prompt && <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{prompt}</strong>}
-      {(entry.body || entry.task) && <p className="small muted" style={{ margin: '0 0 8px' }}>{entry.task ?? entry.body}</p>}
-      {entry.code && (
-        <>
-          <pre className="codeblock" style={{ margin: '6px 0' }}>{entry.code}</pre>
-          <Link className="btn small ghost" to="/playground"><Code2 size={12} /> Run in Code Bro</Link>
-        </>
-      )}
-      {entry.error && <p className="small" style={{ margin: '8px 0 0', color: 'var(--red)' }}>{entry.error}</p>}
-      {entry.steps?.length ? (
-        <ol className="small muted" style={{ margin: '8px 0 0', paddingLeft: 18 }}>
-          {entry.steps.map((step) => <li key={step}>{step}</li>)}
-        </ol>
-      ) : null}
-      {answer && (
-        <div style={{ marginTop: 8 }}>
-          <button type="button" className="btn small" onClick={() => setShown((v) => !v)}>
-            {shown ? 'Hide answer' : 'Show answer'}
-          </button>
-          {shown && (
-            <p className="small" style={{ margin: '8px 0 0' }}>
-              <b>{entry.error ? 'Fix: ' : 'Answer: '}</b>
-              <span className="muted" style={{ whiteSpace: 'pre-wrap' }}>{answer}</span>
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * Coding Lab: the learner writes the code, not reads it.
- *
- * The starter runs in the app's bundled Python runtime (the same Pyodide worker Code Bro uses, so
- * numpy is real and offline), and the printed output is compared with the module's executed output.
- * A run that raises is never a pass, even if it printed the right thing before failing. Passing
- * records the section, the same record every other section writes.
- */
-function CodingEntryCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPass: () => void }) {
-  const [code, setCode] = useState(entry.starter ?? 'import numpy as np\n\n# your code here\n');
-  const [result, setResult] = useState<{ pass: boolean; output: string; error?: string } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [showSolution, setShowSolution] = useState(false);
-  const expected = entry.expected ?? '';
-  /** One kernel per task, cleared before every run, so a leftover name can never make code pass. */
-  const scope = `numpy:${entry.id}`;
-
-  async function grade() {
-    setBusy(true);
-    setResult(null);
-    try {
-      const { runPython, resetKernel } = await import('../coding/runners');
-      resetKernel(scope);
-      const run = await runPython(code, '', scope);
-      let pass = run.ok;
-      let failure = run.error;
-      if (pass && entry.check) {
-        // The hidden check runs in the learner's own namespace: a copied lesson snippet defines
-        // nothing it asserts on, so it fails instead of passing on matching output.
-        const check = await runPython(entry.check, '', scope);
-        pass = check.ok;
-        if (!pass) failure = check.error ?? 'the hidden check did not pass';
-      } else if (!entry.check) {
-        pass = pass && outputMatches(expected, run.output);
-      }
-      setResult({ pass, output: run.output, error: failure });
-      if (pass) onPass();
-    } catch (error) {
-      setResult({ pass: false, output: '', error: String((error as Error)?.message ?? error) });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
-      <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
-        <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
-        {entry.kind === 'task' && <span className="chip">independent task · hidden check</span>}
-        <span className="row" style={{ gap: 6 }}>
-          {done && <span className="chip easy"><Check size={11} /> done</span>}
-          <button type="button" className="btn small ghost" onClick={onPass} disabled={done}>
-            {done ? 'Recorded' : 'Mark done'}
-          </button>
-        </span>
-      </div>
-      <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{entry.title ?? entry.q ?? ''}</strong>
-      {entry.body && <p className="small muted" style={{ margin: '0 0 8px' }}>{entry.body}</p>}
-      {entry.kind === 'task' && entry.statement && (
-        <p className="small" style={{ margin: '0 0 8px' }}>{entry.statement}</p>
-      )}
-      <textarea
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        spellCheck={false}
-        aria-label={`Code for ${entry.title ?? entry.id}`}
-        style={{
-          width: '100%', minHeight: 140, padding: 10, borderRadius: 10, resize: 'vertical',
-          border: '1px solid var(--line, #d6dbe4)', background: 'var(--bg2, #fff)', color: 'inherit',
-          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 13, lineHeight: 1.45,
-        }}
-      />
-      <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-        <button type="button" className="btn small primary" onClick={grade} disabled={busy}>
-          <Play size={12} /> {busy ? 'Running…' : 'Run & grade'}
-        </button>
-        <button type="button" className="btn small ghost" onClick={() => { setCode(entry.starter ?? ''); setResult(null); }} disabled={busy}>
-          Reset code
-        </button>
-        {entry.solution && (
-          <button type="button" className="btn small ghost" onClick={() => setShowSolution((v) => !v)}>
-            {showSolution ? 'Hide solution' : 'Show solution'}
-          </button>
-        )}
-      </div>
-      {busy && <p className="small muted" style={{ margin: '8px 0 0' }}>Python loads once (~10s) and then runs locally — your code never leaves this browser.</p>}
-      {result && (
-        <div
-          className="card"
-          style={{
-            margin: '8px 0 0', padding: 10,
-            borderColor: result.pass ? 'var(--green, #177245)' : 'var(--red, #b42318)',
-          }}
-        >
-          <b className="small" style={{ color: result.pass ? 'var(--green, #177245)' : 'var(--red, #b42318)' }}>
-            {result.pass ? 'Passed — the output matches' : 'Not graded — the output differs'}
-          </b>
-          {result.error && <pre className="codeblock" style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap' }}>{result.error}</pre>}
-          {!result.pass && (
-            <div className="grid2" style={{ gap: 8, marginTop: 8 }}>
-              <div>
-                <span className="small muted">Expected</span>
-                <pre className="codeblock" style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{expected || '(nothing)'}</pre>
-              </div>
-              <div>
-                <span className="small muted">Your output</span>
-                <pre className="codeblock" style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{result.output.trim() || '(nothing printed)'}</pre>
-              </div>
-            </div>
-          )}
-          {result.pass && <p className="small muted" style={{ margin: '6px 0 0' }}>No differences to show — this section is recorded.</p>}
-        </div>
-      )}
-      {showSolution && entry.solution && (
-        <div style={{ marginTop: 8 }}>
-          <span className="small muted">Reference solution</span>
-          <pre className="codeblock" style={{ margin: '4px 0 0' }}>{entry.solution}</pre>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /**
  * A checkpoint quiz: three real outputs, one of which the shown code prints.
@@ -332,7 +162,14 @@ function WrittenCheckpointCard({ entry, done, onPass }: { entry: NEntry; done: b
 function ModuleView({ module, onBack }: { module: NModule; onBack: () => void }) {
   const state = useStore();
   const [section, setSection] = useState<NSectionKey>('learn');
+  const [picked, setPicked] = useState(0);
   const entries = module.sections[section] ?? [];
+  const done = Boolean(state.attempts[nSectionKey(module.id, section)]);
+  const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
+  const entry = entries[Math.min(picked, Math.max(0, entries.length - 1))];
+
+  // Switching section or module is a new list: open its first slip, never a stale index.
+  useEffect(() => { setPicked(0); }, [module.id, section]);
 
   return (
     <div>
@@ -390,15 +227,17 @@ function ModuleView({ module, onBack }: { module: NModule; onBack: () => void })
         </p>
       )}
 
-      <div className="grid2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', alignItems: 'start' }}>
-        {entries.map((entry) => {
-          const done = Boolean(state.attempts[nSectionKey(module.id, section)]);
-          const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
-          if (section === 'coding') return <CodingEntryCard key={entry.id} entry={entry} done={done} onPass={onDone} />;
-          if (entry.options?.length) return <CheckpointCard key={entry.id} entry={entry} done={done} onPass={onDone} />;
-          if (entry.rubric?.length) return <WrittenCheckpointCard key={entry.id} entry={entry} done={done} onPass={onDone} />;
-          return <EntryCard key={entry.id} entry={entry} done={done} onDone={onDone} />;
-        })}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap', marginTop: 10 }}>
+        <div style={{ flex: '3 1 440px', minWidth: 'min(320px, 100%)' }}>
+          {entry && (
+            entry.options?.length
+              ? <CheckpointCard key={entry.id} entry={entry} done={done} onPass={onDone} />
+              : entry.rubric?.length
+                ? <WrittenCheckpointCard key={entry.id} entry={entry} done={done} onPass={onDone} />
+                : <NCodeWorkbench key={entry.id} entry={entry} scope={`numpy:${module.id}:${entry.id}`} done={done} onDone={onDone} />
+          )}
+        </div>
+        <NSlipRail entries={entries} picked={picked} onPick={setPicked} done={done} />
       </div>
     </div>
   );
