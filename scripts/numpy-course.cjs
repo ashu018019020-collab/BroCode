@@ -27,6 +27,26 @@ const readJSON = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
 const course = readJSON(path.join(SRC, 'course.json')).course;
 const moduleFiles = fs.readdirSync(SRC).filter((f) => /^modules-.*\.json$/.test(f)).sort();
 const modules = moduleFiles.flatMap((f) => readJSON(path.join(SRC, f)));
+
+/*
+ * `deepening.json` is the depth layer: extra topics and debug challenges per module, appended to the
+ * authored module so a module can grow without rewriting the file it lives in. Its code samples are
+ * executed by `scripts/numpy-fill-outputs.cjs`; a missing output here is a failure, not an empty card.
+ */
+const DEEPENING = path.join(SRC, 'deepening.json');
+const deepening = fs.existsSync(DEEPENING) ? readJSON(DEEPENING) : {};
+for (const [id, pack] of Object.entries(deepening)) {
+  const target = modules.find((m) => m.id === id);
+  if (!target) {
+    problems.push(`deepening: unknown module ${id}`);
+    continue;
+  }
+  for (const topic of pack.topics || []) {
+    if (!topic.output) problems.push(`${id}: deepening topic "${topic.title}" has no verified output — run node scripts/numpy-fill-outputs.cjs`);
+    target.topics.push(topic);
+  }
+  if (pack.debug) target.debug.push(...pack.debug);
+}
 const problems = [];
 const fail = (m) => problems.push(m);
 
@@ -62,8 +82,11 @@ modules.forEach((m, index) => {
   if (!(m.hours > 0)) fail(`${m.id}: hours must be positive`);
   if (!m.goal) fail(`${m.id}: missing goal`);
   if (!Array.isArray(m.topics) || m.topics.length < 3) fail(`${m.id}: needs 3+ topics`);
+  const topicTitles = new Set();
   for (const [i, t] of (m.topics || []).entries()) {
     if (!t.title || !t.body) fail(`${m.id}: topic ${i + 1} needs title and body`);
+    if (topicTitles.has(t.title)) fail(`${m.id}: duplicate topic title "${t.title}"`);
+    topicTitles.add(t.title);
     if (!t.code || !t.output) fail(`${m.id}: topic ${t.title || i + 1} needs code and verified output`);
     if (String(t.code).includes('\t')) fail(`${m.id}: ${t.title} code contains a tab`);
   }

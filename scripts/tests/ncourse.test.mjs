@@ -25,6 +25,13 @@ const engine = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/nco
 const SRC = path.join(ROOT, 'content', 'numpy-mastery');
 const authored = fs.readdirSync(SRC).filter((f) => /^modules-.*\.json$/.test(f)).sort()
   .flatMap((f) => readJSON(path.join('content', 'numpy-mastery', f)));
+/** The depth layer is part of the authored source, so the artifact is compared against the merge. */
+const deepening = readJSON('content/numpy-mastery/deepening.json');
+const sourceOf = (id) => {
+  const base = authored.find((m) => m.id === id);
+  const extra = deepening[id] || {};
+  return { ...base, topics: [...base.topics, ...(extra.topics || [])], debug: [...base.debug, ...(extra.debug || [])] };
+};
 const artifact = readJSON('public/generated/numpy-course/index.json');
 const SECTIONS = engine.N_SECTIONS.map((s) => s.key);
 
@@ -65,12 +72,21 @@ test('numpy course: no duplicate ids or question text inside a section', () => {
 
 test('numpy course: the artifact is a projection of the authored pack', () => {
   assert.equal(artifact.modules.length, authored.length);
-  for (const [i, module] of artifact.modules.entries()) {
-    const source = authored[i];
+  for (const module of artifact.modules) {
+    const source = sourceOf(module.id);
     assert.equal(module.title, source.title);
-    assert.equal(module.entries, 31, `${module.id}: projection must keep its full entry count`);
-    assert.equal(module.sections.learn.length, source.topics.length);
-    assert.equal(module.sections.debug.length, source.debug.length);
+    assert.equal(module.sections.learn.length, source.topics.length, `${module.id}: Learn is one entry per topic`);
+    assert.equal(module.sections.debug.length, source.debug.length, `${module.id}: Debug is one entry per challenge`);
+    assert.equal(module.entries, Object.values(module.counts).reduce((a, b) => a + b, 0));
+  }
+});
+
+test('numpy course: every deepening sample carries an executed output', () => {
+  for (const [id, pack] of Object.entries(deepening)) {
+    assert.ok(authored.some((m) => m.id === id), `deepening targets unknown module ${id}`);
+    for (const topic of pack.topics || []) {
+      assert.ok(topic.code && topic.output, `${id}: ${topic.title} needs code and output`);
+    }
   }
 });
 

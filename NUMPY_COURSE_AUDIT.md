@@ -26,10 +26,13 @@ Audited before any file was added, so the course reuses the platform instead of 
 
 ## What this batch adds
 
-- `content/numpy-mastery/course.json` + `modules-0X-0Y.json` (authored source).
+- `content/numpy-mastery/course.json` + `modules-0X-0Y.json` (authored source) and `deepening.json`
+  (the per-module depth layer: extra topics and debug challenges, merged by the generator).
 - `scripts/numpy-course.cjs` — validates and publishes one artifact; refuses duplicates, empty
   sections, and a debug challenge whose fix equals its broken code.
-- `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **620 entries**.
+- `scripts/numpy-fill-outputs.cjs` — executes every depth-layer sample and stores the real stdout, so
+  no published output is hand-typed.
+- `public/generated/numpy-course/index.json` — 20 modules, ten sections each, **1,540 entries**.
 - `src/core/learning/ncourse.ts` — types, section registry, progress rules (pure, tested).
 - `src/core/data/ncourse.ts` — loader only.
 - `src/features/numpy-mastery/{NLogo,NCoursePage}.tsx` — mark + course/module workspace.

@@ -1,0 +1,842 @@
+{
+  "n01": {
+    "topics": [
+      {
+        "title": "Two arrays combine elementwise",
+        "body": "Arithmetic between two same-shape arrays pairs position by position, so `a + b` is not concatenation and the result keeps the input shape.",
+        "code": "import numpy as np\na = np.array([1, 2, 3])\nb = np.array([10, 20, 30])\nprint(a + b)",
+        "output": "[11 22 33]"
+      },
+      {
+        "title": "Indexing starts at zero",
+        "body": "The first element is index 0 and the last is -1, exactly like a Python list, so the same counting rules carry over before reshape changes anything.",
+        "code": "import numpy as np\na = np.array([5, 6, 7])\nprint(a[0], a[-1])",
+        "output": "5 7"
+      },
+      {
+        "title": "Methods return plain results",
+        "body": "sum, min and max are methods on the array, so the answer arrives as a Python scalar you can print or compare without converting anything.",
+        "code": "import numpy as np\na = np.array([4, 1, 9])\nprint(a.sum(), a.max(), a.min())",
+        "output": "14 9 1"
+      },
+      {
+        "title": "Convert back to a Python list",
+        "body": "tolist() turns an ndarray into nested Python lists, which is the right move when the receiver expects plain lists rather than array printing.",
+        "code": "import numpy as np\na = np.array([4, 1, 9])\nprint(a.tolist())",
+        "output": "[4, 1, 9]"
+      },
+      {
+        "title": "Integers and floats carry different dtypes",
+        "body": "The dtype is inferred from the values you pass, so `np.array([1, 2])` is integer while `np.array([1.0, 2.0])` is float — one of them can hold 2.5 and the other cannot.",
+        "code": "import numpy as np\nprint(np.array([1, 2]).dtype, np.array([1.0, 2.0]).dtype)",
+        "output": "int64 float64"
+      }
+    ],
+    "debug": [
+      {
+        "title": "The array replaced the module name",
+        "broken": "import numpy as np\nnp = np.array([1, 2])\nprint(np.arange(2))",
+        "fix": "import numpy as np\narr = np.array([1, 2])\nprint(np.arange(2))",
+        "error": "AttributeError: 'numpy.ndarray' object has no attribute 'arange'"
+      }
+    ]
+  },
+  "n02": {
+    "topics": [
+      {
+        "title": "len counts the first axis only",
+        "body": "len() reports the length of axis 0, not the number of elements, so for a (3, 4) array len is 3 while size is 12.",
+        "code": "import numpy as np\na = np.ones((3, 4))\nprint(len(a), a.size)",
+        "output": "3 12"
+      },
+      {
+        "title": "Transpose swaps the shape",
+        "body": "Transposing reverses the axis order, so a (3, 4) array becomes (4, 3) and every operation that follows reads the new shape.",
+        "code": "import numpy as np\na = np.ones((3, 4))\nprint(a.T.shape)",
+        "output": "(4, 3)"
+      },
+      {
+        "title": "Mixed literals promote to float",
+        "body": "One float in the input is enough to make the whole array float64, because a single dtype has to hold every value.",
+        "code": "import numpy as np\nprint(np.array([1, 2.5]).dtype)",
+        "output": "float64"
+      },
+      {
+        "title": "A zero-dimensional array has no axes",
+        "body": "`np.array(7)` is a 0-d array: it has one value, ndim 0 and an empty shape tuple, which is how a scalar crosses into array code.",
+        "code": "import numpy as np\ns = np.array(7)\nprint(s.ndim, s.shape)",
+        "output": "0 ()"
+      },
+      {
+        "title": "Bytes are shape times itemsize",
+        "body": "nbytes is size multiplied by itemsize, so a float32 array of six elements costs 24 bytes and a float64 one would cost 48.",
+        "code": "import numpy as np\na = np.zeros((2, 3), dtype=np.float32)\nprint(a.nbytes)",
+        "output": "24"
+      }
+    ],
+    "debug": [
+      {
+        "title": "shape used like a function",
+        "broken": "import numpy as np\na = np.ones((2, 3))\nprint(a.shape(0))",
+        "fix": "import numpy as np\na = np.ones((2, 3))\nprint(a.shape[0])",
+        "error": "TypeError: 'tuple' object is not callable"
+      }
+    ]
+  },
+  "n03": {
+    "topics": [
+      {
+        "title": "zeros_like copies a shape",
+        "body": "`zeros_like` and `ones_like` take the shape and dtype from an existing array, which is how you allocate an accumulator that lines up with real data.",
+        "code": "import numpy as np\na = np.arange(4)\nprint(np.zeros_like(a), np.ones_like(a, dtype=int))",
+        "output": "[0 0 0 0] [1 1 1 1]"
+      },
+      {
+        "title": "linspace can exclude the endpoint",
+        "body": "With endpoint=False, linspace still gives you a fixed number of points but stops one step short, which is what periodic sampling needs.",
+        "code": "import numpy as np\nprint(np.linspace(0, 1, 4, endpoint=False))",
+        "output": "[0.   0.25 0.5  0.75]"
+      },
+      {
+        "title": "arange accepts a fractional step",
+        "body": "arange happily takes a float step, though repeated float addition can drift; linspace is the safer tool when exact spacing matters.",
+        "code": "import numpy as np\nprint(np.arange(0, 1, 0.25))",
+        "output": "[0.   0.25 0.5  0.75]"
+      },
+      {
+        "title": "ones can take an integer dtype",
+        "body": "The default float dtype is a choice, not a rule: pass dtype=int when you want ones that stay integers in later arithmetic.",
+        "code": "import numpy as np\nprint(np.ones(3, dtype=int))",
+        "output": "[1 1 1]"
+      },
+      {
+        "title": "full repeats any value",
+        "body": "full allocates a shape and fills every cell with the value you give, so a constant column or a sentinel matrix is one call.",
+        "code": "import numpy as np\nprint(np.full((2, 2), 3, dtype=int))",
+        "output": "[[3 3]\n [3 3]]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A float number of points",
+        "broken": "import numpy as np\nprint(np.linspace(0, 1, 2.5))",
+        "fix": "import numpy as np\nprint(np.linspace(0, 1, 3))",
+        "error": "TypeError: 'float' object cannot be interpreted as an integer"
+      }
+    ]
+  },
+  "n04": {
+    "topics": [
+      {
+        "title": "astype truncates toward zero",
+        "body": "Casting float to int does not round: it drops the fractional part, so 1.9 becomes 1 and -1.9 becomes -1.",
+        "code": "import numpy as np\nprint(np.array([1.9, -1.9]).astype(int))",
+        "output": "[ 1 -1]"
+      },
+      {
+        "title": "Text becomes a number with astype",
+        "body": "Numeric strings cast cleanly to int or float, which is exactly why one bad token in a loaded column raises instead of silently becoming zero.",
+        "code": "import numpy as np\nprint(np.array([\"1\", \"2\"]).astype(float))",
+        "output": "[1. 2.]"
+      },
+      {
+        "title": "Division always yields floats",
+        "body": "True division produces float64 even when both operands are integers, so `int / int` never silently loses the remainder.",
+        "code": "import numpy as np\nprint((np.array([1, 2]) / 2).dtype)",
+        "output": "float64"
+      },
+      {
+        "title": "Numbers become booleans by truthiness",
+        "body": "Casting to bool keeps only whether a value is non-zero, so 0 becomes False and every other number becomes True.",
+        "code": "import numpy as np\nprint(np.array([0, 1, 2]).astype(bool))",
+        "output": "[False  True  True]"
+      },
+      {
+        "title": "Count with a boolean array",
+        "body": "Booleans add as 1 and 0, so sum() on a mask counts the matches without any branching code.",
+        "code": "import numpy as np\nm = np.array([True, False, True])\nprint(m.sum())",
+        "output": "2"
+      }
+    ],
+    "debug": [
+      {
+        "title": "One text value breaks the cast",
+        "broken": "import numpy as np\nprint(np.array([\"1\", \"x\"]).astype(int))",
+        "fix": "import numpy as np\nprint(np.array([\"1\", \"2\"]).astype(int))",
+        "error": "ValueError: invalid literal for int() with base 10: 'x'"
+      }
+    ]
+  },
+  "n05": {
+    "topics": [
+      {
+        "title": "Index with a coordinate pair",
+        "body": "Two indices in one bracket address a single cell, row first then column, and the result is a scalar rather than an array.",
+        "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a[1, 2])",
+        "output": "5"
+      },
+      {
+        "title": "One index drops a dimension",
+        "body": "Indexing a single row of a (2, 3) array returns shape (3,), because that axis is consumed by the integer index.",
+        "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a[0].shape)",
+        "output": "(3,)"
+      },
+      {
+        "title": "Select a whole column",
+        "body": "A colon keeps the row axis and the integer picks the column, so `a[:, 1]` is the second column of every row.",
+        "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a[:, 1])",
+        "output": "[1 4]"
+      },
+      {
+        "title": "Fancy indexing picks rows",
+        "body": "An array of indices selects in exactly the order you give it, so repeats and reordering are allowed and the output grows to match the index list.",
+        "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a[[0, 1, 0]])",
+        "output": "[[0 1 2]\n [3 4 5]\n [0 1 2]]"
+      },
+      {
+        "title": "take works along an axis",
+        "body": "np.take does the same selection as fancy indexing but names the axis, which makes the intent readable in longer pipelines.",
+        "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(np.take(a, [2, 0], axis=1))",
+        "output": "[[2 0]\n [5 3]]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "An index that is not an integer",
+        "broken": "import numpy as np\na = np.arange(4)\nprint(a[1.5])",
+        "fix": "import numpy as np\na = np.arange(4)\nprint(a[1])",
+        "error": "IndexError: only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and integer or boolean arrays are valid indices"
+      }
+    ]
+  },
+  "n06": {
+    "topics": [
+      {
+        "title": "Reverse a row with a negative step",
+        "body": "A step of -1 walks the array backwards, so `a[::-1]` is the reversed view and needs no loop or copy.",
+        "code": "import numpy as np\na = np.arange(4)\nprint(a[::-1])",
+        "output": "[3 2 1 0]"
+      },
+      {
+        "title": "Slice assignment writes through",
+        "body": "Assigning into a slice edits the original array, because the slice is a window onto the same memory rather than a new array.",
+        "code": "import numpy as np\na = np.arange(4)\na[0:2] = 0\nprint(a)",
+        "output": "[0 0 2 3]"
+      },
+      {
+        "title": "Step in both dimensions",
+        "body": "Each axis takes its own step, so `a[::2, ::2]` keeps every second row and every second column of a 2-D array.",
+        "code": "import numpy as np\na = np.arange(16).reshape(4, 4)\nprint(a[::2, ::2])",
+        "output": "[[ 0  2]\n [ 8 10]]"
+      },
+      {
+        "title": "Copy breaks the view link",
+        "body": "Calling copy() allocates new memory, so changing the copy leaves the original untouched and the sharing problem disappears.",
+        "code": "import numpy as np\na = np.arange(3)\nb = a[:].copy()\nb[0] = 9\nprint(a, b)",
+        "output": "[0 1 2] [9 1 2]"
+      },
+      {
+        "title": "Slices clamp instead of failing",
+        "body": "A slice bound past the end is clamped to the array length, so `a[0:100]` on three elements returns all three instead of raising.",
+        "code": "import numpy as np\na = np.arange(3)\nprint(a[0:100])",
+        "output": "[0 1 2]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A row slice given the wrong width",
+        "broken": "import numpy as np\na = np.arange(6).reshape(2, 3)\na[0:2] = [1, 2]",
+        "fix": "import numpy as np\na = np.arange(6).reshape(2, 3)\na[0:2] = [[1, 2, 3], [4, 5, 6]]",
+        "error": "ValueError: could not broadcast input array from shape (2,) into shape (2,3)"
+      }
+    ]
+  },
+  "n07": {
+    "topics": [
+      {
+        "title": "reshape with -1 infers the size",
+        "body": "One dimension may be written as -1 and NumPy fills it from the element count, which is how you ask for rows of a fixed width without arithmetic.",
+        "code": "import numpy as np\na = np.arange(6)\nprint(a.reshape(-1, 2))",
+        "output": "[[0 1]\n [2 3]\n [4 5]]"
+      },
+      {
+        "title": "newaxis makes a column",
+        "body": "Indexing with np.newaxis inserts an axis of length 1, turning a (3,) vector into a (3, 1) column that broadcasting can line up against rows.",
+        "code": "import numpy as np\nprint(np.arange(3)[:, np.newaxis].shape)",
+        "output": "(3, 1)"
+      },
+      {
+        "title": "stack adds a new axis",
+        "body": "stack joins arrays of equal shape along a brand-new axis, so two (2,) arrays become a (2, 2) matrix instead of a (4,) flat one.",
+        "code": "import numpy as np\nprint(np.stack([np.zeros(2), np.ones(2)]).shape)",
+        "output": "(2, 2)"
+      },
+      {
+        "title": "split cuts an array into pieces",
+        "body": "split divides an array into equal parts and returns a list, which is handy for batches or train/test cuts.",
+        "code": "import numpy as np\nprint(np.split(np.arange(4), 2))",
+        "output": "[array([0, 1]), array([2, 3])]"
+      },
+      {
+        "title": "flatten always copies",
+        "body": "flatten returns a fresh 1-D array, so editing it never touches the source; ravel returns a view whenever the layout allows.",
+        "code": "import numpy as np\na = np.arange(4)\nf = a.flatten()\nf[0] = 9\nprint(a[0])",
+        "output": "0"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A reshape that cannot hold the elements",
+        "broken": "import numpy as np\na = np.arange(8).reshape(2, 3)",
+        "fix": "import numpy as np\na = np.arange(8).reshape(2, 4)",
+        "error": "ValueError: cannot reshape array of size 8 into shape (2,3)"
+      }
+    ]
+  },
+  "n08": {
+    "topics": [
+      {
+        "title": "sqrt of perfect squares is exact",
+        "body": "Universal functions run compiled loops over the whole array, so np.sqrt returns a float array of the same shape in one call.",
+        "code": "import numpy as np\nprint(np.sqrt([4, 9, 25]))",
+        "output": "[2. 3. 5.]"
+      },
+      {
+        "title": "reduce sums, accumulate keeps running totals",
+        "body": "Every binary ufunc offers reduce (fold the whole array to one value) and accumulate (return every intermediate total).",
+        "code": "import numpy as np\nprint(np.add.reduce([1, 2, 3]), np.add.accumulate([1, 2, 3]))",
+        "output": "6 [1 3 6]"
+      },
+      {
+        "title": "clip limits every element",
+        "body": "clip pins values into a range without a single if, which is how pixel and probability pipelines stay inside their legal bounds.",
+        "code": "import numpy as np\nprint(np.clip([0, 5, 10], 1, 8))",
+        "output": "[1 5 8]"
+      },
+      {
+        "title": "round, floor and ceil differ",
+        "body": "round goes to the nearest even integer at .5, floor always drops down and ceil always climbs, so pick the one your data means.",
+        "code": "import numpy as np\nprint(np.round([1.5, 2.4]), np.floor([1.5, 2.4]), np.ceil([1.5, 2.4]))",
+        "output": "[2. 2.] [1. 2.] [2. 3.]"
+      },
+      {
+        "title": "sign tells you direction",
+        "body": "np.sign maps negatives to -1, zero to 0 and positives to 1, giving a direction array you can multiply into other data.",
+        "code": "import numpy as np\nprint(np.sign([-3, 0, 5]))",
+        "output": "[-1  0  1]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "sqrt called as an array method",
+        "broken": "import numpy as np\na = np.array([1, 2])\nprint(a.sqrt())",
+        "fix": "import numpy as np\na = np.array([1, 2])\nprint(np.sqrt(a))",
+        "error": "AttributeError: 'numpy.ndarray' object has no attribute 'sqrt'"
+      }
+    ]
+  },
+  "n09": {
+    "topics": [
+      {
+        "title": "A vector broadcasts across rows",
+        "body": "A (3,) vector added to a (2, 3) matrix is treated as one row repeated per matrix row, so the column count has to match.",
+        "code": "import numpy as np\na = np.ones((2, 3), dtype=int)\nprint(a + np.array([1, 2, 3]))",
+        "output": "[[2 3 4]\n [2 3 4]]"
+      },
+      {
+        "title": "A column broadcasts down",
+        "body": "A (2, 1) column is stretched across every column, which is how one value per row is applied to a whole matrix.",
+        "code": "import numpy as np\na = np.ones((2, 3), dtype=int)\nprint(a + np.array([[10], [20]]))",
+        "output": "[[11 11 11]\n [21 21 21]]"
+      },
+      {
+        "title": "Outer product uses two new axes",
+        "body": "Adding an axis to each operand makes broadcasting compute every pair, which is the outer product without writing a loop.",
+        "code": "import numpy as np\na = np.array([1, 2])\nb = np.array([3, 4])\nprint(a[:, None] * b[None, :])",
+        "output": "[[3 4]\n [6 8]]"
+      },
+      {
+        "title": "Comparison broadcasts too",
+        "body": "Broadcasting is not limited to arithmetic: comparing a matrix with its per-column mean stretches the mean across rows.",
+        "code": "import numpy as np\na = np.array([[3, 1, 2], [6, 5, 4]])\nprint(a > a.mean(axis=0))",
+        "output": "[[False False False]\n [ True  True  True]]"
+      },
+      {
+        "title": "reshape prepares a strip for broadcasting",
+        "body": "Turning a vector into a (3, 1) column and adding a (1, 2) row yields a (3, 2) grid, which is the shape rule worth memorising.",
+        "code": "import numpy as np\nv = np.arange(3)\nprint((v.reshape(3, 1) + np.zeros((1, 2))).shape)",
+        "output": "(3, 2)"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A row vector where a column was needed",
+        "broken": "import numpy as np\na = np.ones((2, 3))\nv = np.array([1, 2])\nprint(a + v)",
+        "fix": "import numpy as np\na = np.ones((2, 3))\nv = np.array([1, 2]).reshape(2, 1)\nprint(a + v)",
+        "error": "ValueError: operands could not be broadcast together with shapes (2,3) (2,)"
+      }
+    ]
+  },
+  "n10": {
+    "topics": [
+      {
+        "title": "median is not the mean",
+        "body": "One extreme value drags the mean but barely moves the median, so reporting both is how you notice a skewed column.",
+        "code": "import numpy as np\nprint(np.median([1, 2, 100]), np.mean([1, 2, 100]))",
+        "output": "2.0 34.333333333333336"
+      },
+      {
+        "title": "keepdims keeps a column",
+        "body": "keepdims=True leaves the reduced axis as length 1, so the result still broadcasts against the original array without a reshape.",
+        "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a.mean(axis=1, keepdims=True).shape)",
+        "output": "(2, 1)"
+      },
+      {
+        "title": "average can weight values",
+        "body": "np.average accepts weights, so a weighted mean is one call instead of a manual sum of products divided by a sum of weights.",
+        "code": "import numpy as np\nprint(np.average([1, 2], weights=[1, 3]))",
+        "output": "1.75"
+      },
+      {
+        "title": "any and all answer yes/no",
+        "body": "On a boolean array, any asks whether at least one element is True and all asks whether every element is, each returning a single bool.",
+        "code": "import numpy as np\nm = np.array([True, False])\nprint(m.any(), m.all())",
+        "output": "True False"
+      },
+      {
+        "title": "prod multiplies the elements",
+        "body": "prod folds with multiplication instead of addition, which is how compound growth and factorial-style products are computed in one call.",
+        "code": "import numpy as np\nprint(np.prod(np.array([1, 2, 3, 4])))",
+        "output": "24"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A string axis name",
+        "broken": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a.mean(axis='row'))",
+        "fix": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a.mean(axis=1))",
+        "error": "TypeError: 'str' object cannot be interpreted as an integer"
+      }
+    ]
+  },
+  "n11": {
+    "topics": [
+      {
+        "title": "Combine masks with & and |",
+        "body": "Elementwise combination needs the bitwise operators inside parentheses; `and` and `or` would ask for one truth value and fail.",
+        "code": "import numpy as np\na = np.arange(6)\nprint(a[(a > 1) & (a < 4)])",
+        "output": "[2 3]"
+      },
+      {
+        "title": "Invert a mask with ~",
+        "body": "The tilde flips a boolean array, so `a[~(a > 1)]` keeps exactly the elements the mask rejected.",
+        "code": "import numpy as np\na = np.arange(6)\nprint(a[~(a > 1)])",
+        "output": "[0 1]"
+      },
+      {
+        "title": "Assign through a mask",
+        "body": "A boolean mask works on the left of an assignment, which replaces the selected elements in place instead of returning a new array.",
+        "code": "import numpy as np\na = np.array([-1, 4, -5])\na[a < 0] = 0\nprint(a)",
+        "output": "[0 4 0]"
+      },
+      {
+        "title": "Count how many match",
+        "body": "Because True is 1, summing a mask gives the count directly — no filter and no len call needed.",
+        "code": "import numpy as np\na = np.arange(10)\nprint((a % 2 == 0).sum())",
+        "output": "5"
+      },
+      {
+        "title": "Filter rows by one column",
+        "body": "A mask built from one column can select whole rows, so `a[a[:, 1] > 5]` keeps every column of the rows that qualify.",
+        "code": "import numpy as np\na = np.array([[1, 9], [2, 3]])\nprint(a[a[:, 1] > 5])",
+        "output": "[[1 9]]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "Two masks joined with and",
+        "broken": "import numpy as np\na = np.arange(6)\nprint(a[(a > 1) and (a < 4)])",
+        "fix": "import numpy as np\na = np.arange(6)\nprint(a[(a > 1) & (a < 4)])",
+        "error": "ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()"
+      }
+    ]
+  },
+  "n12": {
+    "topics": [
+      {
+        "title": "sort each row separately",
+        "body": "axis=1 sorts inside each row and leaves rows in place, while axis=0 would sort down each column instead.",
+        "code": "import numpy as np\na = np.array([[3, 1, 2], [9, 7, 8]])\nprint(np.sort(a, axis=1))",
+        "output": "[[1 2 3]\n [7 8 9]]"
+      },
+      {
+        "title": "Reverse a sorted array for descending order",
+        "body": "sort only goes ascending, so descending order is a sort followed by a reverse slice — two views, no extra list.",
+        "code": "import numpy as np\nprint(np.sort([3, 1, 2])[::-1])",
+        "output": "[3 2 1]"
+      },
+      {
+        "title": "partition keeps only k small values in front",
+        "body": "partition is cheaper than a full sort when you only need the k smallest elements to be correct, which is enough for top-k work.",
+        "code": "import numpy as np\nprint(np.partition([5, 1, 4, 2, 3], 2))",
+        "output": "[1 2 3 4 5]"
+      },
+      {
+        "title": "lexsort orders by the last key first",
+        "body": "lexsort takes several keys and sorts by the last one primarily, which is how you order by two columns without building tuples.",
+        "code": "import numpy as np\nnames = np.array(['b', 'a', 'b', 'a'])\nscores = np.array([2, 2, 1, 1])\norder = np.lexsort((scores, names))\nprint(names[order], scores[order])",
+        "output": "['a' 'a' 'b' 'b'] [1 2 1 2]"
+      },
+      {
+        "title": "argmax finds the best position",
+        "body": "argmax returns the index of the largest value, so you keep the label or row that produced the maximum instead of the maximum alone.",
+        "code": "import numpy as np\nprint(np.argmax([3, 9, 5]))",
+        "output": "1"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A reverse keyword that does not exist",
+        "broken": "import numpy as np\nprint(np.sort([3, 1, 2], reverse=True))",
+        "fix": "import numpy as np\nprint(np.sort([3, 1, 2])[::-1])",
+        "error": "TypeError: sort() got an unexpected keyword argument 'reverse'"
+      }
+    ]
+  },
+  "n13": {
+    "topics": [
+      {
+        "title": "reshape usually returns a view",
+        "body": "When the memory is contiguous, reshape hands back a new shape over the same buffer, so shares_memory is True and writes travel both ways.",
+        "code": "import numpy as np\na = np.arange(6)\nb = a.reshape(2, 3)\nprint(np.shares_memory(a, b))",
+        "output": "True"
+      },
+      {
+        "title": "base points at the source array",
+        "body": "A view keeps a reference to the array it came from in .base, which is the quickest way to prove two names share one buffer.",
+        "code": "import numpy as np\na = np.arange(4)\nprint(a[1:].base is a)",
+        "output": "True"
+      },
+      {
+        "title": "Transpose is a view with new strides",
+        "body": "Transposing changes only the strides, not the data, so a (2, 3) float64 array transposes to strides (8, 24) with the same bytes.",
+        "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a.T.strides)",
+        "output": "(8, 24)"
+      },
+      {
+        "title": "A reversed slice has negative strides",
+        "body": "A step of -1 stores a negative stride, which is why reversing is free: the array simply walks its memory backwards.",
+        "code": "import numpy as np\nprint(np.arange(4)[::-1].strides)",
+        "output": "(-8,)"
+      },
+      {
+        "title": "copy owns its memory",
+        "body": "The OWNDATA flag tells you whether an array owns its buffer or borrows it, which is the truth behind the view/copy question.",
+        "code": "import numpy as np\na = np.arange(3)\nprint(a.copy().flags['OWNDATA'])",
+        "output": "True"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A flag name in the wrong case",
+        "broken": "import numpy as np\na = np.arange(3)\nprint(a.flags['own_data'])",
+        "fix": "import numpy as np\na = np.arange(3)\nprint(a.flags['OWNDATA'])",
+        "error": "KeyError: 'own_data'"
+      }
+    ]
+  },
+  "n14": {
+    "topics": [
+      {
+        "title": "integers draw inside a half-open range",
+        "body": "integers(low, high) returns values from low up to but excluding high, and the seeded generator makes the draw reproducible.",
+        "code": "import numpy as np\nrng = np.random.default_rng(42)\nprint(rng.integers(1, 7, 5))",
+        "output": "[1 5 4 3 3]"
+      },
+      {
+        "title": "random floats sit between 0 and 1",
+        "body": "random returns floats in [0, 1), which you scale and shift into any interval you need.",
+        "code": "import numpy as np\nrng = np.random.default_rng(1)\nprint(rng.random(3).round(3))",
+        "output": "[0.512 0.95  0.144]"
+      },
+      {
+        "title": "the same seed gives the same numbers",
+        "body": "Two generators built with the same seed produce identical streams, which is the whole reason experiments are reproducible.",
+        "code": "import numpy as np\na = np.random.default_rng(7).normal(size=2)\nb = np.random.default_rng(7).normal(size=2)\nprint(np.allclose(a, b))",
+        "output": "True"
+      },
+      {
+        "title": "size controls the shape of a draw",
+        "body": "Passing a tuple to size returns a multi-dimensional draw, so a batch of samples is one call instead of a loop of calls.",
+        "code": "import numpy as np\nrng = np.random.default_rng(0)\nprint(rng.normal(size=(2, 3)).shape)",
+        "output": "(2, 3)"
+      },
+      {
+        "title": "permutation shuffles a copy",
+        "body": "permutation returns a shuffled copy and leaves the input alone, so sorting the result recovers the original values exactly.",
+        "code": "import numpy as np\nrng = np.random.default_rng(3)\nprint(np.sort(rng.permutation(5)))",
+        "output": "[0 1 2 3 4]"
+      }
+    ],
+    "debug": [
+      {
+        "title": "Calling the old seed method on the new generator",
+        "broken": "import numpy as np\nrng = np.random.default_rng()\nrng.seed(0)",
+        "fix": "import numpy as np\nrng = np.random.default_rng(0)",
+        "error": "AttributeError: 'numpy.random._generator.Generator' object has no attribute 'seed'"
+      }
+    ]
+  },
+  "n15": {
+    "topics": [
+      {
+        "title": "dot product of two vectors is a scalar",
+        "body": "The @ operator on two 1-D arrays sums the pairwise products, so the result is a scalar rather than an array.",
+        "code": "import numpy as np\na = np.array([1, 2, 3])\nb = np.array([4, 5, 6])\nprint(a @ b)",
+        "output": "32"
+      },
+      {
+        "title": "matrix times vector keeps the rows",
+        "body": "A (2, 2) matrix times a (2,) vector returns one value per row, so the output length is the number of rows.",
+        "code": "import numpy as np\nA = np.array([[1, 2], [3, 4]])\nv = np.array([1, 1])\nprint(A @ v)",
+        "output": "[3 7]"
+      },
+      {
+        "title": "solve then verify",
+        "body": "solve returns the x in Ax = b directly; checking A @ x against b is how you prove the answer instead of trusting it.",
+        "code": "import numpy as np\nA = np.array([[2., 1.], [1., 3.]])\nb = np.array([3., 5.])\nx = np.linalg.solve(A, b)\nprint(x, np.allclose(A @ x, b))",
+        "output": "[0.8 1.4] True"
+      },
+      {
+        "title": "norm measures length",
+        "body": "np.linalg.norm gives the Euclidean length by default, so a (3, 4) vector reports 5.0 and needs no manual square root.",
+        "code": "import numpy as np\nprint(np.linalg.norm([3, 4]))",
+        "output": "5.0"
+      },
+      {
+        "title": "lstsq also fits inconsistent systems",
+        "body": "When the system has no exact solution, lstsq returns the least-squares answer so a tall, over-determined fit still works.",
+        "code": "import numpy as np\nA = np.array([[1., 0.], [0., 1.], [1., 1.]])\nb = np.array([1., 2., 3.])\nx = np.linalg.lstsq(A, b, rcond=None)[0]\nprint(np.allclose(A @ x, b))",
+        "output": "True"
+      }
+    ],
+    "debug": [
+      {
+        "title": "Solving a singular system",
+        "broken": "import numpy as np\nA = np.array([[1., 2.], [2., 4.]])\nb = np.array([1., 2.])\nprint(np.linalg.solve(A, b))",
+        "fix": "import numpy as np\nA = np.array([[1., 2.], [2., 4.]])\nb = np.array([1., 2.])\nprint(np.linalg.lstsq(A, b, rcond=None)[0])",
+        "error": "numpy.linalg.LinAlgError: Singular matrix"
+      }
+    ]
+  },
+  "n16": {
+    "topics": [
+      {
+        "title": "skiprows ignores a header line",
+        "body": "loadtxt has no header concept, so skiprows=1 is how a CSV header is dropped before the numbers are parsed.",
+        "code": "import numpy as np, os, tempfile\np = os.path.join(tempfile.gettempdir(), 'np_head.csv')\nopen(p, 'w').write('x,y\\n1,2\\n3,4\\n')\nprint(np.loadtxt(p, delimiter=',', skiprows=1))",
+        "output": "[[1. 2.]\n [3. 4.]]"
+      },
+      {
+        "title": "genfromtxt fills missing values",
+        "body": "genfromtxt tolerates gaps and puts nan where a value is absent, which is exactly what loadtxt would refuse to parse.",
+        "code": "import numpy as np, os, tempfile\np = os.path.join(tempfile.gettempdir(), 'np_gap.csv')\nopen(p, 'w').write('1,2\\n3,\\n')\nprint(np.genfromtxt(p, delimiter=','))",
+        "output": "[[ 1.  2.]\n [ 3. nan]]"
+      },
+      {
+        "title": "npz stores several arrays",
+        "body": "savez writes named arrays into one archive and load exposes them by name through .files, so a whole dataset travels as a single file.",
+        "code": "import numpy as np, os, tempfile\np = os.path.join(tempfile.gettempdir(), 'np_bundle.npz')\nnp.savez(p, a=np.arange(2), b=np.ones(3))\nd = np.load(p)\nprint(sorted(d.files), d['a'])",
+        "output": "['a', 'b'] [0 1]"
+      },
+      {
+        "title": "memmap reads without loading everything",
+        "body": "memmap maps a binary file onto an array shape, so a very large matrix can be indexed while only the touched pages come from disk.",
+        "code": "import numpy as np, os, tempfile\np = os.path.join(tempfile.gettempdir(), 'np_raw.bin')\nnp.arange(10, dtype='float64').tofile(p)\nm = np.memmap(p, dtype='float64', mode='r', shape=(2, 5))\nprint(m.shape, m[1, 0])",
+        "output": "(2, 5) 5.0"
+      },
+      {
+        "title": "savetxt writes formatted text",
+        "body": "savetxt needs an explicit fmt or it falls back to float formatting, so an integer table is written with fmt='%d' and a delimiter you choose.",
+        "code": "import numpy as np, os, tempfile\np = os.path.join(tempfile.gettempdir(), 'np_out.csv')\nnp.savetxt(p, np.array([[1, 2], [3, 4]]), delimiter=',', fmt='%d')\nprint(open(p).read().strip())",
+        "output": "1,2\n3,4"
+      }
+    ],
+    "debug": [
+      {
+        "title": "Loading a file that was never saved",
+        "broken": "import numpy as np\nprint(np.load('data.npy'))",
+        "fix": "import numpy as np\nnp.save('data.npy', np.arange(3))\nprint(np.load('data.npy'))",
+        "error": "FileNotFoundError: [Errno 2] No such file or directory: 'data.npy'"
+      }
+    ]
+  },
+  "n17": {
+    "topics": [
+      {
+        "title": "Fixed-width strings truncate",
+        "body": "A U2 dtype stores at most two characters per element, so longer text is cut on creation rather than at print time.",
+        "code": "import numpy as np\nprint(np.array([\"abcd\"], dtype=\"U2\"))",
+        "output": "['ab']"
+      },
+      {
+        "title": "object dtype keeps Python objects",
+        "body": "dtype=object stores pointers to arbitrary Python values, which is flexible but loses the fast numeric paths that make arrays worthwhile.",
+        "code": "import numpy as np\na = np.array([1, \"x\", None], dtype=object)\nprint(a.dtype, a[1])",
+        "output": "object x"
+      },
+      {
+        "title": "timedelta64 tells the gap",
+        "body": "Subtracting two datetime64 values returns a timedelta64, so date arithmetic reports an interval in the unit of the operands.",
+        "code": "import numpy as np\nprint(np.datetime64('2024-01-03') - np.datetime64('2024-01-01'))",
+        "output": "2 days"
+      },
+      {
+        "title": "Divide a timedelta to get a count",
+        "body": "Dividing a timedelta64 by a unit timedelta converts it to a plain number, which is how you get days, hours or seconds for analysis.",
+        "code": "import numpy as np\nd = np.datetime64('2024-01-03') - np.datetime64('2024-01-01')\nprint(d / np.timedelta64(1, 'D'))",
+        "output": "2.0"
+      },
+      {
+        "title": "Fields are read by name",
+        "body": "A structured array indexes its fields by name, so a price column is a plain array you can sum without unpacking the records.",
+        "code": "import numpy as np\na = np.array([(1, 2.5), (2, 3.5)], dtype=[('id', 'i4'), ('price', 'f4')])\nprint(a['price'].sum())",
+        "output": "6.0"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A field name that does not exist",
+        "broken": "import numpy as np\na = np.array([(1, 2.5)], dtype=[('id', 'i4'), ('price', 'f4')])\nprint(a['name'])",
+        "fix": "import numpy as np\na = np.array([(1, 2.5)], dtype=[('id', 'i4'), ('price', 'f4')])\nprint(a['id'])",
+        "error": "ValueError: no field of name name"
+      }
+    ]
+  },
+  "n18": {
+    "topics": [
+      {
+        "title": "isnan builds the mask",
+        "body": "NaN never equals itself, so isnan is the only reliable way to locate missing values before you decide to drop or fill them.",
+        "code": "import numpy as np\na = np.array([1., np.nan])\nprint(np.isnan(a))",
+        "output": "[False  True]"
+      },
+      {
+        "title": "nanmean ignores missing values",
+        "body": "mean propagates one NaN to the answer while nanmean skips those elements and averages the rest, so the two numbers differ on dirty data.",
+        "code": "import numpy as np\na = np.array([1., np.nan, 3.])\nprint(np.mean(a), np.nanmean(a))",
+        "output": "nan 2.0"
+      },
+      {
+        "title": "nan_to_num replaces NaN and infinity",
+        "body": "nan_to_num swaps non-finite values for finite defaults, which keeps a downstream model from receiving poisoning values.",
+        "code": "import numpy as np\nprint(np.nan_to_num(np.array([np.nan, np.inf, -np.inf])))",
+        "output": "[ 0.00000000e+000  1.79769313e+308 -1.79769313e+308]"
+      },
+      {
+        "title": "allclose can treat NaN as equal",
+        "body": "By default two NaNs are not close, because allclose compares with ==; equal_nan=True is the switch that makes them match.",
+        "code": "import numpy as np\nprint(np.allclose([np.nan], [np.nan], equal_nan=True), np.allclose([np.nan], [np.nan]))",
+        "output": "True False"
+      },
+      {
+        "title": "nanargmax skips NaN",
+        "body": "argmax can return the position of a NaN, while nanargmax ignores them and returns the position of the largest real value.",
+        "code": "import numpy as np\nprint(np.nanargmax([1., np.nan, 3.]))",
+        "output": "2"
+      }
+    ],
+    "debug": [
+      {
+        "title": "isnan on text",
+        "broken": "import numpy as np\nprint(np.isnan(np.array([1, 'a'])))",
+        "fix": "import numpy as np\nprint(np.isnan(np.array([1.0, np.nan])))",
+        "error": "TypeError: ufunc 'isnan' not supported for the input types"
+      }
+    ]
+  },
+  "n19": {
+    "topics": [
+      {
+        "title": "einsum replaces a triple loop",
+        "body": "einsum writes the sum over indices in the subscript string, so a dot product, a trace or a batched contraction is one compiled call.",
+        "code": "import numpy as np\na = np.arange(3.)\nprint(np.einsum('i,i->', a, a))",
+        "output": "5.0"
+      },
+      {
+        "title": "dot and @ agree",
+        "body": "np.dot and the @ operator compute the same matrix product, and proving it with allclose is a good habit before optimising either side.",
+        "code": "import numpy as np\nA = np.arange(4.).reshape(2, 2)\nB = np.eye(2)\nprint(np.allclose(np.dot(A, B), A @ B))",
+        "output": "True"
+      },
+      {
+        "title": "bincount counts integer categories",
+        "body": "bincount tallies non-negative integers in one pass, so labelled data is counted without a Python loop or a dictionary.",
+        "code": "import numpy as np\nprint(np.bincount(np.array([0, 1, 1, 3])))",
+        "output": "[1 2 0 1]"
+      },
+      {
+        "title": "vectorize wraps a Python function",
+        "body": "np.vectorize applies a scalar function elementwise for convenience, but it loops in Python underneath and is not a speed-up.",
+        "code": "import numpy as np\nf = np.vectorize(lambda x: x * x)\nprint(f(np.array([1, 2, 3])))",
+        "output": "[1 4 9]"
+      },
+      {
+        "title": "sum in chunks instead of one huge temporary",
+        "body": "Adding slice sums keeps peak memory small, because each chunk is released instead of materialising a full-size intermediate array.",
+        "code": "import numpy as np\na = np.arange(10)\nprint(sum(a[i:i + 4].sum() for i in range(0, 10, 4)))",
+        "output": "45"
+      }
+    ],
+    "debug": [
+      {
+        "title": "A dot product with mismatched inner sizes",
+        "broken": "import numpy as np\na = np.ones((2, 3))\nb = np.ones((2, 3))\nprint(a @ b)",
+        "fix": "import numpy as np\na = np.ones((2, 3))\nb = np.ones((2, 3))\nprint(a @ b.T)",
+        "error": "ValueError: matmul: Input operand 1 has a mismatch in its core dimension 0, with gufunc signature (n?,k),(k,m?)->(n?,m?)"
+      }
+    ]
+  },
+  "n20": {
+    "topics": [
+      {
+        "title": "Standardise each column",
+        "body": "Subtracting the column mean and dividing by the column standard deviation is broadcasting, and it is the step every model expects before training.",
+        "code": "import numpy as np\nX = np.array([[1., 2.], [3., 4.]])\nZ = (X - X.mean(axis=0)) / X.std(axis=0)\nprint(Z.round(2))",
+        "output": "[[-1. -1.]\n [ 1.  1.]]"
+      },
+      {
+        "title": "One-hot encode with eye",
+        "body": "Indexing an identity matrix with integer labels encodes a class vector into a matrix, no loop and no library needed.",
+        "code": "import numpy as np\nlabels = np.array([0, 2, 1])\nprint(np.eye(3, dtype=int)[labels])",
+        "output": "[[1 0 0]\n [0 0 1]\n [0 1 0]]"
+      },
+      {
+        "title": "Images are uint8 arrays",
+        "body": "An image is just a (height, width, channels) array of unsigned bytes, so brightness is an addition clipped back into 0-255.",
+        "code": "import numpy as np\nimg = np.array([[0, 128], [255, 64]], dtype=np.uint8)\nbright = np.clip(img.astype(int) + 40, 0, 255).astype(np.uint8)\nprint(bright)",
+        "output": "[[ 40 168]\n [255 104]]"
+      },
+      {
+        "title": "A moving average is a convolution",
+        "body": "np.convolve with a window of 1/n computes a moving average, which is the array-only way to smooth a series without pandas.",
+        "code": "import numpy as np\nv = np.array([1., 2., 3., 4.])\nprint(np.convolve(v, np.ones(2) / 2, mode='valid'))",
+        "output": "[1.5 2.5 3.5]"
+      },
+      {
+        "title": "Round only for display",
+        "body": "Rounding is a presentation choice: keep the full float for computation, and round only when the number is about to be shown.",
+        "code": "import numpy as np\nprint(np.round(2.675, 2), np.round(0.1 + 0.2, 2))",
+        "output": "2.68 0.3"
+      }
+    ],
+    "debug": [
+      {
+        "title": "One-hot indexing with float labels",
+        "broken": "import numpy as np\nlabels = np.array([0.0, 1.0])\nprint(np.eye(3)[labels])",
+        "fix": "import numpy as np\nlabels = np.array([0.0, 1.0]).astype(int)\nprint(np.eye(3)[labels])",
+        "error": "IndexError: arrays used as indices must be of integer (or boolean) type"
+      }
+    ]
+  }
+}
