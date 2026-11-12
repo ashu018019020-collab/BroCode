@@ -53,6 +53,22 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Coding labs grow to forty tasks (phase 35)
+
+Every module's Coding Lab now holds **40 independent tasks** (800 across the course, up from 500):
+the fifteen added per module are in `tasks-6.json` … `tasks-9.json`, each with its own data, reference
+solution, hidden check and printed output. `numpy-fill-outputs.cjs` executed all 800 solutions against
+numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typed by hand. Three first
+drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
+bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
+
+### Hints for modules two to six (phase 36)
+
+`hints-2.json` adds **125 hints** (25 per module) so the first twenty-five tasks of ndarray fundamentals,
+array creation, dtypes, indexing and slicing each get a Hint button: **150 hinted tasks** in total
+(module 1 from `hints-1.json`). Each hint names the attribute or function that answers the task without
+printing the solution, in the same voice as the existing set.
+
 ### Axis explorer and reshape playground (phase 34)
 
 Two tools are now explicit about shapes instead of leaving them to the reader:

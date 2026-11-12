@@ -12,12 +12,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { register } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+/* File-writing tasks use relative paths, so every python run gets its own scratch directory —
+ * otherwise `npm test` drops .npy/.csv artifacts into the repository root. */
+const WORKDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'numpy-course-test-'));
 const readJSON = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 register('./_ts-resolve.mjs', import.meta.url);
 const engine = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/ncourse.ts')).href);
@@ -121,7 +125,7 @@ test('numpy course: every module ships independent tasks with a hidden check', (
 });
 
 test('numpy course: each independent task solves its own hidden check', (t) => {
-  const probe = spawnSync('python3', ['-c', 'import numpy'], { encoding: 'utf8' });
+  const probe = spawnSync('python3', ['-c', 'import numpy'], { encoding: 'utf8', cwd: WORKDIR });
   if (probe.status !== 0) {
     t.skip('python3 with numpy is not installed on this machine');
     return;
@@ -147,14 +151,14 @@ for c in cases:
         bad.append({'id': c['id'], 'why': type(e).__name__ + ': ' + str(e)[:120]})
 print(json.dumps(bad))
 `;
-  const run = spawnSync('python3', ['-c', script], { input: JSON.stringify(cases), encoding: 'utf8' });
+  const run = spawnSync('python3', ['-c', script], { input: JSON.stringify(cases), encoding: 'utf8', cwd: WORKDIR });
   assert.equal(run.status, 0, run.stderr);
   const bad = JSON.parse(run.stdout.trim() || '[]');
   assert.deepEqual(bad, [], `task failures: ${JSON.stringify(bad.slice(0, 3))}`);
 });
 
 test('numpy course: every debug fix runs, and broken code raises or prints something else', (t) => {
-  const probe = spawnSync('python3', ['-c', 'import numpy'], { encoding: 'utf8' });
+  const probe = spawnSync('python3', ['-c', 'import numpy'], { encoding: 'utf8', cwd: WORKDIR });
   if (probe.status !== 0) {
     t.skip('python3 with numpy is not installed on this machine');
     return;
@@ -187,7 +191,7 @@ for c in cases:
         raised += 1
 print(json.dumps({'problems': problems, 'raised': raised, 'differed': differed}))
 `;
-  const run = spawnSync('python3', ['-c', script], { input: JSON.stringify(cases), encoding: 'utf8' });
+  const run = spawnSync('python3', ['-c', script], { input: JSON.stringify(cases), encoding: 'utf8', cwd: WORKDIR });
   assert.equal(run.status, 0, run.stderr);
   const report = JSON.parse(run.stdout.trim());
   assert.deepEqual(report.problems, [], `debug problems: ${JSON.stringify(report.problems.slice(0, 3))}`);
@@ -329,7 +333,7 @@ test('numpy course: a module is complete only when all ten sections are recorded
 });
 
 test('numpy course: every Learn code sample prints exactly its published output', (t) => {
-  const probe = spawnSync('python3', ['-c', 'import numpy'], { encoding: 'utf8' });
+  const probe = spawnSync('python3', ['-c', 'import numpy'], { encoding: 'utf8', cwd: WORKDIR });
   if (probe.status !== 0) {
     t.skip('python3 with numpy is not installed on this machine');
     return;
@@ -353,7 +357,7 @@ for c in cases:
         bad.append({'id': c['id'], 'expected': c['output'], 'actual': got})
 print(json.dumps(bad))
 `;
-  const run = spawnSync('python3', ['-c', script], { input: JSON.stringify(cases), encoding: 'utf8' });
+  const run = spawnSync('python3', ['-c', script], { input: JSON.stringify(cases), encoding: 'utf8', cwd: WORKDIR });
   assert.equal(run.status, 0, run.stderr);
   const bad = JSON.parse(run.stdout.trim() || '[]');
   assert.deepEqual(bad, [], `code/output mismatches: ${JSON.stringify(bad.slice(0, 3))}`);
