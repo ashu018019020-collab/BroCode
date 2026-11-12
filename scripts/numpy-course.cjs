@@ -156,6 +156,26 @@ for (const [id, list] of Object.entries(hints)) {
   if (missing.length) fail(`hints: ${id} has hints for unknown tasks: ${missing.join(', ')}`);
 }
 
+/*
+ * `scenarios.json` adds authored real-world questions per module. They are tagged so the bank manifest
+ * can count them as a category instead of hiding them inside the interview total.
+ */
+const scenarioFiles = fs.readdirSync(SRC).filter((f) => /^scenarios\.json$/.test(f));
+const scenarios = {};
+for (const file of scenarioFiles) {
+  for (const [id, list] of Object.entries(readJSON(path.join(SRC, file)))) {
+    (scenarios[id] || (scenarios[id] = [])).push(...list);
+  }
+}
+for (const [id, list] of Object.entries(scenarios)) {
+  const target = modules.find((m) => m.id === id);
+  if (!target) { fail(`scenarios: unknown module ${id}`); continue; }
+  for (const q of list) {
+    if (!q.q || !q.answer) fail(`${id}: scenario needs a question and an answer`);
+  }
+  target.interviewBank = [...(target.interviewBank || []), ...list.map((q) => ({ ...q, scenario: true }))];
+}
+
 const SECTIONS = [
   ['learn', 'Learn'], ['interview', 'Interview'], ['coding', 'Coding Lab'], ['logic', 'Logic'],
   ['debug', 'Debug'], ['practice', 'Practice Solutions'], ['miniProject', 'Mini Project'],
@@ -272,6 +292,7 @@ function buildSections(m) {
       ...(m.interviewBank || []).map((q, i) => ({
         id: id('interview', 'a' + i), q: q.q, answer: q.answer, code: q.code,
         difficulty: difficultyAt(i + topics.length),
+        ...(q.scenario ? { scenario: true } : {}),
       })),
     ],
     /*
@@ -347,12 +368,50 @@ const published = modules.map((m) => {
 });
 
 const bySection = Object.fromEntries(SECTIONS.map(([key, label]) => [label, published.reduce((a, m) => a + m.counts[key], 0)]));
+/*
+ * The bank manifest (Part 6 of the brief). Every number here is counted from the records that ship, so
+ * the UI can print the real total instead of a target. The target is published beside it, and the
+ * shortfall is stated rather than hidden.
+ */
+const countBy = (list, key) => list.reduce((acc, e) => {
+  const value = e[key] || 'unset';
+  acc[value] = (acc[value] || 0) + 1;
+  return acc;
+}, {});
+const bankModules = {};
+for (const m of published) {
+  const sec = m.sections;
+  const all = Object.values(sec).flat();
+  bankModules[m.id] = {
+    total: all.length,
+    categories: {
+      concept: sec.interview.filter((e) => !e.code).length + sec.defense.length,
+      output: sec.logic.length + sec.interview.filter((e) => e.code).length + sec.checkpoint.filter((e) => e.options).length,
+      coding: sec.coding.length,
+      debugging: sec.debug.length,
+      quiz: sec.checkpoint.filter((e) => e.options).length,
+      written: sec.checkpoint.filter((e) => e.rubric).length,
+      project: sec.miniProject.length + sec.projectLab.length,
+      scenario: sec.interview.filter((e) => e.scenario).length,
+    },
+    difficulty: countBy(all, 'difficulty'),
+  };
+}
+const total = published.reduce((a, m) => a + m.entries, 0);
 const stats = {
   modules: published.length,
-  entries: published.reduce((a, m) => a + m.entries, 0),
+  entries: total,
   bySection,
   targetPerSection: 50,
   targetTotal: 10000,
+  bank: {
+    total,
+    target: 500,
+    perModule: published.length ? Math.round(total / published.length) : 0,
+    shortPerModule: 500 - (published.length ? Math.round(total / published.length) : 0),
+    shortfall: published.length * 500 - total,
+    modules: bankModules,
+  },
 };
 
 if (problems.length) {

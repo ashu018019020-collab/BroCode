@@ -101,6 +101,19 @@ export interface NCourseFile {
     bySection: Record<string, number>;
     targetPerSection: number;
     targetTotal: number;
+    /** Real counts per module and category — never a target dressed as a count. */
+    bank: {
+      total: number;
+      target: number;
+      perModule: number;
+      shortPerModule: number;
+      shortfall: number;
+      modules: Record<string, {
+        total: number;
+        categories: Record<string, number>;
+        difficulty: Record<string, number>;
+      }>;
+    };
   };
   modules: NModule[];
 }

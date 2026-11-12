@@ -1,0 +1,82 @@
+{
+  "n01": [
+    { "q": "A shop's daily sales are a Python list of 500 numbers and the total is needed once per page load. Why convert it to an array, and what is the cost of doing it on every request?", "answer": "An array makes the total one compiled reduction (`np.array(sales).sum()`) instead of a Python loop, but the conversion itself copies 500 values. Convert once when the data is loaded or cached, not on every request." },
+    { "q": "Marketing sends 30 marks as strings from a CSV. What breaks if you call np.array on them and then .mean()?", "answer": "np.array keeps them as a string dtype (or object), so .mean() raises because there is no numeric meaning. Convert with `.astype(float)` (or parse at load time) before any arithmetic." }
+  ],
+  "n02": [
+    { "q": "A bug report says an image has shape (0, 256, 3). What does that tell you about the array, and what will happen when you plot it?", "answer": "The first axis (height) is zero, so the array holds no pixels at all. Plotting or reshaping will fail or render nothing; the bug is upstream where the image was read, not in the plotting call." },
+    { "q": "Someone allocates np.empty((1000, 1000)) to save time and sees random huge numbers. Is NumPy broken?", "answer": "No — empty only allocates the buffer without writing values, so it exposes whatever was in memory. Use np.zeros or np.full when a known starting value is required." }
+  ],
+  "n03": [
+    { "q": "A test fixture needs 50 points from 0 to 10 inclusive. Why is np.linspace(0, 10, 50) safer than np.arange(0, 10, 0.2)?", "answer": "linspace takes a count and always includes both ends; arange takes a step, can include the stop unexpectedly with float steps, and can produce 50 or 51 points depending on rounding. Choose by count when the count is the requirement." },
+    { "q": "An identity matrix is needed for a 3×4 system, but np.identity(3, 4) raises. What is the right call?", "answer": "identity only builds square matrices. Use np.eye(3, 4) (rows, columns), which puts ones on the main diagonal of a rectangular shape." }
+  ],
+  "n04": [
+    { "q": "A price column is stored as float64 and cast to int to save memory; customers see 99 instead of 99.99. What went wrong?", "answer": "astype(int) truncates toward zero, it does not round. Either round first (`np.round(price).astype(int)`) or keep cents as integers at the source; casting decimals to integers always loses the fraction." },
+    { "q": "An int32 array of large sensor counters overflows silently negative. How would you have caught it before shipping?", "answer": "Check np.result_type and the dtype's maximum (np.iinfo(np.int32).max) against the expected range, or promote to int64. NumPy does not raise on overflow for integer arithmetic, so the check has to be explicit." }
+  ],
+  "n05": [
+    { "q": "A log array has 1000 rows and you need the last 10 rows only. Which expression keeps memory low?", "answer": "`logs[-10:]` returns a view of the last ten rows without copying the other 990. Copy only if the slice will be mutated after the original is reused." },
+    { "q": "Why does `matrix[:, 1]` give a different result shape than `matrix[:, 1:2]`, and which one should be used before subtracting a column vector?", "answer": "`matrix[:, 1]` is 1-D (shape (rows,)) while `matrix[:, 1:2]` is 2-D (shape (rows, 1)). The 2-D form broadcasts correctly against a row; the 1-D form may broadcast along the wrong axis." }
+  ],
+  "n06": [
+    { "q": "A rolling window is extracted with `series[i:i+window]` and stored in a list; later someone edits one window and the whole series changes. Why?", "answer": "Each slice is a view of the same buffer, so editing the window edits the series. Copy the window (`series[i:i+window].copy()`) when it will be stored and modified independently." },
+    { "q": "Reversing a 200 MB price series with `[::-1]` takes almost no time. What did NumPy actually do?", "answer": "It returned a view with negative strides — no data was moved. Any operation that needs contiguous order (such as some libraries' C-API calls) will copy later, which is where the cost appears." }
+  ],
+  "n07": [
+    { "q": "A model expects (samples, features) but the loader produced (features, samples). Which fix is safer: reshape, transpose or resize?", "answer": "Transpose (`.T`) or reshape with explicit dimensions; resize is not a NumPy ndarray method and reshape alone can scramble the value order. Verify with a known 2×3 array before trusting the shape." },
+    { "q": "Two arrays of shape (100, 3) are joined with np.vstack and the result is (200, 3). Was np.concatenate with axis=0 the same thing here?", "answer": "Yes — vstack is concatenate along axis 0 after promoting 1-D inputs to rows. The distinction matters for 1-D inputs, where vstack adds a row axis and concatenate does not." }
+  ],
+  "n08": [
+    { "q": "A revenue calculation is off by 0.01 in the last row. Is the formula wrong?", "answer": "Almost certainly not — binary floating point cannot represent most decimals exactly, so equality checks and repeated additions drift. Compare with np.isclose and round only for display, not for intermediate maths." },
+    { "q": "A running total is needed per row. Which is cheaper: a Python loop with a counter or np.add.accumulate?", "answer": "accumulate runs one compiled pass and allocates one output array; the loop pays interpreter overhead per element. For very long arrays the difference is orders of magnitude." }
+  ],
+  "n09": [
+    { "q": "A store table has shape (500, 1) of discounts and a product table (1, 12) of prices. What happens on addition, and how much memory does the result take?", "answer": "Both broadcast to (500, 12): every product price meets every store discount. The result is materialised, so it costs 500×12 values even though the inputs are tiny — a real memory risk at scale." },
+    { "q": "An operation fails with 'operands could not be broadcast together with shapes (4,) (3, 1)'. What is the actual mismatch?", "answer": "The trailing dimensions must match or be 1: (4,) is treated as (1, 4), which cannot pair with (3, 1) on the last axis (4 vs 1 is fine, but 1 vs 3 on the first axis gives 4 vs 3 ... ). Fix by reshaping to (4, 1) or (1, 3) so the intended axis pairs." }
+  ],
+  "n10": [
+    { "q": "A dashboard reports the mean order value as 850, but the median is 120. Which number should be shown to explain 'typical' spending?", "answer": "The median — a few very large orders pull the mean up. Report both when the distribution is skewed, and say which is which." },
+    { "q": "A (1000, 12) table of monthly sales needs the yearly total per product. Which axis, and what does the result shape look like?", "answer": "axis=1 collapses the months, giving one value per row (shape (1000,)); axis=0 would give one value per month." }
+  ],
+  "n11": [
+    { "q": "Customers with no purchases for 90 days must be flagged. Why is a boolean mask better than a loop that appends indices?", "answer": "The mask is one vectorised comparison over the whole column, and it can be reused for counting, filtering and assignment. A Python loop grows a list and pays per-row overhead." },
+    { "q": "A codebase updates churn labels with `df[mask] = 1` then checks `df` and finds nothing changed. What kind of object was df likely to be?", "answer": "A NumPy array's boolean assignment does mutate in place, so if nothing changed the value was probably a copy (advanced indexing on a pandas object, or a slice that was copied earlier). Verify with `base is`/`np.shares_memory`." }
+  ],
+  "n12": [
+    { "q": "The top 5 products by revenue are needed from 200k rows. Why is np.argpartition usually better than np.argsort here?", "answer": "argpartition only guarantees that the k smallest/largest are separated, in O(n) expected time, while argsort sorts everything in O(n log n). Sort the 5 selected values afterwards for presentation." },
+    { "q": "Two product id arrays are compared to find ids in this month but not last month. Which operation gives that, and does order matter?", "answer": "np.setdiff1d(this_month, last_month) — it returns sorted unique values in the first array that are absent from the second. The result is sorted, not in input order." }
+  ],
+  "n13": [
+    { "q": "A function slices an array, modifies the slice and returns it; the caller's original data changes too. Is that a bug?", "answer": "It is a view, so yes for callers who did not expect mutation. Either copy before modifying or document that the function mutates its input; np.shares_memory is the check that proves which one happened." },
+    { "q": "A 1 GB array is transposed and the memory use doubles. Why, when transposing should be free?", "answer": "`.T` returns a view with swapped strides, but any later operation that requires C-contiguous layout (a library call, ascontiguousarray, some reductions) materialises a copy, which doubles memory." }
+  ],
+  "n14": [
+    { "q": "An A/B test assigns users with `np.random.rand(n) < 0.5`. Why is that worse than `default_rng(seed).random(n) < 0.5`?", "answer": "The legacy global RNG shares state across the process and cannot be reproduced independently per experiment. A seeded Generator gives a reproducible stream and avoids interference from other code drawing random numbers." },
+    { "q": "A train/test split keeps 80% for training but the same user appears in both sets. What sampling detail was missed?", "answer": "Sampling rows with replacement (or sampling rows when the unit is a user) splits a user's records across sets. Sample unique user ids without replacement and then select their rows." }
+  ],
+  "n15": [
+    { "q": "A recommender scores 1000 users × 500 items by `user_vec @ item_matrix.T`. What are the shapes, and roughly how many multiplications?", "answer": "user_vec is (1000, k), item_matrix is (500, k), so the product is (1000, 500): 500,000 scores and 500,000×k multiplications. That is why k is kept small and why chunking matters at scale." },
+    { "q": "Someone solves a regression with `inv(X.T @ X) @ X.T @ y` and gets a warning about a singular matrix. What should replace it?", "answer": "np.linalg.lstsq(X, y) (or solve on the normal equations only when well-conditioned). Inverting a near-singular matrix amplifies numerical error; lstsq is the stable, intended tool." }
+  ],
+  "n16": [
+    { "q": "A pipeline writes intermediate arrays as CSV and reads them back; float precision changes. Why is .npy the better intermediate format?", "answer": "CSV stores decimal text, so floats round-trip through formatting and parsing. .npy stores dtype, shape and raw bytes, so the array comes back exactly." },
+    { "q": "A 5 GB feature matrix must be read without loading it all. What does np.memmap buy you, and what does it require?", "answer": "Memory mapping lets the OS page in the parts of the file you touch, so RAM use stays bounded. It requires the file to exist in the right format/dtype and the access pattern to be reasonably local." }
+  ],
+  "n17": [
+    { "q": "A dataset mixes dates as strings and timestamps as ints. Why is one datetime64 array better than two columns?", "answer": "datetime64 gives one typed axis with real subtraction (timedelta64), ordering and comparison. Two representations force conversion at every use and invite silent unit mistakes (days vs seconds)." },
+    { "q": "A record has an id and a score. When is a structured array the right choice over two parallel arrays?", "answer": "When rows are always used together — sorting, saving and indexing keep the fields aligned. Two parallel arrays are simpler when the fields are analysed separately and independently." }
+  ],
+  "n18": [
+    { "q": "Sensor data has -999 as a missing marker. What breaks if it is left in, and what are the two honest fixes?", "answer": "The marker drags every mean and histogram toward -999. Either replace it with np.nan and use nan-aware reductions, or mask it with numpy.ma so reductions skip it; both must be visible in the output." },
+    { "q": "np.nanmean returns a number but np.mean returns nan on the same array. Is nanmean always safe?", "answer": "nanmean ignores NaN by reducing the effective count, so it is safe only when the missingness is random. If NaNs correlate with the value being measured, the mean is biased and that must be reported." }
+  ],
+  "n19": [
+    { "q": "A loop builds a 10,000-element array with np.append per iteration. Why is it slow, and what is the fix?", "answer": "np.append copies the whole array every call, so the total work is quadratic. Collect values in a Python list and call np.array once, or preallocate an output array and assign by index." },
+    { "q": "A hot path allocates a temporary at every step. When is `out=` the right optimisation and when is it a bug risk?", "answer": "out= is right when the destination is known and not aliased with the inputs; it avoids allocation churn. It is risky when the output is also an input or a view of one, because partial writes can corrupt the computation." }
+  ],
+  "n20": [
+    { "q": "An image analysis pipeline stores RGB as (height, width, 3). How do you compute per-channel means in one call?", "answer": "`img.mean(axis=(0, 1))` collapses height and width, leaving one mean per channel (shape (3,))." },
+    { "q": "A DataFrame column is converted to an array for arithmetic and back to a Series for the report. Where should the conversion live?", "answer": "At the boundary of the numerical function: take the array in, return an array, and let the caller wrap it back into a Series with the original index. Converting inside the hot path repeats work and loses index alignment." }
+  ]
+}

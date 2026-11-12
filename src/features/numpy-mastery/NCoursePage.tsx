@@ -129,6 +129,18 @@ export default function NCoursePage() {
         })}
       </div>
 
+      <div className="card" style={{ marginTop: 10 }}>
+        <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <b className="small">Question bank — counted, not claimed</b>
+          <span className="chip">{stats.bank.total} unique items</span>
+        </div>
+        <p className="small muted" style={{ margin: '6px 0 0' }}>
+          {stats.bank.perModule} per module against a target of {stats.bank.target}: {stats.bank.shortPerModule} short
+          in each module, {stats.bank.shortfall} across the course. Each module's manifest counts concept,
+          output, coding, debugging, quiz, written, project and scenario items separately.
+        </p>
+      </div>
+
       <p className="small muted" style={{ marginTop: 10 }}>
         Every module holds all ten sections — Learn, Interview, Coding Lab, Logic, Debug, Practice
         Solutions, Mini Project, Project Lab, Defense and Checkpoint. Counts are the records that

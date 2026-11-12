@@ -53,6 +53,20 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Question-bank manifest (phase 22, Part 6 of the brief)
+
+The brief's 500-items-per-module target is not met, and the course now says so in the product instead
+of only in this ledger. `stats.bank` is counted from the published records: per module it reports the
+total, eight categories (concept, output, coding, debugging, quiz, written, project, scenario) and the
+difficulty mix, plus the target, the per-module shortfall and the course-wide shortfall.
+`scripts/tests/numpy-bank.test.mjs` recomputes every one of those numbers from the sections and fails
+if the manifest disagrees, if a module claims 500, or if an id repeats.
+
+`content/numpy-mastery/scenarios.json` adds **40 authored real-world questions** (two per module) —
+seeded A/B splits, singular-matrix regressions, memmap reads, churn labels, silent int overflow — so
+the scenario category is real content rather than a label. The course now holds **2,820 entries**
+(141 per module).
+
 ### Section contract (phase 21, Part 5 of the brief)
 
 All ten sections already existed; what was missing was a gate that proves each one carries what its
