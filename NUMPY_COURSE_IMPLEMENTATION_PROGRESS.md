@@ -53,6 +53,20 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Section contract (phase 21, Part 5 of the brief)
+
+All ten sections already existed; what was missing was a gate that proves each one carries what its
+activity needs. `scripts/tests/numpy-sections.test.mjs` now checks, for every module: Learn has
+title/body/code/output, Interview has a question and answer, Coding has starter/check/expected and a
+statement, Logic has code and a verified answer, Debug has broken code + error + fix, Practice has
+task/solution/expected, both projects have a brief and steps, Defense has a prompt and an authored
+answer, and Checkpoint has quizzes whose answer is among three real options plus written entries with
+three criteria.
+
+Coding hints were genuinely missing (0 of 500). `content/numpy-mastery/hints-1.json` authors one for
+each of module 1's **25 tasks** — a nudge toward the right function, never the solution — and the
+workspace shows it behind a `Hint` button. The other 19 modules' tasks still have no hint.
+
 ### Lesson structure per topic (phase 20, Part 4 of the brief)
 
 `content/numpy-mastery/structure-1.json` authors the brief's 12-part lesson shape for **all 14

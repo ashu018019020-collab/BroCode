@@ -323,175 +323,200 @@
      "statement": "Store the mean of `np.array([2, 4, 6, 8])` as a float in `result`.",
      "solution": "import numpy as np\nresult = float(np.array([2, 4, 6, 8]).mean())\nprint(result)",
      "check": "assert result == 5.0, f'expected 5.0, got {result!r}'",
-     "expected": "5.0"
+     "expected": "5.0",
+     "hint": "The array method `.mean()` returns a float already — no loop, no manual division."
     },
     {
      "title": "How many above one",
      "statement": "Count how many elements of `np.array([0, 1, 2, 3])` are greater than 1 and store the count as an int in `result`.",
      "solution": "import numpy as np\nresult = int((np.array([0, 1, 2, 3]) > 1).sum())\nprint(result)",
      "check": "assert result == 2, f'expected 2, got {result!r}'",
-     "expected": "2"
+     "expected": "2",
+     "hint": "Compare the array with 1 to get a boolean mask, then `.sum()` counts the True values."
     },
     {
      "title": "Gap between largest and smallest",
      "statement": "Store the difference between the largest and smallest value of `np.array([3, 10, 7])`, as an int, in `result`.",
      "solution": "import numpy as np\na = np.array([3, 10, 7])\nresult = int(a.max() - a.min())\nprint(result)",
      "check": "assert result == 7, f'expected 7, got {result!r}'",
-     "expected": "7"
+     "expected": "7",
+     "hint": "`.max()` and `.min()` each return one value; subtract them and keep it an int."
     },
     {
      "title": "ints become floats on request",
      "statement": "Build a float array from `[1, 2]` and store it in `result`.",
      "solution": "import numpy as np\nresult = np.array([1, 2], dtype=float)\nprint(result)",
      "check": "assert result.dtype == np.float64 and np.allclose(result, [1.0, 2.0]), f'got {result!r} as {result.dtype}'",
-     "expected": "[1. 2.]"
+     "expected": "[1. 2.]",
+     "hint": "Either pass `dtype=float` when building, or call `.astype(float)` afterwards."
     },
     {
      "title": "Text keeps its values",
      "statement": "Store `np.array(['a', 'b'])` as a plain list in `result`.",
      "solution": "import numpy as np\nresult = np.array(['a', 'b']).tolist()\nprint(result)",
      "check": "assert result == ['a', 'b'], f'got {result!r}'",
-     "expected": "['a', 'b']"
+     "expected": "['a', 'b']",
+     "hint": "`.tolist()` returns plain Python strings, not NumPy scalars."
     },
     {
      "title": "Shape of a nested list",
      "statement": "Store the shape of the array built from `[[1, 2], [3, 4]]` in `result`.",
      "solution": "import numpy as np\nresult = np.array([[1, 2], [3, 4]]).shape\nprint(result)",
      "check": "assert result == (2, 2), f'got {result!r}'",
-     "expected": "(2, 2)"
+     "expected": "(2, 2)",
+     "hint": "`.shape` is a tuple of axis lengths — store it unchanged."
     },
     {
      "title": "Read the last value",
      "statement": "Store the last value of `np.array([5, 6, 7])`, as an int, in `result`.",
      "solution": "import numpy as np\nresult = int(np.array([5, 6, 7])[-1])\nprint(result)",
      "check": "assert result == 7, f'expected 7, got {result!r}'",
-     "expected": "7"
+     "expected": "7",
+     "hint": "A negative index counts from the end: `-1` is the last element."
     },
     {
      "title": "Squares of a range",
      "statement": "Store the squares of 0, 1, 2 and 3 as a list in `result`.",
      "solution": "import numpy as np\nresult = (np.arange(4) ** 2).tolist()\nprint(result)",
      "check": "assert result == [0, 1, 4, 9], f'got {result!r}'",
-     "expected": "[0, 1, 4, 9]"
+     "expected": "[0, 1, 4, 9]",
+     "hint": "Square the whole array with `** 2`, then convert with `.tolist()`."
     },
     {
      "title": "Product of three values",
      "statement": "Store the product of `np.array([2, 3, 4])`, as an int, in `result`.",
      "solution": "import numpy as np\nresult = int(np.array([2, 3, 4]).prod())\nprint(result)",
      "check": "assert result == 24, f'expected 24, got {result!r}'",
-     "expected": "24"
+     "expected": "24",
+     "hint": "`.prod()` multiplies every element; wrap the result in `int()`."
     },
     {
      "title": "Sum of squares",
      "statement": "Store the sum of the squares of 1, 2 and 3, as an int, in `result`.",
      "solution": "import numpy as np\nresult = int((np.arange(1, 4) ** 2).sum())\nprint(result)",
      "check": "assert result == 14, f'expected 14, got {result!r}'",
-     "expected": "14"
+     "expected": "14",
+     "hint": "Square the array first, then reduce with `.sum()`."
     },
     {
      "title": "Subtract two vectors",
      "statement": "Subtract `np.array([1, 2])` from `np.array([10, 20])` and store the list form in `result`.",
      "solution": "import numpy as np\nresult = (np.array([10, 20]) - np.array([1, 2])).tolist()\nprint(result)",
      "check": "assert result == [9, 18], f'got {result!r}'",
-     "expected": "[9, 18]"
+     "expected": "[9, 18]",
+     "hint": "Array minus array pairs positions; convert the result with `.tolist()`."
     },
     {
      "title": "Halve a range",
      "statement": "Divide `np.arange(4)` by 2 and store the list form in `result`.",
      "solution": "import numpy as np\nresult = (np.arange(4) / 2).tolist()\nprint(result)",
      "check": "assert np.allclose(result, [0.0, 0.5, 1.0, 1.5]), f'got {result!r}'",
-     "expected": "[0.0, 0.5, 1.0, 1.5]"
+     "expected": "[0.0, 0.5, 1.0, 1.5]",
+     "hint": "Divide the array by 2 — the result is float, so `.tolist()` gives 0.0, 0.5, …"
     },
     {
      "title": "Count every element",
      "statement": "Store the number of elements in `np.array([[1, 2, 3], [4, 5, 6]])`, as an int, in `result`.",
      "solution": "import numpy as np\nresult = int(np.array([[1, 2, 3], [4, 5, 6]]).size)\nprint(result)",
      "check": "assert result == 6, f'expected 6, got {result!r}'",
-     "expected": "6"
+     "expected": "6",
+     "hint": "`.size` counts all cells; `.shape` would count per axis instead."
     },
     {
      "title": "Repeat a value four times",
      "statement": "Store four copies of 3 in `result`.",
      "solution": "import numpy as np\nresult = np.repeat(3, 4)\nprint(result)",
      "check": "assert np.array_equal(result, [3, 3, 3, 3]), f'got {result!r}'",
-     "expected": "[3 3 3 3]"
+     "expected": "[3 3 3 3]",
+     "hint": "`np.full(4, 3)` writes one value into four cells."
     },
     {
      "title": "Element-wise product of two vectors",
      "statement": "Multiply `np.array([2, 3, 4])` by `np.array([3, 2, 1])` element by element and store the list form in `result`.",
      "solution": "import numpy as np\nresult = np.multiply(np.array([2, 3, 4]), np.array([3, 2, 1])).tolist()\nprint(result)",
      "check": "assert result == [6, 6, 4], f'got {result!r}'",
-     "expected": "[6, 6, 4]"
+     "expected": "[6, 6, 4]",
+     "hint": "`*` multiplies position by position; `@` would be matrix multiplication."
     },
     {
      "title": "Booleans add up",
      "statement": "Store the number of True values in `np.array([True, False, True])`, as an int, in `result`.",
      "solution": "import numpy as np\nresult = int(np.array([True, False, True]).sum())\nprint(result)",
      "check": "assert result == 2, f'got {result!r}'",
-     "expected": "2"
+     "expected": "2",
+     "hint": "A boolean array stores True as 1, so `.sum()` counts them."
     },
     {
      "title": "Smallest of a small grid",
      "statement": "Store the smallest value of `np.array([[4, 2], [9, 1]])`, as an int, in `result`.",
      "solution": "import numpy as np\nresult = int(np.array([[4, 2], [9, 1]]).min())\nprint(result)",
      "check": "assert result == 1, f'got {result!r}'",
-     "expected": "1"
+     "expected": "1",
+     "hint": "`.min()` reduces every axis by default, whatever the shape."
     },
     {
      "title": "Reciprocals of one and two",
      "statement": "Store the reciprocal of every value of `np.arange(1, 3)` as a list in `result`.",
      "solution": "import numpy as np\nresult = (1 / np.arange(1, 3)).tolist()\nprint(result)",
      "check": "assert np.allclose(result, [1.0, 0.5]), f'got {result!r}'",
-     "expected": "[1.0, 0.5]"
+     "expected": "[1.0, 0.5]",
+     "hint": "Divide 1 by the array; the result is float, then `.tolist()`."
     },
     {
      "title": "Distance between two numbers",
      "statement": "Store the absolute difference between 3 and 8, as an int, in `result`.",
      "solution": "import numpy as np\nresult = int(np.abs(3 - 8))\nprint(result)",
      "check": "assert result == 5, f'got {result!r}'",
-     "expected": "5"
+     "expected": "5",
+     "hint": "`np.abs(3 - 8)` keeps the sign out of the answer; store an int."
     },
     {
      "title": "Two arrays are equal",
      "statement": "Store whether `np.array([1, 2])` and `np.array([1, 2])` hold the same values, as a bool, in `result`.",
      "solution": "import numpy as np\nresult = bool(np.array_equal(np.array([1, 2]), np.array([1, 2])))\nprint(result)",
      "check": "assert result is True, f'got {result!r}'",
-     "expected": "True"
+     "expected": "True",
+     "hint": "`np.array_equal(a, b)` returns a single bool, unlike `==` which returns a mask."
     },
     {
      "title": "Axes of a two-row grid",
      "statement": "Store how many axes `np.zeros((2, 2))` has, as an int, in `result`.",
      "solution": "import numpy as np\nresult = int(np.zeros((2, 2)).ndim)\nprint(result)",
      "check": "assert result == 2, f'got {result!r}'",
-     "expected": "2"
+     "expected": "2",
+     "hint": "`.ndim` reports how many axes an array has."
     },
     {
      "title": "Total without a loop",
      "statement": "Build the array `np.array([4, 8, 15, 16])` and store its total, as an int, in `result`.",
      "solution": "import numpy as np\nvalues = np.array([4, 8, 15, 16])\nresult = int(values.sum())\nprint(result)",
      "check": "assert result == 43, f'expected 43, got {result!r}'",
-     "expected": "43"
+     "expected": "43",
+     "hint": "`.sum()` is the vectorised total."
     },
     {
      "title": "Double, then take the first two",
      "statement": "Starting from `np.arange(1, 6)`, multiply every element by 2 and store the first two elements in `result`.",
      "solution": "import numpy as np\nresult = (np.arange(1, 6) * 2)[:2]\nprint(result)",
      "check": "assert np.array_equal(result, [2, 4]), f'got {result!r}'",
-     "expected": "[2 4]"
+     "expected": "[2 4]",
+     "hint": "Multiply the array, then slice `[:2]`; `.tolist()` at the end."
     },
     {
      "title": "Count the values above ten",
      "statement": "Count how many elements of `np.array([4, 11, 10, 15, 3])` are greater than 10 and store the count as an int in `result`.",
      "solution": "import numpy as np\na = np.array([4, 11, 10, 15, 3])\nresult = int((a > 10).sum())\nprint(result)",
      "check": "assert result == 2, f'expected 2, got {result!r}'",
-     "expected": "2"
+     "expected": "2",
+     "hint": "Build the mask with `> 10`, then count with `.sum()`."
     },
     {
      "title": "Back to a Python list",
      "statement": "Convert `np.array([1.5, 2.5])` to a plain Python list and store it in `result`.",
      "solution": "import numpy as np\nresult = np.array([1.5, 2.5]).tolist()\nprint(result)",
      "check": "assert result == [1.5, 2.5], f'got {result!r}'",
-     "expected": "[1.5, 2.5]"
+     "expected": "[1.5, 2.5]",
+     "hint": "`.tolist()` is the boundary conversion."
     }
    ],
    "sections": {
@@ -1021,6 +1046,7 @@
       "solution": "import numpy as np\nresult = float(np.array([2, 4, 6, 8]).mean())\nprint(result)",
       "expected": "5.0",
       "check": "assert result == 5.0, f'expected 5.0, got {result!r}'",
+      "hint": "The array method `.mean()` returns a float already — no loop, no manual division.",
       "difficulty": "easy"
      },
      {
@@ -1032,6 +1058,7 @@
       "solution": "import numpy as np\nresult = int((np.array([0, 1, 2, 3]) > 1).sum())\nprint(result)",
       "expected": "2",
       "check": "assert result == 2, f'expected 2, got {result!r}'",
+      "hint": "Compare the array with 1 to get a boolean mask, then `.sum()` counts the True values.",
       "difficulty": "medium"
      },
      {
@@ -1043,6 +1070,7 @@
       "solution": "import numpy as np\na = np.array([3, 10, 7])\nresult = int(a.max() - a.min())\nprint(result)",
       "expected": "7",
       "check": "assert result == 7, f'expected 7, got {result!r}'",
+      "hint": "`.max()` and `.min()` each return one value; subtract them and keep it an int.",
       "difficulty": "hard"
      },
      {
@@ -1054,6 +1082,7 @@
       "solution": "import numpy as np\nresult = np.array([1, 2], dtype=float)\nprint(result)",
       "expected": "[1. 2.]",
       "check": "assert result.dtype == np.float64 and np.allclose(result, [1.0, 2.0]), f'got {result!r} as {result.dtype}'",
+      "hint": "Either pass `dtype=float` when building, or call `.astype(float)` afterwards.",
       "difficulty": "easy"
      },
      {
@@ -1065,6 +1094,7 @@
       "solution": "import numpy as np\nresult = np.array(['a', 'b']).tolist()\nprint(result)",
       "expected": "['a', 'b']",
       "check": "assert result == ['a', 'b'], f'got {result!r}'",
+      "hint": "`.tolist()` returns plain Python strings, not NumPy scalars.",
       "difficulty": "medium"
      },
      {
@@ -1076,6 +1106,7 @@
       "solution": "import numpy as np\nresult = np.array([[1, 2], [3, 4]]).shape\nprint(result)",
       "expected": "(2, 2)",
       "check": "assert result == (2, 2), f'got {result!r}'",
+      "hint": "`.shape` is a tuple of axis lengths — store it unchanged.",
       "difficulty": "hard"
      },
      {
@@ -1087,6 +1118,7 @@
       "solution": "import numpy as np\nresult = int(np.array([5, 6, 7])[-1])\nprint(result)",
       "expected": "7",
       "check": "assert result == 7, f'expected 7, got {result!r}'",
+      "hint": "A negative index counts from the end: `-1` is the last element.",
       "difficulty": "easy"
      },
      {
@@ -1098,6 +1130,7 @@
       "solution": "import numpy as np\nresult = (np.arange(4) ** 2).tolist()\nprint(result)",
       "expected": "[0, 1, 4, 9]",
       "check": "assert result == [0, 1, 4, 9], f'got {result!r}'",
+      "hint": "Square the whole array with `** 2`, then convert with `.tolist()`.",
       "difficulty": "medium"
      },
      {
@@ -1109,6 +1142,7 @@
       "solution": "import numpy as np\nresult = int(np.array([2, 3, 4]).prod())\nprint(result)",
       "expected": "24",
       "check": "assert result == 24, f'expected 24, got {result!r}'",
+      "hint": "`.prod()` multiplies every element; wrap the result in `int()`.",
       "difficulty": "hard"
      },
      {
@@ -1120,6 +1154,7 @@
       "solution": "import numpy as np\nresult = int((np.arange(1, 4) ** 2).sum())\nprint(result)",
       "expected": "14",
       "check": "assert result == 14, f'expected 14, got {result!r}'",
+      "hint": "Square the array first, then reduce with `.sum()`.",
       "difficulty": "easy"
      },
      {
@@ -1131,6 +1166,7 @@
       "solution": "import numpy as np\nresult = (np.array([10, 20]) - np.array([1, 2])).tolist()\nprint(result)",
       "expected": "[9, 18]",
       "check": "assert result == [9, 18], f'got {result!r}'",
+      "hint": "Array minus array pairs positions; convert the result with `.tolist()`.",
       "difficulty": "medium"
      },
      {
@@ -1142,6 +1178,7 @@
       "solution": "import numpy as np\nresult = (np.arange(4) / 2).tolist()\nprint(result)",
       "expected": "[0.0, 0.5, 1.0, 1.5]",
       "check": "assert np.allclose(result, [0.0, 0.5, 1.0, 1.5]), f'got {result!r}'",
+      "hint": "Divide the array by 2 — the result is float, so `.tolist()` gives 0.0, 0.5, …",
       "difficulty": "hard"
      },
      {
@@ -1153,6 +1190,7 @@
       "solution": "import numpy as np\nresult = int(np.array([[1, 2, 3], [4, 5, 6]]).size)\nprint(result)",
       "expected": "6",
       "check": "assert result == 6, f'expected 6, got {result!r}'",
+      "hint": "`.size` counts all cells; `.shape` would count per axis instead.",
       "difficulty": "easy"
      },
      {
@@ -1164,6 +1202,7 @@
       "solution": "import numpy as np\nresult = np.repeat(3, 4)\nprint(result)",
       "expected": "[3 3 3 3]",
       "check": "assert np.array_equal(result, [3, 3, 3, 3]), f'got {result!r}'",
+      "hint": "`np.full(4, 3)` writes one value into four cells.",
       "difficulty": "medium"
      },
      {
@@ -1175,6 +1214,7 @@
       "solution": "import numpy as np\nresult = np.multiply(np.array([2, 3, 4]), np.array([3, 2, 1])).tolist()\nprint(result)",
       "expected": "[6, 6, 4]",
       "check": "assert result == [6, 6, 4], f'got {result!r}'",
+      "hint": "`*` multiplies position by position; `@` would be matrix multiplication.",
       "difficulty": "hard"
      },
      {
@@ -1186,6 +1226,7 @@
       "solution": "import numpy as np\nresult = int(np.array([True, False, True]).sum())\nprint(result)",
       "expected": "2",
       "check": "assert result == 2, f'got {result!r}'",
+      "hint": "A boolean array stores True as 1, so `.sum()` counts them.",
       "difficulty": "easy"
      },
      {
@@ -1197,6 +1238,7 @@
       "solution": "import numpy as np\nresult = int(np.array([[4, 2], [9, 1]]).min())\nprint(result)",
       "expected": "1",
       "check": "assert result == 1, f'got {result!r}'",
+      "hint": "`.min()` reduces every axis by default, whatever the shape.",
       "difficulty": "medium"
      },
      {
@@ -1208,6 +1250,7 @@
       "solution": "import numpy as np\nresult = (1 / np.arange(1, 3)).tolist()\nprint(result)",
       "expected": "[1.0, 0.5]",
       "check": "assert np.allclose(result, [1.0, 0.5]), f'got {result!r}'",
+      "hint": "Divide 1 by the array; the result is float, then `.tolist()`.",
       "difficulty": "hard"
      },
      {
@@ -1219,6 +1262,7 @@
       "solution": "import numpy as np\nresult = int(np.abs(3 - 8))\nprint(result)",
       "expected": "5",
       "check": "assert result == 5, f'got {result!r}'",
+      "hint": "`np.abs(3 - 8)` keeps the sign out of the answer; store an int.",
       "difficulty": "easy"
      },
      {
@@ -1230,6 +1274,7 @@
       "solution": "import numpy as np\nresult = bool(np.array_equal(np.array([1, 2]), np.array([1, 2])))\nprint(result)",
       "expected": "True",
       "check": "assert result is True, f'got {result!r}'",
+      "hint": "`np.array_equal(a, b)` returns a single bool, unlike `==` which returns a mask.",
       "difficulty": "medium"
      },
      {
@@ -1241,6 +1286,7 @@
       "solution": "import numpy as np\nresult = int(np.zeros((2, 2)).ndim)\nprint(result)",
       "expected": "2",
       "check": "assert result == 2, f'got {result!r}'",
+      "hint": "`.ndim` reports how many axes an array has.",
       "difficulty": "hard"
      },
      {
@@ -1252,6 +1298,7 @@
       "solution": "import numpy as np\nvalues = np.array([4, 8, 15, 16])\nresult = int(values.sum())\nprint(result)",
       "expected": "43",
       "check": "assert result == 43, f'expected 43, got {result!r}'",
+      "hint": "`.sum()` is the vectorised total.",
       "difficulty": "easy"
      },
      {
@@ -1263,6 +1310,7 @@
       "solution": "import numpy as np\nresult = (np.arange(1, 6) * 2)[:2]\nprint(result)",
       "expected": "[2 4]",
       "check": "assert np.array_equal(result, [2, 4]), f'got {result!r}'",
+      "hint": "Multiply the array, then slice `[:2]`; `.tolist()` at the end.",
       "difficulty": "medium"
      },
      {
@@ -1274,6 +1322,7 @@
       "solution": "import numpy as np\na = np.array([4, 11, 10, 15, 3])\nresult = int((a > 10).sum())\nprint(result)",
       "expected": "2",
       "check": "assert result == 2, f'expected 2, got {result!r}'",
+      "hint": "Build the mask with `> 10`, then count with `.sum()`.",
       "difficulty": "hard"
      },
      {
@@ -1285,6 +1334,7 @@
       "solution": "import numpy as np\nresult = np.array([1.5, 2.5]).tolist()\nprint(result)",
       "expected": "[1.5, 2.5]",
       "check": "assert result == [1.5, 2.5], f'got {result!r}'",
+      "hint": "`.tolist()` is the boundary conversion.",
       "difficulty": "easy"
      }
     ],

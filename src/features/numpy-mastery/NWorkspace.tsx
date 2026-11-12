@@ -330,7 +330,7 @@ const extraOf = (entry: NEntry) => entry as AnyEntry;
  */
 function TopicCard({ entry, level }: { entry: NEntry; level: 'simple' | 'pro' }) {
   const e = extraOf(entry);
-  const [reveal, setReveal] = useState<'answer' | 'fix' | 'solution' | null>(null);
+  const [reveal, setReveal] = useState<'answer' | 'fix' | 'solution' | 'hint' | null>(null);
   const brief = entry.statement ?? e.body ?? e.task ?? '';
   const solution = e.solution ?? '';
   const leveled = Boolean(entry.simple && entry.pro);
@@ -410,6 +410,11 @@ function TopicCard({ entry, level }: { entry: NEntry; level: 'simple' | 'pro' })
         </p>
       )}
       <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+        {entry.hint && (
+          <button type="button" className="btn small ghost" onClick={() => setReveal(reveal === 'hint' ? null : 'hint')}>
+            {reveal === 'hint' ? 'Hide hint' : 'Hint'}
+          </button>
+        )}
         {entry.answer && (
           <button type="button" className="btn small ghost" onClick={() => setReveal(reveal === 'answer' ? null : 'answer')}>
             {reveal === 'answer' ? 'Hide answer' : 'Reveal answer'}
@@ -426,6 +431,11 @@ function TopicCard({ entry, level }: { entry: NEntry; level: 'simple' | 'pro' })
           </button>
         )}
       </div>
+      {reveal === 'hint' && entry.hint && (
+        <p className="small" style={{ margin: '8px 0 0', fontStyle: 'italic' }}>
+          <b>Hint · </b>{entry.hint}
+        </p>
+      )}
       {reveal === 'answer' && entry.answer && (
         <pre className="codeblock" style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{entry.answer}</pre>
       )}

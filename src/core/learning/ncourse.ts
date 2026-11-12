@@ -47,6 +47,8 @@ export interface NEntry {
   /** Independent authored task with a hidden check, vs a guided practice entry built from a topic. */
   kind?: 'topic' | 'task';
   check?: string;
+  /** A nudge toward the right function, never the solution itself. */
+  hint?: string;
   output?: string;
   answer?: string;
   solution?: string;

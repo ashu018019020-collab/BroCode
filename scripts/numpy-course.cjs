@@ -137,6 +137,25 @@ for (const [id, topics] of Object.entries(structure)) {
   }
 }
 
+/*
+ * `hints-*.json` gives coding tasks a nudge that points at the right function without handing over the
+ * reference solution. It is optional per task, so an unauthored task simply shows no hint button.
+ */
+const hintFiles = fs.readdirSync(SRC).filter((f) => /^hints-.*\.json$/.test(f)).sort();
+const hints = {};
+for (const file of hintFiles) {
+  for (const [id, list] of Object.entries(readJSON(path.join(SRC, file)))) {
+    hints[id] = { ...(hints[id] || {}), ...list };
+  }
+}
+for (const [id, list] of Object.entries(hints)) {
+  const target = modules.find((m) => m.id === id);
+  if (!target) { fail(`hints: unknown module ${id}`); continue; }
+  target.tasks = (target.tasks || []).map((task) => (list[task.title] ? { ...task, hint: list[task.title] } : task));
+  const missing = Object.keys(list).filter((title) => !(target.tasks || []).some((t) => t.title === title));
+  if (missing.length) fail(`hints: ${id} has hints for unknown tasks: ${missing.join(', ')}`);
+}
+
 const SECTIONS = [
   ['learn', 'Learn'], ['interview', 'Interview'], ['coding', 'Coding Lab'], ['logic', 'Logic'],
   ['debug', 'Debug'], ['practice', 'Practice Solutions'], ['miniProject', 'Mini Project'],
@@ -262,7 +281,7 @@ function buildSections(m) {
     coding: (m.tasks || []).map((t, i) => ({
       id: id('coding', 't' + i), title: t.title, statement: t.statement, kind: 'task',
       starter: 'import numpy as np\n\n# read the task, then store your answer in `result`\n',
-      solution: t.solution, expected: t.expected, check: t.check,
+      solution: t.solution, expected: t.expected, check: t.check, hint: t.hint,
       difficulty: difficultyAt(i),
     })),
     logic: topics.map((t, i) => ({
