@@ -50,6 +50,25 @@ test('the simple level is the shorter one', () => {
   }
 });
 
+test('every newly added topic carries both levels in the artifact', () => {
+  const deepening = readJSON('content/numpy-mastery/deepening-10.json');
+  let total = 0;
+  for (const [moduleId, { topics }] of Object.entries(deepening)) {
+    const mod = artifact.modules.find((m) => m.id === moduleId);
+    assert.ok(mod, `deepening names an unknown module ${moduleId}`);
+    for (const topic of topics) {
+      const title = topic.title || topic;
+      const entry = mod.sections.learn.find((e) => e.title === title);
+      assert.ok(entry, `${moduleId}: new topic "${title}" is missing from the artifact`);
+      assert.ok(entry.simple && entry.simple.trim().length > 40, `${moduleId}: "${title}" has no simple level`);
+      assert.ok(entry.pro && entry.pro.trim().length > 40, `${moduleId}: "${title}" has no pro level`);
+      assert.ok(entry.simple.length < entry.pro.length, `${moduleId}: "${title}" simple is not shorter`);
+      total++;
+    }
+  }
+  assert.equal(total, 108, 'the new-topic ledger changed; extend the dual-level coverage with it');
+});
+
 test('every authored topic title exists in its module', () => {
   for (const [moduleId, topics] of Object.entries(authored)) {
     const mod = artifact.modules.find((m) => m.id === moduleId);
