@@ -51,6 +51,9 @@ model ProgressSnapshot {
   /// Optional and additive: existing rows simply have NULL and the app falls back to history.
   lastSectionId    String?  @map("last_section_id") @db.VarChar(32)
   lastStage        String?  @map("last_stage") @db.VarChar(16)
+  /// The NumPy course's own records (sections, drafts, capstone ticks), validated before storage.
+  /// One bounded JSON object, so a static deployment syncs course progress without the account API.
+  perCourse        Json     @default("{}") @map("per_course")
   updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
   user             Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 

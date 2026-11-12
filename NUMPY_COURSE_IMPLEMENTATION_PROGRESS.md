@@ -62,6 +62,24 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Per-course progress column + static NumPy sync (phase 48)
+
+`progress_snapshots` gains `per_course jsonb NOT NULL DEFAULT '{}'`, and `save_my_progress` is replaced
+by a 10-argument version that validates and upserts it alongside the counters. The old 9-argument
+signature is dropped so an older client can never hit an ambiguous overload; the new parameter has a
+default, so a counters-only call still resolves. Validation mirrors `server/app.mjs` exactly: only
+`nmod:` / `nans:` / `ntick:` / `ncap` / `nlast` / `nlevel`, objects only, 20 KB per draft, 600 records,
+64 KB total, caller from `auth.uid()` and table writes still revoked.
+
+A narrow `save_my_numpy_progress(jsonb)` writes only `per_course`, so the course page's debounced save
+cannot overwrite XP or the resume position. On a static deployment the client now reads
+`progress_snapshots.per_course` through the existing own-row SELECT policy and writes through that
+RPC; the background snapshot also carries `collectNumpyProgress(state.attempts)` and includes it in the
+dedupe signature, so a new draft triggers a send even when no counter moved.
+
+The migration is additive except for the replaced function signature and has not been applied from
+this workspace (no `DATABASE_URL`); apply with `npm run db:deploy`.
+
 ### Per-module question-bank breakdown (phase 47)
 
 The module header now carries the module's own bank card: total unique items, one chip per category

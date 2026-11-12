@@ -555,7 +555,7 @@ test('layout: the footer shows truthful sync state and working learning actions'
   assert.match(app, /progressSync\.lastSyncedAt[\s\S]{0,100}formatSyncAge/, 'the displayed sync age must come from an actual successful-sync timestamp');
   assert.match(auth, /lastSyncedAt\.current = Date\.now\(\);[\s\S]{0,140}status: 'synced'/,
     'the sync timestamp must be set only after the account API request succeeds');
-  assert.match(auth, /authApi\.saveProgress\(summary\)/, 'the footer sync status must reflect the real progress-summary API');
+  assert.match(auth, /authApi\.saveProgress\(summary(?:, perCourse)?\)/, 'the footer sync status must reflect the real progress-summary API');
   const start = app.indexOf('<footer className="statusbar"');
   const end = app.indexOf('</footer>', start);
   const footer = app.slice(start, end);

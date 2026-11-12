@@ -101,7 +101,7 @@ test('progress sync falls back to Supabase directly when the account API is abse
   // The API stays the first choice (server validation + admin dashboard), but a static deployment
   // must still COLLECT data in Supabase rather than silently dropping the snapshot.
   assert.match(client, /async saveProgress\(/, 'saveProgress is the one write path');
-  assert.match(client, /\/api\/progress\/snapshot[\s\S]{0,220}saveProgressDirectly\(progress\)/,
+  assert.match(client, /\/api\/progress\/snapshot[\s\S]{0,220}saveProgressDirectly\(progress(?:, perCourse)?\)/,
     'the account API is tried first and Supabase direct is the fallback');
   assert.match(client, /rpc\('save_my_progress'/, 'the fallback writes through the database function');
   assert.match(client, /from\('progress_snapshots'\)\s*\.select\('last_section_id, last_stage'\)/,
@@ -147,4 +147,86 @@ test('the direct-sync migration drops nothing and rewrites no learner data', () 
     assert.doesNotMatch(statement, /^\s*(DROP TABLE|DROP COLUMN|TRUNCATE|DELETE FROM|UPDATE public\.progress_snapshots\b(?!.*ON CONFLICT))/i,
       `destructive statement found: ${statement.slice(0, 80)}`);
   }
+});
+
+/* ------------------- per-course column and static NumPy sync ------------------- */
+
+test('the per-course migration adds a bounded column and extends the direct write path', () => {
+  const sql = read('prisma/migrations/20261112130000_progress_per_course/migration.sql');
+
+  // The column is additive with a default, so older rows and clients keep working.
+  assert.match(sql, /ALTER TABLE public\.progress_snapshots\s+ADD COLUMN IF NOT EXISTS per_course jsonb NOT NULL DEFAULT '\{\}'::jsonb/,
+    'the per-course column is additive and defaults to an empty object');
+
+  // The identity, validation and privilege model of the original function is preserved.
+  assert.match(sql, /me uuid := auth\.uid\(\)/, 'the caller still comes from the token');
+  assert.match(sql, /SECURITY DEFINER/, 'the writer still bypasses RLS for its own row only');
+  assert.match(sql, /SET search_path = ''/, 'and keeps an empty search path');
+  assert.match(sql, /Progress counters must be non-negative integers/);
+  assert.match(sql, /last_section_id !~ '\^\[A-Za-z0-9_-\]\{1,32\}\$'/);
+  assert.match(sql, /last_stage must be a real lesson stage/);
+  assert.match(sql, /per_course jsonb DEFAULT '\{\}'::jsonb/, 'save_my_progress takes the course payload');
+  assert.match(sql, /per_course = EXCLUDED\.per_course/, 'and upserts it with the counters');
+
+  // The NumPy allowlist and limits mirror the client/server, so this is not a free-form JSON column.
+  assert.match(sql, /entry\.key LIKE 'nmod:%'/, 'only the course section keys are accepted');
+  assert.match(sql, /entry\.key LIKE 'nans:%'/);
+  assert.match(sql, /entry\.key LIKE 'ntick:%'/);
+  assert.match(sql, /entry\.key IN \('ncap', 'nlast', 'nlevel'\)/);
+  assert.match(sql, /character varying|char_length\(entry\.value ->> 'answer'\) > 20000/,
+    'a draft is bounded on write');
+  assert.match(sql, /octet_length\(payload::text\) > 65536/, 'the whole payload is bounded');
+  assert.match(sql, /jsonb_object_keys\(payload\)\) > 600/, 'and the record count is bounded');
+
+  // One signature only: an older 9-argument call must not become ambiguous.
+  assert.match(sql, /DROP FUNCTION IF EXISTS public\.save_my_progress\([\s\S]*?character varying, character varying\s*\);/,
+    'the old overload is dropped so PostgREST cannot report an ambiguous function');
+  assert.match(sql, /REVOKE ALL ON FUNCTION public\.save_my_progress\([\s\S]*?jsonb\s*\) FROM PUBLIC, anon/);
+  assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.save_my_progress\([\s\S]*?jsonb\s*\) TO authenticated/);
+
+  // The course-only writer touches one column and never the counters.
+  assert.match(sql, /CREATE OR REPLACE FUNCTION public\.save_my_numpy_progress\(/);
+  assert.match(sql, /INSERT INTO public\.progress_snapshots \(user_id, per_course, updated_at\)/);
+  assert.match(sql, /per_course = EXCLUDED\.per_course,[\s\S]*?updated_at = now\(\);/);
+  assert.doesNotMatch(sql, /save_my_numpy_progress[\s\S]{0,900}xp\s*=/,
+    'the course-only path must not accept or overwrite XP');
+  assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.save_my_numpy_progress\(jsonb\) TO authenticated/);
+});
+
+test('the per-course migration drops no data and stays additive', () => {
+  const sql = read('prisma/migrations/20261112130000_progress_per_course/migration.sql')
+    .replace(/--[^\n]*/g, '');
+  const statements = sql.split(';').map((line) => line.trim()).filter(Boolean);
+  for (const statement of statements) {
+    assert.doesNotMatch(statement, /^\s*(DROP TABLE|DROP COLUMN|TRUNCATE|DELETE FROM)/i,
+      `destructive statement found: ${statement.slice(0, 80)}`);
+    assert.doesNotMatch(statement, /^\s*DROP FUNCTION(?! IF EXISTS public\.save_my_progress)/i,
+      `unexpected function drop: ${statement.slice(0, 80)}`);
+  }
+});
+
+test('a static deployment reads and writes the per-course column directly', () => {
+  const client = code('src/core/auth/client.ts');
+  assert.match(client, /rpc\('save_my_progress',[\s\S]*?per_course: perCourse \?\? \{\}/,
+    'the snapshot write carries the course payload');
+  assert.match(client, /from\('progress_snapshots'\)\s*\.select\('per_course'\)/,
+    'the read path selects the caller\'s own per-course payload');
+  assert.match(client, /rpc\('save_my_numpy_progress', \{ per_course: payload \}\)/,
+    'the course-only write uses the narrow function');
+
+  const sync = code('src/core/data/numpy-progress.ts');
+  assert.match(sync, /loadOwnNumpyProgress\(\)/, 'load falls back to the column when the API is absent');
+  assert.match(sync, /saveOwnNumpyProgress\(payload\)/, 'and save falls back to the narrow RPC');
+  // A 401 means "signed out", not "try another path" — it must not be turned into a local write.
+  assert.match(sync, /result\.status === 401\) return \{ ok: false, reason: 'signed-out' \}/);
+});
+
+test('the background sync sends course records with the snapshot and dedupes on them', () => {
+  const provider = code('src/core/auth/AuthProvider.tsx');
+  assert.match(provider, /collectNumpyProgress\(stateSnapshot\(\)\.attempts\)/,
+    'the snapshot gathers the allowed NumPy keys from the real state');
+  assert.match(provider, /JSON\.stringify\(\{ summary, perCourse \}\)/,
+    'a new draft must change the dedupe signature, not just a counter');
+  assert.match(provider, /authApi\.saveProgress\(summary, perCourse\)/,
+    'and the payload travels to the one save call');
 });

@@ -2,6 +2,7 @@ import { createClient, type Session, type SupabaseClient } from '@supabase/supab
 import { SERVICE_UNAVAILABLE_COPY } from './messages';
 import { PUBLIC_SUPABASE_CONFIG } from './public-config';
 import type { ProgressSummary } from './progress';
+import type { NumpySyncPayload } from '../learning/numpy-sync';
 
 export type AccountRole = 'user' | 'admin';
 export type AccountStatus = 'active' | 'disabled';
@@ -381,6 +382,7 @@ export function profileFromSession(session: Session): AuthUser {
  */
 async function saveProgressDirectly(
   progress: ProgressSummary & { lastSectionId?: string; lastStage?: string },
+  perCourse?: NumpySyncPayload,
 ): Promise<boolean> {
   try {
     const { error } = await getSupabaseClient().rpc('save_my_progress', {
@@ -393,6 +395,7 @@ async function saveProgressDirectly(
       open_mistakes: progress.openMistakes,
       last_section_id: progress.lastSectionId ?? null,
       last_stage: progress.lastStage ?? null,
+      per_course: perCourse ?? {},
     });
     if (error) throw authError(error);
     return true;
@@ -421,6 +424,46 @@ async function fetchOwnResumePosition(userId: string): Promise<ResumePosition | 
   } catch (error) {
     console.warn('[BroCode] Could not read the saved lesson position from Supabase.', error);
     return null;
+  }
+}
+
+/**
+ * The NumPy course payload on the caller's OWN snapshot row.
+ *
+ * The row is the same one the counters live in; the SELECT policy already limits it to
+ * `auth.uid() = user_id`, and `per_course` is a bounded JSON object validated on write. A missing row
+ * is `{}` (nothing synced yet); a failed read is null, so the caller can say "unavailable" instead of
+ * "empty" and overwrite a real remote payload.
+ */
+export async function loadOwnNumpyProgress(): Promise<NumpySyncPayload | null> {
+  try {
+    const { data, error } = await getSupabaseClient()
+      .from('progress_snapshots')
+      .select('per_course')
+      .maybeSingle();
+    if (error) throw authError(error);
+    const raw = data?.per_course;
+    if (raw === undefined || raw === null) return {};
+    return typeof raw === 'object' && !Array.isArray(raw) ? (raw as NumpySyncPayload) : null;
+  } catch (error) {
+    console.warn('[BroCode] Could not read NumPy progress directly from Supabase.', error);
+    return null;
+  }
+}
+
+/**
+ * Course-only write for deployments without the account API.
+ * `save_my_numpy_progress` touches only `per_course`, so this path can never overwrite XP or the
+ * resume position with stale counters from another tab.
+ */
+export async function saveOwnNumpyProgress(payload: NumpySyncPayload): Promise<boolean> {
+  try {
+    const { error } = await getSupabaseClient().rpc('save_my_numpy_progress', { per_course: payload });
+    if (error) throw authError(error);
+    return true;
+  } catch (error) {
+    console.warn('[BroCode] Could not save NumPy progress directly to Supabase.', error);
+    return false;
   }
 }
 
@@ -585,14 +628,17 @@ export const authApi = {
    * directly when it does not (a static host has no `/api`). Both paths land in the SAME table, so
    * "progress is collected in Supabase" is true on every deployment.
    */
-  async saveProgress(progress: ProgressSummary & { lastSectionId?: string; lastStage?: string }): Promise<{ ok: true }> {
+  async saveProgress(
+    progress: ProgressSummary & { lastSectionId?: string; lastStage?: string },
+    perCourse?: NumpySyncPayload,
+  ): Promise<{ ok: true }> {
     try {
       return await request<{ ok: true }>('/api/progress/snapshot', {
         method: 'POST',
         body: JSON.stringify(progress),
       });
     } catch (error) {
-      if (await saveProgressDirectly(progress)) return { ok: true };
+      if (await saveProgressDirectly(progress, perCourse)) return { ok: true };
       throw error;
     }
   },

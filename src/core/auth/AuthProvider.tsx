@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { authApi, getSupabaseClient, takeRemoteResume, type AuthUser, type RegistrationResult } from './client';
 import { oauthErrorMessage, readOAuthCallback, withoutOAuthParams } from './oauth';
 import { announcePresence, broadcastSignIn } from './realtime';
+import { collectNumpyProgress } from '../learning/numpy-sync';
 import { summarizeProgress } from './progress';
 import { SERVICE_UNAVAILABLE_COPY } from './messages';
 import { stateSnapshot, useStore, adoptRemoteResume } from '../storage/store';
@@ -90,11 +91,18 @@ function ProgressSync({
       if (current.lastSectionId && current.lastStage) {
         Object.assign(summary, { lastSectionId: current.lastSectionId, lastStage: current.lastStage });
       }
-      const serialized = JSON.stringify(summary);
+      /**
+       * The NumPy course's own records ride the same snapshot: one write carries the counters, the
+       * resume position and the course payload, so a static deployment needs no second transport.
+       * They are part of the dedupe signature — a new draft must trigger a send even when the
+       * counters did not move.
+       */
+      const perCourse = collectNumpyProgress(stateSnapshot().attempts);
+      const serialized = JSON.stringify({ summary, perCourse });
       if (serialized === lastSent.current) return;
       if (active) onStatusChange({ status: 'syncing', lastSyncedAt: lastSyncedAt.current });
       try {
-        await authApi.saveProgress(summary);
+        await authApi.saveProgress(summary, perCourse);
         lastSent.current = serialized;
         lastSyncedAt.current = Date.now();
         if (active) onStatusChange({ status: 'synced', lastSyncedAt: lastSyncedAt.current });
