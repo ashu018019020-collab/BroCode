@@ -62,6 +62,16 @@ export interface NEntry {
   simple?: string;
   /** The same Learn topic explained professionally, in English. */
   pro?: string;
+  /** Lesson structure: the call signature, in one line. */
+  syntax?: string;
+  /** Lesson structure: the ordered steps a reader follows. */
+  visual?: string;
+  /** Lesson structure: where the topic is actually used. */
+  realWorld?: string;
+  /** Lesson structure: the mistakes learners actually make. */
+  mistakes?: string[];
+  /** Lesson structure: the two or three points worth remembering. */
+  revision?: string[];
   difficulty: 'easy' | 'medium' | 'hard';
 }
 

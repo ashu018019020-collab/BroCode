@@ -115,6 +115,28 @@ for (const [id, topics] of Object.entries(levels)) {
   }
 }
 
+/*
+ * `structure-*.json` is the lesson-shape layer (Part 4 of the brief): per module and topic it authors
+ * the syntax line, the step list, a compact visual, the real-world use, the common mistakes and the
+ * revision points. Practice and mastery already exist as real sections, so they are linked, not copied.
+ */
+const structureFiles = fs.readdirSync(SRC).filter((f) => /^structure-.*\.json$/.test(f)).sort();
+const structure = {};
+for (const file of structureFiles) {
+  for (const [id, topics] of Object.entries(readJSON(path.join(SRC, file)))) {
+    structure[id] = { ...(structure[id] || {}), ...topics };
+  }
+}
+for (const [id, topics] of Object.entries(structure)) {
+  if (!modules.some((m) => m.id === id)) fail(`structure: unknown module ${id}`);
+  for (const [title, st] of Object.entries(topics)) {
+    if (!st.syntax) fail(`${id}: structure for "${title}" needs a syntax line`);
+    if (!Array.isArray(st.steps) || st.steps.length < 3) fail(`${id}: structure for "${title}" needs three steps`);
+    if (!st.visual || !st.realWorld) fail(`${id}: structure for "${title}" needs a visual and a real-world use`);
+    if (!Array.isArray(st.mistakes) || !st.revision) fail(`${id}: structure for "${title}" needs mistakes and revision`);
+  }
+}
+
 const SECTIONS = [
   ['learn', 'Learn'], ['interview', 'Interview'], ['coding', 'Coding Lab'], ['logic', 'Logic'],
   ['debug', 'Debug'], ['practice', 'Practice Solutions'], ['miniProject', 'Mini Project'],
@@ -216,6 +238,7 @@ function buildSections(m) {
     learn: topics.map((t, i) => ({
       id: id('learn', i), title: t.title, body: t.body, code: t.code, output: t.output, difficulty: difficultyAt(i),
       ...(levels[m.id]?.[t.title] || {}),
+      ...(structure[m.id]?.[t.title] || {}),
     })),
     /*
      * Interview publishes VERIFIED-OUTPUT questions plus the authored bank. The old "what is X?"

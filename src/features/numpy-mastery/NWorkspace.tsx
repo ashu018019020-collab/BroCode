@@ -363,15 +363,50 @@ function TopicCard({ entry, level }: { entry: NEntry; level: 'simple' | 'pro' })
           Switch level in the module header. The rest of this entry is the same at both levels.
         </p>
       )}
+      {entry.syntax && (
+        <p className="small" style={{ margin: '0 0 6px', fontFamily: 'ui-monospace, monospace' }}>
+          <span className="muted">Syntax · </span>{entry.syntax}
+        </p>
+      )}
+      {entry.visual && (
+        <pre className="codeblock" style={{ margin: '0 0 8px', whiteSpace: 'pre-wrap' }}>{entry.visual}</pre>
+      )}
       {entry.steps?.length ? (
         <ol className="small muted" style={{ margin: '0 0 8px', paddingLeft: 18 }}>
           {entry.steps.map((step) => <li key={step}>{step}</li>)}
         </ol>
       ) : null}
       {entry.code && <pre className="codeblock" style={{ margin: 0 }}>{entry.code}</pre>}
+      {entry.realWorld && (
+        <p className="small" style={{ margin: '8px 0 0' }}>
+          <b>Where it is used · </b><span className="muted">{entry.realWorld}</span>
+        </p>
+      )}
       {entry.error && (
         <p className="small" style={{ margin: '8px 0 0', color: 'var(--red)', fontFamily: 'ui-monospace, monospace' }}>
           <b>Raises:</b> {entry.error}
+        </p>
+      )}
+      {entry.mistakes?.length ? (
+        <div style={{ marginTop: 8 }}>
+          <b className="small">Common mistakes</b>
+          <ul className="small muted" style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+            {entry.mistakes.map((line) => <li key={line}>{line}</li>)}
+          </ul>
+        </div>
+      ) : null}
+      {entry.revision?.length ? (
+        <div style={{ marginTop: 8 }}>
+          <b className="small">Quick revision</b>
+          <ul className="small muted" style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+            {entry.revision.map((line) => <li key={line}>{line}</li>)}
+          </ul>
+        </div>
+      ) : null}
+      {(entry.mistakes?.length || entry.revision?.length) && (
+        <p className="small muted" style={{ margin: '6px 0 0' }}>
+          Then rebuild it in <b>Practice Solutions</b> and prove it in <b>Checkpoint</b> — those two
+          sections of this module are the practice and mastery steps of the lesson.
         </p>
       )}
       <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>

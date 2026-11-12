@@ -53,6 +53,17 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Lesson structure per topic (phase 20, Part 4 of the brief)
+
+`content/numpy-mastery/structure-1.json` authors the brief's 12-part lesson shape for **all 14
+module-1 Learn topics**: a syntax line, three ordered steps, a compact visual, the real-world use, the
+common mistakes and the revision points (intro/easy/technical explanations already come from `body`,
+`simple` and `pro`; practice and mastery are the module's Practice Solutions and Checkpoint sections,
+linked in the panel rather than duplicated). The workspace renders every authored part as its own
+labelled block, and `scripts/tests/numpy-structure.test.mjs` rejects an entry with a missing part.
+The other 19 modules (266 Learn topics) do not have the structure authored yet and render only the
+parts they have.
+
 ### Curriculum coverage (phase 19, Part 3 of the brief)
 
 The brief's 18 module areas are mapped against the pack by `scripts/tests/numpy-coverage.test.mjs`:
