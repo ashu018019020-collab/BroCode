@@ -245,18 +245,25 @@ test('numpy course: interview and defense never repeat a Learn body', () => {
   assert.ok(checked >= 400, `expected 400+ interview/defense records, found ${checked}`);
 });
 
-test('numpy course: every checkpoint quiz offers three distinct options including the answer', () => {
+test('numpy course: every checkpoint quiz offers distinct options including the answer', () => {
   let quizzes = 0;
+  let trueFalse = 0;
   for (const m of artifact.modules) {
     for (const e of m.sections.checkpoint) {
       if (!e.options) continue;
-      quizzes += 1;
-      assert.equal(e.options.length, 3, `${e.id}: a quiz offers three options`);
-      assert.equal(new Set(e.options).size, 3, `${e.id}: options must be distinct`);
+      if (e.format === 'truefalse') {
+        trueFalse += 1;
+        assert.deepEqual(e.options, ['True', 'False'], `${e.id}: a true/false checkpoint offers exactly True and False`);
+      } else {
+        quizzes += 1;
+        assert.equal(e.options.length, 3, `${e.id}: a quiz offers three options`);
+      }
+      assert.equal(new Set(e.options).size, e.options.length, `${e.id}: options must be distinct`);
       assert.ok(e.options.includes(e.answer), `${e.id}: the answer must be one of the options`);
     }
   }
   assert.ok(quizzes >= 200, `expected checkpoint quizzes, found ${quizzes}`);
+  assert.ok(trueFalse >= 100, `expected true/false checkpoints, found ${trueFalse}`);
 });
 
 test('numpy course: every written checkpoint has three real rubric criteria', () => {

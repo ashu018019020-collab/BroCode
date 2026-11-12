@@ -9,6 +9,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -75,6 +76,56 @@ test('scenario questions are authored, answered and tagged', () => {
   }
   const total = scenarios.reduce((n, e) => n + e.followUps.length, 0);
   assert.ok(total >= 80, `only ${total} follow-ups`);
+});
+
+test('every module ships true/false and fill-in-the-blank checkpoints', () => {
+  for (const m of artifact.modules) {
+    const cp = m.sections.checkpoint;
+    const tf = cp.filter((e) => e.format === 'truefalse');
+    const blanks = cp.filter((e) => e.format === 'blank');
+    assert.ok(tf.length >= 5, `${m.id}: only ${tf.length} true/false checkpoints`);
+    assert.ok(blanks.length >= 5, `${m.id}: only ${blanks.length} blank checkpoints`);
+    for (const e of tf) {
+      assert.deepEqual(e.options, ['True', 'False'], `${e.id}: true/false needs exactly two options`);
+      assert.ok(['True', 'False'].includes(e.answer), `${e.id}: answer must be True or False`);
+      assert.ok(e.claim && e.expected, `${e.id}: needs the claimed and real output`);
+      if (e.answer === 'True') assert.equal(e.claim, e.expected, `${e.id}: a true claim must match the real output`);
+      else assert.notEqual(e.claim, e.expected, `${e.id}: a false claim must differ from the real output`);
+    }
+    for (const e of blanks) {
+      assert.ok(e.code.includes('___'), `${e.id}: blank code has no ___`);
+      assert.ok(e.solution && !e.solution.includes('___'), `${e.id}: solution must fill the blank`);
+      assert.ok(e.answer && e.expected, `${e.id}: needs an answer and a verified output`);
+      assert.ok(!/^\s*(import|from)\b/.test(e.code.split('___')[0].split('\n').pop() ?? ''), `${e.id}: no blank on an import line`);
+    }
+  }
+});
+
+test('both new checkpoint formats execute to their published answer', (t) => {
+  const probe = spawnSync('python3', ['-c', 'import numpy'], { encoding: 'utf8' });
+  if (probe.status !== 0) return t.skip('python3 with numpy is not installed on this machine');
+  const cases = artifact.modules.flatMap((m) => m.sections.checkpoint.filter((e) => e.format === 'truefalse' || e.format === 'blank'));
+  const script = `
+import contextlib, io, json, sys
+cases = json.loads(sys.stdin.read())
+bad = []
+for c in cases:
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf):
+            exec(c.get('solution') or c['code'], {})
+    except Exception as e:
+        bad.append({'id': c['id'], 'why': type(e).__name__ + ': ' + str(e)[:120]})
+        continue
+    printed = buf.getvalue().strip()
+    if printed != c['expected'].strip():
+        bad.append({'id': c['id'], 'why': 'output changed', 'expected': c['expected'], 'actual': printed})
+print(json.dumps(bad))
+`;
+  const run = spawnSync('python3', ['-c', script], { input: JSON.stringify(cases), encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  const bad = JSON.parse(run.stdout.trim() || '[]');
+  assert.deepEqual(bad, [], `checkpoint failures: ${JSON.stringify(bad.slice(0, 3))}`);
 });
 
 test('every question id is unique and every difficulty is set', () => {

@@ -53,10 +53,21 @@ test('each section carries the fields its activity needs', () => {
     for (const e of m.sections.defense) {
       assert.ok(e.q && e.answer, `${e.id}: Defense needs a prompt and an authored answer`);
     }
-    const quiz = m.sections.checkpoint.filter((e) => e.options);
+    const quiz = m.sections.checkpoint.filter((e) => e.options && e.format !== 'truefalse');
+    const trueFalse = m.sections.checkpoint.filter((e) => e.format === 'truefalse');
+    const blanks = m.sections.checkpoint.filter((e) => e.format === 'blank');
     const written = m.sections.checkpoint.filter((e) => e.rubric);
     assert.ok(quiz.length > 0, `${m.id}: no quiz checkpoints`);
     assert.ok(written.length > 0, `${m.id}: no written checkpoints`);
+    assert.ok(trueFalse.length > 0, `${m.id}: no true/false checkpoints`);
+    assert.ok(blanks.length > 0, `${m.id}: no fill-in-the-blank checkpoints`);
+    for (const e of trueFalse) {
+      assert.deepEqual(e.options, ['True', 'False'], `${e.id}: true/false needs exactly two options`);
+      assert.ok(e.options.includes(e.answer), `${e.id}: the answer is not True or False`);
+    }
+    for (const e of blanks) {
+      assert.ok(e.code.includes('___') && e.solution && e.answer, `${e.id}: blank needs a ___, a solution and an answer`);
+    }
     for (const e of quiz) {
       assert.ok(e.options.length >= 3, `${e.id}: quiz needs three real options`);
       assert.ok(e.options.includes(e.answer), `${e.id}: the answer is not among the options`);

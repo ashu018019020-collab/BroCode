@@ -58,6 +58,10 @@ export interface NEntry {
   steps?: string[];
   /** A checkpoint quiz offers three real, distinct outputs; the answer is one of them. */
   options?: string[];
+  /** Checkpoint shape: the original three-option quiz, a true/false claim, or a blank to fill in. */
+  format?: 'truefalse' | 'blank';
+  /** The output a true/false checkpoint claims the code prints. */
+  claim?: string;
   /** A written checkpoint is self-assessed against three criteria built from real content. */
   rubric?: string[];
   /** Authored deeper questions asked after the model answer, so practice goes past one reply. */

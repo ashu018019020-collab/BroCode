@@ -282,6 +282,65 @@ function checkpointOptions(title, answer, topics) {
 }
 
 /**
+ * True/false and fill-in-the-blank checkpoints exist because a three-option quiz can be passed by
+ * elimination. Both formats are built from a topic's own executed sample: the true/false claim quotes
+ * real output (a false one quotes another topic's output), and a blank replaces one numeric literal in
+ * the code with `___`, keeping the verified output as the answer key. Tests execute both again.
+ */
+function blankToken(code) {
+  const lines = String(code).split('\n');
+  for (let l = 0; l < lines.length; l += 1) {
+    if (/^\s*(import|from)\b/.test(lines[l])) continue;
+    const m = lines[l].match(/(?<![\w.])(\d+(?:\.\d+)?)(?![\w.])/);
+    if (m) return { line: l, start: m.index, end: m.index + m[0].length, token: m[0] };
+  }
+  return null;
+}
+
+function checkpointFormats(topics, id) {
+  const entries = [];
+  const claimed = topics.slice(0, 5);
+  claimed.forEach((t, i) => {
+    const other = topics.find((o) => o.title !== t.title && String(o.output).trim() !== String(t.output).trim());
+    const useOther = i % 2 === 1 && Boolean(other);
+    entries.push({
+      id: id('checkpoint', 'tf' + i),
+      format: 'truefalse',
+      q: useOther
+        ? `True or false: this ${t.title.toLowerCase()} code prints the output shown below.`
+        : `True or false: this ${t.title.toLowerCase()} code prints exactly the output below.`,
+      code: t.code,
+      claim: String(useOther ? other.output : t.output).trim(),
+      expected: String(t.output).trim(),
+      answer: useOther ? 'False' : 'True',
+      options: ['True', 'False'],
+      difficulty: difficultyAt(i),
+    });
+  });
+  let b = 0;
+  for (const t of topics) {
+    if (b >= 5) break;
+    const hit = blankToken(t.code);
+    if (!hit) continue;
+    const lines = String(t.code).split('\n');
+    const withBlank = lines.slice();
+    withBlank[hit.line] = lines[hit.line].slice(0, hit.start) + '___' + lines[hit.line].slice(hit.end);
+    entries.push({
+      id: id('checkpoint', 'blank' + b),
+      format: 'blank',
+      q: `Fill in the blank so this ${t.title.toLowerCase()} code prints the verified output below.`,
+      code: withBlank.join('\n'),
+      solution: t.code,
+      answer: hit.token,
+      expected: String(t.output).trim(),
+      difficulty: difficultyAt(b),
+    });
+    b += 1;
+  }
+  return entries;
+}
+
+/**
  * A written checkpoint is self-assessed, so it needs criteria a learner can check their own answer
  * against. The lines come from the topic's own title and executed output: the second one quotes the
  * real printed result, so ticking it means "I said what actually prints", not "I reworded the prompt".
@@ -352,7 +411,7 @@ function buildSections(m) {
     defense: (m.defenseBank || []).map((q, i) => ({
       id: id('defense', 'a' + i), q: q.q, answer: q.answer, steps: q.steps, difficulty: difficultyAt(i),
     })),
-    checkpoint: topics.flatMap((t, i) => [
+    checkpoint: [...topics.flatMap((t, i) => [
       {
         id: id('checkpoint', i * 2), q: `Checkpoint: predict the output of this code about ${t.title.toLowerCase()}.`, code: t.code, answer: t.output,
         options: checkpointOptions(t.title, t.output, topics), difficulty: difficultyAt(i),
@@ -361,7 +420,7 @@ function buildSections(m) {
         id: id('checkpoint', i * 2 + 1), q: `Short answer: state what this ${t.title.toLowerCase()} code computes, and why the printed result looks the way it does.`, answer: t.body,
         rubric: writtenRubric(t), difficulty: i === 0 ? 'easy' : 'medium',
       },
-    ]),
+    ]), ...checkpointFormats(topics, id)],
   };
 }
 
@@ -380,9 +439,14 @@ const published = modules.map((m) => {
   }
   for (const entry of sections.checkpoint) {
     if (entry.options) {
-      if (entry.options.length !== 3) fail(`${entry.id}: a checkpoint quiz needs 3 options`);
-      if (new Set(entry.options).size !== 3) fail(`${entry.id}: checkpoint options must be distinct`);
+      const expectedOptions = entry.format === 'truefalse' ? 2 : 3;
+      if (entry.options.length !== expectedOptions) fail(`${entry.id}: a checkpoint quiz needs ${expectedOptions} options`);
+      if (new Set(entry.options).size !== expectedOptions) fail(`${entry.id}: checkpoint options must be distinct`);
       if (!entry.options.includes(entry.answer)) fail(`${entry.id}: the options must include the answer`);
+    }
+    if (entry.format === 'blank') {
+      if (!String(entry.code).includes('___')) fail(`${entry.id}: a blank checkpoint needs a ___ in its code`);
+      if (!entry.answer || !entry.solution) fail(`${entry.id}: a blank checkpoint needs an answer and a solution`);
     }
     if (entry.rubric) {
       if (entry.rubric.length !== 3) fail(`${entry.id}: a written checkpoint needs 3 rubric lines`);

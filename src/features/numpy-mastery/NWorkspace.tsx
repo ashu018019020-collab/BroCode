@@ -109,6 +109,53 @@ function ShortAnswerCard({ entry, done, onPass }: { entry: NEntry; done: boolean
   );
 }
 
+/**
+ * A fill-in-the-blank checkpoint: the code carries one `___`, the learner types the missing token, and
+ * the answer is the literal the generator removed from a sample whose output is already verified.
+ */
+function BlankCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPass: () => void }) {
+  const [typed, setTyped] = useState('');
+  const [checked, setChecked] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const answer = (entry.answer ?? '').trim();
+  const right = typed.trim() === answer;
+  return (
+    <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
+      <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
+        <span className="row" style={{ gap: 6 }}>
+          {done && <span className="chip easy"><Check size={11} /> done</span>}
+          <span className="chip">fill in the blank</span>
+        </span>
+      </div>
+      <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{entry.q}</strong>
+      {entry.code && <pre className="codeblock" style={{ margin: '6px 0' }}>{entry.code}</pre>}
+      {entry.expected && <pre className="codeblock" style={{ margin: '0 0 6px' }}>{entry.expected}</pre>}
+      <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+        <input
+          value={typed}
+          onChange={(e) => { setTyped(e.target.value); setChecked(false); }}
+          aria-label={`Fill the blank for ${entry.id}`}
+          placeholder="missing token"
+          style={{ flex: '1 1 120px', minWidth: 0, padding: '6px 8px', borderRadius: 6, border: '1px solid var(--line, #d6dbe4)', fontFamily: 'ui-monospace, monospace' }}
+        />
+        <button type="button" className="btn small primary" onClick={() => { setChecked(true); if (typed.trim() === answer) onPass(); }}>
+          Check
+        </button>
+        <button type="button" className="btn small ghost" onClick={() => setRevealed((v) => !v)}>
+          {revealed ? 'Hide answer' : 'Show answer'}
+        </button>
+      </div>
+      {checked && (
+        <p className="small" style={{ margin: '8px 0 0', color: right ? 'var(--green, #177245)' : 'var(--red, #b42318)' }}>
+          {right ? 'Correct — this section is recorded.' : 'Not the missing token — try again, then check the code on the right.'}
+        </p>
+      )}
+      {revealed && <pre className="codeblock" style={{ margin: '6px 0 0' }}>{answer}</pre>}
+    </div>
+  );
+}
+
 /** A multiple-choice checkpoint: three real executed outputs, one of which the code prints. */
 function QuizCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPass: () => void }) {
   const [picked, setPicked] = useState<string | null>(null);
@@ -121,11 +168,12 @@ function QuizCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPas
         <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
         <span className="row" style={{ gap: 6 }}>
           {done && <span className="chip easy"><Check size={11} /> done</span>}
-          <span className="chip">quiz · 3 options</span>
+          <span className="chip">{entry.format === 'truefalse' ? 'true / false' : 'quiz · 3 options'}</span>
         </span>
       </div>
       <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{entry.q}</strong>
       {entry.code && <pre className="codeblock" style={{ margin: '6px 0' }}>{entry.code}</pre>}
+      {entry.claim && <pre className="codeblock" style={{ margin: '0 0 6px' }}>{entry.claim}</pre>}
       <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
         {entry.options?.map((option) => {
           const tone = picked === null ? '' : option === answer ? ' easy' : option === picked ? ' hard' : '';
@@ -636,7 +684,9 @@ export function NModuleWorkspace({
               <Check size={12} /> {done ? 'Section recorded' : 'Mark section done'}
             </button>
           </div>
-          {entry && (entry.options?.length
+          {entry && (entry.format === 'blank'
+            ? <BlankCard key={entry.id} entry={entry} done={done} onPass={onDone} />
+            : entry.options?.length
             ? <QuizCard key={entry.id} entry={entry} done={done} onPass={onDone} />
             : entry.rubric?.length
               ? <ShortAnswerCard key={entry.id} entry={entry} done={done} onPass={onDone} />

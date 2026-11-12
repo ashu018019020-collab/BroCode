@@ -62,6 +62,24 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### True/false and fill-in-the-blank checkpoints (phase 38)
+
+Checkpoint is no longer only a three-option quiz plus a written answer. Every module now ships
+**five true/false** and **five fill-in-the-blank** checkpoints (200 new entries, 3,320 in the course):
+
+- **True/false** quotes real output from the module. A true claim is the sample's verified stdout; a
+  false claim is a *different* topic's real output, so it is plausible and definitely not what this
+  code prints. The card shows the code, the claim, and exactly two buttons.
+- **Fill-in-the-blank** removes one numeric literal from a verified sample (never from an import line),
+  replaces it with `___`, and keeps the real output on screen. The learner types the token; the card
+  records the section on a match and can reveal the answer.
+
+The generator validates both shapes (two distinct options including the answer, a `___` with a
+solution and an answer), `numpy-bank.test.mjs` re-executes all 200 entries against numpy to confirm the
+blank's solution still prints the published output and each true/false code really prints its claimed
+answer, and the two older checkpoint tests were updated to distinguish the formats instead of assuming
+three options.
+
 ### Interview follow-ups (phase 37)
 
 Every one of the 40 authored scenarios now carries **two follow-up questions**, 80 in total, each with
