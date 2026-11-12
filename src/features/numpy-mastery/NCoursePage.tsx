@@ -5,7 +5,7 @@ import { useNumpyCourse } from '../../core/data/ncourse';
 import { setState, useSavedAnswer, useStore } from '../../core/storage/store';
 import { collectNumpyProgress, mergeNumpyProgress, numpySyncSummary } from '../../core/learning/numpy-sync';
 import { loadNumpyProgress, saveNumpyProgress } from '../../core/data/numpy-progress';
-import { N_CAPSTONE_KEY, N_LAST_KEY, N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, numpyCertificate, numpyReport, searchCourse } from '../../core/learning/ncourse';
+import { N_CAPSTONE_KEY, N_LAST_KEY, N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, numpyCertificate, numpyReport, revisionPlan, searchCourse } from '../../core/learning/ncourse';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { NLogo } from './NLogo';
 import { NModuleWorkspace } from './NWorkspace';
@@ -31,6 +31,8 @@ export default function NCoursePage() {
   const progress = useMemo(() => nProgress(modules, state.attempts), [modules, state.attempts]);
   const [lastPlace] = useSavedAnswer(N_LAST_KEY);
   const report = useMemo(() => numpyReport(modules, state.attempts, lastPlace), [modules, state.attempts, lastPlace]);
+  /** The plan is derived from the same records the report counts, weakest module first. */
+  const revision = useMemo(() => revisionPlan(modules, state.attempts, 8), [modules, state.attempts]);
   const { user } = useAuth();
   const [capRaw, saveCap] = useSavedAnswer(N_CAPSTONE_KEY);
   const checked = useMemo<string[]>(() => {
@@ -235,26 +237,49 @@ export default function NCoursePage() {
           </div>
         </div>
 
-        {report.weak.length > 0 && (
-          <div style={{ marginTop: 12 }}>
-            <b className="small">Weak topics — untouched sections in course order</b>
-            <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-              {report.weak.slice(0, 8).map((spot) => (
-                <button
-                  key={`${spot.moduleId}:${spot.section}`}
-                  type="button"
-                  className="chip"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => setParams({ module: spot.moduleId, section: spot.section })}
-                >
-                  {spot.label} · {spot.moduleTitle}
-                </button>
-              ))}
-              {report.weak.length > 8 && <span className="chip">+{report.weak.length - 8} more</span>}
-            </div>
-          </div>
-        )}
       </div>
+
+      {revision.length > 0 && (
+        <div className="card" style={{ marginTop: 10 }}>
+          <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <b className="small">Revision plan — weakest modules first</b>
+            <span className="chip">{report.weak.length} untouched sections</span>
+          </div>
+          <p className="small muted" style={{ margin: '4px 0 0' }}>
+            Ranked by how little of each module is recorded, then by module and section order. Start at
+            rank 1: one session there closes the most gaps.
+          </p>
+          <ol style={{ margin: '8px 0 0', padding: 0, listStyle: 'none' }}>
+            {revision.map((item) => (
+              <li key={`${item.moduleId}:${item.section}`} style={{ marginBottom: 4 }}>
+                <button
+                  type="button"
+                  className="row"
+                  style={{
+                    width: '100%', gap: 8, alignItems: 'center', textAlign: 'left', cursor: 'pointer',
+                    background: 'none', border: 0, borderTop: '1px solid var(--line, #e6e8ee)',
+                    padding: '6px 0', color: 'inherit',
+                  }}
+                  onClick={() => setParams({ module: item.moduleId, section: item.section })}
+                >
+                  <span className="chip">{item.rank}</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <b className="small">{item.label}</b>{' '}
+                    <span className="small muted">· {item.moduleTitle}</span>
+                    <span className="small muted" style={{ display: 'block' }}>{item.reason}</span>
+                  </span>
+                  <ChevronRight size={13} className="muted" />
+                </button>
+              </li>
+            ))}
+          </ol>
+          {report.weak.length > revision.length && (
+            <p className="small muted" style={{ margin: '6px 0 0' }}>
+              Showing the {revision.length} highest-priority of {report.weak.length} untouched sections.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="sec-head"><h2><BookOpen size={16} color="var(--blue)" /> Learning outcomes</h2><span className="line" /></div>
       <div className="card">

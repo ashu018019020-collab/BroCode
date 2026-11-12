@@ -385,6 +385,48 @@ export function numpyReport(modules: NModule[], attempts: Record<string, unknown
   };
 }
 
+export interface NRevisionItem extends NWeakSpot {
+  rank: number;
+  moduleNo: number;
+  recorded: number;
+  total: number;
+  /** Why this section is ranked here, printed beside it. */
+  reason: string;
+}
+
+/**
+ * A revision plan, weakest first.
+ *
+ * The plan is DERIVED from the same records `numpyReport` counts: an untouched section is a candidate,
+ * and candidates are ordered by how little of their module is recorded (fewest first), then by module
+ * order, then by the course's own section order. So the learner starts in the module where a single
+ * session closes the most gaps, and inside it the earliest missing section — not merely page order.
+ */
+export function revisionPlan(
+  modules: NModule[], attempts: Record<string, unknown>, limit = 8,
+): NRevisionItem[] {
+  const candidates: Omit<NRevisionItem, 'rank'>[] = [];
+  for (const m of modules) {
+    const recorded = N_SECTIONS.filter((s) => Boolean(attempts[nSectionKey(m.id, s.key)])).length;
+    for (const s of N_SECTIONS) {
+      if (attempts[nSectionKey(m.id, s.key)]) continue;
+      candidates.push({
+        moduleId: m.id,
+        moduleTitle: m.title,
+        moduleNo: m.no,
+        section: s.key,
+        label: s.label,
+        recorded,
+        total: N_SECTIONS.length,
+        reason: `${recorded}/${N_SECTIONS.length} recorded in this module`,
+      });
+    }
+  }
+  candidates.sort((a, b) => a.recorded - b.recorded || a.moduleNo - b.moduleNo
+    || N_SECTIONS.findIndex((s) => s.key === a.section) - N_SECTIONS.findIndex((s) => s.key === b.section));
+  return candidates.slice(0, Math.max(0, limit)).map((item, index) => ({ ...item, rank: index + 1 }));
+}
+
 export function sectionCounts(module: Pick<NModule, 'sections'>): Record<NSectionKey, number> {
   return Object.fromEntries(N_SECTIONS.map((s) => [s.key, module.sections[s.key]?.length ?? 0])) as Record<NSectionKey, number>;
 }

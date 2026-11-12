@@ -62,6 +62,20 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Revision plan panel (phase 52)
+
+`revisionPlan(modules, attempts, limit)` in `ncourse.ts` is the one ranking rule: candidates are the
+untouched sections (the same `nmod:` records `numpyReport` counts), ordered by how few sections their
+module has recorded, then by module number, then by the course's own section order. Each item carries
+its rank, `recorded/total` and a reason string. The course page renders the top eight as a **Revision
+plan — weakest modules first** panel; each row opens that module and section, and the footer says how
+many untouched sections exist beyond the slice.
+
+The older unranked "weak topics" chip row was replaced by this panel rather than left beside it, so
+there is one ordered recommendation. `numpy-revision.test.mjs` drives the ranking with fixtures:
+weakest module first, module-order and section-order ties, recorded sections excluded, limit and
+empty-course cases.
+
 ### NumPy records in the AI tutor's corpus (phase 51)
 
 `scripts/ai-index.cjs` now reads `public/generated/numpy-course/index.json` as an input (so its hash is
