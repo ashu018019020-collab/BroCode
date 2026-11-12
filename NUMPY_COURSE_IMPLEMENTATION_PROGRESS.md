@@ -62,6 +62,26 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Twenty Learn topics per module (phase 43)
+
+`deepening-10.json` adds six executed topics to each of the eighteen modules below twenty (the two
+advanced modules already had 22 and 21), so **every module now teaches at least 20 topics**:
+
+| | topics | | topics |
+|---|---|---|---|
+| n01–n14 | 20 each | n15 | 22 |
+| n16 | 21 | n17–n20 | 20 each |
+
+Course totals move from 295 to **403 Learn topics and 4,058 published entries**. The additions stay
+module-specific rather than generic: `strides` and `base` for attributes, `diag`/`tril`/`logspace` for
+creation, `hypot` and ufunc `out=` for ufuncs, `quantile`/`lexsort`/`partition`/`bincount` for the
+sorting and performance modules, `SeedSequence`/weighted `choice` for randomness, and
+`digitize`/`convolve`/confusion-matrix `bincount` for the ecosystem module.
+
+Every sample was executed by `numpy-fill-outputs.cjs` against numpy 2.5.2; the artifact's counts are
+recomputed by `numpy:coverage` (403 topics) and by the bank tests, so the published numbers are counts,
+not claims.
+
 ### Dual-level explanations for the forty depth-layer topics (phase 42)
 
 `levels-6.json` gives every one of the 40 topics added by `deepening-8.json` a beginner Hinglish
