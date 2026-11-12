@@ -80,6 +80,8 @@ export interface NEntry {
   mistakes?: string[];
   /** Lesson structure: the two or three points worth remembering. */
   revision?: string[];
+  /** Authored real-world interview scenario; counted in the bank's `scenario` category. */
+  scenario?: string;
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
@@ -89,6 +91,55 @@ export const N_BANK_CATEGORY_LABEL: Record<string, string> = {
   concept: 'concept', output: 'output', coding: 'coding', debugging: 'debug', quiz: 'quiz',
   written: 'written', project: 'project', scenario: 'scenario',
 };
+
+/** A bank item plus the section and position it lives at, so a click can open the exact record. */
+export interface NBankMatch {
+  section: NSectionKey;
+  index: number;
+  entry: NEntry;
+}
+
+/** The two chip families; both are optional, and both together are an AND. */
+export interface NBankFilter {
+  category: string | null;
+  difficulty: NEntry['difficulty'] | null;
+}
+
+/**
+ * The bank's category rules, kept identical to the generator that publishes the counts: an interview
+ * entry with code is an output item, one without is a concept item, and a checkpoint with options is
+ * both output and quiz. An item may therefore appear in more than one category — the chips filter the
+ * real records rather than a second hand-maintained list.
+ */
+export function bankCategoryMatch(section: NSectionKey, entry: NEntry, category: string): boolean {
+  switch (category) {
+    case 'concept': return (section === 'interview' && !entry.code) || section === 'defense';
+    case 'output': return section === 'logic' || (section === 'interview' && Boolean(entry.code))
+      || (section === 'checkpoint' && Boolean(entry.options?.length));
+    case 'coding': return section === 'coding';
+    case 'debugging': return section === 'debug';
+    case 'quiz': return section === 'checkpoint' && Boolean(entry.options?.length);
+    case 'written': return section === 'checkpoint' && Boolean(entry.rubric?.length);
+    case 'project': return section === 'miniProject' || section === 'projectLab';
+    case 'scenario': return section === 'interview' && Boolean(entry.scenario);
+    default: return false;
+  }
+}
+
+/** Every module record the active chips accept, in course section order then authored order. */
+export function bankItems(module: NModule, filter: NBankFilter): NBankMatch[] {
+  const matches: NBankMatch[] = [];
+  for (const { key } of N_SECTIONS) {
+    const entries = module.sections[key] ?? [];
+    for (let index = 0; index < entries.length; index++) {
+      const entry = entries[index];
+      if (filter.category && !bankCategoryMatch(key, entry, filter.category)) continue;
+      if (filter.difficulty && entry.difficulty !== filter.difficulty) continue;
+      matches.push({ section: key, index, entry });
+    }
+  }
+  return matches;
+}
 
 export interface NModule {
   id: string;

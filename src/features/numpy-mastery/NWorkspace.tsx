@@ -4,7 +4,7 @@ import {
   ArrowLeft, BookOpen, Check, ChevronLeft, ChevronRight, Code2, Copy, Eye, EyeOff, Play, RotateCcw, Terminal,
 } from 'lucide-react';
 import { useStore, recordAttempt, useSavedAnswer, addXp, bumpStreak } from '../../core/storage/store';
-import { N_LAST_KEY, N_LEVEL_KEY, N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey, nWrittenAnswerKey, nWrittenTicksKey, outputMatches, type NEntry, type NModule, type NSectionKey, N_BANK_CATEGORY_ORDER, N_BANK_CATEGORY_LABEL } from '../../core/learning/ncourse';
+import { N_LAST_KEY, N_LEVEL_KEY, N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey, nWrittenAnswerKey, nWrittenTicksKey, outputMatches, type NEntry, type NModule, type NSectionKey, N_BANK_CATEGORY_ORDER, N_BANK_CATEGORY_LABEL, bankItems, type NBankFilter } from '../../core/learning/ncourse';
 import { completionAward } from '../../core/learning/course-signals';
 import { NLogo } from './NLogo';
 import { NTools } from './NTools';
@@ -562,6 +562,16 @@ export function NModuleWorkspace({
   ));
   const entries = module.sections[section] ?? [];
   const [index, setIndex] = useState(0);
+  const [bankFilter, setBankFilter] = useState<NBankFilter>({ category: null, difficulty: null });
+  const filterActive = Boolean(bankFilter.category || bankFilter.difficulty);
+  const matches = useMemo(() => bankItems(module, bankFilter), [module, bankFilter]);
+  const toggleCategory = (key: string) => setBankFilter((f) => ({ ...f, category: f.category === key ? null : key }));
+  const toggleDifficulty = (key: NEntry['difficulty']) => setBankFilter((f) => ({ ...f, difficulty: f.difficulty === key ? null : key }));
+  const clearFilter = () => setBankFilter({ category: null, difficulty: null });
+  const openMatch = (match: (typeof matches)[number]) => {
+    setSection(match.section);
+    setIndex(match.index);
+  };
   const safe = Math.min(index, Math.max(0, entries.length - 1));
   const entry = entries[safe];
   const done = Boolean(state.attempts[nSectionKey(module.id, section)]);
@@ -616,7 +626,7 @@ export function NModuleWorkspace({
   const cells = useMemo(() => entries.filter((e) => e.code || e.starter || extraOf(e).solution), [entries]);
   const cellIndex = Math.max(0, cells.findIndex((c) => c.id === entry?.id));
 
-  useEffect(() => { setIndex(0); }, [module.id, section]);
+  useEffect(() => { setIndex(0); }, [module.id]);
 
   return (
     <div>
@@ -677,21 +687,69 @@ export function NModuleWorkspace({
             <b className="small">This module's question bank</b>
             <span className="chip">{bank.total} unique items</span>
           </div>
-          <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+          <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }} role="group" aria-label="Filter by category">
             {[...N_BANK_CATEGORY_ORDER, ...Object.keys(bank.categories).filter((k) => !N_BANK_CATEGORY_ORDER.includes(k))].map((key) => (
-              <span key={key} className="chip">
+              <button
+                key={key}
+                type="button"
+                className={`chip${bankFilter.category === key ? ' easy' : ''}`}
+                style={{ cursor: 'pointer' }}
+                aria-pressed={bankFilter.category === key}
+                onClick={() => toggleCategory(key)}
+              >
                 {N_BANK_CATEGORY_LABEL[key] ?? key} · {bank.categories[key] ?? 0}
-              </span>
+              </button>
             ))}
           </div>
-          <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+          <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }} role="group" aria-label="Filter by difficulty">
             {(['easy', 'medium', 'hard'] as const).map((key) => (
-              <span key={key} className={`chip ${DIFF_TONE[key]}`}>{key} · {bank.difficulty[key] ?? 0}</span>
+              <button
+                key={key}
+                type="button"
+                className={`chip ${DIFF_TONE[key]}${bankFilter.difficulty === key ? ' on' : ''}`}
+                style={{ cursor: 'pointer', outline: bankFilter.difficulty === key ? '2px solid currentColor' : undefined }}
+                aria-pressed={bankFilter.difficulty === key}
+                onClick={() => toggleDifficulty(key)}
+              >
+                {key} · {bank.difficulty[key] ?? 0}
+              </button>
             ))}
           </div>
+          {filterActive && (
+            <div style={{ marginTop: 8, borderTop: '1px solid var(--line, #e3e8ef)', paddingTop: 8 }}>
+              <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+                <span className="small muted">
+                  {matches.length} matching item{matches.length === 1 ? '' : 's'} in this module
+                  {bankFilter.category ? ` · ${N_BANK_CATEGORY_LABEL[bankFilter.category] ?? bankFilter.category}` : ''}
+                  {bankFilter.difficulty ? ` · ${bankFilter.difficulty}` : ''}
+                </span>
+                <button type="button" className="btn small ghost" onClick={clearFilter}>Clear filter</button>
+              </div>
+              {matches.length ? (
+                <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                  {matches.slice(0, 10).map((match) => (
+                    <button
+                      key={match.entry.id}
+                      type="button"
+                      className="chip"
+                      style={{ cursor: 'pointer', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      onClick={() => openMatch(match)}
+                      title={`${match.entry.title ?? match.entry.q ?? match.entry.id} · ${N_SECTION_LABEL[match.section]} · ${match.entry.difficulty}`}
+                    >
+                      {match.entry.title ?? match.entry.q ?? match.entry.id}
+                      <span className="muted"> · {N_SECTION_LABEL[match.section]} · {match.entry.difficulty}</span>
+                    </button>
+                  ))}
+                  {matches.length > 10 && <span className="chip">+{matches.length - 10} more</span>}
+                </div>
+              ) : (
+                <p className="small muted" style={{ margin: '6px 0 0' }}>No item matches both chips. Clear one of them.</p>
+              )}
+            </div>
+          )}
           <p className="small muted" style={{ margin: '6px 0 0' }}>
-            Counted from this module's own items — the same per-module manifest the course page totals. Each item is
-            counted once, by category and by difficulty.
+            Counted from this module's own items — the same per-module manifest the course page totals. Category
+            counts can overlap (an output question can also be a scenario); difficulty counts every item once.
           </p>
         </div>
       )}

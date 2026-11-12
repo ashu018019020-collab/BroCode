@@ -10,9 +10,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { register } from 'node:module';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+register('./_ts-resolve.mjs', import.meta.url);
+const nc = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/ncourse.ts')).href);
 const artifact = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/generated/numpy-course/index.json'), 'utf8'));
 
 const countBy = (list, key) => list.reduce((acc, e) => {
@@ -139,4 +142,33 @@ test('every question id is unique and every difficulty is set', () => {
       }
     }
   }
+});
+
+test('the filter chips select exactly the records the manifest counts', () => {
+  for (const m of artifact.modules) {
+    const claimed = artifact.stats.bank.modules[m.id];
+    for (const category of nc.N_BANK_CATEGORY_ORDER) {
+      const matches = nc.bankItems(m, { category, difficulty: null });
+      assert.equal(matches.length, claimed.categories[category], `${m.id}: ${category} filter count`);
+      for (const match of matches) {
+        assert.equal(match.entry.id, m.sections[match.section][match.index].id, `${m.id}: stale match index`);
+        assert.ok(nc.bankCategoryMatch(match.section, match.entry, category), `${m.id}: wrong category match`);
+      }
+    }
+    for (const difficulty of ['easy', 'medium', 'hard']) {
+      const matches = nc.bankItems(m, { category: null, difficulty });
+      assert.equal(matches.length, claimed.difficulty[difficulty], `${m.id}: ${difficulty} filter count`);
+    }
+  }
+});
+
+test('category and difficulty chips combine as an AND', () => {
+  const m = artifact.modules[0];
+  const both = nc.bankItems(m, { category: 'coding', difficulty: 'hard' });
+  for (const match of both) {
+    assert.equal(match.section, 'coding');
+    assert.equal(match.entry.difficulty, 'hard');
+  }
+  assert.ok(both.length > 0, 'fixture has no hard coding item');
+  assert.ok(both.length <= nc.bankItems(m, { category: 'coding', difficulty: null }).length);
 });

@@ -62,6 +62,24 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Bank chips filter the module's real items (phase 56)
+
+Category and difficulty chips in the module's question-bank card are now toggles. `bankItems(module,
+filter)` in `ncourse.ts` walks the ten sections in course order and returns every record matching the
+active chips; `bankCategoryMatch` mirrors the generator's category rules exactly (interview with code
+is output, interview without is concept, checkpoint options are output and quiz, and so on). The two
+families combine as an AND, and clicking an active chip clears it.
+
+The card lists the first ten matches with section and difficulty; opening one switches to that section
+and lands on that exact record, so the filter is a navigation aid, not a decorative count. The section
+resize effect now keys on the module only, so a chosen match's index is not reset. A clear button and
+an empty state are provided, and the footnote explains that category counts can overlap while
+difficulty counts every item once.
+
+`numpy-bank.test.mjs` checks every module, category and difficulty: the filtered record count equals
+the published manifest count, and each returned index still points at that record. It also covers the
+AND combination. No new dependency and no second item list.
+
 ### Per-module bank row on every course tile (phase 55)
 
 Each module tile on `/numpy` now carries the same breakdown the module view shows, compressed to one
