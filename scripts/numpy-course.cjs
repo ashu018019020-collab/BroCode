@@ -95,6 +95,26 @@ for (const [id, list] of Object.entries(tasks)) {
   target.tasks = list;
 }
 
+/*
+ * `levels-*.json` is the teaching layer: for a module's Learn topics it authors TWO explanations —
+ * Hinglish for a beginner and professional English — so the reader can switch level without the
+ * simple version being a shortened copy of the technical one.
+ */
+const levelFiles = fs.readdirSync(SRC).filter((f) => /^levels-.*\.json$/.test(f)).sort();
+const levels = {};
+for (const file of levelFiles) {
+  for (const [id, topics] of Object.entries(readJSON(path.join(SRC, file)))) {
+    levels[id] = { ...(levels[id] || {}), ...topics };
+  }
+}
+for (const [id, topics] of Object.entries(levels)) {
+  if (!modules.some((m) => m.id === id)) fail(`levels: unknown module ${id}`);
+  for (const [title, lv] of Object.entries(topics)) {
+    if (!lv.simple || !lv.pro) fail(`${id}: levels for "${title}" need both simple and pro`);
+    if (lv.simple === lv.pro) fail(`${id}: levels for "${title}" are identical`);
+  }
+}
+
 const SECTIONS = [
   ['learn', 'Learn'], ['interview', 'Interview'], ['coding', 'Coding Lab'], ['logic', 'Logic'],
   ['debug', 'Debug'], ['practice', 'Practice Solutions'], ['miniProject', 'Mini Project'],
@@ -195,6 +215,7 @@ function buildSections(m) {
   return {
     learn: topics.map((t, i) => ({
       id: id('learn', i), title: t.title, body: t.body, code: t.code, output: t.output, difficulty: difficultyAt(i),
+      ...(levels[m.id]?.[t.title] || {}),
     })),
     /*
      * Interview publishes VERIFIED-OUTPUT questions plus the authored bank. The old "what is X?"

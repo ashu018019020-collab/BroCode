@@ -490,7 +490,9 @@
       "body": "np.array turns a Python list into an ndarray: one typed block of memory that supports vectorised maths, so mean() and shape are properties of the data rather than a loop you write.",
       "code": "import numpy as np\na = np.array([10, 20, 30, 40])\nprint(a, a.mean(), a.shape)",
       "output": "[10 20 30 40] 25.0 (4,)",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Socho tumhare paas paanch chocolate hain aur tum unka total nikalna chahte ho. Python list me har chocolate alag pocket me hai; np.array unhe ek hi dabbe me line se rakh deta hai. Ab total, average ya shape poochhne par NumPy poore dabbe par ek saath kaam karta hai, ek-ek chocolate uthane ki zaroorat nahi.",
+      "pro": "np.array converts a Python sequence into an ndarray: one contiguous, typed buffer whose shape and values travel together. Because the data is homogeneous and contiguous, reductions and elementwise operations run in compiled loops rather than Python-level iteration, which is why a.mean() and a.shape are O(n) and O(1) respectively instead of a hand-written accumulator."
      },
      {
       "id": "n01:learn:1",
@@ -498,7 +500,9 @@
       "body": "An operation between an array and a scalar is applied to every element by compiled code, which is why `a * 2` needs no loop and returns a new array instead of mutating `a`.",
       "code": "import numpy as np\na = np.arange(5)\nprint(a * 2)",
       "output": "[0 2 4 6 8]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Vectorised ka matlab: ek hi instruction me poori list par kaam. `a * 2` likho to NumPy har number ko double kar deta hai, tumhe `for` loop likhne ki zaroorat nahi. Jaise teacher poori class ko ek saath 'page 10 kholo' bolti hai, har bachche ko alag se nahi.",
+      "pro": "A ufunc applies a scalar or array operand to every element through a compiled loop, so `a * 2` allocates one output array and performs no Python bytecode per element. The win is both asymptotic constant factor and cache-friendly traversal; it does not change the big-O of the operation itself, which is still linear in the number of elements."
      },
      {
       "id": "n01:learn:2",
@@ -506,7 +510,9 @@
       "body": "Every ndarray has one dtype and a fixed itemsize, so nbytes tells you the real memory it occupies; a Python list stores pointers to separate objects and cannot answer that question.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a.dtype, a.itemsize, a.nbytes)",
       "output": "int64 8 24",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "simple": "Python list me har cheez apni jagah baithi hoti hai — number, text, kuch bhi — isliye list ko har item ka address yaad rakhna padta hai. NumPy array me sab items ek hi type ke hote hain, isliye wo ek compact box jaisa hota hai aur `nbytes` se pata chal jata hai kitni jagah le raha hai.",
+      "pro": "An ndarray stores homogeneous elements in one buffer with a fixed itemsize; a Python list stores pointers to separately allocated objects plus per-object overhead. That is why nbytes is exact for an array while sys.getsizeof(list) only counts the pointer array, and why dtype changes trade range and precision against memory."
      },
      {
       "id": "n01:learn:3",
@@ -514,7 +520,9 @@
       "body": "Arithmetic between two same-shape arrays pairs position by position, so `a + b` is not concatenation and the result keeps the input shape.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nb = np.array([10, 20, 30])\nprint(a + b)",
       "output": "[11 22 33]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Do arrays ko `+` karne par NumPy unhe jodta nahi, balki ghar-ghar jaakar jodta hai: pehla number pehle se, doosra doosre se. Isliye `[1, 2] + [10, 20]` ka answer `[11, 22]` aata hai, `[1, 2, 10, 20]` nahi — wo list wala kaam hai.",
+      "pro": "Binary ufuncs pair operands by position when their shapes broadcast, producing an array of the broadcast result shape. Addition is therefore not concatenation; concatenation is a separate reshaping operation (np.concatenate) with its own axis argument."
      },
      {
       "id": "n01:learn:4",
@@ -522,7 +530,9 @@
       "body": "The first element is index 0 and the last is -1, exactly like a Python list, so the same counting rules carry over before reshape changes anything.",
       "code": "import numpy as np\na = np.array([5, 6, 7])\nprint(a[0], a[-1])",
       "output": "5 7",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Ginti 0 se shuru hoti hai, 1 se nahi. Pehla item `a[0]` hai, doosra `a[1]`, aur last item `a[-1]` se bhi mil jata hai. Ye rule Python list jaisa hi hai, isliye list wali aadat yahan bhi kaam karti hai.",
+      "pro": "Indexing is zero-based and negative indices count from the end, exactly as in Python sequences; on an ndarray the same rule generalises per axis for multidimensional arrays. Basic indexing returns a view, not a copy, so writes through the index mutate the original buffer."
      },
      {
       "id": "n01:learn:5",
@@ -530,7 +540,9 @@
       "body": "sum, min and max are methods on the array, so the answer arrives as a Python scalar you can print or compare without converting anything.",
       "code": "import numpy as np\na = np.array([4, 1, 9])\nprint(a.sum(), a.max(), a.min())",
       "output": "14 9 1",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "simple": "`a.sum()` ya `a.max()` likhne par jawab ek simple number hota hai, poora array nahi. Us number ko tum seedha print kar sakte ho, compare kar sakte ho, ya kisi doosre kaam me daal sakte ho.",
+      "pro": "Reduction methods return NumPy scalars (or arrays when axis is given), not Python ints/floats; they behave like numbers in arithmetic and printing but carry a dtype. Use axis to reduce along one dimension and keepdims to preserve rank for broadcasting against the original array."
      },
      {
       "id": "n01:learn:6",
@@ -538,7 +550,9 @@
       "body": "tolist() turns an ndarray into nested Python lists, which is the right move when the receiver expects plain lists rather than array printing.",
       "code": "import numpy as np\na = np.array([4, 1, 9])\nprint(a.tolist())",
       "output": "[4, 1, 9]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Kabhi kisi function ko NumPy array nahi, simple list chahiye hoti hai. Tab `a.tolist()` use karo — array wahi rehta hai, bas uski list wali copy mil jati hai jise koi bhi Python code samajh leta hai.",
+      "pro": "tolist() recursively converts an ndarray to nested Python lists, turning NumPy scalars into native ints/floats. It is a copy, so later changes to the array do not appear in the list; it is the right boundary when an API requires plain Python containers or JSON serialisation."
      },
      {
       "id": "n01:learn:7",
@@ -546,7 +560,9 @@
       "body": "The dtype is inferred from the values you pass, so `np.array([1, 2])` is integer while `np.array([1.0, 2.0])` is float — one of them can hold 2.5 and the other cannot.",
       "code": "import numpy as np\nprint(np.array([1, 2]).dtype, np.array([1.0, 2.0]).dtype)",
       "output": "int64 float64",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Agar tum `np.array([1, 2])` likhte ho to NumPy sochta hai 'ye pure number hain' aur integer array banata hai — isme 2.5 nahi rakha ja sakta. `[1.0, 2.0]` likho to float array banta hai, jo decimal sambhal leta hai.",
+      "pro": "dtype is inferred from the input values: an all-integer sequence yields a platform int (int64 on 64-bit), a sequence containing a float yields float64. Integer arrays cannot hold fractional values without an explicit cast, and casting a float to an integer truncates toward zero."
      },
      {
       "id": "n01:learn:8",
@@ -554,7 +570,9 @@
       "body": "A scalar is broadcast across the whole array, so one `+` replaces a loop. No Python-level iteration happens.",
       "code": "import numpy as np\n\na = np.array([1, 2, 3])\nprint(a + 10)",
       "output": "[11 12 13]",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "simple": "Ek number ko poore array me jodna ho to bas `a + 5` likho. NumPy us 5 ko har cell me pahucha deta hai — yehi broadcasting ka sabse chhota example hai.",
+      "pro": "Broadcasting stretches the scalar across every position without materialising a repeated array, so `a + 5` is a single ufunc call over the buffer. Because no temporary of the array's shape is created for the scalar, the extra memory cost is the output array only."
      },
      {
       "id": "n01:learn:9",
@@ -562,7 +580,9 @@
       "body": "Comparison returns a boolean array of the same shape. That array is what every filter is built on.",
       "code": "import numpy as np\n\nprint(np.array([1, 5, 9]) > 4)",
       "output": "[False  True  True]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "`a > 10` likhne par tumhe True/False ka array milta hai — har number ke liye ek jawab. Yahi boolean mask aage filtering ka poora base banta hai: mask ke andar jahan True hai, wahi values chunti hain.",
+      "pro": "Comparison ufuncs return a bool array of the broadcast shape rather than a single truth value, which is why `if a > 10:` must be replaced by `.any()` or `.all()`. The mask is then used for boolean indexing, where True positions select elements and the result is a copy."
      },
      {
       "id": "n01:learn:10",
@@ -570,7 +590,9 @@
       "body": "Iterating walks the first axis. It is fine for a handful of values and wrong for a million, where a vectorised expression wins.",
       "code": "import numpy as np\n\ntotal = 0\nfor value in np.array([2, 4, 6]):\n    total += int(value)\nprint(total)",
       "output": "12",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Array par normal `for` loop bhi chal jata hai — wo ek-ek karke values deta hai. Chhote data par theek hai, lekin lakhon numbers par ye dheema pad jata hai, kyunki tab kaam Python karta hai, NumPy nahi.",
+      "pro": "Iteration over an ndarray yields subarrays along the first axis and executes Python-level bytecode per step, which dominates cost at scale. Prefer vectorised expressions or reductions; where a loop is unavoidable, keep the body minimal and consider np.frompyfunc or compiled helpers rather than per-element Python calls."
      },
      {
       "id": "n01:learn:11",
@@ -578,7 +600,9 @@
       "body": "`np.array` always returns an `ndarray`. A Python `list` and an `ndarray` are not interchangeable.",
       "code": "import numpy as np\n\nprint(type(np.array([1, 2])).__name__)",
       "output": "ndarray",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "simple": "`np.array(...)` hamesha ek `ndarray` deta hai. Python list aur ndarray ek jaise dikhte hain, par same cheez nahi hain — list me `.mean()` nahi hota, aur ndarray me list wale kuch methods nahi hote.",
+      "pro": "np.array returns an instance of numpy.ndarray (a subclass such as np.matrix is deprecated for new code), and type checks should use isinstance(value, np.ndarray). Lists and arrays are not interchangeable: arrays expose dtype, shape and strides, while lists expose list methods; conversion is explicit via np.asarray or .tolist()."
      }
     ],
     "interview": [

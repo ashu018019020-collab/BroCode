@@ -58,6 +58,10 @@ export interface NEntry {
   options?: string[];
   /** A written checkpoint is self-assessed against three criteria built from real content. */
   rubric?: string[];
+  /** The same Learn topic explained for a beginner, in Hinglish. */
+  simple?: string;
+  /** The same Learn topic explained professionally, in English. */
+  pro?: string;
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
@@ -122,6 +126,9 @@ export function nSectionKey(moduleId: string, section: NSectionKey): string {
  * one compact `1,0,1` string. The families are distinct from `nmod:` so no tally can count a draft
  * as a completed section, and distinct from each other so a codec bug cannot overwrite an answer.
  */
+/** The reader's teaching level: `simple` (Hinglish, default) or `pro` (professional English). */
+export const N_LEVEL_KEY = 'nlevel';
+
 export const N_WRITTEN_ANSWER_PREFIX = 'nans:';
 export const N_WRITTEN_TICKS_PREFIX = 'ntick:';
 export function nWrittenAnswerKey(entryId: string): string {

@@ -53,6 +53,16 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 480 | 1,000 | 520 |
 | **Total** | **2,540** | **10,000** | **7,460** |
 
+### Dual-level teaching (phase 18, Part 2 of the brief)
+
+The Learn entry now carries two authored explanations: `simple` (Hinglish, written for a beginner) and
+`pro` (professional English). A persistent toggle in the module header switches between them and the
+choice is stored under `nlevel`, so it survives a refresh. `content/numpy-mastery/levels-1.json`
+authors both halves for **all 12 module-1 topics**; the other 19 modules (228 topics) still fall back
+to the single existing body, and the tests only require both levels where they were authored.
+`scripts/tests/numpy-levels.test.mjs` proves the artifact keeps both, that neither copies the body,
+that the simple half is shorter, and that no authored title is orphaned.
+
 ### Interactive tools (phase 17)
 
 Every module now shares four working tools below the 50/50 workspace: an array visualizer (shape →

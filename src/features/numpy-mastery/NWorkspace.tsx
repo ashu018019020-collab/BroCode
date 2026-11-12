@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useStore, recordAttempt, useSavedAnswer } from '../../core/storage/store';
 import {
-  N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey,
+  N_LEVEL_KEY, N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey,
   nWrittenAnswerKey, nWrittenTicksKey, outputMatches,
   type NEntry, type NModule, type NSectionKey,
 } from '../../core/learning/ncourse';
@@ -328,11 +328,13 @@ const extraOf = (entry: NEntry) => entry as AnyEntry;
  * Practice ships `task`/`solution`/`expected`, projects ship `body`/`steps`, logic ships `answer`,
  * and debug ships `error`/`fix` — this card reads all of them, so no section renders an empty panel.
  */
-function TopicCard({ entry }: { entry: NEntry }) {
+function TopicCard({ entry, level }: { entry: NEntry; level: 'simple' | 'pro' }) {
   const e = extraOf(entry);
   const [reveal, setReveal] = useState<'answer' | 'fix' | 'solution' | null>(null);
   const brief = entry.statement ?? e.body ?? e.task ?? '';
   const solution = e.solution ?? '';
+  const leveled = Boolean(entry.simple && entry.pro);
+  const explanation = leveled ? (level === 'pro' ? entry.pro : entry.simple) : brief;
   return (
     <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
       <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
@@ -342,7 +344,25 @@ function TopicCard({ entry }: { entry: NEntry }) {
         </span>
       </div>
       <strong className="small" style={{ display: 'block', margin: '8px 0 4px', fontSize: '0.95rem' }}>{entry.title ?? entry.q}</strong>
-      {brief && <p className="small" style={{ margin: '0 0 8px' }}>{brief}</p>}
+      {explanation && (
+        <p
+          className="small"
+          style={{
+            margin: '0 0 8px', paddingLeft: 12, lineHeight: 1.6,
+            borderLeft: leveled ? '3px solid var(--blue, #2563eb)' : undefined,
+          }}
+        >
+          {leveled && (
+            <span className="chip" style={{ marginRight: 6 }}>{level === 'pro' ? 'professional' : 'simple · Hinglish'}</span>
+          )}
+          {explanation}
+        </p>
+      )}
+      {leveled && (
+        <p className="small muted" style={{ margin: '0 0 8px' }}>
+          Switch level in the module header. The rest of this entry is the same at both levels.
+        </p>
+      )}
       {entry.steps?.length ? (
         <ol className="small muted" style={{ margin: '0 0 8px', paddingLeft: 18 }}>
           {entry.steps.map((step) => <li key={step}>{step}</li>)}
@@ -409,6 +429,8 @@ export function NModuleWorkspace({ module, onBack }: { module: NModule; onBack: 
   const done = Boolean(state.attempts[nSectionKey(module.id, section)]);
   const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
   const progress = useMemo(() => nProgress([module], state.attempts), [module, state.attempts]);
+  const [levelRaw, setLevelRaw] = useSavedAnswer(N_LEVEL_KEY);
+  const level: 'simple' | 'pro' = levelRaw === 'pro' ? 'pro' : 'simple';
   const cells = useMemo(() => entries.filter((e) => e.code || e.starter || extraOf(e).solution), [entries]);
   const cellIndex = Math.max(0, cells.findIndex((c) => c.id === entry?.id));
 
@@ -439,7 +461,25 @@ export function NModuleWorkspace({ module, onBack }: { module: NModule; onBack: 
               </div>
             </div>
           </div>
-          <ModuleRing pct={progress.pct} label="Module progress" />
+          <div className="row" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="row" style={{ gap: 4 }} role="group" aria-label="Teaching level">
+              <button
+                type="button"
+                className={`chip${level === 'simple' ? ' easy' : ''}`}
+                style={{ cursor: 'pointer' }}
+                aria-pressed={level === 'simple'}
+                onClick={() => setLevelRaw('simple')}
+              >Simple · Hinglish</button>
+              <button
+                type="button"
+                className={`chip${level === 'pro' ? ' easy' : ''}`}
+                style={{ cursor: 'pointer' }}
+                aria-pressed={level === 'pro'}
+                onClick={() => setLevelRaw('pro')}
+              >Professional</button>
+            </div>
+            <ModuleRing pct={progress.pct} label="Module progress" />
+          </div>
         </div>
       </div>
 
@@ -477,7 +517,7 @@ export function NModuleWorkspace({ module, onBack }: { module: NModule; onBack: 
             ? <QuizCard key={entry.id} entry={entry} done={done} onPass={onDone} />
             : entry.rubric?.length
               ? <ShortAnswerCard key={entry.id} entry={entry} done={done} onPass={onDone} />
-              : <TopicCard key={entry.id} entry={entry} />)}
+              : <TopicCard key={entry.id} entry={entry} level={level} />)}
         </div>
         <div style={{ flex: '1 1 0', minWidth: 'min(320px, 100%)' }}>
           <CodePanel
