@@ -9,7 +9,7 @@ import {
 import { benchmarkSource, parseBenchmark, type BenchReport } from '../../core/learning/numpy-bench';
 import { runPython } from '../coding/runners';
 import {
-  charLengths, dateDifference, parseStringList, shiftDate, sortedStrings, stringDtype, stringSummary,
+  charLengths, dateDifference, dateSpan, parseStringList, shiftDate, sortedStrings, stringDtype, stringSummary,
   truncateAll, upperAll, type DateUnit,
 } from '../../core/learning/numpy-text-time';
 
@@ -353,6 +353,7 @@ function DateTimeStringExplorer() {
   const [width, setWidth] = useState('3');
 
   const diff = dateDifference(a, b, unit);
+  const span = dateSpan(a, b);
   const shifted = shiftDate(a, Number(days), 'D');
   const names = parseStringList(rawNames);
   const summary = stringSummary(names);
@@ -381,11 +382,16 @@ function DateTimeStringExplorer() {
       </div>
       <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
         <Cell label={`end − start in ${unit}`} value={diff === null ? 'invalid date' : `${num(diff)} ${unit}`} />
+        <Cell label="as weeks" value={span === null ? 'invalid date' : `${num(span.weeks)} weeks`} />
+        <Cell label="as hours" value={span === null ? 'invalid date' : `${num(span.hours)} hours`} />
+        <Cell label="as minutes" value={span === null ? 'invalid date' : `${num(span.minutes)} minutes`} />
         <Cell label="start + days" value={shifted ?? 'invalid date'} />
         <Cell label="dtype" value="datetime64[D]" />
       </div>
       <p className="small muted" style={{ margin: '6px 0 14px' }}>
         The difference is a <code>timedelta64</code>: NumPy stores the count, so the unit you choose decides the number.
+        The week, hour and minute readings are the same span converted — for example, 59 days is 8.4286 weeks,
+        1416 hours or 84,960 minutes.
       </p>
 
       <h2 style={{ margin: '0 0 6px', fontSize: 16 }}>Fixed-width string array</h2>

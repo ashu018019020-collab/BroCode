@@ -62,6 +62,17 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Date-span conversions in the explorer (phase 57)
+
+`dateSpan(a, b)` in `numpy-text-time.ts` returns the same gap as days, weeks (fractional), hours and
+minutes, independent of the dtype unit selected for the timedelta64 reading. The Dates & strings
+explorer shows three extra cells — **as weeks**, **as hours**, **as minutes** — beside the existing
+`end − start in D/s/ms` cell, and an invalid date fills every cell with `invalid date` rather than a
+partial number.
+
+`numpy-datetime.test.mjs` pins the 59-day example (59 days = 1416 hours = 84,960 minutes = 59/7 weeks),
+the same-day zero, a date-time span and the invalid-input case.
+
 ### Bank chips filter the module's real items (phase 56)
 
 Category and difficulty chips in the module's question-bank card are now toggles. `bankItems(module,

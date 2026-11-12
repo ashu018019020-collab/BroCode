@@ -54,6 +54,23 @@ export function dateDifference(a: string, b: string, unit: DateUnit): number | n
   return (right.ms - left.ms) / UNIT_MS[unit];
 }
 
+/** The same span in every display unit: days are the base, weeks are fractional, hours/minutes exact. */
+export interface DateSpan {
+  days: number;
+  weeks: number;
+  hours: number;
+  minutes: number;
+}
+
+/** `b - a` in days plus its week/hour/minute readings, regardless of the selected dtype unit. */
+export function dateSpan(a: string, b: string): DateSpan | null {
+  const left = parseDateValue(a);
+  const right = parseDateValue(b);
+  if (!left || !right) return null;
+  const days = (right.ms - left.ms) / UNIT_MS.D;
+  return { days, weeks: days / 7, hours: days * 24, minutes: days * 1440 };
+}
+
 /** `a + amount unit`, returned in the same ISO shape the input used. */
 export function shiftDate(text: string, amount: number, unit: DateUnit): string | null {
   const value = parseDateValue(text);

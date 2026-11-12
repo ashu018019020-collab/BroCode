@@ -34,6 +34,17 @@ test('date difference and shift use the chosen unit', () => {
   assert.equal(tt.shiftDate('2026-01-01', -1, 'D'), '2025-12-31');
 });
 
+test('a day span also reads as weeks, hours and minutes', () => {
+  const span = tt.dateSpan('2026-01-01', '2026-03-01');
+  assert.equal(span.days, 59);
+  assert.equal(span.hours, 1416);
+  assert.equal(span.minutes, 84960);
+  assert.ok(Math.abs(span.weeks - 59 / 7) < 1e-12);
+  assert.equal(tt.dateSpan('2026-01-01T09:30', '2026-01-02T09:30').minutes, 1440);
+  assert.equal(tt.dateSpan('bad', '2026-01-01'), null);
+  assert.equal(tt.dateSpan('2026-01-01', '2026-01-01').weeks, 0);
+});
+
 test('string helpers follow fixed-width dtype rules', () => {
   const names = ['ada', 'bob', 'cy'];
   assert.equal(tt.stringDtype(names), '<U3');
