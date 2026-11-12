@@ -123,6 +123,7 @@ export default function NCoursePage() {
         <NModuleWorkspace
           module={open}
           modules={modules}
+          bank={stats.bank.modules[open.id]}
           initialSection={params.get('section')}
           onOpen={(id) => setParams({ module: id })}
           onBack={() => {

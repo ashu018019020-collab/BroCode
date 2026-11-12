@@ -62,6 +62,19 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Per-module question-bank breakdown (phase 47)
+
+The module header now carries the module's own bank card: total unique items, one chip per category
+(concept, output, coding, debug, quiz, written, project, scenario) and one per difficulty
+(easy/medium/hard, with the course's chip tones). The numbers come from
+`stats.bank.modules[module.id]`, the same per-module manifest the course page totals — the course page
+keeps its course-wide total, and the module page no longer forces a learner to leave the module to see
+what its bank contains.
+
+The breakdown is optional at the component boundary (`bank?`), so a caller that has no stats cannot
+render an empty or invented card. The artifact's per-module totals, categories and difficulty counts
+were already asserted against a recount in `numpy-bank.test.mjs`.
+
 ### datetime64 and string-array explorer (phase 46)
 
 A **Dates & strings** tab adds both models the advanced-dtype module teaches. The date block takes two

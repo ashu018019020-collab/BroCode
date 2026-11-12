@@ -546,10 +546,23 @@ function TopicCard({ entry, level }: { entry: NEntry; level: 'simple' | 'pro' })
  * half is the Code Bro cell that runs it. Both halves are 50% of the row, and on a phone they stack
  * instead of overflowing.
  */
+/** One module's question-bank counts, as the course artifact publishes them. */
+export interface NBankBreakdown {
+  total: number;
+  categories: Record<string, number>;
+  difficulty: Record<string, number>;
+}
+
+const BANK_CATEGORY_ORDER = ['concept', 'output', 'coding', 'debugging', 'quiz', 'written', 'project', 'scenario'];
+const BANK_CATEGORY_LABEL: Record<string, string> = {
+  concept: 'concept', output: 'output', coding: 'coding', debugging: 'debug', quiz: 'quiz',
+  written: 'written', project: 'project', scenario: 'scenario',
+};
+
 export function NModuleWorkspace({
-  module, modules = [], initialSection, onOpen, onBack,
+  module, modules = [], bank, initialSection, onOpen, onBack,
 }: {
-  module: NModule; modules?: NModule[]; initialSection?: string | null;
+  module: NModule; modules?: NModule[]; bank?: NBankBreakdown; initialSection?: string | null;
   onOpen?: (id: string) => void; onBack: () => void;
 }) {
   const state = useStore();
@@ -653,6 +666,31 @@ export function NModuleWorkspace({
           </div>
         </div>
       </div>
+
+      {bank && (
+        <div className="card" style={{ marginBottom: 10 }}>
+          <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <b className="small">This module's question bank</b>
+            <span className="chip">{bank.total} unique items</span>
+          </div>
+          <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+            {[...BANK_CATEGORY_ORDER, ...Object.keys(bank.categories).filter((k) => !BANK_CATEGORY_ORDER.includes(k))].map((key) => (
+              <span key={key} className="chip">
+                {BANK_CATEGORY_LABEL[key] ?? key} · {bank.categories[key] ?? 0}
+              </span>
+            ))}
+          </div>
+          <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+            {(['easy', 'medium', 'hard'] as const).map((key) => (
+              <span key={key} className={`chip ${DIFF_TONE[key]}`}>{key} · {bank.difficulty[key] ?? 0}</span>
+            ))}
+          </div>
+          <p className="small muted" style={{ margin: '6px 0 0' }}>
+            Counted from this module's own items — the same per-module manifest the course page totals. Each item is
+            counted once, by category and by difficulty.
+          </p>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 10 }}>
         {N_SECTIONS.map((s) => {
