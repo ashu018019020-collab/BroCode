@@ -1,0 +1,510 @@
+{
+  "n06": {
+    "Slice with a step": {
+      "syntax": "a[2:8:2]   # start : stop : step",
+      "steps": [
+        "Read the three slots as start, stop and step — the stop is excluded.",
+        "Slice the window 2..8 with a step of two and print it.",
+        "Check the result holds 2, 4, 6: every other value inside the window."
+      ],
+      "visual": "a = [0 1 2 3 4 5 6 7 8 9]\na[2:8:2] → [2 4 6]",
+      "realWorld": "Downsampling a sensor series to every second reading is one step slice, not a loop with an index counter.",
+      "mistakes": [
+        "Expecting the stop value 8 to appear; the window is cut first, then stepped.",
+        "Reading a[2:8:2] as \"two elements, then stop\"."
+      ],
+      "revision": [
+        "start:stop:step — stop excluded, step optional.",
+        "The window is chosen first, then every step-th element inside it."
+      ]
+    },
+    "Slice rows and columns": {
+      "syntax": "a[:2, 1:]   # rows first, columns second",
+      "steps": [
+        "Build a 3×3 matrix so row and column indices are easy to check.",
+        "Slice the first two rows and every column from index 1.",
+        "Confirm the result is 2×2 — rows and columns are cut independently."
+      ],
+      "visual": "[[0 1 2]\n [3 4 5]\n [6 7 8]]\na[:2, 1:] → [[1 2]\n             [4 5]]",
+      "realWorld": "Reading a data block from a spreadsheet — the first N records, every column past the ID — is one two-axis slice.",
+      "mistakes": [
+        "Swapping the order and slicing columns first.",
+        "Forgetting that a bare slice in one slot keeps that whole axis."
+      ],
+      "revision": [
+        "The comma separates axes: rows, then columns.",
+        "Each axis slices independently; the output shape is what survives."
+      ]
+    },
+    "A slice is a view": {
+      "syntax": "b = a[1:3]   # shares the buffer",
+      "steps": [
+        "Slice a range out of an array and keep it in a second name.",
+        "Write into the slice.",
+        "Print the source array and see the write arrive there."
+      ],
+      "visual": "a = [0 1 2 3 4]\nb = a[1:3]\nb[0] = 99\na → [ 0 99  2  3  4]",
+      "realWorld": "Cleaning a column region in place works because the slice is the same memory; that same property silently corrupts a dataset when someone assumed a copy.",
+      "mistakes": [
+        "Treating the slice as an independent array and losing the source later.",
+        "Believing the assignment created a new buffer."
+      ],
+      "revision": [
+        "Basic slicing returns a view onto the same buffer.",
+        "Any write through either name is visible through the other."
+      ]
+    },
+    "Reverse a row with a negative step": {
+      "syntax": "a[::-1]   # step -1 walks backwards",
+      "steps": [
+        "Create a short range.",
+        "Reverse it with a step of -1.",
+        "Print the result and note the source is unchanged."
+      ],
+      "visual": "a = [0 1 2 3]\na[::-1] → [3 2 1 0]",
+      "realWorld": "Showing the newest reading first is a reversal at display time, with no sort and no copy.",
+      "mistakes": [
+        "Reversing the source in place when only the display needed it reversed.",
+        "Assuming the reversal copied the data."
+      ],
+      "revision": [
+        "A negative step walks the axis backwards.",
+        "The result is a view with negative strides; the values did not move."
+      ]
+    },
+    "Slice assignment writes through": {
+      "syntax": "a[0:2] = 0",
+      "steps": [
+        "Create an array of four values.",
+        "Assign zero into the first two positions.",
+        "Print the array to confirm only that window changed."
+      ],
+      "visual": "[0 1 2 3]\na[0:2] = 0\na → [0 0 2 3]",
+      "realWorld": "Zeroing a padded block or a missing-data band before a computation is a slice assignment, not twenty individual writes.",
+      "mistakes": [
+        "Assigning to a copy and expecting the original to change.",
+        "Using a mismatched shape on the right-hand side."
+      ],
+      "revision": [
+        "A basic slice is a window, so assignment edits the source.",
+        "The right-hand side is copied into the selected cells."
+      ]
+    },
+    "Step in both dimensions": {
+      "syntax": "a[::2, ::2]   # a step per axis",
+      "steps": [
+        "Build a 4×4 matrix so both axes have something to skip.",
+        "Slice every second row and every second column in one expression.",
+        "Print the 2×2 result and map each cell back to its source position."
+      ],
+      "visual": "a = arange(16).reshape(4, 4)\na[::2, ::2] → [[ 0  2]\n               [ 8 10]]",
+      "realWorld": "Coarse sampling of an image — every second pixel in both directions — is one two-axis step slice.",
+      "mistakes": [
+        "Writing both steps in one slot and expecting a 2-D result.",
+        "Forgetting the second axis defaults to everything when its slot is omitted."
+      ],
+      "revision": [
+        "Every axis takes its own step after its own comma.",
+        "The result is a strided view, not a copy."
+      ]
+    },
+    "Copy breaks the view link": {
+      "syntax": "b = a[:].copy()   # own buffer",
+      "steps": [
+        "Copy an array with .copy().",
+        "Write into the copy.",
+        "Print both arrays to prove only one changed."
+      ],
+      "visual": "a = [0 1 2]\nb = a[:].copy()\nb[0] = 9\na → [0 1 2]   b → [9 1 2]",
+      "realWorld": "A helper that mutates its input is safe when it receives a copy; passing a slice instead is how a caller's data gets edited.",
+      "mistakes": [
+        "Calling a[:] and thinking it copied — it is still a view.",
+        "Copying in a hot loop and paying for an allocation per iteration."
+      ],
+      "revision": [
+        "copy() allocates a new buffer.",
+        "shares_memory(a, b) is False after a copy, True after a slice."
+      ]
+    },
+    "Slices clamp instead of failing": {
+      "syntax": "a[0:100]   # clamped to the length",
+      "steps": [
+        "Create a three-element array.",
+        "Slice it far past the end.",
+        "Print the result and note there is no IndexError."
+      ],
+      "visual": "a = [0 1 2]\na[0:100] → [0 1 2]",
+      "realWorld": "A page size taken from user input can exceed the row count; a slice returns what exists instead of crashing the endpoint.",
+      "mistakes": [
+        "Assuming out-of-range slices raise so no validation is needed elsewhere.",
+        "Confusing clamping (slices) with the IndexError a single index raises."
+      ],
+      "revision": [
+        "Slice bounds are clamped to the axis length.",
+        "A single out-of-range index still raises IndexError."
+      ]
+    },
+    "The end of a slice is exclusive": {
+      "syntax": "a[2:5]   # 2, 3, 4",
+      "steps": [
+        "Create a range of ten values.",
+        "Slice from 2 to 5.",
+        "Count the three values and confirm 5 itself is absent."
+      ],
+      "visual": "a[2:5] → [2 3 4]\nindices 2,3,4 — not 5",
+      "realWorld": "Splitting a dataset into 80/20 chunks is exactly this off-by-one: the first chunk is 0:n, the second n:len.",
+      "mistakes": [
+        "Writing a[2:5] and expecting four values.",
+        "Compensating with a[2:6] somewhere else and drifting by one."
+      ],
+      "revision": [
+        "The stop index is never included.",
+        "slice(2, 5) and a[2:5] are the same rule in two spellings."
+      ]
+    },
+    "Omit a bound to keep it open": {
+      "syntax": "a[:2]   |   a[3:]",
+      "steps": [
+        "Omit the start to mean \"from the beginning\".",
+        "Omit the stop to mean \"to the end\".",
+        "Print both and compare with the explicit bounds."
+      ],
+      "visual": "a[:2] → [0 1]\na[3:] → [3 4]",
+      "realWorld": "Skipping a CSV header is a[1:] — the omitted stop is why no length arithmetic is needed.",
+      "mistakes": [
+        "Computing len(a) by hand where an omitted stop would do.",
+        "Writing a[0:len(a)] and then changing the array without updating it."
+      ],
+      "revision": [
+        "An omitted start is 0; an omitted stop is the axis length.",
+        "The idiom survives a change in length; the explicit numbers do not."
+      ]
+    },
+    "A step of two skips elements": {
+      "syntax": "a[::2]   # every other element",
+      "steps": [
+        "Apply a step of two with both bounds omitted.",
+        "Print the result and count the elements.",
+        "Compare with a[1::2] to see the offset version."
+      ],
+      "visual": "arange(10)[::2] → [0 2 4 6 8]",
+      "realWorld": "Separating even and odd days of a series is arange[::2] and arange[1::2], with no index list to maintain.",
+      "mistakes": [
+        "Expecting the step to change the source array.",
+        "Confusing the step slot with a second stop value."
+      ],
+      "revision": [
+        "The third slot is the step and it can skip or reverse.",
+        "It changes the view, never the source."
+      ]
+    },
+    "Slice rows and columns at once": {
+      "syntax": "a[1:, :2]",
+      "steps": [
+        "Take a 3×3 matrix.",
+        "Slice rows from index 1 and columns up to index 2.",
+        "Print the 2×2 block and verify it is rectangular."
+      ],
+      "visual": "a[1:, :2] → [[3 4]\n             [6 7]]",
+      "realWorld": "Dropping a header row and an ID column before modelling is this one expression.",
+      "mistakes": [
+        "Expecting a ragged result from uneven slices — NumPy always returns a rectangle.",
+        "Putting the column slice first."
+      ],
+      "revision": [
+        "One slice per axis, separated by a comma.",
+        "The output is always rectangular."
+      ]
+    },
+    "Writing through a slice edits the original": {
+      "syntax": "b = a[1:4]; b[0] = 99",
+      "steps": [
+        "Slice a middle range into a second name.",
+        "Write into the first cell of that slice.",
+        "Print the source and the slice to see both change."
+      ],
+      "visual": "a = [0 1 2 3 4 5]\nb = a[1:4]; b[0] = 99\na → [ 0 99  2  3  4  5]",
+      "realWorld": "In-place cleaning of a feature block works this way; the same aliasing edits the raw data when the intent was a scratch copy.",
+      "mistakes": [
+        "Assuming the second name owns its data.",
+        "Copying only when the bug has already changed the source."
+      ],
+      "revision": [
+        "A slice shares the buffer; a copy does not.",
+        "Ask for .copy() when the two names must diverge."
+      ]
+    },
+    "Reverse with a negative step": {
+      "syntax": "a[::-1]   |   a[::-1, ::-1]",
+      "steps": [
+        "Reverse a vector with a step of -1.",
+        "Reverse both axes of a 2×2 matrix in one expression.",
+        "Print both and confirm the shapes are unchanged."
+      ],
+      "visual": "[0 1 2 3 4][::-1] → [4 3 2 1 0]\n[[1 2] [3 4]][::-1, ::-1] → [[4 3]\n                              [2 1]]",
+      "realWorld": "Rotating a matrix by 180° for display is a double reversal — no values are moved in memory.",
+      "mistakes": [
+        "Reversing only one axis and calling it a rotation.",
+        "Expecting the shape to change when only the order did."
+      ],
+      "revision": [
+        "A negative step walks that axis backwards.",
+        "The shape is preserved; only the strides are negated."
+      ]
+    }
+  },
+  "n07": {
+    "reshape": {
+      "syntax": "a.reshape(2, 3)   # same values, new shape",
+      "steps": [
+        "Count the values so the target shape is arithmetically possible.",
+        "Reshape to (2, 3) and print the grouping.",
+        "Try (4, 2) and read the error that proves the count is enforced."
+      ],
+      "visual": "arange(6).reshape(2, 3)\n→ [[0 1 2]\n   [3 4 5]]",
+      "realWorld": "A flat buffer from a file or an image decoder becomes a model input only after a reshape to (rows, features).",
+      "mistakes": [
+        "Reshaping to a shape whose product differs from size.",
+        "Assuming reshape reorders values; it only regroups them."
+      ],
+      "revision": [
+        "reshape changes shape, never the data or its order.",
+        "The element count must be identical before and after."
+      ]
+    },
+    "ravel and transpose": {
+      "syntax": "a.ravel()   |   a.T",
+      "steps": [
+        "Flatten a matrix with ravel.",
+        "Transpose the same matrix with .T.",
+        "Compare the two shapes: (4,) versus (2, 2)."
+      ],
+      "visual": "a = [[1 2] [3 4]]\na.ravel() → [1 2 3 4]\na.T → [[1 3]\n       [2 4]]",
+      "realWorld": "Moving a matrix between the flat layout a solver wants and the (rows, columns) layout a report needs is these two calls.",
+      "mistakes": [
+        "Treating ravel's result as an independent copy when it may be a view.",
+        "Transposing twice in a chain and cancelling the effect."
+      ],
+      "revision": [
+        "ravel flattens, .T swaps axes; both are views when the layout allows.",
+        "Neither changes the number of values."
+      ]
+    },
+    "concatenate and stack": {
+      "syntax": "np.concatenate([a, b])   |   np.stack([a, b])",
+      "steps": [
+        "Join two length-2 vectors with concatenate and print the length-4 result.",
+        "Stack the same two vectors and print the (2, 2) result.",
+        "State the difference: one extends an axis, the other adds one."
+      ],
+      "visual": "concatenate → [1 2 1 2]   shape (4,)\nstack → [[1 2]\n         [1 2]]   shape (2, 2)",
+      "realWorld": "Batching rows of new records is concatenate; turning a list of per-sample vectors into a batch matrix is stack.",
+      "mistakes": [
+        "Using stack in a loop and growing a dimension on every iteration.",
+        "Concatenating along the wrong axis and doubling the row count."
+      ],
+      "revision": [
+        "concatenate joins along an existing axis.",
+        "stack creates a new axis, so the rank grows by one."
+      ]
+    },
+    "reshape with -1 infers the size": {
+      "syntax": "a.reshape(-1, 2)   # one inferred axis",
+      "steps": [
+        "Write -1 for the dimension you do not want to compute.",
+        "Give the other dimension explicitly.",
+        "Print the result's shape to confirm NumPy inferred the rows."
+      ],
+      "visual": "arange(6).reshape(-1, 2)\n→ [[0 1]\n   [2 3]\n   [4 5]]   shape (3, 2)",
+      "realWorld": "Batching a stream whose length changes uses reshape(-1, batch), so the batch size stays fixed and the row count adapts.",
+      "mistakes": [
+        "Using -1 on two axes, which cannot be resolved.",
+        "Assuming -1 pads to fit; it never invents values."
+      ],
+      "revision": [
+        "Exactly one axis may be -1.",
+        "The inferred value is size divided by the known dimensions."
+      ]
+    },
+    "newaxis makes a column": {
+      "syntax": "a[:, np.newaxis]   # (3,) → (3, 1)",
+      "steps": [
+        "Start with a length-3 vector.",
+        "Insert an axis with np.newaxis in the index.",
+        "Print the shape and confirm it is (3, 1) rather than (1, 3)."
+      ],
+      "visual": "np.arange(3)[:, np.newaxis].shape → (3, 1)\nnp.arange(3)[np.newaxis, :].shape → (1, 3)",
+      "realWorld": "Subtracting a per-column mean from every row needs the mean as (1, n); a per-row offset needs it as (m, 1).",
+      "mistakes": [
+        "Putting newaxis in the wrong slot and broadcasting the opposite way.",
+        "Using reshape where an axis insert would be clearer."
+      ],
+      "revision": [
+        "newaxis inserts a length-1 axis at that position.",
+        "The slot decides whether it becomes a row or a column."
+      ]
+    },
+    "stack adds a new axis": {
+      "syntax": "np.stack([a, b])   |   np.stack([a, b], axis=1)",
+      "steps": [
+        "Stack two equal-shape arrays.",
+        "Print the new shape and note the extra leading axis.",
+        "Move the axis with axis=1 and compare."
+      ],
+      "visual": "stack([zeros(2), ones(2)]).shape → (2, 2)\nstack(..., axis=1).shape → (2, 2) with the pairs grouped per column",
+      "realWorld": "Turning a list of per-sample feature vectors into one batch matrix is stack along axis 0, which is what most estimators expect.",
+      "mistakes": [
+        "Stacking arrays of different shapes and reading the error as a data problem.",
+        "Confusing stack with concatenate and off-by-one dimensions."
+      ],
+      "revision": [
+        "stack grows the rank by one.",
+        "All inputs must share the same shape."
+      ]
+    },
+    "split cuts an array into pieces": {
+      "syntax": "np.split(a, 2)",
+      "steps": [
+        "Split a length-4 array into two parts.",
+        "Print the returned list and each part's shape.",
+        "Try a length that does not divide evenly and read the error."
+      ],
+      "visual": "np.split(arange(4), 2)\n→ [array([0, 1]), array([2, 3])]",
+      "realWorld": "Train/test splits and mini-batches both start from split or a sliced equivalent.",
+      "mistakes": [
+        "Assuming split pads the last piece.",
+        "Forgetting the return value is a list, not an array."
+      ],
+      "revision": [
+        "split returns a list of views.",
+        "Unequal pieces need array_split."
+      ]
+    },
+    "flatten always copies": {
+      "syntax": "a.flatten()   # new buffer, always",
+      "steps": [
+        "Flatten a matrix.",
+        "Write into the flattened result.",
+        "Print the source to prove it did not change."
+      ],
+      "visual": "a = [[0 1] [2 3]]\nf = a.flatten(); f[0] = 9\na → [[0 1]\n     [2 3]]",
+      "realWorld": "A function that sorts or shuffles its input safely receives flatten(), because the caller's array cannot be reached through it.",
+      "mistakes": [
+        "Using flatten inside a loop and paying an allocation per call.",
+        "Expecting the copy to raise memory errors only on huge arrays."
+      ],
+      "revision": [
+        "flatten allocates unconditionally.",
+        "shares_memory(a, a.flatten()) is always False."
+      ]
+    },
+    "ravel flattens without copying when it can": {
+      "syntax": "a.ravel()   |   a.ravel().base is a",
+      "steps": [
+        "Flatten a contiguous matrix with ravel.",
+        "Check whether the result still points at the source.",
+        "Transpose first, then ravel, and compare the answer."
+      ],
+      "visual": "a.ravel().base is a → False (the view's base is the flattened view)\nshares_memory(a, a.ravel()) → True",
+      "realWorld": "Passing a matrix to a flat C API avoids a copy only when ravel can return a view — which depends on the layout, not the call.",
+      "mistakes": [
+        "Mutating the ravel result assuming it is always a copy.",
+        "Assuming base identity rather than shares_memory is the alias test."
+      ],
+      "revision": [
+        "ravel copies only when the strides forbid a view.",
+        "shares_memory is the reliable question; base identity is not."
+      ]
+    },
+    "reshape turns a vector into a column": {
+      "syntax": "a.reshape(4, 1)",
+      "steps": [
+        "Reshape a length-4 vector into a 4×1 column.",
+        "Broadcast it against a length-4 row and print the shape.",
+        "Reshape as 1×4 and repeat to see the transposed behaviour."
+      ],
+      "visual": "a = [0 1 2 3]\na.reshape(4, 1) → [[0]\n                   [1]\n                   [2]\n                   [3]]",
+      "realWorld": "A per-row offset must arrive as an (m, 1) column, while a per-column offset must arrive as (1, n) — the shape is the whole difference.",
+      "mistakes": [
+        "Using a 1-D vector and expecting the outer product to appear.",
+        "Reshaping to (4, 1) but broadcasting it against rows."
+      ],
+      "revision": [
+        "reshape can add a length-1 axis without changing the values.",
+        "The axis position decides the broadcast direction."
+      ]
+    },
+    "vstack stacks arrays into rows": {
+      "syntax": "np.vstack([a, b])",
+      "steps": [
+        "Stack two length-2 vectors with vstack.",
+        "Print the (2, 2) result and identify each original row.",
+        "Compare with hstack on the same inputs."
+      ],
+      "visual": "vstack([1 2], [3 4]) → [[1 2]\n                          [3 4]]",
+      "realWorld": "Appending a new record to a table is a vstack of the old rows and the new row, kept as an array rather than a list of lists.",
+      "mistakes": [
+        "Using vstack where hstack was meant and doubling the row count.",
+        "Stacking a growing array in a loop instead of collecting and stacking once."
+      ],
+      "revision": [
+        "vstack adds a first axis, so inputs become rows.",
+        "hstack joins along the existing axis instead."
+      ]
+    },
+    "Transpose swaps the axes": {
+      "syntax": "a.T   # shape and strides swap",
+      "steps": [
+        "Build a 2×3 matrix.",
+        "Print the shape of .T and confirm it is (3, 2).",
+        "Write into the transpose and see the source change."
+      ],
+      "visual": "a (2, 3)\na.T (3, 2)\nvalues unmoved — strides reordered",
+      "realWorld": "Most linear algebra expects features as columns or as rows depending on the library; .T supplies the orientation with no copy.",
+      "mistakes": [
+        "Believing .T copied the data.",
+        "Forgetting that a write through the transpose reaches the original."
+      ],
+      "revision": [
+        ".T reverses the axis order and returns a view.",
+        "Size is unchanged; only the shape and strides swap."
+      ]
+    },
+    "reshape returns a view when it can": {
+      "syntax": "b = a.reshape(2, 3)   # may share memory",
+      "steps": [
+        "Reshape a flat range into a matrix.",
+        "Write into the first cell of the matrix.",
+        "Print the flat source and confirm the value arrived."
+      ],
+      "visual": "a = arange(6)\nb = a.reshape(2, 3); b[0, 0] = 99\na → [99  1  2  3  4  5]",
+      "realWorld": "Filling a matrix in place without doubling memory depends on reshape returning a view, which is why the layout matters.",
+      "mistakes": [
+        "Assuming reshape copied and mutating freely.",
+        "Relying on a view where a non-contiguous source forces a copy."
+      ],
+      "revision": [
+        "reshape copies only when the strides cannot express the new shape.",
+        "Use .copy() when independence is required."
+      ]
+    },
+    "Stack and concatenate": {
+      "syntax": "np.vstack / np.hstack / np.stack / np.concatenate",
+      "steps": [
+        "Stack two vectors as rows with vstack.",
+        "Join the same vectors end to end with hstack.",
+        "Stack them into a new axis and compare all three shapes."
+      ],
+      "visual": "vstack → [[1 2]\n          [3 4]]   (2, 2)\nhstack → [1 2 3 4]   (4,)\nstack → (2, 2)",
+      "realWorld": "Feature blocks are joined with hstack, record batches with vstack, and per-sample vectors become a batch with stack.",
+      "mistakes": [
+        "Mixing the three and getting a silently wrong axis.",
+        "Concatenating arrays whose non-joined axes disagree."
+      ],
+      "revision": [
+        "vstack adds rows, hstack adds columns.",
+        "stack creates a new axis; concatenate uses an existing one."
+      ]
+    }
+  }
+}

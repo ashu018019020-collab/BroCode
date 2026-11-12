@@ -1,0 +1,510 @@
+{
+  "n12": {
+    "sort and argsort": {
+      "syntax": "np.sort(a)   |   np.argsort(a)",
+      "steps": [
+        "Sort a short unsorted array and print it.",
+        "Ask for the argsort positions of the same array.",
+        "Walk the positions back through the source to confirm the order."
+      ],
+      "visual": "[3 1 2]\nsort → [1 2 3]\nargsort → [1 2 0]",
+      "realWorld": "Reordering a names array by the scores array needs positions, not values, so argsort is the call that keeps the two columns aligned.",
+      "mistakes": [
+        "Sorting the scores and forgetting the names now point at nothing.",
+        "Assuming argsort returns the sorted values."
+      ],
+      "revision": [
+        "sort returns values; argsort returns the positions that would sort it.",
+        "Feed argsort's output into the parallel array to reorder it in step."
+      ]
+    },
+    "searchsorted": {
+      "syntax": "np.searchsorted(sorted_a, 4)",
+      "steps": [
+        "Take an array that is already sorted.",
+        "Ask where a missing value would be inserted.",
+        "Print the index and check the neighbours around it."
+      ],
+      "visual": "[1 3 5] searchsorted(4) → 2",
+      "realWorld": "Mapping values into buckets — age bands, price tiers — is a binary search over sorted edges rather than a scan per record.",
+      "mistakes": [
+        "Calling it on an unsorted array and trusting the meaningless index.",
+        "Forgetting the default side='left' decides where ties land."
+      ],
+      "revision": [
+        "searchsorted assumes sorted input and returns an insertion index.",
+        "The result is a position, so it indexes the edges array."
+      ]
+    },
+    "Unique values and set operations": {
+      "syntax": "np.unique(a)   |   np.intersect1d(a, b)",
+      "steps": [
+        "Get the distinct values of an array with repeats.",
+        "Ask which values the two arrays share.",
+        "Compare the shapes and confirm the output is sorted."
+      ],
+      "visual": "unique([1 2 2 3]) → [1 2 3]\nintersect1d([1 2 2 3], [2 4]) → [2]",
+      "realWorld": "Reconciling two customer lists — who is in both, who is only in one — is a set operation instead of a nested membership loop.",
+      "mistakes": [
+        "Expecting the original order; unique always sorts.",
+        "Using a Python set comprehension on a large array and losing the speed."
+      ],
+      "revision": [
+        "unique returns sorted distinct values.",
+        "intersect1d, union1d and setdiff1d are the set questions."
+      ]
+    },
+    "sort each row separately": {
+      "syntax": "np.sort(a, axis=1)",
+      "steps": [
+        "Sort a 2×3 matrix along axis 1.",
+        "Print the result and confirm each row is independently ordered.",
+        "Repeat with axis=0 and see the columns sorted instead."
+      ],
+      "visual": "[[3 1 2]\n [9 7 8]]  axis=1\n→ [[1 2 3]\n   [7 8 9]]",
+      "realWorld": "Sorting each sample's readings while keeping the samples in place is a row sort; axis=0 would destroy the record boundaries.",
+      "mistakes": [
+        "Using the default axis on a matrix and flattening the structure.",
+        "Assuming rows move relative to each other."
+      ],
+      "revision": [
+        "axis=1 sorts inside each row.",
+        "axis=0 sorts down each column instead."
+      ]
+    },
+    "Reverse a sorted array for descending order": {
+      "syntax": "np.sort(a)[::-1]",
+      "steps": [
+        "Sort ascending.",
+        "Reverse the sorted result with a negative step.",
+        "Confirm the largest value is now first."
+      ],
+      "visual": "[3 1 2] → sorted [1 2 3] → reversed [3 2 1]",
+      "realWorld": "Leaderboards and top-N reports present descending order, which takes a sort plus one reversal slice.",
+      "mistakes": [
+        "Reversing before sorting and calling it descending.",
+        "Assuming there is a descending flag on np.sort."
+      ],
+      "revision": [
+        "NumPy sorts ascending only.",
+        "Descending is the reverse slice of the sorted result."
+      ]
+    },
+    "partition keeps only k small values in front": {
+      "syntax": "np.partition(a, 2)",
+      "steps": [
+        "Partition an array at position 2.",
+        "Print the first three values and confirm they are the three smallest.",
+        "Note the two halves are not internally sorted."
+      ],
+      "visual": "partition([5 1 4 2 3], 2)\nfirst three sum → 6, rest → 9",
+      "realWorld": "Top-k selection — the three cheapest products, the five slowest requests — does not need a full sort, and partition is the cheaper call.",
+      "mistakes": [
+        "Expecting the whole array to come back sorted.",
+        "Using partition when the full order is actually needed."
+      ],
+      "revision": [
+        "Only the k-th position is guaranteed.",
+        "The elements on each side are unordered."
+      ]
+    },
+    "lexsort orders by the last key first": {
+      "syntax": "np.lexsort((secondary, primary))",
+      "steps": [
+        "Build a primary and a secondary key.",
+        "Pass the secondary key first and the primary last.",
+        "Apply the returned order to both columns."
+      ],
+      "visual": "names ['b' 'a' 'b' 'a'], scores [2 2 1 1]\nlexsort((scores, names))\n→ ['a' 'a' 'b' 'b'] [1 2 1 2]",
+      "realWorld": "Sorting a report by date and then by amount inside each date is a two-key lexsort, with no tuple building.",
+      "mistakes": [
+        "Passing the keys in the intuitive but wrong order.",
+        "Forgetting the output is a permutation, not sorted values."
+      ],
+      "revision": [
+        "The LAST key in the tuple is the primary key.",
+        "The result indexes the data like argsort."
+      ]
+    },
+    "argmax finds the best position": {
+      "syntax": "np.argmax(a)",
+      "steps": [
+        "Find the position of the largest value.",
+        "Use that index to fetch the label or row behind it.",
+        "Add an axis to get one best position per row."
+      ],
+      "visual": "[3 9 5] argmax → 1",
+      "realWorld": "A classifier's predicted class is argmax over the class scores; the value itself is never the answer the user wants.",
+      "mistakes": [
+        "Reporting the maximum value instead of the class it belongs to.",
+        "Forgetting ties resolve to the FIRST occurrence."
+      ],
+      "revision": [
+        "argmax returns an index, not a value.",
+        "It is the bridge from scores to labels."
+      ]
+    },
+    "argsort returns the order, not the values": {
+      "syntax": "np.argsort(a)",
+      "steps": [
+        "Sort positions rather than values.",
+        "Print the permutation.",
+        "Index a second array with it to reorder both together."
+      ],
+      "visual": "argsort([3 1 2]) → [1 2 0]",
+      "realWorld": "Sorting a table by one column means carrying every other column along, and argsort is the only output that allows that.",
+      "mistakes": [
+        "Using sort and losing the link to the other columns.",
+        "Applying the permutation to the already-sorted array."
+      ],
+      "revision": [
+        "argsort returns positions that would sort the array.",
+        "Applying them to the source is what reorders the table."
+      ]
+    },
+    "sort can work in place": {
+      "syntax": "a.sort(axis=1)   # returns None",
+      "steps": [
+        "Call the array method instead of the function.",
+        "Note that it returns None.",
+        "Print the array to see it reordered."
+      ],
+      "visual": "[[3 1] [2 4]].sort(axis=1)\n→ [[1 3]\n   [2 4]]",
+      "realWorld": "Sorting a large array a program already owns in place avoids a second copy of the buffer.",
+      "mistakes": [
+        "Assigning the return value and getting None.",
+        "Calling the method on a view and reordering the source as a side effect."
+      ],
+      "revision": [
+        "ndarray.sort rearranges in place and returns None.",
+        "np.sort returns a new array."
+      ]
+    },
+    "unique removes repeats and sorts": {
+      "syntax": "np.unique(a)   |   return_counts=True",
+      "steps": [
+        "Pass an unsorted array with repeats.",
+        "Print the distinct values and note they are sorted.",
+        "Add return_counts=True to get the frequency of each."
+      ],
+      "visual": "unique([3 1 3 2]) → [1 2 3]",
+      "realWorld": "A category value-count table — how often each label appears — is unique with counts, not a histogram with hand-made bins.",
+      "mistakes": [
+        "Expecting first-seen order from the output.",
+        "Assuming the input was modified."
+      ],
+      "revision": [
+        "unique always returns sorted distinct values.",
+        "return_counts aligns one count with each unique value."
+      ]
+    },
+    "argmin finds the smallest position": {
+      "syntax": "np.argmin(a)",
+      "steps": [
+        "Find the position of the smallest value.",
+        "Fetch the matching row or label with that index.",
+        "Check a tie case and confirm the first one wins."
+      ],
+      "visual": "[4 2 8] argmin → 1",
+      "realWorld": "Locating the worst-performing store or the cheapest supplier is a position question, and the name lookup follows from it.",
+      "mistakes": [
+        "Reading argmin as the minimum value.",
+        "Assuming the last occurrence wins on ties."
+      ],
+      "revision": [
+        "argmin returns the first position of the minimum.",
+        "The value itself comes from min or from indexing."
+      ]
+    },
+    "argsort gives positions, sort gives values": {
+      "syntax": "order = np.argsort(score); names[order]",
+      "steps": [
+        "Compute the order from the sort key.",
+        "Index the label array with that order.",
+        "Index the key array with the same order and check they agree."
+      ],
+      "visual": "names ['b' 'a' 'c'], score [2 9 5]\norder → [0 2 1]\nnames[order] → ['b' 'c' 'a']",
+      "realWorld": "Any table sort — customers by revenue, products by margin — is one permutation applied to every column.",
+      "mistakes": [
+        "Sorting names and scores separately, which breaks the pairing.",
+        "Reusing a stale order after the data changed."
+      ],
+      "revision": [
+        "One argsort, applied to every parallel array, keeps rows aligned.",
+        "The permutation is the sort; the values are just one view of it."
+      ]
+    },
+    "Set operations on arrays": {
+      "syntax": "intersect1d   |   union1d   |   setdiff1d",
+      "steps": [
+        "Compute the shared values of two arrays.",
+        "Compute the union and print it.",
+        "Compute the difference and confirm it excludes the shared value."
+      ],
+      "visual": "a [1 2 3 3], b [3 4]\nintersect → [3]\nunion → [1 2 3 4]\ndiff → [1 2]",
+      "realWorld": "Duplicate detection and list reconciliation are these three calls, and every result is sorted so reports stay stable.",
+      "mistakes": [
+        "Expecting duplicates to survive the operation.",
+        "Assuming the order of the inputs is preserved."
+      ],
+      "revision": [
+        "All three treat the arrays as sets and return sorted unique values.",
+        "setdiff1d is one-way: values in the first that are absent from the second."
+      ]
+    }
+  },
+  "n13": {
+    "view shares, copy does not": {
+      "syntax": "a.view()   |   a.copy()",
+      "steps": [
+        "Create a view and a copy of the same array.",
+        "Write into the view and print the source.",
+        "Write into the copy and print the source again."
+      ],
+      "visual": "a = [0 1 2 3]\nv[0] = 9 → a [9 1 2 3]\nc[0] = 9 → a unchanged",
+      "realWorld": "Passing a copy to a helper that mutates its input is the safe choice; passing a view is how the caller's data gets rewritten.",
+      "mistakes": [
+        "Using a[1:] believing it copied.",
+        "Copying in every call and doubling memory use."
+      ],
+      "revision": [
+        "view shares the buffer; copy allocates a new one.",
+        "A write through the view is visible in the source."
+      ]
+    },
+    "Prove sharing with shares_memory": {
+      "syntax": "np.shares_memory(a, b)",
+      "steps": [
+        "Ask whether a slice shares memory with its source.",
+        "Ask the same question for a copy.",
+        "Print both and read True then False."
+      ],
+      "visual": "shares_memory(a, a[1:3]) → True\nshares_memory(a, a.copy()) → False",
+      "realWorld": "Before mutating a derived array, this is the one check that answers whether the source will change too.",
+      "mistakes": [
+        "Guessing the answer from the operation name.",
+        "Assuming the test is cheap on very large arrays — it can be slow."
+      ],
+      "revision": [
+        "shares_memory answers the question with a real check.",
+        "Slices usually share; copies never do."
+      ]
+    },
+    "Strides describe memory steps": {
+      "syntax": "a.strides",
+      "steps": [
+        "Build a (2, 3) int64 matrix.",
+        "Print the strides and identify the row and column steps.",
+        "Multiply 3 × 8 and confirm it equals the row stride."
+      ],
+      "visual": "shape (2, 3), int64\nstrides (24, 8)",
+      "realWorld": "Why a transpose is free and why some library calls copy is explained by these two numbers, not by the values.",
+      "mistakes": [
+        "Reading strides as element counts when they are bytes.",
+        "Assuming strides are always positive."
+      ],
+      "revision": [
+        "Strides are byte offsets per axis step.",
+        "C order means the last axis has the smallest stride."
+      ]
+    },
+    "reshape usually returns a view": {
+      "syntax": "np.shares_memory(a, a.reshape(2, 3))",
+      "steps": [
+        "Reshape a contiguous range.",
+        "Check sharing with the source.",
+        "Write into the reshaped array and confirm the source changed."
+      ],
+      "visual": "arange(6).reshape(2, 3)\nshares_memory → True",
+      "realWorld": "A pipeline that reshapes a buffer for a model can avoid a copy only while the layout stays contiguous.",
+      "mistakes": [
+        "Assuming reshape always copies.",
+        "Reshaping a transposed array and being surprised by a copy."
+      ],
+      "revision": [
+        "Contiguous layouts reshape as views.",
+        "A non-contiguous source forces an allocation."
+      ]
+    },
+    "base points at the source array": {
+      "syntax": "a[1:].base is a",
+      "steps": [
+        "Take a slice of an array.",
+        "Print the slice's base.",
+        "Confirm the base is the original object."
+      ],
+      "visual": "a.base → None\na[1:].base is a → True",
+      "realWorld": "When two names mysteriously change together, base is the fastest way to prove they share one buffer.",
+      "mistakes": [
+        "Expecting base to be the immediate slice rather than the owner.",
+        "Using base identity where shares_memory is the correct test."
+      ],
+      "revision": [
+        "A view's base points at the array that owns the memory.",
+        "An owning array reports None."
+      ]
+    },
+    "Transpose is a view with new strides": {
+      "syntax": "a.T.strides",
+      "steps": [
+        "Print the strides of a matrix.",
+        "Print the strides of its transpose.",
+        "Confirm the two numbers swapped and no bytes moved."
+      ],
+      "visual": "a  strides (24, 8)\na.T strides (8, 24)",
+      "realWorld": "Reorienting a matrix for a solver costs nothing because only the strides change, which is why transposes appear freely in hot loops.",
+      "mistakes": [
+        "Assuming the transpose allocated a new buffer.",
+        "Assuming a non-contiguous transpose is still C order."
+      ],
+      "revision": [
+        "Transpose swaps strides, not data.",
+        "The result is a view and usually not C-contiguous."
+      ]
+    },
+    "A reversed slice has negative strides": {
+      "syntax": "a[::-1].strides",
+      "steps": [
+        "Reverse an array with a step of -1.",
+        "Print its strides and compare with the source.",
+        "Note the only change is the sign."
+      ],
+      "visual": "a.strides (8,)\na[::-1].strides (-8,)",
+      "realWorld": "Displaying a sequence backwards at no memory cost is exactly what a negative stride buys.",
+      "mistakes": [
+        "Assuming the reversal copied the data.",
+        "Expecting the shape to change."
+      ],
+      "revision": [
+        "A negative step negates that axis's stride.",
+        "The values stay where they are; only the walk direction changed."
+      ]
+    },
+    "copy owns its memory": {
+      "syntax": "a.copy().flags['OWNDATA']",
+      "steps": [
+        "Copy an array.",
+        "Read the OWNDATA flag on the copy.",
+        "Compare it with the flag on a slice."
+      ],
+      "visual": "a.copy().flags['OWNDATA'] → True\nslice flags['OWNDATA'] → False",
+      "realWorld": "Libraries check OWNDATA to decide whether they may write into an array, and a view fails that test.",
+      "mistakes": [
+        "Assuming OWNDATA on the source tells you anything about a view.",
+        "Treating a non-owning array as safe to mutate."
+      ],
+      "revision": [
+        "OWNDATA is True only for the array that allocated the buffer.",
+        "Views borrow, copies own."
+      ]
+    },
+    "A slice is a view into the source": {
+      "syntax": "b = a[:2]; b[0] = 99",
+      "steps": [
+        "Slice the first two elements.",
+        "Write into the slice's first cell.",
+        "Print the source to see the write."
+      ],
+      "visual": "a = [0 1 2 3]\nb = a[:2]; b[0] = 99\na → [99 1 2 3]",
+      "realWorld": "In-place block edits rely on this; accidental edits rely on it too, which is why the aliasing is worth naming.",
+      "mistakes": [
+        "Believing a slice allocated memory for itself.",
+        "Copying only after the source was already changed."
+      ],
+      "revision": [
+        "Basic slicing returns a view of the same buffer.",
+        "Nothing was copied when the slice was taken."
+      ]
+    },
+    "A copy stops the sharing": {
+      "syntax": "b = a[:2].copy()",
+      "steps": [
+        "Slice and immediately copy the slice.",
+        "Write into the copy.",
+        "Print the source and confirm it is unchanged."
+      ],
+      "visual": "a = [0 1 2 3]\nb = a[:2].copy(); b[0] = 99\na → [0 1 2 3]",
+      "realWorld": "This is the one-line fix for accidental mutation: copy at the boundary, then work freely.",
+      "mistakes": [
+        "Copying the slice but keeping other aliases of the source.",
+        "Assuming copy() also changes the dtype."
+      ],
+      "revision": [
+        "copy() allocates a new buffer.",
+        "shares_memory is False between a source and its copy."
+      ]
+    },
+    "Strides describe how memory is walked": {
+      "syntax": "a.strides   # bytes per axis step",
+      "steps": [
+        "Print the strides of a (2, 3) matrix.",
+        "Explain each number as bytes per step on that axis.",
+        "Transpose and print again to see the swap."
+      ],
+      "visual": "arange(6).reshape(2, 3).strides → (24, 8)",
+      "realWorld": "The difference between a fast and a slow loop over a matrix is usually which axis it walks, and strides are how that is measured.",
+      "mistakes": [
+        "Reading strides as shapes.",
+        "Forgetting that a non-contiguous array cannot be flattened for free."
+      ],
+      "revision": [
+        "Strides are byte offsets per axis step.",
+        "Views only change strides; copies move bytes."
+      ]
+    },
+    "A reshape can stay a view": {
+      "syntax": "b = a.reshape(2, 3); b.base is a",
+      "steps": [
+        "Reshape a contiguous range.",
+        "Print the base of the reshaped array.",
+        "Transpose, reshape again and see the base change or copy."
+      ],
+      "visual": "arange(6).reshape(2, 3).base is a → True",
+      "realWorld": "Whether a reshape is free decides the memory profile of a preprocessing step that runs on every batch.",
+      "mistakes": [
+        "Assuming every reshape is a view.",
+        "Relying on base identity instead of shares_memory."
+      ],
+      "revision": [
+        "reshape returns a view when the strides allow.",
+        "A transpose or non-contiguous source forces a copy."
+      ]
+    },
+    "itemsize and nbytes": {
+      "syntax": "a.itemsize   |   a.nbytes",
+      "steps": [
+        "Create an int32 and a float64 array of the same length.",
+        "Print itemsize and nbytes for both.",
+        "Confirm nbytes equals itemsize times size."
+      ],
+      "visual": "int32: itemsize 4, nbytes 20\nfloat64: itemsize 8, nbytes 40",
+      "realWorld": "Memory budgeting for a batch starts from nbytes; choosing int32 over float64 halves a buffer without changing the shape.",
+      "mistakes": [
+        "Confusing nbytes with the number of elements.",
+        "Assuming the shape changed when only the dtype did."
+      ],
+      "revision": [
+        "itemsize is bytes per element, nbytes is the whole buffer.",
+        "Changing dtype changes both without changing shape."
+      ]
+    },
+    "C order and Fortran order": {
+      "syntax": "a.flags['C_CONTIGUOUS']   |   a.strides",
+      "steps": [
+        "Print the C flag and strides of a matrix.",
+        "Transpose it and print both again.",
+        "Explain which axis is walked fastest in each layout."
+      ],
+      "visual": "a     C True,  strides (24, 8)\na.T   C False, strides (8, 24)",
+      "realWorld": "An extension that requires C order will copy a transposed input, so the flag explains an otherwise invisible allocation.",
+      "mistakes": [
+        "Assuming any 2-D array is C contiguous.",
+        "Ignoring the flag until a copy shows up in profiling."
+      ],
+      "revision": [
+        "C order walks the last axis fastest; Fortran order the first.",
+        "ascontiguousarray converts to the C layout."
+      ]
+    }
+  }
+}

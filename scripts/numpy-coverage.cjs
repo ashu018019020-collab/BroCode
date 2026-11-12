@@ -74,8 +74,8 @@ console.log('-'.repeat(head.join(' ').length));
 console.log(`full 12-part: ${totalFull}/${totalTopics} (${pct(totalFull)}%) · dual-level: ${totalDual}/${totalTopics} (${pct(totalDual)}%)`);
 
 const gaps = rows
-  .map(({ m, topics, counts }) => {
-    const missing = PARTS
+  .map(({ m, topics }) => {
+    const missing = FULL
       .map(([name, ok]) => ({ name, titles: topics.filter((t) => !ok(t)).map((t) => t.title) }))
       .filter((part) => part.titles.length);
     return { m, missing };

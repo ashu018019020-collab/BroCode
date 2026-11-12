@@ -1,0 +1,510 @@
+{
+  "n10": {
+    "Mean along an axis": {
+      "syntax": "a.mean()   |   a.mean(axis=1)",
+      "steps": [
+        "Reduce the whole array with no axis and read the single number.",
+        "Reduce with axis=1 and print one value per row.",
+        "Compare the shapes: () versus (rows,)."
+      ],
+      "visual": "[[1 2] [3 4]]\nmean() → 2.5\nmean(axis=1) → [1.5 3.5]",
+      "realWorld": "A dashboard needs both the overall average and the per-customer average; the axis argument is the only difference between them.",
+      "mistakes": [
+        "Assuming axis=1 means \"average along the columns\".",
+        "Expecting a one-element array from the no-axis form."
+      ],
+      "revision": [
+        "No axis reduces every element to one scalar.",
+        "The named axis is the one that disappears."
+      ]
+    },
+    "Standard deviation and variance": {
+      "syntax": "a.std()   |   a.var()   |   ddof=1",
+      "steps": [
+        "Compute std and var on a short array.",
+        "Check that std is the square root of var.",
+        "Set ddof=1 for the sample form and compare."
+      ],
+      "visual": "[1 2 3 4]\nstd → 1.118033988749895\nvar → 1.25",
+      "realWorld": "Reporting spread in the same units as the data is why std is quoted; var is the intermediate the maths uses.",
+      "mistakes": [
+        "Mixing ddof=0 and ddof=1 across two reports and getting different spreads.",
+        "Reading var as if it were in the original units."
+      ],
+      "revision": [
+        "var is the mean squared deviation, std its square root.",
+        "The default ddof=0 is the population form."
+      ]
+    },
+    "Position and running totals": {
+      "syntax": "a.argmin()   |   a.cumsum()",
+      "steps": [
+        "Find where the smallest value sits with argmin.",
+        "Produce every running total with cumsum.",
+        "Note argmin returns an index and cumsum returns an array."
+      ],
+      "visual": "[3 1 2]\nargmin → 1\ncumsum → [3 4 6]",
+      "realWorld": "Finding the worst-performing store and charting cumulative sales in the same report are these two calls.",
+      "mistakes": [
+        "Reading argmin as the minimum value.",
+        "Using cumsum where only the final total was needed."
+      ],
+      "revision": [
+        "arg* returns a position, the plain reduction returns the value.",
+        "cumsum keeps the input length; sum collapses it."
+      ]
+    },
+    "median is not the mean": {
+      "syntax": "np.median(a)   |   a.mean()",
+      "steps": [
+        "Compute both on a column with one extreme value.",
+        "Compare how far each moved from the typical value.",
+        "Report both when the distribution may be skewed."
+      ],
+      "visual": "[1 2 100]\nmedian → 2.0\nmean → 34.33",
+      "realWorld": "House prices and response times are quoted as medians because one outlier can move the mean by an order of magnitude.",
+      "mistakes": [
+        "Reporting the mean of a skewed column as \"typical\".",
+        "Assuming median sorts the source array — it copies."
+      ],
+      "revision": [
+        "median resists extremes; mean does not.",
+        "Comparing the two is how a skew is noticed."
+      ]
+    },
+    "keepdims keeps a column": {
+      "syntax": "a.mean(axis=1, keepdims=True)",
+      "steps": [
+        "Reduce rows with and without keepdims.",
+        "Print both shapes: (2,) versus (2, 1).",
+        "Divide the matrix by the kept column and confirm the shapes match."
+      ],
+      "visual": "axis=1 → (2,)\nkeepdims=True → (2, 1)",
+      "realWorld": "Normalising every row by its own total needs the divisor as a column, and keepdims produces exactly that with no reshape.",
+      "mistakes": [
+        "Using the flat (2,) result as a divisor and getting a ValueError.",
+        "Adding a reshape that duplicates what keepdims already did."
+      ],
+      "revision": [
+        "keepdims leaves the reduced axis as length 1.",
+        "The result broadcasts straight back against the input."
+      ]
+    },
+    "average can weight values": {
+      "syntax": "np.average(a, weights=w)",
+      "steps": [
+        "Compute a plain mean of two values.",
+        "Compute a weighted mean with one weight three times the other.",
+        "Check the result moved toward the heavier value."
+      ],
+      "visual": "average([1, 2], weights=[1, 3]) → 1.75",
+      "realWorld": "Survey results weighted by population, and grades weighted by credit, are one call rather than a manual sum of products.",
+      "mistakes": [
+        "Passing weights whose length differs from the data.",
+        "Forgetting the denominator is the weight total, not the count."
+      ],
+      "revision": [
+        "average is sum(w*x) / sum(w).",
+        "Equal weights reduce to the plain mean."
+      ]
+    },
+    "any and all answer yes/no": {
+      "syntax": "mask.any()   |   mask.all()",
+      "steps": [
+        "Build a boolean array with one True.",
+        "Ask any and all and print both answers.",
+        "State the rule: any needs one True, all needs every True."
+      ],
+      "visual": "[True False]\nany → True\nall → False",
+      "realWorld": "A validation gate asks \"did any row fail?\" with any and \"did every row pass?\" with all — one call each, no loop.",
+      "mistakes": [
+        "Calling any on a numeric array and counting non-zeros by accident.",
+        "Confusing all with a check that the array is non-empty."
+      ],
+      "revision": [
+        "any and all reduce a boolean array to one Python bool.",
+        "On a numeric array, zero counts as False."
+      ]
+    },
+    "prod multiplies the elements": {
+      "syntax": "np.prod(a)",
+      "steps": [
+        "Multiply a short integer array with prod.",
+        "Check the result against the hand product.",
+        "Watch the dtype when the numbers are large."
+      ],
+      "visual": "np.prod([1 2 3 4]) → 24",
+      "realWorld": "Compound growth factors multiply across periods, so the cumulative return is a prod of (1 + r) terms.",
+      "mistakes": [
+        "Overflowing a small integer dtype on a long array.",
+        "Using prod where a sum was meant and getting a meaningless total."
+      ],
+      "revision": [
+        "prod folds with multiplication instead of addition.",
+        "The dtype of the accumulator matters for long products."
+      ]
+    },
+    "mean of a matrix returns one number": {
+      "syntax": "matrix.mean()   # no axis",
+      "steps": [
+        "Reduce a 2×2 matrix with no axis.",
+        "Print the value and its type.",
+        "Confirm it is a scalar, not a (1, 1) array."
+      ],
+      "visual": "[[1 2] [3 4]].mean() → 2.5",
+      "realWorld": "A single KPI across every cell — overall conversion, global error — is the no-axis reduction, and it flattens first.",
+      "mistakes": [
+        "Indexing the result as if it were an array.",
+        "Assuming no-axis reduction averages the row means."
+      ],
+      "revision": [
+        "No axis flattens before reducing.",
+        "The result is a NumPy scalar, printable and comparable."
+      ]
+    },
+    "axis=1 reduces each row": {
+      "syntax": "a.sum(axis=1)",
+      "steps": [
+        "Sum a (2, 3) matrix along axis 1.",
+        "Print the result and confirm it has length 2.",
+        "Check the first value against a hand sum of the first row."
+      ],
+      "visual": "[[1 2 3] [4 5 6]].sum(axis=1) → [ 6 15]",
+      "realWorld": "A per-order total from a line-item matrix is a row reduction; the order count stays, the line-item axis goes.",
+      "mistakes": [
+        "Expecting a column-shaped result from axis=1.",
+        "Mixing up which axis disappeared."
+      ],
+      "revision": [
+        "The named axis is removed from the result.",
+        "axis=1 keeps one value per row."
+      ]
+    },
+    "std measures spread in the same units": {
+      "syntax": "a.std()   # original units",
+      "steps": [
+        "Compute std on a small array.",
+        "Compare it with the variance of the same data.",
+        "Note the units: std is in the data's scale, var is squared."
+      ],
+      "visual": "[2 4 4 4 5 5 7 9].std() → 2.0",
+      "realWorld": "Error bars and quality bands are quoted as ±1 std because that number is in the same unit as the measurement.",
+      "mistakes": [
+        "Quoting the variance with the data's unit label.",
+        "Comparing std of two columns measured in different units."
+      ],
+      "revision": [
+        "std is the square root of variance.",
+        "Only std carries the original unit."
+      ]
+    },
+    "The maximum and where it lives": {
+      "syntax": "a.max()   |   a.argmax()",
+      "steps": [
+        "Print the maximum value.",
+        "Print the index argmax returns for the same array.",
+        "Add an axis and confirm both return one answer per row."
+      ],
+      "visual": "[3 9 4]\nmax → 9\nargmax → 1",
+      "realWorld": "A leaderboard needs the top score and its holder: max gives the score, argmax gives the row to look up the name.",
+      "mistakes": [
+        "Using argmax as the value.",
+        "Forgetting argmax returns the FIRST maximum when there are ties."
+      ],
+      "revision": [
+        "max is a value, argmax is a position.",
+        "Both accept axis for per-row answers."
+      ]
+    },
+    "axis=0 sums columns, axis=1 sums rows": {
+      "syntax": "a.sum(axis=0)   |   a.sum(axis=1)",
+      "steps": [
+        "Sum a (2, 3) matrix along axis 0 and print the shape.",
+        "Sum the same matrix along axis 1 and print the shape.",
+        "Map each result back to \"per column\" and \"per row\"."
+      ],
+      "visual": "sum(axis=0) → [5 7 9]  shape (3,)\nsum(axis=1) → [ 6 15]  shape (2,)",
+      "realWorld": "Feature totals per column and record totals per row are the same call with a different axis, and most aggregation bugs are this one choice.",
+      "mistakes": [
+        "Reading axis=0 as \"sum the rows\".",
+        "Expecting the surviving axis to keep its original position."
+      ],
+      "revision": [
+        "The axis you name is the one that disappears.",
+        "axis=0 collapses rows, so one value per column survives."
+      ]
+    },
+    "Percentiles answer rank questions": {
+      "syntax": "np.percentile(a, [25, 50, 75])",
+      "steps": [
+        "Ask for the median as the 50th percentile.",
+        "Ask for the quartiles as a list and compare the values.",
+        "Note the default linear interpolation between order statistics."
+      ],
+      "visual": "[12 15 18 22 30 41]\np50 → 20.0\np25, p75 → [15.75 28.]",
+      "realWorld": "Latency SLOs are stated as p95 and p99; the mean would hide the slow tail those percentiles expose.",
+      "mistakes": [
+        "Passing 50 instead of 0.5 to quantile — percentile and quantile use different scales.",
+        "Assuming the percentile is always one of the observed values."
+      ],
+      "revision": [
+        "percentile takes 0–100; quantile takes 0–1.",
+        "Interpolation means the answer can sit between two data points."
+      ]
+    }
+  },
+  "n11": {
+    "Filter with a mask": {
+      "syntax": "a[a >= 60]",
+      "steps": [
+        "Build the comparison mask from the array.",
+        "Index the array with that mask.",
+        "Print the passing values and note the result is shorter."
+      ],
+      "visual": "[55 72 38]\na >= 60 → [False  True False]\na[a >= 60] → [72]",
+      "realWorld": "Pass lists, alert queues and eligible rows all come from one comparison plus one index — the mask is the query.",
+      "mistakes": [
+        "Using the mask as a scalar boolean.",
+        "Assuming the filtered array keeps the original shape."
+      ],
+      "revision": [
+        "The comparison builds a mask of the same shape.",
+        "Indexing with it returns only the True positions, flattened."
+      ]
+    },
+    "np.where chooses without a loop": {
+      "syntax": "np.where(condition, x, y)",
+      "steps": [
+        "Write the condition as a boolean array.",
+        "Pass the two branch values to where.",
+        "Print the result and confirm it has the condition's shape."
+      ],
+      "visual": "where([1 5 3] > 2, 'big', 'small')\n→ ['small' 'big' 'big']",
+      "realWorld": "Labelling a column pass/fail or capping an outlier is a vectorised if/else, which keeps the transformation in one expression.",
+      "mistakes": [
+        "Passing only the condition and getting indices instead of values.",
+        "Expecting the branches to be evaluated lazily."
+      ],
+      "revision": [
+        "where(condition, x, y) is an elementwise choice.",
+        "Both branches are evaluated, so keep them cheap."
+      ]
+    },
+    "Membership with isin": {
+      "syntax": "np.isin(a, [2, 4])",
+      "steps": [
+        "Build the membership mask with isin.",
+        "Print it and check it matches the array's shape.",
+        "Compose it with another mask using &."
+      ],
+      "visual": "[1 2 3 4] isin [2, 4]\n→ [False  True False  True]",
+      "realWorld": "Keeping only known country codes or valid SKUs is an isin filter, which replaces a loop with an `in` test per row.",
+      "mistakes": [
+        "Using `element in list` inside a comprehension.",
+        "Assuming isin mutates the array."
+      ],
+      "revision": [
+        "isin returns a boolean mask, not the values.",
+        "The mask composes with & and | like any other."
+      ]
+    },
+    "Combine masks with & and |": {
+      "syntax": "a[(a > 1) & (a < 4)]",
+      "steps": [
+        "Build two comparisons and wrap each in parentheses.",
+        "Combine them with & for both-true.",
+        "Filter the array with the combined mask."
+      ],
+      "visual": "(a > 1) & (a < 4)\n[0 1 2 3 4 5] → keeps 2 and 3",
+      "realWorld": "A price range, a date window or an age band is two comparisons combined elementwise, never a Python `and`.",
+      "mistakes": [
+        "Using `and`, which raises on an array.",
+        "Omitting the parentheses, so & binds before the comparison."
+      ],
+      "revision": [
+        "Elementwise logic uses & and |, not and and or.",
+        "Each comparison needs its own parentheses."
+      ]
+    },
+    "Invert a mask with ~": {
+      "syntax": "a[~(a > 1)]",
+      "steps": [
+        "Build a mask and print what it keeps.",
+        "Invert it with ~ and index again.",
+        "Confirm the two results partition the array."
+      ],
+      "visual": "[0 1 2 3 4 5]\na > 1 → keeps 2..5\n~(a > 1) → keeps 0 and 1",
+      "realWorld": "The held-out split of a dataset is the negation of the training mask, so one mask defines both halves without a second comparison.",
+      "mistakes": [
+        "Using `not` on an array.",
+        "Forgetting the parentheses before the tilde."
+      ],
+      "revision": [
+        "~ flips every boolean value.",
+        "A mask and its negation partition the array."
+      ]
+    },
+    "Assign through a mask": {
+      "syntax": "a[a < 0] = 0",
+      "steps": [
+        "Build a mask for the values to replace.",
+        "Assign the replacement on the left of the mask.",
+        "Print the array and confirm only those cells changed."
+      ],
+      "visual": "[-1 4 -5]\na[a < 0] = 0\n→ [0 4 0]",
+      "realWorld": "Clamping negatives to zero before a ratio or a log is one masked assignment, and the rest of the column keeps its values.",
+      "mistakes": [
+        "Writing a[a < 0] == 0, which compares instead of assigning.",
+        "Assigning an array whose length differs from the selected cells."
+      ],
+      "revision": [
+        "A mask on the left assigns in place.",
+        "The number of selected cells must match the value count."
+      ]
+    },
+    "Count how many match": {
+      "syntax": "(a % 2 == 0).sum()",
+      "steps": [
+        "Build the mask.",
+        "Sum it and print the count.",
+        "Wrap in int() when a Python number is needed."
+      ],
+      "visual": "arange(10) % 2 == 0\nsum → 5",
+      "realWorld": "Missing-value counts, failed-record counts and pass rates are all a summed mask, which needs no filtering at all.",
+      "mistakes": [
+        "Filtering first and then calling len, which allocates a new array.",
+        "Forgetting the count returns a NumPy integer."
+      ],
+      "revision": [
+        "True counts as 1, so a sum is a count.",
+        "No new array is needed to count matches."
+      ]
+    },
+    "Filter rows by one column": {
+      "syntax": "a[a[:, 1] > 5]",
+      "steps": [
+        "Build a mask from a single column.",
+        "Apply it to the whole matrix.",
+        "Confirm every column of the selected rows came along."
+      ],
+      "visual": "[[1 9] [2 3]]\na[:, 1] > 5 → [True False]\na[mask] → [[1 9]]",
+      "realWorld": "Filtering records by one field while keeping the other fields is the standard table filter, and the mask only needs the row count.",
+      "mistakes": [
+        "Applying a column mask to every cell instead of to the rows.",
+        "Using the column's own shape in a place that expects the row count."
+      ],
+      "revision": [
+        "A 1-D row mask selects whole rows.",
+        "The mask length must equal the number of rows."
+      ]
+    },
+    "A mask keeps the shape of its array": {
+      "syntax": "(a % 2 == 0).shape   # same as a",
+      "steps": [
+        "Compare an array with a number and print the mask's shape.",
+        "Check it equals the source's shape.",
+        "Note that only indexing with the mask shortens the data."
+      ],
+      "visual": "arange(5) % 2 == 0 → shape (5,)\nsource shape (5,)",
+      "realWorld": "Storing a mask beside its source only makes sense while the shapes agree, which is why a mask is invalidated by any filter.",
+      "mistakes": [
+        "Reusing a mask after the array was filtered.",
+        "Expecting the comparison itself to drop non-matching values."
+      ],
+      "revision": [
+        "A comparison returns a same-shape boolean array.",
+        "Filtering is the indexing step, not the comparison."
+      ]
+    },
+    "where chooses between two values": {
+      "syntax": "np.where(mask, a, b)",
+      "steps": [
+        "Choose between two literal values with one condition.",
+        "Print the result and its dtype.",
+        "Swap the branches and compare the output."
+      ],
+      "visual": "[1 5 2] > 3\nwhere → ['small' 'big' 'small']",
+      "realWorld": "A vectorised label column — big/small, up/down, ok/late — is a single where instead of a list comprehension with an if.",
+      "mistakes": [
+        "Mixing branch dtypes and getting an unexpected upcast.",
+        "Assuming where short-circuits and skips a branch."
+      ],
+      "revision": [
+        "where is an elementwise if/else.",
+        "Output dtype follows the promotion of both branches."
+      ]
+    },
+    "Sum the mask to count matches": {
+      "syntax": "int((a > 5).sum())",
+      "steps": [
+        "Build the comparison.",
+        "Sum it to get the count.",
+        "Compare with the length of the filtered array."
+      ],
+      "visual": "arange(10) > 5\nsum → 4",
+      "realWorld": "A quick \"how many rows qualify\" before running an expensive query is a summed mask — no array is materialised.",
+      "mistakes": [
+        "Using len on the mask, which returns the array length.",
+        "Leaving the result as a NumPy scalar in a JSON payload."
+      ],
+      "revision": [
+        "sum on a mask counts the True values.",
+        "int() converts it for Python-side use."
+      ]
+    },
+    "Filter a matrix elementwise": {
+      "syntax": "a[a % 2 == 0]   # flattened result",
+      "steps": [
+        "Build a full-shape mask for the matrix.",
+        "Index the matrix with it.",
+        "Print the result and note it is 1-D."
+      ],
+      "visual": "[[0 1 2] [3 4 5]] even → [0 2 4]",
+      "realWorld": "Collecting every qualifying cell across a table — all outliers anywhere — uses an elementwise mask, while keeping rows needs a row mask.",
+      "mistakes": [
+        "Expecting the rectangle to survive elementwise filtering.",
+        "Using an elementwise mask where whole rows were intended."
+      ],
+      "revision": [
+        "A full-shape mask flattens the matches into 1-D.",
+        "Row masks are the way to keep the other columns attached."
+      ]
+    },
+    "where chooses between two arrays": {
+      "syntax": "np.where(condition, array_x, array_y)",
+      "steps": [
+        "Build a condition and two same-shape value arrays.",
+        "Apply where and print the mixed result.",
+        "Confirm each cell came from the branch the condition selected."
+      ],
+      "visual": "marks [35 72 48 90] >= 50\n→ ['fail' 'pass' 'fail' 'pass']",
+      "realWorld": "Choosing between a capped and an uncapped value per cell, from two computed columns, is one where instead of a loop with indexing.",
+      "mistakes": [
+        "Passing branches of different shapes that cannot broadcast.",
+        "Assuming where evaluates the branches lazily."
+      ],
+      "revision": [
+        "Both branches are arrays and both broadcast with the condition.",
+        "The output shape is the broadcast shape."
+      ]
+    },
+    "Updating through a mask": {
+      "syntax": "a[a < 0] = 0",
+      "steps": [
+        "Build the mask for the values to change.",
+        "Assign on the left of the mask.",
+        "Print the array to confirm the untouched values survived."
+      ],
+      "visual": "[-5 3 -2 8]\na[a < 0] = 0\n→ [0 3 0 8]",
+      "realWorld": "Sentinel values, negative readings and impossible ages are cleaned in place with one masked assignment.",
+      "mistakes": [
+        "Comparing with == instead of assigning with =.",
+        "Assigning a scalar of a dtype that cannot hold the remaining values."
+      ],
+      "revision": [
+        "The mask selects the cells that the assignment rewrites.",
+        "Everything outside the mask keeps its value."
+      ]
+    }
+  }
+}

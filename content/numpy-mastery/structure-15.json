@@ -1,0 +1,510 @@
+{
+  "n19": {
+    "Vectorised reduction": {
+      "syntax": "(a * 2).sum()",
+      "steps": [
+        "Build a large range with arange.",
+        "Double it with one operator and sum it.",
+        "Note no Python loop ran over the elements."
+      ],
+      "visual": "arange(1_000_000) * 2, summed → 999999000000",
+      "realWorld": "A million-row total that used to be a loop is one expression, and the speed comes from compiled loops over contiguous memory.",
+      "mistakes": [
+        "Building a Python list and summing it in a comprehension.",
+        "Chaining expressions until several full-size temporaries exist at once."
+      ],
+      "revision": [
+        "Vectorised expressions run compiled loops.",
+        "Each intermediate still allocates unless you use out=."
+      ]
+    },
+    "Reuse a buffer with out=": {
+      "syntax": "np.multiply(a, 2, out=buf)",
+      "steps": [
+        "Allocate a buffer with empty_like.",
+        "Call the ufunc with out= pointing at it.",
+        "Print the buffer and confirm it holds the result."
+      ],
+      "visual": "[1 2 3] * 2 into buf → [2 4 6]",
+      "realWorld": "A hot loop that runs thousands of times spends real time in allocation, and out= removes that cost when the shape is already known.",
+      "mistakes": [
+        "Passing a buffer of the wrong dtype and getting a cast error.",
+        "Reusing a buffer that is also an input in a way the ufunc does not allow."
+      ],
+      "revision": [
+        "out= writes into an existing array.",
+        "This avoids a new allocation but not the computation."
+      ]
+    },
+    "Chunk large work": {
+      "syntax": "for chunk in np.array_split(a, 2): ...",
+      "steps": [
+        "Split a range into two pieces.",
+        "Sum each piece in a generator expression.",
+        "Add the partial sums and compare with the whole."
+      ],
+      "visual": "arange(10) split → 45 total",
+      "realWorld": "Processing data that is larger than comfortable memory means bounded chunks, and the total is the sum of the parts.",
+      "mistakes": [
+        "Holding every chunk result and rebuilding the same memory peak.",
+        "Assuming array_split needs equal division; it tolerates uneven sizes."
+      ],
+      "revision": [
+        "array_split gives bounded pieces.",
+        "Peak memory stays near one chunk instead of the whole array."
+      ]
+    },
+    "einsum replaces a triple loop": {
+      "syntax": "np.einsum('i,i->', a, b)",
+      "steps": [
+        "Write the index string for a dot product.",
+        "Pass both arrays to einsum.",
+        "Check the value against the pairwise-product sum."
+      ],
+      "visual": "einsum('i,i->', arange(3.), arange(3.)) → 5.0",
+      "realWorld": "Batched contractions in attention and tensor code are one subscript string instead of nested loops that are hard to read and slow.",
+      "mistakes": [
+        "Repeating an index that was meant to be summed.",
+        "Assuming einsum optimises order automatically without optimize=True."
+      ],
+      "revision": [
+        "Repeated indices in the output keep the axis; missing ones are summed.",
+        "One call replaces a loop nest."
+      ]
+    },
+    "dot and @ agree": {
+      "syntax": "np.dot(A, B)   vs   A @ B",
+      "steps": [
+        "Multiply a matrix by the identity both ways.",
+        "Compare with allclose.",
+        "Note both are matrix products, unlike *."
+      ],
+      "visual": "allclose(np.dot(A, B), A @ B) → True",
+      "realWorld": "Mixing the two in a codebase is fine only if you know they agree for 2-D input; * is the one that differs.",
+      "mistakes": [
+        "Substituting np.dot for * and changing the meaning silently.",
+        "Assuming the two agree for higher-rank inputs without checking."
+      ],
+      "revision": [
+        "dot and @ are the same matrix product for 2-D inputs.",
+        "Elementwise multiplication is *."
+      ]
+    },
+    "bincount counts integer categories": {
+      "syntax": "np.bincount(labels)",
+      "steps": [
+        "Count a small array of non-negative integers.",
+        "Print the counts array.",
+        "Note the length is the largest value plus one."
+      ],
+      "visual": "[0 1 1 3] → [1 2 0 1]",
+      "realWorld": "Label frequencies for a classifier come from one pass over the targets, with no dictionary and no loop.",
+      "mistakes": [
+        "Passing floats and getting a TypeError.",
+        "Ignoring gaps: a missing value still occupies a slot."
+      ],
+      "revision": [
+        "Position i counts how often i appears.",
+        "Input must be non-negative integers."
+      ]
+    },
+    "vectorize wraps a Python function": {
+      "syntax": "np.vectorize(f)",
+      "steps": [
+        "Wrap a scalar lambda with vectorize.",
+        "Apply it to an array.",
+        "Note the output looks vectorised but the loop is Python."
+      ],
+      "visual": "vectorize(lambda x: x * x)([1 2 3]) → [1 4 9]",
+      "realWorld": "Convenience for an awkward scalar function is real, but calling it a speed-up is the mistake — it is the same loop with nicer syntax.",
+      "mistakes": [
+        "Using vectorize in a hot path and expecting compiled speed.",
+        "Assuming it infers output dtypes reliably."
+      ],
+      "revision": [
+        "vectorize is a convenience wrapper, not an optimisation.",
+        "Pass otypes when the dtype inference matters."
+      ]
+    },
+    "sum in chunks instead of one huge temporary": {
+      "syntax": "sum(a[i:i+n].sum() for i in range(...))",
+      "steps": [
+        "Loop over slices of the array.",
+        "Sum each slice and accumulate the partial totals.",
+        "Confirm the total matches the whole-array sum."
+      ],
+      "visual": "arange(10) in slices of 4 → 45",
+      "realWorld": "A pipeline that cannot hold a full-size intermediate keeps peak memory bounded by processing windows and adding their totals.",
+      "mistakes": [
+        "Concatenating the chunks and recreating the peak.",
+        "Forgetting the last, partial chunk."
+      ],
+      "revision": [
+        "Chunked sums keep peak memory small.",
+        "Each chunk is released after its partial total."
+      ]
+    },
+    "add.reduce sums along an axis": {
+      "syntax": "np.add.reduce(a, axis=0)",
+      "steps": [
+        "Reduce a range with add.reduce.",
+        "Compare with the plain sum.",
+        "Repeat with an axis on a matrix."
+      ],
+      "visual": "add.reduce(arange(5)) → 10",
+      "realWorld": "Understanding the general form explains sum, prod and max, all of which are ufunc reductions with an axis.",
+      "mistakes": [
+        "Assuming reduce only works on 1-D input.",
+        "Forgetting reduce can take an axis like any reduction."
+      ],
+      "revision": [
+        "Every ufunc has a reduce method.",
+        "sum is add.reduce with a friendlier name."
+      ]
+    },
+    "einsum can read a diagonal": {
+      "syntax": "np.einsum('ii->', A)",
+      "steps": [
+        "Write the repeated index for the diagonal.",
+        "Pass a small matrix.",
+        "Compare the value with np.trace."
+      ],
+      "visual": "[[1 2] [3 4]] → 5",
+      "realWorld": "Trace-like sums and batched diagonals come from index notation, which avoids building a mask just to select positions.",
+      "mistakes": [
+        "Writing 'ij->' and summing everything instead.",
+        "Forgetting repeated input indices must appear as output to keep both."
+      ],
+      "revision": [
+        "A repeated index means the same position on both axes.",
+        "Leaving it out of the output sums it, giving the trace."
+      ]
+    },
+    "bincount needs non-negative integers": {
+      "syntax": "np.bincount(labels).tolist()",
+      "steps": [
+        "Count labels including a gap at 2.",
+        "Print the counts and note the zero in the gap.",
+        "Explain why a missing category still uses a slot."
+      ],
+      "visual": "[1, 2, 0, 1]",
+      "realWorld": "Per-class counts must line up with the class ids, and the gap behaviour is what keeps the index mapping intact.",
+      "mistakes": [
+        "Indexing the counts as if absent classes were skipped.",
+        "Passing negative labels, which raise."
+      ],
+      "revision": [
+        "The output length is max + 1.",
+        "minlength pads the array when the top class is absent."
+      ]
+    },
+    "dot on matrices is a matrix product": {
+      "syntax": "np.dot(A, v)",
+      "steps": [
+        "Multiply an identity matrix by a vector with dot.",
+        "Print the result and its shape.",
+        "Compare with the elementwise product."
+      ],
+      "visual": "eye(2) dot [2 3] → [2, 3]",
+      "realWorld": "A linear transform applied with dot keeps the vector's values, while * would have produced something else entirely.",
+      "mistakes": [
+        "Using * where a contraction was meant.",
+        "Forgetting dot flattens higher-rank operands."
+      ],
+      "revision": [
+        "dot on 2-D arrays is a matrix product.",
+        "For rank above two, prefer matmul or @."
+      ]
+    },
+    "Avoid temporaries with out=": {
+      "syntax": "np.multiply(a, 2, out=buf)",
+      "steps": [
+        "Allocate a float buffer with empty_like.",
+        "Multiply into it with out=.",
+        "Print the buffer and confirm it is not the input."
+      ],
+      "visual": "[0. 2. 4. 6.]\nout is a → False",
+      "realWorld": "Repeated big operations in a loop allocate a new array each time, and reusing one buffer is the standard fix.",
+      "mistakes": [
+        "Assuming out= also avoids the arithmetic itself.",
+        "Passing an input array as out and clobbering data still in use."
+      ],
+      "revision": [
+        "out= writes into a preallocated array.",
+        "The allocation is removed, the computation is not."
+      ]
+    },
+    "In-place operations save memory": {
+      "syntax": "a += 1",
+      "steps": [
+        "Create an array of ones and keep a second name for it.",
+        "Apply the in-place add.",
+        "Check both names see the change."
+      ],
+      "visual": "ones(4) += 1 → [2 2 2 2], same object",
+      "realWorld": "Accumulating gradients or counters in place halves the peak memory, at the cost of any alias seeing the update too.",
+      "mistakes": [
+        "Using += on an integer array with a float operand, which raises.",
+        "Forgetting that views of the array change as well."
+      ],
+      "revision": [
+        "In-place operators update the existing buffer.",
+        "Aliases and views observe the change."
+      ]
+    }
+  },
+  "n20": {
+    "Pandas is built on arrays": {
+      "syntax": "series.to_numpy()",
+      "steps": [
+        "Build a short Series.",
+        "Convert it to an array with to_numpy.",
+        "Print the array and its mean."
+      ],
+      "visual": "[1 2], mean → 1.5",
+      "realWorld": "Handing a column to a NumPy routine is a to_numpy call, and the labels stay behind with the DataFrame.",
+      "mistakes": [
+        "Assuming to_numpy copies; it may return a view.",
+        "Losing track of the index after the conversion."
+      ],
+      "revision": [
+        "to_numpy gives the underlying values as an array.",
+        "Labels are not carried across the boundary."
+      ]
+    },
+    "Feature matrices are 2-D arrays": {
+      "syntax": "X.mean(axis=0)   # one value per feature",
+      "steps": [
+        "Build a 2×2 feature matrix.",
+        "Reduce along axis 0.",
+        "Print the shape and confirm one value per column."
+      ],
+      "visual": "(2, 3) input → mean(axis=0) shape (3,)",
+      "realWorld": "A scaler fits one mean and one spread per feature, so the statistic must be shaped like a column, not a row.",
+      "mistakes": [
+        "Reducing along axis 1 and scaling rows by mistake.",
+        "Forgetting that features are columns, samples are rows."
+      ],
+      "revision": [
+        "Rows are samples, columns are features.",
+        "axis=0 reduces across samples and leaves one value per feature."
+      ]
+    },
+    "Images are (height, width, channels)": {
+      "syntax": "np.zeros((h, w, 3), dtype=np.uint8)",
+      "steps": [
+        "Create a small RGB buffer.",
+        "Print its shape and dtype.",
+        "Confirm the channel axis is last."
+      ],
+      "visual": "(2, 2, 3) uint8",
+      "realWorld": "Checking the shape before any filter or model call is how channel-order bugs are caught before they produce a plausible-looking wrong image.",
+      "mistakes": [
+        "Assuming channels-first when the library expects channels-last.",
+        "Using int64 instead of uint8 and quadrupling the memory."
+      ],
+      "revision": [
+        "Images are 3-D arrays of uint8.",
+        "Shape order is height, width, channels."
+      ]
+    },
+    "Standardise each column": {
+      "syntax": "(X - X.mean(axis=0)) / X.std(axis=0)",
+      "steps": [
+        "Compute the per-column mean and spread.",
+        "Subtract and divide using broadcasting.",
+        "Print the standardised matrix."
+      ],
+      "visual": "[[-1. -1.]\n [ 1.  1.]]",
+      "realWorld": "Distance-based models are dominated by whichever column has the largest units, and standardising removes that bias.",
+      "mistakes": [
+        "Standardising rows instead of columns.",
+        "Computing the statistics on the test set and leaking information."
+      ],
+      "revision": [
+        "Subtract the column mean, divide by the column std.",
+        "Broadcasting applies one vector across every row."
+      ]
+    },
+    "One-hot encode with eye": {
+      "syntax": "np.eye(n, dtype=int)[labels]",
+      "steps": [
+        "Create a 3×3 identity of ints.",
+        "Index it with a label array.",
+        "Print the resulting one-hot rows."
+      ],
+      "visual": "[0 2 1] → [[1 0 0]\n           [0 0 1]\n           [0 1 0]]",
+      "realWorld": "Class labels become model input with one index operation, which also documents the encoding in a single line.",
+      "mistakes": [
+        "Using float identity and doubling the memory.",
+        "Indexing with labels outside 0..n−1 and getting a shape error."
+      ],
+      "revision": [
+        "Fancy indexing selects the identity rows.",
+        "The output has one column per class."
+      ]
+    },
+    "Images are uint8 arrays": {
+      "syntax": "np.clip(img.astype(int) + 40, 0, 255).astype(np.uint8)",
+      "steps": [
+        "Add brightness to a uint8 image.",
+        "Clip into the legal 0–255 range.",
+        "Cast back to uint8 and print it."
+      ],
+      "visual": "[[ 40 168]\n [255 104]]",
+      "realWorld": "Skipping the cast to int overflows uint8 and turns bright pixels dark, which is one of the most common image bugs.",
+      "mistakes": [
+        "Adding directly to uint8 and wrapping around.",
+        "Clipping in float and forgetting to cast back."
+      ],
+      "revision": [
+        "Widen before arithmetic, clip, then cast back.",
+        "clip keeps every channel value legal."
+      ]
+    },
+    "A moving average is a convolution": {
+      "syntax": "np.convolve(v, np.ones(n) / n, mode='valid')",
+      "steps": [
+        "Build a short series.",
+        "Convolve it with a normalised window.",
+        "Print the smoothed values."
+      ],
+      "visual": "convolve([1 2 3 4], [.5 .5], 'valid') → [1.5 2.5 3.5]",
+      "realWorld": "Smoothing noisy sensor data is a convolution with a window, and mode='valid' drops the edge effects instead of padding them.",
+      "mistakes": [
+        "Forgetting to normalise the window, which scales the output.",
+        "Expecting the output length to match the input in valid mode."
+      ],
+      "revision": [
+        "The window weights are the kernel.",
+        "mode controls which edges are computed."
+      ]
+    },
+    "Round only for display": {
+      "syntax": "np.round(value, 2)",
+      "steps": [
+        "Round a value with three decimals to two.",
+        "Print it next to 0.1 + 0.2 rounded.",
+        "Note rounding happened at presentation time."
+      ],
+      "visual": "round(2.675, 2) → 2.68\nround(0.1 + 0.2, 2) → 0.3",
+      "realWorld": "Rounding stored values loses precision on every later computation, so it belongs at the formatting boundary.",
+      "mistakes": [
+        "Rounding intermediate results and accumulating the error.",
+        "Expecting round to reproduce a decimal exactly."
+      ],
+      "revision": [
+        "Round for display, not for storage.",
+        "Binary floats make some decimals impossible either way."
+      ]
+    },
+    "Scale each row by its own maximum": {
+      "syntax": "a / a.max(axis=1, keepdims=True)",
+      "steps": [
+        "Compute the per-row maximum with keepdims.",
+        "Divide the matrix by that column.",
+        "Print the result and check each row's top value is 1."
+      ],
+      "visual": "[[0.5, 1.0], [0.5, 1.0]]",
+      "realWorld": "Normalising each sample — per-user histograms, per-row probabilities — needs the divisor shaped as a column.",
+      "mistakes": [
+        "Dividing by a flat (n,) maximum and mixing rows with columns.",
+        "Dividing by a zero maximum on an all-zero row."
+      ],
+      "revision": [
+        "keepdims makes the reduction broadcastable.",
+        "Every row is scaled by its own statistic."
+      ]
+    },
+    "diff gives step-to-step change": {
+      "syntax": "np.diff(a)",
+      "steps": [
+        "Take the difference of a three-value series.",
+        "Print the two results.",
+        "Note the output is one shorter than the input."
+      ],
+      "visual": "[100, 110, 99] → [10.0, -11.0]",
+      "realWorld": "Daily change, velocity and error deltas are differences, and the shorter output is why the arrays cannot be zipped naively.",
+      "mistakes": [
+        "Assuming the output length matches the input.",
+        "Using diff on dates of mixed units."
+      ],
+      "revision": [
+        "diff computes neighbour differences.",
+        "The result has n−1 elements."
+      ]
+    },
+    "digitize buckets values into bins": {
+      "syntax": "np.digitize(values, edges)",
+      "steps": [
+        "Define two bin edges.",
+        "Digitize three values.",
+        "Print the bucket index for each."
+      ],
+      "visual": "[0.1 0.5 1.5] with edges [0.5 1.0] → [0 1 2]",
+      "realWorld": "Turning a continuous score into a grade band or a risk tier is one call, with the edge convention deciding the boundary cases.",
+      "mistakes": [
+        "Assuming a value exactly on an edge goes to the left bin by default.",
+        "Passing unsorted edges."
+      ],
+      "revision": [
+        "digitize returns a bin index per value.",
+        "The right edge is open unless right=True."
+      ]
+    },
+    "Build a confusion matrix with bincount": {
+      "syntax": "bincount(truth * k + pred, minlength=k*k)",
+      "steps": [
+        "Encode each pair as a single integer.",
+        "Count the encoded values with minlength.",
+        "Reshape into a 2×2 matrix."
+      ],
+      "visual": "[[0, 1],\n [0, 2]]",
+      "realWorld": "A classification report needs the pair counts, and one bincount plus a reshape replaces a nested loop over classes.",
+      "mistakes": [
+        "Forgetting minlength and losing all-zero rows.",
+        "Reshaping with the wrong order and transposing the matrix."
+      ],
+      "revision": [
+        "truth * k + pred is a unique cell id.",
+        "reshape(k, k) recovers the matrix."
+      ]
+    },
+    "An image is just an array": {
+      "syntax": "img[..., 0]   |   img * 0",
+      "steps": [
+        "Build a small 3-D array.",
+        "Slice one channel with an ellipsis.",
+        "Multiply the whole thing by zero and check the shape."
+      ],
+      "visual": "(2, 2, 3)\nchannel 0 → [[0 3] [6 9]]",
+      "realWorld": "Cropping, channel extraction and brightness are plain indexing and arithmetic once the image is an array.",
+      "mistakes": [
+        "Hard-coding the channel axis position across datasets.",
+        "Forgetting that a multiplication needs clipping for display."
+      ],
+      "revision": [
+        "Channels are indexed like any axis.",
+        "img[..., 0] keeps the spatial axes and drops the channel."
+      ]
+    },
+    "Moving between NumPy and the rest of Python": {
+      "syntax": "np.asarray(data)   |   a.tolist()",
+      "steps": [
+        "Convert a nested list to an array with asarray.",
+        "Print the shape and dtype.",
+        "Convert back to a list for output."
+      ],
+      "visual": "(2, 2) int64 [[1, 2], [3, 4]]",
+      "realWorld": "The boundary with JSON, an API or a dataframe is where dtype and shape must be checked, since nothing downstream will infer them.",
+      "mistakes": [
+        "Assuming asarray copied the data.",
+        "Returning NumPy scalars in JSON, which the encoder rejects."
+      ],
+      "revision": [
+        "asarray avoids a copy when the input is already an array.",
+        "tolist returns plain Python types."
+      ]
+    }
+  }
+}

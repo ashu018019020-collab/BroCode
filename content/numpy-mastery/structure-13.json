@@ -1,0 +1,382 @@
+{
+  "n16": {
+    "save and load": {
+      "syntax": "np.save(path, a)   |   np.load(path)",
+      "steps": [
+        "Save an array to a .npy path.",
+        "Load it back into a new name.",
+        "Print both and confirm the values match."
+      ],
+      "visual": "save(arange(3)) → load → [0 1 2]",
+      "realWorld": "Caching a prepared array between runs is a save/load pair, and no parsing or dtype guessing is involved.",
+      "mistakes": [
+        "Opening the .npy file in a text editor and expecting numbers.",
+        "Forgetting the extension — save appends .npy automatically."
+      ],
+      "revision": [
+        ".npy is a binary format that stores dtype and shape.",
+        "load restores the array exactly."
+      ]
+    },
+    "Text and CSV round-trip": {
+      "syntax": "np.savetxt(p, a)   |   np.loadtxt(p)",
+      "steps": [
+        "Write an integer array to a text file.",
+        "Read it back with loadtxt.",
+        "Note the values came back as floats."
+      ],
+      "visual": "savetxt [1 2] → loadtxt → [1. 2.]",
+      "realWorld": "When another tool must read the data, a text file is the portable choice even though it loses dtype information.",
+      "mistakes": [
+        "Expecting loadtxt to recover the original integer dtype.",
+        "Writing with the default precision and losing digits."
+      ],
+      "revision": [
+        "Text files are human- and tool-readable but lossy on dtype.",
+        "Pass dtype=int to loadtxt to get integers back."
+      ]
+    },
+    "Several arrays in one NPZ": {
+      "syntax": "np.savez(p, x=a)   |   np.load(p).files",
+      "steps": [
+        "Save one named array into an npz archive.",
+        "Load the archive and print its keys.",
+        "Index the archive by the name you gave."
+      ],
+      "visual": "savez(x=arange(2))\nkeys → ['x']",
+      "realWorld": "Shipping a dataset's features and labels as one file keeps them from being separated or mismatched.",
+      "mistakes": [
+        "Passing arrays positionally, which names them arr_0, arr_1.",
+        "Expecting the archive to be compressed; savez does not compress."
+      ],
+      "revision": [
+        "savez takes keyword names, which become the keys.",
+        "load returns a mapping-like object, not a single array."
+      ]
+    },
+    "skiprows ignores a header line": {
+      "syntax": "np.loadtxt(p, delimiter=',', skiprows=1)",
+      "steps": [
+        "Write a CSV with a header row.",
+        "Load it with skiprows=1.",
+        "Confirm only the numeric rows came through."
+      ],
+      "visual": "'x,y' then '1,2' and '3,4'\nloadtxt → [[1. 2.]\n           [3. 4.]]",
+      "realWorld": "Exported CSVs almost always carry a header, and skiprows is the one argument that keeps loadtxt from failing on it.",
+      "mistakes": [
+        "Forgetting skiprows and getting a parse error on the header.",
+        "Assuming skiprows understands column names."
+      ],
+      "revision": [
+        "loadtxt has no header concept.",
+        "skiprows drops the header before parsing numbers."
+      ]
+    },
+    "genfromtxt fills missing values": {
+      "syntax": "np.genfromtxt(p, delimiter=',')",
+      "steps": [
+        "Write a CSV with one empty field.",
+        "Read it with genfromtxt.",
+        "Confirm the gap became nan."
+      ],
+      "visual": "[[1. 2.]\n [3. nan]]",
+      "realWorld": "Real exports have holes, and genfromtxt keeps the row count intact instead of failing the whole file.",
+      "mistakes": [
+        "Using loadtxt and getting a ValueError on the empty field.",
+        "Forgetting to handle the nan before computing a mean."
+      ],
+      "revision": [
+        "genfromtxt tolerates gaps and fills nan.",
+        "loadtxt requires every field to parse."
+      ]
+    },
+    "npz stores several arrays": {
+      "syntax": "np.load(p).files   |   archive['a']",
+      "steps": [
+        "Save two arrays under two names.",
+        "Print the sorted file keys.",
+        "Fetch one array by name and check its values."
+      ],
+      "visual": "files → ['a', 'b']\narchive['a'] → [0 1]",
+      "realWorld": "A model bundle of weights, means and scales travels as one archive with three keys.",
+      "mistakes": [
+        "Iterating the archive instead of its .files list.",
+        "Forgetting arrays are only read when indexed."
+      ],
+      "revision": [
+        "files lists the stored names.",
+        "Indexing by key returns that array."
+      ]
+    },
+    "memmap reads without loading everything": {
+      "syntax": "np.memmap(p, dtype=..., mode='r', shape=...)",
+      "steps": [
+        "Write a raw float64 file with tofile.",
+        "Map it with an explicit dtype and shape.",
+        "Index one element and print it."
+      ],
+      "visual": "10 float64 values, shape (2, 5)\nm[1, 0] → 5.0",
+      "realWorld": "Datasets larger than memory are indexed through a memory map, so only the touched pages are read from disk.",
+      "mistakes": [
+        "Mismatching dtype or shape against the file and reading garbage.",
+        "Forgetting raw files carry no dtype or shape metadata."
+      ],
+      "revision": [
+        "memmap needs the dtype and shape supplied by you.",
+        "It behaves like an array but reads pages on demand."
+      ]
+    },
+    "savetxt writes formatted text": {
+      "syntax": "np.savetxt(p, a, delimiter=',', fmt='%d')",
+      "steps": [
+        "Write an integer matrix with a comma delimiter.",
+        "Set fmt='%d' so no decimals appear.",
+        "Print the file contents."
+      ],
+      "visual": "file contents:\n1,2\n3,4",
+      "realWorld": "Feeding a spreadsheet or a legacy importer means writing integers as integers, which fmt controls.",
+      "mistakes": [
+        "Leaving the default fmt and writing 1.000000000000000000e+00.",
+        "Choosing a delimiter the reader does not expect."
+      ],
+      "revision": [
+        "fmt decides how each value is stringified.",
+        "delimiter and fmt must match the consumer's expectations."
+      ]
+    },
+    "Save one array and load it back": {
+      "syntax": "np.save(p, a); np.load(p)",
+      "steps": [
+        "Save a small array.",
+        "Load it back.",
+        "Print the values and confirm they are identical."
+      ],
+      "visual": "save([1 2 3]) → load → [1 2 3]",
+      "realWorld": "Intermediate results that must survive a restart are saved, and the dtype comes back with them.",
+      "mistakes": [
+        "Recomputing instead of caching a slow step.",
+        "Assuming the file is portable across Python versions without care."
+      ],
+      "revision": [
+        ".npy keeps dtype and shape.",
+        "load returns the array with no conversion step."
+      ]
+    },
+    "genfromtxt reads named columns": {
+      "syntax": "np.genfromtxt(p, delimiter=',', names=True)",
+      "steps": [
+        "Read a CSV with a header using names=True.",
+        "Print the field names.",
+        "Index a column by name."
+      ],
+      "visual": "names → ('a', 'b')\ndata['a'] → [1.0, 3.0]",
+      "realWorld": "Code that refers to a column by name survives a reordered export, which positional indexing does not.",
+      "mistakes": [
+        "Using positional indexing after asking for names.",
+        "Forgetting names=True and getting a plain 2-D array."
+      ],
+      "revision": [
+        "names=True turns the header into field names.",
+        "The result is a structured array indexed by name."
+      ]
+    },
+    "loadtxt skips comment lines": {
+      "syntax": "np.loadtxt(p, dtype=int)",
+      "steps": [
+        "Write a file whose first line starts with #.",
+        "Load it with dtype=int.",
+        "Confirm the comment vanished and the dtype is integer."
+      ],
+      "visual": "'# n' then 1 and 2\nloadtxt → [1 2]",
+      "realWorld": "Config-style data files carry comments, and loadtxt drops them without any preprocessing.",
+      "mistakes": [
+        "Assuming comments need an explicit flag; '#' is the default.",
+        "Leaving dtype float and getting decimals in integer data."
+      ],
+      "revision": [
+        "Lines beginning with # are ignored by default.",
+        "dtype controls the parsed type."
+      ]
+    },
+    "An npz file exposes its arrays by key": {
+      "syntax": "sorted(np.load(p))",
+      "steps": [
+        "Save two arrays under two names.",
+        "Load the archive and list its keys.",
+        "Fetch one array and print its values."
+      ],
+      "visual": "sorted(load(p)) → ['a', 'b']",
+      "realWorld": "Discovering what a saved bundle contains before loading it is a keys call, which keeps code from guessing names.",
+      "mistakes": [
+        "Indexing a name that was never saved.",
+        "Confusing the archive object with a dict of loaded arrays."
+      ],
+      "revision": [
+        "load on an npz returns a mapping-like archive.",
+        "Keys are the keyword names used at save time."
+      ]
+    },
+    "save and load one array": {
+      "syntax": "np.save(p, a); b = np.load(p)",
+      "steps": [
+        "Save a float32 array.",
+        "Load it back.",
+        "Print the values, dtype and shape."
+      ],
+      "visual": "[0. 1. 2. 3.] float32 (4,)",
+      "realWorld": "Preserving dtype is why .npy beats CSV for a training cache: float32 stays float32 and no rounding happens.",
+      "mistakes": [
+        "Using CSV and silently widening float32 to float64.",
+        "Assuming save writes human-readable output."
+      ],
+      "revision": [
+        "save keeps dtype and shape exactly.",
+        "No text conversion happens in either direction."
+      ]
+    },
+    "savez stores several arrays": {
+      "syntax": "np.savez(p, first=a, second=b)",
+      "steps": [
+        "Save two differently shaped arrays under names.",
+        "List the keys of the archive.",
+        "Print the shape of the second one."
+      ],
+      "visual": "['first', 'second']\narchive['second'].shape → (2, 2)",
+      "realWorld": "A pack of features, labels and metadata belongs in one file so the pieces cannot drift apart.",
+      "mistakes": [
+        "Positional arguments producing arr_0 names.",
+        "Expecting savez to compress; use savez_compressed for that."
+      ],
+      "revision": [
+        "savez groups named arrays into one archive.",
+        "load indexes them by the names you chose."
+      ]
+    },
+    "genfromtxt types a whole table": {
+      "syntax": "genfromtxt(p, names=True, dtype=None)",
+      "steps": [
+        "Write a CSV with a text column and a numeric column.",
+        "Read it with dtype=None so each column is typed.",
+        "Print the field names and sum the numeric column."
+      ],
+      "visual": "names → ('name', 'score')\nscore sum → 16",
+      "realWorld": "Mixed tables — names beside numbers — need per-column types, which a single float dtype cannot express.",
+      "mistakes": [
+        "Leaving the default dtype and getting every column as a string.",
+        "Forgetting encoding='utf-8' on non-ASCII text."
+      ],
+      "revision": [
+        "dtype=None infers a type per column.",
+        "The result is a structured array with named fields."
+      ]
+    },
+    "memmap writes through to disk": {
+      "syntax": "m = np.memmap(p, mode='r+', dtype=..., shape=...); m.flush()",
+      "steps": [
+        "Write a raw float64 file.",
+        "Map it read-write and assign one cell.",
+        "Flush and read the file back with fromfile."
+      ],
+      "visual": "mapped[0, 0] = 99.0 → flush\nfromfile → [99.0, 1.0, 2.0]",
+      "realWorld": "Editing one record of a huge dataset in place is a memmap write, with no full load or rewrite.",
+      "mistakes": [
+        "Forgetting flush and reading a stale file.",
+        "Opening mode='r' and trying to assign into it."
+      ],
+      "revision": [
+        "mode='r+' makes the map writable.",
+        "flush pushes changed pages back to the file."
+      ]
+    },
+    "savez_compressed shrinks an archive": {
+      "syntax": "np.savez_compressed(p, a=a)",
+      "steps": [
+        "Save a long range under compression.",
+        "Open the archive and list its keys.",
+        "Sum the array to confirm the values survived."
+      ],
+      "visual": "['a', 'b']\na.sum() → 499500",
+      "realWorld": "Repetitive arrays compress dramatically, which matters when a dataset has to be uploaded or checked into storage.",
+      "mistakes": [
+        "Using compression for data that is already dense and random.",
+        "Expecting the same write speed as savez."
+      ],
+      "revision": [
+        "savez_compressed adds deflate compression.",
+        "The keyed access is identical to savez."
+      ]
+    },
+    "loadtxt with selected columns": {
+      "syntax": "np.loadtxt(p, delimiter=',', usecols=(0, 2))",
+      "steps": [
+        "Write a three-column CSV.",
+        "Load only columns 0 and 2.",
+        "Confirm the result has two columns in the order asked."
+      ],
+      "visual": "columns 0 and 2\n→ [[1.0, 3.0], [4.0, 6.0]]",
+      "realWorld": "A wide export with one useful pair of columns loads faster when the rest are never parsed.",
+      "mistakes": [
+        "Expecting usecols to reorder or rename columns.",
+        "Passing a column index that does not exist."
+      ],
+      "revision": [
+        "usecols selects and orders the parsed columns.",
+        "The file's other columns are never converted."
+      ]
+    },
+    "savetxt with a format string": {
+      "syntax": "np.savetxt(p, a, fmt='%.2f')",
+      "steps": [
+        "Write a value with four decimals using fmt='%.2f'.",
+        "Read the file and print it.",
+        "Note the precision was decided at write time."
+      ],
+      "visual": "1.2345 written with %.2f → 1.23",
+      "realWorld": "Round-tripping through text loses digits, so the format string is the contract for how much precision survives.",
+      "mistakes": [
+        "Assuming loadtxt recovers the lost digits.",
+        "Using a format that truncates an ID or a timestamp."
+      ],
+      "revision": [
+        "fmt controls precision in the written file.",
+        "Text output is lossy unless the format keeps every digit."
+      ]
+    },
+    "tofile and fromfile for raw binary": {
+      "syntax": "a.tofile(p)   |   np.fromfile(p, dtype=...)",
+      "steps": [
+        "Write a float32 array with tofile.",
+        "Read it back with fromfile and the same dtype.",
+        "Print the dtype and values."
+      ],
+      "visual": "float32 [1.5, 2.5]",
+      "realWorld": "Interchange with C, Fortran or a GPU buffer uses raw bytes, where you control the dtype on both ends.",
+      "mistakes": [
+        "Reading with the wrong dtype and getting noise.",
+        "Expecting fromfile to restore the shape."
+      ],
+      "revision": [
+        "tofile writes the buffer with no header.",
+        "fromfile needs the dtype and returns a flat array."
+      ]
+    },
+    "load refuses pickled objects": {
+      "syntax": "np.load(p, allow_pickle=False)",
+      "steps": [
+        "Save an object array.",
+        "Try to load it with allow_pickle=False and catch the error.",
+        "Load again with allow_pickle=True and read the key."
+      ],
+      "visual": "refused without allow_pickle\n['a']",
+      "realWorld": "Loading a file from an untrusted source with pickle enabled can execute code, so numeric arrays should stay numeric.",
+      "mistakes": [
+        "Setting allow_pickle=True by default in a loader.",
+        "Storing dicts or strings in an array where a structured dtype would do."
+      ],
+      "revision": [
+        "Object arrays require pickle to rebuild.",
+        "allow_pickle=False is the safe default for untrusted files."
+      ]
+    }
+  }
+}

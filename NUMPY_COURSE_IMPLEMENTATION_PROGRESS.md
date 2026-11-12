@@ -553,6 +553,23 @@ Bro. Eight tools from the brief's list of eighteen are still missing: axis explo
 interactive visualizer for 3-D grids, linear-algebra visualiser beyond matmul, performance comparison,
 NumPy coding playground (Code Bro covers it), string/datetime explorer and FFT/frequency explorer.
 
+### Full-shape lesson structure (phase 23, Part 4 of the brief)
+
+Phase 20 authored the 12-part lesson shape for one module. Phase 23 completes it for the course:
+`content/numpy-mastery/structure-7.json` … `structure-15.json` add the syntax line, three ordered
+steps, a compact visual, the real-world use, the common mistakes and two revision points for the
+remaining **225 Learn topics**, so every one of the 403 topics carries the full shape.
+
+`npm run numpy:coverage` now reports **full 12-part: 403/403 (100%)** (was 178/403, 44%). The
+dual-level figure stays at 208/403 (52%) because `simple`/`pro` are still only authored where
+`levels-*.json` covers a module — the two measures are separate on purpose and the coverage command
+prints them side by side.
+
+`scripts/numpy-coverage.cjs` now computes its "Missing parts" gap list from the six structure parts
+alone (`FULL`), not the seven-part `PARTS` set. Before the fix every topic that had the whole
+structure but no authored pro/simple pair was reported as a structure gap, so `--strict` failed on
+topics that were already complete.
+
 ### Question-bank manifest (phase 22, Part 6 of the brief)
 
 The brief's 500-items-per-module target is not met, and the course now says so in the product instead

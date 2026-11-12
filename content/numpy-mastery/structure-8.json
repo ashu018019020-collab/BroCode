@@ -1,0 +1,510 @@
+{
+  "n08": {
+    "Arithmetic is elementwise": {
+      "syntax": "a + 1   |   a ** 2",
+      "steps": [
+        "Apply the operator with a scalar and print the result's length.",
+        "Square the array with ** and confirm every element changed.",
+        "Point at the operator, not a loop: the compiled pass visits all elements once."
+      ],
+      "visual": "a = [1 2 3]\na + 1 → [2 3 4]\na ** 2 → [1 4 9]",
+      "realWorld": "Converting a column of prices or rescaling a feature vector is one expression, so the code reads like the formula on the slide.",
+      "mistakes": [
+        "Writing a for loop over the elements and paying interpreter cost per value.",
+        "Expecting the expression to change the array in place."
+      ],
+      "revision": [
+        "Operators on arrays are universal functions applied element by element.",
+        "The shape is preserved and a new array is returned."
+      ]
+    },
+    "Math ufuncs": {
+      "syntax": "np.sqrt(x)   |   np.exp(x)   |   np.log(x)",
+      "steps": [
+        "Call each ufunc with a scalar to see the plain number it returns.",
+        "Pass an array instead and note the same call now returns an array.",
+        "Keep one spelling: the ufunc form works for both inputs."
+      ],
+      "visual": "np.sqrt(9) → 3.0\nnp.exp(0)  → 1.0\nnp.log(1)  → 0.0",
+      "realWorld": "A helper written with np.sqrt works whether it receives a single measurement or a whole column, which is why libraries standardise on ufuncs.",
+      "mistakes": [
+        "Importing math and using math.sqrt, which refuses an array.",
+        "Forgetting the dtype widens to float even for exact roots."
+      ],
+      "revision": [
+        "ufuncs accept scalars, lists and arrays through one call.",
+        "The result dtype follows the computation, not the input."
+      ]
+    },
+    "Comparisons produce masks": {
+      "syntax": "mask = a > 2   |   a[mask]",
+      "steps": [
+        "Compare the array with the threshold and print the boolean array.",
+        "Index the array with that mask to keep only the True positions.",
+        "Count with mask.sum() when only the number matters."
+      ],
+      "visual": "a = [1 5 3]\na > 2 → [False  True  True]\na[a > 2] → [5 3]",
+      "realWorld": "Pass lists, outlier flags and alert counts are all one comparison away from the raw column.",
+      "mistakes": [
+        "Writing if a > 2: on an array, which has no single truth value.",
+        "Assuming the filtered result keeps the original shape."
+      ],
+      "revision": [
+        "Comparisons return a boolean array of the same shape.",
+        "Indexing with the mask shortens the array to the matches."
+      ]
+    },
+    "sqrt of perfect squares is exact": {
+      "syntax": "np.sqrt([4, 9, 25])",
+      "steps": [
+        "Pass a list of perfect squares to np.sqrt.",
+        "Print the float array and check each value against the hand answer.",
+        "Note the dtype: the result is float even though every root is whole."
+      ],
+      "visual": "np.sqrt([4, 9, 25]) → [2. 3. 5.]",
+      "realWorld": "Distances and standard deviations are roots of sums, so exact roots give a free way to check a numerical path.",
+      "mistakes": [
+        "Expecting an integer dtype because the inputs were integers.",
+        "Comparing the float result with == instead of isclose."
+      ],
+      "revision": [
+        "sqrt is a ufunc over the whole array in one compiled pass.",
+        "The output shape matches the input and the dtype is float."
+      ]
+    },
+    "reduce sums, accumulate keeps running totals": {
+      "syntax": "np.add.reduce(a)   |   np.add.accumulate(a)",
+      "steps": [
+        "Fold a short array to a single total with reduce.",
+        "Return every intermediate total with accumulate.",
+        "Compare lengths: reduce gives one value, accumulate keeps the input length."
+      ],
+      "visual": "np.add.reduce([1 2 3]) → 6\nnp.add.accumulate([1 2 3]) → [1 3 6]",
+      "realWorld": "A checkout total is reduce; a running balance chart is accumulate. Both come from the same ufunc method.",
+      "mistakes": [
+        "Calling reduce on a matrix without an axis and flattening by accident.",
+        "Using a Python accumulator loop where accumulate already exists."
+      ],
+      "revision": [
+        "reduce collapses to one value per axis.",
+        "accumulate keeps every intermediate result."
+      ]
+    },
+    "clip limits every element": {
+      "syntax": "np.clip(a, 1, 8)",
+      "steps": [
+        "Clip values below and above the range.",
+        "Print the result and confirm the in-range value is untouched.",
+        "Check the values that were pinned to each bound."
+      ],
+      "visual": "np.clip([0, 5, 10], 1, 8) → [1 5 8]",
+      "realWorld": "Keeping predicted probabilities inside [0, 1] and pixel channels inside [0, 255] is one clip, not a per-element if.",
+      "mistakes": [
+        "Passing the bounds in the wrong order.",
+        "Clipping before a downstream sum that should have seen the raw values."
+      ],
+      "revision": [
+        "clip pins values into a closed range.",
+        "Values already inside the range pass through unchanged."
+      ]
+    },
+    "round, floor and ceil differ": {
+      "syntax": "np.round(x)   |   np.floor(x)   |   np.ceil(x)",
+      "steps": [
+        "Apply all three to the same decimals.",
+        "Compare where 1.5 lands under each.",
+        "Pick the rule the data means before choosing the function."
+      ],
+      "visual": "[1.5 2.4]\nround → [2. 2.]   (half to even)\nfloor → [1. 2.]\nceil  → [2. 3.]",
+      "realWorld": "Billing rounds to the nearest cent, stock planning floors to whole units, and page counts ceil — picking the wrong one changes the number of items.",
+      "mistakes": [
+        "Assuming round always goes up at .5; it goes to the nearest even.",
+        "Using astype(int) as a rounding step — that truncates toward zero."
+      ],
+      "revision": [
+        "round is half-to-even, floor always down, ceil always up.",
+        "astype(int) truncates, so it is not a rounding replacement."
+      ]
+    },
+    "sign tells you direction": {
+      "syntax": "np.sign(a)",
+      "steps": [
+        "Apply sign to a mix of negative, zero and positive values.",
+        "Read the -1, 0 and 1 array as directions.",
+        "Multiply it into other data to flip only the negatives."
+      ],
+      "visual": "np.sign([-3, 0, 5]) → [-1  0  1]",
+      "realWorld": "Direction columns in time-series data — up, flat, down — come from sign, and multiplying by it separates gains from losses.",
+      "mistakes": [
+        "Using sign when the magnitude is still needed.",
+        "Assuming NaN maps to 0; it propagates."
+      ],
+      "revision": [
+        "sign returns -1, 0 or 1 elementwise.",
+        "It is a direction array, not a magnitude."
+      ]
+    },
+    "Exponentiation uses the ** operator": {
+      "syntax": "a ** 2   |   np.power(a, 2)",
+      "steps": [
+        "Square an integer array with **.",
+        "Repeat with np.power and compare the values.",
+        "Note that both accept an array exponent, not only a scalar one."
+      ],
+      "visual": "np.array([2, 3]) ** 2 → [4 9]",
+      "realWorld": "Polynomial features are powers of one column; ** keeps the expression readable while np.power is the form to pass as a callback.",
+      "mistakes": [
+        "Using a negative integer exponent on an integer array and getting a ValueError.",
+        "Reading ** as matrix power; matrix power is np.linalg.matrix_power."
+      ],
+      "revision": [
+        "** is elementwise on arrays.",
+        "np.power is the same operation as a function."
+      ]
+    },
+    "abs works on whole arrays": {
+      "syntax": "np.abs(a)",
+      "steps": [
+        "Pass an array with negatives to np.abs.",
+        "Print the result and confirm it is elementwise.",
+        "Try the same call with a plain Python list to see it accepts both."
+      ],
+      "visual": "np.abs(np.array([-3, 4])) → [3 4]",
+      "realWorld": "Residuals and error magnitudes are absolute values; a library that accepts arrays, lists and scalars keeps callers from converting first.",
+      "mistakes": [
+        "Calling the Python builtin abs on a multi-element array.",
+        "Assuming abs changes the dtype when the input is unsigned."
+      ],
+      "revision": [
+        "np.abs is a ufunc over the whole array.",
+        "One call serves scalars, lists and arrays."
+      ]
+    },
+    "cumsum keeps every running total": {
+      "syntax": "np.cumsum(a)",
+      "steps": [
+        "Cumulatively sum a short array.",
+        "Compare the last value with the plain total.",
+        "Note the output length equals the input length."
+      ],
+      "visual": "np.cumsum([1 2 3]) → [1 3 6]\nlast value 6 = the plain sum",
+      "realWorld": "Running balances, cumulative sales targets and progress charts are cumsum; the collapsed total is a different question.",
+      "mistakes": [
+        "Using cumsum where only the final total was wanted.",
+        "Forgetting the axis on a matrix and flattening it."
+      ],
+      "revision": [
+        "cumsum returns an array of the same length.",
+        "sum collapses to one number instead."
+      ]
+    },
+    "log and exp invert each other": {
+      "syntax": "np.exp(np.log(values))",
+      "steps": [
+        "Take the log of positive values.",
+        "Exponentiate the result.",
+        "Compare with the original using np.allclose rather than ==."
+      ],
+      "visual": "values = [1. 10.]\nnp.allclose(np.exp(np.log(values)), values) → True",
+      "realWorld": "Log-space transforms in modelling are only reversible if the round trip is checked within a tolerance, not with equality.",
+      "mistakes": [
+        "Checking the round trip with == and calling the float error a bug.",
+        "Taking log(0), which yields -inf with a warning."
+      ],
+      "revision": [
+        "exp and log are inverses up to floating-point error.",
+        "allclose is the correct comparison for that round trip."
+      ]
+    },
+    "reduce and accumulate": {
+      "syntax": "np.add.reduce(a)   |   np.add.accumulate(a)",
+      "steps": [
+        "Fold a length-4 array to one number with reduce.",
+        "Produce every running total with accumulate.",
+        "Swap add for multiply and see the same two shapes."
+      ],
+      "visual": "reduce → 10\naccumulate → [ 1  3  6 10]",
+      "realWorld": "Any binary ufunc gets these two methods for free, so a custom operator inherits totals and running totals without new code.",
+      "mistakes": [
+        "Assuming the methods exist only on np.add.",
+        "Reducing a multi-dimensional array without naming the axis."
+      ],
+      "revision": [
+        "reduce and accumulate are ufunc methods, not array-only helpers.",
+        "They reduce or run over the axis you name."
+      ]
+    },
+    "Never compare floats with ==": {
+      "syntax": "np.isclose(a, b)",
+      "steps": [
+        "Add 0.1 and 0.2 and compare with 0.3 using ==.",
+        "Repeat with np.isclose and see the difference.",
+        "Set rtol/atol when the tolerance needs to match the domain."
+      ],
+      "visual": "0.1 + 0.2 == 0.3 → False\nnp.isclose(0.1 + 0.2, 0.3) → True",
+      "realWorld": "Model checks and test assertions on floats fail on the last bits unless they compare within a tolerance — this is the standard fix.",
+      "mistakes": [
+        "Using == in a test assertion on computed floats.",
+        "Choosing a tolerance so loose that a real error passes."
+      ],
+      "revision": [
+        "Binary floats cannot represent most decimals exactly.",
+        "isclose and allclose compare within a tolerance."
+      ]
+    }
+  },
+  "n09": {
+    "Scalar broadcasting": {
+      "syntax": "a + 10   # scalar stretched, not copied",
+      "steps": [
+        "Add a scalar to a vector.",
+        "Print the result and confirm every element moved.",
+        "Note that no array of ten was allocated for the scalar."
+      ],
+      "visual": "a = [1 2 3]\na + 10 → [11 12 13]",
+      "realWorld": "Adding a fixed fee or a currency offset to a whole column is one addition, and the memory cost does not grow with the row count.",
+      "mistakes": [
+        "Building a full array of the constant first.",
+        "Assuming the scalar changes the dtype silently."
+      ],
+      "revision": [
+        "A scalar broadcasts to every position without a copy.",
+        "The result shape is the array's shape."
+      ]
+    },
+    "Row and column broadcasting": {
+      "syntax": "a * w   # (2, 3) with (3,)",
+      "steps": [
+        "Build a (2, 3) matrix and a length-3 weight vector.",
+        "Multiply them and print the result.",
+        "Confirm each column was scaled by its own weight."
+      ],
+      "visual": "[[1 2 3]      [10 20 30]\n [4 5 6]]  *            \n→ [[ 10  40  90]\n   [ 40 100 180]]",
+      "realWorld": "Feature scaling multiplies each column by its own weight; that is the shape rule every preprocessing pipeline relies on.",
+      "mistakes": [
+        "Aligning shapes from the left instead of the right.",
+        "Passing the weights as a column and scaling rows by mistake."
+      ],
+      "revision": [
+        "Shapes align from the right.",
+        "A (3,) operand matches the last axis of a (2, 3)."
+      ]
+    },
+    "Incompatible shapes fail loudly": {
+      "syntax": "a + b   # ValueError when sizes disagree",
+      "steps": [
+        "Add two matrices whose last axes differ and neither is 1.",
+        "Catch the ValueError and read the two shapes it prints.",
+        "Fix the axis rather than reshaping until the error stops."
+      ],
+      "visual": "(2, 3) + (2, 2)\n→ ValueError: operands could not be broadcast",
+      "realWorld": "A mismatched feature and weight vector is the most common preprocessing bug, and this error is the one that catches it before training.",
+      "mistakes": [
+        "Reshaping blindly until the error disappears.",
+        "Blaming the data instead of the shapes printed in the message."
+      ],
+      "revision": [
+        "Sizes must be equal or one on every aligned axis.",
+        "The error names both shapes — read it right to left."
+      ]
+    },
+    "A vector broadcasts across rows": {
+      "syntax": "ones((2, 3)) + array([1, 2, 3])",
+      "steps": [
+        "Build a (2, 3) matrix of ones.",
+        "Add a length-3 row vector.",
+        "Print the result and confirm both rows received the same addition."
+      ],
+      "visual": "[[1 1 1]        [1 2 3]\n [1 1 1]]  +\n→ [[2 3 4]\n   [2 3 4]]",
+      "realWorld": "Subtracting a per-column mean from every row uses exactly this stretch, which is why column statistics are length-n vectors.",
+      "mistakes": [
+        "Expecting a different offset per row from a 1-D vector.",
+        "Mismatching the column count and reading the error as a row problem."
+      ],
+      "revision": [
+        "A (n,) operand is treated as one row repeated per matrix row.",
+        "The column count must match exactly."
+      ]
+    },
+    "A column broadcasts down": {
+      "syntax": "a + array([[10], [20]])   # (2, 1)",
+      "steps": [
+        "Build a (2, 3) matrix and a (2, 1) column.",
+        "Add them and print the result.",
+        "Confirm each row shifted by its own value."
+      ],
+      "visual": "[[10]\n [20]]  +\n→ [[11 11 11]\n   [21 21 21]]",
+      "realWorld": "Normalising each sample by its own total — a per-row operation — needs the divisor as a (m, 1) column.",
+      "mistakes": [
+        "Encoding the per-row value as a flat (2,) vector, which aligns with columns instead.",
+        "Forgetting keepdims when the column came from a reduction."
+      ],
+      "revision": [
+        "A (m, 1) column stretches across every column of the matrix.",
+        "The row count must match."
+      ]
+    },
+    "Outer product uses two new axes": {
+      "syntax": "a[:, None] * b[None, :]",
+      "steps": [
+        "Add a trailing axis to the first vector and a leading axis to the second.",
+        "Multiply them and print the (2, 2) table.",
+        "Check one cell by hand against the pair it should combine."
+      ],
+      "visual": "a = [1 2]   b = [3 4]\na[:, None] * b[None, :] → [[3 4]\n                          [6 8]]",
+      "realWorld": "Pairwise interaction features and distance tables are outer products; they replace a nested loop over both vectors.",
+      "mistakes": [
+        "Leaving both operands 1-D and getting a dot product instead.",
+        "Using the wrong slot for the new axis and transposing the table."
+      ],
+      "revision": [
+        "One new axis per operand makes broadcasting compute every pair.",
+        "The result shape is (len(a), len(b))."
+      ]
+    },
+    "Comparison broadcasts too": {
+      "syntax": "a > a.mean(axis=0)",
+      "steps": [
+        "Build a matrix and compute its per-column mean.",
+        "Compare the matrix with that length-3 vector.",
+        "Print the boolean matrix and confirm one comparison per row."
+      ],
+      "visual": "mean(axis=0) → [4.5 3. 3.]\na > mean → [[False False False]\n            [ True  True  True]]",
+      "realWorld": "Flagging values above their own column average is one broadcast comparison, not a loop over columns.",
+      "mistakes": [
+        "Assuming broadcasting works only for arithmetic.",
+        "Comparing against a (2, 1) mean and getting a transposed mask."
+      ],
+      "revision": [
+        "Every ufunc broadcasts, including comparisons.",
+        "The mask has the broadcast shape."
+      ]
+    },
+    "reshape prepares a strip for broadcasting": {
+      "syntax": "v.reshape(3, 1) + zeros((1, 2))",
+      "steps": [
+        "Reshape a length-3 vector into a (3, 1) column.",
+        "Add a (1, 2) row of zeros to it.",
+        "Print the shape and confirm it is (3, 2)."
+      ],
+      "visual": "(3, 1) + (1, 2) → (3, 2)",
+      "realWorld": "Building a grid of coordinates or a pairwise table starts by giving each operand the axis it is missing.",
+      "mistakes": [
+        "Reshaping to (3,) and expecting the outer grid.",
+        "Adding the operands in the wrong orientation."
+      ],
+      "revision": [
+        "Each operand contributes the axes it has.",
+        "Length-1 axes stretch to the other operand's size."
+      ]
+    },
+    "A row array broadcasts across rows": {
+      "syntax": "(2, 3) + (3,)   # one row repeated",
+      "steps": [
+        "Add a length-3 vector to a (2, 3) matrix.",
+        "Print the result's shape and confirm it is still (2, 3).",
+        "Note that the vector was never copied into two rows."
+      ],
+      "visual": "ones((2, 3)) + [1 2 3] → shape (2, 3)",
+      "realWorld": "Centering every column uses this stretch, which is why a scaler stores a length-n mean rather than a full matrix.",
+      "mistakes": [
+        "Expecting the result to grow a row.",
+        "Mismatching the last axis and reading the ValueError as a rank problem."
+      ],
+      "revision": [
+        "A (n,) operand matches the last axis.",
+        "The output keeps the matrix's shape."
+      ]
+    },
+    "A scalar is the smallest broadcast": {
+      "syntax": "ones((2, 2)) * 3",
+      "steps": [
+        "Multiply a matrix by a scalar.",
+        "Print the values and confirm all four changed.",
+        "Note that the shape is unchanged."
+      ],
+      "visual": "[[1 1] [1 1]] * 3 → [[3 3]\n                       [3 3]]",
+      "realWorld": "Unit conversions across a whole table are one scalar multiplication, and the cost does not depend on the table size.",
+      "mistakes": [
+        "Looping over cells for a constant operation.",
+        "Assuming the multiplication edited the matrix in place."
+      ],
+      "revision": [
+        "A scalar has no axes, so nothing can misalign.",
+        "The result is a new array of the same shape."
+      ]
+    },
+    "Broadcast a column against a row": {
+      "syntax": "[[1], [2]] * [10, 20]   # (2,1) with (2,)",
+      "steps": [
+        "Multiply a (2, 1) column by a (2,) row.",
+        "Print the (2, 2) result.",
+        "Verify each cell is one row value times one column value."
+      ],
+      "visual": "[[1]\n [2]] * [10 20] → [[10 20]\n                    [20 40]]",
+      "realWorld": "Every pairwise combination — price × quantity, user × item — is this one line instead of a nested loop.",
+      "mistakes": [
+        "Expecting elementwise pairing from a column and a row.",
+        "Confusing the (2, 2) grid with a dot product."
+      ],
+      "revision": [
+        "A column and a row broadcast into the full grid.",
+        "The result shape is the pair of lengths."
+      ]
+    },
+    "A size of one stretches automatically": {
+      "syntax": "zeros((3, 1)) + ones(4)   # → (3, 4)",
+      "steps": [
+        "Add a (3, 1) column of zeros to a length-4 vector.",
+        "Print the shape and confirm it is (3, 4).",
+        "Explain which axis stretched on each operand."
+      ],
+      "visual": "(3, 1) + (4,) → (3, 4)",
+      "realWorld": "Grid construction and one-hot expansion both rely on length-1 axes stretching to the other operand's size.",
+      "mistakes": [
+        "Assuming a length-1 axis must match a length-1 axis.",
+        "Forgetting that a missing axis is treated as length 1 too."
+      ],
+      "revision": [
+        "A length-1 axis repeats to match the other operand.",
+        "This is why keepdims results broadcast straight back."
+      ]
+    },
+    "A column broadcasts against a row": {
+      "syntax": "col + row   # (3, 1) with (1, 4)",
+      "steps": [
+        "Build a (3, 1) column and a (1, 4) row.",
+        "Add them and print the (3, 4) result.",
+        "Check a corner cell against the pair that produced it."
+      ],
+      "visual": "[[10]      [1 2 3 4]\n [20]\n [30]]  +\n→ [[11 12 13 14]\n   [21 22 23 24]\n   [31 32 33 34]]",
+      "realWorld": "Adding a per-row offset to a per-column base — a table of shifts — is one addition once both are shaped correctly.",
+      "mistakes": [
+        "Building the row as (4,) and the column as (3,) and losing the grid.",
+        "Broadcasting a (3,) against a (1, 4) and getting a shape error."
+      ],
+      "revision": [
+        "Both length-1 axes stretch to the other operand's size.",
+        "The result combines every row with every column."
+      ]
+    },
+    "expand_dims adds the axis explicitly": {
+      "syntax": "np.expand_dims(a, 0)   |   np.expand_dims(a, 1)",
+      "steps": [
+        "Start with a length-3 vector.",
+        "Insert an axis at position 0 and print the shape.",
+        "Insert it at position 1 and compare (1, 3) with (3, 1)."
+      ],
+      "visual": "(3,)\nexpand_dims(a, 0) → (1, 3)\nexpand_dims(a, 1) → (3, 1)",
+      "realWorld": "Function pipelines cannot use the [:, None] syntax, so expand_dims is the form that survives being passed as a step in a chain.",
+      "mistakes": [
+        "Choosing the wrong position and broadcasting the opposite direction.",
+        "Forgetting the axis argument is required."
+      ],
+      "revision": [
+        "expand_dims is the function form of newaxis.",
+        "The position decides row versus column."
+      ]
+    }
+  }
+}

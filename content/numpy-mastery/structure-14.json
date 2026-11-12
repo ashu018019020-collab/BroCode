@@ -1,0 +1,510 @@
+{
+  "n17": {
+    "Structured arrays": {
+      "syntax": "dtype=[('id', 'i4'), ('score', 'f4')]",
+      "steps": [
+        "Declare a dtype with two named fields.",
+        "Build a one-row array from a tuple.",
+        "Select the score field and print it."
+      ],
+      "visual": "a['score'] → [2.5]",
+      "realWorld": "A row of mixed types — id, name, price — stays one record instead of three parallel arrays that can drift out of step.",
+      "mistakes": [
+        "Passing a dict where a list of tuples is required.",
+        "Assuming field order can change after creation."
+      ],
+      "revision": [
+        "A structured dtype names and types each field.",
+        "Field access returns a normal array, ready for reductions."
+      ]
+    },
+    "datetime64 arithmetic": {
+      "syntax": "np.array(['2026-01-01'], dtype='datetime64[D]') + 1",
+      "steps": [
+        "Create a datetime64 array with a day unit.",
+        "Add an integer and print the result.",
+        "Note the unit decided what the integer means."
+      ],
+      "visual": "['2026-01-01'] + 1 → ['2026-01-02']",
+      "realWorld": "Due dates and retention windows are whole-day arithmetic, and integer addition is exact where float dates are not.",
+      "mistakes": [
+        "Adding 1 to a [D] array expecting one second.",
+        "Mixing units in one array and getting a coarser resolution."
+      ],
+      "revision": [
+        "The unit fixes what an integer step means.",
+        "Dates are stored as integers underneath, so addition is exact."
+      ]
+    },
+    "Vectorised string operations": {
+      "syntax": "np.char.upper(a)",
+      "steps": [
+        "Build an array of short strings.",
+        "Apply a char function to it.",
+        "Print the transformed array."
+      ],
+      "visual": "['num' 'py'] → ['NUM' 'PY']",
+      "realWorld": "Normalising codes and stripping whitespace across a column is a char call, though real text work belongs in a proper text tool.",
+      "mistakes": [
+        "Reaching for np.char for parsing or regex work.",
+        "Assuming the fixed width grows to fit the result."
+      ],
+      "revision": [
+        "np.char applies string methods elementwise.",
+        "It suits tidy codes, not general text processing."
+      ]
+    },
+    "Fixed-width strings truncate": {
+      "syntax": "np.array(['abcd'], dtype='U2')",
+      "steps": [
+        "Create a string array with a 2-character dtype.",
+        "Print the value.",
+        "Confirm the text was cut, not padded."
+      ],
+      "visual": "['abcd'] with dtype U2 → ['ab']",
+      "realWorld": "A too-small string dtype silently loses characters, which is why a code column should be sized from the data, not guessed.",
+      "mistakes": [
+        "Truncating identifiers or names during conversion.",
+        "Assuming the dtype will widen on assignment."
+      ],
+      "revision": [
+        "A U<n> dtype stores at most n characters.",
+        "Overflow is cut at creation time."
+      ]
+    },
+    "object dtype keeps Python objects": {
+      "syntax": "np.array([...], dtype=object)",
+      "steps": [
+        "Build an array with a number, a string and None.",
+        "Print its dtype and one element.",
+        "Compare the dtype with a normal numeric array."
+      ],
+      "visual": "dtype object, a[1] → x",
+      "realWorld": "Mixed or ragged data forces object dtype, and with it every fast numeric path is lost — a signal the data should be split.",
+      "mistakes": [
+        "Using object dtype for numeric work and losing all speed.",
+        "Assuming comparisons and reductions behave normally."
+      ],
+      "revision": [
+        "object dtype stores pointers to Python values.",
+        "Arithmetic falls back to Python and is far slower."
+      ]
+    },
+    "timedelta64 tells the gap": {
+      "syntax": "datetime64('2024-01-03') - datetime64('2024-01-01')",
+      "steps": [
+        "Subtract two dates.",
+        "Print the difference and its unit.",
+        "Note it reports an interval, not a number."
+      ],
+      "visual": "2024-01-03 − 2024-01-01 → 2 days",
+      "realWorld": "Dwell time and age calculations are differences, and the timedelta keeps the unit attached until you decide what to report.",
+      "mistakes": [
+        "Adding a timedelta to a date of a different unit and losing precision.",
+        "Treating the printed value as a plain integer."
+      ],
+      "revision": [
+        "Date minus date gives a timedelta64.",
+        "The unit comes from the operands."
+      ]
+    },
+    "Divide a timedelta to get a count": {
+      "syntax": "delta / np.timedelta64(1, 'D')",
+      "steps": [
+        "Compute a two-day difference.",
+        "Divide by a one-day timedelta.",
+        "Print the plain float 2.0."
+      ],
+      "visual": "delta / timedelta64(1, 'D') → 2.0",
+      "realWorld": "Feeding a duration into a model needs a plain number, and dividing by the unit is the conversion that keeps the meaning clear.",
+      "mistakes": [
+        "Casting the timedelta with astype and losing control of the unit.",
+        "Dividing by a plain 1 and leaving the result as a timedelta."
+      ],
+      "revision": [
+        "Dividing by a unit timedelta yields a number.",
+        "Choose the unit to match what the report needs."
+      ]
+    },
+    "Fields are read by name": {
+      "syntax": "records['price'].sum()",
+      "steps": [
+        "Build a structured array with an id and a price.",
+        "Select the price field.",
+        "Sum it to show the field is a normal array."
+      ],
+      "visual": "a['price'].sum() → 6.0",
+      "realWorld": "Revenue totals from a record table are a field selection plus a reduction, with no unpacking loop.",
+      "mistakes": [
+        "Indexing by field number instead of name.",
+        "Expecting a field selection to copy the data."
+      ],
+      "revision": [
+        "A field is read by name and comes back as an array.",
+        "All standard reductions then apply."
+      ]
+    },
+    "char functions work elementwise on text": {
+      "syntax": "np.char.upper(np.array(['np', 'ai']))",
+      "steps": [
+        "Pass a short string array to a char function.",
+        "Print the result as a list.",
+        "Confirm every element was transformed."
+      ],
+      "visual": "→ ['NP', 'AI']",
+      "realWorld": "Making category codes consistent before a group-by is one char call on the column.",
+      "mistakes": [
+        "Writing a Python loop over the elements.",
+        "Expecting char functions to handle missing values gracefully."
+      ],
+      "revision": [
+        "np.char methods apply to every element.",
+        "The result keeps the array's shape."
+      ]
+    },
+    "str_len counts characters": {
+      "syntax": "np.char.str_len(a)",
+      "steps": [
+        "Measure two strings of different lengths.",
+        "Print the integer array.",
+        "Note the fixed-width padding does not inflate the count."
+      ],
+      "visual": "['ab', 'cde'] → [2, 3]",
+      "realWorld": "Validating that codes, postcodes or tickers are the right length is a str_len mask, not a per-row len call.",
+      "mistakes": [
+        "Confusing the dtype width with the string length.",
+        "Assuming the result is a boolean mask."
+      ],
+      "revision": [
+        "str_len returns the actual character count.",
+        "Padding is not counted."
+      ]
+    },
+    "Datetime differences are timedeltas": {
+      "syntax": "(end - start) / np.timedelta64(1, 'D')",
+      "steps": [
+        "Create a start and an end date.",
+        "Subtract them to get a timedelta.",
+        "Convert to days and print the number."
+      ],
+      "visual": "10 days apart → 10.0",
+      "realWorld": "Subscription length, SLA windows and cohort age are all day counts derived from two dates.",
+      "mistakes": [
+        "Leaving the result as a timedelta and trying to average it.",
+        "Assuming the division changes the stored unit."
+      ],
+      "revision": [
+        "Subtraction gives timedelta64.",
+        "Division by a unit timedelta gives a plain number."
+      ]
+    },
+    "A structured array reads fields by name": {
+      "syntax": "np.dtype([('name', 'U4'), ('score', 'i4')])",
+      "steps": [
+        "Declare a dtype with a text and an integer field.",
+        "Build one row from a tuple.",
+        "Print the score field."
+      ],
+      "visual": "rows['score'] → [91]",
+      "realWorld": "Keeping a label beside its measurement in one row avoids a join later when the data is saved and reloaded.",
+      "mistakes": [
+        "Exceeding the declared U4 width and losing characters.",
+        "Forgetting the dtype when constructing and getting a plain array."
+      ],
+      "revision": [
+        "Each field has its own type and width.",
+        "Field access returns a normal array."
+      ]
+    },
+    "Dates as datetime64": {
+      "syntax": "np.array([...], dtype='datetime64[D]')",
+      "steps": [
+        "Build a two-date array with a day unit.",
+        "Subtract the dates to get a timedelta.",
+        "Add a ten-day timedelta to the array."
+      ],
+      "visual": "['2026-01-01' '2026-03-01']\ndiff → 59 days\n+ 10 days → shifted array",
+      "realWorld": "Time series indexes and date filters work on datetime64 because comparison is just integer comparison.",
+      "mistakes": [
+        "Expecting timezone handling; datetime64 carries no timezone.",
+        "Mixing [D] and [s] values and losing the finer unit."
+      ],
+      "revision": [
+        "datetime64 is an integer on a chosen unit.",
+        "No timezone information is stored."
+      ]
+    },
+    "Structured arrays hold named fields": {
+      "syntax": "rec.dtype.names   |   rec['score'].mean()",
+      "steps": [
+        "Build two records with an id and a score.",
+        "List the field names.",
+        "Average the score field."
+      ],
+      "visual": "mean → 86.75, names → ('id', 'score')",
+      "realWorld": "A record table read from a CSV maps naturally onto named fields, and each field is immediately analysable.",
+      "mistakes": [
+        "Treating the records as a 2-D numeric array.",
+        "Assuming names are mutable after the dtype is built."
+      ],
+      "revision": [
+        "dtype.names lists the fields in order.",
+        "Each field reduces like any other array."
+      ]
+    }
+  },
+  "n18": {
+    "NaN is not equal to anything": {
+      "syntax": "np.isnan(a)   |   np.nanmean(a)",
+      "steps": [
+        "Build an array with one NaN.",
+        "Locate it with isnan.",
+        "Average with nanmean and compare with plain mean."
+      ],
+      "visual": "isnan → [False  True False]\nnanmean → 2.0",
+      "realWorld": "One missing sensor reading can turn a whole dashboard average into NaN, which is why the nan-aware reductions exist.",
+      "mistakes": [
+        "Using a == np.nan to find missing values.",
+        "Reporting the plain mean of a column with gaps."
+      ],
+      "revision": [
+        "NaN never equals anything, including itself.",
+        "isnan locates it and nan- reductions skip it."
+      ]
+    },
+    "Infinity is a value, not a missing one": {
+      "syntax": "np.isinf(a)",
+      "steps": [
+        "Build an array with inf.",
+        "Test it with isinf.",
+        "Compare with isnan, which returns False for inf."
+      ],
+      "visual": "[1. inf] isinf → [False  True]",
+      "realWorld": "Overflow and division by zero produce infinity, and treating it as missing hides the real bug that generated it.",
+      "mistakes": [
+        "Assuming nan-aware functions also handle inf.",
+        "Clipping inf without asking why it appeared."
+      ],
+      "revision": [
+        "inf is a valid float, not a missing marker.",
+        "isinf finds it; nan tests do not."
+      ]
+    },
+    "Masked arrays carry their own mask": {
+      "syntax": "ma.masked_array(data, mask=...)",
+      "steps": [
+        "Build a masked array with the middle element masked.",
+        "Average it and print the value.",
+        "Note the masked element was skipped."
+      ],
+      "visual": "data [1 2 3], mask [0 1 0]\nmean → 2.0",
+      "realWorld": "Invalid readings stay visible in the data while reductions ignore them, which beats overwriting them with NaN.",
+      "mistakes": [
+        "Expecting the mask to drop the element from the array.",
+        "Mixing masked and plain arrays and losing the mask."
+      ],
+      "revision": [
+        "The mask travels with the data.",
+        "Reductions skip masked positions."
+      ]
+    },
+    "isnan builds the mask": {
+      "syntax": "np.isnan(a)",
+      "steps": [
+        "Build an array with a NaN.",
+        "Apply isnan and print the boolean array.",
+        "Use it to count or filter the missing values."
+      ],
+      "visual": "[1. nan] → [False  True]",
+      "realWorld": "Every cleaning step starts by counting the gaps, and isnan is the only reliable locator.",
+      "mistakes": [
+        "Testing equality with nan.",
+        "Forgetting the mask's shape matches the source."
+      ],
+      "revision": [
+        "isnan returns a boolean mask of the missing positions.",
+        "That mask composes with sum, ~ and indexing."
+      ]
+    },
+    "nanmean ignores missing values": {
+      "syntax": "np.nanmean(a)   vs   a.mean()",
+      "steps": [
+        "Compute the plain mean of data with one NaN.",
+        "Compute nanmean of the same array.",
+        "Compare nan against 2.0."
+      ],
+      "visual": "mean → nan\nnanmean → 2.0",
+      "realWorld": "Reporting an average from real data with gaps is a decision, and the two functions make the choice explicit.",
+      "mistakes": [
+        "Using nanmean silently and hiding that data was missing.",
+        "Assuming nanmean handles inf as well."
+      ],
+      "revision": [
+        "mean propagates NaN; nanmean skips it.",
+        "Always report how many values were skipped."
+      ]
+    },
+    "nan_to_num replaces NaN and infinity": {
+      "syntax": "np.nan_to_num(a, nan=0.0, posinf=..., neginf=...)",
+      "steps": [
+        "Build an array with NaN and both infinities.",
+        "Apply nan_to_num and print the result.",
+        "Note each class of value has its own replacement."
+      ],
+      "visual": "[nan, inf, -inf] → [0, 1.8e308, -1.8e308]",
+      "realWorld": "A model that receives NaN produces NaN predictions, so the boundary is where non-finite values get replaced.",
+      "mistakes": [
+        "Using the huge default for inf when a domain cap is needed.",
+        "Replacing values before diagnosing why they appeared."
+      ],
+      "revision": [
+        "nan, posinf and neginf take separate replacements.",
+        "Defaults are 0 and the float maximum."
+      ]
+    },
+    "allclose can treat NaN as equal": {
+      "syntax": "np.allclose(a, b, equal_nan=True)",
+      "steps": [
+        "Compare two arrays containing NaN with the default.",
+        " Repeat with equal_nan=True.",
+        "Print both answers."
+      ],
+      "visual": "equal_nan=True → True, default → False",
+      "realWorld": "Test assertions on data with gaps fail on NaN unless the comparison opts in, which is a common false alarm.",
+      "mistakes": [
+        "Assuming allclose treats NaN as equal by default.",
+        "Leaving equal_nan off in a validation check."
+      ],
+      "revision": [
+        "allclose compares with == underneath, so NaN fails.",
+        "equal_nan=True makes matching NaNs count as equal."
+      ]
+    },
+    "nanargmax skips NaN": {
+      "syntax": "np.nanargmax(a)",
+      "steps": [
+        "Build an array with a NaN next to real values.",
+        "Print the position nanargmax returns.",
+        "Compare with argmax on the same data."
+      ],
+      "visual": "[1. nan 3.] → 2",
+      "realWorld": "Picking the best non-missing record needs the nan-aware position, or the answer points at a gap.",
+      "mistakes": [
+        "Using argmax and getting the NaN's position.",
+        "Calling nanargmax on an all-NaN slice, which raises."
+      ],
+      "revision": [
+        "nanarg* ignores missing values when searching.",
+        "An all-missing input is an error, not a silent answer."
+      ]
+    },
+    "NaN never equals itself": {
+      "syntax": "np.nan == np.nan",
+      "steps": [
+        "Compare NaN with itself.",
+        "Print the result.",
+        "Explain the IEEE rule in one line."
+      ],
+      "visual": "np.nan == np.nan → False",
+      "realWorld": "Equality-based deduplication silently keeps every missing row, which is a bug that surfaces only in the row counts.",
+      "mistakes": [
+        "Filtering missing values with != comparisons.",
+        "Using `in` or set membership to detect NaN."
+      ],
+      "revision": [
+        "IEEE 754 defines NaN as unequal to everything.",
+        "Use isnan for detection."
+      ]
+    },
+    "isnan finds missing values": {
+      "syntax": "np.isnan(a).sum()",
+      "steps": [
+        "Build an array with one NaN.",
+        "Print the isnan mask as a list.",
+        "Sum it to count the missing values."
+      ],
+      "visual": "[False, True, False]\ncount → 1",
+      "realWorld": "A data-quality report starts with one count per column, and a summed isnan mask supplies it.",
+      "mistakes": [
+        "Forgetting the mask is invertible with ~.",
+        "Assuming isnan works on integer arrays — it needs a float dtype."
+      ],
+      "revision": [
+        "isnan returns a boolean mask.",
+        "It composes with ~, sum and indexing."
+      ]
+    },
+    "nanstd ignores the gaps": {
+      "syntax": "np.nanstd(a)",
+      "steps": [
+        "Compute std on data with a NaN.",
+        "Compute nanstd on the same data.",
+        "Print the rounded values and compare."
+      ],
+      "visual": "nanstd → 1.0, plain std → nan",
+      "realWorld": "Volatility and error bars computed from incomplete data need the nan-aware spread, or the whole metric collapses to NaN.",
+      "mistakes": [
+        "Reporting nan as the spread rather than as a missing result.",
+        "Mixing nanmean with plain std on the same column."
+      ],
+      "revision": [
+        "nan-prefixed reductions skip missing values.",
+        "Pair nanmean with nanstd so both describe the same rows."
+      ]
+    },
+    "Mask NaN, then reduce": {
+      "syntax": "a[~np.isnan(a)].mean()",
+      "steps": [
+        "Build a mask of the missing values.",
+        "Invert it and index the array.",
+        "Average the filtered result."
+      ],
+      "visual": "[1. nan 3.] → [1. 3.] → mean 2.0",
+      "realWorld": "Filtering first gives the raw surviving values, which is what you need when the count of kept rows also matters.",
+      "mistakes": [
+        "Forgetting the tilde and keeping only the NaNs.",
+        "Filtering a matrix elementwise and flattening the rows."
+      ],
+      "revision": [
+        "~np.isnan(a) keeps the valid values.",
+        "The filtered array works with any reduction, not just the nan ones."
+      ]
+    },
+    "Masked arrays ignore invalid cells": {
+      "syntax": "ma.array(data, mask=...).mean()",
+      "steps": [
+        "Mask the middle value of a three-element array.",
+        "Print the mean and the filled version.",
+        "Note filled replaced only the masked cell."
+      ],
+      "visual": "mean → 2.0\nfilled(0) → [1 0 3]",
+      "realWorld": "Keeping a sentinel visible in the data while excluding it from statistics is what a mask is for.",
+      "mistakes": [
+        "Expecting masked values to be removed from indexing.",
+        "Forgetting filled() before writing the array out."
+      ],
+      "revision": [
+        "Masked arrays carry a mask beside the values.",
+        "filled() substitutes the masked positions for output."
+      ]
+    },
+    "nan_to_num replaces non-finite values": {
+      "syntax": "np.nan_to_num(a, nan=0.0, posinf=1e9, neginf=-1e9)",
+      "steps": [
+        "Build an array with NaN and both infinities.",
+        "Replace them with domain-appropriate finite values.",
+        "Print the array and confirm no non-finite value remains."
+      ],
+      "visual": "[nan inf -inf 2] → [0 1e9 -1e9 2]",
+      "realWorld": "Sorting and arithmetic behave unpredictably with non-finite values, so cleaning them at the boundary keeps every later step simple.",
+      "mistakes": [
+        "Using the default inf replacement where the domain has a real cap.",
+        "Cleaning values that should have been rejected instead."
+      ],
+      "revision": [
+        "nan, posinf and neginf are replaced independently.",
+        "The output contains only finite values."
+      ]
+    }
+  }
+}

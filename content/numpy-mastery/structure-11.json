@@ -1,0 +1,256 @@
+{
+  "n14": {
+    "default_rng and reproducibility": {
+      "syntax": "rng = np.random.default_rng(0)",
+      "steps": [
+        "Build a generator with a fixed seed.",
+        "Draw a few integers and print them.",
+        "Rebuild with the same seed and confirm the same values."
+      ],
+      "visual": "default_rng(0).integers(0, 10, 3)\nlength 3, all inside [0, 10)",
+      "realWorld": "A simulation that cannot be rerun cannot be debugged, so every experiment starts from a seeded generator.",
+      "mistakes": [
+        "Using the legacy np.random.seed and global state.",
+        "Reseeding inside a loop and destroying the stream."
+      ],
+      "revision": [
+        "default_rng returns a Generator, the current API.",
+        "A fixed seed reproduces the whole stream."
+      ]
+    },
+    "Normal draws": {
+      "syntax": "rng.normal(loc, scale, size)",
+      "steps": [
+        "Draw a small standard normal sample.",
+        "Print the shape and confirm it matches size.",
+        "Change loc or scale and see the sample shift or spread."
+      ],
+      "visual": "rng.normal(0, 1, 2).shape → (2,)",
+      "realWorld": "Measurement noise, weight initialisation and Monte Carlo estimates all start from a normal draw with a chosen mean and spread.",
+      "mistakes": [
+        "Passing size as a positional loc value.",
+        "Assuming a small sample's mean equals loc."
+      ],
+      "revision": [
+        "normal(loc, scale, size) takes mean, spread and shape.",
+        "Only large samples approach the requested mean."
+      ]
+    },
+    "choice and shuffle": {
+      "syntax": "rng.choice(items, size, replace=False)",
+      "steps": [
+        "Draw two items without replacement.",
+        "Check the values are distinct.",
+        "Shuffle an array in place and compare with the original."
+      ],
+      "visual": "choice([1 2 3], 2, replace=False)\nunique count → 2",
+      "realWorld": "A train/test split is a sample without replacement; shuffling the rows first is the same idea applied to a whole table.",
+      "mistakes": [
+        "Using the default replace=True and getting duplicates.",
+        "Asking for more items than exist without replacement."
+      ],
+      "revision": [
+        "choice draws with replacement unless replace=False.",
+        "shuffle reorders in place; permutation returns a copy."
+      ]
+    },
+    "integers draw inside a half-open range": {
+      "syntax": "rng.integers(low, high, size)",
+      "steps": [
+        "Draw five dice values from 1 to 7.",
+        "Confirm the maximum is at most 6.",
+        "Note high is exclusive, exactly like range."
+      ],
+      "visual": "rng.integers(1, 7, 5) → [1 5 4 3 3]",
+      "realWorld": "Dice, IDs and random indices all need an inclusive-looking range, and the exclusive upper bound is the usual source of off-by-one bugs.",
+      "mistakes": [
+        "Asking for integers(1, 6) and expecting a possible 6.",
+        "Forgetting dtype when a compact integer type matters."
+      ],
+      "revision": [
+        "integers is half-open: low inclusive, high exclusive.",
+        "Use high = n + 1 to include n."
+      ]
+    },
+    "random floats sit between 0 and 1": {
+      "syntax": "rng.random(size)",
+      "steps": [
+        "Draw three floats and print them rounded.",
+        "Confirm every value lies in [0, 1).",
+        "Scale and shift to reach another interval."
+      ],
+      "visual": "rng.random(3).round(3) → [0.512 0.95  0.144]",
+      "realWorld": "Probabilities, dropout masks and random weights are uniform draws in [0, 1) that get scaled into whatever range the model needs.",
+      "mistakes": [
+        "Assuming 1.0 is reachable.",
+        "Forgetting to scale and using a uniform value where a range was needed."
+      ],
+      "revision": [
+        "random returns floats in the half-open interval [0, 1).",
+        "Scaling is a multiply, shifting is an add."
+      ]
+    },
+    "the same seed gives the same numbers": {
+      "syntax": "default_rng(7) twice",
+      "steps": [
+        "Build two generators with the same seed.",
+        "Draw from each and compare with allclose.",
+        "Change one seed and see the streams diverge."
+      ],
+      "visual": "allclose(rng7.normal(2), rng7b.normal(2)) → True",
+      "realWorld": "Reproducible results across runs — the basis of a shareable notebook or a re-run experiment — come from the seed alone.",
+      "mistakes": [
+        "Sharing one generator between threads and losing reproducibility.",
+        "Assuming the same seed works across different generator classes."
+      ],
+      "revision": [
+        "Identical seeds produce identical streams.",
+        "Comparing generated floats uses allclose, not ==."
+      ]
+    },
+    "size controls the shape of a draw": {
+      "syntax": "rng.normal(size=(2, 3))",
+      "steps": [
+        "Pass a tuple to size.",
+        "Print the returned shape.",
+        "Pass an int instead and compare the ranks."
+      ],
+      "visual": "normal(size=(2, 3)).shape → (2, 3)",
+      "realWorld": "Weight matrices and batches of noise are one draw with a shape, which avoids a Python loop over samples.",
+      "mistakes": [
+        "Looping to build a batch that size could have produced.",
+        "Confusing size=int with size=(int,) when rank matters."
+      ],
+      "revision": [
+        "size accepts an int or a tuple.",
+        "A tuple gives a multi-dimensional draw in one call."
+      ]
+    },
+    "permutation shuffles a copy": {
+      "syntax": "rng.permutation(n)   # copy",
+      "steps": [
+        "Permute a range of five.",
+        "Sort the result and confirm the original values all survive.",
+        "Compare with shuffle, which reorders in place."
+      ],
+      "visual": "sort(permutation(5)) → [0 1 2 3 4]",
+      "realWorld": "Cross-validation folds need a shuffled index list while the source order stays intact for later reporting.",
+      "mistakes": [
+        "Using permutation where an in-place shuffle was intended and wasting memory.",
+        "Forgetting the output is a permutation of positions, not values."
+      ],
+      "revision": [
+        "permutation returns a shuffled copy.",
+        "shuffle mutates its argument instead."
+      ]
+    },
+    "integers excludes the high value": {
+      "syntax": "rng.integers(0, 2, size=5)",
+      "steps": [
+        "Draw from the range 0 to 2.",
+        "Print the maximum and confirm it is 1.",
+        "Explain the half-open rule in one sentence."
+      ],
+      "visual": "integers(0, 2, 5).max() <= 1 → True",
+      "realWorld": "Coin flips and binary masks need exactly 0 or 1, and the exclusive bound is what keeps a 2 from appearing.",
+      "mistakes": [
+        "Expecting high itself to be drawable.",
+        "Using integers(0, 1) for a coin flip and always getting 0."
+      ],
+      "revision": [
+        "The upper bound is never produced.",
+        "low == high raises an error rather than returning a constant."
+      ]
+    },
+    "The seed decides the whole stream": {
+      "syntax": "default_rng(42).random(3)",
+      "steps": [
+        "Draw three values from a seeded generator.",
+        "Repeat with a second generator and the same seed.",
+        "Compare the rounded lists for equality."
+      ],
+      "visual": "two generators seeded 42\n→ identical rounded lists",
+      "realWorld": "A bug report that includes the seed is reproducible; one that does not forces the reader to guess.",
+      "mistakes": [
+        "Seeding once globally and assuming every call is isolated.",
+        "Changing the seed to \"fix\" flaky results."
+      ],
+      "revision": [
+        "The seed determines every value the generator will produce.",
+        "Same seed, same stream; different seed, different stream."
+      ]
+    },
+    "choice samples without replacement": {
+      "syntax": "rng.choice(5, 3, replace=False)",
+      "steps": [
+        "Draw three values without replacement.",
+        "Put them in a set and confirm the size is three.",
+        "Repeat with replace=True and see duplicates appear."
+      ],
+      "visual": "choice(5, 3, replace=False)\nlen(set(draw)) == 3 → True",
+      "realWorld": "Picking distinct winners, distinct samples or distinct folds is a without-replacement draw.",
+      "mistakes": [
+        "Leaving the default and getting repeats.",
+        "Assuming the output is sorted; it follows the draw."
+      ],
+      "revision": [
+        "replace=False means no value can appear twice.",
+        "The default replace=True allows duplicates."
+      ]
+    },
+    "normal draws cluster around the mean": {
+      "syntax": "rng.normal(0, 1, 10000).mean()",
+      "steps": [
+        "Draw a large standard normal sample.",
+        "Print the sample mean.",
+        "Check it is within a small band of zero."
+      ],
+      "visual": "10000 draws, mean ≈ 0\nabs(mean) < 0.05 → True",
+      "realWorld": "Monte Carlo estimates only become trustworthy at scale, and this is the check that the sample matches the distribution you asked for.",
+      "mistakes": [
+        "Judging a distribution from five draws.",
+        "Confusing a tighter mean with a smaller spread."
+      ],
+      "revision": [
+        "The sample mean approaches loc as size grows.",
+        "More draws shrink the error of the mean, not the spread itself."
+      ]
+    },
+    "A seed makes randomness repeatable": {
+      "syntax": "rng = np.random.default_rng(42)",
+      "steps": [
+        "Create two generators with seed 42.",
+        "Print three draws from each.",
+        "Confirm the two printed rows are identical."
+      ],
+      "visual": "[0.77395605 0.43887844 0.85859792]\n[0.77395605 0.43887844 0.85859792]",
+      "realWorld": "Sharing a notebook with a seed lets a reviewer reproduce the exact numbers behind a chart.",
+      "mistakes": [
+        "Documenting the code but not the seed.",
+        "Assuming the legacy global seed produces the same stream."
+      ],
+      "revision": [
+        "Seeded generators repeat exactly.",
+        "A different seed gives a different but equally valid stream."
+      ]
+    },
+    "Choice with and without replacement": {
+      "syntax": "rng.choice(items, size, replace=False)",
+      "steps": [
+        "Sample two distinct items from a four-item list.",
+        "Print the draw and confirm no repeats.",
+        "Permute five indices and compare the two operations."
+      ],
+      "visual": "choice([10 20 30 40], 2, replace=False) → [30 40]\npermutation(5) → [0 1 3 2 4]",
+      "realWorld": "A test set must not overlap the training set, so the split is a without-replacement choice, not two independent draws.",
+      "mistakes": [
+        "Using two independent draws and leaking rows across splits.",
+        "Forgetting choice returns values while permutation returns positions."
+      ],
+      "revision": [
+        "replace=False samples distinct items.",
+        "permutation shuffles positions and returns a copy."
+      ]
+    }
+  }
+}

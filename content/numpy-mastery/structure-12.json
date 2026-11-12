@@ -1,0 +1,400 @@
+{
+  "n15": {
+    "Matrix multiplication": {
+      "syntax": "A @ B   |   np.matmul(A, B)",
+      "steps": [
+        "Multiply a matrix by the identity.",
+        "Print the result and confirm it equals the original.",
+        "Compare with A * B to see that elementwise differs."
+      ],
+      "visual": "[[1 2] [3 4]] @ eye(2)\n→ [[1. 2.]\n   [3. 4.]]",
+      "realWorld": "Every layer of a neural network is this one operation, which is why @ is the operator to read fluently.",
+      "mistakes": [
+        "Using * and getting an elementwise product.",
+        "Assuming @ broadcasts shapes that do not contract."
+      ],
+      "revision": [
+        "@ contracts the inner dimensions; * pairs elements.",
+        "A matrix times the identity returns the same matrix."
+      ]
+    },
+    "Solve instead of invert": {
+      "syntax": "np.linalg.solve(A, b)",
+      "steps": [
+        "Build a small system A and b.",
+        "Solve it and print x.",
+        "Multiply A @ x and compare with b."
+      ],
+      "visual": "A [[2 1] [1 3]], b [5 10]\nsolve → [1. 3.]",
+      "realWorld": "Regression coefficients, circuit currents and equilibrium prices are linear systems, and solve is the numerically sound way to get them.",
+      "mistakes": [
+        "Computing inv(A) @ b, which is slower and less accurate.",
+        "Solving with b in the wrong orientation."
+      ],
+      "revision": [
+        "solve handles Ax = b directly.",
+        "It is safer and faster than forming the inverse."
+      ]
+    },
+    "Determinant and eigenvalues": {
+      "syntax": "np.linalg.det(A)   |   np.linalg.eigvals(A)",
+      "steps": [
+        "Take a diagonal matrix and compute its determinant.",
+        "Print the eigenvalues.",
+        "Note they match the diagonal entries."
+      ],
+      "visual": "diag(2, 3)\ndet → 6.0\neigvals → [2. 3.]",
+      "realWorld": "A zero determinant flags an unsolvable system, and eigenvalues say how a transformation scales each direction.",
+      "mistakes": [
+        "Reading eigenvalues on a non-symmetric matrix as real when they are complex.",
+        "Trusting a determinant that is near zero as exactly zero."
+      ],
+      "revision": [
+        "det is a single scaling factor for the volume.",
+        "For a diagonal matrix the eigenvalues are the diagonal."
+      ]
+    },
+    "dot product of two vectors is a scalar": {
+      "syntax": "a @ b   # scalar",
+      "steps": [
+        "Multiply two length-3 vectors with @.",
+        "Print the result and confirm it is a scalar.",
+        "Check it against the sum of pairwise products."
+      ],
+      "visual": "[1 2 3] @ [4 5 6]\n→ 32",
+      "realWorld": "Similarity scores, projections and weighted totals are dot products, and the scalar is the whole answer.",
+      "mistakes": [
+        "Expecting an elementwise array from two 1-D operands.",
+        "Mixing a dot product with a cross product."
+      ],
+      "revision": [
+        "Two 1-D arrays contract to one number.",
+        "The value is the sum of the pairwise products."
+      ]
+    },
+    "matrix times vector keeps the rows": {
+      "syntax": "A @ v   # one value per row",
+      "steps": [
+        "Multiply a (2, 2) matrix by a length-2 vector.",
+        "Print the result and its length.",
+        "Confirm the length equals the number of rows."
+      ],
+      "visual": "[[1 2] [3 4]] @ [1 1]\n→ [3 7]",
+      "realWorld": "Applying a linear map to a point, or a layer to one sample, returns one output per row of the matrix.",
+      "mistakes": [
+        "Expecting the vector's length to survive.",
+        "Transposing the vector to make the shapes fit by accident."
+      ],
+      "revision": [
+        "The output length equals the matrix's row count.",
+        "The vector's length must equal the column count."
+      ]
+    },
+    "solve then verify": {
+      "syntax": "x = solve(A, b); allclose(A @ x, b)",
+      "steps": [
+        "Solve the system for x.",
+        "Multiply the matrix back through x.",
+        "Compare with b using allclose."
+      ],
+      "visual": "A [[2 1] [1 3]], b [3 5]\nx → [0.8 1.4], A @ x ≈ b → True",
+      "realWorld": "A solver result should never be trusted blindly; one matrix multiply is the cheapest proof the answer is right.",
+      "mistakes": [
+        "Comparing the check with == and rejecting a correct answer.",
+        "Forgetting the residual should be near zero, not exactly zero."
+      ],
+      "revision": [
+        "Verification is one matmul plus allclose.",
+        "Floating-point residuals are small, not exactly zero."
+      ]
+    },
+    "norm measures length": {
+      "syntax": "np.linalg.norm(v)",
+      "steps": [
+        "Take a 3-4 vector.",
+        "Compute its norm and print the value.",
+        "Check it against the hand square root."
+      ],
+      "visual": "norm([3, 4]) → 5.0",
+      "realWorld": "Distance, gradient magnitude and normalisation all start from a norm, and the default is the Euclidean length.",
+      "mistakes": [
+        "Writing the square root by hand and losing the vectorised form.",
+        "Assuming norm returns a norm per element instead of one number."
+      ],
+      "revision": [
+        "The default norm is Euclidean.",
+        "Pass an axis to get one norm per row."
+      ]
+    },
+    "lstsq also fits inconsistent systems": {
+      "syntax": "np.linalg.lstsq(A, b, rcond=None)",
+      "steps": [
+        "Build a tall system with no exact solution.",
+        "Call lstsq and take the first return value.",
+        "Check the near-fit against b."
+      ],
+      "visual": "(3, 2) system, b has 3 entries\nx → least-squares answer",
+      "realWorld": "Fitting a line to noisy measurements is an over-determined system, and lstsq is the routine that handles it.",
+      "mistakes": [
+        "Using solve on a tall matrix, which raises.",
+        "Ignoring the rcond keyword and getting a warning."
+      ],
+      "revision": [
+        "lstsq minimises the squared residual.",
+        "It returns the solution plus diagnostics."
+      ]
+    },
+    "identity is the matrix version of one": {
+      "syntax": "np.identity(n)",
+      "steps": [
+        "Build a 2×2 identity.",
+        "Multiply a matrix by it.",
+        "Confirm the result is unchanged."
+      ],
+      "visual": "allclose(A @ identity(2), A) → True",
+      "realWorld": "An identity multiply is the quickest sanity check that a matmul pipeline preserves shapes and values.",
+      "mistakes": [
+        "Using np.eye on a non-square size and expecting the same.",
+        "Assuming @ identity keeps the integer dtype."
+      ],
+      "revision": [
+        "The identity is the neutral element of matrix multiplication.",
+        "np.eye(m, n) gives a rectangular version."
+      ]
+    },
+    "Transpose flips a matrix product": {
+      "syntax": "(A @ B).T == B.T @ A.T",
+      "steps": [
+        "Multiply two matrices and transpose the product.",
+        "Multiply the transposes in reversed order.",
+        "Compare with allclose."
+      ],
+      "visual": "allclose((A @ B).T, B.T @ A.T) → True",
+      "realWorld": "Gradient derivations and covariance formulas rely on this reversal, and getting the order wrong is a classic algebra mistake.",
+      "mistakes": [
+        "Transposing without reversing the order.",
+        "Assuming it holds for elementwise products too."
+      ],
+      "revision": [
+        "The transpose of a product reverses the factors.",
+        "The identity holds whatever the shapes, as long as the product exists."
+      ]
+    },
+    "A zero determinant means no unique solution": {
+      "syntax": "det(A) ≈ 0",
+      "steps": [
+        "Build a matrix whose second row is a multiple of the first.",
+        "Compute the determinant and round it.",
+        "Explain why solve has no unique answer."
+      ],
+      "visual": "[[1 2] [2 4]]\ndet → 0.0",
+      "realWorld": "Duplicate or perfectly correlated feature columns produce a singular design matrix, which is why one of them has to be dropped.",
+      "mistakes": [
+        "Calling solve anyway and using whatever it returns.",
+        "Treating a numerically tiny determinant as exactly zero without a tolerance."
+      ],
+      "revision": [
+        "Dependent rows make the determinant zero.",
+        "A singular system has no unique solution."
+      ]
+    },
+    "trace sums the diagonal": {
+      "syntax": "np.trace(A)",
+      "steps": [
+        "Print the diagonal of a small matrix.",
+        "Compute the trace and compare with its sum.",
+        "Note the trace equals the sum of the eigenvalues."
+      ],
+      "visual": "[[1 2] [3 4]] trace → 5",
+      "realWorld": "Covariance totals and invariant checks under a change of basis are trace computations.",
+      "mistakes": [
+        "Summing the whole matrix instead of the diagonal.",
+        "Assuming trace is available for a non-square array without an offset argument."
+      ],
+      "revision": [
+        "trace adds the main diagonal.",
+        "It equals the eigenvalue sum."
+      ]
+    },
+    "Matrix multiplication with @": {
+      "syntax": "a @ b   vs   a * b",
+      "steps": [
+        "Multiply two 2×2 matrices with @.",
+        "Multiply the same pair with *.",
+        "Compare the two results cell by cell."
+      ],
+      "visual": "a @ b → [[19 22]\n         [43 50]]\na * b → [[ 5 12]\n         [21 32]]",
+      "realWorld": "Choosing * where @ was meant is the most common silent bug in numerical code: it runs, and the numbers are wrong.",
+      "mistakes": [
+        "Replacing @ with * to avoid a shape error.",
+        "Assuming the two agree for diagonal matrices in general."
+      ],
+      "revision": [
+        "@ contracts an axis; * pairs elements.",
+        "The shapes that work differ between them."
+      ]
+    },
+    "Solve, do not invert": {
+      "syntax": "x = np.linalg.solve(A, b)",
+      "steps": [
+        "Solve a 2×2 system.",
+        "Print the solution and the determinant.",
+        "Explain why forming the inverse would be worse."
+      ],
+      "visual": "A [[3 1] [1 2]], b [9 8]\nsolve → [2. 3.]",
+      "realWorld": "Inversion loses precision on ill-conditioned matrices, so production solvers always call solve instead.",
+      "mistakes": [
+        "Caching inv(A) and multiplying for every new b.",
+        "Ignoring the condition number of a nearly singular system."
+      ],
+      "revision": [
+        "solve is faster and more stable than inv.",
+        "Inversion is for when the inverse matrix itself is needed."
+      ]
+    },
+    "SVD splits a matrix into three": {
+      "syntax": "U, s, Vt = np.linalg.svd(A)",
+      "steps": [
+        "Factor a diagonal matrix with svd.",
+        "Print the singular values and note the descending order.",
+        "Rebuild A from U @ diag(s) @ Vt and compare."
+      ],
+      "visual": "diag(3, 4)\ns → [4. 3.]\nallclose(U @ diag(s) @ Vt, A) → True",
+      "realWorld": "Rank, compression and low-rank approximation all come from keeping only the largest singular values.",
+      "mistakes": [
+        "Assuming s is a matrix; it is a 1-D vector.",
+        "Forgetting the reconstruction needs diag(s)."
+      ],
+      "revision": [
+        "svd returns U, s and Vt with s descending.",
+        "The count of non-zero singular values is the rank."
+      ]
+    },
+    "Eigenvalues and eigenvectors together": {
+      "syntax": "values, vectors = np.linalg.eigh(A)",
+      "steps": [
+        "Factor a symmetric matrix with eigh.",
+        "Print the eigenvalues and note they are ascending reals.",
+        "Check A @ v equals value * v with allclose."
+      ],
+      "visual": "[[2 1] [1 2]]\nvalues → [1. 3.]\nA @ vectors ≈ vectors * values → True",
+      "realWorld": "PCA is the eigendecomposition of a covariance matrix, and eigh is the stable form because that matrix is symmetric.",
+      "mistakes": [
+        "Using eig on a symmetric matrix and handling tiny imaginary parts.",
+        "Assuming eigenvectors are returned as rows rather than columns."
+      ],
+      "revision": [
+        "eigh is the symmetric-matrix form and returns reals.",
+        "Eigenvectors are columns; the check is A @ v == value * v."
+      ]
+    },
+    "QR decomposition as two factors": {
+      "syntax": "Q, R = np.linalg.qr(A)",
+      "steps": [
+        "Factor a tall matrix.",
+        "Print the shapes of Q and R.",
+        "Check Q @ R rebuilds A and R is upper triangular."
+      ],
+      "visual": "(3, 2) input\nQ (3, 2), R (2, 2)\nallclose(Q @ R, A) → True",
+      "realWorld": "Least-squares solvers use QR because back-substitution on a triangular matrix is cheap and stable.",
+      "mistakes": [
+        "Expecting Q to be square for a tall input.",
+        "Assuming R has non-zero entries below the diagonal."
+      ],
+      "revision": [
+        "Q has orthonormal columns and R is upper triangular.",
+        "The reduced form gives Q the input's shape."
+      ]
+    },
+    "Cholesky for positive definite matrices": {
+      "syntax": "L = np.linalg.cholesky(A)",
+      "steps": [
+        "Factor a symmetric positive definite matrix.",
+        "Print the lower-triangular L.",
+        "Check L @ L.T rebuilds A."
+      ],
+      "visual": "[[4 2] [2 3]]\nL → [[2. 0. ] [1. 1.414]]\nallclose(L @ L.T, A) → True",
+      "realWorld": "Sampling correlated random variables and solving normal equations both use Cholesky, which is about twice as fast as a general factorisation.",
+      "mistakes": [
+        "Calling it on a matrix that is not positive definite and getting a LinAlgError.",
+        "Forgetting the factor is lower triangular, not upper."
+      ],
+      "revision": [
+        "A must be symmetric and positive definite.",
+        "A == L @ L.T with L lower triangular."
+      ]
+    },
+    "The pseudo-inverse for singular matrices": {
+      "syntax": "np.linalg.pinv(A)",
+      "steps": [
+        "Take a rank-1 matrix.",
+        "Compute its pseudo-inverse and the matrix rank.",
+        "Check A @ P @ A equals A."
+      ],
+      "visual": "[[1 2] [2 4]]\nrank → 1\nallclose(A @ P @ A, A) → True",
+      "realWorld": "Least-squares fits with collinear columns still need an answer, and the pseudo-inverse supplies the minimum-norm one.",
+      "mistakes": [
+        "Expecting A @ P to be the identity for a singular A.",
+        "Using pinv where solve would be exact and faster."
+      ],
+      "revision": [
+        "pinv exists even when no true inverse does.",
+        "The property to check is A @ P @ A == A."
+      ]
+    },
+    "Determinant by sign and log": {
+      "syntax": "sign, logdet = np.linalg.slogdet(A)",
+      "steps": [
+        "Compute the sign and log-determinant.",
+        "Rebuild the determinant as sign * exp(logdet).",
+        "Compare with det(A)."
+      ],
+      "visual": "sign −1, logdet ≈ 0.693\nsign * exp(logdet) → −2.0",
+      "realWorld": "Log-likelihoods of multivariate models need log determinants, and slogdet avoids the overflow a direct det hits on big matrices.",
+      "mistakes": [
+        "Reading logdet as the determinant itself.",
+        "Forgetting the sign when the determinant is negative."
+      ],
+      "revision": [
+        "slogdet returns a sign and a log of the absolute value.",
+        "Rebuild with sign * exp(logdet)."
+      ]
+    },
+    "Matrix powers repeat multiplication": {
+      "syntax": "np.linalg.matrix_power(A, n)",
+      "steps": [
+        "Raise a matrix to the third power.",
+        "Raise the same matrix to the zeroth power.",
+        "Confirm the second result is the identity."
+      ],
+      "visual": "[[1 1] [0 1]]**3 → [[1 3] [0 1]]\n**0 → [[1 0] [0 1]]",
+      "realWorld": "Stepping a Markov transition matrix forward n periods is a matrix power, not a loop of multiplies.",
+      "mistakes": [
+        "Using A ** 3, which is elementwise.",
+        "Expecting a negative power to work without an inverse."
+      ],
+      "revision": [
+        "matrix_power repeats matrix multiplication.",
+        "The zeroth power is the identity."
+      ]
+    },
+    "Least squares returns residuals and rank": {
+      "syntax": "coeffs, residuals, rank, s = lstsq(X, y)",
+      "steps": [
+        "Build a design matrix with a column of ones.",
+        "Fit with lstsq and print the coefficients.",
+        "Read the rank and the residual sum of squares."
+      ],
+      "visual": "slope ≈ 2.03, intercept ≈ 0.98\nrank 2, residuals [0.083]",
+      "realWorld": "A linear fit with an intercept is exactly this call, and the residuals are the evidence for how good the line is.",
+      "mistakes": [
+        "Forgetting the ones column and reporting a fit through the origin.",
+        "Ignoring the rank, which reveals collinear columns."
+      ],
+      "revision": [
+        "A ones column supplies the intercept.",
+        "Residuals and rank are returned alongside the coefficients."
+      ]
+    }
+  }
+}
