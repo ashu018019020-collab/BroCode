@@ -1,0 +1,172 @@
+{
+  "n03": {
+    "zeros, ones and full": {
+      "syntax": "np.zeros(shape) · np.ones(shape) · np.full(shape, value)",
+      "steps": [
+        "Create a length-3 zeros array and print its dtype.",
+        "Create a 2×2 ones array and confirm the shape.",
+        "Fill a length-3 array with 7 using full."
+      ],
+      "visual": "zeros(3)      → [0. 0. 0.]\nones((2,2))   → 2×2 of 1.0\nfull(3, 7)    → [7 7 7]",
+      "realWorld": "A results buffer starts as zeros, a mask starts as ones, and a default price list starts as full — all three are one call with a known shape.",
+      "mistakes": ["Forgetting the shape argument needs a tuple for 2-D.", "Expecting full to infer the dtype from the value."],
+      "revision": ["shape first, value second.", "float64 is the default dtype."]
+    },
+    "arange and linspace": {
+      "syntax": "np.arange(start, stop, step) · np.linspace(start, stop, count)",
+      "steps": [
+        "Create a range with a step of 2 and read the values.",
+        "Create three evenly spaced values from 0 to 1.",
+        "Count both results to see which argument controls the length."
+      ],
+      "visual": "arange(0,10,2) → [0 2 4 6 8]\nlinspace(0,1,3) → [0. 0.5 1.]",
+      "realWorld": "Axis ticks are linspace (a count), while index arithmetic is arange (a step).",
+      "mistakes": ["Using arange with a float step and getting an extra element.", "Expecting arange to include the stop value."],
+      "revision": ["arange takes a step; linspace takes a count.", "linspace includes both ends by default."]
+    },
+    "Identity and diagonal matrices": {
+      "syntax": "np.eye(n) · np.diag(values)",
+      "steps": [
+        "Create a 2×2 identity and read the diagonal.",
+        "Build a diagonal matrix from a list.",
+        "Compare np.diag on a matrix (extracts) with a vector (builds)."
+      ],
+      "visual": "eye(2) → [[1. 0.] [0. 1.]]\ndiag([1,2]) → [[1 0] [0 2]]",
+      "realWorld": "Identity matrices appear in ridge regression and in one-hot encodings; diag builds covariance from variances.",
+      "mistakes": ["Assuming diag always builds a matrix.", "Forgetting eye is float by default."],
+      "revision": ["eye is square identity; diag is context-dependent.", "Pass dtype=int when the values are counts."]
+    },
+    "zeros_like copies a shape": {
+      "syntax": "np.zeros_like(a) · np.ones_like(a, dtype=int)",
+      "steps": [
+        "Create a source array and print its shape.",
+        "Call zeros_like and confirm the shape matches.",
+        "Override dtype with ones_like to get integer ones."
+      ],
+      "visual": "a = arange(4) → shape (4,)\nzeros_like(a) → [0. 0. 0. 0.]",
+      "realWorld": "An output buffer that must match an input uses zeros_like, so the shape never drifts when the input changes.",
+      "mistakes": ["Assuming zeros_like copies the values.", "Forgetting it copies the dtype too."],
+      "revision": ["_like copies shape and dtype.", "Override dtype deliberately when needed."]
+    },
+    "linspace can exclude the endpoint": {
+      "syntax": "np.linspace(0, 1, 4, endpoint=False)",
+      "steps": [
+        "Create four points including the endpoint.",
+        "Repeat with endpoint=False and compare.",
+        "Note the step becomes the full range divided by the count."
+      ],
+      "visual": "endpoint=True  → [0. 0.333 0.667 1.]\nendpoint=False → [0. 0.25 0.5 0.75]",
+      "realWorld": "Histogram bin edges exclude the last endpoint when the range is cyclic, such as angles or phase.",
+      "mistakes": ["Assuming endpoint=False keeps the same step.", "Using it and then expecting the maximum value to appear."],
+      "revision": ["endpoint defaults to True.", "Excluding it changes the spacing, not just the last value."]
+    },
+    "arange accepts a fractional step": {
+      "syntax": "np.arange(0, 1, 0.25)",
+      "steps": [
+        "Create the range with a 0.25 step.",
+        "Count the values and compare with the expected four.",
+        "Check the last value against the stop."
+      ],
+      "visual": "arange(0, 1, 0.25) → [0. 0.25 0.5 0.75]",
+      "realWorld": "Sampling a signal at a fractional interval is arange, but accumulated float error is why linspace is preferred for fixed counts.",
+      "mistakes": ["Expecting 1.0 to be included.", "Trusting float steps to land exactly on the stop."],
+      "revision": ["Fractional steps work but accumulate error.", "The stop is exclusive."]
+    },
+    "ones can take an integer dtype": {
+      "syntax": "np.ones(3, dtype=int)",
+      "steps": [
+        "Create ones without a dtype and read the float dtype.",
+        "Repeat with dtype=int and read the values.",
+        "Use the integer version where counts must stay integral."
+      ],
+      "visual": "ones(3)        → [1. 1. 1.] float64\nones(3, dtype=int) → [1 1 1] int64",
+      "realWorld": "A counter array or a one-hot mask should be integer so later arithmetic does not drag floats through the pipeline.",
+      "mistakes": ["Assuming the dtype is inferred from the value 1.", "Mixing float ones with integer counts in comparisons."],
+      "revision": ["ones defaults to float64.", "dtype is an argument, not a guess."]
+    },
+    "full repeats any value": {
+      "syntax": "np.full((2, 2), 3, dtype=int)",
+      "steps": [
+        "Create a 2×2 array filled with 3.",
+        "Print the dtype to see it follows the value or the argument.",
+        "Use full for a constant baseline array."
+      ],
+      "visual": "full((2,2), 3, dtype=int) → [[3 3] [3 3]]",
+      "realWorld": "A default discount table or a sentinel-filled buffer is one full call with a shape.",
+      "mistakes": ["Passing the value before the shape.", "Forgetting the shape must be a tuple for 2-D."],
+      "revision": ["full is shape + value.", "dtype can be forced."]
+    },
+    "empty allocates without setting values": {
+      "syntax": "np.empty(shape) → uninitialised",
+      "steps": [
+        "Create empty of length 3 and print shape and dtype only.",
+        "Compare with zeros of the same shape.",
+        "Write every cell before reading it in real code."
+      ],
+      "visual": "empty(3).shape → (3,)   dtype float64\nvalues → undefined",
+      "realWorld": "A tight loop that fills a preallocated buffer uses empty to skip a pointless zeroing pass.",
+      "mistakes": ["Treating the values as zeros.", "Shipping code that reads uninitialised cells."],
+      "revision": ["empty is allocation only.", "Initialise before use."]
+    },
+    "identity builds an identity matrix": {
+      "syntax": "np.identity(n)",
+      "steps": [
+        "Build a 2×2 identity and print it.",
+        "Compare with eye(2) and note they agree for square shapes.",
+        "Use eye when the matrix is rectangular."
+      ],
+      "visual": "identity(2) == eye(2) → [[1. 0.] [0. 1.]]",
+      "realWorld": "Identity is the neutral element in matrix multiplication, used to initialise and to test a multiplication routine.",
+      "mistakes": ["Expecting identity to accept two dimensions.", "Comparing identity to an integer matrix with == and getting False."],
+      "revision": ["identity is always square.", "eye is the rectangular generalisation."]
+    },
+    "arange counts down with a negative step": {
+      "syntax": "np.arange(5, 0, -1)",
+      "steps": [
+        "Create the descending range and read the values.",
+        "Confirm the stop is excluded.",
+        "Use it to build reversed index positions."
+      ],
+      "visual": "arange(5, 0, -1) → [5 4 3 2 1]",
+      "realWorld": "Rendering a stack from top to bottom, or walking a time series backwards, is a negative-step range.",
+      "mistakes": ["Using a negative step with start < stop and getting an empty array.", "Expecting 0 in the output."],
+      "revision": ["Negative step counts down.", "Stop stays exclusive."]
+    },
+    "linspace controls the step you get": {
+      "syntax": "np.linspace(0, 1, 5) → step 0.25",
+      "steps": [
+        "Create five points from 0 to 1.",
+        "Compute the step as range divided by (count − 1).",
+        "Change the count and observe the step change."
+      ],
+      "visual": "5 points over [0,1] → step 0.25\n9 points → step 0.125",
+      "realWorld": "Plotting a smooth curve needs a density decision: more points, smaller step, same endpoints.",
+      "mistakes": ["Dividing by count instead of count − 1.", "Assuming the step is an argument."],
+      "revision": ["linspace is endpoints + count.", "Step = (stop − start) / (count − 1)."]
+    },
+    "arange versus linspace": {
+      "syntax": "arange(start, stop, step) vs linspace(start, stop, count)",
+      "steps": [
+        "Build the same range both ways and compare lengths.",
+        "Change the step and see arange's length change.",
+        "Change the count and see linspace's step change."
+      ],
+      "visual": "arange(0,1,0.25) → 4 values, step fixed\nlinspace(0,1,5)  → 5 values, step derived",
+      "realWorld": "Grids for plotting and for numerical integration are linspace; index arithmetic is arange.",
+      "mistakes": ["Choosing arange for a required number of samples.", "Choosing linspace when an exact step is the requirement."],
+      "revision": ["Pick by which quantity is fixed: step or count.", "linspace includes the stop."]
+    },
+    "Identity and eye": {
+      "syntax": "np.eye(rows, cols) · np.identity(n)",
+      "steps": [
+        "Create a 3×3 eye and compare with identity(3).",
+        "Create a rectangular eye(3, 4) that identity cannot build.",
+        "Pass dtype=int where integers matter."
+      ],
+      "visual": "eye(3, 4) → [[1 0 0 0] [0 1 0 0] [0 0 1 0]]",
+      "realWorld": "Rectangular identity blocks appear when padding a design matrix or building a selection mask.",
+      "mistakes": ["Calling identity with two arguments.", "Assuming eye's default dtype is int."],
+      "revision": ["eye takes rows and columns.", "identity is the square special case."]
+    }
+  }
+}

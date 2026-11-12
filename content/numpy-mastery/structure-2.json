@@ -1,0 +1,175 @@
+{
+  "n02": {
+    "shape, size and ndim": {
+      "syntax": "a.shape → tuple   |   a.size → int   |   a.ndim → int",
+      "steps": [
+        "Build the 2×3 array and print all three attributes in one call.",
+        "Read shape as (rows, columns) and check size is their product.",
+        "Count the entries of shape to confirm ndim."
+      ],
+      "visual": "a.shape = (2, 3)   rows × columns\na.size  = 6        cells\na.ndim  = 2        number of axes",
+      "realWorld": "A model expects a feature matrix and fails on shape; printing shape, size and ndim first tells you whether the data is transposed or flattened.",
+      "mistakes": [
+        "Reading shape as (columns, rows) and transposing the wrong way.",
+        "Using len(a) when the total cell count is what is needed."
+      ],
+      "revision": ["shape is the structure, size is the cell count, ndim is the axis count.", "size == product(shape)."]
+    },
+    "dtype and itemsize": {
+      "syntax": "a.dtype   |   a.itemsize",
+      "steps": [
+        "Build an integer array and print dtype.",
+        "Print itemsize and note it is bytes per element, not per array.",
+        "Multiply itemsize by size to reach nbytes."
+      ],
+      "visual": "dtype int64 → itemsize 8 bytes\n3 elements  → nbytes 24",
+      "realWorld": "A million-row column of small integers costs 8 MB as int64 and 1 MB as int8 — the dtype decision is the memory decision.",
+      "mistakes": ["Assuming itemsize changes with array length.", "Casting to a smaller dtype without checking the value range."],
+      "revision": ["dtype names the element type; itemsize is its width in bytes.", "nbytes = itemsize × size."]
+    },
+    "Axis means the direction that is collapsed": {
+      "syntax": "a.sum(axis=0)   |   a.sum(axis=1)",
+      "steps": [
+        "Sum a 2×2 array with axis=0 and read the result shape.",
+        "Sum with axis=1 and compare which values disappeared.",
+        "Say out loud which axis vanished in each case."
+      ],
+      "visual": "[[1 2]      axis=0 → [4 6]   (rows collapse)\n [3 4]]     axis=1 → [3 7]   (columns collapse)",
+      "realWorld": "Monthly sales per product: axis=0 totals each product across months, axis=1 totals each month across products.",
+      "mistakes": ["Thinking axis names the direction that stays.", "Expecting the same shape back from a reduction."],
+      "revision": ["The named axis is the one removed.", "Reductions drop one dimension."]
+    },
+    "len counts the first axis only": {
+      "syntax": "len(a) → a.shape[0]",
+      "steps": [
+        "Build a 3×4 array and print len(a).",
+        "Compare it with a.size.",
+        "Use shape[0] and shape[1] when both counts matter."
+      ],
+      "visual": "a = ones((3, 4)) → len(a) = 3, a.size = 12",
+      "realWorld": "Counting rows of a table is len(a); counting measured values is a.size — mixing them inflates sample counts.",
+      "mistakes": ["Assuming len gives the cell count.", "Using len on a 0-d array and expecting 1."],
+      "revision": ["len is the first axis only.", "size is every cell."]
+    },
+    "Transpose swaps the shape": {
+      "syntax": "a.T   |   a.transpose()",
+      "steps": [
+        "Build a 3×4 array and print both shapes.",
+        "Transpose and print the shape again.",
+        "Note that values were not reordered, only the axes were swapped."
+      ],
+      "visual": "shape (3, 4) → .T → shape (4, 3)",
+      "realWorld": "A CSV read as (features, samples) usually needs .T before a model that expects (samples, features).",
+      "mistakes": ["Believing .T copies the data — it is a view with swapped strides.", "Transposing twice and forgetting the data is back to the original."],
+      "revision": ["Transpose swaps axes and shape.", "It is a view until something forces a copy."]
+    },
+    "Mixed literals promote to float": {
+      "syntax": "np.array([1, 2.5]).dtype → float64",
+      "steps": [
+        "Build an array from an int and a float.",
+        "Print the dtype and observe both values became floats.",
+        "Pass dtype explicitly when the promotion is unwanted."
+      ],
+      "visual": "[1, 2.5] → array([1. , 2.5]) dtype float64",
+      "realWorld": "One decimal in a price column silently turns the whole column into floats, which changes equality and memory behaviour.",
+      "mistakes": ["Expecting the integer to stay an integer in a mixed array.", "Relying on exact equality after promotion."],
+      "revision": ["One dtype per array.", "Mixed input promotes to the common type."]
+    },
+    "A zero-dimensional array has no axes": {
+      "syntax": "np.array(7).ndim → 0",
+      "steps": [
+        "Create an array from a single number.",
+        "Print ndim and shape to see () and 0.",
+        "Use .item() to get the plain Python scalar back."
+      ],
+      "visual": "np.array(7) → ndim 0, shape ()\n.item() → 7",
+      "realWorld": "A reduction over every axis returns a 0-d array; printing it looks like a number but it is still an ndarray.",
+      "mistakes": ["Indexing a 0-d array as if it had axes.", "Comparing it to a Python int in a type check."],
+      "revision": ["0-d means no axes, shape ().", ".item() unwraps it."]
+    },
+    "Bytes are shape times itemsize": {
+      "syntax": "a.nbytes == a.size * a.itemsize",
+      "steps": [
+        "Create a float32 array of shape (2, 3).",
+        "Print nbytes and square it against size × itemsize.",
+        "Repeat with float64 to see the memory double."
+      ],
+      "visual": "float32: 6 × 4 = 24 B\nfloat64: 6 × 8 = 48 B",
+      "realWorld": "Choosing float32 for a large feature matrix halves memory and often changes nothing measurable in accuracy.",
+      "mistakes": ["Confusing nbytes with the Python object's overhead.", "Forgetting that a copy doubles the count."],
+      "revision": ["nbytes = size × itemsize.", "dtype width is the multiplier you control."]
+    },
+    "ndim counts the axes": {
+      "syntax": "np.zeros((2, 3, 4)).ndim → 3",
+      "steps": [
+        "Create a three-axis array.",
+        "Print ndim and size, and confirm size is the product of shape.",
+        "Index with three positions to see each axis used."
+      ],
+      "visual": "shape (2, 3, 4) → ndim 3, size 24",
+      "realWorld": "An image batch is (batch, height, width) or (batch, height, width, channels) — ndim tells you which convention you are holding.",
+      "mistakes": ["Counting shape entries by eye and getting it wrong.", "Assuming a 2-D model accepts a 3-D batch."],
+      "revision": ["ndim = len(shape).", "Each axis needs its own index."]
+    },
+    "Ten zeros are one dimension": {
+      "syntax": "np.zeros(10).shape → (10,)",
+      "steps": [
+        "Create ten zeros and print the shape.",
+        "Notice the trailing comma: one axis, ten cells.",
+        "Compare with np.zeros((10, 1)) which has two axes."
+      ],
+      "visual": "(10,)   one axis\n(10, 1) two axes",
+      "realWorld": "A single feature column must be (n, 1) to broadcast as a column; (n,) silently broadcasts as a row.",
+      "mistakes": ["Treating (10,) and (10, 1) as the same shape.", "Reshaping to (10,) and losing the column semantics."],
+      "revision": ["A 1-D shape is written with a trailing comma.", "Column vectors need two axes."]
+    },
+    "Shape is a tuple you can index": {
+      "syntax": "a.shape[0]   |   a.shape[1]",
+      "steps": [
+        "Create a 2×2 array.",
+        "Read rows and columns from the tuple by position.",
+        "Use those values in a reshape or a loop bound."
+      ],
+      "visual": "shape (2, 2) → shape[0]=2 rows, shape[1]=2 cols",
+      "realWorld": "Building a result array with np.zeros(a.shape[0]) is how code stays correct when the row count changes.",
+      "mistakes": ["Indexing shape[1] on a 1-D array.", "Assuming shape is a list and calling .append."],
+      "revision": ["shape is an immutable tuple.", "Position 0 is rows, 1 is columns."]
+    },
+    "A matrix of one row still has two axes": {
+      "syntax": "np.array([[7, 8]]).shape → (1, 2)",
+      "steps": [
+        "Build a nested list with one inner list.",
+        "Print the shape and note the leading 1.",
+        "Compare with np.array([7, 8]) which is 1-D."
+      ],
+      "visual": "[[7, 8]] → (1, 2)\n[7, 8]   → (2,)",
+      "realWorld": "Batching a single sample for a model needs (1, features); passing (features,) is the classic shape error.",
+      "mistakes": ["Dropping the outer list and losing the batch axis.", "Squeezing a batch of one to save memory and breaking the model call."],
+      "revision": ["Nesting adds an axis.", "Batch of one is still a batch."]
+    },
+    "Every attribute of an ndarray": {
+      "syntax": "shape · ndim · size · dtype · itemsize · nbytes · strides",
+      "steps": [
+        "Reshape a range into a 3×4 array.",
+        "Print all attributes in one line.",
+        "Read strides as bytes to step per axis."
+      ],
+      "visual": "shape (3, 4) · size 12 · dtype int64\nstrides (32, 8) = 4 elements, then 1",
+      "realWorld": "Disagreement between shape and strides is how a transposed view keeps the same buffer without copying.",
+      "mistakes": ["Reading strides in elements instead of bytes.", "Assuming a reshape always changes strides."],
+      "revision": ["strides are byte steps per axis.", "A view shares the buffer; strides differ."]
+    },
+    "np.empty is not filled with zeros": {
+      "syntax": "np.empty(shape, dtype) → uninitialised buffer",
+      "steps": [
+        "Create zeros to see a known starting state.",
+        "Create empty of the same shape and print its dtype and shape only.",
+        "Never print or rely on empty's values."
+      ],
+      "visual": "zeros(3) → [0. 0. 0.]\nempty(3) → whatever memory held",
+      "realWorld": "Preallocating an output buffer with empty is a legitimate speed trick — as long as every cell is written before it is read.",
+      "mistakes": ["Assuming empty contains zeros.", "Reading an unwritten cell and treating garbage as data."],
+      "revision": ["empty skips initialisation for speed.", "Write every cell before reading it."]
+    }
+  }
+}

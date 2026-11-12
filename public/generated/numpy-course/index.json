@@ -2892,7 +2892,23 @@
       "body": "shape is one number per axis, size is the product of those numbers and ndim is how many axes exist — the three answers every shape error is really about.",
       "code": "import numpy as np\na = np.array([[1, 2, 3], [4, 5, 6]])\nprint(a.shape, a.size, a.ndim)",
       "output": "(2, 3) 6 2",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "syntax": "a.shape → tuple   |   a.size → int   |   a.ndim → int",
+      "steps": [
+       "Build the 2×3 array and print all three attributes in one call.",
+       "Read shape as (rows, columns) and check size is their product.",
+       "Count the entries of shape to confirm ndim."
+      ],
+      "visual": "a.shape = (2, 3)   rows × columns\na.size  = 6        cells\na.ndim  = 2        number of axes",
+      "realWorld": "A model expects a feature matrix and fails on shape; printing shape, size and ndim first tells you whether the data is transposed or flattened.",
+      "mistakes": [
+       "Reading shape as (columns, rows) and transposing the wrong way.",
+       "Using len(a) when the total cell count is what is needed."
+      ],
+      "revision": [
+       "shape is the structure, size is the cell count, ndim is the axis count.",
+       "size == product(shape)."
+      ]
      },
      {
       "id": "n02:learn:1",
@@ -2900,7 +2916,23 @@
       "body": "The dtype decides how the bytes are interpreted and itemsize is the bytes per element; together they explain both the values you get and the memory you pay.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a.dtype, a.itemsize)",
       "output": "int64 8",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "syntax": "a.dtype   |   a.itemsize",
+      "steps": [
+       "Build an integer array and print dtype.",
+       "Print itemsize and note it is bytes per element, not per array.",
+       "Multiply itemsize by size to reach nbytes."
+      ],
+      "visual": "dtype int64 → itemsize 8 bytes\n3 elements  → nbytes 24",
+      "realWorld": "A million-row column of small integers costs 8 MB as int64 and 1 MB as int8 — the dtype decision is the memory decision.",
+      "mistakes": [
+       "Assuming itemsize changes with array length.",
+       "Casting to a smaller dtype without checking the value range."
+      ],
+      "revision": [
+       "dtype names the element type; itemsize is its width in bytes.",
+       "nbytes = itemsize × size."
+      ]
      },
      {
       "id": "n02:learn:2",
@@ -2908,7 +2940,23 @@
       "body": "Reducing along axis 0 collapses rows (one result per column) and axis 1 collapses columns (one result per row); reading the output length tells you which axis was reduced.",
       "code": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a.sum(axis=0), a.sum(axis=1))",
       "output": "[4 6] [3 7]",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "syntax": "a.sum(axis=0)   |   a.sum(axis=1)",
+      "steps": [
+       "Sum a 2×2 array with axis=0 and read the result shape.",
+       "Sum with axis=1 and compare which values disappeared.",
+       "Say out loud which axis vanished in each case."
+      ],
+      "visual": "[[1 2]      axis=0 → [4 6]   (rows collapse)\n [3 4]]     axis=1 → [3 7]   (columns collapse)",
+      "realWorld": "Monthly sales per product: axis=0 totals each product across months, axis=1 totals each month across products.",
+      "mistakes": [
+       "Thinking axis names the direction that stays.",
+       "Expecting the same shape back from a reduction."
+      ],
+      "revision": [
+       "The named axis is the one removed.",
+       "Reductions drop one dimension."
+      ]
      },
      {
       "id": "n02:learn:3",
@@ -2916,7 +2964,23 @@
       "body": "len() reports the length of axis 0, not the number of elements, so for a (3, 4) array len is 3 while size is 12.",
       "code": "import numpy as np\na = np.ones((3, 4))\nprint(len(a), a.size)",
       "output": "3 12",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "syntax": "len(a) → a.shape[0]",
+      "steps": [
+       "Build a 3×4 array and print len(a).",
+       "Compare it with a.size.",
+       "Use shape[0] and shape[1] when both counts matter."
+      ],
+      "visual": "a = ones((3, 4)) → len(a) = 3, a.size = 12",
+      "realWorld": "Counting rows of a table is len(a); counting measured values is a.size — mixing them inflates sample counts.",
+      "mistakes": [
+       "Assuming len gives the cell count.",
+       "Using len on a 0-d array and expecting 1."
+      ],
+      "revision": [
+       "len is the first axis only.",
+       "size is every cell."
+      ]
      },
      {
       "id": "n02:learn:4",
@@ -2924,7 +2988,23 @@
       "body": "Transposing reverses the axis order, so a (3, 4) array becomes (4, 3) and every operation that follows reads the new shape.",
       "code": "import numpy as np\na = np.ones((3, 4))\nprint(a.T.shape)",
       "output": "(4, 3)",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "syntax": "a.T   |   a.transpose()",
+      "steps": [
+       "Build a 3×4 array and print both shapes.",
+       "Transpose and print the shape again.",
+       "Note that values were not reordered, only the axes were swapped."
+      ],
+      "visual": "shape (3, 4) → .T → shape (4, 3)",
+      "realWorld": "A CSV read as (features, samples) usually needs .T before a model that expects (samples, features).",
+      "mistakes": [
+       "Believing .T copies the data — it is a view with swapped strides.",
+       "Transposing twice and forgetting the data is back to the original."
+      ],
+      "revision": [
+       "Transpose swaps axes and shape.",
+       "It is a view until something forces a copy."
+      ]
      },
      {
       "id": "n02:learn:5",
@@ -2932,7 +3012,23 @@
       "body": "One float in the input is enough to make the whole array float64, because a single dtype has to hold every value.",
       "code": "import numpy as np\nprint(np.array([1, 2.5]).dtype)",
       "output": "float64",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "syntax": "np.array([1, 2.5]).dtype → float64",
+      "steps": [
+       "Build an array from an int and a float.",
+       "Print the dtype and observe both values became floats.",
+       "Pass dtype explicitly when the promotion is unwanted."
+      ],
+      "visual": "[1, 2.5] → array([1. , 2.5]) dtype float64",
+      "realWorld": "One decimal in a price column silently turns the whole column into floats, which changes equality and memory behaviour.",
+      "mistakes": [
+       "Expecting the integer to stay an integer in a mixed array.",
+       "Relying on exact equality after promotion."
+      ],
+      "revision": [
+       "One dtype per array.",
+       "Mixed input promotes to the common type."
+      ]
      },
      {
       "id": "n02:learn:6",
@@ -2940,7 +3036,23 @@
       "body": "`np.array(7)` is a 0-d array: it has one value, ndim 0 and an empty shape tuple, which is how a scalar crosses into array code.",
       "code": "import numpy as np\ns = np.array(7)\nprint(s.ndim, s.shape)",
       "output": "0 ()",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "syntax": "np.array(7).ndim → 0",
+      "steps": [
+       "Create an array from a single number.",
+       "Print ndim and shape to see () and 0.",
+       "Use .item() to get the plain Python scalar back."
+      ],
+      "visual": "np.array(7) → ndim 0, shape ()\n.item() → 7",
+      "realWorld": "A reduction over every axis returns a 0-d array; printing it looks like a number but it is still an ndarray.",
+      "mistakes": [
+       "Indexing a 0-d array as if it had axes.",
+       "Comparing it to a Python int in a type check."
+      ],
+      "revision": [
+       "0-d means no axes, shape ().",
+       ".item() unwraps it."
+      ]
      },
      {
       "id": "n02:learn:7",
@@ -2948,7 +3060,23 @@
       "body": "nbytes is size multiplied by itemsize, so a float32 array of six elements costs 24 bytes and a float64 one would cost 48.",
       "code": "import numpy as np\na = np.zeros((2, 3), dtype=np.float32)\nprint(a.nbytes)",
       "output": "24",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "syntax": "a.nbytes == a.size * a.itemsize",
+      "steps": [
+       "Create a float32 array of shape (2, 3).",
+       "Print nbytes and square it against size × itemsize.",
+       "Repeat with float64 to see the memory double."
+      ],
+      "visual": "float32: 6 × 4 = 24 B\nfloat64: 6 × 8 = 48 B",
+      "realWorld": "Choosing float32 for a large feature matrix halves memory and often changes nothing measurable in accuracy.",
+      "mistakes": [
+       "Confusing nbytes with the Python object's overhead.",
+       "Forgetting that a copy doubles the count."
+      ],
+      "revision": [
+       "nbytes = size × itemsize.",
+       "dtype width is the multiplier you control."
+      ]
      },
      {
       "id": "n02:learn:8",
@@ -2956,7 +3084,23 @@
       "body": "`ndim` is how many indices you need to reach a single value; `size` is how many values exist in total.",
       "code": "import numpy as np\n\na = np.zeros((2, 3, 4))\nprint(a.ndim, a.size)",
       "output": "3 24",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "syntax": "np.zeros((2, 3, 4)).ndim → 3",
+      "steps": [
+       "Create a three-axis array.",
+       "Print ndim and size, and confirm size is the product of shape.",
+       "Index with three positions to see each axis used."
+      ],
+      "visual": "shape (2, 3, 4) → ndim 3, size 24",
+      "realWorld": "An image batch is (batch, height, width) or (batch, height, width, channels) — ndim tells you which convention you are holding.",
+      "mistakes": [
+       "Counting shape entries by eye and getting it wrong.",
+       "Assuming a 2-D model accepts a 3-D batch."
+      ],
+      "revision": [
+       "ndim = len(shape).",
+       "Each axis needs its own index."
+      ]
      },
      {
       "id": "n02:learn:9",
@@ -2964,7 +3108,23 @@
       "body": "A one-dimensional array has a trailing comma in its shape. That is a 1-tuple, not a scalar.",
       "code": "import numpy as np\n\nprint(np.zeros(10).shape)",
       "output": "(10,)",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "syntax": "np.zeros(10).shape → (10,)",
+      "steps": [
+       "Create ten zeros and print the shape.",
+       "Notice the trailing comma: one axis, ten cells.",
+       "Compare with np.zeros((10, 1)) which has two axes."
+      ],
+      "visual": "(10,)   one axis\n(10, 1) two axes",
+      "realWorld": "A single feature column must be (n, 1) to broadcast as a column; (n,) silently broadcasts as a row.",
+      "mistakes": [
+       "Treating (10,) and (10, 1) as the same shape.",
+       "Reshaping to (10,) and losing the column semantics."
+      ],
+      "revision": [
+       "A 1-D shape is written with a trailing comma.",
+       "Column vectors need two axes."
+      ]
      },
      {
       "id": "n02:learn:10",
@@ -2972,7 +3132,23 @@
       "body": "`shape` is data, not a method. Read `shape[0]` for rows and `shape[1]` for columns instead of calling it.",
       "code": "import numpy as np\n\na = np.ones((2, 2))\nprint(a.shape[0], a.shape[1])",
       "output": "2 2",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "syntax": "a.shape[0]   |   a.shape[1]",
+      "steps": [
+       "Create a 2×2 array.",
+       "Read rows and columns from the tuple by position.",
+       "Use those values in a reshape or a loop bound."
+      ],
+      "visual": "shape (2, 2) → shape[0]=2 rows, shape[1]=2 cols",
+      "realWorld": "Building a result array with np.zeros(a.shape[0]) is how code stays correct when the row count changes.",
+      "mistakes": [
+       "Indexing shape[1] on a 1-D array.",
+       "Assuming shape is a list and calling .append."
+      ],
+      "revision": [
+       "shape is an immutable tuple.",
+       "Position 0 is rows, 1 is columns."
+      ]
      },
      {
       "id": "n02:learn:11",
@@ -2980,7 +3156,23 @@
       "body": "Wrapping a list in a list adds an axis even when there is only one element in it. Shape `(1, 2)` is a matrix, `(2,)` is a vector.",
       "code": "import numpy as np\n\nprint(np.array([[7, 8]]).shape)",
       "output": "(1, 2)",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "syntax": "np.array([[7, 8]]).shape → (1, 2)",
+      "steps": [
+       "Build a nested list with one inner list.",
+       "Print the shape and note the leading 1.",
+       "Compare with np.array([7, 8]) which is 1-D."
+      ],
+      "visual": "[[7, 8]] → (1, 2)\n[7, 8]   → (2,)",
+      "realWorld": "Batching a single sample for a model needs (1, features); passing (features,) is the classic shape error.",
+      "mistakes": [
+       "Dropping the outer list and losing the batch axis.",
+       "Squeezing a batch of one to save memory and breaking the model call."
+      ],
+      "revision": [
+       "Nesting adds an axis.",
+       "Batch of one is still a batch."
+      ]
      },
      {
       "id": "n02:learn:12",
@@ -2988,7 +3180,23 @@
       "body": "shape, ndim, size, dtype, itemsize and nbytes answer different questions about the same buffer, and strides tells you how many elements each axis step moves.",
       "code": "import numpy as np\na = np.arange(12).reshape(3, 4)\nprint(a.shape, a.ndim, a.size, a.dtype, a.itemsize, a.nbytes, a.strides)",
       "output": "(3, 4) 2 12 int64 8 96 (32, 8)",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "syntax": "shape · ndim · size · dtype · itemsize · nbytes · strides",
+      "steps": [
+       "Reshape a range into a 3×4 array.",
+       "Print all attributes in one line.",
+       "Read strides as bytes to step per axis."
+      ],
+      "visual": "shape (3, 4) · size 12 · dtype int64\nstrides (32, 8) = 4 elements, then 1",
+      "realWorld": "Disagreement between shape and strides is how a transposed view keeps the same buffer without copying.",
+      "mistakes": [
+       "Reading strides in elements instead of bytes.",
+       "Assuming a reshape always changes strides."
+      ],
+      "revision": [
+       "strides are byte steps per axis.",
+       "A view shares the buffer; strides differ."
+      ]
      },
      {
       "id": "n02:learn:13",
@@ -2996,7 +3204,23 @@
       "body": "empty allocates the buffer without writing values, so whatever was in memory is what you read. Use zeros when you need a known starting value.",
       "code": "import numpy as np\nz = np.zeros(3, dtype=np.int64)\nprint(z, z.dtype)\nprint(np.zeros((2, 2)).shape)",
       "output": "[0 0 0] int64\n(2, 2)",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "syntax": "np.empty(shape, dtype) → uninitialised buffer",
+      "steps": [
+       "Create zeros to see a known starting state.",
+       "Create empty of the same shape and print its dtype and shape only.",
+       "Never print or rely on empty's values."
+      ],
+      "visual": "zeros(3) → [0. 0. 0.]\nempty(3) → whatever memory held",
+      "realWorld": "Preallocating an output buffer with empty is a legitimate speed trick — as long as every cell is written before it is read.",
+      "mistakes": [
+       "Assuming empty contains zeros.",
+       "Reading an unwritten cell and treating garbage as data."
+      ],
+      "revision": [
+       "empty skips initialisation for speed.",
+       "Write every cell before reading it."
+      ]
      }
     ],
     "interview": [
@@ -4605,7 +4829,23 @@
       "body": "These allocate a new array of a given shape and fill it: zeros and ones are the common starting points, full repeats any value and needs the fill value explicitly.",
       "code": "import numpy as np\nprint(np.zeros(3), np.ones((2, 2)), np.full(3, 7))",
       "output": "[0. 0. 0.] [[1. 1.]\n [1. 1.]] [7 7 7]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "syntax": "np.zeros(shape) · np.ones(shape) · np.full(shape, value)",
+      "steps": [
+       "Create a length-3 zeros array and print its dtype.",
+       "Create a 2×2 ones array and confirm the shape.",
+       "Fill a length-3 array with 7 using full."
+      ],
+      "visual": "zeros(3)      → [0. 0. 0.]\nones((2,2))   → 2×2 of 1.0\nfull(3, 7)    → [7 7 7]",
+      "realWorld": "A results buffer starts as zeros, a mask starts as ones, and a default price list starts as full — all three are one call with a known shape.",
+      "mistakes": [
+       "Forgetting the shape argument needs a tuple for 2-D.",
+       "Expecting full to infer the dtype from the value."
+      ],
+      "revision": [
+       "shape first, value second.",
+       "float64 is the default dtype."
+      ]
      },
      {
       "id": "n03:learn:1",
@@ -4613,7 +4853,23 @@
       "body": "arange builds a range by step (the stop is excluded, like range) while linspace builds a fixed number of evenly spaced points including both ends — the safer choice for float grids.",
       "code": "import numpy as np\nprint(np.arange(0, 10, 2), np.linspace(0, 1, 3))",
       "output": "[0 2 4 6 8] [0.  0.5 1. ]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "syntax": "np.arange(start, stop, step) · np.linspace(start, stop, count)",
+      "steps": [
+       "Create a range with a step of 2 and read the values.",
+       "Create three evenly spaced values from 0 to 1.",
+       "Count both results to see which argument controls the length."
+      ],
+      "visual": "arange(0,10,2) → [0 2 4 6 8]\nlinspace(0,1,3) → [0. 0.5 1.]",
+      "realWorld": "Axis ticks are linspace (a count), while index arithmetic is arange (a step).",
+      "mistakes": [
+       "Using arange with a float step and getting an extra element.",
+       "Expecting arange to include the stop value."
+      ],
+      "revision": [
+       "arange takes a step; linspace takes a count.",
+       "linspace includes both ends by default."
+      ]
      },
      {
       "id": "n03:learn:2",
@@ -4621,7 +4877,23 @@
       "body": "eye builds an identity matrix of any shape and diag builds a square matrix from a 1-D vector (or extracts the diagonal from a 2-D one).",
       "code": "import numpy as np\nprint(np.eye(2), np.diag([1, 2]))",
       "output": "[[1. 0.]\n [0. 1.]] [[1 0]\n [0 2]]",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "syntax": "np.eye(n) · np.diag(values)",
+      "steps": [
+       "Create a 2×2 identity and read the diagonal.",
+       "Build a diagonal matrix from a list.",
+       "Compare np.diag on a matrix (extracts) with a vector (builds)."
+      ],
+      "visual": "eye(2) → [[1. 0.] [0. 1.]]\ndiag([1,2]) → [[1 0] [0 2]]",
+      "realWorld": "Identity matrices appear in ridge regression and in one-hot encodings; diag builds covariance from variances.",
+      "mistakes": [
+       "Assuming diag always builds a matrix.",
+       "Forgetting eye is float by default."
+      ],
+      "revision": [
+       "eye is square identity; diag is context-dependent.",
+       "Pass dtype=int when the values are counts."
+      ]
      },
      {
       "id": "n03:learn:3",
@@ -4629,7 +4901,23 @@
       "body": "`zeros_like` and `ones_like` take the shape and dtype from an existing array, which is how you allocate an accumulator that lines up with real data.",
       "code": "import numpy as np\na = np.arange(4)\nprint(np.zeros_like(a), np.ones_like(a, dtype=int))",
       "output": "[0 0 0 0] [1 1 1 1]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "syntax": "np.zeros_like(a) · np.ones_like(a, dtype=int)",
+      "steps": [
+       "Create a source array and print its shape.",
+       "Call zeros_like and confirm the shape matches.",
+       "Override dtype with ones_like to get integer ones."
+      ],
+      "visual": "a = arange(4) → shape (4,)\nzeros_like(a) → [0. 0. 0. 0.]",
+      "realWorld": "An output buffer that must match an input uses zeros_like, so the shape never drifts when the input changes.",
+      "mistakes": [
+       "Assuming zeros_like copies the values.",
+       "Forgetting it copies the dtype too."
+      ],
+      "revision": [
+       "_like copies shape and dtype.",
+       "Override dtype deliberately when needed."
+      ]
      },
      {
       "id": "n03:learn:4",
@@ -4637,7 +4925,23 @@
       "body": "With endpoint=False, linspace still gives you a fixed number of points but stops one step short, which is what periodic sampling needs.",
       "code": "import numpy as np\nprint(np.linspace(0, 1, 4, endpoint=False))",
       "output": "[0.   0.25 0.5  0.75]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "syntax": "np.linspace(0, 1, 4, endpoint=False)",
+      "steps": [
+       "Create four points including the endpoint.",
+       "Repeat with endpoint=False and compare.",
+       "Note the step becomes the full range divided by the count."
+      ],
+      "visual": "endpoint=True  → [0. 0.333 0.667 1.]\nendpoint=False → [0. 0.25 0.5 0.75]",
+      "realWorld": "Histogram bin edges exclude the last endpoint when the range is cyclic, such as angles or phase.",
+      "mistakes": [
+       "Assuming endpoint=False keeps the same step.",
+       "Using it and then expecting the maximum value to appear."
+      ],
+      "revision": [
+       "endpoint defaults to True.",
+       "Excluding it changes the spacing, not just the last value."
+      ]
      },
      {
       "id": "n03:learn:5",
@@ -4645,7 +4949,23 @@
       "body": "arange happily takes a float step, though repeated float addition can drift; linspace is the safer tool when exact spacing matters.",
       "code": "import numpy as np\nprint(np.arange(0, 1, 0.25))",
       "output": "[0.   0.25 0.5  0.75]",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "syntax": "np.arange(0, 1, 0.25)",
+      "steps": [
+       "Create the range with a 0.25 step.",
+       "Count the values and compare with the expected four.",
+       "Check the last value against the stop."
+      ],
+      "visual": "arange(0, 1, 0.25) → [0. 0.25 0.5 0.75]",
+      "realWorld": "Sampling a signal at a fractional interval is arange, but accumulated float error is why linspace is preferred for fixed counts.",
+      "mistakes": [
+       "Expecting 1.0 to be included.",
+       "Trusting float steps to land exactly on the stop."
+      ],
+      "revision": [
+       "Fractional steps work but accumulate error.",
+       "The stop is exclusive."
+      ]
      },
      {
       "id": "n03:learn:6",
@@ -4653,7 +4973,23 @@
       "body": "The default float dtype is a choice, not a rule: pass dtype=int when you want ones that stay integers in later arithmetic.",
       "code": "import numpy as np\nprint(np.ones(3, dtype=int))",
       "output": "[1 1 1]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "syntax": "np.ones(3, dtype=int)",
+      "steps": [
+       "Create ones without a dtype and read the float dtype.",
+       "Repeat with dtype=int and read the values.",
+       "Use the integer version where counts must stay integral."
+      ],
+      "visual": "ones(3)        → [1. 1. 1.] float64\nones(3, dtype=int) → [1 1 1] int64",
+      "realWorld": "A counter array or a one-hot mask should be integer so later arithmetic does not drag floats through the pipeline.",
+      "mistakes": [
+       "Assuming the dtype is inferred from the value 1.",
+       "Mixing float ones with integer counts in comparisons."
+      ],
+      "revision": [
+       "ones defaults to float64.",
+       "dtype is an argument, not a guess."
+      ]
      },
      {
       "id": "n03:learn:7",
@@ -4661,7 +4997,23 @@
       "body": "full allocates a shape and fills every cell with the value you give, so a constant column or a sentinel matrix is one call.",
       "code": "import numpy as np\nprint(np.full((2, 2), 3, dtype=int))",
       "output": "[[3 3]\n [3 3]]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "syntax": "np.full((2, 2), 3, dtype=int)",
+      "steps": [
+       "Create a 2×2 array filled with 3.",
+       "Print the dtype to see it follows the value or the argument.",
+       "Use full for a constant baseline array."
+      ],
+      "visual": "full((2,2), 3, dtype=int) → [[3 3] [3 3]]",
+      "realWorld": "A default discount table or a sentinel-filled buffer is one full call with a shape.",
+      "mistakes": [
+       "Passing the value before the shape.",
+       "Forgetting the shape must be a tuple for 2-D."
+      ],
+      "revision": [
+       "full is shape + value.",
+       "dtype can be forced."
+      ]
      },
      {
       "id": "n03:learn:8",
@@ -4669,7 +5021,23 @@
       "body": "`np.empty` skips initialisation, so it is faster but holds whatever memory was there. Use it only when you overwrite every element next.",
       "code": "import numpy as np\n\na = np.empty(3)\nprint(a.shape, a.dtype)",
       "output": "(3,) float64",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "syntax": "np.empty(shape) → uninitialised",
+      "steps": [
+       "Create empty of length 3 and print shape and dtype only.",
+       "Compare with zeros of the same shape.",
+       "Write every cell before reading it in real code."
+      ],
+      "visual": "empty(3).shape → (3,)   dtype float64\nvalues → undefined",
+      "realWorld": "A tight loop that fills a preallocated buffer uses empty to skip a pointless zeroing pass.",
+      "mistakes": [
+       "Treating the values as zeros.",
+       "Shipping code that reads uninitialised cells."
+      ],
+      "revision": [
+       "empty is allocation only.",
+       "Initialise before use."
+      ]
      },
      {
       "id": "n03:learn:9",
@@ -4677,7 +5045,23 @@
       "body": "`np.identity(n)` is the square identity: ones on the diagonal, zeros elsewhere. It is the neutral element for matrix multiplication.",
       "code": "import numpy as np\n\nprint(np.identity(2))",
       "output": "[[1. 0.]\n [0. 1.]]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "syntax": "np.identity(n)",
+      "steps": [
+       "Build a 2×2 identity and print it.",
+       "Compare with eye(2) and note they agree for square shapes.",
+       "Use eye when the matrix is rectangular."
+      ],
+      "visual": "identity(2) == eye(2) → [[1. 0.] [0. 1.]]",
+      "realWorld": "Identity is the neutral element in matrix multiplication, used to initialise and to test a multiplication routine.",
+      "mistakes": [
+       "Expecting identity to accept two dimensions.",
+       "Comparing identity to an integer matrix with == and getting False."
+      ],
+      "revision": [
+       "identity is always square.",
+       "eye is the rectangular generalisation."
+      ]
      },
      {
       "id": "n03:learn:10",
@@ -4685,7 +5069,23 @@
       "body": "The stop value is excluded in both directions. A negative step reverses the walk through the range.",
       "code": "import numpy as np\n\nprint(np.arange(5, 0, -1))",
       "output": "[5 4 3 2 1]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "syntax": "np.arange(5, 0, -1)",
+      "steps": [
+       "Create the descending range and read the values.",
+       "Confirm the stop is excluded.",
+       "Use it to build reversed index positions."
+      ],
+      "visual": "arange(5, 0, -1) → [5 4 3 2 1]",
+      "realWorld": "Rendering a stack from top to bottom, or walking a time series backwards, is a negative-step range.",
+      "mistakes": [
+       "Using a negative step with start < stop and getting an empty array.",
+       "Expecting 0 in the output."
+      ],
+      "revision": [
+       "Negative step counts down.",
+       "Stop stays exclusive."
+      ]
      },
      {
       "id": "n03:learn:11",
@@ -4693,7 +5093,23 @@
       "body": "`linspace(start, stop, n)` includes the endpoint and spaces `n` values evenly, which `arange` with floats cannot promise.",
       "code": "import numpy as np\n\nprint(np.linspace(0, 1, 5))",
       "output": "[0.   0.25 0.5  0.75 1.  ]",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "syntax": "np.linspace(0, 1, 5) → step 0.25",
+      "steps": [
+       "Create five points from 0 to 1.",
+       "Compute the step as range divided by (count − 1).",
+       "Change the count and observe the step change."
+      ],
+      "visual": "5 points over [0,1] → step 0.25\n9 points → step 0.125",
+      "realWorld": "Plotting a smooth curve needs a density decision: more points, smaller step, same endpoints.",
+      "mistakes": [
+       "Dividing by count instead of count − 1.",
+       "Assuming the step is an argument."
+      ],
+      "revision": [
+       "linspace is endpoints + count.",
+       "Step = (stop − start) / (count − 1)."
+      ]
      },
      {
       "id": "n03:learn:12",
@@ -4701,7 +5117,23 @@
       "body": "arange takes a step and can miss the stop value; linspace takes a count and always includes both ends. For floats, linspace is usually the safer choice.",
       "code": "import numpy as np\nprint(np.arange(0, 1, 0.25))\nprint(np.linspace(0, 1, 5))",
       "output": "[0.   0.25 0.5  0.75]\n[0.   0.25 0.5  0.75 1.  ]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "syntax": "arange(start, stop, step) vs linspace(start, stop, count)",
+      "steps": [
+       "Build the same range both ways and compare lengths.",
+       "Change the step and see arange's length change.",
+       "Change the count and see linspace's step change."
+      ],
+      "visual": "arange(0,1,0.25) → 4 values, step fixed\nlinspace(0,1,5)  → 5 values, step derived",
+      "realWorld": "Grids for plotting and for numerical integration are linspace; index arithmetic is arange.",
+      "mistakes": [
+       "Choosing arange for a required number of samples.",
+       "Choosing linspace when an exact step is the requirement."
+      ],
+      "revision": [
+       "Pick by which quantity is fixed: step or count.",
+       "linspace includes the stop."
+      ]
      },
      {
       "id": "n03:learn:13",
@@ -4709,7 +5141,23 @@
       "body": "eye builds an identity of any rectangular shape, while identity requires a square one. Both put ones on the main diagonal.",
       "code": "import numpy as np\nprint(np.eye(3, dtype=int))\nprint(np.identity(2, dtype=int))",
       "output": "[[1 0 0]\n [0 1 0]\n [0 0 1]]\n[[1 0]\n [0 1]]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "syntax": "np.eye(rows, cols) · np.identity(n)",
+      "steps": [
+       "Create a 3×3 eye and compare with identity(3).",
+       "Create a rectangular eye(3, 4) that identity cannot build.",
+       "Pass dtype=int where integers matter."
+      ],
+      "visual": "eye(3, 4) → [[1 0 0 0] [0 1 0 0] [0 0 1 0]]",
+      "realWorld": "Rectangular identity blocks appear when padding a design matrix or building a selection mask.",
+      "mistakes": [
+       "Calling identity with two arguments.",
+       "Assuming eye's default dtype is int."
+      ],
+      "revision": [
+       "eye takes rows and columns.",
+       "identity is the square special case."
+      ]
      }
     ],
     "interview": [

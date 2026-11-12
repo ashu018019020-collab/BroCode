@@ -53,6 +53,14 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Structure for modules 2 and 3 (phase 30, Part 14 of the brief)
+
+`structure-2.json` and `structure-3.json` author the full 12-part lesson shape for all **28** Learn
+topics in ndarray Fundamentals and Array Creation: syntax line, three steps, a compact visual, the
+real-world use, common mistakes and revision points. The audit's full-shape number moves from 14 to
+**42 of 280 (15%)**; the remaining 238 topics still render only the parts they have. Dual-level
+(`simple`/`pro`) coverage is still module 1's 12 topics.
+
 ### Course search and audit (phase 29, Part 13 of the brief)
 
 **Search** is a real feature, not a filter over titles: `searchCourse` scans all 2,820 records — Learn
