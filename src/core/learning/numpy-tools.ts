@@ -178,3 +178,108 @@ export function gridShape(shape: Shape): { rows: number; cols: number } {
   if (shape.length === 1) return { rows: 1, cols: shape[0] };
   return { rows: shape[0], cols: shape[1] };
 }
+
+/**
+ * Python slicing, including negative bounds and a negative step, as `slice.indices` computes it.
+ * `null` means the bound was omitted, which is not the same as 0 (or length-1 for a reverse).
+ */
+export function sliceIndices(
+  length: number, start: number | null, stop: number | null, step: number,
+): { indices: number[]; error: string | null } {
+  if (!Number.isInteger(length) || length < 0) return { indices: [], error: 'length must be a positive whole number' };
+  if (!Number.isInteger(step) || step === 0) return { indices: [], error: 'step must be a non-zero whole number' };
+  let from: number;
+  let to: number;
+  if (step > 0) {
+    from = start === null ? 0 : start < 0 ? Math.max(0, length + start) : Math.min(start, length);
+    to = stop === null ? length : stop < 0 ? Math.max(0, length + stop) : Math.min(stop, length);
+  } else {
+    from = start === null ? length - 1 : start < 0 ? length + start : Math.min(start, length - 1);
+    to = stop === null ? -1 : stop < 0 ? length + stop : Math.min(stop, length - 1);
+  }
+  const indices: number[] = [];
+  if (step > 0) for (let i = from; i < to; i += step) indices.push(i);
+  else for (let i = from; i > to; i += step) indices.push(i);
+  return { indices, error: null };
+}
+
+export type CompareOp = '>' | '>=' | '<' | '<=' | '==' | '!=';
+
+/** A boolean mask and the values it selects — what `a[a > t]` returns, step by step. */
+export function maskFilter(values: number[], op: CompareOp, threshold: number): { mask: boolean[]; selected: number[] } {
+  const test = (v: number) => {
+    switch (op) {
+      case '>': return v > threshold;
+      case '>=': return v >= threshold;
+      case '<': return v < threshold;
+      case '<=': return v <= threshold;
+      case '==': return v === threshold;
+      default: return v !== threshold;
+    }
+  };
+  const mask = values.map(test);
+  return { mask, selected: values.filter((_, i) => mask[i]) };
+}
+
+/** The flat C-order index behind every cell of a `rows × cols` reshape. */
+export function reshapeGrid(rows: number, cols: number): number[][] {
+  if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1) return [];
+  return Array.from({ length: rows }, (_, i) => Array.from({ length: cols }, (_, j) => i * cols + j));
+}
+
+/** Bytes per element for the dtypes the course teaches; `null` for one it does not. */
+export const DTYPE_BYTES: Record<string, number> = {
+  bool: 1, int8: 1, int16: 2, int32: 4, int64: 8,
+  float16: 2, float32: 4, float64: 8, complex64: 8, complex128: 16,
+};
+
+/** Total bytes a dtype needs for `count` elements, in the same units the course prints. */
+export function dtypeMemory(dtype: string, count: number): { bytes: number; readable: string } | null {
+  const per = DTYPE_BYTES[dtype];
+  if (!per || !Number.isInteger(count) || count < 0) return null;
+  const bytes = per * count;
+  const readable = bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(2)} MiB`
+    : bytes >= 1024 ? `${(bytes / 1024).toFixed(1)} KiB` : `${bytes} B`;
+  return { bytes, readable };
+}
+
+/**
+ * A deterministic uniform stream, so the RNG playground can show reproducibility without a seed
+ * server: the same seed always yields the same numbers, a different seed yields different ones.
+ * This is a small xorshift32, not NumPy's PCG64 — the panel says so instead of pretending.
+ */
+export function uniformSamples(seed: number, count: number): number[] {
+  let state = (Math.abs(Math.trunc(seed)) || 1) >>> 0;
+  const out: number[] = [];
+  for (let i = 0; i < Math.max(0, Math.min(64, Math.trunc(count))); i += 1) {
+    state ^= state << 13; state >>>= 0;
+    state ^= state >>> 17;
+    state ^= state << 5; state >>>= 0;
+    out.push(Math.round((state / 0xffffffff) * 10000) / 10000);
+  }
+  return out;
+}
+
+export interface MissingSummary {
+  total: number;
+  missing: number;
+  present: number;
+  meanPresent: number | null;
+  minPresent: number | null;
+  maxPresent: number | null;
+}
+
+/** Counts how many cells are absent (`null`, NaN or the sentinel) and summarises the rest. */
+export function missingSummary(values: (number | null)[], sentinel: number | null = null): MissingSummary {
+  const present = values.filter((v): v is number => v !== null && Number.isFinite(v) && (sentinel === null || v !== sentinel));
+  const missing = values.length - present.length;
+  return {
+    total: values.length,
+    missing,
+    present: present.length,
+    meanPresent: present.length ? present.reduce((a, b) => a + b, 0) / present.length : null,
+    minPresent: present.length ? Math.min(...present) : null,
+    maxPresent: present.length ? Math.max(...present) : null,
+  };
+}

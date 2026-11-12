@@ -53,6 +53,20 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Interactive tools (phase 23, Part 7 of the brief)
+
+Every module carries **ten working tools**, all computed by the pure `src/core/learning/numpy-tools.ts`
+and driven by tests: array visualizer (shape → ndim/size/strides/index grid), broadcasting simulator,
+**slicing explorer** (Python `slice.indices` semantics including negative steps), **boolean-mask
+explorer** (mask + selected values), **reshape explorer** (C-order flat indices), statistics playground
+(population mean/median/std/var, p25/p50/p75), matrix lab (`A @ B`, `A.T`, refuses incompatible
+shapes), **dtype memory calculator** (itemsize × count, formatted), **random & seeds playground**
+(deterministic per seed) and **missing-value explorer** (sentinel + null + nan summary). The RNG panel
+states plainly that it uses a small xorshift, not PCG64, and shows the real NumPy call to run in Code
+Bro. Eight tools from the brief's list of eighteen are still missing: axis explorer, copy-vs-view,
+interactive visualizer for 3-D grids, linear-algebra visualiser beyond matmul, performance comparison,
+NumPy coding playground (Code Bro covers it), string/datetime explorer and FFT/frequency explorer.
+
 ### Question-bank manifest (phase 22, Part 6 of the brief)
 
 The brief's 500-items-per-module target is not met, and the course now says so in the product instead

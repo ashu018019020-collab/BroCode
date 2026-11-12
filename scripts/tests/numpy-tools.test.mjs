@@ -81,3 +81,58 @@ test('matmul contracts inner dimensions and refuses the rest', () => {
   assert.equal(tools.matmul([[1, 2]], [[1, 2]]), null);
   assert.deepEqual(tools.transpose([[1, 2, 3], [4, 5, 6]]), [[1, 4], [2, 5], [3, 6]]);
 });
+
+test('sliceIndices matches Python slice semantics including negative steps', () => {
+  const all = tools.sliceIndices(10, null, null, 1).indices;
+  assert.deepEqual(all, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  assert.deepEqual(tools.sliceIndices(10, 2, 8, 2).indices, [2, 4, 6]);
+  assert.deepEqual(tools.sliceIndices(10, null, null, -1).indices, [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
+  assert.deepEqual(tools.sliceIndices(10, -3, null, 1).indices, [7, 8, 9]);
+  assert.deepEqual(tools.sliceIndices(10, null, 4, 1).indices, [0, 1, 2, 3]);
+  assert.deepEqual(tools.sliceIndices(0, null, null, 1).indices, []);
+  assert.equal(tools.sliceIndices(5, 0, 5, 0).error, 'step must be a non-zero whole number');
+});
+
+test('maskFilter builds the mask and the selected values', () => {
+  const r = tools.maskFilter([4, 11, 10, 15, 3], '>', 10);
+  assert.deepEqual(r.mask, [false, true, false, true, false]);
+  assert.deepEqual(r.selected, [11, 15]);
+  assert.deepEqual(tools.maskFilter([1, 2, 2], '==', 2).selected, [2, 2]);
+  assert.deepEqual(tools.maskFilter([1, 2], '>=', 2).selected, [2]);
+});
+
+test('reshapeGrid maps C-order flat indices and rejects bad shapes', () => {
+  assert.deepEqual(tools.reshapeGrid(2, 3), [[0, 1, 2], [3, 4, 5]]);
+  assert.deepEqual(tools.reshapeGrid(0, 3), []);
+  assert.deepEqual(tools.reshapeGrid(2, -1), []);
+});
+
+test('dtypeMemory multiplies itemsize by count and formats it', () => {
+  assert.equal(tools.dtypeMemory('int64', 5).bytes, 40);
+  assert.equal(tools.dtypeMemory('float32', 1000).bytes, 4000);
+  assert.match(tools.dtypeMemory('float32', 1000).readable, /KiB/);
+  assert.equal(tools.dtypeMemory('int8', 0).bytes, 0);
+  assert.equal(tools.dtypeMemory('complex128', 2).bytes, 32);
+  assert.equal(tools.dtypeMemory('int3', 2), null);
+});
+
+test('uniformSamples is deterministic per seed and stays in range', () => {
+  const a = tools.uniformSamples(42, 5);
+  const b = tools.uniformSamples(42, 5);
+  const c = tools.uniformSamples(43, 5);
+  assert.deepEqual(a, b);
+  assert.notDeepEqual(a, c);
+  assert.equal(a.length, 5);
+  for (const v of a) assert.ok(v >= 0 && v <= 1);
+  assert.equal(tools.uniformSamples(1, 0).length, 0);
+});
+
+test('missingSummary skips nulls and a sentinel without inventing values', () => {
+  const s = tools.missingSummary([1, null, -999, 5], -999);
+  assert.equal(s.total, 4);
+  assert.equal(s.missing, 2);
+  assert.equal(s.present, 2);
+  assert.equal(s.meanPresent, 3);
+  assert.equal(s.minPresent, 1);
+  assert.equal(tools.missingSummary([], null).meanPresent, null);
+});
