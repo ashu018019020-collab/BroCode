@@ -776,6 +776,20 @@ export function NModuleWorkspace({
         })}
       </div>
 
+      {module.id === 'n04' && section === 'learn' && (
+        <div className="card" style={{ marginBottom: 10, borderLeft: '3px solid var(--blue, #2563eb)' }}>
+          <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <span className="small">
+              <b>Dates &amp; strings explorer</b> — practise <code>datetime64</code> arithmetic, day/week/hour/minute
+              conversions and fixed-width string rules on the live tools below.
+            </span>
+            <Link className="btn small" to="/numpy?module=n04&section=learn&tool=datetime">
+              Open Dates &amp; strings explorer
+            </Link>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 0', minWidth: 'min(320px, 100%)' }}>
           <div className="row spread" style={{ gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>

@@ -11,6 +11,7 @@ import path from 'node:path';
 import { register } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 register('./_ts-resolve.mjs', import.meta.url);
@@ -90,4 +91,15 @@ test('helpers agree with real numpy', () => {
   assert.equal(tt.dateDifference('2026-01-01', '2026-03-01', 'D'), np.diffD);
   assert.equal(tt.dateDifference('2026-01-01', '2026-01-02', 's'), np.diffS);
   assert.equal(tt.shiftDate('2026-01-01', 45, 'D'), np.shift);
+});
+
+test('the data-types module lessons link to the explorer tab', () => {
+  const workspace = fs.readFileSync(path.join(ROOT, 'src/features/numpy-mastery/NWorkspace.tsx'), 'utf8');
+  const tools = fs.readFileSync(path.join(ROOT, 'src/features/numpy-mastery/NTools.tsx'), 'utf8');
+  assert.match(workspace, /module\.id === 'n04' && section === 'learn'/,
+    'the link belongs to the advanced-dtypes Learn section');
+  assert.match(workspace, /\/numpy\?module=n04&section=learn&tool=datetime/,
+    'the link must carry the explorer tab, not just the module');
+  assert.match(tools, /params\.get\('tool'\)/, 'the tools panel must read the tool param');
+  assert.match(tools, /scrollIntoView/, 'a deep link must bring the panel into view');
 });

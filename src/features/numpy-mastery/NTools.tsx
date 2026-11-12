@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { BarChart3, CalendarDays, Copy, Grid3x3, Layers, Sigma, Timer } from 'lucide-react';
 import {
   axisReduce, broadcastShape, dtypeMemory, DTYPE_BYTES, gridShape, maskFilter, matmul, missingSummary,
@@ -679,14 +680,28 @@ const TOOLS = [
  * Every panel computes with the pure rules in `core/learning/numpy-tools.ts`, so the numbers on screen
  * are the values NumPy would produce — no placeholder cards, no canned outputs.
  */
+type ToolKey = (typeof TOOLS)[number]['key'];
+
 export function NTools() {
-  const [tab, setTab] = useState<(typeof TOOLS)[number]['key']>('array');
+  const [params] = useSearchParams();
+  const requested = params.get('tool');
+  const [tab, setTab] = useState<ToolKey>(() => (
+    TOOLS.some((t) => t.key === requested) ? (requested as ToolKey) : 'array'
+  ));
+  const box = useRef<HTMLDivElement>(null);
+  /* A lesson link carries ?tool=datetime: select that tab and bring the panel into view. */
+  useEffect(() => {
+    const tool = TOOLS.find((t) => t.key === requested);
+    if (!tool) return;
+    setTab(tool.key);
+    box.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [requested]);
   const active = TOOLS.find((t) => t.key === tab) ?? TOOLS[0];
   const shape = parseShape('2, 3');
   const sample: Shape = shape ?? [2, 3];
 
   return (
-    <div className="card" style={{ marginTop: 12 }}>
+    <div className="card" id="numpy-tools" ref={box} style={{ marginTop: 12 }}>
       <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
         <b className="small">Interactive NumPy tools</b>
         <span className="small muted">computed live · {shapeStrides(sample).length} axes supported</span>

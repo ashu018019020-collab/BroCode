@@ -141,45 +141,114 @@ export default function NCoursePage() {
   return (
     <div>
       <div className="card glow fadeup">
-        <div className="row spread" style={{ gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <div className="row spread" style={{ gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
           <div className="row" style={{ gap: 12, minWidth: 'min(260px, 100%)' }}>
-            <span className="cc-logo"><NLogo size={64} /></span>
+            <span className="cc-logo"><NLogo size={56} /></span>
             <div style={{ minWidth: 0 }}>
               <div className="chip" style={{ marginBottom: 6 }}><GraduationCap size={12} /> NUMPY MASTERY</div>
               <h1 style={{ margin: 0 }}>{course.title}</h1>
               <p className="muted small" style={{ margin: '6px 0 0', maxWidth: 620 }}>{course.tagline}</p>
             </div>
           </div>
-          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
             <span className="chip"><BookOpen size={12} /> {stats.modules} modules</span>
-            <span className="chip"><Target size={12} /> {stats.entries} entries</span>
-            <span className="chip"><Trophy size={12} /> {progress.pct}% complete</span>
-            <span className="chip">{progress.modulesDone}/{progress.modulesTotal} modules done</span>
+            <span className="chip"><Target size={12} /> {stats.entries.toLocaleString()} records</span>
             <span className="chip">{modules.reduce((a, m) => a + (m.hours || 0), 0)}h total</span>
-            <span className="chip">{course.level}</span>
           </div>
         </div>
-        <p className="muted small" style={{ margin: '10px 0 0', maxWidth: 820 }}>{course.description}</p>
-        <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-          <span className="chip"><ShieldCheck size={12} /> {course.standard}</span>
-          {course.prerequisites.map((p) => <span key={p} className="chip">{p}</span>)}
-        </div>
-        {next && (
-          <div className="row" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+        <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          {next && (
             <Link className="btn primary" to={`/numpy?module=${next.module.id}`}>
               <Play size={14} /> {progress.sectionsDone ? 'Continue' : 'Start'} learning
             </Link>
-            <span className="small muted" style={{ alignSelf: 'center' }}>
-              Next: {next.module.title} · {N_SECTION_LABEL[next.section]}
-            </span>
-          </div>
+          )}
+          <span className="chip"><Trophy size={12} /> {progress.pct}% complete</span>
+          <span className="chip">{progress.modulesDone}/{progress.modulesTotal} modules done</span>
+          {next && <span className="small muted">Next: {next.module.title} · {N_SECTION_LABEL[next.section]}</span>}
+        </div>
+        <div style={{ marginTop: 10, maxWidth: 520 }}><Bar pct={progress.pct} /></div>
+      </div>
+
+      <div className="sec-head" style={{ marginTop: 14 }}>
+        <h2><BookOpen size={16} color="var(--blue)" /> Modules</h2><span className="line" />
+        <span className="small muted">{modules.length} modules · ten sections each</span>
+      </div>
+
+      <div className="card" style={{ marginBottom: 10 }}>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={`Search ${stats.entries.toLocaleString()} records — try: broadcast, ValueError, percentile`}
+          aria-label="Search the NumPy course"
+          style={{ width: '100%' }}
+        />
+        {query.trim().length >= 2 && (
+          hits.length ? (
+            <div style={{ marginTop: 8 }}>
+              {hits.map((hit) => (
+                <button
+                  key={hit.id}
+                  type="button"
+                  onClick={() => setParams({ module: hit.moduleId, section: hit.section })}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, borderTop: '1px solid var(--line, #e6e8ee)', padding: '6px 0', cursor: 'pointer', color: 'inherit' }}
+                >
+                  <span className="small"><b>{hit.title}</b> <span className="muted">· {hit.label} · {hit.moduleTitle}</span></span>
+                  <span className="small muted" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hit.snippet}</span>
+                </button>
+              ))}
+              <p className="small muted" style={{ margin: '6px 0 0' }}>{hits.length} result{hits.length === 1 ? '' : 's'} shown, ranked with title matches first.</p>
+            </div>
+          ) : <p className="small muted" style={{ margin: '8px 0 0' }}>No record matches “{query.trim()}”. Try a shorter word.</p>
         )}
-        {progress.sectionsDone > 0 && (
-          <div style={{ marginTop: 10, maxWidth: 460 }}>
-            <div className="row spread small"><span className="muted">{progress.modulesDone}/{progress.modulesTotal} modules complete</span><span>{progress.pct}%</span></div>
-            <Bar pct={progress.pct} />
-          </div>
-        )}
+      </div>
+
+      <div className="tile-grid tile-grid-lg">
+        {modules.map((m) => {
+          const done = isModuleComplete(m.id, state.attempts);
+          const sectionsDone = N_SECTIONS.filter((s) => state.attempts[nSectionKey(m.id, s.key)]).length;
+          const bank = stats.bank.modules[m.id];
+          return (
+            <Link
+              key={m.id}
+              to={`/numpy?module=${m.id}`}
+              className={`tile tech${done ? ' on' : ''}`}
+              data-agent-action={`numpy:module:${m.id}`}
+            >
+              <span className="ic" style={{ fontWeight: 700, fontSize: 17, color: done ? 'var(--blue, #2563eb)' : 'var(--muted)' }}>
+                {String(m.no).padStart(2, '0')}
+              </span>
+              <span className="t" style={{ flex: 1, minWidth: 0 }}>
+                <b>{m.title}</b>
+                <span>{m.entries} entries · {m.hours}h · {sectionsDone}/10 sections{done ? ' · complete' : ''}</span>
+                {bank && (
+                  <span
+                    className="muted"
+                    style={{ display: 'block', marginTop: 3, fontSize: 11, lineHeight: 1.4 }}
+                    aria-label={`Module ${m.no} question bank: ${bank.total} items`}
+                  >
+                    Bank {bank.total} · {N_BANK_CATEGORY_ORDER
+                      .filter((key) => bank.categories[key])
+                      .map((key) => `${N_BANK_CATEGORY_LABEL[key] ?? key} ${bank.categories[key]}`)
+                      .join(' · ')}
+                  </span>
+                )}
+              </span>
+              <ChevronRight size={14} className="muted" />
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="card" style={{ marginTop: 10 }}>
+        <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <b className="small">Question bank — counted, not claimed</b>
+          <span className="chip">{stats.bank.total} unique items</span>
+        </div>
+        <p className="small muted" style={{ margin: '6px 0 0' }}>
+          {stats.bank.perModule} per module against a target of {stats.bank.target}: {stats.bank.shortPerModule} short
+          in each module, {stats.bank.shortfall} across the course. Each module's manifest counts concept,
+          output, coding, debugging, quiz, written, project and scenario items separately.
+        </p>
       </div>
 
       <div className="sec-head"><h2><Trophy size={16} color="var(--blue)" /> Your progress</h2><span className="line" /></div>
@@ -201,43 +270,23 @@ export default function NCoursePage() {
                 <Play size={12} /> Resume · {N_SECTION_LABEL[report.resume.section]}
               </button>
             )}
-            {report.next && (
-              <button
-                type="button"
-                className="btn small ghost"
-                onClick={() => setParams({ module: report.next!.moduleId, section: report.next!.section })}
-              >
-                Next: {modules.find((m) => m.id === report.next!.moduleId)?.title} · {N_SECTION_LABEL[report.next.section]}
-              </button>
-            )}
           </div>
         </div>
         <div style={{ marginTop: 10, maxWidth: 520 }}><Bar pct={report.pct} /></div>
 
-        <div style={{ marginTop: 12 }}>
-          <b className="small">Module-wise performance</b>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '4px 16px', marginTop: 6 }}>
-            {report.rows.map((row) => (
-              <button
-                key={row.id}
-                type="button"
-                onClick={() => setParams({ module: row.id })}
-                style={{ background: 'none', border: 0, padding: '2px 0', textAlign: 'left', cursor: 'pointer', color: 'inherit' }}
-                title={`${row.title} — ${row.done}/10 sections`}
-              >
-                <span className="row spread small" style={{ gap: 8 }}>
-                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {String(row.no).padStart(2, '0')} · {row.title}
-                  </span>
-                  <span className="muted">{row.done}/10</span>
-                </span>
-                <Bar pct={row.pct} />
-              </button>
-            ))}
-          </div>
-        </div>
-
       </div>
+
+      <details className="card" style={{ marginTop: 10 }}>
+        <summary className="small" style={{ cursor: 'pointer' }}>
+          <b>About this course</b> — description, standard and prerequisites
+        </summary>
+        <p className="small muted" style={{ margin: '8px 0 0', maxWidth: 820 }}>{course.description}</p>
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+          <span className="chip"><ShieldCheck size={12} /> {course.standard}</span>
+          {course.prerequisites.map((p) => <span key={p} className="chip">{p}</span>)}
+          <span className="chip">{course.level}</span>
+        </div>
+      </details>
 
       {revision.length > 0 && (
         <div className="card" style={{ marginTop: 10 }}>
@@ -416,84 +465,6 @@ export default function NCoursePage() {
                   ? 'no account API on this deployment — progress stays on this device'
                   : 'sign in to sync section records and written drafts across devices'}
       </p>
-
-      <div className="sec-head"><h2>Search the course</h2><span className="line" /></div>
-      <div className="card">
-        <label className="small muted" htmlFor="nc-search">Titles, explanations, tasks, debug errors and code — all 2,820 records</label>
-        <input
-          id="nc-search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Try: broadcast, ValueError, percentile, memmap"
-          style={{ width: '100%', marginTop: 4 }}
-        />
-        {query.trim().length >= 2 && (
-          hits.length ? (
-            <div style={{ marginTop: 8 }}>
-              {hits.map((hit) => (
-                <button
-                  key={hit.id}
-                  type="button"
-                  onClick={() => setParams({ module: hit.moduleId, section: hit.section })}
-                  style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, borderTop: '1px solid var(--line, #e6e8ee)', padding: '6px 0', cursor: 'pointer', color: 'inherit' }}
-                >
-                  <span className="small"><b>{hit.title}</b> <span className="muted">· {hit.label} · {hit.moduleTitle}</span></span>
-                  <span className="small muted" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hit.snippet}</span>
-                </button>
-              ))}
-              <p className="small muted" style={{ margin: '6px 0 0' }}>{hits.length} result{hits.length === 1 ? '' : 's'} shown, ranked with title matches first.</p>
-            </div>
-          ) : <p className="small muted" style={{ margin: '8px 0 0' }}>No record matches “{query.trim()}”. Try a shorter word.</p>
-        )}
-      </div>
-
-      <div className="sec-head"><h2>20 modules · 10 sections each</h2><span className="line" /></div>
-      <div className="tile-grid tile-grid-lg">
-        {modules.map((m) => {
-          const done = isModuleComplete(m.id, state.attempts);
-          const sectionsDone = N_SECTIONS.filter((s) => state.attempts[nSectionKey(m.id, s.key)]).length;
-          const bank = stats.bank.modules[m.id];
-          return (
-            <Link
-              key={m.id}
-              to={`/numpy?module=${m.id}`}
-              className={`tile tech${done ? ' on' : ''}`}
-              data-agent-action={`numpy:module:${m.id}`}
-            >
-              <span className="ic"><NLogo size={30} /></span>
-              <span className="t" style={{ flex: 1, minWidth: 0 }}>
-                <b>{String(m.no).padStart(2, '0')} · {m.title}</b>
-                <span>{m.entries} entries · {m.level} · {m.hours}h{sectionsDone ? ` · ${sectionsDone}/10 sections` : ''}</span>
-                {bank && (
-                  <span
-                    className="muted"
-                    style={{ display: 'block', marginTop: 3, fontSize: 11, lineHeight: 1.4 }}
-                    aria-label={`Module ${m.no} question bank: ${bank.total} items`}
-                  >
-                    Bank {bank.total} · {N_BANK_CATEGORY_ORDER
-                      .filter((key) => bank.categories[key])
-                      .map((key) => `${N_BANK_CATEGORY_LABEL[key] ?? key} ${bank.categories[key]}`)
-                      .join(' · ')}
-                  </span>
-                )}
-              </span>
-              <ChevronRight size={14} className="muted" />
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="card" style={{ marginTop: 10 }}>
-        <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <b className="small">Question bank — counted, not claimed</b>
-          <span className="chip">{stats.bank.total} unique items</span>
-        </div>
-        <p className="small muted" style={{ margin: '6px 0 0' }}>
-          {stats.bank.perModule} per module against a target of {stats.bank.target}: {stats.bank.shortPerModule} short
-          in each module, {stats.bank.shortfall} across the course. Each module's manifest counts concept,
-          output, coding, debugging, quiz, written, project and scenario items separately.
-        </p>
-      </div>
 
       <p className="small muted" style={{ marginTop: 10 }}>
         Every module holds all ten sections — Learn, Interview, Coding Lab, Logic, Debug, Practice
