@@ -11,7 +11,7 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 |---|---|---|---|---|---|
 | Modules | 20 | 20 | 20 | 20 | 20 |
 | Sections per module | 10 | 10 | 10 | 10 | 10 |
-| Entries published | 2,600 | 2,660 | 2,780 | 2,900 | **2,540** |
+| Entries published | 2,660 | 2,780 | 2,900 | 2,540 | **2,780** |
 | Independent coding tasks | 500 | 500 | 500 | 500 | 500 |
 | Debug challenges per module | 7 | 10 | 10 | 10 | 10 |
 | Authored interview answers per module | 0 | 0 | 3 | 6 | **9** |
@@ -41,17 +41,27 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 
 | Section | Entries | Target | Remaining |
 |---|---|---|---|
-| Learn | 240 | 1,000 | 760 |
-| Interview | 420 | 1,000 | 580 |
+| Learn | 280 | 1,000 | 720 |
+| Interview | 460 | 1,000 | 540 |
 | Coding Lab | 500 | 1,000 | 500 |
-| Logic | 240 | 1,000 | 760 |
+| Logic | 280 | 1,000 | 720 |
 | Debug | 200 | 1,000 | 800 |
-| Practice Solutions | 240 | 1,000 | 760 |
+| Practice Solutions | 280 | 1,000 | 720 |
 | Mini Project | 20 | 1,000 | 980 |
 | Project Lab | 20 | 1,000 | 980 |
 | Defense | 180 | 1,000 | 820 |
-| Checkpoint | 480 | 1,000 | 520 |
-| **Total** | **2,540** | **10,000** | **7,460** |
+| Checkpoint | 560 | 1,000 | 440 |
+| **Total** | **2,780** | **10,000** | **7,220** |
+
+### Curriculum coverage (phase 19, Part 3 of the brief)
+
+The brief's 18 module areas are mapped against the pack by `scripts/tests/numpy-coverage.test.mjs`:
+every area must name a module title, a Learn topic or a section, or the suite fails. Phase 19 also
+authored **40 new Learn topics** (two per module) in `content/numpy-mastery/deepening-8.json`, and
+`scripts/numpy-fill-outputs.cjs` executed all 40 against numpy 2.5.2 before publication — the stored
+outputs are what the runtime printed, not hand-written text. That moves the course from 2,540 to
+**2,780 entries**, Learn from 240 to 280, and each module from 127 to 139 records. The 500-per-module
+target is still open: 361 short per module, 7,220 across the course.
 
 ### Dual-level teaching (phase 18, Part 2 of the brief)
 
@@ -75,9 +85,9 @@ are listed with their gaps in `NUMPY_CURRICULUM_AUDIT.md`.
 
 ### Per module
 
-Every module ships **127 entries**: 12 Learn, 21 Interview (12 output questions + 9 authored),
-25 Coding (all independent), 12 Logic, 10 Debug, 12 Practice, 1 Mini Project, 1 Project Lab,
-9 authored Defense, 24 Checkpoint (12 quizzes, 12 written with rubrics).
+Every module ships **139 entries**: 14 Learn, 23 Interview (14 output questions + 9 authored),
+25 Coding (all independent), 14 Logic, 10 Debug, 14 Practice, 1 Mini Project, 1 Project Lab,
+9 authored Defense, 28 Checkpoint (14 quizzes, 14 written with rubrics).
 
 ## What is real today
 

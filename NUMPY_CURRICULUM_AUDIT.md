@@ -10,13 +10,13 @@ not from memory. Where the brief asks for more than the pack holds, the gap is s
 |---|---|
 | Modules | 20 (brief asks 18; the pack splits indexing/slicing, copies/memory, masked arrays into their own modules) |
 | Sections per module | 10 — Learn, Interview, Coding Lab, Logic, Debug, Practice Solutions, Mini Project, Project Lab, Defense, Checkpoint |
-| Entries per module | 127 |
-| Total entries | 2,540 |
-| Learn topics per module | 12 (brief's modules list 20–40 topics each) |
+| Entries per module | 139 |
+| Total entries | 2,780 |
+| Learn topics per module | 14 (brief's modules list 20–40 topics each) |
 | Coding tasks per module | 25, all independent, reference solutions and hidden checks executed |
 | Debug challenges per module | 10, all executed on two runtimes |
-| Interview / Defense per module | 21 / 9, disjoint from Learn bodies |
-| Checkpoint per module | 12 quizzes + 12 written short answers with 3 rubric criteria each |
+| Interview / Defense per module | 23 / 9, disjoint from Learn bodies |
+| Checkpoint per module | 14 quizzes + 14 written short answers with 3 rubric criteria each |
 | Projects per module | 1 Mini Project + 1 Project Lab |
 
 ## 2. Module mapping (brief → pack)
@@ -65,8 +65,8 @@ part of the same module page.
 | Brief item | Status | Gap |
 |---|---|---|
 | 18 modules | Covered by 20 modules | none in coverage, 2 extra modules |
-| 500 unique items per module | Not met | 127 per module; 373 short per module, 7,460 across the course |
-| 20–40 topics per module | Not met | 12 authored topics per module |
+| 500 unique items per module | Not met | 139 per module; 361 short per module, 7,220 across the course |
+| 20–40 topics per module | Not met | 14 authored topics per module (2 added in phase 19) |
 | 18 named interactive components | 4 implemented | 14 still missing (slicing, masking, axis, reshape, copy/view, RNG, missing values, linalg, performance, …) |
 | Hinglish + English toggle | Partially | course copy is English with Hinglish explanations in authored bodies; no locale switch |
 | Voice/AI tutor on the course page | Not wired | platform AI tutor exists elsewhere in the app; no NumPy-context hook yet |
