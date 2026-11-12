@@ -47,6 +47,8 @@ export default function NCoursePage() {
       <div>
         <NModuleWorkspace
           module={open}
+          modules={modules}
+          onOpen={(id) => setParams({ module: id })}
           onBack={() => {
             const p = new URLSearchParams(params);
             p.delete('module');
@@ -61,7 +63,7 @@ export default function NCoursePage() {
     <div>
       <div className="card glow fadeup">
         <div className="row spread" style={{ gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <div className="row" style={{ gap: 12, minWidth: 260 }}>
+          <div className="row" style={{ gap: 12, minWidth: 'min(260px, 100%)' }}>
             <span className="cc-logo"><NLogo size={64} /></span>
             <div style={{ minWidth: 0 }}>
               <div className="chip" style={{ marginBottom: 6 }}><GraduationCap size={12} /> NUMPY MASTERY</div>
@@ -73,6 +75,8 @@ export default function NCoursePage() {
             <span className="chip"><BookOpen size={12} /> {stats.modules} modules</span>
             <span className="chip"><Target size={12} /> {stats.entries} entries</span>
             <span className="chip"><Trophy size={12} /> {progress.pct}% complete</span>
+            <span className="chip">{progress.modulesDone}/{progress.modulesTotal} modules done</span>
+            <span className="chip">{modules.reduce((a, m) => a + (m.hours || 0), 0)}h total</span>
             <span className="chip">{course.level}</span>
           </div>
         </div>

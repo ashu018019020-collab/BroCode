@@ -53,6 +53,23 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Course UI (phase 25, Part 9 of the brief)
+
+The overview now states what the brief asks for in one place: entry count, completion percentage,
+**completed modules out of twenty**, **total authored hours**, level, prerequisites and the course
+standard, then outcomes, the twenty module tiles with per-module section progress, and the counted
+question bank. The recommended next module/section is computed from real attempts, so "Continue
+learning" names an untouched module rather than always module one.
+
+Inside a module: header with ring and level toggle, ten section cards with live counts and `✓`, the
+50/50 workspace, the ten tools, and now **previous/next module navigation** that carries the module
+number and title. The audit's remaining responsive risk (`minWidth: 260` on the course header) is
+gone — it is `min(260px, 100%)` now, so 320px screens no longer overflow.
+
+Still not done from the brief's UI section: a module-tree sidebar (the section cards are the
+navigation), skeleton states inside a module, and a persistence check across a real browser
+click-through (the app requires an account, so the UI is verified as shipped bytes + tests).
+
 ### AI tutor integration (phase 24, Part 8 of the brief)
 
 The course does not add an assistant. The module page publishes a **scoped tutor** through the same

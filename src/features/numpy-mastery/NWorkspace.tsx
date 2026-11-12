@@ -465,7 +465,9 @@ function TopicCard({ entry, level }: { entry: NEntry; level: 'simple' | 'pro' })
  * half is the Code Bro cell that runs it. Both halves are 50% of the row, and on a phone they stack
  * instead of overflowing.
  */
-export function NModuleWorkspace({ module, onBack }: { module: NModule; onBack: () => void }) {
+export function NModuleWorkspace({
+  module, modules = [], onOpen, onBack,
+}: { module: NModule; modules?: NModule[]; onOpen?: (id: string) => void; onBack: () => void }) {
   const state = useStore();
   const [section, setSection] = useState<NSectionKey>('learn');
   const entries = module.sections[section] ?? [];
@@ -617,6 +619,35 @@ export function NModuleWorkspace({ module, onBack }: { module: NModule; onBack: 
       </div>
 
       <NTools />
+
+      {(() => {
+        const at = modules.findIndex((m) => m.id === module.id);
+        const prev = at > 0 ? modules[at - 1] : null;
+        const next = at >= 0 && at < modules.length - 1 ? modules[at + 1] : null;
+        if (!onOpen || (!prev && !next)) return null;
+        return (
+          <div className="row spread" style={{ gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn small ghost"
+              disabled={!prev}
+              onClick={() => prev && onOpen(prev.id)}
+              title={prev ? prev.title : 'First module'}
+            >
+              <ChevronLeft size={12} /> {prev ? `${String(prev.no).padStart(2, '0')} · ${prev.title}` : 'First module'}
+            </button>
+            <button
+              type="button"
+              className="btn small primary"
+              disabled={!next}
+              onClick={() => next && onOpen(next.id)}
+              title={next ? next.title : 'Last module'}
+            >
+              {next ? `${String(next.no).padStart(2, '0')} · ${next.title}` : 'Last module'} <ChevronRight size={12} />
+            </button>
+          </div>
+        );
+      })()}
     </div>
   );
 }
