@@ -42,6 +42,29 @@ test('every structured entry covers the authored parts with real text', () => {
   }
 });
 
+test('every newly added topic carries the full lesson shape', () => {
+  const deepening = readJSON('content/numpy-mastery/deepening-10.json');
+  let total = 0;
+  for (const [moduleId, { topics }] of Object.entries(deepening)) {
+    const mod = artifact.modules.find((m) => m.id === moduleId);
+    assert.ok(mod, `deepening names an unknown module ${moduleId}`);
+    for (const topic of topics) {
+      const title = topic.title || topic;
+      const entry = mod.sections.learn.find((e) => e.title === title);
+      assert.ok(entry, `${moduleId}: new topic "${title}" is missing from the artifact`);
+      assert.ok(entry.syntax && entry.syntax.trim().length > 3, `${moduleId}: "${title}" has no syntax line`);
+      assert.ok(Array.isArray(entry.steps) && entry.steps.length >= 3, `${moduleId}: "${title}" has fewer than three steps`);
+      for (const step of entry.steps) assert.ok(step.trim().length > 10, `${moduleId}: "${title}" has an empty step`);
+      assert.ok(entry.visual && entry.visual.trim().length > 10, `${moduleId}: "${title}" has no visual`);
+      assert.ok(entry.realWorld && entry.realWorld.trim().length > 20, `${moduleId}: "${title}" has no real-world use`);
+      assert.ok(Array.isArray(entry.mistakes) && entry.mistakes.length >= 1, `${moduleId}: "${title}" has no common mistakes`);
+      assert.ok(Array.isArray(entry.revision) && entry.revision.length >= 2, `${moduleId}: "${title}" has no revision points`);
+      total++;
+    }
+  }
+  assert.equal(total, 108, 'the new-topic ledger changed; extend the lesson shape with it');
+});
+
 test('the two gatekeeping parts (practice and mastery) really exist as sections', () => {
   for (const m of artifact.modules) {
     assert.ok(m.sections.practice.length > 0, `${m.id}: no Practice section`);
