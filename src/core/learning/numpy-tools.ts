@@ -285,6 +285,39 @@ export function reshapePlan(size: number, rows: number, cols: number): ReshapePl
   return { ok: true, before, after: [r, c], totalsMatch: r * c === size, error: null };
 }
 
+export type SharingOp = 'slice' | 'copy' | 'fancy' | 'reshape' | 'transpose' | 'ravel' | 'flatten' | 'reverse';
+
+export interface SharingResult {
+  op: SharingOp;
+  label: string;
+  shares: boolean;
+  kind: 'view' | 'copy';
+  why: string;
+}
+
+/**
+ * Copy versus view, as numpy decides it: a basic slice, a reshape, a transpose, ravel and a reversed
+ * slice all hand back a view of the same buffer, while `.copy()`, fancy indexing and `flatten()`
+ * allocate a new one. The tool prints these rules; `numpy-tools.test.mjs` checks every flag against a
+ * real `np.shares_memory` call, so the panel cannot drift from the library.
+ */
+const SHARING: Record<SharingOp, Omit<SharingResult, 'op'>> = {
+  slice: { label: 'a[1:4]', shares: true, kind: 'view', why: 'A basic slice only changes the offset and length, so it reads the same buffer.' },
+  copy: { label: 'a[1:4].copy()', shares: false, kind: 'copy', why: 'An explicit copy allocates a new buffer, so later writes stay local.' },
+  fancy: { label: 'a[[1, 2]]', shares: false, kind: 'copy', why: 'Advanced (list) indexing gathers values into a new array; it cannot be a view.' },
+  reshape: { label: 'a.reshape(2, 3)', shares: true, kind: 'view', why: 'A contiguous array can be reinterpreted with new strides, so reshape reuses the buffer.' },
+  transpose: { label: 'a.reshape(2, 3).T', shares: true, kind: 'view', why: 'Transpose swaps the strides; no value moves, so both names see the same memory.' },
+  ravel: { label: 'a.reshape(2, 3).ravel()', shares: true, kind: 'view', why: 'ravel flattens in place when the layout allows it, which a C-contiguous block does.' },
+  flatten: { label: 'a.reshape(2, 3).flatten()', shares: false, kind: 'copy', why: 'flatten always allocates a flat copy, which is why it is safe to mutate.' },
+  reverse: { label: 'a[::-1]', shares: true, kind: 'view', why: 'A negative step negates the stride, so the reversed array still reads the original buffer.' },
+};
+
+export const SHARING_OPS: SharingOp[] = ['slice', 'copy', 'fancy', 'reshape', 'transpose', 'ravel', 'flatten', 'reverse'];
+
+export function sharingOutcome(op: SharingOp): SharingResult {
+  return { op, ...SHARING[op] };
+}
+
 /** Bytes per element for the dtypes the course teaches; `null` for one it does not. */
 export const DTYPE_BYTES: Record<string, number> = {
   bool: 1, int8: 1, int16: 2, int32: 4, int64: 8,

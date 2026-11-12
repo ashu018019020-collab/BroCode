@@ -187,3 +187,38 @@ test('axis and reshape results equal a real numpy run', () => {
   assert.deepEqual(tools.reshapePlan(6, -1, 3).after, np.reshape);
   assert.deepEqual(tools.reshapeGrid(...tools.reshapePlan(6, -1, 3).after), np.reshapeValues);
 });
+
+test('sharingOutcome marks views and copies correctly', () => {
+  assert.equal(tools.sharingOutcome('slice').kind, 'view');
+  assert.equal(tools.sharingOutcome('copy').kind, 'copy');
+  assert.equal(tools.sharingOutcome('fancy').shares, false);
+  assert.equal(tools.sharingOutcome('reshape').shares, true);
+  assert.equal(tools.sharingOutcome('flatten').shares, false);
+  for (const op of tools.SHARING_OPS) {
+    const result = tools.sharingOutcome(op);
+    assert.equal(result.shares, result.kind === 'view', `${op}: shares and kind disagree`);
+    assert.ok(result.label && result.why.length > 20, `${op}: needs a snippet and a real reason`);
+  }
+});
+
+test('copy-versus-view flags equal numpy shares_memory', () => {
+  const probe = spawnSync('python3', ['-c', [
+    'import json, numpy as np',
+    'a = np.arange(6)',
+    'cases = {',
+    '  "slice": a[1:4], "copy": a[1:4].copy(), "fancy": a[[1, 2]],',
+    '  "reshape": a.reshape(2, 3), "transpose": a.reshape(2, 3).T,',
+    '  "ravel": a.reshape(2, 3).ravel(), "flatten": a.reshape(2, 3).flatten(),',
+    '  "reverse": a[::-1]',
+    '}',
+    'print(json.dumps({k: bool(np.shares_memory(a, v)) for k, v in cases.items()}))',
+  ].join('\n')], { encoding: 'utf8' });
+  if (probe.status !== 0) {
+    console.log('numpy-not-available: sharing flags checked against recorded rules only');
+    return;
+  }
+  const np = JSON.parse(probe.stdout);
+  for (const [op, shares] of Object.entries(np)) {
+    assert.equal(tools.sharingOutcome(op).shares, shares, `${op}: JS says ${!shares}, numpy says ${shares}`);
+  }
+});

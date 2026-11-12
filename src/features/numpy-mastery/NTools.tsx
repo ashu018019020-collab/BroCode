@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { BarChart3, Grid3x3, Layers, Sigma } from 'lucide-react';
+import { BarChart3, Copy, Grid3x3, Layers, Sigma } from 'lucide-react';
 import {
   axisReduce, broadcastShape, dtypeMemory, DTYPE_BYTES, gridShape, maskFilter, matmul, missingSummary,
-  parseMatrix, parseShape, percentile, reshapeGrid, reshapePlan, shapeSize, shapeStrides, sliceIndices,
+  parseMatrix, parseShape, percentile, reshapeGrid, reshapePlan, sharingOutcome, SHARING_OPS, shapeSize,
+  shapeStrides, sliceIndices, type SharingOp,
   statsSummary, transpose, uniformSamples, type CompareOp, type Shape,
 } from '../../core/learning/numpy-tools';
 
@@ -312,6 +313,61 @@ function ReshapeExplorer() {
   );
 }
 
+/**
+ * Copy versus view, with the write-through experiment the rule predicts.
+ *
+ * `sharingOutcome` decides whether the derived array shares the buffer; the panel then shows what
+ * happens to the source when the first element of the result is overwritten. A view changes the
+ * source, a copy cannot — the distinction learners get wrong most often.
+ */
+const DERIVED_SOURCE_INDEX: Record<SharingOp, number | null> = {
+  slice: 1, copy: null, fancy: null, reshape: 0, transpose: 0, ravel: 0, flatten: null, reverse: 5,
+};
+
+function CopyViewExplorer() {
+  const [op, setOp] = useState<SharingOp>('slice');
+  const result = sharingOutcome(op);
+  const source = [0, 1, 2, 3, 4, 5];
+  const after = [...source];
+  const hit = DERIVED_SOURCE_INDEX[op];
+  if (hit !== null) after[hit] = 99;
+  return (
+    <div>
+      <div className="row" style={{ gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+        {SHARING_OPS.map((key) => (
+          <button
+            key={key}
+            type="button"
+            className={`chip${op === key ? ' easy' : ''}`}
+            style={{ cursor: 'pointer', fontFamily: 'ui-monospace, monospace' }}
+            onClick={() => setOp(key)}
+            aria-pressed={op === key}
+          >
+            {sharingOutcome(key).label}
+          </button>
+        ))}
+      </div>
+      <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span className={`chip ${result.kind === 'view' ? 'hard' : 'easy'}`}>{result.kind === 'view' ? 'view · shares memory' : 'copy · own buffer'}</span>
+        <span className="small muted">{result.shares ? 'writes reach the source' : 'writes stay local'}</span>
+      </div>
+      <p className="small" style={{ margin: '8px 0 0' }}>{result.why}</p>
+      <pre className="codeblock" style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{`a = np.arange(6)
+b = ${result.label}
+b[0] = 99`}</pre>
+      <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+        <Cell label="a before" value={`[${source.join(' ')}]`} />
+        <Cell label="a after b[0] = 99" value={`[${after.join(' ')}]`} />
+      </div>
+      <p className="small muted" style={{ margin: '8px 0 0' }}>
+        {result.shares
+          ? 'Same buffer, so the source changed. Copy first if the original must stay intact.'
+          : 'A separate buffer, so the source is untouched. This is the safe choice before mutating a selection.'}
+      </p>
+    </div>
+  );
+}
+
 function AxisExplorer() {
   const [rows, setRows] = useState('3');
   const [cols, setCols] = useState('4');
@@ -439,6 +495,7 @@ const TOOLS = [
   { key: 'slice', label: 'Slicing', icon: Grid3x3, render: () => <SlicingExplorer /> },
   { key: 'mask', label: 'Boolean mask', icon: Layers, render: () => <MaskExplorer /> },
   { key: 'axis', label: 'Axis explorer', icon: Layers, render: () => <AxisExplorer /> },
+  { key: 'sharing', label: 'Copy vs view', icon: Copy, render: () => <CopyViewExplorer /> },
   { key: 'reshape', label: 'Reshape', icon: Grid3x3, render: () => <ReshapeExplorer /> },
   { key: 'stats', label: 'Statistics', icon: Sigma, render: () => <StatisticsPlayground /> },
   { key: 'matrix', label: 'Matrix lab', icon: BarChart3, render: () => <MatrixLab /> },

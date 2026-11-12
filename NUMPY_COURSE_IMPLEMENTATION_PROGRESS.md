@@ -62,6 +62,17 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Copy-versus-view experiment (phase 44)
+
+The tools panel gains a **Copy vs view** tab next to the existing axis explorer. `sharingOutcome` in
+`core/learning/numpy-tools.ts` encodes the eight cases learners meet — basic slice, `.copy()`, fancy
+indexing, reshape, transpose, `ravel`, `flatten` and a reversed slice — with the snippet, the
+view/copy verdict and the reason. Selecting a case shows the predicted source array after
+`b[0] = 99`, so the write-through consequence is visible instead of asserted.
+
+The parity test runs the same eight expressions through real NumPy and compares every flag with
+`np.shares_memory`; it skips only when numpy is absent from the machine, as the other NumPy probes do.
+
 ### Twenty Learn topics per module (phase 43)
 
 `deepening-10.json` adds six executed topics to each of the eighteen modules below twenty (the two
