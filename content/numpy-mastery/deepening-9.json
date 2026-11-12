@@ -1,0 +1,100 @@
+{
+  "n15": {
+    "topics": [
+      {
+        "title": "SVD splits a matrix into three",
+        "body": "`np.linalg.svd` factors any matrix into `U @ diag(s) @ Vt`, where `s` holds the singular values in descending order. The number of non-zero singular values is the rank, and keeping only the largest ones is how compression and low-rank approximations work.",
+        "code": "import numpy as np\nA = np.array([[3.0, 0.0], [0.0, 4.0]])\nU, s, Vt = np.linalg.svd(A)\nprint(s.round(2))\nprint(np.allclose(U @ np.diag(s) @ Vt, A))",
+        "output": "[4. 3.]\nTrue"
+      },
+      {
+        "title": "Eigenvalues and eigenvectors together",
+        "body": "`np.linalg.eigh` is the symmetric-matrix form of eig: it returns real eigenvalues in ascending order and orthonormal eigenvectors as columns. An eigenvector only gets scaled by its eigenvalue, so `A @ v == value * v` is the identity to verify.",
+        "code": "import numpy as np\nA = np.array([[2.0, 1.0], [1.0, 2.0]])\nvalues, vectors = np.linalg.eigh(A)\nprint(values.round(2))\nprint(np.allclose(A @ vectors, vectors * values))",
+        "output": "[1. 3.]\nTrue"
+      },
+      {
+        "title": "QR decomposition as two factors",
+        "body": "`np.linalg.qr` writes a matrix as `Q @ R`: `Q` has orthonormal columns and `R` is upper triangular. Least-squares solvers use this shape because solving with a triangular matrix is cheap and stable.",
+        "code": "import numpy as np\nA = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nQ, R = np.linalg.qr(A)\nprint(Q.shape, R.shape)\nprint(np.allclose(Q @ R, A), np.allclose(R, np.triu(R)))",
+        "output": "(3, 2) (2, 2)\nTrue True"
+      },
+      {
+        "title": "Cholesky for positive definite matrices",
+        "body": "When a symmetric matrix is positive definite, `np.linalg.cholesky` gives a lower-triangular `L` with `A == L @ L.T`. It is roughly twice as fast as a general decomposition and is the standard way to sample correlated random variables.",
+        "code": "import numpy as np\nA = np.array([[4.0, 2.0], [2.0, 3.0]])\nL = np.linalg.cholesky(A)\nprint(L.round(3).tolist())\nprint(np.allclose(L @ L.T, A))",
+        "output": "[[2.0, 0.0], [1.0, 1.414]]\nTrue"
+      },
+      {
+        "title": "The pseudo-inverse for singular matrices",
+        "body": "A singular matrix has no true inverse, but `np.linalg.pinv` still returns the Moore-Penrose pseudo-inverse. It satisfies `A @ P @ A == A`, which is the property to check instead of expecting `A @ P` to be the identity.",
+        "code": "import numpy as np\nA = np.array([[1.0, 2.0], [2.0, 4.0]])\nP = np.linalg.pinv(A)\nprint(P.shape)\nprint(np.linalg.matrix_rank(A))\nprint(np.allclose(A @ P @ A, A))",
+        "output": "(2, 2)\n1\nTrue"
+      },
+      {
+        "title": "Determinant by sign and log",
+        "body": "`np.linalg.slogdet` returns the sign and the log of the absolute determinant, avoiding the overflow that a direct determinant hits on large matrices. Rebuild the determinant with `sign * np.exp(logdet)`.",
+        "code": "import numpy as np\nsign, logdet = np.linalg.slogdet(np.array([[1.0, 2.0], [3.0, 4.0]]))\nprint(int(sign), round(float(logdet), 3))\nprint(round(float(sign * np.exp(logdet)), 3))",
+        "output": "-1 0.693\n-2.0"
+      },
+      {
+        "title": "Matrix powers repeat multiplication",
+        "body": "`np.linalg.matrix_power(A, n)` multiplies `A` by itself `n` times without a Python loop, and `n=0` returns the identity. It is the tool for stepping a transition matrix forward.",
+        "code": "import numpy as np\nA = np.array([[1, 1], [0, 1]])\nprint(np.linalg.matrix_power(A, 3).tolist())\nprint(np.linalg.matrix_power(A, 0).tolist())",
+        "output": "[[1, 3], [0, 1]]\n[[1, 0], [0, 1]]"
+      },
+      {
+        "title": "Least squares returns residuals and rank",
+        "body": "`np.linalg.lstsq` solves overdetermined systems and reports residuals, rank and singular values. With a column of ones in the design matrix it fits an intercept, and the residuals say how far the noisy data sits from the best line.",
+        "code": "import numpy as np\nx = np.array([0.0, 1.0, 2.0, 3.0])\ny = np.array([1.0, 3.1, 4.8, 7.2])\ndesign = np.column_stack([x, np.ones_like(x)])\ncoeffs, residuals, rank, singular = np.linalg.lstsq(design, y, rcond=None)\nprint(coeffs.round(3))\nprint(rank, residuals.round(4).tolist())",
+        "output": "[2.03 0.98]\n2 [0.083]"
+      }
+    ]
+  },
+  "n16": {
+    "topics": [
+      {
+        "title": "genfromtxt types a whole table",
+        "body": "`np.genfromtxt` can name the columns and convert each one with an explicit dtype, so a CSV arrives as a structured array with text and numbers in the right fields instead of one string dtype.",
+        "code": "import numpy as np\nwith open('crew.csv', 'w') as f:\n    f.write('name,score\\nada,9\\nbob,7\\n')\ndata = np.genfromtxt('crew.csv', delimiter=',', names=True, dtype=None, encoding='utf-8')\nprint(data.dtype.names)\nprint(int(data['score'].sum()))",
+        "output": "('name', 'score')\n16"
+      },
+      {
+        "title": "memmap writes through to disk",
+        "body": "A memory map opened with `mode='r+'` is a writable view of the file: assignments change the page cache and `flush()` writes them back. The array is never fully loaded, so a huge file can be edited in place.",
+        "code": "import numpy as np\nnp.arange(6, dtype=np.float64).tofile('raw.bin')\nmapped = np.memmap('raw.bin', dtype=np.float64, mode='r+', shape=(2, 3))\nmapped[0, 0] = 99.0\nmapped.flush()\nprint(np.fromfile('raw.bin', dtype=np.float64).reshape(2, 3)[0].tolist())",
+        "output": "[99.0, 1.0, 2.0]"
+      },
+      {
+        "title": "savez_compressed shrinks an archive",
+        "body": "`np.savez_compressed` stores arrays in one zip archive with deflate compression. It is slower to write than `savez` but much smaller for repetitive data, and `np.load` reads it with the same keyed access.",
+        "code": "import numpy as np\nnp.savez_compressed('packed.npz', a=np.arange(1000), b=np.ones(3))\nwith np.load('packed.npz') as archive:\n    print(sorted(archive.files))\n    print(int(archive['a'].sum()))",
+        "output": "['a', 'b']\n499500"
+      },
+      {
+        "title": "loadtxt with selected columns",
+        "body": "`usecols` reads only the columns you name, in the order you name them, without parsing the rest. That is how a wide CSV becomes a small numeric array at load time.",
+        "code": "import numpy as np\nwith open('table.csv', 'w') as f:\n    f.write('1,2,3\\n4,5,6\\n')\ncols = np.loadtxt('table.csv', delimiter=',', usecols=(0, 2))\nprint(cols.tolist())",
+        "output": "[[1.0, 3.0], [4.0, 6.0]]"
+      },
+      {
+        "title": "savetxt with a format string",
+        "body": "`fmt` controls how each value is written, so `%.2f` stores two decimals instead of the full float repr. It is the difference between a file a human can read and one that only round-trips approximately.",
+        "code": "import numpy as np\nnp.savetxt('fmt.txt', np.array([[1.2345]]), fmt='%.2f')\nprint(open('fmt.txt').read().strip())",
+        "output": "1.23"
+      },
+      {
+        "title": "tofile and fromfile for raw binary",
+        "body": "`tofile` writes the buffer with no header at all and `fromfile` reads it back by dtype, so you must remember the dtype and shape yourself. It is the fastest interchange format when you control both ends.",
+        "code": "import numpy as np\nnp.array([1.5, 2.5], dtype=np.float32).tofile('floats.bin')\nback = np.fromfile('floats.bin', dtype=np.float32)\nprint(back.dtype, back.tolist())",
+        "output": "float32 [1.5, 2.5]"
+      },
+      {
+        "title": "load refuses pickled objects",
+        "body": "A `.npy` file holding an object array needs pickle to rebuild it, and unpickling untrusted data can run code. `np.load(..., allow_pickle=False)` refuses such files, which is why numeric arrays should stay numeric.",
+        "code": "import numpy as np\nnp.save('obj.npy', np.array([{'a': 1}], dtype=object))\ntry:\n    np.load('obj.npy', allow_pickle=False)\n    print('loaded')\nexcept ValueError:\n    print('refused without allow_pickle')\nprint(list(np.load('obj.npy', allow_pickle=True)[0].keys()))",
+        "output": "refused without allow_pickle\n['a']"
+      }
+    ]
+  }
+}

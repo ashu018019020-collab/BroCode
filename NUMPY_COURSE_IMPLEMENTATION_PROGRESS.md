@@ -62,6 +62,22 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Linear algebra and file I/O depth (phase 41)
+
+`deepening-9.json` adds fifteen executed topics to the two thinnest advanced modules:
+
+- **Linear algebra (n15, 14 → 22):** SVD (`U @ diag(s) @ Vt` reconstruction), symmetric eig via
+  `eigh` (real values, verified `A @ v == value * v`), QR (orthonormal `Q`, upper-triangular `R`,
+  reconstruction), Cholesky (`L @ L.T == A`), pseudo-inverse (`A @ P @ A == A`, rank 1 input),
+  `slogdet` (sign plus log-determinant, rebuilt), `matrix_power` (A³ and the identity at power 0), and
+  `lstsq` with an intercept column (coefficients, rank and residuals).
+- **File I/O (n16, 14 → 21):** `genfromtxt` with named, typed columns, a writable `memmap` that flushes
+  through to disk, `savez_compressed` (keys and sum), `loadtxt` with `usecols`, `savetxt` with
+  `fmt='%.2f'`, `tofile`/`fromfile` raw binary, and `allow_pickle=False` refusing an object array.
+
+Every sample was executed by `numpy-fill-outputs.cjs` against numpy 2.5.2; the printed output above is
+the real stdout. Course totals move to **295 Learn topics and 3,410 entries**.
+
 ### Coverage command (phase 40)
 
 `npm run numpy:coverage` prints what every module actually teaches, read from the published artifact

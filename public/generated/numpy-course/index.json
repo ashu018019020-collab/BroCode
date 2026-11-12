@@ -51,27 +51,27 @@
  },
  "stats": {
   "modules": 20,
-  "entries": 3320,
+  "entries": 3410,
   "bySection": {
-   "Learn": 280,
-   "Interview": 500,
+   "Learn": 295,
+   "Interview": 515,
    "Coding Lab": 800,
-   "Logic": 280,
+   "Logic": 295,
    "Debug": 200,
-   "Practice Solutions": 280,
+   "Practice Solutions": 295,
    "Mini Project": 20,
    "Project Lab": 20,
    "Defense": 180,
-   "Checkpoint": 760
+   "Checkpoint": 790
   },
   "targetPerSection": 50,
   "targetTotal": 10000,
   "bank": {
-   "total": 3320,
+   "total": 3410,
    "target": 500,
-   "perModule": 166,
-   "shortPerModule": 334,
-   "shortfall": 6680,
+   "perModule": 171,
+   "shortPerModule": 329,
+   "shortfall": 6590,
    "modules": {
     "n01": {
      "total": 166,
@@ -326,39 +326,39 @@
      }
     },
     "n15": {
-     "total": 166,
+     "total": 214,
      "categories": {
       "concept": 20,
-      "output": 47,
+      "output": 71,
       "coding": 40,
       "debugging": 10,
-      "quiz": 19,
-      "written": 14,
+      "quiz": 27,
+      "written": 22,
       "project": 2,
       "scenario": 2
      },
      "difficulty": {
-      "easy": 50,
-      "medium": 73,
-      "hard": 43
+      "easy": 61,
+      "medium": 98,
+      "hard": 55
      }
     },
     "n16": {
-     "total": 166,
+     "total": 208,
      "categories": {
       "concept": 20,
-      "output": 47,
+      "output": 68,
       "coding": 40,
       "debugging": 10,
-      "quiz": 19,
-      "written": 14,
+      "quiz": 26,
+      "written": 21,
       "project": 2,
       "scenario": 2
      },
      "difficulty": {
-      "easy": 50,
-      "medium": 73,
-      "hard": 43
+      "easy": 58,
+      "medium": 96,
+      "hard": 54
      }
     },
     "n17": {
@@ -32114,6 +32114,54 @@
      "body": "np.linalg.solve(A, b) solves Ax = b directly and is more stable and faster than computing inv(A) @ b. Inversion also loses accuracy on ill-conditioned matrices.",
      "code": "import numpy as np\na = np.array([[3.0, 1.0], [1.0, 2.0]])\nb = np.array([9.0, 8.0])\nprint(np.linalg.solve(a, b))\nprint(np.linalg.det(a))",
      "output": "[2. 3.]\n5.000000000000001"
+    },
+    {
+     "title": "SVD splits a matrix into three",
+     "body": "`np.linalg.svd` factors any matrix into `U @ diag(s) @ Vt`, where `s` holds the singular values in descending order. The number of non-zero singular values is the rank, and keeping only the largest ones is how compression and low-rank approximations work.",
+     "code": "import numpy as np\nA = np.array([[3.0, 0.0], [0.0, 4.0]])\nU, s, Vt = np.linalg.svd(A)\nprint(s.round(2))\nprint(np.allclose(U @ np.diag(s) @ Vt, A))",
+     "output": "[4. 3.]\nTrue"
+    },
+    {
+     "title": "Eigenvalues and eigenvectors together",
+     "body": "`np.linalg.eigh` is the symmetric-matrix form of eig: it returns real eigenvalues in ascending order and orthonormal eigenvectors as columns. An eigenvector only gets scaled by its eigenvalue, so `A @ v == value * v` is the identity to verify.",
+     "code": "import numpy as np\nA = np.array([[2.0, 1.0], [1.0, 2.0]])\nvalues, vectors = np.linalg.eigh(A)\nprint(values.round(2))\nprint(np.allclose(A @ vectors, vectors * values))",
+     "output": "[1. 3.]\nTrue"
+    },
+    {
+     "title": "QR decomposition as two factors",
+     "body": "`np.linalg.qr` writes a matrix as `Q @ R`: `Q` has orthonormal columns and `R` is upper triangular. Least-squares solvers use this shape because solving with a triangular matrix is cheap and stable.",
+     "code": "import numpy as np\nA = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nQ, R = np.linalg.qr(A)\nprint(Q.shape, R.shape)\nprint(np.allclose(Q @ R, A), np.allclose(R, np.triu(R)))",
+     "output": "(3, 2) (2, 2)\nTrue True"
+    },
+    {
+     "title": "Cholesky for positive definite matrices",
+     "body": "When a symmetric matrix is positive definite, `np.linalg.cholesky` gives a lower-triangular `L` with `A == L @ L.T`. It is roughly twice as fast as a general decomposition and is the standard way to sample correlated random variables.",
+     "code": "import numpy as np\nA = np.array([[4.0, 2.0], [2.0, 3.0]])\nL = np.linalg.cholesky(A)\nprint(L.round(3).tolist())\nprint(np.allclose(L @ L.T, A))",
+     "output": "[[2.0, 0.0], [1.0, 1.414]]\nTrue"
+    },
+    {
+     "title": "The pseudo-inverse for singular matrices",
+     "body": "A singular matrix has no true inverse, but `np.linalg.pinv` still returns the Moore-Penrose pseudo-inverse. It satisfies `A @ P @ A == A`, which is the property to check instead of expecting `A @ P` to be the identity.",
+     "code": "import numpy as np\nA = np.array([[1.0, 2.0], [2.0, 4.0]])\nP = np.linalg.pinv(A)\nprint(P.shape)\nprint(np.linalg.matrix_rank(A))\nprint(np.allclose(A @ P @ A, A))",
+     "output": "(2, 2)\n1\nTrue"
+    },
+    {
+     "title": "Determinant by sign and log",
+     "body": "`np.linalg.slogdet` returns the sign and the log of the absolute determinant, avoiding the overflow that a direct determinant hits on large matrices. Rebuild the determinant with `sign * np.exp(logdet)`.",
+     "code": "import numpy as np\nsign, logdet = np.linalg.slogdet(np.array([[1.0, 2.0], [3.0, 4.0]]))\nprint(int(sign), round(float(logdet), 3))\nprint(round(float(sign * np.exp(logdet)), 3))",
+     "output": "-1 0.693\n-2.0"
+    },
+    {
+     "title": "Matrix powers repeat multiplication",
+     "body": "`np.linalg.matrix_power(A, n)` multiplies `A` by itself `n` times without a Python loop, and `n=0` returns the identity. It is the tool for stepping a transition matrix forward.",
+     "code": "import numpy as np\nA = np.array([[1, 1], [0, 1]])\nprint(np.linalg.matrix_power(A, 3).tolist())\nprint(np.linalg.matrix_power(A, 0).tolist())",
+     "output": "[[1, 3], [0, 1]]\n[[1, 0], [0, 1]]"
+    },
+    {
+     "title": "Least squares returns residuals and rank",
+     "body": "`np.linalg.lstsq` solves overdetermined systems and reports residuals, rank and singular values. With a column of ones in the design matrix it fits an intercept, and the residuals say how far the noisy data sits from the best line.",
+     "code": "import numpy as np\nx = np.array([0.0, 1.0, 2.0, 3.0])\ny = np.array([1.0, 3.1, 4.8, 7.2])\ndesign = np.column_stack([x, np.ones_like(x)])\ncoeffs, residuals, rank, singular = np.linalg.lstsq(design, y, rcond=None)\nprint(coeffs.round(3))\nprint(rank, residuals.round(4).tolist())",
+     "output": "[2.03 0.98]\n2 [0.083]"
     }
    ],
    "debug": [
@@ -32697,6 +32745,70 @@
       "code": "import numpy as np\na = np.array([[3.0, 1.0], [1.0, 2.0]])\nb = np.array([9.0, 8.0])\nprint(np.linalg.solve(a, b))\nprint(np.linalg.det(a))",
       "output": "[2. 3.]\n5.000000000000001",
       "difficulty": "medium"
+     },
+     {
+      "id": "n15:learn:14",
+      "title": "SVD splits a matrix into three",
+      "body": "`np.linalg.svd` factors any matrix into `U @ diag(s) @ Vt`, where `s` holds the singular values in descending order. The number of non-zero singular values is the rank, and keeping only the largest ones is how compression and low-rank approximations work.",
+      "code": "import numpy as np\nA = np.array([[3.0, 0.0], [0.0, 4.0]])\nU, s, Vt = np.linalg.svd(A)\nprint(s.round(2))\nprint(np.allclose(U @ np.diag(s) @ Vt, A))",
+      "output": "[4. 3.]\nTrue",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:learn:15",
+      "title": "Eigenvalues and eigenvectors together",
+      "body": "`np.linalg.eigh` is the symmetric-matrix form of eig: it returns real eigenvalues in ascending order and orthonormal eigenvectors as columns. An eigenvector only gets scaled by its eigenvalue, so `A @ v == value * v` is the identity to verify.",
+      "code": "import numpy as np\nA = np.array([[2.0, 1.0], [1.0, 2.0]])\nvalues, vectors = np.linalg.eigh(A)\nprint(values.round(2))\nprint(np.allclose(A @ vectors, vectors * values))",
+      "output": "[1. 3.]\nTrue",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n15:learn:16",
+      "title": "QR decomposition as two factors",
+      "body": "`np.linalg.qr` writes a matrix as `Q @ R`: `Q` has orthonormal columns and `R` is upper triangular. Least-squares solvers use this shape because solving with a triangular matrix is cheap and stable.",
+      "code": "import numpy as np\nA = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nQ, R = np.linalg.qr(A)\nprint(Q.shape, R.shape)\nprint(np.allclose(Q @ R, A), np.allclose(R, np.triu(R)))",
+      "output": "(3, 2) (2, 2)\nTrue True",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:learn:17",
+      "title": "Cholesky for positive definite matrices",
+      "body": "When a symmetric matrix is positive definite, `np.linalg.cholesky` gives a lower-triangular `L` with `A == L @ L.T`. It is roughly twice as fast as a general decomposition and is the standard way to sample correlated random variables.",
+      "code": "import numpy as np\nA = np.array([[4.0, 2.0], [2.0, 3.0]])\nL = np.linalg.cholesky(A)\nprint(L.round(3).tolist())\nprint(np.allclose(L @ L.T, A))",
+      "output": "[[2.0, 0.0], [1.0, 1.414]]\nTrue",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:learn:18",
+      "title": "The pseudo-inverse for singular matrices",
+      "body": "A singular matrix has no true inverse, but `np.linalg.pinv` still returns the Moore-Penrose pseudo-inverse. It satisfies `A @ P @ A == A`, which is the property to check instead of expecting `A @ P` to be the identity.",
+      "code": "import numpy as np\nA = np.array([[1.0, 2.0], [2.0, 4.0]])\nP = np.linalg.pinv(A)\nprint(P.shape)\nprint(np.linalg.matrix_rank(A))\nprint(np.allclose(A @ P @ A, A))",
+      "output": "(2, 2)\n1\nTrue",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n15:learn:19",
+      "title": "Determinant by sign and log",
+      "body": "`np.linalg.slogdet` returns the sign and the log of the absolute determinant, avoiding the overflow that a direct determinant hits on large matrices. Rebuild the determinant with `sign * np.exp(logdet)`.",
+      "code": "import numpy as np\nsign, logdet = np.linalg.slogdet(np.array([[1.0, 2.0], [3.0, 4.0]]))\nprint(int(sign), round(float(logdet), 3))\nprint(round(float(sign * np.exp(logdet)), 3))",
+      "output": "-1 0.693\n-2.0",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:learn:20",
+      "title": "Matrix powers repeat multiplication",
+      "body": "`np.linalg.matrix_power(A, n)` multiplies `A` by itself `n` times without a Python loop, and `n=0` returns the identity. It is the tool for stepping a transition matrix forward.",
+      "code": "import numpy as np\nA = np.array([[1, 1], [0, 1]])\nprint(np.linalg.matrix_power(A, 3).tolist())\nprint(np.linalg.matrix_power(A, 0).tolist())",
+      "output": "[[1, 3], [0, 1]]\n[[1, 0], [0, 1]]",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:learn:21",
+      "title": "Least squares returns residuals and rank",
+      "body": "`np.linalg.lstsq` solves overdetermined systems and reports residuals, rank and singular values. With a column of ones in the design matrix it fits an intercept, and the residuals say how far the noisy data sits from the best line.",
+      "code": "import numpy as np\nx = np.array([0.0, 1.0, 2.0, 3.0])\ny = np.array([1.0, 3.1, 4.8, 7.2])\ndesign = np.column_stack([x, np.ones_like(x)])\ncoeffs, residuals, rank, singular = np.linalg.lstsq(design, y, rcond=None)\nprint(coeffs.round(3))\nprint(rank, residuals.round(4).tolist())",
+      "output": "[2.03 0.98]\n2 [0.083]",
+      "difficulty": "easy"
      }
     ],
     "interview": [
@@ -32796,67 +32908,123 @@
       "q": "What does this solve, do not invert snippet print, and why?",
       "code": "import numpy as np\na = np.array([[3.0, 1.0], [1.0, 2.0]])\nb = np.array([9.0, 8.0])\nprint(np.linalg.solve(a, b))\nprint(np.linalg.det(a))",
       "answer": "[2. 3.]\n5.000000000000001",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:interview:14",
+      "q": "What does this svd splits a matrix into three snippet print, and why?",
+      "code": "import numpy as np\nA = np.array([[3.0, 0.0], [0.0, 4.0]])\nU, s, Vt = np.linalg.svd(A)\nprint(s.round(2))\nprint(np.allclose(U @ np.diag(s) @ Vt, A))",
+      "answer": "[4. 3.]\nTrue",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:interview:15",
+      "q": "What does this eigenvalues and eigenvectors together snippet print, and why?",
+      "code": "import numpy as np\nA = np.array([[2.0, 1.0], [1.0, 2.0]])\nvalues, vectors = np.linalg.eigh(A)\nprint(values.round(2))\nprint(np.allclose(A @ vectors, vectors * values))",
+      "answer": "[1. 3.]\nTrue",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:interview:16",
+      "q": "What does this qr decomposition as two factors snippet print, and why?",
+      "code": "import numpy as np\nA = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nQ, R = np.linalg.qr(A)\nprint(Q.shape, R.shape)\nprint(np.allclose(Q @ R, A), np.allclose(R, np.triu(R)))",
+      "answer": "(3, 2) (2, 2)\nTrue True",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:interview:17",
+      "q": "What does this cholesky for positive definite matrices snippet print, and why?",
+      "code": "import numpy as np\nA = np.array([[4.0, 2.0], [2.0, 3.0]])\nL = np.linalg.cholesky(A)\nprint(L.round(3).tolist())\nprint(np.allclose(L @ L.T, A))",
+      "answer": "[[2.0, 0.0], [1.0, 1.414]]\nTrue",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:interview:18",
+      "q": "What does this the pseudo-inverse for singular matrices snippet print, and why?",
+      "code": "import numpy as np\nA = np.array([[1.0, 2.0], [2.0, 4.0]])\nP = np.linalg.pinv(A)\nprint(P.shape)\nprint(np.linalg.matrix_rank(A))\nprint(np.allclose(A @ P @ A, A))",
+      "answer": "(2, 2)\n1\nTrue",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:interview:19",
+      "q": "What does this determinant by sign and log snippet print, and why?",
+      "code": "import numpy as np\nsign, logdet = np.linalg.slogdet(np.array([[1.0, 2.0], [3.0, 4.0]]))\nprint(int(sign), round(float(logdet), 3))\nprint(round(float(sign * np.exp(logdet)), 3))",
+      "answer": "-1 0.693\n-2.0",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:interview:20",
+      "q": "What does this matrix powers repeat multiplication snippet print, and why?",
+      "code": "import numpy as np\nA = np.array([[1, 1], [0, 1]])\nprint(np.linalg.matrix_power(A, 3).tolist())\nprint(np.linalg.matrix_power(A, 0).tolist())",
+      "answer": "[[1, 3], [0, 1]]\n[[1, 0], [0, 1]]",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:interview:21",
+      "q": "What does this least squares returns residuals and rank snippet print, and why?",
+      "code": "import numpy as np\nx = np.array([0.0, 1.0, 2.0, 3.0])\ny = np.array([1.0, 3.1, 4.8, 7.2])\ndesign = np.column_stack([x, np.ones_like(x)])\ncoeffs, residuals, rank, singular = np.linalg.lstsq(design, y, rcond=None)\nprint(coeffs.round(3))\nprint(rank, residuals.round(4).tolist())",
+      "answer": "[2.03 0.98]\n2 [0.083]",
       "difficulty": "hard"
      },
      {
       "id": "n15:interview:a0",
       "q": "Why solve a linear system instead of multiplying by the inverse?",
       "answer": "`solve` factorises the matrix directly and is faster and more stable; forming an inverse adds rounding and does more work.",
-      "difficulty": "hard"
+      "difficulty": "medium"
      },
      {
       "id": "n15:interview:a1",
       "q": "What does a zero determinant tell you?",
       "answer": "The matrix is singular: its rows are linearly dependent, so a system may have no solution or infinitely many.",
-      "difficulty": "easy"
+      "difficulty": "hard"
      },
      {
       "id": "n15:interview:a2",
       "q": "When is a matrix ill-conditioned, and why does it matter?",
       "answer": "When its condition number is large, small input changes produce large output changes, so a solve can be numerically unreliable.",
-      "difficulty": "medium"
+      "difficulty": "easy"
      },
      {
       "id": "n15:interview:a3",
       "q": "What shapes does `np.dot` require for matrices?",
       "answer": "The inner dimensions must match: `(m, k)` with `(k, n)` gives `(m, n)`.",
-      "difficulty": "hard"
+      "difficulty": "medium"
      },
      {
       "id": "n15:interview:a4",
       "q": "Why is `@` preferred to `np.dot` for matrix products?",
       "answer": "It is the dedicated matrix operator, it reads like the maths, and it does not change meaning for higher-rank inputs the way `dot` does.",
-      "difficulty": "easy"
+      "difficulty": "hard"
      },
      {
       "id": "n15:interview:a5",
       "q": "What does `np.linalg.norm` measure with no arguments?",
       "answer": "The Euclidean (Frobenius for matrices) norm, the square root of the sum of squares.",
-      "difficulty": "medium"
+      "difficulty": "easy"
      },
      {
       "id": "n15:interview:a6",
       "q": "What does `np.linalg.solve` return?",
       "answer": "The vector or matrix x that satisfies `A x = b`.",
-      "difficulty": "hard"
+      "difficulty": "medium"
      },
      {
       "id": "n15:interview:a7",
       "q": "How do you compute a matrix inverse safely?",
       "answer": "Usually you do not: solve the system instead, because the inverse adds error and work.",
-      "difficulty": "easy"
+      "difficulty": "hard"
      },
      {
       "id": "n15:interview:a8",
       "q": "What does `np.trace` compute?",
       "answer": "The sum of the main diagonal.",
-      "difficulty": "medium"
+      "difficulty": "easy"
      },
      {
       "id": "n15:interview:a9",
       "q": "A recommender scores 1000 users × 500 items by `user_vec @ item_matrix.T`. What are the shapes, and roughly how many multiplications?",
       "answer": "user_vec is (1000, k), item_matrix is (500, k), so the product is (1000, 500): 500,000 scores and 500,000×k multiplications. That is why k is kept small and why chunking matters at scale.",
-      "difficulty": "hard",
+      "difficulty": "medium",
       "scenario": true,
       "followUps": [
        {
@@ -32873,7 +33041,7 @@
       "id": "n15:interview:a10",
       "q": "Someone solves a regression with `inv(X.T @ X) @ X.T @ y` and gets a warning about a singular matrix. What should replace it?",
       "answer": "np.linalg.lstsq(X, y) (or solve on the normal equations only when well-conditioned). Inverting a near-singular matrix amplifies numerical error; lstsq is the stable, intended tool.",
-      "difficulty": "easy",
+      "difficulty": "hard",
       "scenario": true,
       "followUps": [
        {
@@ -33427,6 +33595,62 @@
       "code": "import numpy as np\na = np.array([[3.0, 1.0], [1.0, 2.0]])\nb = np.array([9.0, 8.0])\nprint(np.linalg.solve(a, b))\nprint(np.linalg.det(a))",
       "answer": "[2. 3.]\n5.000000000000001",
       "difficulty": "medium"
+     },
+     {
+      "id": "n15:logic:14",
+      "q": "Predict the exact output of this svd splits a matrix into three code before you run it.",
+      "code": "import numpy as np\nA = np.array([[3.0, 0.0], [0.0, 4.0]])\nU, s, Vt = np.linalg.svd(A)\nprint(s.round(2))\nprint(np.allclose(U @ np.diag(s) @ Vt, A))",
+      "answer": "[4. 3.]\nTrue",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:logic:15",
+      "q": "Predict the exact output of this eigenvalues and eigenvectors together code before you run it.",
+      "code": "import numpy as np\nA = np.array([[2.0, 1.0], [1.0, 2.0]])\nvalues, vectors = np.linalg.eigh(A)\nprint(values.round(2))\nprint(np.allclose(A @ vectors, vectors * values))",
+      "answer": "[1. 3.]\nTrue",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n15:logic:16",
+      "q": "Predict the exact output of this qr decomposition as two factors code before you run it.",
+      "code": "import numpy as np\nA = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nQ, R = np.linalg.qr(A)\nprint(Q.shape, R.shape)\nprint(np.allclose(Q @ R, A), np.allclose(R, np.triu(R)))",
+      "answer": "(3, 2) (2, 2)\nTrue True",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:logic:17",
+      "q": "Predict the exact output of this cholesky for positive definite matrices code before you run it.",
+      "code": "import numpy as np\nA = np.array([[4.0, 2.0], [2.0, 3.0]])\nL = np.linalg.cholesky(A)\nprint(L.round(3).tolist())\nprint(np.allclose(L @ L.T, A))",
+      "answer": "[[2.0, 0.0], [1.0, 1.414]]\nTrue",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:logic:18",
+      "q": "Predict the exact output of this the pseudo-inverse for singular matrices code before you run it.",
+      "code": "import numpy as np\nA = np.array([[1.0, 2.0], [2.0, 4.0]])\nP = np.linalg.pinv(A)\nprint(P.shape)\nprint(np.linalg.matrix_rank(A))\nprint(np.allclose(A @ P @ A, A))",
+      "answer": "(2, 2)\n1\nTrue",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n15:logic:19",
+      "q": "Predict the exact output of this determinant by sign and log code before you run it.",
+      "code": "import numpy as np\nsign, logdet = np.linalg.slogdet(np.array([[1.0, 2.0], [3.0, 4.0]]))\nprint(int(sign), round(float(logdet), 3))\nprint(round(float(sign * np.exp(logdet)), 3))",
+      "answer": "-1 0.693\n-2.0",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:logic:20",
+      "q": "Predict the exact output of this matrix powers repeat multiplication code before you run it.",
+      "code": "import numpy as np\nA = np.array([[1, 1], [0, 1]])\nprint(np.linalg.matrix_power(A, 3).tolist())\nprint(np.linalg.matrix_power(A, 0).tolist())",
+      "answer": "[[1, 3], [0, 1]]\n[[1, 0], [0, 1]]",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:logic:21",
+      "q": "Predict the exact output of this least squares returns residuals and rank code before you run it.",
+      "code": "import numpy as np\nx = np.array([0.0, 1.0, 2.0, 3.0])\ny = np.array([1.0, 3.1, 4.8, 7.2])\ndesign = np.column_stack([x, np.ones_like(x)])\ncoeffs, residuals, rank, singular = np.linalg.lstsq(design, y, rcond=None)\nprint(coeffs.round(3))\nprint(rank, residuals.round(4).tolist())",
+      "answer": "[2.03 0.98]\n2 [0.083]",
+      "difficulty": "easy"
      }
     ],
     "debug": [
@@ -33623,6 +33847,70 @@
       "solution": "import numpy as np\na = np.array([[3.0, 1.0], [1.0, 2.0]])\nb = np.array([9.0, 8.0])\nprint(np.linalg.solve(a, b))\nprint(np.linalg.det(a))",
       "expected": "[2. 3.]\n5.000000000000001",
       "difficulty": "medium"
+     },
+     {
+      "id": "n15:practice:14",
+      "title": "Rebuild from memory: SVD splits a matrix into three",
+      "task": "`np.linalg.svd` factors any matrix into `U @ diag(s) @ Vt`, where `s` holds the singular values in descending order. The number of non-zero singular values is the rank, and keeping only the largest ones is how compression and low-rank approximations work.",
+      "solution": "import numpy as np\nA = np.array([[3.0, 0.0], [0.0, 4.0]])\nU, s, Vt = np.linalg.svd(A)\nprint(s.round(2))\nprint(np.allclose(U @ np.diag(s) @ Vt, A))",
+      "expected": "[4. 3.]\nTrue",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:practice:15",
+      "title": "Rebuild from memory: Eigenvalues and eigenvectors together",
+      "task": "`np.linalg.eigh` is the symmetric-matrix form of eig: it returns real eigenvalues in ascending order and orthonormal eigenvectors as columns. An eigenvector only gets scaled by its eigenvalue, so `A @ v == value * v` is the identity to verify.",
+      "solution": "import numpy as np\nA = np.array([[2.0, 1.0], [1.0, 2.0]])\nvalues, vectors = np.linalg.eigh(A)\nprint(values.round(2))\nprint(np.allclose(A @ vectors, vectors * values))",
+      "expected": "[1. 3.]\nTrue",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n15:practice:16",
+      "title": "Rebuild from memory: QR decomposition as two factors",
+      "task": "`np.linalg.qr` writes a matrix as `Q @ R`: `Q` has orthonormal columns and `R` is upper triangular. Least-squares solvers use this shape because solving with a triangular matrix is cheap and stable.",
+      "solution": "import numpy as np\nA = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nQ, R = np.linalg.qr(A)\nprint(Q.shape, R.shape)\nprint(np.allclose(Q @ R, A), np.allclose(R, np.triu(R)))",
+      "expected": "(3, 2) (2, 2)\nTrue True",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:practice:17",
+      "title": "Rebuild from memory: Cholesky for positive definite matrices",
+      "task": "When a symmetric matrix is positive definite, `np.linalg.cholesky` gives a lower-triangular `L` with `A == L @ L.T`. It is roughly twice as fast as a general decomposition and is the standard way to sample correlated random variables.",
+      "solution": "import numpy as np\nA = np.array([[4.0, 2.0], [2.0, 3.0]])\nL = np.linalg.cholesky(A)\nprint(L.round(3).tolist())\nprint(np.allclose(L @ L.T, A))",
+      "expected": "[[2.0, 0.0], [1.0, 1.414]]\nTrue",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:practice:18",
+      "title": "Rebuild from memory: The pseudo-inverse for singular matrices",
+      "task": "A singular matrix has no true inverse, but `np.linalg.pinv` still returns the Moore-Penrose pseudo-inverse. It satisfies `A @ P @ A == A`, which is the property to check instead of expecting `A @ P` to be the identity.",
+      "solution": "import numpy as np\nA = np.array([[1.0, 2.0], [2.0, 4.0]])\nP = np.linalg.pinv(A)\nprint(P.shape)\nprint(np.linalg.matrix_rank(A))\nprint(np.allclose(A @ P @ A, A))",
+      "expected": "(2, 2)\n1\nTrue",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n15:practice:19",
+      "title": "Rebuild from memory: Determinant by sign and log",
+      "task": "`np.linalg.slogdet` returns the sign and the log of the absolute determinant, avoiding the overflow that a direct determinant hits on large matrices. Rebuild the determinant with `sign * np.exp(logdet)`.",
+      "solution": "import numpy as np\nsign, logdet = np.linalg.slogdet(np.array([[1.0, 2.0], [3.0, 4.0]]))\nprint(int(sign), round(float(logdet), 3))\nprint(round(float(sign * np.exp(logdet)), 3))",
+      "expected": "-1 0.693\n-2.0",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:practice:20",
+      "title": "Rebuild from memory: Matrix powers repeat multiplication",
+      "task": "`np.linalg.matrix_power(A, n)` multiplies `A` by itself `n` times without a Python loop, and `n=0` returns the identity. It is the tool for stepping a transition matrix forward.",
+      "solution": "import numpy as np\nA = np.array([[1, 1], [0, 1]])\nprint(np.linalg.matrix_power(A, 3).tolist())\nprint(np.linalg.matrix_power(A, 0).tolist())",
+      "expected": "[[1, 3], [0, 1]]\n[[1, 0], [0, 1]]",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:practice:21",
+      "title": "Rebuild from memory: Least squares returns residuals and rank",
+      "task": "`np.linalg.lstsq` solves overdetermined systems and reports residuals, rank and singular values. With a column of ones in the design matrix it fits an intercept, and the residuals say how far the noisy data sits from the best line.",
+      "solution": "import numpy as np\nx = np.array([0.0, 1.0, 2.0, 3.0])\ny = np.array([1.0, 3.1, 4.8, 7.2])\ndesign = np.column_stack([x, np.ones_like(x)])\ncoeffs, residuals, rank, singular = np.linalg.lstsq(design, y, rcond=None)\nprint(coeffs.round(3))\nprint(rank, residuals.round(4).tolist())",
+      "expected": "[2.03 0.98]\n2 [0.083]",
+      "difficulty": "easy"
      }
     ],
     "miniProject": [
@@ -34031,6 +34319,190 @@
       "difficulty": "medium"
      },
      {
+      "id": "n15:checkpoint:28",
+      "q": "Checkpoint: predict the output of this code about svd splits a matrix into three.",
+      "code": "import numpy as np\nA = np.array([[3.0, 0.0], [0.0, 4.0]])\nU, s, Vt = np.linalg.svd(A)\nprint(s.round(2))\nprint(np.allclose(U @ np.diag(s) @ Vt, A))",
+      "answer": "[4. 3.]\nTrue",
+      "options": [
+       "[4. 3.]\nTrue",
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]"
+      ],
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:checkpoint:29",
+      "q": "Short answer: state what this svd splits a matrix into three code computes, and why the printed result looks the way it does.",
+      "answer": "`np.linalg.svd` factors any matrix into `U @ diag(s) @ Vt`, where `s` holds the singular values in descending order. The number of non-zero singular values is the rank, and keeping only the largest ones is how compression and low-rank approximations work.",
+      "rubric": [
+       "Names the operation, not just the output: SVD splits a matrix into three.",
+       "Mentions the concrete values or shape involved ([4. 3.]).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:checkpoint:30",
+      "q": "Checkpoint: predict the output of this code about eigenvalues and eigenvectors together.",
+      "code": "import numpy as np\nA = np.array([[2.0, 1.0], [1.0, 2.0]])\nvalues, vectors = np.linalg.eigh(A)\nprint(values.round(2))\nprint(np.allclose(A @ vectors, vectors * values))",
+      "answer": "[1. 3.]\nTrue",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]\nTrue",
+       "[1. 3.]"
+      ],
+      "difficulty": "easy"
+     },
+     {
+      "id": "n15:checkpoint:31",
+      "q": "Short answer: state what this eigenvalues and eigenvectors together code computes, and why the printed result looks the way it does.",
+      "answer": "`np.linalg.eigh` is the symmetric-matrix form of eig: it returns real eigenvalues in ascending order and orthonormal eigenvectors as columns. An eigenvector only gets scaled by its eigenvalue, so `A @ v == value * v` is the identity to verify.",
+      "rubric": [
+       "Names the operation, not just the output: Eigenvalues and eigenvectors together.",
+       "Mentions the concrete values or shape involved ([1. 3.]).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:checkpoint:32",
+      "q": "Checkpoint: predict the output of this code about qr decomposition as two factors.",
+      "code": "import numpy as np\nA = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])\nQ, R = np.linalg.qr(A)\nprint(Q.shape, R.shape)\nprint(np.allclose(Q @ R, A), np.allclose(R, np.triu(R)))",
+      "answer": "(3, 2) (2, 2)\nTrue True",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "(3, 2) (2, 2)\nTrue True",
+       "[1. 3.]"
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:checkpoint:33",
+      "q": "Short answer: state what this qr decomposition as two factors code computes, and why the printed result looks the way it does.",
+      "answer": "`np.linalg.qr` writes a matrix as `Q @ R`: `Q` has orthonormal columns and `R` is upper triangular. Least-squares solvers use this shape because solving with a triangular matrix is cheap and stable.",
+      "rubric": [
+       "Names the operation, not just the output: QR decomposition as two factors.",
+       "Mentions the concrete values or shape involved ((3, 2) (2, 2)).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:checkpoint:34",
+      "q": "Checkpoint: predict the output of this code about cholesky for positive definite matrices.",
+      "code": "import numpy as np\nA = np.array([[4.0, 2.0], [2.0, 3.0]])\nL = np.linalg.cholesky(A)\nprint(L.round(3).tolist())\nprint(np.allclose(L @ L.T, A))",
+      "answer": "[[2.0, 0.0], [1.0, 1.414]]\nTrue",
+      "options": [
+       "[[2.0, 0.0], [1.0, 1.414]]\nTrue",
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]"
+      ],
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:checkpoint:35",
+      "q": "Short answer: state what this cholesky for positive definite matrices code computes, and why the printed result looks the way it does.",
+      "answer": "When a symmetric matrix is positive definite, `np.linalg.cholesky` gives a lower-triangular `L` with `A == L @ L.T`. It is roughly twice as fast as a general decomposition and is the standard way to sample correlated random variables.",
+      "rubric": [
+       "Names the operation, not just the output: Cholesky for positive definite matrices.",
+       "Mentions the concrete values or shape involved ([[2.0, 0.0], [1.0, 1.414]]).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:checkpoint:36",
+      "q": "Checkpoint: predict the output of this code about the pseudo-inverse for singular matrices.",
+      "code": "import numpy as np\nA = np.array([[1.0, 2.0], [2.0, 4.0]])\nP = np.linalg.pinv(A)\nprint(P.shape)\nprint(np.linalg.matrix_rank(A))\nprint(np.allclose(A @ P @ A, A))",
+      "answer": "(2, 2)\n1\nTrue",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "(2, 2)\n1\nTrue",
+       "[1. 3.]"
+      ],
+      "difficulty": "easy"
+     },
+     {
+      "id": "n15:checkpoint:37",
+      "q": "Short answer: state what this the pseudo-inverse for singular matrices code computes, and why the printed result looks the way it does.",
+      "answer": "A singular matrix has no true inverse, but `np.linalg.pinv` still returns the Moore-Penrose pseudo-inverse. It satisfies `A @ P @ A == A`, which is the property to check instead of expecting `A @ P` to be the identity.",
+      "rubric": [
+       "Names the operation, not just the output: The pseudo-inverse for singular matrices.",
+       "Mentions the concrete values or shape involved ((2, 2)).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:checkpoint:38",
+      "q": "Checkpoint: predict the output of this code about determinant by sign and log.",
+      "code": "import numpy as np\nsign, logdet = np.linalg.slogdet(np.array([[1.0, 2.0], [3.0, 4.0]]))\nprint(int(sign), round(float(logdet), 3))\nprint(round(float(sign * np.exp(logdet)), 3))",
+      "answer": "-1 0.693\n-2.0",
+      "options": [
+       "-1 0.693\n-2.0",
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]"
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:checkpoint:39",
+      "q": "Short answer: state what this determinant by sign and log code computes, and why the printed result looks the way it does.",
+      "answer": "`np.linalg.slogdet` returns the sign and the log of the absolute determinant, avoiding the overflow that a direct determinant hits on large matrices. Rebuild the determinant with `sign * np.exp(logdet)`.",
+      "rubric": [
+       "Names the operation, not just the output: Determinant by sign and log.",
+       "Mentions the concrete values or shape involved (-1 0.693).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:checkpoint:40",
+      "q": "Checkpoint: predict the output of this code about matrix powers repeat multiplication.",
+      "code": "import numpy as np\nA = np.array([[1, 1], [0, 1]])\nprint(np.linalg.matrix_power(A, 3).tolist())\nprint(np.linalg.matrix_power(A, 0).tolist())",
+      "answer": "[[1, 3], [0, 1]]\n[[1, 0], [0, 1]]",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[1. 3.]",
+       "[[1, 3], [0, 1]]\n[[1, 0], [0, 1]]"
+      ],
+      "difficulty": "hard"
+     },
+     {
+      "id": "n15:checkpoint:41",
+      "q": "Short answer: state what this matrix powers repeat multiplication code computes, and why the printed result looks the way it does.",
+      "answer": "`np.linalg.matrix_power(A, n)` multiplies `A` by itself `n` times without a Python loop, and `n=0` returns the identity. It is the tool for stepping a transition matrix forward.",
+      "rubric": [
+       "Names the operation, not just the output: Matrix powers repeat multiplication.",
+       "Mentions the concrete values or shape involved ([[1, 3], [0, 1]]).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n15:checkpoint:42",
+      "q": "Checkpoint: predict the output of this code about least squares returns residuals and rank.",
+      "code": "import numpy as np\nx = np.array([0.0, 1.0, 2.0, 3.0])\ny = np.array([1.0, 3.1, 4.8, 7.2])\ndesign = np.column_stack([x, np.ones_like(x)])\ncoeffs, residuals, rank, singular = np.linalg.lstsq(design, y, rcond=None)\nprint(coeffs.round(3))\nprint(rank, residuals.round(4).tolist())",
+      "answer": "[2.03 0.98]\n2 [0.083]",
+      "options": [
+       "[[1. 2.]\n [3. 4.]]",
+       "[2.03 0.98]\n2 [0.083]",
+       "[1. 3.]"
+      ],
+      "difficulty": "easy"
+     },
+     {
+      "id": "n15:checkpoint:43",
+      "q": "Short answer: state what this least squares returns residuals and rank code computes, and why the printed result looks the way it does.",
+      "answer": "`np.linalg.lstsq` solves overdetermined systems and reports residuals, rank and singular values. With a column of ones in the design matrix it fits an intercept, and the residuals say how far the noisy data sits from the best line.",
+      "rubric": [
+       "Names the operation, not just the output: Least squares returns residuals and rank.",
+       "Mentions the concrete values or shape involved ([2.03 0.98]).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
       "id": "n15:checkpoint:tf0",
       "format": "truefalse",
       "q": "True or false: this matrix multiplication code prints exactly the output below.",
@@ -34153,18 +34625,18 @@
     ]
    },
    "counts": {
-    "learn": 14,
-    "interview": 25,
+    "learn": 22,
+    "interview": 33,
     "coding": 40,
-    "logic": 14,
+    "logic": 22,
     "debug": 10,
-    "practice": 14,
+    "practice": 22,
     "miniProject": 1,
     "projectLab": 1,
     "defense": 9,
-    "checkpoint": 38
+    "checkpoint": 54
    },
-   "entries": 166
+   "entries": 214
   },
   {
    "id": "n16",
@@ -34257,6 +34729,48 @@
      "body": "savez groups named arrays into one .npz archive, and load returns a mapping you index by name. Use savez_compressed for large, repetitive data.",
      "code": "import numpy as np, tempfile, os\na, b = np.arange(3), np.ones((2, 2))\np = os.path.join(tempfile.mkdtemp(), 'pack.npz')\nnp.savez(p, first=a, second=b)\nz = np.load(p)\nprint(sorted(z.files), z['second'].shape)",
      "output": "['first', 'second'] (2, 2)"
+    },
+    {
+     "title": "genfromtxt types a whole table",
+     "body": "`np.genfromtxt` can name the columns and convert each one with an explicit dtype, so a CSV arrives as a structured array with text and numbers in the right fields instead of one string dtype.",
+     "code": "import numpy as np\nwith open('crew.csv', 'w') as f:\n    f.write('name,score\\nada,9\\nbob,7\\n')\ndata = np.genfromtxt('crew.csv', delimiter=',', names=True, dtype=None, encoding='utf-8')\nprint(data.dtype.names)\nprint(int(data['score'].sum()))",
+     "output": "('name', 'score')\n16"
+    },
+    {
+     "title": "memmap writes through to disk",
+     "body": "A memory map opened with `mode='r+'` is a writable view of the file: assignments change the page cache and `flush()` writes them back. The array is never fully loaded, so a huge file can be edited in place.",
+     "code": "import numpy as np\nnp.arange(6, dtype=np.float64).tofile('raw.bin')\nmapped = np.memmap('raw.bin', dtype=np.float64, mode='r+', shape=(2, 3))\nmapped[0, 0] = 99.0\nmapped.flush()\nprint(np.fromfile('raw.bin', dtype=np.float64).reshape(2, 3)[0].tolist())",
+     "output": "[99.0, 1.0, 2.0]"
+    },
+    {
+     "title": "savez_compressed shrinks an archive",
+     "body": "`np.savez_compressed` stores arrays in one zip archive with deflate compression. It is slower to write than `savez` but much smaller for repetitive data, and `np.load` reads it with the same keyed access.",
+     "code": "import numpy as np\nnp.savez_compressed('packed.npz', a=np.arange(1000), b=np.ones(3))\nwith np.load('packed.npz') as archive:\n    print(sorted(archive.files))\n    print(int(archive['a'].sum()))",
+     "output": "['a', 'b']\n499500"
+    },
+    {
+     "title": "loadtxt with selected columns",
+     "body": "`usecols` reads only the columns you name, in the order you name them, without parsing the rest. That is how a wide CSV becomes a small numeric array at load time.",
+     "code": "import numpy as np\nwith open('table.csv', 'w') as f:\n    f.write('1,2,3\\n4,5,6\\n')\ncols = np.loadtxt('table.csv', delimiter=',', usecols=(0, 2))\nprint(cols.tolist())",
+     "output": "[[1.0, 3.0], [4.0, 6.0]]"
+    },
+    {
+     "title": "savetxt with a format string",
+     "body": "`fmt` controls how each value is written, so `%.2f` stores two decimals instead of the full float repr. It is the difference between a file a human can read and one that only round-trips approximately.",
+     "code": "import numpy as np\nnp.savetxt('fmt.txt', np.array([[1.2345]]), fmt='%.2f')\nprint(open('fmt.txt').read().strip())",
+     "output": "1.23"
+    },
+    {
+     "title": "tofile and fromfile for raw binary",
+     "body": "`tofile` writes the buffer with no header at all and `fromfile` reads it back by dtype, so you must remember the dtype and shape yourself. It is the fastest interchange format when you control both ends.",
+     "code": "import numpy as np\nnp.array([1.5, 2.5], dtype=np.float32).tofile('floats.bin')\nback = np.fromfile('floats.bin', dtype=np.float32)\nprint(back.dtype, back.tolist())",
+     "output": "float32 [1.5, 2.5]"
+    },
+    {
+     "title": "load refuses pickled objects",
+     "body": "A `.npy` file holding an object array needs pickle to rebuild it, and unpickling untrusted data can run code. `np.load(..., allow_pickle=False)` refuses such files, which is why numeric arrays should stay numeric.",
+     "code": "import numpy as np\nnp.save('obj.npy', np.array([{'a': 1}], dtype=object))\ntry:\n    np.load('obj.npy', allow_pickle=False)\n    print('loaded')\nexcept ValueError:\n    print('refused without allow_pickle')\nprint(list(np.load('obj.npy', allow_pickle=True)[0].keys()))",
+     "output": "refused without allow_pickle\n['a']"
     }
    ],
    "debug": [
@@ -34840,6 +35354,62 @@
       "code": "import numpy as np, tempfile, os\na, b = np.arange(3), np.ones((2, 2))\np = os.path.join(tempfile.mkdtemp(), 'pack.npz')\nnp.savez(p, first=a, second=b)\nz = np.load(p)\nprint(sorted(z.files), z['second'].shape)",
       "output": "['first', 'second'] (2, 2)",
       "difficulty": "medium"
+     },
+     {
+      "id": "n16:learn:14",
+      "title": "genfromtxt types a whole table",
+      "body": "`np.genfromtxt` can name the columns and convert each one with an explicit dtype, so a CSV arrives as a structured array with text and numbers in the right fields instead of one string dtype.",
+      "code": "import numpy as np\nwith open('crew.csv', 'w') as f:\n    f.write('name,score\\nada,9\\nbob,7\\n')\ndata = np.genfromtxt('crew.csv', delimiter=',', names=True, dtype=None, encoding='utf-8')\nprint(data.dtype.names)\nprint(int(data['score'].sum()))",
+      "output": "('name', 'score')\n16",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n16:learn:15",
+      "title": "memmap writes through to disk",
+      "body": "A memory map opened with `mode='r+'` is a writable view of the file: assignments change the page cache and `flush()` writes them back. The array is never fully loaded, so a huge file can be edited in place.",
+      "code": "import numpy as np\nnp.arange(6, dtype=np.float64).tofile('raw.bin')\nmapped = np.memmap('raw.bin', dtype=np.float64, mode='r+', shape=(2, 3))\nmapped[0, 0] = 99.0\nmapped.flush()\nprint(np.fromfile('raw.bin', dtype=np.float64).reshape(2, 3)[0].tolist())",
+      "output": "[99.0, 1.0, 2.0]",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n16:learn:16",
+      "title": "savez_compressed shrinks an archive",
+      "body": "`np.savez_compressed` stores arrays in one zip archive with deflate compression. It is slower to write than `savez` but much smaller for repetitive data, and `np.load` reads it with the same keyed access.",
+      "code": "import numpy as np\nnp.savez_compressed('packed.npz', a=np.arange(1000), b=np.ones(3))\nwith np.load('packed.npz') as archive:\n    print(sorted(archive.files))\n    print(int(archive['a'].sum()))",
+      "output": "['a', 'b']\n499500",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:learn:17",
+      "title": "loadtxt with selected columns",
+      "body": "`usecols` reads only the columns you name, in the order you name them, without parsing the rest. That is how a wide CSV becomes a small numeric array at load time.",
+      "code": "import numpy as np\nwith open('table.csv', 'w') as f:\n    f.write('1,2,3\\n4,5,6\\n')\ncols = np.loadtxt('table.csv', delimiter=',', usecols=(0, 2))\nprint(cols.tolist())",
+      "output": "[[1.0, 3.0], [4.0, 6.0]]",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n16:learn:18",
+      "title": "savetxt with a format string",
+      "body": "`fmt` controls how each value is written, so `%.2f` stores two decimals instead of the full float repr. It is the difference between a file a human can read and one that only round-trips approximately.",
+      "code": "import numpy as np\nnp.savetxt('fmt.txt', np.array([[1.2345]]), fmt='%.2f')\nprint(open('fmt.txt').read().strip())",
+      "output": "1.23",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n16:learn:19",
+      "title": "tofile and fromfile for raw binary",
+      "body": "`tofile` writes the buffer with no header at all and `fromfile` reads it back by dtype, so you must remember the dtype and shape yourself. It is the fastest interchange format when you control both ends.",
+      "code": "import numpy as np\nnp.array([1.5, 2.5], dtype=np.float32).tofile('floats.bin')\nback = np.fromfile('floats.bin', dtype=np.float32)\nprint(back.dtype, back.tolist())",
+      "output": "float32 [1.5, 2.5]",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:learn:20",
+      "title": "load refuses pickled objects",
+      "body": "A `.npy` file holding an object array needs pickle to rebuild it, and unpickling untrusted data can run code. `np.load(..., allow_pickle=False)` refuses such files, which is why numeric arrays should stay numeric.",
+      "code": "import numpy as np\nnp.save('obj.npy', np.array([{'a': 1}], dtype=object))\ntry:\n    np.load('obj.npy', allow_pickle=False)\n    print('loaded')\nexcept ValueError:\n    print('refused without allow_pickle')\nprint(list(np.load('obj.npy', allow_pickle=True)[0].keys()))",
+      "output": "refused without allow_pickle\n['a']",
+      "difficulty": "hard"
      }
     ],
     "interview": [
@@ -34939,67 +35509,116 @@
       "q": "What does this savez stores several arrays snippet print, and why?",
       "code": "import numpy as np, tempfile, os\na, b = np.arange(3), np.ones((2, 2))\np = os.path.join(tempfile.mkdtemp(), 'pack.npz')\nnp.savez(p, first=a, second=b)\nz = np.load(p)\nprint(sorted(z.files), z['second'].shape)",
       "answer": "['first', 'second'] (2, 2)",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:interview:14",
+      "q": "What does this genfromtxt types a whole table snippet print, and why?",
+      "code": "import numpy as np\nwith open('crew.csv', 'w') as f:\n    f.write('name,score\\nada,9\\nbob,7\\n')\ndata = np.genfromtxt('crew.csv', delimiter=',', names=True, dtype=None, encoding='utf-8')\nprint(data.dtype.names)\nprint(int(data['score'].sum()))",
+      "answer": "('name', 'score')\n16",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:interview:15",
+      "q": "What does this memmap writes through to disk snippet print, and why?",
+      "code": "import numpy as np\nnp.arange(6, dtype=np.float64).tofile('raw.bin')\nmapped = np.memmap('raw.bin', dtype=np.float64, mode='r+', shape=(2, 3))\nmapped[0, 0] = 99.0\nmapped.flush()\nprint(np.fromfile('raw.bin', dtype=np.float64).reshape(2, 3)[0].tolist())",
+      "answer": "[99.0, 1.0, 2.0]",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:interview:16",
+      "q": "What does this savez_compressed shrinks an archive snippet print, and why?",
+      "code": "import numpy as np\nnp.savez_compressed('packed.npz', a=np.arange(1000), b=np.ones(3))\nwith np.load('packed.npz') as archive:\n    print(sorted(archive.files))\n    print(int(archive['a'].sum()))",
+      "answer": "['a', 'b']\n499500",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:interview:17",
+      "q": "What does this loadtxt with selected columns snippet print, and why?",
+      "code": "import numpy as np\nwith open('table.csv', 'w') as f:\n    f.write('1,2,3\\n4,5,6\\n')\ncols = np.loadtxt('table.csv', delimiter=',', usecols=(0, 2))\nprint(cols.tolist())",
+      "answer": "[[1.0, 3.0], [4.0, 6.0]]",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:interview:18",
+      "q": "What does this savetxt with a format string snippet print, and why?",
+      "code": "import numpy as np\nnp.savetxt('fmt.txt', np.array([[1.2345]]), fmt='%.2f')\nprint(open('fmt.txt').read().strip())",
+      "answer": "1.23",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:interview:19",
+      "q": "What does this tofile and fromfile for raw binary snippet print, and why?",
+      "code": "import numpy as np\nnp.array([1.5, 2.5], dtype=np.float32).tofile('floats.bin')\nback = np.fromfile('floats.bin', dtype=np.float32)\nprint(back.dtype, back.tolist())",
+      "answer": "float32 [1.5, 2.5]",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:interview:20",
+      "q": "What does this load refuses pickled objects snippet print, and why?",
+      "code": "import numpy as np\nnp.save('obj.npy', np.array([{'a': 1}], dtype=object))\ntry:\n    np.load('obj.npy', allow_pickle=False)\n    print('loaded')\nexcept ValueError:\n    print('refused without allow_pickle')\nprint(list(np.load('obj.npy', allow_pickle=True)[0].keys()))",
+      "answer": "refused without allow_pickle\n['a']",
       "difficulty": "hard"
      },
      {
       "id": "n16:interview:a0",
       "q": "When do you use `savez` instead of several `savetxt` calls?",
       "answer": "When the data is numeric and must round-trip exactly with its dtype and shape, and several arrays belong together in one file.",
-      "difficulty": "hard"
+      "difficulty": "easy"
      },
      {
       "id": "n16:interview:a1",
       "q": "Why prefer `.npy` over CSV for intermediate arrays?",
       "answer": "It stores dtype, shape and exact binary values, so loading is fast and lossless. CSV loses precision and needs parsing.",
-      "difficulty": "easy"
+      "difficulty": "medium"
      },
      {
       "id": "n16:interview:a2",
       "q": "How do you read a CSV whose first row is a header?",
       "answer": "Use `loadtxt(..., skiprows=1)` for plain numbers, or `genfromtxt(..., names=True)` to keep the column names.",
-      "difficulty": "medium"
+      "difficulty": "hard"
      },
      {
       "id": "n16:interview:a3",
       "q": "What does `np.save` add to the file name you give it?",
       "answer": "It appends `.npy` when the name does not already end in it, which is why a later `open` of the bare name fails.",
-      "difficulty": "hard"
+      "difficulty": "easy"
      },
      {
       "id": "n16:interview:a4",
       "q": "How do you store several arrays in one file under names?",
       "answer": "Use `np.savez` or `np.savez_compressed` with keyword arguments, then read them back by key from the loaded archive.",
-      "difficulty": "easy"
+      "difficulty": "medium"
      },
      {
       "id": "n16:interview:a5",
       "q": "Why does `np.load` require `allow_pickle=False` on untrusted files?",
       "answer": "Pickled payloads can execute constructors, so loading becomes code execution. Array-only files need no pickle at all.",
-      "difficulty": "medium"
+      "difficulty": "hard"
      },
      {
       "id": "n16:interview:a6",
       "q": "What does `np.savez` create?",
       "answer": "A `.npz` archive holding several named arrays.",
-      "difficulty": "hard"
+      "difficulty": "easy"
      },
      {
       "id": "n16:interview:a7",
       "q": "How do you read one array out of an `.npz` file?",
       "answer": "`np.load(path)` returns a mapping; index it by key.",
-      "difficulty": "easy"
+      "difficulty": "medium"
      },
      {
       "id": "n16:interview:a8",
       "q": "Why is `np.loadtxt` slower than `np.load`?",
       "answer": "Text must be parsed and converted element by element, while binary values are read directly.",
-      "difficulty": "medium"
+      "difficulty": "hard"
      },
      {
       "id": "n16:interview:a9",
       "q": "A pipeline writes intermediate arrays as CSV and reads them back; float precision changes. Why is .npy the better intermediate format?",
       "answer": "CSV stores decimal text, so floats round-trip through formatting and parsing. .npy stores dtype, shape and raw bytes, so the array comes back exactly.",
-      "difficulty": "hard",
+      "difficulty": "easy",
       "scenario": true,
       "followUps": [
        {
@@ -35016,7 +35635,7 @@
       "id": "n16:interview:a10",
       "q": "A 5 GB feature matrix must be read without loading it all. What does np.memmap buy you, and what does it require?",
       "answer": "Memory mapping lets the OS page in the parts of the file you touch, so RAM use stays bounded. It requires the file to exist in the right format/dtype and the access pattern to be reasonably local.",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "scenario": true,
       "followUps": [
        {
@@ -35570,6 +36189,55 @@
       "code": "import numpy as np, tempfile, os\na, b = np.arange(3), np.ones((2, 2))\np = os.path.join(tempfile.mkdtemp(), 'pack.npz')\nnp.savez(p, first=a, second=b)\nz = np.load(p)\nprint(sorted(z.files), z['second'].shape)",
       "answer": "['first', 'second'] (2, 2)",
       "difficulty": "medium"
+     },
+     {
+      "id": "n16:logic:14",
+      "q": "Predict the exact output of this genfromtxt types a whole table code before you run it.",
+      "code": "import numpy as np\nwith open('crew.csv', 'w') as f:\n    f.write('name,score\\nada,9\\nbob,7\\n')\ndata = np.genfromtxt('crew.csv', delimiter=',', names=True, dtype=None, encoding='utf-8')\nprint(data.dtype.names)\nprint(int(data['score'].sum()))",
+      "answer": "('name', 'score')\n16",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n16:logic:15",
+      "q": "Predict the exact output of this memmap writes through to disk code before you run it.",
+      "code": "import numpy as np\nnp.arange(6, dtype=np.float64).tofile('raw.bin')\nmapped = np.memmap('raw.bin', dtype=np.float64, mode='r+', shape=(2, 3))\nmapped[0, 0] = 99.0\nmapped.flush()\nprint(np.fromfile('raw.bin', dtype=np.float64).reshape(2, 3)[0].tolist())",
+      "answer": "[99.0, 1.0, 2.0]",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n16:logic:16",
+      "q": "Predict the exact output of this savez_compressed shrinks an archive code before you run it.",
+      "code": "import numpy as np\nnp.savez_compressed('packed.npz', a=np.arange(1000), b=np.ones(3))\nwith np.load('packed.npz') as archive:\n    print(sorted(archive.files))\n    print(int(archive['a'].sum()))",
+      "answer": "['a', 'b']\n499500",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:logic:17",
+      "q": "Predict the exact output of this loadtxt with selected columns code before you run it.",
+      "code": "import numpy as np\nwith open('table.csv', 'w') as f:\n    f.write('1,2,3\\n4,5,6\\n')\ncols = np.loadtxt('table.csv', delimiter=',', usecols=(0, 2))\nprint(cols.tolist())",
+      "answer": "[[1.0, 3.0], [4.0, 6.0]]",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n16:logic:18",
+      "q": "Predict the exact output of this savetxt with a format string code before you run it.",
+      "code": "import numpy as np\nnp.savetxt('fmt.txt', np.array([[1.2345]]), fmt='%.2f')\nprint(open('fmt.txt').read().strip())",
+      "answer": "1.23",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n16:logic:19",
+      "q": "Predict the exact output of this tofile and fromfile for raw binary code before you run it.",
+      "code": "import numpy as np\nnp.array([1.5, 2.5], dtype=np.float32).tofile('floats.bin')\nback = np.fromfile('floats.bin', dtype=np.float32)\nprint(back.dtype, back.tolist())",
+      "answer": "float32 [1.5, 2.5]",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:logic:20",
+      "q": "Predict the exact output of this load refuses pickled objects code before you run it.",
+      "code": "import numpy as np\nnp.save('obj.npy', np.array([{'a': 1}], dtype=object))\ntry:\n    np.load('obj.npy', allow_pickle=False)\n    print('loaded')\nexcept ValueError:\n    print('refused without allow_pickle')\nprint(list(np.load('obj.npy', allow_pickle=True)[0].keys()))",
+      "answer": "refused without allow_pickle\n['a']",
+      "difficulty": "hard"
      }
     ],
     "debug": [
@@ -35766,6 +36434,62 @@
       "solution": "import numpy as np, tempfile, os\na, b = np.arange(3), np.ones((2, 2))\np = os.path.join(tempfile.mkdtemp(), 'pack.npz')\nnp.savez(p, first=a, second=b)\nz = np.load(p)\nprint(sorted(z.files), z['second'].shape)",
       "expected": "['first', 'second'] (2, 2)",
       "difficulty": "medium"
+     },
+     {
+      "id": "n16:practice:14",
+      "title": "Rebuild from memory: genfromtxt types a whole table",
+      "task": "`np.genfromtxt` can name the columns and convert each one with an explicit dtype, so a CSV arrives as a structured array with text and numbers in the right fields instead of one string dtype.",
+      "solution": "import numpy as np\nwith open('crew.csv', 'w') as f:\n    f.write('name,score\\nada,9\\nbob,7\\n')\ndata = np.genfromtxt('crew.csv', delimiter=',', names=True, dtype=None, encoding='utf-8')\nprint(data.dtype.names)\nprint(int(data['score'].sum()))",
+      "expected": "('name', 'score')\n16",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n16:practice:15",
+      "title": "Rebuild from memory: memmap writes through to disk",
+      "task": "A memory map opened with `mode='r+'` is a writable view of the file: assignments change the page cache and `flush()` writes them back. The array is never fully loaded, so a huge file can be edited in place.",
+      "solution": "import numpy as np\nnp.arange(6, dtype=np.float64).tofile('raw.bin')\nmapped = np.memmap('raw.bin', dtype=np.float64, mode='r+', shape=(2, 3))\nmapped[0, 0] = 99.0\nmapped.flush()\nprint(np.fromfile('raw.bin', dtype=np.float64).reshape(2, 3)[0].tolist())",
+      "expected": "[99.0, 1.0, 2.0]",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n16:practice:16",
+      "title": "Rebuild from memory: savez_compressed shrinks an archive",
+      "task": "`np.savez_compressed` stores arrays in one zip archive with deflate compression. It is slower to write than `savez` but much smaller for repetitive data, and `np.load` reads it with the same keyed access.",
+      "solution": "import numpy as np\nnp.savez_compressed('packed.npz', a=np.arange(1000), b=np.ones(3))\nwith np.load('packed.npz') as archive:\n    print(sorted(archive.files))\n    print(int(archive['a'].sum()))",
+      "expected": "['a', 'b']\n499500",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:practice:17",
+      "title": "Rebuild from memory: loadtxt with selected columns",
+      "task": "`usecols` reads only the columns you name, in the order you name them, without parsing the rest. That is how a wide CSV becomes a small numeric array at load time.",
+      "solution": "import numpy as np\nwith open('table.csv', 'w') as f:\n    f.write('1,2,3\\n4,5,6\\n')\ncols = np.loadtxt('table.csv', delimiter=',', usecols=(0, 2))\nprint(cols.tolist())",
+      "expected": "[[1.0, 3.0], [4.0, 6.0]]",
+      "difficulty": "hard"
+     },
+     {
+      "id": "n16:practice:18",
+      "title": "Rebuild from memory: savetxt with a format string",
+      "task": "`fmt` controls how each value is written, so `%.2f` stores two decimals instead of the full float repr. It is the difference between a file a human can read and one that only round-trips approximately.",
+      "solution": "import numpy as np\nnp.savetxt('fmt.txt', np.array([[1.2345]]), fmt='%.2f')\nprint(open('fmt.txt').read().strip())",
+      "expected": "1.23",
+      "difficulty": "easy"
+     },
+     {
+      "id": "n16:practice:19",
+      "title": "Rebuild from memory: tofile and fromfile for raw binary",
+      "task": "`tofile` writes the buffer with no header at all and `fromfile` reads it back by dtype, so you must remember the dtype and shape yourself. It is the fastest interchange format when you control both ends.",
+      "solution": "import numpy as np\nnp.array([1.5, 2.5], dtype=np.float32).tofile('floats.bin')\nback = np.fromfile('floats.bin', dtype=np.float32)\nprint(back.dtype, back.tolist())",
+      "expected": "float32 [1.5, 2.5]",
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:practice:20",
+      "title": "Rebuild from memory: load refuses pickled objects",
+      "task": "A `.npy` file holding an object array needs pickle to rebuild it, and unpickling untrusted data can run code. `np.load(..., allow_pickle=False)` refuses such files, which is why numeric arrays should stay numeric.",
+      "solution": "import numpy as np\nnp.save('obj.npy', np.array([{'a': 1}], dtype=object))\ntry:\n    np.load('obj.npy', allow_pickle=False)\n    print('loaded')\nexcept ValueError:\n    print('refused without allow_pickle')\nprint(list(np.load('obj.npy', allow_pickle=True)[0].keys()))",
+      "expected": "refused without allow_pickle\n['a']",
+      "difficulty": "hard"
      }
     ],
     "miniProject": [
@@ -36174,6 +36898,167 @@
       "difficulty": "medium"
      },
      {
+      "id": "n16:checkpoint:28",
+      "q": "Checkpoint: predict the output of this code about genfromtxt types a whole table.",
+      "code": "import numpy as np\nwith open('crew.csv', 'w') as f:\n    f.write('name,score\\nada,9\\nbob,7\\n')\ndata = np.genfromtxt('crew.csv', delimiter=',', names=True, dtype=None, encoding='utf-8')\nprint(data.dtype.names)\nprint(int(data['score'].sum()))",
+      "answer": "('name', 'score')\n16",
+      "options": [
+       "('name', 'score')\n16",
+       "[0 1 2]",
+       "[1. 2.]"
+      ],
+      "difficulty": "hard"
+     },
+     {
+      "id": "n16:checkpoint:29",
+      "q": "Short answer: state what this genfromtxt types a whole table code computes, and why the printed result looks the way it does.",
+      "answer": "`np.genfromtxt` can name the columns and convert each one with an explicit dtype, so a CSV arrives as a structured array with text and numbers in the right fields instead of one string dtype.",
+      "rubric": [
+       "Names the operation, not just the output: genfromtxt types a whole table.",
+       "Mentions the concrete values or shape involved (('name', 'score')).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:checkpoint:30",
+      "q": "Checkpoint: predict the output of this code about memmap writes through to disk.",
+      "code": "import numpy as np\nnp.arange(6, dtype=np.float64).tofile('raw.bin')\nmapped = np.memmap('raw.bin', dtype=np.float64, mode='r+', shape=(2, 3))\nmapped[0, 0] = 99.0\nmapped.flush()\nprint(np.fromfile('raw.bin', dtype=np.float64).reshape(2, 3)[0].tolist())",
+      "answer": "[99.0, 1.0, 2.0]",
+      "options": [
+       "[0 1 2]",
+       "[1. 2.]",
+       "[99.0, 1.0, 2.0]"
+      ],
+      "difficulty": "easy"
+     },
+     {
+      "id": "n16:checkpoint:31",
+      "q": "Short answer: state what this memmap writes through to disk code computes, and why the printed result looks the way it does.",
+      "answer": "A memory map opened with `mode='r+'` is a writable view of the file: assignments change the page cache and `flush()` writes them back. The array is never fully loaded, so a huge file can be edited in place.",
+      "rubric": [
+       "Names the operation, not just the output: memmap writes through to disk.",
+       "Mentions the concrete values or shape involved ([99.0, 1.0, 2.0]).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:checkpoint:32",
+      "q": "Checkpoint: predict the output of this code about savez_compressed shrinks an archive.",
+      "code": "import numpy as np\nnp.savez_compressed('packed.npz', a=np.arange(1000), b=np.ones(3))\nwith np.load('packed.npz') as archive:\n    print(sorted(archive.files))\n    print(int(archive['a'].sum()))",
+      "answer": "['a', 'b']\n499500",
+      "options": [
+       "[0 1 2]",
+       "[1. 2.]",
+       "['a', 'b']\n499500"
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:checkpoint:33",
+      "q": "Short answer: state what this savez_compressed shrinks an archive code computes, and why the printed result looks the way it does.",
+      "answer": "`np.savez_compressed` stores arrays in one zip archive with deflate compression. It is slower to write than `savez` but much smaller for repetitive data, and `np.load` reads it with the same keyed access.",
+      "rubric": [
+       "Names the operation, not just the output: savez_compressed shrinks an archive.",
+       "Mentions the concrete values or shape involved (['a', 'b']).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:checkpoint:34",
+      "q": "Checkpoint: predict the output of this code about loadtxt with selected columns.",
+      "code": "import numpy as np\nwith open('table.csv', 'w') as f:\n    f.write('1,2,3\\n4,5,6\\n')\ncols = np.loadtxt('table.csv', delimiter=',', usecols=(0, 2))\nprint(cols.tolist())",
+      "answer": "[[1.0, 3.0], [4.0, 6.0]]",
+      "options": [
+       "[0 1 2]",
+       "[1. 2.]",
+       "[[1.0, 3.0], [4.0, 6.0]]"
+      ],
+      "difficulty": "hard"
+     },
+     {
+      "id": "n16:checkpoint:35",
+      "q": "Short answer: state what this loadtxt with selected columns code computes, and why the printed result looks the way it does.",
+      "answer": "`usecols` reads only the columns you name, in the order you name them, without parsing the rest. That is how a wide CSV becomes a small numeric array at load time.",
+      "rubric": [
+       "Names the operation, not just the output: loadtxt with selected columns.",
+       "Mentions the concrete values or shape involved ([[1.0, 3.0], [4.0, 6.0]]).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:checkpoint:36",
+      "q": "Checkpoint: predict the output of this code about savetxt with a format string.",
+      "code": "import numpy as np\nnp.savetxt('fmt.txt', np.array([[1.2345]]), fmt='%.2f')\nprint(open('fmt.txt').read().strip())",
+      "answer": "1.23",
+      "options": [
+       "[0 1 2]",
+       "1.23",
+       "[1. 2.]"
+      ],
+      "difficulty": "easy"
+     },
+     {
+      "id": "n16:checkpoint:37",
+      "q": "Short answer: state what this savetxt with a format string code computes, and why the printed result looks the way it does.",
+      "answer": "`fmt` controls how each value is written, so `%.2f` stores two decimals instead of the full float repr. It is the difference between a file a human can read and one that only round-trips approximately.",
+      "rubric": [
+       "Names the operation, not just the output: savetxt with a format string.",
+       "Mentions the concrete values or shape involved (1.23).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:checkpoint:38",
+      "q": "Checkpoint: predict the output of this code about tofile and fromfile for raw binary.",
+      "code": "import numpy as np\nnp.array([1.5, 2.5], dtype=np.float32).tofile('floats.bin')\nback = np.fromfile('floats.bin', dtype=np.float32)\nprint(back.dtype, back.tolist())",
+      "answer": "float32 [1.5, 2.5]",
+      "options": [
+       "[0 1 2]",
+       "float32 [1.5, 2.5]",
+       "[1. 2.]"
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:checkpoint:39",
+      "q": "Short answer: state what this tofile and fromfile for raw binary code computes, and why the printed result looks the way it does.",
+      "answer": "`tofile` writes the buffer with no header at all and `fromfile` reads it back by dtype, so you must remember the dtype and shape yourself. It is the fastest interchange format when you control both ends.",
+      "rubric": [
+       "Names the operation, not just the output: tofile and fromfile for raw binary.",
+       "Mentions the concrete values or shape involved (float32 [1.5, 2.5]).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
+      "id": "n16:checkpoint:40",
+      "q": "Checkpoint: predict the output of this code about load refuses pickled objects.",
+      "code": "import numpy as np\nnp.save('obj.npy', np.array([{'a': 1}], dtype=object))\ntry:\n    np.load('obj.npy', allow_pickle=False)\n    print('loaded')\nexcept ValueError:\n    print('refused without allow_pickle')\nprint(list(np.load('obj.npy', allow_pickle=True)[0].keys()))",
+      "answer": "refused without allow_pickle\n['a']",
+      "options": [
+       "[0 1 2]",
+       "refused without allow_pickle\n['a']",
+       "[1. 2.]"
+      ],
+      "difficulty": "hard"
+     },
+     {
+      "id": "n16:checkpoint:41",
+      "q": "Short answer: state what this load refuses pickled objects code computes, and why the printed result looks the way it does.",
+      "answer": "A `.npy` file holding an object array needs pickle to rebuild it, and unpickling untrusted data can run code. `np.load(..., allow_pickle=False)` refuses such files, which is why numeric arrays should stay numeric.",
+      "rubric": [
+       "Names the operation, not just the output: load refuses pickled objects.",
+       "Mentions the concrete values or shape involved (refused without allow_pickle).",
+       "Explains why the dtype, axis or shape is what it is, not only what the code prints."
+      ],
+      "difficulty": "medium"
+     },
+     {
       "id": "n16:checkpoint:tf0",
       "format": "truefalse",
       "q": "True or false: this save and load code prints exactly the output below.",
@@ -36296,18 +37181,18 @@
     ]
    },
    "counts": {
-    "learn": 14,
-    "interview": 25,
+    "learn": 21,
+    "interview": 32,
     "coding": 40,
-    "logic": 14,
+    "logic": 21,
     "debug": 10,
-    "practice": 14,
+    "practice": 21,
     "miniProject": 1,
     "projectLab": 1,
     "defense": 9,
-    "checkpoint": 38
+    "checkpoint": 52
    },
-   "entries": 166
+   "entries": 208
   },
   {
    "id": "n17",
