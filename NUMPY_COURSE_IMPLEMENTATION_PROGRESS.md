@@ -53,6 +53,29 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Cross-device account sync (phase 33)
+
+The NumPy course's own records — `nmod:` section records, `nans:` written drafts, `ntick:` rubric ticks,
+`ncap`, `nlast`, `nlevel` — now travel with the account. The design keeps the two write paths apart:
+
+- **contract** `src/core/learning/numpy-sync.ts` (pure, tested): allowlisted key families, drafts capped
+  at 20 KB, payload capped at 64 KB, `mergeNumpyProgress` keeping local records and filling gaps from the
+  server.
+- **transport** `src/core/data/numpy-progress.ts` on the existing `apiJson` account client:
+  `POST /api/numpy/progress` with `action: 'load' | 'save'`.
+- **server** `server/app.mjs` validates the same allowlist and size limits, takes the identity from the
+  JWT, and `server/store.mjs` stores one row per account in a new `numpy_progress` table
+  (`prisma/schema.prisma` + migration `20261112120000_numpy_progress`, `ON DELETE CASCADE`).
+- **surface** the course page pulls once per session, merges server-only records into local state, then
+  pushes a debounced snapshot; the chip names the real outcome (`saved to your account (N sections ·
+  M drafts)`, `no account API on this deployment — progress stays on this device`, `rejected`).
+
+**Operational step still required:** apply the migration with `npm run db:deploy` against the project
+database (`DATABASE_URL` + `DIRECT_URL`). Until it runs, the endpoint answers 500, the client falls back
+to `local` and nothing is lost — the feature is additive, not a replacement for local storage. The
+schema validates (`prisma validate` passes with placeholder URLs); the migration could not be applied
+from this workspace because no database credentials are present.
+
 ### Dual-level teaching for modules 4 and 5 (phase 32)
 
 `levels-4.json` (Data Types) and `levels-5.json` (Indexing and Selection) complete the dual-level layer

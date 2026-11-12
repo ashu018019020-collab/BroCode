@@ -186,6 +186,43 @@ function validateProgress(input) {
 }
 
 /**
+ * The NumPy payload, validated with the SAME allowlist the client collects: the course's own key
+ * families only, one object per record, a bounded draft length and a bounded total. Anything else is a
+ * 400, because this body is stored as-is and re-served to the same account later.
+ */
+const NUMPY_SYNC_PREFIXES = ['nmod:', 'nans:', 'ntick:'];
+const NUMPY_SYNC_EXACT = ['ncap', 'nlast', 'nlevel'];
+const NUMPY_MAX_DRAFT = 20_000;
+const NUMPY_MAX_BYTES = 64 * 1024;
+
+function validateNumpyPayload(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new HttpError(400, 'NumPy progress must be an object.');
+  }
+  const entries = Object.entries(input);
+  if (entries.length > 600) throw new HttpError(413, 'NumPy progress holds too many records.');
+  const clean = {};
+  for (const [key, value] of entries) {
+    const allowed = NUMPY_SYNC_EXACT.includes(key) || NUMPY_SYNC_PREFIXES.some((p) => key.startsWith(p));
+    if (!allowed) throw new HttpError(400, `NumPy progress key ${key} is not allowed.`);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      throw new HttpError(400, `NumPy progress record ${key} must be an object.`);
+    }
+    if (value.answer !== undefined && typeof value.answer !== 'string') {
+      throw new HttpError(400, `NumPy progress record ${key} has a non-string answer.`);
+    }
+    if (typeof value.answer === 'string' && value.answer.length > NUMPY_MAX_DRAFT) {
+      throw new HttpError(413, `NumPy progress record ${key} exceeds the draft limit.`);
+    }
+    clean[key] = value;
+  }
+  if (JSON.stringify(clean).length > NUMPY_MAX_BYTES) {
+    throw new HttpError(413, 'NumPy progress exceeds the payload limit.');
+  }
+  return clean;
+}
+
+/**
  * The lesson position stored on a profile, or null.
  *
  * Defensive on read as well as on write: rows written by an older release, a manual SQL update or a
@@ -634,6 +671,30 @@ export function createAuthServer({
         await store.saveProgress(user.profile.id, progress, new Date(now()));
         json(response, 200, { ok: true }, headers);
         return;
+      }
+
+      /**
+       * Per-course NumPy progress: `load` returns the caller's own payload, `save` replaces it.
+       * Same-origin checked and identity taken from the JWT — the body never names a user. A static
+       * deployment has no API here, which the client reports as "local only" instead of an error.
+       */
+      if (request.method === 'POST' && url.pathname === '/api/numpy/progress') {
+        ensureSameOrigin(request, allowedOrigin);
+        const user = await requireUser(request);
+        const input = await readJson(request);
+        const action = input?.action;
+        if (action === 'load') {
+          const payload = await store.getNumpyProgress(user.profile.id);
+          json(response, 200, { ok: true, payload: payload ?? {} }, headers);
+          return;
+        }
+        if (action === 'save') {
+          const payload = validateNumpyPayload(input.payload);
+          await store.saveNumpyProgress(user.profile.id, payload, new Date(now()));
+          json(response, 200, { ok: true, saved: Object.keys(payload).length }, headers);
+          return;
+        }
+        throw new HttpError(400, 'action must be load or save.');
       }
 
       if (request.method === 'GET' && url.pathname === '/api/admin/users') {

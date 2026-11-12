@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronRight, GraduationCap, Play, ShieldCheck, Target, Trophy } from 'lucide-react';
 import { useNumpyCourse } from '../../core/data/ncourse';
-import { useSavedAnswer, useStore } from '../../core/storage/store';
+import { setState, useSavedAnswer, useStore } from '../../core/storage/store';
+import { collectNumpyProgress, mergeNumpyProgress, numpySyncSummary } from '../../core/learning/numpy-sync';
+import { loadNumpyProgress, saveNumpyProgress } from '../../core/data/numpy-progress';
 import { N_CAPSTONE_KEY, N_LAST_KEY, N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, numpyCertificate, numpyReport, searchCourse } from '../../core/learning/ncourse';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { NLogo } from './NLogo';
@@ -47,6 +49,56 @@ export default function NCoursePage() {
     saveCap(JSON.stringify(nextList));
   };
   const learnerName = (state.profile.name || user?.name || 'Learner').trim();
+  /*
+   * Account sync for the course's own records. Pull once when the account arrives, merge server-only
+   * records into the local map (local always wins), then push a debounced snapshot after changes.
+   * Every outcome is named so the chip never says "synced" when the deployment has no API.
+   */
+  const [syncState, setSyncState] = useState<'idle' | 'pulling' | 'synced' | 'local' | 'saving' | 'rejected'>('idle');
+  const pushed = useRef<string>('');
+  const pulled = useRef(false);
+  const syncPayload = useMemo(() => collectNumpyProgress(state.attempts), [state.attempts]);
+  const syncSignature = useMemo(() => JSON.stringify(syncPayload), [syncPayload]);
+
+  useEffect(() => { pulled.current = false; setSyncState('idle'); }, [user?.name]);
+
+  useEffect(() => {
+    if (!user || pulled.current) return;
+    pulled.current = true;
+    setSyncState('pulling');
+    let alive = true;
+    loadNumpyProgress().then((result) => {
+      if (!alive) return;
+      if (!result.ok) {
+        setSyncState(result.reason === 'rejected' || result.reason === 'invalid' ? 'rejected' : 'local');
+        return;
+      }
+      const merged = mergeNumpyProgress(syncPayload, result.payload);
+      if (merged.added.length) {
+        setState((s) => ({ ...s, attempts: { ...merged.payload, ...s.attempts } }));
+      }
+      pushed.current = JSON.stringify(merged.payload);
+      setSyncState('synced');
+    });
+    return () => { alive = false; };
+  }, [user, syncPayload]);
+
+  useEffect(() => {
+    if (!user || !pulled.current) return;
+    if (!Object.keys(syncPayload).length || syncSignature === pushed.current) return;
+    const timer = window.setTimeout(() => {
+      setSyncState('saving');
+      saveNumpyProgress(syncPayload).then((result) => {
+        if (result.ok) {
+          pushed.current = syncSignature;
+          setSyncState('synced');
+        } else {
+          setSyncState(result.reason === 'rejected' ? 'rejected' : 'local');
+        }
+      });
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [user, syncPayload, syncSignature]);
   const [query, setQuery] = useState('');
   const hits = useMemo(() => searchCourse(modules, query), [modules, query]);
   const next = useMemo(() => {
@@ -323,6 +375,21 @@ export default function NCoursePage() {
           </p>
         )}
       </div>
+
+      <p className="small muted" style={{ margin: '8px 0 0' }}>
+        <b>Account sync · </b>
+        {syncState === 'synced'
+          ? `saved to your account (${numpySyncSummary(syncPayload)})`
+          : syncState === 'saving'
+            ? `saving ${numpySyncSummary(syncPayload)}…`
+            : syncState === 'pulling'
+              ? 'loading this account\u2019s course records…'
+              : syncState === 'rejected'
+                ? 'the account API rejected this payload; progress stays on this device'
+                : syncState === 'local'
+                  ? 'no account API on this deployment — progress stays on this device'
+                  : 'sign in to sync section records and written drafts across devices'}
+      </p>
 
       <div className="sec-head"><h2>Search the course</h2><span className="line" /></div>
       <div className="card">

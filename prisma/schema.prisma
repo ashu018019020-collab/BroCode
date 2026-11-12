@@ -29,6 +29,9 @@ model Profile {
   updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   lastSeenAt  DateTime?     @map("last_seen_at") @db.Timestamptz(6)
   progress    ProgressSnapshot?
+  /// The NumPy course's own records (`nmod:` / `nans:` / `ntick:` / `ncap` / `nlast` / `nlevel`),
+  /// stored as validated JSON text so per-section progress follows the account across devices.
+  numpyProgress NumpyProgress?
   signInEvents SignInEvent[]
 
   @@index([lastSeenAt])
@@ -57,6 +60,19 @@ model ProgressSnapshot {
 /// Owner-created course cards: a name, a mark, a level and an internal link.
 /// They own no generated content, which is why a dashboard may DELETE one; catalog courses are
 /// only ever hidden (`course_placement.hidden`) because their slugs key pages and progress.
+/// NumPy Mastery's per-course records, one row per account.
+/// `payload` is JSON text validated by `server/app.mjs` before it is written: an allowlisted key set,
+/// 20 KB per draft, 64 KB total. The aggregate counters stay in `ProgressSnapshot`; this table never
+/// carries them, so the two write paths cannot overwrite each other.
+model NumpyProgress {
+  userId    String   @id @map("user_id") @db.Uuid
+  payload   String   @db.Text
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("numpy_progress")
+}
+
 model OwnerCourse {
   slug      String    @id @db.VarChar(48)
   name      String    @db.VarChar(80)

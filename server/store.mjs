@@ -99,6 +99,30 @@ export function createSupabaseStore(prisma = new PrismaClient()) {
       });
     },
 
+    /**
+     * The caller's own NumPy payload, or null when the account has never synced. Read defensively:
+     * a row written by a future release must not crash an older client, so malformed JSON is null.
+     */
+    async getNumpyProgress(userId) {
+      const row = await prisma.numpyProgress.findUnique({ where: { userId } });
+      if (!row) return null;
+      try {
+        const parsed = JSON.parse(row.payload);
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+      } catch {
+        return null;
+      }
+    },
+
+    async saveNumpyProgress(userId, payload, now = new Date()) {
+      const text = JSON.stringify(payload);
+      return prisma.numpyProgress.upsert({
+        where: { userId },
+        create: { userId, payload: text, updatedAt: now },
+        update: { payload: text, updatedAt: now },
+      });
+    },
+
     async listAdminUsers() {
       const profiles = await prisma.profile.findMany({
         include: { progress: true },
