@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { BarChart3, Grid3x3, Layers, Sigma } from 'lucide-react';
 import {
-  broadcastShape, dtypeMemory, DTYPE_BYTES, gridShape, maskFilter, matmul, missingSummary, parseMatrix,
-  parseShape, percentile, reshapeGrid, shapeSize, shapeStrides, sliceIndices, statsSummary, transpose,
-  uniformSamples, type CompareOp, type Shape,
+  axisReduce, broadcastShape, dtypeMemory, DTYPE_BYTES, gridShape, maskFilter, matmul, missingSummary,
+  parseMatrix, parseShape, percentile, reshapeGrid, reshapePlan, shapeSize, shapeStrides, sliceIndices,
+  statsSummary, transpose, uniformSamples, type CompareOp, type Shape,
 } from '../../core/learning/numpy-tools';
 
 const inputStyle = {
@@ -271,21 +271,33 @@ a[mask]             # [${result.selected.join(' ')}]`}</pre>
   );
 }
 
+function ShapeArrow({ before, after }: { before: number[]; after: number[] }) {
+  return (
+    <p className="small" style={{ margin: '8px 0 0', fontFamily: 'ui-monospace, monospace' }}>
+      <span className="muted">before </span>{`(${before.join(', ')})`}
+      <span className="muted">  →  after </span>{`(${after.join(', ')})`}
+    </p>
+  );
+}
+
 function ReshapeExplorer() {
+  const [size, setSize] = useState('6');
   const [rows, setRows] = useState('2');
   const [cols, setCols] = useState('3');
-  const r = Number(rows);
-  const c = Number(cols);
-  const grid = reshapeGrid(r, c);
+  const plan = reshapePlan(Number(size), Number(rows), Number(cols));
+  const [r, c] = plan.after;
+  const grid = plan.ok ? reshapeGrid(r, c) : [];
   return (
     <div>
       <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-        <div style={{ flex: '1 1 100px' }}><label className="small muted" htmlFor="rs-rows">rows</label><input id="rs-rows" value={rows} onChange={(e) => setRows(e.target.value)} style={inputStyle} /></div>
-        <div style={{ flex: '1 1 100px' }}><label className="small muted" htmlFor="rs-cols">cols</label><input id="rs-cols" value={cols} onChange={(e) => setCols(e.target.value)} style={inputStyle} /></div>
+        <div style={{ flex: '1 1 90px' }}><label className="small muted" htmlFor="rs-size">array size</label><input id="rs-size" value={size} onChange={(e) => setSize(e.target.value)} style={inputStyle} /></div>
+        <div style={{ flex: '1 1 90px' }}><label className="small muted" htmlFor="rs-rows">rows (-1 infers)</label><input id="rs-rows" value={rows} onChange={(e) => setRows(e.target.value)} style={inputStyle} /></div>
+        <div style={{ flex: '1 1 90px' }}><label className="small muted" htmlFor="rs-cols">cols (-1 infers)</label><input id="rs-cols" value={cols} onChange={(e) => setCols(e.target.value)} style={inputStyle} /></div>
       </div>
-      {grid.length ? (
+      <ShapeArrow before={plan.before} after={plan.after} />
+      {plan.ok ? (
         <>
-          <pre className="codeblock" style={{ margin: '8px 0 0' }}>{`np.arange(${r * c}).reshape(${r}, ${c})   # or reshape(-1, ${c})`}</pre>
+          <pre className="codeblock" style={{ margin: '8px 0 0' }}>{`np.arange(${plan.before[0]}).reshape(${rows}, ${cols})   # → (${r}, ${c})`}</pre>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(c, 8)}, minmax(36px, 1fr))`, gap: 4, marginTop: 8 }}>
             {grid.flatMap((row, i) => row.map((flat, j) => (
               <div key={flat} style={{ padding: '6px 2px', textAlign: 'center', fontSize: 12, borderRadius: 6, border: '1px solid var(--line, #d6dbe4)', fontFamily: 'ui-monospace, monospace' }}>
@@ -293,9 +305,46 @@ function ReshapeExplorer() {
               </div>
             )))}
           </div>
-          <p className="small muted" style={{ margin: '8px 0 0' }}>Flat index runs left to right, then down — C order. {r * c} cells.</p>
+          <p className="small muted" style={{ margin: '8px 0 0' }}>{r * c} cells before and after — reshape never changes how many values exist, only how they are grouped. C order runs left to right, then down.</p>
         </>
-      ) : <p className="small" style={{ color: 'var(--red)' }}>Rows and columns must be positive whole numbers.</p>}
+      ) : <p className="small" style={{ color: 'var(--red)', margin: '8px 0 0' }}>{plan.error}</p>}
+    </div>
+  );
+}
+
+function AxisExplorer() {
+  const [rows, setRows] = useState('3');
+  const [cols, setCols] = useState('4');
+  const [axis, setAxis] = useState<'0' | '1'>('0');
+  const r = Math.max(1, Math.min(6, Number(rows) || 1));
+  const c = Math.max(1, Math.min(6, Number(cols) || 1));
+  const grid = reshapeGrid(r, c).map((row) => row.map((flat) => flat + 1));
+  const result = axisReduce(grid, axis === '0' ? 0 : 1);
+  return (
+    <div>
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 80px' }}><label className="small muted" htmlFor="ax-rows">rows</label><input id="ax-rows" value={rows} onChange={(e) => setRows(e.target.value)} style={inputStyle} /></div>
+        <div style={{ flex: '1 1 80px' }}><label className="small muted" htmlFor="ax-cols">cols</label><input id="ax-cols" value={cols} onChange={(e) => setCols(e.target.value)} style={inputStyle} /></div>
+        <div style={{ flex: '1 1 110px' }}>
+          <label className="small muted" htmlFor="ax-axis">axis</label>
+          <select id="ax-axis" value={axis} onChange={(e) => setAxis(e.target.value as '0' | '1')} style={inputStyle}>
+            <option value="0">0 — collapse rows</option>
+            <option value="1">1 — collapse columns</option>
+          </select>
+        </div>
+      </div>
+      <ShapeArrow before={result.before} after={result.after} />
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${c}, minmax(34px, 1fr))`, gap: 4, marginTop: 8 }}>
+        {grid.flatMap((row, i) => row.map((v, j) => (
+          <div key={`${i}-${j}`} style={{ padding: '6px 2px', textAlign: 'center', fontSize: 12, borderRadius: 6, border: '1px solid var(--line, #d6dbe4)', fontFamily: 'ui-monospace, monospace' }}>{v}</div>
+        )))}
+      </div>
+      <p className="small" style={{ margin: '8px 0 0' }}>
+        <b>a.sum(axis={axis})</b> = <span style={{ fontFamily: 'ui-monospace, monospace' }}>[{result.totals.join(' ')}]</span>
+        <span className="muted"> — the {result.collapsed} axis disappears, so {result.before.join('×')} becomes {result.after.join('×')}.</span>
+      </p>
+      <pre className="codeblock" style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{`a = np.arange(1, ${r * c + 1}).reshape(${r}, ${c})
+a.sum(axis=${axis})   # → ${result.totals.join(' ')}  shape ${`(${result.after.join(', ')})`}`}</pre>
     </div>
   );
 }
@@ -389,6 +438,7 @@ const TOOLS = [
   { key: 'broadcast', label: 'Broadcasting', icon: Layers, render: () => <BroadcastingSimulator /> },
   { key: 'slice', label: 'Slicing', icon: Grid3x3, render: () => <SlicingExplorer /> },
   { key: 'mask', label: 'Boolean mask', icon: Layers, render: () => <MaskExplorer /> },
+  { key: 'axis', label: 'Axis explorer', icon: Layers, render: () => <AxisExplorer /> },
   { key: 'reshape', label: 'Reshape', icon: Grid3x3, render: () => <ReshapeExplorer /> },
   { key: 'stats', label: 'Statistics', icon: Sigma, render: () => <StatisticsPlayground /> },
   { key: 'matrix', label: 'Matrix lab', icon: BarChart3, render: () => <MatrixLab /> },

@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { register } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 register('./_ts-resolve.mjs', import.meta.url);
@@ -135,4 +136,54 @@ test('missingSummary skips nulls and a sentinel without inventing values', () =>
   assert.equal(s.meanPresent, 3);
   assert.equal(s.minPresent, 1);
   assert.equal(tools.missingSummary([], null).meanPresent, null);
+});
+
+test('axisReduce matches numpy sums and shapes for both axes', () => {
+  const grid = [[1, 2, 3], [4, 5, 6]];
+  const down = tools.axisReduce(grid, 0);
+  assert.deepEqual(down.after, [3]);
+  assert.deepEqual(down.totals, [5, 7, 9]);
+  assert.equal(down.collapsed, 'rows');
+  const across = tools.axisReduce(grid, 1);
+  assert.deepEqual(across.after, [2]);
+  assert.deepEqual(across.totals, [6, 15]);
+  assert.equal(across.collapsed, 'columns');
+  assert.equal(tools.axisReduce([], 0).error, 'the grid needs at least one row and one column');
+  assert.equal(tools.axisReduce([[1, 2], [3]], 0).error, 'every row must hold the same number of values');
+});
+
+test('reshapePlan preserves the size and infers exactly one dimension', () => {
+  assert.deepEqual(tools.reshapePlan(6, 2, 3), { ok: true, before: [6], after: [2, 3], totalsMatch: true, error: null });
+  assert.deepEqual(tools.reshapePlan(6, -1, 3).after, [2, 3]);
+  assert.deepEqual(tools.reshapePlan(6, 3, -1).after, [3, 2]);
+  assert.equal(tools.reshapePlan(6, 4, 2).ok, false);
+  assert.match(tools.reshapePlan(6, 4, 2).error, /8 cells/);
+  assert.equal(tools.reshapePlan(6, -1, -1).ok, false);
+  assert.equal(tools.reshapePlan(5, -1, 2).ok, false);
+  assert.equal(tools.reshapePlan(0, 0, 1).ok, false);
+});
+
+test('axis and reshape results equal a real numpy run', () => {
+  const probe = spawnSync('python3', ['-c', [
+    'import json, numpy as np',
+    'a = np.array([[1,2,3],[4,5,6]])',
+    'b = np.arange(6)',
+    'print(json.dumps({',
+    '  "sum0": a.sum(axis=0).tolist(), "shape0": list(a.sum(axis=0).shape),',
+    '  "sum1": a.sum(axis=1).tolist(), "shape1": list(a.sum(axis=1).shape),',
+    '  "reshape": list(b.reshape(-1, 3).shape), "reshapeValues": b.reshape(-1, 3).tolist()',
+    '}))',
+  ].join('\n')], { encoding: 'utf8' });
+  if (probe.status !== 0) {
+    console.log('numpy-not-available: axis/reshape parity checked against recorded values only');
+    return;
+  }
+  const np = JSON.parse(probe.stdout);
+  const grid = [[1, 2, 3], [4, 5, 6]];
+  assert.deepEqual(tools.axisReduce(grid, 0).totals, np.sum0);
+  assert.deepEqual(tools.axisReduce(grid, 0).after, np.shape0);
+  assert.deepEqual(tools.axisReduce(grid, 1).totals, np.sum1);
+  assert.deepEqual(tools.axisReduce(grid, 1).after, np.shape1);
+  assert.deepEqual(tools.reshapePlan(6, -1, 3).after, np.reshape);
+  assert.deepEqual(tools.reshapeGrid(...tools.reshapePlan(6, -1, 3).after), np.reshapeValues);
 });

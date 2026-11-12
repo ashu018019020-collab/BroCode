@@ -227,6 +227,64 @@ export function reshapeGrid(rows: number, cols: number): number[][] {
   return Array.from({ length: rows }, (_, i) => Array.from({ length: cols }, (_, j) => i * cols + j));
 }
 
+export interface AxisReduction {
+  before: [number, number];
+  after: number[];
+  collapsed: 'rows' | 'columns';
+  totals: number[];
+  error: string | null;
+}
+
+/**
+ * Summing along one axis, with the shapes NumPy actually produces. `axis=0` removes the row axis, so a
+ * (r, c) grid gives `c` totals and shape (c,); `axis=1` removes the column axis and gives `r` totals.
+ */
+export function axisReduce(grid: number[][], axis: 0 | 1): AxisReduction {
+  const rows = grid.length;
+  const cols = rows ? grid[0].length : 0;
+  const base: AxisReduction = { before: [rows, cols], after: [], collapsed: axis === 0 ? 'rows' : 'columns', totals: [], error: null };
+  if (!rows || !cols) return { ...base, error: 'the grid needs at least one row and one column' };
+  if (grid.some((row) => row.length !== cols)) return { ...base, error: 'every row must hold the same number of values' };
+  if (axis === 0) {
+    const totals = Array.from({ length: cols }, (_, c) => grid.reduce((sum, row) => sum + row[c], 0));
+    return { ...base, after: [cols], totals };
+  }
+  const totals = grid.map((row) => row.reduce((sum, v) => sum + v, 0));
+  return { ...base, after: [rows], totals };
+}
+
+export interface ReshapePlan {
+  ok: boolean;
+  before: [number];
+  after: number[];
+  totalsMatch: boolean;
+  error: string | null;
+}
+
+/**
+ * The reshape the playground shows: one axis in, a chosen shape out, with `-1` inferring exactly one
+ * dimension the way NumPy does. The size must be preserved — that is the rule the panel is teaching.
+ */
+export function reshapePlan(size: number, rows: number, cols: number): ReshapePlan {
+  const before: [number] = [size];
+  const fail = (error: string): ReshapePlan => ({ ok: false, before, after: [rows, cols], totalsMatch: false, error });
+  if (!Number.isInteger(size) || size < 0) return fail('the array needs a whole, non-negative size');
+  if (rows === -1 && cols === -1) return fail('reshape can infer only one dimension');
+  if (rows === 0 || cols === 0) return fail('a shape of zero is not what this panel shows');
+  let r = rows;
+  let c = cols;
+  if (r === -1) {
+    if (cols < 1 || size % cols !== 0) return fail(`cannot infer rows: ${size} is not divisible by ${cols}`);
+    r = size / cols;
+  } else if (c === -1) {
+    if (rows < 1 || size % rows !== 0) return fail(`cannot infer columns: ${size} is not divisible by ${rows}`);
+    c = size / rows;
+  }
+  if (!Number.isInteger(r) || !Number.isInteger(c) || r < 1 || c < 1) return fail('both dimensions must be positive whole numbers');
+  if (r * c !== size) return fail(`${r} × ${c} = ${r * c} cells, but the array holds ${size}`);
+  return { ok: true, before, after: [r, c], totalsMatch: r * c === size, error: null };
+}
+
 /** Bytes per element for the dtypes the course teaches; `null` for one it does not. */
 export const DTYPE_BYTES: Record<string, number> = {
   bool: 1, int8: 1, int16: 2, int32: 4, int64: 8,

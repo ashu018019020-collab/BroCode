@@ -53,6 +53,22 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Axis explorer and reshape playground (phase 34)
+
+Two tools are now explicit about shapes instead of leaving them to the reader:
+
+- **Axis explorer** — pick rows/columns (1–6) and `axis`, and the panel prints
+  `before (r, c) → after (n)` plus the real `a.sum(axis=k)` totals and the axis that disappeared
+  ("the rows axis disappears, so 2×3 becomes 3").
+- **Reshape playground** — enter the array size and a target shape, with `-1` inferring exactly one
+  dimension; the panel shows the before/after shapes, the flat C-order grid, and refuses a shape that
+  changes the number of cells ("4 × 2 = 8 cells, but the array holds 6").
+
+Both are computed by `axisReduce` and `reshapePlan` in `core/learning/numpy-tools.ts`, and the results
+are **verified against a real numpy run**: `numpy-tools.test.mjs` executes
+`a.sum(axis=0/1)` and `b.reshape(-1, 3)` and compares totals, shapes and the flat index grid, skipping
+only when python/numpy is absent on the machine.
+
 ### Cross-device account sync (phase 33)
 
 The NumPy course's own records — `nmod:` section records, `nans:` written drafts, `ntick:` rubric ticks,
