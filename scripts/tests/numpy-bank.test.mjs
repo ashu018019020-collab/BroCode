@@ -64,7 +64,17 @@ test('scenario questions are authored, answered and tagged', () => {
   for (const e of scenarios) {
     assert.ok(e.q.trim().length > 40, `${e.id}: scenario prompt too short`);
     assert.ok(e.answer.trim().length > 40, `${e.id}: scenario answer too short`);
+    assert.ok(Array.isArray(e.followUps) && e.followUps.length >= 2, `${e.id}: needs at least two follow-ups`);
+    const asked = new Set();
+    for (const f of e.followUps) {
+      assert.ok(f.q.trim().length > 30, `${e.id}: follow-up question too short`);
+      assert.ok(f.answer.trim().length > 30, `${e.id}: follow-up answer too short`);
+      assert.ok(!asked.has(f.q), `${e.id}: duplicate follow-up question`);
+      asked.add(f.q);
+    }
   }
+  const total = scenarios.reduce((n, e) => n + e.followUps.length, 0);
+  assert.ok(total >= 80, `only ${total} follow-ups`);
 });
 
 test('every question id is unique and every difficulty is set', () => {

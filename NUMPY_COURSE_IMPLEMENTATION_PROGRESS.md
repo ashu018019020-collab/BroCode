@@ -62,6 +62,15 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Interview follow-ups (phase 37)
+
+Every one of the 40 authored scenarios now carries **two follow-up questions**, 80 in total, each with
+its own model answer in `scenarios.json` (`followUps: [{ q, answer }]`). They are the questions an
+interviewer asks next — the measurement, the edge case, the trade-off — not a restatement of the first
+answer. The generator validates the shape and publishes them with the scenario, `numpy-bank.test.mjs`
+recomputes that every scenario has at least two with unique prompts, and the interview card reveals
+each follow-up answer separately so the learner still attempts a reply first.
+
 ### Hints for modules two to six (phase 36)
 
 `hints-2.json` adds **125 hints** (25 per module) so the first twenty-five tasks of ndarray fundamentals,

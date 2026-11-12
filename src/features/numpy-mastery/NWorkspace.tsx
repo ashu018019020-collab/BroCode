@@ -319,6 +319,38 @@ function CodePanel({
   );
 }
 
+/**
+ * The interview answer is a starting point, so an authored scenario carries follow-ups that an
+ * interviewer would actually ask next. Each one reveals its own answer, keeping the learner's first
+ * attempt honest instead of printing every reply at once.
+ */
+function FollowUps({ items }: { items: { q: string; answer: string }[] }) {
+  const [open, setOpen] = useState<number | null>(null);
+  return (
+    <div style={{ marginTop: 10 }}>
+      <b className="small">Then the interviewer asks</b>
+      <ol className="small" style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+        {items.map((item, i) => (
+          <li key={item.q} style={{ marginBottom: 6 }}>
+            {item.q}{' '}
+            <button
+              type="button"
+              className="btn small ghost"
+              onClick={() => setOpen(open === i ? null : i)}
+              aria-expanded={open === i}
+            >
+              {open === i ? 'Hide answer' : 'Show answer'}
+            </button>
+            {open === i && (
+              <span className="muted" style={{ display: 'block', marginTop: 4, whiteSpace: 'pre-wrap' }}>{item.answer}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 /** Fields some authored records carry instead of `statement`/`code`/`output`. */
 type AnyEntry = NEntry & { body?: string; task?: string; solution?: string };
 const extraOf = (entry: NEntry) => entry as AnyEntry;
@@ -440,6 +472,7 @@ function TopicCard({ entry, level }: { entry: NEntry; level: 'simple' | 'pro' })
       {reveal === 'answer' && entry.answer && (
         <pre className="codeblock" style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{entry.answer}</pre>
       )}
+      {reveal === 'answer' && entry.followUps?.length ? <FollowUps items={entry.followUps} /> : null}
       {reveal === 'fix' && entry.fix && (
         <pre className="codeblock" style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{entry.fix}</pre>
       )}

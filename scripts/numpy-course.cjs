@@ -172,6 +172,10 @@ for (const [id, list] of Object.entries(scenarios)) {
   if (!target) { fail(`scenarios: unknown module ${id}`); continue; }
   for (const q of list) {
     if (!q.q || !q.answer) fail(`${id}: scenario needs a question and an answer`);
+    if (q.followUps && (!Array.isArray(q.followUps) || !q.followUps.length)) fail(`${id}: followUps must be a non-empty array`);
+    for (const f of q.followUps || []) {
+      if (!f.q || !f.answer) fail(`${id}: every follow-up needs a question and an answer`);
+    }
   }
   target.interviewBank = [...(target.interviewBank || []), ...list.map((q) => ({ ...q, scenario: true }))];
 }
@@ -314,6 +318,7 @@ function buildSections(m) {
         id: id('interview', 'a' + i), q: q.q, answer: q.answer, code: q.code,
         difficulty: difficultyAt(i + topics.length),
         ...(q.scenario ? { scenario: true } : {}),
+        ...(q.followUps ? { followUps: q.followUps } : {}),
       })),
     ],
     /*

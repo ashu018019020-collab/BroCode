@@ -60,6 +60,8 @@ export interface NEntry {
   options?: string[];
   /** A written checkpoint is self-assessed against three criteria built from real content. */
   rubric?: string[];
+  /** Authored deeper questions asked after the model answer, so practice goes past one reply. */
+  followUps?: { q: string; answer: string }[];
   /** The same Learn topic explained for a beginner, in Hinglish. */
   simple?: string;
   /** The same Learn topic explained professionally, in English. */
