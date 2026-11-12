@@ -257,6 +257,37 @@ export interface NReport {
  * and falls back to the first untouched section; `weak` is every unrecorded section in course order,
  * which is what a revision plan needs.
  */
+/** The rubric self-check is stored as a JSON array of criteria under this key. */
+export const N_CAPSTONE_KEY = 'ncap';
+
+export interface NCertificate {
+  /** Every section recorded — the only thing that makes the course complete. */
+  complete: boolean;
+  capstonePassed: boolean;
+  eligible: boolean;
+  score: number;
+  grade: 'none' | 'pass' | 'excellent';
+  reason: string;
+}
+
+/**
+ * A certificate is a claim, so it is derived, never assumed: the course must be complete (all sections
+ * recorded) AND the capstone rubric must reach the pass mark the course publishes. The grade mirrors
+ * the same thresholds (70 pass, 90 excellent) instead of inventing a second scale.
+ */
+export function numpyCertificate(report: NReport, rubric: { criterion: string; weight: number }[], checked: string[]): NCertificate {
+  const score = rubric.reduce((a, row) => a + (checked.includes(row.criterion) ? row.weight : 0), 0);
+  const complete = report.sectionsDone === report.sectionsTotal && report.sectionsTotal > 0;
+  const capstonePassed = score >= 70;
+  const grade: NCertificate['grade'] = score >= 90 ? 'excellent' : score >= 70 ? 'pass' : 'none';
+  const reason = !complete
+    ? `${report.sectionsTotal - report.sectionsDone} sections are still untouched.`
+    : !capstonePassed
+      ? 'The capstone rubric is below 70 — tick the evidence you can actually show.'
+      : 'Every section is recorded and the capstone rubric is at or above the pass mark.';
+  return { complete, capstonePassed, eligible: complete && capstonePassed, score, grade, reason };
+}
+
 export function numpyReport(modules: NModule[], attempts: Record<string, unknown>, last?: string): NReport {
   const rows: NReportRow[] = [];
   const weak: NWeakSpot[] = [];

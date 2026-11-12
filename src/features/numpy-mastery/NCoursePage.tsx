@@ -3,7 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronRight, GraduationCap, Play, ShieldCheck, Target, Trophy } from 'lucide-react';
 import { useNumpyCourse } from '../../core/data/ncourse';
 import { useSavedAnswer, useStore } from '../../core/storage/store';
-import { N_LAST_KEY, N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, numpyReport } from '../../core/learning/ncourse';
+import { N_CAPSTONE_KEY, N_LAST_KEY, N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, numpyCertificate, numpyReport } from '../../core/learning/ncourse';
+import { useAuth } from '../../core/auth/AuthProvider';
 import { NLogo } from './NLogo';
 import { NModuleWorkspace } from './NWorkspace';
 import { Bar } from '../../components/ui/ui';
@@ -28,6 +29,24 @@ export default function NCoursePage() {
   const progress = useMemo(() => nProgress(modules, state.attempts), [modules, state.attempts]);
   const [lastPlace] = useSavedAnswer(N_LAST_KEY);
   const report = useMemo(() => numpyReport(modules, state.attempts, lastPlace), [modules, state.attempts, lastPlace]);
+  const { user } = useAuth();
+  const [capRaw, saveCap] = useSavedAnswer(N_CAPSTONE_KEY);
+  const checked = useMemo<string[]>(() => {
+    try {
+      const parsed = JSON.parse(capRaw || '[]');
+      return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+    } catch { return []; }
+  }, [capRaw]);
+  const rubric = file?.capstone?.rubric ?? [];
+  const certificate = useMemo(
+    () => numpyCertificate(report, rubric, checked),
+    [report, rubric, checked],
+  );
+  const toggleCriterion = (criterion: string) => {
+    const nextList = checked.includes(criterion) ? checked.filter((c) => c !== criterion) : [...checked, criterion];
+    saveCap(JSON.stringify(nextList));
+  };
+  const learnerName = (state.profile.name || user?.name || 'Learner').trim();
   const next = useMemo(() => {
     const fresh = modules.find((m) => !isModuleComplete(m.id, state.attempts));
     return fresh ? { module: fresh, section: nextSection(fresh.id, state.attempts) } : null;
@@ -244,6 +263,64 @@ export default function NCoursePage() {
           </div>
         </>
       )}
+
+      <div className="sec-head"><h2><ShieldCheck size={16} color="var(--blue)" /> Proof of work</h2><span className="line" /></div>
+      <div className="card">
+        <div className="row spread" style={{ gap: 10, flexWrap: 'wrap' }}>
+          <div>
+            <b className="small">Certificate eligibility</b>
+            <p className="small muted" style={{ margin: '4px 0 0' }}>
+              {certificate.reason} Both conditions are measured, not assumed: all {report.sectionsTotal} sections
+              recorded and a capstone rubric at or above the course's own pass mark.
+            </p>
+          </div>
+          <span className={`chip ${certificate.eligible ? 'easy' : ''}`}>
+            {report.sectionsDone}/{report.sectionsTotal} sections{' · '}rubric {certificate.score}/100
+            {certificate.eligible ? ` · ${certificate.grade}` : ''}
+          </span>
+        </div>
+
+        {rubric.length > 0 && (
+          <div style={{ marginTop: 10 }}>
+            <b className="small">Capstone rubric — tick only what you can show</b>
+            <div style={{ marginTop: 4 }}>
+              {rubric.map((row) => (
+                <label key={row.criterion} className="row small" style={{ gap: 6, alignItems: 'flex-start', marginBottom: 4, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={checked.includes(row.criterion)} onChange={() => toggleCriterion(row.criterion)} style={{ marginTop: 2 }} />
+                  <span><b>{row.weight}</b> · {row.criterion} <span className="muted">— {row.evidence}</span></span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {certificate.eligible ? (
+          <div className="card" style={{ marginTop: 12, padding: 14, border: '1px solid var(--blue, #2563eb)' }}>
+            <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <b>Certificate of completion — NumPy Mastery</b>
+              <span className="chip easy">{certificate.grade}</span>
+            </div>
+            <p className="small" style={{ margin: '8px 0 0' }}>
+              <b>{learnerName}</b> completed all {report.modulesTotal} modules and {report.sectionsTotal} sections
+              of BroCode's NumPy Mastery course ({stats.entries} published items) and self-assessed the capstone at{' '}
+              <b>{certificate.score}/100</b>.
+            </p>
+            <p className="small muted" style={{ margin: '6px 0 0' }}>
+              Issued {new Date().toLocaleDateString()} · Self-issued proof of work from your own progress records;
+              it is not an accredited qualification. Print it or save it as a PDF from your browser.
+            </p>
+            <button type="button" className="btn small primary" style={{ marginTop: 8 }} onClick={() => window.print()}>
+              Print / save as PDF
+            </button>
+          </div>
+        ) : (
+          <p className="small muted" style={{ margin: '10px 0 0' }}>
+            {report.weak.length > 0
+              ? `Next untouched: ${report.weak[0].label} in ${report.weak[0].moduleTitle}.`
+              : 'Every section is recorded — finish the capstone rubric to unlock the certificate.'}
+          </p>
+        )}
+      </div>
 
       <div className="sec-head"><h2>20 modules · 10 sections each</h2><span className="line" /></div>
       <div className="tile-grid tile-grid-lg">

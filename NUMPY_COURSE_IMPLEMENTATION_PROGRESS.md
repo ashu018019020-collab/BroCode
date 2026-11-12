@@ -53,6 +53,19 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Certificate and proof of work (phase 28, Part 12 of the brief)
+
+`numpyCertificate` derives eligibility instead of assuming it: every one of the 200 sections must
+have a record AND the capstone rubric (self-assessed, criterion by criterion, stored under `ncap`) must
+reach the course's own pass mark of 70, with 90 for the excellent grade — the same thresholds the
+capstone publishes. The course page renders the status, the tick list with each criterion's weight, the
+reason when it is locked, and, once eligible, a printable certificate naming the learner, the completed
+totals and the rubric score.
+
+The certificate says plainly that it is **self-issued proof of work from the learner's own records,
+not an accredited qualification** — the app has no server-side grading and will not imply otherwise.
+`ncourse.test.mjs` drives the rule (no ticks, 80 pass, 100 excellent, 150/200 sections blocked).
+
 ### Capstone project (phase 27, Part 11 of the brief)
 
 `content/numpy-mastery/capstone.json` adds the one assessable project for the whole course: a

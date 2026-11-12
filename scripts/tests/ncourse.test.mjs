@@ -397,3 +397,33 @@ test('numpyReport marks a module done only with all ten sections', () => {
   assert.equal(report.rows[0].pct, 100);
   assert.equal(report.sectionsDone, 10);
 });
+
+test('numpyCertificate needs both completion and the capstone pass mark', () => {
+  const rubric = [
+    { criterion: 'axis', weight: 30 },
+    { criterion: 'vector', weight: 25 },
+    { criterion: 'honest', weight: 25 },
+    { criterion: 'decision', weight: 20 },
+  ];
+  const complete = { sectionsDone: 200, sectionsTotal: 200, modulesDone: 20, modulesTotal: 20, pct: 100, rows: [], weak: [], next: null, resume: null };
+  const partial = { ...complete, sectionsDone: 150, pct: 75 };
+
+  const empty = engine.numpyCertificate(complete, rubric, []);
+  assert.equal(empty.score, 0);
+  assert.equal(empty.eligible, false);
+  assert.equal(empty.grade, 'none');
+  assert.match(empty.reason, /below 70/);
+
+  const pass = engine.numpyCertificate(complete, rubric, ['axis', 'vector', 'honest']);
+  assert.equal(pass.score, 80);
+  assert.equal(pass.grade, 'pass');
+  assert.equal(pass.eligible, true);
+
+  const excellent = engine.numpyCertificate(complete, rubric, rubric.map((r) => r.criterion));
+  assert.equal(excellent.score, 100);
+  assert.equal(excellent.grade, 'excellent');
+
+  const unfinished = engine.numpyCertificate(partial, rubric, rubric.map((r) => r.criterion));
+  assert.equal(unfinished.eligible, false);
+  assert.match(unfinished.reason, /50 sections/);
+});
