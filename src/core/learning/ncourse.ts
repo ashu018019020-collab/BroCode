@@ -116,6 +116,17 @@ export interface NCourseFile {
     };
   };
   modules: NModule[];
+  /** The one assessable project for the whole course, when the build carries it. */
+  capstone?: {
+    title: string;
+    brief: string;
+    dataset: string;
+    starter: { code: string; output: string };
+    tiers: { name: string; goal: string; requirements: string[]; deliverables: string[]; stretch: string[] }[];
+    milestones: { title: string; detail: string }[];
+    rubric: { criterion: string; weight: number; evidence: string }[];
+    assessment: { pass: string; excellent: string };
+  };
 }
 
 /**

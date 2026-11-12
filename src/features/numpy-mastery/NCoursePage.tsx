@@ -189,6 +189,62 @@ export default function NCoursePage() {
         </ol>
       </div>
 
+      {file?.capstone && (
+        <>
+          <div className="sec-head"><h2><GraduationCap size={16} color="var(--blue)" /> Capstone project</h2><span className="line" /></div>
+          <div className="card">
+            <h3 style={{ margin: 0 }}>{file.capstone.title}</h3>
+            <p className="small" style={{ margin: '6px 0 0' }}>{file.capstone.brief}</p>
+            <p className="small muted" style={{ margin: '6px 0 0' }}><b>Dataset · </b>{file.capstone.dataset}</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, marginTop: 12 }}>
+              {file.capstone.tiers.map((tier) => (
+                <div key={tier.name} className="card" style={{ padding: 10 }}>
+                  <div className="row spread" style={{ gap: 6 }}>
+                    <b className="small">{tier.name}</b>
+                    <span className="chip">{tier.requirements.length} requirements</span>
+                  </div>
+                  <p className="small muted" style={{ margin: '4px 0 6px' }}>{tier.goal}</p>
+                  <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
+                    {tier.requirements.map((r) => <li key={r}>{r}</li>)}
+                  </ul>
+                  <p className="small" style={{ margin: '6px 0 0' }}><b>Deliverables · </b>{tier.deliverables.join(' ')}</p>
+                  <p className="small muted" style={{ margin: '4px 0 0' }}><b>Stretch · </b>{tier.stretch.join(' ')}</p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <b className="small">Starter — the shape contract, executed</b>
+              <pre className="codeblock" style={{ margin: '6px 0 0' }}>{file.capstone.starter.code}</pre>
+              <pre className="codeblock" style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap' }}>{file.capstone.starter.output}</pre>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <b className="small">Milestones</b>
+              <ol className="small" style={{ margin: '4px 0 0', paddingLeft: 20 }}>
+                {file.capstone.milestones.map((m) => (
+                  <li key={m.title} style={{ marginBottom: 4 }}><b>{m.title}</b> — <span className="muted">{m.detail}</span></li>
+                ))}
+              </ol>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <b className="small">Assessment rubric (weights total 100)</b>
+              <div className="small" style={{ marginTop: 4 }}>
+                {file.capstone.rubric.map((row) => (
+                  <div key={row.criterion} className="row" style={{ gap: 8, alignItems: 'flex-start', marginBottom: 3 }}>
+                    <span className="chip">{row.weight}</span>
+                    <span><b>{row.criterion}</b> — <span className="muted">{row.evidence}</span></span>
+                  </div>
+                ))}
+              </div>
+              <p className="small muted" style={{ margin: '6px 0 0' }}>Pass: {file.capstone.assessment.pass} Excellent: {file.capstone.assessment.excellent}</p>
+            </div>
+          </div>
+        </>
+      )}
+
       <div className="sec-head"><h2>20 modules · 10 sections each</h2><span className="line" /></div>
       <div className="tile-grid tile-grid-lg">
         {modules.map((m) => {

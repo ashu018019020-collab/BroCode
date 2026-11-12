@@ -53,6 +53,21 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Capstone project (phase 27, Part 11 of the brief)
+
+`content/numpy-mastery/capstone.json` adds the one assessable project for the whole course: a
+twelve-month sales table generated from a fixed seed, three tiers (Beginner / Intermediate / Advanced)
+each with at least three requirements, deliverables and a stretch goal, four ordered milestones, and a
+four-row rubric whose weights total exactly 100 with a pass and an excellent bar. The starter is real
+code, executed against numpy before publication, so the printed `units shape: (12, 6)` and the twelve
+monthly totals on the page are the runtime's own output.
+
+The generator rejects a capstone with a missing tier field or a rubric that does not sum to 100, and
+`scripts/tests/numpy-capstone.test.mjs` checks the same contract from the published artifact.
+
+Open: the twenty per-module mini projects and labs still carry only a brief and steps — they have no
+requirements, dataset note, deliverable or rubric of their own.
+
 ### Progress and personalization (phase 26, Part 10 of the brief)
 
 `numpyReport` (pure, in `core/learning/ncourse.ts`) turns the section records into everything the

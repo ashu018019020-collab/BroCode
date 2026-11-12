@@ -176,6 +176,27 @@ for (const [id, list] of Object.entries(scenarios)) {
   target.interviewBank = [...(target.interviewBank || []), ...list.map((q) => ({ ...q, scenario: true }))];
 }
 
+/*
+ * The capstone (Part 11 of the brief): one assessable project for the whole course. Its starter code is
+ * executed before publication by `numpy-fill-outputs.cjs`, so the stored output is what NumPy printed.
+ */
+const capstone = fs.existsSync(path.join(SRC, 'capstone.json')) ? readJSON(path.join(SRC, 'capstone.json')) : null;
+if (capstone) {
+  if (!capstone.title || !capstone.brief || !capstone.dataset) fail('capstone: title, brief and dataset are required');
+  if (!Array.isArray(capstone.tiers) || capstone.tiers.length !== 3) fail('capstone: three tiers are required');
+  for (const tier of capstone.tiers) {
+    if (!tier.name || !tier.goal) fail('capstone: every tier needs a name and a goal');
+    if (!Array.isArray(tier.requirements) || tier.requirements.length < 3) fail(`capstone: ${tier.name} needs three requirements`);
+    if (!Array.isArray(tier.deliverables) || !tier.deliverables.length) fail(`capstone: ${tier.name} needs a deliverable`);
+    if (!Array.isArray(tier.stretch) || !tier.stretch.length) fail(`capstone: ${tier.name} needs a stretch goal`);
+  }
+  if (!Array.isArray(capstone.milestones) || capstone.milestones.length < 4) fail('capstone: four milestones are required');
+  if (!Array.isArray(capstone.rubric)) fail('capstone: rubric is required');
+  const weights = capstone.rubric.reduce((a, r) => a + (r.weight || 0), 0);
+  if (weights !== 100) fail(`capstone: rubric weights sum to ${weights}, expected 100`);
+  if (!capstone.starter?.code || !capstone.starter?.output) fail('capstone: starter code and output are required');
+}
+
 const SECTIONS = [
   ['learn', 'Learn'], ['interview', 'Interview'], ['coding', 'Coding Lab'], ['logic', 'Logic'],
   ['debug', 'Debug'], ['practice', 'Practice Solutions'], ['miniProject', 'Mini Project'],
@@ -420,7 +441,7 @@ if (problems.length) {
   process.exit(1);
 }
 
-const artifact = { course, stats, modules: published };
+const artifact = { course, stats, modules: published, ...(capstone ? { capstone } : {}) };
 if (WRITE) {
   fs.mkdirSync(OUT, { recursive: true });
   fs.writeFileSync(path.join(OUT, 'index.json'), `${JSON.stringify(artifact, null, 1)}\n`);

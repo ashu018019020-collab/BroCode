@@ -1,0 +1,79 @@
+{
+  "title": "Capstone: a year of sales, answered with arrays",
+  "brief": "You are handed twelve months of unit sales across six products and a price list. Build one NumPy pipeline that answers the questions a manager actually asks — which month earned most, which product carries the year, how volatile each product is, and what next quarter looks like if the current trend holds. No loops for the arithmetic, no pandas, no hand-typed totals.",
+  "dataset": "Generated in code so it is reproducible: `default_rng(7).integers(20, 120, size=(12, 6))` gives units per month per product, and the price list is `[249, 199, 349, 149, 299, 179]`. Shape (12, 6) means months are rows and products are columns — decide that once and keep it everywhere.",
+  "starter": {
+    "code": "import numpy as np\nrng = np.random.default_rng(7)\nunits = rng.integers(20, 120, size=(12, 6))\nprice = np.array([249, 199, 349, 149, 299, 179])\nrevenue = units * price\nmonthly = revenue.sum(axis=1)\nprint(\"units shape:\", units.shape)\nprint(\"monthly revenue:\", monthly.tolist())\nprint(\"best month:\", int(monthly.argmax()) + 1)\nprint(\"mean per month:\", round(float(monthly.mean()), 2))",
+    "output": "units shape: (12, 6)\nmonthly revenue: [132043, 83685, 98486, 88111, 115244, 124129, 102229, 95339, 89755, 126650, 90974, 108179]\nbest month: 1\nmean per month: 104568.67"
+  },
+  "tiers": [
+    {
+      "name": "Beginner",
+      "goal": "Answer the four manager questions with reductions and one comparison.",
+      "requirements": [
+        "Compute per-month revenue with broadcasting, not a loop over products.",
+        "Report the best month with argmax and the worst month with argmin.",
+        "Report total units and total revenue for the year.",
+        "Print the shape of every array you create and say what each axis means."
+      ],
+      "deliverables": [
+        "A script that prints six labelled numbers with their units.",
+        "One sentence per number explaining which axis was collapsed."
+      ],
+      "stretch": [
+        "Express the same monthly totals with `@ price` and confirm the numbers match."
+      ]
+    },
+    {
+      "name": "Intermediate",
+      "goal": "Add per-product analysis, shares and a fair comparison across products.",
+      "requirements": [
+        "Per-product yearly revenue and its share of the total, sorted descending.",
+        "Per-product mean and standard deviation across the twelve months.",
+        "The month × product cell with the highest revenue, reported as (month, product) using unravel_index.",
+        "A boolean mask that selects months above the yearly monthly mean."
+      ],
+      "deliverables": [
+        "A printed table whose ordering is explained (sorted by revenue).",
+        "A mask whose True count matches the number you print."
+      ],
+      "stretch": [
+        "Normalise each product to its own first month and compare growth in percent."
+      ]
+    },
+    {
+      "name": "Advanced",
+      "goal": "Turn the table into a defensible forecast and a written recommendation.",
+      "requirements": [
+        "Fit a straight-line trend per product with `np.polyfit` over the twelve months.",
+        "Project the next three months per product and total them.",
+        "Quantify uncertainty honestly: report the residual standard deviation and say what the projection assumes.",
+        "State one decision the data supports and one it does not."
+      ],
+      "deliverables": [
+        "A projection array of shape (3, 6) plus its monthly totals.",
+        "A short written recommendation with the numbers it rests on.",
+        "A limitations paragraph naming at least two assumptions."
+      ],
+      "stretch": [
+        "Compare the linear projection against a simple 3-month moving average and explain which is more honest for this data."
+      ]
+    }
+  ],
+  "milestones": [
+    { "title": "1 · Fix the shape contract", "detail": "Write down months × products before any arithmetic. Print units.shape and verify (12, 6); every later axis choice depends on it." },
+    { "title": "2 · Broadcasting, not looping", "detail": "Multiply units by price to get revenue. Confirm revenue.sum(axis=1) matches a manual total for one month." },
+    { "title": "3 · Ask the manager questions", "detail": "Best and worst month, per-product share, per-product volatility, and the mask of above-average months. Each answer is one reduction or one comparison." },
+    { "title": "4 · Project and defend", "detail": "Fit the trend, project three months, then write what the projection assumes and what would break it." }
+  ],
+  "rubric": [
+    { "criterion": "Correct axis reasoning", "weight": 30, "evidence": "Every reduction names the axis it collapses, and printed shapes match the claim." },
+    { "criterion": "Vectorised arithmetic", "weight": 25, "evidence": "No Python loop performs the revenue or aggregation work; broadcasting is used where it belongs." },
+    { "criterion": "Honest reporting", "weight": 25, "evidence": "Numbers carry units, the mask count matches the printed count, and the projection states its assumptions." },
+    { "criterion": "Decision quality", "weight": 20, "evidence": "The recommendation is supported by the computed numbers, and the limitations paragraph names real risks." }
+  ],
+  "assessment": {
+    "pass": "All four milestones produce numbers you can explain, and the rubric totals at least 70.",
+    "excellent": "90 or more, with the advanced tier's projection and limitations written so a non-programmer could act on them."
+  }
+}
