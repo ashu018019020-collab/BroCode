@@ -168,8 +168,8 @@ function CodePanel({
   entry: NEntry | undefined; cells: NEntry[]; index: number;
   onMove: (i: number) => void; scope: string; done: boolean; onDone: () => void;
 }) {
-  const source = entry ? (entry.code ?? entry.starter ?? '') : '';
-  const expected = entry ? (entry.kind === 'task' ? (entry.expected ?? '') : (entry.output ?? '')) : '';
+  const source = entry ? (entry.code ?? entry.starter ?? extraOf(entry).solution ?? '') : '';
+  const expected = entry ? (entry.kind === 'task' ? (entry.expected ?? '') : (entry.output ?? entry.expected ?? '')) : '';
   const [code, setCode] = useState(source);
   const [stdin, setStdin] = useState('');
   const [out, setOut] = useState<{ run: RunResult; graded: 'pass' | 'fail' | null } | null>(null);
@@ -177,7 +177,7 @@ function CodePanel({
   const [showExpected, setShowExpected] = useState(false);
 
   useEffect(() => {
-    setCode(entry ? (entry.code ?? entry.starter ?? '') : '');
+    setCode(entry ? (entry.code ?? entry.starter ?? extraOf(entry).solution ?? '') : '');
     setOut(null);
     setShowExpected(false);
   }, [entry?.id, entry?.code, entry?.starter]);
@@ -318,6 +318,80 @@ function CodePanel({
   );
 }
 
+/** Fields some authored records carry instead of `statement`/`code`/`output`. */
+type AnyEntry = NEntry & { body?: string; task?: string; solution?: string };
+const extraOf = (entry: NEntry) => entry as AnyEntry;
+
+/**
+ * A non-interactive record: the brief, its code, and whatever must stay behind a reveal.
+ *
+ * Practice ships `task`/`solution`/`expected`, projects ship `body`/`steps`, logic ships `answer`,
+ * and debug ships `error`/`fix` — this card reads all of them, so no section renders an empty panel.
+ */
+function TopicCard({ entry }: { entry: NEntry }) {
+  const e = extraOf(entry);
+  const [reveal, setReveal] = useState<'answer' | 'fix' | 'solution' | null>(null);
+  const brief = entry.statement ?? e.body ?? e.task ?? '';
+  const solution = e.solution ?? '';
+  return (
+    <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
+      <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
+        <span className="chip">
+          {entry.kind === 'task' ? 'independent task · hidden check' : entry.error ? 'broken code' : 'verified sample'}
+        </span>
+      </div>
+      <strong className="small" style={{ display: 'block', margin: '8px 0 4px', fontSize: '0.95rem' }}>{entry.title ?? entry.q}</strong>
+      {brief && <p className="small" style={{ margin: '0 0 8px' }}>{brief}</p>}
+      {entry.steps?.length ? (
+        <ol className="small muted" style={{ margin: '0 0 8px', paddingLeft: 18 }}>
+          {entry.steps.map((step) => <li key={step}>{step}</li>)}
+        </ol>
+      ) : null}
+      {entry.code && <pre className="codeblock" style={{ margin: 0 }}>{entry.code}</pre>}
+      {entry.error && (
+        <p className="small" style={{ margin: '8px 0 0', color: 'var(--red)', fontFamily: 'ui-monospace, monospace' }}>
+          <b>Raises:</b> {entry.error}
+        </p>
+      )}
+      <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+        {entry.answer && (
+          <button type="button" className="btn small ghost" onClick={() => setReveal(reveal === 'answer' ? null : 'answer')}>
+            {reveal === 'answer' ? 'Hide answer' : 'Reveal answer'}
+          </button>
+        )}
+        {entry.fix && (
+          <button type="button" className="btn small ghost" onClick={() => setReveal(reveal === 'fix' ? null : 'fix')}>
+            {reveal === 'fix' ? 'Hide the fix' : 'Show the fix'}
+          </button>
+        )}
+        {solution && (
+          <button type="button" className="btn small ghost" onClick={() => setReveal(reveal === 'solution' ? null : 'solution')}>
+            {reveal === 'solution' ? 'Hide the solution' : 'Show the solution'}
+          </button>
+        )}
+      </div>
+      {reveal === 'answer' && entry.answer && (
+        <pre className="codeblock" style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{entry.answer}</pre>
+      )}
+      {reveal === 'fix' && entry.fix && (
+        <pre className="codeblock" style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{entry.fix}</pre>
+      )}
+      {reveal === 'solution' && solution && (
+        <>
+          <pre className="codeblock" style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{solution}</pre>
+          {entry.expected && (
+            <pre className="codeblock" style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap' }}>{entry.expected}</pre>
+          )}
+        </>
+      )}
+      <p className="small muted" style={{ margin: '8px 0 0' }}>
+        Run the cell on the right. Predict the result first, then compare it with the verified output.
+      </p>
+    </div>
+  );
+}
+
 /**
  * One module: a header with a completion ring and ten section cards, then a 50/50 workspace.
  *
@@ -335,7 +409,7 @@ export function NModuleWorkspace({ module, onBack }: { module: NModule; onBack: 
   const done = Boolean(state.attempts[nSectionKey(module.id, section)]);
   const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
   const progress = useMemo(() => nProgress([module], state.attempts), [module, state.attempts]);
-  const cells = useMemo(() => entries.filter((e) => e.code || e.starter), [entries]);
+  const cells = useMemo(() => entries.filter((e) => e.code || e.starter || extraOf(e).solution), [entries]);
   const cellIndex = Math.max(0, cells.findIndex((c) => c.id === entry?.id));
 
   useEffect(() => { setIndex(0); }, [module.id, section]);
@@ -403,25 +477,7 @@ export function NModuleWorkspace({ module, onBack }: { module: NModule; onBack: 
             ? <QuizCard key={entry.id} entry={entry} done={done} onPass={onDone} />
             : entry.rubric?.length
               ? <ShortAnswerCard key={entry.id} entry={entry} done={done} onPass={onDone} />
-              : (
-                <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
-                  <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
-                    <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
-                    <span className="chip">{entry.kind === 'task' ? 'independent task · hidden check' : 'verified sample'}</span>
-                  </div>
-                  <strong className="small" style={{ display: 'block', margin: '8px 0 4px', fontSize: '0.95rem' }}>{entry.title ?? entry.q}</strong>
-                  {entry.statement && <p className="small" style={{ margin: '0 0 8px' }}>{entry.statement}</p>}
-                  {entry.code && <pre className="codeblock" style={{ margin: '0 0 8px' }}>{entry.code}</pre>}
-                  {entry.steps?.length ? (
-                    <ol className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
-                      {entry.steps.map((step) => <li key={step}>{step}</li>)}
-                    </ol>
-                  ) : null}
-                  <p className="small muted" style={{ margin: '8px 0 0' }}>
-                    Run the cell on the right. Change one value, predict the output, then run it again.
-                  </p>
-                </div>
-              ))}
+              : <TopicCard key={entry.id} entry={entry} />)}
         </div>
         <div style={{ flex: '1 1 0', minWidth: 'min(320px, 100%)' }}>
           <CodePanel
