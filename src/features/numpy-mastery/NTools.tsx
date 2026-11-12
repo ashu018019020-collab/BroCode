@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
-import { BarChart3, Copy, Grid3x3, Layers, Sigma } from 'lucide-react';
+import { BarChart3, Copy, Grid3x3, Layers, Sigma, Timer } from 'lucide-react';
 import {
   axisReduce, broadcastShape, dtypeMemory, DTYPE_BYTES, gridShape, maskFilter, matmul, missingSummary,
   parseMatrix, parseShape, percentile, reshapeGrid, reshapePlan, sharingOutcome, SHARING_OPS, shapeSize,
   shapeStrides, sliceIndices, type SharingOp,
   statsSummary, transpose, uniformSamples, type CompareOp, type Shape,
 } from '../../core/learning/numpy-tools';
+import { benchmarkSource, parseBenchmark, type BenchReport } from '../../core/learning/numpy-bench';
+import { runPython } from '../coding/runners';
 
 const inputStyle = {
   width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line, #d6dbe4)',
@@ -324,6 +326,83 @@ const DERIVED_SOURCE_INDEX: Record<SharingOp, number | null> = {
   slice: 1, copy: null, fancy: null, reshape: 0, transpose: 0, ravel: 0, flatten: null, reverse: 5,
 };
 
+/**
+ * Loop versus vectorised, measured in this tab.
+ *
+ * The program runs in the app's bundled Pyodide runtime with the bundled NumPy wheel, so both kernels
+ * are the real thing: a Python `for` loop over `tolist()` and `np.sum(values * values)`. The panel shows
+ * the median of the repeats plus every repeat, and confirms both kernels produced the same sum.
+ */
+function PerformanceLab() {
+  const [n, setN] = useState(200_000);
+  const [report, setReport] = useState<BenchReport | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState('');
+  const reps = 5;
+
+  async function measure() {
+    setBusy(true);
+    setNote('Starting the in-browser Python runtime…');
+    setReport(null);
+    const run = await runPython(benchmarkSource(n, reps));
+    setBusy(false);
+    if (!run.ok) {
+      setNote(run.error || 'The benchmark did not finish.');
+      return;
+    }
+    const parsed = parseBenchmark(run.output);
+    if (!parsed) {
+      setNote('The runtime printed no benchmark line — open the console for this run.');
+      return;
+    }
+    setReport(parsed);
+    setNote(`Measured in this tab: ${parsed.reps} repeats of ${parsed.n.toLocaleString()} values each.`);
+  }
+
+  return (
+    <div>
+      <p className="small muted" style={{ marginTop: 0 }}>
+        A real Python <code>for</code> loop against a real NumPy expression, timed with <code>perf_counter</code>
+        in the bundled offline runtime. The first run boots Python (5–15 s); repeat it to compare sizes.
+      </p>
+      <div className="row" style={{ gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+        {[100_000, 500_000, 1_000_000].map((size) => (
+          <button
+            key={size}
+            type="button"
+            className={`chip${n === size ? ' easy' : ''}`}
+            style={{ cursor: 'pointer' }}
+            onClick={() => setN(size)}
+            disabled={busy}
+            aria-pressed={n === size}
+          >
+            {size.toLocaleString()} values
+          </button>
+        ))}
+        <button type="button" className="btn" onClick={measure} disabled={busy} style={{ marginLeft: 'auto' }}>
+          {busy ? 'Measuring…' : 'Run benchmark'}
+        </button>
+      </div>
+      {report && (
+        <>
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <Cell label="Python loop (median)" value={`${num(report.loopMs)} ms`} />
+            <Cell label="Vectorised (median)" value={`${num(report.vectorMs)} ms`} />
+            <Cell label="Vectorised is" value={`${report.speedup.toFixed(1)}× faster`} />
+          </div>
+          <p className="small" style={{ margin: '8px 0 0' }}>
+            Loop repeats: {report.loopTimes.map(num).join(', ')} ms · vectorised: {report.vectorTimes.map(num).join(', ')} ms
+          </p>
+          <p className="small muted" style={{ margin: '4px 0 0' }}>
+            Same sum from both kernels (difference {report.checksumDelta}) — the speed is not the result of doing less work.
+          </p>
+        </>
+      )}
+      {note && <p className="small" style={{ margin: '8px 0 0' }}>{note}</p>}
+    </div>
+  );
+}
+
 function CopyViewExplorer() {
   const [op, setOp] = useState<SharingOp>('slice');
   const result = sharingOutcome(op);
@@ -496,6 +575,7 @@ const TOOLS = [
   { key: 'mask', label: 'Boolean mask', icon: Layers, render: () => <MaskExplorer /> },
   { key: 'axis', label: 'Axis explorer', icon: Layers, render: () => <AxisExplorer /> },
   { key: 'sharing', label: 'Copy vs view', icon: Copy, render: () => <CopyViewExplorer /> },
+  { key: 'perf', label: 'Performance lab', icon: Timer, render: () => <PerformanceLab /> },
   { key: 'reshape', label: 'Reshape', icon: Grid3x3, render: () => <ReshapeExplorer /> },
   { key: 'stats', label: 'Statistics', icon: Sigma, render: () => <StatisticsPlayground /> },
   { key: 'matrix', label: 'Matrix lab', icon: BarChart3, render: () => <MatrixLab /> },

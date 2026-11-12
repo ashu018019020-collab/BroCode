@@ -62,6 +62,20 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Performance comparison lab (phase 45)
+
+A **Performance lab** tab times a real CPython `for` loop over `values.tolist()` against the vectorised
+`np.sum(values * values)` inside the tab, using the bundled offline Pyodide runtime and its NumPy
+wheel. The program (`core/learning/numpy-bench.ts`) warms both kernels, runs five repeats, prints one
+`NBENCH` JSON line, and the parser turns it into the median of each set, the speedup and the
+difference between the two sums — so the panel also proves both kernels computed the same answer.
+Sizes are 100k, 500k and 1M values; a first run includes the Python boot (5–15 s).
+
+`numpy-bench.test.mjs` executes the identical program with the local Python and parses it with the
+same function the panel calls, asserting the vectorised path wins and the checksums agree. The parser
+also refuses a missing marker, broken JSON or empty timing arrays, so a failed run shows the runtime
+error instead of a fabricated card.
+
 ### Copy-versus-view experiment (phase 44)
 
 The tools panel gains a **Copy vs view** tab next to the existing axis explorer. `sharingOutcome` in
