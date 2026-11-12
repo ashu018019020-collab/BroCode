@@ -62,6 +62,20 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### datetime64 and string-array explorer (phase 46)
+
+A **Dates & strings** tab adds both models the advanced-dtype module teaches. The date block takes two
+dates, a unit and a day offset, and computes the `datetime64` difference in D/s/ms plus the shifted
+date (the difference is presented as the `timedelta64` count it is). The string block rebuilds the
+fixed-width dtype from the longest value, then shows `str_len`, `upper`, an `astype('<U<n>')`
+truncation at the chosen width and the sorted order — all from the typed into the panel.
+
+`numpy-text-time.ts` holds the arithmetic; `numpy-datetime.test.mjs` checks the `<U` width, lengths,
+uppercase, sort order, truncation, the D and s differences and the 45-day shift against real NumPy
+calls, and pins the strict parser that rejects `2026-02-30` and non-ISO input instead of rolling it
+over. The page's heading outline rule required the new section titles to be `h2`, which the layout
+test enforced before this shipped.
+
 ### Performance comparison lab (phase 45)
 
 A **Performance lab** tab times a real CPython `for` loop over `values.tolist()` against the vectorised

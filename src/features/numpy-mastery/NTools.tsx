@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BarChart3, Copy, Grid3x3, Layers, Sigma, Timer } from 'lucide-react';
+import { BarChart3, CalendarDays, Copy, Grid3x3, Layers, Sigma, Timer } from 'lucide-react';
 import {
   axisReduce, broadcastShape, dtypeMemory, DTYPE_BYTES, gridShape, maskFilter, matmul, missingSummary,
   parseMatrix, parseShape, percentile, reshapeGrid, reshapePlan, sharingOutcome, SHARING_OPS, shapeSize,
@@ -8,6 +8,10 @@ import {
 } from '../../core/learning/numpy-tools';
 import { benchmarkSource, parseBenchmark, type BenchReport } from '../../core/learning/numpy-bench';
 import { runPython } from '../coding/runners';
+import {
+  charLengths, dateDifference, parseStringList, shiftDate, sortedStrings, stringDtype, stringSummary,
+  truncateAll, upperAll, type DateUnit,
+} from '../../core/learning/numpy-text-time';
 
 const inputStyle = {
   width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line, #d6dbe4)',
@@ -333,6 +337,84 @@ const DERIVED_SOURCE_INDEX: Record<SharingOp, number | null> = {
  * are the real thing: a Python `for` loop over `tolist()` and `np.sum(values * values)`. The panel shows
  * the median of the repeats plus every repeat, and confirms both kernels produced the same sum.
  */
+/**
+ * datetime64 and fixed-width strings, both computed.
+ *
+ * The date block re-derives NumPy's unit conversion from the two picked dates; the string block rebuilds
+ * the `<U<n>` dtype from the longest value, then shows lengths, uppercase, truncation and sort order.
+ * `numpy-datetime.test.mjs` checks each result against real NumPy calls, so nothing here is decorative.
+ */
+function DateTimeStringExplorer() {
+  const [a, setA] = useState('2026-01-01');
+  const [b, setB] = useState('2026-03-01');
+  const [unit, setUnit] = useState<DateUnit>('D');
+  const [days, setDays] = useState('45');
+  const [rawNames, setRawNames] = useState('ada, bob, cy');
+  const [width, setWidth] = useState('3');
+
+  const diff = dateDifference(a, b, unit);
+  const shifted = shiftDate(a, Number(days), 'D');
+  const names = parseStringList(rawNames);
+  const summary = stringSummary(names);
+  const cut = Math.max(0, Number(width) || 0);
+
+  return (
+    <div>
+      <h2 style={{ margin: '0 0 6px', fontSize: 16 }}>datetime64</h2>
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <label className="small muted">Start<br />
+          <input type="date" value={a} onChange={(e) => setA(e.target.value)} style={inputStyle} />
+        </label>
+        <label className="small muted">End<br />
+          <input type="date" value={b} onChange={(e) => setB(e.target.value)} style={inputStyle} />
+        </label>
+        <label className="small muted">Unit<br />
+          <select value={unit} onChange={(e) => setUnit(e.target.value as DateUnit)} style={inputStyle}>
+            <option value="D">days (D)</option>
+            <option value="s">seconds (s)</option>
+            <option value="ms">milliseconds (ms)</option>
+          </select>
+        </label>
+        <label className="small muted">Add days<br />
+          <input value={days} onChange={(e) => setDays(e.target.value)} inputMode="numeric" style={inputStyle} />
+        </label>
+      </div>
+      <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+        <Cell label={`end − start in ${unit}`} value={diff === null ? 'invalid date' : `${num(diff)} ${unit}`} />
+        <Cell label="start + days" value={shifted ?? 'invalid date'} />
+        <Cell label="dtype" value="datetime64[D]" />
+      </div>
+      <p className="small muted" style={{ margin: '6px 0 14px' }}>
+        The difference is a <code>timedelta64</code>: NumPy stores the count, so the unit you choose decides the number.
+      </p>
+
+      <h2 style={{ margin: '0 0 6px', fontSize: 16 }}>Fixed-width string array</h2>
+      <label className="small muted" htmlFor="nstr-names">Values, comma separated</label>
+      <input id="nstr-names" value={rawNames} onChange={(e) => setRawNames(e.target.value)} style={inputStyle} />
+      <div className="row" style={{ gap: 8, marginTop: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <label className="small muted">Truncate to width<br />
+          <input value={width} onChange={(e) => setWidth(e.target.value)} inputMode="numeric" style={{ ...inputStyle, width: 90 }} />
+        </label>
+        <span className="chip hard">{summary.dtype}</span>
+        <span className="small muted">{summary.count} values · longest {summary.longest} · {summary.totalChars} characters</span>
+      </div>
+      {names.length === 0 ? (
+        <p className="small" style={{ color: 'var(--red)' }}>Type at least one value to see the array.</p>
+      ) : (
+        <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+          <Cell label="lengths" value={`[${charLengths(names).join(' ')}]`} />
+          <Cell label="upper()" value={`[${upperAll(names).join(' ')}]`} />
+          <Cell label={`astype('<U${Math.min(cut, summary.longest) || 0}')`} value={`[${truncateAll(names, cut).join(' ')}]`} />
+          <Cell label="sorted" value={`[${sortedStrings(names).join(' ')}]`} />
+        </div>
+      )}
+      <p className="small muted" style={{ margin: '6px 0 0' }}>
+        One width fits every value, so assigning a longer string later truncates it instead of growing the buffer.
+      </p>
+    </div>
+  );
+}
+
 function PerformanceLab() {
   const [n, setN] = useState(200_000);
   const [report, setReport] = useState<BenchReport | null>(null);
@@ -576,6 +658,7 @@ const TOOLS = [
   { key: 'axis', label: 'Axis explorer', icon: Layers, render: () => <AxisExplorer /> },
   { key: 'sharing', label: 'Copy vs view', icon: Copy, render: () => <CopyViewExplorer /> },
   { key: 'perf', label: 'Performance lab', icon: Timer, render: () => <PerformanceLab /> },
+  { key: 'datetime', label: 'Dates & strings', icon: CalendarDays, render: () => <DateTimeStringExplorer /> },
   { key: 'reshape', label: 'Reshape', icon: Grid3x3, render: () => <ReshapeExplorer /> },
   { key: 'stats', label: 'Statistics', icon: Sigma, render: () => <StatisticsPlayground /> },
   { key: 'matrix', label: 'Matrix lab', icon: BarChart3, render: () => <MatrixLab /> },
