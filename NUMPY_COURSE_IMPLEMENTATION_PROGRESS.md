@@ -62,6 +62,16 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Per-module bank row on every course tile (phase 55)
+
+Each module tile on `/numpy` now carries the same breakdown the module view shows, compressed to one
+muted line: the module's total bank count followed by its non-zero categories in canonical order
+(`Bank 48 · concept 8 · output 8 · coding 8 · debug 6 · quiz 4 · written 4 · project 4 · scenario 6`).
+The category list and labels moved into `ncourse.ts` (`N_BANK_CATEGORY_ORDER`,
+`N_BANK_CATEGORY_LABEL`) so the tile and `NWorkspace` cannot drift; the workspace now imports them
+instead of holding its own copy. Data comes from `stats.bank.modules[id]` in the same artifact, and a
+missing entry simply renders no row rather than a zero.
+
 ### Twelve-part structure for the 108 new topics (phase 54)
 
 `content/numpy-mastery/structure-6.json` authors the full lesson shape for every topic in

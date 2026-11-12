@@ -5,7 +5,7 @@ import { useNumpyCourse } from '../../core/data/ncourse';
 import { setState, useSavedAnswer, useStore } from '../../core/storage/store';
 import { collectNumpyProgress, mergeNumpyProgress, numpySyncSummary } from '../../core/learning/numpy-sync';
 import { loadNumpyProgress, saveNumpyProgress } from '../../core/data/numpy-progress';
-import { N_CAPSTONE_KEY, N_LAST_KEY, N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, numpyCertificate, numpyReport, revisionPlan, searchCourse } from '../../core/learning/ncourse';
+import { N_BANK_CATEGORY_LABEL, N_BANK_CATEGORY_ORDER, N_CAPSTONE_KEY, N_LAST_KEY, N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, numpyCertificate, numpyReport, revisionPlan, searchCourse } from '../../core/learning/ncourse';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { NLogo } from './NLogo';
 import { NModuleWorkspace } from './NWorkspace';
@@ -452,6 +452,7 @@ export default function NCoursePage() {
         {modules.map((m) => {
           const done = isModuleComplete(m.id, state.attempts);
           const sectionsDone = N_SECTIONS.filter((s) => state.attempts[nSectionKey(m.id, s.key)]).length;
+          const bank = stats.bank.modules[m.id];
           return (
             <Link
               key={m.id}
@@ -463,6 +464,18 @@ export default function NCoursePage() {
               <span className="t" style={{ flex: 1, minWidth: 0 }}>
                 <b>{String(m.no).padStart(2, '0')} · {m.title}</b>
                 <span>{m.entries} entries · {m.level} · {m.hours}h{sectionsDone ? ` · ${sectionsDone}/10 sections` : ''}</span>
+                {bank && (
+                  <span
+                    className="muted"
+                    style={{ display: 'block', marginTop: 3, fontSize: 11, lineHeight: 1.4 }}
+                    aria-label={`Module ${m.no} question bank: ${bank.total} items`}
+                  >
+                    Bank {bank.total} · {N_BANK_CATEGORY_ORDER
+                      .filter((key) => bank.categories[key])
+                      .map((key) => `${N_BANK_CATEGORY_LABEL[key] ?? key} ${bank.categories[key]}`)
+                      .join(' · ')}
+                  </span>
+                )}
               </span>
               <ChevronRight size={14} className="muted" />
             </Link>

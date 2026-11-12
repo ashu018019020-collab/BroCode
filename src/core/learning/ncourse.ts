@@ -83,6 +83,13 @@ export interface NEntry {
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
+/** Canonical question-bank categories, in display order, shared by the course tiles and the module view. */
+export const N_BANK_CATEGORY_ORDER = ['concept', 'output', 'coding', 'debugging', 'quiz', 'written', 'project', 'scenario'];
+export const N_BANK_CATEGORY_LABEL: Record<string, string> = {
+  concept: 'concept', output: 'output', coding: 'coding', debugging: 'debug', quiz: 'quiz',
+  written: 'written', project: 'project', scenario: 'scenario',
+};
+
 export interface NModule {
   id: string;
   no: number;

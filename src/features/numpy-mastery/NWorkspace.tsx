@@ -4,11 +4,7 @@ import {
   ArrowLeft, BookOpen, Check, ChevronLeft, ChevronRight, Code2, Copy, Eye, EyeOff, Play, RotateCcw, Terminal,
 } from 'lucide-react';
 import { useStore, recordAttempt, useSavedAnswer, addXp, bumpStreak } from '../../core/storage/store';
-import {
-  N_LAST_KEY, N_LEVEL_KEY, N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey,
-  nWrittenAnswerKey, nWrittenTicksKey, outputMatches,
-  type NEntry, type NModule, type NSectionKey,
-} from '../../core/learning/ncourse';
+import { N_LAST_KEY, N_LEVEL_KEY, N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey, nWrittenAnswerKey, nWrittenTicksKey, outputMatches, type NEntry, type NModule, type NSectionKey, N_BANK_CATEGORY_ORDER, N_BANK_CATEGORY_LABEL } from '../../core/learning/ncourse';
 import { completionAward } from '../../core/learning/course-signals';
 import { NLogo } from './NLogo';
 import { NTools } from './NTools';
@@ -554,12 +550,6 @@ export interface NBankBreakdown {
   difficulty: Record<string, number>;
 }
 
-const BANK_CATEGORY_ORDER = ['concept', 'output', 'coding', 'debugging', 'quiz', 'written', 'project', 'scenario'];
-const BANK_CATEGORY_LABEL: Record<string, string> = {
-  concept: 'concept', output: 'output', coding: 'coding', debugging: 'debug', quiz: 'quiz',
-  written: 'written', project: 'project', scenario: 'scenario',
-};
-
 export function NModuleWorkspace({
   module, modules = [], bank, initialSection, onOpen, onBack,
 }: {
@@ -688,9 +678,9 @@ export function NModuleWorkspace({
             <span className="chip">{bank.total} unique items</span>
           </div>
           <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-            {[...BANK_CATEGORY_ORDER, ...Object.keys(bank.categories).filter((k) => !BANK_CATEGORY_ORDER.includes(k))].map((key) => (
+            {[...N_BANK_CATEGORY_ORDER, ...Object.keys(bank.categories).filter((k) => !N_BANK_CATEGORY_ORDER.includes(k))].map((key) => (
               <span key={key} className="chip">
-                {BANK_CATEGORY_LABEL[key] ?? key} · {bank.categories[key] ?? 0}
+                {N_BANK_CATEGORY_LABEL[key] ?? key} · {bank.categories[key] ?? 0}
               </span>
             ))}
           </div>
