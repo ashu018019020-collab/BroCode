@@ -1,0 +1,60 @@
+{
+  "n02": {
+    "shape, size and ndim": {
+      "simple": "Shape batata hai array ka dhancha — jaise 2 rows aur 3 columns. Size batata hai total kitne number hain, aur ndim batata hai kitne 'dabbe' (axes) hain: ek line ka ndim 1, table ka 2.",
+      "pro": "Shape is a tuple of axis lengths, size is their product, and ndim is the count of axes. Printing all three together is the fastest way to catch a transposed or flattened array before it reaches a model."
+    },
+    "dtype and itemsize": {
+      "simple": "Dtype batata hai array me kaise number hain — pure integer ya decimal (float). Itemsize batata hai ek number kitni memory leta hai, jaise int64 ka 8 byte.",
+      "pro": "dtype fixes the element type and itemsize its width in bytes; nbytes is their product with size. Downcasting to a narrower dtype is a deliberate memory trade that must be checked against the value range."
+    },
+    "Axis means the direction that is collapsed": {
+      "simple": "Jis axis ka naam doge, wahi axis gayab ho jaata hai. axis=0 ka matlab rows ko mila do (columns bachenge), axis=1 ka matlab columns ko mila do.",
+      "pro": "The axis argument names the axis that is reduced away, not the one preserved. A (2, 3) reduction with axis=0 returns three values, one per column, and drops the row dimension."
+    },
+    "len counts the first axis only": {
+      "simple": "len(array) sirf pehla axis ginta hai — table me rows. Saare numbers ginne hain to size use karo.",
+      "pro": "len calls the first axis length, so on a (3, 4) array it returns 3 while size returns 12. Use shape[0] and shape[1] when both counts matter, and never use len as a sample count."
+    },
+    "Transpose swaps the shape": {
+      "simple": "Transpose rows ko columns bana deta hai. Shape (3, 4) ka transpose (4, 3) ho jaata hai, par numbers ka order wahi rehta hai.",
+      "pro": "Transpose swaps the axis order, so the shape reverses and the strides swap with it. It returns a view of the same buffer, which is why the operation is free until a consumer demands C-contiguous data."
+    },
+    "Mixed literals promote to float": {
+      "simple": "Agar list me ek bhi decimal hai, poora array float ban jaata hai — integer bhi 1.0 ban jaata hai. Ek dtype hi hota hai poore array ka.",
+      "pro": "NumPy promotes all elements to a single common dtype, so one float literal converts the integers to float64. That promotion changes memory width and makes exact equality unreliable, so pass dtype deliberately when it matters."
+    },
+    "A zero-dimensional array has no axes": {
+      "simple": "Ek single number ka array bhi array hota hai, par uska koi axis nahi hota (ndim 0, shape khaali). `.item()` se asli Python number milta hai.",
+      "pro": "A 0-d array holds one value with ndim 0 and shape (); reductions over every axis return one. Use .item() when a plain Python scalar is required, because the object is still an ndarray."
+    },
+    "Bytes are shape times itemsize": {
+      "simple": "Total memory = number of elements × ek element ka size. float32 se float64 karoge to memory dugni ho jaayegi.",
+      "pro": "nbytes equals size multiplied by itemsize, so dtype is the lever on memory: float32 halves a float64 matrix. Account for copies separately, since a copy doubles the live footprint."
+    },
+    "ndim counts the axes": {
+      "simple": "Jitne brackets ke andar brackets, utne axes. 3D array me ndim 3 hota hai aur index bhi teen lagte hain.",
+      "pro": "ndim equals len(shape), and every axis needs its own index. In practice ndim identifies the convention you are holding — (batch, height, width) versus (batch, height, width, channels)."
+    },
+    "Ten zeros are one dimension": {
+      "simple": "`np.zeros(10)` me sirf 10 numbers hain, ek line. `(10, 1)` do axis hain — 10 rows aur 1 column, jo model ke liye column banta hai.",
+      "pro": "Shape (10,) is one axis while (10, 1) is two; broadcasting treats them differently. A feature matrix needs the explicit column axis, otherwise the vector broadcasts across rows and silently produces the wrong result."
+    },
+    "Shape is a tuple you can index": {
+      "simple": "Shape ek tuple hai, isliye shape[0] se rows aur shape[1] se columns nikal sakte ho — badi value hard-code karne ki zarurat nahi.",
+      "pro": "shape is an immutable tuple, so indexing it gives axis lengths you can reuse in allocations and reshapes. That keeps code correct when the row count changes between runs."
+    },
+    "A matrix of one row still has two axes": {
+      "simple": "`[[7, 8]]` me bahar ka bracket ek extra axis banata hai, isliye shape (1, 2) hota hai. Model ko aksar aisa hi batch chahiye.",
+      "pro": "Nesting a list adds an axis, so [[7, 8]] is (1, 2) while [7, 8] is (2,). A single-sample batch must keep that leading axis or the model receives a vector instead of a batch."
+    },
+    "Every attribute of an ndarray": {
+      "simple": "Shape, ndim, size, dtype, itemsize, nbytes aur strides — ye saat cheezein array ke baare me sab kuch bata deti hain. Strides batate hain har axis me aage badhne par kitne byte chalo.",
+      "pro": "strides are byte steps per axis, so shape plus strides fully describe how a view maps onto its buffer. A transposed view keeps the same buffer with swapped strides, which is why the copy only happens later."
+    },
+    "np.empty is not filled with zeros": {
+      "simple": "`np.empty` sirf jagah banata hai, usme zero nahi daalta — jo memory me pehle se tha wahi dikhta hai. Isliye use karne se pehle har cell bharni padti hai.",
+      "pro": "empty allocates without initialisation, so the values are whatever the buffer held. It is a legitimate preallocation only when every element is written before it is read."
+    }
+  }
+}

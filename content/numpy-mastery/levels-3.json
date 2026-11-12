@@ -1,0 +1,60 @@
+{
+  "n03": {
+    "zeros, ones and full": {
+      "simple": "Zeros se sab 0 wala array, ones se sab 1 wala, aur full se kisi bhi number se bhara array banta hai. Shape dena zaruri hai.",
+      "pro": "Each takes the shape first: zeros and ones fill with 0 and 1 (float64 by default), full fills with any value. They are the three constructors for a known-shape buffer before real data arrives."
+    },
+    "arange and linspace": {
+      "simple": "arange me step dete hain ('har 2 kadam'), linspace me count dete hain ('mujhe 5 number chahiye'). Dono ke apne use hain.",
+      "pro": "arange fixes the step and derives the count; linspace fixes the count, includes both endpoints and derives the step. Choose by which quantity your problem actually specifies."
+    },
+    "Identity and diagonal matrices": {
+      "simple": "Identity matrix me diagonal par 1 aur baaki 0 hote hain. diag se list ko diagonal matrix bana sakte hain, aur matrix se diagonal nikal bhi sakte hain.",
+      "pro": "eye and identity build matrices with ones on the main diagonal; diag is overloaded — given a vector it builds a diagonal matrix, given a matrix it extracts the diagonal. Read the argument type before trusting the result."
+    },
+    "zeros_like copies a shape": {
+      "simple": "`zeros_like(a)` wahi shape aur dtype deta hai jo `a` ka hai, isliye shape hard-code karne ki zarurat nahi padti.",
+      "pro": "The _like constructors copy shape and dtype from an existing array, so an output buffer cannot drift when the input shape changes. Override dtype explicitly when the buffer must hold a different type."
+    },
+    "linspace can exclude the endpoint": {
+      "simple": "`endpoint=False` se aakhri value nahi aati — aur isse step bhi badal jaata hai, sirf last number nahi hatta.",
+      "pro": "With endpoint=False the range covers [start, stop) and the step becomes the full span divided by the count, not by count − 1. Both the values and the spacing change, which matters for bin edges."
+    },
+    "arange accepts a fractional step": {
+      "simple": "arange me 0.25 jaisa decimal step bhi de sakte hain, par float galti se ek extra ya kam number aa sakta hai.",
+      "pro": "Fractional steps work but accumulate binary floating-point error, so the length can differ from the arithmetic expectation and the stop is never included. For a required count, linspace is the safer constructor."
+    },
+    "ones can take an integer dtype": {
+      "simple": "`np.ones(3)` float deta hai; agar pure integer chahiye to `dtype=int` likhna padta hai.",
+      "pro": "ones defaults to float64 regardless of the literal 1, so counters and masks need dtype=int. Leaving them float drags floating arithmetic and rounding into code that should stay integral."
+    },
+    "full repeats any value": {
+      "simple": "`np.full((2, 2), 3)` do-ka-do array banata hai jisme har jagah 3 hota hai. Shape pehle, value baad me.",
+      "pro": "full(shape, value) is the general constant constructor, and dtype can be forced. It replaces the pattern of building zeros and then adding a scalar to every cell."
+    },
+    "empty allocates without setting values": {
+      "simple": "`np.empty(3)` sirf 3 jagah banata hai, number nahi daalta. Isme purani memory ka kachra dikh sakta hai.",
+      "pro": "empty performs allocation only, so the contents are undefined until written. It saves the zeroing pass in tight loops, at the cost of a real bug if any cell is read before assignment."
+    },
+    "identity builds an identity matrix": {
+      "simple": "`np.identity(2)` 2×2 ki identity deta hai — diagonal par 1. Ye sirf square (barabar rows-columns) ke liye hota hai.",
+      "pro": "identity(n) is the square special case of eye, so it accepts exactly one dimension. It is the neutral element for matrix multiplication and a standard way to test a matmul implementation."
+    },
+    "arange counts down with a negative step": {
+      "simple": "Negative step dene se range ulti chalti hai — `arange(5, 0, -1)` 5 se 1 tak deta hai, 0 nahi aata.",
+      "pro": "A negative step walks downward and still excludes the stop, so arange(5, 0, -1) yields 5 through 1. A sign mismatch between start, stop and step produces an empty array rather than an error."
+    },
+    "linspace controls the step you get": {
+      "simple": "Linspace me aap count dete ho, step khud nikalta hai: (stop − start) / (count − 1). Zyada points maange to step chhota ho jaayega.",
+      "pro": "linspace derives the step as the span divided by count − 1 so both endpoints are included. That is why increasing the count refines the grid without moving its ends."
+    },
+    "arange versus linspace": {
+      "simple": "Step pata hai to arange, count pata hai to linspace. Plot ya grid ke liye aksar linspace behtar hota hai.",
+      "pro": "Pick arange when the step is the requirement and linspace when the sample count is; linspace also guarantees the endpoint. For plots and numerical grids the count is usually what you actually know."
+    },
+    "Identity and eye": {
+      "simple": "eye rectangular bhi ban sakta hai (3×4), identity sirf square. Isliye eye zyada flexible hai.",
+      "pro": "eye(rows, columns) generalises identity to rectangular shapes, which is what padding a design matrix or building a selection block needs. identity stays as the square convenience alias."
+    }
+  }
+}

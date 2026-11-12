@@ -53,6 +53,17 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Dual-level teaching for modules 2 and 3 (phase 31, Part 15 of the brief)
+
+`levels-2.json` and `levels-3.json` author the Hinglish `simple` and professional `pro` explanation for
+all **28** topics in ndarray Fundamentals and Array Creation, so the module-header level toggle now
+changes the text in three modules instead of one. Dual-level coverage moves from 12 to **40 of 280
+(14%)**; the remaining 240 topics still show the single authored `body`.
+
+The explanations are written to the same rule as module 1: `simple` explains the idea without jargon,
+`pro` states the precise behaviour and its consequence (promotion, strides, broadcasting, endpoint
+arithmetic) — neither is a translation of the other.
+
 ### Structure for modules 2 and 3 (phase 30, Part 14 of the brief)
 
 `structure-2.json` and `structure-3.json` author the full 12-part lesson shape for all **28** Learn
