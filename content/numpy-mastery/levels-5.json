@@ -1,0 +1,60 @@
+{
+  "n05": {
+    "Positive and negative indexing": {
+      "simple": "Index 0 se shuru hota hai, isliye a[0] pehla element hai. −1 se aakhri element milta hai, −2 se usse pehle wala.",
+      "pro": "Indices are zero-based, and negative indices count from the end, so a[-1] is the last element and a[-len(a)] is the first. An index equal to the length is out of bounds and raises IndexError."
+    },
+    "Rows and cells in 2-D": {
+      "simple": "2-D array me pehla number row batata hai, doosra column. a[1, 2] ka matlab doosri row ka teesra column.",
+      "pro": "For a 2-D array the first index selects the row and the second the column, so a[1, 2] is one scalar while a[0] is an entire row. Comma indexing is faster and clearer than chained brackets."
+    },
+    "Fancy indexing with an index array": {
+      "simple": "List se index karne par kai elements ek saath milte hain — jaise a[[0, 2]] pehla aur teesra. Ye copy deta hai, view nahi.",
+      "pro": "Integer-array indexing gathers the requested positions in the order given, and it always returns a copy. That copy is why writing into a fancy-indexed result does not modify the source array."
+    },
+    "Index with a coordinate pair": {
+      "simple": "a[1, 2] me dono number alag-alag axis ke liye hain — row aur column — isliye result ek single value hota hai.",
+      "pro": "A coordinate pair indexes each axis independently and returns a scalar for a 2-D array. This is different from a[[1, 2]] which selects rows 1 and 2 along the first axis."
+    },
+    "One index drops a dimension": {
+      "simple": "a[0] poore pehli row deta hai, aur us row ka apna shape hota hai — matrix ka shape kam ho jaata hai.",
+      "pro": "Basic indexing removes the indexed axis, so a (3, 4) array gives a (4,) row for a[0]. Keep the axis with a[0:1] when a downstream operation needs 2-D input."
+    },
+    "Select a whole column": {
+      "simple": "Column lene ke liye row ki jagah colon lagate hain: a[:, 1] ka matlab 'saari rows, column 1'.",
+      "pro": "a[:, 1] keeps every row and fixes the column, returning a 1-D array of shape (rows,). Use a[:, 1:2] when the column must stay 2-D for broadcasting against a row."
+    },
+    "Fancy indexing picks rows": {
+      "simple": "a[[0, 1, 0]] se rows chun sakte ho, aur wahi row baar-baar bhi le sakte ho — order aur repetition aapke control me hai.",
+      "pro": "A list of row indices selects rows in exactly that order and may repeat them, producing a new first axis matching the list's length. The result is a copy of the selected rows, not a view."
+    },
+    "take works along an axis": {
+      "simple": "np.take se kisi bhi axis par positions chun sakte ho — axis=1 likho to columns chunenge.",
+      "pro": "np.take(a, indices, axis=k) gathers along the named axis, which fancy indexing cannot express directly for axes after the first. It is the readable form for column selection by position."
+    },
+    "Negative indices count from the end": {
+      "simple": "−1 aakhri, −2 usse pehle — count peeche se. Ye length badalne par bhi kaam karta hai.",
+      "pro": "Negative indices resolve as length + index, so they stay correct when the array grows or shrinks. Going past -length raises IndexError rather than clamping."
+    },
+    "Slice columns of a matrix": {
+      "simple": "Colon se 'sab' bolte hain, isliye a[:, 1] me saari rows aur sirf column 1 aata hai.",
+      "pro": "The colon preserves an axis and the number selects one position, so a[:, 1] returns a 1-D column. Mixing a slice with a scalar is the standard way to keep one axis while dropping another."
+    },
+    "A boolean mask filters one dimension": {
+      "simple": "a[a > 5] me pehle True/False ka array banta hai, phir sirf True wale values chun liye jaate hain. Result chhota ho sakta hai.",
+      "pro": "Boolean indexing selects the cells where the mask is True and returns a 1-D copy whose length equals the True count. Because the shape can change, masks are for filtering, not for assignment of a fixed-shape block."
+    },
+    "Index with paired row and column lists": {
+      "simple": "a[[0, 2], [1, 2]] me pehla list rows aur doosra columns batata hai — pairs bante hain: (0,1) aur (2,2).",
+      "pro": "Two index arrays broadcast position by position, so the result is a[(0,1)] and a[(2,2)], not a 2×2 block. That pairing is the most common source of surprising fancy-index results."
+    },
+    "Rows, columns and single cells": {
+      "simple": "a[1] row deta hai, a[:, 1] column, aur a[1, 2] ek hi cell. Teen tarah ke selection, teen shapes.",
+      "pro": "The three forms answer different questions: a[1] is a row view, a[:, 1] a column view, and a[1, 2] a scalar. Printing .shape after each is the habit that keeps multi-axis code honest."
+    },
+    "Ellipsis and newaxis": {
+      "simple": "Ellipsis (...) bachi hui saari axes ke liye hota hai, aur np.newaxis ek nayi axis add karta hai — broadcasting ke liye kaam aata hai.",
+      "pro": "Ellipsis expands to every axis not named, which keeps indexing readable for 3-D and 4-D arrays. np.newaxis inserts a length-one axis, turning a (3,) vector into (1, 3) or (3, 1) to control how it broadcasts."
+    }
+  }
+}

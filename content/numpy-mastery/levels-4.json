@@ -1,0 +1,60 @@
+{
+  "n04": {
+    "Converting with astype": {
+      "simple": "astype se array ka type badal sakte ho — jaise float se int. Ye naya array banata hai, purana waisa hi rehta hai.",
+      "pro": "astype returns a new array with the requested dtype and leaves the original untouched. The conversion happens element by element, so it costs a full copy and can lose information when the target type is narrower."
+    },
+    "Overflow is silent": {
+      "simple": "Chhote type me bada number daal do to NumPy error nahi deta — number palat kar negative ho jaata hai. Isliye type ka range check karna zaruri hai.",
+      "pro": "Integer overflow wraps around without warning, so int8 arithmetic above 127 becomes negative. NumPy does not raise here; guarding means checking the target dtype's range with np.iinfo before casting."
+    },
+    "Smaller dtype, smaller memory": {
+      "simple": "Chhota type chuniye to memory bachegi — int32, int64 se aadha leti hai. Par values us range me honi chahiye.",
+      "pro": "Memory scales with itemsize, so int32 halves an int64 array's footprint. The trade is range and precision: choose the narrowest dtype whose full value range the data actually fits."
+    },
+    "astype truncates toward zero": {
+      "simple": "astype(int) round nahi karta, decimal ko kaat deta hai — 1.9 bhi 1 ban jaata hai aur −1.9 bhi −1. Pehle round karo to sahi answer milega.",
+      "pro": "Casting a float to an integer truncates toward zero rather than rounding. When the value must not lose its fraction, call np.round first and then cast; otherwise 1.9 and 1.1 both become 1."
+    },
+    "Text becomes a number with astype": {
+      "simple": "String wale number ko astype(float) se asli number bana sakte ho — par text galat ho to error aayega.",
+      "pro": "astype parses numeric strings into the requested dtype and raises ValueError on anything unparsable. Parse at the boundary, before arithmetic, so a bad cell fails loudly instead of becoming a string array."
+    },
+    "Division always yields floats": {
+      "simple": "Division (/) hamesha float deta hai, chahe dono number integer hon. Integer division ke liye // use karo.",
+      "pro": "True division always returns a floating dtype, even for two integers, because the result may be fractional. Use floor division (//) when an integer quotient is the intent, and expect the dtype change."
+    },
+    "Numbers become booleans by truthiness": {
+      "simple": "0 False ban jaata hai aur baaki sab (negative bhi) True. Isliye boolean conversion se sirf 'zero tha ya nahi' pata chalta hai.",
+      "pro": "Casting to bool follows truthiness: zero is False and every non-zero value, including negatives, is True. It answers 'was this cell zero', not 'was this cell positive'."
+    },
+    "Count with a boolean array": {
+      "simple": "Boolean array ka sum True ki ginti deta hai, kyunki True ko 1 gina jaata hai. Isliye mask.sum() se count milta hai.",
+      "pro": "A boolean array sums as ones and zeros, so sum() counts the True cells, mean() gives the fraction that pass, and any()/all() answer existence questions without a loop."
+    },
+    "dtype reports the element type": {
+      "simple": "Integer list se int array banta hai, decimal list se float array. dtype batata hai kaunsa type hai.",
+      "pro": "dtype is inferred from the literals: an integer list yields int64, a list containing a decimal yields float64. Reading dtype first explains every later behaviour, from division to memory."
+    },
+    "A float array prints a decimal point": {
+      "simple": "Float array me 1 bhi 1. dikhta hai — ye batata hai ki values float hain, integer nahi.",
+      "pro": "The trailing decimal is NumPy showing the dtype, not extra precision: [1. 2.] holds exact whole values in a float array. Use dtype=int when the values are counts and the decimal is misleading."
+    },
+    "Each dtype has a size in bytes": {
+      "simple": "Har type ka apna size hota hai — int64 ka 8 byte, int32 ka 4 byte. Isse memory ka hisaab lagta hai.",
+      "pro": "np.dtype(name).itemsize gives bytes per element, so int64 is 8 and int32 is 4. Multiply by the element count for the real footprint and compare before committing to a large array."
+    },
+    "A comparison produces booleans": {
+      "simple": "Comparison ka result True/False ka array hota hai, ek single answer nahi. Usi ko mask bolte hain.",
+      "pro": "A comparison is elementwise, so it returns a boolean array of the same shape, never one truth value. That mask is what indexing and counting consume; wrapping it in if requires .any() or .all()."
+    },
+    "Casting a float to an integer truncates": {
+      "simple": "Round karke int banane se 1.9 ka 2 milta hai, sirf astype karne par 1 milta hai. Difference yahi hai.",
+      "pro": "np.round applies round-half-to-even before the cast, while astype alone truncates. The order matters for every reported total, so decide explicitly whether the business rule is rounding or truncation."
+    },
+    "Type promotion with result_type": {
+      "simple": "Do alag type milte hain to NumPy bada type chunta hai — int aur float milne par float. result_type se pehle hi pata chal jaata hai.",
+      "pro": "np.result_type reports the dtype an operation will produce, which is how you predict promotion before allocating the result. Mixing an int8 array with 0.5 promotes to float64, not float32, because the Python scalar is treated as a double."
+    }
+  }
+}

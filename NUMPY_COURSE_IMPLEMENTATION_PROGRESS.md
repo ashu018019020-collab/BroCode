@@ -53,6 +53,18 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Dual-level teaching for modules 4 and 5 (phase 32)
+
+`levels-4.json` (Data Types) and `levels-5.json` (Indexing and Selection) complete the dual-level layer
+for **every topic in modules 2 through 5** — 56 Learn topics, 14 per module. What this phase added is
+28 topics, because modules 2 and 3 were authored in phase 31; the four modules now read 14/14 each.
+Dual-level coverage is **68 of 280 (24%)** and the module-header toggle changes the text in five
+modules.
+
+The pairs stay deliberately different: `simple` uses an everyday analogy ("astype round nahi karta,
+decimal kaat deta hai"), `pro` states the mechanism and its consequence (truncation toward zero versus
+`np.round`'s half-to-even, fancy indexing returning a copy, `a[:, 1:2]` keeping the axis).
+
 ### Dual-level teaching for modules 2 and 3 (phase 31, Part 15 of the brief)
 
 `levels-2.json` and `levels-3.json` author the Hinglish `simple` and professional `pro` explanation for
