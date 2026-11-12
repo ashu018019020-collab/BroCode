@@ -53,6 +53,25 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Progress and personalization (phase 26, Part 10 of the brief)
+
+`numpyReport` (pure, in `core/learning/ncourse.ts`) turns the section records into everything the
+brief asks for: overall percentage, sections and modules completed, a per-module row with its own
+progress bar, every untouched section ranked in course order as a weak spot, the recommended next
+place, and a resume target read from the `nlast` key the module page writes on every section change.
+"Resume" therefore returns to the section you actually left, and `?section=` makes the deep link real.
+
+The course page renders it as the **Your progress** card: counts, Resume and Next buttons, twenty
+module bars, and weak-topic chips that jump straight to the module and section. Three tests drive the
+report with fixtures (partial course, empty course, one complete module) so a change to the
+completion rule fails there first.
+
+**Cloud sync is still open, and precisely so:** the account snapshot stores aggregate counters
+(`done_records`, `practiced_count`, …) through `save_my_progress`; the NumPy section keys (`nmod:`)
+and written drafts (`nans:`/`ntick:`) are not part of that payload, so they survive a refresh on one
+device but do not follow the learner to another. Fixing it needs either a migration with a per-course
+JSON column or a second RPC — neither was invented here.
+
 ### Course UI (phase 25, Part 9 of the brief)
 
 The overview now states what the brief asks for in one place: entry count, completion percentage,

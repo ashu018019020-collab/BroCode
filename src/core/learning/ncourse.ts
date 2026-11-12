@@ -209,6 +209,85 @@ export function nProgress(modules: { id: string }[], attempts: Record<string, un
 }
 
 /** Counts a module prints: real records per section, never a target. */
+/** The reader's last opened place, so "Resume" is a real place and not a guess. */
+export const N_LAST_KEY = 'nlast';
+
+export interface NReportRow {
+  id: string;
+  no: number;
+  title: string;
+  done: number;
+  total: number;
+  pct: number;
+}
+
+export interface NWeakSpot {
+  moduleId: string;
+  moduleTitle: string;
+  section: NSectionKey;
+  label: string;
+}
+
+export interface NReport {
+  modulesDone: number;
+  modulesTotal: number;
+  sectionsDone: number;
+  sectionsTotal: number;
+  pct: number;
+  rows: NReportRow[];
+  weak: NWeakSpot[];
+  next: { moduleId: string; section: NSectionKey } | null;
+  resume: { moduleId: string; section: NSectionKey } | null;
+}
+
+/**
+ * The course's own progress arithmetic: per-section records only, so a checkpoint score alone never
+ * counts a section (the same predicate `isModuleComplete` uses). `resume` reads the stored last place
+ * and falls back to the first untouched section; `weak` is every unrecorded section in course order,
+ * which is what a revision plan needs.
+ */
+export function numpyReport(modules: NModule[], attempts: Record<string, unknown>, last?: string): NReport {
+  const rows: NReportRow[] = [];
+  const weak: NWeakSpot[] = [];
+  let sectionsDone = 0;
+  let sectionsTotal = 0;
+  for (const m of modules) {
+    const recorded = N_SECTIONS.filter((s) => Boolean(attempts[nSectionKey(m.id, s.key)])).length;
+    sectionsDone += recorded;
+    sectionsTotal += N_SECTIONS.length;
+    rows.push({
+      id: m.id, no: m.no, title: m.title,
+      done: recorded, total: N_SECTIONS.length,
+      pct: Math.round((recorded / N_SECTIONS.length) * 100),
+    });
+    for (const s of N_SECTIONS) {
+      if (!attempts[nSectionKey(m.id, s.key)]) {
+        weak.push({ moduleId: m.id, moduleTitle: m.title, section: s.key, label: s.label });
+      }
+    }
+  }
+  const modulesDone = rows.filter((r) => r.done === r.total).length;
+  const first = weak[0] ? { moduleId: weak[0].moduleId, section: weak[0].section } : null;
+  let resume: { moduleId: string; section: NSectionKey } | null = null;
+  if (last) {
+    const [moduleId, section] = last.split(':');
+    if (modules.some((m) => m.id === moduleId) && N_SECTIONS.some((s) => s.key === section)) {
+      resume = { moduleId, section: section as NSectionKey };
+    }
+  }
+  return {
+    modulesDone,
+    modulesTotal: modules.length,
+    sectionsDone,
+    sectionsTotal,
+    pct: sectionsTotal ? Math.round((sectionsDone / sectionsTotal) * 100) : 0,
+    rows,
+    weak,
+    next: first,
+    resume: resume ?? first,
+  };
+}
+
 export function sectionCounts(module: Pick<NModule, 'sections'>): Record<NSectionKey, number> {
   return Object.fromEntries(N_SECTIONS.map((s) => [s.key, module.sections[s.key]?.length ?? 0])) as Record<NSectionKey, number>;
 }

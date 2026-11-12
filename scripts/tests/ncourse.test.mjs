@@ -358,3 +358,42 @@ print(json.dumps(bad))
   const bad = JSON.parse(run.stdout.trim() || '[]');
   assert.deepEqual(bad, [], `code/output mismatches: ${JSON.stringify(bad.slice(0, 3))}`);
 });
+
+test('numpyReport counts sections, ranks weak spots and resumes the stored place', async () => {
+  const modules = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/generated/numpy-course/index.json'), 'utf8')).modules;
+  const attempts = {
+    [engine.nSectionKey('n01', 'learn')]: { done: true },
+    [engine.nSectionKey('n01', 'coding')]: { done: true },
+    [engine.nSectionKey('n02', 'learn')]: { done: true },
+  };
+  const report = engine.numpyReport(modules, attempts, 'n02:learn');
+  assert.equal(report.modulesTotal, 20);
+  assert.equal(report.sectionsTotal, 200);
+  assert.equal(report.sectionsDone, 3);
+  assert.equal(report.pct, 2);
+  assert.equal(report.rows.find((r) => r.id === 'n02').done, 1);
+  assert.equal(report.weak.length, 197);
+  assert.equal(report.weak[0].moduleId, 'n01');
+  assert.equal(report.weak[0].section, 'interview');
+  assert.deepEqual(report.resume, { moduleId: 'n02', section: 'learn' });
+  assert.deepEqual(report.next, { moduleId: 'n01', section: 'interview' });
+  assert.equal(report.modulesDone, 0);
+});
+
+test('numpyReport falls back to the first weak section when nothing was opened', () => {
+  const modules = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/generated/numpy-course/index.json'), 'utf8')).modules;
+  const report = engine.numpyReport(modules, {});
+  assert.equal(report.pct, 0);
+  assert.deepEqual(report.resume, { moduleId: 'n01', section: 'learn' });
+  assert.equal(report.modulesDone, 0);
+});
+
+test('numpyReport marks a module done only with all ten sections', () => {
+  const modules = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/generated/numpy-course/index.json'), 'utf8')).modules;
+  const attempts = {};
+  for (const s of engine.N_SECTIONS) attempts[engine.nSectionKey('n01', s.key)] = { done: true };
+  const report = engine.numpyReport(modules, attempts);
+  assert.equal(report.modulesDone, 1);
+  assert.equal(report.rows[0].pct, 100);
+  assert.equal(report.sectionsDone, 10);
+});

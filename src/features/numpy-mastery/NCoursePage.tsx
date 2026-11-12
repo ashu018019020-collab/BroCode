@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronRight, GraduationCap, Play, ShieldCheck, Target, Trophy } from 'lucide-react';
 import { useNumpyCourse } from '../../core/data/ncourse';
-import { useStore } from '../../core/storage/store';
-import { N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection } from '../../core/learning/ncourse';
+import { useSavedAnswer, useStore } from '../../core/storage/store';
+import { N_LAST_KEY, N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, numpyReport } from '../../core/learning/ncourse';
 import { NLogo } from './NLogo';
 import { NModuleWorkspace } from './NWorkspace';
 import { Bar } from '../../components/ui/ui';
@@ -26,6 +26,8 @@ export default function NCoursePage() {
   const modules = file?.modules ?? [];
   const open = modules.find((m) => m.id === params.get('module')) ?? null;
   const progress = useMemo(() => nProgress(modules, state.attempts), [modules, state.attempts]);
+  const [lastPlace] = useSavedAnswer(N_LAST_KEY);
+  const report = useMemo(() => numpyReport(modules, state.attempts, lastPlace), [modules, state.attempts, lastPlace]);
   const next = useMemo(() => {
     const fresh = modules.find((m) => !isModuleComplete(m.id, state.attempts));
     return fresh ? { module: fresh, section: nextSection(fresh.id, state.attempts) } : null;
@@ -48,6 +50,7 @@ export default function NCoursePage() {
         <NModuleWorkspace
           module={open}
           modules={modules}
+          initialSection={params.get('section')}
           onOpen={(id) => setParams({ module: id })}
           onBack={() => {
             const p = new URLSearchParams(params);
@@ -99,6 +102,82 @@ export default function NCoursePage() {
           <div style={{ marginTop: 10, maxWidth: 460 }}>
             <div className="row spread small"><span className="muted">{progress.modulesDone}/{progress.modulesTotal} modules complete</span><span>{progress.pct}%</span></div>
             <Bar pct={progress.pct} />
+          </div>
+        )}
+      </div>
+
+      <div className="sec-head"><h2><Trophy size={16} color="var(--blue)" /> Your progress</h2><span className="line" /></div>
+      <div className="card">
+        <div className="row spread" style={{ gap: 10, flexWrap: 'wrap' }}>
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            <span className="chip">{report.pct}% of the course</span>
+            <span className="chip">{report.sectionsDone}/{report.sectionsTotal} sections</span>
+            <span className="chip">{report.modulesDone}/{report.modulesTotal} modules</span>
+            <span className="chip">{report.weak.length} sections untouched</span>
+          </div>
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            {report.resume && (
+              <button
+                type="button"
+                className="btn small primary"
+                onClick={() => setParams({ module: report.resume!.moduleId, section: report.resume!.section })}
+              >
+                <Play size={12} /> Resume · {N_SECTION_LABEL[report.resume.section]}
+              </button>
+            )}
+            {report.next && (
+              <button
+                type="button"
+                className="btn small ghost"
+                onClick={() => setParams({ module: report.next!.moduleId, section: report.next!.section })}
+              >
+                Next: {modules.find((m) => m.id === report.next!.moduleId)?.title} · {N_SECTION_LABEL[report.next.section]}
+              </button>
+            )}
+          </div>
+        </div>
+        <div style={{ marginTop: 10, maxWidth: 520 }}><Bar pct={report.pct} /></div>
+
+        <div style={{ marginTop: 12 }}>
+          <b className="small">Module-wise performance</b>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '4px 16px', marginTop: 6 }}>
+            {report.rows.map((row) => (
+              <button
+                key={row.id}
+                type="button"
+                onClick={() => setParams({ module: row.id })}
+                style={{ background: 'none', border: 0, padding: '2px 0', textAlign: 'left', cursor: 'pointer', color: 'inherit' }}
+                title={`${row.title} — ${row.done}/10 sections`}
+              >
+                <span className="row spread small" style={{ gap: 8 }}>
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {String(row.no).padStart(2, '0')} · {row.title}
+                  </span>
+                  <span className="muted">{row.done}/10</span>
+                </span>
+                <Bar pct={row.pct} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {report.weak.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <b className="small">Weak topics — untouched sections in course order</b>
+            <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+              {report.weak.slice(0, 8).map((spot) => (
+                <button
+                  key={`${spot.moduleId}:${spot.section}`}
+                  type="button"
+                  className="chip"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setParams({ module: spot.moduleId, section: spot.section })}
+                >
+                  {spot.label} · {spot.moduleTitle}
+                </button>
+              ))}
+              {report.weak.length > 8 && <span className="chip">+{report.weak.length - 8} more</span>}
+            </div>
           </div>
         )}
       </div>

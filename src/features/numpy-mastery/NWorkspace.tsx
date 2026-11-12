@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useStore, recordAttempt, useSavedAnswer } from '../../core/storage/store';
 import {
-  N_LEVEL_KEY, N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey,
+  N_LAST_KEY, N_LEVEL_KEY, N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey,
   nWrittenAnswerKey, nWrittenTicksKey, outputMatches,
   type NEntry, type NModule, type NSectionKey,
 } from '../../core/learning/ncourse';
@@ -466,10 +466,15 @@ function TopicCard({ entry, level }: { entry: NEntry; level: 'simple' | 'pro' })
  * instead of overflowing.
  */
 export function NModuleWorkspace({
-  module, modules = [], onOpen, onBack,
-}: { module: NModule; modules?: NModule[]; onOpen?: (id: string) => void; onBack: () => void }) {
+  module, modules = [], initialSection, onOpen, onBack,
+}: {
+  module: NModule; modules?: NModule[]; initialSection?: string | null;
+  onOpen?: (id: string) => void; onBack: () => void;
+}) {
   const state = useStore();
-  const [section, setSection] = useState<NSectionKey>('learn');
+  const [section, setSection] = useState<NSectionKey>(() => (
+    N_SECTIONS.some((s) => s.key === initialSection) ? (initialSection as NSectionKey) : 'learn'
+  ));
   const entries = module.sections[section] ?? [];
   const [index, setIndex] = useState(0);
   const safe = Math.min(index, Math.max(0, entries.length - 1));
@@ -478,6 +483,9 @@ export function NModuleWorkspace({
   const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
   const progress = useMemo(() => nProgress([module], state.attempts), [module, state.attempts]);
   const [levelRaw, setLevelRaw] = useSavedAnswer(N_LEVEL_KEY);
+  /* "Resume" needs a real place: every section change records it, so the course page can jump back. */
+  const [, saveLast] = useSavedAnswer(N_LAST_KEY);
+  useEffect(() => { saveLast(`${module.id}:${section}`); }, [module.id, section, saveLast]);
   const level: 'simple' | 'pro' = levelRaw === 'pro' ? 'pro' : 'simple';
   /*
    * The module publishes the SAME scoped tutor the step pages publish, so the footer assistant already
