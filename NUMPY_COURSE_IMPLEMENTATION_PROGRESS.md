@@ -62,6 +62,17 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Levels for the 108 twenty-topic additions (phase 50)
+
+`levels-7.json` authors a Hinglish `simple` explanation and a professional `pro` one for every topic in
+`deepening-10.json` — 18 modules, 108 pairs. Simple stays shorter than professional on every pair (the
+level test's rule), neither repeats the Learn body, and the toggle is the existing one, so no UI change
+was needed.
+
+Course dual-level coverage moves from 100 to **208 of 403 topics (52%)**. The pre-existing 195 topics
+that still carry only a Learn body are unchanged by this phase, so the toggle does reach all 108 new
+topics but not yet the whole 403-topic course.
+
 ### Course-wide XP, streak and achievement signals (phase 49)
 
 Recording a NumPy section now pays **12 XP once** plus a **20 XP module bonus** on the tenth section,
