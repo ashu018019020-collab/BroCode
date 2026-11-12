@@ -7,7 +7,7 @@ import {
 import {
   useJAssessments, useJCoding, useJCourse, useJDebugging, useJInterview, useJLabs, useJProjects,
 } from '../../core/data/jcourse';
-import { addXp, newNote, recordAttempt, upsertNote, useStore } from '../../core/storage/store';
+import { addXp, bumpStreak, newNote, recordAttempt, upsertNote, useStore } from '../../core/storage/store';
 import {
   checkpointKey, codingTally, debugTally, jQuizKey, jQuizTally, jStageKey, quizScore,
   submissionScore, testKey, wrongIndexes,
@@ -224,7 +224,7 @@ export default function JLessonPage() {
   };
   const finish = () => {
     if (!module.checkpoint.checks.every((_, i) => checked[i])) return;
-    if (!complete) { recordAttempt(checkpointKey(module.id), { done: true, score: 100 }); addXp(30); }
+    if (!complete) { recordAttempt(checkpointKey(module.id), { done: true, score: 100 }); addXp(30); bumpStreak(); }
   };
   const saveNote = () => {
     if (note) upsertNote({ ...note, body: noteDraft });

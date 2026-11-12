@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import {
   ArrowLeft, BookOpen, Check, ChevronLeft, ChevronRight, Code2, Copy, Eye, EyeOff, Play, RotateCcw, Terminal,
 } from 'lucide-react';
-import { useStore, recordAttempt, useSavedAnswer } from '../../core/storage/store';
+import { useStore, recordAttempt, useSavedAnswer, addXp, bumpStreak } from '../../core/storage/store';
 import {
   N_LAST_KEY, N_LEVEL_KEY, N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey,
   nWrittenAnswerKey, nWrittenTicksKey, outputMatches,
   type NEntry, type NModule, type NSectionKey,
 } from '../../core/learning/ncourse';
+import { completionAward } from '../../core/learning/course-signals';
 import { NLogo } from './NLogo';
 import { NTools } from './NTools';
 import { usePublishTutorScope } from '../../components/shared/tutorScope';
@@ -574,7 +575,20 @@ export function NModuleWorkspace({
   const safe = Math.min(index, Math.max(0, entries.length - 1));
   const entry = entries[safe];
   const done = Boolean(state.attempts[nSectionKey(module.id, section)]);
-  const onDone = () => recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
+  /**
+   * Recording a section feeds the SAME learner signals as every other course: a one-time XP award
+   * (plus the module bonus on the tenth section), today's streak, and the achievement panel — which
+   * derives its course badges from these very `nmod:` keys. `done` is checked first, so a second
+   * click cannot farm XP.
+   */
+  const onDone = () => {
+    if (done) return;
+    const recorded = N_SECTIONS.filter((s) => Boolean(state.attempts[nSectionKey(module.id, s.key)])).length;
+    const award = completionAward('numpy', false, recorded === N_SECTIONS.length - 1);
+    recordAttempt(nSectionKey(module.id, section), { done: true, tries: 1 });
+    addXp(award, 'course', `NumPy · ${module.title} · ${N_SECTION_LABEL[section]}`);
+    bumpStreak();
+  };
   const progress = useMemo(() => nProgress([module], state.attempts), [module, state.attempts]);
   const [levelRaw, setLevelRaw] = useSavedAnswer(N_LEVEL_KEY);
   /* "Resume" needs a real place: every section change records it, so the course page can jump back. */

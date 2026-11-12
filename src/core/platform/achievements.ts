@@ -11,6 +11,7 @@ import { levelForXp, resumeDefenseAnswer, stageAttempt } from './keys';
 import { bankPractised, doneRecords, mockPassed } from '../learning/coverage';
 import { CAREER_CHECKLIST } from '../learning/career';
 import { RESUME_ANSWER_TOTAL } from '../assessment/defense';
+import { courseSignals } from '../learning/course-signals';
 
 export interface Achievement {
   id: string;
@@ -39,9 +40,18 @@ interface Ctx {
   resumeAnswers: number;
   /** Job-prep checklist ticks. */
   checklistTicks: number;
+  /** Finished modules in C, Java and NumPy, counted from those courses' own attempt keys. */
+  courseModules: number;
+  /** Recorded NumPy sections (one per section, ten per module). */
+  numpySections: number;
+  /** NumPy modules with all ten sections recorded. */
+  numpyModules: number;
+  /** One finished module in EACH of C, Java and NumPy. */
+  courseTrio: number;
 }
 
 export function context(state: AppState, sections: Section[]): Ctx {
+  const courses = courseSignals(state.attempts);
   return {
     state,
     sections,
@@ -65,6 +75,10 @@ export function context(state: AppState, sections: Section[]): Ctx {
     defenseGates: sections.filter((s) => !!state.attempts[stageAttempt(s.id, 'defense')]).length,
     resumeAnswers: Object.keys(state.defenseAnswers).filter((k) => k.startsWith(RESUME_FAMILY)).length,
     checklistTicks: Object.values(state.jobPrep).filter(Boolean).length,
+    courseModules: courses.modules,
+    numpySections: courses.numpySections,
+    numpyModules: courses.numpyModules,
+    courseTrio: courses.allThree ? 1 : 0,
   };
 }
 
@@ -98,6 +112,13 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'defended', icon: '🛡️', label: 'Defended', hint: 'Defend one build against interviewer questions', progress: (c) => need(c.defenseGates, 1) },
   { id: 'resume-ready', icon: '📄', label: 'Resume Ready', hint: 'Write pitch answers for every defense project', progress: (c) => need(c.resumeAnswers, RESUME_ANSWER_TOTAL) },
   { id: 'checklist-half', icon: '💼', label: 'Halfway There', hint: 'Half the job-prep checklist ticked', progress: (c) => need(c.checklistTicks, Math.ceil(CAREER_CHECKLIST.length / 2)) },
+  // Course badges read the C, Java and NumPy attempt families through `courseSignals`, so finishing a
+  // module in any of them moves the same panel. Nothing is granted by opening a page.
+  { id: 'numpy-first', icon: '🐍', label: 'NumPy Starter', hint: 'Record your first NumPy section', progress: (c) => need(c.numpySections, 1) },
+  { id: 'course-first', icon: '📘', label: 'Course Climber', hint: 'Finish a module in C, Java or NumPy', progress: (c) => need(c.courseModules, 1) },
+  { id: 'course-ten', icon: '🧗', label: 'Ten Modules', hint: 'Finish 10 modules across C, Java and NumPy', progress: (c) => need(c.courseModules, 10) },
+  { id: 'numpy-twenty', icon: '🧮', label: 'NumPy Mastery', hint: 'Complete all 20 NumPy modules', progress: (c) => need(c.numpyModules, 20) },
+  { id: 'course-trio', icon: '🧭', label: 'Three Languages', hint: 'Finish a module in C, Java AND NumPy', progress: (c) => need(c.courseTrio, 1) },
 ];
 
 /** The badge ids the Career pillar shows — the pure-learning badges stay the Dashboard's story. */

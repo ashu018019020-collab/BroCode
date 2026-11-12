@@ -62,6 +62,23 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Course-wide XP, streak and achievement signals (phase 49)
+
+Recording a NumPy section now pays **12 XP once** plus a **20 XP module bonus** on the tenth section,
+and calls `bumpStreak()` — the same `addXp`/streak path the Python lessons already use. The C and Java
+module checkpoints keep their 30 XP and now feed the streak too; the Python curriculum's existing
+stage awards are unchanged.
+
+`core/learning/course-signals.ts` is the one count for the course attempt families: NumPy sections and
+completed modules (`nmod:`), C and Java module checkpoints (`ccourse:` / `jcourse:`, matched exactly so
+the `:assessment` suffix does not complete a module), the cross-course module total and the
+one-of-each signal. `achievements.ts` adds five derived badges on top of it — NumPy Starter, Course
+Climber, Ten Modules, NumPy Mastery (20 modules) and Three Languages — so opening a page never earns
+one and a re-click never pays twice.
+
+`course-signals.test.mjs` drives the counting and the award rule with fixtures and pins the page
+wiring; the full suite is 1,077 tests.
+
 ### Per-course progress column + static NumPy sync (phase 48)
 
 `progress_snapshots` gains `per_course jsonb NOT NULL DEFAULT '{}'`, and `save_my_progress` is replaced

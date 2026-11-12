@@ -3,7 +3,7 @@ import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Briefcase, Bug, CheckCircle2, FlaskConical, Lightbulb, ListChecks, Play, Sparkles, X } from 'lucide-react';
 import { useCAssessments, useCCourse, useCLabs } from '../../core/data/ccourse';
 import { AssistantCard } from '../../components/shared/AssistantCard';
-import { addXp, recordAttempt, useStore } from '../../core/storage/store';
+import { addXp, bumpStreak, recordAttempt, useStore } from '../../core/storage/store';
 import { checkpointKey, quizScore, testKey, wrongIndexes } from '../../core/learning/ccourse';
 import { ASSISTANT_MODULE_KEY } from '../../core/platform/keys';
 import CNotebook from './CNotebook';
@@ -125,7 +125,7 @@ export default function CLessonPage() {
   );
   const finish = () => {
     if (!module.checkpoint.checks.every((_, i) => checked[i])) return;
-    if (!done) { recordAttempt(checkpointKey(module.id), { done: true, score: 100 }); addXp(30); }
+    if (!done) { recordAttempt(checkpointKey(module.id), { done: true, score: 100 }); addXp(30); bumpStreak(); }
   };
 
   return (
