@@ -288,6 +288,55 @@ export function numpyCertificate(report: NReport, rubric: { criterion: string; w
   return { complete, capstonePassed, eligible: complete && capstonePassed, score, grade, reason };
 }
 
+export interface NSearchHit {
+  moduleId: string;
+  moduleTitle: string;
+  section: NSectionKey;
+  label: string;
+  id: string;
+  title: string;
+  snippet: string;
+  score: number;
+}
+
+/**
+ * Search across every published record in the course, not just titles: a learner searching "broadcast"
+ * should find the coding task that uses it, and one searching "ValueError" should find the debug item
+ * that raises it. Title matches outrank body matches, and an exact title beats a partial one, so the
+ * first row is the thing being named.
+ */
+export function searchCourse(modules: NModule[], rawQuery: string, limit = 20): NSearchHit[] {
+  const query = rawQuery.trim().toLowerCase();
+  if (query.length < 2) return [];
+  const hits: NSearchHit[] = [];
+  for (const m of modules) {
+    for (const s of N_SECTIONS) {
+      for (const e of (m.sections[s.key] ?? []) as NEntry[]) {
+        const title = String(e.title ?? e.q ?? '').trim();
+        const body = [e.body, e.statement, e.error, e.task, e.answer, e.code]
+          .filter((v): v is string => typeof v === 'string' && v.length > 0)
+          .join(' ')
+          .toLowerCase();
+        const lowerTitle = title.toLowerCase();
+        let score = 0;
+        if (lowerTitle === query) score = 100;
+        else if (lowerTitle.startsWith(query)) score = 60;
+        else if (lowerTitle.includes(query)) score = 40;
+        else if (body.includes(query)) score = 10;
+        if (!score) continue;
+        const at = body.indexOf(query);
+        const raw = body || [e.body, e.statement, e.task, e.answer, e.code, title]
+          .find((v): v is string => typeof v === 'string' && v.trim().length > 0) || title;
+        const snippet = at >= 0
+          ? body.slice(Math.max(0, at - 40), Math.min(body.length, at + 80)).trim()
+          : raw.slice(0, 120).trim();
+        hits.push({ moduleId: m.id, moduleTitle: m.title, section: s.key, label: s.label, id: e.id, title, snippet, score });
+      }
+    }
+  }
+  return hits.sort((a, b) => b.score - a.score || a.title.localeCompare(b.title)).slice(0, limit);
+}
+
 export function numpyReport(modules: NModule[], attempts: Record<string, unknown>, last?: string): NReport {
   const rows: NReportRow[] = [];
   const weak: NWeakSpot[] = [];

@@ -53,6 +53,30 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### Course search and audit (phase 29, Part 13 of the brief)
+
+**Search** is a real feature, not a filter over titles: `searchCourse` scans all 2,820 records — Learn
+explanations, coding statements, debug errors, practice tasks, answers and code — and ranks exact
+title, title prefix, title substring, then body match. The course page shows the hits with section and
+module labels and opens the exact record, so "ValueError" reaches a debug item and "broadcast" reaches
+a coding task.
+
+**`npm run numpy:audit`** is the read-only report: entries, per-module count against the 500 target,
+shortfall, Learn topics with the full 12-part shape, dual-level coverage, coding hints, scenario
+questions, capstone rubric total, artifact bytes, and the eight-category totals. It exits 1 only on a
+broken invariant (duplicate id, duplicate Learn title, Learn without code/output, empty section), so
+partial authoring is reported as a percentage instead of hidden:
+
+```
+entries              2820 (141 per module, target 500)
+shortfall            359/module · 7180 course-wide
+Learn topics         280
+  full 12-part shape 14 (5%)
+  dual-level simple+pro 12 (4%)
+coding hints         25/500 (5%)
+scenario questions   40
+```
+
 ### Certificate and proof of work (phase 28, Part 12 of the brief)
 
 `numpyCertificate` derives eligibility instead of assuming it: every one of the 200 sections must

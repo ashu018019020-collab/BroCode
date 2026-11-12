@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronRight, GraduationCap, Play, ShieldCheck, Target, Trophy } from 'lucide-react';
 import { useNumpyCourse } from '../../core/data/ncourse';
 import { useSavedAnswer, useStore } from '../../core/storage/store';
-import { N_CAPSTONE_KEY, N_LAST_KEY, N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, numpyCertificate, numpyReport } from '../../core/learning/ncourse';
+import { N_CAPSTONE_KEY, N_LAST_KEY, N_SECTIONS, N_SECTION_LABEL, isModuleComplete, nProgress, nSectionKey, nextSection, numpyCertificate, numpyReport, searchCourse } from '../../core/learning/ncourse';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { NLogo } from './NLogo';
 import { NModuleWorkspace } from './NWorkspace';
@@ -47,6 +47,8 @@ export default function NCoursePage() {
     saveCap(JSON.stringify(nextList));
   };
   const learnerName = (state.profile.name || user?.name || 'Learner').trim();
+  const [query, setQuery] = useState('');
+  const hits = useMemo(() => searchCourse(modules, query), [modules, query]);
   const next = useMemo(() => {
     const fresh = modules.find((m) => !isModuleComplete(m.id, state.attempts));
     return fresh ? { module: fresh, section: nextSection(fresh.id, state.attempts) } : null;
@@ -319,6 +321,36 @@ export default function NCoursePage() {
               ? `Next untouched: ${report.weak[0].label} in ${report.weak[0].moduleTitle}.`
               : 'Every section is recorded — finish the capstone rubric to unlock the certificate.'}
           </p>
+        )}
+      </div>
+
+      <div className="sec-head"><h2>Search the course</h2><span className="line" /></div>
+      <div className="card">
+        <label className="small muted" htmlFor="nc-search">Titles, explanations, tasks, debug errors and code — all 2,820 records</label>
+        <input
+          id="nc-search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Try: broadcast, ValueError, percentile, memmap"
+          style={{ width: '100%', marginTop: 4 }}
+        />
+        {query.trim().length >= 2 && (
+          hits.length ? (
+            <div style={{ marginTop: 8 }}>
+              {hits.map((hit) => (
+                <button
+                  key={hit.id}
+                  type="button"
+                  onClick={() => setParams({ module: hit.moduleId, section: hit.section })}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, borderTop: '1px solid var(--line, #e6e8ee)', padding: '6px 0', cursor: 'pointer', color: 'inherit' }}
+                >
+                  <span className="small"><b>{hit.title}</b> <span className="muted">· {hit.label} · {hit.moduleTitle}</span></span>
+                  <span className="small muted" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hit.snippet}</span>
+                </button>
+              ))}
+              <p className="small muted" style={{ margin: '6px 0 0' }}>{hits.length} result{hits.length === 1 ? '' : 's'} shown, ranked with title matches first.</p>
+            </div>
+          ) : <p className="small muted" style={{ margin: '8px 0 0' }}>No record matches “{query.trim()}”. Try a shorter word.</p>
         )}
       </div>
 

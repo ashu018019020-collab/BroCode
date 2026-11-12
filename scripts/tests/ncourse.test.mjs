@@ -427,3 +427,26 @@ test('numpyCertificate needs both completion and the capstone pass mark', () => 
   assert.equal(unfinished.eligible, false);
   assert.match(unfinished.reason, /50 sections/);
 });
+
+test('searchCourse ranks titles over bodies and finds every section type', () => {
+  const modules = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/generated/numpy-course/index.json'), 'utf8')).modules;
+  const exact = engine.searchCourse(modules, 'Create your first array');
+  assert.ok(exact.length > 0);
+  assert.equal(exact[0].section, 'learn');
+  assert.equal(exact[0].score, 100);
+
+  const broadcast = engine.searchCourse(modules, 'broadcast');
+  assert.ok(broadcast.length >= 5, `only ${broadcast.length} broadcast hits`);
+  assert.ok(broadcast.some((h) => h.section === 'coding'), 'a coding task about broadcasting must be findable');
+
+  const error = engine.searchCourse(modules, 'valueerror');
+  assert.ok(error.length > 0, 'debug errors must be searchable');
+
+  assert.deepEqual(engine.searchCourse(modules, 'a'), []);
+  assert.ok(engine.searchCourse(modules, 'array', 5).length <= 5);
+
+  for (const hit of broadcast.slice(0, 10)) {
+    assert.ok(hit.moduleId && hit.moduleTitle && hit.label && hit.id);
+    assert.ok(hit.snippet.length > 0);
+  }
+});
