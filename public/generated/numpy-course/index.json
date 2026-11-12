@@ -8364,7 +8364,24 @@
       "output": "[1 2]",
       "difficulty": "easy",
       "simple": "astype se array ka type badal sakte ho — jaise float se int. Ye naya array banata hai, purana waisa hi rehta hai.",
-      "pro": "astype returns a new array with the requested dtype and leaves the original untouched. The conversion happens element by element, so it costs a full copy and can lose information when the target type is narrower."
+      "pro": "astype returns a new array with the requested dtype and leaves the original untouched. The conversion happens element by element, so it costs a full copy and can lose information when the target type is narrower.",
+      "syntax": "a.astype(dtype, copy=True)",
+      "steps": [
+       "Build an array and print its dtype.",
+       "Call `astype(int)` and print the new array.",
+       "Print the original array to show it did not change."
+      ],
+      "visual": "a = [1.7, 2.9]  dtype float64\nastype(int)   → [1 2] dtype int64\noriginal a    → [1.7 2.9] (untouched)",
+      "realWorld": "A model expects integer class ids but the labels arrived as floats after a merge; `astype(int)` is the explicit conversion at that boundary.",
+      "mistakes": [
+       "Assuming `astype` edits the array in place — it returns a new one.",
+       "Casting to int to \"round\" values, when it truncates.",
+       "Repeated casts in a hot loop instead of casting once at load time."
+      ],
+      "revision": [
+       "astype returns a new array with the requested dtype.",
+       "Convert once at the boundary, not inside the loop."
+      ]
      },
      {
       "id": "n04:learn:1",
@@ -8374,7 +8391,24 @@
       "output": "[4]",
       "difficulty": "medium",
       "simple": "Chhote type me bada number daal do to NumPy error nahi deta — number palat kar negative ho jaata hai. Isliye type ka range check karna zaruri hai.",
-      "pro": "Integer overflow wraps around without warning, so int8 arithmetic above 127 becomes negative. NumPy does not raise here; guarding means checking the target dtype's range with np.iinfo before casting."
+      "pro": "Integer overflow wraps around without warning, so int8 arithmetic above 127 becomes negative. NumPy does not raise here; guarding means checking the target dtype's range with np.iinfo before casting.",
+      "syntax": "np.array(values, dtype=np.uint8)  # wraps modulo 2**8",
+      "steps": [
+       "Create `np.array([250], dtype=np.uint8)`.",
+       "Add 10 and print the result.",
+       "Check the value against `np.iinfo(np.uint8).max`."
+      ],
+      "visual": "uint8 range: 0 … 255\n250 + 10 = 260 → 260 − 256 = 4\nno warning, no exception",
+      "realWorld": "Sensor counters and image pixel arithmetic are the classic overflow sites: a brightness increase wraps 250 → 4 and the image goes dark instead of clipping.",
+      "mistakes": [
+       "Expecting NumPy to raise on overflow like a Python int.",
+       "Choosing uint8 for counters that can pass 255.",
+       "Adding arrays of different integer widths and assuming the wider one wins."
+      ],
+      "revision": [
+       "Integer overflow wraps silently.",
+       "Check `np.iinfo(dtype).max` against the real range, or promote."
+      ]
      },
      {
       "id": "n04:learn:2",
@@ -8384,7 +8418,24 @@
       "output": "float32 12",
       "difficulty": "hard",
       "simple": "Chhota type chuniye to memory bachegi — int32, int64 se aadha leti hai. Par values us range me honi chahiye.",
-      "pro": "Memory scales with itemsize, so int32 halves an int64 array's footprint. The trade is range and precision: choose the narrowest dtype whose full value range the data actually fits."
+      "pro": "Memory scales with itemsize, so int32 halves an int64 array's footprint. The trade is range and precision: choose the narrowest dtype whose full value range the data actually fits.",
+      "syntax": "np.array(values, dtype=np.float32)  # 4 bytes instead of 8",
+      "steps": [
+       "Create the same values as float32 and as float64.",
+       "Print `dtype` and `nbytes` for both.",
+       "Compare the total bytes for one million elements."
+      ],
+      "visual": "float64 → 8 bytes/value\nfloat32 → 4 bytes/value\n1,000,000 values: 8 MB vs 4 MB",
+      "realWorld": "A feature matrix that fits in RAM as float32 but not as float64 is the difference between training locally and needing a bigger machine.",
+      "mistakes": [
+       "Downcasting float64 data without checking the precision loss.",
+       "Assuming float32 speeds up every operation — some libraries upcast internally.",
+       "Forgetting that `nbytes` counts the buffer, not the Python object overhead."
+      ],
+      "revision": [
+       "`itemsize` is bytes per element; `nbytes` is the whole buffer.",
+       "float32 halves memory at the cost of precision."
+      ]
      },
      {
       "id": "n04:learn:3",
@@ -8394,7 +8445,24 @@
       "output": "[ 1 -1]",
       "difficulty": "easy",
       "simple": "astype(int) round nahi karta, decimal ko kaat deta hai — 1.9 bhi 1 ban jaata hai aur −1.9 bhi −1. Pehle round karo to sahi answer milega.",
-      "pro": "Casting a float to an integer truncates toward zero rather than rounding. When the value must not lose its fraction, call np.round first and then cast; otherwise 1.9 and 1.1 both become 1."
+      "pro": "Casting a float to an integer truncates toward zero rather than rounding. When the value must not lose its fraction, call np.round first and then cast; otherwise 1.9 and 1.1 both become 1.",
+      "syntax": "a.astype(np.int64)  # drops the fraction, does not round",
+      "steps": [
+       "Create `[1.9, -1.9]` and cast to int.",
+       "Print the result and note both values moved toward zero.",
+       "Compare with `np.round(a).astype(int)`."
+      ],
+      "visual": "1.9  → 1\n-1.9 → -1\n2.5  → 2 (with np.round: 2)",
+      "realWorld": "Prices stored as floats and cast to integer cents lose a cent per item; the honest fix is rounding first or storing cents as integers from the start.",
+      "mistakes": [
+       "Using `astype(int)` as a rounding step.",
+       "Assuming negative numbers round down; they truncate up toward zero.",
+       "Casting before summing instead of after."
+      ],
+      "revision": [
+       "Cast truncates toward zero.",
+       "Round first when the fraction matters."
+      ]
      },
      {
       "id": "n04:learn:4",
@@ -8404,7 +8472,24 @@
       "output": "[1. 2.]",
       "difficulty": "medium",
       "simple": "String wale number ko astype(float) se asli number bana sakte ho — par text galat ho to error aayega.",
-      "pro": "astype parses numeric strings into the requested dtype and raises ValueError on anything unparsable. Parse at the boundary, before arithmetic, so a bad cell fails loudly instead of becoming a string array."
+      "pro": "astype parses numeric strings into the requested dtype and raises ValueError on anything unparsable. Parse at the boundary, before arithmetic, so a bad cell fails loudly instead of becoming a string array.",
+      "syntax": "np.array(['1', '2']).astype(float)",
+      "steps": [
+       "Create a string array from two numeric strings.",
+       "Cast it to float and print the dtype.",
+       "Try one non-numeric token and read the error."
+      ],
+      "visual": "['1', '2'] dtype <U1\nastype(float) → [1.0 2.0] dtype float64\n['1', 'x']   → ValueError",
+      "realWorld": "CSV columns arrive as text; converting once at load time turns a column of strings into an array you can actually average.",
+      "mistakes": [
+       "Calling `.mean()` on a string array and expecting a number.",
+       "Silently replacing unparseable values with 0 — that changes the mean.",
+       "Assuming `np.array` already parsed the numbers."
+      ],
+      "revision": [
+       "astype(float) parses numeric text.",
+       "One bad token raises; validate which row failed."
+      ]
      },
      {
       "id": "n04:learn:5",
@@ -8414,7 +8499,24 @@
       "output": "float64",
       "difficulty": "hard",
       "simple": "Division (/) hamesha float deta hai, chahe dono number integer hon. Integer division ke liye // use karo.",
-      "pro": "True division always returns a floating dtype, even for two integers, because the result may be fractional. Use floor division (//) when an integer quotient is the intent, and expect the dtype change."
+      "pro": "True division always returns a floating dtype, even for two integers, because the result may be fractional. Use floor division (//) when an integer quotient is the intent, and expect the dtype change.",
+      "syntax": "a / b  # true division → float64",
+      "steps": [
+       "Divide an integer array by 2.",
+       "Print the result and its dtype.",
+       "Compare with `a // 2` for floor division."
+      ],
+      "visual": "np.array([1, 2]) / 2   → [0.5 1. ] float64\nnp.array([1, 2]) // 2  → [0 1] int64",
+      "realWorld": "A ratio or percentage computed from integer counts must not silently stay an integer; true division is the default for exactly this reason.",
+      "mistakes": [
+       "Expecting an integer result from `/`.",
+       "Using `//` when a fractional average is wanted.",
+       "Casting the result back to int before rounding."
+      ],
+      "revision": [
+       "`/` always produces floats.",
+       "`//` is floor division and keeps integers."
+      ]
      },
      {
       "id": "n04:learn:6",
@@ -8424,7 +8526,24 @@
       "output": "[False  True  True]",
       "difficulty": "easy",
       "simple": "0 False ban jaata hai aur baaki sab (negative bhi) True. Isliye boolean conversion se sirf 'zero tha ya nahi' pata chalta hai.",
-      "pro": "Casting to bool follows truthiness: zero is False and every non-zero value, including negatives, is True. It answers 'was this cell zero', not 'was this cell positive'."
+      "pro": "Casting to bool follows truthiness: zero is False and every non-zero value, including negatives, is True. It answers 'was this cell zero', not 'was this cell positive'.",
+      "syntax": "a.astype(bool)  # 0 → False, anything else → True",
+      "steps": [
+       "Cast `[0, 1, 2]` to bool.",
+       "Print the array and its dtype kind.",
+       "Sum the booleans to count the non-zero values."
+      ],
+      "visual": "[0, 1, 2] → [False  True  True]\nsum() → 2",
+      "realWorld": "A presence column stored as 0/1 becomes a real mask with one cast, ready for filtering or counting.",
+      "mistakes": [
+       "Expecting `False` only for exactly zero and `True` for negative values — negatives are True.",
+       "Casting NaN to bool and assuming it becomes False (it is True).",
+       "Using bool arrays for arithmetic when counts are wanted."
+      ],
+      "revision": [
+       "Truthiness: zero is False, everything else True.",
+       "Bool sums count the True values."
+      ]
      },
      {
       "id": "n04:learn:7",
@@ -8434,7 +8553,24 @@
       "output": "2",
       "difficulty": "medium",
       "simple": "Boolean array ka sum True ki ginti deta hai, kyunki True ko 1 gina jaata hai. Isliye mask.sum() se count milta hai.",
-      "pro": "A boolean array sums as ones and zeros, so sum() counts the True cells, mean() gives the fraction that pass, and any()/all() answer existence questions without a loop."
+      "pro": "A boolean array sums as ones and zeros, so sum() counts the True cells, mean() gives the fraction that pass, and any()/all() answer existence questions without a loop.",
+      "syntax": "mask.sum()  # True counts as 1",
+      "steps": [
+       "Build a boolean array and print it.",
+       "Call `.sum()` and print the count.",
+       "Compare with `len(a[a > threshold])`."
+      ],
+      "visual": "[True, False, True]\n.sum() → 2\nlen(a[mask]) → 2",
+      "realWorld": "Dashboards count how many orders crossed a threshold by summing the mask — no loop, no branch.",
+      "mistakes": [
+       "Using `sum()` on an object array where True is a string.",
+       "Forgetting the mask must match the array shape.",
+       "Counting with a Python loop when the mask already answers it."
+      ],
+      "revision": [
+       "Booleans add as 1 and 0.",
+       "One mask serves counting, filtering and assignment."
+      ]
      },
      {
       "id": "n04:learn:8",
@@ -8444,7 +8580,24 @@
       "output": "int64 float64",
       "difficulty": "hard",
       "simple": "Integer list se int array banta hai, decimal list se float array. dtype batata hai kaunsa type hai.",
-      "pro": "dtype is inferred from the literals: an integer list yields int64, a list containing a decimal yields float64. Reading dtype first explains every later behaviour, from division to memory."
+      "pro": "dtype is inferred from the literals: an integer list yields int64, a list containing a decimal yields float64. Reading dtype first explains every later behaviour, from division to memory.",
+      "syntax": "a.dtype  # one dtype for the whole array",
+      "steps": [
+       "Create an int array and a float array.",
+       "Print both dtypes.",
+       "Mix an int and a float and print the promoted dtype."
+      ],
+      "visual": "np.array([1, 2]).dtype   → int64\nnp.array([1.0]).dtype     → float64\nint + float               → float64",
+      "realWorld": "A join silently turns an id column into float64 because one missing value introduced NaN; checking `.dtype` catches it before the ids print as `1.0`.",
+      "mistakes": [
+       "Assuming each element can have its own dtype.",
+       "Ignoring the promotion that a single float literal causes.",
+       "Comparing dtype objects as strings instead of using `.kind`."
+      ],
+      "revision": [
+       "One dtype per array.",
+       "Mixing types promotes to one that can hold both."
+      ]
      },
      {
       "id": "n04:learn:9",
@@ -8454,7 +8607,24 @@
       "output": "[1. 2.]",
       "difficulty": "easy",
       "simple": "Float array me 1 bhi 1. dikhta hai — ye batata hai ki values float hain, integer nahi.",
-      "pro": "The trailing decimal is NumPy showing the dtype, not extra precision: [1. 2.] holds exact whole values in a float array. Use dtype=int when the values are counts and the decimal is misleading."
+      "pro": "The trailing decimal is NumPy showing the dtype, not extra precision: [1. 2.] holds exact whole values in a float array. Use dtype=int when the values are counts and the decimal is misleading.",
+      "syntax": "print(a)  # [1. 2.] is float, [1 2] is int",
+      "steps": [
+       "Print an integer array.",
+       "Print a float array with the same values.",
+       "Point at the decimal point as the visual dtype cue."
+      ],
+      "visual": "[1 2]     int64\n[1. 2.]   float64",
+      "realWorld": "In a notebook, the printed form is the fastest dtype check before a plot or a division looks wrong.",
+      "mistakes": [
+       "Reading `[1. 2.]` as text rather than floats.",
+       "Assuming trailing dots are a formatting bug.",
+       "Trusting the print over `.dtype` in production code."
+      ],
+      "revision": [
+       "A decimal point in the print means floats.",
+       "`.dtype` is the authoritative check."
+      ]
      },
      {
       "id": "n04:learn:10",
@@ -8464,7 +8634,24 @@
       "output": "8 4",
       "difficulty": "medium",
       "simple": "Har type ka apna size hota hai — int64 ka 8 byte, int32 ka 4 byte. Isse memory ka hisaab lagta hai.",
-      "pro": "np.dtype(name).itemsize gives bytes per element, so int64 is 8 and int32 is 4. Multiply by the element count for the real footprint and compare before committing to a large array."
+      "pro": "np.dtype(name).itemsize gives bytes per element, so int64 is 8 and int32 is 4. Multiply by the element count for the real footprint and compare before committing to a large array.",
+      "syntax": "np.dtype('int64').itemsize  # bytes per element",
+      "steps": [
+       "Print `itemsize` for int64 and int32.",
+       "Multiply by the element count to get `nbytes`.",
+       "Estimate the memory for ten million values."
+      ],
+      "visual": "int64 → 8 bytes\nint32 → 4 bytes\n10,000,000 × 8 = 80 MB",
+      "realWorld": "Sizing a batch before loading it: 10 million int64 features need 80 MB before any copy, which decides whether the job fits on the worker.",
+      "mistakes": [
+       "Confusing `itemsize` with `size`.",
+       "Forgetting that a copy doubles the footprint.",
+       "Assuming all integer dtypes are the same width."
+      ],
+      "revision": [
+       "`itemsize` = bytes per element.",
+       "`nbytes` = itemsize × size."
+      ]
      },
      {
       "id": "n04:learn:11",
@@ -8474,7 +8661,24 @@
       "output": "bool",
       "difficulty": "hard",
       "simple": "Comparison ka result True/False ka array hota hai, ek single answer nahi. Usi ko mask bolte hain.",
-      "pro": "A comparison is elementwise, so it returns a boolean array of the same shape, never one truth value. That mask is what indexing and counting consume; wrapping it in if requires .any() or .all()."
+      "pro": "A comparison is elementwise, so it returns a boolean array of the same shape, never one truth value. That mask is what indexing and counting consume; wrapping it in if requires .any() or .all().",
+      "syntax": "a > 1  # dtype bool",
+      "steps": [
+       "Compare an integer array with 1.",
+       "Print the result and its dtype.",
+       "Use the result to index the array."
+      ],
+      "visual": "np.array([1, 2, 3]) > 1 → [False  True  True]\ndtype                     → bool",
+      "realWorld": "Filters, alerts and counts all start as a comparison; understanding that a mask is a real bool array explains why it can be stored and reused.",
+      "mistakes": [
+       "Chaining comparisons with `and`/`or` instead of `&`/`|`.",
+       "Forgetting parentheses around each comparison.",
+       "Mutating the mask and wondering why the filter changed."
+      ],
+      "revision": [
+       "Comparisons produce bool arrays.",
+       "Combine masks with `&`, `|`, `~`, each in parentheses."
+      ]
      },
      {
       "id": "n04:learn:12",
@@ -8484,7 +8688,24 @@
       "output": "[ 1 -1  2]\n[ 2 -2  2]",
       "difficulty": "easy",
       "simple": "Round karke int banane se 1.9 ka 2 milta hai, sirf astype karne par 1 milta hai. Difference yahi hai.",
-      "pro": "np.round applies round-half-to-even before the cast, while astype alone truncates. The order matters for every reported total, so decide explicitly whether the business rule is rounding or truncation."
+      "pro": "np.round applies round-half-to-even before the cast, while astype alone truncates. The order matters for every reported total, so decide explicitly whether the business rule is rounding or truncation.",
+      "syntax": "np.round(a).astype(np.int64)  # round, then cast",
+      "steps": [
+       "Cast `[1.9, -1.9, 2.5]` straight to int and print.",
+       "Round first, then cast, and print again.",
+       "Compare the two results value by value."
+      ],
+      "visual": "direct:  [ 1 -1  2]\nround:   [ 2 -2  2]",
+      "realWorld": "Converting a measured score to an integer grade: the direct cast gives 89.9 → 89, the rounded one gives 90.",
+      "mistakes": [
+       "Casting first and rounding the integer afterwards (too late).",
+       "Assuming `np.round` rounds .5 up — it rounds to even.",
+       "Using int32 for values that can exceed its range."
+      ],
+      "revision": [
+       "Round before casting.",
+       "np.round uses round-half-to-even."
+      ]
      },
      {
       "id": "n04:learn:13",
@@ -8494,7 +8715,24 @@
       "output": "float64\nfloat64",
       "difficulty": "medium",
       "simple": "Do alag type milte hain to NumPy bada type chunta hai — int aur float milne par float. result_type se pehle hi pata chal jaata hai.",
-      "pro": "np.result_type reports the dtype an operation will produce, which is how you predict promotion before allocating the result. Mixing an int8 array with 0.5 promotes to float64, not float32, because the Python scalar is treated as a double."
+      "pro": "np.result_type reports the dtype an operation will produce, which is how you predict promotion before allocating the result. Mixing an int8 array with 0.5 promotes to float64, not float32, because the Python scalar is treated as a double.",
+      "syntax": "np.result_type(np.int32, np.float32)  # float64",
+      "steps": [
+       "Ask `np.result_type` for int32 and float32.",
+       "Add a Python float to an int8 array and print the dtype.",
+       "Use `np.promote_types` for two dtype strings."
+      ],
+      "visual": "result_type(int32, float32) → float64\nint8 + 0.5                  → float64",
+      "realWorld": "Before a big allocation, `result_type` tells you whether the operation will quietly widen to float64 and double the memory.",
+      "mistakes": [
+       "Assuming int32 + float32 stays float32.",
+       "Forgetting that Python scalars participate in promotion.",
+       "Using `result_type` on arrays instead of dtypes."
+      ],
+      "revision": [
+       "Promotion picks a dtype that can hold both inputs.",
+       "`result_type` predicts it without running the operation."
+      ]
      }
     ],
     "interview": [
@@ -10585,7 +10823,24 @@
       "output": "10 40",
       "difficulty": "easy",
       "simple": "Index 0 se shuru hota hai, isliye a[0] pehla element hai. −1 se aakhri element milta hai, −2 se usse pehle wala.",
-      "pro": "Indices are zero-based, and negative indices count from the end, so a[-1] is the last element and a[-len(a)] is the first. An index equal to the length is out of bounds and raises IndexError."
+      "pro": "Indices are zero-based, and negative indices count from the end, so a[-1] is the last element and a[-len(a)] is the first. An index equal to the length is out of bounds and raises IndexError.",
+      "syntax": "a[i]  ·  a[-1]  # 0-based from the front, -1 from the end",
+      "steps": [
+       "Build `np.array([10, 20, 30, 40])`.",
+       "Print `a[0]` and `a[-1]`.",
+       "Print `a[-2]` to show the count continues backwards."
+      ],
+      "visual": "index:   0   1   2   3\nvalue:  10  20  30  40\nnegative: -4 -3 -2  -1",
+      "realWorld": "Reading the newest record without knowing the row count: `logs[-1]` means \"the latest\" and survives a growing file.",
+      "mistakes": [
+       "Assuming index 1 is the first element.",
+       "Using `-0` (it is just 0).",
+       "Indexing past the end and expecting None instead of IndexError."
+      ],
+      "revision": [
+       "Indexes are 0-based.",
+       "Negative indexes count from the end."
+      ]
      },
      {
       "id": "n05:learn:1",
@@ -10595,7 +10850,24 @@
       "output": "6 [1 2 3]",
       "difficulty": "medium",
       "simple": "2-D array me pehla number row batata hai, doosra column. a[1, 2] ka matlab doosri row ka teesra column.",
-      "pro": "For a 2-D array the first index selects the row and the second the column, so a[1, 2] is one scalar while a[0] is an entire row. Comma indexing is faster and clearer than chained brackets."
+      "pro": "For a 2-D array the first index selects the row and the second the column, so a[1, 2] is one scalar while a[0] is an entire row. Comma indexing is faster and clearer than chained brackets.",
+      "syntax": "a[row, column]  ·  a[row]  # cell vs whole row",
+      "steps": [
+       "Build a 2×3 array and print `a[1, 2]`.",
+       "Print `a[0]` and note the shape is (3,).",
+       "Print `a[1]` and compare."
+      ],
+      "visual": "a[1, 2] → 6 (scalar)\na[0]    → [1 2 3] shape (3,)",
+      "realWorld": "Reading one measured value from a feature matrix by row (sample) and column (feature) is the most common lookup in data work.",
+      "mistakes": [
+       "Writing `a[0][1]` out of habit — it works but is slower and hides the pair.",
+       "Expecting a row index to keep the 2-D shape.",
+       "Swapping row and column when the table is transposed."
+      ],
+      "revision": [
+       "Row first, column second.",
+       "One integer index consumes that axis."
+      ]
      },
      {
       "id": "n05:learn:2",
@@ -10605,7 +10877,24 @@
       "output": "[10 30]",
       "difficulty": "hard",
       "simple": "List se index karne par kai elements ek saath milte hain — jaise a[[0, 2]] pehla aur teesra. Ye copy deta hai, view nahi.",
-      "pro": "Integer-array indexing gathers the requested positions in the order given, and it always returns a copy. That copy is why writing into a fancy-indexed result does not modify the source array."
+      "pro": "Integer-array indexing gathers the requested positions in the order given, and it always returns a copy. That copy is why writing into a fancy-indexed result does not modify the source array.",
+      "syntax": "a[[0, 2]]  # pick positions, in this order",
+      "steps": [
+       "Build `[10, 20, 30, 40]`.",
+       "Select positions 0 and 2 with a list.",
+       "Select `[2, 0]` and show the order follows the request."
+      ],
+      "visual": "a[[0, 2]] → [10 30]\na[[2, 0]] → [30 10]",
+      "realWorld": "Reordering a table by a stored sort order, or sampling specific rows for a report, is one list index away.",
+      "mistakes": [
+       "Assuming the result is sorted — it follows the index order.",
+       "Using a list where a slice is meant, which copies instead of viewing.",
+       "Passing floats or booleans by accident and getting mask semantics."
+      ],
+      "revision": [
+       "Fancy indexing returns a copy in the requested order.",
+       "Duplicates and repeats are allowed."
+      ]
      },
      {
       "id": "n05:learn:3",
@@ -10615,7 +10904,24 @@
       "output": "5",
       "difficulty": "easy",
       "simple": "a[1, 2] me dono number alag-alag axis ke liye hain — row aur column — isliye result ek single value hota hai.",
-      "pro": "A coordinate pair indexes each axis independently and returns a scalar for a 2-D array. This is different from a[[1, 2]] which selects rows 1 and 2 along the first axis."
+      "pro": "A coordinate pair indexes each axis independently and returns a scalar for a 2-D array. This is different from a[[1, 2]] which selects rows 1 and 2 along the first axis.",
+      "syntax": "a[row, col]  # one scalar cell",
+      "steps": [
+       "Build `np.arange(6).reshape(2, 3)`.",
+       "Print `a[1, 2]`.",
+       "Print its type to show it is a NumPy scalar, not an array."
+      ],
+      "visual": "a = [[0 1 2]\n     [3 4 5]]\na[1, 2] → 5",
+      "realWorld": "Pulling a single metric out of a results grid — one number for a headline — is a coordinate lookup, not a slice.",
+      "mistakes": [
+       "Using two brackets `a[1][2]` and losing the vectorised intent.",
+       "Expecting a 0-d array and getting a scalar (or vice versa).",
+       "Forgetting that the pair is (row, column), not (x, y)."
+      ],
+      "revision": [
+       "Two indices inside one bracket address one cell.",
+       "The result is a scalar."
+      ]
      },
      {
       "id": "n05:learn:4",
@@ -10625,7 +10931,24 @@
       "output": "(3,)",
       "difficulty": "medium",
       "simple": "a[0] poore pehli row deta hai, aur us row ka apna shape hota hai — matrix ka shape kam ho jaata hai.",
-      "pro": "Basic indexing removes the indexed axis, so a (3, 4) array gives a (4,) row for a[0]. Keep the axis with a[0:1] when a downstream operation needs 2-D input."
+      "pro": "Basic indexing removes the indexed axis, so a (3, 4) array gives a (4,) row for a[0]. Keep the axis with a[0:1] when a downstream operation needs 2-D input.",
+      "syntax": "a[0].shape  # (3,) not (1, 3)",
+      "steps": [
+       "Build a (2, 3) array.",
+       "Print the shape of `a[0]`.",
+       "Keep the axis with `a[0:1]` and print its shape."
+      ],
+      "visual": "a[0]      → shape (3,)\na[0:1]    → shape (1, 3)",
+      "realWorld": "Broadcasting a row against a column fails because the row lost its axis; keeping the dimension with a slice fixes the shape.",
+      "mistakes": [
+       "Treating a 1-D row as a (1, n) row vector.",
+       "Adding `.reshape` everywhere instead of using a slice.",
+       "Assuming shape (3,) and (1, 3) print the same way (they do not)."
+      ],
+      "revision": [
+       "Integer indexing removes the axis.",
+       "Slicing keeps it."
+      ]
      },
      {
       "id": "n05:learn:5",
@@ -10635,7 +10958,24 @@
       "output": "[1 4]",
       "difficulty": "hard",
       "simple": "Column lene ke liye row ki jagah colon lagate hain: a[:, 1] ka matlab 'saari rows, column 1'.",
-      "pro": "a[:, 1] keeps every row and fixes the column, returning a 1-D array of shape (rows,). Use a[:, 1:2] when the column must stay 2-D for broadcasting against a row."
+      "pro": "a[:, 1] keeps every row and fixes the column, returning a 1-D array of shape (rows,). Use a[:, 1:2] when the column must stay 2-D for broadcasting against a row.",
+      "syntax": "a[:, 1]  # every row, column 1",
+      "steps": [
+       "Build `np.arange(6).reshape(2, 3)`.",
+       "Print `a[:, 1]`.",
+       "Print `a[:, 1].shape` and compare with the matrix."
+      ],
+      "visual": "a[:, 1] → [1 4] shape (2,)",
+      "realWorld": "One feature column across all samples is exactly this expression, and it is the input to most per-feature statistics.",
+      "mistakes": [
+       "Writing `a[1]` and getting a row instead of a column.",
+       "Expecting a (2, 1) result from an integer column index.",
+       "Mutating the column and forgetting it is a view."
+      ],
+      "revision": [
+       "Colon keeps the row axis.",
+       "An integer column index drops the column axis."
+      ]
      },
      {
       "id": "n05:learn:6",
@@ -10645,7 +10985,24 @@
       "output": "[[0 1 2]\n [3 4 5]\n [0 1 2]]",
       "difficulty": "easy",
       "simple": "a[[0, 1, 0]] se rows chun sakte ho, aur wahi row baar-baar bhi le sakte ho — order aur repetition aapke control me hai.",
-      "pro": "A list of row indices selects rows in exactly that order and may repeat them, producing a new first axis matching the list's length. The result is a copy of the selected rows, not a view."
+      "pro": "A list of row indices selects rows in exactly that order and may repeat them, producing a new first axis matching the list's length. The result is a copy of the selected rows, not a view.",
+      "syntax": "a[[0, 1, 0]]  # row selection with repeats",
+      "steps": [
+       "Build a (2, 3) array.",
+       "Select rows `[0, 1, 0]`.",
+       "Print the shape to show three rows came back."
+      ],
+      "visual": "a[[0, 1, 0]] → shape (3, 3)\nrow 0 appears twice",
+      "realWorld": "Bootstrapping a sample by repeating rows, or duplicating a header row for a report, needs repeated indices — a slice cannot do it.",
+      "mistakes": [
+       "Expecting fancy indexing to return a view.",
+       "Assuming repeated indices are deduplicated.",
+       "Mixing a list of rows with a single column index without a comma."
+      ],
+      "revision": [
+       "A list of row indices returns rows in that order.",
+       "Repeats are preserved and the result is a copy."
+      ]
      },
      {
       "id": "n05:learn:7",
@@ -10655,7 +11012,24 @@
       "output": "[[2 0]\n [5 3]]",
       "difficulty": "medium",
       "simple": "np.take se kisi bhi axis par positions chun sakte ho — axis=1 likho to columns chunenge.",
-      "pro": "np.take(a, indices, axis=k) gathers along the named axis, which fancy indexing cannot express directly for axes after the first. It is the readable form for column selection by position."
+      "pro": "np.take(a, indices, axis=k) gathers along the named axis, which fancy indexing cannot express directly for axes after the first. It is the readable form for column selection by position.",
+      "syntax": "np.take(a, indices, axis=1)",
+      "steps": [
+       "Build a (2, 3) array.",
+       "Use `np.take` with `[2, 0]` on axis 1.",
+       "Compare with the equivalent bracket expression."
+      ],
+      "visual": "np.take(a, [2, 0], axis=1)\n→ [[2 0]\n   [5 3]]",
+      "realWorld": "Named-axis selection reads better in a pipeline: `take(..., axis=1)` says \"columns\" without the reader decoding a colon.",
+      "mistakes": [
+       "Forgetting `axis` and flattening the array by default.",
+       "Assuming `take` returns a view.",
+       "Mixing axis 0 and axis 1 when the table is wide."
+      ],
+      "revision": [
+       "`take` names the axis explicitly.",
+       "Default axis is the flattened array."
+      ]
      },
      {
       "id": "n05:learn:8",
@@ -10665,7 +11039,24 @@
       "output": "30 20",
       "difficulty": "hard",
       "simple": "−1 aakhri, −2 usse pehle — count peeche se. Ye length badalne par bhi kaam karta hai.",
-      "pro": "Negative indices resolve as length + index, so they stay correct when the array grows or shrinks. Going past -length raises IndexError rather than clamping."
+      "pro": "Negative indices resolve as length + index, so they stay correct when the array grows or shrinks. Going past -length raises IndexError rather than clamping.",
+      "syntax": "a[-1]  ·  a[-2]  # last, second last",
+      "steps": [
+       "Build `[10, 20, 30]`.",
+       "Print `a[-1]` and `a[-2]`.",
+       "Apply the same idea to a row of a matrix."
+      ],
+      "visual": "a[-1] → 30\na[-2] → 20",
+      "realWorld": "Grabbing the most recent measurement works regardless of how many rows the file grew to.",
+      "mistakes": [
+       "Using `a[len(a)]` instead of `a[-1]`.",
+       "Assuming `-1` means \"before the first\".",
+       "Forgetting the same rule works per axis in 2-D."
+      ],
+      "revision": [
+       "`-1` is the last element.",
+       "The rule applies on every axis."
+      ]
      },
      {
       "id": "n05:learn:9",
@@ -10675,7 +11066,24 @@
       "output": "[1 4]",
       "difficulty": "easy",
       "simple": "Colon se 'sab' bolte hain, isliye a[:, 1] me saari rows aur sirf column 1 aata hai.",
-      "pro": "The colon preserves an axis and the number selects one position, so a[:, 1] returns a 1-D column. Mixing a slice with a scalar is the standard way to keep one axis while dropping another."
+      "pro": "The colon preserves an axis and the number selects one position, so a[:, 1] returns a 1-D column. Mixing a slice with a scalar is the standard way to keep one axis while dropping another.",
+      "syntax": "a[:, start:stop]  # columns, every row",
+      "steps": [
+       "Build a (2, 3) array.",
+       "Take `a[:, 1]` and print it.",
+       "Take `a[:, 0:2]` and print its shape."
+      ],
+      "visual": "a[:, 1]    → [1 4] shape (2,)\na[:, 0:2]  → shape (2, 2)",
+      "realWorld": "Feature selection before a model is a column slice; keeping it a slice preserves the 2-D shape the model expects.",
+      "mistakes": [
+       "Losing the second axis by using an integer instead of a slice.",
+       "Assuming `a[:, 0:1]` is the same shape as `a[:, 0]`.",
+       "Mutating the slice and being surprised the matrix changed."
+      ],
+      "revision": [
+       "Slice columns with `:, start:stop`.",
+       "A slice keeps the column axis."
+      ]
      },
      {
       "id": "n05:learn:10",
@@ -10685,7 +11093,24 @@
       "output": "[6 7]",
       "difficulty": "medium",
       "simple": "a[a > 5] me pehle True/False ka array banta hai, phir sirf True wale values chun liye jaate hain. Result chhota ho sakta hai.",
-      "pro": "Boolean indexing selects the cells where the mask is True and returns a 1-D copy whose length equals the True count. Because the shape can change, masks are for filtering, not for assignment of a fixed-shape block."
+      "pro": "Boolean indexing selects the cells where the mask is True and returns a 1-D copy whose length equals the True count. Because the shape can change, masks are for filtering, not for assignment of a fixed-shape block.",
+      "syntax": "a[a > 5]  # mask must match the shape",
+      "steps": [
+       "Build `[5, 6, 7]`.",
+       "Build the mask `a > 5` and print it.",
+       "Index with the mask and print the kept values."
+      ],
+      "visual": "a        → [5 6 7]\nmask     → [False  True  True]\na[mask]  → [6 7]",
+      "realWorld": "Filtering a column by a business rule — orders above a threshold — is one comparison and one index, with no loop.",
+      "mistakes": [
+       "Using `and`/`or` between comparisons instead of `&`/`|`.",
+       "Passing a mask of the wrong length.",
+       "Expecting the mask to change the original array."
+      ],
+      "revision": [
+       "Masks are boolean arrays of the same shape.",
+       "Filtering copies the kept values."
+      ]
      },
      {
       "id": "n05:learn:11",
@@ -10695,7 +11120,24 @@
       "output": "[1 8]",
       "difficulty": "hard",
       "simple": "a[[0, 2], [1, 2]] me pehla list rows aur doosra columns batata hai — pairs bante hain: (0,1) aur (2,2).",
-      "pro": "Two index arrays broadcast position by position, so the result is a[(0,1)] and a[(2,2)], not a 2×2 block. That pairing is the most common source of surprising fancy-index results."
+      "pro": "Two index arrays broadcast position by position, so the result is a[(0,1)] and a[(2,2)], not a 2×2 block. That pairing is the most common source of surprising fancy-index results.",
+      "syntax": "a[rows, cols]  # zipped, not crossed",
+      "steps": [
+       "Build a 3×3 array.",
+       "Index `a[[0, 2], [1, 2]]`.",
+       "Print the result and explain it is (0,1) and (2,2)."
+      ],
+      "visual": "a[[0, 2], [1, 2]]\n→ [1 8]\npairs: (0,1) and (2,2)",
+      "realWorld": "Reading a diagonal or a set of specific (row, column) measurements — paired indexing is the precise tool.",
+      "mistakes": [
+       "Expecting a 2×2 crossing of the two lists.",
+       "Using a slice for one of the two lists by accident.",
+       "Mismatched list lengths, which raises."
+      ],
+      "revision": [
+       "Two index arrays are zipped element by element.",
+       "The result has the length of the index arrays."
+      ]
      },
      {
       "id": "n05:learn:12",
@@ -10705,7 +11147,24 @@
       "output": "[4 5 6]\n[2 5]\n6",
       "difficulty": "easy",
       "simple": "a[1] row deta hai, a[:, 1] column, aur a[1, 2] ek hi cell. Teen tarah ke selection, teen shapes.",
-      "pro": "The three forms answer different questions: a[1] is a row view, a[:, 1] a column view, and a[1, 2] a scalar. Printing .shape after each is the habit that keeps multi-axis code honest."
+      "pro": "The three forms answer different questions: a[1] is a row view, a[:, 1] a column view, and a[1, 2] a scalar. Printing .shape after each is the habit that keeps multi-axis code honest.",
+      "syntax": "a[1]  ·  a[:, 1]  ·  a[1, 2]",
+      "steps": [
+       "Build a 2×3 array.",
+       "Print the row, the column and one cell.",
+       "Print each shape to compare."
+      ],
+      "visual": "a[1]    → [4 5 6]  (3,)\na[:, 1] → [2 5]    (2,)\na[1, 2] → 6        scalar",
+      "realWorld": "A data inspection notebook moves between these three constantly; knowing which one keeps which axis prevents most shape bugs.",
+      "mistakes": [
+       "Using a colon where an integer was meant, or vice versa.",
+       "Assuming all three return the same shape.",
+       "Forgetting that a cell is a scalar, not a length-1 array."
+      ],
+      "revision": [
+       "Integer = one item, colon = all items.",
+       "Row and column are 1-D; a cell is scalar."
+      ]
      },
      {
       "id": "n05:learn:13",
@@ -10715,7 +11174,24 @@
       "output": "(2, 3)\n(1, 3)",
       "difficulty": "medium",
       "simple": "Ellipsis (...) bachi hui saari axes ke liye hota hai, aur np.newaxis ek nayi axis add karta hai — broadcasting ke liye kaam aata hai.",
-      "pro": "Ellipsis expands to every axis not named, which keeps indexing readable for 3-D and 4-D arrays. np.newaxis inserts a length-one axis, turning a (3,) vector into (1, 3) or (3, 1) to control how it broadcasts."
+      "pro": "Ellipsis expands to every axis not named, which keeps indexing readable for 3-D and 4-D arrays. np.newaxis inserts a length-one axis, turning a (3,) vector into (1, 3) or (3, 1) to control how it broadcasts.",
+      "syntax": "a[..., 0]  ·  a[np.newaxis, :]",
+      "steps": [
+       "Build a (2, 3, 4) array.",
+       "Slice `a[..., 0]` and print the shape.",
+       "Add an axis to a vector with `np.newaxis` and print the shape."
+      ],
+      "visual": "a[..., 0]              → (2, 3)\nnp.array([1,2,3])[np.newaxis, :] → (1, 3)",
+      "realWorld": "Keeping code readable for n-dimensional tensors: `...` avoids counting colons, and `newaxis` is how a vector becomes a row for broadcasting.",
+      "mistakes": [
+       "Using `...` when an explicit axis would be clearer.",
+       "Confusing `np.newaxis` with `np.expand_dims` (same result, different spelling).",
+       "Adding an axis at the wrong position and broadcasting along the wrong dimension."
+      ],
+      "revision": [
+       "`...` stands for all unnamed axes.",
+       "`np.newaxis` inserts a length-1 axis."
+      ]
      }
     ],
     "interview": [

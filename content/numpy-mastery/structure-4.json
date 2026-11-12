@@ -1,0 +1,270 @@
+{
+  "n04": {
+    "Converting with astype": {
+      "syntax": "a.astype(dtype, copy=True)",
+      "steps": [
+        "Build an array and print its dtype.",
+        "Call `astype(int)` and print the new array.",
+        "Print the original array to show it did not change."
+      ],
+      "visual": "a = [1.7, 2.9]  dtype float64\nastype(int)   → [1 2] dtype int64\noriginal a    → [1.7 2.9] (untouched)",
+      "realWorld": "A model expects integer class ids but the labels arrived as floats after a merge; `astype(int)` is the explicit conversion at that boundary.",
+      "mistakes": [
+        "Assuming `astype` edits the array in place — it returns a new one.",
+        "Casting to int to \"round\" values, when it truncates.",
+        "Repeated casts in a hot loop instead of casting once at load time."
+      ],
+      "revision": [
+        "astype returns a new array with the requested dtype.",
+        "Convert once at the boundary, not inside the loop."
+      ]
+    },
+    "Overflow is silent": {
+      "syntax": "np.array(values, dtype=np.uint8)  # wraps modulo 2**8",
+      "steps": [
+        "Create `np.array([250], dtype=np.uint8)`.",
+        "Add 10 and print the result.",
+        "Check the value against `np.iinfo(np.uint8).max`."
+      ],
+      "visual": "uint8 range: 0 … 255\n250 + 10 = 260 → 260 − 256 = 4\nno warning, no exception",
+      "realWorld": "Sensor counters and image pixel arithmetic are the classic overflow sites: a brightness increase wraps 250 → 4 and the image goes dark instead of clipping.",
+      "mistakes": [
+        "Expecting NumPy to raise on overflow like a Python int.",
+        "Choosing uint8 for counters that can pass 255.",
+        "Adding arrays of different integer widths and assuming the wider one wins."
+      ],
+      "revision": [
+        "Integer overflow wraps silently.",
+        "Check `np.iinfo(dtype).max` against the real range, or promote."
+      ]
+    },
+    "Smaller dtype, smaller memory": {
+      "syntax": "np.array(values, dtype=np.float32)  # 4 bytes instead of 8",
+      "steps": [
+        "Create the same values as float32 and as float64.",
+        "Print `dtype` and `nbytes` for both.",
+        "Compare the total bytes for one million elements."
+      ],
+      "visual": "float64 → 8 bytes/value\nfloat32 → 4 bytes/value\n1,000,000 values: 8 MB vs 4 MB",
+      "realWorld": "A feature matrix that fits in RAM as float32 but not as float64 is the difference between training locally and needing a bigger machine.",
+      "mistakes": [
+        "Downcasting float64 data without checking the precision loss.",
+        "Assuming float32 speeds up every operation — some libraries upcast internally.",
+        "Forgetting that `nbytes` counts the buffer, not the Python object overhead."
+      ],
+      "revision": [
+        "`itemsize` is bytes per element; `nbytes` is the whole buffer.",
+        "float32 halves memory at the cost of precision."
+      ]
+    },
+    "astype truncates toward zero": {
+      "syntax": "a.astype(np.int64)  # drops the fraction, does not round",
+      "steps": [
+        "Create `[1.9, -1.9]` and cast to int.",
+        "Print the result and note both values moved toward zero.",
+        "Compare with `np.round(a).astype(int)`."
+      ],
+      "visual": "1.9  → 1\n-1.9 → -1\n2.5  → 2 (with np.round: 2)",
+      "realWorld": "Prices stored as floats and cast to integer cents lose a cent per item; the honest fix is rounding first or storing cents as integers from the start.",
+      "mistakes": [
+        "Using `astype(int)` as a rounding step.",
+        "Assuming negative numbers round down; they truncate up toward zero.",
+        "Casting before summing instead of after."
+      ],
+      "revision": [
+        "Cast truncates toward zero.",
+        "Round first when the fraction matters."
+      ]
+    },
+    "Text becomes a number with astype": {
+      "syntax": "np.array(['1', '2']).astype(float)",
+      "steps": [
+        "Create a string array from two numeric strings.",
+        "Cast it to float and print the dtype.",
+        "Try one non-numeric token and read the error."
+      ],
+      "visual": "['1', '2'] dtype <U1\nastype(float) → [1.0 2.0] dtype float64\n['1', 'x']   → ValueError",
+      "realWorld": "CSV columns arrive as text; converting once at load time turns a column of strings into an array you can actually average.",
+      "mistakes": [
+        "Calling `.mean()` on a string array and expecting a number.",
+        "Silently replacing unparseable values with 0 — that changes the mean.",
+        "Assuming `np.array` already parsed the numbers."
+      ],
+      "revision": [
+        "astype(float) parses numeric text.",
+        "One bad token raises; validate which row failed."
+      ]
+    },
+    "Division always yields floats": {
+      "syntax": "a / b  # true division → float64",
+      "steps": [
+        "Divide an integer array by 2.",
+        "Print the result and its dtype.",
+        "Compare with `a // 2` for floor division."
+      ],
+      "visual": "np.array([1, 2]) / 2   → [0.5 1. ] float64\nnp.array([1, 2]) // 2  → [0 1] int64",
+      "realWorld": "A ratio or percentage computed from integer counts must not silently stay an integer; true division is the default for exactly this reason.",
+      "mistakes": [
+        "Expecting an integer result from `/`.",
+        "Using `//` when a fractional average is wanted.",
+        "Casting the result back to int before rounding."
+      ],
+      "revision": [
+        "`/` always produces floats.",
+        "`//` is floor division and keeps integers."
+      ]
+    },
+    "Numbers become booleans by truthiness": {
+      "syntax": "a.astype(bool)  # 0 → False, anything else → True",
+      "steps": [
+        "Cast `[0, 1, 2]` to bool.",
+        "Print the array and its dtype kind.",
+        "Sum the booleans to count the non-zero values."
+      ],
+      "visual": "[0, 1, 2] → [False  True  True]\nsum() → 2",
+      "realWorld": "A presence column stored as 0/1 becomes a real mask with one cast, ready for filtering or counting.",
+      "mistakes": [
+        "Expecting `False` only for exactly zero and `True` for negative values — negatives are True.",
+        "Casting NaN to bool and assuming it becomes False (it is True).",
+        "Using bool arrays for arithmetic when counts are wanted."
+      ],
+      "revision": [
+        "Truthiness: zero is False, everything else True.",
+        "Bool sums count the True values."
+      ]
+    },
+    "Count with a boolean array": {
+      "syntax": "mask.sum()  # True counts as 1",
+      "steps": [
+        "Build a boolean array and print it.",
+        "Call `.sum()` and print the count.",
+        "Compare with `len(a[a > threshold])`."
+      ],
+      "visual": "[True, False, True]\n.sum() → 2\nlen(a[mask]) → 2",
+      "realWorld": "Dashboards count how many orders crossed a threshold by summing the mask — no loop, no branch.",
+      "mistakes": [
+        "Using `sum()` on an object array where True is a string.",
+        "Forgetting the mask must match the array shape.",
+        "Counting with a Python loop when the mask already answers it."
+      ],
+      "revision": [
+        "Booleans add as 1 and 0.",
+        "One mask serves counting, filtering and assignment."
+      ]
+    },
+    "dtype reports the element type": {
+      "syntax": "a.dtype  # one dtype for the whole array",
+      "steps": [
+        "Create an int array and a float array.",
+        "Print both dtypes.",
+        "Mix an int and a float and print the promoted dtype."
+      ],
+      "visual": "np.array([1, 2]).dtype   → int64\nnp.array([1.0]).dtype     → float64\nint + float               → float64",
+      "realWorld": "A join silently turns an id column into float64 because one missing value introduced NaN; checking `.dtype` catches it before the ids print as `1.0`.",
+      "mistakes": [
+        "Assuming each element can have its own dtype.",
+        "Ignoring the promotion that a single float literal causes.",
+        "Comparing dtype objects as strings instead of using `.kind`."
+      ],
+      "revision": [
+        "One dtype per array.",
+        "Mixing types promotes to one that can hold both."
+      ]
+    },
+    "A float array prints a decimal point": {
+      "syntax": "print(a)  # [1. 2.] is float, [1 2] is int",
+      "steps": [
+        "Print an integer array.",
+        "Print a float array with the same values.",
+        "Point at the decimal point as the visual dtype cue."
+      ],
+      "visual": "[1 2]     int64\n[1. 2.]   float64",
+      "realWorld": "In a notebook, the printed form is the fastest dtype check before a plot or a division looks wrong.",
+      "mistakes": [
+        "Reading `[1. 2.]` as text rather than floats.",
+        "Assuming trailing dots are a formatting bug.",
+        "Trusting the print over `.dtype` in production code."
+      ],
+      "revision": [
+        "A decimal point in the print means floats.",
+        "`.dtype` is the authoritative check."
+      ]
+    },
+    "Each dtype has a size in bytes": {
+      "syntax": "np.dtype('int64').itemsize  # bytes per element",
+      "steps": [
+        "Print `itemsize` for int64 and int32.",
+        "Multiply by the element count to get `nbytes`.",
+        "Estimate the memory for ten million values."
+      ],
+      "visual": "int64 → 8 bytes\nint32 → 4 bytes\n10,000,000 × 8 = 80 MB",
+      "realWorld": "Sizing a batch before loading it: 10 million int64 features need 80 MB before any copy, which decides whether the job fits on the worker.",
+      "mistakes": [
+        "Confusing `itemsize` with `size`.",
+        "Forgetting that a copy doubles the footprint.",
+        "Assuming all integer dtypes are the same width."
+      ],
+      "revision": [
+        "`itemsize` = bytes per element.",
+        "`nbytes` = itemsize × size."
+      ]
+    },
+    "A comparison produces booleans": {
+      "syntax": "a > 1  # dtype bool",
+      "steps": [
+        "Compare an integer array with 1.",
+        "Print the result and its dtype.",
+        "Use the result to index the array."
+      ],
+      "visual": "np.array([1, 2, 3]) > 1 → [False  True  True]\ndtype                     → bool",
+      "realWorld": "Filters, alerts and counts all start as a comparison; understanding that a mask is a real bool array explains why it can be stored and reused.",
+      "mistakes": [
+        "Chaining comparisons with `and`/`or` instead of `&`/`|`.",
+        "Forgetting parentheses around each comparison.",
+        "Mutating the mask and wondering why the filter changed."
+      ],
+      "revision": [
+        "Comparisons produce bool arrays.",
+        "Combine masks with `&`, `|`, `~`, each in parentheses."
+      ]
+    },
+    "Casting a float to an integer truncates": {
+      "syntax": "np.round(a).astype(np.int64)  # round, then cast",
+      "steps": [
+        "Cast `[1.9, -1.9, 2.5]` straight to int and print.",
+        "Round first, then cast, and print again.",
+        "Compare the two results value by value."
+      ],
+      "visual": "direct:  [ 1 -1  2]\nround:   [ 2 -2  2]",
+      "realWorld": "Converting a measured score to an integer grade: the direct cast gives 89.9 → 89, the rounded one gives 90.",
+      "mistakes": [
+        "Casting first and rounding the integer afterwards (too late).",
+        "Assuming `np.round` rounds .5 up — it rounds to even.",
+        "Using int32 for values that can exceed its range."
+      ],
+      "revision": [
+        "Round before casting.",
+        "np.round uses round-half-to-even."
+      ]
+    },
+    "Type promotion with result_type": {
+      "syntax": "np.result_type(np.int32, np.float32)  # float64",
+      "steps": [
+        "Ask `np.result_type` for int32 and float32.",
+        "Add a Python float to an int8 array and print the dtype.",
+        "Use `np.promote_types` for two dtype strings."
+      ],
+      "visual": "result_type(int32, float32) → float64\nint8 + 0.5                  → float64",
+      "realWorld": "Before a big allocation, `result_type` tells you whether the operation will quietly widen to float64 and double the memory.",
+      "mistakes": [
+        "Assuming int32 + float32 stays float32.",
+        "Forgetting that Python scalars participate in promotion.",
+        "Using `result_type` on arrays instead of dtypes."
+      ],
+      "revision": [
+        "Promotion picks a dtype that can hold both inputs.",
+        "`result_type` predicts it without running the operation."
+      ]
+    }
+  }
+}
