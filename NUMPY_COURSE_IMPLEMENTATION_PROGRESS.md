@@ -53,6 +53,16 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 480 | 1,000 | 520 |
 | **Total** | **2,540** | **10,000** | **7,460** |
 
+### Interactive tools (phase 17)
+
+Every module now shares four working tools below the 50/50 workspace: an array visualizer (shape →
+ndim/size/strides/index grid), a broadcasting simulator that shows each axis decision or the exact
+failure, a statistics playground (population mean/median/std/var, p25/p50/p75 with linear
+interpolation) and a matrix lab (`A @ B`, `A.T`, incompatible shapes refused). The arithmetic lives in
+the pure `src/core/learning/numpy-tools.ts` and is driven by `scripts/tests/numpy-tools.test.mjs` —
+the panels format real computed values, not canned output. The 18-module brief's remaining 14 tools
+are listed with their gaps in `NUMPY_CURRICULUM_AUDIT.md`.
+
 ### Per module
 
 Every module ships **127 entries**: 12 Learn, 21 Interview (12 output questions + 9 authored),

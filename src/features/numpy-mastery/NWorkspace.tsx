@@ -10,6 +10,7 @@ import {
   type NEntry, type NModule, type NSectionKey,
 } from '../../core/learning/ncourse';
 import { NLogo } from './NLogo';
+import { NTools } from './NTools';
 import type { RunResult } from '../coding/runners';
 
 const DIFF_TONE: Record<NEntry['difficulty'], string> = { easy: 'easy', medium: 'medium', hard: 'hard' };
@@ -438,6 +439,8 @@ export function NModuleWorkspace({ module, onBack }: { module: NModule; onBack: 
           />
         </div>
       </div>
+
+      <NTools />
     </div>
   );
 }
