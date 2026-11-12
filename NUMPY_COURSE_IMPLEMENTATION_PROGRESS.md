@@ -62,6 +62,18 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Dual-level explanations for the forty depth-layer topics (phase 42)
+
+`levels-6.json` gives every one of the 40 topics added by `deepening-8.json` a beginner Hinglish
+explanation (`simple`, the default) and a professional English one (`pro`), so the level toggle now
+works on all of them: **40/40 dual-level** in that layer, and course-wide dual coverage moves from
+68 to **100 of 295 topics**.
+
+The Hinglish side teaches with a concrete scene (a bag of chocolates for mixed types, an attendance
+sheet for rows and columns, a vacuum bag for dtype memory), while the professional side states the
+mechanism and the consequence — promotion tables, strides, aliasing, tolerance choice — without
+repeating the beginner sentence.
+
 ### Linear algebra and file I/O depth (phase 41)
 
 `deepening-9.json` adds fifteen executed topics to the two thinnest advanced modules:

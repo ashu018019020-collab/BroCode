@@ -1344,6 +1344,8 @@
       "code": "import numpy as np\nmarks = [40, 55, 70, 85]\na = np.array(marks)\nprint(a.sum(), a.mean())\nprint(a.dtype, a.shape)",
       "output": "250 62.5\nint64 (4,)",
       "difficulty": "easy",
+      "simple": "Socho tumhe 1000 notebook ke marks jodne hain. Python list me computer har number ko alag-alag uthta hai — jaise ek-ek kagaz uthana. NumPy pehle saare marks ko ek hi dabbe me line se rakh deta hai, phir poore dabbe par ek saath jod deta hai. Isliye wahi kaam bahut tez hota hai, aur isi wajah se data science NumPy se shuru hoti hai.",
+      "pro": "Python-level iteration pays interpreter overhead per element; an ndarray performs the same reduction in compiled code over a contiguous, homogeneously typed buffer. That is why numerical pipelines convert once and then express work as whole-array operations rather than loops. The performance difference comes from the buffer and the compiled loop, not from the syntax.",
       "syntax": "np.array(sequence)  →  compiled buffer operations",
       "steps": [
        "Sum a list with Python's builtin to see the loop-based path.",
@@ -1368,6 +1370,8 @@
       "code": "import numpy as np\nmixed = np.array([1, 2.5, True])\nprint(mixed, mixed.dtype)",
       "output": "[1.  2.5 1. ] float64",
       "difficulty": "medium",
+      "simple": "List ek aisa bag hai jisme chocolate, pen aur kagaz sab kuch ek saath rakh sakte ho. NumPy array ek aisa dabba hai jisme sirf ek hi cheez rakh sakte ho — sab numbers ya sab text. Agar tum mix karne ki koshish karo, NumPy sabko ek hi type me badal deta hai, isliye `True` bhi number ban jata hai.",
+      "pro": "A list is heterogeneous and Python-object-backed; an ndarray has one dtype and one shape for the whole buffer. Mixing an int, a float and a bool therefore promotes everything to a common dtype (float64 here), which is a silent conversion rather than an error. That conversion is silent, so inspect dtype after building an array from mixed Python values.",
       "syntax": "np.array([1, 2.5, True])  →  one promoted dtype",
       "steps": [
        "Build an array from mixed values.",
@@ -3785,8 +3789,8 @@
       "code": "import numpy as np\na = np.arange(12).reshape(3, 4)\nprint(a.shape, a.ndim, a.size, a.dtype, a.itemsize, a.nbytes, a.strides)",
       "output": "(3, 4) 2 12 int64 8 96 (32, 8)",
       "difficulty": "easy",
-      "simple": "Shape, ndim, size, dtype, itemsize, nbytes aur strides — ye saat cheezein array ke baare me sab kuch bata deti hain. Strides batate hain har axis me aage badhne par kitne byte chalo.",
-      "pro": "strides are byte steps per axis, so shape plus strides fully describe how a view maps onto its buffer. A transposed view keeps the same buffer with swapped strides, which is why the copy only happens later.",
+      "simple": "Ek array ke baare me hum alag-alag sawaal poochh sakte hain: kitni rows aur columns hain (`shape`), kitne total numbers hain (`size`), har number ka type kya hai (`dtype`), aur memory me kitni jagah lagi (`nbytes`). `strides` batata hai ki agla number lene ke liye memory me kitne step aage jaana hai — jaise seedhi ke steps.",
+      "pro": "shape, ndim, size, dtype, itemsize, nbytes and strides describe different layers of the same allocation: logical axes, element type, buffer bytes and the byte offset each axis step applies. For a C-contiguous (3, 4) int64 array the strides are (32, 8), so every column step moves one 8-byte element and every row step moves four.",
       "syntax": "shape · ndim · size · dtype · itemsize · nbytes · strides",
       "steps": [
        "Reshape a range into a 3×4 array.",
@@ -3811,8 +3815,8 @@
       "code": "import numpy as np\nz = np.zeros(3, dtype=np.int64)\nprint(z, z.dtype)\nprint(np.zeros((2, 2)).shape)",
       "output": "[0 0 0] int64\n(2, 2)",
       "difficulty": "medium",
-      "simple": "`np.empty` sirf jagah banata hai, usme zero nahi daalta — jo memory me pehle se tha wahi dikhta hai. Isliye use karne se pehle har cell bharni padti hai.",
-      "pro": "empty allocates without initialisation, so the values are whatever the buffer held. It is a legitimate preallocation only when every element is written before it is read.",
+      "simple": "`np.empty` ek khaali dabba deta hai jisme pehle se kuch bhi likha ho sakta hai — purane numbers, kachra, kuch bhi. Ye zeros nahi deta. Agar tumhe pakka pata ho ki tum turant saare numbers khud bhar doge, tab empty use karo; warna `np.zeros` hi lo.",
+      "pro": "empty allocates the buffer without initialising it, so the values are whatever the allocator returned — reading them is undefined behaviour for your program. It is only appropriate for a preallocated output that is fully overwritten before any read; zeros trades one memset pass for determinism.",
       "syntax": "np.empty(shape, dtype) → uninitialised buffer",
       "steps": [
        "Create zeros to see a known starting state.",
@@ -6230,8 +6234,8 @@
       "code": "import numpy as np\nprint(np.arange(0, 1, 0.25))\nprint(np.linspace(0, 1, 5))",
       "output": "[0.   0.25 0.5  0.75]\n[0.   0.25 0.5  0.75 1.  ]",
       "difficulty": "easy",
-      "simple": "Step pata hai to arange, count pata hai to linspace. Plot ya grid ke liye aksar linspace behtar hota hai.",
-      "pro": "Pick arange when the step is the requirement and linspace when the sample count is; linspace also guarantees the endpoint. For plots and numerical grids the count is usually what you actually know.",
+      "simple": "`arange` bolta hai \"kitna-kitna badhao\" — jaise 0 se shuru karke 0.25 ke steps. `linspace` bolta hai \"kitne number chahiye\" aur wo dono ends pakka include karta hai. Decimal steps me arange kabhi stop ko miss kar deta hai, isliye jab ginti zaroori ho to linspace safe hai.",
+      "pro": "arange is step-driven and excludes the stop, with float steps accumulating representation error; linspace is count-driven and includes both endpoints by construction. When a specification says \"n points between a and b\", linspace encodes that requirement directly and avoids off-by-one surprises.",
       "syntax": "arange(start, stop, step) vs linspace(start, stop, count)",
       "steps": [
        "Build the same range both ways and compare lengths.",
@@ -6256,8 +6260,8 @@
       "code": "import numpy as np\nprint(np.eye(3, dtype=int))\nprint(np.identity(2, dtype=int))",
       "output": "[[1 0 0]\n [0 1 0]\n [0 0 1]]\n[[1 0]\n [0 1]]",
       "difficulty": "medium",
-      "simple": "eye rectangular bhi ban sakta hai (3×4), identity sirf square. Isliye eye zyada flexible hai.",
-      "pro": "eye(rows, columns) generalises identity to rectangular shapes, which is what padding a design matrix or building a selection block needs. identity stays as the square convenience alias.",
+      "simple": "Identity matrix ek jaadu wala number hai: kisi bhi matrix ko usse multiply karo, matrix wahi rehta hai. `np.identity(2)` sirf square (2×2) banata hai, jabki `np.eye(3, 4)` lambi-chaudi shape bhi bana sakta hai — diagonal par 1, baaki jagah 0.",
+      "pro": "identity requires a square matrix; eye accepts independent row and column counts and places ones on the main diagonal of a rectangular shape. Both default to float64, so pass dtype=int when the matrix participates in integer arithmetic. For a rectangular shape only the main diagonal receives ones; every other cell is zero by construction.",
       "syntax": "np.eye(rows, cols) · np.identity(n)",
       "steps": [
        "Create a 3×3 eye and compare with identity(3).",
@@ -8687,8 +8691,8 @@
       "code": "import numpy as np\na = np.array([1.9, -1.9, 2.5])\nprint(a.astype(np.int64))\nprint(np.round(a).astype(np.int64))",
       "output": "[ 1 -1  2]\n[ 2 -2  2]",
       "difficulty": "easy",
-      "simple": "Round karke int banane se 1.9 ka 2 milta hai, sirf astype karne par 1 milta hai. Difference yahi hai.",
-      "pro": "np.round applies round-half-to-even before the cast, while astype alone truncates. The order matters for every reported total, so decide explicitly whether the business rule is rounding or truncation.",
+      "simple": "Jab tum 1.9 ko integer banao, NumPy usse 2 nahi karta — wo 1 kar deta hai, kyunki wo dushmal wala hissa phenk deta hai. Negative me bhi wahi hota hai: -1.9 se -1. Agar rounding chahiye to pehle `np.round` karo, phir integer banao.",
+      "pro": "astype(int) truncates toward zero, it does not round; 1.9 becomes 1 and -1.9 becomes -1. Round first with np.round (which uses round-half-to-even) when the fractional part carries meaning, and keep the original array if the precision must survive.",
       "syntax": "np.round(a).astype(np.int64)  # round, then cast",
       "steps": [
        "Cast `[1.9, -1.9, 2.5]` straight to int and print.",
@@ -8714,8 +8718,8 @@
       "code": "import numpy as np\nprint(np.result_type(np.int32, np.float32))\nprint((np.array([1], dtype=np.int8) + 0.5).dtype)",
       "output": "float64\nfloat64",
       "difficulty": "medium",
-      "simple": "Do alag type milte hain to NumPy bada type chunta hai — int aur float milne par float. result_type se pehle hi pata chal jaata hai.",
-      "pro": "np.result_type reports the dtype an operation will produce, which is how you predict promotion before allocating the result. Mixing an int8 array with 0.5 promotes to float64, not float32, because the Python scalar is treated as a double.",
+      "simple": "Jab do alag tarah ke numbers milte hain — jaise ek chhota integer aur ek decimal — NumPy unke liye ek aisa type chunta hai jisme dono fit ho jayein. `result_type` pehle hi bata deta hai ki kaunsa type aayega, bina calculation kiye.",
+      "pro": "NumPy promotes operands to a dtype that can represent both, following its type-promotion table; result_type predicts that dtype without performing the operation. Check it before a large allocation, because an int8 array meeting a Python float promotes to float64 and doubles the memory.",
       "syntax": "np.result_type(np.int32, np.float32)  # float64",
       "steps": [
        "Ask `np.result_type` for int32 and float32.",
@@ -11146,8 +11150,8 @@
       "code": "import numpy as np\na = np.array([[1, 2, 3], [4, 5, 6]])\nprint(a[1])\nprint(a[:, 1])\nprint(a[1, 2])",
       "output": "[4 5 6]\n[2 5]\n6",
       "difficulty": "easy",
-      "simple": "a[1] row deta hai, a[:, 1] column, aur a[1, 2] ek hi cell. Teen tarah ke selection, teen shapes.",
-      "pro": "The three forms answer different questions: a[1] is a row view, a[:, 1] a column view, and a[1, 2] a scalar. Printing .shape after each is the habit that keeps multi-axis code honest.",
+      "simple": "2D array ek attendance sheet jaisa hai. `a[1]` poori row 1 deta hai (jaise ek student ke saare marks), `a[:, 1]` poora column 1 deta hai (jaise sab students ka ek subject), aur `a[1, 2]` ek hi cell — ek student ka ek mark.",
+      "pro": "The first index selects along axis 0 and the second along axis 1: a[1] returns a 1-D row, a[:, 1] returns a 1-D column, and a[1, 2] returns a scalar cell. Only the slice form keeps the axis, which is why a[:, 1:2] stays 2-D.",
       "syntax": "a[1]  ·  a[:, 1]  ·  a[1, 2]",
       "steps": [
        "Build a 2×3 array.",
@@ -11173,8 +11177,8 @@
       "code": "import numpy as np\na = np.arange(24).reshape(2, 3, 4)\nprint(a[..., 0].shape)\nprint(np.array([1, 2, 3])[np.newaxis, :].shape)",
       "output": "(2, 3)\n(1, 3)",
       "difficulty": "medium",
-      "simple": "Ellipsis (...) bachi hui saari axes ke liye hota hai, aur np.newaxis ek nayi axis add karta hai — broadcasting ke liye kaam aata hai.",
-      "pro": "Ellipsis expands to every axis not named, which keeps indexing readable for 3-D and 4-D arrays. np.newaxis inserts a length-one axis, turning a (3,) vector into (1, 3) or (3, 1) to control how it broadcasts.",
+      "simple": "Jab array me bahut saare dimensions ho, `...` bolta hai \"baaki saare dimensions jaisa hai waisa hi rehne do\" — tumhe saare colon likhne ki zaroorat nahi. `newaxis` ek naya chhota dimension add karta hai, jaise ek line ko ek row banane ke liye.",
+      "pro": "Ellipsis expands to every axis not named, which keeps n-dimensional slicing readable. np.newaxis (or expand_dims) inserts a length-one axis at a chosen position, giving a 1-D array the (1, n) or (n, 1) shape a broadcast needs. Both are index expressions, so they cost nothing at runtime and compose with any other slice.",
       "syntax": "a[..., 0]  ·  a[np.newaxis, :]",
       "steps": [
        "Build a (2, 3, 4) array.",
@@ -13376,7 +13380,9 @@
       "body": "Slicing returns a view of the same buffer, so writing through the slice changes the original. Use copy when the two must be independent.",
       "code": "import numpy as np\na = np.arange(6)\nb = a[1:4]\nb[0] = 99\nprint(a, b)",
       "output": "[ 0 99  2  3  4  5] [99  2  3]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Slice koi nayi copy nahi hoti — wo usi dabbe ki ek khidki hai. Agar tum khidki se andar haath daal kar number badloge, to asli array bhi badal jayega. Agar tumhe alag copy chahiye to `.copy()` likho.",
+      "pro": "A basic slice returns a view: same buffer, different offset and strides, so an assignment through the view mutates the parent. Call .copy() when the slice must outlive or diverge from the original, and prove the distinction with np.shares_memory."
      },
      {
       "id": "n06:learn:13",
@@ -13384,7 +13390,9 @@
       "body": "A step of -1 walks the axis backwards and keeps the shape otherwise unchanged. The same syntax works per axis on a 2-D array.",
       "code": "import numpy as np\na = np.arange(5)\nprint(a[::-1])\nprint(np.array([[1, 2], [3, 4]])[::-1, ::-1])",
       "output": "[4 3 2 1 0]\n[[4 3]\n [2 1]]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Step `-1` ka matlab hai peeche ki taraf chalo — jaise seedhi par ulta utarna. `a[::-1]` poora array ulta kar deta hai, aur 2D me `[::-1, ::-1]` dono directions ulta kar deta hai. Ye naya data nahi banata, sirf padhne ka rukh badalta hai.",
+      "pro": "A negative step reverses the traversal of an axis by negating that axis's stride; the buffer is untouched, so the result is a view. Combining negative steps across axes flips rows and columns in one expression, and any later contiguity requirement will force a copy."
      }
     ],
     "interview": [
@@ -15544,7 +15552,9 @@
       "body": "reshape never copies if the existing strides allow the new shape; ravel returns a view where possible and a copy otherwise. Use flatten when a copy is required.",
       "code": "import numpy as np\na = np.arange(6)\nb = a.reshape(2, 3)\nb[0, 0] = 99\nprint(a, b.shape)",
       "output": "[99  1  2  3  4  5] (2, 3)",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "`reshape` se hum ek hi dabbe ke numbers ko naya shape de dete hain — jaise 6 chocolates ko 2 lines ki 3-3 me rakhna. Dabba wahi rehta hai, sirf dekhne ka tarika badalta hai. Isliye reshape ke baad number badlo to asli array me bhi badal jata hai.",
+      "pro": "reshape reinterprets the same buffer when the existing strides permit the new shape, returning a view rather than allocating. ravel prefers a view and falls back to a copy for non-contiguous layouts; flatten always copies, which is the safe choice when independence is required."
      },
      {
       "id": "n07:learn:13",
@@ -15552,7 +15562,9 @@
       "body": "concatenate joins along an existing axis, vstack adds rows and hstack adds columns. stack creates a new axis instead of joining one.",
       "code": "import numpy as np\na = np.array([1, 2])\nb = np.array([3, 4])\nprint(np.vstack([a, b]))\nprint(np.hstack([a, b]))\nprint(np.stack([a, b]).shape)",
       "output": "[[1 2]\n [3 4]]\n[1 2 3 4]\n(2, 2)",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "`concatenate` do arrays ko jodta hai — jaise do pencils ko end-to-end jodna. `vstack` unhe upar-neeche rakhta hai (nayi rows), `hstack` side-by-side (naye columns), aur `stack` ek naya dimension bana kar unhe ek doosre ke upar rakh deta hai.",
+      "pro": "concatenate joins along an existing axis, vstack/hstack are axis-0/axis-1 conveniences with 1-D promotion, and stack creates a new leading (or named) axis instead of joining one. Pick stack when the arrays are observations of the same variable and the extra dimension carries meaning."
      }
     ],
     "interview": [
@@ -17687,7 +17699,9 @@
       "body": "add.reduce collapses an axis to one value, while add.accumulate keeps every running total. They are ufunc methods, so they work with any binary ufunc.",
       "code": "import numpy as np\na = np.array([1, 2, 3, 4])\nprint(np.add.reduce(a))\nprint(np.add.accumulate(a))",
       "output": "10\n[ 1  3  6 10]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "`reduce` saare numbers ko jod kar ek jawab deta hai, jaise poore mahine ka total. `accumulate` har step ka running total deta hai, jaise din-din ka hisaab — [1, 3, 6, 10]. Dono kisi bhi jodne wale function ke saath chalte hain.",
+      "pro": "reduce collapses an axis to a scalar and accumulate returns the full prefix sequence; both are ufunc methods, so the same call works with add, multiply or maximum. accumulate allocates an output the size of the input, which is the memory cost of keeping every running value."
      },
      {
       "id": "n08:learn:13",
@@ -17695,7 +17709,9 @@
       "body": "Binary floating point cannot represent most decimals exactly, so two computations that should agree can differ in the last bits. isclose compares within a tolerance instead.",
       "code": "import numpy as np\nprint(0.1 + 0.2 == 0.3)\nprint(np.isclose(0.1 + 0.2, 0.3))",
       "output": "False\nTrue",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Computer 0.1 aur 0.2 ko bilkul theek se store nahi kar sakta, isliye unka jod 0.3 se thoda alag aata hai. `==` turant \"barabar nahi\" bol dega. Iske liye `np.isclose` use karo, jo thodi si galti ko ignore karta hai.",
+      "pro": "Binary floating point cannot represent most decimal fractions exactly, so computed values differ in the last bits even when the algebra says they are equal. Compare with np.isclose (or allclose for arrays) using a tolerance appropriate to the magnitudes involved; reserve == for exact integers and booleans."
      }
     ],
     "interview": [
@@ -19830,7 +19846,9 @@
       "body": "Shape (3, 1) against (1, 4) stretches both to (3, 4): each row value meets each column value. That single rule is how standardising every column is written without a loop.",
       "code": "import numpy as np\ncol = np.array([[10], [20], [30]])\nrow = np.array([[1, 2, 3, 4]])\nprint(col + row)",
       "output": "[[11 12 13 14]\n [21 22 23 24]\n [31 32 33 34]]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Socho ek column me tumhare 3 dost aur ek row me 4 chocolates ke daam hain. NumPy dono ko khud-ba-khud phaila deta hai aur har dost ke liye har daam ka hisaab kar deta hai — bina kisi loop ke, 3×4 ka table ban jata hai.",
+      "pro": "A (3, 1) column and a (1, 4) row broadcast to (3, 4): each axis is stretched where its length is 1, producing every pairwise combination. The result is materialised, so a tiny pair of inputs can allocate a large output — the shape to check before running it at scale."
      },
      {
       "id": "n09:learn:13",
@@ -19838,7 +19856,9 @@
       "body": "expand_dims is the function form of newaxis: it inserts a length-one axis at the position you name, which makes the intended broadcast shape obvious in code.",
       "code": "import numpy as np\na = np.array([1, 2, 3])\nprint(a.shape, np.expand_dims(a, 0).shape, np.expand_dims(a, 1).shape)",
       "output": "(3,) (1, 3) (3, 1)",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "`expand_dims` ek line ko ek row ya ek column banane ka saaf tareeka hai. `axis=0` se (1, 3) banta hai aur `axis=1` se (3, 1) — jaise ek list ko ya to horizontal line me rakhna ya vertical.",
+      "pro": "expand_dims inserts a length-one axis at the named position and is the function form of np.newaxis. Naming the axis makes the intended broadcast explicit in review, and choosing 0 versus 1 decides whether the vector lines up with rows or columns."
      }
     ],
     "interview": [
@@ -21973,7 +21993,9 @@
       "body": "The axis you name is the axis that disappears. Summing a (2, 3) array with axis=0 collapses the rows and leaves one value per column.",
       "code": "import numpy as np\na = np.array([[1, 2, 3], [4, 5, 6]])\nprint(a.sum(axis=0), a.sum(axis=0).shape)\nprint(a.sum(axis=1), a.sum(axis=1).shape)",
       "output": "[5 7 9] (3,)\n[ 6 15] (2,)",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Yaad rakho: jo axis tum bolte ho, wahi gayab ho jati hai. `axis=0` ka matlab hai rows ko jod do, isliye har column ka ek total bachta hai. `axis=1` ka matlab columns ko jod do, isliye har row ka ek total bachta hai.",
+      "pro": "The named axis is the one removed by the reduction: axis=0 collapses rows and leaves one value per column, axis=1 collapses columns and leaves one value per row. The shape of the result is the input shape with that axis deleted, which is exactly what keepdims reverses."
      },
      {
       "id": "n10:learn:13",
@@ -21981,7 +22003,9 @@
       "body": "percentile returns the value below which a percentage of the data falls, using linear interpolation by default. It is the number to quote for latency and marks, not the mean.",
       "code": "import numpy as np\na = np.array([12, 15, 18, 22, 30, 41])\nprint(np.percentile(a, 50), np.percentile(a, [25, 75]))",
       "output": "20.0 [15.75 28.  ]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Percentile batata hai ki kitne log tumse neeche hain. Agar tumhari marks 90th percentile hain, to 90% students tumse kam marks laaye. Average se percentile behtar hai jab kuch bahut bade number sabko confuse kar rahe hon.",
+      "pro": "percentile returns the value below which a given fraction of observations fall, using linear interpolation between order statistics by default. It is robust to skew where the mean is not, which is why latency and score reports quote p50/p95 rather than the average alone."
      }
     ],
     "interview": [
@@ -24116,7 +24140,9 @@
       "body": "np.where(condition, x, y) returns x where the condition is true and y where it is false, which replaces an if/else loop over the elements.",
       "code": "import numpy as np\nmarks = np.array([35, 72, 48, 90])\nprint(np.where(marks >= 50, 'pass', 'fail'))",
       "output": "['fail' 'pass' 'fail' 'pass']",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "`np.where` ek chhota judge hai: jahan condition sach ho wahan pehla option, jahan jhoot ho wahan doosra. Jaise pass/fail likhna — marks 50 se zyada to \"pass\", warna \"fail\", poore array par ek saath.",
+      "pro": "np.where(condition, x, y) is a vectorised select: it returns x where the condition is true and y elsewhere, broadcasting all three inputs. It replaces an elementwise if/else and always materialises an output array."
      },
      {
       "id": "n11:learn:13",
@@ -24124,7 +24150,9 @@
       "body": "A boolean mask can be used on the left of an assignment, so only the selected cells change and the rest keep their values.",
       "code": "import numpy as np\na = np.array([-5, 3, -2, 8])\na[a < 0] = 0\nprint(a)",
       "output": "[0 3 0 8]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Mask ek chashma hai jo sirf chuni hui jagah dikhata hai. `a[a < 0] = 0` ka matlab hai \"jahan number negative hai wahan 0 rakh do\" — baaki numbers ko chhue bina. Isse saara array ek saath saaf ho jata hai.",
+      "pro": "Assigning into a boolean mask mutates only the selected cells in place, leaving the rest untouched. The mask is computed once and reused; the same pattern serves counting (mask.sum()), filtering and conditional replacement."
      }
     ],
     "interview": [
@@ -26259,7 +26287,9 @@
       "body": "argsort returns the indices that would sort the array, which is what you need to reorder a second array the same way.",
       "code": "import numpy as np\nnames = np.array(['b', 'a', 'c'])\nscore = np.array([2, 9, 5])\norder = np.argsort(score)\nprint(order, names[order], score[order])",
       "output": "[0 2 1] ['b' 'c' 'a'] [2 5 9]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "`sort` tumhe seedha sorted numbers deta hai. `argsort` thoda alag hai — wo batata hai \"kaun sa number kis jagah tha\", jaise race ke baad positions ki list. Isi list se tum doosri cheez (jaise naam) ko bhi usi order me rakh sakte ho.",
+      "pro": "argsort returns the permutation that would sort the array, which is what you need to reorder parallel arrays consistently. Apply the same index array to correlated data, and remember the result follows the sort order, not the original positions."
      },
      {
       "id": "n12:learn:13",
@@ -26267,7 +26297,9 @@
       "body": "intersect1d, union1d and setdiff1d treat the arrays as sets and return sorted unique values, which is how duplicate detection and reconciliation are written.",
       "code": "import numpy as np\na = np.array([1, 2, 3, 3])\nb = np.array([3, 4])\nprint(np.intersect1d(a, b))\nprint(np.union1d(a, b))\nprint(np.setdiff1d(a, b))",
       "output": "[3]\n[1 2 3 4]\n[1 2]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Set operations maths ke Venn diagram jaise hain: `intersect1d` sirf common cheezein deta hai, `union1d` sab kuch ek saath, aur `setdiff1d` pehle wale me se doosre wale ko hata deta hai. Result hamesha sorted aur duplicate-free hota hai.",
+      "pro": "intersect1d, union1d and setdiff1d treat inputs as sets and return sorted unique values, so ordering and duplicates from the input are not preserved. For order-preserving filtering use np.isin with invert=True instead. Because the outputs are sorted and unique, comparing them directly is meaningful, unlike raw input order."
      }
     ],
     "interview": [
@@ -28402,7 +28434,9 @@
       "body": "itemsize is the bytes one element occupies and nbytes is itemsize times size. Changing dtype changes both without changing shape.",
       "code": "import numpy as np\na = np.zeros(5, dtype=np.int32)\nb = np.zeros(5, dtype=np.float64)\nprint(a.itemsize, a.nbytes, b.itemsize, b.nbytes)",
       "output": "4 20 8 40",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Har number memory me kuch jagah leta hai. `itemsize` batata hai ek number kitni jagah leta hai, aur `nbytes` poore array ki jagah. Chhota type chuno to wahi data kam jagah me aa jata hai — jaise kapde ko vacuum bag me pack karna.",
+      "pro": "itemsize is bytes per element and nbytes is itemsize × size, independent of shape. Downcasting halves the footprint but changes precision, and any copy doubles nbytes, so both attributes matter when sizing a pipeline. Sizing a new array from these numbers avoids the surprise of an eight-fold jump when a dtype widens."
      },
      {
       "id": "n13:learn:13",
@@ -28410,7 +28444,9 @@
       "body": "C order walks the last axis fastest, Fortran order the first. The flags say which layout a buffer uses, and ascontiguousarray gives you the C layout.",
       "code": "import numpy as np\na = np.arange(6).reshape(2, 3)\nprint(a.flags['C_CONTIGUOUS'], a.strides)\nprint(a.T.flags['C_CONTIGUOUS'], a.T.strides)",
       "output": "True (24, 8)\nFalse (8, 24)",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Array memory me line se rehta hai. C order me pehle poora ek row aata hai, phir doosra; Fortran order me pehle poora column. Isliye transpose karne par data hilta nahi, sirf padhne ka rukh badalta hai — `strides` wahi batate hain.",
+      "pro": "C order walks the last axis fastest, Fortran order the first, and strides encode that layout as byte offsets. A transpose swaps strides without moving data, so flags and ascontiguousarray tell you when a library call will force a copy."
      }
     ],
     "interview": [
@@ -30545,7 +30581,9 @@
       "body": "Two generators built with the same seed produce the same stream, which is how an experiment becomes reproducible. A different seed gives a different stream.",
       "code": "import numpy as np\nr1 = np.random.default_rng(42)\nr2 = np.random.default_rng(42)\nprint(r1.random(3))\nprint(r2.random(3))",
       "output": "[0.77395605 0.43887844 0.85859792]\n[0.77395605 0.43887844 0.85859792]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Random numbers bhi ek jaadu ki tarah hain — seed ek secret code hai. Same code doge to wahi numbers dobara milenge, isliye tumhara experiment koi bhi dohra sakta hai. Alag seed doge to naye numbers aayenge.",
+      "pro": "A seeded Generator produces a reproducible stream, so an experiment can be re-run and audited. Two default_rng(42) instances return identical draws; independent experiments should use SeedSequence.spawn rather than sharing one global stream."
      },
      {
       "id": "n14:learn:13",
@@ -30553,7 +30591,9 @@
       "body": "rng.choice samples from a list; replace=False samples without repeating an item, which is what a shuffled train/test split needs.",
       "code": "import numpy as np\nrng = np.random.default_rng(7)\nprint(rng.choice([10, 20, 30, 40], size=2, replace=False))\nprint(rng.permutation(5))",
       "output": "[30 40]\n[0 1 3 2 4]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "`choice` ek bag se cheezein nikalta hai. `replace=False` ka matlab hai jo nikal liya use wapas bag me nahi daalna — isliye koi cheez do baar nahi aati. Train/test split me yahi chahiye hota hai taaki same cheez dono jagah na chali jaye.",
+      "pro": "choice samples with replacement by default; replace=False samples without repetition and raises if the request exceeds the population. permutation returns a shuffled copy of the whole range, which is the right primitive for an index-only split."
      }
     ],
     "interview": [
@@ -32736,7 +32776,9 @@
       "body": "The @ operator contracts the last axis of the left operand with the second-to-last of the right. Elementwise * is a different operation with a different result.",
       "code": "import numpy as np\na = np.array([[1, 2], [3, 4]])\nb = np.array([[5, 6], [7, 8]])\nprint(a @ b)\nprint(a * b)",
       "output": "[[19 22]\n [43 50]]\n[[ 5 12]\n [21 32]]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "`@` do tables ko aise jodta hai jaise ek table ki rows doosri table ke columns se milti hain. `*` bilkul alag hai — wo sirf same jagah wale numbers ko multiply karta hai. Isliye `a @ b` aur `a * b` ke jawab alag aate hain.",
+      "pro": "The @ operator performs a matrix product, contracting the left operand's last axis with the right operand's second-to-last; elementwise * matches positions instead. Keep the shapes in view: (m, k) @ (k, n) gives (m, n), and a k mismatch raises."
      },
      {
       "id": "n15:learn:13",
@@ -32744,7 +32786,9 @@
       "body": "np.linalg.solve(A, b) solves Ax = b directly and is more stable and faster than computing inv(A) @ b. Inversion also loses accuracy on ill-conditioned matrices.",
       "code": "import numpy as np\na = np.array([[3.0, 1.0], [1.0, 2.0]])\nb = np.array([9.0, 8.0])\nprint(np.linalg.solve(a, b))\nprint(np.linalg.det(a))",
       "output": "[2. 3.]\n5.000000000000001",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Agar tumhe `Ax = b` me x chahiye, to A ka ulta (inverse) nikaal kar multiply karne ki zaroorat nahi. `np.linalg.solve` seedha x de deta hai — tez bhi hai aur zyada saaf bhi, kyunki inverse banane me galti badh jati hai.",
+      "pro": "solve(A, b) factors A and solves the system directly, which is faster and numerically more stable than forming inv(A) @ b. Inversion amplifies error on ill-conditioned matrices, so reserve it for cases where the inverse itself is the deliverable."
      },
      {
       "id": "n15:learn:14",
@@ -35345,7 +35389,9 @@
       "body": "save writes a .npy file that keeps dtype and shape, and load reads it back exactly. Unlike CSV, no text conversion happens.",
       "code": "import numpy as np, tempfile, os\na = np.arange(4, dtype=np.float32)\np = os.path.join(tempfile.mkdtemp(), 'a.npy')\nnp.save(p, a)\nb = np.load(p)\nprint(b, b.dtype, b.shape)",
       "output": "[0. 1. 2. 3.] float32 (4,)",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "`np.save` array ko ek special file me rakh deta hai jisme uska type aur shape bhi yaad rehta hai. `np.load` usse bilkul wahi wapas la deta hai — CSV ki tarah numbers ko text me badalne ka jhanjhat nahi.",
+      "pro": "save writes a .npy file with a header carrying dtype, shape and order plus the raw bytes, so load returns an identical array. It is the right intermediate format for a numeric pipeline; CSV remains for human interchange at the cost of text round-tripping."
      },
      {
       "id": "n16:learn:13",
@@ -35353,7 +35399,9 @@
       "body": "savez groups named arrays into one .npz archive, and load returns a mapping you index by name. Use savez_compressed for large, repetitive data.",
       "code": "import numpy as np, tempfile, os\na, b = np.arange(3), np.ones((2, 2))\np = os.path.join(tempfile.mkdtemp(), 'pack.npz')\nnp.savez(p, first=a, second=b)\nz = np.load(p)\nprint(sorted(z.files), z['second'].shape)",
       "output": "['first', 'second'] (2, 2)",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "`np.savez` ek zip dabba banata hai jisme tum kai arrays apne naam ke saath rakh sakte ho — jaise ek folder me alag-alag files. `np.load` se tum naam se wahi array nikal sakte ho. Bade data ke liye `savez_compressed` aur bhi chhota file banata hai.",
+      "pro": "savez groups named arrays into one .npz archive and load exposes them as a keyed mapping, so related arrays travel as a unit. Use savez_compressed when repetition makes deflate worthwhile, and always close the archive or use a context manager. The archive is a zip file, so it can be moved and versioned as one artifact instead of a folder of .npy files."
      },
      {
       "id": "n16:learn:14",
@@ -37859,7 +37907,9 @@
       "body": "datetime64 stores an instant on a fixed unit, so subtraction gives a timedelta64 and comparison is a number comparison. No timezone is carried.",
       "code": "import numpy as np\nd = np.array(['2026-01-01', '2026-03-01'], dtype='datetime64[D]')\nprint(d, d[1] - d[0])\nprint(d + np.timedelta64(10, 'D'))",
       "output": "['2026-01-01' '2026-03-01'] 59 days\n['2026-01-11' '2026-03-11']",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Date bhi ek number hi hai, bas NumPy use khaas tarah se samajhta hai. Do dates ko minus karo to pata chal jata hai kitne din ka fark hai, aur plus karne par nayi date milti hai. Isme timezone nahi hota, sirf ek saaf unit (din, second) hota hai.",
+      "pro": "datetime64 stores an instant on a fixed unit, so subtraction yields timedelta64 and comparisons are integer comparisons. The unit is part of the dtype and a wrong unit shifts dates silently; no timezone is carried, so convert deliberately at the boundary."
      },
      {
       "id": "n17:learn:13",
@@ -37867,7 +37917,9 @@
       "body": "A structured dtype gives every row named, typed fields, so a record stays one row instead of three parallel arrays.",
       "code": "import numpy as np\nrec = np.array([(1, 92.5), (2, 81.0)], dtype=[('id', 'i4'), ('score', 'f8')])\nprint(rec['score'].mean(), rec.dtype.names)",
       "output": "86.75 ('id', 'score')",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Socho har student ke liye ek line: id aur score. Structured array me har row ke andar naam wale khaane hote hain — `rec['score']` bol kar seedha score mil jata hai. Teen alag arrays rakhne ki zaroorat nahi.",
+      "pro": "A structured dtype gives each row named, typed fields stored contiguously, so a record stays one row and field access is a strided view. It suits records that travel together (sorting, saving, indexing); parallel arrays are simpler when columns are analysed independently."
      }
     ],
     "interview": [
@@ -40002,7 +40054,9 @@
       "body": "A masked array carries a mask beside the data, so reductions skip the masked positions instead of returning NaN.",
       "code": "import numpy as np\nimport numpy.ma as ma\na = ma.array([1, 2, 3], mask=[False, True, False])\nprint(a.mean(), a.filled(0))",
       "output": "2.0 [1 0 3]",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Kabhi data me kuch kharab numbers hote hain. Masked array un kharab khaanon par ek dhakkan laga deta hai — average nikaalo to NumPy unhe chhod deta hai, isliye jawab NaN nahi aata. Baad me `filled` se un khaanon me apna number bhar sakte ho.",
+      "pro": "A masked array carries a boolean mask beside the data, and reductions skip masked positions rather than propagating NaN. It distinguishes \"missing\" from \"zero\" explicitly; filled() materialises the mask as chosen values when an array without masks is required."
      },
      {
       "id": "n18:learn:13",
@@ -40010,7 +40064,9 @@
       "body": "NaN and infinity break arithmetic and sorting. nan_to_num maps them to chosen finite values so downstream code has no special cases.",
       "code": "import numpy as np\na = np.array([np.nan, np.inf, -np.inf, 2.0])\nprint(np.nan_to_num(a, nan=0.0, posinf=1e9, neginf=-1e9))",
       "output": "[ 0.e+00  1.e+09 -1.e+09  2.e+00]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "NaN ka matlab hai \"koi number nahi\", aur infinity ka matlab hai \"bahut bada\". Ye dono aage ke hisaab ko kharab kar dete hain. `nan_to_num` unhe tumhare chune hue safe numbers se badal deta hai, taaki program chalta rahe.",
+      "pro": "nan_to_num maps NaN to zero by default and infinities to the dtype's largest finite magnitude, or to values you pass explicitly. It prevents NaN propagation into downstream arithmetic, but the choice of replacement is a modelling decision and should be reported."
      }
     ],
     "interview": [
@@ -42145,7 +42201,9 @@
       "body": "Every expression allocates a new array. Passing out= writes into an existing buffer, which matters when the arrays are large and the loop is repeated.",
       "code": "import numpy as np\na = np.arange(4.0)\nout = np.empty_like(a)\nnp.multiply(a, 2, out=out)\nprint(out, out is a)",
       "output": "[0. 2. 4. 6.] False",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Har calculation ek naya dabba bana deti hai, aur bade data me yeh bahut jagah kha jata hai. `out=` bol kar tum NumPy ko bata sakte ho \"jawab is purane dabbe me hi rakh do\". Isse naya dabba nahi banta aur memory bachti hai.",
+      "pro": "Every expression allocates an output; out= writes into a caller-provided buffer and avoids that allocation churn. It is safe only when the destination does not alias an input, since partial writes during an aliased computation corrupt the result."
      },
      {
       "id": "n19:learn:13",
@@ -42153,7 +42211,9 @@
       "body": "Operators ending in = update the buffer instead of allocating, so a += 1 costs no new array. The trade-off is that aliased views see the change.",
       "code": "import numpy as np\na = np.ones(4, dtype=np.int64)\nbefore = a\nbefore += 1\nprint(a, before is a)",
       "output": "[2 2 2 2] True",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "`a += 1` ka matlab hai usi dabbe ke andar numbers badal do — naya dabba nahi banta. Isliye memory bachti hai. Par dhyan rakho: agar kisi aur ne bhi wahi dabba dekha hua hai, uske numbers bhi badal jayenge.",
+      "pro": "Augmented assignment updates the existing buffer instead of allocating, with no extra array for large operands. The trade-off is aliasing: every view of that buffer observes the change, so in-place code must own its inputs."
      }
     ],
     "interview": [
@@ -44288,7 +44348,9 @@
       "body": "A colour image is a (height, width, 3) array, so slicing a channel is plain indexing and brightness is multiplication by a scalar.",
       "code": "import numpy as np\nimg = np.arange(12).reshape(2, 2, 3)\nprint(img.shape)\nprint(img[..., 0])\nprint((img * 0).shape)",
       "output": "(2, 2, 3)\n[[0 3]\n [6 9]]\n(2, 2, 3)",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "simple": "Photo bhi asal me numbers ka table hai — height, width aur teen colour channels. Isliye image ka ek channel nikalna bas indexing hai, aur brightness badhana bas har number ko multiply karna. NumPy ke liye photo aur koi data alag nahi.",
+      "pro": "A colour image is a (height, width, 3) array, so channel selection is indexing and brightness is scalar multiplication over the whole buffer. The same operations that work on any ndarray apply unchanged, which is why image pipelines are NumPy-shaped."
      },
      {
       "id": "n20:learn:13",
@@ -44296,7 +44358,9 @@
       "body": "asarray accepts lists and tuples without copying when it can, and tolist returns plain lists for JSON or an API. That boundary is where dtype and shape must be checked.",
       "code": "import numpy as np\ndata = [[1, 2], [3, 4]]\na = np.asarray(data)\nprint(a.shape, a.dtype, a.tolist())",
       "output": "(2, 2) int64 [[1, 2], [3, 4]]",
-      "difficulty": "medium"
+      "difficulty": "medium",
+      "simple": "Jab tumhe list se array chahiye, `np.asarray` use karo — wo jitna ho sake copy nahi banata. Jab JSON ya API ke liye wapas list chahiye, `tolist()` use karo. Is border par type aur shape check karna mat bhoolo.",
+      "pro": "asarray accepts lists and tuples and avoids copying when the input is already a compatible ndarray; tolist converts back to Python lists for JSON or an API. The boundary is where dtype and shape must be asserted, because a silent promotion or a copy changes both behaviour and memory."
      }
     ],
     "interview": [
