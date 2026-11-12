@@ -1,0 +1,902 @@
+{
+  "n01": {
+    "Shape travels with the data": {
+      "syntax": "a = np.array([[1, 2, 3], [4, 5, 6]])  ·  a.shape",
+      "steps": ["Build the nested list with two rows and three columns.", "Print the values so the grouping is visible.", "Print `a.shape` and confirm it is `(2, 3)`."],
+      "visual": "values        shape\n[[1 2 3]      (2, 3)\n [4 5 6]]",
+      "realWorld": "A feature matrix read from a CSV must arrive as (rows, features), and the shape is the first thing a model checks.",
+      "mistakes": ["Passing a flat list and expecting rows to appear."],
+      "revision": ["Shape is metadata stored with the array.", "Print shape beside values when debugging."]
+    },
+    "Subtraction and multiplication are elementwise": {
+      "syntax": "a - b  ·  a * b  # position by position",
+      "steps": ["Create two arrays with the same shape.", "Subtract them and print the result.", "Multiply them and compare with a matrix product using `@`."],
+      "visual": "[10 20] - [1 2] = [9 18]\n[10 20] * [1 2] = [10 40]",
+      "realWorld": "Residuals in a regression are one elementwise subtraction of prediction from target.",
+      "mistakes": ["Reading `*` as a matrix product; that is `@`."],
+      "revision": ["Arithmetic aligns by position.", "Shapes must be compatible before values are read."]
+    },
+    "An array of strings is still an array": {
+      "syntax": "names = np.array(['ada', 'bob', 'cy'])  ·  names.dtype",
+      "steps": ["Create a string array from a list of names.", "Print the dtype and confirm the `<U` width.", "Reverse and print the array with a slice."],
+      "visual": "dtype('<U3')\n['ada' 'bob' 'cy'] → ['cy' 'bob' 'ada']",
+      "realWorld": "Category labels often live in a string array before they are encoded for a model.",
+      "mistakes": ["Trying arithmetic on text without converting it first."],
+      "revision": ["Strings use a fixed-width Unicode dtype.", "Slicing and sorting work; arithmetic needs a cast."]
+    },
+    "tolist detaches the result": {
+      "syntax": "values = a.tolist()  # plain Python list, no shared buffer",
+      "steps": ["Create a small array.", "Convert it with `tolist()`.", "Change the list and print the array to prove they are separate."],
+      "visual": "a = [1 2 3]\nplain = [1, 2, 3]   (own memory)",
+      "realWorld": "APIs and JSON serialisers accept plain lists, so `tolist()` is the hand-off at the boundary.",
+      "mistakes": ["Expecting a mutation of the list to update the array."],
+      "revision": ["`tolist()` allocates Python objects.", "It is the JSON-ready boundary."]
+    },
+    "A boolean result is a normal array": {
+      "syntax": "mask = marks >= 50  ·  int(mask.sum())",
+      "steps": ["Compare an array with a threshold.", "Store the result in a variable.", "Count the True values with `sum()`."],
+      "visual": "marks   [35 72 48 90]\nmask    [F  T  F  T]\nsum     2",
+      "realWorld": "Pass rates and alert counts are boolean arrays reduced to a number.",
+      "mistakes": ["Using the mask as a scalar without reducing it."],
+      "revision": ["Comparisons return a bool array of the same shape.", "True counts as 1 in a sum."]
+    },
+    "Reshaping a list of lists": {
+      "syntax": "a = np.array([[1, 2], [3, 4], [5, 6]])  ·  a.reshape(2, 3)",
+      "steps": ["Build a 3×2 nested list.", "Print its shape to confirm two axes.", "Reshape to 2×3 and print the values."],
+      "visual": "(3, 2) → (2, 3)\n[[1 2] [3 4] [5 6]] → [[1 2 3] [4 5 6]]",
+      "realWorld": "Image batches are reshaped from a flat buffer into (batch, height, width) before a model.",
+      "mistakes": ["Reshaping to a size that does not multiply to the same count."],
+      "revision": ["Nested lists already carry row structure.", "A reshape keeps the values and changes the grouping."]
+    }
+  },
+  "n02": {
+    "strides report bytes per axis step": {
+      "syntax": "a.strides  # bytes to advance one index on each axis",
+      "steps": ["Create an int64 matrix with `arange` and `reshape`.", "Print `a.strides` and `a.shape`.", "Move one row and confirm the byte jump matches the row stride."],
+      "visual": "shape (2, 3), int64\nstrides (24, 8)\nrow step 24 bytes = 3 × 8",
+      "realWorld": "Memory layout explains why a transpose is free and why some library calls copy.",
+      "mistakes": ["Reading strides as element counts instead of bytes."],
+      "revision": ["Strides are byte offsets per axis.", "C-order rows jump by the row width."]
+    },
+    "A transpose keeps the same size": {
+      "syntax": "a.T  # shape and strides swap, size is unchanged",
+      "steps": ["Build a 2×3 array.", "Print `a.T.shape` and `a.size`.", "Compare the strides of both views."],
+      "visual": "a  (2, 3) strides (24, 8)\na.T (3, 2) strides (8, 24)",
+      "realWorld": "Linear algebra libraries expect a particular orientation, and transpose supplies it without a copy.",
+      "mistakes": ["Mutating a transpose and being surprised the source changed."],
+      "revision": ["Transpose is a view.", "Size is the product of the shape and does not change."]
+    },
+    "dtype name versus dtype kind": {
+      "syntax": "str(a.dtype)  ·  a.dtype.kind",
+      "steps": ["Create one integer and one float array.", "Print the full dtype name for both.", "Print `.kind` and compare the single letters."],
+      "visual": "int64  → kind 'i'\nfloat64 → kind 'f'",
+      "realWorld": "Validation code branches on kind when any integer width is acceptable.",
+      "mistakes": ["Comparing `.kind` with the full dtype string."],
+      "revision": ["The name includes width and precision.", "The kind is the type family."]
+    },
+    "size is zero when any axis is zero": {
+      "syntax": "np.zeros((0, 5)).size  # 0, not 5",
+      "steps": ["Create an array with a zero-length axis.", "Print shape, size and nbytes.", "Reduce it and observe the empty result."],
+      "visual": "shape (0, 5)\nsize  0\nnbytes 0",
+      "realWorld": "A filter that matches no rows still flows through a pipeline as a valid empty result.",
+      "mistakes": ["Assuming the non-zero axis still yields elements."],
+      "revision": ["Size multiplies every axis length.", "One zero axis empties the array."]
+    },
+    "flags report the memory layout": {
+      "syntax": "a.flags['C_CONTIGUOUS']  ·  a.flags['WRITEABLE']",
+      "steps": ["Build a contiguous matrix.", "Print its C, Fortran and writeable flags.", "Transpose it and print the flags again."],
+      "visual": "a     C True  F False\na.T   C False F True",
+      "realWorld": "A library that needs contiguous input reads these flags before deciding to copy.",
+      "mistakes": ["Ignoring a non-contiguous warning until a copy appears in profiling."],
+      "revision": ["Flags describe the buffer, not the values.", "Transpose flips the layout flags."]
+    },
+    "base links a view to its source": {
+      "syntax": "a[1:3].base is a  # True for a view",
+      "steps": ["Create a vector.", "Print `a.base` for the owner and for a slice.", "Confirm the slice's base is the source array."],
+      "visual": "a.base     None\na[1:3].base → a",
+      "realWorld": "Debugging a silent data change starts by checking whether two names share a base.",
+      "mistakes": ["Assuming a slice always owns its own data."],
+      "revision": ["A view's base points at the owner.", "An owning array reports None."]
+    }
+  },
+  "n03": {
+    "diag builds a matrix from a vector": {
+      "syntax": "np.diag([1, 2, 3])  ·  np.diag(matrix)",
+      "steps": ["Pass a vector to `np.diag` and print the square matrix.", "Pass a matrix and print the extracted diagonal.", "Compare the two shapes."],
+      "visual": "diag([1 2 3]) → [[1 0 0] [0 2 0] [0 0 3]]\ndiag(that) → [1 2 3]",
+      "realWorld": "Covariance matrices and scaling operators are built from a diagonal vector.",
+      "mistakes": ["Forgetting that a 1-D input produces a matrix, not a diagonal."],
+      "revision": ["The input rank decides the direction.", "Values off the diagonal are zero."]
+    },
+    "tril and triu keep one triangle": {
+      "syntax": "np.tril(a)  ·  np.triu(a, k=1)",
+      "steps": ["Create a matrix of ones.", "Apply `tril` and print it.", "Apply `triu` with an offset and compare."],
+      "visual": "tril        triu(k=1)\n[[1 0 0]    [[0 1 1]\n [1 1 0]     [0 0 1]\n [1 1 1]]    [0 0 0]]",
+      "realWorld": "A correlation matrix is often read as its lower triangle to avoid duplicate pairs.",
+      "mistakes": ["Assuming the operation edits the original matrix."],
+      "revision": ["`k` moves the diagonal boundary.", "Both return a new array by default."]
+    },
+    "repeat repeats each element": {
+      "syntax": "np.repeat([1, 2], 2)  ·  np.repeat(a, counts)",
+      "steps": ["Repeat a short vector a fixed number of times.", "Print the result and its length.", "Repeat with per-element counts."],
+      "visual": "[1 2] ×2 → [1 1 2 2]\ncounts [3, 1] → [1 1 1 2]",
+      "realWorld": "Expanding a per-group label to match the rows of each group is a repeat operation.",
+      "mistakes": ["Confusing repeat with tile and getting the wrong grouping."],
+      "revision": ["Repeat works element by element.", "Output length is the sum of counts."]
+    },
+    "tile repeats the whole block": {
+      "syntax": "np.tile([1, 2], 2)  ·  np.tile(a, (1, 2))",
+      "steps": ["Tile a short vector twice.", "Print the result and check the order.", "Tile a column block along the second axis."],
+      "visual": "[1 2] tiled 2 → [1 2 1 2]\nblock repeated as a unit",
+      "realWorld": "Periodic patterns and repeated feature blocks are built with tile.",
+      "mistakes": ["Using tile when each value itself should repeat."],
+      "revision": ["Tile repeats the whole block.", "Output length multiplies by the repeat count."]
+    },
+    "logspace spaces powers of ten": {
+      "syntax": "np.logspace(0, 2, 3)  # 1, 10, 100",
+      "steps": ["Ask for three values from 10⁰ to 10².", "Print them and check the ratio.", "Change the base and compare."],
+      "visual": "logspace(0, 2, 3) → [1. 10. 100.]\nconstant ratio 10",
+      "realWorld": "Learning-rate sweeps and frequency grids are sampled on a log scale.",
+      "mistakes": ["Expecting equal differences between consecutive values."],
+      "revision": ["Spacing is constant in the exponent.", "The ratio between neighbours is fixed."]
+    },
+    "fromfunction builds from indices": {
+      "syntax": "np.fromfunction(lambda i, j: i * 10 + j, (2, 3))",
+      "steps": ["Define a function of row and column index.", "Pass it with the desired shape.", "Print the grid and verify one cell by hand."],
+      "visual": "i*10+j over (2,3)\n[[ 0  1  2]\n [10 11 12]]",
+      "realWorld": "Coordinate grids for plots and physics simulations come from index formulas.",
+      "mistakes": ["Writing a scalar-only function that cannot take index arrays."],
+      "revision": ["The callable receives index arrays.", "Use vectorised arithmetic inside it."]
+    }
+  },
+  "n04": {
+    "Casting to a wider type is lossless": {
+      "syntax": "a.astype(np.int64)  # wider destination, same values",
+      "steps": ["Create a small int8 array.", "Cast it to int64 and print both dtypes.", "Compare the values to confirm nothing changed."],
+      "visual": "int8  [1 2 3]\nint64 [1 2 3]",
+      "realWorld": "IDs read from a compact file are widened before arithmetic can overflow.",
+      "mistakes": ["Casting down and assuming NumPy will raise instead of wrapping."],
+      "revision": ["Widening preserves every value.", "Narrowing can wrap silently."]
+    },
+    "Booleans cast back to integers": {
+      "syntax": "mask.astype(int)  # True→1, False→0",
+      "steps": ["Build a boolean array.", "Cast it to int and print the values.", "Sum the result to count True cells."],
+      "visual": "[True False True] → [1 0 1]\nsum = 2",
+      "realWorld": "Flags stored as booleans become 0/1 features for a model.",
+      "mistakes": ["Multiplying a mask by a float array and being unsure of the dtype."],
+      "revision": ["True maps to 1 and False to 0.", "Summing a mask counts matches."]
+    },
+    "float32 keeps fewer digits": {
+      "syntax": "np.array([1.234567890123], dtype=np.float32)",
+      "steps": ["Create the same value as float32 and float64.", "Print both and compare the decimals.", "Check the dtype of each."],
+      "visual": "float32 1.2345679\nfloat64 1.234567890123",
+      "realWorld": "GPUs prefer float32, so the precision loss is a deliberate trade in training.",
+      "mistakes": ["Accumulating millions of float32 values and trusting the last digits."],
+      "revision": ["float32 has about seven significant digits.", "Use float64 for sensitive accumulation."]
+    },
+    "int8 has a small range": {
+      "syntax": "np.iinfo(np.int8)  # min -128, max 127",
+      "steps": ["Print the int8 bounds with `iinfo`.", "Add 1 to the maximum value.", "Observe the wrapped result."],
+      "visual": "127 + 1 → -128\nrange -128 … 127",
+      "realWorld": "Quantised models pack weights into int8, so range checks are part of the contract.",
+      "mistakes": ["Using int8 for counters that can exceed 127."],
+      "revision": ["Check bounds with `iinfo`.", "Overflow wraps by default."]
+    },
+    "astype accepts a dtype string": {
+      "syntax": "a.astype('f4')  ·  a.astype('int16')",
+      "steps": ["Create a float array.", "Cast it with the short code `f4`.", "Cast again with a full dtype name and compare."],
+      "visual": "'f4'    → float32\n'int16' → int16",
+      "realWorld": "Configuration files store dtypes as short strings, so the parser is part of the API.",
+      "mistakes": ["Typing an invalid code and expecting a silent fallback."],
+      "revision": ["String codes are resolved by NumPy.", "An invalid code raises."]
+    },
+    "promote_types compares two dtypes": {
+      "syntax": "np.promote_types('int8', 'int16')  # int16",
+      "steps": ["Ask for the promotion of int8 and int16.", "Ask for float32 and int64.", "Compare with the dtype of a mixed expression."],
+      "visual": "int8 + int16 → int16\nfloat32 + int64 → float64",
+      "realWorld": "Knowing the promoted dtype prevents a surprising upcast and a large copy.",
+      "mistakes": ["Assuming an int and a float stay integer."],
+      "revision": ["Promotion picks the smallest type holding both.", "Mixed arithmetic follows the same rule."]
+    }
+  },
+  "n05": {
+    "Negative row index selects from the end": {
+      "syntax": "a[-1]  ·  a[-2]  # rows counted from the end",
+      "steps": ["Build a 3×2 matrix.", "Print the last row with `a[-1]`.", "Print the row before it with `a[-2]`."],
+      "visual": "a[-1] → last row\na[-2] → second last",
+      "realWorld": "Reading the latest record from a growing table uses the last row.",
+      "mistakes": ["Using `-0` and expecting the last row."],
+      "revision": ["Negative indexes count from the end.", "The magnitude must fit the axis length."]
+    },
+    "Index a three-dimensional array": {
+      "syntax": "a[depth, row, column]  ·  a[depth]",
+      "steps": ["Create a (2, 3, 4) array with `arange`.", "Print one scalar with three indexes.", "Print a 2-D slice and note its shape."],
+      "visual": "a[1, 2, 3] → scalar\na[1, 2]    → shape (4,)",
+      "realWorld": "Image stacks and video frames are indexed by frame, row and column.",
+      "mistakes": ["Forgetting a colon and silently dropping an axis."],
+      "revision": ["Each axis takes one index.", "A colon preserves that axis."]
+    },
+    "Select rows with a boolean list": {
+      "syntax": "a[[True, False, True]]  # keep flagged rows",
+      "steps": ["Build a 3-row matrix.", "Pass a boolean list of length 3.", "Verify the selected rows and their order."],
+      "visual": "flags [T F T]\nrows 0 and 2 returned",
+      "realWorld": "A split mask selects the training rows of a table.",
+      "mistakes": ["Passing a list whose length is not the row count."],
+      "revision": ["Boolean lists act as masks on the first axis.", "Order is preserved."]
+    },
+    "take along rows": {
+      "syntax": "np.take(a, [2, 0], axis=0)",
+      "steps": ["Build a matrix.", "Call `take` with row positions and `axis=0`.", "Print the returned rows in the requested order."],
+      "visual": "take rows [2, 0] → row 2 then row 0",
+      "realWorld": "Reordering a batch by an index array is a take operation.",
+      "mistakes": ["Omitting the axis and flattening the matrix."],
+      "revision": ["`take` selects by position.", "`axis=0` keeps rows intact."]
+    },
+    "Index with an empty list": {
+      "syntax": "a[[]].shape  # (0, columns)",
+      "steps": ["Build a matrix.", "Index it with an empty list.", "Print the shape and size of the empty result."],
+      "visual": "a[[]] → shape (0, 2), size 0",
+      "realWorld": "A filter with no matches should return an empty table, not an error.",
+      "mistakes": ["Treating an empty selection as a failed query."],
+      "revision": ["An empty index gives an empty axis.", "Other axes keep their length."]
+    },
+    "Read a column as a column": {
+      "syntax": "a[:, 1]  → (rows,)   ·   a[:, [1]] → (rows, 1)",
+      "steps": ["Build a matrix.", "Print both column forms and their shapes.", "Broadcast each against a row to see the difference."],
+      "visual": "a[:, 1]  shape (3,)\na[:, [1]] shape (3, 1)",
+      "realWorld": "Keeping a feature as a column is required before subtracting a per-row value.",
+      "mistakes": ["Using the 1-D form in an outer operation by accident."],
+      "revision": ["A list index keeps the axis.", "The 2-D form broadcasts against rows."]
+    }
+  },
+  "n06": {
+    "Slice with a negative start": {
+      "syntax": "a[-3:-1]  ·  a[-2:]",
+      "steps": ["Create a vector from 0 to 5.", "Slice with a negative start and stop.", "Print the tail with an open stop."],
+      "visual": "a[-3:-1] → [3 4]\na[-2:]   → [4 5]",
+      "realWorld": "Keeping the last two readings of a sensor stream uses a negative slice.",
+      "mistakes": ["Expecting the stop index to be included."],
+      "revision": ["Negative bounds count from the end.", "The stop stays exclusive."]
+    },
+    "Slice a three-dimensional array": {
+      "syntax": "a[:, 1, :]  ·  a[0, :, 1]",
+      "steps": ["Build a (2, 3, 4) array.", "Slice the middle axis and print the shape.", "Slice a single depth and column, then compare."],
+      "visual": "a[:, 1, :] → (2, 4)\na[0, :, 1] → (3,)",
+      "realWorld": "Extracting one channel from an image batch is a middle-axis slice.",
+      "mistakes": ["Mixing the axis order and selecting the wrong channel."],
+      "revision": ["Each axis slices independently.", "The remaining axes give the output shape."]
+    },
+    "Assign a scalar to a slice": {
+      "syntax": "a[1:4] = 0",
+      "steps": ["Create a vector.", "Assign zero to a middle slice.", "Print the array to confirm only that range changed."],
+      "visual": "[0 1 2 3 4 5]\n→ [0 0 0 0 4 5]",
+      "realWorld": "Clearing a padded region of a batch is a slice assignment.",
+      "mistakes": ["Using a copy and expecting the source to change."],
+      "revision": ["A basic slice writes into the buffer.", "Every view of that buffer sees the change."]
+    },
+    "Assign an array to a slice": {
+      "syntax": "a[1:3] = np.array([7, 8])",
+      "steps": ["Create a zero vector.", "Assign a two-value array to a slice of length two.", "Print the result and try a mismatched shape."],
+      "visual": "slice length 2 ← array length 2\nmismatch raises ValueError",
+      "realWorld": "Filling a column range from a computed vector is a routine preprocessing step.",
+      "mistakes": ["Assigning a longer array to a shorter slice."],
+      "revision": ["The shapes must match exactly.", "Values are copied into the destination."]
+    },
+    "Slice with an omitted stop": {
+      "syntax": "a[3:]  ·  a[:]",
+      "steps": ["Create a vector.", "Print the tail from index 3.", "Print a full slice and confirm it is a view."],
+      "visual": "a[3:] → [3 4 5]\na[:]  → whole axis",
+      "realWorld": "Skipping a header row is `a[1:]`, the most common tail slice.",
+      "mistakes": ["Assuming an omitted stop copies the data."],
+      "revision": ["An omitted stop means the axis length.", "A full slice is still a view."]
+    },
+    "Slice every other column": {
+      "syntax": "a[:, ::2]",
+      "steps": ["Build a matrix with four columns.", "Slice alternate columns.", "Print the shape to confirm two columns remain."],
+      "visual": "columns 0, 2 kept\nshape (rows, 2)",
+      "realWorld": "Dropping every second feature during a quick experiment uses a step slice.",
+      "mistakes": ["Putting the step on the row axis by mistake."],
+      "revision": ["A step belongs to one axis.", "The result is a strided view."]
+    }
+  },
+  "n07": {
+    "reshape groups values in C order": {
+      "syntax": "a.reshape(2, 3)  # row-major fill",
+      "steps": ["Create a flat range of six values.", "Reshape to 2×3 and print it.", "Reshape to 3×2 and compare the grouping."],
+      "visual": "0..5 → [[0 1 2]\n        [3 4 5]]",
+      "realWorld": "A flat image buffer becomes a height-by-width array through a C-order reshape.",
+      "mistakes": ["Expecting column-major fill without `order='F'`."],
+      "revision": ["C order fills the last axis fastest.", "The element count must stay the same."]
+    },
+    "ravel returns a flat view": {
+      "syntax": "a.ravel()  ·  np.shares_memory(a, a.ravel())",
+      "steps": ["Build a contiguous matrix.", "Flatten it with `ravel`.", "Check sharing with `shares_memory`."],
+      "visual": "ravel → view (when contiguous)\nshares_memory → True",
+      "realWorld": "Passing a matrix to a flat API can avoid a copy when ravel returns a view.",
+      "mistakes": ["Mutating the ravel result and forgetting it may be a view."],
+      "revision": ["Ravel copies only when it must.", "Check sharing before writing."]
+    },
+    "flatten returns a copy": {
+      "syntax": "a.flatten()  # always a new buffer",
+      "steps": ["Build a matrix.", "Flatten it and mutate the result.", "Print the source to prove it did not change."],
+      "visual": "flatten → independent copy\nsource stays the same",
+      "realWorld": "A helper that mutates its input receives `flatten()` to keep the caller's data safe.",
+      "mistakes": ["Using flatten in a hot loop and paying for a copy each time."],
+      "revision": ["Flatten always allocates.", "The result is independent of the source."]
+    },
+    "concatenate along columns": {
+      "syntax": "np.concatenate([a, b], axis=1)",
+      "steps": ["Create two blocks with the same row count.", "Concatenate them along axis 1.", "Print the resulting shape."],
+      "visual": "(2, 2) + (2, 1) → (2, 3)",
+      "realWorld": "Adding an engineered feature column to a design matrix is a column concatenation.",
+      "mistakes": ["Joining blocks with different row counts."],
+      "revision": ["The named axis is the one that grows.", "Other axes must agree."]
+    },
+    "split into equal parts": {
+      "syntax": "np.split(a, 3)  ·  np.array_split(a, 3)",
+      "steps": ["Create a length-6 vector.", "Split it into three parts and print them.", "Try a length that does not divide evenly."],
+      "visual": "len 6 / 3 → three parts of 2\nlen 7 / 3 → array_split only",
+      "realWorld": "Mini-batches are slices or splits of a shuffled index array.",
+      "mistakes": ["Using split when the length is not divisible."],
+      "revision": ["Split requires equal parts.", "Array_split distributes the remainder."]
+    },
+    "transpose a three-dimensional array": {
+      "syntax": "a.transpose(2, 0, 1)",
+      "steps": ["Create a (2, 3, 4) array.", "Transpose with an explicit axis order.", "Print the new shape and verify one value."],
+      "visual": "(2, 3, 4) → (4, 2, 3)\nvalues unmoved, strides reordered",
+      "realWorld": "Frameworks differ on channel-first versus channel-last, and transpose bridges them.",
+      "mistakes": ["Assuming transpose reverses all axes in 3-D."],
+      "revision": ["The argument is the new axis order.", "The result is a view."]
+    }
+  },
+  "n08": {
+    "maximum picks elementwise winners": {
+      "syntax": "np.maximum(a, b)",
+      "steps": ["Create two vectors of equal length.", "Apply `maximum` and print the winners.", "Compare with a fixed clamp using `clip`."],
+      "visual": "[1 5 2] vs [3 2 9]\n→ [3 5 9]",
+      "realWorld": "A per-row floor stored as an array is applied with maximum.",
+      "mistakes": ["Using Python's `max` on whole arrays instead of elementwise."],
+      "revision": ["Maximum compares position by position.", "Operands broadcast first."]
+    },
+    "minimum pairs the same way": {
+      "syntax": "np.minimum(a, b)",
+      "steps": ["Create two vectors.", "Apply `minimum` and print the smaller values.", "Use a limit array to cap a result."],
+      "visual": "[1 5 2] vs [3 2 9]\n→ [1 2 2]",
+      "realWorld": "Capping predicted probabilities by a per-class threshold uses minimum.",
+      "mistakes": ["Forgetting that broadcasting can change the result shape."],
+      "revision": ["Minimum keeps the smaller value.", "It is the array counterpart of a cap."]
+    },
+    "divide warns on zero": {
+      "syntax": "a / 0  # inf or nan + RuntimeWarning",
+      "steps": ["Divide a vector containing zero by zero.", "Observe the warning and the inf/nan values.", "Guard the denominator with a mask."],
+      "visual": "1/0 → inf\n0/0 → nan",
+      "realWorld": "Ratios computed from counts hit zero denominators, so the guard is part of the metric.",
+      "mistakes": ["Ignoring the warning until NaNs reach a mean."],
+      "revision": ["Division by zero returns inf or nan.", "Guard the denominator explicitly."]
+    },
+    "power raises elementwise": {
+      "syntax": "np.power(base, exponent)",
+      "steps": ["Create a base and an exponent array.", "Apply `power` and print the result.", "Compare with the `**` operator."],
+      "visual": "[2 3 4] ** [2 2 1]\n→ [4 9 4]",
+      "realWorld": "Polynomial features are powers of one column with a fixed exponent.",
+      "mistakes": ["Using a negative integer exponent on an integer base."],
+      "revision": ["Power is applied per element.", "Exponents are broadcast with the base."]
+    },
+    "hypot is a stable length": {
+      "syntax": "np.hypot(x, y)",
+      "steps": ["Compute a length with `hypot`.", "Compare it with `sqrt(x**2 + y**2)`.", "Try large values where the naive form overflows."],
+      "visual": "hypot(3, 4) → 5\nsafe for huge magnitudes",
+      "realWorld": "Distances between coordinates are computed with hypot to avoid overflow.",
+      "mistakes": ["Squaring large values before taking the root."],
+      "revision": ["Hypot scales internally.", "The result equals the Euclidean length."]
+    },
+    "ufuncs accept out=": {
+      "syntax": "np.sqrt(a, out=buffer)",
+      "steps": ["Preallocate an output array.", "Call `sqrt` with `out=` and print the buffer.", "Confirm no new array was needed."],
+      "visual": "sqrt(a, out=out)\nout holds the result",
+      "realWorld": "Streaming pipelines reuse buffers to keep allocation out of the hot path.",
+      "mistakes": ["Passing an output with the wrong shape or dtype."],
+      "revision": ["`out=` writes in place.", "Shape and dtype must match."]
+    }
+  },
+  "n09": {
+    "broadcast_to makes the shape explicit": {
+      "syntax": "np.broadcast_to(v, (2, 3))",
+      "steps": ["Create a length-3 vector.", "Broadcast it to a 2×3 shape.", "Try to write into the result and observe the refusal."],
+      "visual": "(3,) → (2, 3)\nread-only view, no copy",
+      "realWorld": "Inspecting the effective shape of a broadcast prevents a wrong arithmetic assumption.",
+      "mistakes": ["Writing through a broadcast view."],
+      "revision": ["Broadcast_to returns a read-only view.", "Zero strides mark the stretched axes."]
+    },
+    "Trailing dimensions must match": {
+      "syntax": "a.shape[-1] == b.shape[-1]  # or one is 1",
+      "steps": ["Create a (2, 3) matrix.", "Multiply by a length-3 vector and print the shape.", "Multiply by a (3, 2) matrix and read the error."],
+      "visual": "(2, 3) * (3,)   → (2, 3)\n(2, 3) + (3, 2) → ValueError",
+      "realWorld": "Feature scaling works because the parameter vector aligns with the last axis.",
+      "mistakes": ["Aligning shapes from the left instead of the right."],
+      "revision": ["Broadcasting aligns from the right.", "Lengths must be equal or one."]
+    },
+    "keepdims prepares a column for broadcast": {
+      "syntax": "a.sum(axis=1, keepdims=True)",
+      "steps": ["Create a matrix of values.", "Sum each row with `keepdims=True`.", "Divide the matrix by that column."],
+      "visual": "sum → (2, 1)\na / sum → (2, 3)",
+      "realWorld": "Normalising each sample by its own total is a keepdims division.",
+      "mistakes": ["Dropping the axis and getting a length mismatch."],
+      "revision": ["Keepdims leaves a length-1 axis.", "That shape broadcasts back against the input."]
+    },
+    "A matrix broadcasts with a scalar": {
+      "syntax": "matrix * scalar",
+      "steps": ["Create a matrix.", "Multiply it by a scalar.", "Print the result and confirm every cell changed."],
+      "visual": "[[1 2] [3 4]] * 3\n→ [[3 6] [9 12]]",
+      "realWorld": "Converting units across a whole table is one scalar multiplication.",
+      "mistakes": ["Looping over cells when one operation is enough."],
+      "revision": ["A scalar has no axes to align.", "It applies to every element."]
+    },
+    "Outer difference via newaxis": {
+      "syntax": "a[:, None] - b",
+      "steps": ["Create two vectors.", "Turn the first into a column with `newaxis`.", "Subtract the second and print the pairwise table."],
+      "visual": "(3, 1) - (4,) → (3, 4)\nall pairwise differences",
+      "realWorld": "A distance matrix between two sets of points starts as an outer difference.",
+      "mistakes": ["Leaving both vectors 1-D and producing a length mismatch."],
+      "revision": ["Newaxis adds a length-1 axis.", "The result is the full outer table."]
+    },
+    "A broadcast error names the shapes": {
+      "syntax": "ValueError: operands could not be broadcast together with shapes …",
+      "steps": ["Add two deliberately incompatible matrices.", "Read the shapes in the error message.", "Fix the axis with a reshape or transpose."],
+      "visual": "(2, 3) vs (3, 2)\nread right to left",
+      "realWorld": "Most shape bugs in a preprocessing pipeline surface as this one error.",
+      "mistakes": ["Reshaping blindly until the error disappears."],
+      "revision": ["The message reports both shapes.", "Fix the axis that cannot stretch."]
+    }
+  },
+  "n10": {
+    "sum with keepdims keeps the axis": {
+      "syntax": "a.sum(axis=1, keepdims=True)",
+      "steps": ["Create a matrix.", "Sum rows with and without keepdims.", "Compare both shapes."],
+      "visual": "axis=1        → (2,)\nkeepdims=True → (2, 1)",
+      "realWorld": "A row total kept as a column can be divided straight back into the matrix.",
+      "mistakes": ["Forgetting that the default reduction deletes the axis."],
+      "revision": ["Keepdims preserves a length-1 axis.", "It makes the result broadcastable."]
+    },
+    "quantile uses fractions": {
+      "syntax": "np.quantile(a, 0.5)  ·  np.quantile(a, [0.25, 0.75])",
+      "steps": ["Create a small sorted array.", "Ask for the median as 0.5.", "Ask for the quartiles as a list."],
+      "visual": "quantile 0.5 → median\nquantile 0.25/0.75 → quartiles",
+      "realWorld": "Latency budgets are stated as p50 and p95 quantiles.",
+      "mistakes": ["Passing 50 instead of 0.5 to quantile."],
+      "revision": ["Quantile uses a 0–1 scale.", "It interpolates between order statistics."]
+    },
+    "argmax with an axis": {
+      "syntax": "a.argmax(axis=1)",
+      "steps": ["Create a matrix with distinct rows.", "Find the best column per row.", "Find the best row per column and compare."],
+      "visual": "axis=1 → one index per row\naxis=0 → one index per column",
+      "realWorld": "Argmax turns per-class scores into a predicted class index.",
+      "mistakes": ["Expecting argmax to return the maximum value."],
+      "revision": ["Argmax returns an index.", "The axis argument selects what is reduced."]
+    },
+    "cumulative sum along a row": {
+      "syntax": "a.cumsum(axis=1)",
+      "steps": ["Create a matrix.", "Cumulatively sum each row.", "Print the result and check the last cell equals the row total."],
+      "visual": "[1 2 3] → [1 3 6]\nshape preserved",
+      "realWorld": "Cumulative revenue or running totals are cumsum operations.",
+      "mistakes": ["Calling cumsum without an axis and flattening the matrix."],
+      "revision": ["Cumsum keeps every intermediate total.", "The axis decides where it accumulates."]
+    },
+    "average accepts a weight per value": {
+      "syntax": "np.average(a, weights=w)",
+      "steps": ["Create values and matching weights.", "Compute the weighted average.", "Return the weight total with `returned=True`."],
+      "visual": "sum(w*x) / sum(w)\nweights shift the centre",
+      "realWorld": "Survey results are weighted by population so each group contributes fairly.",
+      "mistakes": ["Passing weights of the wrong length."],
+      "revision": ["Average supports per-value weights.", "The denominator is the weight total."]
+    },
+    "ptp is max minus min": {
+      "syntax": "np.ptp(a)",
+      "steps": ["Create a vector with a known range.", "Compute `ptp`.", "Compare it with max minus min."],
+      "visual": "max 9, min 1\nptp 8",
+      "realWorld": "Quality control reports the spread of a batch as its range.",
+      "mistakes": ["Using ptp with NaN values and getting NaN."],
+      "revision": ["Ptp is the range.", "NaN needs explicit handling."]
+    }
+  },
+  "n11": {
+    "nonzero returns the positions": {
+      "syntax": "np.nonzero(a)",
+      "steps": ["Create a vector with zeros.", "Call `nonzero` and print the index array.", "Use the positions to select the values."],
+      "visual": "[0 3 0 4] → (array([1, 3]),)",
+      "realWorld": "Finding the set bits or non-zero features of a sparse row uses nonzero.",
+      "mistakes": ["Treating the tuple as a single index array."],
+      "revision": ["Nonzero returns one array per dimension.", "A 1-D input needs `[0]`."]
+    },
+    "Count matches per column": {
+      "syntax": "(a > 4).sum(axis=0)",
+      "steps": ["Create a matrix.", "Build a threshold mask.", "Sum the mask down the rows to count per column."],
+      "visual": "mask.sum(axis=0) → counts per column",
+      "realWorld": "Missing-value counts per feature are a boolean sum down the rows.",
+      "mistakes": ["Summing without an axis and losing the per-column meaning."],
+      "revision": ["True counts as 1.", "The named axis is the one collapsed."]
+    },
+    "Select with an isin mask": {
+      "syntax": "a[np.isin(a, allowed)]",
+      "steps": ["Create a vector of categories.", "Build the membership mask with `isin`.", "Filter the values with that mask."],
+      "visual": "a [1 4 7], allowed [4 7]\n→ [4 7]",
+      "realWorld": "Keeping only known country codes in a dataset is an isin filter.",
+      "mistakes": ["Using `in` inside a loop instead of a vectorised mask."],
+      "revision": ["Isin returns a boolean mask.", "The mask preserves the input shape."]
+    },
+    "Mask a matrix row-wise": {
+      "syntax": "a[a[:, 0] > 4]",
+      "steps": ["Create a matrix where the first column is a key.", "Build a mask from that column.", "Apply it to the matrix to keep whole rows."],
+      "visual": "column key > 4 → keep those rows",
+      "realWorld": "Filtering records by one field keeps the other fields attached.",
+      "mistakes": ["Applying a column mask to every cell instead of whole rows."],
+      "revision": ["A 1-D row mask selects rows.", "The mask length must equal the row count."]
+    },
+    "where with two arrays": {
+      "syntax": "np.where(condition, a, b)",
+      "steps": ["Create a condition and two value arrays.", "Apply `where` and print the mix.", "Swap the branches and compare."],
+      "visual": "True → a, False → b\noutput shape is the broadcast shape",
+      "realWorld": "Replacing outliers with a capped value per cell is a where operation.",
+      "mistakes": ["Passing scalars when arrays were intended, then wondering about dtype."],
+      "revision": ["Both branches can be arrays.", "They broadcast with the condition."]
+    },
+    "Combine masks with and": {
+      "syntax": "a[(a > 2) & (a < 10)]",
+      "steps": ["Create a vector.", "Build two comparisons and combine them with `&`.", "Filter with the combined mask."],
+      "visual": "(a > 2) & (a < 10)\nboth must be True",
+      "realWorld": "A price range filter is two conditions combined elementwise.",
+      "mistakes": ["Using Python `and`, which raises on arrays."],
+      "revision": ["Use `&`, not `and`.", "Parenthesise each comparison."]
+    }
+  },
+  "n12": {
+    "sort descending by reversing": {
+      "syntax": "np.sort(a)[::-1]",
+      "steps": ["Create an unsorted vector.", "Sort it ascending.", "Reverse the sorted result and print it."],
+      "visual": "[3 1 2] → [1 2 3] → [3 2 1]",
+      "realWorld": "Leaderboards show a descending sort of scores.",
+      "mistakes": ["Reversing before sorting and calling it descending."],
+      "revision": ["Sort ascending, then reverse.", "The reversal is a view of the sorted copy."]
+    },
+    "unique with counts": {
+      "syntax": "np.unique(a, return_counts=True)",
+      "steps": ["Create a vector with repeats.", "Ask for unique values and counts.", "Pair the two arrays into a table."],
+      "visual": "values [1 2 3]\ncounts [2 1 3]",
+      "realWorld": "A value-count table for categories comes directly from unique with counts.",
+      "mistakes": ["Assuming first-seen order instead of sorted order."],
+      "revision": ["Unique sorts its output.", "Counts align with the unique values."]
+    },
+    "searchsorted needs a sorted array": {
+      "syntax": "np.searchsorted(sorted_a, value)",
+      "steps": ["Create a sorted vector.", "Find the insertion point for a value.", "Try the same on an unsorted vector and inspect the meaningless result."],
+      "visual": "[1 3 5], value 4 → index 2",
+      "realWorld": "Bucket boundaries are located with a binary search over sorted edges.",
+      "mistakes": ["Calling searchsorted on data that was never sorted."],
+      "revision": ["It assumes sorted input.", "It returns an insertion index."]
+    },
+    "partition with a kth position": {
+      "syntax": "np.partition(a, k)",
+      "steps": ["Create an unsorted vector.", "Partition at index k.", "Verify the value at k is the k-th smallest and the sides are unordered."],
+      "visual": "partition([9 1 5 3], 1)\nk-th smallest at index 1",
+      "realWorld": "Top-k selection avoids a full sort when only the k-th value matters.",
+      "mistakes": ["Expecting both sides to be sorted."],
+      "revision": ["Partition guarantees only the k-th position.", "The sides stay unordered."]
+    },
+    "lexsort orders by two keys": {
+      "syntax": "np.lexsort((secondary, primary))",
+      "steps": ["Create a primary and a secondary key.", "Call `lexsort` with secondary first.", "Apply the returned order to the data."],
+      "visual": "sorts by primary,\nties broken by secondary",
+      "realWorld": "Sorting orders by date and then by customer id is a two-key lexsort.",
+      "mistakes": ["Passing the keys in the intuitive but wrong order."],
+      "revision": ["The last key is the primary key.", "The output is a permutation."]
+    },
+    "isin is membership testing": {
+      "syntax": "np.isin(a, values)",
+      "steps": ["Create a vector and an allowed set.", "Call `isin` and print the mask.", "Use the mask to filter the vector."],
+      "visual": "a [1 4 2], values [2 4]\n→ [F T T]",
+      "realWorld": "Checking which IDs appear in a reference list is membership testing.",
+      "mistakes": ["Building a Python set and looping per element."],
+      "revision": ["Isin returns a boolean mask.", "It preserves the input shape."]
+    }
+  },
+  "n13": {
+    "ascontiguousarray forces C order": {
+      "syntax": "np.ascontiguousarray(a)",
+      "steps": ["Transpose a matrix to make it non-contiguous.", "Print its C flag.", "Convert it and print the flag again."],
+      "visual": "a.T C_CONTIGUOUS False\nascontiguousarray(a.T) True",
+      "realWorld": "A C extension that requires contiguous input makes the copy visible here.",
+      "mistakes": ["Assuming the conversion always copies."],
+      "revision": ["It copies only when needed.", "The result is C-contiguous."]
+    },
+    "setflags can make an array read-only": {
+      "syntax": "a.setflags(write=False)",
+      "steps": ["Create an array.", "Make it read-only.", "Attempt an assignment and observe the error."],
+      "visual": "write=False\nassignment → ValueError",
+      "realWorld": "A shared configuration array is locked so a downstream function cannot mutate it.",
+      "mistakes": ["Believing another view of the buffer is also locked."],
+      "revision": ["The flag is per array object.", "Other views can still write."]
+    },
+    "view reinterprets the bytes": {
+      "syntax": "a.view(np.uint8)",
+      "steps": ["Create an int32 array.", "View it as uint8.", "Compare the element counts and explain the difference."],
+      "visual": "int32 2 elements\nuint8 8 elements (4 bytes each)",
+      "realWorld": "Reading raw colour channels from packed pixels uses a dtype view.",
+      "mistakes": ["Using a view when a real numeric conversion was intended."],
+      "revision": ["A view changes interpretation, not bytes.", "The last axis length adjusts."]
+    },
+    "nbytes counts the whole buffer": {
+      "syntax": "a.nbytes  # itemsize × size",
+      "steps": ["Create an int16 matrix.", "Print itemsize, size and nbytes.", "Check that nbytes equals their product."],
+      "visual": "itemsize 2, size 6\nnbytes 12",
+      "realWorld": "Memory budgeting for a batch starts from nbytes, not the element count.",
+      "mistakes": ["Confusing nbytes with the number of values."],
+      "revision": ["Nbytes is buffer memory.", "It is itemsize times size."]
+    },
+    "negative strides walk backwards": {
+      "syntax": "a[::-1].strides",
+      "steps": ["Create a vector.", "Reverse it with a negative step.", "Print the strides and compare with the source."],
+      "visual": "a.strides (8,)\na[::-1].strides (-8,)",
+      "realWorld": "Reversing a sequence for display costs no copy thanks to negative strides.",
+      "mistakes": ["Assuming a reversed slice copied the data."],
+      "revision": ["A negative step negates the stride.", "No values move."]
+    },
+    "copy is independent of the source": {
+      "syntax": "b = a.copy()",
+      "steps": ["Copy an array.", "Mutate the copy.", "Print the source and check `shares_memory`."],
+      "visual": "copy owns its buffer\nshares_memory False",
+      "realWorld": "Passing a copy to a mutating helper protects the original dataset.",
+      "mistakes": ["Using a slice where a copy was needed."],
+      "revision": ["A copy owns separate memory.", "Writes do not propagate back."]
+    }
+  },
+  "n14": {
+    "SeedSequence spawns independent streams": {
+      "syntax": "np.random.SeedSequence(42).spawn(2)",
+      "steps": ["Create a seed sequence.", "Spawn two child sequences.", "Build a generator per child and compare their draws."],
+      "visual": "parent seed 42\n→ child A, child B (independent)",
+      "realWorld": "Parallel training workers need separate streams that stay reproducible from one seed.",
+      "mistakes": ["Sharing one generator across workers."],
+      "revision": ["Spawn derives independent streams.", "The parent seed reproduces all of them."]
+    },
+    "uniform takes low and high": {
+      "syntax": "rng.uniform(low, high, size)",
+      "steps": ["Create a default generator.", "Draw values in a range.", "Check the minimum and maximum are inside it."],
+      "visual": "uniform(5, 10) → [5, 10)\nhigh excluded",
+      "realWorld": "Random initial weights are drawn from a small uniform range.",
+      "mistakes": ["Assuming the high bound can be returned."],
+      "revision": ["The interval is half-open.", "Size controls the shape."]
+    },
+    "integers can take a dtype": {
+      "syntax": "rng.integers(0, 5, 3, dtype='int8')",
+      "steps": ["Draw integers with a narrow dtype.", "Print the dtype and values.", "Request a range that does not fit and read the error."],
+      "visual": "dtype int8\nrange must fit -128…127",
+      "realWorld": "Compact label arrays save memory when the category count is small.",
+      "mistakes": ["Requesting a range wider than the chosen dtype."],
+      "revision": ["The dtype is applied to the draw.", "An unfit range raises."]
+    },
+    "normal takes mean and std": {
+      "syntax": "rng.normal(loc=0, scale=1, size=100)",
+      "steps": ["Draw a sample with a chosen mean and standard deviation.", "Print the sample mean and std.", "Change the scale and repeat."],
+      "visual": "loc centres the draws\nscale widens them",
+      "realWorld": "Synthetic measurement noise is generated with a mean and a standard deviation.",
+      "mistakes": ["Passing variance where the standard deviation is expected."],
+      "revision": ["loc is the mean.", "scale is the standard deviation."]
+    },
+    "shuffle works in place": {
+      "syntax": "rng.shuffle(a)  # returns None",
+      "steps": ["Create a vector.", "Shuffle it with a generator.", "Print the array and note the missing return value."],
+      "visual": "shuffle(a) → None\na itself is reordered",
+      "realWorld": "Shuffling a dataset in place before splitting is a common step.",
+      "mistakes": ["Assigning the return value and getting None."],
+      "revision": ["Shuffle mutates the input.", "Use permutation for a copy."]
+    },
+    "choice takes probabilities": {
+      "syntax": "rng.choice(values, size=10, p=probs)",
+      "steps": ["Define values and matching probabilities.", "Draw a sample with `p=`.", "Check the probabilities sum to one."],
+      "visual": "p=[0.9, 0.1]\n0 is drawn about nine times as often",
+      "realWorld": "Sampling a class imbalance with weights uses choice with probabilities.",
+      "mistakes": ["Passing unnormalised probabilities."],
+      "revision": ["`p=` makes choice weighted.", "Probabilities must sum to 1."]
+    }
+  },
+  "n17": {
+    "datetime64 carries its unit": {
+      "syntax": "np.datetime64('2026-01-01')  ·  + np.timedelta64(1, 'D')",
+      "steps": ["Create a date and print its dtype.", "Add a one-day timedelta.", "Print the result and confirm the unit."],
+      "visual": "datetime64[D]\n2026-01-01 + 1 day → 2026-01-02",
+      "realWorld": "Daily sales dates are stored as datetime64[D] so arithmetic stays in whole days.",
+      "mistakes": ["Adding a bare number without a unit."],
+      "revision": ["The unit is part of the dtype.", "Use timedelta64 for offsets."]
+    },
+    "astype converts integers to dates": {
+      "syntax": "epochs.astype('datetime64[s]')",
+      "steps": ["Create an integer array of epoch seconds.", "Cast it to datetime64 with seconds.", "Print the dates."],
+      "visual": "[0 86400] → ['1970-01-01' '1970-01-02']",
+      "realWorld": "Database timestamps arrive as integers and become dates at the boundary.",
+      "mistakes": ["Forgetting the unit and getting an unexpected interpretation."],
+      "revision": ["Casting needs an explicit unit.", "The integer counts from the epoch."]
+    },
+    "sort a structured array by a field": {
+      "syntax": "np.sort(rec, order='score')",
+      "steps": ["Build a structured array with two fields.", "Sort it by one field.", "Print the other field to confirm rows stayed together."],
+      "visual": "records sorted by score\nid travels with its score",
+      "realWorld": "Sorting a table by a metric while keeping each row intact is a structured sort.",
+      "mistakes": ["Sorting one field separately and losing the pairing."],
+      "revision": ["`order=` names the sort field.", "Whole records move together."]
+    },
+    "string arrays have a fixed width": {
+      "syntax": "np.array(['ab', 'c']).dtype  # <U2",
+      "steps": ["Create a string array.", "Print the dtype width.", "Assign a longer value and observe truncation."],
+      "visual": "['ab' 'c'] dtype <U2\n'long' → 'lo'",
+      "realWorld": "Country codes stored as <U2 reject or truncate longer input.",
+      "mistakes": ["Expecting the buffer to grow for a longer value."],
+      "revision": ["Width is fixed at creation.", "Later longer values are truncated."]
+    },
+    "object arrays hold anything": {
+      "syntax": "np.array([1, 'two', 3.0], dtype=object)",
+      "steps": ["Create an object array with mixed types.", "Print each element's Python type.", "Try arithmetic and observe the failure."],
+      "visual": "dtype object\n[int, str, float] references",
+      "realWorld": "A column of parsed JSON values may need object dtype before cleaning.",
+      "mistakes": ["Expecting vectorised numeric speed from object dtype."],
+      "revision": ["Object arrays store references.", "They need pickle to save."]
+    },
+    "read several fields at once": {
+      "syntax": "rec[['id', 'score']]",
+      "steps": ["Build a structured array.", "Select two fields with a list.", "Print the narrower dtype names."],
+      "visual": "fields ('id', 'score')\na smaller structured array",
+      "realWorld": "Projecting a few columns before export keeps the file small.",
+      "mistakes": ["Indexing a field name as a string and getting a 1-D array."],
+      "revision": ["A list of names keeps the structured type.", "A single name extracts one field."]
+    }
+  },
+  "n18": {
+    "masked_invalid masks NaN": {
+      "syntax": "np.ma.masked_invalid(a)",
+      "steps": ["Create a float vector with NaN.", "Mask invalid values.", "Compute the mean and print the count."],
+      "visual": "masked NaN\nmean ignores the gap",
+      "realWorld": "Sensor gaps are masked before a daily average is reported.",
+      "mistakes": ["Using a plain mean and getting NaN."],
+      "revision": ["Masked_invalid covers NaN and inf.", "Reductions skip masked cells."]
+    },
+    "filled replaces masked values": {
+      "syntax": "masked.filled(0)",
+      "steps": ["Mask a value.", "Fill it with zero.", "Print the plain array."],
+      "visual": "[1 -- 3] → [1 0 3]",
+      "realWorld": "Exporting a table requires a concrete fill value for missing cells.",
+      "mistakes": ["Filling with a value that is indistinguishable from real data."],
+      "revision": ["Filled returns a plain ndarray.", "The fill value is a reporting choice."]
+    },
+    "count counts the unmasked cells": {
+      "syntax": "masked.count()",
+      "steps": ["Mask one value in a three-element array.", "Print the count.", "Compare with the array size."],
+      "visual": "size 3, count 2",
+      "realWorld": "The count is the denominator of every masked mean.",
+      "mistakes": ["Using the array length as the denominator."],
+      "revision": ["Count is the surviving cells.", "It differs from size."]
+    },
+    "nanpercentile skips missing values": {
+      "syntax": "np.nanpercentile(a, 50)",
+      "steps": ["Create a vector containing NaN.", "Compute the median with `nanpercentile`.", "Compare with the plain percentile."],
+      "visual": "plain → nan\nnan-aware → real median",
+      "realWorld": "Latency percentiles must ignore failed requests recorded as NaN.",
+      "mistakes": ["Assuming an all-NaN slice returns 0."],
+      "revision": ["NaN is skipped.", "An all-NaN slice returns NaN with a warning."]
+    },
+    "isinf finds infinities": {
+      "syntax": "np.isinf(a)",
+      "steps": ["Create a vector with both infinities.", "Build the isinf mask.", "Count the matches."],
+      "visual": "[1 inf -inf] → [F T T]",
+      "realWorld": "Ratios that divide by zero produce inf, which is a different bug from missing data.",
+      "mistakes": ["Treating inf as NaN and masking both blindly."],
+      "revision": ["Isinf isolates infinite values.", "They usually signal a zero denominator."]
+    },
+    "nan_to_num with chosen fill values": {
+      "syntax": "np.nan_to_num(a, nan=-1, posinf=999)",
+      "steps": ["Create a vector with NaN and inf.", "Replace each with an explicit value.", "Print the cleaned array."],
+      "visual": "nan→-1, inf→999\nexplicit replacements",
+      "realWorld": "A model input must be finite, so each sentinel is chosen deliberately.",
+      "mistakes": ["Accepting defaults that collide with legitimate values."],
+      "revision": ["Each case takes its own fill.", "The replacement is explicit."]
+    }
+  },
+  "n19": {
+    "Preallocate and assign": {
+      "syntax": "out = np.empty(n); out[i] = value",
+      "steps": ["Allocate an empty output of known length.", "Fill it by index in a loop.", "Print the result."],
+      "visual": "allocate once\nfill by index (linear work)",
+      "realWorld": "A simulation writes each timestep into a preallocated trace array.",
+      "mistakes": ["Growing the array inside the loop instead."],
+      "revision": ["Preallocation keeps work linear.", "It fixes dtype and shape up front."]
+    },
+    "Avoid repeated np.append": {
+      "syntax": "values = []; values.append(x); np.array(values)",
+      "steps": ["Collect values in a Python list.", "Convert the list to an array once.", "Compare with appending inside a loop."],
+      "visual": "list append is amortised\nnp.append copies every call",
+      "realWorld": "Reading a log line by line should collect first and convert once.",
+      "mistakes": ["Calling np.append in a hot loop."],
+      "revision": ["Np.append returns a new array.", "Collect then convert."]
+    },
+    "einsum for a dot product": {
+      "syntax": "np.einsum('i,i->', a, b)",
+      "steps": ["Create two vectors.", "Compute their dot product with einsum.", "Compare with `np.dot`."],
+      "visual": "'i,i->' sums over i\nsame value as dot",
+      "realWorld": "Attention scores and contractions are often written with einsum for clarity.",
+      "mistakes": ["Writing an index that is neither output nor summed."],
+      "revision": ["Einsum states the index algebra.", "Repeated indices are summed."]
+    },
+    "bincount for integer counts": {
+      "syntax": "np.bincount(a, minlength=k)",
+      "steps": ["Create a non-negative integer vector.", "Call `bincount` and print the counts.", "Try a negative value and read the error."],
+      "visual": "[0 1 1 3] → [1 2 0 1]",
+      "realWorld": "Class frequencies in a label array are a bincount.",
+      "mistakes": ["Passing negative labels."],
+      "revision": ["Bincount indexes by value.", "Inputs must be non-negative integers."]
+    },
+    "vectorize is convenience, not speed": {
+      "syntax": "np.vectorize(fn)(a)",
+      "steps": ["Wrap a Python function with `vectorize`.", "Apply it to an array.", "Compare its runtime with a real ufunc."],
+      "visual": "same values\nextra Python call overhead",
+      "realWorld": "A one-off custom transform is fine to vectorize; a hot path is not.",
+      "mistakes": ["Assuming vectorize compiles the function."],
+      "revision": ["Vectorize loops in Python.", "Use ufuncs for speed."]
+    },
+    "Chunk a big reduction": {
+      "syntax": "sum(chunk.sum() for chunk in chunks)",
+      "steps": ["Split a large array into chunks.", "Reduce each chunk.", "Combine the partial results."],
+      "visual": "chunk sums → total\npeak memory bounded",
+      "realWorld": "A dataset larger than memory is reduced in batches from disk.",
+      "mistakes": ["Combining means without carrying chunk sizes."],
+      "revision": ["Chunking bounds peak memory.", "Means need weights when combining."]
+    }
+  },
+  "n20": {
+    "Standardise columns with broadcasting": {
+      "syntax": "(a - a.mean(axis=0)) / a.std(axis=0)",
+      "steps": ["Create a small feature matrix.", "Compute column means and standard deviations.", "Subtract and divide using broadcasting."],
+      "visual": "each column → mean 0, std 1\nshapes (rows, cols)",
+      "realWorld": "Standardisation is a required preprocessing step for many models.",
+      "mistakes": ["Using the population std when the sample std was intended."],
+      "revision": ["Broadcast per-column statistics.", "Keep the reduced axis as length 1."]
+    },
+    "One-hot with eye indexing": {
+      "syntax": "np.eye(k)[labels]",
+      "steps": ["Create integer labels.", "Index an identity matrix with them.", "Print the one-hot rows."],
+      "visual": "labels [0 2], k=3\n→ [[1 0 0] [0 0 1]]",
+      "realWorld": "Categorical labels become model-ready one-hot rows in one gather.",
+      "mistakes": ["Using labels outside 0…k-1."],
+      "revision": ["Eye indexing gathers a row per label.", "An out-of-range label raises."]
+    },
+    "Moving average with convolve": {
+      "syntax": "np.convolve(a, np.ones(w) / w, mode='valid')",
+      "steps": ["Create a series.", "Convolve it with a normalised window.", "Compare the output length with the input."],
+      "visual": "window 3, valid mode\nlength n-2",
+      "realWorld": "Smoothing a noisy metric for a dashboard uses a moving average.",
+      "mistakes": ["Forgetting to normalise the window."],
+      "revision": ["Convolve applies the window.", "Valid mode drops the edges."]
+    },
+    "diff subtracts neighbouring values": {
+      "syntax": "np.diff(a)",
+      "steps": ["Create a series of levels.", "Take the first difference.", "Print the shorter output and check one value by hand."],
+      "visual": "[1 4 9 16] → [3 5 7]",
+      "realWorld": "Daily change in a cumulative count is a diff.",
+      "mistakes": ["Expecting the output to keep the input length."],
+      "revision": ["Diff subtracts neighbours.", "The output is one shorter."]
+    },
+    "digitize assigns bin indices": {
+      "syntax": "np.digitize(values, bins)",
+      "steps": ["Define sorted bin edges.", "Digitize a few values.", "Check which edge convention the indices follow."],
+      "visual": "edges [10 20]\n15 → bin 1",
+      "realWorld": "Age bands and score buckets are produced with digitize.",
+      "mistakes": ["Passing unsorted edges."],
+      "revision": ["Digitize returns bin indices.", "Edges must be sorted."]
+    },
+    "Confusion matrix with bincount": {
+      "syntax": "np.bincount(true * k + pred, minlength=k*k).reshape(k, k)",
+      "steps": ["Encode true and predicted labels as pairs.", "Count the encoded pairs with bincount.", "Reshape to a k×k matrix."],
+      "visual": "pair = true*k + pred\nreshape (k, k)",
+      "realWorld": "A classifier report starts from the confusion matrix built this way.",
+      "mistakes": ["Reshaping with the wrong class count."],
+      "revision": ["Encode pairs as one integer.", "Reshape rows=true, columns=predicted."]
+    }
+  }
+}

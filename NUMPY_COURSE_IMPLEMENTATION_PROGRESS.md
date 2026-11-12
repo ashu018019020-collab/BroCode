@@ -62,6 +62,18 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Twelve-part structure for the 108 new topics (phase 54)
+
+`content/numpy-mastery/structure-6.json` authors the full lesson shape for every topic in
+`deepening-10.json`: 18 modules × 6 topics, each with a syntax line, three concrete steps, a visual,
+a real-world use, at least one common mistake and two revision points. Titles are the source titles,
+so the generator's title check passes and the artifact inherits the fields unchanged.
+
+Full-shape coverage moves from **70/403 to 178/403 (44%)** — exactly the 108 new topics — while
+dual-level stays at **208/403**. The AI corpus was regenerated because the artifact bodies changed;
+`numpy:coverage` reports per-module syntax/steps/visual/realWorld/mistakes/revision counts so missing
+modules are visible instead of hidden in one percentage.
+
 ### Cross-device NumPy sync without clobbering (phase 53)
 
 The per-course write path is hardened against the cross-device failure that matters: the generic
