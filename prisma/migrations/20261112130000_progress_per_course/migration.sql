@@ -11,7 +11,8 @@
 -- overload) and keeps its whole contract: caller from `auth.uid()`, never an argument; counters
 -- re-validated; table writes still revoked, SELECT still limited to the caller's own row. The
 -- `per_course` payload is validated by `checked_per_course` against the same allowlist and limits as
--- `server/app.mjs`: 600 records, 20 KB per draft, 64 KB total, objects only.
+-- `server/app.mjs`: 600 records, 20 KB per draft, 64 KB total, objects only. Passing NULL preserves
+-- the stored value, which is how the generic snapshot avoids clobbering the course's own writes.
 --
 -- Apply with `npm run db:deploy`. Never `migrate reset` or `db push` against production.
 
@@ -83,7 +84,9 @@ CREATE OR REPLACE FUNCTION public.save_my_progress(
   open_mistakes integer,
   last_section_id character varying DEFAULT NULL,
   last_stage character varying DEFAULT NULL,
-  per_course jsonb DEFAULT '{}'::jsonb
+  -- NULL means "this caller has no course payload to contribute": the stored column is preserved,
+  -- so a generic snapshot from a device with no NumPy records can never wipe another device's work.
+  per_course jsonb DEFAULT NULL
 )
 RETURNS void
 LANGUAGE plpgsql
@@ -94,6 +97,7 @@ DECLARE
   me uuid := auth.uid();
   is_real_stage boolean;
   course_payload jsonb;
+  preserve_course boolean;
 BEGIN
   IF me IS NULL THEN
     RAISE EXCEPTION 'Sign in to save progress.';
@@ -123,7 +127,8 @@ BEGIN
     END IF;
   END IF;
 
-  course_payload := public.checked_per_course(per_course);
+  preserve_course := per_course IS NULL;
+  course_payload := public.checked_per_course(COALESCE(per_course, '{}'::jsonb));
 
   -- A missing profile row must never block the snapshot: create it with database defaults.
   -- `role`/`status` are deliberately NOT written here, so this path can neither mint an
@@ -147,7 +152,7 @@ BEGIN
     open_mistakes = EXCLUDED.open_mistakes,
     last_section_id = EXCLUDED.last_section_id,
     last_stage = EXCLUDED.last_stage,
-    per_course = EXCLUDED.per_course,
+    per_course = CASE WHEN preserve_course THEN progress_snapshots.per_course ELSE EXCLUDED.per_course END,
     updated_at = now();
 END;
 $function$;

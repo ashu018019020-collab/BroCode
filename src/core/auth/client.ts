@@ -395,7 +395,7 @@ async function saveProgressDirectly(
       open_mistakes: progress.openMistakes,
       last_section_id: progress.lastSectionId ?? null,
       last_stage: progress.lastStage ?? null,
-      per_course: perCourse ?? {},
+      per_course: perCourse ?? null,
     });
     if (error) throw authError(error);
     return true;

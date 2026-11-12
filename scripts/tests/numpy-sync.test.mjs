@@ -12,6 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 register('./_ts-resolve.mjs', import.meta.url);
 const sync = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/numpy-sync.ts')).href);
+const signals = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/course-signals.ts')).href);
 
 test('only NumPy key families are collected', () => {
   const payload = sync.collectNumpyProgress({
@@ -55,4 +56,15 @@ test('payload validation mirrors the allowlist and the byte budget', () => {
 test('the summary names what would be synced', () => {
   const summary = sync.numpySyncSummary({ 'nmod:a': {}, 'nmod:b': {}, 'nans:x': {}, ncap: {} });
   assert.equal(summary, '2 sections · 1 drafts');
+});
+
+test('a module completed on another device survives the merge', () => {
+  const remote = Object.fromEntries(
+    ['learn', 'interview', 'coding', 'logic', 'debug', 'practice', 'miniProject', 'projectLab', 'defense', 'checkpoint']
+      .map((section) => [`nmod:n07:${section}`, { done: true }]),
+  );
+  const { payload, added } = sync.mergeNumpyProgress({}, remote);
+  assert.equal(added.length, 10, 'every remote section is a gap on this device');
+  assert.deepEqual(signals.numpyCompletedModules(payload), ['n07'],
+    'the merged payload still counts as a completed module');
 });

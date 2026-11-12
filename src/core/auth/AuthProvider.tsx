@@ -3,7 +3,6 @@ import type { Session } from '@supabase/supabase-js';
 import { authApi, getSupabaseClient, takeRemoteResume, type AuthUser, type RegistrationResult } from './client';
 import { oauthErrorMessage, readOAuthCallback, withoutOAuthParams } from './oauth';
 import { announcePresence, broadcastSignIn } from './realtime';
-import { collectNumpyProgress } from '../learning/numpy-sync';
 import { summarizeProgress } from './progress';
 import { SERVICE_UNAVAILABLE_COPY } from './messages';
 import { stateSnapshot, useStore, adoptRemoteResume } from '../storage/store';
@@ -92,17 +91,16 @@ function ProgressSync({
         Object.assign(summary, { lastSectionId: current.lastSectionId, lastStage: current.lastStage });
       }
       /**
-       * The NumPy course's own records ride the same snapshot: one write carries the counters, the
-       * resume position and the course payload, so a static deployment needs no second transport.
-       * They are part of the dedupe signature — a new draft must trigger a send even when the
-       * counters did not move.
+       * The aggregate snapshot deliberately does NOT carry the NumPy payload. The course page owns
+       * that record: it loads the remote payload, merges local-first, then writes. Sending the
+       * snapshot's local copy from here could overwrite a full remote course with an empty one
+       * before the page ever opened — passing no payload lets `save_my_progress` preserve it.
        */
-      const perCourse = collectNumpyProgress(stateSnapshot().attempts);
-      const serialized = JSON.stringify({ summary, perCourse });
+      const serialized = JSON.stringify(summary);
       if (serialized === lastSent.current) return;
       if (active) onStatusChange({ status: 'syncing', lastSyncedAt: lastSyncedAt.current });
       try {
-        await authApi.saveProgress(summary, perCourse);
+        await authApi.saveProgress(summary);
         lastSent.current = serialized;
         lastSyncedAt.current = Date.now();
         if (active) onStatusChange({ status: 'synced', lastSyncedAt: lastSyncedAt.current });

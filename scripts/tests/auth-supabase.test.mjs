@@ -165,8 +165,10 @@ test('the per-course migration adds a bounded column and extends the direct writ
   assert.match(sql, /Progress counters must be non-negative integers/);
   assert.match(sql, /last_section_id !~ '\^\[A-Za-z0-9_-\]\{1,32\}\$'/);
   assert.match(sql, /last_stage must be a real lesson stage/);
-  assert.match(sql, /per_course jsonb DEFAULT '\{\}'::jsonb/, 'save_my_progress takes the course payload');
-  assert.match(sql, /per_course = EXCLUDED\.per_course/, 'and upserts it with the counters');
+  assert.match(sql, /save_my_progress[\s\S]*?per_course jsonb DEFAULT NULL/, 'save_my_progress takes the optional course payload');
+  assert.match(sql, /preserve_course := per_course IS NULL/, 'NULL means preserve the stored payload');
+  assert.match(sql, /CASE WHEN preserve_course THEN progress_snapshots\.per_course ELSE EXCLUDED\.per_course END/,
+    'the snapshot write preserves a stored course payload when it sends none');
 
   // The NumPy allowlist and limits mirror the client/server, so this is not a free-form JSON column.
   assert.match(sql, /entry\.key LIKE 'nmod:%'/, 'only the course section keys are accepted');
@@ -207,8 +209,8 @@ test('the per-course migration drops no data and stays additive', () => {
 
 test('a static deployment reads and writes the per-course column directly', () => {
   const client = code('src/core/auth/client.ts');
-  assert.match(client, /rpc\('save_my_progress',[\s\S]*?per_course: perCourse \?\? \{\}/,
-    'the snapshot write carries the course payload');
+  assert.match(client, /rpc\('save_my_progress',[\s\S]*?per_course: perCourse \?\? null/,
+    'the snapshot write omits the course payload with NULL so the database preserves the stored one');
   assert.match(client, /from\('progress_snapshots'\)\s*\.select\('per_course'\)/,
     'the read path selects the caller\'s own per-course payload');
   assert.match(client, /rpc\('save_my_numpy_progress', \{ per_course: payload \}\)/,
@@ -221,12 +223,10 @@ test('a static deployment reads and writes the per-course column directly', () =
   assert.match(sync, /result\.status === 401\) return \{ ok: false, reason: 'signed-out' \}/);
 });
 
-test('the background sync sends course records with the snapshot and dedupes on them', () => {
+test('the generic snapshot never overwrites the course payload it does not own', () => {
   const provider = code('src/core/auth/AuthProvider.tsx');
-  assert.match(provider, /collectNumpyProgress\(stateSnapshot\(\)\.attempts\)/,
-    'the snapshot gathers the allowed NumPy keys from the real state');
-  assert.match(provider, /JSON\.stringify\(\{ summary, perCourse \}\)/,
-    'a new draft must change the dedupe signature, not just a counter');
-  assert.match(provider, /authApi\.saveProgress\(summary, perCourse\)/,
-    'and the payload travels to the one save call');
+  assert.doesNotMatch(provider, /collectNumpyProgress/,
+    'the aggregate snapshot must not send a local NumPy copy');
+  assert.match(provider, /authApi\.saveProgress\(summary\)/,
+    'it saves the counters and lets the database preserve per_course');
 });

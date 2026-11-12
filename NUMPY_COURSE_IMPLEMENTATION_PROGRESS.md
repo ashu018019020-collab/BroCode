@@ -62,6 +62,23 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Cross-device NumPy sync without clobbering (phase 53)
+
+The per-course write path is hardened against the cross-device failure that matters: the generic
+progress snapshot no longer sends a local NumPy payload, and `save_my_progress` now receives
+`per_course NULL` by default, which preserves the stored column instead of replacing it with `{}`.
+The course page remains the single owner of that record — it loads the remote payload, merges
+local-first (`mergeNumpyProgress`), then writes through `/api/numpy/progress` or the direct
+`save_my_numpy_progress` RPC on a static deployment.
+
+`numpy-sync.test.mjs` adds the round trip: a module completed on another device (all ten `nmod:` keys)
+merges into an empty local map and still counts as complete via `numpyCompletedModules`. The client
+writes `per_course: null` when it has no payload, and the SQL keeps the existing value in that case.
+
+**Still required:** the migration has not been applied from this workspace (no `DATABASE_URL` /
+`DIRECT_URL`). Run `npm run db:deploy` before expecting production sync; the client reports
+"local" honestly until the column and functions exist.
+
 ### Revision plan panel (phase 52)
 
 `revisionPlan(modules, attempts, limit)` in `ncourse.ts` is the one ranking rule: candidates are the
