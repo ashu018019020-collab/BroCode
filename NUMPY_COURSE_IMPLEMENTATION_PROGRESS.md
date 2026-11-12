@@ -62,6 +62,26 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### Coverage command (phase 40)
+
+`npm run numpy:coverage` prints what every module actually teaches, read from the published artifact
+rather than the authored files, so a dropped field shows up as a gap instead of a claim:
+
+```
+n04    Data Types and Type Conversion         14      14/14      14/14  ...  14/14
+full 12-part: 70/280 (25%) · dual-level: 68/280 (24%)
+
+Missing parts:
+n06 Slicing and Array Views — dual 14, syntax 14, steps 14, visual 14, realWorld 14, mistakes 14, revision 14
+  dual: Every second value; Slice with a step; ...
+```
+
+Columns are `topics` plus `authored/topics` for dual level and each of the five structure parts. The
+gaps section names the topics still missing a part (first four, then `+N more`). `--strict` exits 1
+when any part is missing, for a future gate; without it the report always exits 0.
+`numpy-coverage.test.mjs` recomputes every row and the summary from the artifact and checks that
+`--strict` fails exactly when a gap exists.
+
 ### Twelve-part structure for modules four and five (phase 39)
 
 `structure-4.json` and `structure-5.json` add the five lesson-structure fields — `syntax`, `steps`,
