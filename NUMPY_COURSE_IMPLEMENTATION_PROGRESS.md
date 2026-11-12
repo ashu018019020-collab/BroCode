@@ -62,6 +62,20 @@ numpy 2.5.2 and filled the `expected` text from real stdout, so no output is typ
 drafts failed that run (a text-format check, a wrong square-sum constant, an FFT peak read off the wrong
 bin) and were corrected rather than accepted — the generator also rejects duplicate task titles.
 
+### NumPy records in the AI tutor's corpus (phase 51)
+
+`scripts/ai-index.cjs` now reads `public/generated/numpy-course/index.json` as an input (so its hash is
+part of `sourceHash`) and indexes **all 4,058 published NumPy entries** as documents with a namespaced
+`numpy:<module>:<section>:<index>` id, the module as `chapterTitle`, `course: 'numpy-mastery'` and
+`courseTitle: 'NumPy Mastery'`. Each keeps a traceable `sourceRef`
+(`public/generated/numpy-course/index.json#modules[...].sections...`) and the `/numpy?module=…&section=…`
+route that opens it. Learn bodies include the Hinglish and professional halves, so a Hinglish question
+retrieves the same record.
+
+The corpus grows from 15,385 to **19,443 documents** (3.04 MB gzip). A new test asserts every NumPy
+entry is indexed, every NumPy document carries course/route/record provenance, and a Learn topic is
+retrievable for a real NumPy question. The course-title set assertion now includes `NumPy Mastery`.
+
 ### Levels for the 108 twenty-topic additions (phase 50)
 
 `levels-7.json` authors a Hinglish `simple` explanation and a professional `pro` one for every topic in

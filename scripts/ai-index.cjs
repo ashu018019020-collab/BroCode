@@ -77,9 +77,10 @@ async function buildAiIndex() {
   const coursesIndexPath = path.join(GENERATED, 'courses', 'index.json');
   const tracksIndexPath = path.join(GENERATED, 'tracks', 'index.json');
   const notebookManifestPath = path.join(ROOT, 'public', 'notebooks', 'manifest.json');
+  const numpyCoursePath = path.join(GENERATED, 'numpy-course', 'index.json');
   const inputPaths = [
     sectionsPath, extrasPath, playbookPath, playbookManifestPath, coursesIndexPath, tracksIndexPath,
-    notebookManifestPath,
+    notebookManifestPath, numpyCoursePath,
   ];
   const sectionsRaw = readJson(sectionsPath);
   const sections = Array.isArray(sectionsRaw) ? sectionsRaw : sectionsRaw.sections;
@@ -89,6 +90,7 @@ async function buildAiIndex() {
   const playbook = readJson(playbookPath);
   const playbookManifest = readJson(playbookManifestPath);
   const notebookManifest = readJson(notebookManifestPath);
+  const numpyCourse = readJson(numpyCoursePath);
 
   const [roadmap, career] = await Promise.all([
     import(pathToFileURL(path.join(ROOT, 'src', 'core', 'learning', 'roadmap.ts')).href),
@@ -108,6 +110,9 @@ async function buildAiIndex() {
    */
   const courseTitleBySlug = new Map();
   for (const course of courseIndex.courses ?? []) courseTitleBySlug.set(course.slug, plain(course.name));
+  // NumPy Mastery publishes its own artifact rather than a `courses/index.json` entry; its documents
+  // still need the canonical title every other course-tagged document carries.
+  if (numpyCourse?.course?.title) courseTitleBySlug.set('numpy-mastery', plain(numpyCourse.course.title));
   const nameOfCourse = (slug) => courseTitleBySlug.get(slug) ?? '';
 
   const courseBySection = new Map();
@@ -310,6 +315,46 @@ async function buildAiIndex() {
     route: '/final-assessment', source: 'Intensive interview set',
     sourceRef: `public/generated/curriculum/extras.json#intensive[${index}]`,
   });
+
+  /**
+   * The NumPy Mastery course ships as ONE generated artifact (`numpy-course/index.json`), not as
+   * curriculum sections, so without this pass the tutor could not cite a single NumPy record. Every
+   * published entry becomes a document with a traceable sourceRef and the page route that opens it;
+   * the Learn topic's Hinglish and professional halves travel in the body so a Hinglish question
+   * retrieves the same record. Ids are namespaced (`numpy:`) to stay unique beside the curriculum.
+   */
+  const NUMPY_KIND = {
+    learn: 'concept', interview: 'interview', coding: 'coding', logic: 'logic', debug: 'debug',
+    practice: 'practice', miniProject: 'project', projectLab: 'project', defense: 'defense',
+    checkpoint: 'checkpoint',
+  };
+  for (const module of numpyCourse.modules ?? []) {
+    for (const [sectionKey, entries] of Object.entries(module.sections ?? {})) {
+      for (const [index, entry] of (entries ?? []).entries()) {
+        const title = entry.title ?? entry.q ?? entry.task ?? entry.statement;
+        if (!title) continue;
+        const body = textOf(
+          entry.body, entry.simple, entry.pro, entry.task, entry.statement, entry.code, entry.output,
+          entry.expected, entry.error, entry.fix, entry.steps, entry.rubric, entry.options,
+          entry.followUps?.map((item) => [item.q, item.a]), entry.solution, entry.hint,
+        );
+        add({
+          id: `numpy:${module.id}:${sectionKey}:${index}`,
+          kind: NUMPY_KIND[sectionKey] ?? 'concept',
+          type: sectionKey,
+          difficulty: entry.difficulty,
+          title,
+          answer: entry.answer,
+          body,
+          course: 'numpy-mastery',
+          chapterTitle: module.title,
+          route: `/numpy?module=${encodeURIComponent(module.id)}&section=${encodeURIComponent(sectionKey)}`,
+          source: 'NumPy Mastery course',
+          sourceRef: `public/generated/numpy-course/index.json#modules[${module.id}].sections.${sectionKey}[${index}]`,
+        });
+      }
+    }
+  }
 
   const bankFiles = fs.readdirSync(questionsDir).filter((name) => name.endsWith('.json') && name !== 'manifest.json').sort();
   let bankQuestions = 0;

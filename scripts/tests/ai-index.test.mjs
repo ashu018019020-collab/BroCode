@@ -98,8 +98,8 @@ test('the AI index corpus is plain strings everywhere — a localized { en, hi }
   assert.ok(titled.every((document) => typeof document.courseTitle === 'string'));
   assert.deepEqual([...new Set(titled.map((document) => document.courseTitle))].sort(), [
     'AI Career Foundations', 'Agentic AI', 'Build, Production & System Design', 'Data Engineering',
-    'Generative AI', 'Interview & Career', 'Machine Learning & NLP', 'NumPy & Pandas', 'Python',
-    'SQL', 'Statistics & Data Analysis',
+    'Generative AI', 'Interview & Career', 'Machine Learning & NLP', 'NumPy & Pandas', 'NumPy Mastery',
+    'Python', 'SQL', 'Statistics & Data Analysis',
   ]);
   // `KnowledgeCourse.title` is rendered by the assistant's course list, so it is plain too.
   assert.ok(index.courses.every((course) => typeof course.title === 'string' && course.title.trim()));
@@ -266,4 +266,35 @@ test('notebook source cells and the career readiness registry are indexed withou
   assert.ok(index.documents.some((item) => item.kind === 'career' && item.sourceRef.includes('CAREER_CHECKLIST')));
   assert.ok(index.documents.every((item) => !item.sourceRef.includes('resume-removed')));
   assert.ok(index.documents.every((item) => !item.body?.includes('execution_count')));
+});
+
+test('every NumPy course entry is retrievable with a traceable source', async () => {
+  const index = await buildAiIndex();
+  const course = JSON.parse(read('public/generated/numpy-course/index.json'));
+  const expected = course.modules.reduce(
+    (total, module) => total + Object.values(module.sections).reduce((sum, entries) => sum + entries.length, 0),
+    0,
+  );
+  const numpyDocs = index.documents.filter((document) => document.course === 'numpy-mastery');
+  assert.equal(numpyDocs.length, expected, 'every published NumPy entry must be indexed');
+  assert.ok(numpyDocs.every((document) =>
+    document.courseTitle === 'NumPy Mastery'
+    && document.route.startsWith('/numpy?module=')
+    && document.sourceRef.startsWith('public/generated/numpy-course/index.json#')
+    && document.sourceRef.includes('.sections.')), 'a NumPy document must carry its course, route and record path');
+  assert.ok(numpyDocs.some((document) => document.type === 'learn' && document.body?.length > 100),
+    'a Learn topic must carry the explanation, not just its title');
+
+  const hits = retrieveKnowledge(index, 'Why NumPy exists', { course: 'numpy-mastery' }, 20);
+  assert.ok(hits.length > 0, 'a NumPy question must retrieve a course record');
+  // The corpus also holds the older "NumPy & Pandas" curriculum and the course's own quizzes, so the
+  // assertion is that a real LEARN record is retrievable with its provenance, not that it tops a
+  // five-hit list shared with assessment items.
+  const top = hits.map(({ document }) => document)
+    .find((document) => document.course === 'numpy-mastery' && document.type === 'learn');
+  assert.ok(top, 'a NumPy Mastery Learn record must be in the candidate set');
+  assert.equal(top.courseTitle, 'NumPy Mastery');
+  assert.match(top.route, /^\/numpy\?module=n\d+&section=/);
+  assert.match(top.sourceRef, /^public\/generated\/numpy-course\/index\.json#/);
+  assert.ok(top.chapterTitle && top.chapterTitle.length > 0, 'the chapter is the module title');
 });
