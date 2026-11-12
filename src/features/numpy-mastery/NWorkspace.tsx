@@ -11,6 +11,7 @@ import {
 } from '../../core/learning/ncourse';
 import { NLogo } from './NLogo';
 import { NTools } from './NTools';
+import { usePublishTutorScope } from '../../components/shared/tutorScope';
 import type { RunResult } from '../coding/runners';
 
 const DIFF_TONE: Record<NEntry['difficulty'], string> = { easy: 'easy', medium: 'medium', hard: 'hard' };
@@ -476,6 +477,34 @@ export function NModuleWorkspace({ module, onBack }: { module: NModule; onBack: 
   const progress = useMemo(() => nProgress([module], state.attempts), [module, state.attempts]);
   const [levelRaw, setLevelRaw] = useSavedAnswer(N_LEVEL_KEY);
   const level: 'simple' | 'pro' = levelRaw === 'pro' ? 'pro' : 'simple';
+  /*
+   * The module publishes the SAME scoped tutor the step pages publish, so the footer assistant already
+   * knows the module, the section and the exact record on screen — no second chat system, no repeated
+   * briefing. Untouched sections are named, which is what "what should I revise?" needs.
+   */
+  const untouched = N_SECTIONS.filter((s) => !state.attempts[nSectionKey(module.id, s.key)]).map((s) => s.label);
+  usePublishTutorScope({
+    kind: 'module',
+    title: `${module.title} · ${N_SECTION_LABEL[section]}`,
+    context: {
+      route: '/numpy',
+      pageTitle: 'NumPy Mastery',
+      courseTitle: 'NumPy Mastery',
+      chapterTitle: module.title,
+      topic: entry?.title ?? entry?.q,
+      learningLevel: module.level,
+      where: `NumPy Mastery · ${module.title} · ${N_SECTION_LABEL[section]}`,
+      code: entry ? (entry.code ?? entry.starter ?? extraOf(entry).solution) : undefined,
+      progressSummary: `${N_SECTIONS.length - untouched.length}/${N_SECTIONS.length} sections recorded${untouched.length ? ` · untouched: ${untouched.join(', ')}` : ''}`,
+    },
+    prompts: [
+      `Explain ${entry?.title ?? 'this topic'} like I am a beginner.`,
+      'Line by line, what does the code on this screen do?',
+      `Give me one hint for this ${N_SECTION_LABEL[section]} item without the answer.`,
+      `What should I revise next in ${module.title}?`,
+    ],
+    briefing: `${module.title}: ${module.goal} You are in ${N_SECTION_LABEL[section]}${entry ? ` on "${entry.title ?? entry.q}"` : ''}.`,
+  });
   const cells = useMemo(() => entries.filter((e) => e.code || e.starter || extraOf(e).solution), [entries]);
   const cellIndex = Math.max(0, cells.findIndex((c) => c.id === entry?.id));
 
@@ -485,6 +514,12 @@ export function NModuleWorkspace({ module, onBack }: { module: NModule; onBack: 
     <div>
       <div className="row" style={{ gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
         <button type="button" className="btn small ghost" onClick={onBack}><ArrowLeft size={13} /> All modules</button>
+        <button
+          type="button"
+          className="btn small ghost"
+          onClick={() => window.dispatchEvent(new CustomEvent('bi:open-ai'))}
+          title="Opens the same AI assistant with this module, section and record as context"
+        >Ask the AI tutor</button>
         <Link className="btn small ghost" to="/notebooks"><BookOpen size={13} /> Code Bro</Link>
       </div>
 

@@ -53,6 +53,17 @@ authored interview/defense passes, and removed every entry that quoted a Learn b
 | Checkpoint | 560 | 1,000 | 440 |
 | **Total** | **2,780** | **10,000** | **7,220** |
 
+### AI tutor integration (phase 24, Part 8 of the brief)
+
+The course does not add an assistant. The module page publishes a **scoped tutor** through the same
+`usePublishTutorScope` store the step pages use (`kind: 'module'`), and an `Ask the AI tutor` button
+dispatches `bi:open-ai`, which the shell already listens for: the footer `AiDock` opens on the one
+existing `AssistantCard` and transcript. The published scope carries the module, the section, the
+selected record's code, the learner's teaching level and a progress summary that names the untouched
+sections, plus four starters (explain like a beginner, line-by-line, hint without the answer, what to
+revise). `scripts/tests/numpy-tutor.test.mjs` pins the three couplings and asserts the course renders
+no second assistant.
+
 ### Interactive tools (phase 23, Part 7 of the brief)
 
 Every module carries **ten working tools**, all computed by the pure `src/core/learning/numpy-tools.ts`

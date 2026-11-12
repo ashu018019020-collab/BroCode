@@ -314,6 +314,16 @@ function Shell() {
   const notifPanelRef = useRef<HTMLDivElement>(null);
   const [quickOpen, setQuickOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  /*
+   * A page can ask for the assistant without owning its state: the NumPy course publishes a scoped
+   * tutor and dispatches `bi:open-ai`, so the dock opens on the SAME panel every other screen uses.
+   * No second assistant, no second transcript.
+   */
+  useEffect(() => {
+    const open = () => setAiOpen(true);
+    window.addEventListener('bi:open-ai', open);
+    return () => window.removeEventListener('bi:open-ai', open);
+  }, []);
   const [scrolled, setScrolled] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [syncClock, setSyncClock] = useState(Date.now());

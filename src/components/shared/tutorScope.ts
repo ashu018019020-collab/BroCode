@@ -19,7 +19,7 @@ import type { AssistantContext } from '../../core/ai/assistant';
  * route change).
  */
 export interface TutorScopeInput {
-  kind: 'step' | 'build';
+  kind: 'step' | 'build' | 'module';
   /** The step title or the build name, printed beside the entry's heading. */
   title: string;
   context: AssistantContext;
