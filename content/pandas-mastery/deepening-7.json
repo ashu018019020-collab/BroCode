@@ -1,0 +1,297 @@
+{
+ "p11": {
+  "tasks": [
+   {
+    "title": "Read a column as text",
+    "statement": "Read the id column as text and print its dtype.",
+    "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"id\\n007\\n\"), dtype={\"id\": str})\nprint(df[\"id\"].dtype)",
+    "expected": "str"
+   },
+   {
+    "title": "Write without the index",
+    "statement": "Write the frame to CSV without the index and print the first line.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1]})\nprint(df.to_csv(index=False).splitlines()[0])",
+    "expected": "v"
+   },
+   {
+    "title": "Read only one column",
+    "statement": "Read only the v column and print the resulting shape.",
+    "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"v,w\\n1,2\\n\"), usecols=[\"v\"])\nprint(df.shape)",
+    "expected": "(1, 1)"
+   },
+   {
+    "title": "Records from a frame",
+    "statement": "Convert the frame to records and print the first record.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.to_dict(orient=\"records\")[0])",
+    "expected": "{'a': 1, 'b': 2}"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An index_col that is not a column",
+    "broken": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"a\\n1\\n\"), index_col=\"z\")\nprint(df.shape)",
+    "fix": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"a\\n1\\n\"), index_col=\"a\")\nprint(df.shape)",
+    "error": "ValueError: Index z invalid",
+    "fixedOutput": "(1, 0)"
+   },
+   {
+    "title": "An unknown JSON orient",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_json(orient=\"rows\"))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_json(orient=\"records\"))",
+    "error": "ValueError: Invalid value 'rows' for option 'orient'",
+    "fixedOutput": "[{\"a\":1}]"
+   },
+   {
+    "title": "An unterminated quoted field",
+    "broken": "import pandas as pd\nfrom io import StringIO\n\nprint(pd.read_csv(StringIO(\"a\\n\\\"1\")).shape)",
+    "fix": "import pandas as pd\nfrom io import StringIO\n\nprint(pd.read_csv(StringIO(\"a\\n1\")).shape)",
+    "error": "pandas.errors.ParserError: Error tokenizing data. C error: EOF inside string starting at row 1",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "An index column smuggled into the export",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1]})\nprint(df.to_csv().strip())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1]})\nprint(df.to_csv(index=False).strip())",
+    "error": "Wrong output: ,v / 0,1 — the default export writes the index as an unnamed first column.",
+    "fixedOutput": "v\n1",
+    "brokenOutput": ",v\n0,1"
+   }
+  ]
+ },
+ "p12": {
+  "tasks": [
+   {
+    "title": "Inner join row count",
+    "statement": "Merge the two frames on id with an inner join and print the row count.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2], \"x\": [10, 20]})\nb = pd.DataFrame({\"id\": [2, 3], \"y\": [30, 40]})\nprint(len(a.merge(b, on=\"id\")))",
+    "expected": "1"
+   },
+   {
+    "title": "Left join keeps every left row",
+    "statement": "Left-join and print how many rows ended up without a match.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2], \"y\": [30]})\nout = a.merge(b, on=\"id\", how=\"left\")\nprint(int(out[\"y\"].isna().sum()))",
+    "expected": "1"
+   },
+   {
+    "title": "Stack two frames",
+    "statement": "Concatenate the frames vertically and print the resulting shape.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]})\nb = pd.DataFrame({\"x\": [2]})\nprint(pd.concat([a, b], ignore_index=True).shape)",
+    "expected": "(2, 1)"
+   },
+   {
+    "title": "Count unmatched keys",
+    "statement": "Use the merge indicator and print how many ids exist only on the left.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2]})\nout = a.merge(b, on=\"id\", how=\"left\", indicator=True)\nprint(int((out[\"_merge\"] == \"left_only\").sum()))",
+    "expected": "1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Merging frames with no shared column name",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1]})\nb = pd.DataFrame({\"key\": [1]})\nprint(a.merge(b).shape)",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1]})\nb = pd.DataFrame({\"key\": [1]})\nprint(a.merge(b, left_on=\"id\", right_on=\"key\").shape)",
+    "error": "pandas.errors.MergeError: No common columns to perform merge on. Merge options: left_on=None, right_on=None, left_index=False, right_index=False",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "Concatenating along a third axis",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]})\nprint(pd.concat([a], axis=3).shape)",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]})\nprint(pd.concat([a], axis=0).shape)",
+    "error": "ValueError: No axis named 3 for object type DataFrame",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "A promised one-to-one that is not",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1], \"x\": [10]})\nb = pd.DataFrame({\"id\": [1, 1], \"y\": [20, 30]})\nprint(a.merge(b, on=\"id\", validate=\"one_to_one\").shape)",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1], \"x\": [10]})\nb = pd.DataFrame({\"id\": [1, 1], \"y\": [20, 30]})\nprint(a.merge(b, on=\"id\", validate=\"one_to_many\").shape)",
+    "error": "1 ...",
+    "fixedOutput": "(2, 3)"
+   },
+   {
+    "title": "A left join counted as the left rows",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2, 2], \"y\": [1, 2]})\nprint(len(a.merge(b, on=\"id\", how=\"left\")))",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2, 2], \"y\": [1, 2]})\nprint(len(a), len(a.merge(b, on=\"id\", how=\"left\")))",
+    "error": "Wrong output: 3 — the repeated right key multiplies the matched row, so the result is longer than the left table.",
+    "fixedOutput": "2 3",
+    "brokenOutput": "3"
+   }
+  ]
+ },
+ "p13": {
+  "tasks": [
+   {
+    "title": "Sum per group",
+    "statement": "Sum the values per city and print the mapping.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"v\": [1, 2, 3]})\nprint(df.groupby(\"city\")[\"v\"].sum().to_dict())",
+    "expected": "{'Delhi': 3, 'Pune': 3}"
+   },
+   {
+    "title": "Distance from the group mean",
+    "statement": "Print how many rows are above their own group's mean.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\", \"b\"], \"v\": [1, 3, 10, 20]})\nprint(int((df[\"v\"] > df.groupby(\"g\")[\"v\"].transform(\"mean\")).sum()))",
+    "expected": "2"
+   },
+   {
+    "title": "Rows versus non-missing values",
+    "statement": "Print the group size and the non-missing count for the single group.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\"], \"v\": [1.0, None]})\nout = df.groupby(\"g\").agg(n=(\"v\", \"size\"), filled=(\"v\", \"count\"))\nprint(out.values.tolist())",
+    "expected": "[[2, 1]]"
+   },
+   {
+    "title": "Named aggregation",
+    "statement": "Produce total and average per group and print the column names.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nout = df.groupby(\"g\").agg(total=(\"v\", \"sum\"), average=(\"v\", \"mean\"))\nprint(out.columns.tolist())",
+    "expected": "['total', 'average']"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Grouping by a misspelled column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"v\": [1]})\nprint(df.groupby(\"town\")[\"v\"].sum())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"v\": [1]})\nprint(df.groupby(\"city\")[\"v\"].sum().to_dict())",
+    "error": "KeyError: 'town'",
+    "fixedOutput": "{'Pune': 1}"
+   },
+   {
+    "title": "transform given an axis",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\")[\"v\"].transform(\"sum\", axis=1).tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\")[\"v\"].transform(\"sum\").tolist())",
+    "error": "TypeError: GroupBy.sum() got an unexpected keyword argument 'axis'",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "A positional lookup on a keyed result",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\")[\"v\"].agg([\"sum\", \"mean\"]).loc[0])",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\")[\"v\"].agg([\"sum\", \"mean\"]).loc[\"a\"].tolist())",
+    "error": "KeyError: 0",
+    "fixedOutput": "[1.0, 1.0]"
+   },
+   {
+    "title": "Rows counted where users were meant",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2], \"v\": [1, 2, 3]})\nprint(int(df.groupby(\"user\")[\"v\"].size().sum()))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2], \"v\": [1, 2, 3]})\nprint(df[\"user\"].nunique())",
+    "error": "Wrong output: 3 — size() counts attempt rows, while the question asks for distinct users.",
+    "fixedOutput": "2",
+    "brokenOutput": "3"
+   }
+  ]
+ },
+ "p14": {
+  "tasks": [
+   {
+    "title": "Pivot table shape",
+    "statement": "Build a city × year table summed by value and print its shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2025, 2026, 2026], \"v\": [1, 2, 3]})\nt = df.pivot_table(index=\"city\", columns=\"year\", values=\"v\", aggfunc=\"sum\", fill_value=0)\nprint(t.shape)",
+    "expected": "(2, 2)"
+   },
+   {
+    "title": "Melt two value columns",
+    "statement": "Melt the two value columns and print the resulting row count.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"a\": [3, 4], \"b\": [5, 6]})\nprint(pd.melt(df, id_vars=\"id\", value_vars=[\"a\", \"b\"]).shape[0])",
+    "expected": "4"
+   },
+   {
+    "title": "Explode a list column",
+    "statement": "Explode the tags column and print the resulting row count.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1], \"tags\": [[\"a\", \"b\"]]})\nprint(df.explode(\"tags\").shape[0])",
+    "expected": "2"
+   },
+   {
+    "title": "Crosstab counts",
+    "statement": "Cross the two columns and print the resulting shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\", \"y\"], \"b\": [1, 0]})\nprint(pd.crosstab(df[\"a\"], df[\"b\"]).shape)",
+    "expected": "(2, 2)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "pivot on duplicated index/column pairs",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\", \"x\"], \"b\": [1, 1], \"v\": [1, 2]})\nprint(df.pivot(index=\"a\", columns=\"b\", values=\"v\"))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\", \"x\"], \"b\": [1, 1], \"v\": [1, 2]})\nprint(df.pivot_table(index=\"a\", columns=\"b\", values=\"v\", aggfunc=\"sum\").values.tolist())",
+    "error": "ValueError: Index contains duplicate entries, cannot reshape",
+    "fixedOutput": "[[3]]"
+   },
+   {
+    "title": "A stack level that does not exist",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.stack(level=5).shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.stack().shape)",
+    "error": "IndexError: Too many levels: Index has only 1 level, not 6",
+    "fixedOutput": "(2,)"
+   },
+   {
+    "title": "Exploding a column that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"tags\": [[\"a\"]]})\nprint(df.explode(\"tag\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"tags\": [[\"a\"]]})\nprint(df.explode(\"tags\").shape)",
+    "error": "KeyError: 'tag'",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "A melt counted as one row per id",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"a\": [3, 4], \"b\": [5, 6]})\nprint(pd.melt(df, id_vars=\"id\").shape[0])",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"a\": [3, 4], \"b\": [5, 6]})\nprint(df.shape[0])",
+    "error": "Wrong output: 4 — melting turns each value column into rows, so two ids with two measures become four rows.",
+    "fixedOutput": "2",
+    "brokenOutput": "4"
+   }
+  ]
+ },
+ "p15": {
+  "tasks": [
+   {
+    "title": "Monthly totals",
+    "statement": "Resample the daily series to month starts and print the summed values.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3], index=pd.to_datetime([\"2026-01-01\", \"2026-01-02\", \"2026-02-01\"]))\nprint(s.resample(\"MS\").sum().tolist())",
+    "expected": "[3, 3]"
+   },
+   {
+    "title": "Two-day rolling mean",
+    "statement": "Print the two-row rolling mean of the values.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1.0, 2.0, 4.0])\nprint(s.rolling(2).mean().round(2).tolist())",
+    "expected": "[nan, 1.5, 3.0]"
+   },
+   {
+    "title": "Day-over-day change",
+    "statement": "Print the difference from the previous value.",
+    "solution": "import pandas as pd\n\ns = pd.Series([10, 15, 14])\nprint(s.diff().tolist())",
+    "expected": "[nan, 5.0, -1.0]"
+   },
+   {
+    "title": "Expose a missing day",
+    "statement": "Reindex to daily and print how many days have no observation.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1.0, 3.0], index=pd.to_datetime([\"2026-01-01\", \"2026-01-03\"]))\nprint(int(s.asfreq(\"D\").isna().sum()))",
+    "expected": "1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Resample on a plain index",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.resample(\"D\").sum().tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2], index=pd.to_datetime([\"2026-01-01\", \"2026-01-02\"]))\nprint(s.resample(\"D\").sum().tolist())",
+    "error": "TypeError: Only valid with DatetimeIndex, TimedeltaIndex or PeriodIndex, but got an instance of 'RangeIndex'",
+    "fixedOutput": "[1, 2]"
+   },
+   {
+    "title": "Converting a timezone that was never attached",
+    "broken": "import pandas as pd\n\ns = pd.Series(pd.to_datetime([\"2026-01-01\"]))\nprint(s.dt.tz_convert(\"UTC\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series(pd.to_datetime([\"2026-01-01\"]))\nprint(s.dt.tz_localize(\"UTC\").tolist())",
+    "error": "TypeError: Cannot convert tz-naive timestamps, use tz_localize to localize",
+    "fixedOutput": "[Timestamp('2026-01-01 00:00:00+0000', tz='UTC')]"
+   },
+   {
+    "title": "A shift given a frequency string",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.shift(\"1D\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.shift(1).tolist())",
+    "error": "ValueError: invalid literal for int() with base 10: '1D'",
+    "fixedOutput": "[nan, 1.0]"
+   },
+   {
+    "title": "A missing day reported as zero activity",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.0, 3.0], index=pd.to_datetime([\"2026-01-01\", \"2026-01-03\"]))\nprint(s.resample(\"D\").sum().tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.0, 3.0], index=pd.to_datetime([\"2026-01-01\", \"2026-01-03\"]))\nprint(s.asfreq(\"D\").tolist())",
+    "error": "Wrong output: [1.0, 0.0, 3.0] — the sum invents a zero for a day that has no record.",
+    "fixedOutput": "[1.0, nan, 3.0]",
+    "brokenOutput": "[1.0, 0.0, 3.0]"
+   }
+  ]
+ }
+}

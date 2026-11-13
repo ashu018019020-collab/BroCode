@@ -9,20 +9,20 @@ Honest ledger for the Pandas course. Counts are **records that shipped**, not ta
 | Course page | `/pandas` (own route, `Protect`-wrapped, in the sitemap) |
 | Course card | `/courses` grid, own panda mark, beside NumPy Mastery |
 | Modules | 20 (`p01`…`p20`), ten learning sections each |
-| Published entries | **1,720** |
+| Published entries | **1,880** |
 | Authored topics | 180, every code sample executed against pandas 3.0.5 |
-| Debug challenges | 80 (broken sample + real error/wrong output + executed fix) |
-| Independent coding tasks | 60 (expected output executed) |
+| Debug challenges | 160 (broken sample + real error/wrong output + executed fix) |
+| Independent coding tasks | 140 (expected output executed) |
 | Interview bank | 100 authored Q&A beside 180 verified-output questions |
 | Defense bank | 40 authored Q&A with steps |
 | Authored MCQs | 135 (four options each, answer one of them) |
 | Mini projects / Project Labs | 20 / 20 |
 
-Published section counts: Learn 180, Interview 260, Coding Lab 60, Logic 180, Debug 80,
+Published section counts: Learn 180, Interview 260, Coding Lab 140, Logic 180, Debug 160,
 Practice Solutions 180, Mini Project 20, Project Lab 20, Defense 40, Checkpoint 700.
 
-Per module: Learn 9 · Interview 13 · Coding Lab 3 · Logic 9 · Debug 4 · Practice 9 ·
-Mini 1 · Lab 1 · Defense 2 · Checkpoint 34–36 (87 entries in p01–p10, 85 in p11–p20).
+Per module: Learn 9 · Interview 13 · Coding Lab 7 · Logic 9 · Debug 8 · Practice 9 ·
+Mini 1 · Lab 1 · Defense 2 · Checkpoint 34–36 (95 entries in p01–p10, 93 in p11–p20).
 
 ## Growth layer (deepening-1…4.json)
 
@@ -36,6 +36,10 @@ its topics, debug challenges, coding tasks, interview items and `mcq` bank into 
 | `deepening-2.json` | p06–p10 | 4 topics, 2 tasks, 2 debug, 2 interview, 7 MCQs |
 | `deepening-3.json` | p11–p15 | 4 topics, 2 tasks, 2 debug, 2 interview, 6 MCQs |
 | `deepening-4.json` | p16–p20 | 4 topics, 2 tasks, 2 debug, 2 interview, 6 MCQs |
+| `deepening-5.json` | p01–p05 | 4 coding tasks, 4 debug challenges |
+| `deepening-6.json` | p06–p10 | 4 coding tasks, 4 debug challenges |
+| `deepening-7.json` | p11–p15 | 4 coding tasks, 4 debug challenges |
+| `deepening-8.json` | p16–p20 | 4 coding tasks, 4 debug challenges |
 
 Every added topic, task solution, debug fix and broken sample is executed by
 `scripts/pandas-fill-outputs.cjs`, which now reads both shapes (a module array and an id-keyed
@@ -71,10 +75,12 @@ course — the assistant index still covers NumPy only.
 ## Not done (stated, not hidden)
 
 1. **Question volume is still below the brief's 50-per-section target.** The brief asks for 7,000+
-   bank items; this build ships 1,720 (86 per module), up from 970. No section reaches 50: Learn 9,
-   Interview 13, Coding 3, Logic 9, Debug 4, Practice 9, Defense 2, Checkpoint 34–36. The remaining
-   gap is roughly 5,300 authored items and was not filled in this pass; the artifact's
-   `stats.targetPerSection` records the target so the shortfall stays visible.
+   bank items; this build ships 1,880 (94 per module), up from 970 and then 1,720. No section reaches
+   50: Learn 9, Interview 13, Coding 7, Logic 9, Debug 8, Practice 9, Defense 2, Checkpoint 34–36.
+   Coding Lab and Debug were the target of the last two layers and now stand at 7 and 8 of 50, so
+   roughly 43 tasks and 42 challenges per module (about 1,700 items) are still missing. They were not
+   filled in this pass; the artifact's `stats.targetPerSection` records the target so the shortfall
+   stays visible rather than being rounded away.
 2. **No BroCode-specific datasets are wired.** The examples use small synthetic tables shaped like
    BroCode records (courses, lessons, attempts); no production table or private row is read, and no
    data inventory was possible without the database credentials.
@@ -89,5 +95,7 @@ course — the assistant index still covers NumPy only.
 `npm run typecheck` clean · `npm test` 1083 pass, 6 skipped, 0 fail · `npm run build` ok
 (`PCoursePage-*.js` emitted) · dev server serves `/generated/pandas-course/index.json`.
 
-After the growth layer: `pandas-fill-outputs` executed 180 topics, 80 debug fixes and 60 task
-solutions; `pandas-course --write` published 1,720 entries; the same three gates passed again.
+After the growth layers: `pandas-fill-outputs` executed 180 topics, 160 debug fixes and 140 task
+solutions; `pandas-course --write` published 1,880 entries; the same three gates passed again
+(1089 tests, 0 fail). The filler now accepts file arguments so a two-layer re-run fits the command
+timeout instead of re-executing the whole course.

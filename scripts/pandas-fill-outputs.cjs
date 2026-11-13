@@ -19,7 +19,10 @@ const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'content', 'pandas-mastery');
-const files = fs.readdirSync(SRC).filter((f) => /^(modules-|deepening).*\.json$/.test(f)).sort();
+/* Optional file arguments keep a full re-run inside the five-minute command budget. */
+const only = process.argv.slice(2);
+const files = fs.readdirSync(SRC).filter((f) => /^(modules-|deepening).*\.json$/.test(f))
+  .filter((f) => !only.length || only.includes(f)).sort();
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pandas-fill-'));
 const script = path.join(tmp, 'sample.py');

@@ -1,0 +1,297 @@
+{
+ "p01": {
+  "tasks": [
+   {
+    "title": "Build a labeled Series",
+    "statement": "Create a Series from the dict and print its values as a list.",
+    "solution": "import pandas as pd\n\ns = pd.Series({\"a\": 1, \"b\": 2})\nprint(s.tolist())",
+    "expected": "[1, 2]"
+   },
+   {
+    "title": "Label alignment leaves a gap",
+    "statement": "Add the two Series and print how many values ended up missing.",
+    "solution": "import pandas as pd\n\na = pd.Series([1, 2], index=[\"x\", \"y\"])\nb = pd.Series([10, 20], index=[\"y\", \"z\"])\nprint(int((a + b).isna().sum()))",
+    "expected": "2"
+   },
+   {
+    "title": "Read by label",
+    "statement": "Print the value stored under the label \"y\".",
+    "solution": "import pandas as pd\n\ns = pd.Series([5, 6], index=[\"x\", \"y\"])\nprint(s[\"y\"])",
+    "expected": "6"
+   },
+   {
+    "title": "Count above the mean",
+    "statement": "Print how many values are strictly above the mean.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4])\nprint(int((s > s.mean()).sum()))",
+    "expected": "2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A label read from a default index",
+    "broken": "import pandas as pd\n\ns = pd.Series([5, 6])\nprint(s[\"a\"])",
+    "fix": "import pandas as pd\n\ns = pd.Series([5, 6])\nprint(s.iloc[0])",
+    "error": "KeyError: 'a'",
+    "fixedOutput": "5"
+   },
+   {
+    "title": "Two values, one label",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2], index=[\"a\"])\nprint(s.tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2], index=[\"a\", \"b\"])\nprint(s.tolist())",
+    "error": "ValueError: Length of values (2) does not match length of index (1)",
+    "fixedOutput": "[1, 2]"
+   },
+   {
+    "title": "The removed append method",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.append(3).tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(pd.concat([s, pd.Series([3])], ignore_index=True).tolist())",
+    "error": "AttributeError: 'Series' object has no attribute 'append'",
+    "fixedOutput": "[1, 2, 3]"
+   },
+   {
+    "title": "Sum of numeric-looking text",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"1\", \"2\"])\nprint(s.sum())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"1\", \"2\"]).astype(int)\nprint(s.sum())",
+    "error": "Wrong output: 12 — object dtypes concatenate text, so the sum is a string, not 3.",
+    "fixedOutput": "3",
+    "brokenOutput": "12"
+   }
+  ]
+ },
+ "p02": {
+  "tasks": [
+   {
+    "title": "Frame from records",
+    "statement": "Build the frame from the list of dicts and print its shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame([{\"a\": 1, \"b\": 2}, {\"a\": 3, \"b\": 4}])\nprint(df.shape)",
+    "expected": "(2, 2)"
+   },
+   {
+    "title": "Custom index at construction",
+    "statement": "Create the frame with the given index and print the index labels.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2]}, index=[\"r1\", \"r2\"])\nprint(df.index.tolist())",
+    "expected": "['r1', 'r2']"
+   },
+   {
+    "title": "A derived column",
+    "statement": "Add a column that is the sum of the two existing columns and print it.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"total\"] = df[\"a\"] + df[\"b\"]\nprint(df[\"total\"].tolist())",
+    "expected": "[4, 6]"
+   },
+   {
+    "title": "Column types after construction",
+    "statement": "Print the column names and the number of numeric columns.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [\"x\"], \"c\": [1.5]})\nprint(df.columns.tolist(), len(df.select_dtypes(\"number\").columns))",
+    "expected": "['a', 'b', 'c'] 2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Columns of different lengths",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [1]})\nprint(df.shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [1, 2]})\nprint(df.shape)",
+    "error": "ValueError: All arrays must be of the same length",
+    "fixedOutput": "(2, 2)"
+   },
+   {
+    "title": "All scalar values without an index",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": 1, \"b\": 2})\nprint(df.shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.shape)",
+    "error": "ValueError: If using all scalar values, you must pass an index",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "Too few names for the columns",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\ndf.columns = [\"only\"]\nprint(df.columns.tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\ndf.columns = [\"one\", \"two\"]\nprint(df.columns.tolist())",
+    "error": "ValueError: Length mismatch: Expected axis has 2 elements, new values have 1 elements",
+    "fixedOutput": "['one', 'two']"
+   },
+   {
+    "title": "Rows reported as cells",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df.size)",
+    "error": "Wrong output: 3 — len() counts rows, while the table has 6 cells.",
+    "fixedOutput": "6",
+    "brokenOutput": "3"
+   }
+  ]
+ },
+ "p03": {
+  "tasks": [
+   {
+    "title": "Shape and columns",
+    "statement": "Print the shape and the column list of the frame.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.shape, df.columns.tolist())",
+    "expected": "(1, 2) ['a', 'b']"
+   },
+   {
+    "title": "Select two columns",
+    "statement": "Select the two numeric columns and print the resulting shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [\"x\"]})\nprint(df[[\"a\", \"b\"]].shape)",
+    "expected": "(1, 2)"
+   },
+   {
+    "title": "Label slice versus position slice",
+    "statement": "Print the row count from a label slice of 0:1 and from a position slice of 0:1.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [10, 20, 30]})\nprint(len(df.loc[0:1]), len(df.iloc[0:1]))",
+    "expected": "2 1"
+   },
+   {
+    "title": "Types as text",
+    "statement": "Print each column's dtype as a string.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\nprint(df.dtypes.astype(str).tolist())",
+    "expected": "['int64', 'float64', 'str']"
+   }
+  ],
+  "debug": [
+   {
+    "title": "shape called as a method",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.shape())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "A number used against a text index",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2]}, index=[\"r1\", \"r2\"])\nprint(df.loc[0])",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2]}, index=[\"r1\", \"r2\"])\nprint(df.loc[\"r1\"].tolist())",
+    "error": "KeyError: 0",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "A tuple treated as one key",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df[\"a\", \"b\"].shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df[[\"a\", \"b\"]].shape)",
+    "error": "KeyError: ('a', 'b')",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "size reported as row count",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df.size)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df))",
+    "error": "Wrong output: 6 — size counts cells, not rows.",
+    "fixedOutput": "3",
+    "brokenOutput": "6"
+   }
+  ]
+ },
+ "p04": {
+  "tasks": [
+   {
+    "title": "Filter and count",
+    "statement": "Print how many rows have a value above 2.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 3, 5]})\nprint(int((df[\"v\"] > 2).sum()))",
+    "expected": "2"
+   },
+   {
+    "title": "Targeted assignment",
+    "statement": "Set b to 0 where a is above 1, then print b.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [9, 9]})\ndf.loc[df[\"a\"] > 1, \"b\"] = 0\nprint(df[\"b\"].tolist())",
+    "expected": "[9, 0]"
+   },
+   {
+    "title": "Two conditions in query",
+    "statement": "Use query to keep 1 < a < 4 and print the kept values.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4]})\nprint(df.query(\"1 < a < 4\")[\"a\"].tolist())",
+    "expected": "[2, 3]"
+   },
+   {
+    "title": "Filter with isin",
+    "statement": "Keep only the listed cities and print them in order.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\", \"Goa\"]})\nprint(df[df[\"city\"].isin([\"Pune\", \"Goa\"])][\"city\"].tolist())",
+    "expected": "['Pune', 'Goa']"
+   }
+  ],
+  "debug": [
+   {
+    "title": "and instead of &",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [5, 1]})\nprint(df[(df[\"a\"] > 0) and (df[\"b\"] < 5)])",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [5, 1]})\nprint(df[(df[\"a\"] > 0) & (df[\"b\"] < 5)].shape)",
+    "error": "ValueError: The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "Comparing numbers with text",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[df[\"a\"] > \"1\"].shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[df[\"a\"] > 1].shape)",
+    "error": "TypeError: Invalid comparison between dtype=int64 and str",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "A query variable that does not exist",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.query(\"a > @limit\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nlimit = 1\nprint(df.query(\"a > @limit\").shape)",
+    "error": "pandas.errors.UndefinedVariableError: local variable 'limit' is not defined",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "A filter that was never assigned",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [9, 9]})\ndf[df[\"a\"] > 1][\"b\"] = 0\nprint(df[\"b\"].tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [9, 9]})\ndf.loc[df[\"a\"] > 1, \"b\"] = 0\nprint(df[\"b\"].tolist())",
+    "error": "Wrong output: [9, 9] — chained assignment writes into a temporary copy, so the frame is unchanged.",
+    "fixedOutput": "[9, 0]",
+    "brokenOutput": "[9, 9]"
+   }
+  ]
+ },
+ "p05": {
+  "tasks": [
+   {
+    "title": "Parse with an explicit format",
+    "statement": "Parse the date string and print its year.",
+    "solution": "import pandas as pd\n\ns = pd.to_datetime(\"31/01/2026\", format=\"%d/%m/%Y\")\nprint(s.year)",
+    "expected": "2026"
+   },
+   {
+    "title": "Weekday of a date",
+    "statement": "Print the weekday number for 2026-01-05.",
+    "solution": "import pandas as pd\n\ns = pd.to_datetime(\"2026-01-05\")\nprint(s.dayofweek)",
+    "expected": "0"
+   },
+   {
+    "title": "Three daily timestamps",
+    "statement": "Build a three-period daily range and print its first and last date.",
+    "solution": "import pandas as pd\n\nr = pd.date_range(\"2026-01-01\", periods=3, freq=\"D\")\nprint(r[0].strftime(\"%Y-%m-%d\"), r[-1].strftime(\"%Y-%m-%d\"))",
+    "expected": "2026-01-01 2026-01-03"
+   },
+   {
+    "title": "Month extraction",
+    "statement": "Print the month number of every timestamp in the series.",
+    "solution": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"2026-01-15\", \"2026-03-01\"]))\nprint(s.dt.month.tolist())",
+    "expected": "[1, 3]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A day that February does not have",
+    "broken": "import pandas as pd\n\nprint(pd.to_datetime(\"2026-02-30\"))",
+    "fix": "import pandas as pd\n\nprint(pd.to_datetime(\"2026-02-28\"))",
+    "error": "pandas._libs.tslibs.parsing.DateParseError: day is out of range for month: 2026-02-30",
+    "fixedOutput": "2026-02-28 00:00:00"
+   },
+   {
+    "title": "The dt accessor on text",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"2026-01-01\"])\nprint(s.dt.day.tolist())",
+    "fix": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"2026-01-01\"]))\nprint(s.dt.day.tolist())",
+    "error": "AttributeError: Can only use .dt accessor with datetimelike values. Did you mean: 'at'?",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "A timestamp plus a string",
+    "broken": "import pandas as pd\n\nprint(pd.Timestamp(\"2026-01-01\") + \"1 day\")",
+    "fix": "import pandas as pd\n\nprint(pd.Timestamp(\"2026-01-01\") + pd.Timedelta(days=1))",
+    "error": "TypeError: unsupported operand type(s) for +: 'Timestamp' and 'str'",
+    "fixedOutput": "2026-01-02 00:00:00"
+   },
+   {
+    "title": "An ambiguous date read month-first",
+    "broken": "import pandas as pd\n\nprint(pd.to_datetime(\"05/01/2026\").strftime(\"%d-%m\"))",
+    "fix": "import pandas as pd\n\nprint(pd.to_datetime(\"05/01/2026\", format=\"%d/%m/%Y\").strftime(\"%d-%m\"))",
+    "error": "Wrong output: 01-05 — the value was read as 5 January, not 1 May.",
+    "fixedOutput": "05-01",
+    "brokenOutput": "01-05"
+   }
+  ]
+ }
+}

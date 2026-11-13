@@ -1,0 +1,298 @@
+{
+ "p06": {
+  "tasks": [
+   {
+    "title": "Double a column by assign",
+    "statement": "Add a doubled column with assign and print it.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.assign(b=df[\"a\"] * 2)[\"b\"].tolist())",
+    "expected": "[2, 4]"
+   },
+   {
+    "title": "Clamp a range",
+    "statement": "Clip the values into 0..10 and print the result.",
+    "solution": "import pandas as pd\n\ns = pd.Series([-5, 5, 50])\nprint(s.clip(0, 10).tolist())",
+    "expected": "[0, 5, 10]"
+   },
+   {
+    "title": "Map codes to labels",
+    "statement": "Map the letters to their numbers and print the mapped values.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"x\", \"y\"])\nprint(s.map({\"x\": 1, \"y\": 2}).tolist())",
+    "expected": "[1, 2]"
+   },
+   {
+    "title": "A conditional column with where",
+    "statement": "Keep the value when it is at least 10, otherwise print \"low\".",
+    "solution": "import pandas as pd\n\ns = pd.Series([5, 10])\nprint(s.where(s >= 10, \"low\").tolist())",
+    "expected": "['low', 10]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An axis name that does not exist",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.apply(lambda r: r[\"a\"], axis=2).tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.apply(lambda r: r[\"a\"], axis=1).tolist())",
+    "error": "ValueError: No axis named 2 for object type DataFrame",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "len applied to numbers",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.apply(len).tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.apply(lambda v: len(str(v))).tolist())",
+    "error": "TypeError: object of type 'int' has no len()",
+    "fixedOutput": "[1, 1]"
+   },
+   {
+    "title": "eval names a column that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.eval(\"a + b\").tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.eval(\"a + b\").tolist())",
+    "error": "pandas.errors.UndefinedVariableError: name 'b' is not defined",
+    "fixedOutput": "[3]"
+   },
+   {
+    "title": "Column sums read as row sums",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.apply(lambda row: row.sum()).tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.apply(lambda row: row.sum(), axis=1).tolist())",
+    "error": "Wrong output: [4, 6] — the default axis aggregates each column, not each row.",
+    "fixedOutput": "[4, 6]",
+    "brokenOutput": "[3, 7]"
+   }
+  ]
+ },
+ "p07": {
+  "tasks": [
+   {
+    "title": "Two largest values",
+    "statement": "Print the two largest values in the column.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [5, 9, 1]})\nprint(df.nlargest(2, \"v\")[\"v\"].tolist())",
+    "expected": "[9, 5]"
+   },
+   {
+    "title": "Ranks with a tie",
+    "statement": "Print the average ranks of the values.",
+    "solution": "import pandas as pd\n\ns = pd.Series([10, 20, 20, 40])\nprint(s.rank().tolist())",
+    "expected": "[1.0, 2.5, 2.5, 4.0]"
+   },
+   {
+    "title": "Share of each value",
+    "statement": "Print each value's share of the rows, rounded to two decimals.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"a\", \"a\", \"b\"])\nprint(s.value_counts(normalize=True).round(2).tolist())",
+    "expected": "[0.67, 0.33]"
+   },
+   {
+    "title": "Quartiles",
+    "statement": "Print the first and third quartiles.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4])\nprint(s.quantile([0.25, 0.75]).tolist())",
+    "expected": "[1.75, 3.25]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "nlargest without a column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2]})\nprint(df.nlargest(1))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2]})\nprint(df.nlargest(1, \"v\")[\"v\"].tolist())",
+    "error": "TypeError: DataFrame.nlargest() missing 1 required positional argument: 'columns'",
+    "fixedOutput": "[2]"
+   },
+   {
+    "title": "A percentile written as 25",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nprint(s.quantile(25))",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nprint(s.quantile(0.25))",
+    "error": "ValueError: percentiles should all be in the interval [0, 1]",
+    "fixedOutput": "1.5"
+   },
+   {
+    "title": "A statistic describe does not report",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nprint(s.describe().loc[\"median\"])",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nprint(s.describe().loc[\"50%\"])",
+    "error": "KeyError: 'median'",
+    "fixedOutput": "2.0"
+   },
+   {
+    "title": "A mean diluted by one gap",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.sum() / len(s))",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.mean())",
+    "error": "Wrong output: 1.33 — the NaN-skipping sum divided by all three rows understates the mean.",
+    "fixedOutput": "2.0",
+    "brokenOutput": "1.3333333333333333"
+   }
+  ]
+ },
+ "p08": {
+  "tasks": [
+   {
+    "title": "Count gaps per column",
+    "statement": "Print the total number of missing values in the frame.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, 2]})\nprint(int(df.isna().sum().sum()))",
+    "expected": "2"
+   },
+   {
+    "title": "Fill forward then back",
+    "statement": "Fill the gap from both directions and print the series.",
+    "solution": "import pandas as pd\n\ns = pd.Series([None, 2.0, None])\nprint(s.ffill().bfill().tolist())",
+    "expected": "[2.0, 2.0, 2.0]"
+   },
+   {
+    "title": "Drop rows missing a key",
+    "statement": "Drop rows missing the key column and print the kept ids.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, None, 3]})\nprint(df.dropna(subset=[\"id\"])[\"id\"].tolist())",
+    "expected": "[1.0, 3.0]"
+   },
+   {
+    "title": "Fill with the median",
+    "statement": "Fill the gap with the column median and print the values.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.fillna(s.median()).tolist())",
+    "expected": "[1.0, 2.0, 3.0]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Interpolation that needs an order",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.interpolate(method=\"polynomial\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.interpolate(method=\"linear\").tolist())",
+    "error": "ValueError: You must specify the order of the spline or polynomial.",
+    "fixedOutput": "[1.0, 2.0, 3.0]"
+   },
+   {
+    "title": "An axis named row",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [None]})\nprint(df.dropna(axis=\"row\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [None]})\nprint(df.dropna(axis=0).shape)",
+    "error": "ValueError: No axis named row for object type DataFrame",
+    "fixedOutput": "(0, 1)"
+   },
+   {
+    "title": "Summing a mask along a third axis",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [None]})\nprint(df.isna().sum(axis=2))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [None]})\nprint(int(df.isna().sum().sum()))",
+    "error": "ValueError: No axis named 2 for object type DataFrame",
+    "fixedOutput": "1"
+   },
+   {
+    "title": "A leading gap that ffill cannot fill",
+    "broken": "import pandas as pd\n\ns = pd.Series([None, 2.0, 3.0])\nprint(int(s.ffill().isna().sum()))",
+    "fix": "import pandas as pd\n\ns = pd.Series([None, 2.0, 3.0])\nprint(int(s.bfill().isna().sum()))",
+    "error": "Wrong output: 1 — ffill only carries a value forward, so the first gap survives.",
+    "fixedOutput": "0",
+    "brokenOutput": "1"
+   }
+  ]
+ },
+ "p09": {
+  "tasks": [
+   {
+    "title": "Keep the first copy",
+    "statement": "Drop duplicate ids keeping the first and print the kept values.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1, 2], \"v\": [\"a\", \"b\", \"c\"]})\nprint(df.drop_duplicates(\"id\", keep=\"first\")[\"v\"].tolist())",
+    "expected": "['a', 'c']"
+   },
+   {
+    "title": "Normalise city text",
+    "statement": "Strip and lower the city values, then print them.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\" Pune \", \"DELHI\"])\nprint(s.str.strip().str.lower().tolist())",
+    "expected": "['pune', 'delhi']"
+   },
+   {
+    "title": "Count outliers by IQR",
+    "statement": "Flag values outside 1.5×IQR and print how many there are.",
+    "solution": "import pandas as pd\n\ns = pd.Series([10, 11, 12, 13, 100])\nq1, q3 = s.quantile(0.25), s.quantile(0.75)\niqr = q3 - q1\nprint(int(((s < q1 - 1.5 * iqr) | (s > q3 + 1.5 * iqr)).sum()))",
+    "expected": "1"
+   },
+   {
+    "title": "Rename a column",
+    "statement": "Rename v to total and print the column list.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1]})\nprint(df.rename(columns={\"v\": \"total\"}).columns.tolist())",
+    "expected": "['total']"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Deduplicating on a column that does not exist",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1]})\nprint(df.drop_duplicates(subset=[\"key\"]).shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1]})\nprint(df.drop_duplicates(subset=[\"id\"]).shape)",
+    "error": "KeyError: Index(['key'], dtype='str')",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "Casting text to an integer",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"1\", \"x\"])\nprint(s.astype(int).tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"1\", \"2\"])\nprint(s.astype(int).tolist())",
+    "error": "ValueError: invalid literal for int() with base 10: 'x'",
+    "fixedOutput": "[1, 2]"
+   },
+   {
+    "title": "A numeric conversion that must fail loudly",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"abc\"])\nprint(pd.to_numeric(s, errors=\"raise\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"abc\"])\nprint(pd.to_numeric(s, errors=\"coerce\").isna().tolist())",
+    "error": "ValueError: Unable to parse string \"abc\" at position 0",
+    "fixedOutput": "[True]"
+   },
+   {
+    "title": "An exclusive range that drops the boundary",
+    "broken": "import pandas as pd\n\ns = pd.Series([10, 20])\nprint(s.between(10, 20, inclusive=\"neither\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([10, 20])\nprint(s.between(10, 20).tolist())",
+    "error": "Wrong output: [False, False] — an exclusive range drops both boundaries, while the rule includes them.",
+    "fixedOutput": "[True, True]",
+    "brokenOutput": "[False, False]"
+   }
+  ]
+ },
+ "p10": {
+  "tasks": [
+   {
+    "title": "Count a pattern match",
+    "statement": "Count how many cities contain \"pur\" regardless of case.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"Pune\", \"Nagpur\", \"Goa\"])\nprint(int(s.str.contains(\"pur\", case=False).sum()))",
+    "expected": "1"
+   },
+   {
+    "title": "Extract digits",
+    "statement": "Extract the digits from each code and print them.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"MH-12\", \"DL-7\"])\nprint(s.str.extract(r\"(\\d+)\")[0].tolist())",
+    "expected": "['12', '7']"
+   },
+   {
+    "title": "Deduplicate normalised text",
+    "statement": "Strip and lower the values, then print the unique sorted labels.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\" Pune\", \"pune \", \"Goa\"])\nprint(sorted(s.str.strip().str.lower().unique()))",
+    "expected": "['goa', 'pune']"
+   },
+   {
+    "title": "Split into two columns",
+    "statement": "Split the values on the pipe and print the resulting shape.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"pune|MH\", \"delhi|DL\"])\nprint(s.str.split(\"|\", expand=True).shape)",
+    "expected": "(2, 2)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A string method left unclosed",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"pune\"])\nprint(s.str.upper)",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"pune\"])\nprint(s.str.upper().tolist())",
+    "error": "Wrong output: prints a bound method, not the uppercased values.",
+    "fixedOutput": "['PUNE']",
+    "brokenOutput": "<bound method StringMethods.upper of <pandas.core.strings.accessor.StringMethods object at 0x7f4af1c59670>>"
+   },
+   {
+    "title": "An unclosed group in a pattern",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"a1\"])\nprint(s.str.extract(r\"(\\d+\")[0].tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"a1\"])\nprint(s.str.extract(r\"(\\d+)\")[0].tolist())",
+    "error": "re.error: missing ), unterminated subpattern at position 0",
+    "fixedOutput": "['1']"
+   },
+   {
+    "title": "str.len given an argument",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"ab\"])\nprint(s.str.len(2).tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"ab\"])\nprint(s.str.len().tolist())",
+    "error": "TypeError: StringMethods.len() takes 1 positional argument but 2 were given",
+    "fixedOutput": "[2]"
+   },
+   {
+    "title": "A case-sensitive search missing half the matches",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"Pune\", \"pune\", \"PUNE\"])\nprint(int(s.str.contains(\"pune\").sum()))",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"Pune\", \"pune\", \"PUNE\"])\nprint(int(s.str.contains(\"pune\", case=False).sum()))",
+    "error": "Wrong output: 1 — the search is case-sensitive, so it only finds the lowercase row.",
+    "fixedOutput": "3",
+    "brokenOutput": "1"
+   }
+  ]
+ }
+}

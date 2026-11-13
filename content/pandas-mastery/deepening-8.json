@@ -1,0 +1,297 @@
+{
+ "p16": {
+  "tasks": [
+   {
+    "title": "Group levels",
+    "statement": "Group by city and year and print the index level names.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(list(s.index.names))",
+    "expected": "['city', 'year']"
+   },
+   {
+    "title": "Category codes",
+    "statement": "Store the column as a category and print the integer codes.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"b\", \"a\", \"b\"], dtype=\"category\")\nprint(s.cat.codes.tolist())",
+    "expected": "[1, 0, 1]"
+   },
+   {
+    "title": "A parameterised pipe",
+    "statement": "Scale the values by 3 through pipe and print the result.",
+    "solution": "import pandas as pd\n\ndef scale(df, factor):\n    return df.assign(v=df[\"v\"] * factor)\n\nprint(pd.DataFrame({\"v\": [1, 2]}).pipe(scale, 3)[\"v\"].tolist())",
+    "expected": "[3, 6]"
+   },
+   {
+    "title": "Query with a variable",
+    "statement": "Keep values above the local limit and print them.",
+    "solution": "import pandas as pd\n\nlimit = 2\ndf = pd.DataFrame({\"v\": [1, 2, 3]})\nprint(df.query(\"v > @limit\")[\"v\"].tolist())",
+    "expected": "[3]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A cross-section on a level that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(s.xs(\"Pune\", level=\"town\"))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(s.xs(\"Pune\", level=\"city\").tolist())",
+    "error": "KeyError: 'Level town not found'",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "pipe given something that is not callable",
+    "broken": "import pandas as pd\n\nprint(pd.DataFrame({\"a\": [1]}).pipe(1))",
+    "fix": "import pandas as pd\n\nprint(pd.DataFrame({\"a\": [1]}).pipe(len))",
+    "error": "TypeError: 'int' object is not callable",
+    "fixedOutput": "1"
+   },
+   {
+    "title": "clip with a numeric bound on text",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"a\", \"b\"])\nprint(s.clip(lower=0).tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([0, 5])\nprint(s.clip(lower=1).tolist())",
+    "error": "TypeError: '>=' not supported between instances of 'str' and 'int'",
+    "fixedOutput": "[1, 5]"
+   },
+   {
+    "title": "An unordered category sorted alphabetically",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"low\", \"high\"], dtype=\"category\")\nprint(s.sort_values().tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series(pd.Categorical([\"low\", \"high\"], categories=[\"low\", \"high\"], ordered=True))\nprint(s.sort_values().tolist())",
+    "error": "Wrong output: ['high', 'low'] — an unordered category sorts by label, not by the intended severity order.",
+    "fixedOutput": "['low', 'high']",
+    "brokenOutput": "['high', 'low']"
+   }
+  ]
+ },
+ "p17": {
+  "tasks": [
+   {
+    "title": "Describe text too",
+    "statement": "Describe the frame including text columns and print the reported row count.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"], \"v\": [1, 2]})\nprint(len(df.describe(include=\"all\")))",
+    "expected": "11"
+   },
+   {
+    "title": "Direction of the tail",
+    "statement": "Print the skew rounded to two decimals.",
+    "solution": "import pandas as pd\n\nprint(round(float(pd.Series([1, 1, 1, 100]).skew()), 2))",
+    "expected": "2.0"
+   },
+   {
+    "title": "Three equal-count buckets",
+    "statement": "Split into three equal-count buckets and print the bucket sizes.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4, 5, 6])\nprint(pd.qcut(s, 3).value_counts().sort_index().tolist())",
+    "expected": "[2, 2, 2]"
+   },
+   {
+    "title": "Rank correlation",
+    "statement": "Print the Spearman correlation rounded to two decimals.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4], \"b\": [1, 4, 9, 16]})\nprint(round(float(df[\"a\"].corr(df[\"b\"], method=\"spearman\")), 2))",
+    "expected": "1.0"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A quantile above one",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nprint(s.quantile(1.5))",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nprint(s.quantile(0.5))",
+    "error": "ValueError: percentiles should all be in the interval [0, 1]",
+    "fixedOutput": "2.0"
+   },
+   {
+    "title": "An interval bin read as an integer",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 7])\nprint(pd.cut(s, bins=[0, 5, 10]).value_counts().loc[0])",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 7])\nprint(pd.cut(s, bins=[0, 5, 10]).value_counts().tolist())",
+    "error": "KeyError: 0",
+    "fixedOutput": "[1, 1]"
+   },
+   {
+    "title": "idxmax on an empty series",
+    "broken": "import pandas as pd\n\ns = pd.Series([], dtype=float)\nprint(s.idxmax())",
+    "fix": "import pandas as pd\n\ns = pd.Series([2.0, 5.0])\nprint(s.idxmax())",
+    "error": "ValueError: attempt to get argmax of an empty sequence",
+    "fixedOutput": "1"
+   },
+   {
+    "title": "A right tail reported as negative skew",
+    "broken": "import pandas as pd\n\nprint(round(float(pd.Series([1, 1, 1, 100]).skew()), 2))",
+    "fix": "import pandas as pd\n\nprint(round(float(pd.Series([1, 2, 3, 4]).skew()), 2))",
+    "error": "Wrong output: 1.73 — the long tail is on the right, so the skew is positive, not negative.",
+    "fixedOutput": "0.0",
+    "brokenOutput": "2.0"
+   }
+  ]
+ },
+ "p18": {
+  "tasks": [
+   {
+    "title": "Bytes of a narrow column",
+    "statement": "Cast the values to int8 and print the bytes they occupy.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 127], dtype=\"int64\")\nprint(s.astype(\"int8\").nbytes)",
+    "expected": "2"
+   },
+   {
+    "title": "Category codes for a feature",
+    "statement": "Convert the labels to a category and print the codes.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"gold\", \"silver\", \"gold\"], dtype=\"category\")\nprint(s.cat.codes.tolist())",
+    "expected": "[0, 1, 0]"
+   },
+   {
+    "title": "A formula through eval",
+    "statement": "Compute (a + b) * 3 with eval and print it.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.eval(\"(a + b) * 3\").tolist())",
+    "expected": "[12, 18]"
+   },
+   {
+    "title": "Deep memory of a text column",
+    "statement": "Print the deep memory usage of the whole frame as an integer.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [\"text\"]})\nprint(int(df.memory_usage(deep=True).sum()))",
+    "expected": "193"
+   }
+  ],
+  "debug": [
+   {
+    "title": "int8 overflow that never warns",
+    "broken": "import pandas as pd\n\ns = pd.Series([200])\nprint(s.astype(\"int8\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([200])\nprint(s.astype(\"int16\").tolist())",
+    "error": "Wrong output: [-56] — int8 wraps past 127 silently, so the value is corrupted rather than rejected.",
+    "fixedOutput": "[200]",
+    "brokenOutput": "[-56]"
+   },
+   {
+    "title": "Reading a column that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\ndf[\"missing\"] += 1\nprint(df.shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\ndf[\"b\"] = 0\ndf[\"b\"] += 1\nprint(df[\"b\"].tolist())",
+    "error": "KeyError: 'missing'",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "nbytes called as a method",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.nbytes())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.nbytes)",
+    "error": "TypeError: 'int' object is not callable",
+    "fixedOutput": "16"
+   },
+   {
+    "title": "A chunk size that is not positive",
+    "broken": "import pandas as pd\nfrom io import StringIO\n\nprint(next(pd.read_csv(StringIO(\"v\\n1\"), chunksize=-1)))",
+    "fix": "import pandas as pd\nfrom io import StringIO\n\nprint(next(pd.read_csv(StringIO(\"v\\n1\"), chunksize=1))[\"v\"].tolist())",
+    "error": "ValueError: 'chunksize' must be an integer >=1",
+    "fixedOutput": "[1]"
+   }
+  ]
+ },
+ "p19": {
+  "tasks": [
+   {
+    "title": "Numeric array with an explicit dtype",
+    "statement": "Convert the column to a float array and print its shape and dtype name.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2])\na = s.to_numpy(dtype=float)\nprint(a.shape, a.dtype.name)",
+    "expected": "(2,) float64"
+   },
+   {
+    "title": "Frame from database rows",
+    "statement": "Build the frame from the tuples and print the column list.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame.from_records([(1, \"a\")], columns=[\"id\", \"name\"])\nprint(df.columns.tolist())",
+    "expected": "['id', 'name']"
+   },
+   {
+    "title": "Count a mask in numpy",
+    "statement": "Convert the mask to numpy and print how many True values it holds.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 5, 9])\nprint(int(s.gt(4).to_numpy().sum()))",
+    "expected": "2"
+   },
+   {
+    "title": "Train-only centring",
+    "statement": "Centre the test value by the training mean and print it rounded to one decimal.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1.0, 2.0, 3.0, 10.0]})\ntrain = df.iloc[:3]\nprint(round(float((df.iloc[3][\"x\"] - train[\"x\"].mean())), 1))",
+    "expected": "8.0"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A float cast over text",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"1\", \"x\"])\nprint(s.to_numpy(dtype=float))",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"1\", \"2\"])\nprint(s.to_numpy(dtype=float).tolist())",
+    "error": "ValueError: could not convert string to float: 'x'",
+    "fixedOutput": "[1.0, 2.0]"
+   },
+   {
+    "title": "A reshape that does not fit",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\nprint(df.to_numpy().reshape(2, 2))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4]})\nprint(df.to_numpy().reshape(2, 2).tolist())",
+    "error": "ValueError: cannot reshape array of size 3 into shape (2,2)",
+    "fixedOutput": "[[1, 2], [3, 4]]"
+   },
+   {
+    "title": "More values than column names",
+    "broken": "import pandas as pd\n\nprint(pd.DataFrame.from_records([(1, 2)], columns=[\"a\"]).shape)",
+    "fix": "import pandas as pd\n\nprint(pd.DataFrame.from_records([(1, 2)], columns=[\"a\", \"b\"]).shape)",
+    "error": "ValueError: 1 columns passed, passed data had 2 columns",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "A scaler fitted on the held-out row",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1.0, 2.0, 3.0, 100.0]})\nprint(round(float((df.iloc[:3][\"x\"] - df[\"x\"].mean()).mean()), 1))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1.0, 2.0, 3.0, 100.0]})\ntrain = df.iloc[:3]\nprint(round(float((train[\"x\"] - train[\"x\"].mean()).mean()), 1))",
+    "error": "Wrong output: -24.5 — the full-table mean carried the held-out value into the training features.",
+    "fixedOutput": "0.0",
+    "brokenOutput": "-24.5"
+   }
+  ]
+ },
+ "p20": {
+  "tasks": [
+   {
+    "title": "Pass rate per city",
+    "statement": "Print learners and pass rate per city rounded to two decimals.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nprint(df.groupby(\"city\")[\"passed\"].agg(learners=\"size\", rate=\"mean\").round(2).to_dict(\"index\"))",
+    "expected": "{'Delhi': {'learners': 1, 'rate': 1.0}, 'Pune': {'learners': 2, 'rate': 0.5}}"
+   },
+   {
+    "title": "Distinct users",
+    "statement": "Print how many distinct users the attempt rows mention.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2]})\nprint(df[\"user\"].nunique())",
+    "expected": "2"
+   },
+   {
+    "title": "Cleaning log",
+    "statement": "Drop duplicate ids and print the before and after row counts.",
+    "solution": "import pandas as pd\n\nraw = pd.DataFrame({\"id\": [1, 1, 2]})\nprint(len(raw), len(raw.drop_duplicates(\"id\")))",
+    "expected": "3 2"
+   },
+   {
+    "title": "A reproducible sample",
+    "statement": "Draw the same sample twice with one seed and print whether they match.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": range(6)})\na = df.sample(3, random_state=11)[\"x\"].tolist()\nb = df.sample(3, random_state=11)[\"x\"].tolist()\nprint(a == b)",
+    "expected": "True"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An aggregate name that is not a function",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"passed\": [True]})\nprint(df.groupby(\"city\").agg({\"passed\": \"rate\"}))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"passed\": [True]})\nprint(df.groupby(\"city\").agg({\"passed\": \"mean\"}).to_dict())",
+    "error": "AttributeError: 'SeriesGroupBy' object has no attribute 'rate'",
+    "fixedOutput": "{'passed': {'Pune': 1.0}}"
+   },
+   {
+    "title": "Sorting by a column that only exists after aggregating",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"passed\": [True]})\nprint(df.sort_values(\"rate\"))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"passed\": [True]})\nprint(df.groupby(\"city\")[\"passed\"].mean().sort_values().to_dict())",
+    "error": "KeyError: 'rate'",
+    "fixedOutput": "{'Pune': 1.0}"
+   },
+   {
+    "title": "nlargest on a column that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2]})\nprint(df.nlargest(1, \"score\"))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2]})\nprint(df.nlargest(1, \"v\")[\"v\"].tolist())",
+    "error": "KeyError: 'score'",
+    "fixedOutput": "[2]"
+   },
+   {
+    "title": "A pass rate computed on attempts",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2], \"passed\": [True, False, True]})\nprint(round(float(df[\"passed\"].mean()), 2))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2], \"passed\": [True, False, True]})\nper_user = df.groupby(\"user\")[\"passed\"].mean()\nprint(round(float(per_user.mean()), 2))",
+    "error": "Wrong output: 0.67 — that weights the user with two attempts twice, so it is not the per-user pass rate.",
+    "fixedOutput": "0.75",
+    "brokenOutput": "0.67"
+   }
+  ]
+ }
+}
