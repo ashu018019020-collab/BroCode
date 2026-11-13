@@ -16,10 +16,12 @@ import type { CourseCard } from '../../core/learning/courses';
 import { useCIndex } from '../../core/data/ccourse';
 import { useNumpyCourse } from '../../core/data/ncourse';
 import { usePandasCourse } from '../../core/data/pcourse';
+import { useCppCourse } from '../../core/data/cppcourse';
 import { CLogo } from '../c-programming/CLogo';
 import { JLogo } from '../java-programming/JLogo';
 import { NLogo } from '../numpy-mastery/NLogo';
 import { PLogo } from '../pandas-mastery/PLogo';
+import { CppLogo } from '../cpp-mastery/CppLogo';
 
 /**
  * /courses — ONE grid of course cards, in the learning sequence.
@@ -42,6 +44,7 @@ export default function CoursesHome() {
   const cIndex = useCIndex();
   const nCourse = useNumpyCourse();
   const pCourse = usePandasCourse();
+  const cppCourse = useCppCourse();
   const pctOf = useSectionPct();
   /** Owner overrides when the database has them; the code-authored journey otherwise. */
   const { placements } = useCoursePlacements();
@@ -187,6 +190,26 @@ export default function CoursesHome() {
     );
   };
 
+  /**
+   * C++ Mastery is its own course page like NumPy and Pandas: a real card in the same grid, its own
+   * mark, and present only once its published artifact has loaded.
+   */
+  const renderCpp = () => {
+    if (!cppCourse) return null;
+    return (
+      <Link
+        to="/cpp"
+        className="course-card cc-simple tone-blue"
+        data-agent-action="course:cpp-mastery"
+        data-agent-label="C++ Mastery"
+        title="C++ Mastery"
+      >
+        <span className="cc-logo"><CppLogo size={88} /></span>
+        <b className="cc-name">C++ Mastery</b>
+      </Link>
+    );
+  };
+
   const renderN = () => {
     if (!nCourse) return null;
     return (
@@ -218,7 +241,7 @@ export default function CoursesHome() {
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
               {/* Java is a real card in the grid below, so it is counted here too — the header may
                   never say 12 while 13 cards are on screen. */}
-              <span className="chip">{visible.length + (cHidden ? 0 : 1) + 1 + (nCourse ? 1 : 0) + (pCourse ? 1 : 0) + ownerVisible.length} {t('courses.coursesUnit')}</span>
+              <span className="chip">{visible.length + (cHidden ? 0 : 1) + 1 + (nCourse ? 1 : 0) + (pCourse ? 1 : 0) + (cppCourse ? 1 : 0) + ownerVisible.length} {t('courses.coursesUnit')}</span>
               <span className="chip">{steps} {t('courses.stepsUnit')}</span>
               <span className="chip">{index.totals.items} {t('courses.itemsUnit')}</span>
             </div>
@@ -257,6 +280,7 @@ export default function CoursesHome() {
         <div className="course-grid">
           {renderN()}
           {renderP()}
+          {renderCpp()}
           <Link
             to="/java"
             className="course-card cc-simple tone-amber"

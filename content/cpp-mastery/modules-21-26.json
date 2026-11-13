@@ -1,0 +1,575 @@
+[
+ {
+  "id": "cpp21",
+  "no": 21,
+  "title": "File Handling and Filesystem",
+  "level": "advanced",
+  "hours": 7,
+  "goal": "Read and write files safely, check that a stream opened, and use std::filesystem for paths.",
+  "topics": [
+   {
+    "title": "Write a file with ofstream",
+    "body": "`std::ofstream` creates or truncates a file. Always test `is_open()`: a failed open leaves the stream unusable and every later write silently does nothing.",
+    "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    std::ofstream out(\"notes.txt\");\n    if (!out.is_open()) return 1;\n    out << \"brocode\\n\";\n    out.close();\n    std::cout << \"written\\n\";\n    return 0;\n}",
+    "output": "written"
+   },
+   {
+    "title": "Read line by line",
+    "body": "`std::getline` returns a stream reference that converts to false at end of file, so the loop reads until the file is exhausted.",
+    "code": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    { std::ofstream(\"log.txt\") << \"one\\ntwo\\n\"; }\n    std::ifstream in(\"log.txt\");\n    std::string line;\n    int n = 0;\n    while (std::getline(in, line)) ++n;\n    std::cout << n << \" lines\\n\";\n    return 0;\n}",
+    "output": "2 lines"
+   },
+   {
+    "title": "filesystem checks a path",
+    "body": "`std::filesystem::exists` and `file_size` need `<filesystem>`. They make file handling explicit instead of relying on a failed open.",
+    "code": "#include <filesystem>\n#include <fstream>\n#include <iostream>\n\nint main() {\n    { std::ofstream(\"data.txt\") << \"abc\"; }\n    std::cout << std::filesystem::exists(\"data.txt\") << \" \"\n              << std::filesystem::file_size(\"data.txt\") << \"\\n\";\n    return 0;\n}",
+    "output": "1 3"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Reading without checking the open",
+    "broken": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::ifstream in(\"missing.txt\");\n    std::string line;\n    std::getline(in, line);\n    std::cout << \"[\" << line << \"]\\n\";\n    return 0;\n}",
+    "fix": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::ifstream in(\"missing.txt\");\n    if (!in.is_open()) { std::cout << \"not found\\n\"; return 0; }\n    std::string line;\n    std::getline(in, line);\n    std::cout << \"[\" << line << \"]\\n\";\n    return 0;\n}",
+    "error": "Wrong output: [] — the stream never opened, and reading it produced an empty result instead of an error.",
+    "fixedOutput": "not found",
+    "brokenOutput": "[]"
+   },
+   {
+    "title": "ofstream used without fstream",
+    "broken": "#include <iostream>\n\nint main() {\n    std::ofstream out(\"a.txt\");\n    out << \"x\";\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "fix": "#include <fstream>\n#include <iostream>\n\nint main() {\n    std::ofstream out(\"a.txt\");\n    if (!out) return 1;\n    out << \"x\";\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "error": "error: variable ‘std::ofstream out’ has initializer but incomplete type",
+    "fixedOutput": "ok"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Count the lines in a file",
+    "statement": "Write two lines to a file, then read it back and print the line count.",
+    "solution": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    { std::ofstream(\"demo.txt\") << \"a\\nb\\n\"; }\n    std::ifstream in(\"demo.txt\");\n    std::string line;\n    int n = 0;\n    while (std::getline(in, line)) ++n;\n    std::cout << n << \"\\n\";\n    return 0;\n}",
+    "expected": "2"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why check is_open instead of assuming the file exists?",
+    "answer": "Opening can fail for permissions, a missing directory or a locked file, and a failed stream stays in a failed state. Reading it yields nothing, so the program continues with empty data unless the open is checked."
+   },
+   {
+    "q": "What is the difference between a text and a binary stream?",
+    "answer": "A text stream may translate line endings, while a binary stream reads and writes the bytes exactly. Use binary for serialized structures, images or anything whose bytes must round-trip unchanged."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A file-based feature works locally and fails in production. What do you check?",
+    "answer": "The working directory, permissions and whether the path is relative to a location that exists on the server. A relative path resolves against the process cwd, which differs between environments.",
+    "steps": [
+     "Print the absolute path being opened.",
+     "Check permissions and the directory's existence.",
+     "Prefer a configured absolute path over a relative one."
+    ]
+   },
+   {
+    "q": "Why is std::filesystem preferred to manual string paths?",
+    "answer": "It handles separators, joins and existence checks portably, so the code does not depend on the host's path syntax. Manual concatenation breaks on the platform you did not test."
+   }
+  ],
+  "mini": {
+   "title": "Contact book on disk",
+   "brief": "Write three name lines to a file, read them back and print them numbered.",
+   "steps": [
+    "Open an ofstream and check it.",
+    "Write the three names.",
+    "Read with getline and print a counter beside each."
+   ]
+  },
+  "lab": {
+   "title": "CSV report",
+   "brief": "Write a three-row CSV with a header, read it back and print the number of data rows.",
+   "milestones": [
+    "Write the header and rows.",
+    "Read the first line separately as a header.",
+    "Count only the data lines."
+   ]
+  }
+ },
+ {
+  "id": "cpp22",
+  "no": 22,
+  "title": "Modern C++ and Version Evolution",
+  "level": "advanced",
+  "hours": 8,
+  "goal": "Use the features that changed everyday C++: auto, nullptr, range-for, optional, structured bindings and constexpr.",
+  "topics": [
+   {
+    "title": "auto and nullptr",
+    "body": "`auto` deduces from the initializer; `nullptr` is a typed null pointer constant, unlike `NULL` which is an integer. Overload resolution can tell them apart.",
+    "code": "#include <iostream>\n\nint main() {\n    auto answer = 42;\n    auto pi = 3.14;\n    int* p = nullptr;\n    std::cout << answer << \" \" << pi << \" \" << (p == nullptr) << \"\\n\";\n    return 0;\n}",
+    "output": "42 3.14 1"
+   },
+   {
+    "title": "Range-for and structured bindings",
+    "body": "`for (const auto& [key, value] : map)` names both halves of a pair without `first` and `second`, which makes loops over maps readable.",
+    "code": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> m{{\"a\", 1}, {\"b\", 2}};\n    int sum = 0;\n    for (const auto& [key, value] : m) sum += value;\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "optional models absence",
+    "body": "`std::optional<T>` either holds a value or holds nothing, which is clearer than a sentinel. Check it before use; `value()` throws when empty.",
+    "code": "#include <iostream>\n#include <optional>\n\nstd::optional<int> parse(bool ok) {\n    if (!ok) return std::nullopt;\n    return 7;\n}\n\nint main() {\n    auto a = parse(true);\n    auto b = parse(false);\n    std::cout << a.value_or(-1) << \" \" << b.value_or(-1) << \"\\n\";\n    return 0;\n}",
+    "output": "7 -1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "value() on an empty optional",
+    "broken": "#include <iostream>\n#include <optional>\n\nint main() {\n    std::optional<int> o;\n    std::cout << o.value() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <optional>\n\nint main() {\n    std::optional<int> o;\n    std::cout << o.value_or(0) << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::bad_optional_access'",
+    "fixedOutput": "0"
+   },
+   {
+    "title": "constexpr initialized from a runtime value",
+    "broken": "#include <iostream>\n\nint main() {\n    int n = 3;\n    constexpr int m = n;\n    std::cout << m << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    constexpr int n = 3;\n    constexpr int m = n;\n    std::cout << m << \"\\n\";\n    return 0;\n}",
+    "error": "error: the value of ‘n’ is not usable in a constant expression",
+    "fixedOutput": "3"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Optional fallback",
+    "statement": "Return std::nullopt from a function and print the value_or fallback.",
+    "solution": "#include <iostream>\n#include <optional>\n\nstd::optional<int> parse(bool ok) {\n    if (!ok) return std::nullopt;\n    return 7;\n}\n\nint main() {\n    std::cout << parse(false).value_or(-1) << \"\\n\";\n    return 0;\n}",
+    "expected": "-1"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why is nullptr better than NULL?",
+    "answer": "`nullptr` has its own type, so it converts to any pointer type without becoming an integer. `NULL` is usually 0, which can select an int overload and hide a bug."
+   },
+   {
+    "q": "When should a function return optional instead of a pointer?",
+    "answer": "When absence is a normal outcome and the value is small or cheap to move. A pointer suggests an object already exists somewhere; optional suggests the function may produce one or none."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "How do you decide which C++ standard a project targets?",
+    "answer": "By the compiler support the deployment actually has and the features the code needs, not by the newest standard. Pin the flag, test it in CI and document the requirement.",
+    "steps": [
+     "Check the compiler's supported standards.",
+     "List the features the code relies on.",
+     "Pin the standard flag and state it in the README."
+    ]
+   },
+   {
+    "q": "Why label C++23 and C++26 features explicitly?",
+    "answer": "Support varies by compiler version, so a feature that compiles locally can fail elsewhere. The label tells the reader which flag and which compiler were verified."
+   }
+  ],
+  "mini": {
+   "title": "Modern rewrite",
+   "brief": "Rewrite a loop with auto, nullptr and a structured binding over a map, then print the same result as the original.",
+   "steps": [
+    "Write the traditional version.",
+    "Rewrite it with modern features.",
+    "Print both results and compare."
+   ]
+  },
+  "lab": {
+   "title": "Standard probe",
+   "brief": "Print __cplusplus, use a C++17 feature and a C++20 feature, and state what the numbers mean.",
+   "milestones": [
+    "Print the value of __cplusplus.",
+    "Use structured bindings and if constexpr.",
+    "Explain the flag that produced the value."
+   ]
+  }
+ },
+ {
+  "id": "cpp23",
+  "no": 23,
+  "title": "Data Structures and Algorithms",
+  "level": "advanced",
+  "hours": 12,
+  "goal": "Analyse complexity, implement core algorithms, and choose a data structure from the operations the problem needs.",
+  "topics": [
+   {
+    "title": "Big O describes growth",
+    "body": "Big O counts how work grows with input, ignoring constants: a linear scan is O(n), a halving search is O(log n). Two algorithms can both be correct and differ by orders of magnitude at size.",
+    "code": "#include <iostream>\n\nint main() {\n    int n = 1000;\n    int linear = n;\n    int logarithmic = 0;\n    for (int size = n; size > 1; size /= 2) ++logarithmic;\n    std::cout << linear << \" \" << logarithmic << \"\\n\";\n    return 0;\n}",
+    "output": "1000 9"
+   },
+   {
+    "title": "Binary search halves the range",
+    "body": "On a sorted array, compare with the middle and discard the half that cannot contain the target. The loop runs O(log n) times; the overflow-safe midpoint is `lo + (hi - lo) / 2`.",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 3, 5, 7, 9};\n    int target = 7, lo = 0, hi = static_cast<int>(v.size()) - 1, found = -1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (v[mid] == target) { found = mid; break; }\n        if (v[mid] < target) lo = mid + 1; else hi = mid - 1;\n    }\n    std::cout << found << \"\\n\";\n    return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "Dynamic programming remembers",
+    "body": "Tabulation stores each subproblem once, turning an exponential recursion into a linear pass. The array is the memory of answers already computed.",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    int n = 10;\n    std::vector<long long> fib(n + 1);\n    fib[0] = 0; fib[1] = 1;\n    for (int i = 2; i <= n; ++i) fib[i] = fib[i - 1] + fib[i - 2];\n    std::cout << fib[n] << \"\\n\";\n    return 0;\n}",
+    "output": "55"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A binary search boundary that skips the last element",
+    "broken": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 3, 5, 7};\n    int target = 7, lo = 0, hi = static_cast<int>(v.size()) - 1, found = -1;\n    while (lo < hi) {\n        int mid = (lo + hi) / 2;\n        if (v[mid] == target) { found = mid; break; }\n        if (v[mid] < target) lo = mid + 1; else hi = mid - 1;\n    }\n    std::cout << found << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 3, 5, 7};\n    int target = 7, lo = 0, hi = static_cast<int>(v.size()) - 1, found = -1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (v[mid] == target) { found = mid; break; }\n        if (v[mid] < target) lo = mid + 1; else hi = mid - 1;\n    }\n    std::cout << found << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: -1 — `lo < hi` exits before checking the last remaining element.",
+    "fixedOutput": "3",
+    "brokenOutput": "-1"
+   },
+   {
+    "title": "Recursion without a base case",
+    "broken": "#include <iostream>\n\nint down(int n) {\n    return down(n - 1) + 1;\n}\n\nint main() {\n    std::cout << down(3) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint down(int n) {\n    if (n <= 0) return 0;\n    return down(n - 1) + 1;\n}\n\nint main() {\n    std::cout << down(3) << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null)",
+    "fixedOutput": "3"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Binary search index",
+    "statement": "Search for 7 in {1,3,5,7,9} with binary search and print the index.",
+    "solution": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 3, 5, 7, 9};\n    int target = 7, lo = 0, hi = static_cast<int>(v.size()) - 1, found = -1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (v[mid] == target) { found = mid; break; }\n        if (v[mid] < target) lo = mid + 1; else hi = mid - 1;\n    }\n    std::cout << found << \"\\n\";\n    return 0;\n}",
+    "expected": "3"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "How do you choose between a hash map and a balanced tree?",
+    "answer": "A hash map gives average constant lookup but no ordering. A balanced tree gives O(log n) lookup with sorted iteration and range queries. Choose by whether order is part of the problem."
+   },
+   {
+    "q": "What is the difference between O(n log n) and O(n)?",
+    "answer": "A linear pass touches each element once; a sort-based solution does logarithmic work per element. At a million elements the difference is a factor of about twenty."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "How do you explain an algorithm's complexity in an interview?",
+    "answer": "Name the operation that dominates, count how many times it runs as a function of n, and state the space the algorithm needs beyond its input.",
+    "steps": [
+     "Identify the nested or repeated operation.",
+     "Express its count in terms of n.",
+     "State the auxiliary space."
+    ]
+   },
+   {
+    "q": "Why start with brute force before optimizing?",
+    "answer": "It proves you understand the problem and gives a correct baseline to test the faster version against. The optimization then has a reference answer and a measured reason."
+   }
+  ],
+  "mini": {
+   "title": "Two pointers",
+   "brief": "Given a sorted array, find whether two values sum to a target using two pointers.",
+   "steps": [
+    "Start one index at each end.",
+    "Move the left index up or the right index down by comparison.",
+    "Stop when the indices meet."
+   ]
+  },
+  "lab": {
+   "title": "Sorting comparison",
+   "brief": "Implement bubble sort and use std::sort on the same array, and compare the number of comparisons each performs.",
+   "milestones": [
+    "Count comparisons in bubble sort.",
+    "Sort a copy with std::sort.",
+    "State both complexities."
+   ]
+  }
+ },
+ {
+  "id": "cpp24",
+  "no": 24,
+  "title": "Multithreading and Concurrency",
+  "level": "advanced",
+  "hours": 7,
+  "goal": "Start and join a thread, protect shared data with a mutex, and know why a data race is undefined behaviour.",
+  "topics": [
+   {
+    "title": "A thread must be joined or detached",
+    "body": "`std::thread` starts running immediately. Its destructor terminates the program unless the thread was joined or detached first.",
+    "code": "#include <iostream>\n#include <thread>\n\nint main() {\n    int value = 0;\n    std::thread t([&value] { value = 21; });\n    t.join();\n    std::cout << value * 2 << \"\\n\";\n    return 0;\n}",
+    "output": "42"
+   },
+   {
+    "title": "A mutex serialises access",
+    "body": "Two threads incrementing the same counter race unless the read-modify-write is protected. `std::lock_guard` locks on construction and unlocks on destruction, including on exceptions.",
+    "code": "#include <iostream>\n#include <mutex>\n#include <thread>\n\nint main() {\n    int counter = 0;\n    std::mutex m;\n    auto work = [&] {\n        for (int i = 0; i < 1000; ++i) {\n            std::lock_guard<std::mutex> lock(m);\n            ++counter;\n        }\n    };\n    std::thread a(work), b(work);\n    a.join(); b.join();\n    std::cout << counter << \"\\n\";\n    return 0;\n}",
+    "output": "2000"
+   },
+   {
+    "title": "atomic for a single value",
+    "body": "`std::atomic<int>` makes one read-modify-write indivisible without a mutex. It does not make a whole data structure thread-safe.",
+    "code": "#include <atomic>\n#include <iostream>\n#include <thread>\n\nint main() {\n    std::atomic<int> counter{0};\n    std::thread a([&] { for (int i = 0; i < 100; ++i) ++counter; });\n    std::thread b([&] { for (int i = 0; i < 100; ++i) ++counter; });\n    a.join(); b.join();\n    std::cout << counter.load() << \"\\n\";\n    return 0;\n}",
+    "output": "200"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A thread destroyed without join",
+    "broken": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread t([] { std::cout << \"work\\n\"; });\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread t([] { std::cout << \"work\\n\"; });\n    t.join();\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called without an active exception",
+    "fixedOutput": "work"
+   },
+   {
+    "title": "Joining the same thread twice",
+    "broken": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread t([] {});\n    t.join();\n    t.join();\n    std::cout << \"done\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread t([] {});\n    t.join();\n    std::cout << \"done\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::system_error'",
+    "fixedOutput": "done"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Worker thread sum",
+    "statement": "Run a lambda on a thread that sets a value to 21, join it and print double the value.",
+    "solution": "#include <iostream>\n#include <thread>\n\nint main() {\n    int value = 0;\n    std::thread t([&value] { value = 21; });\n    t.join();\n    std::cout << value * 2 << \"\\n\";\n    return 0;\n}",
+    "expected": "42"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is a data race?",
+    "answer": "Two threads access the same memory, at least one writes, and there is no synchronisation ordering them. In C++ that is undefined behaviour, not just an unexpected value."
+   },
+   {
+    "q": "Why is a mutex not a complete concurrency design?",
+    "answer": "It keeps one critical section correct but introduces contention and deadlock risk, and it does not make a compound operation across several calls atomic. The design has to define the invariant and which lock owns it."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "How do you prevent deadlock between two mutexes?",
+    "answer": "Always acquire them in the same global order, or lock both at once with std::scoped_lock, which uses a deadlock-avoiding algorithm.",
+    "steps": [
+     "List the locks a thread takes.",
+     "Impose one order on every path.",
+     "Prefer scoped_lock when both are needed together."
+    ]
+   },
+   {
+    "q": "Why does a race sometimes pass tests?",
+    "answer": "Its outcome depends on timing, so a run on one machine can happen to serialise the accesses. Passing once says nothing; the absence of synchronisation is the bug."
+   }
+  ],
+  "mini": {
+   "title": "Safe counter",
+   "brief": "Increment one shared counter from two threads with a mutex and print the exact total.",
+   "steps": [
+    "Wrap the increment in a lock_guard.",
+    "Start two threads with the same lambda.",
+    "Join both and print the counter."
+   ]
+  },
+  "lab": {
+   "title": "Race demonstration",
+   "brief": "Run the same increment loop with and without a mutex, and explain the difference in the final value.",
+   "milestones": [
+    "Run the unprotected version several times.",
+    "Run the protected version.",
+    "Explain why only the second is guaranteed."
+   ]
+  }
+ },
+ {
+  "id": "cpp25",
+  "no": 25,
+  "title": "Professional Engineering and Testing",
+  "level": "advanced",
+  "hours": 8,
+  "goal": "Structure a project, assert what the code promises, and use the compiler's warnings and sanitizers as tools.",
+  "topics": [
+   {
+    "title": "The standard you compiled with",
+    "body": "`__cplusplus` reports the language standard the compiler used. If it prints 201703, the build is C++17; a modern feature compiled without the right flag fails here first.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << __cplusplus << \"\\n\";\n    return 0;\n}",
+    "output": "201703"
+   },
+   {
+    "title": "assert states a precondition",
+    "body": "`assert` checks a condition in debug builds and is removed with NDEBUG. It documents what must be true and fails loudly instead of corrupting data.",
+    "code": "#include <cassert>\n#include <iostream>\n\nint add(int a, int b) { return a + b; }\n\nint main() {\n    assert(add(2, 3) == 5);\n    std::cout << \"all checks passed\\n\";\n    return 0;\n}",
+    "output": "all checks passed"
+   },
+   {
+    "title": "static_assert checks at compile time",
+    "body": "`static_assert` runs during compilation, so a violated assumption stops the build with your message. It is the cheapest test to run and the hardest to skip.",
+    "code": "#include <iostream>\n\nstatic_assert(sizeof(int) >= 4, \"int must hold at least 32 bits\");\n\nint main() {\n    std::cout << sizeof(int) << \"\\n\";\n    return 0;\n}",
+    "output": "4"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A static_assert that fails",
+    "broken": "#include <iostream>\n\nstatic_assert(sizeof(int) == 2, \"int must be 2 bytes\");\n\nint main() {\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nstatic_assert(sizeof(int) >= 4, \"int must hold at least 32 bits\");\n\nint main() {\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "error": "error: static assertion failed: int must be 2 bytes",
+    "fixedOutput": "ok"
+   },
+   {
+    "title": "A tested invariant that is false",
+    "broken": "#include <cassert>\n#include <iostream>\n\nint add(int a, int b) { return a - b; }\n\nint main() {\n    assert(add(2, 3) == 5);\n    std::cout << \"passed\\n\";\n    return 0;\n}",
+    "fix": "#include <cassert>\n#include <iostream>\n\nint add(int a, int b) { return a + b; }\n\nint main() {\n    assert(add(2, 3) == 5);\n    std::cout << \"passed\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — main: main.cpp:7: int main(): Assertion `add(2, 3) == 5' failed.",
+    "fixedOutput": "passed"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Assert the contract",
+    "statement": "Write add(a, b) and assert that add(2, 3) is 5, then print passed.",
+    "solution": "#include <cassert>\n#include <iostream>\n\nint add(int a, int b) { return a + b; }\n\nint main() {\n    assert(add(2, 3) == 5);\n    std::cout << \"passed\\n\";\n    return 0;\n}",
+    "expected": "passed"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the difference between assert and an exception?",
+    "answer": "An assertion documents an internal precondition that should never be false and is removed in release builds. An exception reports a runtime failure that callers are expected to handle, such as invalid input."
+   },
+   {
+    "q": "Why compile with -Wall -Wextra -Wpedantic?",
+    "answer": "They surface uninitialised reads, unused results, narrowing conversions and non-standard extensions before they become runtime bugs. A warning-clean build is cheaper than finding the same defect in production."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "How do you structure a small C++ project?",
+    "answer": "Headers declare the interfaces, one source file per implementation, and a build file lists the targets. Keep main thin so the logic can be tested without it.",
+    "steps": [
+     "Separate declarations from definitions.",
+     "Keep one responsibility per translation unit.",
+     "Put the executable's entry point in its own file."
+    ]
+   },
+   {
+    "q": "What does the One Definition Rule forbid?",
+    "answer": "Two different definitions of the same function or object in one program. Declarations can repeat, definitions cannot, which is why headers hold declarations and source files hold bodies."
+   }
+  ],
+  "mini": {
+   "title": "Warning-clean build",
+   "brief": "Compile a small program with -Wall -Wextra -Wpedantic, fix every warning and show the clean rebuild.",
+   "steps": [
+    "Compile with the three warning flags.",
+    "Read each warning and fix the cause.",
+    "Rebuild and show an empty warning list."
+   ]
+  },
+  "lab": {
+   "title": "Sanitizer run",
+   "brief": "Run a program with an out-of-bounds read under AddressSanitizer and read the report.",
+   "milestones": [
+    "Compile with -fsanitize=address.",
+    "Trigger the out-of-bounds access.",
+    "Identify the allocation and the access in the report."
+   ]
+  }
+ },
+ {
+  "id": "cpp26",
+  "no": 26,
+  "title": "Projects, Design Patterns and Career",
+  "level": "advanced",
+  "hours": 10,
+  "goal": "Assemble the course into a portfolio project, apply a pattern where it earns its place, and explain your code in an interview.",
+  "topics": [
+   {
+    "title": "A project is a set of responsibilities",
+    "body": "Split a console application into input, domain rules and storage. Each part can then be tested and replaced without rewriting the others.",
+    "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Student { std::string name; int marks; };\n\nint main() {\n    std::vector<Student> roster{{\"Aman\", 88}, {\"Riya\", 91}};\n    int total = 0;\n    for (const auto& s : roster) total += s.marks;\n    std::cout << roster.size() << \" students, average \" << total / static_cast<int>(roster.size()) << \"\\n\";\n    return 0;\n}",
+    "output": "2 students, average 89"
+   },
+   {
+    "title": "Singleton only when one instance is the rule",
+    "body": "A private constructor plus a static accessor enforces one instance. Use it for a genuinely singular resource; otherwise it becomes hidden global state that tests cannot replace.",
+    "code": "#include <iostream>\n\nclass Config {\npublic:\n    static Config& instance() {\n        static Config one;\n        return one;\n    }\n    int version() const { return 3; }\nprivate:\n    Config() = default;\n};\n\nint main() {\n    std::cout << Config::instance().version() << \"\\n\";\n    return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "Two pointers in an interview",
+    "body": "A sorted pair-sum uses one index at each end: move the left up when the sum is too small, the right down when it is too large. Linear time, constant extra space.",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 4, 7};\n    int target = 9, i = 0, j = static_cast<int>(v.size()) - 1;\n    bool found = false;\n    while (i < j) {\n        int sum = v[i] + v[j];\n        if (sum == target) { found = true; break; }\n        if (sum < target) ++i; else --j;\n    }\n    std::cout << found << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A singleton that can be copied",
+    "broken": "#include <iostream>\n\nclass Config {\npublic:\n    static Config& instance() { static Config one; return one; }\n    int version() const { return 3; }\n};\n\nint main() {\n    Config a = Config::instance();\n    std::cout << (&a == &Config::instance()) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Config {\npublic:\n    static Config& instance() { static Config one; return one; }\n    Config(const Config&) = delete;\n    Config& operator=(const Config&) = delete;\n    int version() const { return 3; }\nprivate:\n    Config() = default;\n};\n\nint main() {\n    Config& a = Config::instance();\n    std::cout << (&a == &Config::instance()) << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 0 — the copy is a different object, so the class no longer has one instance.",
+    "fixedOutput": "1",
+    "brokenOutput": "0"
+   },
+   {
+    "title": "A private constructor called from main",
+    "broken": "#include <iostream>\n\nclass Config {\npublic:\n    int version() const { return 3; }\nprivate:\n    Config() = default;\n};\n\nint main() {\n    Config c;\n    std::cout << c.version() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Config {\npublic:\n    static Config& instance() { static Config one; return one; }\n    int version() const { return 3; }\nprivate:\n    Config() = default;\n};\n\nint main() {\n    std::cout << Config::instance().version() << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘constexpr Config::Config()’ is private within this context",
+    "fixedOutput": "3"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sorted pair sum",
+    "statement": "Use two pointers on {1,2,4,7} to decide whether any pair sums to 9, and print the boolean.",
+    "solution": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 4, 7};\n    int target = 9, i = 0, j = static_cast<int>(v.size()) - 1;\n    bool found = false;\n    while (i < j) {\n        int sum = v[i] + v[j];\n        if (sum == target) { found = true; break; }\n        if (sum < target) ++i; else --j;\n    }\n    std::cout << found << \"\\n\";\n    return 0;\n}",
+    "expected": "1"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "How do you present a project in a 5-minute interview?",
+    "answer": "Problem, constraints, the one design decision that mattered, the result with a number, and one thing you would change. The rest belongs in the repository README."
+   },
+   {
+    "q": "When is a design pattern unnecessary complexity?",
+    "answer": "When there is only one implementation and no sign of a second: a factory for one type or an observer with one listener adds indirection without a decision to make. Patterns pay for variation."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Why is Singleton criticised despite being common?",
+    "answer": "It is global state with a constructor, so tests cannot substitute it and dependencies are hidden. A passed-in object with an interface gives the same single instance without the coupling.",
+    "steps": [
+     "Name the hidden dependency.",
+     "Show the test that cannot isolate it.",
+     "Replace it with an injected instance."
+    ]
+   },
+   {
+    "q": "What makes a C++ portfolio project credible?",
+    "answer": "It builds with one documented command, has tests for the core rules, handles bad input and explains its trade-offs. A small finished project beats a large half-written one."
+   }
+  ],
+  "mini": {
+   "title": "Roster report",
+   "brief": "Build a small roster report with a struct, a loop and an average, and print the count and average.",
+   "steps": [
+    "Store the records in a vector.",
+    "Accumulate the marks.",
+    "Print the count and the integer average."
+   ]
+  },
+  "lab": {
+   "title": "Capstone plan",
+   "brief": "Write the README for a console project: problem, features, build command, test plan and one trade-off.",
+   "milestones": [
+    "State the problem in two sentences.",
+    "List the build and test commands.",
+    "Name the trade-off and why it was chosen."
+   ]
+  }
+ }
+]

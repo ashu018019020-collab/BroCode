@@ -1,0 +1,576 @@
+[
+ {
+  "id": "cpp15",
+  "no": 15,
+  "title": "Polymorphism and Abstraction",
+  "level": "intermediate",
+  "hours": 7,
+  "goal": "Call the right override through a base pointer, design abstract interfaces and avoid object slicing.",
+  "topics": [
+   {
+    "title": "virtual enables dynamic dispatch",
+    "body": "A virtual function is chosen by the object's dynamic type, not the pointer's static type. `override` makes a signature mismatch a compile error instead of a silent new function.",
+    "code": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual int area() const { return 0; }\n    virtual ~Shape() = default;\n};\n\nclass Square : public Shape {\npublic:\n    explicit Square(int side) : side_(side) {}\n    int area() const override { return side_ * side_; }\nprivate:\n    int side_;\n};\n\nint main() {\n    Square s(4);\n    const Shape& shape = s;\n    std::cout << shape.area() << \"\\n\";\n    return 0;\n}",
+    "output": "16"
+   },
+   {
+    "title": "Pure virtual makes an interface",
+    "body": "`= 0` makes the function pure virtual, so the class cannot be instantiated and every concrete derived class must implement it.",
+    "code": "#include <iostream>\n\nclass Payment {\npublic:\n    virtual int fee(int amount) const = 0;\n    virtual ~Payment() = default;\n};\n\nclass Card : public Payment {\npublic:\n    int fee(int amount) const override { return amount / 10; }\n};\n\nint main() {\n    Card c;\n    std::cout << c.fee(500) << \"\\n\";\n    return 0;\n}",
+    "output": "50"
+   },
+   {
+    "title": "Object slicing loses the derived part",
+    "body": "Copying a derived object into a base value slices off the derived fields, so the virtual call uses the base version. Pass by reference or pointer instead.",
+    "code": "#include <iostream>\n\nclass Base {\npublic:\n    virtual int value() const { return 1; }\n};\n\nclass Derived : public Base {\npublic:\n    int value() const override { return 2; }\n};\n\nint main() {\n    Derived d;\n    const Base& ref = d;\n    Base sliced = d;\n    std::cout << ref.value() << \" \" << sliced.value() << \"\\n\";\n    return 0;\n}",
+    "output": "2 1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Instantiating an abstract class",
+    "broken": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual int area() const = 0;\n};\n\nint main() {\n    Shape s;\n    std::cout << s.area() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual int area() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Square : public Shape {\npublic:\n    int area() const override { return 16; }\n};\n\nint main() {\n    Square s;\n    std::cout << s.area() << \"\\n\";\n    return 0;\n}",
+    "error": "error: cannot declare variable ‘s’ to be of abstract type ‘Shape’",
+    "fixedOutput": "16"
+   },
+   {
+    "title": "An override with the wrong signature",
+    "broken": "#include <iostream>\n\nclass Base {\npublic:\n    virtual int value() const { return 1; }\n};\n\nclass Derived : public Base {\npublic:\n    int value() { return 2; }\n};\n\nint main() {\n    Derived d;\n    const Base& b = d;\n    std::cout << b.value() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Base {\npublic:\n    virtual int value() const { return 1; }\n};\n\nclass Derived : public Base {\npublic:\n    int value() const override { return 2; }\n};\n\nint main() {\n    Derived d;\n    const Base& b = d;\n    std::cout << b.value() << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 1 — the missing const made a different function, so the base version was called.",
+    "fixedOutput": "2",
+    "brokenOutput": "1"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Shape area through a base reference",
+    "statement": "Create a Shape base with a pure virtual area(), implement Square and print the area through a const Shape reference.",
+    "solution": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual int area() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Square : public Shape {\npublic:\n    explicit Square(int side) : side_(side) {}\n    int area() const override { return side_ * side_; }\nprivate:\n    int side_;\n};\n\nint main() {\n    Square s(5);\n    const Shape& ref = s;\n    std::cout << ref.area() << \"\\n\";\n    return 0;\n}",
+    "expected": "25"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why does a polymorphic base need a virtual destructor?",
+    "answer": "Deleting a derived object through a base pointer runs only the base destructor when it is not virtual, so the derived part is never destroyed. That is undefined behaviour and typically leaks."
+   },
+   {
+    "q": "What is the difference between overloading and overriding?",
+    "answer": "Overloading picks a function by argument types at compile time within one scope. Overriding replaces a virtual function in a derived class and is selected at runtime by the object's type."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "How would you explain polymorphism to a beginner?",
+    "answer": "One instruction, many behaviours: calling area() on a shape works whether it is a square or a circle, and each type answers in its own way.",
+    "steps": [
+     "Name the shared instruction.",
+     "Show two different answers.",
+     "Show that the caller did not change."
+    ]
+   },
+   {
+    "q": "When is runtime polymorphism the wrong tool?",
+    "answer": "When the type is known at compile time or the hot path cannot afford an indirect call. Templates or plain overloads resolve earlier and inline better."
+   }
+  ],
+  "mini": {
+   "title": "Payment fee interface",
+   "brief": "Define a Payment interface with fee(), implement Card and UPI, and print both fees through one function.",
+   "steps": [
+    "Declare the pure virtual fee().",
+    "Implement two derived types.",
+    "Write a function taking const Payment& and call it twice."
+   ]
+  },
+  "lab": {
+   "title": "Slicing demonstration",
+   "brief": "Show the same object answering differently as a reference and as a sliced value.",
+   "milestones": [
+    "Create a derived object.",
+    "Call the virtual function through a base reference.",
+    "Copy it into a base value and call again."
+   ]
+  }
+ },
+ {
+  "id": "cpp16",
+  "no": 16,
+  "title": "Operator Overloading and Conversions",
+  "level": "advanced",
+  "hours": 6,
+  "goal": "Give a value type natural operators with correct semantics, and keep conversions explicit.",
+  "topics": [
+   {
+    "title": "A value type with operator+",
+    "body": "Return a new value, take the operands by const reference, and keep the operator const so it works on const objects.",
+    "code": "#include <iostream>\n\nclass Complex {\npublic:\n    Complex(int re, int im) : re_(re), im_(im) {}\n    Complex operator+(const Complex& other) const {\n        return Complex(re_ + other.re_, im_ + other.im_);\n    }\n    int real() const { return re_; }\n    int imag() const { return im_; }\nprivate:\n    int re_, im_;\n};\n\nint main() {\n    Complex a(1, 2), b(3, 4);\n    Complex c = a + b;\n    std::cout << c.real() << \" \" << c.imag() << \"\\n\";\n    return 0;\n}",
+    "output": "4 6"
+   },
+   {
+    "title": "operator<< makes a type printable",
+    "body": "Stream insertion must be a non-member taking `std::ostream&` first. Returning the stream lets calls chain.",
+    "code": "#include <iostream>\n\nclass Point {\npublic:\n    Point(int x, int y) : x_(x), y_(y) {}\n    friend std::ostream& operator<<(std::ostream& os, const Point& p) {\n        return os << \"(\" << p.x_ << \", \" << p.y_ << \")\";\n    }\nprivate:\n    int x_, y_;\n};\n\nint main() {\n    std::cout << Point(2, 3) << \"\\n\";\n    return 0;\n}",
+    "output": "(2, 3)"
+   },
+   {
+    "title": "Compound assignment returns the object",
+    "body": "`operator+=` modifies the left operand and returns `*this` by reference. `operator+` is then written once in terms of it, so the two cannot disagree.",
+    "code": "#include <iostream>\n\nclass Counter {\npublic:\n    explicit Counter(int v) : v_(v) {}\n    Counter& operator+=(const Counter& o) { v_ += o.v_; return *this; }\n    int value() const { return v_; }\nprivate:\n    int v_;\n};\n\nint main() {\n    Counter a(3), b(4);\n    a += b;\n    std::cout << a.value() << \"\\n\";\n    return 0;\n}",
+    "output": "7"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A stream operator that returns void",
+    "broken": "#include <iostream>\n\nclass Point {\npublic:\n    explicit Point(int x) : x_(x) {}\n    friend void operator<<(std::ostream& os, const Point& p) {\n        os << p.x_;\n    }\nprivate:\n    int x_;\n};\n\nint main() {\n    std::cout << Point(2) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Point {\npublic:\n    explicit Point(int x) : x_(x) {}\n    friend std::ostream& operator<<(std::ostream& os, const Point& p) {\n        return os << p.x_;\n    }\nprivate:\n    int x_;\n};\n\nint main() {\n    std::cout << Point(2) << \"\\n\";\n    return 0;\n}",
+    "error": "error: invalid operands of types ‘void’ and ‘const char [2]’ to binary ‘operator<<’",
+    "fixedOutput": "2"
+   },
+   {
+    "title": "operator+ that mutates the left operand",
+    "broken": "#include <iostream>\n\nclass Counter {\npublic:\n    explicit Counter(int v) : v_(v) {}\n    Counter operator+(const Counter& o) { v_ += o.v_; return *this; }\n    int value() const { return v_; }\nprivate:\n    int v_;\n};\n\nint main() {\n    Counter a(3), b(4);\n    Counter c = a + b;\n    std::cout << c.value() << \" \" << a.value() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Counter {\npublic:\n    explicit Counter(int v) : v_(v) {}\n    Counter operator+(const Counter& o) const { return Counter(v_ + o.v_); }\n    int value() const { return v_; }\nprivate:\n    int v_;\n};\n\nint main() {\n    Counter a(3), b(4);\n    Counter c = a + b;\n    std::cout << c.value() << \" \" << a.value() << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 7 7 — operator+ changed a, so the addition was not a pure operation.",
+    "fixedOutput": "7 3",
+    "brokenOutput": "7 7"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Complex addition",
+    "statement": "Implement Complex with operator+ and print the real and imaginary parts of (1,2) + (3,4).",
+    "solution": "#include <iostream>\n\nclass Complex {\npublic:\n    Complex(int re, int im) : re_(re), im_(im) {}\n    Complex operator+(const Complex& other) const {\n        return Complex(re_ + other.re_, im_ + other.im_);\n    }\n    int real() const { return re_; }\n    int imag() const { return im_; }\nprivate:\n    int re_, im_;\n};\n\nint main() {\n    Complex c = Complex(1, 2) + Complex(3, 4);\n    std::cout << c.real() << \" \" << c.imag() << \"\\n\";\n    return 0;\n}",
+    "expected": "4 6"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Which operators should stay non-member?",
+    "answer": "Stream insertion and extraction, and any operator whose left operand is not your type, such as `int + Complex`. They can be friends when they need private access."
+   },
+   {
+    "q": "Why must operator= handle self-assignment?",
+    "answer": "`a = a` would otherwise free a resource before reading from it. The usual guard checks for `this == &other` before releasing anything."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Why is overloading `&&` or `,` usually a mistake?",
+    "answer": "Both have built-in sequencing and short-circuit behaviour that a user-defined overload cannot reproduce, so code that relies on them silently changes meaning.",
+    "steps": [
+     "Name the built-in guarantee.",
+     "Show what the overload loses.",
+     "Keep the operator for types where it is unsurprising."
+    ]
+   },
+   {
+    "q": "What makes an operator overload defensible?",
+    "answer": "It behaves like the built-in operator for that concept, has the expected return type and does not surprise with side effects. If a reader has to check the header, it probably should have been a named function."
+   }
+  ],
+  "mini": {
+   "title": "Printable point",
+   "brief": "Create Point with operator<< and operator==, and print whether two points are equal.",
+   "steps": [
+    "Write the friend stream operator.",
+    "Write equality comparing both fields.",
+    "Print the point and the comparison result."
+   ]
+  },
+  "lab": {
+   "title": "Money type",
+   "brief": "Build a Money class with operator+ and operator<< that prints rupees and paise.",
+   "milestones": [
+    "Store the amount in paise.",
+    "Implement addition without losing precision.",
+    "Format the output with two decimals."
+   ]
+  }
+ },
+ {
+  "id": "cpp17",
+  "no": 17,
+  "title": "Templates and Generic Programming",
+  "level": "advanced",
+  "hours": 7,
+  "goal": "Write one function or class that works for many types, and read template errors without panic.",
+  "topics": [
+   {
+    "title": "A function template",
+    "body": "The compiler generates a concrete function for each type used, so the same body works for int and double without runtime cost.",
+    "code": "#include <iostream>\n\ntemplate <typename T>\nT maximum(T a, T b) {\n    return a > b ? a : b;\n}\n\nint main() {\n    std::cout << maximum(3, 7) << \" \" << maximum(2.5, 1.5) << \"\\n\";\n    return 0;\n}",
+    "output": "7 2.5"
+   },
+   {
+    "title": "A class template",
+    "body": "A class template parameterises the element type. Member functions defined outside the class need the template header and the qualified name.",
+    "code": "#include <iostream>\n\ntemplate <typename T>\nclass Box {\npublic:\n    explicit Box(T value) : value_(value) {}\n    T get() const { return value_; }\nprivate:\n    T value_;\n};\n\nint main() {\n    Box<int> a(4);\n    Box<double> b(2.5);\n    std::cout << a.get() << \" \" << b.get() << \"\\n\";\n    return 0;\n}",
+    "output": "4 2.5"
+   },
+   {
+    "title": "Two parameters, one algorithm",
+    "body": "Templates can take several parameters. The compiler deduces each from the arguments, and a mismatch between them is reported at the call site.",
+    "code": "#include <iostream>\n\ntemplate <typename A, typename B>\nauto add(A a, B b) -> decltype(a + b) {\n    return a + b;\n}\n\nint main() {\n    std::cout << add(2, 3) << \" \" << add(2, 0.5) << \"\\n\";\n    return 0;\n}",
+    "output": "5 2.5"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Two different types for one T",
+    "broken": "#include <iostream>\n\ntemplate <typename T>\nT maximum(T a, T b) { return a > b ? a : b; }\n\nint main() {\n    std::cout << maximum(3, 2.5) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\ntemplate <typename T>\nT maximum(T a, T b) { return a > b ? a : b; }\n\nint main() {\n    std::cout << maximum(3, 4) << \"\\n\";\n    return 0;\n}",
+    "error": "error: no matching function for call to ‘maximum(int, double)’",
+    "fixedOutput": "4"
+   },
+   {
+    "title": "A dependent type without typename",
+    "broken": "#include <iostream>\n#include <vector>\n\ntemplate <typename T>\nint lastSize(const std::vector<T>& v) {\n    T::size_type n = v.size();\n    return static_cast<int>(n);\n}\n\nint main() {\n    std::cout << lastSize(std::vector<int>{1, 2}) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <vector>\n\ntemplate <typename T>\nint lastSize(const std::vector<T>& v) {\n    typename std::vector<T>::size_type n = v.size();\n    return static_cast<int>(n);\n}\n\nint main() {\n    std::cout << lastSize(std::vector<int>{1, 2}) << \"\\n\";\n    return 0;\n}",
+    "error": "error: need ‘typename’ before ‘T::size_type’ because ‘T’ is a dependent scope",
+    "fixedOutput": "2"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Generic maximum",
+    "statement": "Write a function template maximum<T> and print the larger of 3 and 7.",
+    "solution": "#include <iostream>\n\ntemplate <typename T>\nT maximum(T a, T b) { return a > b ? a : b; }\n\nint main() {\n    std::cout << maximum(3, 7) << \"\\n\";\n    return 0;\n}",
+    "expected": "7"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is template instantiation?",
+    "answer": "It is the compiler generating a concrete function or class for the types actually used. Nothing is generated for types you never instantiate, which is why template errors often appear at the call site."
+   },
+   {
+    "q": "Why do template errors look so long?",
+    "answer": "The compiler reports the full instantiation chain from your call down into the library. The useful line is usually the first note that names your type and the requirement that failed."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "When is a template unnecessary?",
+    "answer": "When only one type is ever used, or when the abstraction forces every caller into the same algorithm. A plain function or a small interface is easier to read and debug.",
+    "steps": [
+     "Count the real instantiations.",
+     "Check whether the types share the required operations.",
+     "Prefer the simpler non-template version when they do not."
+    ]
+   },
+   {
+    "q": "What does it mean that templates are header-only in practice?",
+    "answer": "The compiler needs the full definition to instantiate, so the body usually lives in the header. Putting it in a .cpp leaves other translation units unable to generate the code."
+   }
+  ],
+  "mini": {
+   "title": "Generic pair",
+   "brief": "Write a Pair template holding two values of different types and print both.",
+   "steps": [
+    "Declare the two type parameters.",
+    "Store the two values.",
+    "Print them from main."
+   ]
+  },
+  "lab": {
+   "title": "Template stack",
+   "brief": "Implement a fixed-capacity stack template with push, pop and top, and use it with int and string.",
+   "milestones": [
+    "Store an array and a count.",
+    "Guard push and pop on the count.",
+    "Instantiate it for two element types."
+   ]
+  }
+ },
+ {
+  "id": "cpp18",
+  "no": 18,
+  "title": "STL Containers",
+  "level": "advanced",
+  "hours": 8,
+  "goal": "Choose the right container for the access pattern and use vector, map and set without fighting their interfaces.",
+  "topics": [
+   {
+    "title": "vector is the default sequence",
+    "body": "`std::vector` stores its elements contiguously and grows geometrically, so push_back is amortised constant time and iteration is cache-friendly.",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{2, 4, 6};\n    v.push_back(8);\n    int sum = 0;\n    for (int x : v) sum += x;\n    std::cout << v.size() << \" \" << sum << \"\\n\";\n    return 0;\n}",
+    "output": "4 20"
+   },
+   {
+    "title": "map keeps keys sorted",
+    "body": "`std::map` is a balanced tree: lookup is logarithmic and iteration is in key order. `operator[]` inserts a default value when the key is missing, which is sometimes what you want and sometimes a bug.",
+    "code": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> marks;\n    marks[\"Aman\"] = 88;\n    marks[\"Riya\"] = 91;\n    for (const auto& [name, score] : marks) std::cout << name << \"=\" << score << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "Aman=88 Riya=91"
+   },
+   {
+    "title": "set stores unique keys",
+    "body": "A `set` removes duplicates and keeps order, so it is the tool for distinct values and membership tests rather than counts.",
+    "code": "#include <iostream>\n#include <set>\n\nint main() {\n    std::set<int> ids{3, 1, 3, 2};\n    std::cout << ids.size() << \" \" << (ids.count(2) > 0) << \"\\n\";\n    return 0;\n}",
+    "output": "3 1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "operator[] on a const map",
+    "broken": "#include <iostream>\n#include <map>\n\nint main() {\n    const std::map<int, int> m{{1, 10}};\n    std::cout << m[1] << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <map>\n\nint main() {\n    const std::map<int, int> m{{1, 10}};\n    std::cout << m.at(1) << \"\\n\";\n    return 0;\n}",
+    "error": "error: passing ‘const std::map<int, int>’ as ‘this’ argument discards qualifiers [-fpermissive]",
+    "fixedOutput": "10"
+   },
+   {
+    "title": "at() past the end of a vector",
+    "broken": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2};\n    std::cout << v.at(5) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2};\n    std::cout << v.at(1) << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::out_of_range'",
+    "fixedOutput": "2"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Count words with a map",
+    "statement": "Count how often each word appears in the array {\"a\",\"b\",\"a\"} and print the count for \"a\".",
+    "solution": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> counts;\n    for (const std::string& w : {\"a\", \"b\", \"a\"}) ++counts[w];\n    std::cout << counts[\"a\"] << \"\\n\";\n    return 0;\n}",
+    "expected": "2"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "vector, list or deque: how do you choose?",
+    "answer": "Default to vector for contiguous storage and cache locality. Use deque when you need fast insertion at both ends, and list only when stable iterators and frequent middle insertion outweigh the pointer overhead."
+   },
+   {
+    "q": "map or unordered_map?",
+    "answer": "map when order matters or you need range queries, unordered_map when average constant lookup matters more and the key can be hashed. The unordered version trades ordering and worst-case guarantees for speed."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Why does `map::operator[]` sometimes create a bug?",
+    "answer": "It inserts a default-constructed value for a missing key, so a lookup that was meant to be read-only silently grows the container and changes later results.",
+    "steps": [
+     "Show the missing key.",
+     "Show the inserted default.",
+     "Use find or at when absence must be explicit."
+    ]
+   },
+   {
+    "q": "How do you decide between a set and a vector for distinct values?",
+    "answer": "If you need membership checks and ordering, a set gives both. If you only need uniqueness once, sort and unique a vector, which has better locality and a cheaper constant factor."
+   }
+  ],
+  "mini": {
+   "title": "Marks with vector",
+   "brief": "Store five marks in a vector, print the average and the highest mark.",
+   "steps": [
+    "Fill the vector.",
+    "Accumulate the values.",
+    "Track the maximum in the same pass."
+   ]
+  },
+  "lab": {
+   "title": "Container choice",
+   "brief": "Solve the same distinct-values problem with a vector, a set and an unordered_set, and print each result.",
+   "milestones": [
+    "Sort and unique the vector.",
+    "Insert into both sets.",
+    "Compare the printed contents."
+   ]
+  }
+ },
+ {
+  "id": "cpp19",
+  "no": 19,
+  "title": "Iterators, Algorithms and Lambdas",
+  "level": "advanced",
+  "hours": 8,
+  "goal": "Replace hand-written loops with algorithms, pass behaviour as a lambda, and understand iterator invalidation.",
+  "topics": [
+   {
+    "title": "Algorithms take iterator ranges",
+    "body": "`std::sort` receives a begin and an end iterator, so it works on any contiguous or random-access range. Half-open ranges mean the end is one past the last element.",
+    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{4, 1, 3};\n    std::sort(v.begin(), v.end());\n    for (int x : v) std::cout << x << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "1 3 4"
+   },
+   {
+    "title": "A lambda is a local function object",
+    "body": "`[](int x) { return x > 2; }` is an anonymous callable. Captures bring in local state; `[&]` captures by reference and `[=]` by value.",
+    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3, 4};\n    int limit = 2;\n    auto count = std::count_if(v.begin(), v.end(), [limit](int x) { return x > limit; });\n    std::cout << count << \"\\n\";\n    return 0;\n}",
+    "output": "2"
+   },
+   {
+    "title": "accumulate folds a range",
+    "body": "`std::accumulate` combines the elements with an initial value. The initial value's type is the result type, so `0.0` is needed for a double mean.",
+    "code": "#include <iostream>\n#include <numeric>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    double mean = std::accumulate(v.begin(), v.end(), 0.0) / v.size();\n    std::cout << mean << \"\\n\";\n    return 0;\n}",
+    "output": "2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "sort called without its parentheses",
+    "broken": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{2, 1};\n    std::sort(v.begin(), v.end);\n    std::cout << v[0] << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{2, 1};\n    std::sort(v.begin(), v.end());\n    std::cout << v[0] << \"\\n\";\n    return 0;\n}",
+    "error": "error: no matching function for call to ‘sort(std::vector<int>::iterator, <unresolved overloaded function type>)’",
+    "fixedOutput": "1"
+   },
+   {
+    "title": "erase-remove without the erase",
+    "broken": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    std::remove(v.begin(), v.end(), 2);\n    std::cout << v.size() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    v.erase(std::remove(v.begin(), v.end(), 2), v.end());\n    std::cout << v.size() << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 3 — remove only shifts the kept elements; the container size changes only when erase runs.",
+    "fixedOutput": "2",
+    "brokenOutput": "3"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sort descending and sum",
+    "statement": "Sort {1,3,2} descending with a lambda and print the first element and the total.",
+    "solution": "#include <algorithm>\n#include <iostream>\n#include <numeric>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 3, 2};\n    std::sort(v.begin(), v.end(), [](int a, int b) { return a > b; });\n    std::cout << v[0] << \" \" << std::accumulate(v.begin(), v.end(), 0) << \"\\n\";\n    return 0;\n}",
+    "expected": "3 6"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why is erase(remove(...)) a two-step operation?",
+    "answer": "remove_if moves the kept elements forward and returns the new logical end, but it cannot change the container's size because it only sees iterators. erase then removes the tail, which is why both calls are required."
+   },
+   {
+    "q": "What invalidates a vector iterator?",
+    "answer": "Any reallocation, and any insertion or erase at or before the iterator's position. Reallocation happens on growth, so a stored iterator can dangle after a push_back even if no element was erased."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "When is a hand-written loop clearer than an algorithm?",
+    "answer": "When the loop performs several different actions in one pass, or the algorithm would need a lambda so complex that the loop is shorter. Algorithms win when they name a single operation.",
+    "steps": [
+     "Name the single operation the loop performs.",
+     "Check whether an algorithm states it directly.",
+     "Keep the loop when the body does more than one thing."
+    ]
+   },
+   {
+    "q": "Why do lambdas capture by reference carefully?",
+    "answer": "A reference capture keeps a pointer to a local that may be gone when the lambda is called later, which is a dangling reference. Capture by value when the lambda outlives the scope."
+   }
+  ],
+  "mini": {
+   "title": "Filter and count",
+   "brief": "Count the even values in a vector using count_if and a lambda, then print them with a range-for.",
+   "steps": [
+    "Write the predicate lambda.",
+    "Count with count_if.",
+    "Print only the values that satisfy it."
+   ]
+  },
+  "lab": {
+   "title": "Student ranking",
+   "brief": "Sort records by marks descending with a lambda, then print the top three names.",
+   "milestones": [
+    "Store records in a vector.",
+    "Sort with a comparison lambda.",
+    "Print the first three."
+   ]
+  }
+ },
+ {
+  "id": "cpp20",
+  "no": 20,
+  "title": "Exception Handling and Error Management",
+  "level": "advanced",
+  "hours": 6,
+  "goal": "Signal failure with exceptions, catch them at the right level, and keep objects consistent while unwinding.",
+  "topics": [
+   {
+    "title": "throw, try, catch",
+    "body": "`throw` transfers control to the nearest matching `catch`. Stack objects are destroyed on the way out, which is what makes RAII the partner of exceptions.",
+    "code": "#include <iostream>\n#include <stdexcept>\n\nint divide(int a, int b) {\n    if (b == 0) throw std::invalid_argument(\"division by zero\");\n    return a / b;\n}\n\nint main() {\n    try {\n        std::cout << divide(10, 2) << \"\\n\";\n        std::cout << divide(1, 0) << \"\\n\";\n    } catch (const std::exception& e) {\n        std::cout << \"error: \" << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "output": "5\nerror: division by zero"
+   },
+   {
+    "title": "A custom exception type",
+    "body": "Derive from `std::runtime_error` when callers may want to catch a category. The `what()` message should say what failed, not just that something failed.",
+    "code": "#include <iostream>\n#include <stdexcept>\n\nclass InsufficientFunds : public std::runtime_error {\npublic:\n    explicit InsufficientFunds(int shortfall)\n        : std::runtime_error(\"insufficient funds\"), shortfall_(shortfall) {}\n    int shortfall() const { return shortfall_; }\nprivate:\n    int shortfall_;\n};\n\nint main() {\n    try {\n        throw InsufficientFunds(30);\n    } catch (const InsufficientFunds& e) {\n        std::cout << e.what() << \" \" << e.shortfall() << \"\\n\";\n    }\n    return 0;\n}",
+    "output": "insufficient funds 30"
+   },
+   {
+    "title": "noexcept is a promise",
+    "body": "`noexcept` states that a function will not throw. If it does, the program terminates, so mark only operations that genuinely cannot fail or must not.",
+    "code": "#include <iostream>\n\nint square(int x) noexcept { return x * x; }\n\nint main() {\n    std::cout << square(6) << \" \" << noexcept(square(1)) << \"\\n\";\n    return 0;\n}",
+    "output": "36 1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An exception nobody catches",
+    "broken": "#include <iostream>\n#include <stdexcept>\n\nint main() {\n    throw std::runtime_error(\"boom\");\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <stdexcept>\n\nint main() {\n    try {\n        throw std::runtime_error(\"boom\");\n    } catch (const std::exception& e) {\n        std::cout << \"caught: \" << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::runtime_error'",
+    "fixedOutput": "caught: boom"
+   },
+   {
+    "title": "Catching a polymorphic exception by value",
+    "broken": "#include <iostream>\n#include <stdexcept>\n\nint main() {\n    try {\n        throw std::runtime_error(\"disk full\");\n    } catch (std::exception e) {\n        std::cout << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <stdexcept>\n\nint main() {\n    try {\n        throw std::runtime_error(\"disk full\");\n    } catch (const std::exception& e) {\n        std::cout << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "error": "Wrong output: std::exception — catching by value slices the runtime_error, so the derived message is lost.",
+    "fixedOutput": "disk full",
+    "brokenOutput": "std::exception"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Safe divide",
+    "statement": "Write divide that throws std::invalid_argument on zero, catch it and print the message.",
+    "solution": "#include <iostream>\n#include <stdexcept>\n\nint divide(int a, int b) {\n    if (b == 0) throw std::invalid_argument(\"division by zero\");\n    return a / b;\n}\n\nint main() {\n    try {\n        divide(4, 0);\n    } catch (const std::exception& e) {\n        std::cout << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "expected": "division by zero"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "When should you return an error code instead of throwing?",
+    "answer": "When failure is expected and cheap to handle at every call site, or when the code is compiled without exceptions. Exceptions fit exceptional failures that cannot be handled locally."
+   },
+   {
+    "q": "What does exception safety mean?",
+    "answer": "That an operation leaves the program in a valid state when it throws: no leaks, no half-updated invariants. The strong guarantee adds that the operation either fully succeeds or changes nothing."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Why catch by const reference?",
+    "answer": "A reference preserves the dynamic type for the handler and avoids a copy; const states that the handler does not modify the exception. Catching by value slices a derived exception.",
+    "steps": [
+     "Show the derived-to-base conversion.",
+     "Show what the sliced copy loses.",
+     "Write the catch clause with const&."
+    ]
+   },
+   {
+    "q": "Why not use exceptions for ordinary control flow?",
+    "answer": "Throwing is expensive compared to a return, and it hides control flow from a reader. A loop that exits by exception is harder to reason about than one with a condition."
+   }
+  ],
+  "mini": {
+   "title": "Transaction guard",
+   "brief": "Throw a custom error when a withdrawal exceeds the balance, catch it and print the shortfall.",
+   "steps": [
+    "Define the exception with a shortfall field.",
+    "Throw it from the withdraw function.",
+    "Catch by const reference and print both fields."
+   ]
+  },
+  "lab": {
+   "title": "Error policy",
+   "brief": "Compare three failure styles for the same parse: return code, exception and std::optional.",
+   "milestones": [
+    "Implement the parse three ways.",
+    "Call each with valid and invalid input.",
+    "State when each style is appropriate."
+   ]
+  }
+ }
+]

@@ -329,6 +329,7 @@ export const PATH_ROUTE_ALLOWLIST: string[] = [
   '/career',              // pillar hub — /job-prep, /defense, /progress are the paths
   '/numpy',               // the NumPy Mastery course — its modules are chapters, not path cards
   '/pandas',              // the Pandas Mastery course — same rule: modules, not path cards
+  '/cpp',                 // the C++ Mastery course — same rule: modules, not path cards
   '/track/:trackSlug',    // owned by the 8 TRACK_DEFS cards
   '/lesson/:sid/:stage',  // owned by the 8 TRACK_DEFS cards
   '/lesson/:sid',

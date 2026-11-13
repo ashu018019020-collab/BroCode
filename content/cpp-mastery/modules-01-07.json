@@ -1,0 +1,671 @@
+[
+ {
+  "id": "cpp01",
+  "no": 1,
+  "title": "Introduction to C++",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "Write, compile and run your first C++ program, and understand what the compiler and linker each do.",
+  "topics": [
+   {
+    "title": "Your first C++ program",
+    "body": "Every C++ program starts at `main`. `std::cout` writes text to the terminal; `<<` sends the value into the stream and `\\n` ends the line.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, BroCode!\\n\";\n    return 0;\n}",
+    "output": "Hello, BroCode!"
+   },
+   {
+    "title": "Compile, link, run",
+    "body": "The compiler turns source into an object file, the linker joins it with the standard library, and the loader runs the executable. `g++ main.cpp -o app` does all three.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << \"source -> object -> executable\\n\";\n    return 0;\n}",
+    "output": "source -> object -> executable"
+   },
+   {
+    "title": "The compiler is your first reader",
+    "body": "C++ is statically typed: the compiler checks types before anything runs. An `int` occupies four bytes on this compiler, which `sizeof` reports.",
+    "code": "#include <iostream>\n\nint main() {\n    int modules = 26;\n    std::cout << modules << \" modules, \" << sizeof(int) << \" bytes per int\\n\";\n    return 0;\n}",
+    "output": "26 modules, 4 bytes per int"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A missing semicolon",
+    "broken": "#include <iostream>\n\nint main() {\n    std::cout << \"hi\"\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    std::cout << \"hi\\n\";\n    return 0;\n}",
+    "error": "error: expected ‘;’ before ‘return’",
+    "fixedOutput": "hi"
+   },
+   {
+    "title": "iostream never included",
+    "broken": "int main() {\n    std::cout << \"hi\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    std::cout << \"hi\\n\";\n    return 0;\n}",
+    "error": "error: ‘cout’ is not a member of ‘std’",
+    "fixedOutput": "hi"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Print a two-line banner",
+    "statement": "Print \"BroCode C++\" on the first line and \"26 modules\" on the second, then return 0.",
+    "solution": "#include <iostream>\n\nint main() {\n    std::cout << \"BroCode C++\\n\";\n    std::cout << \"26 modules\\n\";\n    return 0;\n}",
+    "expected": "BroCode C++\n26 modules"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What happens between the source file and a running program?",
+    "answer": "Preprocessing expands includes and macros, compilation translates each translation unit to an object file, the linker resolves symbols against libraries, and the loader maps the executable into memory before `main` runs. A missing function definition fails at link time, not compile time."
+   },
+   {
+    "q": "Why does `main` return an int?",
+    "answer": "The return value is the process exit status: 0 means success and a non-zero value reports failure to the shell and to whatever script launched the program. `return 0;` at the end of main is implicit, but writing it makes the intent explicit."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A new learner asks why their code does not run after saving the file. What do you check first?",
+    "answer": "Saving is not compiling. I check whether a compiler was actually invoked and whether the binary they ran is the one just built.",
+    "steps": [
+     "Confirm the compile command and its exit status.",
+     "Confirm the path of the binary that was executed.",
+     "Read the first compiler error, not the last."
+    ]
+   },
+   {
+    "q": "Why teach `std::cout` instead of `using namespace std;`?",
+    "answer": "The `std::` prefix keeps every name visible at its use site and avoids the collisions that a global using-directive invites. For a beginner the extra five characters are cheaper than a name clash they cannot diagnose."
+   }
+  ],
+  "mini": {
+   "title": "Hello, environment",
+   "brief": "Write a program that prints your name, the C++ standard you compiled with (`__cplusplus`) and the size of an int.",
+   "steps": [
+    "Include iostream and start main.",
+    "Print the three values on separate lines.",
+    "Return 0 and compile with g++ -std=c++17."
+   ]
+  },
+  "lab": {
+   "title": "Build-and-run checklist",
+   "brief": "Produce a one-screen checklist that takes a source file to a running program, and prove each step with real output.",
+   "milestones": [
+    "Compile a file and show the compiler's exit status.",
+    "Run the binary and show its stdout.",
+    "Introduce a deliberate error and show the compiler's first message."
+   ]
+  }
+ },
+ {
+  "id": "cpp02",
+  "no": 2,
+  "title": "Program Structure and Input/Output",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "Read the parts of a C++ program and take typed input from the user without leaving the stream broken.",
+  "topics": [
+   {
+    "title": "Reading input with cin",
+    "body": "`std::cin >> x` skips whitespace and reads one value into `x`. Reading into a string stops at the first space, which is why full names need `getline`.",
+    "code": "#include <iostream>\n\nint main() {\n    int age = 17;\n    std::cout << \"next year: \" << age + 1 << \"\\n\";\n    return 0;\n}",
+    "output": "next year: 18"
+   },
+   {
+    "title": "getline reads the whole line",
+    "body": "`std::getline(std::cin, line)` keeps spaces. Mixing `>>` and `getline` leaves a newline in the buffer, so consume it first.",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string name = \"Aman Sharma\";\n    std::cout << name << \", welcome\\n\";\n    return 0;\n}",
+    "output": "Aman Sharma, welcome"
+   },
+   {
+    "title": "Formatting output",
+    "body": "`std::fixed` and `std::setprecision` come from `<iomanip>` and control decimals; the setting persists until you change it.",
+    "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    double marks = 87.456;\n    std::cout << std::fixed << std::setprecision(1) << marks << \"\\n\";\n    return 0;\n}",
+    "output": "87.5"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A number assigned to a string",
+    "broken": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string name = 42;\n    std::cout << name << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string name = \"42\";\n    std::cout << name << \"\\n\";\n    return 0;\n}",
+    "error": "error: conversion from ‘int’ to non-scalar type ‘std::string’ {aka ‘std::__cxx11::basic_string<char>’} requested",
+    "fixedOutput": "42"
+   },
+   {
+    "title": "setprecision without iomanip",
+    "broken": "#include <iostream>\n\nint main() {\n    std::cout << std::setprecision(2) << 3.14159 << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << 3.14159 << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘setprecision’ is not a member of ‘std’",
+    "fixedOutput": "3.14"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Add two numbers",
+    "statement": "Start from 12 and 8, print their sum.",
+    "solution": "#include <iostream>\n\nint main() {\n    int a = 12, b = 8;\n    std::cout << a + b << \"\\n\";\n    return 0;\n}",
+    "expected": "20"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why does `cin >> name` lose the second word of a full name?",
+    "answer": "Formatted extraction treats whitespace as a delimiter: it reads until the next space and leaves the rest in the buffer. `getline` reads to the newline instead, which is the correct tool for a line of text."
+   },
+   {
+    "q": "What is the difference between `\\n` and `std::endl`?",
+    "answer": "Both write a newline, but `std::endl` also flushes the stream. Flushing every line is unnecessary in most code and costs performance in loops, so `\\n` is the default choice."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A menu program loops forever after a bad input. Explain the cause.",
+    "answer": "When extraction fails, `cin` sets its failbit and leaves the bad characters in the buffer, so the next read fails immediately. The fix is to detect failure, clear the state and ignore the rest of the line.",
+    "steps": [
+     "Check `if (!std::cin)` after every read.",
+     "Call `std::cin.clear()` and `std::cin.ignore(...)`.",
+     "Re-prompt instead of proceeding with an unsent value."
+    ]
+   },
+   {
+    "q": "Why is input validation part of the lesson, not an advanced extra?",
+    "answer": "A program that trusts its input is a program that corrupts its own state on the first typo. Validation is cheaper to teach at the point of input than to debug later as a mysterious loop."
+   }
+  ],
+  "mini": {
+   "title": "Student card",
+   "brief": "Read a full name, an age and a percentage, then print a formatted three-line card with one decimal on the percentage.",
+   "steps": [
+    "Read the line with getline, then the numbers.",
+    "Print the card with fixed one-decimal formatting.",
+    "Reject a negative age with a clear message."
+   ]
+  },
+  "lab": {
+   "title": "Safe number reader",
+   "brief": "Write a function that keeps asking until it has a valid integer, and prove it survives bad input.",
+   "milestones": [
+    "Attempt a read and test the stream state.",
+    "Clear the error and discard the line.",
+    "Return only a value the user actually entered."
+   ]
+  }
+ },
+ {
+  "id": "cpp03",
+  "no": 3,
+  "title": "Variables, Data Types and Constants",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Choose a type deliberately, know its range and size, and keep values that must not change constant.",
+  "topics": [
+   {
+    "title": "The numeric types",
+    "body": "`int` is the default whole number; `double` is the default decimal. `long long` exists because `int` is not guaranteed to hold a large id.",
+    "code": "#include <iostream>\n\nint main() {\n    int students = 40;\n    double average = 82.5;\n    long long views = 9000000000LL;\n    std::cout << students << \" \" << average << \" \" << views << \"\\n\";\n    return 0;\n}",
+    "output": "40 82.5 9000000000"
+   },
+   {
+    "title": "char, bool and their limits",
+    "body": "`char` stores one character code, `bool` stores true or false, and `sizeof` reports the storage each type takes.",
+    "code": "#include <iostream>\n\nint main() {\n    char grade = 'A';\n    bool passed = true;\n    std::cout << grade << \" \" << passed << \" \" << sizeof(bool) << \"\\n\";\n    return 0;\n}",
+    "output": "A 1 1"
+   },
+   {
+    "title": "const and auto",
+    "body": "`const` makes a name read-only and lets the compiler reject an accidental write. `auto` asks the compiler to deduce the type from the initializer, which is a tool for long types, not for hiding them.",
+    "code": "#include <iostream>\n\nint main() {\n    const int maxMarks = 100;\n    auto bonus = 2.5;\n    std::cout << maxMarks << \" \" << bonus << \"\\n\";\n    return 0;\n}",
+    "output": "100 2.5"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Writing to a const",
+    "broken": "#include <iostream>\n\nint main() {\n    const int maxMarks = 100;\n    maxMarks = 90;\n    std::cout << maxMarks << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int maxMarks = 100;\n    maxMarks = 90;\n    std::cout << maxMarks << \"\\n\";\n    return 0;\n}",
+    "error": "error: assignment of read-only variable ‘maxMarks’",
+    "fixedOutput": "90"
+   },
+   {
+    "title": "A string literal assigned to a char",
+    "broken": "#include <iostream>\n\nint main() {\n    char grade = \"A\";\n    std::cout << grade << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    char grade = 'A';\n    std::cout << grade << \"\\n\";\n    return 0;\n}",
+    "error": "error: invalid conversion from ‘const char*’ to ‘char’ [-fpermissive]",
+    "fixedOutput": "A"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Average without integer division",
+    "statement": "Average the marks 70, 80 and 90 and print it with two decimals.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    int a = 70, b = 80, c = 90;\n    double avg = (a + b + c) / 3.0;\n    std::cout << std::fixed << std::setprecision(2) << avg << \"\\n\";\n    return 0;\n}",
+    "expected": "80.00"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why is `double` the default for decimals instead of `float`?",
+    "answer": "`double` has roughly twice the precision and is the type of unsuffixed floating literals, so it avoids the silent rounding that `float` introduces in ordinary calculations. `float` is for storage-sensitive cases, not the default."
+   },
+   {
+    "q": "What is the difference between initialization and assignment?",
+    "answer": "Initialization gives a variable its first value as it is created; assignment replaces a value that already exists. A `const` can be initialized but never assigned, which is why the distinction matters to the compiler."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Why is an uninitialized local variable dangerous even when the program seems to run?",
+    "answer": "Its value is indeterminate, so reading it is undefined behaviour: the output can change between builds, compilers and optimisation levels. A test that passes today proves nothing about it.",
+    "steps": [
+     "Name the undefined behaviour, not just the wrong number.",
+     "Show the fix: initialize at declaration.",
+     "Explain why the bug is not reproducible."
+    ]
+   },
+   {
+    "q": "When is `auto` a bad choice?",
+    "answer": "When it hides a conversion or an ownership decision the reader needs to see. `auto x = 1.5;` is fine; `auto p = makeWidget();` is only fine if the widget type is obvious from the name."
+   }
+  ],
+  "mini": {
+   "title": "Marks summary",
+   "brief": "Store marks as doubles, compute the average, and print it with one decimal while keeping the maximum constant.",
+   "steps": [
+    "Declare a const maximum and the three marks.",
+    "Compute the average without integer division.",
+    "Print the average and the headroom to the maximum."
+   ]
+  },
+  "lab": {
+   "title": "Type sizes report",
+   "brief": "Print the size and minimum value of int, long long, double and char, and explain each number.",
+   "milestones": [
+    "Use sizeof for each type.",
+    "Use numeric_limits for the range.",
+    "State which choices would change on another platform."
+   ]
+  }
+ },
+ {
+  "id": "cpp04",
+  "no": 4,
+  "title": "Operators and Type Conversion",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Use arithmetic, comparison, logical and bitwise operators without falling into integer division or implicit-conversion traps.",
+  "topics": [
+   {
+    "title": "Integer division and modulus",
+    "body": "Two ints divide as integers and discard the remainder. Convert one side to `double` when you need the fractional part; `%` gives the remainder.",
+    "code": "#include <iostream>\n\nint main() {\n    int total = 17, groups = 5;\n    std::cout << total / groups << \" \" << total % groups << \"\\n\";\n    std::cout << static_cast<double>(total) / groups << \"\\n\";\n    return 0;\n}",
+    "output": "3 2\n3.4"
+   },
+   {
+    "title": "Comparison and logic",
+    "body": "Comparisons produce bools, `&&` and `||` combine them with short-circuit evaluation, and `!` negates. A chained comparison like `1 < x < 3` does not mean what it looks like.",
+    "code": "#include <iostream>\n\nint main() {\n    int x = 5;\n    bool inRange = x > 1 && x < 10;\n    std::cout << inRange << \" \" << (x == 5) << \"\\n\";\n    return 0;\n}",
+    "output": "1 1"
+   },
+   {
+    "title": "Bitwise operators",
+    "body": "`&`, `|`, `^`, `~`, `<<` and `>>` work on the bits of an integer. They are used for flags and masks, and they are not the same as the logical operators.",
+    "code": "#include <iostream>\n\nint main() {\n    int flags = 0b0101;\n    std::cout << (flags & 0b0001) << \" \" << (flags | 0b0010) << \" \" << (flags << 1) << \"\\n\";\n    return 0;\n}",
+    "output": "1 7 10"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Modulus on a double",
+    "broken": "#include <iostream>\n\nint main() {\n    double total = 7.5;\n    std::cout << total % 2 << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <cmath>\n#include <iostream>\n\nint main() {\n    double total = 7.5;\n    std::cout << std::fmod(total, 2.0) << \"\\n\";\n    return 0;\n}",
+    "error": "error: invalid operands of types ‘double’ and ‘int’ to binary ‘operator%’",
+    "fixedOutput": "1.5"
+   },
+   {
+    "title": "A chained comparison",
+    "broken": "#include <iostream>\n\nint main() {\n    int x = 50;\n    bool ok = 1 < x < 3;\n    std::cout << ok << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int x = 50;\n    bool ok = 1 < x && x < 3;\n    std::cout << ok << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 1 — `1 < x < 3` compares the bool `1 < x` with 3, so it is always true.",
+    "fixedOutput": "0",
+    "brokenOutput": "1"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Grade from marks",
+    "statement": "Starting from 72 marks, print A for 90+, B for 70+, C for 50+, otherwise fail.",
+    "solution": "#include <iostream>\n\nint main() {\n    int marks = 72;\n    if (marks >= 90) std::cout << \"A\\n\";\n    else if (marks >= 70) std::cout << \"B\\n\";\n    else if (marks >= 50) std::cout << \"C\\n\";\n    else std::cout << \"fail\\n\";\n    return 0;\n}",
+    "expected": "B"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why does `7 / 2` print 3 and not 3.5?",
+    "answer": "Both operands are ints, so the division is integer division and the fractional part is discarded. Making one operand a double, for example `7 / 2.0`, selects floating-point division."
+   },
+   {
+    "q": "When is `static_cast` preferable to a C-style cast?",
+    "answer": "`static_cast` states which conversion is intended and is checked at compile time for incompatible types, so a reviewer can see it. A C-style cast can silently become a reinterpret_cast, which is much harder to justify."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner writes `int avg = total / count;` and the average is wrong. What do you ask?",
+    "answer": "I ask for the types of total and count before touching the formula: if both are integers, the division already lost the fraction before the assignment.",
+    "steps": [
+     "Check the operand types, not the variable being assigned.",
+     "Check for a divide-by-zero path.",
+     "Convert one operand and re-test with a case that has a remainder."
+    ]
+   },
+   {
+    "q": "Why are implicit conversions a common source of bugs?",
+    "answer": "They are invisible at the call site, so a `double` narrowing to `int` or a negative `int` converting to `unsigned` reads like a normal assignment. Braces and explicit casts make the conversion visible."
+   }
+  ],
+  "mini": {
+   "title": "Even, odd and average",
+   "brief": "Read two integers, print whether each is even, and print their average with two decimals.",
+   "steps": [
+    "Use % 2 to decide even or odd.",
+    "Print a boolean result as true or false.",
+    "Convert before dividing for the average."
+   ]
+  },
+  "lab": {
+   "title": "Bit flags",
+   "brief": "Represent three permissions as bits, set and clear one, and print the resulting mask.",
+   "milestones": [
+    "Define the three bit values.",
+    "Set a flag with | and clear it with & and ~.",
+    "Print the mask in decimal and binary form."
+   ]
+  }
+ },
+ {
+  "id": "cpp05",
+  "no": 5,
+  "title": "Conditional Statements",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Make decisions with if, else-if, switch and the ternary operator, including range checks and menu selection.",
+  "topics": [
+   {
+    "title": "if and else-if",
+    "body": "Only the first true branch runs. Order the ranges from most specific to least, because a later `else if` is only reached when the earlier ones were false.",
+    "code": "#include <iostream>\n\nint main() {\n    int marks = 72;\n    if (marks >= 90) std::cout << \"A\\n\";\n    else if (marks >= 70) std::cout << \"B\\n\";\n    else std::cout << \"C\\n\";\n    return 0;\n}",
+    "output": "B"
+   },
+   {
+    "title": "switch needs integral cases",
+    "body": "`switch` compares one integral value against constant cases. `break` leaves the switch; forgetting it falls through into the next case.",
+    "code": "#include <iostream>\n\nint main() {\n    int choice = 2;\n    switch (choice) {\n        case 1: std::cout << \"start\\n\"; break;\n        case 2: std::cout << \"practice\\n\"; break;\n        default: std::cout << \"unknown\\n\";\n    }\n    return 0;\n}",
+    "output": "practice"
+   },
+   {
+    "title": "The ternary operator",
+    "body": "`condition ? a : b` picks one of two values and is an expression, so it can initialize a variable. Keep it for short choices; a nested ternary is harder to read than an if.",
+    "code": "#include <iostream>\n\nint main() {\n    int marks = 38;\n    std::cout << (marks >= 40 ? \"pass\" : \"fail\") << \"\\n\";\n    return 0;\n}",
+    "output": "fail"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A string used as a case label",
+    "broken": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cmd = \"start\";\n    switch (cmd) {\n        case \"start\": std::cout << \"go\\n\"; break;\n    }\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cmd = \"start\";\n    if (cmd == \"start\") std::cout << \"go\\n\";\n    return 0;\n}",
+    "error": "error: switch quantity not an integer",
+    "fixedOutput": "go"
+   },
+   {
+    "title": "An else-if that can never run",
+    "broken": "#include <iostream>\n\nint main() {\n    int marks = 95;\n    if (marks > 0) std::cout << \"positive\\n\";\n    else if (marks >= 90) std::cout << \"A\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int marks = 95;\n    if (marks >= 90) std::cout << \"A\\n\";\n    else if (marks > 0) std::cout << \"positive\\n\";\n    return 0;\n}",
+    "error": "Wrong output: positive — the broad first branch swallows every value the specific branch was meant to catch.",
+    "fixedOutput": "A",
+    "brokenOutput": "positive"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Factorial with a loop",
+    "statement": "Print 5! using a loop.",
+    "solution": "#include <iostream>\n\nint main() {\n    int n = 5;\n    long long f = 1;\n    for (int i = 2; i <= n; ++i) f *= i;\n    std::cout << f << \"\\n\";\n    return 0;\n}",
+    "expected": "120"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "When should you prefer switch over if-else?",
+    "answer": "When one integral value is compared against several constant alternatives and each branch is independent: the switch states the intent and the compiler can warn about a missing default. Ranges and non-integral types need if-else."
+   },
+   {
+    "q": "What is the dangling-else problem?",
+    "answer": "An `else` binds to the nearest unmatched `if`, which may not be the one the indentation suggests. Braces around every branch make the binding explicit."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Explain a menu-driven program to a beginner without showing code.",
+    "answer": "It is a loop that shows numbered choices, reads the number, runs the matching branch and repeats until the user chooses exit. The loop is the part that keeps the menu alive; switch is only the dispatcher.",
+    "steps": [
+     "Describe the loop and its exit condition.",
+     "Describe how a number selects a branch.",
+     "Describe what happens for an unknown number."
+    ]
+   },
+   {
+    "q": "Why validate a range instead of trusting the branch order?",
+    "answer": "Branch order encodes assumptions about the data. If a negative mark arrives, an ordered ladder may fall into a plausible-looking bucket, so an explicit range check is what makes the failure visible."
+   }
+  ],
+  "mini": {
+   "title": "ATM menu",
+   "brief": "Show three choices, read one, and print the selected action; reject anything outside 1-3.",
+   "steps": [
+    "Print the menu.",
+    "Read the choice and validate the range.",
+    "Dispatch with switch and a default that reports an invalid choice."
+   ]
+  },
+  "lab": {
+   "title": "Electricity bill slabs",
+   "brief": "Compute a bill from units using three slabs and print the slab that applied.",
+   "milestones": [
+    "Define the slab boundaries.",
+    "Order the conditions from highest to lowest.",
+    "Print both the amount and the slab label."
+   ]
+  }
+ },
+ {
+  "id": "cpp06",
+  "no": 6,
+  "title": "Loops and Iteration",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Repeat work with for, while and range-for, and know when break, continue and a sentinel make a loop clearer.",
+  "topics": [
+   {
+    "title": "The for loop",
+    "body": "A `for` loop names its counter, its bound and its step in one line, which makes the number of iterations readable at a glance.",
+    "code": "#include <iostream>\n\nint main() {\n    int sum = 0;\n    for (int i = 1; i <= 5; ++i) sum += i;\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "output": "15"
+   },
+   {
+    "title": "while and a sentinel",
+    "body": "`while` repeats while a condition holds. A sentinel value, such as -1, ends a read loop without needing to know the count in advance.",
+    "code": "#include <iostream>\n\nint main() {\n    int value = 0, count = 0;\n    while (std::cin >> value && value != -1) ++count;\n    std::cout << count << \" values\\n\";\n    return 0;\n}",
+    "output": "0 values"
+   },
+   {
+    "title": "Range-based for",
+    "body": "`for (int v : values)` visits each element without an index. Use `const auto&` when the elements are expensive to copy.",
+    "code": "#include <iostream>\n\nint main() {\n    int values[] = {2, 4, 6};\n    int sum = 0;\n    for (int v : values) sum += v;\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "output": "12"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A break outside any loop",
+    "broken": "#include <iostream>\n\nint main() {\n    break;\n    std::cout << \"done\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 1; ++i) break;\n    std::cout << \"done\\n\";\n    return 0;\n}",
+    "error": "error: break statement not within loop or switch",
+    "fixedOutput": "done"
+   },
+   {
+    "title": "An off-by-one sum",
+    "broken": "#include <iostream>\n\nint main() {\n    int sum = 0;\n    for (int i = 1; i < 5; ++i) sum += i;\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int sum = 0;\n    for (int i = 1; i <= 5; ++i) sum += i;\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 10 — the loop stops before 5, so the last term is missing.",
+    "fixedOutput": "15",
+    "brokenOutput": "10"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Greatest common divisor",
+    "statement": "Print the GCD of 12 and 18 using a function.",
+    "solution": "#include <iostream>\n\nint gcd(int a, int b) {\n    while (b != 0) {\n        int t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\nint main() {\n    std::cout << gcd(12, 18) << \"\\n\";\n    return 0;\n}",
+    "expected": "6"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "When is a do-while the right loop?",
+    "answer": "When the body must run at least once, such as showing a menu or reading a value before validating it. The condition is checked after the body, so the first pass is unconditional."
+   },
+   {
+    "q": "Why is `continue` sometimes a readability problem?",
+    "answer": "It skips the rest of the body, so a reader has to hold every earlier continue in mind to know what actually executes. A guard clause or an if-else is often clearer."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A loop never ends. What is your debugging order?",
+    "answer": "I check whether the condition can ever become false, then whether the counter is modified on every path, including the continue paths.",
+    "steps": [
+     "Print the loop variables on the first few iterations.",
+     "Look for a continue that skips the update.",
+     "Check for a condition that compares the wrong variable."
+    ]
+   },
+   {
+    "q": "Why is an off-by-one error so common at boundaries?",
+    "answer": "Because the two conventions `<` and `<=` differ in exactly one case, and the difference only appears at the last iteration. Naming the bound as a count rather than an index removes the ambiguity."
+   }
+  ],
+  "mini": {
+   "title": "Multiplication table",
+   "brief": "Print the table for a number from 1 to 10, one line per product.",
+   "steps": [
+    "Read the number.",
+    "Loop from 1 to 10 inclusive.",
+    "Print in the form n x i = product."
+   ]
+  },
+  "lab": {
+   "title": "Prime check and pattern",
+   "brief": "Test whether a number is prime with a loop, then print a triangle of stars of that height.",
+   "milestones": [
+    "Check divisors only up to the square root.",
+    "Use a flag that starts true and flips on the first divisor.",
+    "Print the pattern with nested loops."
+   ]
+  }
+ },
+ {
+  "id": "cpp07",
+  "no": 7,
+  "title": "Functions and Recursion",
+  "level": "beginner",
+  "hours": 6,
+  "goal": "Break a program into functions with clear parameters and return values, and use recursion with a real base case.",
+  "topics": [
+   {
+    "title": "Declare, define, call",
+    "body": "A declaration tells the compiler a function's signature; the definition supplies the body. The call site only needs the declaration, which is why headers work.",
+    "code": "#include <iostream>\n\nint square(int x);\n\nint main() {\n    std::cout << square(6) << \"\\n\";\n    return 0;\n}\n\nint square(int x) { return x * x; }",
+    "output": "36"
+   },
+   {
+    "title": "Pass by reference",
+    "body": "A reference parameter aliases the caller's object, so the function can change it without pointers. `const&` avoids the copy but forbids the change.",
+    "code": "#include <iostream>\n\nvoid addBonus(int& marks) { marks += 5; }\n\nint main() {\n    int marks = 80;\n    addBonus(marks);\n    std::cout << marks << \"\\n\";\n    return 0;\n}",
+    "output": "85"
+   },
+   {
+    "title": "Recursion needs a base case",
+    "body": "A recursive function calls itself on a smaller input and stops at a base case. Without the base case the call stack grows until it overflows.",
+    "code": "#include <iostream>\n\nlong long factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}\n\nint main() {\n    std::cout << factorial(5) << \"\\n\";\n    return 0;\n}",
+    "output": "120"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A function used before it is declared",
+    "broken": "#include <iostream>\n\nint main() {\n    std::cout << square(4) << \"\\n\";\n    return 0;\n}\n\nint square(int x) { return x * x; }",
+    "fix": "#include <iostream>\n\nint square(int x);\n\nint main() {\n    std::cout << square(4) << \"\\n\";\n    return 0;\n}\n\nint square(int x) { return x * x; }",
+    "error": "error: ‘square’ was not declared in this scope",
+    "fixedOutput": "16"
+   },
+   {
+    "title": "A reference parameter changed by value",
+    "broken": "#include <iostream>\n\nvoid addBonus(int marks) { marks += 5; }\n\nint main() {\n    int marks = 80;\n    addBonus(marks);\n    std::cout << marks << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nvoid addBonus(int& marks) { marks += 5; }\n\nint main() {\n    int marks = 80;\n    addBonus(marks);\n    std::cout << marks << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 80 — the parameter is a copy, so the caller's marks never changed.",
+    "fixedOutput": "85",
+    "brokenOutput": "80"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Greatest common divisor",
+    "statement": "Print the GCD of 12 and 18 using a function.",
+    "solution": "#include <iostream>\n\nint gcd(int a, int b) {\n    while (b != 0) {\n        int t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}\n\nint main() {\n    std::cout << gcd(12, 18) << \"\\n\";\n    return 0;\n}",
+    "expected": "6"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the difference between a parameter and an argument?",
+    "answer": "A parameter is the variable in the function's signature; an argument is the value the caller supplies for it. The distinction matters when explaining overloading and default arguments."
+   },
+   {
+    "q": "Why prefer `const std::string&` over `std::string` for a read-only parameter?",
+    "answer": "The reference avoids copying the string, and `const` promises the function will not modify the caller's object. For small types such as int the copy is cheaper than the indirection."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A recursive function crashes with a stack overflow. Explain the failure precisely.",
+    "answer": "Every call keeps a stack frame alive until it returns, so a missing or unreachable base case turns recursion into unbounded stack growth. The program aborts when the stack limit is reached.",
+    "steps": [
+     "Show the base case and why it is not reached.",
+     "Trace the argument on the first three calls.",
+     "Fix the base case or convert to iteration."
+    ]
+   },
+   {
+    "q": "When is iteration a better choice than recursion?",
+    "answer": "When the recursive depth is linear and the problem needs no backtracking: a loop uses constant stack and is easier to reason about. Recursion earns its cost on trees, divide-and-conquer and backtracking."
+   }
+  ],
+  "mini": {
+   "title": "Function calculator",
+   "brief": "Build four functions for add, subtract, multiply and divide, and call them from a menu.",
+   "steps": [
+    "Write and declare the four functions.",
+    "Read the operation and two numbers.",
+    "Reject division by zero with a message."
+   ]
+  },
+  "lab": {
+   "title": "Recursion trace",
+   "brief": "Print the call depth of a recursive factorial, then compare the same computation with a loop.",
+   "milestones": [
+    "Add a depth parameter and print it on every call.",
+    "Show the base case returning 1.",
+    "Compare the two implementations for n = 10."
+   ]
+  }
+ }
+]

@@ -1,0 +1,668 @@
+[
+ {
+  "id": "cpp08",
+  "no": 8,
+  "title": "Strings and Text Processing",
+  "level": "beginner",
+  "hours": 6,
+  "goal": "Work with std::string confidently: build, search, slice, compare and transform text.",
+  "topics": [
+   {
+    "title": "std::string owns its characters",
+    "body": "`std::string` manages its own buffer, so it can grow with `+=` and reports its length with `size()`. A C-style `char[]` does neither.",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string name = \"Bro\";\n    name += \"Code\";\n    std::cout << name << \" \" << name.size() << \"\\n\";\n    return 0;\n}",
+    "output": "BroCode 7"
+   },
+   {
+    "title": "find and substr",
+    "body": "`find` returns the position of a substring or `npos`. `substr(pos, len)` returns a new string, so the original is untouched.",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string email = \"aman@brocode.dev\";\n    auto at = email.find('@');\n    std::cout << email.substr(0, at) << \" | \" << email.substr(at + 1) << \"\\n\";\n    return 0;\n}",
+    "output": "aman | brocode.dev"
+   },
+   {
+    "title": "Transform every character",
+    "body": "A range-based loop over `char&` edits the string in place. `std::toupper` needs the character cast to unsigned char to be safe on all inputs.",
+    "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::string code = \"brocode\";\n    for (char& c : code) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));\n    std::cout << code << \"\\n\";\n    return 0;\n}",
+    "output": "BROCODE"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Two literals added together",
+    "broken": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"Bro\" + \"Code\";\n    std::cout << s << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = std::string(\"Bro\") + \"Code\";\n    std::cout << s << \"\\n\";\n    return 0;\n}",
+    "error": "error: invalid operands of types ‘const char [4]’ and ‘const char [5]’ to binary ‘operator+’",
+    "fixedOutput": "BroCode"
+   },
+   {
+    "title": "length read without calling it",
+    "broken": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"code\";\n    std::cout << s.length << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"code\";\n    std::cout << s.length() << \"\\n\";\n    return 0;\n}",
+    "error": "error: invalid use of non-static member function ‘std::__cxx11::basic_string<_CharT, _Traits, _Alloc>::size_type std::__cxx11::basic_string<_CharT, _Traits, _Alloc>::length() const [with _CharT = char; _Traits = std::char_traits<char>; _Alloc = std::allocator<char>; size_type = long unsigned int]’",
+    "fixedOutput": "4"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Count the vowels",
+    "statement": "Count how many vowels the string \"programming\" contains and print the count.",
+    "solution": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"programming\";\n    int count = 0;\n    for (char c : s) {\n        if (std::string(\"aeiou\").find(c) != std::string::npos) ++count;\n    }\n    std::cout << count << \"\\n\";\n    return 0;\n}",
+    "expected": "3"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why is `std::string` preferred over `char[]`?",
+    "answer": "It owns and resizes its buffer, knows its length, supports value semantics and cannot silently overflow the way a fixed array can. A `char[]` remains useful only at API boundaries or for fixed binary data."
+   },
+   {
+    "q": "What does `npos` mean?",
+    "answer": "It is the constant returned by `find` when nothing matched. Because it is the largest possible position value, comparing against it is the correct test instead of comparing with -1."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "How do you reverse a string without copying it twice?",
+    "answer": "Swap from both ends inward, or use `std::reverse` on its iterators. Both work in place, so the cost is a linear pass with no second buffer.",
+    "steps": [
+     "Name the two indices that move toward each other.",
+     "State the loop condition i < j.",
+     "Swap and advance both ends."
+    ]
+   },
+   {
+    "q": "Why does case handling need a cast to unsigned char?",
+    "answer": "`std::toupper` and friends require a value representable as unsigned char or EOF; a negative signed char is undefined behaviour. The cast is a correctness fix, not a style choice."
+   }
+  ],
+  "mini": {
+   "title": "Username check",
+   "brief": "Normalise a username to lowercase, trim spaces and print whether it is at least three characters.",
+   "steps": [
+    "Copy the input into a std::string.",
+    "Lowercase every character.",
+    "Print the length check result."
+   ]
+  },
+  "lab": {
+   "title": "Word frequency",
+   "brief": "Count how often each word appears in a sentence using a loop over words split by spaces.",
+   "milestones": [
+    "Scan the sentence and split on spaces.",
+    "Store each word in a container with its count.",
+    "Print the words with their counts."
+   ]
+  }
+ },
+ {
+  "id": "cpp09",
+  "no": 9,
+  "title": "Pointers and References",
+  "level": "intermediate",
+  "hours": 7,
+  "goal": "Understand addresses, dereference safely, and choose between a pointer, a reference and a value.",
+  "topics": [
+   {
+    "title": "Address and dereference",
+    "body": "`&x` yields the address of x, and `*p` reads the value stored there. A pointer is a variable whose value is an address.",
+    "code": "#include <iostream>\n\nint main() {\n    int marks = 90;\n    int* p = &marks;\n    std::cout << *p << \" \" << (p == &marks) << \"\\n\";\n    return 0;\n}",
+    "output": "90 1"
+   },
+   {
+    "title": "A reference is an alias",
+    "body": "A reference must be bound when created and cannot be rebound. Writing through it writes to the original, which is why swap takes references.",
+    "code": "#include <iostream>\n\nvoid swap(int& a, int& b) {\n    int t = a;\n    a = b;\n    b = t;\n}\n\nint main() {\n    int x = 1, y = 2;\n    swap(x, y);\n    std::cout << x << \" \" << y << \"\\n\";\n    return 0;\n}",
+    "output": "2 1"
+   },
+   {
+    "title": "Pointers walk an array",
+    "body": "Array elements are contiguous, so `p + 1` moves to the next element. The one-past-the-end pointer is valid for comparison but must never be dereferenced.",
+    "code": "#include <iostream>\n\nint main() {\n    int a[] = {10, 20, 30};\n    int* p = a;\n    int sum = 0;\n    for (int i = 0; i < 3; ++i) sum += *(p + i);\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "output": "60"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An integer assigned to a pointer",
+    "broken": "#include <iostream>\n\nint main() {\n    int* p = 42;\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int value = 42;\n    int* p = &value;\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "error": "error: invalid conversion from ‘int’ to ‘int*’ [-fpermissive]",
+    "fixedOutput": "42"
+   },
+   {
+    "title": "Dereferencing a null pointer",
+    "broken": "#include <iostream>\n\nint main() {\n    int* p = nullptr;\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int value = 7;\n    int* p = &value;\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null)",
+    "fixedOutput": "7"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sum through a pointer",
+    "statement": "Sum the three array elements using a pointer, not indexing, and print the total.",
+    "solution": "#include <iostream>\n\nint main() {\n    int a[] = {4, 5, 6};\n    int* p = a;\n    int sum = 0;\n    for (int i = 0; i < 3; ++i) sum += *(p + i);\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "expected": "15"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the difference between a pointer and a reference?",
+    "answer": "A pointer is an object that stores an address, can be null, can be rebound and needs dereferencing. A reference is an alias bound once, cannot be null and is used with ordinary syntax. Prefer a reference when the argument must exist."
+   },
+   {
+    "q": "Why is dereferencing a dangling pointer undefined behaviour?",
+    "answer": "The object it points to has ended, so the memory may be reused or unmapped. Reading or writing there has no defined result, and the program can appear to work until the allocator reuses that block."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "How do you explain `*` and `&` without confusing a beginner?",
+    "answer": "`&` asks where a variable lives, `*` asks what lives at an address. One takes the address, the other follows it, and the pair cancels when used together.",
+    "steps": [
+     "Draw a box for the variable and a label for the address.",
+     "Draw an arrow from the pointer to the box.",
+     "Read `*p` aloud as the value at that arrow."
+    ]
+   },
+   {
+    "q": "When is a raw pointer still the right parameter type?",
+    "answer": "When null is a meaningful value or the pointer is optional and not owned. Otherwise a reference states that the object exists, and a smart pointer states who owns it."
+   }
+  ],
+  "mini": {
+   "title": "Swap three ways",
+   "brief": "Implement swap by value, by pointer and by reference, then print which one actually changed the caller's variables.",
+   "steps": [
+    "Write the three signatures.",
+    "Call each with two ints.",
+    "Print the values after each call."
+   ]
+  },
+  "lab": {
+   "title": "Address map",
+   "brief": "Print the address, size and value of three variables and the pointer that refers to each.",
+   "milestones": [
+    "Print &variable for each.",
+    "Print sizeof the variable and the pointer.",
+    "Show that the pointer value equals the address."
+   ]
+  }
+ },
+ {
+  "id": "cpp10",
+  "no": 10,
+  "title": "Dynamic Memory and RAII",
+  "level": "intermediate",
+  "hours": 7,
+  "goal": "Allocate and release heap memory correctly, then replace manual new/delete with smart pointers.",
+  "topics": [
+   {
+    "title": "new and delete",
+    "body": "`new` returns an address on the free store and `delete` releases it. Arrays need `new[]` with `delete[]`; mixing them is undefined behaviour.",
+    "code": "#include <iostream>\n\nint main() {\n    int* p = new int(21);\n    std::cout << *p * 2 << \"\\n\";\n    delete p;\n    return 0;\n}",
+    "output": "42"
+   },
+   {
+    "title": "unique_ptr owns one object",
+    "body": "`std::make_unique` allocates and transfers ownership to a `unique_ptr`, which deletes the object when it goes out of scope. Copying is forbidden; moving is allowed.",
+    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto p = std::make_unique<int>(21);\n    std::cout << *p * 2 << \"\\n\";\n    return 0;\n}",
+    "output": "42"
+   },
+   {
+    "title": "shared_ptr counts owners",
+    "body": "`shared_ptr` keeps a reference count and deletes the object when the last owner goes away. Use it for genuinely shared lifetime, not as a default.",
+    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto a = std::make_shared<int>(5);\n    auto b = a;\n    std::cout << *a + *b << \" \" << a.use_count() << \"\\n\";\n    return 0;\n}",
+    "output": "10 2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "unique_ptr without memory",
+    "broken": "#include <iostream>\n\nint main() {\n    auto p = std::make_unique<int>(3);\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto p = std::make_unique<int>(3);\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘make_unique’ is not a member of ‘std’",
+    "fixedOutput": "3"
+   },
+   {
+    "title": "A double delete",
+    "broken": "#include <iostream>\n\nint main() {\n    int* p = new int(5);\n    delete p;\n    delete p;\n    std::cout << \"done\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int* p = new int(5);\n    delete p;\n    p = nullptr;\n    std::cout << \"done\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — free(): double free detected in tcache 2",
+    "fixedOutput": "done"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Heap array with unique_ptr",
+    "statement": "Allocate three integers on the heap with make_unique<int[]>, fill them with 1, 2, 3 and print their sum.",
+    "solution": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto a = std::make_unique<int[]>(3);\n    a[0] = 1; a[1] = 2; a[2] = 3;\n    std::cout << a[0] + a[1] + a[2] << \"\\n\";\n    return 0;\n}",
+    "expected": "6"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What does RAII guarantee?",
+    "answer": "That a resource is released when its owning object's lifetime ends, including during stack unwinding from an exception. The destructor is the release point, so no manual cleanup path can be forgotten."
+   },
+   {
+    "q": "When would you choose shared_ptr over unique_ptr?",
+    "answer": "Only when several independent owners must keep the same object alive and no single owner can define its lifetime. Exclusive ownership is simpler and cheaper, so unique_ptr is the default."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "How do you find a memory leak in a small program?",
+    "answer": "I look for every new and check for a matching delete on all paths, then run the program under AddressSanitizer, which reports the allocation that leaked.",
+    "steps": [
+     "List allocation sites and their release paths.",
+     "Check early returns and exception paths.",
+     "Rebuild with -fsanitize=address and read the report."
+    ]
+   },
+   {
+    "q": "Why is `delete p; delete p;` worse than a leak?",
+    "answer": "A leak wastes memory but leaves the program defined. A double delete corrupts the allocator's bookkeeping, which is undefined behaviour and often crashes somewhere unrelated later."
+   }
+  ],
+  "mini": {
+   "title": "Ownership comparison",
+   "brief": "Store an integer with a raw pointer, a unique_ptr and a shared_ptr, and print the same value through all three.",
+   "steps": [
+    "Allocate each form.",
+    "Read the value through each handle.",
+    "Explain which one deletes automatically."
+   ]
+  },
+  "lab": {
+   "title": "Leak hunt",
+   "brief": "Take a program that leaks a heap array on an early return, fix it with unique_ptr, and explain the change.",
+   "milestones": [
+    "Reproduce the leak path.",
+    "Replace the raw array with unique_ptr<int[]>.",
+    "Remove the manual delete and re-run."
+   ]
+  }
+ },
+ {
+  "id": "cpp11",
+  "no": 11,
+  "title": "Structs, Enums and Namespaces",
+  "level": "intermediate",
+  "hours": 5,
+  "goal": "Group related data in a struct, give constants a type-safe enum, and keep names from colliding.",
+  "topics": [
+   {
+    "title": "A struct groups fields",
+    "body": "A struct is a named collection of fields with independent types. Aggregate initialization fills them in declaration order.",
+    "code": "#include <iostream>\n#include <string>\n\nstruct Student {\n    std::string name;\n    int marks;\n};\n\nint main() {\n    Student s{\"Aman\", 88};\n    std::cout << s.name << \" \" << s.marks << \"\\n\";\n    return 0;\n}",
+    "output": "Aman 88"
+   },
+   {
+    "title": "enum class is scoped",
+    "body": "`enum class` keeps its enumerators inside the type name and does not convert to int implicitly, which prevents accidental comparisons with unrelated numbers.",
+    "code": "#include <iostream>\n\nenum class Level { Beginner, Intermediate, Advanced };\n\nint main() {\n    Level l = Level::Advanced;\n    std::cout << (l == Level::Advanced) << \" \" << static_cast<int>(l) << \"\\n\";\n    return 0;\n}",
+    "output": "1 2"
+   },
+   {
+    "title": "A namespace names a region",
+    "body": "A namespace qualifies its members, so two libraries can both define `print`. Access with `ns::name` rather than importing everything.",
+    "code": "#include <iostream>\n\nnamespace bro {\n    void print() { std::cout << \"bro\\n\"; }\n}\nnamespace code {\n    void print() { std::cout << \"code\\n\"; }\n}\n\nint main() {\n    bro::print();\n    code::print();\n    return 0;\n}",
+    "output": "bro\ncode"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A missing semicolon after the struct",
+    "broken": "#include <iostream>\n\nstruct Point {\n    int x;\n    int y;\n}\n\nint main() {\n    Point p{1, 2};\n    std::cout << p.x + p.y << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nstruct Point {\n    int x;\n    int y;\n};\n\nint main() {\n    Point p{1, 2};\n    std::cout << p.x + p.y << \"\\n\";\n    return 0;\n}",
+    "error": "error: expected ‘;’ after struct definition",
+    "fixedOutput": "3"
+   },
+   {
+    "title": "An enum class used as an int",
+    "broken": "#include <iostream>\n\nenum class Level { Beginner, Advanced };\n\nint main() {\n    Level l = Level::Advanced;\n    int n = l;\n    std::cout << n << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nenum class Level { Beginner, Advanced };\n\nint main() {\n    Level l = Level::Advanced;\n    int n = static_cast<int>(l);\n    std::cout << n << \"\\n\";\n    return 0;\n}",
+    "error": "error: cannot convert ‘Level’ to ‘int’ in initialization",
+    "fixedOutput": "1"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Average marks from records",
+    "statement": "Create three Student records and print their average marks as an integer.",
+    "solution": "#include <iostream>\n#include <string>\n\nstruct Student {\n    std::string name;\n    int marks;\n};\n\nint main() {\n    Student a[] = {{\"Aman\", 80}, {\"Riya\", 90}, {\"Rahul\", 70}};\n    int sum = 0;\n    for (const auto& s : a) sum += s.marks;\n    std::cout << sum / 3 << \"\\n\";\n    return 0;\n}",
+    "expected": "80"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the difference between a struct and a class in C++?",
+    "answer": "The only language difference is the default access: public for a struct, private for a class, and public for inheritance from a struct. Convention uses struct for passive data and class for types with invariants."
+   },
+   {
+    "q": "Why prefer enum class to a plain enum?",
+    "answer": "It is scoped, so enumerator names cannot collide, and it is strongly typed, so no implicit conversion to int. A plain enum leaks its names into the enclosing scope and converts silently."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "When is a struct the wrong abstraction?",
+    "answer": "When the fields must change together to stay valid. A struct with public fields cannot enforce that, so the invariant belongs behind a class with a constructor and private members.",
+    "steps": [
+     "Name the invariant that must always hold.",
+     "Show how a public field could break it.",
+     "Move the fields behind a constructor."
+    ]
+   },
+   {
+    "q": "Why avoid `using namespace` in a header?",
+    "answer": "It injects every name into every file that includes the header, where unrelated code can collide with it. Qualifying names or importing a single name keeps the effect local."
+   }
+  ],
+  "mini": {
+   "title": "Inventory record",
+   "brief": "Define a Product struct with id, name and price, store three products and print the total value.",
+   "steps": [
+    "Declare the struct.",
+    "Create an array of three products.",
+    "Sum price times quantity and print it."
+   ]
+  },
+  "lab": {
+   "title": "Scoped menu",
+   "brief": "Model menu actions with an enum class and dispatch them with a switch, rejecting unknown values.",
+   "milestones": [
+    "Define the enum class with four actions.",
+    "Switch on the value without casting.",
+    "Add a default that reports an unknown action."
+   ]
+  }
+ },
+ {
+  "id": "cpp12",
+  "no": 12,
+  "title": "Object-Oriented Programming Fundamentals",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Model a real thing as a class with private data, public behaviour and a stated invariant.",
+  "topics": [
+   {
+    "title": "A class owns its state",
+    "body": "Data members hold the state and member functions define the behaviour. Keeping the data private means every change goes through a function that can enforce the rules.",
+    "code": "#include <iostream>\n\nclass Counter {\npublic:\n    void add(int n) { value_ += n; }\n    int value() const { return value_; }\nprivate:\n    int value_ = 0;\n};\n\nint main() {\n    Counter c;\n    c.add(3);\n    c.add(4);\n    std::cout << c.value() << \"\\n\";\n    return 0;\n}",
+    "output": "7"
+   },
+   {
+    "title": "Getters and setters with a rule",
+    "body": "A setter is only worth writing when it validates. Here the balance cannot go negative, so `withdraw` refuses instead of leaving the object inconsistent.",
+    "code": "#include <iostream>\n\nclass Account {\npublic:\n    void deposit(int n) { balance_ += n; }\n    bool withdraw(int n) {\n        if (n > balance_) return false;\n        balance_ -= n;\n        return true;\n    }\n    int balance() const { return balance_; }\nprivate:\n    int balance_ = 0;\n};\n\nint main() {\n    Account a;\n    a.deposit(100);\n    std::cout << a.withdraw(150) << \" \" << a.balance() << \"\\n\";\n    return 0;\n}",
+    "output": "0 100"
+   },
+   {
+    "title": "const member functions",
+    "body": "A `const` member function promises not to change the object, so it callable on a const reference. Reading methods should be const; that is what makes `print(const Account&)` possible.",
+    "code": "#include <iostream>\n\nclass Point {\npublic:\n    Point(int x, int y) : x_(x), y_(y) {}\n    int sum() const { return x_ + y_; }\nprivate:\n    int x_, y_;\n};\n\nint main() {\n    Point p(2, 5);\n    std::cout << p.sum() << \"\\n\";\n    return 0;\n}",
+    "output": "7"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A private member read from main",
+    "broken": "#include <iostream>\n\nclass Box {\n    int value_ = 5;\n};\n\nint main() {\n    Box b;\n    std::cout << b.value_ << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Box {\npublic:\n    int value() const { return value_; }\nprivate:\n    int value_ = 5;\n};\n\nint main() {\n    Box b;\n    std::cout << b.value() << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘int Box::value_’ is private within this context",
+    "fixedOutput": "5"
+   },
+   {
+    "title": "A class body without its semicolon",
+    "broken": "#include <iostream>\n\nclass Box {\npublic:\n    int value() const { return 5; }\n}\n\nint main() {\n    Box b;\n    std::cout << b.value() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Box {\npublic:\n    int value() const { return 5; }\n};\n\nint main() {\n    Box b;\n    std::cout << b.value() << \"\\n\";\n    return 0;\n}",
+    "error": "error: expected ‘;’ after class definition",
+    "fixedOutput": "5"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A bank account class",
+    "statement": "Implement Account with deposit and a withdraw that refuses to overdraw, then print the final balance.",
+    "solution": "#include <iostream>\n\nclass Account {\npublic:\n    void deposit(int n) { balance_ += n; }\n    bool withdraw(int n) {\n        if (n > balance_) return false;\n        balance_ -= n;\n        return true;\n    }\n    int balance() const { return balance_; }\nprivate:\n    int balance_ = 0;\n};\n\nint main() {\n    Account a;\n    a.deposit(100);\n    a.withdraw(30);\n    std::cout << a.balance() << \"\\n\";\n    return 0;\n}",
+    "expected": "70"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is encapsulation in practice?",
+    "answer": "It is not just private fields: it is that every state change goes through an operation that preserves the object's invariant. Without the invariant, private data is only hidden, not protected."
+   },
+   {
+    "q": "Why does a getter exist if the field could simply be public?",
+    "answer": "A getter keeps the representation free to change and lets the class compute the value rather than store it. It also keeps the field read-only from outside while internal code can still update it."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A teammate wants public fields to save time. How do you respond?",
+    "answer": "Public fields are fine for a passive record with no invariant. The moment a value must stay valid, the class needs a function that can reject a bad change.",
+    "steps": [
+     "Ask whether any combination of field values is invalid.",
+     "If yes, name the function that must enforce it.",
+     "Keep the fields private behind that function."
+    ]
+   },
+   {
+    "q": "What is a class invariant?",
+    "answer": "A statement that is true of every valid object between public operations — for example, a balance is never negative. Constructors establish it and every mutator preserves it."
+   }
+  ],
+  "mini": {
+   "title": "Student class",
+   "brief": "Create a Student class with private marks and a method that adds marks only within 0..100.",
+   "steps": [
+    "Store marks privately.",
+    "Validate in the mutator.",
+    "Print the final marks through a const getter."
+   ]
+  },
+  "lab": {
+   "title": "Invariant test",
+   "brief": "Write five operations on a bank account, including an invalid withdrawal, and show that the balance never goes below zero.",
+   "milestones": [
+    "List the valid states.",
+    "Attempt the invalid operation.",
+    "Print the balance after each attempt."
+   ]
+  }
+ },
+ {
+  "id": "cpp13",
+  "no": 13,
+  "title": "Constructors, Destructors and Class Design",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Initialize objects correctly, understand lifetime and destruction order, and know when the compiler-generated operations are enough.",
+  "topics": [
+   {
+    "title": "Constructor initialization lists",
+    "body": "Members are initialized in declaration order, before the body runs. An initializer list is the correct place to set them, and the order in the list cannot override declaration order.",
+    "code": "#include <iostream>\n\nclass Point {\npublic:\n    Point(int x, int y) : x_(x), y_(y) {}\n    int sum() const { return x_ + y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Point p(3, 4);\n    std::cout << p.sum() << \"\\n\";\n    return 0;\n}",
+    "output": "7"
+   },
+   {
+    "title": "A destructor runs at the end of lifetime",
+    "body": "The destructor releases whatever the constructor acquired. For a stack object it runs at the closing brace, in reverse order of construction.",
+    "code": "#include <iostream>\n\nclass Guard {\npublic:\n    Guard() { std::cout << \"open\\n\"; }\n    ~Guard() { std::cout << \"close\\n\"; }\n};\n\nint main() {\n    Guard g;\n    std::cout << \"work\\n\";\n    return 0;\n}",
+    "output": "open\nwork\nclose"
+   },
+   {
+    "title": "Rule of Zero",
+    "body": "If a class manages no resource directly, do not write a destructor, copy or move operation: the compiler-generated ones are correct. Write them only when you own a resource.",
+    "code": "#include <iostream>\n#include <string>\n\nclass Student {\npublic:\n    Student(std::string name, int marks) : name_(std::move(name)), marks_(marks) {}\n    const std::string& name() const { return name_; }\n    int marks() const { return marks_; }\nprivate:\n    std::string name_;\n    int marks_;\n};\n\nint main() {\n    Student s(\"Riya\", 91);\n    std::cout << s.name() << \" \" << s.marks() << \"\\n\";\n    return 0;\n}",
+    "output": "Riya 91"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A constructor with a return type",
+    "broken": "#include <iostream>\n\nclass Box {\npublic:\n    void Box() {}\n};\n\nint main() {\n    Box b;\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Box {\npublic:\n    Box() {}\n};\n\nint main() {\n    Box b;\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "error": "error: return type specification for constructor invalid",
+    "fixedOutput": "ok"
+   },
+   {
+    "title": "Initialization order contradicts the list",
+    "broken": "#include <iostream>\n\nclass Pair {\npublic:\n    Pair(int a) : second_(a), first_(second_ + 1) {}\n    int first() const { return first_; }\n    int second() const { return second_; }\nprivate:\n    int first_;\n    int second_;\n};\n\nint main() {\n    Pair p(5);\n    std::cout << p.first() << \" \" << p.second() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Pair {\npublic:\n    Pair(int a) : first_(a + 1), second_(a) {}\n    int first() const { return first_; }\n    int second() const { return second_; }\nprivate:\n    int first_;\n    int second_;\n};\n\nint main() {\n    Pair p(5);\n    std::cout << p.first() << \" \" << p.second() << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 6 5 — members initialize in declaration order, so second_ used an uninitialized first_.",
+    "fixedOutput": "6 5",
+    "brokenOutput": "32766 5"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A class with visible lifetime",
+    "statement": "Create a class whose constructor prints open and destructor prints close; build one in main and print work between them.",
+    "solution": "#include <iostream>\n\nclass Guard {\npublic:\n    Guard() { std::cout << \"open\\n\"; }\n    ~Guard() { std::cout << \"close\\n\"; }\n};\n\nint main() {\n    Guard g;\n    std::cout << \"work\\n\";\n    return 0;\n}",
+    "expected": "open\nwork\nclose"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the Rule of Three and why does it exist?",
+    "answer": "If a class needs a custom destructor, copy constructor or copy assignment, it almost always needs all three, because they all manage the same resource. Getting one right and the others wrong gives double frees or leaks."
+   },
+   {
+    "q": "Why can member initialization order surprise you?",
+    "answer": "Members are initialized in declaration order, not in the order written in the initializer list. A member that reads another must be declared after it."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "How do you decide whether a destructor should be virtual?",
+    "answer": "If the class is meant to be a polymorphic base and deletion can happen through a base pointer, the destructor must be virtual; otherwise deleting through the base is undefined behaviour.",
+    "steps": [
+     "Ask whether deletion can occur through a base pointer.",
+     "If yes, make the base destructor virtual.",
+     "Keep non-polymorphic value types non-virtual."
+    ]
+   },
+   {
+    "q": "Why is Rule of Zero the default advice?",
+    "answer": "The compiler's copy and move operations are correct for types that own nothing directly. Writing them by hand only adds a chance to get lifetime wrong."
+   }
+  ],
+  "mini": {
+   "title": "RAII timer",
+   "brief": "Build a class that prints start in its constructor and done in its destructor, and use it around a block of work.",
+   "steps": [
+    "Write the constructor and destructor.",
+    "Create the object before the work.",
+    "Show the destructor message after the block."
+   ]
+  },
+  "lab": {
+   "title": "Lifetime order",
+   "brief": "Create three objects of a logging class and show that destruction runs in reverse order of construction.",
+   "milestones": [
+    "Print a tag in each constructor.",
+    "Print the same tag in each destructor.",
+    "Compare the two orders."
+   ]
+  }
+ },
+ {
+  "id": "cpp14",
+  "no": 14,
+  "title": "Inheritance and Composition",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Reuse behaviour through a base class or a member, and choose composition when inheritance would be wrong.",
+  "topics": [
+   {
+    "title": "Public inheritance is an is-a",
+    "body": "A derived class inherits the base's public interface and can add its own state. Constructors run base first, then members, then the derived body.",
+    "code": "#include <iostream>\n#include <string>\n\nclass Person {\npublic:\n    Person(std::string name) : name_(std::move(name)) {}\n    const std::string& name() const { return name_; }\nprotected:\n    std::string name_;\n};\n\nclass Student : public Person {\npublic:\n    Student(std::string name, int marks) : Person(std::move(name)), marks_(marks) {}\n    int marks() const { return marks_; }\nprivate:\n    int marks_;\n};\n\nint main() {\n    Student s(\"Aman\", 88);\n    std::cout << s.name() << \" \" << s.marks() << \"\\n\";\n    return 0;\n}",
+    "output": "Aman 88"
+   },
+   {
+    "title": "Composition is a has-a",
+    "body": "A class can hold another object as a member. Composition keeps the two lifetimes explicit and avoids the fragile base-class coupling inheritance creates.",
+    "code": "#include <iostream>\n#include <string>\n\nclass Engine {\npublic:\n    int power() const { return 120; }\n};\n\nclass Car {\npublic:\n    int power() const { return engine_.power(); }\nprivate:\n    Engine engine_;\n};\n\nint main() {\n    Car c;\n    std::cout << c.power() << \"\\n\";\n    return 0;\n}",
+    "output": "120"
+   },
+   {
+    "title": "protected is for derived classes",
+    "body": "`protected` exposes a member to derived classes but not to outside code. Use it for state a derived class genuinely needs, not as a shortcut for public fields.",
+    "code": "#include <iostream>\n\nclass Base {\npublic:\n    int value() const { return value_; }\nprotected:\n    int value_ = 7;\n};\n\nclass Derived : public Base {\npublic:\n    int doubled() const { return value_ * 2; }\n};\n\nint main() {\n    Derived d;\n    std::cout << d.value() << \" \" << d.doubled() << \"\\n\";\n    return 0;\n}",
+    "output": "7 14"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A private base member used by the derived class",
+    "broken": "#include <iostream>\n\nclass Base {\n    int value_ = 5;\n};\n\nclass Derived : public Base {\npublic:\n    int doubled() const { return value_ * 2; }\n};\n\nint main() {\n    Derived d;\n    std::cout << d.doubled() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Base {\nprotected:\n    int value_ = 5;\n};\n\nclass Derived : public Base {\npublic:\n    int doubled() const { return value_ * 2; }\n};\n\nint main() {\n    Derived d;\n    std::cout << d.doubled() << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘int Base::value_’ is private within this context",
+    "fixedOutput": "10"
+   },
+   {
+    "title": "A base class with no default constructor",
+    "broken": "#include <iostream>\n\nclass Base {\npublic:\n    explicit Base(int n) : n_(n) {}\n    int n() const { return n_; }\nprivate:\n    int n_;\n};\n\nclass Derived : public Base {\npublic:\n    Derived() {}\n};\n\nint main() {\n    Derived d;\n    std::cout << d.n() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Base {\npublic:\n    explicit Base(int n) : n_(n) {}\n    int n() const { return n_; }\nprivate:\n    int n_;\n};\n\nclass Derived : public Base {\npublic:\n    Derived() : Base(4) {}\n};\n\nint main() {\n    Derived d;\n    std::cout << d.n() << \"\\n\";\n    return 0;\n}",
+    "error": "error: no matching function for call to ‘Base::Base()’",
+    "fixedOutput": "4"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Person and Student",
+    "statement": "Derive Student from Person, store marks and print the name and marks of one student.",
+    "solution": "#include <iostream>\n#include <string>\n\nclass Person {\npublic:\n    Person(std::string name) : name_(std::move(name)) {}\n    const std::string& name() const { return name_; }\nprivate:\n    std::string name_;\n};\n\nclass Student : public Person {\npublic:\n    Student(std::string name, int marks) : Person(std::move(name)), marks_(marks) {}\n    int marks() const { return marks_; }\nprivate:\n    int marks_;\n};\n\nint main() {\n    Student s(\"Aman\", 88);\n    std::cout << s.name() << \" \" << s.marks() << \"\\n\";\n    return 0;\n}",
+    "expected": "Aman 88"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Inheritance or composition: how do you decide?",
+    "answer": "If the derived type genuinely is a kind of the base and must be usable through its interface, inheritance fits. If it merely uses the other type's behaviour, composition is safer and does not couple the two hierarchies."
+   },
+   {
+    "q": "What is the diamond problem?",
+    "answer": "Two base classes sharing a common ancestor give the most-derived object two copies of that ancestor, so a member reference is ambiguous. Virtual inheritance solves it by sharing one base subobject, at a cost in complexity."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Why can deep inheritance hierarchies become fragile?",
+    "answer": "A change in a base class reaches every derived class, and the derived classes may depend on protected details that were never a contract. Composition keeps that dependency explicit and local.",
+    "steps": [
+     "Count how many classes depend on the base's details.",
+     "Name a change that would break them.",
+     "Show the composition that would localise it."
+    ]
+   },
+   {
+    "q": "What does the base constructor run before the derived one?",
+    "answer": "Construction goes base first so the derived body can rely on a fully constructed base. Destruction goes the other way: derived first, then base."
+   }
+  ],
+  "mini": {
+   "title": "Vehicle hierarchy",
+   "brief": "Create a Vehicle base with wheels() and two derived types that return different counts.",
+   "steps": [
+    "Write the base with a virtual wheels().",
+    "Override it in Car and Bike.",
+    "Print both through base references."
+   ]
+  },
+  "lab": {
+   "title": "Composition refactor",
+   "brief": "Take a class that inherited to reuse one method and replace the inheritance with a member.",
+   "milestones": [
+    "Show the inherited call.",
+    "Replace it with a member object.",
+    "Re-run the program and compare the output."
+   ]
+  }
+ }
+]
