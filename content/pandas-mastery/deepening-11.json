@@ -1,0 +1,297 @@
+{
+ "p11": {
+  "tasks": [
+   {
+    "title": "Read a thousands separator",
+    "statement": "Parse the number with the comma removed and print it.",
+    "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"v\\n1,200\\n\"), thousands=\",\")\nprint(df[\"v\"].tolist())",
+    "expected": "[200]"
+   },
+   {
+    "title": "JSON split keys",
+    "statement": "Serialise with the split orient and print the sorted top-level keys.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nimport json\nprint(sorted(json.loads(df.to_json(orient=\"split\")).keys()))",
+    "expected": "['columns', 'data', 'index']"
+   },
+   {
+    "title": "Skip comment lines",
+    "statement": "Read the file ignoring comment lines and print the row count.",
+    "solution": "import pandas as pd\nfrom io import StringIO\n\ntext = \"# note\\na\\n1\\n# other\\n2\"\nprint(pd.read_csv(StringIO(text), comment=\"#\").shape[0])",
+    "expected": "2"
+   },
+   {
+    "title": "Keep the zip as text",
+    "statement": "Read the zip column as text and print its value and dtype.",
+    "solution": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"zip\\n012345\\n\"), dtype={\"zip\": str})\nprint(df[\"zip\"].tolist(), df[\"zip\"].dtype)",
+    "expected": "['012345'] str"
+   }
+  ],
+  "debug": [
+   {
+    "title": "skiprows given text",
+    "broken": "import pandas as pd\nfrom io import StringIO\n\nprint(pd.read_csv(StringIO(\"a\\n1\"), skiprows=\"two\").shape)",
+    "fix": "import pandas as pd\nfrom io import StringIO\n\nprint(pd.read_csv(StringIO(\"a\\n1\"), skiprows=1).shape)",
+    "error": "TypeError: an integer is required",
+    "fixedOutput": "(0, 1)"
+   },
+   {
+    "title": "to_csv given an integer as a destination",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(1))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False).strip())",
+    "error": "ValueError: Invalid file path or buffer object type: <class 'int'>",
+    "fixedOutput": "a\n1"
+   },
+   {
+    "title": "A truncated JSON document",
+    "broken": "import pandas as pd\nfrom io import StringIO\n\nprint(pd.read_json(StringIO(\"[1,\")).shape)",
+    "fix": "import pandas as pd\nfrom io import StringIO\n\nprint(pd.read_json(StringIO(\"[1,2]\")).shape)",
+    "error": "ValueError: Expected object or value",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "A headerless export read as if it had names",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False, header=False).strip())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.to_csv(index=False).strip())",
+    "error": "Wrong output: 1 — with header=False the file has no column name, so a later read invents one.",
+    "fixedOutput": "a\n1",
+    "brokenOutput": "1"
+   }
+  ]
+ },
+ "p12": {
+  "tasks": [
+   {
+    "title": "Merge on two keys",
+    "statement": "Merge on id and year and print the row count.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 1], \"year\": [2025, 2026]})\nb = pd.DataFrame({\"id\": [1, 1], \"year\": [2025, 2026]})\nprint(len(a.merge(b, on=[\"id\", \"year\"])))",
+    "expected": "2"
+   },
+   {
+    "title": "Join on the index",
+    "statement": "Join the two frames on their indexes and print the columns.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]}, index=[\"k\"])\nb = pd.DataFrame({\"y\": [2]}, index=[\"k\"])\nprint(a.join(b).columns.tolist())",
+    "expected": "['x', 'y']"
+   },
+   {
+    "title": "Concat with keys",
+    "statement": "Concatenate with keys and print the index level names.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]})\nprint(pd.concat([a, a], keys=[\"p\", \"q\"]).index.names)",
+    "expected": "[None, None]"
+   },
+   {
+    "title": "Collision suffixes",
+    "statement": "Merge with the suffixes _l and _r and print the column names.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1], \"v\": [1]})\nb = pd.DataFrame({\"id\": [1], \"v\": [2]})\nprint(a.merge(b, on=\"id\", suffixes=(\"_l\", \"_r\")).columns.tolist())",
+    "expected": "['id', 'v_l', 'v_r']"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A join with overlapping non-key columns",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]}, index=[1])\nb = pd.DataFrame({\"x\": [2]}, index=[1])\nprint(a.join(b).shape)",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]}, index=[1])\nb = pd.DataFrame({\"y\": [2]}, index=[1])\nprint(a.join(b).shape)",
+    "error": "ValueError: columns overlap but no suffix specified: Index(['x'], dtype='str')",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "A cross join given a key",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1]})\nb = pd.DataFrame({\"id\": [2]})\nprint(a.merge(b, how=\"cross\", on=\"id\").shape)",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1]})\nb = pd.DataFrame({\"id\": [2]})\nprint(a.merge(b, how=\"cross\").shape)",
+    "error": "pandas.errors.MergeError: Can not pass on, right_on, left_on or set right_index=True or left_index=True",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "merge_asof on unsorted keys",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"t\": [2, 1]})\nb = pd.DataFrame({\"t\": [1]})\nprint(pd.merge_asof(a, b, on=\"t\").shape)",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"t\": [1, 2]})\nb = pd.DataFrame({\"t\": [1]})\nprint(pd.merge_asof(a, b, on=\"t\").shape)",
+    "error": "ValueError: left keys must be sorted",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "An inner join reported as every row",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2]})\nprint(len(a))",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2]})\nprint(len(a.merge(b, on=\"id\")))",
+    "error": "Wrong output: 2 — an inner join keeps only the matching key, so one row survives.",
+    "fixedOutput": "1",
+    "brokenOutput": "2"
+   }
+  ]
+ },
+ "p13": {
+  "tasks": [
+   {
+    "title": "Count by two keys",
+    "statement": "Count rows per city and year and print the shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2026, 2026, 2026]})\nprint(df.groupby([\"city\", \"year\"]).size().shape)",
+    "expected": "(2,)"
+   },
+   {
+    "title": "Running total inside a group",
+    "statement": "Print the cumulative sum within each group.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1, 2, 3]})\nprint(df.groupby(\"g\")[\"v\"].cumsum().tolist())",
+    "expected": "[1, 3, 3]"
+   },
+   {
+    "title": "First non-missing value",
+    "statement": "Print the first non-missing value of the column per group.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\"], \"v\": [None, 5.0]})\nprint(df.groupby(\"g\")[\"v\"].first().tolist())",
+    "expected": "[5.0]"
+   },
+   {
+    "title": "Range inside each group",
+    "statement": "Print max minus min per group.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1, 4, 9]})\nprint(df.groupby(\"g\")[\"v\"].agg(lambda x: x.max() - x.min()).tolist())",
+    "expected": "[3, 0]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An aggregation on a column that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\").agg({\"missing\": \"sum\"}))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\").agg({\"v\": \"sum\"}).to_dict())",
+    "error": "KeyError: \"Label(s) ['missing'] do not exist\"",
+    "fixedOutput": "{'v': {'a': 1}}"
+   },
+   {
+    "title": "transform given two aggregations",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\")[\"v\"].transform(\"sum\", \"mean\").tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\")[\"v\"].transform(\"sum\").tolist())",
+    "error": "ValueError: numeric_only accepts only Boolean values",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "A group mean used as the overall mean",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1, 2, 30]})\nprint(round(float(df.groupby(\"g\")[\"v\"].mean().mean()), 2))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1, 2, 30]})\nprint(round(float(df[\"v\"].mean()), 2))",
+    "error": "Wrong output: 16.5 — averaging two group means weights the one-row group equally with the two-row group.",
+    "fixedOutput": "11.0",
+    "brokenOutput": "15.75"
+   },
+   {
+    "title": "nth given a word instead of a position",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"b\"], \"v\": [1, 2]})\nprint(df.groupby(\"g\")[\"v\"].nth(\"first\").tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"b\"], \"v\": [1, 2]})\nprint(df.groupby(\"g\")[\"v\"].first().tolist())",
+    "error": "TypeError: Invalid index <class 'str'>. Must be integer, list-like, slice or a tuple of integers and slices",
+    "fixedOutput": "[1, 2]"
+   }
+  ]
+ },
+ "p14": {
+  "tasks": [
+   {
+    "title": "Pivot with a count",
+    "statement": "Cross city and year counting rows, and print the shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"year\": [2026, 2026]})\nprint(df.pivot_table(index=\"city\", columns=\"year\", values=\"city\", aggfunc=\"count\").shape)",
+    "expected": "(1, 1)"
+   },
+   {
+    "title": "Unstack a groupby",
+    "statement": "Group by two keys and print the unstacked shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\nprint(df.groupby([\"city\", \"year\"])[\"v\"].sum().unstack().shape)",
+    "expected": "(1, 1)"
+   },
+   {
+    "title": "Melt and pivot back",
+    "statement": "Melt the frame, pivot it back and print the recovered value.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1], \"a\": [3]})\nlong = pd.melt(df, id_vars=\"id\")\nwide = long.pivot(index=\"id\", columns=\"variable\", values=\"value\")\nprint(int(wide[\"a\"].iloc[0]))",
+    "expected": "3"
+   },
+   {
+    "title": "Crosstab with margins",
+    "statement": "Cross the columns with margins and print the shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\", \"y\"], \"b\": [1, 0]})\nprint(pd.crosstab(df[\"a\"], df[\"b\"], margins=True).shape)",
+    "expected": "(3, 3)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A pivot table over a missing column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\"], \"v\": [1]})\nprint(df.pivot_table(index=\"a\", values=\"missing\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\"], \"v\": [1]})\nprint(df.pivot_table(index=\"a\", values=\"v\").shape)",
+    "error": "KeyError: 'missing'",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "Exploding two columns where one is missing",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"tags\": [[\"a\"]], \"other\": [[\"b\"]]})\nprint(df.explode([\"tags\", \"missing\"]).shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"tags\": [[\"a\"]], \"other\": [[\"b\"]]})\nprint(df.explode([\"tags\", \"other\"]).shape)",
+    "error": "KeyError: 'missing'",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "A pivot table over a missing value column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\"], \"b\": [1]})\nprint(df.pivot_table(index=\"a\", columns=\"b\", values=\"missing\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\"], \"b\": [1], \"v\": [1]})\nprint(df.pivot_table(index=\"a\", columns=\"b\", values=\"v\").shape)",
+    "error": "KeyError: 'missing'",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "The margins row counted as a group",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\", \"y\"]})\nprint(len(pd.crosstab(df[\"a\"], df[\"a\"], margins=True)))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\", \"y\"]})\nprint(len(pd.crosstab(df[\"a\"], df[\"a\"])))",
+    "error": "Wrong output: 3 — the All row is a total, not a third group.",
+    "fixedOutput": "2",
+    "brokenOutput": "3"
+   }
+  ]
+ },
+ "p15": {
+  "tasks": [
+   {
+    "title": "Two aggregations per month",
+    "statement": "Resample to month starts and print the sum and count.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2], index=pd.to_datetime([\"2026-01-01\", \"2026-01-02\"]))\nout = s.resample(\"MS\").agg([\"sum\", \"count\"])\nprint(out.values.tolist())",
+    "expected": "[[3, 2]]"
+   },
+   {
+    "title": "Rolling with one observation",
+    "statement": "Print the rolling mean of two allowing a single observation.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1.0, 3.0])\nprint(s.rolling(2, min_periods=1).mean().tolist())",
+    "expected": "[1.0, 2.0]"
+   },
+   {
+    "title": "Shift inside a group",
+    "statement": "Print the previous value within each group.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1, 2, 3]})\nprint(df.groupby(\"g\")[\"v\"].shift(1).tolist())",
+    "expected": "[nan, 1.0, nan]"
+   },
+   {
+    "title": "Seconds between timestamps",
+    "statement": "Print the gap between consecutive timestamps in seconds.",
+    "solution": "import pandas as pd\n\ns = pd.Series(pd.to_datetime([\"2026-01-01 00:00\", \"2026-01-01 00:01\"]))\nprint(s.diff().dt.total_seconds().tolist())",
+    "expected": "[nan, 60.0]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A rolling window given as text on a plain index",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.0, 2.0])\nprint(s.rolling(\"2D\").mean().tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.0, 2.0], index=pd.to_datetime([\"2026-01-01\", \"2026-01-02\"]))\nprint(s.rolling(\"2D\").mean().tolist())",
+    "error": "ValueError: window must be an integer 0 or greater",
+    "fixedOutput": "[1.0, 1.5]"
+   },
+   {
+    "title": "total_seconds on a datetime column",
+    "broken": "import pandas as pd\n\ns = pd.Series(pd.to_datetime([\"2026-01-01\"]))\nprint(s.dt.total_seconds().tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series(pd.to_timedelta([\"1 day\"]))\nprint(s.dt.total_seconds().tolist())",
+    "error": "AttributeError: 'DatetimeProperties' object has no attribute 'total_seconds'",
+    "fixedOutput": "[86400.0]"
+   },
+   {
+    "title": "A rolling mean whose first row is NaN",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.0, 3.0])\nprint(s.rolling(2).mean().tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.0, 3.0])\nprint(s.rolling(2, min_periods=1).mean().tolist())",
+    "error": "Wrong output: [nan, 2.0] — the default needs two observations, so the first window has no mean.",
+    "fixedOutput": "[1.0, 2.0]",
+    "brokenOutput": "[nan, 2.0]"
+   },
+   {
+    "title": "A resample on a plain index",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.resample(\"D\").sum().tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2], index=pd.to_datetime([\"2026-01-01\", \"2026-01-02\"]))\nprint(s.resample(\"D\").sum().tolist())",
+    "error": "TypeError: Only valid with DatetimeIndex, TimedeltaIndex or PeriodIndex, but got an instance of 'RangeIndex'",
+    "fixedOutput": "[1, 2]"
+   }
+  ]
+ }
+}

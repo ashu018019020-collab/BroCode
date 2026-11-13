@@ -1,0 +1,297 @@
+{
+ "p01": {
+  "tasks": [
+   {
+    "title": "Count distinct values",
+    "statement": "Print the number of distinct values in the series.",
+    "solution": "import pandas as pd\n\nprint(pd.Series([\"a\", \"a\", \"b\"]).nunique())",
+    "expected": "2"
+   },
+   {
+    "title": "Filter with a mask",
+    "statement": "Print the values above 2.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 3, 5])\nprint(s[s > 2].tolist())",
+    "expected": "[3, 5]"
+   },
+   {
+    "title": "Series with a step",
+    "statement": "Build a Series from 0 to 6 in steps of 2 and print it.",
+    "solution": "import pandas as pd\n\nprint(pd.Series(range(0, 6, 2)).tolist())",
+    "expected": "[0, 2, 4]"
+   },
+   {
+    "title": "Last value by position",
+    "statement": "Print the last value using a position, not a label.",
+    "solution": "import pandas as pd\n\ns = pd.Series([5, 6], index=[\"x\", \"y\"])\nprint(s.iloc[-1])",
+    "expected": "6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A negative position passed as a label",
+    "broken": "import pandas as pd\n\ns = pd.Series([5, 6], index=[\"x\", \"y\"])\nprint(s[-1])",
+    "fix": "import pandas as pd\n\ns = pd.Series([5, 6], index=[\"x\", \"y\"])\nprint(s.iloc[-1])",
+    "error": "KeyError: -1",
+    "fixedOutput": "6"
+   },
+   {
+    "title": "A mask longer than the series",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s[[True, False, True]].tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s[[True, False]].tolist())",
+    "error": "IndexError: Boolean index has wrong length: 3 instead of 2",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "count read as the row count",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.count())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(len(s))",
+    "error": "Wrong output: 2 — count() skips the missing value, so it is not the number of rows.",
+    "fixedOutput": "3",
+    "brokenOutput": "2"
+   },
+   {
+    "title": "A mean over text",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"a\", \"b\"])\nprint(s.mean())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.mean())",
+    "error": "TypeError: Cannot perform reduction 'mean' with string dtype",
+    "fixedOutput": "1.5"
+   }
+  ]
+ },
+ "p02": {
+  "tasks": [
+   {
+    "title": "A constant column",
+    "statement": "Add a flag column set to 1 and print it.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf[\"flag\"] = 1\nprint(df[\"flag\"].tolist())",
+    "expected": "[1, 1]"
+   },
+   {
+    "title": "Transpose shape",
+    "statement": "Print the shape of the transposed frame.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.T.shape)",
+    "expected": "(2, 2)"
+   },
+   {
+    "title": "Rename then select",
+    "statement": "Rename a to x and print the renamed column's values.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.rename(columns={\"a\": \"x\"})[\"x\"].tolist())",
+    "expected": "[1, 2]"
+   },
+   {
+    "title": "Insert a column first",
+    "statement": "Insert an id column at position 0 and print the column order.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf.insert(0, \"id\", [1, 2])\nprint(df.columns.tolist())",
+    "expected": "['id', 'a']"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Inserting a column with too few values",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf.insert(0, \"id\", [1])\nprint(df.columns.tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf.insert(0, \"id\", [1, 2])\nprint(df.columns.tolist())",
+    "error": "ValueError: Length of values (1) does not match length of index (2)",
+    "fixedOutput": "['id', 'a']"
+   },
+   {
+    "title": "A column name with a space read as an attribute",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a b\": [1]})\nprint(df.a)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a b\": [1]})\nprint(df[\"a b\"].tolist())",
+    "error": "AttributeError: 'DataFrame' object has no attribute 'a'. Did you mean: 'at'?",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "set_index on a column that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1]})\nprint(df.set_index(\"key\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1]})\nprint(df.set_index(\"id\").shape)",
+    "error": "KeyError: \"None of ['key'] are in the columns\"",
+    "fixedOutput": "(1, 0)"
+   },
+   {
+    "title": "A transpose reported as the same shape",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\nprint(df.shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\nprint(df.T.shape)",
+    "error": "Wrong output: (3, 1) — that is the original shape; transposing makes it (1, 3).",
+    "fixedOutput": "(1, 3)",
+    "brokenOutput": "(3, 1)"
+   }
+  ]
+ },
+ "p03": {
+  "tasks": [
+   {
+    "title": "First and last row",
+    "statement": "Select the first and last row by position and print the shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\nprint(df.iloc[[0, -1]].shape)",
+    "expected": "(2, 1)"
+   },
+   {
+    "title": "Count of integer columns",
+    "statement": "Print how many columns are int64.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [2]})\nprint(int((df.dtypes == \"int64\").sum()))",
+    "expected": "2"
+   },
+   {
+    "title": "Slice a run of columns",
+    "statement": "Slice from column a to column b and print the shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2], \"c\": [3]})\nprint(df.loc[:, \"a\":\"b\"].shape)",
+    "expected": "(1, 2)"
+   },
+   {
+    "title": "An empty filter",
+    "statement": "Print the row count after keeping only values above 100.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[df[\"a\"] > 100].shape[0])",
+    "expected": "0"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A boolean mask from a different index",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]}, index=[\"x\", \"y\"])\nmask = pd.Series([True, True], index=[\"p\", \"q\"])\nprint(df[mask].shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]}, index=[\"x\", \"y\"])\nmask = pd.Series([True, True], index=[\"x\", \"y\"])\nprint(df[mask].shape)",
+    "error": "pandas.errors.IndexingError: Unalignable boolean Series provided as indexer (index of the boolean Series and of the indexed object do not match).",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "at on a column that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.at[0, \"z\"])",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.at[0, \"a\"])",
+    "error": "KeyError: 'z'",
+    "fixedOutput": "1"
+   },
+   {
+    "title": "item on a column of two values",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].item())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df[\"a\"].item())",
+    "error": "ValueError: can only convert an array of size 1 to a Python scalar",
+    "fixedOutput": "1"
+   },
+   {
+    "title": "iloc[0] reported as a row by label",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]}, index=[\"r1\", \"r2\"])\nprint(df.iloc[0].tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]}, index=[\"r1\", \"r2\"])\nprint(df.loc[\"r2\"].tolist())",
+    "error": "Wrong output: [1] — iloc counts positions, so the row labelled r2 is not the one printed.",
+    "fixedOutput": "[2]",
+    "brokenOutput": "[1]"
+   }
+  ]
+ },
+ "p04": {
+  "tasks": [
+   {
+    "title": "Negate a membership test",
+    "statement": "Keep values that are not 1 and print them.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\nprint(df[~df[\"a\"].isin([1])][\"a\"].tolist())",
+    "expected": "[2, 3]"
+   },
+   {
+    "title": "Rows inside a range",
+    "statement": "Count the rows with v between 2 and 4 inclusive.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2, 4, 5]})\nprint(int(df[\"v\"].between(2, 4).sum()))",
+    "expected": "2"
+   },
+   {
+    "title": "Replace values failing a test",
+    "statement": "Keep values above 1 and replace the rest with 0.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nprint(s.where(s > 1, 0).tolist())",
+    "expected": "[0, 2, 3]"
+   },
+   {
+    "title": "Set one cell by label",
+    "statement": "Set a at label 1 to 9 and print the column.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf.loc[1, \"a\"] = 9\nprint(df[\"a\"].tolist())",
+    "expected": "[1, 9]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "isin given a scalar",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[df[\"a\"].isin(1)].shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[df[\"a\"].isin([1])].shape)",
+    "error": "TypeError: only list-like objects are allowed to be passed to isin(), you passed a `int`",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "A missing pair of parentheses in a mask",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [1, 2]})\nprint(df[df[\"a\"] > 1 | df[\"b\"] > 1].shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [1, 2]})\nprint(df[(df[\"a\"] > 1) | (df[\"b\"] > 1)].shape)",
+    "error": "ValueError: The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "Assigning a list of the wrong length",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [0, 0, 0]})\ndf.loc[df[\"a\"] > 1, \"b\"] = [1, 2, 3]\nprint(df[\"b\"].tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [0, 0, 0]})\ndf.loc[df[\"a\"] > 1, \"b\"] = 1\nprint(df[\"b\"].tolist())",
+    "error": "ValueError: setting an array element with a sequence.",
+    "fixedOutput": "[0, 1, 1]"
+   },
+   {
+    "title": "A series assigned against the wrong index",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf[\"b\"] = pd.Series([10, 20], index=[1, 0])\nprint(df[\"b\"].tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf[\"b\"] = pd.Series([10, 20], index=[0, 1])\nprint(df[\"b\"].tolist())",
+    "error": "Wrong output: [20, 10] — the assignment aligns by label, so the reversed index swaps the values.",
+    "fixedOutput": "[10, 20]",
+    "brokenOutput": "[20, 10]"
+   }
+  ]
+ },
+ "p05": {
+  "tasks": [
+   {
+    "title": "Quarter of a date",
+    "statement": "Print the quarter number of the date.",
+    "solution": "import pandas as pd\n\nprint(pd.Timestamp(\"2026-05-01\").quarter)",
+    "expected": "2"
+   },
+   {
+    "title": "Days between two dates",
+    "statement": "Print the number of days between the two dates.",
+    "solution": "import pandas as pd\n\na = pd.Timestamp(\"2026-01-01\")\nb = pd.Timestamp(\"2026-01-31\")\nprint((b - a).days)",
+    "expected": "30"
+   },
+   {
+    "title": "Floor to the month",
+    "statement": "Convert the date to its month period and print it as text.",
+    "solution": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"2026-01-15\"]))\nprint(s.dt.to_period(\"M\").astype(str).tolist())",
+    "expected": "['2026-01']"
+   },
+   {
+    "title": "Business days in a range",
+    "statement": "Build five business days from 2026-01-01 and print the length.",
+    "solution": "import pandas as pd\n\nprint(len(pd.bdate_range(\"2026-01-01\", periods=5)))",
+    "expected": "5"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A frequency string that does not exist",
+    "broken": "import pandas as pd\n\nprint(pd.date_range(\"2026-01-01\", periods=2, freq=\"Q-Q\").tolist())",
+    "fix": "import pandas as pd\n\nprint(pd.date_range(\"2026-01-01\", periods=2, freq=\"QE\").tolist())",
+    "error": "ValueError: Invalid frequency: Q-Q. Failed to parse with error message: ValueError(\"Invalid frequency: Q-Q. Failed to parse with error message: KeyError('Q').\")",
+    "fixedOutput": "[Timestamp('2026-03-31 00:00:00'), Timestamp('2026-06-30 00:00:00')]"
+   },
+   {
+    "title": "Adding text to a timestamp",
+    "broken": "import pandas as pd\n\nprint(pd.Timestamp(\"2026-01-01\") + \"1 month\")",
+    "fix": "import pandas as pd\n\nprint(pd.Timestamp(\"2026-01-01\") + pd.DateOffset(months=1))",
+    "error": "TypeError: unsupported operand type(s) for +: 'Timestamp' and 'str'",
+    "fixedOutput": "2026-02-01 00:00:00"
+   },
+   {
+    "title": "A timedelta multiplied by text",
+    "broken": "import pandas as pd\n\nprint(pd.to_timedelta(\"1 day\") * \"2\")",
+    "fix": "import pandas as pd\n\nprint(pd.to_timedelta(\"1 day\") * 2)",
+    "error": "TypeError: can't multiply sequence by non-int of type 'Timedelta'",
+    "fixedOutput": "2 days 00:00:00"
+   },
+   {
+    "title": "A month-start period read as month end",
+    "broken": "import pandas as pd\n\nprint(pd.Timestamp(\"2026-01-15\").to_period(\"M\").end_time.strftime(\"%Y-%m-%d\"))",
+    "fix": "import pandas as pd\n\nprint(pd.Timestamp(\"2026-01-15\").to_period(\"M\").start_time.strftime(\"%Y-%m-%d\"))",
+    "error": "Wrong output: 2026-01-31 — end_time is the period's last moment, not its start.",
+    "fixedOutput": "2026-01-01",
+    "brokenOutput": "2026-01-31"
+   }
+  ]
+ }
+}

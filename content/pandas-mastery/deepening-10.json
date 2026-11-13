@@ -1,0 +1,299 @@
+{
+ "p06": {
+  "tasks": [
+   {
+    "title": "Row-wise maximum",
+    "statement": "Print the larger value of each row.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 5], \"b\": [3, 2]})\nprint(df.max(axis=1).tolist())",
+    "expected": "[3, 5]"
+   },
+   {
+    "title": "Cumulative product",
+    "statement": "Print the running product of the values.",
+    "solution": "import pandas as pd\n\nprint(pd.Series([2, 3, 4]).cumprod().tolist())",
+    "expected": "[2, 6, 24]"
+   },
+   {
+    "title": "Squared values",
+    "statement": "Square every value and print the result.",
+    "solution": "import pandas as pd\n\ns = pd.Series([2, 3])\nprint((s ** 2).tolist())",
+    "expected": "[4, 9]"
+   },
+   {
+    "title": "Absolute gap between columns",
+    "statement": "Print the absolute difference between the two columns.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [5, 1], \"b\": [2, 4]})\nprint((df[\"a\"] - df[\"b\"]).abs().tolist())",
+    "expected": "[3, 3]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "The removed applymap",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.applymap(str).shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.map(str).shape)",
+    "error": "AttributeError: 'DataFrame' object has no attribute 'applymap'",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "An axis named rows",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.agg(\"sum\", axis=2))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.agg(\"sum\", axis=0).tolist())",
+    "error": "ValueError: No axis named 2 for object type DataFrame",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "A column added from the wrong-length array",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf[\"b\"] = df[\"a\"].to_numpy() + [1, 2, 3]\nprint(df.shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf[\"b\"] = df[\"a\"].to_numpy() + [1, 2]\nprint(df.shape)",
+    "error": "ValueError: operands could not be broadcast together with shapes (2,) (3,)",
+    "fixedOutput": "(2, 2)"
+   },
+   {
+    "title": "Subtracting frames with different columns",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]})\nb = pd.DataFrame({\"y\": [2]})\nprint(a.sub(b)[\"x\"].tolist())",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]})\nb = pd.DataFrame({\"x\": [2]})\nprint(a.sub(b)[\"x\"].tolist())",
+    "error": "Wrong output: [nan] — the labels do not overlap, so subtraction produces no aligned value.",
+    "fixedOutput": "[-1]",
+    "brokenOutput": "[nan]"
+   }
+  ]
+ },
+ "p07": {
+  "tasks": [
+   {
+    "title": "Median absolute deviation",
+    "statement": "Print the median absolute deviation from the median.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 10])\nprint((s - s.median()).abs().median())",
+    "expected": "1.0"
+   },
+   {
+    "title": "Value counts in order",
+    "statement": "Print the values ordered from most to least frequent.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"a\", \"b\", \"a\"])\nprint(s.value_counts().index.tolist())",
+    "expected": "['a', 'b']"
+   },
+   {
+    "title": "Index of the maximum",
+    "statement": "Print the index label of the largest value.",
+    "solution": "import pandas as pd\n\ns = pd.Series([5, 9, 2])\nprint(s.idxmax())",
+    "expected": "1"
+   },
+   {
+    "title": "Describe per group",
+    "statement": "Describe the values per group and print the resulting shape.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\", \"b\"], \"v\": [1, 2, 3]})\nprint(df.groupby(\"g\")[\"v\"].describe().shape)",
+    "expected": "(2, 8)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A percentile written above one",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nprint(s.describe(percentiles=[1.5]).shape)",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nprint(s.describe(percentiles=[0.5]).shape)",
+    "error": "ValueError: percentiles should all be in the interval [0, 1]",
+    "fixedOutput": "(6,)"
+   },
+   {
+    "title": "A rank method that does not exist",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.rank(method=\"bad\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2])\nprint(s.rank(method=\"first\").tolist())",
+    "error": "KeyError: 'bad'",
+    "fixedOutput": "[1.0, 2.0]"
+   },
+   {
+    "title": "median of a text column",
+    "broken": "import pandas as pd\n\nprint(pd.Series([\"a\", \"b\"]).median())",
+    "fix": "import pandas as pd\n\nprint(pd.Series([1, 2]).median())",
+    "error": "TypeError: Cannot perform reduction 'median' with string dtype",
+    "fixedOutput": "1.5"
+   },
+   {
+    "title": "A correlation with a constant column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 1, 1], \"b\": [1, 2, 3]})\nprint(round(float(df[\"a\"].corr(df[\"b\"])), 2))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [1, 2, 3]})\nprint(round(float(df[\"a\"].corr(df[\"b\"])), 2))",
+    "error": "Wrong output: nan — a constant column has no variation, so Pearson correlation is undefined.",
+    "fixedOutput": "1.0",
+    "brokenOutput": "nan"
+   }
+  ]
+ },
+ "p08": {
+  "tasks": [
+   {
+    "title": "Fill only the first gap",
+    "statement": "Fill at most one gap and print the series.",
+    "solution": "import pandas as pd\n\ns = pd.Series([None, None, 3.0])\nprint(s.fillna(0, limit=1).tolist())",
+    "expected": "[0.0, nan, 3.0]"
+   },
+   {
+    "title": "Drop columns that are empty",
+    "statement": "Drop columns that are entirely missing and print the remaining names.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1.0], \"b\": [None]})\nprint(df.dropna(axis=1, how=\"all\").columns.tolist())",
+    "expected": "['a']"
+   },
+   {
+    "title": "Combine two partial series",
+    "statement": "Fill the gaps of the first series from the second and print the result.",
+    "solution": "import pandas as pd\n\na = pd.Series([1.0, None])\nb = pd.Series([9.0, 2.0])\nprint(a.combine_first(b).tolist())",
+    "expected": "[1.0, 2.0]"
+   },
+   {
+    "title": "Missing count per column",
+    "statement": "Print how many values are missing in each column.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, None]})\nprint(df.isna().sum().to_dict())",
+    "expected": "{'a': 1, 'b': 2}"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A dropna rule that does not exist",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [None]})\nprint(df.dropna(how=\"sometimes\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [None]})\nprint(df.dropna(how=\"any\").shape)",
+    "error": "ValueError: invalid how option: sometimes",
+    "fixedOutput": "(0, 1)"
+   },
+   {
+    "title": "Interpolating along a third axis",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1.0, None]})\nprint(df.interpolate(axis=2).shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1.0, None]})\nprint(df.interpolate(axis=0).shape)",
+    "error": "ValueError: No axis named 2 for object type DataFrame",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "A limit direction that does not exist",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.interpolate(limit_direction=\"sideways\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.interpolate(limit_direction=\"both\").tolist())",
+    "error": "ValueError: Invalid limit_direction: expecting one of ['forward', 'backward', 'both'], got 'sideways'.",
+    "fixedOutput": "[1.0, 2.0, 3.0]"
+   },
+   {
+    "title": "A thresh that drops every row",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1.0, None], \"b\": [None, None]})\nprint(df.dropna(thresh=3).shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1.0, None], \"b\": [None, None]})\nprint(df.dropna(thresh=1).shape)",
+    "error": "Wrong output: (0, 2) — thresh counts non-missing values per row, and no row has three.",
+    "fixedOutput": "(1, 2)",
+    "brokenOutput": "(0, 2)"
+   }
+  ]
+ },
+ "p09": {
+  "tasks": [
+   {
+    "title": "Case-insensitive comparison",
+    "statement": "Casefold the labels and print the unique values in order.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"Pune\", \"PUNE\", \"Goa\"])\nprint(sorted(s.str.casefold().unique()))",
+    "expected": "['goa', 'pune']"
+   },
+   {
+    "title": "Duplicates across two columns",
+    "statement": "Count rows that repeat a pair of values.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 1, 2], \"b\": [1, 1, 2]})\nprint(int(df.duplicated(subset=[\"a\", \"b\"]).sum()))",
+    "expected": "1"
+   },
+   {
+    "title": "Winsorize by quantiles",
+    "statement": "Clip the values to the 5th and 95th percentiles and print them.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4, 100])\nprint(s.clip(s.quantile(0.05), s.quantile(0.95)).tolist())",
+    "expected": "[1.2, 2.0, 3.0, 4.0, 80.79999999999998]"
+   },
+   {
+    "title": "Map booleans to labels",
+    "statement": "Map True to yes and False to no, then print the labels.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"ok\": [True, False]})\nprint(df[\"ok\"].map({True: \"yes\", False: \"no\"}).tolist())",
+    "expected": "['yes', 'no']"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A float cast that truncates silently",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.9])\nprint(s.astype(int).tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.9])\nprint(s.round().astype(int).tolist())",
+    "error": "Wrong output: [1] — astype(int) truncates toward zero instead of rounding.",
+    "fixedOutput": "[2]",
+    "brokenOutput": "[1]"
+   },
+   {
+    "title": "A rename whose result is assigned",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\ndf = df.rename(columns={\"a\": \"b\"}, inplace=True)\nprint(df.columns.tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\ndf = df.rename(columns={\"a\": \"b\"})\nprint(df.columns.tolist())",
+    "error": "AttributeError: 'NoneType' object has no attribute 'columns'",
+    "fixedOutput": "['b']"
+   },
+   {
+    "title": "duplicated given an axis argument",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 1]})\nprint(df.duplicated(axis=1).tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 1]})\nprint(df.duplicated().tolist())",
+    "error": "TypeError: DataFrame.duplicated() got an unexpected keyword argument 'axis'",
+    "fixedOutput": "[False, True]"
+   },
+   {
+    "title": "A z-score that used the wrong spread",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nz = (s - s.mean()) / s.std()\nprint(z.abs().round(2).tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2, 3])\nz = (s - s.mean()) / s.std(ddof=0)\nprint(z.abs().round(2).tolist())",
+    "error": "Wrong output: [1.0, 0.0, 1.0] — the sample std (n-1) is larger, so these z-scores are smaller than the population ones.",
+    "fixedOutput": "[1.22, 0.0, 1.22]",
+    "brokenOutput": "[1.0, 0.0, 1.0]"
+   }
+  ]
+ },
+ "p10": {
+  "tasks": [
+   {
+    "title": "Title case labels",
+    "statement": "Title-case the labels and print them.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"pune city\", \"goa\"])\nprint(s.str.title().tolist())",
+    "expected": "['Pune City', 'Goa']"
+   },
+   {
+    "title": "Strip punctuation",
+    "statement": "Remove everything that is not a letter, digit or space, then print the labels.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"Pune!\", \"Goa?\", \"Mumbai.\"])\nprint(s.str.replace(r\"[^A-Za-z0-9 ]\", \"\", regex=True).tolist())",
+    "expected": "['Pune', 'Goa', 'Mumbai']"
+   },
+   {
+    "title": "Pad to a fixed width",
+    "statement": "Left-align the codes in a width of five characters and print them.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"ab\", \"c\"])\nprint(s.str.ljust(5, \".\").tolist())",
+    "expected": "['ab...', 'c....']"
+   },
+   {
+    "title": "Either of two patterns",
+    "statement": "Count the labels containing either \"pur\" or \"del\".",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"Pune\", \"Nagpur\", \"Delhi\"])\nprint(int(s.str.contains(\"pur|del\", case=False).sum()))",
+    "expected": "2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An unterminated character set",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"a\"])\nprint(s.str.match(r\"[\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"a\"])\nprint(s.str.match(r\"[a-z]\").tolist())",
+    "error": "re.error: unterminated character set at position 0",
+    "fixedOutput": "[True]"
+   },
+   {
+    "title": "A pad width passed as text",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"ab\"])\nprint(s.str.pad(width=\"5\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"ab\"])\nprint(s.str.pad(width=5).tolist())",
+    "error": "TypeError: width must be of integer type, not str",
+    "fixedOutput": "['   ab']"
+   },
+   {
+    "title": "findall read as plain text",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"a1\", \"b2\"])\nprint(s.str.findall(r\"\\d\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"a1\", \"b2\"])\nprint(s.str.extract(r\"(\\d)\")[0].tolist())",
+    "error": "Wrong output: [['1'], ['2']] — findall returns a list per row, which is not a text column.",
+    "fixedOutput": "['1', '2']",
+    "brokenOutput": "[['1'], ['2']]"
+   },
+   {
+    "title": "A length taken as zero for a missing label",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"ab\", None])\nprint(s.str.len().tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"ab\", None])\nprint(s.str.len().fillna(0).astype(int).tolist())",
+    "error": "Wrong output: [2.0, nan] — a missing label has no length, so it is NaN, not 0.",
+    "fixedOutput": "[2, 0]",
+    "brokenOutput": "[2.0, nan]"
+   }
+  ]
+ }
+}
