@@ -1,0 +1,754 @@
+{
+ "p01": {
+  "topics": [
+   {
+    "title": "Rows, columns and records",
+    "body": "A row is one record and a column is one field across records. `len(df)` counts records, `df.columns` lists fields, and the two numbers answer different questions.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2, 3], \"city\": [\"Pune\", \"Delhi\", \"Pune\"]})\nprint(len(df), len(df.columns))\nprint(df[\"city\"].nunique())",
+    "output": "3 2\n2"
+   },
+   {
+    "title": "Structured data has a schema",
+    "body": "A structured table has the same fields on every row with a type per field. Scraped text or a JSON blob is unstructured: it needs parsing before it can be counted.",
+    "code": "import pandas as pd\n\nrows = [{\"id\": 1, \"tags\": \"a\"}, {\"id\": 2}]\ndf = pd.DataFrame(rows)\nprint(df.notna().all(axis=1).tolist())",
+    "output": "[True, False]"
+   },
+   {
+    "title": "Pandas, Excel and SQL in one line",
+    "body": "Excel is a manual grid, SQL queries a database in place, Pandas runs code over data in memory. The same three operations — select, filter, group — exist in all of them.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"sales\": [10, 20, 5]})\nprint(df[df[\"sales\"] > 5].groupby(\"city\")[\"sales\"].sum().to_dict())",
+    "output": "{'Pune': 30}"
+   },
+   {
+    "title": "pd is only an alias",
+    "body": "`import pandas as pd` binds the module to a short name; `pd` is a convention, not a requirement. Code that imports `pandas` keeps working but reads like everyone else's code does not.",
+    "code": "import pandas as pandas_lib\n\ndf = pandas_lib.DataFrame({\"a\": [1]})\nprint(type(df).__name__)",
+    "output": "DataFrame"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "A DataFrame has 4 rows and 3 columns. What does `df.size` print?",
+    "options": [
+     "7",
+     "12",
+     "(4, 3)",
+     "3"
+    ],
+    "answer": "12"
+   },
+   {
+    "q": "Which object does `df[\"marks\"]` return?",
+    "options": [
+     "A DataFrame",
+     "A Series",
+     "A NumPy array",
+     "A Python list"
+    ],
+    "answer": "A Series"
+   },
+   {
+    "q": "A dict passed to `pd.DataFrame` uses its keys as what?",
+    "options": [
+     "Column names",
+     "Row labels",
+     "dtypes",
+     "Values"
+    ],
+    "answer": "Column names"
+   },
+   {
+    "q": "What does `df.shape` return for 5 rows and 2 columns?",
+    "options": [
+     "(2, 5)",
+     "(5, 2)",
+     "10",
+     "[5, 2]"
+    ],
+    "answer": "(5, 2)"
+   },
+   {
+    "q": "Which call gives the average of a single numeric column?",
+    "options": [
+     "df.mean(\"marks\")",
+     "df[\"marks\"].mean()",
+     "df[\"marks\"].avg()",
+     "mean(df[\"marks\"])"
+    ],
+    "answer": "df[\"marks\"].mean()"
+   },
+   {
+    "q": "Why is `pd` the standard alias?",
+    "options": [
+     "It is faster",
+     "It is a naming convention",
+     "It changes the API",
+     "It is required by pandas"
+    ],
+    "answer": "It is a naming convention"
+   },
+   {
+    "q": "What is one row of a DataFrame?",
+    "options": [
+     "One field",
+     "One record",
+     "One dtype",
+     "One index level"
+    ],
+    "answer": "One record"
+   },
+   {
+    "q": "A CSV with one header row plus 9 data rows becomes a DataFrame with how many rows?",
+    "options": [
+     "9",
+     "10",
+     "11",
+     "8"
+    ],
+    "answer": "9"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Report the table's size",
+    "statement": "Print rows, columns and the number of distinct cities in one line.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\", \"Pune\"]})\nprint(len(df), len(df.columns), df[\"city\"].nunique())",
+    "expected": "3 1 2"
+   },
+   {
+    "title": "Average of one column",
+    "statement": "Build a two-column student table and print the mean marks as a plain float.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"name\": [\"A\", \"B\"], \"marks\": [80, 91]})\nprint(float(df[\"marks\"].mean()))",
+    "expected": "85.5"
+   }
+  ],
+  "debug": [
+   {
+    "title": "shape called like a function",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "Constructing a DataFrame with no data",
+    "broken": "import pandas as pd\n\ne = pd.DataFrame()\nprint(e[\"a\"].mean())",
+    "fix": "import pandas as pd\n\ne = pd.DataFrame()\nprint(e.shape, e.empty)",
+    "error": "KeyError: 'a'",
+    "fixedOutput": "(0, 0) True"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is a DataFrame internally, in one sentence?",
+    "answer": "A dict-like collection of Series that share one index, with a column axis that carries names and dtypes. That is why selecting a column returns a Series and aligning two frames matches rows by label."
+   },
+   {
+    "q": "When would a plain Python dict be enough instead of a DataFrame?",
+    "answer": "When the data is a single record, there are no repeated rows to aggregate, and no alignment or missing-value handling is needed. A one-row lookup is a dict; a table of many rows with grouping is a frame."
+   }
+  ]
+ },
+ "p02": {
+  "topics": [
+   {
+    "title": "Series from a dict keeps the keys",
+    "body": "A dict becomes a Series whose index is the keys in insertion order — the shortest way to carry named values with their labels.",
+    "code": "import pandas as pd\n\ns = pd.Series({\"a\": 10, \"b\": 20})\nprint(s.index.tolist())\nprint(s.sum())",
+    "output": "['a', 'b']\n30"
+   },
+   {
+    "title": "reindex asks for a different set of labels",
+    "body": "`reindex` lines the object up with the labels you name: existing ones keep their value, missing ones become NaN. It is the alignment tool.",
+    "code": "import pandas as pd\n\ns = pd.Series([10, 20], index=[\"a\", \"b\"])\nprint(s.reindex([\"b\", \"c\"]).tolist())",
+    "output": "[20.0, nan]"
+   },
+   {
+    "title": "set_index moves a column into the index",
+    "body": "`set_index` returns a new frame with that column as labels, which makes `.loc` lookups on it direct and keeps the column out of the data.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [10, 20], \"name\": [\"Aman\", \"Riya\"]})\nout = df.set_index(\"id\")\nprint(out.index.tolist())\nprint(out.columns.tolist())",
+    "output": "[10, 20]\n['name']"
+   },
+   {
+    "title": "A list of lists needs column names",
+    "body": "Row-wise input has no names, so `columns=` supplies them. Without it the columns are 0, 1, 2 and every later selection is positional.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame([[1, 2], [3, 4]], columns=[\"a\", \"b\"])\nprint(df[\"b\"].tolist())",
+    "output": "[2, 4]"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What does `s.reindex([\"x\", \"y\"])` do when only x exists?",
+    "options": [
+     "Raises KeyError",
+     "Drops the missing label",
+     "Fills y with NaN",
+     "Fills y with 0"
+    ],
+    "answer": "Fills y with NaN"
+   },
+   {
+    "q": "`df.set_index(\"id\")` returns what?",
+    "options": [
+     "None",
+     "A new DataFrame",
+     "The same frame mutated",
+     "A Series"
+    ],
+    "answer": "A new DataFrame"
+   },
+   {
+    "q": "Two Series with different index labels are added. What decides the row order?",
+    "options": [
+     "Position",
+     "Sorted union of labels",
+     "The left Series order",
+     "dtype"
+    ],
+    "answer": "Sorted union of labels"
+   },
+   {
+    "q": "A Series built from a dict has its index taken from where?",
+    "options": [
+     "0..n",
+     "The dict keys",
+     "The dict values",
+     "A RangeIndex always"
+    ],
+    "answer": "The dict keys"
+   },
+   {
+    "q": "Which call counts the labels in a frame's index?",
+    "options": [
+     "len(df.index)",
+     "df.index.count()",
+     "df.columns.size",
+     "df.ndim"
+    ],
+    "answer": "len(df.index)"
+   },
+   {
+    "q": "Before sorting a frame, what is the index?",
+    "options": [
+     "The row values",
+     "0..n-1 by default",
+     "Column names",
+     "Always a DatetimeIndex"
+    ],
+    "answer": "0..n-1 by default"
+   },
+   {
+    "q": "A duplicate index label makes `.loc[label]` do what?",
+    "options": [
+     "Return the first row",
+     "Return every matching row",
+     "Raise",
+     "Return None"
+    ],
+    "answer": "Return every matching row"
+   },
+   {
+    "q": "`df[[\"a\", \"b\"]]` returns what?",
+    "options": [
+     "A Series",
+     "A DataFrame",
+     "A tuple",
+     "A NumPy array"
+    ],
+    "answer": "A DataFrame"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Index by id",
+    "statement": "Set the id column as the index and print the label of the second record.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [10, 20], \"name\": [\"A\", \"B\"]}).set_index(\"id\")\nprint(df.index[1])",
+    "expected": "20"
+   },
+   {
+    "title": "Reindex to a fixed calendar",
+    "statement": "Reindex the series to labels a, b, c and print the missing count.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2], index=[\"a\", \"b\"])\nprint(s.reindex([\"a\", \"b\", \"c\"]).isna().sum())",
+    "expected": "1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "inplace set_index was assigned",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1], \"v\": [2]})\ndf = df.set_index(\"id\", inplace=True)\nprint(df.columns.tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1], \"v\": [2]})\ndf = df.set_index(\"id\")\nprint(df.columns.tolist())",
+    "error": "AttributeError: 'NoneType' object has no attribute 'columns'",
+    "fixedOutput": "['v']"
+   },
+   {
+    "title": "Dot access on a column name with a space",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"student name\": [\"A\"]})\nprint(df.student name)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"student name\": [\"A\"]})\nprint(df[\"student name\"].tolist())",
+    "error": "SyntaxError: invalid syntax. Perhaps you forgot a comma?",
+    "fixedOutput": "['A']"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why must an index be unique before a join?",
+    "answer": "A join matches labels, so a duplicate label on either side multiplies the matched rows into a fan-out. Convert to a key column and deduplicate before merging, or use `validate` so the duplicate fails loudly."
+   },
+   {
+    "q": "What is the difference between `set_index` and `reset_index`?",
+    "answer": "`set_index` demotes a column into the row labels; `reset_index` promotes the labels back into a column and restores 0..n. They are inverses, and a round trip loses a meaningful index only if you choose to."
+   }
+  ]
+ },
+ "p03": {
+  "topics": [
+   {
+    "title": "sample shows rows you did not look at",
+    "body": "`head` and `tail` only show the edges. `sample(n, random_state=...)` draws from anywhere in the table, which is how a suspicious middle row is found.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": range(10)})\nprint(df.sample(2, random_state=1)[\"id\"].tolist())",
+    "output": "[2, 9]"
+   },
+   {
+    "title": "select_dtypes picks by type",
+    "body": "`select_dtypes` returns only the columns of the types you name, so scaling, dates and text can be handled by separate pipelines.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\nprint(df.select_dtypes(\"number\").columns.tolist())",
+    "output": "['a', 'b']"
+   },
+   {
+    "title": "empty answers a different question than zero rows",
+    "body": "`empty` is True when there are no elements at all — no rows OR no columns. A frame with rows and zero columns is empty too, which catches a wrong `usecols`.",
+    "code": "import pandas as pd\n\nprint(pd.DataFrame().empty)\nprint(pd.DataFrame({\"a\": [1]}).empty)",
+    "output": "True\nFalse"
+   },
+   {
+    "title": "count ignores missing, size does not",
+    "body": "`count` returns non-missing values per column; `size` returns rows × columns. Comparing them shows how much of a column is actually usable.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None, 3]})\nprint(df[\"a\"].count(), df[\"a\"].size)",
+    "output": "2 3"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which method returns the number of non-missing values in a column?",
+    "options": [
+     "size()",
+     "count()",
+     "len()",
+     "nunique()"
+    ],
+    "answer": "count()"
+   },
+   {
+    "q": "`describe()` by default summarises which columns?",
+    "options": [
+     "All columns",
+     "Numeric columns",
+     "Text columns",
+     "Only the index"
+    ],
+    "answer": "Numeric columns"
+   },
+   {
+    "q": "What does `value_counts()` sort by?",
+    "options": [
+     "Value ascending",
+     "Frequency descending",
+     "Index order",
+     "dtype"
+    ],
+    "answer": "Frequency descending"
+   },
+   {
+    "q": "A frame with 0 rows and 3 columns has `empty` equal to what?",
+    "options": [
+     "True",
+     "False",
+     "NaN",
+     "Raises"
+    ],
+    "answer": "True"
+   },
+   {
+    "q": "Which call lists the dtype of every column as text?",
+    "options": [
+     "df.dtypes.astype(str)",
+     "df.types",
+     "df.info()",
+     "df.select_dtypes()"
+    ],
+    "answer": "df.dtypes.astype(str)"
+   },
+   {
+    "q": "`df.sample(3)` returns what?",
+    "options": [
+     "The first 3 rows",
+     "3 random rows",
+     "3 random columns",
+     "A boolean mask"
+    ],
+    "answer": "3 random rows"
+   },
+   {
+    "q": "`nunique()` counts what?",
+    "options": [
+     "Rows",
+     "Distinct non-missing values",
+     "Missing values",
+     "Duplicate rows"
+    ],
+    "answer": "Distinct non-missing values"
+   },
+   {
+    "q": "A numeric column shows dtype `object`. What is the likely cause?",
+    "options": [
+     "It is too large",
+     "It holds text such as comma separators",
+     "It has too few rows",
+     "It was sorted"
+    ],
+    "answer": "It holds text such as comma separators"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Numeric column count",
+    "statement": "Print how many numeric columns the table has.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [1.5], \"c\": [\"x\"]})\nprint(df.select_dtypes(\"number\").shape[1])",
+    "expected": "2"
+   },
+   {
+    "title": "Usable values in a column",
+    "statement": "Print the count of non-missing values beside the total number of values.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None, 3]})\nprint(df[\"a\"].count(), df[\"a\"].size)",
+    "expected": "2 3"
+   }
+  ],
+  "debug": [
+   {
+    "title": "head used as a property",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.head)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.head(1).shape)",
+    "error": "Wrong output: prints a bound-method repr instead of rows — head is a method, so it needs parentheses.",
+    "fixedOutput": "(1, 1)",
+    "brokenOutput": "<bound method NDFrame.head of    a\n0  1\n1  2>"
+   },
+   {
+    "title": "dtypes called as a method",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.dtypes())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.dtypes.astype(str).tolist())",
+    "error": "TypeError: 'Series' object is not callable",
+    "fixedOutput": "['int64']"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why sample instead of only looking at head?",
+    "answer": "Sorted or grouped exports put the anomalies in the middle: a bad batch, a blank block, a wrong unit. A seeded sample reaches rows head and tail never show, and the seed keeps the review reproducible."
+   },
+   {
+    "q": "What does a clean `describe()` still hide?",
+    "answer": "Shape. Identical mean, std and quartiles can describe a normal column and a bimodal one. Bin or plot the column before drawing a conclusion from the summary."
+   }
+  ]
+ },
+ "p04": {
+  "topics": [
+   {
+    "title": "at and iat read one cell fast",
+    "body": "`at` is a label lookup and `iat` is a positional one, both for a single scalar. They are the cheapest read when you know exactly which cell you need.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [10, 20]}, index=[\"x\", \"y\"])\nprint(df.at[\"y\", \"a\"], df.iat[0, 0])",
+    "output": "20 10"
+   },
+   {
+    "title": "where keeps the shape, mask keeps the shape",
+    "body": "`where` keeps a value where the condition is True and replaces the rest; `mask` does the opposite. Both return the original shape, unlike filtering.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 5, 9]})\nprint(df.where(df[\"v\"] > 4, 0)[\"v\"].tolist())\nprint(df.mask(df[\"v\"] > 4, 0)[\"v\"].tolist())",
+    "output": "[0, 5, 9]\n[1, 0, 0]"
+   },
+   {
+    "title": "filter matches column names, not rows",
+    "body": "`filter(like=...)` selects columns by their name pattern. It is not a row filter; rows belong to a Boolean mask or `query`.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"sale_jan\": [1], \"sale_feb\": [2], \"cost\": [3]})\nprint(df.filter(like=\"sale\").columns.tolist())",
+    "output": "['sale_jan', 'sale_feb']"
+   },
+   {
+    "title": "A mask combines with & only inside brackets",
+    "body": "`&` binds tighter than `>` in Python, so every comparison needs its own parentheses; `and` on an array raises because it wants one truth value.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 5, 9]})\nprint(df[(df[\"a\"] > 2) & (df[\"a\"] < 9)][\"a\"].tolist())",
+    "output": "[5]"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which lookup is positional?",
+    "options": [
+     "df.loc[0]",
+     "df.at[0, \"a\"]",
+     "df.iat[0, 1]",
+     "df[0]"
+    ],
+    "answer": "df.iat[0, 1]"
+   },
+   {
+    "q": "`df.where(cond, 0)` replaces which values?",
+    "options": [
+     "The True ones",
+     "The False ones",
+     "NaN only",
+     "Everything"
+    ],
+    "answer": "The False ones"
+   },
+   {
+    "q": "`df.mask(cond, 0)` replaces which values?",
+    "options": [
+     "The True ones",
+     "The False ones",
+     "Duplicates",
+     "Outliers"
+    ],
+    "answer": "The True ones"
+   },
+   {
+    "q": "A slice `df.loc[\"a\":\"c\"]` includes which labels?",
+    "options": [
+     "a and b only",
+     "a, b and c",
+     "b and c only",
+     "Only a"
+    ],
+    "answer": "a, b and c"
+   },
+   {
+    "q": "`df.iloc[0:2]` returns how many rows?",
+    "options": [
+     "3",
+     "2",
+     "1",
+     "All rows"
+    ],
+    "answer": "2"
+   },
+   {
+    "q": "Why does `df[df.a > 1 and df.b < 2]` fail?",
+    "options": [
+     "and needs scalars, not Series",
+     "The columns do not exist",
+     "dtype mismatch",
+     "It returns a copy"
+    ],
+    "answer": "and needs scalars, not Series"
+   },
+   {
+    "q": "`df.filter(like=\"total\")` selects what?",
+    "options": [
+     "Rows whose values contain total",
+     "Columns whose names contain total",
+     "Both",
+     "The index labels"
+    ],
+    "answer": "Columns whose names contain total"
+   },
+   {
+    "q": "`query()` needs backticks around a column name when the name…",
+    "options": [
+     "is numeric",
+     "contains a space",
+     "is lowercase",
+     "is unique"
+    ],
+    "answer": "contains a space"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "One cell, by label",
+    "statement": "Read the marks of student \"b\" with `at` and print it.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"marks\": [80, 90]}, index=[\"a\", \"b\"])\nprint(df.at[\"b\", \"marks\"])",
+    "expected": "90"
+   },
+   {
+    "title": "Cap values without changing shape",
+    "statement": "Replace every value above 100 with 100 and print the column as a list.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [50, 120, 90]})\nprint(df.where(df[\"v\"] <= 100, 100)[\"v\"].tolist())",
+    "expected": "[50, 100, 90]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "iloc called with a label",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]}, index=[\"x\", \"y\"])\nprint(df.iloc[\"x\"].tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]}, index=[\"x\", \"y\"])\nprint(df.loc[\"x\"].tolist())",
+    "error": "TypeError: Cannot index by location index with a non-integer key",
+    "fixedOutput": "[1]"
+   },
+   {
+    "title": "Two conditions joined with and",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 5], \"b\": [1, 9]})\nprint(df[(df[\"a\"] > 0) and (df[\"b\"] > 0)])",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 5], \"b\": [1, 9]})\nprint(df[(df[\"a\"] > 0) & (df[\"b\"] > 0)].shape[0])",
+    "error": "ValueError: The truth value of a Series is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().",
+    "fixedOutput": "2"
+   }
+  ],
+  "interview": [
+   {
+    "q": "When is `where` the right tool instead of a Boolean filter?",
+    "answer": "When the row count and index must stay intact — capping outliers, blanking invalid cells, or building two aligned branches. Filtering removes rows, so anything that must line up with the original frame needs `where` or `mask`."
+   },
+   {
+    "q": "Why can a filter return an empty frame without any error?",
+    "answer": "Filtering is a comparison, and a comparison that matches nothing is perfectly valid. The cause is almost always dtype (text compared to a number), case or whitespace in a category, or a column name that silently differs."
+   }
+  ]
+ },
+ "p05": {
+  "topics": [
+   {
+    "title": "Nullable Int64 keeps integers and gaps",
+    "body": "The classic `int64` cannot hold NaN, so a gap forces float. The nullable `Int64` extension stores `pd.NA` and keeps the integer arithmetic.",
+    "code": "import pandas as pd\n\ns = pd.Series([1, None], dtype=\"Int64\")\nprint(s.dtype)\nprint(s.sum())",
+    "output": "Int64\n1"
+   },
+   {
+    "title": "A category dtype can be ordered",
+    "body": "Declaring the categories and `ordered=True` lets comparisons and sorting follow the domain order, which is what turns a status column into a sortable one.",
+    "code": "import pandas as pd\n\ns = pd.Series([\"medium\", \"low\"], dtype=pd.CategoricalDtype([\"low\", \"medium\", \"high\"], ordered=True))\nprint((s == \"low\").tolist())\nprint(s.cat.categories.tolist())",
+    "output": "[False, True]\n['low', 'medium', 'high']"
+   },
+   {
+    "title": "to_datetime fixes the unit",
+    "body": "Passing `format=` or `unit=` makes parsing explicit. Without it pandas guesses, and two files in one pipeline can guess differently.",
+    "code": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"05/01/2026\"]), format=\"%d/%m/%Y\")\nprint(s.dt.strftime(\"%Y-%m-%d\").tolist())",
+    "output": "['2026-01-05']"
+   },
+   {
+    "title": "astype on one column only",
+    "body": "A per-column conversion keeps the rest of the frame untouched: build a dict or use `astype` on the Series, so a numeric column does not turn the whole frame into text.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [\"1\", \"2\"], \"name\": [\"a\", \"b\"]})\ndf[\"id\"] = df[\"id\"].astype(int)\nprint(df.dtypes.astype(str).tolist())",
+    "output": "['int64', 'str']"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Why does an int column with one missing value become float64?",
+    "options": [
+     "Pandas prefers floats",
+     "int64 cannot store NaN",
+     "astype is required",
+     "The index changed"
+    ],
+    "answer": "int64 cannot store NaN"
+   },
+   {
+    "q": "Which dtype stores integers and `pd.NA` together?",
+    "options": [
+     "int64",
+     "float64",
+     "Int64",
+     "object only"
+    ],
+    "answer": "Int64"
+   },
+   {
+    "q": "What does `pd.to_numeric(s, errors=\"coerce\")` do to an unparseable value?",
+    "options": [
+     "Raises",
+     "Drops the row",
+     "Turns it into NaN",
+     "Keeps it as text"
+    ],
+    "answer": "Turns it into NaN"
+   },
+   {
+    "q": "When does `category` save the most memory?",
+    "options": [
+     "When values are unique",
+     "When few values repeat many times",
+     "When values are long numbers",
+     "When the column is short"
+    ],
+    "answer": "When few values repeat many times"
+   },
+   {
+    "q": "What does `convert_dtypes()` choose?",
+    "options": [
+     "Always int64",
+     "Nullable extension dtypes",
+     "Only object",
+     "A datetime index"
+    ],
+    "answer": "Nullable extension dtypes"
+   },
+   {
+    "q": "Which accessor reads parts of a datetime column?",
+    "options": [
+     ".str",
+     ".cat",
+     ".dt",
+     ".num"
+    ],
+    "answer": ".dt"
+   },
+   {
+    "q": "What does `astype(int)` do with a NaN value?",
+    "options": [
+     "Raises",
+     "Writes 0",
+     "Writes -1",
+     "Drops it"
+    ],
+    "answer": "Raises"
+   },
+   {
+    "q": "Which call lists an object column's dtype after conversion to text type?",
+    "options": [
+     "df.dtypes",
+     "df.info()",
+     "df.types()",
+     "df.dtype()"
+    ],
+    "answer": "df.dtypes"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Year from a date column",
+    "statement": "Convert the text dates and print the year of the first one.",
+    "solution": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"2026-01-05\", \"2025-12-31\"]))\nprint(int(s.dt.year.iloc[0]))",
+    "expected": "2026"
+   },
+   {
+    "title": "Category with a known vocabulary",
+    "statement": "Store the values as an ordered category and print its categories.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"medium\", \"low\"], dtype=pd.CategoricalDtype([\"low\", \"medium\", \"high\"], ordered=True))\nprint(s.cat.categories.tolist())",
+    "expected": "['low', 'medium', 'high']"
+   }
+  ],
+  "debug": [
+   {
+    "title": "astype int on a column with a gap",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, None])\nprint(s.astype(int).tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, None], dtype=\"Int64\")\nprint(s.tolist())",
+    "error": "pandas.errors.IntCastingNaNError: Cannot convert non-finite values (NA or inf) to integer.Replace or remove non-finite values or cast to an integer typethat supports these values (e.g. 'Int64')",
+    "fixedOutput": "[1, <NA>]"
+   },
+   {
+    "title": "Date parsed with the wrong day/month order",
+    "broken": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"05/01/2026\"]), format=\"%m/%d/%Y\")\nprint(s.dt.strftime(\"%d-%m\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"05/01/2026\"]), format=\"%d/%m/%Y\")\nprint(s.dt.strftime(\"%d-%m\").tolist())",
+    "error": "Wrong output: ['01-05'] — 05/01 was read as 5 January, but the source means 1 May.",
+    "fixedOutput": "['05-01']",
+    "brokenOutput": "['01-05']"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why prefer an explicit dtype map over inference at load?",
+    "answer": "Inference changes with the data: one blank cell turns an integer column into float, and a join key that was numeric stops matching. An explicit map fails at the boundary, where the cause is obvious, instead of at the join."
+   },
+   {
+    "q": "When is `object` dtype a real problem?",
+    "answer": "When the column holds numbers or repeated text: arithmetic either fails or falls back to Python, memory grows with pointer overhead, and grouping is slower. It is fine for genuinely heterogeneous values, which usually means the column should be split."
+   }
+  ]
+ }
+}

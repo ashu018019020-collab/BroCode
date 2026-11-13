@@ -31,6 +31,26 @@ const modules = moduleFiles.flatMap((f) => readJSON(path.join(SRC, f)));
 const problems = [];
 const fail = (m) => problems.push(m);
 
+/*
+ * `deepening*.json` is the growth layer: extra topics, MCQs, coding tasks, debug challenges and
+ * interview questions per module, merged in file order. A module can therefore grow without
+ * rewriting the file it lives in, and its code samples are executed by
+ * `scripts/pandas-fill-outputs.cjs` before publication.
+ */
+const deepeningFiles = fs.readdirSync(SRC).filter((f) => /^deepening.*\.json$/.test(f)).sort();
+for (const file of deepeningFiles) {
+  const layer = readJSON(path.join(SRC, file));
+  for (const [id, pack] of Object.entries(layer)) {
+    const target = modules.find((m) => m.id === id);
+    if (!target) { fail(`deepening: unknown module ${id}`); continue; }
+    target.topics.push(...(pack.topics || []));
+    target.debug.push(...(pack.debug || []));
+    target.tasks.push(...(pack.tasks || []));
+    if (pack.interview) target.interviewBank = [...(target.interviewBank || []), ...pack.interview];
+    if (pack.mcq) target.mcqBank = [...(target.mcqBank || []), ...pack.mcq];
+  }
+}
+
 /* --------------------------------- course -------------------------------- */
 for (const key of ['id', 'slug', 'title', 'tagline', 'description', 'level', 'hours', 'prerequisites', 'outcomes']) {
   if (!course[key]) fail(`course: missing ${key}`);
@@ -64,6 +84,11 @@ modules.forEach((m, index) => {
     if (!d.title || !d.broken || !d.fix || !d.error) fail(`${m.id}: debug challenge needs title/broken/fix/error`);
     if (d.fix === d.broken) fail(`${m.id}: debug "${d.title}" fix equals broken code`);
     if (!d.fixedOutput) fail(`${m.id}: debug "${d.title}" has no executed fix output — run node scripts/pandas-fill-outputs.cjs`);
+  }
+  for (const q of m.mcqBank || []) {
+    if (!q.q || !Array.isArray(q.options) || q.options.length !== 4) fail(`${m.id}: an MCQ needs a question and four options`);
+    if (!q.answer || !q.options.includes(q.answer)) fail(`${m.id}: MCQ "${q.q.slice(0, 40)}…" answer must be one of its options`);
+    if (new Set(q.options).size !== 4) fail(`${m.id}: MCQ "${q.q.slice(0, 40)}…" options must be distinct`);
   }
   if (!Array.isArray(m.tasks) || m.tasks.length < 1) fail(`${m.id}: needs 1+ independent coding task`);
   for (const t of m.tasks || []) {
@@ -228,7 +253,13 @@ function buildSections(m) {
         q: `Short answer: state what this ${t.title.toLowerCase()} code computes, and why the printed result looks the way it does.`,
         answer: t.body, rubric: writtenRubric(t), difficulty: i === 0 ? 'easy' : 'medium',
       },
-    ]), ...checkpointFormats(topics, id)],
+    ]),
+    /* Authored MCQs, four options each, answer included — counted in the bank's quiz category. */
+    ...(m.mcqBank || []).map((q, i) => ({
+      id: id('checkpoint', 'mcq' + i), format: 'mcq', q: q.q, options: q.options, answer: q.answer,
+      why: q.why, difficulty: difficultyAt(i + 1),
+    })),
+    ...checkpointFormats(topics, id)],
   };
 }
 
@@ -247,7 +278,7 @@ const published = modules.map((m) => {
   }
   for (const entry of sections.checkpoint) {
     if (entry.options) {
-      const expected = entry.format === 'truefalse' ? 2 : 3;
+      const expected = entry.format === 'truefalse' ? 2 : entry.format === 'mcq' ? 4 : 3;
       if (entry.options.length !== expected) fail(`${entry.id}: a checkpoint quiz needs ${expected} options`);
       if (new Set(entry.options).size !== expected) fail(`${entry.id}: checkpoint options must be distinct`);
       if (!entry.options.includes(entry.answer)) fail(`${entry.id}: the options must include the answer`);

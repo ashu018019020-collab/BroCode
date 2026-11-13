@@ -1,0 +1,752 @@
+{
+ "p06": {
+  "topics": [
+   {
+    "title": "A Series broadcasts down every column",
+    "body": "A Series lines up with a column axis when you subtract it from a frame, so a per-row vector can be applied to every row without a loop.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nrow = pd.Series({\"a\": 10, \"b\": 20})\nprint(df.add(row, axis=\"columns\").values.tolist())",
+    "output": "[[11, 23], [12, 24]]"
+   },
+   {
+    "title": "where builds a conditional column",
+    "body": "`where` is a vectorised if: keep the value where the condition holds and substitute otherwise. It is the safe way to add a status column without apply.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"marks\": [40, 75]})\ndf[\"band\"] = df[\"marks\"].where(df[\"marks\"] >= 50, \"fail\")\nprint(df[\"band\"].tolist())",
+    "output": "['fail', 75]"
+   },
+   {
+    "title": "cumsum builds a running column",
+    "body": "A cumulative sum keeps one value per row, so revenue can be charted against a target without a second aggregation.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"sales\": [10, 20, 5]})\ndf[\"running\"] = df[\"sales\"].cumsum()\nprint(df[\"running\"].tolist())",
+    "output": "[10, 30, 35]"
+   },
+   {
+    "title": "round, floor and ceil are three rules",
+    "body": "`round` goes to the nearest value, `floor` always down, `ceil` always up. Billing and capacity planning need different ones, and pandas exposes both numeric and `.dt` versions.",
+    "code": "import pandas as pd\n\ns = pd.Series([1.4, 2.5])\nprint(s.round().tolist(), s.apply(lambda v: int(v)).tolist())",
+    "output": "[1.0, 2.0] [1, 2]"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Adding a scalar to a DataFrame does what?",
+    "options": [
+     "Adds to the first column",
+     "Adds to every cell",
+     "Raises",
+     "Adds to the index"
+    ],
+    "answer": "Adds to every cell"
+   },
+   {
+    "q": "`df.assign(x=df.a * 2)` returns what?",
+    "options": [
+     "None",
+     "A new frame with x",
+     "The frame mutated",
+     "A Series"
+    ],
+    "answer": "A new frame with x"
+   },
+   {
+    "q": "`df[\"a\"].clip(0, 10)` does what?",
+    "options": [
+     "Drops values outside 0..10",
+     "Pins them into 0..10",
+     "Raises",
+     "Rounds them"
+    ],
+    "answer": "Pins them into 0..10"
+   },
+   {
+    "q": "Which operator multiplies element by element?",
+    "options": [
+     "@",
+     "dot",
+     "*",
+     "matmul"
+    ],
+    "answer": "*"
+   },
+   {
+    "q": "`map` on a Series with a dict does what?",
+    "options": [
+     "Filters rows",
+     "Replaces values by key",
+     "Sorts values",
+     "Aggregates"
+    ],
+    "answer": "Replaces values by key"
+   },
+   {
+    "q": "Why is `apply(axis=1)` slower than column arithmetic?",
+    "options": [
+     "It copies the frame",
+     "It runs Python per row",
+     "It sorts first",
+     "It uses more dtypes"
+    ],
+    "answer": "It runs Python per row"
+   },
+   {
+    "q": "`abs()` on a Series returns what?",
+    "options": [
+     "The sign",
+     "The magnitude",
+     "The sum",
+     "A mask"
+    ],
+    "answer": "The magnitude"
+   },
+   {
+    "q": "What does `df.mul(2, axis=\"rows\")` multiply?",
+    "options": [
+     "Every row by 2",
+     "Every column by 2",
+     "Only the index",
+     "Nothing"
+    ],
+    "answer": "Every row by 2"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Broadcast a row vector",
+    "statement": "Add the row offsets to every row of the frame and print the result as nested lists.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nrow = pd.Series({\"a\": 10, \"b\": 20})\nprint(df.add(row, axis=\"columns\").values.tolist())",
+    "expected": "[[11, 23], [12, 24]]"
+   },
+   {
+    "title": "Running total",
+    "statement": "Add a running total column and print it.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [5, 10, 1]})\ndf[\"run\"] = df[\"v\"].cumsum()\nprint(df[\"run\"].tolist())",
+    "expected": "[5, 15, 16]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A new column with the wrong length",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\ndf[\"b\"] = [1, 2]\nprint(df)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3]})\ndf[\"b\"] = [1, 2, 3]\nprint(df[\"b\"].tolist())",
+    "error": "ValueError: Length of values (2) does not match length of index (3)",
+    "fixedOutput": "[1, 2, 3]"
+   },
+   {
+    "title": "The wrong axis in apply",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.apply(lambda row: row[\"a\"] + row[\"b\"], axis=0).tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.apply(lambda row: row[\"a\"] + row[\"b\"], axis=1).tolist())",
+    "error": "KeyError: 'a'",
+    "fixedOutput": "[4, 6]"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the difference between `assign` and plain column assignment?",
+    "answer": "`assign` returns a new frame and can be chained inside a pipeline, so the input stays untouched. `df[\"x\"] = ...` mutates the frame in place, which is fine in a script but makes a long chain hard to test."
+   },
+   {
+    "q": "Why does a percentage column produce inf, and how do you prevent it?",
+    "answer": "Division by zero yields inf (or a warning), and inf then poisons means and charts. Replace zero denominators with NaN before dividing, then decide explicitly whether to fill, drop or flag those rows."
+   }
+  ]
+ },
+ "p07": {
+  "topics": [
+   {
+    "title": "sort_values decides where NaN goes",
+    "body": "`na_position` puts missing values first or last. The default is last, which is why a sorted column can hide its gaps at the bottom.",
+    "code": "import pandas as pd\n\ns = pd.Series([3.0, None, 1.0])\nprint(s.sort_values(na_position=\"first\").tolist())",
+    "output": "[nan, 1.0, 3.0]"
+   },
+   {
+    "title": "rank can be a percentage",
+    "body": "`rank(pct=True)` returns the position as a share of the rows, which is how a column becomes a percentile score without a second step.",
+    "code": "import pandas as pd\n\ns = pd.Series([10, 20, 30, 40])\nprint(s.rank(pct=True).round(2).tolist())",
+    "output": "[0.25, 0.5, 0.75, 1.0]"
+   },
+   {
+    "title": "corrwith compares two frames column by column",
+    "body": "`corrwith` pairs columns by name and returns one correlation per pair, which is the quickest way to see which features move with a target column.",
+    "code": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1, 2, 3], \"y\": [3, 2, 1]})\nb = pd.Series([1, 2, 3])\nprint(a.corrwith(b).round(2).to_dict())",
+    "output": "{'x': 1.0, 'y': -1.0}"
+   },
+   {
+    "title": "quantile uses 0 to 1",
+    "body": "`quantile(0.25)` and `percentile(25)` ask the same question on different scales. Mixing them puts the median at 0.5 or 50 by accident.",
+    "code": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4])\nprint(s.quantile(0.5))\nprint(s.quantile([0.25, 0.75]).tolist())",
+    "output": "2.5\n[1.75, 3.25]"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "`sort_values` places NaN where by default?",
+    "options": [
+     "First",
+     "Last",
+     "It drops them",
+     "Raises"
+    ],
+    "answer": "Last"
+   },
+   {
+    "q": "`rank(pct=True)` returns what?",
+    "options": [
+     "Rank from 0 to 100",
+     "Rank as a share of rows",
+     "The value",
+     "A boolean mask"
+    ],
+    "answer": "Rank as a share of rows"
+   },
+   {
+    "q": "`corr` returns values in which range?",
+    "options": [
+     "0 to 1",
+     "-1 to 1",
+     "0 to 100",
+     "Any number"
+    ],
+    "answer": "-1 to 1"
+   },
+   {
+    "q": "`df.nlargest(3, \"v\")` returns what?",
+    "options": [
+     "Sorted full frame",
+     "The three highest rows",
+     "Three columns",
+     "A boolean mask"
+    ],
+    "answer": "The three highest rows"
+   },
+   {
+    "q": "`quantile(0.5)` equals which statistic?",
+    "options": [
+     "Mean",
+     "Median",
+     "Mode",
+     "Std"
+    ],
+    "answer": "Median"
+   },
+   {
+    "q": "`std()` uses which divisor by default in pandas?",
+    "options": [
+     "n",
+     "n-1",
+     "n+1",
+     "sqrt(n)"
+    ],
+    "answer": "n-1"
+   },
+   {
+    "q": "`sort_index()` orders by what?",
+    "options": [
+     "Column values",
+     "Row labels",
+     "dtypes",
+     "Missing count"
+    ],
+    "answer": "Row labels"
+   },
+   {
+    "q": "Which call returns the column's most frequent value?",
+    "options": [
+     "df.a.mode()",
+     "df.a.median()",
+     "df.a.max()",
+     "df.a.nunique()"
+    ],
+    "answer": "df.a.mode()"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Percentile score",
+    "statement": "Add a percentile rank column and print it rounded to two decimals.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [10, 20, 30, 40]})\nprint(df[\"v\"].rank(pct=True).round(2).tolist())",
+    "expected": "[0.25, 0.5, 0.75, 1.0]"
+   },
+   {
+    "title": "Correlation with a target",
+    "statement": "Print the correlation of each column with the target series, rounded to two decimals.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1, 2, 3], \"y\": [3, 2, 1]})\nb = pd.Series([1, 2, 3])\nprint(a.corrwith(b).round(2).to_dict())",
+    "expected": "{'x': 1.0, 'y': -1.0}"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Sorting by a misspelled column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"marks\": [9, 1]})\nprint(df.sort_values(\"mark\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"marks\": [9, 1]})\nprint(df.sort_values(\"marks\").shape)",
+    "error": "KeyError: 'mark'",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "ascending passed as text",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.sort_values(\"a\", ascending=\"false\").tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.sort_values(\"a\", ascending=False)[\"a\"].tolist())",
+    "error": "ValueError: For argument \"ascending\" expected type bool, received type str.",
+    "fixedOutput": "[2, 1]"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you explain a mean that is far above the median?",
+    "answer": "A long right tail: a few very large values pull the mean up while the median stays at the typical observation. Report both, inspect the top values, and choose the statistic the decision needs."
+   },
+   {
+    "q": "Why is correlation not enough to claim a relationship?",
+    "answer": "It measures linear co-movement only, can be produced by a third variable or a shared trend, and is sensitive to outliers. Plot the pair and check the relationship inside segments before reporting it."
+   }
+  ]
+ },
+ "p08": {
+  "topics": [
+   {
+    "title": "isna().any(axis=1) finds incomplete rows",
+    "body": "Reducing the missing mask along the columns answers \"which rows have at least one gap\", which is the count a data-quality note needs.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, 2]})\nprint(df.isna().any(axis=1).tolist())\nprint(df.isna().all(axis=1).tolist())",
+    "output": "[True, True]\n[False, False]"
+   },
+   {
+    "title": "fillna takes a different rule per column",
+    "body": "A dict fills each column with its own value, so text and numbers do not share one default that is wrong for both.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"score\": [10.0, None], \"city\": [None, \"Pune\"]})\nprint(df.fillna({\"score\": 0.0, \"city\": \"unknown\"}).values.tolist())",
+    "output": "[[10.0, 'unknown'], [0.0, 'Pune']]"
+   },
+   {
+    "title": "dropna how decides the rule",
+    "body": "`how=\"any\"` drops a row with any gap, `how=\"all\"` only when every value is missing. The default is aggressive, so name it.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [None, 1], \"b\": [None, None]})\nprint(df.dropna(how=\"all\").shape[0])\nprint(df.dropna(how=\"any\").shape[0])",
+    "output": "1\n0"
+   },
+   {
+    "title": "interpolate can limit the fill distance",
+    "body": "`limit` and `limit_direction` stop interpolation from bridging a long gap, which keeps an isolated missing point from becoming invented data.",
+    "code": "import pandas as pd\n\ns = pd.Series([0.0, None, None, 30.0])\nprint(s.interpolate(limit=1).tolist())",
+    "output": "[0.0, 10.0, nan, 30.0]"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "`isna()` and `isnull()` are what?",
+    "options": [
+     "Different results",
+     "Aliases",
+     "Deprecated",
+     "Row filters"
+    ],
+    "answer": "Aliases"
+   },
+   {
+    "q": "`dropna(how=\"all\")` drops a row when…",
+    "options": [
+     "any value is missing",
+     "every value is missing",
+     "the index is missing",
+     "a column is missing"
+    ],
+    "answer": "every value is missing"
+   },
+   {
+    "q": "What does `ffill()` use to fill a gap?",
+    "options": [
+     "The next value",
+     "The previous value",
+     "The mean",
+     "Zero"
+    ],
+    "answer": "The previous value"
+   },
+   {
+    "q": "`fillna({\"a\": 1})` fills what?",
+    "options": [
+     "Every column with 1",
+     "Column a with 1",
+     "The index",
+     "Raises"
+    ],
+    "answer": "Column a with 1"
+   },
+   {
+    "q": "Which fill invents the most structure?",
+    "options": [
+     "fillna(mean)",
+     "ffill",
+     "dropna",
+     "interpolate"
+    ],
+    "answer": "interpolate"
+   },
+   {
+    "q": "Does `groupby` keep rows whose key is NaN by default?",
+    "options": [
+     "Yes",
+     "No, it drops them",
+     "Only with dropna=True",
+     "Raises"
+    ],
+    "answer": "No, it drops them"
+   },
+   {
+    "q": "`count()` on a column with one NaN returns what?",
+    "options": [
+     "The row count",
+     "The non-missing count",
+     "Zero",
+     "Raises"
+    ],
+    "answer": "The non-missing count"
+   },
+   {
+    "q": "Filling with the mean does what to the variance?",
+    "options": [
+     "Increases it",
+     "Reduces it",
+     "Leaves it unchanged",
+     "Makes it NaN"
+    ],
+    "answer": "Reduces it"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Incomplete rows",
+    "statement": "Print how many rows have at least one missing value.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, 2]})\nprint(int(df.isna().any(axis=1).sum()))",
+    "expected": "2"
+   },
+   {
+    "title": "Per-column fill",
+    "statement": "Fill the numeric gap with 0 and the text gap with \"unknown\", then print the missing count.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"score\": [10.0, None], \"city\": [None, \"Pune\"]})\nfilled = df.fillna({\"score\": 0.0, \"city\": \"unknown\"})\nprint(int(filled.isna().sum().sum()))",
+    "expected": "0"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An interpolate method that does not exist",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.interpolate(method=\"magic\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.interpolate(method=\"linear\").tolist())",
+    "error": "ValueError: Can not interpolate with method=magic.",
+    "fixedOutput": "[1.0, 2.0, 3.0]"
+   },
+   {
+    "title": "An axis that does not exist",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [None, 1]})\nprint(df.dropna(axis=3).shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [None, 1]})\nprint(df.dropna().shape)",
+    "error": "ValueError: No axis named 3 for object type DataFrame",
+    "fixedOutput": "(1, 1)"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you report handling missing data honestly?",
+    "answer": "State how many values were missing in each affected column, which rule was applied, and what it changes — an imputed mean reduces variance, and dropping rows changes the population. A reader must be able to see which rows the number came from."
+   },
+   {
+    "q": "Why is `ffill` dangerous on a measurement column?",
+    "answer": "It asserts the value did not change, which is true for a status and false for a measurement. On a temperature column it creates a plateau and understates the variation, so the statistic describes the fill rule more than the data."
+   }
+  ]
+ },
+ "p09": {
+  "topics": [
+   {
+    "title": "duplicated keep=False marks every copy",
+    "body": "The default marks all but the first copy; `keep=False` marks every row involved, which is what you need to see a whole duplicate pair.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1, 2]})\nprint(df.duplicated().tolist())\nprint(df.duplicated(keep=False).tolist())",
+    "output": "[False, True, False]\n[True, True, False]"
+   },
+   {
+    "title": "rename can change the index too",
+    "body": "`rename(index=...)` relabels rows and `rename(columns=...)` relabels columns. Both return a new object unless `inplace=True`.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"v\": [1, 2]}, index=[\"r1\", \"r2\"])\nout = df.rename(index={\"r1\": \"first\"})\nprint(out.index.tolist())",
+    "output": "['first', 'r2']"
+   },
+   {
+    "title": "A z-score flags distance in std units",
+    "body": "The z-score divides the deviation by the standard deviation. It is comparable across columns, unlike a raw threshold, but it assumes a roughly normal spread.",
+    "code": "import pandas as pd\n\ns = pd.Series([10, 12, 11, 40])\nz = (s - s.mean()) / s.std()\nprint(s[z.abs() > 1.5].tolist())",
+    "output": "[]"
+   },
+   {
+    "title": "replace accepts a regex",
+    "body": "`replace({\"r\": {\"^-$\": \"\"}}, regex=True)` turns a sentinel into an empty value across a table, which is how an export's placeholders become real missing data.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"-\", \"Pune\"]})\nout = df.replace({\"city\": {r\"^-\": \"\"}}, regex=True)\nprint(out[\"city\"].tolist())",
+    "output": "['', 'Pune']"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "`duplicated(keep=False)` marks which rows?",
+    "options": [
+     "The first copy only",
+     "Every row that has a duplicate",
+     "The last copy only",
+     "None"
+    ],
+    "answer": "Every row that has a duplicate"
+   },
+   {
+    "q": "`drop_duplicates(subset=[\"id\"])` keeps what?",
+    "options": [
+     "One row per id",
+     "Every row",
+     "Only unique ids across all columns",
+     "Nothing"
+    ],
+    "answer": "One row per id"
+   },
+   {
+    "q": "`rename(columns={...})` returns what without inplace?",
+    "options": [
+     "None",
+     "A new frame",
+     "The same object",
+     "A Series"
+    ],
+    "answer": "A new frame"
+   },
+   {
+    "q": "Which values does a z-score flag as unusual?",
+    "options": [
+     "Large absolute values",
+     "Negative values",
+     "Zero values",
+     "Repeated values"
+    ],
+    "answer": "Large absolute values"
+   },
+   {
+    "q": "The IQR rule uses which two statistics?",
+    "options": [
+     "Mean and std",
+     "Q1 and Q3",
+     "Min and max",
+     "Median only"
+    ],
+    "answer": "Q1 and Q3"
+   },
+   {
+    "q": "What does `str.strip()` remove?",
+    "options": [
+     "All spaces",
+     "Leading and trailing whitespace",
+     "Digits",
+     "Case"
+    ],
+    "answer": "Leading and trailing whitespace"
+   },
+   {
+    "q": "`df.replace` with `regex=True` requires what?",
+    "options": [
+     "A compiled pattern only",
+     "A mapping of column to pattern",
+     "Numeric columns",
+     "An index"
+    ],
+    "answer": "A mapping of column to pattern"
+   },
+   {
+    "q": "An outlier that is a real observation should be…",
+    "options": [
+     "Deleted",
+     "Kept and flagged",
+     "Zeroed",
+     "Averaged"
+    ],
+    "answer": "Kept and flagged"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Keep the newest record",
+    "statement": "Drop duplicate ids keeping the last row and print the kept values.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1, 2], \"v\": [\"old\", \"new\", \"x\"]})\nprint(df.drop_duplicates(\"id\", keep=\"last\")[\"v\"].tolist())",
+    "expected": "['new', 'x']"
+   },
+   {
+    "title": "Flag by z-score",
+    "statement": "Print the values whose z-score is above 1.5 in absolute value.",
+    "solution": "import pandas as pd\n\ns = pd.Series([10, 12, 11, 40])\nz = (s - s.mean()) / s.std()\nprint(s[z.abs() > 1.5].tolist())",
+    "expected": "[]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Dropping a row label that does not exist",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.drop(\"missing\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.drop(columns=[\"missing\"], errors=\"ignore\").shape)",
+    "error": "KeyError: \"['missing'] not found in axis\"",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "str.strip on a numeric column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [10, 20]})\nprint(df[\"code\"].str.strip().tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [10, 20]})\nprint(df[\"code\"].astype(str).str.strip().tolist())",
+    "error": "AttributeError: Can only use .str accessor with string values, not integer. Did you mean: 'std'?",
+    "fixedOutput": "['10', '20']"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What makes a cleaning step reviewable?",
+    "answer": "A count before and after, the rule that was applied, and why. \"Removed duplicates\" is not reviewable; \"removed 412 rows where id repeated, keeping the newest by updated_at\" is."
+   },
+   {
+    "q": "Why prefer IQR over a fixed threshold for outliers?",
+    "answer": "The IQR adapts to the column's own spread and ignores the tail when computing the bounds, so one extreme value cannot widen the threshold enough to hide itself. A fixed threshold requires knowing the domain."
+   }
+  ]
+ },
+ "p10": {
+  "topics": [
+   {
+    "title": "zfill pads numeric-looking ids",
+    "body": "`str.zfill` pads to a fixed width, which makes ids sort and join consistently instead of mixing 7 and 0007.",
+    "code": "import pandas as pd\n\ns = pd.Series([7, 42]).astype(str)\nprint(s.str.zfill(4).tolist())",
+    "output": "['0007', '0042']"
+   },
+   {
+    "title": "str.cat joins two text columns",
+    "body": "`str.cat` concatenates columns with a separator and handles missing values, replacing the string `+` that fails on NaN.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"first\": [\"Aman\"], \"last\": [\"Sharma\"]})\nprint(df[\"first\"].str.cat(df[\"last\"], sep=\" \").tolist())",
+    "output": "['Aman Sharma']"
+   },
+   {
+    "title": "str.slice takes positions",
+    "body": "`str.slice(0, 2)` takes characters by position, which is the quickest read of a fixed-width code such as a state prefix.",
+    "code": "import pandas as pd\n\ns = pd.Series([\"MH-PUN-01\", \"DL-DEL-02\"])\nprint(s.str.slice(0, 2).tolist())",
+    "output": "['MH', 'DL']"
+   },
+   {
+    "title": "str.get reads one piece of a split",
+    "body": "`str.split(...).str.get(1)` extracts one element without expanding the column, so the frame shape stays the same.",
+    "code": "import pandas as pd\n\ns = pd.Series([\"pune|MH\", \"delhi|DL\"])\nprint(s.str.split(\"|\").str.get(1).tolist())",
+    "output": "['MH', 'DL']"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "`str.contains` treats its pattern as what by default?",
+    "options": [
+     "A literal string",
+     "A regular expression",
+     "A column name",
+     "A number"
+    ],
+    "answer": "A regular expression"
+   },
+   {
+    "q": "`str.extract` with one group and `expand=False` returns what?",
+    "options": [
+     "A DataFrame",
+     "A Series",
+     "A list",
+     "An array"
+    ],
+    "answer": "A Series"
+   },
+   {
+    "q": "`str.len()` on a missing value returns what?",
+    "options": [
+     "0",
+     "NaN",
+     "Raises",
+     "An empty string"
+    ],
+    "answer": "NaN"
+   },
+   {
+    "q": "`str.split(expand=True)` does what?",
+    "options": [
+     "Returns lists",
+     "Returns one column per part",
+     "Drops the column",
+     "Sorts the parts"
+    ],
+    "answer": "Returns one column per part"
+   },
+   {
+    "q": "Which flag makes `str.replace` use a pattern?",
+    "options": [
+     "regex=True",
+     "case=False",
+     "expand=True",
+     "na=False"
+    ],
+    "answer": "regex=True"
+   },
+   {
+    "q": "`str.zfill(4)` does what to \"7\"?",
+    "options": [
+     "\"7   \"",
+     "\"0007\"",
+     "\"7.000\"",
+     "\"7000\""
+    ],
+    "answer": "\"0007\""
+   },
+   {
+    "q": "What does `str.cat` need when joining two columns?",
+    "options": [
+     "A separator",
+     "A regex",
+     "An index",
+     "A dtype"
+    ],
+    "answer": "A separator"
+   },
+   {
+    "q": "Which call counts matches of a pattern in a column?",
+    "options": [
+     "str.find",
+     "str.contains(...).sum()",
+     "str.len",
+     "str.get"
+    ],
+    "answer": "str.contains(...).sum()"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Pad ids to four digits",
+    "statement": "Convert the ids to text, pad to four characters and print them.",
+    "solution": "import pandas as pd\n\ns = pd.Series([7, 42]).astype(str)\nprint(s.str.zfill(4).tolist())",
+    "expected": "['0007', '0042']"
+   },
+   {
+    "title": "Join first and last names",
+    "statement": "Concatenate the two name columns with a space and print the result.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"first\": [\"Aman\"], \"last\": [\"Sharma\"]})\nprint(df[\"first\"].str.cat(df[\"last\"], sep=\" \").tolist())",
+    "expected": "['Aman Sharma']"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An unescaped parenthesis in a regex",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"(022) 1234\"])\nprint(s.str.replace(\"(\", \"\", regex=True).tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"(022) 1234\"])\nprint(s.str.replace(r\"\\(\", \"\", regex=True).tolist())",
+    "error": "re.error: missing ), unterminated subpattern at position 0",
+    "fixedOutput": "['022) 1234']"
+   },
+   {
+    "title": "Reading a split part that does not exist",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"a-b\"])\nprint(s.str.split(\"-\", expand=True)[2].tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"a-b\"])\nprint(s.str.split(\"-\", expand=True)[1].tolist())",
+    "error": "KeyError: 2",
+    "fixedOutput": "['b']"
+   }
+  ],
+  "interview": [
+   {
+    "q": "When do you stop using `.str` and parse instead?",
+    "answer": "When the text is a serialised structure — JSON, HTML, a nested field. Regex over it is unreadable and breaks on the first nesting; use the parser that owns the format, then hand the fields to Pandas."
+   },
+   {
+    "q": "Why normalise case and whitespace before a join on text?",
+    "answer": "Joins compare exactly, so \"Pune\" and \"pune \" never match and the join silently drops rows. Normalising both sides first makes the match reflect the data rather than the formatting."
+   }
+  ]
+ }
+}

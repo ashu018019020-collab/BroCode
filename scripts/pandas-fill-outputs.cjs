@@ -19,7 +19,7 @@ const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'content', 'pandas-mastery');
-const files = fs.readdirSync(SRC).filter((f) => /^modules-.*\.json$/.test(f)).sort();
+const files = fs.readdirSync(SRC).filter((f) => /^(modules-|deepening).*\.json$/.test(f)).sort();
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pandas-fill-'));
 const script = path.join(tmp, 'sample.py');
@@ -40,7 +40,16 @@ function run(code) {
 let topics = 0; let tasks = 0; let debug = 0; const problems = [];
 for (const file of files) {
   const data = JSON.parse(fs.readFileSync(path.join(SRC, file), 'utf8'));
-  for (const m of data) {
+  /*
+   * A module file is an array of modules; a growth layer is an object keyed by module id. Both hold
+   * the same pack shape, so the executor walks either one and writes it back in the shape it read.
+   */
+  const packs = Array.isArray(data)
+    ? data.map((m) => ({ id: m.id, pack: m }))
+    : Object.entries(data).map(([id, pack]) => ({ id, pack }));
+  for (const { id, pack: source } of packs) {
+    /* Nested arrays are shared with `data`, so the edits below are written back with the file. */
+    const m = { ...source, id };
     for (const t of m.topics || []) {
       if (!t.code) { problems.push(`${m.id}: topic "${t.title}" has no code`); continue; }
       const r = run(t.code);

@@ -1,0 +1,654 @@
+{
+ "p16": {
+  "topics": [
+   {
+    "title": "swaplevel exchanges two levels",
+    "body": "A MultiIndex keeps the level names, and `swaplevel` exchanges their order so the report sorts by the other dimension without rebuilding the groupby.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(s.swaplevel().index.names)",
+    "output": "['year', 'city']"
+   },
+   {
+    "title": "pd.NA is the missing scalar",
+    "body": "`pd.NA` is the missing value of the nullable dtypes, distinct from `np.nan`. `isna()` recognises both, which is why a test should use it rather than an equality check.",
+    "code": "import pandas as pd\n\ns = pd.Series([1, pd.NA], dtype=\"Int64\")\nprint(s.isna().tolist())\nprint(s.fillna(0).tolist())",
+    "output": "[False, True]\n[1, 0]"
+   },
+   {
+    "title": "pipe can pass arguments",
+    "body": "`pipe` forwards extra arguments to the function, so one reusable step can be parameterised without a lambda.",
+    "code": "import pandas as pd\n\ndef scale(df, factor):\n    return df.assign(v=df[\"v\"] * factor)\n\nprint(pd.DataFrame({\"v\": [1, 2]}).pipe(scale, 10)[\"v\"].tolist())",
+    "output": "[10, 20]"
+   },
+   {
+    "title": "query can read a local variable",
+    "body": "An `@name` inside a query refers to a Python variable, which lets a threshold come from config while the condition stays a readable string.",
+    "code": "import pandas as pd\n\nlimit = 2\ndf = pd.DataFrame({\"v\": [1, 2, 3]})\nprint(df.query(\"v > @limit\")[\"v\"].tolist())",
+    "output": "[3]"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "`swaplevel` works on which object?",
+    "options": [
+     "Any Series",
+     "A MultiIndex",
+     "Only a DataFrame",
+     "A datetime index"
+    ],
+    "answer": "A MultiIndex"
+   },
+   {
+    "q": "Which test finds `pd.NA`?",
+    "options": [
+     "x is None",
+     "x == None",
+     "pd.isna(x)",
+     "x != x"
+    ],
+    "answer": "pd.isna(x)"
+   },
+   {
+    "q": "`pipe` passes the frame to what?",
+    "options": [
+     "A string",
+     "A function",
+     "A column",
+     "An index"
+    ],
+    "answer": "A function"
+   },
+   {
+    "q": "In `query`, a leading `@` means what?",
+    "options": [
+     "A column",
+     "A Python variable",
+     "A regex",
+     "A comment"
+    ],
+    "answer": "A Python variable"
+   },
+   {
+    "q": "`combine_first` keeps which value when both exist?",
+    "options": [
+     "The second",
+     "The first",
+     "The larger",
+     "NaN"
+    ],
+    "answer": "The first"
+   },
+   {
+    "q": "A categorical's ordering matters for what?",
+    "options": [
+     "Memory only",
+     "Sorting and comparisons",
+     "File size",
+     "Joins"
+    ],
+    "answer": "Sorting and comparisons"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Swap the report levels",
+    "statement": "Group by city and year, swap the levels and print the index names.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(s.swaplevel().index.names)",
+    "expected": "['year', 'city']"
+   },
+   {
+    "title": "Parameterised pipeline",
+    "statement": "Scale the value column by 10 through pipe and print the result.",
+    "solution": "import pandas as pd\n\ndef scale(df, factor):\n    return df.assign(v=df[\"v\"] * factor)\n\nprint(pd.DataFrame({\"v\": [1, 2]}).pipe(scale, 10)[\"v\"].tolist())",
+    "expected": "[10, 20]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "The cat accessor on a plain Series",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"a\", \"b\"])\nprint(s.cat.categories.tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"a\", \"b\"], dtype=\"category\")\nprint(s.cat.categories.tolist())",
+    "error": "AttributeError: Can only use .cat accessor with a 'category' dtype. Did you mean: 'at'?",
+    "fixedOutput": "['a', 'b']"
+   },
+   {
+    "title": "swaplevel on a flat index",
+    "broken": "import pandas as pd\n\ns = pd.Series([1], index=[\"a\"])\nprint(s.swaplevel().index.tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"v\": [1]})\ns = df.groupby([\"city\", \"year\"])[\"v\"].sum()\nprint(s.swaplevel().index.names)",
+    "error": "AssertionError",
+    "fixedOutput": "['year', 'city']"
+   }
+  ],
+  "interview": [
+   {
+    "q": "When is a MultiIndex worth the verbosity?",
+    "answer": "When a result is genuinely two-dimensional and the second dimension is a category such as year, and when cross-sections with `xs` replace repeated filtering. For a single flat report, `reset_index` is easier to read."
+   },
+   {
+    "q": "What does Copy-on-Write change for a learner?",
+    "answer": "A slice behaves like a copy for writes: modifying a derived frame no longer changes the parent silently, and chained assignment either fails or does nothing. The fix is one `.loc` call on the frame you intend to change."
+   }
+  ]
+ },
+ "p17": {
+  "topics": [
+   {
+    "title": "skew tells you which way the tail runs",
+    "body": "`skew()` is positive when the long tail is on the right and negative when it is on the left. It quantifies what a mean far above the median already hinted at.",
+    "code": "import pandas as pd\n\nprint(round(float(pd.Series([1, 1, 1, 100]).skew()), 2))\nprint(round(float(pd.Series([1, 2, 3, 4]).skew()), 2))",
+    "output": "2.0\n0.0"
+   },
+   {
+    "title": "corr takes a method",
+    "body": "Pearson measures linear agreement; Spearman ranks the values first, so it survives a curved but monotone relationship and is the safer default on ordinal data.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4], \"b\": [1, 4, 9, 16]})\nprint(round(df[\"a\"].corr(df[\"b\"]), 2), round(df[\"a\"].corr(df[\"b\"], method=\"spearman\"), 2))",
+    "output": "0.98 1.0"
+   },
+   {
+    "title": "qcut makes equal-count buckets",
+    "body": "`cut` splits by value ranges; `qcut` splits into groups of roughly equal size. Deciles of spend need qcut, because a fixed range would put almost everyone in one bucket.",
+    "code": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4, 5, 6])\nprint(pd.qcut(s, 3).value_counts().sort_index().tolist())",
+    "output": "[2, 2, 2]"
+   },
+   {
+    "title": "describe(include='all') covers text",
+    "body": "The default summary skips text. `include=\"all\"` adds count, unique and top for the object columns, which is the difference between a numeric profile and a full one.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"], \"v\": [1, 2]})\nprint(df.describe(include=\"all\").shape[0])",
+    "output": "11"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "A positive skew means the tail is on which side?",
+    "options": [
+     "Left",
+     "Right",
+     "Both",
+     "Neither"
+    ],
+    "answer": "Right"
+   },
+   {
+    "q": "Spearman correlation is based on what?",
+    "options": [
+     "Raw values",
+     "Ranks",
+     "Squares",
+     "Means"
+    ],
+    "answer": "Ranks"
+   },
+   {
+    "q": "`qcut` produces buckets with roughly…",
+    "options": [
+     "equal value ranges",
+     "equal counts",
+     "equal means",
+     "equal variance"
+    ],
+    "answer": "equal counts"
+   },
+   {
+    "q": "`describe()` skips which columns by default?",
+    "options": [
+     "Numeric",
+     "Text",
+     "Datetime",
+     "Boolean"
+    ],
+    "answer": "Text"
+   },
+   {
+    "q": "`cut(s, bins=[0, 10, 20])` requires bins to be…",
+    "options": [
+     "unsorted",
+     "increasing",
+     "integers",
+     "unique"
+    ],
+    "answer": "increasing"
+   },
+   {
+    "q": "A pass rate is which statistic of a boolean column?",
+    "options": [
+     "sum",
+     "mean",
+     "count",
+     "std"
+    ],
+    "answer": "mean"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Spearman rank correlation",
+    "statement": "Print the Spearman correlation between the two columns rounded to two decimals.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4], \"b\": [1, 4, 9, 16]})\nprint(round(float(df[\"a\"].corr(df[\"b\"], method=\"spearman\")), 2))",
+    "expected": "1.0"
+   },
+   {
+    "title": "Equal-count buckets",
+    "statement": "Split the values into three equal-count buckets and print the counts.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4, 5, 6])\nprint(pd.qcut(s, 3).value_counts().sort_index().tolist())",
+    "expected": "[2, 2, 2]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Bins in decreasing order",
+    "broken": "import pandas as pd\n\nprint(pd.cut(pd.Series([1, 5]), bins=[10, 5, 0]).value_counts().tolist())",
+    "fix": "import pandas as pd\n\nprint(pd.cut(pd.Series([1, 5]), bins=[0, 5, 10]).value_counts().tolist())",
+    "error": "ValueError: bins must increase monotonically.",
+    "fixedOutput": "[2, 0]"
+   },
+   {
+    "title": "qcut on too few distinct values",
+    "broken": "import pandas as pd\n\nprint(pd.qcut(pd.Series([1, 1, 1, 1, 2]), 4).tolist())",
+    "fix": "import pandas as pd\n\nprint(pd.qcut(pd.Series([1, 1, 1, 1, 2]), 4, duplicates=\"drop\").tolist())",
+    "error": "You can drop duplicate edges by setting the 'duplicates' kwarg",
+    "fixedOutput": "[Interval(0.999, 2.0, closed='right'), Interval(0.999, 2.0, closed='right'), Interval(0.999, 2.0, closed='right'), Interval(0.999, 2.0, closed='right'), Interval(0.999, 2.0, closed='right')]"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you turn an EDA observation into a finding?",
+    "answer": "Name the segment, give the metric with its denominator, and state what would falsify it. \"Pune learners pass at 62% of 812 attempts\" is a finding; \"Pune looks better\" is an impression."
+   },
+   {
+    "q": "What is Simpson's paradox in a Pandas table?",
+    "answer": "An overall trend that reverses inside every segment, because the segments differ in size and baseline. Group by the segment and compare the relationship within groups before reporting the pooled number."
+   }
+  ]
+ },
+ "p18": {
+  "topics": [
+   {
+    "title": "astype narrows a numeric column",
+    "body": "The smallest integer dtype that fits the range can cut memory by a factor of four or more. Check the min and max first, because an overflowing cast is silent.",
+    "code": "import pandas as pd\n\ns = pd.Series([1, 127], dtype=\"int64\")\nprint(s.astype(\"int8\").nbytes)\nprint(s.astype(\"int8\").max())",
+    "output": "2\n127"
+   },
+   {
+    "title": "category codes are integers",
+    "body": "`cat.codes` exposes the integer behind each category, which is a compact feature column while the readable labels stay available.",
+    "code": "import pandas as pd\n\ns = pd.Series([\"b\", \"a\", \"b\"], dtype=\"category\")\nprint(s.cat.codes.tolist())\nprint(s.cat.categories.tolist())",
+    "output": "[1, 0, 1]\n['a', 'b']"
+   },
+   {
+    "title": "eval computes against columns by name",
+    "body": "`eval` parses one expression and evaluates it against the frame, which avoids building every intermediate column of a long formula.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.eval(\"(a + b) * 2\").tolist())",
+    "output": "[8, 12]"
+   },
+   {
+    "title": "A chunk loop keeps one frame alive",
+    "body": "Aggregating inside the loop means only the current chunk exists; appending each chunk to a list and concatenating at the end rebuilds the full table in memory.",
+    "code": "import pandas as pd\nfrom io import StringIO\n\ntotal = 0\nfor chunk in pd.read_csv(StringIO(\"v\\n1\\n2\\n3\"), chunksize=2):\n    total += int(chunk[\"v\"].sum())\nprint(total)",
+    "output": "6"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "`memory_usage(deep=True)` includes what?",
+    "options": [
+     "Only the array buffers",
+     "Object contents too",
+     "The index only",
+     "Nothing extra"
+    ],
+    "answer": "Object contents too"
+   },
+   {
+    "q": "`int8` holds values up to what?",
+    "options": [
+     "127",
+     "255",
+     "32767",
+     "65535"
+    ],
+    "answer": "127"
+   },
+   {
+    "q": "Which is the slowest for row-wise work?",
+    "options": [
+     "Column arithmetic",
+     "groupby mean",
+     "iterrows",
+     "vectorised mask"
+    ],
+    "answer": "iterrows"
+   },
+   {
+    "q": "`chunksize` bounds what?",
+    "options": [
+     "The file size",
+     "The rows per frame",
+     "The columns read",
+     "The dtypes"
+    ],
+    "answer": "The rows per frame"
+   },
+   {
+    "q": "`cat.codes` returns what?",
+    "options": [
+     "Labels",
+     "Integers per category",
+     "Booleans",
+     "Counts"
+    ],
+    "answer": "Integers per category"
+   },
+   {
+    "q": "When should you leave Pandas?",
+    "options": [
+     "At 1,000 rows",
+     "When the working set does not fit memory",
+     "When columns are text",
+     "When the index is a string"
+    ],
+    "answer": "When the working set does not fit memory"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Narrow integers",
+    "statement": "Store the values as int8 and print the resulting bytes and maximum.",
+    "solution": "import pandas as pd\n\ns = pd.Series([1, 127], dtype=\"int64\")\nprint(s.astype(\"int8\").nbytes, s.astype(\"int8\").max())",
+    "expected": "2 127"
+   },
+   {
+    "title": "Category codes",
+    "statement": "Store the column as a category and print the integer codes.",
+    "solution": "import pandas as pd\n\ns = pd.Series([\"b\", \"a\", \"b\"], dtype=\"category\")\nprint(s.cat.codes.tolist())",
+    "expected": "[1, 0, 1]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "eval names a column that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.eval(\"missing + 1\").tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1]})\nprint(df.eval(\"a + 1\").tolist())",
+    "error": "pandas.errors.UndefinedVariableError: name 'missing' is not defined",
+    "fixedOutput": "[2]"
+   },
+   {
+    "title": "A chunk size of zero",
+    "broken": "import pandas as pd\nfrom io import StringIO\n\nprint(next(pd.read_csv(StringIO(\"v\\n1\"), chunksize=0)))",
+    "fix": "import pandas as pd\nfrom io import StringIO\n\nprint(next(pd.read_csv(StringIO(\"v\\n1\"), chunksize=1))[\"v\"].tolist())",
+    "error": "ValueError: 'chunksize' must be an integer >=1",
+    "fixedOutput": "[1]"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the first performance change you try on a slow Pandas pipeline?",
+    "answer": "Find the row-wise step: `iterrows` or `apply(axis=1)` is usually where the time goes. Rewrite it as column arithmetic or a groupby transform, then measure again rather than assuming."
+   },
+   {
+    "q": "Why is a naive `int8` downcast risky?",
+    "answer": "The cast does not raise on overflow; it wraps to a negative number. Check min and max against the dtype's range before casting, or use a nullable type and a validation step."
+   }
+  ]
+ },
+ "p19": {
+  "topics": [
+   {
+    "title": "Series.to_numpy copies by default",
+    "body": "`to_numpy()` may share memory for a single dtype, and `copy=True` makes the boundary explicit. Knowing which you got matters when a model or a library writes into the array.",
+    "code": "import pandas as pd\n\ns = pd.Series([1, 2])\narr = s.to_numpy(copy=True)\narr[0] = 99\nprint(s.tolist())",
+    "output": "[1, 2]"
+   },
+   {
+    "title": "from_records builds a frame from rows",
+    "body": "`pd.DataFrame.from_records` accepts tuples or dicts with an explicit column list, which is how a database cursor becomes a frame without a second parse.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame.from_records([(1, \"a\"), (2, \"b\")], columns=[\"id\", \"name\"])\nprint(df[\"name\"].tolist())",
+    "output": "['a', 'b']"
+   },
+   {
+    "title": "A SQL WHERE is a mask",
+    "body": "Every SQL clause has a Pandas equivalent: SELECT is column selection, WHERE a Boolean mask, GROUP BY `groupby`, JOIN `merge`. Translating clause by clause is how a query becomes a frame.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"], \"v\": [10, 5]})\nprint(df[df[\"v\"] > 5][\"city\"].tolist())",
+    "output": "['Pune']"
+   },
+   {
+    "title": "One-hot before the split, fit on train",
+    "body": "Encoding a category is stateless and safe on the full table only when the category list is fixed. Any statistic — a mean, a fill value, a quantile — must be fitted on training rows and applied to both.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1.0, 2.0, 3.0, 10.0]})\ntrain, test = df.iloc[:3], df.iloc[3:]\nmean = train[\"x\"].mean()\nprint(round(float((test[\"x\"] - mean).iloc[0]), 2))",
+    "output": "8.0"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "A mixed-dtype frame's `to_numpy()` returns which dtype?",
+    "options": [
+     "float64",
+     "object",
+     "int64",
+     "str"
+    ],
+    "answer": "object"
+   },
+   {
+    "q": "`from_records` with a column list does what?",
+    "options": [
+     "Names the columns",
+     "Drops columns",
+     "Sorts rows",
+     "Changes dtypes"
+    ],
+    "answer": "Names the columns"
+   },
+   {
+    "q": "SQL WHERE maps to which Pandas operation?",
+    "options": [
+     "groupby",
+     "Boolean mask",
+     "merge",
+     "sort_values"
+    ],
+    "answer": "Boolean mask"
+   },
+   {
+    "q": "Data leakage happens when…",
+    "options": [
+     "the test set is small",
+     "a transform sees test data",
+     "columns are numeric",
+     "the index is reset"
+    ],
+    "answer": "a transform sees test data"
+   },
+   {
+    "q": "Which is stateless and safe to apply to the whole table?",
+    "options": [
+     "Mean fill",
+     "Standard scaling",
+     "One-hot encoding a fixed vocabulary",
+     "Quantile binning"
+    ],
+    "answer": "One-hot encoding a fixed vocabulary"
+   },
+   {
+    "q": "scikit-learn expects which input shape?",
+    "options": [
+     "A DataFrame with labels",
+     "A numeric 2-D array",
+     "A dict",
+     "A list of dicts"
+    ],
+    "answer": "A numeric 2-D array"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Frame from records",
+    "statement": "Build the frame from the tuples and print the names.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame.from_records([(1, \"a\"), (2, \"b\")], columns=[\"id\", \"name\"])\nprint(df[\"name\"].tolist())",
+    "expected": "['a', 'b']"
+   },
+   {
+    "title": "Train-only mean",
+    "statement": "Compute the mean on the first three rows and print the first test value minus that mean, rounded to two decimals.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1.0, 2.0, 3.0, 10.0]})\ntrain, test = df.iloc[:3], df.iloc[3:]\nprint(round(float((test[\"x\"] - train[\"x\"].mean()).iloc[0]), 2))",
+    "expected": "8.0"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Mean over an object array",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [\"x\", \"y\"]})\nprint(df.to_numpy().mean())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [\"x\", \"y\"]})\nprint(df[[\"a\"]].to_numpy().mean())",
+    "error": "TypeError: unsupported operand type(s) for +: 'int' and 'str'",
+    "fixedOutput": "1.5"
+   },
+   {
+    "title": "The scaler was fitted on everything",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1.0, 2.0, 3.0, 100.0]})\nmean = df[\"x\"].mean()\nprint(round(float((df.iloc[:3][\"x\"] - mean).mean()), 2))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1.0, 2.0, 3.0, 100.0]})\ntrain = df.iloc[:3]\nprint(round(float((train[\"x\"] - train[\"x\"].mean()).mean()), 2))",
+    "error": "Wrong output: -24.5 — the full-table mean carried the held-out 100 into the training values.",
+    "fixedOutput": "0.0",
+    "brokenOutput": "-24.5"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Where exactly is the DataFrame/Numpy boundary in a model pipeline?",
+    "answer": "After all row-level work — filtering, joining, encoding, splitting — and before the estimator. `to_numpy(dtype=float)` at that point gives the model an unambiguous numeric matrix, while the frame keeps the labels for reporting."
+   },
+   {
+    "q": "How do you explain data leakage to a non-specialist?",
+    "answer": "It is marking your own homework: the preparation step was allowed to look at the answers it will be tested on. The score looks excellent and then collapses in production, because the information it relied on will not be there."
+   }
+  ]
+ },
+ "p20": {
+  "topics": [
+   {
+    "title": "Write the question before the query",
+    "body": "A written question names the grain, the metric and the comparison. Without it, a table can be technically correct and still not answer what was asked.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2], \"minutes\": [10, 20, 30]})\nprint(\"per user:\", df.groupby(\"user\")[\"minutes\"].sum().mean())\nprint(\"per attempt:\", df[\"minutes\"].mean())",
+    "output": "per user: 30.0\nper attempt: 20.0"
+   },
+   {
+    "title": "A cleaning log is part of the deliverable",
+    "body": "Recording what was dropped and why is what makes a number reviewable. A log line is a count, a rule and a reason.",
+    "code": "import pandas as pd\n\nraw = pd.DataFrame({\"id\": [1, 1, 2], \"v\": [1, 2, 3]})\nclean = raw.drop_duplicates(\"id\", keep=\"last\")\nprint(len(raw), len(clean))",
+    "output": "3 2"
+   },
+   {
+    "title": "Reproducible means rerunnable",
+    "body": "A stored seed and a fixed input make the same output tomorrow. Anything without one is a screenshot, not an analysis.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": range(6)})\na = df.sample(3, random_state=11)[\"x\"].tolist()\nb = df.sample(3, random_state=11)[\"x\"].tolist()\nprint(a == b)",
+    "output": "True"
+   },
+   {
+    "title": "Present the table, then the chart",
+    "body": "A stakeholder needs the number they can quote and the picture that explains it. Shipping only one of the two forces them to recompute or to trust blindly.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nreport = df.groupby(\"city\")[\"passed\"].agg(learners=\"size\", rate=\"mean\").round(2)\nprint(report.to_dict(\"index\"))",
+    "output": "{'Delhi': {'learners': 1, 'rate': 1.0}, 'Pune': {'learners': 2, 'rate': 0.5}}"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What does \"grain\" mean in an analysis?",
+    "options": [
+     "The sort order",
+     "What one row represents",
+     "The column count",
+     "The file format"
+    ],
+    "answer": "What one row represents"
+   },
+   {
+    "q": "A rate is only interpretable with what?",
+    "options": [
+     "Its denominator",
+     "Its dtype",
+     "A chart",
+     "An index"
+    ],
+    "answer": "Its denominator"
+   },
+   {
+    "q": "Before counting users, you must…",
+    "options": [
+     "sort the rows",
+     "deduplicate to one row per user",
+     "drop text columns",
+     "reset the index"
+    ],
+    "answer": "deduplicate to one row per user"
+   },
+   {
+    "q": "A reproducible analysis needs which of these?",
+    "options": [
+     "A fixed seed and stored input",
+     "A faster laptop",
+     "More charts",
+     "A shorter script"
+    ],
+    "answer": "A fixed seed and stored input"
+   },
+   {
+    "q": "Which is NOT part of a project README?",
+    "options": [
+     "Question and data source",
+     "Cleaning decisions",
+     "Findings with denominators",
+     "The author's salary"
+    ],
+    "answer": "The author's salary"
+   },
+   {
+    "q": "A statistically significant result can still be…",
+    "options": [
+     "too small to matter",
+     "impossible",
+     "unmeasured",
+     "unreproducible by definition"
+    ],
+    "answer": "too small to matter"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Two grains, two numbers",
+    "statement": "Print the mean minutes per user and the mean minutes per attempt.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2], \"minutes\": [10, 20, 30]})\nprint(df.groupby(\"user\")[\"minutes\"].sum().mean(), df[\"minutes\"].mean())",
+    "expected": "30.0 20.0"
+   },
+   {
+    "title": "Report with denominators",
+    "statement": "Print learners and pass rate per city as nested dicts.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nprint(df.groupby(\"city\")[\"passed\"].agg(learners=\"size\", rate=\"mean\").round(2).to_dict(\"index\"))",
+    "expected": "{'Delhi': {'learners': 1, 'rate': 1.0}, 'Pune': {'learners': 2, 'rate': 0.5}}"
+   }
+  ],
+  "debug": [
+   {
+    "title": "The metric column is misspelled",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"passed\": [True]})\nprint(df.groupby(\"city\")[\"pass\"].mean())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"passed\": [True]})\nprint(df.groupby(\"city\")[\"passed\"].mean().to_dict())",
+    "error": "KeyError: 'Column not found: pass'",
+    "fixedOutput": "{'Pune': 1.0}"
+   },
+   {
+    "title": "Rows counted as users",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2]})\nprint(df[\"user\"].count())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2]})\nprint(df[\"user\"].nunique())",
+    "error": "Wrong output: 3 — that counts attempt rows, not the 2 distinct users.",
+    "fixedOutput": "2",
+    "brokenOutput": "3"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you present one finding in 30 seconds?",
+    "answer": "Question, method in one clause, the number with its denominator, and the decision it supports. Stop there; the notebook is the backup, not the pitch."
+   },
+   {
+    "q": "What is the most common mistake in a junior Pandas project?",
+    "answer": "Trusting a row count — counting attempts as users, or a fan-out join that silently multiplied rows. Checking grain and counts before every aggregate catches most of it."
+   }
+  ]
+ }
+}

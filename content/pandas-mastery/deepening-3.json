@@ -1,0 +1,652 @@
+{
+ "p11": {
+  "topics": [
+   {
+    "title": "na_values declares the sentinels",
+    "body": "A CSV often encodes missing data as \"NA\", \"-\" or \"999\". `na_values` names them at load time, so they arrive as NaN instead of as a category or a number.",
+    "code": "import pandas as pd\nfrom io import StringIO\n\ntext = \"v\\n10\\nNA\"\ndf = pd.read_csv(StringIO(text), na_values=[\"NA\"])\nprint(df[\"v\"].isna().tolist())",
+    "output": "[False, True]"
+   },
+   {
+    "title": "nrows reads a sample of a big file",
+    "body": "`nrows` reads the first n data rows, which is enough to check the columns and dtypes of a file that would take minutes to parse fully.",
+    "code": "import pandas as pd\nfrom io import StringIO\n\ntext = \"a,b\\n1,2\\n3,4\\n5,6\"\nprint(pd.read_csv(StringIO(text), nrows=1).shape)",
+    "output": "(1, 2)"
+   },
+   {
+    "title": "to_json orient chooses the shape",
+    "body": "`orient=\"records\"` writes one object per row, which is what an API expects. The default is column-oriented and reads very differently.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.to_json(orient=\"records\"))",
+    "output": "[{\"a\":1,\"b\":2}]"
+   },
+   {
+    "title": "index_col moves a column into the index at load",
+    "body": "`index_col` avoids a later `set_index`, and it keeps the column out of the data from the start, which is why an id often belongs there.",
+    "code": "import pandas as pd\nfrom io import StringIO\n\nprint(pd.read_csv(StringIO(\"id,v\\n1,10\\n\"), index_col=\"id\").index.tolist())",
+    "output": "[1]"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "`read_csv` splits on which separator by default?",
+    "options": [
+     "Semicolon",
+     "Comma",
+     "Tab",
+     "Pipe"
+    ],
+    "answer": "Comma"
+   },
+   {
+    "q": "`index_col=0` does what?",
+    "options": [
+     "Drops the first column",
+     "Uses the first column as the index",
+     "Sets a range index",
+     "Renames the index"
+    ],
+    "answer": "Uses the first column as the index"
+   },
+   {
+    "q": "What does `na_values` do?",
+    "options": [
+     "Drops missing rows",
+     "Declares which tokens mean missing",
+     "Fills missing values",
+     "Raises on missing"
+    ],
+    "answer": "Declares which tokens mean missing"
+   },
+   {
+    "q": "`to_csv` writes the index unless you pass…",
+    "options": [
+     "index=True",
+     "index=False",
+     "header=False",
+     "sep=','"
+    ],
+    "answer": "index=False"
+   },
+   {
+    "q": "`chunksize` returns what?",
+    "options": [
+     "A list of frames",
+     "An iterator of frames",
+     "One frame",
+     "A generator of rows"
+    ],
+    "answer": "An iterator of frames"
+   },
+   {
+    "q": "Which argument parses a date column during the read?",
+    "options": [
+     "dtype",
+     "parse_dates",
+     "usecols",
+     "nrows"
+    ],
+    "answer": "parse_dates"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Read with a sentinel",
+    "statement": "Treat \"NA\" as missing and print how many values are missing.",
+    "solution": "import pandas as pd\nfrom io import StringIO\n\ntext = \"v\\n10\\nNA\"\ndf = pd.read_csv(StringIO(text), na_values=[\"NA\"])\nprint(int(df[\"v\"].isna().sum()))",
+    "expected": "1"
+   },
+   {
+    "title": "Records JSON",
+    "statement": "Serialise the frame as records and print the string.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]})\nprint(df.to_json(orient=\"records\"))",
+    "expected": "[{\"a\":1,\"b\":2}]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Both sep and delimiter passed",
+    "broken": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"a;b\\n1;2\"), sep=\";\", delimiter=\";\")\nprint(df.shape)",
+    "fix": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"a;b\\n1;2\"), sep=\";\")\nprint(df.shape)",
+    "error": "ValueError: Specified a sep and a delimiter; you can only specify one.",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "usecols names a column the file lacks",
+    "broken": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"a,b\\n1,2\"), usecols=[\"z\"])\nprint(df.shape)",
+    "fix": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"a,b\\n1,2\"), usecols=[\"a\"])\nprint(df.shape)",
+    "error": "ValueError: Usecols do not match columns, columns expected but not found: ['z']",
+    "fixedOutput": "(1, 1)"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you make a CSV load reproducible?",
+    "answer": "Pin the contract: `sep`, `dtype`, `parse_dates`, `na_values`, `usecols`. Then the same file produces the same frame on every machine, and a change in the source fails at the boundary instead of in a later mean."
+   },
+   {
+    "q": "Why is a Parquet export often preferred to CSV for downstream analysis?",
+    "answer": "Parquet stores the schema and the types, reads only the columns requested, and is far faster to parse at size. CSV is portable and human-readable, which is the reason it is still the interchange default."
+   }
+  ]
+ },
+ "p12": {
+  "topics": [
+   {
+    "title": "suffixes name the collision",
+    "body": "When both sides have a column of the same name, `suffixes` decides the two new names. Naming them explicitly keeps a report readable.",
+    "code": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1], \"v\": [10]})\nb = pd.DataFrame({\"id\": [1], \"v\": [20]})\nout = a.merge(b, on=\"id\", suffixes=(\"_left\", \"_right\"))\nprint(out.columns.tolist())",
+    "output": "['id', 'v_left', 'v_right']"
+   },
+   {
+    "title": "concat stacks columns with axis=1",
+    "body": "`axis=1` places frames side by side and aligns them by index. Misaligned labels produce NaN rows, which is the sign the indexes did not agree.",
+    "code": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]})\nb = pd.DataFrame({\"y\": [2]})\nprint(pd.concat([a, b], axis=1).shape)",
+    "output": "(1, 2)"
+   },
+   {
+    "title": "merge on the index needs no key column",
+    "body": "With `left_index` and `right_index` the join uses labels, which is how two tables already indexed by the same key are combined without a reset.",
+    "code": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]}, index=[\"k\"])\nb = pd.DataFrame({\"y\": [2]}, index=[\"k\"])\nprint(a.merge(b, left_index=True, right_index=True).values.tolist())",
+    "output": "[[1, 2]]"
+   },
+   {
+    "title": "indicator turns a mystery into a filter",
+    "body": "`_merge` labels each row as `both`, `left_only` or `right_only`. Filtering `left_only` is the \"who never matched\" report.",
+    "code": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2]})\nout = a.merge(b, on=\"id\", how=\"left\", indicator=True)\nprint(out[\"_merge\"].tolist())",
+    "output": "['left_only', 'both']"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "`merge` defaults to which join?",
+    "options": [
+     "left",
+     "inner",
+     "outer",
+     "cross"
+    ],
+    "answer": "inner"
+   },
+   {
+    "q": "`indicator=True` adds which column?",
+    "options": [
+     "_join",
+     "_merge",
+     "_matched",
+     "_source"
+    ],
+    "answer": "_merge"
+   },
+   {
+    "q": "A left join keeps which rows?",
+    "options": [
+     "Only matches",
+     "Every left row",
+     "Every right row",
+     "Both sides"
+    ],
+    "answer": "Every left row"
+   },
+   {
+    "q": "`concat(axis=0)` does what?",
+    "options": [
+     "Stacks rows",
+     "Stacks columns",
+     "Joins on a key",
+     "Sorts"
+    ],
+    "answer": "Stacks rows"
+   },
+   {
+    "q": "`validate=\"many_to_one\"` fails when…",
+    "options": [
+     "the left key repeats",
+     "the right key repeats",
+     "the keys are text",
+     "the frames are large"
+    ],
+    "answer": "the right key repeats"
+   },
+   {
+    "q": "Merging int and object keys raises what?",
+    "options": [
+     "Nothing",
+     "ValueError about merge keys",
+     "KeyError",
+     "TypeError"
+    ],
+    "answer": "ValueError about merge keys"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Name the collision",
+    "statement": "Merge on id with suffixes _l and _r and print the column names.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1], \"v\": [10]})\nb = pd.DataFrame({\"id\": [1], \"v\": [20]})\nprint(a.merge(b, on=\"id\", suffixes=(\"_l\", \"_r\")).columns.tolist())",
+    "expected": "['id', 'v_l', 'v_r']"
+   },
+   {
+    "title": "Who never matched",
+    "statement": "Left-join with an indicator and print the rows that came only from the left side.",
+    "solution": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2]})\nout = a.merge(b, on=\"id\", how=\"left\", indicator=True)\nprint(out[out[\"_merge\"] == \"left_only\"][\"id\"].tolist())",
+    "expected": "[1]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Merging text keys against numbers",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"id\": [\"1\"], \"x\": [1]})\nb = pd.DataFrame({\"id\": [1], \"y\": [2]})\nprint(a.merge(b, on=\"id\").shape)",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"id\": [\"1\"], \"x\": [1]})\nb = pd.DataFrame({\"id\": [1], \"y\": [2]})\nb[\"id\"] = b[\"id\"].astype(str)\nprint(a.merge(b, on=\"id\").shape)",
+    "error": "ValueError: You are trying to merge on str and int64 columns for key 'id'. If you wish to proceed you should use pd.concat",
+    "fixedOutput": "(1, 3)"
+   },
+   {
+    "title": "An axis that does not exist",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]})\nprint(pd.concat([a], axis=2))",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"x\": [1]})\nprint(pd.concat([a], axis=1).shape)",
+    "error": "ValueError: No axis named 2 for object type DataFrame",
+    "fixedOutput": "(1, 1)"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you prove a join did not change the grain?",
+    "answer": "Record the row count and the key's uniqueness on both sides, then compare the result with the expected relationship: one-to-one keeps the count, one-to-many multiplies it by the matches. `validate` turns the expectation into an assertion."
+   },
+   {
+    "q": "What is the risk of `how=\"outer\"` on a large table?",
+    "answer": "It keeps unmatched keys from both sides, so the result grows and the NaN columns mix two different kinds of missingness — a genuinely absent record and a record that exists but has no value. Report the counts of each separately."
+   }
+  ]
+ },
+ "p13": {
+  "topics": [
+   {
+    "title": "as_index=False keeps the key as a column",
+    "body": "By default the group key becomes the index. `as_index=False` keeps it as a column, which is what a flat export or a chart expects.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"v\": [1, 2]})\nout = df.groupby(\"city\", as_index=False)[\"v\"].sum()\nprint(out.columns.tolist())",
+    "output": "['city', 'v']"
+   },
+   {
+    "title": "dropna=False keeps the missing key",
+    "body": "Rows with a missing group key are dropped by default, so the totals shrink. Keeping them shows that the key itself is incomplete.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", None], \"v\": [1, 2]})\nprint(len(df.groupby(\"city\")[\"v\"].sum()))\nprint(len(df.groupby(\"city\", dropna=False)[\"v\"].sum()))",
+    "output": "1\n2"
+   },
+   {
+    "title": "ngroup numbers the groups",
+    "body": "`ngroup()` returns a group number per row, which is how a categorical segment becomes a compact integer feature for a model.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"b\", \"a\", \"b\"]})\nprint(df.groupby(\"city\").ngroup().tolist())",
+    "output": "[1, 0, 1]"
+   },
+   {
+    "title": "size counts rows, count counts values",
+    "body": "`size` includes missing values, `count` does not. On a sparse column the two answers differ, and the wrong one overstates the evidence.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\", \"a\"], \"v\": [1.0, None]})\nout = df.groupby(\"g\").agg(n=(\"v\", \"size\"), filled=(\"v\", \"count\"))\nprint(out.values.tolist())",
+    "output": "[[2, 1]]"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "A groupby result's index is what by default?",
+    "options": [
+     "RangeIndex",
+     "The group keys",
+     "The original index",
+     "A DatetimeIndex"
+    ],
+    "answer": "The group keys"
+   },
+   {
+    "q": "`size()` on a group counts what?",
+    "options": [
+     "Non-missing values",
+     "Rows including missing",
+     "Distinct values",
+     "Columns"
+    ],
+    "answer": "Rows including missing"
+   },
+   {
+    "q": "`transform(\"mean\")` returns what shape?",
+    "options": [
+     "One row per group",
+     "One value per original row",
+     "The frame",
+     "A scalar"
+    ],
+    "answer": "One value per original row"
+   },
+   {
+    "q": "`filter` on a groupby keeps what?",
+    "options": [
+     "Rows that pass",
+     "Whole groups that pass",
+     "Columns that pass",
+     "Nothing"
+    ],
+    "answer": "Whole groups that pass"
+   },
+   {
+    "q": "Named aggregation uses which form?",
+    "options": [
+     "agg(name=(\"col\", \"fn\"))",
+     "agg(\"col\", name)",
+     "agg(name=\"col\")",
+     "agg(fn=col)"
+    ],
+    "answer": "agg(name=(\"col\", \"fn\"))"
+   },
+   {
+    "q": "Rows with a NaN group key are…",
+    "options": [
+     "kept as a group",
+     "dropped by default",
+     "raising an error",
+     "counted as zero"
+    ],
+    "answer": "dropped by default"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Key as a column",
+    "statement": "Group by city with as_index=False, sum the values, and print the column names.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"v\": [1, 2]})\nprint(df.groupby(\"city\", as_index=False)[\"v\"].sum().columns.tolist())",
+    "expected": "['city', 'v']"
+   },
+   {
+    "title": "Group numbers",
+    "statement": "Print one group number per row for the city column.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"b\", \"a\", \"b\"]})\nprint(df.groupby(\"city\").ngroup().tolist())",
+    "expected": "[1, 0, 1]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Two aggregations passed positionally",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\").agg(\"mean\", \"sum\"))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\").agg([\"mean\", \"sum\"]).values.tolist())",
+    "error": "ValueError: numeric_only accepts only Boolean values",
+    "fixedOutput": "[[1.0, 1.0]]"
+   },
+   {
+    "title": "An aggregate name that is not a method",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\").agg(total=(\"v\", \"average\")))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"g\": [\"a\"], \"v\": [1]})\nprint(df.groupby(\"g\").agg(total=(\"v\", \"mean\")).to_dict())",
+    "error": "AttributeError: 'SeriesGroupBy' object has no attribute 'average'",
+    "fixedOutput": "{'total': {'a': 1.0}}"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why report a group size beside a group mean?",
+    "answer": "A mean over one or two rows has no meaningful spread and cannot be compared with a mean over thousands. The size column lets the reader see which conclusions are supported and which are anecdote."
+   },
+   {
+    "q": "What is the difference between `agg` and `transform` in one example?",
+    "answer": "`agg(\"mean\")` collapses each city to a single row — a report. `transform(\"mean\")` returns the city mean on every original row, so it can be compared with the row's own value to find above-average records."
+   }
+  ]
+ },
+ "p14": {
+  "topics": [
+   {
+    "title": "margins adds the totals row",
+    "body": "`margins=True` appends an All row and column, so a pivot table carries its own totals instead of a second computation.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2025, 2026, 2026], \"v\": [1, 2, 3]})\nt = df.pivot_table(index=\"city\", columns=\"year\", values=\"v\", aggfunc=\"sum\", margins=True, fill_value=0)\nprint(t.index.tolist())",
+    "output": "['Delhi', 'Pune', 'All']"
+   },
+   {
+    "title": "stack and unstack are inverses",
+    "body": "`stack` moves the innermost column level into the index; `unstack` moves it back. A round trip is a good way to prove a reshape lost nothing.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1], \"b\": [2]}, index=[\"r\"])\nlong = df.stack()\nprint(long.tolist())\nprint(long.unstack().values.tolist())",
+    "output": "[1, 2]\n[[1, 2]]"
+   },
+   {
+    "title": "wide_to_long needs a stub name",
+    "body": "`wide_to_long` collects columns that share a prefix, so `sale_2025`, `sale_2026` become one value column with the year kept in a new column.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1], \"sale_2025\": [10], \"sale_2026\": [20]})\nlong = pd.wide_to_long(df, stubnames=\"sale\", i=\"id\", j=\"year\", sep=\"_\")\nprint(long[\"sale\"].tolist())",
+    "output": "[10, 20]"
+   },
+   {
+    "title": "crosstab can show shares",
+    "body": "`normalize=\"columns\"` divides each column by its total, so a crosstab reports a share rather than a count — the difference between 200 rows and 20%.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\", \"x\", \"y\"], \"b\": [1, 1, 0]})\nprint(pd.crosstab(df[\"a\"], df[\"b\"], normalize=\"columns\").round(2).values.tolist())",
+    "output": "[[0.0, 1.0], [1.0, 0.0]]"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "`pivot_table` aggregates duplicates with which function by default?",
+    "options": [
+     "sum",
+     "mean",
+     "count",
+     "max"
+    ],
+    "answer": "mean"
+   },
+   {
+    "q": "`melt` with `id_vars` keeps those columns as what?",
+    "options": [
+     "Values",
+     "Identifiers repeated per row",
+     "Index",
+     "dtypes"
+    ],
+    "answer": "Identifiers repeated per row"
+   },
+   {
+    "q": "`explode` turns a list cell into what?",
+    "options": [
+     "One column per element",
+     "One row per element",
+     "A string",
+     "Nothing"
+    ],
+    "answer": "One row per element"
+   },
+   {
+    "q": "`normalize=\"index\"` in crosstab divides by what?",
+    "options": [
+     "Row totals",
+     "Column totals",
+     "Grand total",
+     "Nothing"
+    ],
+    "answer": "Row totals"
+   },
+   {
+    "q": "`get_dummies(dtype=int)` produces what?",
+    "options": [
+     "One integer column per category",
+     "A single code column",
+     "Text",
+     "NaN"
+    ],
+    "answer": "One integer column per category"
+   },
+   {
+    "q": "`pivot` raises when the index/column pairs are…",
+    "options": [
+     "unique",
+     "duplicated",
+     "numeric",
+     "sorted"
+    ],
+    "answer": "duplicated"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Pivot with totals",
+    "statement": "Build a city × year table with margins and print its row labels.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2025, 2026, 2026], \"v\": [1, 2, 3]})\nt = df.pivot_table(index=\"city\", columns=\"year\", values=\"v\", aggfunc=\"sum\", margins=True, fill_value=0)\nprint(t.index.tolist())",
+    "expected": "['Delhi', 'Pune', 'All']"
+   },
+   {
+    "title": "Long from wide",
+    "statement": "Use wide_to_long to collect the two sale columns and print the values.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1], \"sale_2025\": [10], \"sale_2026\": [20]})\nprint(pd.wide_to_long(df, stubnames=\"sale\", i=\"id\", j=\"year\", sep=\"_\")[\"sale\"].tolist())",
+    "expected": "[10, 20]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "melt names an id column that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"v\": [1]})\nprint(pd.melt(df, id_vars=\"town\", value_vars=\"v\"))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"v\": [1]})\nprint(pd.melt(df, id_vars=\"city\", value_vars=\"v\").shape)",
+    "error": "KeyError: \"The following id_vars or value_vars are not present in the DataFrame: ['town']\"",
+    "fixedOutput": "(1, 3)"
+   },
+   {
+    "title": "An invalid normalize value",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\"], \"b\": [1]})\nprint(pd.crosstab(df[\"a\"], df[\"b\"], normalize=\"rows\"))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [\"x\"], \"b\": [1]})\nprint(pd.crosstab(df[\"a\"], df[\"b\"], normalize=\"index\").values.tolist())",
+    "error": "ValueError: Not a valid normalize argument",
+    "fixedOutput": "[[1.0]]"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What makes a dataset tidy?",
+    "answer": "One row per observation, one column per variable, one value per cell. Wide monthly columns violate it because the month is a variable spread across headers; melting restores the rule and makes grouping and plotting direct."
+   },
+   {
+    "q": "Why does a pivot show NaN where you expect zero?",
+    "answer": "The combination does not exist in the data, so there is no group to aggregate. `fill_value=0` states the business meaning — no activity — instead of leaving the reader to guess between absent and unknown."
+   }
+  ]
+ },
+ "p15": {
+  "topics": [
+   {
+    "title": "strftime formats a datetime column",
+    "body": "`.dt.strftime` turns timestamps into the exact text a report needs, and it is the safest way to compare a month label across two sources.",
+    "code": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"2026-01-05\"]))\nprint(s.dt.strftime(\"%b %Y\").tolist())",
+    "output": "['Jan 2026']"
+   },
+   {
+    "title": "DateOffset moves by calendar units",
+    "body": "`pd.DateOffset(months=1)` respects month lengths, unlike adding 30 days. It is the correct arithmetic for billing cycles and renewals.",
+    "code": "import pandas as pd\n\nstart = pd.Timestamp(\"2026-01-31\")\nprint((start + pd.DateOffset(months=1)).strftime(\"%Y-%m-%d\"))",
+    "output": "2026-02-28"
+   },
+   {
+    "title": "Localise, then convert",
+    "body": "`tz_localize` attaches a timezone to naive timestamps; `tz_convert` moves an aware series to another zone. Calling convert first is the classic error.",
+    "code": "import pandas as pd\n\ns = pd.Series(pd.to_datetime([\"2026-01-01 00:00\"]))\naware = s.dt.tz_localize(\"Asia/Kolkata\").dt.tz_convert(\"UTC\")\nprint(aware.dt.hour.tolist())",
+    "output": "[18]"
+   },
+   {
+    "title": "asfreq shows the empty periods",
+    "body": "`asfreq` reindexes to a frequency and leaves NaN where no observation exists, which exposes gaps that a resample sum would turn into zero.",
+    "code": "import pandas as pd\n\ns = pd.Series([1.0, 3.0], index=pd.to_datetime([\"2026-01-01\", \"2026-01-03\"]))\nprint(s.asfreq(\"D\").isna().sum())",
+    "output": "1"
+   }
+  ],
+  "mcq": [
+   {
+    "q": "`tz_localize` does what?",
+    "options": [
+     "Converts between zones",
+     "Attaches a zone to naive times",
+     "Removes the zone",
+     "Rounds to hours"
+    ],
+    "answer": "Attaches a zone to naive times"
+   },
+   {
+    "q": "`resample(\"MS\")` groups by what?",
+    "options": [
+     "Month end",
+     "Month start",
+     "Week",
+     "Business day"
+    ],
+    "answer": "Month start"
+   },
+   {
+    "q": "`rolling(3).mean()` needs how many rows for a full first window?",
+    "options": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ],
+    "answer": "3"
+   },
+   {
+    "q": "`shift(1)` moves values…",
+    "options": [
+     "up one row",
+     "down one row",
+     "one column right",
+     "into the index"
+    ],
+    "answer": "down one row"
+   },
+   {
+    "q": "`pd.DateOffset(months=1)` differs from 30 days because…",
+    "options": [
+     "it is faster",
+     "it respects calendar months",
+     "it drops time",
+     "it uses UTC"
+    ],
+    "answer": "it respects calendar months"
+   },
+   {
+    "q": "`asfreq` on a daily series with a missing day produces what?",
+    "options": [
+     "Zero",
+     "NaN",
+     "It drops the day",
+     "Raises"
+    ],
+    "answer": "NaN"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Month label",
+    "statement": "Format the date as \"Jan 2026\" and print it.",
+    "solution": "import pandas as pd\n\ns = pd.to_datetime(pd.Series([\"2026-01-05\"]))\nprint(s.dt.strftime(\"%b %Y\").tolist())",
+    "expected": "['Jan 2026']"
+   },
+   {
+    "title": "One month later",
+    "statement": "Add one calendar month to 31 January and print the date.",
+    "solution": "import pandas as pd\n\nprint((pd.Timestamp(\"2026-01-31\") + pd.DateOffset(months=1)).strftime(\"%Y-%m-%d\"))",
+    "expected": "2026-02-28"
+   }
+  ],
+  "debug": [
+   {
+    "title": "tz_convert on a naive series",
+    "broken": "import pandas as pd\n\ns = pd.Series(pd.to_datetime([\"2026-01-01\"]))\nprint(s.dt.tz_convert(\"UTC\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series(pd.to_datetime([\"2026-01-01\"]))\nprint(s.dt.tz_localize(\"UTC\").tolist())",
+    "error": "TypeError: Cannot convert tz-naive timestamps, use tz_localize to localize",
+    "fixedOutput": "[Timestamp('2026-01-01 00:00:00+0000', tz='UTC')]"
+   },
+   {
+    "title": "A date that does not exist",
+    "broken": "import pandas as pd\n\nprint(pd.to_datetime([\"2026-13-01\"]).tolist())",
+    "fix": "import pandas as pd\n\nprint(pd.to_datetime([\"2026-12-01\"]).tolist())",
+    "error": "pandas._libs.tslibs.parsing.DateParseError: month must be in 1..12: 2026-13-01",
+    "fixedOutput": "[Timestamp('2026-12-01 00:00:00')]"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why does resample produce months that a groupby would miss?",
+    "answer": "Resample generates the calendar for the range, including empty periods, so a gap is visible as a row. Grouping on an extracted month only returns the months that have data, which hides the gap."
+   },
+   {
+    "q": "What does a rolling window assume about the data?",
+    "answer": "That the index is evenly spaced and ordered, and that the window's rows are comparable periods. On uneven sampling or duplicate timestamps the window mixes different amounts of time, so the mean is not comparable across rows."
+   }
+  ]
+ }
+}
