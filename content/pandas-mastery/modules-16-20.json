@@ -1,0 +1,568 @@
+[
+ {
+  "id": "p16",
+  "no": 16,
+  "title": "Advanced Pandas",
+  "level": "advanced",
+  "hours": 6,
+  "goal": "Use MultiIndex, categoricals, pipelines and index alignment deliberately instead of avoiding them.",
+  "topics": [
+   {
+    "title": "A MultiIndex is a key of several levels",
+    "body": "Grouping by two keys produces a MultiIndex. `get_level_values` reads one level back as a flat index.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2025, 2026, 2026], \"sales\": [10, 20, 5]})\ns = df.groupby([\"city\", \"year\"])[\"sales\"].sum()\nprint(s.index.nlevels)\nprint(s.index.get_level_values(\"year\").tolist())",
+    "output": "2\n[2026, 2025, 2026]"
+   },
+   {
+    "title": "xs selects one level",
+    "body": "`xs` cross-sections a MultiIndex at one level, returning the remaining levels without a full reset.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2025, 2026, 2026], \"sales\": [10, 20, 5]})\ns = df.groupby([\"city\", \"year\"])[\"sales\"].sum()\nprint(s.xs(2026, level=\"year\").tolist())",
+    "output": "[5, 20]"
+   },
+   {
+    "title": "Categorical makes the order explicit",
+    "body": "A categorical dtype knows its categories and whether order matters, so sorting and plotting follow the domain order instead of alphabetical.",
+    "code": "import pandas as pd\n\ns = pd.Series([\"medium\", \"low\", \"high\"], dtype=pd.CategoricalDtype([\"low\", \"medium\", \"high\"], ordered=True))\nprint(s.sort_values().tolist())",
+    "output": "['low', 'medium', 'high']"
+   },
+   {
+    "title": "pipe keeps a pipeline readable",
+    "body": "`pipe` passes the frame into a function, so a sequence of named steps reads top to bottom instead of nesting calls.",
+    "code": "import pandas as pd\n\ndef double(df):\n    return df.assign(v=df[\"v\"] * 2)\n\ndf = pd.DataFrame({\"v\": [1, 2]})\nprint(df.pipe(double)[\"v\"].tolist())",
+    "output": "[2, 4]"
+   },
+   {
+    "title": "combine_first fills holes from another table",
+    "body": "`combine_first` takes the first non-missing value across two aligned tables, which is how a corrected override is merged over a base record.",
+    "code": "import pandas as pd\n\na = pd.Series([1.0, None, 3.0])\nb = pd.Series([9.0, 2.0, 9.0])\nprint(a.combine_first(b).tolist())",
+    "output": "[1.0, 2.0, 3.0]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Reading a level that does not exist",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"sales\": [10]})\ns = df.groupby(\"city\")[\"sales\"].sum()\nprint(s.index.get_level_values(\"year\").tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"sales\": [10]})\ns = df.groupby(\"city\")[\"sales\"].sum()\nprint(s.index.get_level_values(\"city\").tolist())",
+    "error": "KeyError: 'Requested level (year) does not match index name (city)'",
+    "fixedOutput": "['Pune']"
+   },
+   {
+    "title": "xs with the wrong level name",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"sales\": [10]})\ns = df.groupby([\"city\", \"year\"])[\"sales\"].sum()\nprint(s.xs(2026, level=\"years\"))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"year\": [2026], \"sales\": [10]})\ns = df.groupby([\"city\", \"year\"])[\"sales\"].sum()\nprint(s.xs(2026, level=\"year\").tolist())",
+    "error": "KeyError: 'Level years not found'",
+    "fixedOutput": "[10]"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Override with combine_first",
+    "statement": "Fill the gaps in the base series from the override series and print the result.",
+    "solution": "import pandas as pd\n\nbase = pd.Series([1.0, None, 3.0])\noverride = pd.Series([9.0, 2.0, 9.0])\nprint(base.combine_first(override).tolist())",
+    "expected": "[1.0, 2.0, 3.0]"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What problem does a MultiIndex solve, and what does it cost?",
+    "answer": "It keeps several key levels without repeating values or inventing a concatenated string key, and it supports cross-sections with `xs`. The cost is verbosity: most operations need `reset_index` or `level=` to be explicit, and a partially selected frame can surprise a reader."
+   },
+   {
+    "q": "Why is `pipe` better than one long chained expression?",
+    "answer": "Each step becomes a named function that can be tested alone, and the reader sees the order of transformations. A chain of `.assign` and `.query` is fine until a step needs branching or a docstring."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Defend using categoricals for a status column.",
+    "answer": "Status has a small fixed vocabulary, so codes save memory and the ordered categories make sorting and plotting correct. The constraint also fails loudly when a new value arrives instead of silently widening the column.",
+    "steps": [
+     "State the vocabulary size.",
+     "Name the memory win.",
+     "Name the validation win."
+    ]
+   },
+   {
+    "q": "A pipeline has eight chained methods. When do you split it?",
+    "answer": "When a step needs a comment longer than its name, when it is reused by another report, or when it is the only step that needs a test. Those are the points where a named function with `pipe` pays for itself.",
+    "steps": [
+     "Name the three triggers.",
+     "Give the pipe form.",
+     "Say what stays inline."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Two-level report",
+   "brief": "Group a table by city and year, read one year with xs and print the result.",
+   "steps": [
+    "Build the groupby.",
+    "Cross-section one level.",
+    "Print values and the remaining index."
+   ]
+  },
+  "lab": {
+   "title": "Reusable pipeline",
+   "brief": "Build three named steps — trim, enrich, summarise — and run them with pipe in one expression.",
+   "milestones": [
+    "Write each step as a function.",
+    "Compose with pipe.",
+    "Print the final shape and one row."
+   ]
+  }
+ },
+ {
+  "id": "p17",
+  "no": 17,
+  "title": "Exploratory Data Analysis",
+  "level": "advanced",
+  "hours": 6,
+  "goal": "Profile a dataset, find the patterns worth reporting, and turn each one into a sentence a stakeholder can act on.",
+  "topics": [
+   {
+    "title": "Start with the distribution, not the mean",
+    "body": "Mean, median, std and quartiles together describe shape. A mean far above the median is the first sign of a long right tail.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"spend\": [100, 120, 130, 900]})\nprint(round(df[\"spend\"].mean(), 1), df[\"spend\"].median())\nprint(round(df[\"spend\"].quantile(0.75), 1))",
+    "output": "312.5 125.0\n322.5"
+   },
+   {
+    "title": "Value counts reveal the busy categories",
+    "body": "Counting a category before grouping tells you which groups are large enough to compare and which are noise.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"course\": [\"Python\", \"Python\", \"SQL\", \"Python\"]})\ncounts = df[\"course\"].value_counts()\nprint(counts.to_dict())\nprint(round(counts.max() / counts.sum() * 100, 1))",
+    "output": "{'Python': 3, 'SQL': 1}\n75.0"
+   },
+   {
+    "title": "Correlation is a starting question",
+    "body": "A correlation matrix ranks candidate relationships. Read it as \"what to plot next\", never as a finding on its own.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"hours\": [1, 2, 3, 4], \"marks\": [40, 50, 65, 80], \"sleep\": [8, 7, 7, 6]})\nc = df.corr().round(2)\nprint(c.loc[\"marks\"].to_dict())",
+    "output": "{'hours': 1.0, 'marks': 1.0, 'sleep': -0.93}"
+   },
+   {
+    "title": "Group by the dimension in the question",
+    "body": "An EDA finding is usually a comparison: this segment versus that one. Group by the segment and report count plus rate, never a bare average.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nout = df.groupby(\"city\")[\"passed\"].agg([\"count\", \"mean\"])\nprint(out.loc[\"Pune\"].round(2).tolist())",
+    "output": "[2.0, 0.5]"
+   },
+   {
+    "title": "cut turns a number into a band",
+    "body": "`cut` bins a continuous column into labelled intervals, which is how an age or spend distribution becomes a readable table.",
+    "code": "import pandas as pd\n\nages = pd.Series([12, 25, 41, 63])\nbands = pd.cut(ages, bins=[0, 18, 35, 60, 100], labels=[\"teen\", \"young\", \"adult\", \"senior\"])\nprint(bands.value_counts().to_dict())",
+    "output": "{'teen': 1, 'young': 1, 'adult': 1, 'senior': 1}"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Correlation over a text column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"], \"marks\": [80, 90]})\nprint(df.corr())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"], \"marks\": [80, 90]})\nprint(df[[\"marks\"]].corr().shape)",
+    "error": "ValueError: could not convert string to float: 'Pune'",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "A rate divided by the wrong base",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\npune = df[df[\"city\"] == \"Pune\"]\nprint(round(pune[\"passed\"].sum() / df.shape[0] * 100, 1))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\npune = df[df[\"city\"] == \"Pune\"]\nprint(round(pune[\"passed\"].mean() * 100, 1))",
+    "error": "Wrong output: 33.3 — the numerator is Pune passes but the denominator is every pass in the table, so the number is a share of passes, not a pass rate.",
+    "fixedOutput": "50.0",
+    "brokenOutput": "33.3"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Pass rate per city",
+    "statement": "Group by city and print the pass rate (mean of a boolean) as a dict rounded to two decimals.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nprint(df.groupby(\"city\")[\"passed\"].mean().round(2).to_dict())",
+    "expected": "{'Delhi': 1.0, 'Pune': 0.5}"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Walk through your first fifteen minutes with an unknown dataset.",
+    "answer": "Shape and dtypes, then missing counts and duplicates, then value counts for categories and `describe` for numerics, then a correlation look at the numeric columns. Each step decides the next question, and anything surprising becomes a note for the report."
+   },
+   {
+    "q": "How do you avoid reporting a correlation that is really a group effect?",
+    "answer": "Check the relationship inside each segment as well as overall. Simpson's paradox is exactly this: a positive overall trend can reverse inside every group when the groups differ in size and level."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Defend reporting a median and a p95 instead of a mean.",
+    "answer": "The mean is pulled by the tail and answers \"total divided by count\", which no user experiences. The median describes the typical case and p95 describes the worst case that still matters, which is what a decision usually needs.",
+    "steps": [
+     "Name what the mean measures.",
+     "Name the typical case.",
+     "Name the tail that matters."
+    ]
+   },
+   {
+    "q": "A stakeholder asks for \"the average engagement\". What do you clarify first?",
+    "answer": "The grain and the denominator: average per user, per session or per day, and whether a user with no activity counts as zero. Those three choices can change the number by an order of magnitude.",
+    "steps": [
+     "Name the grain options.",
+     "Name the zero-activity question.",
+     "Show the magnitude risk."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "First findings",
+   "brief": "From a small course table, print the three largest categories, the pass rate per category and one sentence of interpretation.",
+   "steps": [
+    "Count categories.",
+    "Compute the rate per category.",
+    "Print one finding sentence."
+   ]
+  },
+  "lab": {
+   "title": "EDA brief",
+   "brief": "Produce a profile of a table: shape, missing, duplicates, numeric summary, top categories and a ranked correlation list.",
+   "milestones": [
+    "Profile shape and quality.",
+    "Summarise numerics.",
+    "Rank correlations and print the top pair."
+   ]
+  }
+ },
+ {
+  "id": "p18",
+  "no": 18,
+  "title": "Performance and Large Data",
+  "level": "advanced",
+  "hours": 6,
+  "goal": "Measure memory, choose compact dtypes, and process data that does not fit in memory.",
+  "topics": [
+   {
+    "title": "memory_usage shows what a column costs",
+    "body": "`memory_usage(deep=True)` measures the real cost, including object pointers. It is the number to quote before optimising.",
+    "code": "import pandas as pd\n\ns = pd.Series([\"pune\", \"delhi\"] * 100)\nprint(s.memory_usage(deep=True) > 0)\nprint(s.astype(\"category\").memory_usage(deep=True) < s.memory_usage(deep=True))",
+    "output": "True\nTrue"
+   },
+   {
+    "title": "Downcast a numeric column",
+    "body": "An int64 column of small values can be int16. `astype` halves or quarters the memory without changing the values.",
+    "code": "import pandas as pd\n\ns = pd.Series([1, 2, 3], dtype=\"int64\")\nprint(s.nbytes)\nprint(s.astype(\"int16\").nbytes)",
+    "output": "24\n6"
+   },
+   {
+    "title": "Vectorised beats iterrows",
+    "body": "`iterrows` boxes every row into a Series, which is slow. A column expression does the same work in one compiled pass.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint((df[\"a\"] + df[\"b\"]).tolist())",
+    "output": "[4, 6]"
+   },
+   {
+    "title": "Chunk a file that is too large",
+    "body": "`chunksize` returns an iterator of frames. Aggregating each chunk keeps peak memory at one chunk instead of the whole file.",
+    "code": "import pandas as pd\nfrom io import StringIO\n\ntext = \"v\\n1\\n2\\n3\\n4\"\ntotal = 0\nfor chunk in pd.read_csv(StringIO(text), chunksize=2):\n    total += int(chunk[\"v\"].sum())\nprint(total)",
+    "output": "10"
+   },
+   {
+    "title": "eval avoids a temporary frame",
+    "body": "`eval` computes an expression without materialising each intermediate column, which matters when a pipeline chains several arithmetic steps.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.eval(\"a + b\").tolist())",
+    "output": "[4, 6]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Measuring with the default shallow memory",
+    "broken": "import pandas as pd\n\ns = pd.Series([\"pune\", \"delhi\"] * 100)\nprint(s.memory_usage() == s.astype(\"category\").memory_usage())",
+    "fix": "import pandas as pd\n\ns = pd.Series([\"pune\", \"delhi\"] * 100)\nprint(s.memory_usage(deep=True) > s.astype(\"category\").memory_usage(deep=True))",
+    "error": "Wrong output: False — the shallow measurement ignores the string payload, so the object column looks no bigger than the category.",
+    "fixedOutput": "True",
+    "brokenOutput": "False"
+   },
+   {
+    "title": "Mutating rows while iterating",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nfor _, row in df.iterrows():\n    row[\"a\"] = row[\"a\"] * 2\nprint(df[\"a\"].tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\ndf[\"a\"] = df[\"a\"] * 2\nprint(df[\"a\"].tolist())",
+    "error": "Wrong output: [1, 2] — assigning into the row Series never writes back to the frame.",
+    "fixedOutput": "[2, 4]",
+    "brokenOutput": "[1, 2]"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Compact integers",
+    "statement": "Store the values as the smallest practical integer dtype and print the resulting nbytes.",
+    "solution": "import pandas as pd\n\ns = pd.Series([10, 20, 30], dtype=\"int64\")\nprint(s.astype(\"int8\").nbytes)",
+    "expected": "3"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Where does Pandas actually get slow?",
+    "answer": "Row-wise Python work: `iterrows`, `apply(axis=1)` and per-group Python functions. Column operations run in compiled code, so the wins come from rewriting a row loop as column arithmetic or a groupby aggregation."
+   },
+   {
+    "q": "When should you stop using Pandas?",
+    "answer": "When the working set no longer fits comfortably in memory, or when a single machine cannot finish in the time budget. Then move to chunked processing for a one-off, or to a query engine, Parquet plus DuckDB, or a distributed tool when it is recurring."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Defend measuring before optimising a dataframe pipeline.",
+    "answer": "Memory and time are dominated by one or two columns or steps. `memory_usage(deep=True)` and a timed section show which, and optimising anything else risks complicating code for no measurable gain.",
+    "steps": [
+     "Name the measurement.",
+     "Name the usual culprit.",
+     "Name the cost of guessing."
+    ]
+   },
+   {
+    "q": "A 4 GB CSV must be summarised on a 8 GB laptop. Outline the approach.",
+    "answer": "Read in chunks and aggregate each chunk into a small result, or convert once to Parquet and read only the needed columns. Either way the peak is a chunk plus the summary, not the file plus a copy.",
+    "steps": [
+     "State the peak-memory target.",
+     "Name the chunked loop.",
+     "Name the columnar alternative."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Memory audit",
+   "brief": "Compare the deep memory of a text column before and after converting it to category, and print both numbers.",
+   "steps": [
+    "Measure deep memory.",
+    "Convert to category.",
+    "Print the ratio."
+   ]
+  },
+  "lab": {
+   "title": "Chunked pipeline",
+   "brief": "Process a CSV in chunks of two rows, compute per-chunk totals and print the grand total plus the chunk count.",
+   "milestones": [
+    "Iterate with chunksize.",
+    "Accumulate per-chunk results.",
+    "Print total and count."
+   ]
+  }
+ },
+ {
+  "id": "p19",
+  "no": 19,
+  "title": "Pandas with NumPy, SQL and ML",
+  "level": "advanced",
+  "hours": 6,
+  "goal": "Move data between Pandas, NumPy and a database, and prepare a leakage-free dataset for a model.",
+  "topics": [
+   {
+    "title": "to_numpy hands over the values",
+    "body": "`to_numpy()` drops the index and returns one dtype array, which is what scikit-learn expects. Check the dtype: mixed columns become object.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\narr = df.to_numpy()\nprint(arr.shape, arr.dtype)",
+    "output": "(2, 2) int64"
+   },
+   {
+    "title": "A DataFrame from an array needs names",
+    "body": "An array has no column names, so the frame supplies them. Without the names, every later selection is positional and fragile.",
+    "code": "import pandas as pd\nimport numpy as np\n\narr = np.array([[1, 2], [3, 4]])\ndf = pd.DataFrame(arr, columns=[\"a\", \"b\"])\nprint(df.columns.tolist())\nprint(df[\"b\"].tolist())",
+    "output": "['a', 'b']\n[2, 4]"
+   },
+   {
+    "title": "SQL and Pandas say the same thing",
+    "body": "SELECT is column selection, WHERE is a mask, GROUP BY is groupby, JOIN is merge. Knowing the mapping is how a query becomes a frame and back.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"sales\": [10, 20, 5]})\nout = df[df[\"sales\"] > 5].groupby(\"city\")[\"sales\"].sum()\nprint(out.to_dict())",
+    "output": "{'Pune': 30}"
+   },
+   {
+    "title": "Split before you compute statistics",
+    "body": "Fit any statistic on the training rows and apply it to the test rows. Computing the mean over the full table leaks test information into training.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1, 2, 3, 100]})\ntrain = df.iloc[:3]\ntest = df.iloc[3:]\nmean = train[\"x\"].mean()\nprint(mean, round(float((test[\"x\"] - mean).abs().iloc[0]), 1))",
+    "output": "2.0 98.0"
+   },
+   {
+    "title": "Encode categories for a model",
+    "body": "One-hot encoding is the safe default for a nominal category; an integer code implies an order the model will use.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\", \"Pune\"]})\nX = pd.get_dummies(df, columns=[\"city\"], dtype=int)\nprint(X.columns.tolist())\nprint(X.shape)",
+    "output": "['city_Delhi', 'city_Pune']\n(3, 2)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A model receives an object array",
+    "broken": "import pandas as pd\nimport numpy as np\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [\"x\", \"y\"]})\nprint(df.to_numpy().dtype)\nprint(np.asarray(df).sum())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [\"x\", \"y\"]})\nprint(df[[\"a\"]].to_numpy().dtype)",
+    "error": "TypeError: unsupported operand type(s) for +: 'int' and 'str'",
+    "fixedOutput": "int64"
+   },
+   {
+    "title": "Scaling before the split",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1, 2, 3, 100]})\nmean = df[\"x\"].mean()\ntrain = df.iloc[:3]\nprint(round(float((train[\"x\"] - mean).mean()), 2))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"x\": [1, 2, 3, 100]})\ntrain = df.iloc[:3]\nmean = train[\"x\"].mean()\nprint(round(float((train[\"x\"] - mean).mean()), 2))",
+    "error": "Wrong output: -24.5 — the mean of the full table pulled the held-out 100 into the training values.",
+    "fixedOutput": "0.0",
+    "brokenOutput": "-24.5"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Train-only scaling",
+    "statement": "Compute the mean on the training rows only and print the scaled training values rounded to two decimals.",
+    "solution": "import pandas as pd\n\nops = pd.DataFrame({\"x\": [1, 2, 3, 100]})\ntrain = ops.iloc[:3]\nmean = train[\"x\"].mean()\nprint((train[\"x\"] - mean).round(2).tolist())",
+    "expected": "[-1.0, 0.0, 1.0]"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is data leakage, in one concrete Pandas example?",
+    "answer": "Filling missing values or scaling with a statistic computed on the full dataset before splitting. The test rows influenced the transformation, so the validation score is optimistic and does not survive production."
+   },
+   {
+    "q": "Why does scikit-learn prefer a NumPy array while analysis prefers a DataFrame?",
+    "answer": "The estimator needs a numeric matrix with no labels and no mixed dtypes, so an array is the unambiguous input. Analysis needs names, alignment and mixed types, which the frame provides; `to_numpy` is the boundary."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Defend one-hot encoding over integer codes for city.",
+    "answer": "City is nominal: an integer code tells the model Pune is between Delhi and Mumbai, which is false. One-hot removes the invented order at the cost of more columns, which is manageable for a small vocabulary.",
+    "steps": [
+     "State the nominal property.",
+     "Name the false ordering.",
+     "Name the cost of the fix."
+    ]
+   },
+   {
+    "q": "A pipeline scores 0.98 in validation and 0.6 in production. Give your first hypothesis.",
+    "answer": "Leakage: a feature or a transformation saw information it will not have in production, usually statistics computed before the split or a column derived from the target. Verify by rebuilding the split first, then the transforms inside it.",
+    "steps": [
+     "Name leakage first.",
+     "Name the two usual sources.",
+     "Name the rebuild order."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Model-ready table",
+   "brief": "From a table with one numeric and one category column, produce a numeric frame with one-hot columns and print its shape.",
+   "steps": [
+    "Select the features.",
+    "One-hot the category.",
+    "Print columns and shape."
+   ]
+  },
+  "lab": {
+   "title": "Split-safe preparation",
+   "brief": "Split rows into train and test, fit the fill value on train only, apply it to both, and report the missing counts.",
+   "milestones": [
+    "Split the frame.",
+    "Fit on train.",
+    "Apply to both and print counts."
+   ]
+  }
+ },
+ {
+  "id": "p20",
+  "no": 20,
+  "title": "Professional Projects and Career",
+  "level": "advanced",
+  "hours": 6,
+  "goal": "Run one analysis end to end, defend every choice, and present it as portfolio work.",
+  "topics": [
+   {
+    "title": "An analysis is a pipeline, not a script",
+    "body": "Load, validate, clean, analyse, report. Naming the stages makes each one testable and lets a reviewer see where a number came from.",
+    "code": "import pandas as pd\n\nraw = pd.DataFrame({\"id\": [1, 2, 2], \"marks\": [80, None, 90]})\nclean = raw.drop_duplicates(\"id\").fillna({\"marks\": raw[\"marks\"].median()})\nprint(clean.shape[0], clean[\"marks\"].mean())",
+    "output": "2 82.5"
+   },
+   {
+    "title": "State the grain before any number",
+    "body": "One row per what? Answering that decides whether a total is a sum, a mean or a count of distinct ids.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2], \"minutes\": [10, 20, 30]})\nprint(df[\"minutes\"].sum())\nprint(df.groupby(\"user\")[\"minutes\"].sum().mean())",
+    "output": "60\n30.0"
+   },
+   {
+    "title": "A finding needs a denominator",
+    "body": "\"40% of learners\" means nothing without the base. Print the count next to every rate so the reader can judge it.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"passed\": [True, False, False, True]})\nprint(df[\"passed\"].sum(), len(df), round(df[\"passed\"].mean() * 100, 1))",
+    "output": "2 4 50.0"
+   },
+   {
+    "title": "Write the report the stakeholder asked for",
+    "body": "A table with the metric, the segment and the count is more useful than a plot with no labels. Build that table first, then chart it.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nreport = df.groupby(\"city\")[\"passed\"].agg(learners=\"size\", pass_rate=\"mean\").round(2)\nprint(report.to_dict(\"index\"))",
+    "output": "{'Delhi': {'learners': 1, 'pass_rate': 1.0}, 'Pune': {'learners': 2, 'pass_rate': 0.5}}"
+   },
+   {
+    "title": "Reproducibility is a feature",
+    "body": "A seed, a pinned dtype map and a saved intermediate table let someone else rerun the analysis and get the same number.",
+    "code": "import pandas as pd\n\nraw = pd.DataFrame({\"x\": range(6)})\nseed = 7\nsample = raw.sample(3, random_state=seed)[\"x\"].tolist()\nprint(sample == raw.sample(3, random_state=seed)[\"x\"].tolist())",
+    "output": "True"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A rate without its base",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"], \"passed\": [True, False]})\nprint(df.groupby(\"city\")[\"passed\"].mean().round(2).to_dict())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"], \"passed\": [True, False]})\nprint(df.groupby(\"city\")[\"passed\"].agg([\"size\", \"mean\"]).round(2).to_dict(\"index\"))",
+    "error": "Wrong output: 1.0 for both cities — a rate computed from one row carries no evidence, and the sample size is nowhere in the output.",
+    "fixedOutput": "{'Delhi': {'size': 1, 'mean': 0.0}, 'Pune': {'size': 1, 'mean': 1.0}}",
+    "brokenOutput": "{'Delhi': 0.0, 'Pune': 1.0}"
+   },
+   {
+    "title": "Counting rows instead of users",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2]})\nprint(df[\"user\"].count())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"user\": [1, 1, 2]})\nprint(df[\"user\"].nunique())",
+    "error": "Wrong output: 3 — that counts attempt rows, not the 2 distinct users.",
+    "fixedOutput": "2",
+    "brokenOutput": "3"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "The honest report",
+    "statement": "Group by city and print learners and pass rate rounded to two decimals as nested dicts.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nprint(df.groupby(\"city\")[\"passed\"].agg(learners=\"size\", pass_rate=\"mean\").round(2).to_dict(\"index\"))",
+    "expected": "{'Delhi': {'learners': 1, 'pass_rate': 1.0}, 'Pune': {'learners': 2, 'pass_rate': 0.5}}"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Walk an interviewer through a Pandas project in four sentences.",
+    "answer": "The question and the grain, the data and its quality problems, the transformations and why each was chosen, then the finding with its denominator and the check that would falsify it. Four sentences prove you can hold the whole pipeline."
+   },
+   {
+    "q": "How do you answer \"what was the hardest bug\"?",
+    "answer": "Name a bug with a cause, not a symptom: a merge that fanned out because the key was not unique, found by comparing row counts, fixed with `validate` and a dedupe. The lesson is the check, not the fix."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Defend including a cleaning notebook in your portfolio.",
+    "answer": "It shows the judgement employers test: what was wrong with the data, which rows were removed and why, and what the numbers looked like before and after. A model with no cleaning trail cannot be audited.",
+    "steps": [
+     "Name the judgement shown.",
+     "Name the before/after evidence.",
+     "Name the audit value."
+    ]
+   },
+   {
+    "q": "Your manager asks for one chart. What do you deliver instead, and why?",
+    "answer": "The chart plus the table it came from and the two-line finding. The table lets them check the number and reuse it; the finding states what the chart means, which is the part they actually asked for.",
+    "steps": [
+     "Deliver chart, table, finding.",
+     "Say what each is for.",
+     "Keep it to one screen."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "End-to-end mini analysis",
+   "brief": "Load a small table, remove duplicates, fill one gap, group by a segment and print a two-metric report.",
+   "steps": [
+    "Clean the table.",
+    "Group by the segment.",
+    "Print count and rate."
+   ]
+  },
+  "lab": {
+   "title": "Portfolio project",
+   "brief": "Produce a complete project brief: question, data dictionary, cleaning log, three findings with denominators, and the README outline.",
+   "milestones": [
+    "Write the question and grain.",
+    "Log every cleaning step.",
+    "State three findings with counts."
+   ]
+  }
+ }
+]

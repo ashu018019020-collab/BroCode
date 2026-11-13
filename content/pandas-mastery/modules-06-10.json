@@ -1,0 +1,567 @@
+[
+ {
+  "id": "p06",
+  "no": 6,
+  "title": "Arithmetic and Vectorized Operations",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Compute new columns with column arithmetic instead of loops, and know when apply is the honest choice.",
+  "topics": [
+   {
+    "title": "Column arithmetic creates a column",
+    "body": "Two Series of the same length combine element by element, and assigning the result adds a column. No loop, no index bookkeeping.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"price\": [100, 200], \"qty\": [2, 3]})\ndf[\"total\"] = df[\"price\"] * df[\"qty\"]\nprint(df[\"total\"].tolist())",
+    "output": "[200, 600]"
+   },
+   {
+    "title": "assign keeps the chain readable",
+    "body": "`assign` returns a new frame with the column added, so a pipeline can stay one expression and the original frame is untouched.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"marks\": [40, 80]})\nout = df.assign(passed=df[\"marks\"] >= 50)\nprint(out[\"passed\"].tolist())\nprint(\"passed\" in df.columns)",
+    "output": "[False, True]\nFalse"
+   },
+   {
+    "title": "clip keeps values inside a range",
+    "body": "`clip(lower, upper)` pins out-of-range values without an if. It is the standard guard before a ratio, a score or a pixel write.",
+    "code": "import pandas as pd\n\ns = pd.Series([-5, 50, 150])\nprint(s.clip(0, 100).tolist())",
+    "output": "[0, 50, 100]"
+   },
+   {
+    "title": "map translates values with a dict",
+    "body": "`map` looks each value up in a dict, which is how codes become labels. A value missing from the dict becomes NaN.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"A\", \"B\", \"C\"]})\nprint(df[\"code\"].map({\"A\": \"active\", \"B\": \"paused\"}).tolist())",
+    "output": "['active', 'paused', nan]"
+   },
+   {
+    "title": "apply row-wise is a loop in disguise",
+    "body": "`apply(axis=1)` receives one row at a time and runs Python per row. It is correct for irregular logic, but column arithmetic is faster whenever the operation is elementwise.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [10, 20]})\nprint(df.apply(lambda row: row[\"a\"] + row[\"b\"], axis=1).tolist())",
+    "output": "[11, 22]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Dividing by zero silently",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"spent\": [10, 20], \"budget\": [0, 40]})\ndf[\"pct\"] = df[\"spent\"] / df[\"budget\"]\nprint(df[\"pct\"].tolist())",
+    "fix": "import pandas as pd\n\nimport numpy as np\n\ndf = pd.DataFrame({\"spent\": [10, 20], \"budget\": [0, 40]})\ndf[\"pct\"] = (df[\"spent\"] / df[\"budget\"].replace(0, np.nan)).fillna(0)\nprint(df[\"pct\"].tolist())",
+    "error": "Wrong output: the pct column holds inf, and every later mean or chart built from it is poisoned.",
+    "fixedOutput": "[0.0, 0.5]",
+    "brokenOutput": "[inf, 0.5]"
+   },
+   {
+    "title": "apply with the wrong axis",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.apply(lambda row: row[\"a\"] + 1, axis=0).tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.apply(lambda row: row[\"a\"] + 1, axis=1).tolist())",
+    "error": "KeyError: 'a'",
+    "fixedOutput": "[2, 3]"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Discount column",
+    "statement": "Add a `final` column equal to price minus ten percent, rounded to two decimals, and print it as a list.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"price\": [100, 250]})\ndf[\"final\"] = (df[\"price\"] * 0.9).round(2)\nprint(df[\"final\"].tolist())",
+    "expected": "[90.0, 225.0]"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "When is `apply` the right call?",
+    "answer": "When the logic is genuinely row-wise and irregular — a lookup across several columns with branching, or a call into library code that takes a row. Even then, `axis=1` is slow; if the operation can be expressed as column arithmetic, that version wins."
+   },
+   {
+    "q": "What is the difference between `map`, `apply` and `transform` on a Series?",
+    "answer": "`map` substitutes values (dict, Series or function) elementwise and returns the same shape. `apply` can return an aggregate, so its shape may change. `transform` guarantees the original shape, which is what you need when feeding the result back into the frame."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Defend this claim: a calculated column should never overwrite its input.",
+    "answer": "Overwriting destroys the raw value, so a wrong formula cannot be recomputed or audited, and a downstream bug becomes unrecoverable. Keep the input and write the result under a new name; drop the raw column at export if it is genuinely redundant.",
+    "steps": [
+     "State what is lost on overwrite.",
+     "Name the audit consequence.",
+     "Give the naming rule."
+    ]
+   },
+   {
+    "q": "Your percentage column has inf values and the dashboard shows blank cells. Explain the chain and the fix.",
+    "answer": "Dividing by zero produces inf, and a later JSON or chart step cannot represent it, so it disappears. Replace the zero denominator with NaN before dividing, then decide explicitly whether to fill, drop or flag those rows.",
+    "steps": [
+     "Name the source of inf.",
+     "Name the step that loses it.",
+     "Give the replace-then-decide fix."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Invoice totals",
+   "brief": "From price and quantity, add total, apply a 10% discount above 500, and print the invoice totals.",
+   "steps": [
+    "Multiply price by quantity.",
+    "Apply a conditional discount with where or mask.",
+    "Print the totals and the grand total."
+   ]
+  },
+  "lab": {
+   "title": "Scoring rules",
+   "brief": "Build a score from three weighted columns, clip it into 0..100 and label the bands with map.",
+   "milestones": [
+    "Multiply each column by its weight.",
+    "Clip the result into range.",
+    "Map numeric bands to labels."
+   ]
+  }
+ },
+ {
+  "id": "p07",
+  "no": 7,
+  "title": "Sorting, Ranking and Statistics",
+  "level": "beginner",
+  "hours": 5,
+  "goal": "Order a table, rank inside groups, and read the right descriptive statistic for the question.",
+  "topics": [
+   {
+    "title": "sort_values orders rows",
+    "body": "`sort_values` returns a new frame unless `inplace=True`. The index travels with the row, which is why a sorted frame often has an out-of-order index.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"name\": [\"Aman\", \"Riya\", \"Rahul\"], \"marks\": [85, 92, 78]})\nprint(df.sort_values(\"marks\", ascending=False)[\"name\"].tolist())",
+    "output": "['Riya', 'Aman', 'Rahul']"
+   },
+   {
+    "title": "Two sort keys, two directions",
+    "body": "Pass a list of columns and a matching list of booleans. The first key dominates; the second breaks ties.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"marks\": [70, 90, 95]})\nout = df.sort_values([\"city\", \"marks\"], ascending=[True, False])\nprint(out[\"marks\"].tolist())",
+    "output": "[95, 90, 70]"
+   },
+   {
+    "title": "nlargest skips the full sort",
+    "body": "`nlargest(n, column)` keeps the top n rows and is cheaper than sorting a million rows to read three.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"name\": [\"A\", \"B\", \"C\"], \"marks\": [70, 95, 88]})\nprint(df.nlargest(2, \"marks\")[\"name\"].tolist())",
+    "output": "['B', 'C']"
+   },
+   {
+    "title": "rank numbers ties explicitly",
+    "body": "`rank` gives each value a position and lets you choose how ties behave: `method=\"min\"` gives both tied rows rank 1, `dense` gives the next distinct value the next rank.",
+    "code": "import pandas as pd\n\ns = pd.Series([90, 90, 70])\nprint(s.rank(method=\"min\").tolist())\nprint(s.rank(method=\"dense\").tolist())",
+    "output": "[2.0, 2.0, 1.0]\n[2.0, 2.0, 1.0]"
+   },
+   {
+    "title": "corr measures linear agreement",
+    "body": "`corr` returns a matrix from -1 to 1. It measures linear movement only, so a strong curve can still show a correlation near zero.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"hours\": [1, 2, 3, 4], \"marks\": [40, 50, 65, 80]})\nprint(round(df[\"hours\"].corr(df[\"marks\"]), 3))",
+    "output": "0.996"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Sorting by a column that does not exist",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"marks\": [80, 90]})\nprint(df.sort_values(\"mark\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"marks\": [80, 90]})\nprint(df.sort_values(\"marks\").shape)",
+    "error": "KeyError: 'mark'",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "Averaging a column of text",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"marks\": [\"80\", \"90\"]})\nprint(df[\"marks\"].mean())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"marks\": [\"80\", \"90\"]})\nprint(df[\"marks\"].astype(int).mean())",
+    "error": "TypeError: Cannot perform reduction 'mean' with string dtype",
+    "fixedOutput": "85.0"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Top three by revenue",
+    "statement": "Print the product names of the three highest revenue rows, highest first.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"product\": [\"a\", \"b\", \"c\", \"d\"], \"revenue\": [10, 50, 30, 40]})\nprint(df.nlargest(3, \"revenue\")[\"product\"].tolist())",
+    "expected": "['b', 'd', 'c']"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Mean and median differ by a factor of three. What does that tell you?",
+    "answer": "That the distribution is skewed by large values pulling the mean up — income and response time behave this way. Report the median as typical and the mean as a total-cost figure, and look at the tail before choosing which one the decision needs."
+   },
+   {
+    "q": "What does a correlation of 0.9 not prove?",
+    "answer": "Causation, and not even linearity beyond the observed range. It can also be produced by a third variable, by a shared trend over time, or by an outlier pair. Plot the scatter before quoting the number."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Argue for nlargest over sort_values when the request is \"top 5\".",
+    "answer": "The requirement is five rows, not an ordered table. `nlargest` uses a partial selection, so it does not order the other rows at all. Reserve a full sort for when the whole order is the deliverable.",
+    "steps": [
+     "State the requirement.",
+     "Say what the full sort does that is unused.",
+     "Name the partial call."
+    ]
+   },
+   {
+    "q": "A dashboard's average is stable but users complain it is wrong. Explain a plausible cause.",
+    "answer": "The average is likely computed over rows that include duplicates or partial records: a user with three attempts counts three times. Deduplicate to one row per entity before averaging, and state the grain in the metric definition.",
+    "steps": [
+     "Name the grain mismatch.",
+     "Show how duplicates enter.",
+     "Give the dedupe before aggregation."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Class leaderboard",
+   "brief": "Rank students within each city by marks, keep the top one per city, and print the winners.",
+   "steps": [
+    "Sort or rank inside groups.",
+    "Select the first row per group.",
+    "Print name and city."
+   ]
+  },
+  "lab": {
+   "title": "Statistics brief",
+   "brief": "For a numeric column, print mean, median, std, p25 and p95, then state in one line whether the column is skewed.",
+   "milestones": [
+    "Compute the five statistics.",
+    "Compare mean and median.",
+    "Print the skew verdict."
+   ]
+  }
+ },
+ {
+  "id": "p08",
+  "no": 8,
+  "title": "Missing Data",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Find missing values, understand why they are missing, and choose a handling strategy you can defend.",
+  "topics": [
+   {
+    "title": "isna counts the gaps per column",
+    "body": "`isna()` returns a boolean frame of the same shape, so summing it gives one count per column and the percentage is one division away.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, None], \"b\": [None, None]})\nprint(df.isna().sum().tolist())\nprint(round(df.isna().mean().max() * 100, 1))",
+    "output": "[1, 2]\n100.0"
+   },
+   {
+    "title": "dropna removes rows by rule",
+    "body": "With no arguments it drops any row containing a gap; `subset` limits the rule to the columns the analysis actually needs.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2, 3], \"marks\": [80, None, 70]})\nprint(df.dropna().shape[0])\nprint(df.dropna(subset=[\"id\"]).shape[0])",
+    "output": "2\n3"
+   },
+   {
+    "title": "fillna with a decided value",
+    "body": "Filling with the mean keeps the count and the mean, but shrinks the variance. State which one the analysis needs before choosing the fill value.",
+    "code": "import pandas as pd\n\ns = pd.Series([10.0, None, 30.0])\nprint(s.fillna(s.mean()).tolist())\nprint(s.isna().sum())",
+    "output": "[10.0, 20.0, 30.0]\n1"
+   },
+   {
+    "title": "ffill carries the last known value",
+    "body": "`ffill` copies the previous non-missing value forward, which is correct for a status that only changes when a new event arrives — not for a measurement.",
+    "code": "import pandas as pd\n\ns = pd.Series([\"active\", None, None, \"paused\"])\nprint(s.ffill().tolist())",
+    "output": "['active', 'active', 'active', 'paused']"
+   },
+   {
+    "title": "interpolate estimates between points",
+    "body": "Linear interpolation draws a straight line between known values. It suits a smooth series such as temperature, and invents data in a sparse one.",
+    "code": "import pandas as pd\n\ns = pd.Series([10.0, None, 30.0])\nprint(s.interpolate().tolist())",
+    "output": "[10.0, 20.0, 30.0]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "The removed fillna method",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.fillna(method=\"ffill\").tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.0, None, 3.0])\nprint(s.ffill().tolist())",
+    "error": "TypeError: NDFrame.fillna() got an unexpected keyword argument 'method'",
+    "fixedOutput": "[1.0, 1.0, 3.0]"
+   },
+   {
+    "title": "Counting missing with equality",
+    "broken": "import pandas as pd\n\ns = pd.Series([1.0, None])\nprint((s == None).sum())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1.0, None])\nprint(s.isna().sum())",
+    "error": "Wrong output: 0 — NaN is never equal to anything, so the equality test never matches a gap.",
+    "fixedOutput": "1",
+    "brokenOutput": "0"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Median fill, then count",
+    "statement": "Fill the missing marks with the column median and print the filled values as a list.",
+    "solution": "import pandas as pd\n\ns = pd.Series([10.0, None, 30.0, 20.0])\nprint(s.fillna(s.median()).tolist())",
+    "expected": "[10.0, 20.0, 30.0, 20.0]"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What are the three kinds of missingness, and why does the kind matter?",
+    "answer": "MCAR (random), MAR (explained by other columns) and MNAR (explained by the missing value itself, such as high earners skipping a salary field). Dropping is safe only under MCAR; otherwise the missingness is signal and should be modelled, for example with a fill plus an `is_missing` flag."
+   },
+   {
+    "q": "Why is filling with the mean often the weakest choice?",
+    "answer": "It reduces variance, distorts correlations and creates a spike at one value, while pretending the estimate is a real measurement. Median or model-based fills are more robust, and an explicit missing indicator is often more honest than any fill."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A column is 60% missing. Defend your plan.",
+    "answer": "Above roughly half missing, an imputed column mostly encodes the imputation rule, so I would first check whether the record exists at all (a status or an all-null block). If it does, keep it with an explicit missing flag and exclude it from any average that would be dominated by the fill.",
+    "steps": [
+     "State the threshold reasoning.",
+     "Check whether the gap is structural.",
+     "Keep the flag, exclude from averages."
+    ]
+   },
+   {
+    "q": "Explain why ffill is right for a status column and wrong for a temperature column.",
+    "answer": "A status is a state that persists until the next event, so the last known value is the true value. A temperature changes continuously, so carrying the last reading forward invents a plateau and understates the variation.",
+    "steps": [
+     "Define what ffill assumes.",
+     "Match it to a state.",
+     "Contrast with a measurement."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Completion report",
+   "brief": "For a three-column table, print the missing count and percentage per column and the number of complete rows.",
+   "steps": [
+    "Count missing per column.",
+    "Convert to percentages.",
+    "Count rows with no gaps."
+   ]
+  },
+  "lab": {
+   "title": "Fill policy",
+   "brief": "Apply a different fill rule per column — median for numbers, mode for categories, ffill for status — and print the before/after missing counts.",
+   "milestones": [
+    "Inspect missing per column.",
+    "Apply the per-column rule.",
+    "Confirm zero missing and print the policy."
+   ]
+  }
+ },
+ {
+  "id": "p09",
+  "no": 9,
+  "title": "Cleaning and Validation",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Turn a messy table into a validated one: duplicates, names, categories, whitespace and outliers.",
+  "topics": [
+   {
+    "title": "drop_duplicates keeps one row per record",
+    "body": "`duplicated()` marks repeats after the first. `drop_duplicates` removes them, optionally only when a subset of the columns matches.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1, 2], \"v\": [10, 10, 20]})\nprint(df.duplicated().tolist())\nprint(df.drop_duplicates().shape[0])",
+    "output": "[False, True, False]\n2"
+   },
+   {
+    "title": "rename fixes column names",
+    "body": "`rename(columns={...})` changes labels without touching data, which is how a raw export becomes a table the rest of the code can name.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"Student Name\": [\"Aman\"], \"Marks Obtained\": [85]})\ndf = df.rename(columns={\"Student Name\": \"name\", \"Marks Obtained\": \"marks\"})\nprint(df.columns.tolist())",
+    "output": "['name', 'marks']"
+   },
+   {
+    "title": "replace standardises values",
+    "body": "A dict maps several spellings onto one canonical value. Without it, groupby treats \"Pune\" and \"pune \" as two different cities.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"pune \", \"PUNE\"]})\ndf[\"city\"] = df[\"city\"].str.strip().str.lower().replace({\"pune\": \"Pune\"})\nprint(df[\"city\"].tolist())",
+    "output": "['Pune', 'Pune', 'Pune']"
+   },
+   {
+    "title": "Whitespace hides in the middle of a category",
+    "body": "Trailing spaces survive every comparison, filter and join. Strip the whole column before anything else looks at it.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"name\": [\" Aman\", \"Riya \"]})\nprint(df[\"name\"].str.len().tolist())\nprint(df[\"name\"].str.strip().str.len().tolist())",
+    "output": "[5, 5]\n[4, 4]"
+   },
+   {
+    "title": "IQR flags outliers by position",
+    "body": "The IQR rule marks values outside Q1 − 1.5·IQR and Q3 + 1.5·IQR. It is robust to a few extremes because quartiles ignore the tail.",
+    "code": "import pandas as pd\n\ns = pd.Series([10, 12, 11, 13, 100])\nq1, q3 = s.quantile(0.25), s.quantile(0.75)\niqr = q3 - q1\nprint(s[(s < q1 - 1.5 * iqr) | (s > q3 + 1.5 * iqr)].tolist())",
+    "output": "[100]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "rename called without the columns argument",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"old\": [1]})\ndf = df.rename({\"old\": \"new\"})\nprint(df.columns.tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"old\": [1]})\ndf = df.rename(columns={\"old\": \"new\"})\nprint(df.columns.tolist())",
+    "error": "Wrong output: the column is still called old; without columns= the dict was read as an index rename.",
+    "fixedOutput": "['new']",
+    "brokenOutput": "['old']"
+   },
+   {
+    "title": "Dropping duplicates on the wrong subset",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1], \"at\": [\"am\", \"pm\"]})\nprint(df.drop_duplicates(subset=[\"at\"]).shape[0])",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 1], \"at\": [\"am\", \"pm\"]})\nprint(df.drop_duplicates(subset=[\"id\"], keep=\"last\").shape[0])",
+    "error": "Wrong output: 1 row — the at column is unique, so nothing looked like a duplicate and the real duplicate id stayed.",
+    "fixedOutput": "1",
+    "brokenOutput": "2"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Normalise a category column",
+    "statement": "Strip whitespace, lowercase, then map `in` and `ind` to `india`; print the resulting list.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"country\": [\"IN \", \"ind\", \"India\"]})\ndf[\"country\"] = df[\"country\"].str.strip().str.lower().replace({\"in\": \"india\", \"ind\": \"india\", \"india\": \"india\"})\nprint(df[\"country\"].tolist())",
+    "expected": "['india', 'india', 'india']"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "How do you decide which duplicate to keep?",
+    "answer": "By the grain and by the newest record: typically order by an updated-at column and keep the last per key. Keeping the first silently keeps the oldest state, which is wrong for slowly changing records."
+   },
+   {
+    "q": "What is the difference between an outlier and an invalid value?",
+    "answer": "An outlier is a real observation far from the rest; an invalid value is impossible — a negative age, a date in the future, a price of zero on a paid order. Validation rules catch the impossible; statistics only flag the unusual."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Defend writing a validation report before removing any row.",
+    "answer": "Removal is irreversible and hides the cause. A report that counts duplicates, invalid values and outliers per column shows whether the pipeline is broken upstream, and gives a number to compare after the fix instead of a silently smaller table.",
+    "steps": [
+     "Say what removal destroys.",
+     "Say what the report proves.",
+     "Give the before/after count."
+    ]
+   },
+   {
+    "q": "A teammate drops every row outside 3 standard deviations. What is the problem?",
+    "answer": "The rule assumes a roughly normal distribution and is itself distorted by the extreme values it targets; on a skewed column it can delete a large legitimate tail. Use IQR or a domain threshold, and say which rows were removed.",
+    "steps": [
+     "Name the distribution assumption.",
+     "Name the masking effect.",
+     "Give a robust alternative."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Clean the roster",
+   "brief": "Given a dirty roster, remove duplicate ids, strip and title-case names, and print the cleaned shape.",
+   "steps": [
+    "Drop duplicates on id keeping the last.",
+    "Strip and title-case names.",
+    "Print shape before and after."
+   ]
+  },
+  "lab": {
+   "title": "Quality gate",
+   "brief": "Write a checker that returns the number of duplicate ids, invalid ages and empty names, and refuses the table if any is non-zero.",
+   "milestones": [
+    "Check each rule separately.",
+    "Collect the counts.",
+    "Raise or pass with a printed summary."
+   ]
+  }
+ },
+ {
+  "id": "p10",
+  "no": 10,
+  "title": "Strings and Regular Expressions",
+  "level": "intermediate",
+  "hours": 5,
+  "goal": "Clean and extract text with the .str accessor and regex, without a Python loop.",
+  "topics": [
+   {
+    "title": "str.contains filters text",
+    "body": "`contains` returns a boolean mask; `case=False` and `regex=True` are the two arguments that decide whether a search is literal or a pattern.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"email\": [\"a@gmail.com\", \"b@yahoo.com\"]})\nprint(df[\"email\"].str.contains(\"gmail\", case=False).tolist())",
+    "output": "[True, False]"
+   },
+   {
+    "title": "str.extract pulls a group out",
+    "body": "A capture group in the pattern becomes a column. `expand=False` returns a Series when there is exactly one group.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"email\": [\"a@gmail.com\", \"b@yahoo.com\"]})\ndf[\"domain\"] = df[\"email\"].str.extract(r\"@(\\w+)\\.\")\nprint(df[\"domain\"].tolist())",
+    "output": "['gmail', 'yahoo']"
+   },
+   {
+    "title": "str.split expands into columns",
+    "body": "`split(pat, expand=True)` turns one text column into several, which is how a \"city, state\" field becomes two usable columns.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"where\": [\"Pune, MH\", \"Delhi, DL\"]})\nparts = df[\"where\"].str.split(\", \", expand=True)\nprint(parts.shape)\nprint(parts[0].tolist())",
+    "output": "(2, 2)\n['Pune', 'Delhi']"
+   },
+   {
+    "title": "str.len measures the text",
+    "body": "Length is a cheap validation: a phone number column with lengths other than 10 is wrong before any regex.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"phone\": [\"9876543210\", \"98765\"]})\nprint(df[\"phone\"].str.len().tolist())",
+    "output": "[10, 5]"
+   },
+   {
+    "title": "Regex cleans a phone number",
+    "body": "`replace` with `regex=True` removes every non-digit in one pass, then the length check tells you which numbers are still invalid.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"phone\": [\"+91 98765-43210\", \"(022) 1234 5678\"]})\ndigits = df[\"phone\"].str.replace(r\"\\D\", \"\", regex=True)\nprint(digits.str.len().tolist())",
+    "output": "[12, 11]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "str accessor on a numeric column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [101, 102]})\nprint(df[\"code\"].str.startswith(\"1\").tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [101, 102]})\nprint(df[\"code\"].astype(str).str.startswith(\"1\").tolist())",
+    "error": "AttributeError: Can only use .str accessor with string values, not integer. Did you mean: 'std'?",
+    "fixedOutput": "[True, True]"
+   },
+   {
+    "title": "A regex group that matches nothing",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"email\": [\"no-at-sign\"]})\nprint(df[\"email\"].str.extract(r\"@(\\w+)\\.\")[0].str.len().tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"email\": [\"no-at-sign\"]})\nprint(df[\"email\"].str.extract(r\"@(\\w+)\\.\")[0].isna().tolist())",
+    "error": "Wrong output: nan instead of a length, because the pattern found no match and extract returned NaN.",
+    "fixedOutput": "[True]",
+    "brokenOutput": "[nan]"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Extract the year from a code",
+    "statement": "From codes like \"BR-2026-07\", extract the four-digit year and print it as a list.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"code\": [\"BR-2026-07\", \"BR-2025-11\"]})\nprint(df[\"code\"].str.extract(r\"-(\\d{4})-\")[0].tolist())",
+    "expected": "['2026', '2025']"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why prefer a vectorised .str call over a list comprehension of string methods?",
+    "answer": "The `.str` accessor handles missing values as NaN instead of raising, runs the same compiled loop over the column, and keeps the index. A comprehension needs its own None handling and rebuilds a Series."
+   },
+   {
+    "q": "When is a regex the wrong tool?",
+    "answer": "When the format is structured — parse JSON, split on a fixed delimiter, or use a real date parser. Regex for HTML or nested syntax becomes unreadable and wrong at the edges; use the parser that owns the format."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Defend normalising text before grouping.",
+    "answer": "Group keys compare exactly, so \"Pune\", \"pune\" and \"Pune \" become three groups and every aggregate is split three ways. Normalising case and whitespace first makes the group count match the real number of cities.",
+    "steps": [
+     "State the exact-match rule.",
+     "Show the split aggregates.",
+     "Give the normalise-first order."
+    ]
+   },
+   {
+    "q": "A phone column has 8, 10 and 12 digit values. What do you report?",
+    "answer": "That the column has three length populations, which usually means a country code or a missing prefix, not bad data. Report the counts per length before changing anything, then normalise with an explicit rule.",
+    "steps": [
+     "Count by length.",
+     "Name the likely cause.",
+     "State the normalisation rule."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Contact cleanup",
+   "brief": "From an email column, extract the domain, count the distinct domains and list the invalid rows.",
+   "steps": [
+    "Extract the domain with a capture group.",
+    "Count distinct domains.",
+    "Flag rows with no domain."
+   ]
+  },
+  "lab": {
+   "title": "Text normaliser",
+   "brief": "Build one function that strips, lowercases, removes punctuation from phone numbers and returns the cleaned frame plus a validity count.",
+   "milestones": [
+    "Strip and normalise case.",
+    "Clean digits with regex.",
+    "Print validity counts per column."
+   ]
+  }
+ }
+]

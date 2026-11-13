@@ -15,9 +15,11 @@ import {
 import type { CourseCard } from '../../core/learning/courses';
 import { useCIndex } from '../../core/data/ccourse';
 import { useNumpyCourse } from '../../core/data/ncourse';
+import { usePandasCourse } from '../../core/data/pcourse';
 import { CLogo } from '../c-programming/CLogo';
 import { JLogo } from '../java-programming/JLogo';
 import { NLogo } from '../numpy-mastery/NLogo';
+import { PLogo } from '../pandas-mastery/PLogo';
 
 /**
  * /courses — ONE grid of course cards, in the learning sequence.
@@ -39,6 +41,7 @@ export default function CoursesHome() {
   const index = useCourseIndex();
   const cIndex = useCIndex();
   const nCourse = useNumpyCourse();
+  const pCourse = usePandasCourse();
   const pctOf = useSectionPct();
   /** Owner overrides when the database has them; the code-authored journey otherwise. */
   const { placements } = useCoursePlacements();
@@ -164,6 +167,26 @@ export default function CoursesHome() {
    * NumPy Mastery is its own course page like C and Java: a real card in the same grid, drawn with
    * its own mark, and present only once its published artifact has loaded.
    */
+  /**
+   * Pandas Mastery is its own course page like NumPy: a real card in the same grid, its own panda
+   * mark, and present only once its published artifact has loaded.
+   */
+  const renderP = () => {
+    if (!pCourse) return null;
+    return (
+      <Link
+        to="/pandas"
+        className="course-card cc-simple tone-green"
+        data-agent-action="course:pandas-mastery"
+        data-agent-label="Pandas Mastery"
+        title="Pandas Mastery"
+      >
+        <span className="cc-logo"><PLogo size={88} /></span>
+        <b className="cc-name">Pandas Mastery</b>
+      </Link>
+    );
+  };
+
   const renderN = () => {
     if (!nCourse) return null;
     return (
@@ -195,7 +218,7 @@ export default function CoursesHome() {
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
               {/* Java is a real card in the grid below, so it is counted here too — the header may
                   never say 12 while 13 cards are on screen. */}
-              <span className="chip">{visible.length + (cHidden ? 0 : 1) + 1 + (nCourse ? 1 : 0) + ownerVisible.length} {t('courses.coursesUnit')}</span>
+              <span className="chip">{visible.length + (cHidden ? 0 : 1) + 1 + (nCourse ? 1 : 0) + (pCourse ? 1 : 0) + ownerVisible.length} {t('courses.coursesUnit')}</span>
               <span className="chip">{steps} {t('courses.stepsUnit')}</span>
               <span className="chip">{index.totals.items} {t('courses.itemsUnit')}</span>
             </div>
@@ -233,6 +256,7 @@ export default function CoursesHome() {
       {index && (
         <div className="course-grid">
           {renderN()}
+          {renderP()}
           <Link
             to="/java"
             className="course-card cc-simple tone-amber"

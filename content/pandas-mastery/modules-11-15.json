@@ -1,0 +1,565 @@
+[
+ {
+  "id": "p11",
+  "no": 11,
+  "title": "Importing and Exporting Data",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Read and write CSV, JSON and SQL without losing types, and stream a file that does not fit in memory.",
+  "topics": [
+   {
+    "title": "read_csv with an explicit separator",
+    "body": "`read_csv` splits on a comma by default. A semicolon or tab file that is not declared arrives as one wide text column.",
+    "code": "import pandas as pd\nfrom io import StringIO\n\ntext = \"name;marks\\nAman;85\\nRiya;92\"\ndf = pd.read_csv(StringIO(text), sep=\";\")\nprint(df.shape)\nprint(df[\"marks\"].sum())",
+    "output": "(2, 2)\n177"
+   },
+   {
+    "title": "Read only the columns you need",
+    "body": "`usecols` and `dtype` cut memory at the source: a wide export becomes a small typed frame without a post-load clean-up.",
+    "code": "import pandas as pd\nfrom io import StringIO\n\ntext = \"id,name,marks\\n1,Aman,85\\n2,Riya,92\"\ndf = pd.read_csv(StringIO(text), usecols=[\"name\", \"marks\"], dtype={\"marks\": \"int16\"})\nprint(df.columns.tolist())\nprint(df[\"marks\"].dtype)",
+    "output": "['name', 'marks']\nint16"
+   },
+   {
+    "title": "to_csv without the index",
+    "body": "By default the index is written as an unnamed first column. `index=False` is what stops a round trip from growing a column each time.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.to_csv(index=False).strip().split(\"\\n\"))",
+    "output": "['a', '1', '2']"
+   },
+   {
+    "title": "JSON arrives as records",
+    "body": "A JSON array of objects becomes rows directly; nested objects need `json_normalize` to become columns.",
+    "code": "import pandas as pd\n\nrecords = [{\"id\": 1, \"meta\": {\"city\": \"Pune\"}}, {\"id\": 2, \"meta\": {\"city\": \"Delhi\"}}]\ndf = pd.json_normalize(records)\nprint(df.columns.tolist())",
+    "output": "['id', 'meta.city']"
+   },
+   {
+    "title": "read_sql runs inside the database",
+    "body": "`read_sql` sends the query and builds the frame from the result, so filtering happens in SQL instead of after a full load.",
+    "code": "import pandas as pd\nimport sqlite3\n\ncon = sqlite3.connect(\":memory:\")\ncon.execute(\"create table marks (name text, mark integer)\")\ncon.executemany(\"insert into marks values (?, ?)\", [(\"Aman\", 85), (\"Riya\", 92)])\nprint(pd.read_sql(\"select name from marks where mark > 90\", con)[\"name\"].tolist())",
+    "output": "['Riya']"
+   }
+  ],
+  "debug": [
+   {
+    "title": "The separator was never declared",
+    "broken": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"a;b\\n1;2\"))\nprint(df.columns.tolist())",
+    "fix": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"a;b\\n1;2\"), sep=\";\")\nprint(df.columns.tolist())",
+    "error": "Wrong output: one column named a;b instead of two columns a and b.",
+    "fixedOutput": "['a', 'b']",
+    "brokenOutput": "['a;b']"
+   },
+   {
+    "title": "usecols names a column that is not there",
+    "broken": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"a,b\\n1,2\"), usecols=[\"c\"])\nprint(df.shape)",
+    "fix": "import pandas as pd\nfrom io import StringIO\n\ndf = pd.read_csv(StringIO(\"a,b\\n1,2\"), usecols=[\"a\"])\nprint(df.shape)",
+    "error": "ValueError: Usecols do not match columns, columns expected but not found: ['c']",
+    "fixedOutput": "(1, 1)"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Typed subset from text",
+    "statement": "Read only the name and marks columns from the CSV text, keep marks as integers, and print the mean.",
+    "solution": "import pandas as pd\nfrom io import StringIO\n\ntext = \"id,name,marks\\n1,Aman,85\\n2,Riya,92\\n\"\ndf = pd.read_csv(StringIO(text), usecols=[\"name\", \"marks\"], dtype={\"marks\": int})\nprint(df[\"marks\"].mean())",
+    "expected": "88.5"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "How do you read a 20 GB CSV on a laptop?",
+    "answer": "In chunks: `read_csv(..., chunksize=1_000_000)` and aggregate each chunk into a small result, so peak memory is one chunk. If the file is columnar, convert once to Parquet and read only the needed columns."
+   },
+   {
+    "q": "What does `parse_dates` change about later work?",
+    "answer": "It makes the column datetime64, which enables `.dt`, resampling, rolling windows and date arithmetic. Without it the column is text, comparisons are lexicographic and `resample` raises."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Argue for pinning a dtype map in a production loader.",
+    "answer": "An inferred dtype can change when the data changes — one new blank cell turns an integer column into float and the join key stops matching. An explicit map makes the contract fail at load instead of at analysis.",
+    "steps": [
+     "Name the inference risk.",
+     "Name the downstream failure.",
+     "Give the explicit map."
+    ]
+   },
+   {
+    "q": "When is exporting to CSV the wrong deliverable?",
+    "answer": "When the consumer is another program that needs types and speed, or when the data is large: CSV loses dtypes, is slow to parse and cannot hold nested or binary values. Parquet keeps the schema and reads only the columns asked for.",
+    "steps": [
+     "Name what CSV loses.",
+     "Name the size cost.",
+     "Give the typed alternative."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Round-trip a table",
+   "brief": "Write a small frame to CSV text without the index, read it back with an explicit dtype and prove the values survived.",
+   "steps": [
+    "Write with index=False.",
+    "Read back with dtype.",
+    "Compare the value lists."
+   ]
+  },
+  "lab": {
+   "title": "Chunked total",
+   "brief": "Read a CSV in chunks of two rows and compute the total of a column without ever holding the whole file.",
+   "milestones": [
+    "Loop with chunksize.",
+    "Accumulate the partial sums.",
+    "Print the final total and the chunk count."
+   ]
+  }
+ },
+ {
+  "id": "p12",
+  "no": 12,
+  "title": "Merging, Joining and Concatenation",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Combine tables by key or by stacking, and prove the row count did what you intended.",
+  "topics": [
+   {
+    "title": "merge joins on a shared key",
+    "body": "`merge` matches rows by key and keeps the columns of both sides. The default `how=\"inner\"` keeps only keys present in both.",
+    "code": "import pandas as pd\n\nusers = pd.DataFrame({\"id\": [1, 2], \"name\": [\"Aman\", \"Riya\"]})\nmarks = pd.DataFrame({\"id\": [1, 3], \"mark\": [85, 92]})\nprint(users.merge(marks, on=\"id\").shape[0])",
+    "output": "1"
+   },
+   {
+    "title": "A left join keeps every row on the left",
+    "body": "`how=\"left\"` never drops a left row; unmatched keys get NaN on the right. That is the shape of a \"who has not done it\" question.",
+    "code": "import pandas as pd\n\nusers = pd.DataFrame({\"id\": [1, 2], \"name\": [\"Aman\", \"Riya\"]})\nmarks = pd.DataFrame({\"id\": [1], \"mark\": [85]})\nout = users.merge(marks, on=\"id\", how=\"left\")\nprint(out[\"mark\"].isna().tolist())",
+    "output": "[False, True]"
+   },
+   {
+    "title": "indicator names where each row came from",
+    "body": "`indicator=True` adds `_merge` with `both`, `left_only` or `right_only`, which turns an audit question into a filter.",
+    "code": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2]})\nb = pd.DataFrame({\"id\": [2, 3]})\nout = a.merge(b, on=\"id\", how=\"outer\", indicator=True)\nprint(out[\"_merge\"].value_counts().to_dict())",
+    "output": "{'left_only': 1, 'right_only': 1, 'both': 1}"
+   },
+   {
+    "title": "concat stacks rows",
+    "body": "`concat` glues tables along an axis without matching keys. `ignore_index=True` renumbers the result so the old labels do not repeat.",
+    "code": "import pandas as pd\n\njan = pd.DataFrame({\"sales\": [10]})\nfeb = pd.DataFrame({\"sales\": [20]})\nout = pd.concat([jan, feb], ignore_index=True)\nprint(out[\"sales\"].tolist())\nprint(out.index.tolist())",
+    "output": "[10, 20]\n[0, 1]"
+   },
+   {
+    "title": "validate refuses a fan-out",
+    "body": "A duplicate key on either side multiplies rows. `validate=\"one_to_one\"` raises instead of shipping a table that is quietly bigger.",
+    "code": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 2], \"x\": [10, 20]})\nb = pd.DataFrame({\"id\": [1, 2], \"y\": [1, 2]})\nprint(a.merge(b, on=\"id\", validate=\"one_to_one\").shape[0])",
+    "output": "2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "merge with no shared key",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"user_id\": [1]})\nb = pd.DataFrame({\"id\": [1]})\nprint(a.merge(b).shape)",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"user_id\": [1]})\nb = pd.DataFrame({\"id\": [1]})\nprint(a.merge(b, left_on=\"user_id\", right_on=\"id\").shape)",
+    "error": "pandas.errors.MergeError: No common columns to perform merge on. Merge options: left_on=None, right_on=None, left_index=False, right_index=False",
+    "fixedOutput": "(1, 2)"
+   },
+   {
+    "title": "A duplicate key inflates the row count",
+    "broken": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 1], \"x\": [1, 2]})\nb = pd.DataFrame({\"id\": [1], \"y\": [9]})\nprint(a.merge(b, on=\"id\", validate=\"one_to_one\").shape)",
+    "fix": "import pandas as pd\n\na = pd.DataFrame({\"id\": [1, 1], \"x\": [1, 2]}).drop_duplicates(\"id\")\nb = pd.DataFrame({\"id\": [1], \"y\": [9]})\nprint(a.merge(b, on=\"id\", validate=\"one_to_one\").shape)",
+    "error": "1 ...",
+    "fixedOutput": "(1, 3)"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Who has not started",
+    "statement": "Left-join the users table to the progress table and print the names with no progress row.",
+    "solution": "import pandas as pd\n\nusers = pd.DataFrame({\"id\": [1, 2], \"name\": [\"Aman\", \"Riya\"]})\nprogress = pd.DataFrame({\"id\": [1], \"pct\": [40]})\nout = users.merge(progress, on=\"id\", how=\"left\")\nprint(out[out[\"pct\"].isna()][\"name\"].tolist())",
+    "expected": "['Riya']"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why does a merge sometimes return more rows than the left table?",
+    "answer": "Because the key is not unique on the right: each match produces a row, so one left row with three right matches becomes three. That is a fan-out, and `validate` is the check that catches it before the numbers are trusted."
+   },
+   {
+    "q": "What is the difference between merge and join?",
+    "answer": "`merge` is the general, key-based operation with `on`, `how` and `validate`. `join` is a convenience that joins on the index by default. For anything beyond a simple index join, `merge` is the explicit choice."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Explain why you check the row count before and after every join.",
+    "answer": "A join can multiply or drop rows without any error. Comparing counts before and after is the cheapest proof that the relationship was what I assumed, and when it changes I know the key is not unique.",
+    "steps": [
+     "Record the left count.",
+     "Record the result count.",
+     "Compare against the expected relationship."
+    ]
+   },
+   {
+    "q": "When is concat the right tool instead of merge?",
+    "answer": "When the tables are the same shape and represent the same entity over time or source — monthly files, two regions. Merge combines different attributes of one entity; concat extends the rows of one table.",
+    "steps": [
+     "State the shape condition.",
+     "Give the time/source example.",
+     "Contrast with attribute combination."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Progress join",
+   "brief": "Join a users table to a lessons table through an attempts table and report completions per user.",
+   "steps": [
+    "Merge attempts to lessons.",
+    "Merge that to users.",
+    "Count completions per name."
+   ]
+  },
+  "lab": {
+   "title": "Join audit",
+   "brief": "Build a reusable join that reports the row count before and after, the unmatched keys, and refuses a fan-out.",
+   "milestones": [
+    "Count both sides.",
+    "Merge with indicator.",
+    "Print unmatched counts and the delta."
+   ]
+  }
+ },
+ {
+  "id": "p13",
+  "no": 13,
+  "title": "GroupBy and Aggregation",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Split a table by a key, compute per-group answers, and put them back beside the original rows.",
+  "topics": [
+   {
+    "title": "groupby splits, then aggregates",
+    "body": "`groupby(key)` groups rows with the same key; a reduction then returns one value per group instead of per row.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"sales\": [10, 20, 5]})\nprint(df.groupby(\"city\")[\"sales\"].sum().to_dict())",
+    "output": "{'Delhi': 5, 'Pune': 30}"
+   },
+   {
+    "title": "agg asks several questions at once",
+    "body": "Passing a list of function names returns one column per function. Named aggregation gives those columns the names the report needs.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"sales\": [10, 20, 5]})\ng = df.groupby(\"city\").agg(total=(\"sales\", \"sum\"), n=(\"sales\", \"size\"))\nprint(g.loc[\"Pune\"].tolist())",
+    "output": "[30, 2]"
+   },
+   {
+    "title": "transform keeps the row count",
+    "body": "`transform` returns a value per original row, so a group mean can be attached back and used in a per-row comparison.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"sales\": [10, 20, 5]})\ndf[\"avg\"] = df.groupby(\"city\")[\"sales\"].transform(\"mean\")\nprint(df[\"avg\"].tolist())",
+    "output": "[15.0, 15.0, 5.0]"
+   },
+   {
+    "title": "filter keeps whole groups",
+    "body": "`filter` takes a function of the group and returns the rows of the groups that pass, which is different from filtering rows.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"sales\": [10, 20, 5]})\nout = df.groupby(\"city\").filter(lambda g: g[\"sales\"].sum() > 20)\nprint(out[\"city\"].unique().tolist())",
+    "output": "['Pune']"
+   },
+   {
+    "title": "Two keys make a MultiIndex result",
+    "body": "Grouping by two columns returns a Series indexed by both keys. `unstack` turns the second key into columns for a report.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2025, 2026, 2026], \"sales\": [10, 20, 5]})\nout = df.groupby([\"city\", \"year\"])[\"sales\"].sum().unstack(fill_value=0)\nprint(out.columns.tolist())",
+    "output": "[2025, 2026]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Grouping by a column that is not there",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"sales\": [10]})\nprint(df.groupby(\"cities\")[\"sales\"].sum())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"sales\": [10]})\nprint(df.groupby(\"city\")[\"sales\"].sum().tolist())",
+    "error": "KeyError: 'cities'",
+    "fixedOutput": "[10]"
+   },
+   {
+    "title": "Aggregating text with a numeric function",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].sum())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"name\": [\"Aman\"]})\nprint(df.groupby(\"city\")[\"name\"].count().tolist())",
+    "error": "Wrong output: Aman — sum concatenated the text values instead of counting rows.",
+    "fixedOutput": "[1]",
+    "brokenOutput": "city\nPune    Aman\nName: name, dtype: str"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Average marks per course",
+    "statement": "Group by course, average the marks, and print the result as a dict rounded to one decimal.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"course\": [\"Py\", \"Py\", \"SQL\"], \"marks\": [80, 90, 70]})\nprint(df.groupby(\"course\")[\"marks\"].mean().round(1).to_dict())",
+    "expected": "{'Py': 85.0, 'SQL': 70.0}"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What does groupby actually do internally?",
+    "answer": "Split the rows into groups by the key, apply the function to each group, combine the results into one object indexed by the key. The split is why a groupby on a high-cardinality key is expensive, and why the result is indexed by that key."
+   },
+   {
+    "q": "When do you use transform instead of agg?",
+    "answer": "When the answer must line up with the original rows: adding a group mean to each row, or comparing a row against its group. `agg` collapses each group to one row; `transform` returns one value per input row."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A groupby mean looks wrong because one group has a single row. What do you do?",
+    "answer": "Report the group size beside the mean, because a mean of one observation has no spread and is not comparable. Filter or flag groups below a minimum count, and say the threshold in the output.",
+    "steps": [
+     "Add a size column.",
+     "Set a minimum count.",
+     "Flag the excluded groups."
+    ]
+   },
+   {
+    "q": "Explain the difference between dropping missing keys and keeping them in a groupby.",
+    "answer": "By default `groupby` drops rows whose key is missing, so the totals silently shrink. `dropna=False` keeps them as a group, which is right when the missing key itself is a finding.",
+    "steps": [
+     "Name the default.",
+     "Show the total that changes.",
+     "Give the flag and when to use it."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Course report",
+   "brief": "Group a lessons table by course, count lessons and average duration, and print the two-column report.",
+   "steps": [
+    "Group by course.",
+    "Aggregate count and mean.",
+    "Sort by count and print."
+   ]
+  },
+  "lab": {
+   "title": "Cohort metrics",
+   "brief": "Per city and month, compute attempts, pass rate and average score, then flatten the result into columns.",
+   "milestones": [
+    "Group by two keys.",
+    "Aggregate three metrics.",
+    "Unstack and print the table."
+   ]
+  }
+ },
+ {
+  "id": "p14",
+  "no": 14,
+  "title": "Reshaping and Pivoting",
+  "level": "intermediate",
+  "hours": 6,
+  "goal": "Move between long and wide layouts, and choose the reshape that answers the question.",
+  "topics": [
+   {
+    "title": "pivot_table builds a cross-tab",
+    "body": "`pivot_table` aggregates by default, so duplicate key combinations do not raise. Rows, columns and values are named explicitly.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"year\": [2025, 2026, 2026], \"sales\": [10, 20, 5]})\nt = df.pivot_table(index=\"city\", columns=\"year\", values=\"sales\", aggfunc=\"sum\")\nprint(t.shape)\nprint(t.loc[\"Pune\"].tolist())",
+    "output": "(2, 2)\n[10.0, 20.0]"
+   },
+   {
+    "title": "melt turns columns into rows",
+    "body": "`melt` is the inverse of a pivot: wide columns become a key column plus a value column, which is the shape plotting and groupby prefer.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"2025\": [10], \"2026\": [20]})\nlong = df.melt(id_vars=\"city\", var_name=\"year\", value_name=\"sales\")\nprint(long.shape)\nprint(long[\"year\"].tolist())",
+    "output": "(2, 3)\n['2025', '2026']"
+   },
+   {
+    "title": "crosstab counts combinations",
+    "body": "`crosstab` counts how often each pair of values occurs. `normalize=\"index\"` turns counts into a row-wise share.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nt = pd.crosstab(df[\"city\"], df[\"passed\"], normalize=\"index\").round(2)\nprint(t.loc[\"Pune\"].tolist())",
+    "output": "[0.5, 0.5]"
+   },
+   {
+    "title": "explode expands a list column",
+    "body": "A cell holding a list becomes one row per element with `explode`, which is how tags and multi-value fields become analysable.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"id\": [1, 2], \"tags\": [[\"py\", \"sql\"], [\"py\"]]})\nout = df.explode(\"tags\")\nprint(out.shape[0])\nprint(out[\"tags\"].tolist())",
+    "output": "3\n['py', 'sql', 'py']"
+   },
+   {
+    "title": "get_dummies encodes categories",
+    "body": "One-hot columns turn a category into numbers a model can read. `dtype=int` keeps the output from doubling memory as booleans.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Delhi\"]})\nout = pd.get_dummies(df[\"city\"], dtype=int)\nprint(out.columns.tolist())\nprint(out.values.tolist())",
+    "output": "['Delhi', 'Pune']\n[[0, 1], [1, 0]]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "pivot with duplicate combinations",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"year\": [2026, 2026], \"sales\": [1, 2]})\nprint(df.pivot(index=\"city\", columns=\"year\", values=\"sales\"))",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\"], \"year\": [2026, 2026], \"sales\": [1, 2]})\nprint(df.pivot_table(index=\"city\", columns=\"year\", values=\"sales\", aggfunc=\"sum\").shape)",
+    "error": "ValueError: Index contains duplicate entries, cannot reshape",
+    "fixedOutput": "(1, 1)"
+   },
+   {
+    "title": "melt names no id column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"2025\": [10]})\nprint(df.melt(var_name=\"year\").shape)",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"2025\": [10]})\nprint(df.melt(id_vars=\"city\", var_name=\"year\", value_name=\"sales\").shape)",
+    "error": "Wrong output: 6 rows instead of 2, because city was melted as a value column as well.",
+    "fixedOutput": "(1, 3)",
+    "brokenOutput": "(2, 2)"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Wide to long",
+    "statement": "Melt the two year columns into a long table and print the value column as a list.",
+    "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\"], \"2025\": [10], \"2026\": [20]})\nlong = df.melt(id_vars=\"city\", var_name=\"year\", value_name=\"sales\")\nprint(long[\"sales\"].tolist())",
+    "expected": "[10, 20]"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "When do you want long data instead of wide?",
+    "answer": "When the analysis groups or plots by a variable that is currently spread across columns — year, metric, region. Long data has one value column and one key column, which is what groupby, seaborn and most model APIs expect."
+   },
+   {
+    "q": "What is the difference between pivot and pivot_table?",
+    "answer": "`pivot` only reshapes unique index/column pairs and raises on duplicates. `pivot_table` aggregates duplicates with `aggfunc`, so it is the safe choice on real data."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Defend storing a clean dataset in long format.",
+    "answer": "Long format is additive: a new month is new rows, not a new column, so no code or schema changes. It also makes the metric a value instead of a column name, which is what groupby and plotting need.",
+    "steps": [
+     "State the additive property.",
+     "Name the schema benefit.",
+     "Name the downstream benefit."
+    ]
+   },
+   {
+    "q": "A pivot table has a NaN where you expect a zero. Explain and fix.",
+    "answer": "The combination simply does not exist in the data, so there is no row to aggregate and pandas leaves NaN. `fill_value=0` states the business meaning — no activity — instead of implying unknown.",
+    "steps": [
+     "Say why the cell is NaN.",
+     "Distinguish absent from unknown.",
+     "Give the fill argument."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Monthly matrix",
+   "brief": "From a long sales table, build a city × month matrix of totals and print it.",
+   "steps": [
+    "Pivot with sum.",
+    "Fill missing combinations with zero.",
+    "Print the shape and one row."
+   ]
+  },
+  "lab": {
+   "title": "Report builder",
+   "brief": "Take a long attempts table and produce both a wide summary and a normalised crosstab from it.",
+   "milestones": [
+    "Build the pivot table.",
+    "Build the crosstab.",
+    "Print both shapes and a sample row."
+   ]
+  }
+ },
+ {
+  "id": "p15",
+  "no": 15,
+  "title": "Datetime and Time Series",
+  "level": "advanced",
+  "hours": 6,
+  "goal": "Parse dates, extract parts, resample a series and compute rolling windows.",
+  "topics": [
+   {
+    "title": "Parse once, then use dt",
+    "body": "`to_datetime` makes the column datetime64, and the `.dt` accessor then exposes year, month, weekday and formatting without another parse.",
+    "code": "import pandas as pd\n\ndf = pd.DataFrame({\"at\": [\"2026-01-05\", \"2026-02-10\"]})\ndf[\"at\"] = pd.to_datetime(df[\"at\"])\nprint(df[\"at\"].dt.month.tolist())\nprint(df[\"at\"].dt.day_name().tolist())",
+    "output": "[1, 2]\n['Monday', 'Tuesday']"
+   },
+   {
+    "title": "date_range generates the calendar",
+    "body": "`date_range` builds an index of dates with a frequency. `freq=\"W\"` marks weekly boundaries and `\"B\"` business days, which is how a gap-free series is built.",
+    "code": "import pandas as pd\n\nidx = pd.date_range(\"2026-01-01\", periods=3, freq=\"D\")\nprint(idx.strftime(\"%Y-%m-%d\").tolist())",
+    "output": "['2026-01-01', '2026-01-02', '2026-01-03']"
+   },
+   {
+    "title": "resample aggregates by period",
+    "body": "With a DatetimeIndex, `resample(\"M\")` groups rows into months and applies a reduction — the time-series version of groupby.",
+    "code": "import pandas as pd\n\nidx = pd.to_datetime([\"2026-01-05\", \"2026-01-20\", \"2026-02-02\"])\ns = pd.Series([10, 20, 5], index=idx)\nprint(s.resample(\"MS\").sum().tolist())",
+    "output": "[30, 5]"
+   },
+   {
+    "title": "rolling smooths a series",
+    "body": "`rolling(2).mean()` averages each point with the previous one. The first window is incomplete, so it starts as NaN.",
+    "code": "import pandas as pd\n\ns = pd.Series([10.0, 20.0, 30.0])\nprint(s.rolling(2).mean().round(1).tolist())",
+    "output": "[nan, 15.0, 25.0]"
+   },
+   {
+    "title": "shift compares with the previous period",
+    "body": "`shift(1)` moves values down one row, so subtracting it gives the change from the previous period without a loop.",
+    "code": "import pandas as pd\n\ns = pd.Series([100, 110, 99])\nprint(s.diff().tolist())",
+    "output": "[nan, 10.0, -11.0]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "resample on a non-datetime index",
+    "broken": "import pandas as pd\n\ns = pd.Series([1, 2], index=[\"2026-01-01\", \"2026-02-01\"])\nprint(s.resample(\"MS\").sum().tolist())",
+    "fix": "import pandas as pd\n\ns = pd.Series([1, 2], index=pd.to_datetime([\"2026-01-01\", \"2026-02-01\"]))\nprint(s.resample(\"MS\").sum().tolist())",
+    "error": "TypeError: Only valid with DatetimeIndex, TimedeltaIndex or PeriodIndex, but got an instance of 'Index'",
+    "fixedOutput": "[1, 2]"
+   },
+   {
+    "title": "dt on a text column",
+    "broken": "import pandas as pd\n\ndf = pd.DataFrame({\"at\": [\"2026-01-05\"]})\nprint(df[\"at\"].dt.year.tolist())",
+    "fix": "import pandas as pd\n\ndf = pd.DataFrame({\"at\": [\"2026-01-05\"]})\nprint(pd.to_datetime(df[\"at\"]).dt.year.tolist())",
+    "error": "AttributeError: Can only use .dt accessor with datetimelike values. Did you mean: 'at'?",
+    "fixedOutput": "[2026]"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Weekly totals",
+    "statement": "Resample the daily series to weekly sums and print the totals as a list.",
+    "solution": "import pandas as pd\n\nidx = pd.to_datetime([\"2026-01-01\", \"2026-01-03\", \"2026-01-08\"])\ns = pd.Series([1, 2, 3], index=idx)\nprint(s.resample(\"W\").sum().tolist())",
+    "expected": "[3, 3]"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why is resampling different from groupby on a month column?",
+    "answer": "Resample knows the calendar: it produces every period in the range, including empty ones, and respects frequency rules such as business days and month starts. Grouping on an extracted month only returns the months that exist."
+   },
+   {
+    "q": "What does `rolling(7)` do at the start of a series?",
+    "answer": "The first six windows are incomplete, so the default result is NaN. `min_periods=1` computes with whatever is available, which changes the shape of the early values and should be a stated decision."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Defend converting to datetime at load rather than when a chart needs it.",
+    "answer": "The parse either succeeds once or fails once, at the boundary, with one dtype for the column. Parsing later means every consumer has to remember, and mixed formats can parse differently in two places.",
+    "steps": [
+     "State the single parse point.",
+     "Name the failure location.",
+     "Name the dtype consistency."
+    ]
+   },
+   {
+    "q": "A monthly revenue chart shows a dip every February. How do you explain it?",
+    "answer": "February is shorter, so a monthly sum compares unequal periods. Compare a daily average, or use a same-length window or year-over-year comparison before calling it a decline.",
+    "steps": [
+     "Name the period-length difference.",
+     "Give the normalised metric.",
+     "Name the comparison that is fair."
+    ]
+   }
+  ],
+  "mini": {
+   "title": "Daily to weekly",
+   "brief": "Build a 14-day series, sum it by week, and print both the daily and weekly totals.",
+   "steps": [
+    "Build the date range.",
+    "Resample to weekly sums.",
+    "Print both lists."
+   ]
+  },
+  "lab": {
+   "title": "Trend analysis",
+   "brief": "For a daily metric, compute a 3-day rolling mean, the day-over-day change and the best day.",
+   "milestones": [
+    "Index by date.",
+    "Add rolling mean and diff.",
+    "Print the best day with its date."
+   ]
+  }
+ }
+]
