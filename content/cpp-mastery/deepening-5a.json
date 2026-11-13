@@ -1,0 +1,410 @@
+{
+ "cpp01": {
+  "interview": [
+   {
+    "q": "What does this precedence expression print?",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << 2 + 3 * 4 << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n14"
+   },
+   {
+    "q": "What do two adjacent string literals produce?",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Bro\" \"Code\" << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\nBroCode"
+   },
+   {
+    "q": "What does a program with an empty main print?",
+    "code": "int main() {\n    return 0;\n}",
+    "answer": "Output:\n"
+   },
+   {
+    "q": "What does the linker do that the compiler cannot?",
+    "answer": "The compiler translates each translation unit independently and leaves external symbols unresolved. The linker matches those references to definitions across object files and libraries, and reports a missing definition as a link error."
+   },
+   {
+    "q": "Why is a header not the same thing as a library?",
+    "answer": "A header is copied into the translation unit by the preprocessor and carries declarations; a library is linked object code that provides the definitions. Including a header without linking its library leaves undefined references."
+   },
+   {
+    "q": "What happens when two translation units define the same non-inline function?",
+    "answer": "The symbol appears twice in the linked program, which violates the one-definition rule and produces a duplicate-symbol link error. Marking it inline or moving the definition to one unit fixes it."
+   }
+  ]
+ },
+ "cpp02": {
+  "interview": [
+   {
+    "q": "What padding does this print?",
+    "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::setfill('0') << std::setw(4) << 7 << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n0007"
+   },
+   {
+    "q": "What does hex output look like here?",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << std::hex << 255 << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\nff"
+   },
+   {
+    "q": "What does boolalpha change?",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << std::boolalpha << (3 > 2) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\ntrue"
+   },
+   {
+    "q": "Why does mixing >> and getline drop the rest of a line?",
+    "answer": "The extraction stops before the newline and leaves it in the buffer. getline then reads that leftover newline as an empty line, so the newline must be consumed first."
+   },
+   {
+    "q": "Is std::cout unbuffered?",
+    "answer": "No. Output is buffered and flushed when the buffer fills, when the program exits, or when std::endl or flush is used. That is why a crash can lose output that was written but not flushed."
+   },
+   {
+    "q": "Why prefer std::string over a char array for input?",
+    "answer": "A std::string grows as needed and owns its storage, so input cannot overflow a fixed buffer. A char array has a compile-time capacity and needs an explicit length limit."
+   }
+  ]
+ },
+ "cpp03": {
+  "interview": [
+   {
+    "q": "What does this unsigned subtraction print?",
+    "code": "#include <iostream>\n\nint main() {\n    unsigned int a = 2;\n    std::cout << a - 5 << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n4294967293"
+   },
+   {
+    "q": "What sizes does this report?",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << sizeof(char) << \" \" << sizeof(double) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1 8"
+   },
+   {
+    "q": "What does char arithmetic produce?",
+    "code": "#include <iostream>\n\nint main() {\n    char c = 'A';\n    std::cout << c + 1 << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n66"
+   },
+   {
+    "q": "Why is size_t unsigned?",
+    "answer": "It represents sizes and indices that cannot be negative, and it is wide enough to address any object. The trade-off is that a subtraction below zero wraps, so loops that count down need care."
+   },
+   {
+    "q": "What is narrowing and why can it be dangerous?",
+    "answer": "A narrowing conversion loses information, such as double to int or long to short. Braced initialization rejects narrowing at compile time, which is why {} is safer than = for constants."
+   },
+   {
+    "q": "What is the difference between const and constexpr?",
+    "answer": "const promises no change after initialization but may be computed at runtime; constexpr requires a compile-time constant expression, usable for array bounds and template arguments."
+   }
+  ]
+ },
+ "cpp04": {
+  "interview": [
+   {
+    "q": "What does integer division do here?",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << (7 / 2) * 2 << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n6"
+   },
+   {
+    "q": "What do these bitwise results look like?",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << (6 & 3) << \" \" << (6 | 3) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n2 7"
+   },
+   {
+    "q": "What does the ternary choose?",
+    "code": "#include <iostream>\n\nint main() {\n    int n = 0;\n    std::cout << (n == 0 ? \"zero\" : \"other\") << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\nzero"
+   },
+   {
+    "q": "Why is signed integer overflow undefined behaviour?",
+    "answer": "The standard does not define a wrapped result for signed overflow, so the optimizer may assume it never happens and transform the code. Unsigned overflow is defined and wraps."
+   },
+   {
+    "q": "What is short-circuit evaluation used for?",
+    "answer": "It skips the right operand when the left already decides the result, which guards null dereferences and prevents unnecessary work."
+   },
+   {
+    "q": "Why does -17 % 5 give a negative result?",
+    "answer": "The remainder takes the sign of the left operand in C++, so the result is -2. The division truncates toward zero, which keeps the identity a == (a / b) * b + a % b true."
+   }
+  ]
+ },
+ "cpp05": {
+  "interview": [
+   {
+    "q": "What does this fallthrough print?",
+    "code": "#include <iostream>\n\nint main() {\n    int n = 1;\n    switch (n) {\n        case 1: std::cout << \"one \";\n        case 2: std::cout << \"two \";\n            break;\n        default: std::cout << \"other\";\n    }\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\none two"
+   },
+   {
+    "q": "Which branch does this dangling else take?",
+    "code": "#include <iostream>\n\nint main() {\n    int a = 1, b = 0;\n    if (a)\n        if (b) std::cout << \"both\\n\";\n        else std::cout << \"only a\\n\";\n    return 0;\n}",
+    "answer": "Output:\nonly a"
+   },
+   {
+    "q": "What does the nested ternary return?",
+    "code": "#include <iostream>\n\nint main() {\n    int n = 7;\n    std::cout << (n > 0 ? \"positive\" : n == 0 ? \"zero\" : \"negative\") << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\npositive"
+   },
+   {
+    "q": "When is switch clearer than an if chain?",
+    "answer": "When one integral or enum value selects among several exact alternatives, because the compiler can warn about missing enumerators and the intent is visible at a glance."
+   },
+   {
+    "q": "Why do case labels have to be compile-time constants?",
+    "answer": "The compiler builds a jump table or comparison chain from the labels, so each value must be known before the program runs. A runtime value cannot be a case label."
+   },
+   {
+    "q": "What is the risk of an if without braces?",
+    "answer": "Only the next single statement is controlled. Adding a second statement later silently moves it outside the condition, which is how dangling-else bugs appear."
+   }
+  ]
+ },
+ "cpp06": {
+  "interview": [
+   {
+    "q": "How many times does this loop body run?",
+    "code": "#include <iostream>\n\nint main() {\n    int n = 0;\n    do {\n        std::cout << n << \" \";\n        ++n;\n    } while (n < 0);\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n0"
+   },
+   {
+    "q": "Which values does continue skip?",
+    "code": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 4; ++i) {\n        if (i % 2) continue;\n        std::cout << i << \" \";\n    }\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n0 2"
+   },
+   {
+    "q": "How many stars does the nested loop print?",
+    "code": "#include <iostream>\n\nint main() {\n    for (int r = 0; r < 2; ++r) {\n        for (int c = 0; c < 3; ++c) std::cout << \"*\";\n        std::cout << \"\\n\";\n    }\n    return 0;\n}",
+    "answer": "Output:\n***\n***"
+   },
+   {
+    "q": "What is a loop invariant?",
+    "answer": "A statement that is true before and after every iteration, which is how you reason about what the loop has accomplished and why the exit condition gives the right result."
+   },
+   {
+    "q": "Why is a range-based for unsafe while modifying the container?",
+    "answer": "The loop holds iterators into the container. Adding or removing elements can reallocate or invalidate them, so the iteration may read freed memory."
+   },
+   {
+    "q": "How do you avoid an off-by-one error at the end of a loop?",
+    "answer": "Decide explicitly whether the bound is inclusive or exclusive, use the container’s size or iterators, and test the empty and single-element cases."
+   }
+  ]
+ },
+ "cpp07": {
+  "interview": [
+   {
+    "q": "What does the default argument produce?",
+    "code": "#include <iostream>\n#include <string>\n\nvoid greet(const std::string& name, const std::string& word = \"Hello\") {\n    std::cout << word << \", \" << name << \"\\n\";\n}\n\nint main() {\n    greet(\"Aman\");\n    return 0;\n}",
+    "answer": "Output:\nHello, Aman"
+   },
+   {
+    "q": "Does this reference parameter change the caller?",
+    "code": "#include <iostream>\n\nvoid bump(int& value) { ++value; }\n\nint main() {\n    int score = 5;\n    bump(score);\n    std::cout << score << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n6"
+   },
+   {
+    "q": "What does this recursion return?",
+    "code": "#include <iostream>\n\nint down(int n) { return n == 0 ? 0 : 1 + down(n - 1); }\n\nint main() {\n    std::cout << down(3) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n3"
+   },
+   {
+    "q": "How does the compiler choose between overloads?",
+    "answer": "It ranks the conversions needed for each argument and picks the best viable candidate. An exact match beats a promotion, which beats a user-defined conversion; a tie is an ambiguity error."
+   },
+   {
+    "q": "What does inline actually mean today?",
+    "answer": "It permits the same function definition in multiple translation units and hints that inlining may be worthwhile. The optimizer decides, so inline is not a performance guarantee."
+   },
+   {
+    "q": "Why does deep recursion risk a stack overflow?",
+    "answer": "Every call keeps a stack frame until it returns, so unbounded depth exhausts the fixed stack. Converting to iteration or adding a base case bounds the depth."
+   }
+  ]
+ },
+ "cpp08": {
+  "interview": [
+   {
+    "q": "What does find return when nothing matches?",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"abc\";\n    std::cout << (s.find('z') == std::string::npos) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1"
+   },
+   {
+    "q": "What does this substring produce?",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"brocode\";\n    std::cout << s.substr(3, 4) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\ncode"
+   },
+   {
+    "q": "How do these strings compare?",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"apple\", b = \"banana\";\n    std::cout << (a < b) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1"
+   },
+   {
+    "q": "When does a string_view become invalid?",
+    "answer": "When the string it points into is destroyed, reallocated or modified in a way that changes storage. A view owns nothing, so the underlying characters must outlive it."
+   },
+   {
+    "q": "Why is std::string::size() not the number of visible characters?",
+    "answer": "It returns the number of bytes in the encoding. A UTF-8 code point can take several bytes, so a multi-byte character counts more than once."
+   },
+   {
+    "q": "What is the small-string optimization?",
+    "answer": "Many implementations store short strings inside the string object itself instead of allocating on the heap, which makes small strings cheap to create and copy."
+   }
+  ]
+ },
+ "cpp09": {
+  "interview": [
+   {
+    "q": "What does pointer arithmetic print here?",
+    "code": "#include <iostream>\n\nint main() {\n    int data[3] = {10, 20, 30};\n    int* p = data;\n    std::cout << *(p + 2) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n30"
+   },
+   {
+    "q": "What does this null check print?",
+    "code": "#include <iostream>\n\nint main() {\n    int* p = nullptr;\n    std::cout << (p == nullptr) << \" \" << static_cast<bool>(p) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1 0"
+   },
+   {
+    "q": "Does the reference see the change?",
+    "code": "#include <iostream>\n\nint main() {\n    int value = 5;\n    int& ref = value;\n    value = 9;\n    std::cout << ref << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n9"
+   },
+   {
+    "q": "Why can a reference not be null?",
+    "answer": "A reference must be bound to a valid object at initialization and cannot be reseated, so the language gives it no null state. A pointer is the type to use when \"points at nothing\" is meaningful."
+   },
+   {
+    "q": "What is a dangling pointer?",
+    "answer": "A pointer that still holds the address of an object whose lifetime has ended. Reading or writing through it is undefined behaviour, so lifetime must outlive every pointer."
+   },
+   {
+    "q": "What is the difference between a const pointer and a pointer to const?",
+    "answer": "A const pointer cannot change its address; a pointer to const cannot change the pointee through it. const int* p is the second, int* const p is the first."
+   }
+  ]
+ },
+ "cpp10": {
+  "interview": [
+   {
+    "q": "What does use_count report here?",
+    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto a = std::make_shared<int>(1);\n    auto b = a;\n    std::cout << a.use_count() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n2"
+   },
+   {
+    "q": "What is left in the moved-from pointer?",
+    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto a = std::make_unique<int>(7);\n    auto b = std::move(a);\n    std::cout << (a == nullptr) << \" \" << *b << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1 7"
+   },
+   {
+    "q": "What does this array allocation print?",
+    "code": "#include <iostream>\n\nint main() {\n    int* data = new int[3]{1, 2, 3};\n    std::cout << data[0] + data[1] + data[2] << \"\\n\";\n    delete[] data;\n    return 0;\n}",
+    "answer": "Output:\n6"
+   },
+   {
+    "q": "What problem does RAII solve?",
+    "answer": "It ties resource release to object lifetime, so every exit path — including exceptions — runs the destructor. That removes the need to remember cleanup at each return."
+   },
+   {
+    "q": "When would you use weak_ptr?",
+    "answer": "When one owner must observe an object without extending its lifetime, such as a cache or a back-reference that would otherwise create a shared_ptr cycle."
+   },
+   {
+    "q": "Why is double delete undefined behaviour?",
+    "answer": "The second delete operates on memory that has already been returned to the allocator, so the program corrupts its own heap state. Setting the pointer to nullptr after delete prevents it."
+   }
+  ]
+ },
+ "cpp11": {
+  "interview": [
+   {
+    "q": "What does this scoped enum require?",
+    "code": "#include <iostream>\n\nenum class Level { Low, High };\n\nint main() {\n    std::cout << static_cast<int>(Level::High) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1"
+   },
+   {
+    "q": "What does aggregate initialization set?",
+    "code": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nint main() {\n    Point p{3};\n    std::cout << p.x << \" \" << p.y << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n3 0"
+   },
+   {
+    "q": "What does sizeof report for this union?",
+    "code": "#include <iostream>\n\nunion Value {\n    int number;\n    double real;\n};\n\nint main() {\n    std::cout << sizeof(Value) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n8"
+   },
+   {
+    "q": "What is the difference between a struct and a class?",
+    "answer": "Only the default access and inheritance: struct members are public by default, class members are private. Everything else is identical."
+   },
+   {
+    "q": "Why use an anonymous namespace?",
+    "answer": "Names inside it have internal linkage, so they are visible only in that translation unit. It is the modern replacement for static at file scope."
+   },
+   {
+    "q": "When is a union preferable to separate members?",
+    "answer": "When only one alternative is alive at a time and memory matters, such as a tagged variant. A union does not track which member is active, so the tag must be stored separately."
+   },
+   {
+    "q": "What does this namespace alias print?",
+    "code": "#include <iostream>\n\nnamespace long_name { int value() { return 4; } }\nnamespace short_name = long_name;\n\nint main() {\n    std::cout << short_name::value() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n4\nThe alias is another name for the same namespace, so the call resolves to the same function."
+   }
+  ]
+ },
+ "cpp12": {
+  "interview": [
+   {
+    "q": "What does this static counter print?",
+    "code": "#include <iostream>\n\nclass Item {\npublic:\n    Item() { ++count; }\n    static int count;\n};\n\nint Item::count = 0;\n\nint main() {\n    Item a, b;\n    std::cout << Item::count << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n2"
+   },
+   {
+    "q": "Can a const object call this method?",
+    "code": "#include <iostream>\n\nclass Box {\npublic:\n    int get() const { return value; }\nprivate:\n    int value = 4;\n};\n\nint main() {\n    const Box b;\n    std::cout << b.get() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n4"
+   },
+   {
+    "q": "What does this copy print?",
+    "code": "#include <iostream>\n\nclass Point {\npublic:\n    Point(int a, int b) : x(a), y(b) {}\n    int sum() const { return x + y; }\nprivate:\n    int x;\n    int y;\n};\n\nint main() {\n    Point a(1, 2);\n    Point b = a;\n    std::cout << b.sum() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n3"
+   },
+   {
+    "q": "What does encapsulation buy beyond private fields?",
+    "answer": "It guarantees that state changes only through operations that preserve the class invariants. Hiding the representation is the mechanism; keeping the object valid is the point."
+   },
+   {
+    "q": "What is this inside a member function?",
+    "answer": "A pointer to the object the call was made on, const-qualified in a const member function. It is how chaining returns the same object and how parameters are disambiguated from members."
+   },
+   {
+    "q": "Why prefer a member initializer list to assignment in the body?",
+    "answer": "Members are constructed before the body runs, so assignment inside the body is a second write; const and reference members cannot be assigned at all. The list also makes initialization order explicit."
+   }
+  ]
+ },
+ "cpp13": {
+  "interview": [
+   {
+    "q": "What order does construction and destruction follow?",
+    "code": "#include <iostream>\n\nstruct Base { Base() { std::cout << \"b \"; } ~Base() { std::cout << \"B \"; } };\nstruct Derived : Base { Derived() { std::cout << \"d \"; } ~Derived() { std::cout << \"D \"; } };\n\nint main() {\n    { Derived x; }\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\nb d D B"
+   },
+   {
+    "q": "Which value does the delegating constructor set?",
+    "code": "#include <iostream>\n\nclass Box {\npublic:\n    Box() : Box(5) {}\n    explicit Box(int v) : value(v) {}\n    int get() const { return value; }\nprivate:\n    int value;\n};\n\nint main() {\n    Box b;\n    std::cout << b.get() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n5"
+   },
+   {
+    "q": "Does this copy constructor change the count?",
+    "code": "#include <iostream>\n\nclass Copyable {\npublic:\n    Copyable() = default;\n    Copyable(const Copyable&) { ++copies; }\n    static int copies;\n};\n\nint Copyable::copies = 0;\n\nint main() {\n    Copyable a;\n    Copyable b = a;\n    std::cout << Copyable::copies << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1"
+   },
+   {
+    "q": "Why can a copy constructor not take its parameter by value?",
+    "answer": "Taking it by value would require a copy to create the argument, which calls the copy constructor again, recursing without end. The parameter must be a reference, usually const."
+   },
+   {
+    "q": "Why mark a single-argument constructor explicit?",
+    "answer": "It stops the compiler from converting the argument type into the class implicitly, so a function expecting the class cannot silently accept a raw value."
+   },
+   {
+    "q": "In what order are members initialized?",
+    "answer": "In declaration order, regardless of the order written in the initializer list. A mismatch between the two is a common source of reading an uninitialized member."
+   }
+  ]
+ }
+}

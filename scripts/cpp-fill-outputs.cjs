@@ -58,7 +58,7 @@ function run(code) {
   }
 }
 
-let topics = 0; let tasks = 0; let debug = 0; const problems = [];
+let topics = 0; let tasks = 0; let debug = 0; let interview = 0; const problems = [];
 for (const file of files) {
   const data = JSON.parse(fs.readFileSync(path.join(SRC, file), 'utf8'));
   const packs = Array.isArray(data)
@@ -92,6 +92,15 @@ for (const file of files) {
       task.expected = r.out;
       tasks += 1;
     }
+    /* Authored interview questions may ship a snippet: compile it and let the answer quote the real output. */
+    for (const e of m.interviewBank || m.interview || []) {
+      if (!e.code) continue;
+      const r = run(e.code);
+      if (r.error) { problems.push(`${m.id}: interview "${e.q}" failed: ${r.error}`); continue; }
+      e.answer = `Output:\n${r.out}${e.note ? `\n${e.note}` : ''}`;
+      delete e.note;
+      interview += 1;
+    }
   }
   fs.writeFileSync(path.join(SRC, file), `${JSON.stringify(data, null, 1)}\n`, 'utf8');
 }
@@ -101,4 +110,4 @@ if (problems.length) {
   for (const p of problems) console.error(`  · ${p}`);
   process.exit(1);
 }
-console.log(`cpp-fill-outputs: compiled and ran ${topics} topics, ${debug} debug pairs, ${tasks} task solutions`);
+console.log(`cpp-fill-outputs: compiled and ran ${topics} topics, ${interview} interview snippets, ${debug} debug pairs, ${tasks} task solutions`);

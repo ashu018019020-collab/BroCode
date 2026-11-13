@@ -1,0 +1,420 @@
+{
+ "cpp14": {
+  "interview": [
+   {
+    "q": "What does the construction order print?",
+    "code": "#include <iostream>\n\nstruct Base { Base() { std::cout << \"base \"; } };\nstruct Derived : Base { Derived() { std::cout << \"derived \"; } };\n\nint main() {\n    Derived d;\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\nbase derived"
+   },
+   {
+    "q": "Can the derived class read this protected member?",
+    "code": "#include <iostream>\n\nclass Base {\nprotected:\n    int id = 7;\n};\n\nclass Derived : public Base {\npublic:\n    int read() const { return id; }\n};\n\nint main() {\n    Derived d;\n    std::cout << d.read() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n7"
+   },
+   {
+    "q": "What does slicing do to the area?",
+    "code": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual int area() const { return 0; }\n    virtual ~Shape() = default;\n};\n\nclass Square : public Shape {\npublic:\n    int area() const override { return 9; }\n};\n\nint main() {\n    Square s;\n    Shape sliced = s;\n    std::cout << sliced.area() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n0"
+   },
+   {
+    "q": "Why is virtual inheritance needed in a diamond hierarchy?",
+    "answer": "Without it, two intermediate bases each contain their own copy of the common base, so members are ambiguous and state is duplicated. Virtual inheritance makes both paths share one base subobject."
+   },
+   {
+    "q": "When is private inheritance useful?",
+    "answer": "When a class wants to reuse another’s implementation without exposing an is-a relationship. Composition is usually clearer, since private inheritance still couples to the base."
+   },
+   {
+    "q": "Why is composition usually easier to change than inheritance?",
+    "answer": "A contained object can be replaced or tested independently, while a base class change propagates to every derived class. Inheritance should model a stable is-a contract."
+   }
+  ]
+ },
+ "cpp15": {
+  "interview": [
+   {
+    "q": "Which version does the base pointer call?",
+    "code": "#include <iostream>\n\nclass Base {\npublic:\n    virtual const char* name() const { return \"base\"; }\n    virtual ~Base() = default;\n};\n\nclass Derived : public Base {\npublic:\n    const char* name() const override { return \"derived\"; }\n};\n\nint main() {\n    Base* p = new Derived;\n    std::cout << p->name() << \"\\n\";\n    delete p;\n    return 0;\n}",
+    "answer": "Output:\nderived"
+   },
+   {
+    "q": "What order do these destructors print?",
+    "code": "#include <iostream>\n\nclass Base { public: virtual ~Base() { std::cout << \"base \"; } };\nclass Derived : public Base { public: ~Derived() override { std::cout << \"derived \"; } };\n\nint main() {\n    Base* p = new Derived;\n    delete p;\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\nderived base"
+   },
+   {
+    "q": "What does this failed cast return?",
+    "code": "#include <iostream>\n\nclass Base { public: virtual ~Base() = default; };\nclass Other : public Base {};\n\nint main() {\n    Base* b = new Base;\n    std::cout << (dynamic_cast<Other*>(b) == nullptr) << \"\\n\";\n    delete b;\n    return 0;\n}",
+    "answer": "Output:\n1"
+   },
+   {
+    "q": "How does virtual dispatch work at runtime?",
+    "answer": "Each polymorphic object carries a hidden pointer to its class’s virtual table, and a virtual call loads the function address from that table. The call therefore depends on the object, not the pointer type."
+   },
+   {
+    "q": "Why must an override repeat the base function’s const qualification?",
+    "answer": "Const is part of the function’s signature, so a non-const version is a different function. Without the matching const, override reports an error and the base version still gets called through a base pointer."
+   },
+   {
+    "q": "Why should a base destructor be virtual or protected?",
+    "answer": "Deleting a derived object through a base pointer with a non-virtual destructor is undefined and skips the derived cleanup. A virtual destructor, or a protected non-virtual one, closes that hole."
+   }
+  ]
+ },
+ "cpp16": {
+  "interview": [
+   {
+    "q": "What does this operator+ produce?",
+    "code": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nPoint operator+(const Point& a, const Point& b) { return {a.x + b.x, a.y + b.y}; }\n\nint main() {\n    Point c = Point{1, 2} + Point{3, 4};\n    std::cout << c.x << \" \" << c.y << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n4 6"
+   },
+   {
+    "q": "What does the postfix increment return?",
+    "code": "#include <iostream>\n\nclass Counter {\npublic:\n    Counter operator++(int) { Counter old = *this; ++value; return old; }\n    int get() const { return value; }\nprivate:\n    int value = 0;\n};\n\nint main() {\n    Counter c;\n    Counter before = c++;\n    std::cout << before.get() << \" \" << c.get() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n0 1"
+   },
+   {
+    "q": "What does this conversion print?",
+    "code": "#include <iostream>\n\nclass Meter {\npublic:\n    explicit Meter(int v) : value(v) {}\n    explicit operator int() const { return value; }\nprivate:\n    int value;\n};\n\nint main() {\n    Meter m(5);\n    std::cout << static_cast<int>(m) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n5"
+   },
+   {
+    "q": "Why is operator== usually written as a free function?",
+    "answer": "A free function treats both operands symmetrically and allows a conversion on either side, while a member operator only converts the right operand. It also keeps the class interface smaller."
+   },
+   {
+    "q": "Why must operator= be a member function?",
+    "answer": "The language requires it, because assignment needs access to the object being assigned and must return *this for chaining."
+   },
+   {
+    "q": "When should a conversion operator be explicit?",
+    "answer": "When an implicit conversion would be surprising or lossy. Explicit keeps the conversion at the call site, where the reader can see it."
+   }
+  ]
+ },
+ "cpp17": {
+  "interview": [
+   {
+    "q": "What does deduction choose here?",
+    "code": "#include <iostream>\n\ntemplate <typename T>\nT twice(T v) { return v + v; }\n\nint main() {\n    std::cout << twice(3) << \" \" << twice(1.5) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n6 3"
+   },
+   {
+    "q": "What does the specialization return?",
+    "code": "#include <iostream>\n\ntemplate <typename T>\nstruct Name { static const char* get() { return \"generic\"; } };\n\ntemplate <>\nstruct Name<int> { static const char* get() { return \"int\"; } };\n\nint main() {\n    std::cout << Name<int>::get() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\nint"
+   },
+   {
+    "q": "How many arguments does the pack hold?",
+    "code": "#include <iostream>\n\ntemplate <typename... Args>\nint count(Args...) { return sizeof...(Args); }\n\nint main() {\n    std::cout << count(1, 2, 3) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n3"
+   },
+   {
+    "q": "Why are templates usually defined in headers?",
+    "answer": "The compiler must see the definition to instantiate it for each type at the point of use. A definition hidden in a .cpp file is invisible to other translation units."
+   },
+   {
+    "q": "What is SFINAE?",
+    "answer": "Substitution failure is not an error: if a template argument substitution fails, the candidate is removed from overload resolution instead of failing the build. Concepts express the same constraints more readably."
+   },
+   {
+    "q": "What is template code bloat?",
+    "answer": "Each instantiation produces its own function or class, so many types increase binary size and compile time. Sharing a common non-template implementation reduces it."
+   }
+  ]
+ },
+ "cpp18": {
+  "interview": [
+   {
+    "q": "In what order does this map print?",
+    "code": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> m{{\"b\", 2}, {\"a\", 1}};\n    for (const auto& [k, v] : m) std::cout << k << v << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\na1 b2"
+   },
+   {
+    "q": "What does the duplicate insert report?",
+    "code": "#include <iostream>\n#include <set>\n\nint main() {\n    std::set<int> s{1, 2};\n    auto r = s.insert(2);\n    std::cout << s.size() << \" \" << r.second << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n2 0"
+   },
+   {
+    "q": "What does capacity guarantee here?",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    std::cout << (v.capacity() >= v.size()) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1"
+   },
+   {
+    "q": "How do you choose between map and unordered_map?",
+    "answer": "Use map when ordered iteration or range queries matter, and unordered_map when average constant lookup matters and order is irrelevant. The hashed version needs a hash function."
+   },
+   {
+    "q": "What invalidates a vector iterator?",
+    "answer": "Any reallocation, such as a push_back that exceeds capacity, invalidates all iterators and references. Erasing invalidates at and after the erased position."
+   },
+   {
+    "q": "When is std::list a better choice than std::vector?",
+    "answer": "When elements are inserted or removed in the middle and iterators to other elements must stay valid. Its poor locality usually makes it slower for traversal."
+   }
+  ]
+ },
+ "cpp19": {
+  "interview": [
+   {
+    "q": "What order does this comparator produce?",
+    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{2, 4, 1};\n    std::sort(v.begin(), v.end(), [](int a, int b) { return a > b; });\n    for (int x : v) std::cout << x << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n4 2 1"
+   },
+   {
+    "q": "What does accumulate with a double seed return?",
+    "code": "#include <iostream>\n#include <numeric>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2};\n    std::cout << std::accumulate(v.begin(), v.end(), 0.5) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n3.5"
+   },
+   {
+    "q": "Which element does find_if return?",
+    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 4, 9};\n    auto it = std::find_if(v.begin(), v.end(), [](int x) { return x > 3; });\n    std::cout << *it << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n4"
+   },
+   {
+    "q": "What is the difference between capturing by value and by reference?",
+    "answer": "A by-value capture copies at lambda creation and is const unless the lambda is mutable; a by-reference capture aliases the original and sees later changes. A reference capture must not outlive the variable."
+   },
+   {
+    "q": "Why does erase-remove exist?",
+    "answer": "std::remove_if only reorders elements and returns the new end, because an algorithm cannot change a container’s size. The container’s erase then removes the tail."
+   },
+   {
+    "q": "What complexity does std::sort guarantee?",
+    "answer": "O(n log n) comparisons on average and in the worst case for the standard library implementation, with O(log n) extra stack space."
+   }
+  ]
+ },
+ "cpp20": {
+  "interview": [
+   {
+    "q": "Which handler runs for this throw?",
+    "code": "#include <iostream>\n#include <stdexcept>\n\nint main() {\n    try {\n        throw std::out_of_range(\"bad index\");\n    } catch (const std::runtime_error& e) {\n        std::cout << \"runtime: \" << e.what() << \"\\n\";\n    } catch (...) {\n        std::cout << \"other\\n\";\n    }\n    return 0;\n}",
+    "answer": "Output:\nother"
+   },
+   {
+    "q": "What does the rethrow do?",
+    "code": "#include <iostream>\n\nint main() {\n    try {\n        try {\n            throw 5;\n        } catch (int) {\n            std::cout << \"inner \";\n            throw;\n        }\n    } catch (int code) {\n        std::cout << \"outer \" << code << \"\\n\";\n    }\n    return 0;\n}",
+    "answer": "Output:\ninner outer 5"
+   },
+   {
+    "q": "What does noexcept change at runtime?",
+    "code": "#include <iostream>\n\nvoid safe() noexcept { std::cout << \"safe\\n\"; }\n\nint main() {\n    safe();\n    return 0;\n}",
+    "answer": "Output:\nsafe"
+   },
+   {
+    "q": "What are the three exception-safety guarantees?",
+    "answer": "The basic guarantee leaves the program valid but unspecified, the strong guarantee is all-or-nothing, and the no-throw guarantee promises no exception escapes."
+   },
+   {
+    "q": "When should an error not be an exception?",
+    "answer": "When it is expected and handled locally, such as \"not found\", where a return value or optional is clearer and cheaper than unwinding."
+   },
+   {
+    "q": "Why catch by const reference?",
+    "answer": "It avoids copying the exception object and prevents slicing a derived exception into a base value, while const stops accidental modification."
+   }
+  ]
+ },
+ "cpp21": {
+  "interview": [
+   {
+    "q": "How many lines does this file contain?",
+    "code": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    {\n        std::ofstream out(\"log.txt\");\n        out << \"one\\n\";\n    }\n    {\n        std::ofstream out(\"log.txt\", std::ios::app);\n        out << \"two\\n\";\n    }\n    std::ifstream in(\"log.txt\");\n    std::string line;\n    int n = 0;\n    while (std::getline(in, line)) ++n;\n    std::cout << n << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n2"
+   },
+   {
+    "q": "What does the binary round trip print?",
+    "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream out(\"v.bin\", std::ios::binary);\n        int value = 42;\n        out.write(reinterpret_cast<const char*>(&value), sizeof value);\n    }\n    std::ifstream in(\"v.bin\", std::ios::binary);\n    int value = 0;\n    in.read(reinterpret_cast<char*>(&value), sizeof value);\n    std::cout << value << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n42"
+   },
+   {
+    "q": "What extension does this path report?",
+    "code": "#include <filesystem>\n#include <iostream>\n\nint main() {\n    std::filesystem::path p = \"notes.txt\";\n    std::cout << p.extension().string() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n.txt"
+   },
+   {
+    "q": "What is the difference between text and binary file mode?",
+    "answer": "Text mode may translate line endings on some platforms, while binary mode reads and writes the exact bytes. Structured records should use binary mode."
+   },
+   {
+    "q": "Why does an ofstream need to be destroyed or flushed before reading?",
+    "answer": "Buffered writes may still be in memory; the destructor or flush pushes them to the file. Reading before that can see an incomplete file."
+   },
+   {
+    "q": "Why should a file stream be checked after opening?",
+    "answer": "A failed open leaves the stream in a failed state and extractions return immediately, so the program silently works with empty data unless is_open is checked."
+   }
+  ]
+ },
+ "cpp22": {
+  "interview": [
+   {
+    "q": "What does this optional print?",
+    "code": "#include <iostream>\n#include <optional>\n\nint main() {\n    std::optional<int> v;\n    std::cout << v.value_or(0) << \" \" << v.has_value() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n0 0"
+   },
+   {
+    "q": "What does this variant hold?",
+    "code": "#include <iostream>\n#include <string>\n#include <variant>\n\nint main() {\n    std::variant<int, std::string> v = std::string(\"hi\");\n    std::cout << std::get<std::string>(v) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\nhi"
+   },
+   {
+    "q": "Which branch does if constexpr keep?",
+    "code": "#include <iostream>\n#include <type_traits>\n\ntemplate <typename T>\nconst char* kind() {\n    if constexpr (std::is_integral_v<T>) return \"integer\";\n    else return \"other\";\n}\n\nint main() {\n    std::cout << kind<int>() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\ninteger"
+   },
+   {
+    "q": "What is the difference between auto and decltype?",
+    "answer": "auto deduces a value type after dropping references and top-level const; decltype preserves the exact declared type, including references."
+   },
+   {
+    "q": "When does structured binding copy instead of reference?",
+    "answer": "Writing auto [a, b] copies; auto& [a, b] binds references. Copying is fine for small values but silently detaches from the source."
+   },
+   {
+    "q": "Why is std::optional not a replacement for error codes?",
+    "answer": "It expresses absence, not the reason for failure. When the caller needs to distinguish causes, a variant or an exception carries more information."
+   }
+  ]
+ },
+ "cpp23": {
+  "interview": [
+   {
+    "q": "Which index does this binary search return?",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 3, 5, 7, 9};\n    int lo = 0, hi = 4, target = 7, found = -1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (v[mid] == target) { found = mid; break; }\n        if (v[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    std::cout << found << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n3"
+   },
+   {
+    "q": "What does the queue return first?",
+    "code": "#include <iostream>\n#include <queue>\n\nint main() {\n    std::queue<int> q;\n    q.push(1);\n    q.push(2);\n    std::cout << q.front() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1"
+   },
+   {
+    "q": "What does the hash map report?",
+    "code": "#include <iostream>\n#include <string>\n#include <unordered_map>\n\nint main() {\n    std::unordered_map<std::string, int> m{{\"a\", 1}};\n    std::cout << m[\"a\"] << \" \" << m.size() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1 1"
+   },
+   {
+    "q": "What does Big O describe?",
+    "answer": "An upper bound on how running time or memory grows with input size, ignoring constants and lower-order terms. It compares algorithms, not machines."
+   },
+   {
+    "q": "When is dynamic programming applicable?",
+    "answer": "When a problem has overlapping subproblems and an optimal substructure, so caching a subproblem’s result avoids recomputation."
+   },
+   {
+    "q": "Why can BFS find the shortest path in an unweighted graph?",
+    "answer": "It explores vertices in order of distance from the source, so the first time a vertex is reached is by a shortest path."
+   }
+  ]
+ },
+ "cpp24": {
+  "interview": [
+   {
+    "q": "What total does the synchronized counter print?",
+    "code": "#include <atomic>\n#include <iostream>\n#include <thread>\n\nint main() {\n    std::atomic<int> n{0};\n    std::thread a([&] { for (int i = 0; i < 100; ++i) ++n; });\n    std::thread b([&] { for (int i = 0; i < 100; ++i) ++n; });\n    a.join();\n    b.join();\n    std::cout << n.load() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n200"
+   },
+   {
+    "q": "What does this lock_guard scope print?",
+    "code": "#include <iostream>\n#include <mutex>\n\nint main() {\n    std::mutex m;\n    {\n        std::lock_guard<std::mutex> g(m);\n        std::cout << \"locked \";\n    }\n    std::cout << \"released\\n\";\n    return 0;\n}",
+    "answer": "Output:\nlocked released"
+   },
+   {
+    "q": "What does the future return?",
+    "code": "#include <future>\n#include <iostream>\n\nint main() {\n    auto f = std::async(std::launch::async, [] { return 6 * 7; });\n    std::cout << f.get() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n42"
+   },
+   {
+    "q": "What is the difference between a race condition and a data race?",
+    "answer": "A data race is two unsynchronised accesses with a write, which is undefined behaviour. A race condition is a timing-dependent logic bug, which can exist even with atomics."
+   },
+   {
+    "q": "How do you prevent deadlock between two mutexes?",
+    "answer": "Acquire them in a single consistent order, or use std::scoped_lock, which locks multiple mutexes without deadlock."
+   },
+   {
+    "q": "When is std::atomic enough instead of a mutex?",
+    "answer": "When a single value is updated independently, such as a counter or flag. If an invariant spans several variables, a mutex is needed to protect the whole update."
+   },
+   {
+    "q": "What does scoped_lock protect here?",
+    "code": "#include <iostream>\n#include <mutex>\n\nint main() {\n    std::mutex a, b;\n    {\n        std::scoped_lock lock(a, b);\n        std::cout << \"both\\n\";\n    }\n    return 0;\n}",
+    "answer": "Output:\nboth\nscoped_lock locks both mutexes without deadlock and releases them at the end of the block."
+   }
+  ]
+ },
+ "cpp25": {
+  "interview": [
+   {
+    "q": "What does this static_assert prove?",
+    "code": "#include <iostream>\n\nint main() {\n    static_assert(sizeof(int) >= 2, \"int must hold at least two bytes\");\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "answer": "Output:\nok"
+   },
+   {
+    "q": "What does this assert check at runtime?",
+    "code": "#include <cassert>\n#include <iostream>\n\nint main() {\n    int total = 2 + 3;\n    assert(total == 5);\n    std::cout << total << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n5"
+   },
+   {
+    "q": "Why does this header guard compile once?",
+    "code": "#include <iostream>\n\n#ifndef POINT_H\n#define POINT_H\nstruct Point { int x; int y; };\n#endif\n\nint main() {\n    Point p{1, 2};\n    std::cout << p.x << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n1"
+   },
+   {
+    "q": "What is the difference between a header guard and #pragma once?",
+    "answer": "A guard is standard and portable but must use a unique macro; #pragma once is shorter and supported by every major compiler but not part of the standard."
+   },
+   {
+    "q": "What does a sanitizer catch that a normal build does not?",
+    "answer": "AddressSanitizer detects out-of-bounds and use-after-free; UndefinedBehaviorSanitizer reports signed overflow and invalid shifts. Both instrument the build and slow it down."
+   },
+   {
+    "q": "Why is a failing unit test more useful than a manual check?",
+    "answer": "It states the expected behaviour in code, runs on every change, and pinpoints the regression instead of relying on someone remembering to click through the app."
+   }
+  ]
+ },
+ "cpp26": {
+  "interview": [
+   {
+    "q": "What does the singleton return?",
+    "code": "#include <iostream>\n\nclass Config {\npublic:\n    static Config& instance() { static Config one; return one; }\n    int version() const { return 3; }\nprivate:\n    Config() = default;\n};\n\nint main() {\n    std::cout << Config::instance().version() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n3"
+   },
+   {
+    "q": "Which name does the factory produce?",
+    "code": "#include <iostream>\n#include <memory>\n#include <string>\n\nclass Shape {\npublic:\n    virtual std::string name() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Circle : public Shape {\npublic:\n    std::string name() const override { return \"circle\"; }\n};\n\nstd::unique_ptr<Shape> make() { return std::make_unique<Circle>(); }\n\nint main() {\n    std::cout << make()->name() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\ncircle"
+   },
+   {
+    "q": "What does the strategy call compute?",
+    "code": "#include <functional>\n#include <iostream>\n\nclass Calc {\npublic:\n    explicit Calc(std::function<int(int, int)> op) : op(op) {}\n    int run(int a, int b) const { return op(a, b); }\nprivate:\n    std::function<int(int, int)> op;\n};\n\nint main() {\n    Calc add([](int a, int b) { return a + b; });\n    std::cout << add.run(2, 3) << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\n5"
+   },
+   {
+    "q": "What does the single-responsibility principle ask for?",
+    "answer": "One reason to change per class, so a class has one job. That keeps tests focused and limits the blast radius of a change."
+   },
+   {
+    "q": "When does a design pattern become unnecessary complexity?",
+    "answer": "When the variation it prepares for does not exist. A factory or strategy with one implementation adds indirection without buying flexibility."
+   },
+   {
+    "q": "Why prefer composition over inheritance for reuse?",
+    "answer": "It couples to behaviour rather than a type hierarchy, so the part can be swapped and tested independently. Inheritance is for a genuine is-a contract."
+   },
+   {
+    "q": "What does the builder produce?",
+    "code": "#include <iostream>\n#include <string>\n\nclass Report {\npublic:\n    Report& title(std::string t) { name = std::move(t); return *this; }\n    Report& rows(int n) { count = n; return *this; }\n    std::string build() const { return name + \":\" + std::to_string(count); }\nprivate:\n    std::string name;\n    int count = 0;\n};\n\nint main() {\n    std::cout << Report().title(\"marks\").rows(3).build() << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\nmarks:3\nEach builder step returns the same object, so the chain finishes with one configured report."
+   },
+   {
+    "q": "How many observers are notified here?",
+    "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<std::string> listeners{\"ui\", \"log\", \"mail\"};\n    for (const auto& name : listeners) std::cout << name << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "answer": "Output:\nui log mail\nThe subject holds three listeners, so all three receive the notification."
+   }
+  ]
+ }
+}
