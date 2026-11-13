@@ -1,0 +1,606 @@
+{
+ "cpp10": {
+  "topics": [
+   {
+    "title": "A reference is another name for one object",
+    "body": "A reference must bind at initialization and never rebinds, so writing through it always reaches the same object. That makes reference parameters a readable way to return results through the argument list.",
+    "code": "#include <iostream>\n\nvoid swap(int& a, int& b) {\n    int t = a;\n    a = b;\n    b = t;\n}\n\nint main() {\n    int x = 1, y = 2;\n    swap(x, y);\n    std::cout << x << \" \" << y << \"\\n\";\n    return 0;\n}",
+    "output": "2 1"
+   },
+   {
+    "title": "nullptr is a type, not a macro",
+    "body": "`nullptr` has type `std::nullptr_t` and converts to any pointer type without becoming an integer. `NULL` is usually `0`, which overloads can mistake for an int.",
+    "code": "#include <iostream>\n\nint main() {\n    int* p = nullptr;\n    std::cout << (p == nullptr) << \" \" << sizeof(p) << \"\\n\";\n    return 0;\n}",
+    "output": "1 8"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sum an array through a pointer",
+    "statement": "Walk `{2, 4, 6}` with a pointer from the first element to one past the last, and print the total.",
+    "solution": "#include <iostream>\n\nint main() {\n    int data[3] = {2, 4, 6};\n    int* p = data;\n    int* end = data + 3;\n    int sum = 0;\n    while (p != end) {\n        sum += *p;\n        ++p;\n    }\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "expected": "12"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Dereferencing a null pointer",
+    "broken": "#include <iostream>\n\nint main() {\n    int* p = nullptr;\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int value = 7;\n    int* p = &value;\n    if (p != nullptr) std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null)",
+    "fixedOutput": "7"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the difference between a pointer and a reference?",
+    "answer": "A pointer is an object that stores an address and can be null or reassigned; a reference is an alias that must be bound and cannot be reseated. References have no null state, which removes one class of bug when the target is required."
+   },
+   {
+    "q": "What makes a pointer dangle?",
+    "answer": "The object it points at is destroyed or freed while the pointer still holds the old address. Reading or writing through it is undefined, so lifetime has to outlive every pointer to it."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which statement is true of a reference?",
+    "options": [
+     "It can be null",
+     "It can be reseated after binding",
+     "It must be bound when initialized",
+     "It stores a copy"
+    ],
+    "answer": "It must be bound when initialized",
+    "why": "A reference is an alias and cannot be rebound or left unbound."
+   },
+   {
+    "q": "What is the type of `nullptr`?",
+    "options": [
+     "int",
+     "void*",
+     "std::nullptr_t",
+     "char*"
+    ],
+    "answer": "std::nullptr_t",
+    "why": "The dedicated type avoids the integer interpretation that `NULL` has."
+   }
+  ]
+ },
+ "cpp11": {
+  "topics": [
+   {
+    "title": "unique_ptr frees itself",
+    "body": "`std::make_unique` allocates and hands ownership to a `unique_ptr`, whose destructor calls `delete`. No manual cleanup remains on the success path or on a thrown exception.",
+    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto value = std::make_unique<int>(42);\n    std::cout << *value << \"\\n\";\n    return 0;\n}",
+    "output": "42"
+   },
+   {
+    "title": "shared_ptr counts its owners",
+    "body": "A `shared_ptr` keeps a control block with a strong count; copying increments it and destruction decrements it, freeing the object at zero. `use_count` reports the current number of owners.",
+    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto first = std::make_shared<int>(7);\n    auto second = first;\n    std::cout << first.use_count() << \" \" << *second << \"\\n\";\n    return 0;\n}",
+    "output": "2 7"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Own a dynamic array safely",
+    "statement": "Allocate four ints with `make_unique<int[]>`, fill them with 1 to 4, sum them and print the total.",
+    "solution": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto data = std::make_unique<int[]>(4);\n    for (int i = 0; i < 4; ++i) data[i] = i + 1;\n    int sum = 0;\n    for (int i = 0; i < 4; ++i) sum += data[i];\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "expected": "10"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A raw new handed to a unique_ptr",
+    "broken": "#include <memory>\n\nint main() {\n    std::unique_ptr<int> p = new int(5);\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <memory>\n\nint main() {\n    std::unique_ptr<int> p = std::make_unique<int>(5);\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "error": "error: conversion from ‘int*’ to non-scalar type ‘std::unique_ptr<int>’ requested",
+    "fixedOutput": "5"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does RAII mean in practice?",
+    "answer": "A resource is acquired by an object’s constructor and released by its destructor, so scope and the type system guarantee cleanup. It works for memory, files, locks and sockets alike."
+   },
+   {
+    "q": "Why prefer `make_shared` to `shared_ptr<T>(new T)`?",
+    "answer": "It allocates the object and the control block in one allocation, which is faster and exception-safe. The raw `new` form can leak if an exception occurs between allocation and the smart pointer construction."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What happens when a `unique_ptr` goes out of scope?",
+    "options": [
+     "Nothing",
+     "The object is deleted",
+     "The object is copied",
+     "A memory leak occurs"
+    ],
+    "answer": "The object is deleted",
+    "why": "Its destructor owns the cleanup."
+   },
+   {
+    "q": "Which smart pointer allows several owners?",
+    "options": [
+     "unique_ptr",
+     "shared_ptr",
+     "weak_ptr alone",
+     "raw pointer"
+    ],
+    "answer": "shared_ptr",
+    "why": "A shared pointer keeps a reference count across copies."
+   }
+  ]
+ },
+ "cpp12": {
+  "topics": [
+   {
+    "title": "enum class keeps its names inside the enum",
+    "body": "A scoped enum requires `Level::High` at every use and does not convert to int implicitly. That removes the collisions and accidental arithmetic that plain enums allow.",
+    "code": "#include <iostream>\n\nenum class Level { Low, High };\n\nint main() {\n    Level level = Level::High;\n    std::cout << static_cast<int>(level) << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   },
+   {
+    "title": "Structured bindings unpack a tuple",
+    "body": "`auto [name, marks] = student;` declares one variable per element and binds them to the tuple’s members. It also works on pairs, arrays and simple structs.",
+    "code": "#include <iostream>\n#include <string>\n#include <tuple>\n\nint main() {\n    std::tuple<std::string, int> student{\"Aman\", 92};\n    auto [name, marks] = student;\n    std::cout << name << \" \" << marks << \"\\n\";\n    return 0;\n}",
+    "output": "Aman 92"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sum marks in a struct array",
+    "statement": "Define a `Student` struct with a name and marks; create three students and print the total marks.",
+    "solution": "#include <iostream>\n#include <string>\n\nstruct Student {\n    std::string name;\n    int marks;\n};\n\nint main() {\n    Student roster[3] = {{\"Aman\", 92}, {\"Riya\", 88}, {\"Kiran\", 75}};\n    int total = 0;\n    for (const Student& s : roster) total += s.marks;\n    std::cout << total << \"\\n\";\n    return 0;\n}",
+    "expected": "255"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A scoped enum used as an int",
+    "broken": "enum class Color { Red };\n\nint main() {\n    int c = Color::Red;\n    return c;\n}",
+    "fix": "#include <iostream>\n\nenum class Color { Red };\n\nint main() {\n    int c = static_cast<int>(Color::Red);\n    std::cout << c << \"\\n\";\n    return 0;\n}",
+    "error": "error: cannot convert ‘Color’ to ‘int’ in initialization",
+    "fixedOutput": "0"
+   }
+  ],
+  "interview": [
+   {
+    "q": "When is a plain enum still acceptable?",
+    "answer": "When the names are local to one small scope and implicit integer conversion is convenient, such as indexing a table. A scoped enum is the safer default because it prevents accidental mixing with integers."
+   },
+   {
+    "q": "What is the difference between a struct and a class in C++?",
+    "answer": "Only the default access: struct members are public and class members are private, and inheritance defaults follow the same rule. Everything else, including constructors and methods, is identical."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "How do you refer to the `High` enumerator of `enum class Level`?",
+    "options": [
+     "High",
+     "Level.High",
+     "Level::High",
+     "LEVEL_HIGH"
+    ],
+    "answer": "Level::High",
+    "why": "Scoped enumerators are qualified by the enum name."
+   },
+   {
+    "q": "What does a structured binding declare?",
+    "options": [
+     "One pointer",
+     "One variable per element",
+     "A new class",
+     "A macro"
+    ],
+    "answer": "One variable per element",
+    "why": "Each name binds to the corresponding tuple, pair, array or struct member."
+   }
+  ]
+ },
+ "cpp13": {
+  "topics": [
+   {
+    "title": "A class enforces its invariant",
+    "body": "Keeping `balance` private and validating inside `deposit` means no caller can create a negative balance. The public methods are the only way to change the state, so the rule holds everywhere.",
+    "code": "#include <iostream>\n\nclass Account {\npublic:\n    explicit Account(int start) : balance(start) {}\n    void deposit(int amount) {\n        if (amount > 0) balance += amount;\n    }\n    int get() const { return balance; }\nprivate:\n    int balance;\n};\n\nint main() {\n    Account a(100);\n    a.deposit(-50);\n    std::cout << a.get() << \"\\n\";\n    return 0;\n}",
+    "output": "100"
+   },
+   {
+    "title": "const member functions promise not to mutate",
+    "body": "A `const` member function can be called on a const object and may not modify members. Marking the readers const is what lets the rest of the program pass objects by const reference.",
+    "code": "#include <iostream>\n\nclass Counter {\npublic:\n    void hit() { ++count; }\n    int value() const { return count; }\nprivate:\n    int count = 0;\n};\n\nint main() {\n    Counter c;\n    c.hit();\n    std::cout << c.value() << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A rectangle with area and perimeter",
+    "statement": "Write a `Rectangle` class with width and height, and member functions `area()` and `perimeter()`; print both for 3 by 4.",
+    "solution": "#include <iostream>\n\nclass Rectangle {\npublic:\n    Rectangle(int w, int h) : width(w), height(h) {}\n    int area() const { return width * height; }\n    int perimeter() const { return 2 * (width + height); }\nprivate:\n    int width;\n    int height;\n};\n\nint main() {\n    Rectangle r(3, 4);\n    std::cout << r.area() << \" \" << r.perimeter() << \"\\n\";\n    return 0;\n}",
+    "expected": "12 14"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Members left private by default",
+    "broken": "class Point {\n    int x = 1;\n};\n\nint main() {\n    Point p;\n    return p.x;\n}",
+    "fix": "#include <iostream>\n\nclass Point {\npublic:\n    int x = 1;\n};\n\nint main() {\n    Point p;\n    std::cout << p.x << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘int Point::x’ is private within this context",
+    "fixedOutput": "1"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is encapsulation, beyond private members?",
+    "answer": "It is the guarantee that state can only change through operations that preserve its rules. Private data is the mechanism; a validated interface is the point."
+   },
+   {
+    "q": "What does `this` point to inside a member function?",
+    "answer": "The object the call was made on, with the member function’s constness applied. It is why `return *this;` enables chaining and why a const member function has a pointer to const."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What is the default access for members of a `class`?",
+    "options": [
+     "public",
+     "private",
+     "protected",
+     "internal"
+    ],
+    "answer": "private",
+    "why": "Unlike a struct, a class starts private."
+   },
+   {
+    "q": "What does a const member function guarantee?",
+    "options": [
+     "It returns const",
+     "It cannot modify the object’s members",
+     "It runs at compile time",
+     "It is static"
+    ],
+    "answer": "It cannot modify the object’s members",
+    "why": "The const qualifier forbids mutation except for mutable members."
+   }
+  ]
+ },
+ "cpp14": {
+  "topics": [
+   {
+    "title": "Initialization lists run before the body",
+    "body": "Members are constructed in declaration order before the constructor body executes, so an initializer list is the only place to construct a const or reference member. Listing them in a different order than declared invites confusion.",
+    "code": "#include <iostream>\n\nclass Pair {\npublic:\n    Pair() : b(2), a(1) {}\n    void show() const { std::cout << a << \" \" << b << \"\\n\"; }\nprivate:\n    int a;\n    int b;\n};\n\nint main() {\n    Pair p;\n    p.show();\n    return 0;\n}",
+    "output": "1 2"
+   },
+   {
+    "title": "A delegating constructor reuses another",
+    "body": "`Box() : Box(0) {}` hands construction to the parameterized constructor, so the default state is defined in exactly one place. This keeps validation from being duplicated.",
+    "code": "#include <iostream>\n\nclass Box {\npublic:\n    Box() : Box(0) {}\n    explicit Box(int v) : value(v) {}\n    int get() const { return value; }\nprivate:\n    int value;\n};\n\nint main() {\n    Box a, b(5);\n    std::cout << a.get() << \" \" << b.get() << \"\\n\";\n    return 0;\n}",
+    "output": "0 5"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Construct with defaults and arguments",
+    "statement": "Write a `Student` class whose default constructor sets marks to 0 and whose parameterized constructor takes marks; print both objects.",
+    "solution": "#include <iostream>\n\nclass Student {\npublic:\n    Student() : marks(0) {}\n    explicit Student(int m) : marks(m) {}\n    int get() const { return marks; }\nprivate:\n    int marks;\n};\n\nint main() {\n    Student a;\n    Student b(88);\n    std::cout << a.get() << \" \" << b.get() << \"\\n\";\n    return 0;\n}",
+    "expected": "0 88"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A constructor with the wrong name",
+    "broken": "class Account {\npublic:\n    account() {}\n};\n\nint main() {\n    Account a;\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Account {\npublic:\n    Account() { std::cout << \"constructed\\n\"; }\n};\n\nint main() {\n    Account a;\n    return 0;\n}",
+    "error": "error: ISO C++ forbids declaration of ‘account’ with no type [-fpermissive]",
+    "fixedOutput": "constructed"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the Rule of Three?",
+    "answer": "If a class needs a custom destructor, copy constructor or copy assignment, it usually needs all three because they manage the same resource. Modern code often reaches for the Rule of Zero instead by holding a smart pointer."
+   },
+   {
+    "q": "Why is `explicit` used on single-argument constructors?",
+    "answer": "It blocks implicit conversions from the argument type, so a function taking the class cannot silently accept a raw value. The conversion must be written at the call site."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "In what order are members initialized?",
+    "options": [
+     "Initializer-list order",
+     "Declaration order",
+     "Alphabetical order",
+     "Reverse declaration order"
+    ],
+    "answer": "Declaration order",
+    "why": "The list order is ignored; members construct in the order they are declared."
+   },
+   {
+    "q": "What does a delegating constructor do?",
+    "options": [
+     "Calls the base destructor",
+     "Calls another constructor of the same class",
+     "Creates a copy",
+     "Deletes the object"
+    ],
+    "answer": "Calls another constructor of the same class",
+    "why": "It reuses another constructor so initialization logic is not duplicated."
+   }
+  ]
+ },
+ "cpp15": {
+  "topics": [
+   {
+    "title": "Construction runs base before derived",
+    "body": "A derived object contains its base subobject, so the base constructor completes first and the derived body runs after. Destruction is the exact reverse: derived first, then base.",
+    "code": "#include <iostream>\n\nclass Base {\npublic:\n    Base() { std::cout << \"base \"; }\n};\n\nclass Derived : public Base {\npublic:\n    Derived() { std::cout << \"derived\\n\"; }\n};\n\nint main() {\n    Derived d;\n    return 0;\n}",
+    "output": "base derived"
+   },
+   {
+    "title": "Composition models HAS-A",
+    "body": "A `Car` that contains an `Engine` reuses behaviour without inheriting an interface. Composition keeps the two classes independent, which is usually the cheaper relationship to change later.",
+    "code": "#include <iostream>\n\nclass Engine {\npublic:\n    void start() const { std::cout << \"engine on\\n\"; }\n};\n\nclass Car {\npublic:\n    void drive() const { engine.start(); }\nprivate:\n    Engine engine;\n};\n\nint main() {\n    Car c;\n    c.drive();\n    return 0;\n}",
+    "output": "engine on"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Forward arguments to a base constructor",
+    "statement": "Write `Person(name)` and `Student(name, marks)` where `Student` passes the name to `Person`; print both fields.",
+    "solution": "#include <iostream>\n#include <string>\n\nclass Person {\npublic:\n    explicit Person(std::string n) : name(std::move(n)) {}\n    const std::string& get() const { return name; }\nprivate:\n    std::string name;\n};\n\nclass Student : public Person {\npublic:\n    Student(std::string n, int m) : Person(std::move(n)), marks(m) {}\n    int score() const { return marks; }\nprivate:\n    int marks;\n};\n\nint main() {\n    Student s(\"Aman\", 92);\n    std::cout << s.get() << \" \" << s.score() << \"\\n\";\n    return 0;\n}",
+    "expected": "Aman 92"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A private base member read by the derived class",
+    "broken": "class Base {\n    int secret = 7;\n};\n\nclass Derived : public Base {\npublic:\n    int read() const { return secret; }\n};\n\nint main() {\n    Derived d;\n    return d.read();\n}",
+    "fix": "class Base {\nprotected:\n    int secret = 7;\n};\n\nclass Derived : public Base {\npublic:\n    int read() const { return secret; }\n};\n\n#include <iostream>\n\nint main() {\n    Derived d;\n    std::cout << d.read() << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘int Base::secret’ is private within this context",
+    "fixedOutput": "7"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does the diamond problem describe?",
+    "answer": "Two paths to the same base class create two base subobjects, so members are ambiguous and state is duplicated. Virtual inheritance collapses them into one shared base, at the cost of a more complex object layout."
+   },
+   {
+    "q": "Why is composition often preferred to inheritance?",
+    "answer": "It couples to behaviour rather than to a type hierarchy, so the contained class can be swapped and tested independently. Inheritance is for a genuine IS-A relationship and a stable base interface."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which constructor runs first for a derived object?",
+    "options": [
+     "Derived",
+     "Base",
+     "They run in parallel",
+     "The destructor"
+    ],
+    "answer": "Base",
+    "why": "The base subobject must exist before the derived body runs."
+   },
+   {
+    "q": "A class holding another class as a member models which relationship?",
+    "options": [
+     "IS-A",
+     "HAS-A",
+     "IS-IMPLEMENTED-IN-TERMS-OF",
+     "No relationship"
+    ],
+    "answer": "HAS-A",
+    "why": "Containment is composition, a HAS-A relationship."
+   }
+  ]
+ },
+ "cpp16": {
+  "topics": [
+   {
+    "title": "virtual makes the call wait for runtime",
+    "body": "A call through a base pointer to a virtual function dispatches on the dynamic type, so the derived override runs. Without virtual the call is bound statically and always picks the base version.",
+    "code": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual double area() const { return 0; }\n    virtual ~Shape() = default;\n};\n\nclass Square : public Shape {\npublic:\n    explicit Square(double s) : side(s) {}\n    double area() const override { return side * side; }\nprivate:\n    double side;\n};\n\nint main() {\n    Shape* shape = new Square(3);\n    std::cout << shape->area() << \"\\n\";\n    delete shape;\n    return 0;\n}",
+    "output": "9"
+   },
+   {
+    "title": "A virtual destructor is not optional",
+    "body": "Deleting a derived object through a base pointer with a non-virtual destructor is undefined and skips the derived destructor. Making the base destructor virtual fixes the whole hierarchy.",
+    "code": "#include <iostream>\n\nclass Base {\npublic:\n    virtual ~Base() { std::cout << \"base\\n\"; }\n};\n\nclass Derived : public Base {\npublic:\n    ~Derived() override { std::cout << \"derived\\n\"; }\n};\n\nint main() {\n    Base* p = new Derived;\n    delete p;\n    return 0;\n}",
+    "output": "derived\nbase"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Area through a base pointer",
+    "statement": "Create `Shape` with a pure virtual `area()` and a `Circle(2)` override using 3.14; call it through a base pointer and print with two decimals.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nclass Shape {\npublic:\n    virtual double area() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Circle : public Shape {\npublic:\n    explicit Circle(double r) : radius(r) {}\n    double area() const override { return 3.14 * radius * radius; }\nprivate:\n    double radius;\n};\n\nint main() {\n    Shape* shape = new Circle(2);\n    std::cout << std::fixed << std::setprecision(2) << shape->area() << \"\\n\";\n    delete shape;\n    return 0;\n}",
+    "expected": "12.56"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A base destructor that is not virtual",
+    "broken": "#include <iostream>\n\nclass Base {\npublic:\n    ~Base() { std::cout << \"base\\n\"; }\n};\n\nclass Derived : public Base {\npublic:\n    ~Derived() { std::cout << \"derived\\n\"; }\n};\n\nint main() {\n    Base* p = new Derived;\n    delete p;\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Base {\npublic:\n    virtual ~Base() { std::cout << \"base\\n\"; }\n};\n\nclass Derived : public Base {\npublic:\n    ~Derived() override { std::cout << \"derived\\n\"; }\n};\n\nint main() {\n    Base* p = new Derived;\n    delete p;\n    return 0;\n}",
+    "error": "Wrong output: base — the non-virtual base destructor skips the derived destructor.",
+    "fixedOutput": "derived\nbase",
+    "brokenOutput": "base"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is object slicing?",
+    "answer": "Copying a derived object into a base object by value keeps only the base subobject, so the derived state and overrides are lost. Passing by reference or pointer avoids it."
+   },
+   {
+    "q": "When should a function be pure virtual?",
+    "answer": "When the base has no sensible implementation and every concrete derived class must provide one. That turns the class into an interface that cannot be instantiated."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which keyword enables runtime dispatch?",
+    "options": [
+     "static",
+     "virtual",
+     "constexpr",
+     "inline"
+    ],
+    "answer": "virtual",
+    "why": "Virtual functions are resolved from the dynamic type."
+   },
+   {
+    "q": "What does `override` do?",
+    "options": [
+     "Forces a virtual call",
+     "Checks that a virtual function is actually overridden",
+     "Creates a new overload",
+     "Deletes the base version"
+    ],
+    "answer": "Checks that a virtual function is actually overridden",
+    "why": "It turns a signature mismatch into a compile error."
+   }
+  ]
+ },
+ "cpp17": {
+  "topics": [
+   {
+    "title": "operator+ as a free function",
+    "body": "A free `operator+` takes both operands explicitly, so it works when the left operand is not the class type. Returning by value keeps the operands unchanged.",
+    "code": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nPoint operator+(const Point& a, const Point& b) { return {a.x + b.x, a.y + b.y}; }\n\nint main() {\n    Point p{1, 2}, q{3, 4};\n    Point r = p + q;\n    std::cout << r.x << \" \" << r.y << \"\\n\";\n    return 0;\n}",
+    "output": "4 6"
+   },
+   {
+    "title": "operator<< returns the stream",
+    "body": "Returning `std::ostream&` lets `std::cout << p << \" done\"` chain, because each call feeds the same stream to the next. Returning void breaks every chained expression.",
+    "code": "#include <iostream>\n#include <ostream>\n\nstruct Point { int x; int y; };\n\nstd::ostream& operator<<(std::ostream& out, const Point& p) {\n    return out << \"(\" << p.x << \",\" << p.y << \")\";\n}\n\nint main() {\n    Point p{2, 5};\n    std::cout << p << \" done\\n\";\n    return 0;\n}",
+    "output": "(2,5) done"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Add two complex numbers",
+    "statement": "Write a `Complex` struct with `real` and `imag`, overload `+`, and print `3+4i` plus `1+2i` as `4 6`.",
+    "solution": "#include <iostream>\n\nstruct Complex {\n    int real;\n    int imag;\n};\n\nComplex operator+(const Complex& a, const Complex& b) {\n    return {a.real + b.real, a.imag + b.imag};\n}\n\nint main() {\n    Complex a{3, 4}, b{1, 2};\n    Complex c = a + b;\n    std::cout << c.real << \" \" << c.imag << \"\\n\";\n    return 0;\n}",
+    "expected": "4 6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Stream insertion that returns void",
+    "broken": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nvoid operator<<(std::ostream& out, const Point& p) {\n    out << \"(\" << p.x << \",\" << p.y << \")\";\n}\n\nint main() {\n    Point p{1, 2};\n    std::cout << p << \" done\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nstd::ostream& operator<<(std::ostream& out, const Point& p) {\n    return out << \"(\" << p.x << \",\" << p.y << \")\";\n}\n\nint main() {\n    Point p{1, 2};\n    std::cout << p << \" done\\n\";\n    return 0;\n}",
+    "error": "error: invalid operands of types ‘void’ and ‘const char [7]’ to binary ‘operator<<’",
+    "fixedOutput": "(1,2) done"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Which operators cannot be overloaded?",
+    "answer": "`::`, `.`, `.*`, `?:` and `sizeof`. Everything else that takes at least one class-type operand can be overloaded, though doing so should preserve the operator’s expected meaning."
+   },
+   {
+    "q": "Why is `operator=` usually a member function?",
+    "answer": "It needs access to the object being assigned and must return `*this` by reference for chaining. The compiler-generated copy assignment is a member for the same reason."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What should `operator<<` for a stream return?",
+    "options": [
+     "void",
+     "std::ostream&",
+     "The class by value",
+     "bool"
+    ],
+    "answer": "std::ostream&",
+    "why": "Returning the stream is what makes chained insertion work."
+   },
+   {
+    "q": "Can `operator+` be a non-member function?",
+    "options": [
+     "No",
+     "Yes, taking both operands",
+     "Only for integers",
+     "Only with friend"
+    ],
+    "answer": "Yes, taking both operands",
+    "why": "A free operator+ usually takes two const references."
+   }
+  ]
+ },
+ "cpp18": {
+  "topics": [
+   {
+    "title": "A function template instantiates per type",
+    "body": "The compiler generates a separate function for each deduced type, so `larger(3, 9)` and `larger(2.5, 1.5)` share source but not machine code. Errors appear at instantiation, not at definition.",
+    "code": "#include <iostream>\n\ntemplate <typename T>\nT larger(T a, T b) { return a > b ? a : b; }\n\nint main() {\n    std::cout << larger(3, 9) << \" \" << larger(2.5, 1.5) << \"\\n\";\n    return 0;\n}",
+    "output": "9 2.5"
+   },
+   {
+    "title": "Non-type template parameters carry a value",
+    "body": "A template can take a constant value such as `int N`, which lets the size travel in the type. The array reference form below preserves the length instead of decaying to a pointer.",
+    "code": "#include <iostream>\n\ntemplate <typename T, int N>\nT total(const T (&data)[N]) {\n    T sum{};\n    for (const T& v : data) sum += v;\n    return sum;\n}\n\nint main() {\n    int marks[4] = {1, 2, 3, 4};\n    std::cout << total(marks) << \"\\n\";\n    return 0;\n}",
+    "output": "10"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A generic maximum",
+    "statement": "Write a function template `biggest` and use it on two ints and two doubles; print both results separated by a space.",
+    "solution": "#include <iostream>\n\ntemplate <typename T>\nT biggest(T a, T b) { return a > b ? a : b; }\n\nint main() {\n    std::cout << biggest(4, 9) << \" \" << biggest(2.5, 1.5) << \"\\n\";\n    return 0;\n}",
+    "expected": "9 2.5"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Two types for one template parameter",
+    "broken": "#include <iostream>\n\ntemplate <typename T>\nT add(T a, T b) { return a + b; }\n\nint main() {\n    std::cout << add(1, 2.5) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\ntemplate <typename A, typename B>\nauto add(A a, B b) { return a + b; }\n\nint main() {\n    std::cout << add(1, 2.5) << \"\\n\";\n    return 0;\n}",
+    "error": "error: no matching function for call to ‘add(int, double)’",
+    "fixedOutput": "3.5"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why must a template usually be defined in a header?",
+    "answer": "The compiler needs the definition to instantiate it for each type at the point of use. A definition hidden in a .cpp file is invisible to other translation units, producing link errors."
+   },
+   {
+    "q": "What is the difference between a template and a macro?",
+    "answer": "A template is type-checked, scoped and instantiated by the compiler. A macro is textual substitution with no type safety, which is why templates replaced most macro-based generic code."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "When is a function template type-checked?",
+    "options": [
+     "Never",
+     "When it is instantiated",
+     "Only at link time",
+     "At runtime"
+    ],
+    "answer": "When it is instantiated",
+    "why": "Each instantiation is compiled for its concrete types."
+   },
+   {
+    "q": "What does `template <typename T, int N>` allow?",
+    "options": [
+     "Two type parameters",
+     "A type and a compile-time value",
+     "Two runtime values",
+     "A macro parameter"
+    ],
+    "answer": "A type and a compile-time value",
+    "why": "`N` is a non-type parameter fixed at compile time."
+   }
+  ]
+ }
+}

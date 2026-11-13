@@ -1,0 +1,611 @@
+{
+ "cpp01": {
+  "topics": [
+   {
+    "title": "Comments are ignored by the compiler",
+    "body": "`//` comments out the rest of the line and `/* ... */` spans lines. Comments document intent; they never change the program, and the compiler discards them before linking.",
+    "code": "#include <iostream>\n\n// one line\n/* many\n   lines */\nint main() {\n    std::cout << 2 + 3 << \"\\n\"; // 5\n    return 0;\n}",
+    "output": "5"
+   },
+   {
+    "title": "The standard you compiled with",
+    "body": "`__cplusplus` is a predefined macro that reports the language standard as a number: `201703` means C++17. It is useful when a build must prove which standard produced it.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << __cplusplus << \"\\n\";\n    std::cout << sizeof(double) << \" bytes\\n\";\n    return 0;\n}",
+    "output": "201703\n8 bytes"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Print compiler facts",
+    "statement": "Print the value of `__cplusplus`, then the size of a `long long` in bytes, each on its own line.",
+    "solution": "#include <iostream>\n\nint main() {\n    std::cout << __cplusplus << \"\\n\";\n    std::cout << sizeof(long long) << \"\\n\";\n    return 0;\n}",
+    "expected": "201703\n8"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A misspelled variable name",
+    "broken": "#include <iostream>\n\nint main() {\n    int anwser = 42;\n    std::cout << answer << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int answer = 42;\n    std::cout << answer << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘answer’ was not declared in this scope; did you mean ‘anwser’?",
+    "fixedOutput": "42"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why is C++ compiled instead of interpreted, and what does that buy the program?",
+    "answer": "The compiler translates the whole translation unit to machine code ahead of time, so type errors surface before the program runs and execution needs no interpreter in the loop. That is why a C++ binary starts fast and has predictable performance."
+   },
+   {
+    "q": "What does `#include <iostream>` actually do?",
+    "answer": "It asks the preprocessor to copy the contents of the iostream header into the translation unit, which declares `std::cout`, `std::cin` and the stream operators. It does not link anything by itself; the linker brings in the standard library implementation."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What does `return 0;` at the end of `main` report?",
+    "options": [
+     "The number of errors",
+     "Successful termination to the operating system",
+     "The program version",
+     "The size of the program"
+    ],
+    "answer": "Successful termination to the operating system",
+    "why": "The return value of `main` is the process exit status; zero means success."
+   },
+   {
+    "q": "Which g++ command builds `main.cpp` into an executable named `app`?",
+    "options": [
+     "g++ main.cpp -o app",
+     "g++ -o app",
+     "g++ app main.cpp",
+     "gcc --run main.cpp"
+    ],
+    "answer": "g++ main.cpp -o app",
+    "why": "The source file is compiled and linked, and `-o app` names the output binary."
+   }
+  ]
+ },
+ "cpp02": {
+  "topics": [
+   {
+    "title": "Escape sequences you will actually use",
+    "body": "`\\t` inserts a tab, `\\n` ends the line, `\\\\` prints a backslash and `\\\"` prints a quote. Each sequence is one character in the string even though it is typed as two.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << \"name\\tmarks\\n\";\n    std::cout << \"Aman\\t92\\n\";\n    std::cout << \"quote: \\\"done\\\"\\n\";\n    return 0;\n}",
+    "output": "name\tmarks\nAman\t92\nquote: \"done\""
+   },
+   {
+    "title": "Reading fields from a string stream",
+    "body": "`std::istringstream` behaves like `std::cin` but reads from a string, which makes parsing testable without waiting for a keyboard. `>>` splits on whitespace and converts to the requested type.",
+    "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream input(\"Aman Sharma 92\");\n    std::string first, last;\n    int marks = 0;\n    input >> first >> last >> marks;\n    std::cout << last << \", \" << first << \": \" << marks << \"\\n\";\n    return 0;\n}",
+    "output": "Sharma, Aman: 92"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Print an aligned receipt line",
+    "statement": "Print the word `pen` left-aligned in 10 columns, then `42.5` right-aligned in 6 columns with two decimals.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::left << std::setw(10) << \"pen\"\n              << std::right << std::setw(6)\n              << std::fixed << std::setprecision(2) << 42.5 << \"\\n\";\n    return 0;\n}",
+    "expected": "pen        42.50"
+   }
+  ],
+  "debug": [
+   {
+    "title": "setw without its header",
+    "broken": "#include <iostream>\n\nint main() {\n    std::cout << std::setw(6) << 42 << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::setw(6) << 42 << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘setw’ is not a member of ‘std’",
+    "fixedOutput": "    42"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why does `std::cin >> name` stop at the first space?",
+    "answer": "The extraction operator treats whitespace as the field separator, so it reads one token. A full line needs `std::getline`, and mixing the two requires clearing the leftover newline first."
+   },
+   {
+    "q": "Why does `std::setw` affect only the next output field?",
+    "answer": "Width is consumed by the single insertion that follows it, while flags such as `std::left`, `std::fixed` and the fill character persist. That is why an aligned table repeats `setw` per column but sets the alignment once."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which header declares `std::setw`?",
+    "options": [
+     "<iostream>",
+     "<iomanip>",
+     "<string>",
+     "<sstream>"
+    ],
+    "answer": "<iomanip>",
+    "why": "The manipulators `setw`, `setfill` and `setprecision` live in `<iomanip>`."
+   },
+   {
+    "q": "What does `std::left` change?",
+    "options": [
+     "The stream buffer size",
+     "The padding side for the next output field",
+     "The integer base",
+     "The newline character"
+    ],
+    "answer": "The padding side for the next output field",
+    "why": "It makes subsequent width-padded output align to the left until changed."
+   }
+  ]
+ },
+ "cpp03": {
+  "topics": [
+   {
+    "title": "auto deduces a type, it does not guess",
+    "body": "`auto` takes the type from the initializer, so `auto count = 7` is an `int` and `auto ratio = 7.0` is a `double`. An uninitialized `auto` is a compile error because there is nothing to deduce from.",
+    "code": "#include <iostream>\n\nint main() {\n    auto count = 7;\n    auto ratio = 7.0;\n    std::cout << sizeof(count) << \" \" << sizeof(ratio) << \"\\n\";\n    return 0;\n}",
+    "output": "4 8"
+   },
+   {
+    "title": "constexpr is computed at compile time",
+    "body": "A `constexpr` function can run during compilation when its arguments are constants, and `static_assert` then verifies the result before the program ever executes.",
+    "code": "#include <iostream>\n\nconstexpr int square(int x) { return x * x; }\n\nint main() {\n    constexpr int area = square(5);\n    static_assert(area == 25, \"compile-time check\");\n    std::cout << area << \"\\n\";\n    return 0;\n}",
+    "output": "25"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Report four type sizes",
+    "statement": "Print the sizes of `char`, `int`, `long long` and `bool`, separated by single spaces.",
+    "solution": "#include <iostream>\n\nint main() {\n    std::cout << sizeof(char) << \" \" << sizeof(int) << \" \"\n              << sizeof(long long) << \" \" << sizeof(bool) << \"\\n\";\n    return 0;\n}",
+    "expected": "1 4 8 1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An unsigned value that underflows",
+    "broken": "#include <iostream>\n\nint main() {\n    unsigned int score = 3;\n    std::cout << score - 5 << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int score = 3;\n    std::cout << score - 5 << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 4294967294 — unsigned subtraction wraps instead of producing -2.",
+    "fixedOutput": "-2",
+    "brokenOutput": "4294967294"
+   }
+  ],
+  "interview": [
+   {
+    "q": "When should a value be `const` instead of `constexpr`?",
+    "answer": "`const` promises the value will not change after initialization but may be computed at runtime; `constexpr` requires it to be computable at compile time. Use `constexpr` when the value must participate in compile-time checks or array bounds."
+   },
+   {
+    "q": "Why does `unsigned` subtraction wrap instead of going negative?",
+    "answer": "Unsigned arithmetic is defined modulo two to the power of the type width, so subtracting past zero wraps to a huge positive value. That is well-defined, not undefined, and it is exactly why counts that can go negative should be signed."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What is the type of `auto x = 5 / 2.0;`?",
+    "options": [
+     "int",
+     "double",
+     "float",
+     "long"
+    ],
+    "answer": "double",
+    "why": "The literal `2.0` is a double, so the division and the deduced type are double."
+   },
+   {
+    "q": "What must a `constexpr` variable be initialized with?",
+    "options": [
+     "Any runtime value",
+     "A constant expression",
+     "A function call",
+     "A macro"
+    ],
+    "answer": "A constant expression",
+    "why": "Its value has to be known during compilation, which is what makes it usable in compile-time contexts."
+   }
+  ]
+ },
+ "cpp04": {
+  "topics": [
+   {
+    "title": "Integer division and modulus together",
+    "body": "`/` between two ints truncates toward zero and `%` returns the remainder with the sign of the left operand. The two results always satisfy `a == (a / b) * b + a % b`.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << 17 / 5 << \" \" << 17 % 5 << \"\\n\";\n    std::cout << -17 / 5 << \" \" << -17 % 5 << \"\\n\";\n    return 0;\n}",
+    "output": "3 2\n-3 -2"
+   },
+   {
+    "title": "Prefix and postfix increment differ",
+    "body": "`a++` yields the old value and then increments, while `++a` increments and yields the new value. Reading both in one expression is where beginners lose track of the order.",
+    "code": "#include <iostream>\n\nint main() {\n    int a = 5;\n    int b = a++;\n    int c = ++a;\n    std::cout << a << \" \" << b << \" \" << c << \"\\n\";\n    return 0;\n}",
+    "output": "7 5 7"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Turn seconds into a clock",
+    "statement": "Convert 3725 seconds to `hours:minutes:seconds` with each part padded to two digits.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    int total = 3725;\n    int hours = total / 3600;\n    int minutes = (total % 3600) / 60;\n    int seconds = total % 60;\n    std::cout << hours << \":\" << std::setfill('0') << std::setw(2) << minutes\n              << \":\" << std::setw(2) << seconds << \"\\n\";\n    return 0;\n}",
+    "expected": "1:02:05"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Assignment where a comparison was meant",
+    "broken": "#include <iostream>\n\nint main() {\n    int x = 5;\n    if (x = 3) std::cout << \"three\\n\";\n    else std::cout << \"not three\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int x = 5;\n    if (x == 3) std::cout << \"three\\n\";\n    else std::cout << \"not three\\n\";\n    return 0;\n}",
+    "error": "Wrong output: three — the assignment stores 3, so the condition is true even though x was 5.",
+    "fixedOutput": "not three",
+    "brokenOutput": "three"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is operator precedence and why does it matter?",
+    "answer": "Precedence decides which operator binds first when several appear without parentheses; `*` before `+`, for example. When the intent is not obvious, parentheses are cheaper than a reader re-deriving the table."
+   },
+   {
+    "q": "Why is `static_cast<double>(a) / b` safer than relying on implicit conversion?",
+    "answer": "It states the conversion at the exact point it matters, so the division is floating point even if both operands are ints. Implicit conversion can happen later than the author expects, leaving integer division in place."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What does `17 % 5` evaluate to?",
+    "options": [
+     "3",
+     "2",
+     "3.4",
+     "0"
+    ],
+    "answer": "2",
+    "why": "Five goes into seventeen three times with a remainder of two."
+   },
+   {
+    "q": "Which expression increments `a` and yields the new value?",
+    "options": [
+     "a++",
+     "++a",
+     "a--",
+     "a += 0"
+    ],
+    "answer": "++a",
+    "why": "The prefix form updates first and yields the updated value."
+   }
+  ]
+ },
+ "cpp05": {
+  "topics": [
+   {
+    "title": "switch falls through without break",
+    "body": "Cases share code by stacking labels, and execution continues into the next case until a `break` or the end of the switch. That is a feature when intentional and a bug when forgotten.",
+    "code": "#include <iostream>\n\nint main() {\n    int day = 2;\n    switch (day) {\n        case 2:\n        case 3:\n            std::cout << \"weekday\\n\";\n            break;\n        default:\n            std::cout << \"other\\n\";\n    }\n    return 0;\n}",
+    "output": "weekday"
+   },
+   {
+    "title": "Guard clauses flatten a decision tree",
+    "body": "Returning early for each rejected case keeps the happy path at one indentation level. The alternative is a pyramid of nested `if`s where the reader must remember every condition to reach the end.",
+    "code": "#include <iostream>\n\nconst char* grade(int marks) {\n    if (marks < 0) return \"invalid\";\n    if (marks < 50) return \"fail\";\n    if (marks < 90) return \"pass\";\n    return \"distinction\";\n}\n\nint main() {\n    std::cout << grade(72) << \"\\n\";\n    return 0;\n}",
+    "output": "pass"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Check a leap year",
+    "statement": "Print `leap` when 2024 is divisible by 4 and not by 100, or divisible by 400; otherwise print `common`.",
+    "solution": "#include <iostream>\n\nint main() {\n    int year = 2024;\n    bool leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);\n    std::cout << (leap ? \"leap\" : \"common\") << \"\\n\";\n    return 0;\n}",
+    "expected": "leap"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A dangling else without braces",
+    "broken": "#include <iostream>\n\nint main() {\n    int a = 5, b = 0;\n    if (a > 0)\n        if (b > 0) std::cout << \"both\\n\";\n    else\n        std::cout << \"a only\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int a = 5, b = 0;\n    if (a > 0) {\n        if (b > 0) std::cout << \"both\\n\";\n    } else {\n        std::cout << \"a only\\n\";\n    }\n    std::cout << \"a is positive\\n\";\n    return 0;\n}",
+    "error": "Wrong output: nothing — the else binds to the inner if, so neither branch runs.",
+    "fixedOutput": "a is positive",
+    "brokenOutput": "a only"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Which types can be used in a `switch` condition?",
+    "answer": "Integral types and enums, plus `char`. Floating-point values and strings cannot be switched on because the case labels must be compile-time integral constants."
+   },
+   {
+    "q": "When is a chain of `else if` better than `switch`?",
+    "answer": "When the conditions are ranges or unrelated predicates, because `switch` only matches exact constants. A `switch` over an enum is still clearer when every enumerator is handled."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What happens when a `switch` case has no `break`?",
+    "options": [
+     "Compilation fails",
+     "Execution continues into the next case",
+     "The switch exits immediately",
+     "The default case runs first"
+    ],
+    "answer": "Execution continues into the next case",
+    "why": "Fallthrough is the specified behaviour, which is why a missing break changes the result."
+   },
+   {
+    "q": "Which condition means \"divisible by 4\"?",
+    "options": [
+     "year / 4 == 0",
+     "year % 4 == 0",
+     "year * 4 == 0",
+     "year % 4 = 0"
+    ],
+    "answer": "year % 4 == 0",
+    "why": "The remainder operator returns zero when the division is exact."
+   }
+  ]
+ },
+ "cpp06": {
+  "topics": [
+   {
+    "title": "do-while runs once before checking",
+    "body": "The body of a `do-while` executes before the condition is tested, so it always runs at least once. That makes it the right shape for \"ask once, then repeat while the answer is invalid\".",
+    "code": "#include <iostream>\n\nint main() {\n    int n = 0;\n    do {\n        std::cout << \"run \" << n << \"\\n\";\n        ++n;\n    } while (n < 2);\n    return 0;\n}",
+    "output": "run 0\nrun 1"
+   },
+   {
+    "title": "Range-based for reads every element",
+    "body": "`for (int m : marks)` visits each element in order and copies it into `m`; `for (const int& m : marks)` avoids the copy. The loop cannot run past the container because it uses its iterators.",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> marks{70, 85, 92};\n    int total = 0;\n    for (int m : marks) total += m;\n    std::cout << total << \"\\n\";\n    return 0;\n}",
+    "output": "247"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sum the digits of a number",
+    "statement": "Add the digits of 4729 and print the total.",
+    "solution": "#include <iostream>\n\nint main() {\n    int n = 4729;\n    int sum = 0;\n    while (n > 0) {\n        sum += n % 10;\n        n /= 10;\n    }\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "expected": "22"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An accumulator that is overwritten",
+    "broken": "#include <iostream>\n\nint main() {\n    int sum = 0;\n    for (int i = 1; i <= 5; ++i) sum = i;\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int sum = 0;\n    for (int i = 1; i <= 5; ++i) sum += i;\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 5 — sum is overwritten on every pass instead of accumulated.",
+    "fixedOutput": "15",
+    "brokenOutput": "5"
+   }
+  ],
+  "interview": [
+   {
+    "q": "When would you choose `while` over `for`?",
+    "answer": "`for` when the iteration count or the counter is the point of the loop, `while` when the loop ends on a condition that is not a counter, such as reading until end of input."
+   },
+   {
+    "q": "Why does a range-based for not need an index?",
+    "answer": "It iterates with `begin()` and `end()`, so the container supplies the bounds. That removes the off-by-one class of bug and works for containers that have no index at all."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "How many times does a `do-while` body run when the condition is false from the start?",
+    "options": [
+     "Zero",
+     "Once",
+     "Twice",
+     "It depends on the compiler"
+    ],
+    "answer": "Once",
+    "why": "The body runs before the first condition test."
+   },
+   {
+    "q": "Which loop is guaranteed to visit every element of a vector in order?",
+    "options": [
+     "for (int i = 0; i <= v.size(); ++i)",
+     "for (int x : v)",
+     "while (v.size())",
+     "do { } while (v.empty())"
+    ],
+    "answer": "for (int x : v)",
+    "why": "The range form uses the container bounds exactly once, without an index to get wrong."
+   }
+  ]
+ },
+ "cpp07": {
+  "topics": [
+   {
+    "title": "Default arguments fill the gap",
+    "body": "A default argument is used only when the caller omits that argument; it is written once in the declaration. Defaults must be trailing, so a parameter with a default cannot precede one without.",
+    "code": "#include <iostream>\n#include <string>\n\nvoid greet(const std::string& name, const std::string& word = \"Hello\") {\n    std::cout << word << \", \" << name << \"!\\n\";\n}\n\nint main() {\n    greet(\"Aman\");\n    greet(\"Riya\", \"Namaste\");\n    return 0;\n}",
+    "output": "Hello, Aman!\nNamaste, Riya!"
+   },
+   {
+    "title": "Passing by reference changes the caller",
+    "body": "A reference parameter is another name for the caller’s object, so writing through it mutates the original. Passing by value would modify only the copy and leave the caller unchanged.",
+    "code": "#include <iostream>\n\nvoid bump(int& value) { value += 10; }\n\nint main() {\n    int score = 5;\n    bump(score);\n    std::cout << score << \"\\n\";\n    return 0;\n}",
+    "output": "15"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Overload an area function",
+    "statement": "Write `area(double r)` for a circle and `area(double w, double h)` for a rectangle; print the circle area with two decimals and the rectangle area as an integer.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\ndouble area(double r) { return 3.14159 * r * r; }\ndouble area(double w, double h) { return w * h; }\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << area(2.0) << \"\\n\";\n    std::cout << static_cast<int>(area(3.0, 4.0)) << \"\\n\";\n    return 0;\n}",
+    "expected": "12.57\n12"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A call before the declaration",
+    "broken": "#include <iostream>\n\nint main() {\n    std::cout << twice(4) << \"\\n\";\n    return 0;\n}\n\nint twice(int x) { return x * 2; }",
+    "fix": "#include <iostream>\n\nint twice(int x);\n\nint main() {\n    std::cout << twice(4) << \"\\n\";\n    return 0;\n}\n\nint twice(int x) { return x * 2; }",
+    "error": "error: ‘twice’ was not declared in this scope",
+    "fixedOutput": "8"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is function overloading resolved by?",
+    "answer": "The compiler matches the call against each declaration’s parameter list and return type is not part of the signature, so two functions cannot differ only by return type. Ambiguous conversions make the call a compile error."
+   },
+   {
+    "q": "Why prefer `const T&` for a read-only parameter?",
+    "answer": "It avoids copying a large object while still promising the callee cannot modify it, and it binds to temporaries. For small scalars a plain value is usually cheaper than a reference."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which call is ambiguous for `void f(int); void f(double);`?",
+    "options": [
+     "f(3)",
+     "f(3.5)",
+     "f(3.0f)",
+     "f('a')"
+    ],
+    "answer": "f(3.0f)",
+    "why": "A float converts equally well to int and double, so neither overload is a better match."
+   },
+   {
+    "q": "What does a default argument allow?",
+    "options": [
+     "Calling with fewer arguments",
+     "Changing the return type",
+     "Overloading by name",
+     "Skipping the definition"
+    ],
+    "answer": "Calling with fewer arguments",
+    "why": "The omitted argument is filled with the declared default at the call site."
+   }
+  ]
+ },
+ "cpp08": {
+  "topics": [
+   {
+    "title": "std::array knows its own size",
+    "body": "A `std::array` carries its length in the type, so `size()` is a constant and `at()` checks the index and throws instead of reading past the end.",
+    "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> marks{60, 70, 80, 90};\n    std::cout << marks.size() << \" \" << marks.at(2) << \"\\n\";\n    return 0;\n}",
+    "output": "4 80"
+   },
+   {
+    "title": "Array decay loses the length",
+    "body": "Passing a C array to a function passes a pointer to its first element, so `sizeof` inside the function measures the pointer, not the array. The length has to travel as a separate parameter or be fixed in the type.",
+    "code": "#include <iostream>\n\nint count(int data[]) { return sizeof(data) / sizeof(data[0]); }\n\nint main() {\n    int data[6] = {1, 2, 3, 4, 5, 6};\n    std::cout << sizeof(data) / sizeof(data[0]) << \" \" << count(data) << \"\\n\";\n    return 0;\n}",
+    "output": "6 2"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Reverse an array in place",
+    "statement": "Reverse `{1, 2, 3, 4, 5}` by swapping from both ends, then print the elements separated by spaces.",
+    "solution": "#include <iostream>\n\nint main() {\n    int data[5] = {1, 2, 3, 4, 5};\n    for (int i = 0, j = 4; i < j; ++i, --j) {\n        int t = data[i];\n        data[i] = data[j];\n        data[j] = t;\n    }\n    for (int v : data) std::cout << v << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "expected": "5 4 3 2 1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A std::array passed by value",
+    "broken": "#include <array>\n#include <iostream>\n\nvoid setFirst(std::array<int, 3> data) { data[0] = 9; }\n\nint main() {\n    std::array<int, 3> data{1, 2, 3};\n    setFirst(data);\n    std::cout << data[0] << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <array>\n#include <iostream>\n\nvoid setFirst(std::array<int, 3>& data) { data[0] = 9; }\n\nint main() {\n    std::array<int, 3> data{1, 2, 3};\n    setFirst(data);\n    std::cout << data[0] << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 1 — the array was copied, so the caller’s element is unchanged.",
+    "fixedOutput": "9",
+    "brokenOutput": "1"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why does `std::array` not decay when passed to a function?",
+    "answer": "It is a class object, not a raw array, so passing it by value copies the whole array and passing by reference keeps its type and length. That is why the size is still available inside the callee."
+   },
+   {
+    "q": "When is `std::vector` the better choice than `std::array`?",
+    "answer": "When the element count is decided at runtime or must grow. `std::array` is for a fixed compile-time size and avoids a heap allocation entirely."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What does `sizeof(data) / sizeof(data[0])` compute inside `main` for `int data[6]`?",
+    "options": [
+     "The pointer size",
+     "6",
+     "24",
+     "Undefined"
+    ],
+    "answer": "6",
+    "why": "The array is still an array there, so the division gives the element count."
+   },
+   {
+    "q": "What does `std::array::at()` do that `operator[]` does not?",
+    "options": [
+     "Returns a copy",
+     "Checks the index and throws when out of range",
+     "Sorts the array",
+     "Grows the array"
+    ],
+    "answer": "Checks the index and throws when out of range",
+    "why": "`at` is bounds-checked; `operator[]` is not."
+   }
+  ]
+ },
+ "cpp09": {
+  "topics": [
+   {
+    "title": "split a string with find and substr",
+    "body": "`find` returns the position of a character or `std::string::npos`, and `substr(pos, len)` copies a slice. Combining them splits a record without a regular expression.",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string mail = \"aman@brocode.dev\";\n    auto at = mail.find('@');\n    std::cout << mail.substr(0, at) << \" | \" << mail.substr(at + 1) << \"\\n\";\n    return 0;\n}",
+    "output": "aman | brocode.dev"
+   },
+   {
+    "title": "string_view is a non-owning window",
+    "body": "`std::string_view` stores a pointer and a length, so taking a substring or passing it to a function copies no characters. It is valid only while the underlying string is alive.",
+    "code": "#include <iostream>\n#include <string>\n#include <string_view>\n\nint main() {\n    std::string text = \"pointers and references\";\n    std::string_view view(text);\n    std::cout << view.substr(0, 8) << \" \" << view.size() << \"\\n\";\n    return 0;\n}",
+    "output": "pointers 23"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Count the vowels",
+    "statement": "Count the vowels in `programming` and print the total.",
+    "solution": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string word = \"programming\";\n    int count = 0;\n    for (char c : word) {\n        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u') ++count;\n    }\n    std::cout << count << \"\\n\";\n    return 0;\n}",
+    "expected": "3"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Comparing character arrays with ==",
+    "broken": "#include <iostream>\n\nint main() {\n    char a[] = \"hi\";\n    char b[] = \"hi\";\n    std::cout << (a == b) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"hi\";\n    std::string b = \"hi\";\n    std::cout << (a == b) << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 0 — comparing two char arrays compares their addresses, not their text.",
+    "fixedOutput": "1",
+    "brokenOutput": "0"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does `std::string::npos` mean?",
+    "answer": "It is the value returned by `find` when nothing matched, defined as the largest representable size type. Comparing against it is the check, not comparing against `-1` by hand."
+   },
+   {
+    "q": "When is `std::string_view` unsafe?",
+    "answer": "When it outlives the string it points into, or when that string reallocates. It owns nothing, so a dangling view reads freed memory with no warning."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What does `mail.substr(0, at)` return when `at` is the position of `@`?",
+    "options": [
+     "The domain",
+     "The local part before @",
+     "The whole address",
+     "An empty string"
+    ],
+    "answer": "The local part before @",
+    "why": "`substr` starts at 0 and copies `at` characters, which stops before the @."
+   },
+   {
+    "q": "Which type stores a pointer and a length without owning characters?",
+    "options": [
+     "std::string",
+     "std::string_view",
+     "char*",
+     "std::vector<char>"
+    ],
+    "answer": "std::string_view",
+    "why": "A view is a non-owning window over existing characters."
+   }
+  ]
+ }
+}

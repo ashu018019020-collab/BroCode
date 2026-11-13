@@ -1,0 +1,540 @@
+{
+ "cpp19": {
+  "topics": [
+   {
+    "title": "map keeps its keys sorted",
+    "body": "`std::map` orders keys by `operator<`, so iteration is sorted without an extra sort. Lookup is logarithmic and the container stores one value per unique key.",
+    "code": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> marks{{\"Riya\", 88}, {\"Aman\", 92}};\n    for (const auto& [name, score] : marks) std::cout << name << \"=\" << score << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "Aman=92 Riya=88"
+   },
+   {
+    "title": "unordered_map counts without promising order",
+    "body": "The hashed container gives average constant-time lookup, which is why it is the usual choice for frequency tables. Iteration order is unspecified, so never print it as if it were sorted.",
+    "code": "#include <iostream>\n#include <string>\n#include <unordered_map>\n\nint main() {\n    std::unordered_map<std::string, int> freq;\n    for (const std::string& word : {\"a\", \"b\", \"a\"}) ++freq[word];\n    std::cout << freq[\"a\"] << \" \" << freq.size() << \"\\n\";\n    return 0;\n}",
+    "output": "2 2"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Deduplicate and sort",
+    "statement": "Insert `{3, 1, 3, 2}` into a `std::set` and print the values separated by spaces.",
+    "solution": "#include <iostream>\n#include <set>\n\nint main() {\n    std::set<int> values{3, 1, 3, 2};\n    for (int v : values) std::cout << v << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "expected": "1 2 3"
+   }
+  ],
+  "debug": [
+   {
+    "title": "push_back on a const vector",
+    "broken": "#include <vector>\n\nint main() {\n    const std::vector<int> v{1, 2};\n    v.push_back(3);\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2};\n    v.push_back(3);\n    std::cout << v.size() << \"\\n\";\n    return 0;\n}",
+    "error": "error: passing ‘const std::vector<int>’ as ‘this’ argument discards qualifiers [-fpermissive]",
+    "fixedOutput": "3"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you choose between `map` and `unordered_map`?",
+    "answer": "Choose `map` when ordered iteration or range queries matter, and `unordered_map` when lookup speed is the priority and order is irrelevant. The hashed version needs a hash function and can degrade under bad hashing."
+   },
+   {
+    "q": "What is iterator invalidation?",
+    "answer": "An operation that reallocates or restructures the container leaves existing iterators pointing at freed or moved storage. A vector push_back may invalidate all iterators, while a node-based map only invalidates the erased element’s iterator."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which container keeps unique keys in sorted order?",
+    "options": [
+     "vector",
+     "set",
+     "list",
+     "stack"
+    ],
+    "answer": "set",
+    "why": "A set stores unique keys ordered by the comparator."
+   },
+   {
+    "q": "What is the average lookup complexity of `unordered_map`?",
+    "options": [
+     "O(1)",
+     "O(log n)",
+     "O(n)",
+     "O(n log n)"
+    ],
+    "answer": "O(1)",
+    "why": "Hashing gives average constant time, with worst case linear under collisions."
+   }
+  ]
+ },
+ "cpp20": {
+  "topics": [
+   {
+    "title": "sort with a lambda comparator",
+    "body": "The third argument is any callable that answers \"does a come before b?\". A lambda keeps the rule next to the call, and the sort stays stable only if `stable_sort` is used.",
+    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{3, 1, 4, 2};\n    std::sort(v.begin(), v.end(), [](int a, int b) { return a > b; });\n    for (int x : v) std::cout << x << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "4 3 2 1"
+   },
+   {
+    "title": "accumulate needs the right seed type",
+    "body": "The initial value fixes the accumulator’s type. Seeding with `0` keeps integer arithmetic even when the range holds doubles, while `0.0` makes the average a real division.",
+    "code": "#include <iostream>\n#include <numeric>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    std::cout << std::accumulate(v.begin(), v.end(), 0) << \" \"\n              << std::accumulate(v.begin(), v.end(), 0.0) / v.size() << \"\\n\";\n    return 0;\n}",
+    "output": "6 2"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Count values above a threshold",
+    "statement": "Count how many of `{1, 5, 2, 8, 3}` are greater than 2 and print the count.",
+    "solution": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 5, 2, 8, 3};\n    auto count = std::count_if(v.begin(), v.end(), [](int x) { return x > 2; });\n    std::cout << count << \"\\n\";\n    return 0;\n}",
+    "expected": "3"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An iterator passed without the call parentheses",
+    "broken": "#include <algorithm>\n#include <vector>\n\nint main() {\n    std::vector<int> v{2, 1};\n    std::sort(v.begin(), v.end);\n    return 0;\n}",
+    "fix": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{2, 1};\n    std::sort(v.begin(), v.end());\n    std::cout << v.front() << \"\\n\";\n    return 0;\n}",
+    "error": "error: no matching function for call to ‘sort(std::vector<int>::iterator, <unresolved overloaded function type>)’",
+    "fixedOutput": "1"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the difference between `find` and `binary_search`?",
+    "answer": "`find` scans linearly and works on any range, while `binary_search` assumes sorted input and halves the range. Use the latter when the data is already ordered and only presence matters."
+   },
+   {
+    "q": "Why does `remove` not shrink a vector?",
+    "answer": "It moves the kept elements to the front and returns the new logical end, because it only sees iterators and cannot change the container. The erase-remove idiom removes the tail afterwards."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which algorithm requires a sorted range?",
+    "options": [
+     "find",
+     "binary_search",
+     "count",
+     "for_each"
+    ],
+    "answer": "binary_search",
+    "why": "Binary search depends on ordering to discard half the range."
+   },
+   {
+    "q": "What does `std::accumulate(v.begin(), v.end(), 0.0)` produce?",
+    "options": [
+     "An int sum",
+     "A double sum",
+     "A sorted vector",
+     "The count of elements"
+    ],
+    "answer": "A double sum",
+    "why": "A sorted vector"
+   }
+  ]
+ },
+ "cpp21": {
+  "topics": [
+   {
+    "title": "Throw by value, catch by const reference",
+    "body": "The exception object is copied when thrown and caught by reference avoids a second copy, while `const` prevents accidental modification. Catching by value slices derived exceptions.",
+    "code": "#include <iostream>\n#include <stdexcept>\n\nint main() {\n    try {\n        throw std::out_of_range(\"index 9 is past the end\");\n    } catch (const std::exception& e) {\n        std::cout << \"caught: \" << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "output": "caught: index 9 is past the end"
+   },
+   {
+    "title": "RAII cleans up during unwinding",
+    "body": "When an exception leaves a scope, every fully constructed local object is destroyed. That is why a guard object releases its resource even though the normal exit never runs.",
+    "code": "#include <iostream>\n\nstruct Guard {\n    ~Guard() { std::cout << \"guard released\\n\"; }\n};\n\nint main() {\n    try {\n        Guard g;\n        throw 42;\n    } catch (int code) {\n        std::cout << \"caught \" << code << \"\\n\";\n    }\n    return 0;\n}",
+    "output": "guard released\ncaught 42"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Validate a division",
+    "statement": "Write `divide` that throws `std::invalid_argument` when the divisor is zero; print the result of 10 divided by 2 and catch the zero case.",
+    "solution": "#include <iostream>\n#include <stdexcept>\n\nint divide(int a, int b) {\n    if (b == 0) throw std::invalid_argument(\"divide by zero\");\n    return a / b;\n}\n\nint main() {\n    std::cout << divide(10, 2) << \"\\n\";\n    try {\n        divide(1, 0);\n    } catch (const std::invalid_argument& e) {\n        std::cout << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "expected": "5\ndivide by zero"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An exception nobody catches",
+    "broken": "#include <iostream>\n\nint main() {\n    throw 42;\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    try {\n        throw 42;\n    } catch (int code) {\n        std::cout << \"caught \" << code << \"\\n\";\n    }\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'int'",
+    "fixedOutput": "caught 42"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does `noexcept` promise?",
+    "answer": "That the function will not let an exception escape; if one does, `std::terminate` runs. It lets containers and the optimizer assume safety, which is why move constructors are usually marked noexcept."
+   },
+   {
+    "q": "When should an exception not be used?",
+    "answer": "For expected, frequent conditions such as \"not found\" where a return value or `std::optional` is clearer and cheaper. Exceptions are for exceptional failure that the immediate caller cannot handle."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "How should a standard exception be caught?",
+    "options": [
+     "By value",
+     "By const reference",
+     "By pointer",
+     "By macro"
+    ],
+    "answer": "By const reference",
+    "why": "A const reference avoids slicing and an extra copy."
+   },
+   {
+    "q": "What happens if an exception leaves `main` uncaught?",
+    "options": [
+     "It is ignored",
+     "std::terminate is called",
+     "It returns 0",
+     "The compiler rejects it"
+    ],
+    "answer": "std::terminate is called",
+    "why": "An uncaught exception ends the program through terminate."
+   }
+  ]
+ },
+ "cpp22": {
+  "topics": [
+   {
+    "title": "A file stream closes at the end of its scope",
+    "body": "The `ofstream` destructor flushes and closes the file, so a nested scope is enough to make the write visible. Reading afterwards then sees the complete contents.",
+    "code": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    {\n        std::ofstream out(\"demo.txt\");\n        out << \"line one\\n\";\n    }\n    std::ifstream in(\"demo.txt\");\n    std::string line;\n    std::getline(in, line);\n    std::cout << line << \"\\n\";\n    return 0;\n}",
+    "output": "line one"
+   },
+   {
+    "title": "filesystem splits a path",
+    "body": "`std::filesystem::path` understands separators, so `filename()` and `extension()` work on any platform instead of being hand-parsed from a string.",
+    "code": "#include <filesystem>\n#include <iostream>\n\nint main() {\n    std::filesystem::path p = \"demo.txt\";\n    std::cout << p.filename().string() << \" \" << p.extension().string() << \"\\n\";\n    return 0;\n}",
+    "output": "demo.txt .txt"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Write two lines and count them",
+    "statement": "Write `alpha` and `beta` to a file, read them back with `getline` and print how many lines were read.",
+    "solution": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    {\n        std::ofstream out(\"lines.txt\");\n        out << \"alpha\\n\" << \"beta\\n\";\n    }\n    std::ifstream in(\"lines.txt\");\n    std::string line;\n    int count = 0;\n    while (std::getline(in, line)) ++count;\n    std::cout << count << \"\\n\";\n    return 0;\n}",
+    "expected": "2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A file that was never opened",
+    "broken": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::ifstream in(\"missing.txt\");\n    std::string line;\n    in >> line;\n    std::cout << line.size() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::ifstream in(\"missing.txt\");\n    if (!in.is_open()) {\n        std::cout << \"could not open file\\n\";\n        return 0;\n    }\n    std::string line;\n    in >> line;\n    std::cout << line.size() << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 0 — the missing file was never detected, so an empty line looked like valid data.",
+    "fixedOutput": "could not open file",
+    "brokenOutput": "0"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why check a stream after opening it?",
+    "answer": "A failed open leaves the stream in a failed state and every extraction returns immediately, so the program silently works with empty data. `is_open()` or a boolean test turns that into an explicit error path."
+   },
+   {
+    "q": "What is the difference between text and binary mode?",
+    "answer": "Text mode may translate line endings on some platforms, while binary mode reads the exact bytes. Structured records should be read and written in binary with fixed layouts."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which class writes to a file?",
+    "options": [
+     "ifstream",
+     "ofstream",
+     "fstream only for reading",
+     "iostream"
+    ],
+    "answer": "ofstream",
+    "why": "The output file stream opens for writing."
+   },
+   {
+    "q": "What does `std::getline(in, line)` return?",
+    "options": [
+     "The line",
+     "The stream, testable as a bool",
+     "The file size",
+     "void"
+    ],
+    "answer": "The stream, testable as a bool",
+    "why": "The returned stream converts to bool, which is how the read loop ends."
+   }
+  ]
+ },
+ "cpp23": {
+  "topics": [
+   {
+    "title": "optional expresses a value that may be missing",
+    "body": "`std::optional<T>` either holds a T or holds nothing, so \"not found\" needs no magic number. `value_or` supplies a default without a branch.",
+    "code": "#include <iostream>\n#include <optional>\n#include <string>\n\nstd::optional<int> find_mark(const std::string& name) {\n    if (name == \"Aman\") return 92;\n    return std::nullopt;\n}\n\nint main() {\n    auto mark = find_mark(\"Riya\");\n    std::cout << mark.value_or(0) << \" \" << mark.has_value() << \"\\n\";\n    return 0;\n}",
+    "output": "0 0"
+   },
+   {
+    "title": "Structured bindings walk a map",
+    "body": "Binding `[name, age]` to each map entry avoids the `first`/`second` noise, and the reference keeps the iteration from copying the pair.",
+    "code": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> ages{{\"Aman\", 21}, {\"Riya\", 22}};\n    for (const auto& [name, age] : ages) std::cout << name << \":\" << age << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "Aman:21 Riya:22"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Print a variant",
+    "statement": "Store `42` in a `std::variant<int, std::string>` and print it through `std::get<int>`.",
+    "solution": "#include <iostream>\n#include <string>\n#include <variant>\n\nint main() {\n    std::variant<int, std::string> value = 42;\n    std::cout << std::get<int>(value) << \"\\n\";\n    return 0;\n}",
+    "expected": "42"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Reading an empty optional with value()",
+    "broken": "#include <iostream>\n#include <optional>\n\nint main() {\n    std::optional<int> value;\n    std::cout << value.value() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <optional>\n\nint main() {\n    std::optional<int> value;\n    std::cout << value.value_or(0) << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::bad_optional_access'",
+    "fixedOutput": "0"
+   }
+  ],
+  "interview": [
+   {
+    "q": "When is `std::optional` better than a sentinel like -1?",
+    "answer": "When every value of the type is legal, so no sentinel can be reserved. The type then states the possibility of absence and the compiler forces the caller to handle it."
+   },
+   {
+    "q": "What does `if constexpr` solve?",
+    "answer": "It discards the untaken branch during instantiation, so a template can use operations that are valid for some types but not others. A plain `if` still has to compile both branches."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which header declares `std::optional`?",
+    "options": [
+     "<variant>",
+     "<optional>",
+     "<any>",
+     "<tuple>"
+    ],
+    "answer": "<optional>",
+    "why": "`optional`, `variant` and `any` each live in their own header."
+   },
+   {
+    "q": "What does `value_or(0)` do on an empty optional?",
+    "options": [
+     "Throws",
+     "Returns 0",
+     "Returns null",
+     "Crashes"
+    ],
+    "answer": "Returns 0",
+    "why": "The fallback is returned when no value is stored."
+   }
+  ]
+ },
+ "cpp24": {
+  "topics": [
+   {
+    "title": "Binary search halves the range",
+    "body": "Sorted input lets each comparison discard half the remaining elements. The midpoint uses `lo + (hi - lo) / 2` so a large range cannot overflow the addition.",
+    "code": "#include <iostream>\n#include <vector>\n\nint search(const std::vector<int>& data, int target) {\n    int lo = 0, hi = static_cast<int>(data.size()) - 1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (data[mid] == target) return mid;\n        if (data[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    return -1;\n}\n\nint main() {\n    std::vector<int> data{1, 3, 5, 7, 9};\n    std::cout << search(data, 7) << \"\\n\";\n    return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "Iterative Fibonacci is linear",
+    "body": "Keeping the last two values in a loop needs constant extra space and no call stack. The recursive version recomputes the same subproblems unless it is memoised.",
+    "code": "#include <iostream>\n\nlong long fib(int n) {\n    long long a = 0, b = 1;\n    for (int i = 0; i < n; ++i) {\n        long long next = a + b;\n        a = b;\n        b = next;\n    }\n    return a;\n}\n\nint main() {\n    std::cout << fib(10) << \"\\n\";\n    return 0;\n}",
+    "output": "55"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sort with bubble sort",
+    "statement": "Sort `{5, 1, 4, 2}` with bubble sort and print the result separated by spaces.",
+    "solution": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{5, 1, 4, 2};\n    for (std::size_t i = 0; i + 1 < v.size(); ++i) {\n        for (std::size_t j = 0; j + 1 < v.size() - i; ++j) {\n            if (v[j] > v[j + 1]) {\n                int t = v[j];\n                v[j] = v[j + 1];\n                v[j + 1] = t;\n            }\n        }\n    }\n    for (int x : v) std::cout << x << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "expected": "1 2 4 5"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A binary search that moves the wrong half",
+    "broken": "#include <iostream>\n#include <vector>\n\nint search(const std::vector<int>& data, int target) {\n    int lo = 0, hi = static_cast<int>(data.size()) - 1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (data[mid] == target) return mid;\n        if (data[mid] < target) hi = mid - 1;\n        else lo = mid + 1;\n    }\n    return -1;\n}\n\nint main() {\n    std::vector<int> data{1, 3, 5, 7, 9};\n    std::cout << search(data, 7) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <vector>\n\nint search(const std::vector<int>& data, int target) {\n    int lo = 0, hi = static_cast<int>(data.size()) - 1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (data[mid] == target) return mid;\n        if (data[mid] < target) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    return -1;\n}\n\nint main() {\n    std::vector<int> data{1, 3, 5, 7, 9};\n    std::cout << search(data, 7) << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: -1 — the search discards the half that actually contains the target.",
+    "fixedOutput": "3",
+    "brokenOutput": "-1"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the time complexity of binary search and why?",
+    "answer": "O(log n), because every comparison halves the candidate range. A range of a million elements needs about twenty comparisons."
+   },
+   {
+    "q": "When is a hash map preferable to sorting plus binary search?",
+    "answer": "When the data changes often and many lookups are expected, since a hash map gives average O(1) lookup without re-sorting. Sorting wins when ordered traversal or range queries are also needed."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which precondition does binary search require?",
+    "options": [
+     "Unique elements",
+     "Sorted elements",
+     "Even length",
+     "Positive values"
+    ],
+    "answer": "Sorted elements",
+    "why": "The halving step is only valid on ordered data."
+   },
+   {
+    "q": "What is the complexity of iterative Fibonacci for n terms?",
+    "options": [
+     "O(1)",
+     "O(log n)",
+     "O(n)",
+     "O(2^n)"
+    ],
+    "answer": "O(n)",
+    "why": "The loop performs one constant-time step per term."
+   }
+  ]
+ },
+ "cpp25": {
+  "topics": [
+   {
+    "title": "A thread must be joined or detached",
+    "body": "A `std::thread` that is still joinable when destroyed calls `std::terminate`. `join` waits for it; detach would let it run independently, which is rarely what a program with shared state wants.",
+    "code": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread worker([] { std::cout << \"worker\\n\"; });\n    worker.join();\n    std::cout << \"main\\n\";\n    return 0;\n}",
+    "output": "worker\nmain"
+   },
+   {
+    "title": "atomic removes the lost update",
+    "body": "A plain int incremented from two threads is a data race: read, add and write can interleave. `std::atomic<int>` makes the increment one indivisible operation, so the total is exact.",
+    "code": "#include <atomic>\n#include <iostream>\n#include <thread>\n\nint main() {\n    std::atomic<int> count{0};\n    std::thread a([&] { for (int i = 0; i < 1000; ++i) ++count; });\n    std::thread b([&] { for (int i = 0; i < 1000; ++i) ++count; });\n    a.join();\n    b.join();\n    std::cout << count.load() << \"\\n\";\n    return 0;\n}",
+    "output": "2000"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sum 1..100 twice with threads",
+    "statement": "Run two threads that each add 5050 into a shared `std::atomic<int>`; join both and print the total.",
+    "solution": "#include <atomic>\n#include <iostream>\n#include <thread>\n\nint main() {\n    std::atomic<int> total{0};\n    auto add = [&] {\n        for (int i = 1; i <= 100; ++i) total += i;\n    };\n    std::thread a(add);\n    std::thread b(add);\n    a.join();\n    b.join();\n    std::cout << total.load() << \"\\n\";\n    return 0;\n}",
+    "expected": "10100"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A thread destroyed without join",
+    "broken": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread worker([] { std::cout << \"worker\\n\"; });\n    std::cout << \"main\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread worker([] { std::cout << \"worker\\n\"; });\n    worker.join();\n    std::cout << \"main\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called without an active exception",
+    "fixedOutput": "worker\nmain"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is a data race?",
+    "answer": "Two threads access the same memory concurrently, at least one writes, and no synchronization orders them. The result is undefined behaviour, not merely an unpredictable value."
+   },
+   {
+    "q": "What does a mutex actually protect?",
+    "answer": "It protects the invariant that the locked region is supposed to maintain, not the variable by itself. Every access to the shared state must take the same lock or the protocol is broken."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What happens when a joinable `std::thread` is destroyed?",
+    "options": [
+     "It is joined automatically",
+     "std::terminate is called",
+     "It is detached",
+     "It is ignored"
+    ],
+    "answer": "std::terminate is called",
+    "why": "The destructor cannot leave a running thread unowned."
+   },
+   {
+    "q": "What does `std::atomic<int>::fetch_add` guarantee?",
+    "options": [
+     "Ordering with other variables",
+     "An indivisible read-modify-write",
+     "A lock",
+     "A copy"
+    ],
+    "answer": "An indivisible read-modify-write",
+    "why": "The operation completes as one unit with respect to other threads."
+   }
+  ]
+ },
+ "cpp26": {
+  "topics": [
+   {
+    "title": "Rule of Zero",
+    "body": "A class that owns its members through RAII types needs no destructor, copy constructor or assignment operator; the compiler-generated ones are correct. That is less code and fewer chances to get lifetime wrong.",
+    "code": "#include <iostream>\n#include <string>\n#include <utility>\n\nclass Document {\npublic:\n    explicit Document(std::string text) : text(std::move(text)) {}\n    const std::string& body() const { return text; }\nprivate:\n    std::string text;\n};\n\nint main() {\n    Document doc(\"RAII owns the resource\");\n    std::cout << doc.body() << \"\\n\";\n    return 0;\n}",
+    "output": "RAII owns the resource"
+   },
+   {
+    "title": "A move-only class",
+    "body": "Deleting the copy operations makes ownership exclusive explicit: the unique_ptr member cannot be copied, and `std::move` transfers it. This is the type-system version of \"there is only one owner\".",
+    "code": "#include <iostream>\n#include <memory>\n\nclass Buffer {\npublic:\n    Buffer() : data(std::make_unique<int>(7)) {}\n    Buffer(const Buffer&) = delete;\n    Buffer& operator=(const Buffer&) = delete;\n    Buffer(Buffer&&) = default;\n    Buffer& operator=(Buffer&&) = default;\n    int value() const { return *data; }\nprivate:\n    std::unique_ptr<int> data;\n};\n\nint main() {\n    Buffer a;\n    Buffer b = std::move(a);\n    std::cout << b.value() << \"\\n\";\n    return 0;\n}",
+    "output": "7"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A const-correct accessor",
+    "statement": "Write a `Sensor` class holding a reading, with a `reading() const` accessor; print the value for a reading of 36.",
+    "solution": "#include <iostream>\n\nclass Sensor {\npublic:\n    explicit Sensor(int value) : value(value) {}\n    int reading() const { return value; }\nprivate:\n    int value;\n};\n\nint main() {\n    Sensor s(36);\n    std::cout << s.reading() << \"\\n\";\n    return 0;\n}",
+    "expected": "36"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Copying a move-only type",
+    "broken": "#include <memory>\n\nclass Buffer {\npublic:\n    Buffer() : data(std::make_unique<int>(7)) {}\n    Buffer(const Buffer&) = delete;\n    Buffer& operator=(const Buffer&) = delete;\nprivate:\n    std::unique_ptr<int> data;\n};\n\nint main() {\n    Buffer a;\n    Buffer b = a;\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <memory>\n\nclass Buffer {\npublic:\n    Buffer() : data(std::make_unique<int>(7)) {}\n    Buffer(const Buffer&) = delete;\n    Buffer& operator=(const Buffer&) = delete;\n    Buffer(Buffer&&) = default;\n    Buffer& operator=(Buffer&&) = default;\nprivate:\n    std::unique_ptr<int> data;\n};\n\nint main() {\n    Buffer a;\n    Buffer b = std::move(a);\n    std::cout << \"moved\\n\";\n    return 0;\n}",
+    "error": "error: use of deleted function ‘Buffer::Buffer(const Buffer&)’",
+    "fixedOutput": "moved"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does the Rule of Five add to the Rule of Three?",
+    "answer": "Move construction and move assignment, so a resource can be transferred instead of copied. A class that declares one of the five should consider all five."
+   },
+   {
+    "q": "Why is `const` correctness a design tool rather than decoration?",
+    "answer": "It encodes which operations may mutate state, so the compiler rejects accidental writes and the interface documents itself. It also enables passing by const reference without losing the ability to call readers."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "Which member functions does the Rule of Zero avoid writing?",
+    "options": [
+     "Only the constructor",
+     "Destructor, copy and assignment",
+     "Only the destructor",
+     "Only the getters"
+    ],
+    "answer": "Destructor, copy and assignment",
+    "why": "RAII members make the compiler-generated versions correct."
+   },
+   {
+    "q": "What does `= delete` on a copy constructor do?",
+    "options": [
+     "Makes copying slower",
+     "Rejects copying at compile time",
+     "Copies shallowly",
+     "Leaks memory"
+    ],
+    "answer": "Rejects copying at compile time",
+    "why": "Any copy attempt becomes a compile error."
+   }
+  ]
+ }
+}
