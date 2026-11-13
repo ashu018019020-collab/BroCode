@@ -1,0 +1,503 @@
+{
+ "cpp14": {
+  "tasks": [
+   {
+    "title": "Print a base field through a derived object",
+    "statement": "Write `Person(name)` and `Student(name, marks)`; print both fields for Aman, 92.",
+    "solution": "#include <iostream>\n#include <string>\n\nclass Person {\npublic:\n    explicit Person(std::string n) : name(std::move(n)) {}\n    const std::string& get() const { return name; }\nprivate:\n    std::string name;\n};\n\nclass Student : public Person {\npublic:\n    Student(std::string n, int m) : Person(std::move(n)), marks(m) {}\n    int score() const { return marks; }\nprivate:\n    int marks;\n};\n\nint main() {\n    Student s(\"Aman\", 92);\n    std::cout << s.get() << \" \" << s.score() << \"\\n\";\n    return 0;\n}",
+    "expected": "Aman 92"
+   },
+   {
+    "title": "Read a protected member from a derived class",
+    "statement": "Store 7 in a protected base member and print it through a derived getter.",
+    "solution": "#include <iostream>\n\nclass Base {\nprotected:\n    int secret = 7;\n};\n\nclass Derived : public Base {\npublic:\n    int read() const { return secret; }\n};\n\nint main() {\n    Derived d;\n    std::cout << d.read() << \"\\n\";\n    return 0;\n}",
+    "expected": "7"
+   },
+   {
+    "title": "Compose an engine into a car",
+    "statement": "Write `Engine::start()` printing `engine on`, and a `Car` that owns one and calls it.",
+    "solution": "#include <iostream>\n\nclass Engine {\npublic:\n    void start() const { std::cout << \"engine on\\n\"; }\n};\n\nclass Car {\npublic:\n    void drive() const { engine.start(); }\nprivate:\n    Engine engine;\n};\n\nint main() {\n    Car c;\n    c.drive();\n    return 0;\n}",
+    "expected": "engine on"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A derived constructor with no base initializer",
+    "broken": "#include <iostream>\n#include <string>\n\nclass Person {\npublic:\n    explicit Person(std::string n) : name(std::move(n)) {}\nprivate:\n    std::string name;\n};\n\nclass Student : public Person {\npublic:\n    Student(std::string n, int m) : marks(m) {}\nprivate:\n    int marks;\n};\n\nint main() {\n    Student s(\"Aman\", 92);\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n\nclass Person {\npublic:\n    explicit Person(std::string n) : name(std::move(n)) {}\nprivate:\n    std::string name;\n};\n\nclass Student : public Person {\npublic:\n    Student(std::string n, int m) : Person(std::move(n)), marks(m) {}\nprivate:\n    int marks;\n};\n\nint main() {\n    Student s(\"Aman\", 92);\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "error": "error: no matching function for call to ‘Person::Person()’",
+    "fixedOutput": "ok"
+   },
+   {
+    "title": "Private inheritance that blocks the upcast",
+    "broken": "class Base {};\n\nclass Derived : private Base {};\n\nint main() {\n    Derived d;\n    Base* p = &d;\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Base {};\n\nclass Derived : public Base {};\n\nint main() {\n    Derived d;\n    Base* p = &d;\n    std::cout << (p != nullptr) << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘Base’ is an inaccessible base of ‘Derived’",
+    "fixedOutput": "1"
+   }
+  ]
+ },
+ "cpp15": {
+  "tasks": [
+   {
+    "title": "Virtual sound through a base pointer",
+    "statement": "Make `Animal::speak()` virtual and `Dog` override it with `woof`; call it through an `Animal*`.",
+    "solution": "#include <iostream>\n\nclass Animal {\npublic:\n    virtual const char* speak() const { return \"...\"; }\n    virtual ~Animal() = default;\n};\n\nclass Dog : public Animal {\npublic:\n    const char* speak() const override { return \"woof\"; }\n};\n\nint main() {\n    Animal* a = new Dog;\n    std::cout << a->speak() << \"\\n\";\n    delete a;\n    return 0;\n}",
+    "expected": "woof"
+   },
+   {
+    "title": "Area through an abstract base",
+    "statement": "Write a pure virtual `Shape::area()` and a `Circle(2)` override using 3.14; print it with two decimals.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nclass Shape {\npublic:\n    virtual double area() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Circle : public Shape {\npublic:\n    explicit Circle(double r) : radius(r) {}\n    double area() const override { return 3.14 * radius * radius; }\nprivate:\n    double radius;\n};\n\nint main() {\n    Shape* s = new Circle(2);\n    std::cout << std::fixed << std::setprecision(2) << s->area() << \"\\n\";\n    delete s;\n    return 0;\n}",
+    "expected": "12.56"
+   },
+   {
+    "title": "Sum the areas of base pointers",
+    "statement": "Put two `Circle(1)` objects in a vector of `Shape*`, sum their areas and print the integer total.",
+    "solution": "#include <iostream>\n#include <vector>\n\nclass Shape {\npublic:\n    virtual double area() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Circle : public Shape {\npublic:\n    explicit Circle(double r) : radius(r) {}\n    double area() const override { return 3.14 * radius * radius; }\nprivate:\n    double radius;\n};\n\nint main() {\n    std::vector<Shape*> shapes{new Circle(1), new Circle(1)};\n    double total = 0;\n    for (const Shape* s : shapes) total += s->area();\n    std::cout << static_cast<int>(total) << \"\\n\";\n    for (const Shape* s : shapes) delete s;\n    return 0;\n}",
+    "expected": "6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An override with a missing const",
+    "broken": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual double area() const { return 0; }\n    virtual ~Shape() = default;\n};\n\nclass Square : public Shape {\npublic:\n    double area() override { return 9; }\n};\n\nint main() {\n    Square s;\n    std::cout << s.area() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual double area() const { return 0; }\n    virtual ~Shape() = default;\n};\n\nclass Square : public Shape {\npublic:\n    double area() const override { return 9; }\n};\n\nint main() {\n    Square s;\n    std::cout << s.area() << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘double Square::area()’ marked ‘override’, but does not override",
+    "fixedOutput": "9"
+   },
+   {
+    "title": "A derived object sliced into a base value",
+    "broken": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual double area() const { return 0; }\n    virtual ~Shape() = default;\n};\n\nclass Square : public Shape {\npublic:\n    double area() const override { return 9; }\n};\n\nint main() {\n    Square square;\n    Shape sliced = square;\n    std::cout << sliced.area() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual double area() const { return 0; }\n    virtual ~Shape() = default;\n};\n\nclass Square : public Shape {\npublic:\n    double area() const override { return 9; }\n};\n\nint main() {\n    Square square;\n    Shape& view = square;\n    std::cout << view.area() << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 0 — the derived part was sliced off, so the base version ran.",
+    "fixedOutput": "9",
+    "brokenOutput": "0"
+   }
+  ]
+ },
+ "cpp16": {
+  "tasks": [
+   {
+    "title": "Compare two points for equality",
+    "statement": "Overload `operator==` for `Point` and print the comparison of (1,2) and (1,2).",
+    "solution": "#include <iostream>\n\nstruct Point {\n    int x;\n    int y;\n};\n\nbool operator==(const Point& a, const Point& b) {\n    return a.x == b.x && a.y == b.y;\n}\n\nint main() {\n    Point a{1, 2}, b{1, 2};\n    std::cout << (a == b) << \"\\n\";\n    return 0;\n}",
+    "expected": "1"
+   },
+   {
+    "title": "Prefix increment returns the object",
+    "statement": "Overload `operator++` for a counter starting at 5 and print the incremented value.",
+    "solution": "#include <iostream>\n\nclass Counter {\npublic:\n    explicit Counter(int v) : value(v) {}\n    Counter& operator++() {\n        ++value;\n        return *this;\n    }\n    int get() const { return value; }\nprivate:\n    int value;\n};\n\nint main() {\n    Counter c(5);\n    ++c;\n    std::cout << c.get() << \"\\n\";\n    return 0;\n}",
+    "expected": "6"
+   },
+   {
+    "title": "Print a complex number",
+    "statement": "Overload `operator<<` for `Complex{1,2}` so it prints `(1,2)`.",
+    "solution": "#include <iostream>\n#include <ostream>\n\nstruct Complex {\n    int real;\n    int imag;\n};\n\nstd::ostream& operator<<(std::ostream& out, const Complex& c) {\n    return out << \"(\" << c.real << \",\" << c.imag << \")\";\n}\n\nint main() {\n    Complex c{1, 2};\n    std::cout << c << \"\\n\";\n    return 0;\n}",
+    "expected": "(1,2)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An assignment operator that returns void",
+    "broken": "#include <iostream>\n\nstruct Point {\n    int x;\n    int y;\n    void operator=(const Point& other) {\n        x = other.x;\n        y = other.y;\n    }\n};\n\nint main() {\n    Point a{1, 2}, b{3, 4}, c{0, 0};\n    a = b = c;\n    std::cout << a.x << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nstruct Point {\n    int x;\n    int y;\n    Point& operator=(const Point& other) {\n        x = other.x;\n        y = other.y;\n        return *this;\n    }\n};\n\nint main() {\n    Point a{1, 2}, b{3, 4}, c{0, 0};\n    a = b = c;\n    std::cout << a.x << \"\\n\";\n    return 0;\n}",
+    "error": "error: no match for ‘operator=’ (operand types are ‘Point’ and ‘void’)",
+    "fixedOutput": "0"
+   },
+   {
+    "title": "An operator+ that changes its left operand",
+    "broken": "#include <iostream>\n\nstruct Point {\n    int x;\n    int y;\n};\n\nPoint operator+(Point& a, const Point& b) {\n    a.x += b.x;\n    a.y += b.y;\n    return a;\n}\n\nint main() {\n    Point a{1, 2}, b{3, 4};\n    Point c = a + b;\n    std::cout << a.x << \" \" << c.x << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nstruct Point {\n    int x;\n    int y;\n};\n\nPoint operator+(const Point& a, const Point& b) {\n    return {a.x + b.x, a.y + b.y};\n}\n\nint main() {\n    Point a{1, 2}, b{3, 4};\n    Point c = a + b;\n    std::cout << a.x << \" \" << c.x << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 4 4 — the left operand was mutated, though operator+ must leave both operands unchanged.",
+    "fixedOutput": "1 4",
+    "brokenOutput": "4 4"
+   }
+  ]
+ },
+ "cpp17": {
+  "tasks": [
+   {
+    "title": "Sum an array with a template",
+    "statement": "Write `total` as a function template over an array of four ints and print the sum of 1 to 4.",
+    "solution": "#include <iostream>\n\ntemplate <typename T, int N>\nT total(const T (&data)[N]) {\n    T sum{};\n    for (const T& v : data) sum += v;\n    return sum;\n}\n\nint main() {\n    int data[4] = {1, 2, 3, 4};\n    std::cout << total(data) << \"\\n\";\n    return 0;\n}",
+    "expected": "10"
+   },
+   {
+    "title": "A two-type Pair template",
+    "statement": "Write `Pair<A, B>` and print the int 1 and the string `one`.",
+    "solution": "#include <iostream>\n#include <string>\n\ntemplate <typename A, typename B>\nstruct Pair {\n    A first;\n    B second;\n};\n\nint main() {\n    Pair<int, std::string> p{1, \"one\"};\n    std::cout << p.first << \" \" << p.second << \"\\n\";\n    return 0;\n}",
+    "expected": "1 one"
+   },
+   {
+    "title": "Print two different types generically",
+    "statement": "Write a function template `show` and call it with 5 and `x`.",
+    "solution": "#include <iostream>\n\ntemplate <typename A, typename B>\nvoid show(const A& a, const B& b) {\n    std::cout << a << \" \" << b << \"\\n\";\n}\n\nint main() {\n    show(5, \"x\");\n    return 0;\n}",
+    "expected": "5 x"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A template call with no deducible type",
+    "broken": "#include <iostream>\n\ntemplate <typename T>\nT make() { return T{}; }\n\nint main() {\n    std::cout << make() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\ntemplate <typename T>\nT make() { return T{}; }\n\nint main() {\n    std::cout << make<int>() << \"\\n\";\n    return 0;\n}",
+    "error": "error: no matching function for call to ‘make()’",
+    "fixedOutput": "0"
+   },
+   {
+    "title": "A class template used without its argument",
+    "broken": "#include <iostream>\n\ntemplate <typename T>\nclass Stack {\npublic:\n    void push(T) {}\n};\n\nint main() {\n    Stack s;\n    return 0;\n}",
+    "fix": "#include <iostream>\n\ntemplate <typename T>\nclass Stack {\npublic:\n    void push(T) {}\n};\n\nint main() {\n    Stack<int> s;\n    s.push(1);\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "error": "error: class template argument deduction failed:",
+    "fixedOutput": "ok"
+   }
+  ]
+ },
+ "cpp18": {
+  "tasks": [
+   {
+    "title": "Sort a vector from largest to smallest",
+    "statement": "Sort `{1, 4, 2}` descending and print it separated by spaces.",
+    "solution": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 4, 2};\n    std::sort(v.begin(), v.end(), [](int a, int b) { return a > b; });\n    for (int x : v) std::cout << x << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "expected": "4 2 1"
+   },
+   {
+    "title": "Count with a frequency map",
+    "statement": "Count how often `a` appears in `{a, b, a}` and print the count.",
+    "solution": "#include <iostream>\n#include <map>\n#include <string>\n\nint main() {\n    std::map<std::string, int> freq;\n    for (const std::string& w : {\"a\", \"b\", \"a\"}) ++freq[w];\n    std::cout << freq[\"a\"] << \"\\n\";\n    return 0;\n}",
+    "expected": "2"
+   },
+   {
+    "title": "Push and pop a stack",
+    "statement": "Push 1 and 2 onto a `std::stack`, pop once and print the top.",
+    "solution": "#include <iostream>\n#include <stack>\n\nint main() {\n    std::stack<int> s;\n    s.push(1);\n    s.push(2);\n    s.pop();\n    std::cout << s.top() << \"\\n\";\n    return 0;\n}",
+    "expected": "1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "operator[] used on a const map",
+    "broken": "#include <map>\n\nint main() {\n    const std::map<int, int> data{{1, 10}};\n    return data[1];\n}",
+    "fix": "#include <iostream>\n#include <map>\n\nint main() {\n    const std::map<int, int> data{{1, 10}};\n    std::cout << data.at(1) << \"\\n\";\n    return 0;\n}",
+    "error": "error: passing ‘const std::map<int, int>’ as ‘this’ argument discards qualifiers [-fpermissive]",
+    "fixedOutput": "10"
+   },
+   {
+    "title": "at() asked for a key that is not there",
+    "broken": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2};\n    std::cout << v.at(5) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2};\n    if (v.size() > 5) std::cout << v.at(5) << \"\\n\";\n    else std::cout << \"missing\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::out_of_range'",
+    "fixedOutput": "missing"
+   }
+  ]
+ },
+ "cpp19": {
+  "tasks": [
+   {
+    "title": "Find the largest with max_element",
+    "statement": "Print the largest value of `{4, 9, 2}` using `max_element`.",
+    "solution": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{4, 9, 2};\n    std::cout << *std::max_element(v.begin(), v.end()) << \"\\n\";\n    return 0;\n}",
+    "expected": "9"
+   },
+   {
+    "title": "Double every value with transform",
+    "statement": "Transform `{1, 2, 3}` in place by doubling and print it separated by spaces.",
+    "solution": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    std::transform(v.begin(), v.end(), v.begin(), [](int x) { return x * 2; });\n    for (int x : v) std::cout << x << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "expected": "2 4 6"
+   },
+   {
+    "title": "Count the even values",
+    "statement": "Count how many of `{1, 2, 4, 5}` are even and print the count.",
+    "solution": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 4, 5};\n    auto n = std::count_if(v.begin(), v.end(), [](int x) { return x % 2 == 0; });\n    std::cout << n << \"\\n\";\n    return 0;\n}",
+    "expected": "2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "accumulate called without an initial value",
+    "broken": "#include <iostream>\n#include <numeric>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    std::cout << std::accumulate(v.begin(), v.end()) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <numeric>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    std::cout << std::accumulate(v.begin(), v.end(), 0) << \"\\n\";\n    return 0;\n}",
+    "error": "error: no matching function for call to ‘accumulate(std::vector<int>::iterator, std::vector<int>::iterator)’",
+    "fixedOutput": "6"
+   },
+   {
+    "title": "A lambda that captures its sum by value",
+    "broken": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    int sum = 0;\n    std::for_each(v.begin(), v.end(), [sum](int x) mutable { sum += x; });\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    int sum = 0;\n    std::for_each(v.begin(), v.end(), [&sum](int x) { sum += x; });\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 0 — the by-value capture updated a copy, so the outer sum never changed.",
+    "fixedOutput": "6",
+    "brokenOutput": "0"
+   }
+  ]
+ },
+ "cpp20": {
+  "tasks": [
+   {
+    "title": "Catch an out_of_range from at()",
+    "statement": "Read index 5 of a two-element vector inside a try and print `out of range`.",
+    "solution": "#include <iostream>\n#include <stdexcept>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2};\n    try {\n        std::cout << v.at(5) << \"\\n\";\n    } catch (const std::out_of_range&) {\n        std::cout << \"out of range\\n\";\n    }\n    return 0;\n}",
+    "expected": "out of range"
+   },
+   {
+    "title": "Throw and catch a custom exception",
+    "statement": "Define `MyError : std::runtime_error`, throw it with `bad input` and print its `what()`.",
+    "solution": "#include <iostream>\n#include <stdexcept>\n\nstruct MyError : std::runtime_error {\n    explicit MyError(const char* m) : std::runtime_error(m) {}\n};\n\nint main() {\n    try {\n        throw MyError(\"bad input\");\n    } catch (const MyError& e) {\n        std::cout << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "expected": "bad input"
+   },
+   {
+    "title": "Catch an int before a string",
+    "statement": "Throw 7 and catch it in a block that prints `int 7`.",
+    "solution": "#include <iostream>\n\nint main() {\n    try {\n        throw 7;\n    } catch (int code) {\n        std::cout << \"int \" << code << \"\\n\";\n    } catch (...) {\n        std::cout << \"other\\n\";\n    }\n    return 0;\n}",
+    "expected": "int 7"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A derived exception caught by value",
+    "broken": "#include <iostream>\n#include <stdexcept>\n\nstruct MyError : std::runtime_error {\n    explicit MyError() : std::runtime_error(\"base\") {}\n    const char* what() const noexcept override { return \"derived\"; }\n};\n\nint main() {\n    try {\n        throw MyError();\n    } catch (std::exception e) {\n        std::cout << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <stdexcept>\n\nstruct MyError : std::runtime_error {\n    explicit MyError() : std::runtime_error(\"base\") {}\n    const char* what() const noexcept override { return \"derived\"; }\n};\n\nint main() {\n    try {\n        throw MyError();\n    } catch (const std::exception& e) {\n        std::cout << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "error": "Wrong output: base — catching by value sliced the derived exception and lost its what().",
+    "fixedOutput": "derived",
+    "brokenOutput": "std::exception"
+   },
+   {
+    "title": "An exception thrown with no handler",
+    "broken": "#include <iostream>\n\nint main() {\n    throw 7;\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    try {\n        throw 7;\n    } catch (int code) {\n        std::cout << \"caught \" << code << \"\\n\";\n    }\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'int'",
+    "fixedOutput": "caught 7"
+   }
+  ]
+ },
+ "cpp21": {
+  "tasks": [
+   {
+    "title": "Append a second line to a file",
+    "statement": "Write `one` to a file, append `two`, then count the lines you read back.",
+    "solution": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    {\n        std::ofstream out(\"demo.txt\");\n        out << \"one\\n\";\n    }\n    {\n        std::ofstream out(\"demo.txt\", std::ios::app);\n        out << \"two\\n\";\n    }\n    std::ifstream in(\"demo.txt\");\n    std::string line;\n    int count = 0;\n    while (std::getline(in, line)) ++count;\n    std::cout << count << \"\\n\";\n    return 0;\n}",
+    "expected": "2"
+   },
+   {
+    "title": "Count the characters in a file",
+    "statement": "Write `hello` to a file and print how many characters it contains.",
+    "solution": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    {\n        std::ofstream out(\"word.txt\");\n        out << \"hello\";\n    }\n    std::ifstream in(\"word.txt\");\n    std::string text;\n    std::getline(in, text);\n    std::cout << text.size() << \"\\n\";\n    return 0;\n}",
+    "expected": "5"
+   },
+   {
+    "title": "Print a path extension",
+    "statement": "Print the extension of `notes.txt` using `std::filesystem`.",
+    "solution": "#include <filesystem>\n#include <iostream>\n\nint main() {\n    std::filesystem::path p = \"notes.txt\";\n    std::cout << p.extension().string() << \"\\n\";\n    return 0;\n}",
+    "expected": ".txt"
+   }
+  ],
+  "debug": [
+   {
+    "title": "operator>> splitting a full name",
+    "broken": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    {\n        std::ofstream out(\"name.txt\");\n        out << \"Aman Sharma\\n\";\n    }\n    std::ifstream in(\"name.txt\");\n    std::string name;\n    in >> name;\n    std::cout << name << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    {\n        std::ofstream out(\"name.txt\");\n        out << \"Aman Sharma\\n\";\n    }\n    std::ifstream in(\"name.txt\");\n    std::string name;\n    std::getline(in, name);\n    std::cout << name << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: Aman — >> stopped at the space, so the surname was dropped.",
+    "fixedOutput": "Aman Sharma",
+    "brokenOutput": "Aman"
+   },
+   {
+    "title": "fstream used without its header",
+    "broken": "#include <iostream>\n\nint main() {\n    std::ofstream out(\"x.txt\");\n    out << \"x\";\n    return 0;\n}",
+    "fix": "#include <fstream>\n#include <iostream>\n\nint main() {\n    std::ofstream out(\"x.txt\");\n    out << \"x\";\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "error": "error: variable ‘std::ofstream out’ has initializer but incomplete type",
+    "fixedOutput": "ok"
+   }
+  ]
+ },
+ "cpp22": {
+  "tasks": [
+   {
+    "title": "Read an optional with a fallback",
+    "statement": "Return `std::nullopt` from a lookup and print the fallback from `value_or(0)`.",
+    "solution": "#include <iostream>\n#include <optional>\n\nstd::optional<int> find() { return std::nullopt; }\n\nint main() {\n    std::cout << find().value_or(0) << \"\\n\";\n    return 0;\n}",
+    "expected": "0"
+   },
+   {
+    "title": "Print the string inside a variant",
+    "statement": "Store `hi` in a `std::variant<int, std::string>` and print it with `std::get<std::string>`.",
+    "solution": "#include <iostream>\n#include <string>\n#include <variant>\n\nint main() {\n    std::variant<int, std::string> value = std::string(\"hi\");\n    std::cout << std::get<std::string>(value) << \"\\n\";\n    return 0;\n}",
+    "expected": "hi"
+   },
+   {
+    "title": "Unpack a pair with structured bindings",
+    "statement": "Bind a `pair<string, int>` of Aman, 92 to two names and print them.",
+    "solution": "#include <iostream>\n#include <string>\n#include <utility>\n\nint main() {\n    std::pair<std::string, int> student{\"Aman\", 92};\n    auto [name, marks] = student;\n    std::cout << name << \" \" << marks << \"\\n\";\n    return 0;\n}",
+    "expected": "Aman 92"
+   }
+  ],
+  "debug": [
+   {
+    "title": "variant get with the wrong alternative",
+    "broken": "#include <iostream>\n#include <string>\n#include <variant>\n\nint main() {\n    std::variant<int, std::string> value = 42;\n    std::cout << std::get<std::string>(value) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n#include <variant>\n\nint main() {\n    std::variant<int, std::string> value = 42;\n    std::cout << std::get<int>(value) << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::bad_variant_access'",
+    "fixedOutput": "42"
+   },
+   {
+    "title": "any_cast with the wrong type",
+    "broken": "#include <any>\n#include <iostream>\n\nint main() {\n    std::any value = 42;\n    std::cout << std::any_cast<std::string>(value) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <any>\n#include <iostream>\n\nint main() {\n    std::any value = 42;\n    std::cout << std::any_cast<int>(value) << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::bad_any_cast'",
+    "fixedOutput": "42"
+   }
+  ]
+ },
+ "cpp23": {
+  "tasks": [
+   {
+    "title": "Find an index with linear search",
+    "statement": "Find 8 in `{5, 3, 8}` and print its index.",
+    "solution": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{5, 3, 8};\n    int index = -1;\n    for (std::size_t i = 0; i < v.size(); ++i) {\n        if (v[i] == 8) { index = static_cast<int>(i); break; }\n    }\n    std::cout << index << \"\\n\";\n    return 0;\n}",
+    "expected": "2"
+   },
+   {
+    "title": "Sort with insertion sort",
+    "statement": "Sort `{5, 2, 4, 1}` with insertion sort and print it separated by spaces.",
+    "solution": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{5, 2, 4, 1};\n    for (std::size_t i = 1; i < v.size(); ++i) {\n        int key = v[i];\n        int j = static_cast<int>(i) - 1;\n        while (j >= 0 && v[j] > key) {\n            v[j + 1] = v[j];\n            --j;\n        }\n        v[j + 1] = key;\n    }\n    for (int x : v) std::cout << x << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "expected": "1 2 4 5"
+   },
+   {
+    "title": "Pop the top of a vector stack",
+    "statement": "Push 1, 2 and 3 onto a vector used as a stack, pop once and print the new top.",
+    "solution": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> stack;\n    stack.push_back(1);\n    stack.push_back(2);\n    stack.push_back(3);\n    stack.pop_back();\n    std::cout << stack.back() << \"\\n\";\n    return 0;\n}",
+    "expected": "2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Recursion with no stopping condition",
+    "broken": "#include <iostream>\n\nint down(int n) { return down(n - 1); }\n\nint main() {\n    std::cout << down(3) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint down(int n) { return n == 0 ? 0 : down(n - 1); }\n\nint main() {\n    std::cout << down(3) << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null)",
+    "fixedOutput": "0"
+   },
+   {
+    "title": "A comparator that sorts the wrong way",
+    "broken": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{2, 1, 4};\n    std::sort(v.begin(), v.end(), [](int a, int b) { return a > b; });\n    for (int x : v) std::cout << x << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{2, 1, 4};\n    std::sort(v.begin(), v.end());\n    for (int x : v) std::cout << x << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 4 2 1 — the comparator sorted descending while the task needed ascending.",
+    "fixedOutput": "1 2 4",
+    "brokenOutput": "4 2 1"
+   }
+  ]
+ },
+ "cpp24": {
+  "tasks": [
+   {
+    "title": "Join a worker before printing",
+    "statement": "Start a thread that prints `worker`, join it, then print `main`.",
+    "solution": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread t([] { std::cout << \"worker\\n\"; });\n    t.join();\n    std::cout << \"main\\n\";\n    return 0;\n}",
+    "expected": "worker\nmain"
+   },
+   {
+    "title": "Protect a counter with a mutex",
+    "statement": "Two threads each increment a shared counter 1000 times under a mutex; print the total.",
+    "solution": "#include <iostream>\n#include <mutex>\n#include <thread>\n\nint main() {\n    int total = 0;\n    std::mutex lock;\n    auto work = [&] {\n        for (int i = 0; i < 1000; ++i) {\n            std::lock_guard<std::mutex> guard(lock);\n            ++total;\n        }\n    };\n    std::thread a(work), b(work);\n    a.join();\n    b.join();\n    std::cout << total << \"\\n\";\n    return 0;\n}",
+    "expected": "2000"
+   },
+   {
+    "title": "Sum with std::async",
+    "statement": "Run a lambda returning 6 with `std::async` and print its result.",
+    "solution": "#include <future>\n#include <iostream>\n\nint main() {\n    auto result = std::async(std::launch::async, [] { return 1 + 2 + 3; });\n    std::cout << result.get() << \"\\n\";\n    return 0;\n}",
+    "expected": "6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "std::thread used without its header",
+    "broken": "#include <iostream>\n\nint main() {\n    std::thread t([] {});\n    t.join();\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread t([] {});\n    t.join();\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "error": "error: ‘thread’ is not a member of ‘std’",
+    "fixedOutput": "ok"
+   },
+   {
+    "title": "A thread joined twice",
+    "broken": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread t([] {});\n    t.join();\n    t.join();\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread t([] {});\n    t.join();\n    if (t.joinable()) t.join();\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::system_error'",
+    "fixedOutput": "ok"
+   }
+  ]
+ },
+ "cpp25": {
+  "tasks": [
+   {
+    "title": "Release a resource from a destructor",
+    "statement": "Write a guard whose destructor prints `release`, create it in a scope and then print `done`.",
+    "solution": "#include <iostream>\n\nclass Guard {\npublic:\n    ~Guard() { std::cout << \"release\\n\"; }\n};\n\nint main() {\n    { Guard g; }\n    std::cout << \"done\\n\";\n    return 0;\n}",
+    "expected": "release\ndone"
+   },
+   {
+    "title": "Read through a const method",
+    "statement": "Store 5 in a class and print it through a `const` accessor.",
+    "solution": "#include <iostream>\n\nclass Value {\npublic:\n    explicit Value(int v) : v(v) {}\n    int get() const { return v; }\nprivate:\n    int v;\n};\n\nint main() {\n    Value value(5);\n    std::cout << value.get() << \"\\n\";\n    return 0;\n}",
+    "expected": "5"
+   },
+   {
+    "title": "Build an object with a static factory",
+    "statement": "Write a static `make()` that returns a configured object with value 7 and print it.",
+    "solution": "#include <iostream>\n\nclass Config {\npublic:\n    static Config make() { return Config(7); }\n    int get() const { return value; }\nprivate:\n    explicit Config(int v) : value(v) {}\n    int value;\n};\n\nint main() {\n    std::cout << Config::make().get() << \"\\n\";\n    return 0;\n}",
+    "expected": "7"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A const method that writes a member",
+    "broken": "#include <iostream>\n\nclass Counter {\npublic:\n    int value() const { return ++count; }\nprivate:\n    int count = 0;\n};\n\nint main() {\n    Counter c;\n    std::cout << c.value() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Counter {\npublic:\n    void hit() { ++count; }\n    int value() const { return count; }\nprivate:\n    int count = 0;\n};\n\nint main() {\n    Counter c;\n    c.hit();\n    std::cout << c.value() << \"\\n\";\n    return 0;\n}",
+    "error": "error: increment of member ‘Counter::count’ in read-only object",
+    "fixedOutput": "1"
+   },
+   {
+    "title": "A static_assert that is false",
+    "broken": "#include <iostream>\n\nint main() {\n    static_assert(sizeof(int) == 8, \"int must be eight bytes\");\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    static_assert(sizeof(int) >= 2, \"int must be at least two bytes\");\n    std::cout << \"ok\\n\";\n    return 0;\n}",
+    "error": "error: static assertion failed: int must be eight bytes",
+    "fixedOutput": "ok"
+   }
+  ]
+ },
+ "cpp26": {
+  "tasks": [
+   {
+    "title": "Expose one singleton instance",
+    "statement": "Write a `Config::instance()` returning a static object with value 3, and print it.",
+    "solution": "#include <iostream>\n\nclass Config {\npublic:\n    static Config& instance() {\n        static Config one;\n        return one;\n    }\n    int value() const { return 3; }\nprivate:\n    Config() = default;\n};\n\nint main() {\n    std::cout << Config::instance().value() << \"\\n\";\n    return 0;\n}",
+    "expected": "3"
+   },
+   {
+    "title": "Create shapes with a factory",
+    "statement": "Write a factory returning `unique_ptr<Shape>` and print `circle` for a circle.",
+    "solution": "#include <iostream>\n#include <memory>\n#include <string>\n\nclass Shape {\npublic:\n    virtual std::string name() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Circle : public Shape {\npublic:\n    std::string name() const override { return \"circle\"; }\n};\n\nstd::unique_ptr<Shape> makeShape() { return std::make_unique<Circle>(); }\n\nint main() {\n    auto shape = makeShape();\n    std::cout << shape->name() << \"\\n\";\n    return 0;\n}",
+    "expected": "circle"
+   },
+   {
+    "title": "Notify two observers",
+    "statement": "Keep two listener names in a vector and print them separated by a space after `notify`.",
+    "solution": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<std::string> listeners{\"a\", \"b\"};\n    for (const auto& name : listeners) std::cout << name << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "expected": "a b"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A strategy base with no virtual destructor",
+    "broken": "#include <iostream>\n\nclass Strategy {\npublic:\n    ~Strategy() { std::cout << \"base\\n\"; }\n};\n\nclass Fast : public Strategy {\npublic:\n    ~Fast() { std::cout << \"fast\\n\"; }\n};\n\nint main() {\n    Strategy* s = new Fast;\n    delete s;\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Strategy {\npublic:\n    virtual ~Strategy() { std::cout << \"base\\n\"; }\n};\n\nclass Fast : public Strategy {\npublic:\n    ~Fast() override { std::cout << \"fast\\n\"; }\n};\n\nint main() {\n    Strategy* s = new Fast;\n    delete s;\n    return 0;\n}",
+    "error": "Wrong output: base — the non-virtual destructor skipped the derived cleanup.",
+    "fixedOutput": "fast\nbase",
+    "brokenOutput": "base"
+   },
+   {
+    "title": "An empty std::function called",
+    "broken": "#include <functional>\n#include <iostream>\n\nint main() {\n    std::function<int()> task;\n    std::cout << task() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <functional>\n#include <iostream>\n\nint main() {\n    std::function<int()> task;\n    if (task) std::cout << task() << \"\\n\";\n    else std::cout << \"no task\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::bad_function_call'",
+    "fixedOutput": "no task"
+   }
+  ]
+ }
+}

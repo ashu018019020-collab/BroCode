@@ -1,0 +1,509 @@
+{
+ "cpp01": {
+  "tasks": [
+   {
+    "title": "Print three course facts",
+    "statement": "Print `C++ Mastery`, `26 modules` and `g++ 13` on three lines.",
+    "solution": "#include <iostream>\n\nint main() {\n    std::cout << \"C++ Mastery\\n\";\n    std::cout << \"26 modules\\n\";\n    std::cout << \"g++ 13\\n\";\n    return 0;\n}",
+    "expected": "C++ Mastery\n26 modules\ng++ 13"
+   },
+   {
+    "title": "Print a three by three star square",
+    "statement": "Print three lines of three stars each.",
+    "solution": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 3; ++i) std::cout << \"***\\n\";\n    return 0;\n}",
+    "expected": "***\n***\n***"
+   },
+   {
+    "title": "Print two type sizes",
+    "statement": "Print the size of an `int` and a `char`, separated by a space.",
+    "solution": "#include <iostream>\n\nint main() {\n    std::cout << sizeof(int) << \" \" << sizeof(char) << \"\\n\";\n    return 0;\n}",
+    "expected": "4 1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Chained output with a comma",
+    "broken": "#include <iostream>\n\nint main() {\n    std::cout << \"a\", \"b\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    std::cout << \"a\" << \"b\\n\";\n    return 0;\n}",
+    "error": "Wrong output: a — the comma operator discards the second string instead of streaming it.",
+    "fixedOutput": "ab",
+    "brokenOutput": "a"
+   },
+   {
+    "title": "A string literal with no closing quote",
+    "broken": "#include <iostream>\n\nint main() {\n    std::cout << \"hi;\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    std::cout << \"hi\\n\";\n    return 0;\n}",
+    "error": "error: missing terminating \" character",
+    "fixedOutput": "hi"
+   }
+  ]
+ },
+ "cpp02": {
+  "tasks": [
+   {
+    "title": "Echo the last parsed field",
+    "statement": "Parse `12 34 56` with an `istringstream` and print only the third field.",
+    "solution": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream input(\"12 34 56\");\n    int a = 0, b = 0, c = 0;\n    input >> a >> b >> c;\n    std::cout << c << \"\\n\";\n    return 0;\n}",
+    "expected": "56"
+   },
+   {
+    "title": "Zero-pad an identifier",
+    "statement": "Print 42 padded to five digits with leading zeros.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::setfill('0') << std::setw(5) << 42 << \"\\n\";\n    return 0;\n}",
+    "expected": "00042"
+   },
+   {
+    "title": "Print pi to two decimals",
+    "statement": "Print `3.14159` fixed to two decimal places.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << 3.14159 << \"\\n\";\n    return 0;\n}",
+    "expected": "3.14"
+   }
+  ],
+  "debug": [
+   {
+    "title": "getline asked to fill a char array",
+    "broken": "#include <iostream>\n\nint main() {\n    char line[10];\n    std::getline(std::cin, line);\n    std::cout << line << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string line = \"ready\";\n    std::cout << line << \"\\n\";\n    return 0;\n}",
+    "error": "error: no matching function for call to ‘getline(std::istream&, char [10])’",
+    "fixedOutput": "ready"
+   },
+   {
+    "title": "A base manipulator without iomanip",
+    "broken": "#include <iostream>\n\nint main() {\n    std::cout << std::setbase(16) << 255 << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::setbase(16) << 255 << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘setbase’ is not a member of ‘std’",
+    "fixedOutput": "ff"
+   }
+  ]
+ },
+ "cpp03": {
+  "tasks": [
+   {
+    "title": "Print the largest long long",
+    "statement": "Print `std::numeric_limits<long long>::max()`.",
+    "solution": "#include <iostream>\n#include <limits>\n\nint main() {\n    std::cout << std::numeric_limits<long long>::max() << \"\\n\";\n    return 0;\n}",
+    "expected": "9223372036854775807"
+   },
+   {
+    "title": "Cube a number at compile time",
+    "statement": "Print a `constexpr` cube of 3.",
+    "solution": "#include <iostream>\n\nconstexpr int cube(int x) { return x * x * x; }\n\nint main() {\n    std::cout << cube(3) << \"\\n\";\n    return 0;\n}",
+    "expected": "27"
+   },
+   {
+    "title": "Print a char and its code",
+    "statement": "Print `A` and its integer code separated by a space.",
+    "solution": "#include <iostream>\n\nint main() {\n    char letter = 'A';\n    std::cout << letter << \" \" << static_cast<int>(letter) << \"\\n\";\n    return 0;\n}",
+    "expected": "A 65"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A string literal assigned to a bool",
+    "broken": "#include <iostream>\n\nint main() {\n    bool ready = \"false\";\n    std::cout << ready << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    bool ready = false;\n    std::cout << ready << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 1 — a non-null string literal converts to true, so ready was never false.",
+    "fixedOutput": "0",
+    "brokenOutput": "1"
+   },
+   {
+    "title": "A double truncated by an int",
+    "broken": "#include <iostream>\n\nint main() {\n    double price = 3.99;\n    int whole = price;\n    std::cout << whole << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <cmath>\n#include <iostream>\n\nint main() {\n    double price = 3.99;\n    int whole = static_cast<int>(std::lround(price));\n    std::cout << whole << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 3 — the assignment truncated 3.99 instead of rounding it.",
+    "fixedOutput": "4",
+    "brokenOutput": "3"
+   }
+  ]
+ },
+ "cpp04": {
+  "tasks": [
+   {
+    "title": "Print bitwise and or",
+    "statement": "Print `12 & 10` and `12 | 10` separated by a space.",
+    "solution": "#include <iostream>\n\nint main() {\n    std::cout << (12 & 10) << \" \" << (12 | 10) << \"\\n\";\n    return 0;\n}",
+    "expected": "8 14"
+   },
+   {
+    "title": "Swap with XOR",
+    "statement": "Swap 5 and 9 using XOR and print the pair.",
+    "solution": "#include <iostream>\n\nint main() {\n    int a = 5, b = 9;\n    a ^= b;\n    b ^= a;\n    a ^= b;\n    std::cout << a << \" \" << b << \"\\n\";\n    return 0;\n}",
+    "expected": "9 5"
+   },
+   {
+    "title": "Average three marks as a double",
+    "statement": "Print the average of 70, 80 and 90 with one decimal.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    double avg = (70 + 80 + 90) / 3.0;\n    std::cout << std::fixed << std::setprecision(1) << avg << \"\\n\";\n    return 0;\n}",
+    "expected": "80.0"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A modulus by zero",
+    "broken": "#include <iostream>\n\nint main() {\n    int total = 10;\n    int parts = 0;\n    std::cout << total % parts << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int total = 10;\n    int parts = 0;\n    if (parts != 0) std::cout << total % parts << \"\\n\";\n    else std::cout << \"no parts\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null)",
+    "fixedOutput": "no parts"
+   },
+   {
+    "title": "Integer division losing the decimals",
+    "broken": "#include <iostream>\n\nint main() {\n    int marks = 7;\n    std::cout << marks / 2 << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int marks = 7;\n    std::cout << marks / 2.0 << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 3 — both operands are ints, so the decimals were discarded.",
+    "fixedOutput": "3.5",
+    "brokenOutput": "3"
+   }
+  ]
+ },
+ "cpp05": {
+  "tasks": [
+   {
+    "title": "Largest of three numbers",
+    "statement": "Print the largest of 4, 9 and 2.",
+    "solution": "#include <iostream>\n\nint main() {\n    int a = 4, b = 9, c = 2;\n    int best = a > b ? a : b;\n    best = best > c ? best : c;\n    std::cout << best << \"\\n\";\n    return 0;\n}",
+    "expected": "9"
+   },
+   {
+    "title": "Switch on a grade letter",
+    "statement": "Print `good` for B, `average` for C and `other` otherwise.",
+    "solution": "#include <iostream>\n\nint main() {\n    char grade = 'B';\n    switch (grade) {\n        case 'B': std::cout << \"good\\n\"; break;\n        case 'C': std::cout << \"average\\n\"; break;\n        default: std::cout << \"other\\n\";\n    }\n    return 0;\n}",
+    "expected": "good"
+   },
+   {
+    "title": "Classify a sign with a ternary",
+    "statement": "Print `negative`, `zero` or `positive` for -5.",
+    "solution": "#include <iostream>\n\nint main() {\n    int n = -5;\n    std::cout << (n < 0 ? \"negative\" : n == 0 ? \"zero\" : \"positive\") << \"\\n\";\n    return 0;\n}",
+    "expected": "negative"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Two case labels with the same value",
+    "broken": "#include <iostream>\n\nint main() {\n    int n = 1;\n    switch (n) {\n        case 1: std::cout << \"one\\n\"; break;\n        case 1: std::cout << \"again\\n\"; break;\n    }\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int n = 1;\n    switch (n) {\n        case 1: std::cout << \"one\\n\"; break;\n        case 2: std::cout << \"two\\n\"; break;\n    }\n    return 0;\n}",
+    "error": "error: duplicate case value",
+    "fixedOutput": "one"
+   },
+   {
+    "title": "An else-if chain in the wrong order",
+    "broken": "#include <iostream>\n\nint main() {\n    int marks = 95;\n    if (marks >= 50) std::cout << \"pass\\n\";\n    else if (marks >= 90) std::cout << \"distinction\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int marks = 95;\n    if (marks >= 90) std::cout << \"distinction\\n\";\n    else if (marks >= 50) std::cout << \"pass\\n\";\n    return 0;\n}",
+    "error": "Wrong output: pass — the earlier branch swallowed marks above 90.",
+    "fixedOutput": "distinction",
+    "brokenOutput": "pass"
+   }
+  ]
+ },
+ "cpp06": {
+  "tasks": [
+   {
+    "title": "Factorial of six with a loop",
+    "statement": "Print 6! computed in a loop.",
+    "solution": "#include <iostream>\n\nint main() {\n    long long f = 1;\n    for (int i = 2; i <= 6; ++i) f *= i;\n    std::cout << f << \"\\n\";\n    return 0;\n}",
+    "expected": "720"
+   },
+   {
+    "title": "First six Fibonacci numbers",
+    "statement": "Print the first six Fibonacci numbers separated by spaces.",
+    "solution": "#include <iostream>\n\nint main() {\n    int a = 0, b = 1;\n    for (int i = 0; i < 6; ++i) {\n        std::cout << a << \" \";\n        int next = a + b;\n        a = b;\n        b = next;\n    }\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "expected": "0 1 1 2 3 5"
+   },
+   {
+    "title": "Sum the even numbers to ten",
+    "statement": "Add every even number from 1 to 10 and print the total.",
+    "solution": "#include <iostream>\n\nint main() {\n    int sum = 0;\n    for (int i = 1; i <= 10; ++i) if (i % 2 == 0) sum += i;\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "expected": "30"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A for loop whose counter is out of scope",
+    "broken": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 3; ++i);\n    std::cout << i << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 3; ++i) {\n        std::cout << i << \" \";\n    }\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘i’ was not declared in this scope",
+    "fixedOutput": "0 1 2"
+   },
+   {
+    "title": "break used where continue was meant",
+    "broken": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 5; ++i) {\n        if (i == 2) break;\n        std::cout << i << \" \";\n    }\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 5; ++i) {\n        if (i == 2) continue;\n        std::cout << i << \" \";\n    }\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 0 1 — break stopped the loop instead of skipping only i == 2.",
+    "fixedOutput": "0 1 3 4",
+    "brokenOutput": "0 1"
+   }
+  ]
+ },
+ "cpp07": {
+  "tasks": [
+   {
+    "title": "Check whether 29 is prime",
+    "statement": "Write `isPrime(int)` and print `prime` or `composite` for 29.",
+    "solution": "#include <iostream>\n\nbool isPrime(int n) {\n    for (int d = 2; d * d <= n; ++d) if (n % d == 0) return false;\n    return n > 1;\n}\n\nint main() {\n    std::cout << (isPrime(29) ? \"prime\" : \"composite\") << \"\\n\";\n    return 0;\n}",
+    "expected": "prime"
+   },
+   {
+    "title": "Raise two to the tenth",
+    "statement": "Write `power(base, exp)` recursively and print 2 to the 10th.",
+    "solution": "#include <iostream>\n\nlong long power(int base, int exp) {\n    return exp == 0 ? 1 : base * power(base, exp - 1);\n}\n\nint main() {\n    std::cout << power(2, 10) << \"\\n\";\n    return 0;\n}",
+    "expected": "1024"
+   },
+   {
+    "title": "Recursive factorial of five",
+    "statement": "Compute 5! with a recursive function and print it.",
+    "solution": "#include <iostream>\n\nlong long fact(int n) { return n <= 1 ? 1 : n * fact(n - 1); }\n\nint main() {\n    std::cout << fact(5) << \"\\n\";\n    return 0;\n}",
+    "expected": "120"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A call with the wrong argument count",
+    "broken": "#include <iostream>\n\nint add(int a, int b) { return a + b; }\n\nint main() {\n    std::cout << add(3) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint add(int a, int b) { return a + b; }\n\nint main() {\n    std::cout << add(3, 4) << \"\\n\";\n    return 0;\n}",
+    "error": "error: too few arguments to function ‘int add(int, int)’",
+    "fixedOutput": "7"
+   },
+   {
+    "title": "Recursion with no base case",
+    "broken": "#include <iostream>\n\nlong long fact(int n) { return n * fact(n - 1); }\n\nint main() {\n    std::cout << fact(5) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nlong long fact(int n) { return n <= 1 ? 1 : n * fact(n - 1); }\n\nint main() {\n    std::cout << fact(5) << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null)",
+    "fixedOutput": "120"
+   }
+  ]
+ },
+ "cpp08": {
+  "tasks": [
+   {
+    "title": "Reverse a short string",
+    "statement": "Print `code` reversed.",
+    "solution": "#include <algorithm>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"code\";\n    std::reverse(s.begin(), s.end());\n    std::cout << s << \"\\n\";\n    return 0;\n}",
+    "expected": "edoc"
+   },
+   {
+    "title": "Count the words in a sentence",
+    "statement": "Count the words in `C++ is fun` with an `istringstream`.",
+    "solution": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream input(\"C++ is fun\");\n    std::string word;\n    int count = 0;\n    while (input >> word) ++count;\n    std::cout << count << \"\\n\";\n    return 0;\n}",
+    "expected": "3"
+   },
+   {
+    "title": "Uppercase every letter",
+    "statement": "Print `code` in uppercase.",
+    "solution": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"code\";\n    for (char& c : s) c = static_cast<char>(std::toupper(c));\n    std::cout << s << \"\\n\";\n    return 0;\n}",
+    "expected": "CODE"
+   },
+   {
+    "title": "Replace part of a word",
+    "statement": "Turn `cat` into `cut` with `replace`.",
+    "solution": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"cat\";\n    s.replace(1, 1, \"u\");\n    std::cout << s << \"\\n\";\n    return 0;\n}",
+    "expected": "cut"
+   }
+  ],
+  "debug": [
+   {
+    "title": "substr asked for more characters than exist",
+    "broken": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"hi\";\n    std::cout << s.substr(1, 5) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"hi\";\n    std::cout << s.substr(1) << \" \" << s.size() << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: i — substr clamped the count, so the caller never learned the request was too long.",
+    "fixedOutput": "i 2",
+    "brokenOutput": "i"
+   },
+   {
+    "title": "A string initialized from an int",
+    "broken": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = 5;\n    std::cout << s << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = std::to_string(5);\n    std::cout << s << \"\\n\";\n    return 0;\n}",
+    "error": "error: conversion from ‘int’ to non-scalar type ‘std::string’ {aka ‘std::__cxx11::basic_string<char>’} requested",
+    "fixedOutput": "5"
+   }
+  ]
+ },
+ "cpp09": {
+  "tasks": [
+   {
+    "title": "Swap two values through pointers",
+    "statement": "Swap 1 and 2 using a function that takes two `int*`, then print them.",
+    "solution": "#include <iostream>\n\nvoid swap(int* a, int* b) {\n    int t = *a;\n    *a = *b;\n    *b = t;\n}\n\nint main() {\n    int x = 1, y = 2;\n    swap(&x, &y);\n    std::cout << x << \" \" << y << \"\\n\";\n    return 0;\n}",
+    "expected": "2 1"
+   },
+   {
+    "title": "Find the maximum through a pointer",
+    "statement": "Print the largest of `{4, 9, 1}` using pointer traversal.",
+    "solution": "#include <iostream>\n\nint main() {\n    int data[3] = {4, 9, 1};\n    int* p = data;\n    int best = *p;\n    while (p != data + 3) {\n        if (*p > best) best = *p;\n        ++p;\n    }\n    std::cout << best << \"\\n\";\n    return 0;\n}",
+    "expected": "9"
+   },
+   {
+    "title": "Increment a value by reference",
+    "statement": "Write `bump(int&)` that adds one, apply it to 5 and print the result.",
+    "solution": "#include <iostream>\n\nvoid bump(int& value) { ++value; }\n\nint main() {\n    int score = 5;\n    bump(score);\n    std::cout << score << \"\\n\";\n    return 0;\n}",
+    "expected": "6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A reference bound to a literal",
+    "broken": "#include <iostream>\n\nint main() {\n    int& r = 5;\n    std::cout << r << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int value = 5;\n    int& r = value;\n    std::cout << r << \"\\n\";\n    return 0;\n}",
+    "error": "error: cannot bind non-const lvalue reference of type ‘int&’ to an rvalue of type ‘int’",
+    "fixedOutput": "5"
+   },
+   {
+    "title": "A pointer taken to a temporary",
+    "broken": "#include <iostream>\n\nint main() {\n    int* p = &(2 + 3);\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    int sum = 2 + 3;\n    int* p = &sum;\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "error": "error: lvalue required as unary ‘&’ operand",
+    "fixedOutput": "5"
+   }
+  ]
+ },
+ "cpp10": {
+  "tasks": [
+   {
+    "title": "Move ownership of a unique_ptr",
+    "statement": "Create a `unique_ptr<int>` holding 7, move it into a second pointer and print the value.",
+    "solution": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto first = std::make_unique<int>(7);\n    auto second = std::move(first);\n    std::cout << *second << \"\\n\";\n    return 0;\n}",
+    "expected": "7"
+   },
+   {
+    "title": "Count the owners of a shared_ptr",
+    "statement": "Create one `shared_ptr`, copy it, and print `use_count`.",
+    "solution": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto first = std::make_shared<int>(1);\n    auto second = first;\n    std::cout << first.use_count() << \"\\n\";\n    return 0;\n}",
+    "expected": "2"
+   },
+   {
+    "title": "Sum a vector of unique_ptr",
+    "statement": "Own 1 and 2 as `unique_ptr<int>` in a vector and print their sum.",
+    "solution": "#include <iostream>\n#include <memory>\n#include <vector>\n\nint main() {\n    std::vector<std::unique_ptr<int>> values;\n    values.push_back(std::make_unique<int>(1));\n    values.push_back(std::make_unique<int>(2));\n    int sum = 0;\n    for (const auto& v : values) sum += *v;\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "expected": "3"
+   }
+  ],
+  "debug": [
+   {
+    "title": "delete applied to a unique_ptr’s object",
+    "broken": "#include <memory>\n\nint main() {\n    auto p = std::make_unique<int>(5);\n    delete p.get();\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto p = std::make_unique<int>(5);\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — free(): double free detected in tcache 2",
+    "fixedOutput": "5"
+   },
+   {
+    "title": "A default unique_ptr dereferenced",
+    "broken": "#include <iostream>\n#include <memory>\n\nint main() {\n    std::unique_ptr<int> p;\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto p = std::make_unique<int>(0);\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null)",
+    "fixedOutput": "0"
+   }
+  ]
+ },
+ "cpp11": {
+  "tasks": [
+   {
+    "title": "Area of a struct rectangle",
+    "statement": "Define `Rect` with width and height, and print the area of 3 by 4.",
+    "solution": "#include <iostream>\n\nstruct Rect { int width; int height; };\n\nint main() {\n    Rect r{3, 4};\n    std::cout << r.width * r.height << \"\\n\";\n    return 0;\n}",
+    "expected": "12"
+   },
+   {
+    "title": "Print an enum class label",
+    "statement": "Map `Level::High` to `high` with a switch and print it.",
+    "solution": "#include <iostream>\n\nenum class Level { Low, High };\n\nint main() {\n    Level level = Level::High;\n    switch (level) {\n        case Level::Low: std::cout << \"low\\n\"; break;\n        case Level::High: std::cout << \"high\\n\"; break;\n    }\n    return 0;\n}",
+    "expected": "high"
+   },
+   {
+    "title": "Print a nested struct field",
+    "statement": "Define `Address{city}` inside `Student`, then print the city for Pune.",
+    "solution": "#include <iostream>\n#include <string>\n\nstruct Address { std::string city; };\nstruct Student { std::string name; Address address; };\n\nint main() {\n    Student s{\"Aman\", {\"Pune\"}};\n    std::cout << s.address.city << \"\\n\";\n    return 0;\n}",
+    "expected": "Pune"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A struct body without its semicolon",
+    "broken": "#include <iostream>\n\nstruct Point { int x; int y; }\n\nint main() {\n    Point p{1, 2};\n    std::cout << p.x << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nint main() {\n    Point p{1, 2};\n    std::cout << p.x << \"\\n\";\n    return 0;\n}",
+    "error": "error: expected ‘;’ after struct definition",
+    "fixedOutput": "1"
+   },
+   {
+    "title": "An enum class compared with an int",
+    "broken": "#include <iostream>\n\nenum class Level { Low, High };\n\nint main() {\n    Level level = Level::High;\n    if (level == 1) std::cout << \"high\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nenum class Level { Low, High };\n\nint main() {\n    Level level = Level::High;\n    if (level == Level::High) std::cout << \"high\\n\";\n    return 0;\n}",
+    "error": "error: no match for ‘operator==’ (operand types are ‘Level’ and ‘int’)",
+    "fixedOutput": "high"
+   }
+  ]
+ },
+ "cpp12": {
+  "tasks": [
+   {
+    "title": "Guard a withdrawal",
+    "statement": "Write a class with balance 100 whose `withdraw` ignores an amount larger than the balance; print the balance after withdrawing 200.",
+    "solution": "#include <iostream>\n\nclass Account {\npublic:\n    explicit Account(int start) : balance(start) {}\n    void withdraw(int amount) { if (amount <= balance) balance -= amount; }\n    int get() const { return balance; }\nprivate:\n    int balance;\n};\n\nint main() {\n    Account a(100);\n    a.withdraw(200);\n    std::cout << a.get() << \"\\n\";\n    return 0;\n}",
+    "expected": "100"
+   },
+   {
+    "title": "Area of a circle class",
+    "statement": "Write a `Circle` class with radius 2 and print its area with two decimals.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nclass Circle {\npublic:\n    explicit Circle(double r) : radius(r) {}\n    double area() const { return 3.14159 * radius * radius; }\nprivate:\n    double radius;\n};\n\nint main() {\n    Circle c(2);\n    std::cout << std::fixed << std::setprecision(2) << c.area() << \"\\n\";\n    return 0;\n}",
+    "expected": "12.57"
+   },
+   {
+    "title": "Count objects with a static member",
+    "statement": "Create two objects of a class with a static counter and print the count.",
+    "solution": "#include <iostream>\n\nclass Item {\npublic:\n    Item() { ++count; }\n    static int count;\n};\n\nint Item::count = 0;\n\nint main() {\n    Item a, b;\n    std::cout << Item::count << \"\\n\";\n    return 0;\n}",
+    "expected": "2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A non-const method called on a const object",
+    "broken": "#include <iostream>\n\nclass Counter {\npublic:\n    void hit() { ++count; }\n    int value() { return count; }\nprivate:\n    int count = 0;\n};\n\nint main() {\n    const Counter c;\n    std::cout << c.value() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Counter {\npublic:\n    void hit() { ++count; }\n    int value() const { return count; }\nprivate:\n    int count = 0;\n};\n\nint main() {\n    const Counter c;\n    std::cout << c.value() << \"\\n\";\n    return 0;\n}",
+    "error": "error: passing ‘const Counter’ as ‘this’ argument discards qualifiers [-fpermissive]",
+    "fixedOutput": "0"
+   },
+   {
+    "title": "A private member read outside the class",
+    "broken": "#include <iostream>\n\nclass Point {\n    int x = 1;\n};\n\nint main() {\n    Point p;\n    std::cout << p.x << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Point {\npublic:\n    int get() const { return x; }\nprivate:\n    int x = 1;\n};\n\nint main() {\n    Point p;\n    std::cout << p.get() << \"\\n\";\n    return 0;\n}",
+    "error": "error: ‘int Point::x’ is private within this context",
+    "fixedOutput": "1"
+   }
+  ]
+ },
+ "cpp13": {
+  "tasks": [
+   {
+    "title": "Two constructors for one class",
+    "statement": "Write `Box()` setting 0 and `Box(int)` setting the argument; print both.",
+    "solution": "#include <iostream>\n\nclass Box {\npublic:\n    Box() : value(0) {}\n    explicit Box(int v) : value(v) {}\n    int get() const { return value; }\nprivate:\n    int value;\n};\n\nint main() {\n    Box a, b(5);\n    std::cout << a.get() << \" \" << b.get() << \"\\n\";\n    return 0;\n}",
+    "expected": "0 5"
+   },
+   {
+    "title": "Print from a destructor",
+    "statement": "Create an object in a nested scope whose destructor prints `bye`, then print `done`.",
+    "solution": "#include <iostream>\n\nclass Guard {\npublic:\n    ~Guard() { std::cout << \"bye\\n\"; }\n};\n\nint main() {\n    { Guard g; }\n    std::cout << \"done\\n\";\n    return 0;\n}",
+    "expected": "bye\ndone"
+   },
+   {
+    "title": "Count copies through a copy constructor",
+    "statement": "Write a class with a copy constructor that counts copies; copy one object and print the count.",
+    "solution": "#include <iostream>\n\nclass Copyable {\npublic:\n    Copyable() = default;\n    Copyable(const Copyable&) { ++copies; }\n    static int copies;\n};\n\nint Copyable::copies = 0;\n\nint main() {\n    Copyable a;\n    Copyable b = a;\n    std::cout << Copyable::copies << \"\\n\";\n    return 0;\n}",
+    "expected": "1"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A const member assigned in the constructor body",
+    "broken": "#include <iostream>\n\nclass Box {\npublic:\n    Box(int v) { value = v; }\n    int get() const { return value; }\nprivate:\n    const int value;\n};\n\nint main() {\n    Box b(5);\n    std::cout << b.get() << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Box {\npublic:\n    explicit Box(int v) : value(v) {}\n    int get() const { return value; }\nprivate:\n    const int value;\n};\n\nint main() {\n    Box b(5);\n    std::cout << b.get() << \"\\n\";\n    return 0;\n}",
+    "error": "error: uninitialized const member in ‘const int’ [-fpermissive]",
+    "fixedOutput": "5"
+   },
+   {
+    "title": "An array of objects with no default constructor",
+    "broken": "#include <iostream>\n\nclass Box {\npublic:\n    explicit Box(int v) : value(v) {}\n    int get() const { return value; }\nprivate:\n    int value;\n};\n\nint main() {\n    Box boxes[2];\n    return boxes[0].get();\n}",
+    "fix": "#include <iostream>\n\nclass Box {\npublic:\n    Box() : value(0) {}\n    explicit Box(int v) : value(v) {}\n    int get() const { return value; }\nprivate:\n    int value;\n};\n\nint main() {\n    Box boxes[2];\n    std::cout << boxes[0].get() << \"\\n\";\n    return 0;\n}",
+    "error": "error: no matching function for call to ‘Box::Box()’",
+    "fixedOutput": "0"
+   }
+  ]
+ }
+}

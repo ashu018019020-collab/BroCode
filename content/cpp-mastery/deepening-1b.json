@@ -1,5 +1,141 @@
 {
+ "cpp09": {
+  "topics": [
+   {
+    "title": "std::array knows its own size",
+    "body": "A `std::array` carries its length in the type, so `size()` is a constant and `at()` checks the index and throws instead of reading past the end.",
+    "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> marks{60, 70, 80, 90};\n    std::cout << marks.size() << \" \" << marks.at(2) << \"\\n\";\n    return 0;\n}",
+    "output": "4 80"
+   },
+   {
+    "title": "Array decay loses the length",
+    "body": "Passing a C array to a function passes a pointer to its first element, so `sizeof` inside the function measures the pointer, not the array. The length has to travel as a separate parameter or be fixed in the type.",
+    "code": "#include <iostream>\n\nint count(int data[]) { return sizeof(data) / sizeof(data[0]); }\n\nint main() {\n    int data[6] = {1, 2, 3, 4, 5, 6};\n    std::cout << sizeof(data) / sizeof(data[0]) << \" \" << count(data) << \"\\n\";\n    return 0;\n}",
+    "output": "6 2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A std::array passed by value",
+    "broken": "#include <array>\n#include <iostream>\n\nvoid setFirst(std::array<int, 3> data) { data[0] = 9; }\n\nint main() {\n    std::array<int, 3> data{1, 2, 3};\n    setFirst(data);\n    std::cout << data[0] << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <array>\n#include <iostream>\n\nvoid setFirst(std::array<int, 3>& data) { data[0] = 9; }\n\nint main() {\n    std::array<int, 3> data{1, 2, 3};\n    setFirst(data);\n    std::cout << data[0] << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 1 — the array was copied, so the caller’s element is unchanged.",
+    "fixedOutput": "9",
+    "brokenOutput": "1"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Reverse an array in place",
+    "statement": "Reverse `{1, 2, 3, 4, 5}` by swapping from both ends, then print the elements separated by spaces.",
+    "solution": "#include <iostream>\n\nint main() {\n    int data[5] = {1, 2, 3, 4, 5};\n    for (int i = 0, j = 4; i < j; ++i, --j) {\n        int t = data[i];\n        data[i] = data[j];\n        data[j] = t;\n    }\n    for (int v : data) std::cout << v << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "expected": "5 4 3 2 1"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why does `std::array` not decay when passed to a function?",
+    "answer": "It is a class object, not a raw array, so passing it by value copies the whole array and passing by reference keeps its type and length. That is why the size is still available inside the callee."
+   },
+   {
+    "q": "When is `std::vector` the better choice than `std::array`?",
+    "answer": "When the element count is decided at runtime or must grow. `std::array` is for a fixed compile-time size and avoids a heap allocation entirely."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What does `sizeof(data) / sizeof(data[0])` compute inside `main` for `int data[6]`?",
+    "options": [
+     "The pointer size",
+     "6",
+     "24",
+     "Undefined"
+    ],
+    "answer": "6",
+    "why": "The array is still an array there, so the division gives the element count."
+   },
+   {
+    "q": "What does `std::array::at()` do that `operator[]` does not?",
+    "options": [
+     "Returns a copy",
+     "Checks the index and throws when out of range",
+     "Sorts the array",
+     "Grows the array"
+    ],
+    "answer": "Checks the index and throws when out of range",
+    "why": "`at` is bounds-checked; `operator[]` is not."
+   }
+  ]
+ },
  "cpp10": {
+  "topics": [
+   {
+    "title": "split a string with find and substr",
+    "body": "`find` returns the position of a character or `std::string::npos`, and `substr(pos, len)` copies a slice. Combining them splits a record without a regular expression.",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string mail = \"aman@brocode.dev\";\n    auto at = mail.find('@');\n    std::cout << mail.substr(0, at) << \" | \" << mail.substr(at + 1) << \"\\n\";\n    return 0;\n}",
+    "output": "aman | brocode.dev"
+   },
+   {
+    "title": "string_view is a non-owning window",
+    "body": "`std::string_view` stores a pointer and a length, so taking a substring or passing it to a function copies no characters. It is valid only while the underlying string is alive.",
+    "code": "#include <iostream>\n#include <string>\n#include <string_view>\n\nint main() {\n    std::string text = \"pointers and references\";\n    std::string_view view(text);\n    std::cout << view.substr(0, 8) << \" \" << view.size() << \"\\n\";\n    return 0;\n}",
+    "output": "pointers 23"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Comparing character arrays with ==",
+    "broken": "#include <iostream>\n\nint main() {\n    char a[] = \"hi\";\n    char b[] = \"hi\";\n    std::cout << (a == b) << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"hi\";\n    std::string b = \"hi\";\n    std::cout << (a == b) << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 0 — comparing two char arrays compares their addresses, not their text.",
+    "fixedOutput": "1",
+    "brokenOutput": "0"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Count the vowels",
+    "statement": "Count the vowels in `programming` and print the total.",
+    "solution": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string word = \"programming\";\n    int count = 0;\n    for (char c : word) {\n        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u') ++count;\n    }\n    std::cout << count << \"\\n\";\n    return 0;\n}",
+    "expected": "3"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does `std::string::npos` mean?",
+    "answer": "It is the value returned by `find` when nothing matched, defined as the largest representable size type. Comparing against it is the check, not comparing against `-1` by hand."
+   },
+   {
+    "q": "When is `std::string_view` unsafe?",
+    "answer": "When it outlives the string it points into, or when that string reallocates. It owns nothing, so a dangling view reads freed memory with no warning."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What does `mail.substr(0, at)` return when `at` is the position of `@`?",
+    "options": [
+     "The domain",
+     "The local part before @",
+     "The whole address",
+     "An empty string"
+    ],
+    "answer": "The local part before @",
+    "why": "`substr` starts at 0 and copies `at` characters, which stops before the @."
+   },
+   {
+    "q": "Which type stores a pointer and a length without owning characters?",
+    "options": [
+     "std::string",
+     "std::string_view",
+     "char*",
+     "std::vector<char>"
+    ],
+    "answer": "std::string_view",
+    "why": "A view is a non-owning window over existing characters."
+   }
+  ]
+ },
+ "cpp11": {
   "topics": [
    {
     "title": "A reference is another name for one object",
@@ -14,14 +150,6 @@
     "output": "1 8"
    }
   ],
-  "tasks": [
-   {
-    "title": "Sum an array through a pointer",
-    "statement": "Walk `{2, 4, 6}` with a pointer from the first element to one past the last, and print the total.",
-    "solution": "#include <iostream>\n\nint main() {\n    int data[3] = {2, 4, 6};\n    int* p = data;\n    int* end = data + 3;\n    int sum = 0;\n    while (p != end) {\n        sum += *p;\n        ++p;\n    }\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
-    "expected": "12"
-   }
-  ],
   "debug": [
    {
     "title": "Dereferencing a null pointer",
@@ -29,6 +157,14 @@
     "fix": "#include <iostream>\n\nint main() {\n    int value = 7;\n    int* p = &value;\n    if (p != nullptr) std::cout << *p << \"\\n\";\n    return 0;\n}",
     "error": "the program failed at runtime (exit null)",
     "fixedOutput": "7"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sum an array through a pointer",
+    "statement": "Walk `{2, 4, 6}` with a pointer from the first element to one past the last, and print the total.",
+    "solution": "#include <iostream>\n\nint main() {\n    int data[3] = {2, 4, 6};\n    int* p = data;\n    int* end = data + 3;\n    int sum = 0;\n    while (p != end) {\n        sum += *p;\n        ++p;\n    }\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "expected": "12"
    }
   ],
   "interview": [
@@ -66,7 +202,7 @@
    }
   ]
  },
- "cpp11": {
+ "cpp12": {
   "topics": [
    {
     "title": "unique_ptr frees itself",
@@ -81,14 +217,6 @@
     "output": "2 7"
    }
   ],
-  "tasks": [
-   {
-    "title": "Own a dynamic array safely",
-    "statement": "Allocate four ints with `make_unique<int[]>`, fill them with 1 to 4, sum them and print the total.",
-    "solution": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto data = std::make_unique<int[]>(4);\n    for (int i = 0; i < 4; ++i) data[i] = i + 1;\n    int sum = 0;\n    for (int i = 0; i < 4; ++i) sum += data[i];\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
-    "expected": "10"
-   }
-  ],
   "debug": [
    {
     "title": "A raw new handed to a unique_ptr",
@@ -96,6 +224,14 @@
     "fix": "#include <iostream>\n#include <memory>\n\nint main() {\n    std::unique_ptr<int> p = std::make_unique<int>(5);\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
     "error": "error: conversion from ‘int*’ to non-scalar type ‘std::unique_ptr<int>’ requested",
     "fixedOutput": "5"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Own a dynamic array safely",
+    "statement": "Allocate four ints with `make_unique<int[]>`, fill them with 1 to 4, sum them and print the total.",
+    "solution": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto data = std::make_unique<int[]>(4);\n    for (int i = 0; i < 4; ++i) data[i] = i + 1;\n    int sum = 0;\n    for (int i = 0; i < 4; ++i) sum += data[i];\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "expected": "10"
    }
   ],
   "interview": [
@@ -133,7 +269,7 @@
    }
   ]
  },
- "cpp12": {
+ "cpp13": {
   "topics": [
    {
     "title": "enum class keeps its names inside the enum",
@@ -148,14 +284,6 @@
     "output": "Aman 92"
    }
   ],
-  "tasks": [
-   {
-    "title": "Sum marks in a struct array",
-    "statement": "Define a `Student` struct with a name and marks; create three students and print the total marks.",
-    "solution": "#include <iostream>\n#include <string>\n\nstruct Student {\n    std::string name;\n    int marks;\n};\n\nint main() {\n    Student roster[3] = {{\"Aman\", 92}, {\"Riya\", 88}, {\"Kiran\", 75}};\n    int total = 0;\n    for (const Student& s : roster) total += s.marks;\n    std::cout << total << \"\\n\";\n    return 0;\n}",
-    "expected": "255"
-   }
-  ],
   "debug": [
    {
     "title": "A scoped enum used as an int",
@@ -163,6 +291,14 @@
     "fix": "#include <iostream>\n\nenum class Color { Red };\n\nint main() {\n    int c = static_cast<int>(Color::Red);\n    std::cout << c << \"\\n\";\n    return 0;\n}",
     "error": "error: cannot convert ‘Color’ to ‘int’ in initialization",
     "fixedOutput": "0"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sum marks in a struct array",
+    "statement": "Define a `Student` struct with a name and marks; create three students and print the total marks.",
+    "solution": "#include <iostream>\n#include <string>\n\nstruct Student {\n    std::string name;\n    int marks;\n};\n\nint main() {\n    Student roster[3] = {{\"Aman\", 92}, {\"Riya\", 88}, {\"Kiran\", 75}};\n    int total = 0;\n    for (const Student& s : roster) total += s.marks;\n    std::cout << total << \"\\n\";\n    return 0;\n}",
+    "expected": "255"
    }
   ],
   "interview": [
@@ -200,7 +336,7 @@
    }
   ]
  },
- "cpp13": {
+ "cpp14": {
   "topics": [
    {
     "title": "A class enforces its invariant",
@@ -215,14 +351,6 @@
     "output": "1"
    }
   ],
-  "tasks": [
-   {
-    "title": "A rectangle with area and perimeter",
-    "statement": "Write a `Rectangle` class with width and height, and member functions `area()` and `perimeter()`; print both for 3 by 4.",
-    "solution": "#include <iostream>\n\nclass Rectangle {\npublic:\n    Rectangle(int w, int h) : width(w), height(h) {}\n    int area() const { return width * height; }\n    int perimeter() const { return 2 * (width + height); }\nprivate:\n    int width;\n    int height;\n};\n\nint main() {\n    Rectangle r(3, 4);\n    std::cout << r.area() << \" \" << r.perimeter() << \"\\n\";\n    return 0;\n}",
-    "expected": "12 14"
-   }
-  ],
   "debug": [
    {
     "title": "Members left private by default",
@@ -230,6 +358,14 @@
     "fix": "#include <iostream>\n\nclass Point {\npublic:\n    int x = 1;\n};\n\nint main() {\n    Point p;\n    std::cout << p.x << \"\\n\";\n    return 0;\n}",
     "error": "error: ‘int Point::x’ is private within this context",
     "fixedOutput": "1"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A rectangle with area and perimeter",
+    "statement": "Write a `Rectangle` class with width and height, and member functions `area()` and `perimeter()`; print both for 3 by 4.",
+    "solution": "#include <iostream>\n\nclass Rectangle {\npublic:\n    Rectangle(int w, int h) : width(w), height(h) {}\n    int area() const { return width * height; }\n    int perimeter() const { return 2 * (width + height); }\nprivate:\n    int width;\n    int height;\n};\n\nint main() {\n    Rectangle r(3, 4);\n    std::cout << r.area() << \" \" << r.perimeter() << \"\\n\";\n    return 0;\n}",
+    "expected": "12 14"
    }
   ],
   "interview": [
@@ -267,7 +403,7 @@
    }
   ]
  },
- "cpp14": {
+ "cpp15": {
   "topics": [
    {
     "title": "Initialization lists run before the body",
@@ -282,14 +418,6 @@
     "output": "0 5"
    }
   ],
-  "tasks": [
-   {
-    "title": "Construct with defaults and arguments",
-    "statement": "Write a `Student` class whose default constructor sets marks to 0 and whose parameterized constructor takes marks; print both objects.",
-    "solution": "#include <iostream>\n\nclass Student {\npublic:\n    Student() : marks(0) {}\n    explicit Student(int m) : marks(m) {}\n    int get() const { return marks; }\nprivate:\n    int marks;\n};\n\nint main() {\n    Student a;\n    Student b(88);\n    std::cout << a.get() << \" \" << b.get() << \"\\n\";\n    return 0;\n}",
-    "expected": "0 88"
-   }
-  ],
   "debug": [
    {
     "title": "A constructor with the wrong name",
@@ -297,6 +425,14 @@
     "fix": "#include <iostream>\n\nclass Account {\npublic:\n    Account() { std::cout << \"constructed\\n\"; }\n};\n\nint main() {\n    Account a;\n    return 0;\n}",
     "error": "error: ISO C++ forbids declaration of ‘account’ with no type [-fpermissive]",
     "fixedOutput": "constructed"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Construct with defaults and arguments",
+    "statement": "Write a `Student` class whose default constructor sets marks to 0 and whose parameterized constructor takes marks; print both objects.",
+    "solution": "#include <iostream>\n\nclass Student {\npublic:\n    Student() : marks(0) {}\n    explicit Student(int m) : marks(m) {}\n    int get() const { return marks; }\nprivate:\n    int marks;\n};\n\nint main() {\n    Student a;\n    Student b(88);\n    std::cout << a.get() << \" \" << b.get() << \"\\n\";\n    return 0;\n}",
+    "expected": "0 88"
    }
   ],
   "interview": [
@@ -334,7 +470,7 @@
    }
   ]
  },
- "cpp15": {
+ "cpp16": {
   "topics": [
    {
     "title": "Construction runs base before derived",
@@ -349,14 +485,6 @@
     "output": "engine on"
    }
   ],
-  "tasks": [
-   {
-    "title": "Forward arguments to a base constructor",
-    "statement": "Write `Person(name)` and `Student(name, marks)` where `Student` passes the name to `Person`; print both fields.",
-    "solution": "#include <iostream>\n#include <string>\n\nclass Person {\npublic:\n    explicit Person(std::string n) : name(std::move(n)) {}\n    const std::string& get() const { return name; }\nprivate:\n    std::string name;\n};\n\nclass Student : public Person {\npublic:\n    Student(std::string n, int m) : Person(std::move(n)), marks(m) {}\n    int score() const { return marks; }\nprivate:\n    int marks;\n};\n\nint main() {\n    Student s(\"Aman\", 92);\n    std::cout << s.get() << \" \" << s.score() << \"\\n\";\n    return 0;\n}",
-    "expected": "Aman 92"
-   }
-  ],
   "debug": [
    {
     "title": "A private base member read by the derived class",
@@ -364,6 +492,14 @@
     "fix": "class Base {\nprotected:\n    int secret = 7;\n};\n\nclass Derived : public Base {\npublic:\n    int read() const { return secret; }\n};\n\n#include <iostream>\n\nint main() {\n    Derived d;\n    std::cout << d.read() << \"\\n\";\n    return 0;\n}",
     "error": "error: ‘int Base::secret’ is private within this context",
     "fixedOutput": "7"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Forward arguments to a base constructor",
+    "statement": "Write `Person(name)` and `Student(name, marks)` where `Student` passes the name to `Person`; print both fields.",
+    "solution": "#include <iostream>\n#include <string>\n\nclass Person {\npublic:\n    explicit Person(std::string n) : name(std::move(n)) {}\n    const std::string& get() const { return name; }\nprivate:\n    std::string name;\n};\n\nclass Student : public Person {\npublic:\n    Student(std::string n, int m) : Person(std::move(n)), marks(m) {}\n    int score() const { return marks; }\nprivate:\n    int marks;\n};\n\nint main() {\n    Student s(\"Aman\", 92);\n    std::cout << s.get() << \" \" << s.score() << \"\\n\";\n    return 0;\n}",
+    "expected": "Aman 92"
    }
   ],
   "interview": [
@@ -401,7 +537,7 @@
    }
   ]
  },
- "cpp16": {
+ "cpp17": {
   "topics": [
    {
     "title": "virtual makes the call wait for runtime",
@@ -416,14 +552,6 @@
     "output": "derived\nbase"
    }
   ],
-  "tasks": [
-   {
-    "title": "Area through a base pointer",
-    "statement": "Create `Shape` with a pure virtual `area()` and a `Circle(2)` override using 3.14; call it through a base pointer and print with two decimals.",
-    "solution": "#include <iomanip>\n#include <iostream>\n\nclass Shape {\npublic:\n    virtual double area() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Circle : public Shape {\npublic:\n    explicit Circle(double r) : radius(r) {}\n    double area() const override { return 3.14 * radius * radius; }\nprivate:\n    double radius;\n};\n\nint main() {\n    Shape* shape = new Circle(2);\n    std::cout << std::fixed << std::setprecision(2) << shape->area() << \"\\n\";\n    delete shape;\n    return 0;\n}",
-    "expected": "12.56"
-   }
-  ],
   "debug": [
    {
     "title": "A base destructor that is not virtual",
@@ -432,6 +560,14 @@
     "error": "Wrong output: base — the non-virtual base destructor skips the derived destructor.",
     "fixedOutput": "derived\nbase",
     "brokenOutput": "base"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Area through a base pointer",
+    "statement": "Create `Shape` with a pure virtual `area()` and a `Circle(2)` override using 3.14; call it through a base pointer and print with two decimals.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nclass Shape {\npublic:\n    virtual double area() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Circle : public Shape {\npublic:\n    explicit Circle(double r) : radius(r) {}\n    double area() const override { return 3.14 * radius * radius; }\nprivate:\n    double radius;\n};\n\nint main() {\n    Shape* shape = new Circle(2);\n    std::cout << std::fixed << std::setprecision(2) << shape->area() << \"\\n\";\n    delete shape;\n    return 0;\n}",
+    "expected": "12.56"
    }
   ],
   "interview": [
@@ -466,140 +602,6 @@
     ],
     "answer": "Checks that a virtual function is actually overridden",
     "why": "It turns a signature mismatch into a compile error."
-   }
-  ]
- },
- "cpp17": {
-  "topics": [
-   {
-    "title": "operator+ as a free function",
-    "body": "A free `operator+` takes both operands explicitly, so it works when the left operand is not the class type. Returning by value keeps the operands unchanged.",
-    "code": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nPoint operator+(const Point& a, const Point& b) { return {a.x + b.x, a.y + b.y}; }\n\nint main() {\n    Point p{1, 2}, q{3, 4};\n    Point r = p + q;\n    std::cout << r.x << \" \" << r.y << \"\\n\";\n    return 0;\n}",
-    "output": "4 6"
-   },
-   {
-    "title": "operator<< returns the stream",
-    "body": "Returning `std::ostream&` lets `std::cout << p << \" done\"` chain, because each call feeds the same stream to the next. Returning void breaks every chained expression.",
-    "code": "#include <iostream>\n#include <ostream>\n\nstruct Point { int x; int y; };\n\nstd::ostream& operator<<(std::ostream& out, const Point& p) {\n    return out << \"(\" << p.x << \",\" << p.y << \")\";\n}\n\nint main() {\n    Point p{2, 5};\n    std::cout << p << \" done\\n\";\n    return 0;\n}",
-    "output": "(2,5) done"
-   }
-  ],
-  "tasks": [
-   {
-    "title": "Add two complex numbers",
-    "statement": "Write a `Complex` struct with `real` and `imag`, overload `+`, and print `3+4i` plus `1+2i` as `4 6`.",
-    "solution": "#include <iostream>\n\nstruct Complex {\n    int real;\n    int imag;\n};\n\nComplex operator+(const Complex& a, const Complex& b) {\n    return {a.real + b.real, a.imag + b.imag};\n}\n\nint main() {\n    Complex a{3, 4}, b{1, 2};\n    Complex c = a + b;\n    std::cout << c.real << \" \" << c.imag << \"\\n\";\n    return 0;\n}",
-    "expected": "4 6"
-   }
-  ],
-  "debug": [
-   {
-    "title": "Stream insertion that returns void",
-    "broken": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nvoid operator<<(std::ostream& out, const Point& p) {\n    out << \"(\" << p.x << \",\" << p.y << \")\";\n}\n\nint main() {\n    Point p{1, 2};\n    std::cout << p << \" done\\n\";\n    return 0;\n}",
-    "fix": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nstd::ostream& operator<<(std::ostream& out, const Point& p) {\n    return out << \"(\" << p.x << \",\" << p.y << \")\";\n}\n\nint main() {\n    Point p{1, 2};\n    std::cout << p << \" done\\n\";\n    return 0;\n}",
-    "error": "error: invalid operands of types ‘void’ and ‘const char [7]’ to binary ‘operator<<’",
-    "fixedOutput": "(1,2) done"
-   }
-  ],
-  "interview": [
-   {
-    "q": "Which operators cannot be overloaded?",
-    "answer": "`::`, `.`, `.*`, `?:` and `sizeof`. Everything else that takes at least one class-type operand can be overloaded, though doing so should preserve the operator’s expected meaning."
-   },
-   {
-    "q": "Why is `operator=` usually a member function?",
-    "answer": "It needs access to the object being assigned and must return `*this` by reference for chaining. The compiler-generated copy assignment is a member for the same reason."
-   }
-  ],
-  "mcq": [
-   {
-    "q": "What should `operator<<` for a stream return?",
-    "options": [
-     "void",
-     "std::ostream&",
-     "The class by value",
-     "bool"
-    ],
-    "answer": "std::ostream&",
-    "why": "Returning the stream is what makes chained insertion work."
-   },
-   {
-    "q": "Can `operator+` be a non-member function?",
-    "options": [
-     "No",
-     "Yes, taking both operands",
-     "Only for integers",
-     "Only with friend"
-    ],
-    "answer": "Yes, taking both operands",
-    "why": "A free operator+ usually takes two const references."
-   }
-  ]
- },
- "cpp18": {
-  "topics": [
-   {
-    "title": "A function template instantiates per type",
-    "body": "The compiler generates a separate function for each deduced type, so `larger(3, 9)` and `larger(2.5, 1.5)` share source but not machine code. Errors appear at instantiation, not at definition.",
-    "code": "#include <iostream>\n\ntemplate <typename T>\nT larger(T a, T b) { return a > b ? a : b; }\n\nint main() {\n    std::cout << larger(3, 9) << \" \" << larger(2.5, 1.5) << \"\\n\";\n    return 0;\n}",
-    "output": "9 2.5"
-   },
-   {
-    "title": "Non-type template parameters carry a value",
-    "body": "A template can take a constant value such as `int N`, which lets the size travel in the type. The array reference form below preserves the length instead of decaying to a pointer.",
-    "code": "#include <iostream>\n\ntemplate <typename T, int N>\nT total(const T (&data)[N]) {\n    T sum{};\n    for (const T& v : data) sum += v;\n    return sum;\n}\n\nint main() {\n    int marks[4] = {1, 2, 3, 4};\n    std::cout << total(marks) << \"\\n\";\n    return 0;\n}",
-    "output": "10"
-   }
-  ],
-  "tasks": [
-   {
-    "title": "A generic maximum",
-    "statement": "Write a function template `biggest` and use it on two ints and two doubles; print both results separated by a space.",
-    "solution": "#include <iostream>\n\ntemplate <typename T>\nT biggest(T a, T b) { return a > b ? a : b; }\n\nint main() {\n    std::cout << biggest(4, 9) << \" \" << biggest(2.5, 1.5) << \"\\n\";\n    return 0;\n}",
-    "expected": "9 2.5"
-   }
-  ],
-  "debug": [
-   {
-    "title": "Two types for one template parameter",
-    "broken": "#include <iostream>\n\ntemplate <typename T>\nT add(T a, T b) { return a + b; }\n\nint main() {\n    std::cout << add(1, 2.5) << \"\\n\";\n    return 0;\n}",
-    "fix": "#include <iostream>\n\ntemplate <typename A, typename B>\nauto add(A a, B b) { return a + b; }\n\nint main() {\n    std::cout << add(1, 2.5) << \"\\n\";\n    return 0;\n}",
-    "error": "error: no matching function for call to ‘add(int, double)’",
-    "fixedOutput": "3.5"
-   }
-  ],
-  "interview": [
-   {
-    "q": "Why must a template usually be defined in a header?",
-    "answer": "The compiler needs the definition to instantiate it for each type at the point of use. A definition hidden in a .cpp file is invisible to other translation units, producing link errors."
-   },
-   {
-    "q": "What is the difference between a template and a macro?",
-    "answer": "A template is type-checked, scoped and instantiated by the compiler. A macro is textual substitution with no type safety, which is why templates replaced most macro-based generic code."
-   }
-  ],
-  "mcq": [
-   {
-    "q": "When is a function template type-checked?",
-    "options": [
-     "Never",
-     "When it is instantiated",
-     "Only at link time",
-     "At runtime"
-    ],
-    "answer": "When it is instantiated",
-    "why": "Each instantiation is compiled for its concrete types."
-   },
-   {
-    "q": "What does `template <typename T, int N>` allow?",
-    "options": [
-     "Two type parameters",
-     "A type and a compile-time value",
-     "Two runtime values",
-     "A macro parameter"
-    ],
-    "answer": "A type and a compile-time value",
-    "why": "`N` is a non-type parameter fixed at compile time."
    }
   ]
  }

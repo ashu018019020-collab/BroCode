@@ -475,74 +475,6 @@
  "cpp08": {
   "topics": [
    {
-    "title": "std::array knows its own size",
-    "body": "A `std::array` carries its length in the type, so `size()` is a constant and `at()` checks the index and throws instead of reading past the end.",
-    "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> marks{60, 70, 80, 90};\n    std::cout << marks.size() << \" \" << marks.at(2) << \"\\n\";\n    return 0;\n}",
-    "output": "4 80"
-   },
-   {
-    "title": "Array decay loses the length",
-    "body": "Passing a C array to a function passes a pointer to its first element, so `sizeof` inside the function measures the pointer, not the array. The length has to travel as a separate parameter or be fixed in the type.",
-    "code": "#include <iostream>\n\nint count(int data[]) { return sizeof(data) / sizeof(data[0]); }\n\nint main() {\n    int data[6] = {1, 2, 3, 4, 5, 6};\n    std::cout << sizeof(data) / sizeof(data[0]) << \" \" << count(data) << \"\\n\";\n    return 0;\n}",
-    "output": "6 2"
-   }
-  ],
-  "tasks": [
-   {
-    "title": "Reverse an array in place",
-    "statement": "Reverse `{1, 2, 3, 4, 5}` by swapping from both ends, then print the elements separated by spaces.",
-    "solution": "#include <iostream>\n\nint main() {\n    int data[5] = {1, 2, 3, 4, 5};\n    for (int i = 0, j = 4; i < j; ++i, --j) {\n        int t = data[i];\n        data[i] = data[j];\n        data[j] = t;\n    }\n    for (int v : data) std::cout << v << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
-    "expected": "5 4 3 2 1"
-   }
-  ],
-  "debug": [
-   {
-    "title": "A std::array passed by value",
-    "broken": "#include <array>\n#include <iostream>\n\nvoid setFirst(std::array<int, 3> data) { data[0] = 9; }\n\nint main() {\n    std::array<int, 3> data{1, 2, 3};\n    setFirst(data);\n    std::cout << data[0] << \"\\n\";\n    return 0;\n}",
-    "fix": "#include <array>\n#include <iostream>\n\nvoid setFirst(std::array<int, 3>& data) { data[0] = 9; }\n\nint main() {\n    std::array<int, 3> data{1, 2, 3};\n    setFirst(data);\n    std::cout << data[0] << \"\\n\";\n    return 0;\n}",
-    "error": "Wrong output: 1 — the array was copied, so the caller’s element is unchanged.",
-    "fixedOutput": "9",
-    "brokenOutput": "1"
-   }
-  ],
-  "interview": [
-   {
-    "q": "Why does `std::array` not decay when passed to a function?",
-    "answer": "It is a class object, not a raw array, so passing it by value copies the whole array and passing by reference keeps its type and length. That is why the size is still available inside the callee."
-   },
-   {
-    "q": "When is `std::vector` the better choice than `std::array`?",
-    "answer": "When the element count is decided at runtime or must grow. `std::array` is for a fixed compile-time size and avoids a heap allocation entirely."
-   }
-  ],
-  "mcq": [
-   {
-    "q": "What does `sizeof(data) / sizeof(data[0])` compute inside `main` for `int data[6]`?",
-    "options": [
-     "The pointer size",
-     "6",
-     "24",
-     "Undefined"
-    ],
-    "answer": "6",
-    "why": "The array is still an array there, so the division gives the element count."
-   },
-   {
-    "q": "What does `std::array::at()` do that `operator[]` does not?",
-    "options": [
-     "Returns a copy",
-     "Checks the index and throws when out of range",
-     "Sorts the array",
-     "Grows the array"
-    ],
-    "answer": "Checks the index and throws when out of range",
-    "why": "`at` is bounds-checked; `operator[]` is not."
-   }
-  ]
- },
- "cpp09": {
-  "topics": [
-   {
     "title": "split a string with find and substr",
     "body": "`find` returns the position of a character or `std::string::npos`, and `substr(pos, len)` copies a slice. Combining them splits a record without a regular expression.",
     "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string mail = \"aman@brocode.dev\";\n    auto at = mail.find('@');\n    std::cout << mail.substr(0, at) << \" | \" << mail.substr(at + 1) << \"\\n\";\n    return 0;\n}",
@@ -555,14 +487,6 @@
     "output": "pointers 23"
    }
   ],
-  "tasks": [
-   {
-    "title": "Count the vowels",
-    "statement": "Count the vowels in `programming` and print the total.",
-    "solution": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string word = \"programming\";\n    int count = 0;\n    for (char c : word) {\n        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u') ++count;\n    }\n    std::cout << count << \"\\n\";\n    return 0;\n}",
-    "expected": "3"
-   }
-  ],
   "debug": [
    {
     "title": "Comparing character arrays with ==",
@@ -573,6 +497,7 @@
     "brokenOutput": "0"
    }
   ],
+  "tasks": [],
   "interview": [
    {
     "q": "What does `std::string::npos` mean?",
