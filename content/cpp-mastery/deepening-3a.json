@@ -1,0 +1,240 @@
+{
+ "cpp01": {
+  "topics": [
+   {
+    "title": "A program needs exactly one main",
+    "body": "`main` is the entry point the runtime calls; a second definition fails at link time because the symbol would exist twice.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << \"one entry point\\n\";\n    return 0;\n}",
+    "output": "one entry point"
+   },
+   {
+    "title": "Source becomes an executable in stages",
+    "body": "Preprocessing, compilation, assembly and linking each produce a different file; `g++` runs all four unless told to stop earlier.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << \"compile then link\\n\";\n    return 0;\n}",
+    "output": "compile then link"
+   },
+   {
+    "title": "The toolchain has four stages",
+    "body": "Each stage has a flag that stops the build: `-E` preprocesses, `-S` emits assembly, `-c` emits an object file and the default links.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << \"preprocess compile assemble link\\n\";\n    return 0;\n}",
+    "output": "preprocess compile assemble link"
+   },
+   {
+    "title": "A comment records the reason",
+    "body": "The code already says what happens; a comment earns its place by explaining why, as in the tax rule below.",
+    "code": "#include <iostream>\n\nint main() {\n    int price = 100;\n    // campus orders are exempt from the service fee\n    std::cout << price << \"\\n\";\n    return 0;\n}",
+    "output": "100"
+   },
+   {
+    "title": "A build fails before it runs",
+    "body": "A compile error stops the pipeline, so no executable exists to run. Reading the first diagnostic is faster than reading the last.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << \"build succeeded\\n\";\n    return 0;\n}",
+    "output": "build succeeded"
+   }
+  ]
+ },
+ "cpp02": {
+  "topics": [
+   {
+    "title": "cin skips whitespace between fields",
+    "body": "Extraction ignores leading whitespace, which is why two integers separated by spaces can be read one after another.",
+    "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream input(\"10   20\");\n    int a = 0, b = 0;\n    input >> a >> b;\n    std::cout << a + b << \"\\n\";\n    return 0;\n}",
+    "output": "30"
+   },
+   {
+    "title": "Insertion chains left to right",
+    "body": "`std::cout << a << b` feeds the stream from each expression to the next, so order of appearance is order of printing.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << \"a\" << \"b\" << \"c\\n\";\n    return 0;\n}",
+    "output": "abc"
+   },
+   {
+    "title": "setfill chooses the padding character",
+    "body": "`setw` sets the width of the next field and `setfill` chooses what fills it; the fill persists after the field is printed.",
+    "code": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::setfill('*') << std::setw(4) << 7 << \"\\n\";\n    return 0;\n}",
+    "output": "***7"
+   },
+   {
+    "title": "A newline is a character",
+    "body": "`\\n` is one character with code 10, which is why it can be printed as a char and counted like any other.",
+    "code": "#include <iostream>\n\nint main() {\n    char nl = '\\n';\n    std::cout << static_cast<int>(nl) << \"\\n\";\n    return 0;\n}",
+    "output": "10"
+   },
+   {
+    "title": "getline keeps the spaces",
+    "body": "`std::getline` reads up to the delimiter, so a sentence survives intact where `>>` would have stopped at the first space.",
+    "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream input(\"C++ is fun\");\n    std::string line;\n    std::getline(input, line);\n    std::cout << line << \"\\n\";\n    return 0;\n}",
+    "output": "C++ is fun"
+   }
+  ]
+ },
+ "cpp03": {
+  "topics": [
+   {
+    "title": "short and long have different widths",
+    "body": "The standard fixes minimum sizes, not exact ones, so `sizeof` is the honest way to report what this compiler chose.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << sizeof(short) << \" \" << sizeof(long) << \"\\n\";\n    return 0;\n}",
+    "output": "2 8"
+   },
+   {
+    "title": "A literal suffix chooses its type",
+    "body": "`10u` is unsigned and `10L` is long, so the suffix changes the type and therefore the size the program sees.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << sizeof(10u) << \" \" << sizeof(10L) << \"\\n\";\n    return 0;\n}",
+    "output": "4 8"
+   },
+   {
+    "title": "const cannot be reassigned",
+    "body": "A `const` variable is fixed after initialization; an assignment to it is a compile error rather than a silent change.",
+    "code": "#include <iostream>\n\nint main() {\n    const int limit = 5;\n    std::cout << limit << \"\\n\";\n    return 0;\n}",
+    "output": "5"
+   },
+   {
+    "title": "Assignment can narrow a value",
+    "body": "Converting a `double` to `int` truncates toward zero and drops the fraction, which is a silent loss unless the code says otherwise.",
+    "code": "#include <iostream>\n\nint main() {\n    double price = 3.9;\n    int whole = price;\n    std::cout << whole << \"\\n\";\n    return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "sizeof works on expressions",
+    "body": "The operand of `sizeof` is not evaluated; only its type matters, so `sizeof(3.14)` is the size of a double.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << sizeof(3.14) << \"\\n\";\n    return 0;\n}",
+    "output": "8"
+   }
+  ]
+ },
+ "cpp04": {
+  "topics": [
+   {
+    "title": "Logical AND short-circuits",
+    "body": "When the left operand is false the right side is never evaluated, which is what makes `if (ptr && ptr->ok())` safe.",
+    "code": "#include <iostream>\n\nint main() {\n    bool left = false;\n    bool result = left && true;\n    std::cout << result << \"\\n\";\n    return 0;\n}",
+    "output": "0"
+   },
+   {
+    "title": "Relational operators return bool",
+    "body": "A comparison produces a `bool`, so it can be printed, stored or combined without converting to int first.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << (3 < 5) << \" \" << (3 > 5) << \"\\n\";\n    return 0;\n}",
+    "output": "1 0"
+   },
+   {
+    "title": "A left shift doubles the value",
+    "body": "Shifting left by n multiplies by two to the n, provided the result still fits in the type.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << (1 << 4) << \"\\n\";\n    return 0;\n}",
+    "output": "16"
+   },
+   {
+    "title": "Compound assignment combines two steps",
+    "body": "`x += 5` reads `x`, adds 5 and stores the result, which is exactly one mutation of the variable.",
+    "code": "#include <iostream>\n\nint main() {\n    int x = 7;\n    x += 5;\n    std::cout << x << \"\\n\";\n    return 0;\n}",
+    "output": "12"
+   },
+   {
+    "title": "The ternary returns one of two values",
+    "body": "Both branches must have compatible types, and only the chosen branch is evaluated.",
+    "code": "#include <iostream>\n\nint main() {\n    int best = 5 > 2 ? 1 : 0;\n    std::cout << best << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   }
+  ]
+ },
+ "cpp05": {
+  "topics": [
+   {
+    "title": "Nested if narrows a range",
+    "body": "Testing the broad range first and the narrow range inside it keeps each condition small and readable.",
+    "code": "#include <iostream>\n\nint main() {\n    int marks = 75;\n    if (marks >= 50) {\n        if (marks >= 70) std::cout << \"B\\n\";\n        else std::cout << \"C\\n\";\n    } else {\n        std::cout << \"fail\\n\";\n    }\n    return 0;\n}",
+    "output": "B"
+   },
+   {
+    "title": "default handles every other value",
+    "body": "A `default` label catches the values no case matched, so a switch over an open set still has a defined path.",
+    "code": "#include <iostream>\n\nint main() {\n    char grade = 'z';\n    switch (grade) {\n        case 'A': std::cout << \"top\\n\"; break;\n        default: std::cout << \"other\\n\";\n    }\n    return 0;\n}",
+    "output": "other"
+   },
+   {
+    "title": "break leaves the whole switch",
+    "body": "Without `break` execution falls into the following cases; with it the switch ends immediately.",
+    "code": "#include <iostream>\n\nint main() {\n    int n = 1;\n    switch (n) {\n        case 1: std::cout << \"one\\n\"; break;\n        case 2: std::cout << \"two\\n\"; break;\n    }\n    return 0;\n}",
+    "output": "one"
+   },
+   {
+    "title": "Conditions combine with AND",
+    "body": "A compound condition expresses two requirements at once; both must be true before the branch runs.",
+    "code": "#include <iostream>\n\nint main() {\n    int age = 20;\n    bool citizen = true;\n    if (age >= 18 && citizen) std::cout << \"vote\\n\";\n    return 0;\n}",
+    "output": "vote"
+   },
+   {
+    "title": "An if without braces takes one statement",
+    "body": "Braces are optional for a single statement, which is why adding a second line without braces changes the meaning.",
+    "code": "#include <iostream>\n\nint main() {\n    int n = 1;\n    if (n == 1) std::cout << \"one\\n\";\n    return 0;\n}",
+    "output": "one"
+   }
+  ]
+ },
+ "cpp06": {
+  "topics": [
+   {
+    "title": "A while loop counts down",
+    "body": "The condition is checked before each pass, so a counter that reaches the limit ends the loop.",
+    "code": "#include <iostream>\n\nint main() {\n    int n = 3;\n    while (n > 0) {\n        std::cout << n << \" \";\n        --n;\n    }\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "3 2 1"
+   },
+   {
+    "title": "A for loop can step by two",
+    "body": "The increment expression is arbitrary, so `i += 2` visits every second value without an extra condition.",
+    "code": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 6; i += 2) std::cout << i << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "0 2 4"
+   },
+   {
+    "title": "Nested loops make rows and columns",
+    "body": "The outer loop selects a row and the inner loop fills it, which is the shape behind every grid and pattern exercise.",
+    "code": "#include <iostream>\n\nint main() {\n    for (int row = 0; row < 2; ++row) {\n        for (int col = 0; col < 2; ++col) std::cout << \"*\";\n        std::cout << \"\\n\";\n    }\n    return 0;\n}",
+    "output": "**\n**"
+   },
+   {
+    "title": "continue skips one iteration",
+    "body": "`continue` jumps to the next pass without ending the loop, which is how one value can be filtered out.",
+    "code": "#include <iostream>\n\nint main() {\n    for (int i = 0; i < 5; ++i) {\n        if (i == 1) continue;\n        std::cout << i << \" \";\n    }\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "0 2 3 4"
+   },
+   {
+    "title": "An accumulator adds every value",
+    "body": "A variable declared before the loop and updated inside it carries the running total across iterations.",
+    "code": "#include <iostream>\n\nint main() {\n    int sum = 0;\n    for (int i = 1; i <= 4; ++i) sum += i;\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "output": "10"
+   }
+  ]
+ },
+ "cpp07": {
+  "topics": [
+   {
+    "title": "A function returns one value",
+    "body": "The return type declares what the caller receives; returning early is how a function reports a result or a rejection.",
+    "code": "#include <iostream>\n\nint square(int x) { return x * x; }\n\nint main() {\n    std::cout << square(4) << \"\\n\";\n    return 0;\n}",
+    "output": "16"
+   },
+   {
+    "title": "void means no return value",
+    "body": "A `void` function still performs work, as this one prints instead of returning a number.",
+    "code": "#include <iostream>\n\nvoid banner() { std::cout << \"BroCode\\n\"; }\n\nint main() {\n    banner();\n    return 0;\n}",
+    "output": "BroCode"
+   },
+   {
+    "title": "Parameters are copies by default",
+    "body": "Passing by value gives the function its own copy, so changing the parameter leaves the caller’s variable untouched.",
+    "code": "#include <iostream>\n\nvoid bump(int value) { ++value; }\n\nint main() {\n    int score = 5;\n    bump(score);\n    std::cout << score << \"\\n\";\n    return 0;\n}",
+    "output": "5"
+   },
+   {
+    "title": "A function can call another",
+    "body": "Composing small functions keeps each one testable and lets a later change stay local.",
+    "code": "#include <iostream>\n\nint twice(int x) { return x * 2; }\nint four_times(int x) { return twice(twice(x)); }\n\nint main() {\n    std::cout << four_times(3) << \"\\n\";\n    return 0;\n}",
+    "output": "12"
+   },
+   {
+    "title": "Overloads differ by parameter types",
+    "body": "The compiler picks the overload from the argument types, so the same name can serve an int and a string.",
+    "code": "#include <iostream>\n#include <string>\n\nvoid show(int x) { std::cout << \"int \" << x << \"\\n\"; }\nvoid show(const std::string& s) { std::cout << \"text \" << s << \"\\n\"; }\n\nint main() {\n    show(1);\n    show(\"one\");\n    return 0;\n}",
+    "output": "int 1\ntext one"
+   }
+  ]
+ }
+}

@@ -1,0 +1,228 @@
+{
+ "cpp08": {
+  "topics": [
+   {
+    "title": "Strings compare lexicographically",
+    "body": "`<` compares character by character, so `apple` sorts before `banana` and the comparison is stable across platforms.",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"apple\", b = \"banana\";\n    std::cout << (a < b) << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   },
+   {
+    "title": "append grows a string in place",
+    "body": "`append` adds characters to the existing string instead of creating a third one, which keeps the capacity it already has.",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"C++\";\n    s.append(\" Mastery\");\n    std::cout << s << \"\\n\";\n    return 0;\n}",
+    "output": "C++ Mastery"
+   },
+   {
+    "title": "erase removes a range of characters",
+    "body": "`erase(pos, count)` deletes from the middle and shifts the rest left, shrinking the string.",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"abcdef\";\n    s.erase(2, 2);\n    std::cout << s << \"\\n\";\n    return 0;\n}",
+    "output": "abef"
+   },
+   {
+    "title": "length and size report the same count",
+    "body": "Both return the number of characters; `size` exists so strings share an interface with the other containers.",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"code\";\n    std::cout << s.length() << \" \" << s.size() << \"\\n\";\n    return 0;\n}",
+    "output": "4 4"
+   },
+   {
+    "title": "find returns npos when nothing matches",
+    "body": "A search compares against `std::string::npos`; testing against anything else can silently succeed.",
+    "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s = \"abc\";\n    std::cout << (s.find('z') == std::string::npos) << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   }
+  ]
+ },
+ "cpp09": {
+  "topics": [
+   {
+    "title": "A pointer can be reassigned",
+    "body": "Unlike a reference, a pointer is an object holding an address, so it can point at one variable and later at another.",
+    "code": "#include <iostream>\n\nint main() {\n    int a = 1, b = 2;\n    int* p = &a;\n    p = &b;\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "output": "2"
+   },
+   {
+    "title": "const can qualify the pointer or the pointee",
+    "body": "`const int*` forbids writing through the pointer, while `int* const` forbids changing where it points.",
+    "code": "#include <iostream>\n\nint main() {\n    int value = 5;\n    const int* p = &value;\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "output": "5"
+   },
+   {
+    "title": "nullptr compares equal to itself",
+    "body": "A null pointer is falsy, so `if (p)` is the concise check before dereferencing.",
+    "code": "#include <iostream>\n\nint main() {\n    int* p = nullptr;\n    if (!p) std::cout << \"empty\\n\";\n    return 0;\n}",
+    "output": "empty"
+   }
+  ]
+ },
+ "cpp10": {
+  "topics": [
+   {
+    "title": "make_unique constructs in place",
+    "body": "It allocates and forwards the arguments to the constructor in one expression, so no raw pointer ever exists to leak.",
+    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto p = std::make_unique<int>(9);\n    std::cout << *p << \"\\n\";\n    return 0;\n}",
+    "output": "9"
+   },
+   {
+    "title": "unique_ptr cannot be copied",
+    "body": "Copying would create two owners, so the copy constructor is deleted; only `std::move` transfers ownership.",
+    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto a = std::make_unique<int>(1);\n    auto b = std::move(a);\n    std::cout << (a == nullptr) << \" \" << *b << \"\\n\";\n    return 0;\n}",
+    "output": "1 1"
+   },
+   {
+    "title": "shared_ptr resets its count",
+    "body": "`reset` drops one owner; when the count reaches zero the object is destroyed and its memory returned.",
+    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    auto p = std::make_shared<int>(1);\n    p.reset();\n    std::cout << (p == nullptr) << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   },
+   {
+    "title": "RAII frees at the end of the scope",
+    "body": "The destructor runs when the owning object leaves its block, which is why no explicit cleanup is needed.",
+    "code": "#include <iostream>\n#include <memory>\n\nint main() {\n    {\n        auto p = std::make_unique<int>(5);\n        std::cout << *p << \"\\n\";\n    }\n    std::cout << \"freed\\n\";\n    return 0;\n}",
+    "output": "5\nfreed"
+   },
+   {
+    "title": "new[] needs delete[]",
+    "body": "Array allocation and array deletion are different functions; mixing them is undefined behaviour.",
+    "code": "#include <iostream>\n\nint main() {\n    int* data = new int[3]{1, 2, 3};\n    std::cout << data[0] + data[2] << \"\\n\";\n    delete[] data;\n    return 0;\n}",
+    "output": "4"
+   }
+  ]
+ },
+ "cpp11": {
+  "topics": [
+   {
+    "title": "A namespace avoids a name clash",
+    "body": "Two functions with the same name can coexist in different namespaces, and the caller chooses with the scope operator.",
+    "code": "#include <iostream>\n\nnamespace first { int value() { return 1; } }\nnamespace second { int value() { return 2; } }\n\nint main() {\n    std::cout << first::value() << \" \" << second::value() << \"\\n\";\n    return 0;\n}",
+    "output": "1 2"
+   },
+   {
+    "title": "using brings one name into scope",
+    "body": "A using-declaration imports a single name, which is narrower than a using-directive and easier to reason about.",
+    "code": "#include <iostream>\n\nnamespace math { int twice(int x) { return 2 * x; } }\nusing math::twice;\n\nint main() {\n    std::cout << twice(4) << \"\\n\";\n    return 0;\n}",
+    "output": "8"
+   },
+   {
+    "title": "Aggregate initialization fills fields in order",
+    "body": "Braced initialization assigns members in declaration order, so a missing value becomes zero.",
+    "code": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nint main() {\n    Point p{3};\n    std::cout << p.x << \" \" << p.y << \"\\n\";\n    return 0;\n}",
+    "output": "3 0"
+   },
+   {
+    "title": "A union shares one storage",
+    "body": "All members of a union start at the same address, so writing one overwrites the others; the size is the largest member.",
+    "code": "#include <iostream>\n\nunion Value {\n    int number;\n    char letter;\n};\n\nint main() {\n    Value v;\n    v.number = 65;\n    std::cout << sizeof(Value) << \"\\n\";\n    return 0;\n}",
+    "output": "4"
+   },
+   {
+    "title": "typedef and using name the same type",
+    "body": "Both create an alias; `using` reads left to right and works with templates, which is why new code prefers it.",
+    "code": "#include <iostream>\n\nusing Marks = int;\n\nint main() {\n    Marks total = 92;\n    std::cout << total << \"\\n\";\n    return 0;\n}",
+    "output": "92"
+   }
+  ]
+ },
+ "cpp12": {
+  "topics": [
+   {
+    "title": "this points at the current object",
+    "body": "Inside a member function `this` is the address of the object the call was made on, which is how chaining returns itself.",
+    "code": "#include <iostream>\n\nclass Counter {\npublic:\n    Counter& add(int n) {\n        value += n;\n        return *this;\n    }\n    int get() const { return value; }\nprivate:\n    int value = 0;\n};\n\nint main() {\n    Counter c;\n    c.add(2).add(3);\n    std::cout << c.get() << \"\\n\";\n    return 0;\n}",
+    "output": "5"
+   },
+   {
+    "title": "Encapsulation hides the representation",
+    "body": "Callers see methods, not fields, so the internal type can change without breaking them.",
+    "code": "#include <iostream>\n\nclass Temperature {\npublic:\n    explicit Temperature(int c) : celsius(c) {}\n    int fahrenheit() const { return celsius * 9 / 5 + 32; }\nprivate:\n    int celsius;\n};\n\nint main() {\n    Temperature t(0);\n    std::cout << t.fahrenheit() << \"\\n\";\n    return 0;\n}",
+    "output": "32"
+   },
+   {
+    "title": "Objects can be copied",
+    "body": "The compiler-generated copy constructor copies each member, which is enough when the members manage themselves.",
+    "code": "#include <iostream>\n\nclass Point {\npublic:\n    Point(int a, int b) : x(a), y(b) {}\n    int sum() const { return x + y; }\nprivate:\n    int x;\n    int y;\n};\n\nint main() {\n    Point a(1, 2);\n    Point b = a;\n    std::cout << b.sum() << \"\\n\";\n    return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "Static members belong to the class",
+    "body": "A static data member is shared by every object, and a static function can be called without an instance.",
+    "code": "#include <iostream>\n\nclass Id {\npublic:\n    static int next() { return ++counter; }\nprivate:\n    static int counter;\n};\n\nint Id::counter = 0;\n\nint main() {\n    std::cout << Id::next() << \" \" << Id::next() << \"\\n\";\n    return 0;\n}",
+    "output": "1 2"
+   },
+   {
+    "title": "A class can hold another class",
+    "body": "Containment lets one type reuse another without inheritance, and the contained object is constructed automatically.",
+    "code": "#include <iostream>\n#include <string>\n\nclass Engine {\npublic:\n    std::string state() const { return \"off\"; }\n};\n\nclass Car {\npublic:\n    std::string state() const { return engine.state(); }\nprivate:\n    Engine engine;\n};\n\nint main() {\n    Car c;\n    std::cout << c.state() << \"\\n\";\n    return 0;\n}",
+    "output": "off"
+   }
+  ]
+ },
+ "cpp13": {
+  "topics": [
+   {
+    "title": "A constructor runs once per object",
+    "body": "Every object is constructed exactly once, and the constructor’s body is the first code that sees a fully allocated object.",
+    "code": "#include <iostream>\n\nclass Box {\npublic:\n    Box() { std::cout << \"built\\n\"; }\n};\n\nint main() {\n    Box a;\n    Box b;\n    return 0;\n}",
+    "output": "built\nbuilt"
+   },
+   {
+    "title": "Destruction is the reverse of construction",
+    "body": "Locals are destroyed in reverse order of construction, which is why later objects can still rely on earlier ones.",
+    "code": "#include <iostream>\n\nstruct A { ~A() { std::cout << \"A \"; } };\nstruct B { ~B() { std::cout << \"B\\n\"; } };\n\nint main() {\n    A a;\n    B b;\n    return 0;\n}",
+    "output": "B\nA"
+   },
+   {
+    "title": "Copy assignment returns the object",
+    "body": "Returning `*this` lets `a = b = c` chain, and the parameter is a const reference to avoid a copy.",
+    "code": "#include <iostream>\n\nclass Box {\npublic:\n    Box& operator=(const Box& other) {\n        value = other.value;\n        return *this;\n    }\n    int value = 0;\n};\n\nint main() {\n    Box a, b;\n    b.value = 5;\n    a = b;\n    std::cout << a.value << \"\\n\";\n    return 0;\n}",
+    "output": "5"
+   },
+   {
+    "title": "explicit blocks an implicit conversion",
+    "body": "Marking a one-argument constructor `explicit` stops the compiler from turning an int into the class behind your back.",
+    "code": "#include <iostream>\n\nclass Meter {\npublic:\n    explicit Meter(int v) : value(v) {}\n    int get() const { return value; }\nprivate:\n    int value;\n};\n\nint main() {\n    Meter m(5);\n    std::cout << m.get() << \"\\n\";\n    return 0;\n}",
+    "output": "5"
+   },
+   {
+    "title": "A delegating constructor shares the work",
+    "body": "One constructor can call another, so validation lives in a single place instead of being copied.",
+    "code": "#include <iostream>\n\nclass Range {\npublic:\n    Range() : Range(0, 10) {}\n    Range(int lo, int hi) : low(lo), high(hi) {}\n    int span() const { return high - low; }\nprivate:\n    int low;\n    int high;\n};\n\nint main() {\n    Range r;\n    std::cout << r.span() << \"\\n\";\n    return 0;\n}",
+    "output": "10"
+   }
+  ]
+ },
+ "cpp14": {
+  "topics": [
+   {
+    "title": "is-a and has-a are different questions",
+    "body": "Inheritance answers \"is a kind of\"; composition answers \"contains\". Choosing the wrong one makes later changes expensive.",
+    "code": "#include <iostream>\n\nclass Animal {\npublic:\n    const char* kind() const { return \"animal\"; }\n};\n\nclass Dog : public Animal {};\n\nint main() {\n    Dog d;\n    std::cout << d.kind() << \"\\n\";\n    return 0;\n}",
+    "output": "animal"
+   },
+   {
+    "title": "protected reaches derived classes",
+    "body": "A protected member is invisible to unrelated code but available to a derived class, which is the middle ground between public and private.",
+    "code": "#include <iostream>\n\nclass Base {\nprotected:\n    int id = 7;\n};\n\nclass Derived : public Base {\npublic:\n    int read() const { return id; }\n};\n\nint main() {\n    Derived d;\n    std::cout << d.read() << \"\\n\";\n    return 0;\n}",
+    "output": "7"
+   },
+   {
+    "title": "Construction runs base then derived",
+    "body": "The base subobject must exist before the derived body can use it, so its constructor completes first.",
+    "code": "#include <iostream>\n\nclass Base { public: Base() { std::cout << \"base \"; } };\nclass Derived : public Base { public: Derived() { std::cout << \"derived\\n\"; } };\n\nint main() {\n    Derived d;\n    return 0;\n}",
+    "output": "base derived"
+   },
+   {
+    "title": "Destruction runs derived then base",
+    "body": "The derived part is destroyed first because it may depend on the base, and the base is torn down last.",
+    "code": "#include <iostream>\n\nclass Base { public: virtual ~Base() { std::cout << \"base \"; } };\nclass Derived : public Base { public: ~Derived() override { std::cout << \"derived \"; } };\n\nint main() {\n    Derived d;\n    return 0;\n}",
+    "output": "derived base"
+   },
+   {
+    "title": "Composition keeps the parts independent",
+    "body": "A containing class can swap the contained type without changing its own interface, which inheritance cannot do.",
+    "code": "#include <iostream>\n\nclass Engine {\npublic:\n    int power() const { return 120; }\n};\n\nclass Car {\npublic:\n    int power() const { return engine.power(); }\nprivate:\n    Engine engine;\n};\n\nint main() {\n    Car c;\n    std::cout << c.power() << \"\\n\";\n    return 0;\n}",
+    "output": "120"
+   }
+  ]
+ }
+}

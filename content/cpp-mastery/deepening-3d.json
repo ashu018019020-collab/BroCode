@@ -1,0 +1,196 @@
+{
+ "cpp22": {
+  "topics": [
+   {
+    "title": "Structured bindings unpack a pair",
+    "body": "One declaration names both halves of a pair or tuple, which removes the `first`/`second` noise from loops.",
+    "code": "#include <iostream>\n#include <utility>\n\nint main() {\n    std::pair<int, int> point{3, 4};\n    auto [x, y] = point;\n    std::cout << x + y << \"\\n\";\n    return 0;\n}",
+    "output": "7"
+   },
+   {
+    "title": "auto drops top-level const",
+    "body": "Deduction copies the value and discards the top-level qualifier, so `auto` from a const int gives an int; `const auto&` keeps it.",
+    "code": "#include <iostream>\n#include <type_traits>\n\nint main() {\n    const int value = 5;\n    auto copy = value;\n    copy = 6;\n    std::cout << copy << \" \" << std::is_const_v<decltype(copy)> << \"\\n\";\n    return 0;\n}",
+    "output": "6 0"
+   },
+   {
+    "title": "nullptr replaces NULL",
+    "body": "It has its own type and converts to any pointer without being mistaken for the integer zero by an overload.",
+    "code": "#include <iostream>\n\nvoid pick(int) { std::cout << \"int\\n\"; }\nvoid pick(int*) { std::cout << \"pointer\\n\"; }\n\nint main() {\n    pick(nullptr);\n    return 0;\n}",
+    "output": "pointer"
+   },
+   {
+    "title": "if constexpr selects at compile time",
+    "body": "The false branch is discarded during instantiation, so it can contain code that would not compile for that type.",
+    "code": "#include <iostream>\n#include <type_traits>\n\ntemplate <typename T>\nconst char* label() {\n    if constexpr (std::is_pointer_v<T>) return \"pointer\";\n    else return \"value\";\n}\n\nint main() {\n    std::cout << label<int*>() << \"\\n\";\n    return 0;\n}",
+    "output": "pointer"
+   },
+   {
+    "title": "optional avoids a sentinel",
+    "body": "The type states that a value may be absent, so no legal value has to be reserved as \"not found\".",
+    "code": "#include <iostream>\n#include <optional>\n\nstd::optional<int> half(int n) {\n    if (n % 2 != 0) return std::nullopt;\n    return n / 2;\n}\n\nint main() {\n    std::cout << half(8).value_or(-1) << \" \" << half(3).value_or(-1) << \"\\n\";\n    return 0;\n}",
+    "output": "4 -1"
+   }
+  ]
+ },
+ "cpp23": {
+  "topics": [
+   {
+    "title": "Linear search scans every element",
+    "body": "It stops at the first match and is the only option when the data is unsorted; worst case is one pass.",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{4, 2, 9};\n    int found = -1;\n    for (int i = 0; i < static_cast<int>(v.size()); ++i) {\n        if (v[i] == 9) { found = i; break; }\n    }\n    std::cout << found << \"\\n\";\n    return 0;\n}",
+    "output": "2"
+   },
+   {
+    "title": "Selection sort picks the minimum each pass",
+    "body": "It scans the unsorted tail for the smallest value and swaps it into place, which is O(n²) but uses no extra memory.",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{3, 1, 2};\n    for (std::size_t i = 0; i + 1 < v.size(); ++i) {\n        std::size_t best = i;\n        for (std::size_t j = i + 1; j < v.size(); ++j) if (v[j] < v[best]) best = j;\n        int tmp = v[i];\n        v[i] = v[best];\n        v[best] = tmp;\n    }\n    for (int x : v) std::cout << x << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "1 2 3"
+   },
+   {
+    "title": "Merging two sorted ranges is linear",
+    "body": "Two pointers advance through the inputs, always taking the smaller head, which is the combine step of merge sort.",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> a{1, 4}, b{2, 3};\n    std::size_t i = 0, j = 0;\n    while (i < a.size() && j < b.size()) {\n        if (a[i] <= b[j]) std::cout << a[i++] << \" \";\n        else std::cout << b[j++] << \" \";\n    }\n    while (i < a.size()) std::cout << a[i++] << \" \";\n    while (j < b.size()) std::cout << b[j++] << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "1 2 3 4"
+   },
+   {
+    "title": "A stack is last in, first out",
+    "body": "The most recent push is the first pop, which is why stacks model undo, recursion and expression evaluation.",
+    "code": "#include <iostream>\n#include <stack>\n\nint main() {\n    std::stack<int> s;\n    s.push(1);\n    s.push(2);\n    s.push(3);\n    std::cout << s.top() << \"\\n\";\n    return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "A queue is first in, first out",
+    "body": "The earliest push leaves first, which is the shape of scheduling and breadth-first traversal.",
+    "code": "#include <iostream>\n#include <queue>\n\nint main() {\n    std::queue<int> q;\n    q.push(1);\n    q.push(2);\n    q.push(3);\n    std::cout << q.front() << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   },
+   {
+    "title": "A hash map trades order for speed",
+    "body": "Average lookup is constant and keys are unordered, which is the right trade when only membership matters.",
+    "code": "#include <iostream>\n#include <string>\n#include <unordered_map>\n\nint main() {\n    std::unordered_map<std::string, int> marks{{\"Aman\", 92}, {\"Riya\", 88}};\n    std::cout << marks[\"Aman\"] << \" \" << marks.size() << \"\\n\";\n    return 0;\n}",
+    "output": "92 2"
+   }
+  ]
+ },
+ "cpp24": {
+  "topics": [
+   {
+    "title": "detach lets a thread run independently",
+    "body": "A detached thread owns itself and cannot be joined; the program must not exit while it still reads shared state.",
+    "code": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread worker([] { std::cout << \"detached\\n\"; });\n    worker.detach();\n    std::cout << \"main\\n\";\n    return 0;\n}",
+    "output": "main\ndetached"
+   },
+   {
+    "title": "lock_guard releases at scope exit",
+    "body": "The mutex is unlocked by the guard’s destructor, so an early return or exception cannot leave it locked.",
+    "code": "#include <iostream>\n#include <mutex>\n\nint main() {\n    std::mutex m;\n    {\n        std::lock_guard<std::mutex> guard(m);\n        std::cout << \"locked\\n\";\n    }\n    std::cout << \"released\\n\";\n    return 0;\n}",
+    "output": "locked\nreleased"
+   },
+   {
+    "title": "A condition_variable waits for a signal",
+    "body": "The waiter releases the lock while asleep and reacquires it before returning, which avoids burning a core.",
+    "code": "#include <condition_variable>\n#include <iostream>\n#include <mutex>\n#include <thread>\n\nint main() {\n    std::mutex m;\n    std::condition_variable cv;\n    bool ready = false;\n    std::thread waiter([&] {\n        std::unique_lock<std::mutex> lock(m);\n        cv.wait(lock, [&] { return ready; });\n    });\n    {\n        std::lock_guard<std::mutex> lock(m);\n        ready = true;\n    }\n    cv.notify_one();\n    waiter.join();\n    std::cout << \"woke\\n\";\n    return 0;\n}",
+    "output": "woke"
+   },
+   {
+    "title": "atomic load reads one snapshot",
+    "body": "A relaxed load returns the current value without a lock, which is enough for a single counter.",
+    "code": "#include <atomic>\n#include <iostream>\n\nint main() {\n    std::atomic<int> count{7};\n    int seen = count.load();\n    std::cout << seen << \"\\n\";\n    return 0;\n}",
+    "output": "7"
+   },
+   {
+    "title": "async returns a future",
+    "body": "The task runs on another thread and `get()` blocks until its result is ready, propagating any exception.",
+    "code": "#include <future>\n#include <iostream>\n\nint main() {\n    auto task = std::async(std::launch::async, [] { return 6 * 7; });\n    std::cout << task.get() << \"\\n\";\n    return 0;\n}",
+    "output": "42"
+   },
+   {
+    "title": "A data race is undefined behaviour",
+    "body": "Two unsynchronised accesses with one write are not merely unpredictable; the standard says nothing about the result, so the fix is synchronisation, not testing.",
+    "code": "#include <atomic>\n#include <iostream>\n#include <thread>\n\nint main() {\n    std::atomic<int> count{0};\n    std::thread a([&] { for (int i = 0; i < 100; ++i) ++count; });\n    std::thread b([&] { for (int i = 0; i < 100; ++i) ++count; });\n    a.join();\n    b.join();\n    std::cout << count.load() << \"\\n\";\n    return 0;\n}",
+    "output": "200"
+   }
+  ]
+ },
+ "cpp25": {
+  "topics": [
+   {
+    "title": "A header guard prevents double inclusion",
+    "body": "The `#ifndef`/`#define` pair makes the second inclusion a no-op, which is why a header can be included from several files.",
+    "code": "#include <iostream>\n\n#ifndef POINT_H\n#define POINT_H\nstruct Point { int x; int y; };\n#endif\n\nint main() {\n    Point p{1, 2};\n    std::cout << p.x << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   },
+   {
+    "title": "Assertions document an invariant",
+    "body": "The check runs in debug builds and disappears with `NDEBUG`, so it documents an invariant without costing release performance.",
+    "code": "#include <cassert>\n#include <iostream>\n\nint half(int n) {\n    assert(n % 2 == 0);\n    return n / 2;\n}\n\nint main() {\n    std::cout << half(8) << \"\\n\";\n    return 0;\n}",
+    "output": "4"
+   },
+   {
+    "title": "Sanitizers catch memory bugs",
+    "body": "Compiling with `-fsanitize=address` reports an out-of-bounds access at the point it happens; the flag is a build decision, not a code change.",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    std::cout << v.at(1) << \"\\n\";\n    return 0;\n}",
+    "output": "2"
+   },
+   {
+    "title": "A unit test pins behaviour",
+    "body": "A test states the expected result and fails loudly when the implementation drifts, which is cheaper than a manual check.",
+    "code": "#include <cassert>\n#include <iostream>\n\nint add(int a, int b) { return a + b; }\n\nint main() {\n    assert(add(2, 3) == 5);\n    std::cout << \"tests passed\\n\";\n    return 0;\n}",
+    "output": "tests passed"
+   },
+   {
+    "title": "A commit records one change",
+    "body": "A small, reviewable commit with a message that states the intent is what makes history useful later.",
+    "code": "#include <iostream>\n\nint main() {\n    std::cout << \"one change, one commit\\n\";\n    return 0;\n}",
+    "output": "one change, one commit"
+   }
+  ]
+ },
+ "cpp26": {
+  "topics": [
+   {
+    "title": "A factory hides the concrete type",
+    "body": "The caller asks for a shape and receives a base pointer, so adding a new shape does not touch the call site.",
+    "code": "#include <iostream>\n#include <memory>\n\nclass Shape {\npublic:\n    virtual const char* name() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Circle : public Shape {\npublic:\n    const char* name() const override { return \"circle\"; }\n};\n\nstd::unique_ptr<Shape> make(const char*) { return std::make_unique<Circle>(); }\n\nint main() {\n    auto s = make(\"circle\");\n    std::cout << s->name() << \"\\n\";\n    return 0;\n}",
+    "output": "circle"
+   },
+   {
+    "title": "An observer is notified by its subject",
+    "body": "The subject keeps a list of listeners and calls each one when its state changes, which decouples the two sides.",
+    "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<std::string> listeners{\"ui\", \"log\"};\n    for (const auto& name : listeners) std::cout << name << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "output": "ui log"
+   },
+   {
+    "title": "A strategy is a swappable algorithm",
+    "body": "The behaviour is injected as a callable, so the caller can change the algorithm without editing the class.",
+    "code": "#include <functional>\n#include <iostream>\n\nclass Calculator {\npublic:\n    explicit Calculator(std::function<int(int, int)> op) : op(std::move(op)) {}\n    int run(int a, int b) const { return op(a, b); }\nprivate:\n    std::function<int(int, int)> op;\n};\n\nint main() {\n    Calculator add([](int a, int b) { return a + b; });\n    std::cout << add.run(2, 3) << \"\\n\";\n    return 0;\n}",
+    "output": "5"
+   },
+   {
+    "title": "A builder assembles step by step",
+    "body": "The builder collects the parts and produces the finished object once, which keeps the constructor from taking ten arguments.",
+    "code": "#include <iostream>\n#include <string>\n\nclass Report {\npublic:\n    Report& title(std::string t) { name = std::move(t); return *this; }\n    Report& rows(int n) { count = n; return *this; }\n    std::string build() const { return name + \":\" + std::to_string(count); }\nprivate:\n    std::string name;\n    int count = 0;\n};\n\nint main() {\n    std::cout << Report().title(\"marks\").rows(3).build() << \"\\n\";\n    return 0;\n}",
+    "output": "marks:3"
+   },
+   {
+    "title": "An adapter fits an old interface",
+    "body": "It translates one interface into the one the caller expects, so old code can be reused without rewriting it.",
+    "code": "#include <iostream>\n\nclass OldPrinter {\npublic:\n    void print_old() const { std::cout << \"old\\n\"; }\n};\n\nclass Printer {\npublic:\n    void print() const { legacy.print_old(); }\nprivate:\n    OldPrinter legacy;\n};\n\nint main() {\n    Printer p;\n    p.print();\n    return 0;\n}",
+    "output": "old"
+   },
+   {
+    "title": "A singleton owns its only instance",
+    "body": "The instance is a function-local static, which is created on first use and destroyed at exit.",
+    "code": "#include <iostream>\n\nclass Config {\npublic:\n    static Config& instance() {\n        static Config one;\n        return one;\n    }\n    int version() const { return 2; }\nprivate:\n    Config() = default;\n};\n\nint main() {\n    std::cout << Config::instance().version() << \"\\n\";\n    return 0;\n}",
+    "output": "2"
+   },
+   {
+    "title": "SOLID keeps a class focused",
+    "body": "A class with one reason to change is easier to test; the report below formats, while the caller decides where it goes.",
+    "code": "#include <iostream>\n#include <string>\n\nclass Formatter {\npublic:\n    std::string row(int n) const { return \"row \" + std::to_string(n); }\n};\n\nint main() {\n    Formatter f;\n    std::cout << f.row(3) << \"\\n\";\n    return 0;\n}",
+    "output": "row 3"
+   }
+  ]
+ }
+}

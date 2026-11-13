@@ -14,14 +14,6 @@
     "output": "201703\n8 bytes"
    }
   ],
-  "tasks": [
-   {
-    "title": "Print compiler facts",
-    "statement": "Print the value of `__cplusplus`, then the size of a `long long` in bytes, each on its own line.",
-    "solution": "#include <iostream>\n\nint main() {\n    std::cout << __cplusplus << \"\\n\";\n    std::cout << sizeof(long long) << \"\\n\";\n    return 0;\n}",
-    "expected": "201703\n8"
-   }
-  ],
   "debug": [
    {
     "title": "A misspelled variable name",
@@ -29,6 +21,14 @@
     "fix": "#include <iostream>\n\nint main() {\n    int answer = 42;\n    std::cout << answer << \"\\n\";\n    return 0;\n}",
     "error": "error: ‘answer’ was not declared in this scope; did you mean ‘anwser’?",
     "fixedOutput": "42"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Print compiler facts",
+    "statement": "Print the value of `__cplusplus`, then the size of a `long long` in bytes, each on its own line.",
+    "solution": "#include <iostream>\n\nint main() {\n    std::cout << __cplusplus << \"\\n\";\n    std::cout << sizeof(long long) << \"\\n\";\n    return 0;\n}",
+    "expected": "201703\n8"
    }
   ],
   "interview": [
@@ -81,14 +81,6 @@
     "output": "Sharma, Aman: 92"
    }
   ],
-  "tasks": [
-   {
-    "title": "Print an aligned receipt line",
-    "statement": "Print the word `pen` left-aligned in 10 columns, then `42.5` right-aligned in 6 columns with two decimals.",
-    "solution": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::left << std::setw(10) << \"pen\"\n              << std::right << std::setw(6)\n              << std::fixed << std::setprecision(2) << 42.5 << \"\\n\";\n    return 0;\n}",
-    "expected": "pen        42.50"
-   }
-  ],
   "debug": [
    {
     "title": "setw without its header",
@@ -96,6 +88,14 @@
     "fix": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::setw(6) << 42 << \"\\n\";\n    return 0;\n}",
     "error": "error: ‘setw’ is not a member of ‘std’",
     "fixedOutput": "    42"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Print an aligned receipt line",
+    "statement": "Print the word `pen` left-aligned in 10 columns, then `42.5` right-aligned in 6 columns with two decimals.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    std::cout << std::left << std::setw(10) << \"pen\"\n              << std::right << std::setw(6)\n              << std::fixed << std::setprecision(2) << 42.5 << \"\\n\";\n    return 0;\n}",
+    "expected": "pen        42.50"
    }
   ],
   "interview": [
@@ -148,14 +148,6 @@
     "output": "25"
    }
   ],
-  "tasks": [
-   {
-    "title": "Report four type sizes",
-    "statement": "Print the sizes of `char`, `int`, `long long` and `bool`, separated by single spaces.",
-    "solution": "#include <iostream>\n\nint main() {\n    std::cout << sizeof(char) << \" \" << sizeof(int) << \" \"\n              << sizeof(long long) << \" \" << sizeof(bool) << \"\\n\";\n    return 0;\n}",
-    "expected": "1 4 8 1"
-   }
-  ],
   "debug": [
    {
     "title": "An unsigned value that underflows",
@@ -164,6 +156,14 @@
     "error": "Wrong output: 4294967294 — unsigned subtraction wraps instead of producing -2.",
     "fixedOutput": "-2",
     "brokenOutput": "4294967294"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Report four type sizes",
+    "statement": "Print the sizes of `char`, `int`, `long long` and `bool`, separated by single spaces.",
+    "solution": "#include <iostream>\n\nint main() {\n    std::cout << sizeof(char) << \" \" << sizeof(int) << \" \"\n              << sizeof(long long) << \" \" << sizeof(bool) << \"\\n\";\n    return 0;\n}",
+    "expected": "1 4 8 1"
    }
   ],
   "interview": [
@@ -216,14 +216,6 @@
     "output": "7 5 7"
    }
   ],
-  "tasks": [
-   {
-    "title": "Turn seconds into a clock",
-    "statement": "Convert 3725 seconds to `hours:minutes:seconds` with each part padded to two digits.",
-    "solution": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    int total = 3725;\n    int hours = total / 3600;\n    int minutes = (total % 3600) / 60;\n    int seconds = total % 60;\n    std::cout << hours << \":\" << std::setfill('0') << std::setw(2) << minutes\n              << \":\" << std::setw(2) << seconds << \"\\n\";\n    return 0;\n}",
-    "expected": "1:02:05"
-   }
-  ],
   "debug": [
    {
     "title": "Assignment where a comparison was meant",
@@ -232,6 +224,14 @@
     "error": "Wrong output: three — the assignment stores 3, so the condition is true even though x was 5.",
     "fixedOutput": "not three",
     "brokenOutput": "three"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Turn seconds into a clock",
+    "statement": "Convert 3725 seconds to `hours:minutes:seconds` with each part padded to two digits.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\nint main() {\n    int total = 3725;\n    int hours = total / 3600;\n    int minutes = (total % 3600) / 60;\n    int seconds = total % 60;\n    std::cout << hours << \":\" << std::setfill('0') << std::setw(2) << minutes\n              << \":\" << std::setw(2) << seconds << \"\\n\";\n    return 0;\n}",
+    "expected": "1:02:05"
    }
   ],
   "interview": [
@@ -284,14 +284,6 @@
     "output": "pass"
    }
   ],
-  "tasks": [
-   {
-    "title": "Check a leap year",
-    "statement": "Print `leap` when 2024 is divisible by 4 and not by 100, or divisible by 400; otherwise print `common`.",
-    "solution": "#include <iostream>\n\nint main() {\n    int year = 2024;\n    bool leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);\n    std::cout << (leap ? \"leap\" : \"common\") << \"\\n\";\n    return 0;\n}",
-    "expected": "leap"
-   }
-  ],
   "debug": [
    {
     "title": "A dangling else without braces",
@@ -300,6 +292,14 @@
     "error": "Wrong output: nothing — the else binds to the inner if, so neither branch runs.",
     "fixedOutput": "a is positive",
     "brokenOutput": "a only"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Check a leap year",
+    "statement": "Print `leap` when 2024 is divisible by 4 and not by 100, or divisible by 400; otherwise print `common`.",
+    "solution": "#include <iostream>\n\nint main() {\n    int year = 2024;\n    bool leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);\n    std::cout << (leap ? \"leap\" : \"common\") << \"\\n\";\n    return 0;\n}",
+    "expected": "leap"
    }
   ],
   "interview": [
@@ -352,14 +352,6 @@
     "output": "247"
    }
   ],
-  "tasks": [
-   {
-    "title": "Sum the digits of a number",
-    "statement": "Add the digits of 4729 and print the total.",
-    "solution": "#include <iostream>\n\nint main() {\n    int n = 4729;\n    int sum = 0;\n    while (n > 0) {\n        sum += n % 10;\n        n /= 10;\n    }\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
-    "expected": "22"
-   }
-  ],
   "debug": [
    {
     "title": "An accumulator that is overwritten",
@@ -368,6 +360,14 @@
     "error": "Wrong output: 5 — sum is overwritten on every pass instead of accumulated.",
     "fixedOutput": "15",
     "brokenOutput": "5"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Sum the digits of a number",
+    "statement": "Add the digits of 4729 and print the total.",
+    "solution": "#include <iostream>\n\nint main() {\n    int n = 4729;\n    int sum = 0;\n    while (n > 0) {\n        sum += n % 10;\n        n /= 10;\n    }\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "expected": "22"
    }
   ],
   "interview": [
@@ -420,14 +420,6 @@
     "output": "15"
    }
   ],
-  "tasks": [
-   {
-    "title": "Overload an area function",
-    "statement": "Write `area(double r)` for a circle and `area(double w, double h)` for a rectangle; print the circle area with two decimals and the rectangle area as an integer.",
-    "solution": "#include <iomanip>\n#include <iostream>\n\ndouble area(double r) { return 3.14159 * r * r; }\ndouble area(double w, double h) { return w * h; }\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << area(2.0) << \"\\n\";\n    std::cout << static_cast<int>(area(3.0, 4.0)) << \"\\n\";\n    return 0;\n}",
-    "expected": "12.57\n12"
-   }
-  ],
   "debug": [
    {
     "title": "A call before the declaration",
@@ -435,6 +427,14 @@
     "fix": "#include <iostream>\n\nint twice(int x);\n\nint main() {\n    std::cout << twice(4) << \"\\n\";\n    return 0;\n}\n\nint twice(int x) { return x * 2; }",
     "error": "error: ‘twice’ was not declared in this scope",
     "fixedOutput": "8"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Overload an area function",
+    "statement": "Write `area(double r)` for a circle and `area(double w, double h)` for a rectangle; print the circle area with two decimals and the rectangle area as an integer.",
+    "solution": "#include <iomanip>\n#include <iostream>\n\ndouble area(double r) { return 3.14159 * r * r; }\ndouble area(double w, double h) { return w * h; }\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << area(2.0) << \"\\n\";\n    std::cout << static_cast<int>(area(3.0, 4.0)) << \"\\n\";\n    return 0;\n}",
+    "expected": "12.57\n12"
    }
   ],
   "interview": [
@@ -497,7 +497,6 @@
     "brokenOutput": "0"
    }
   ],
-  "tasks": [],
   "interview": [
    {
     "q": "What does `std::string::npos` mean?",
@@ -530,6 +529,118 @@
     ],
     "answer": "std::string_view",
     "why": "A view is a non-owning window over existing characters."
+   }
+  ]
+ },
+ "cpp09": {
+  "topics": [
+   {
+    "title": "std::array knows its own size",
+    "body": "A `std::array` carries its length in the type, so `size()` is a constant and `at()` checks the index and throws instead of reading past the end.",
+    "code": "#include <array>\n#include <iostream>\n\nint main() {\n    std::array<int, 4> marks{60, 70, 80, 90};\n    std::cout << marks.size() << \" \" << marks.at(2) << \"\\n\";\n    return 0;\n}",
+    "output": "4 80"
+   },
+   {
+    "title": "Array decay loses the length",
+    "body": "Passing a C array to a function passes a pointer to its first element, so `sizeof` inside the function measures the pointer, not the array. The length has to travel as a separate parameter or be fixed in the type.",
+    "code": "#include <iostream>\n\nint count(int data[]) { return sizeof(data) / sizeof(data[0]); }\n\nint main() {\n    int data[6] = {1, 2, 3, 4, 5, 6};\n    std::cout << sizeof(data) / sizeof(data[0]) << \" \" << count(data) << \"\\n\";\n    return 0;\n}",
+    "output": "6 2"
+   },
+   {
+    "title": "A reference is another name for one object",
+    "body": "A reference must bind at initialization and never rebinds, so writing through it always reaches the same object. That makes reference parameters a readable way to return results through the argument list.",
+    "code": "#include <iostream>\n\nvoid swap(int& a, int& b) {\n    int t = a;\n    a = b;\n    b = t;\n}\n\nint main() {\n    int x = 1, y = 2;\n    swap(x, y);\n    std::cout << x << \" \" << y << \"\\n\";\n    return 0;\n}",
+    "output": "2 1"
+   },
+   {
+    "title": "nullptr is a type, not a macro",
+    "body": "`nullptr` has type `std::nullptr_t` and converts to any pointer type without becoming an integer. `NULL` is usually `0`, which overloads can mistake for an int.",
+    "code": "#include <iostream>\n\nint main() {\n    int* p = nullptr;\n    std::cout << (p == nullptr) << \" \" << sizeof(p) << \"\\n\";\n    return 0;\n}",
+    "output": "1 8"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A std::array passed by value",
+    "broken": "#include <array>\n#include <iostream>\n\nvoid setFirst(std::array<int, 3> data) { data[0] = 9; }\n\nint main() {\n    std::array<int, 3> data{1, 2, 3};\n    setFirst(data);\n    std::cout << data[0] << \"\\n\";\n    return 0;\n}",
+    "fix": "#include <array>\n#include <iostream>\n\nvoid setFirst(std::array<int, 3>& data) { data[0] = 9; }\n\nint main() {\n    std::array<int, 3> data{1, 2, 3};\n    setFirst(data);\n    std::cout << data[0] << \"\\n\";\n    return 0;\n}",
+    "error": "Wrong output: 1 — the array was copied, so the caller’s element is unchanged.",
+    "fixedOutput": "9",
+    "brokenOutput": "1"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Reverse an array in place",
+    "statement": "Reverse `{1, 2, 3, 4, 5}` by swapping from both ends, then print the elements separated by spaces.",
+    "solution": "#include <iostream>\n\nint main() {\n    int data[5] = {1, 2, 3, 4, 5};\n    for (int i = 0, j = 4; i < j; ++i, --j) {\n        int t = data[i];\n        data[i] = data[j];\n        data[j] = t;\n    }\n    for (int v : data) std::cout << v << \" \";\n    std::cout << \"\\n\";\n    return 0;\n}",
+    "expected": "5 4 3 2 1"
+   },
+   {
+    "title": "Sum an array through a pointer",
+    "statement": "Walk `{2, 4, 6}` with a pointer from the first element to one past the last, and print the total.",
+    "solution": "#include <iostream>\n\nint main() {\n    int data[3] = {2, 4, 6};\n    int* p = data;\n    int* end = data + 3;\n    int sum = 0;\n    while (p != end) {\n        sum += *p;\n        ++p;\n    }\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "expected": "12"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why does `std::array` not decay when passed to a function?",
+    "answer": "It is a class object, not a raw array, so passing it by value copies the whole array and passing by reference keeps its type and length. That is why the size is still available inside the callee."
+   },
+   {
+    "q": "When is `std::vector` the better choice than `std::array`?",
+    "answer": "When the element count is decided at runtime or must grow. `std::array` is for a fixed compile-time size and avoids a heap allocation entirely."
+   },
+   {
+    "q": "What makes a pointer dangle?",
+    "answer": "The object it points at is destroyed or freed while the pointer still holds the old address. Reading or writing through it is undefined, so lifetime has to outlive every pointer to it."
+   }
+  ],
+  "mcq": [
+   {
+    "q": "What does `sizeof(data) / sizeof(data[0])` compute inside `main` for `int data[6]`?",
+    "options": [
+     "The pointer size",
+     "6",
+     "24",
+     "Undefined"
+    ],
+    "answer": "6",
+    "why": "The array is still an array there, so the division gives the element count."
+   },
+   {
+    "q": "What does `std::array::at()` do that `operator[]` does not?",
+    "options": [
+     "Returns a copy",
+     "Checks the index and throws when out of range",
+     "Sorts the array",
+     "Grows the array"
+    ],
+    "answer": "Checks the index and throws when out of range",
+    "why": "`at` is bounds-checked; `operator[]` is not."
+   },
+   {
+    "q": "Which statement is true of a reference?",
+    "options": [
+     "It can be null",
+     "It can be reseated after binding",
+     "It must be bound when initialized",
+     "It stores a copy"
+    ],
+    "answer": "It must be bound when initialized",
+    "why": "A reference is an alias and cannot be rebound or left unbound."
+   },
+   {
+    "q": "What is the type of `nullptr`?",
+    "options": [
+     "int",
+     "void*",
+     "std::nullptr_t",
+     "char*"
+    ],
+    "answer": "std::nullptr_t",
+    "why": "The dedicated type avoids the integer interpretation that `NULL` has."
    }
   ]
  }

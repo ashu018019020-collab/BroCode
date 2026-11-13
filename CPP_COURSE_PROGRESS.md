@@ -9,18 +9,19 @@ Honest ledger for the C++ course. Counts are **records that shipped**, not targe
 | Course page | `/cpp` (own route, `Protect`-wrapped, in the sitemap) |
 | Course card | `/courses` grid, own C++ mark, beside C, Java, NumPy and Pandas |
 | Modules | 26 (`cpp01`…`cpp26`), ten learning sections each |
-| Published entries | **1,560** |
-| Authored topics | 130, every program compiled and run with g++ 13.3 (`-std=c++17`) |
+| Published entries | **2,338** |
+| Authored topics | 260 — ten per module, every program compiled and run with g++ 13.3 (`-std=c++17`) |
 | Debug challenges | 130 — five per module (broken program + real compiler/runtime error or declared wrong output + executed fix) |
-| Independent coding tasks | 130 — five per module (expected output executed) |
-| Interview bank | 130 verified-output questions beside 104 authored Q&A |
+| Independent coding tasks | 131 — at least five per module (expected output executed) |
+| Interview bank | 260 verified-output questions beside 104 authored Q&A |
 | MCQ bank | 52, four distinct options each with an answer in them |
 | Defense bank | 52 authored Q&A with steps |
 | Mini projects / Project Labs | 26 / 26 |
 
-Published section counts: Learn 130, Interview 234, Coding Lab 130, Logic 130, Debug 130,
-Practice Solutions 130, Mini Project 26, Project Lab 26, Defense 52, Checkpoint 572.
-Per module: Learn 5, Interview 9, Coding 5, Logic 5, Debug 5, Practice 5, MCQ 2, Defense 2.
+Published section counts: Learn 260, Interview 361, Coding Lab 131, Logic 260, Debug 130,
+Practice Solutions 260, Mini Project 26, Project Lab 26, Defense 52, Checkpoint 832.
+Per module: **Learn 10, Logic 10, Practice 10**, Interview 13–14, Coding 5, Debug 5, MCQ 2,
+Defense 2.
 
 ## Architecture (same as NumPy and Pandas Mastery, separate records)
 
@@ -47,12 +48,12 @@ npm run cpp-course                    # dry run only
 ## Not done (stated, not hidden)
 
 1. **Question volume is below the brief.** The brief asks for 7 sections × 50 questions × 26
-   modules = 9,100 items plus a 1,000-question Interview Masterclass. Two growth layers raised the
-   artifact from 858 to 1,560 entries (60 per module): layer 1 added 52 compiled topics, 52 interview
-   answers and 52 MCQs; layer 2 added 79 compiled coding tasks and 52 debug pairs, so Coding Lab and
-   Debug are now **5 per module (130 each)**. Learn/Logic/Practice remain 5 of 50 and Interview 9.
-   The artifact records `targetPerSection` so the page prints the shortfall instead of implying
-   completeness.
+   modules = 9,100 items plus a 1,000-question Interview Masterclass. The artifact is now 2,338
+   entries (90 per module): layer 1 added 52 compiled topics, 52 interview answers and 52 MCQs;
+   layer 2 added 79 compiled coding tasks and 52 debug pairs; layer 3 added **132 compiled topics**,
+   which raised **Learn, Logic and Practice to 10 per module (260 each)**. Coding Lab and Debug are
+   at the **5 per module minimum (131 / 130)**. Every section is still far from 50, and the artifact
+   records `targetPerSection` so the page prints the shortfall instead of implying completeness.
 2. **No C++ execution in the browser lab.** The samples were verified with a local g++ 13.3; the
    shipped Pyodide runtime cannot compile C++, so the Playground still runs Python only. Wiring a
    real isolated C++ compiler service is a separate piece of infrastructure and was not faked.

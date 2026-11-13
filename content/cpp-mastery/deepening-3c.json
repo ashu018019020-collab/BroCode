@@ -1,0 +1,240 @@
+{
+ "cpp15": {
+  "topics": [
+   {
+    "title": "override checks the signature",
+    "body": "Writing `override` makes a mismatch a compile error instead of a silently separate function that never gets called.",
+    "code": "#include <iostream>\n\nclass Base {\npublic:\n    virtual int value() const { return 1; }\n    virtual ~Base() = default;\n};\n\nclass Derived : public Base {\npublic:\n    int value() const override { return 2; }\n};\n\nint main() {\n    Derived d;\n    std::cout << d.value() << \"\\n\";\n    return 0;\n}",
+    "output": "2"
+   },
+   {
+    "title": "An abstract class cannot be instantiated",
+    "body": "A class with a pure virtual function is a contract: only derived classes that implement it can be created.",
+    "code": "#include <iostream>\n\nclass Shape {\npublic:\n    virtual int sides() const = 0;\n    virtual ~Shape() = default;\n};\n\nclass Triangle : public Shape {\npublic:\n    int sides() const override { return 3; }\n};\n\nint main() {\n    Triangle t;\n    std::cout << t.sides() << \"\\n\";\n    return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "A base pointer calls the derived override",
+    "body": "Dispatch follows the object’s real type, so the same call runs different code depending on what the pointer refers to.",
+    "code": "#include <iostream>\n\nclass Base {\npublic:\n    virtual const char* name() const { return \"base\"; }\n    virtual ~Base() = default;\n};\n\nclass Derived : public Base {\npublic:\n    const char* name() const override { return \"derived\"; }\n};\n\nint main() {\n    Base* p = new Derived;\n    std::cout << p->name() << \"\\n\";\n    delete p;\n    return 0;\n}",
+    "output": "derived"
+   },
+   {
+    "title": "A virtual destructor frees the derived part",
+    "body": "Deleting through a base pointer only runs the derived destructor when the base destructor is virtual.",
+    "code": "#include <iostream>\n\nclass Base {\npublic:\n    virtual ~Base() { std::cout << \"base\\n\"; }\n};\n\nclass Derived : public Base {\npublic:\n    ~Derived() override { std::cout << \"derived\\n\"; }\n};\n\nint main() {\n    Base* p = new Derived;\n    delete p;\n    return 0;\n}",
+    "output": "derived\nbase"
+   },
+   {
+    "title": "dynamic_cast checks the real type",
+    "body": "A failed pointer cast returns null, so the program can branch instead of invoking undefined behaviour.",
+    "code": "#include <iostream>\n\nclass Base { public: virtual ~Base() = default; };\nclass Derived : public Base { public: int id = 7; };\n\nint main() {\n    Base* b = new Derived;\n    if (auto* d = dynamic_cast<Derived*>(b)) std::cout << d->id << \"\\n\";\n    delete b;\n    return 0;\n}",
+    "output": "7"
+   }
+  ]
+ },
+ "cpp16": {
+  "topics": [
+   {
+    "title": "operator== compares values",
+    "body": "A free comparison function keeps both operands const and returns a plain bool.",
+    "code": "#include <iostream>\n\nstruct Point { int x; int y; };\n\nbool operator==(const Point& a, const Point& b) {\n    return a.x == b.x && a.y == b.y;\n}\n\nint main() {\n    std::cout << (Point{1, 2} == Point{1, 2}) << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   },
+   {
+    "title": "operator+= reuses operator+",
+    "body": "Implementing the compound form first and building `+` from it avoids duplicating the arithmetic.",
+    "code": "#include <iostream>\n\nstruct Point {\n    int x;\n    int y;\n    Point& operator+=(const Point& other) {\n        x += other.x;\n        y += other.y;\n        return *this;\n    }\n};\n\nint main() {\n    Point a{1, 2};\n    a += Point{3, 4};\n    std::cout << a.x << \" \" << a.y << \"\\n\";\n    return 0;\n}",
+    "output": "4 6"
+   },
+   {
+    "title": "Prefix and postfix differ in signature",
+    "body": "The postfix form takes a dummy int so the compiler can tell the two overloads apart.",
+    "code": "#include <iostream>\n\nclass Counter {\npublic:\n    Counter& operator++() { ++value; return *this; }\n    Counter operator++(int) { Counter old = *this; ++value; return old; }\n    int get() const { return value; }\nprivate:\n    int value = 0;\n};\n\nint main() {\n    Counter c;\n    c++;\n    std::cout << c.get() << \"\\n\";\n    return 0;\n}",
+    "output": "1"
+   },
+   {
+    "title": "A friend can see private members",
+    "body": "A friend declaration grants one function access without making it a member, which is common for stream operators.",
+    "code": "#include <iostream>\n\nclass Box {\npublic:\n    explicit Box(int v) : value(v) {}\n    friend int read(const Box& b);\nprivate:\n    int value;\n};\n\nint read(const Box& b) { return b.value; }\n\nint main() {\n    Box b(5);\n    std::cout << read(b) << \"\\n\";\n    return 0;\n}",
+    "output": "5"
+   },
+   {
+    "title": "A conversion operator converts outward",
+    "body": "It lets an object be used where another type is expected, and `explicit` keeps that conversion from happening silently.",
+    "code": "#include <iostream>\n\nclass Meter {\npublic:\n    explicit Meter(int v) : value(v) {}\n    explicit operator int() const { return value; }\nprivate:\n    int value;\n};\n\nint main() {\n    Meter m(5);\n    std::cout << static_cast<int>(m) << \"\\n\";\n    return 0;\n}",
+    "output": "5"
+   }
+  ]
+ },
+ "cpp17": {
+  "topics": [
+   {
+    "title": "Template deduction reads the call",
+    "body": "The compiler infers `T` from the argument types, so the caller rarely writes the angle brackets.",
+    "code": "#include <iostream>\n\ntemplate <typename T>\nT twice(T value) { return value + value; }\n\nint main() {\n    std::cout << twice(3) << \" \" << twice(1.5) << \"\\n\";\n    return 0;\n}",
+    "output": "6 3"
+   },
+   {
+    "title": "A class template can default its parameter",
+    "body": "A default argument makes the common instantiation shorter while still allowing another type.",
+    "code": "#include <iostream>\n\ntemplate <typename T = int>\nstruct Box {\n    T value;\n};\n\nint main() {\n    Box<> a{5};\n    Box<double> b{1.5};\n    std::cout << a.value << \" \" << b.value << \"\\n\";\n    return 0;\n}",
+    "output": "5 1.5"
+   },
+   {
+    "title": "A variadic template counts its arguments",
+    "body": "A fold expression over a parameter pack can consume any number of arguments without recursion.",
+    "code": "#include <iostream>\n\ntemplate <typename... Args>\nint count(Args...) { return sizeof...(Args); }\n\nint main() {\n    std::cout << count(1, 2, 3) << \"\\n\";\n    return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "if constexpr drops the other branch",
+    "body": "The discarded branch is not instantiated, so template code can mention operations that only exist for some types.",
+    "code": "#include <iostream>\n#include <type_traits>\n\ntemplate <typename T>\nconst char* kind() {\n    if constexpr (std::is_integral_v<T>) return \"integer\";\n    else return \"other\";\n}\n\nint main() {\n    std::cout << kind<int>() << \"\\n\";\n    return 0;\n}",
+    "output": "integer"
+   },
+   {
+    "title": "A template can be specialized",
+    "body": "A full specialization replaces the generic definition for one concrete type, which is how behaviour is customized.",
+    "code": "#include <iostream>\n\ntemplate <typename T>\nstruct Name { static const char* get() { return \"generic\"; } };\n\ntemplate <>\nstruct Name<int> { static const char* get() { return \"int\"; } };\n\nint main() {\n    std::cout << Name<int>::get() << \"\\n\";\n    return 0;\n}",
+    "output": "int"
+   }
+  ]
+ },
+ "cpp18": {
+  "topics": [
+   {
+    "title": "vector grows geometrically",
+    "body": "When capacity runs out the vector allocates a larger block and moves the elements, so repeated pushes stay amortized constant.",
+    "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v;\n    v.push_back(1);\n    v.push_back(2);\n    std::cout << v.size() << \" \" << (v.capacity() >= v.size()) << \"\\n\";\n    return 0;\n}",
+    "output": "2 1"
+   },
+   {
+    "title": "map operator[] inserts a default",
+    "body": "Reading a missing key with `[]` creates it with a zero value, which is convenient for counters and dangerous for lookups.",
+    "code": "#include <iostream>\n#include <map>\n\nint main() {\n    std::map<int, int> m;\n    m[3];\n    std::cout << m.size() << \" \" << m[3] << \"\\n\";\n    return 0;\n}",
+    "output": "1 0"
+   },
+   {
+    "title": "set rejects duplicates",
+    "body": "Inserting an existing key changes nothing and reports that no insertion happened.",
+    "code": "#include <iostream>\n#include <set>\n\nint main() {\n    std::set<int> s{1, 2};\n    auto result = s.insert(2);\n    std::cout << s.size() << \" \" << result.second << \"\\n\";\n    return 0;\n}",
+    "output": "2 0"
+   },
+   {
+    "title": "deque pushes at both ends",
+    "body": "A double-ended queue keeps fast insertion at the front and the back, which a vector cannot do at the front.",
+    "code": "#include <deque>\n#include <iostream>\n\nint main() {\n    std::deque<int> d;\n    d.push_back(2);\n    d.push_front(1);\n    std::cout << d.front() << \" \" << d.back() << \"\\n\";\n    return 0;\n}",
+    "output": "1 2"
+   },
+   {
+    "title": "priority_queue pops the largest",
+    "body": "The default comparator is `less`, so the top is the greatest element and each pop removes it.",
+    "code": "#include <iostream>\n#include <queue>\n\nint main() {\n    std::priority_queue<int> q;\n    q.push(3);\n    q.push(9);\n    q.push(5);\n    std::cout << q.top() << \"\\n\";\n    return 0;\n}",
+    "output": "9"
+   }
+  ]
+ },
+ "cpp19": {
+  "topics": [
+   {
+    "title": "find_if takes a predicate",
+    "body": "It returns the first iterator whose element satisfies the predicate, or `end()` when none does.",
+    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 4, 9};\n    auto it = std::find_if(v.begin(), v.end(), [](int x) { return x > 3; });\n    std::cout << *it << \"\\n\";\n    return 0;\n}",
+    "output": "4"
+   },
+   {
+    "title": "lower_bound needs sorted input",
+    "body": "It binary-searches for the first element not less than the value, which is why an unsorted range gives a meaningless answer.",
+    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 3, 5, 7};\n    auto it = std::lower_bound(v.begin(), v.end(), 5);\n    std::cout << (it - v.begin()) << \"\\n\";\n    return 0;\n}",
+    "output": "2"
+   },
+   {
+    "title": "remove_if moves the kept values",
+    "body": "It partitions the range and returns the new logical end; erasing that tail is a separate step.",
+    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3, 4};\n    auto end = std::remove_if(v.begin(), v.end(), [](int x) { return x % 2 == 0; });\n    v.erase(end, v.end());\n    std::cout << v.size() << \"\\n\";\n    return 0;\n}",
+    "output": "2"
+   },
+   {
+    "title": "A lambda can capture by reference",
+    "body": "A reference capture lets the lambda update the caller’s variable, which is how a loop accumulates through an algorithm.",
+    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    int sum = 0;\n    std::for_each(v.begin(), v.end(), [&sum](int x) { sum += x; });\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+    "output": "6"
+   },
+   {
+    "title": "reverse reorders in place",
+    "body": "It swaps from both ends toward the middle, so no extra storage is needed.",
+    "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> v{1, 2, 3};\n    std::reverse(v.begin(), v.end());\n    std::cout << v.front() << \" \" << v.back() << \"\\n\";\n    return 0;\n}",
+    "output": "3 1"
+   }
+  ]
+ },
+ "cpp20": {
+  "topics": [
+   {
+    "title": "Stack unwinding runs destructors",
+    "body": "When an exception leaves a scope, every constructed local is destroyed before the handler runs, which is how locks and files are released.",
+    "code": "#include <iostream>\n\nstruct Guard {\n    ~Guard() { std::cout << \"released\\n\"; }\n};\n\nint main() {\n    try {\n        Guard g;\n        throw 1;\n    } catch (int) {\n        std::cout << \"caught\\n\";\n    }\n    return 0;\n}",
+    "output": "released\ncaught"
+   },
+   {
+    "title": "what() explains a standard exception",
+    "body": "Every standard exception derives from `std::exception` and carries a message through `what()`.",
+    "code": "#include <iostream>\n#include <stdexcept>\n\nint main() {\n    try {\n        throw std::runtime_error(\"disk full\");\n    } catch (const std::exception& e) {\n        std::cout << e.what() << \"\\n\";\n    }\n    return 0;\n}",
+    "output": "disk full"
+   },
+   {
+    "title": "noexcept keeps moves cheap",
+    "body": "A move constructor marked `noexcept` lets a vector move elements instead of copying them when it grows.",
+    "code": "#include <iostream>\n#include <utility>\n\nstruct Item {\n    Item() = default;\n    Item(Item&&) noexcept { std::cout << \"moved\\n\"; }\n};\n\nint main() {\n    Item a;\n    Item b(std::move(a));\n    return 0;\n}",
+    "output": "moved"
+   },
+   {
+    "title": "try blocks can nest",
+    "body": "An inner handler can deal with one failure and let the rest propagate to the outer handler.",
+    "code": "#include <iostream>\n\nint main() {\n    try {\n        try {\n            throw 1;\n        } catch (int) {\n            std::cout << \"inner\\n\";\n            throw;\n        }\n    } catch (int) {\n        std::cout << \"outer\\n\";\n    }\n    return 0;\n}",
+    "output": "inner\nouter"
+   },
+   {
+    "title": "catch(...) takes anything",
+    "body": "The ellipsis handler catches every type, which is useful as a last resort but hides the actual exception.",
+    "code": "#include <iostream>\n\nint main() {\n    try {\n        throw 3.5;\n    } catch (...) {\n        std::cout << \"unknown\\n\";\n    }\n    return 0;\n}",
+    "output": "unknown"
+   }
+  ]
+ },
+ "cpp21": {
+  "topics": [
+   {
+    "title": "ofstream truncates by default",
+    "body": "Opening an existing file in the default mode clears it, which is why a read-back shows only the new content.",
+    "code": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    {\n        std::ofstream out(\"demo.txt\");\n        out << \"old\";\n    }\n    {\n        std::ofstream out(\"demo.txt\");\n        out << \"new\";\n    }\n    std::ifstream in(\"demo.txt\");\n    std::string text;\n    in >> text;\n    std::cout << text << \"\\n\";\n    return 0;\n}",
+    "output": "new"
+   },
+   {
+    "title": "ios::app keeps existing content",
+    "body": "Append mode writes at the end instead of clearing the file, which is how logs survive a restart.",
+    "code": "#include <fstream>\n#include <iostream>\n#include <string>\n\nint main() {\n    {\n        std::ofstream out(\"log.txt\");\n        out << \"one\\n\";\n    }\n    {\n        std::ofstream out(\"log.txt\", std::ios::app);\n        out << \"two\\n\";\n    }\n    std::ifstream in(\"log.txt\");\n    std::string line;\n    int lines = 0;\n    while (std::getline(in, line)) ++lines;\n    std::cout << lines << \"\\n\";\n    return 0;\n}",
+    "output": "2"
+   },
+   {
+    "title": "Binary mode writes raw bytes",
+    "body": "Binary mode avoids newline translation, so a struct’s bytes read back exactly as they were written.",
+    "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream out(\"data.bin\", std::ios::binary);\n        int value = 42;\n        out.write(reinterpret_cast<const char*>(&value), sizeof value);\n    }\n    std::ifstream in(\"data.bin\", std::ios::binary);\n    int value = 0;\n    in.read(reinterpret_cast<char*>(&value), sizeof value);\n    std::cout << value << \"\\n\";\n    return 0;\n}",
+    "output": "42"
+   },
+   {
+    "title": "filesystem::exists checks a path",
+    "body": "It asks the operating system whether the path resolves, which is the guard before opening a file for reading.",
+    "code": "#include <filesystem>\n#include <iostream>\n\nint main() {\n    std::filesystem::path p = \"definitely_missing.txt\";\n    std::cout << std::filesystem::exists(p) << \"\\n\";\n    return 0;\n}",
+    "output": "0"
+   },
+   {
+    "title": "remove deletes a file",
+    "body": "`std::filesystem::remove` returns whether a file was actually removed, so the caller can report a real failure.",
+    "code": "#include <filesystem>\n#include <fstream>\n#include <iostream>\n\nint main() {\n    { std::ofstream out(\"temp.txt\"); out << \"x\"; }\n    bool gone = std::filesystem::remove(\"temp.txt\");\n    std::cout << gone << \" \" << std::filesystem::exists(\"temp.txt\") << \"\\n\";\n    return 0;\n}",
+    "output": "1 0"
+   }
+  ]
+ }
+}

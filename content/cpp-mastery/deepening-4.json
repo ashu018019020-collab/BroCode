@@ -1,0 +1,43 @@
+{
+ "cpp20": {
+  "debug": [
+   {
+    "title": "catch(...) placed before a typed handler",
+    "broken": "#include <iostream>\n\nint main() {\n    try {\n        throw 7;\n    } catch (...) {\n        std::cout << \"any\\n\";\n    } catch (int code) {\n        std::cout << code << \"\\n\";\n    }\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nint main() {\n    try {\n        throw 7;\n    } catch (int code) {\n        std::cout << \"int \" << code << \"\\n\";\n    } catch (...) {\n        std::cout << \"any\\n\";\n    }\n    return 0;\n}",
+    "error": "error: ‘...’ handler must be the last handler for its try block [-fpermissive]",
+    "fixedOutput": "int 7"
+   }
+  ]
+ },
+ "cpp24": {
+  "debug": [
+   {
+    "title": "join() called on a thread that was never started",
+    "broken": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread t;\n    t.join();\n    std::cout << \"joined\\n\";\n    return 0;\n}",
+    "fix": "#include <iostream>\n#include <thread>\n\nint main() {\n    std::thread t;\n    if (t.joinable()) t.join();\n    std::cout << \"nothing to join\\n\";\n    return 0;\n}",
+    "error": "the program failed at runtime (exit null) — terminate called after throwing an instance of 'std::system_error'",
+    "fixedOutput": "nothing to join"
+   }
+  ]
+ },
+ "cpp26": {
+  "tasks": [
+   {
+    "title": "Build a report step by step",
+    "statement": "Use a builder to set the title `marks` and three rows, then print `marks:3`.",
+    "solution": "#include <iostream>\n#include <string>\n\nclass Report {\npublic:\n    Report& title(std::string t) { name = std::move(t); return *this; }\n    Report& rows(int n) { count = n; return *this; }\n    std::string build() const { return name + \":\" + std::to_string(count); }\nprivate:\n    std::string name;\n    int count = 0;\n};\n\nint main() {\n    std::cout << Report().title(\"marks\").rows(3).build() << \"\\n\";\n    return 0;\n}",
+    "expected": "marks:3"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A pure virtual call from a constructor",
+    "broken": "#include <iostream>\n\nclass Base {\npublic:\n    Base() { hello(); }\n    virtual void hello() = 0;\n    virtual ~Base() = default;\n};\n\nclass Derived : public Base {\npublic:\n    void hello() override { std::cout << \"hello\\n\"; }\n};\n\nint main() {\n    Derived d;\n    return 0;\n}",
+    "fix": "#include <iostream>\n\nclass Base {\npublic:\n    virtual void hello() = 0;\n    virtual ~Base() = default;\n};\n\nclass Derived : public Base {\npublic:\n    void hello() override { std::cout << \"hello\\n\"; }\n};\n\nint main() {\n    Derived d;\n    d.hello();\n    return 0;\n}",
+    "error": "error: ld returned 1 exit status",
+    "fixedOutput": "hello"
+   }
+  ]
+ }
+}
