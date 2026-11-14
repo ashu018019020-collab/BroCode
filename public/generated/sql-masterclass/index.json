@@ -18,14 +18,14 @@
   ]
  },
  "stats": {
-  "modules": 8,
-  "topics": 177,
-  "learn": 160,
-  "interview": 160,
-  "labs": 160,
-  "logic": 120,
-  "debug": 80,
-  "revision": 80
+  "modules": 9,
+  "topics": 197,
+  "learn": 180,
+  "interview": 180,
+  "labs": 180,
+  "logic": 135,
+  "debug": 90,
+  "revision": 90
  },
  "modules": [
   {
@@ -7591,6 +7591,921 @@
      {
       "q": "Why use parentheses?",
       "answer": "To state the intended logic and override precedence."
+     }
+    ]
+   }
+  },
+  {
+   "id": "sql08",
+   "no": 8,
+   "title": "ORDER BY, LIMIT and OFFSET",
+   "goal": "Produce deterministic sorted pages and top-N reports.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Introduction to ORDER BY",
+     "simple": "ORDER BY result rows ko sort karta hai.",
+     "pro": "ORDER BY sorts the final result set using one or more sort expressions; it runs after SELECT and DISTINCT and before LIMIT.",
+     "points": [
+      "No ORDER BY means no guaranteed order.",
+      "ASC is the default.",
+      "Sorting happens after filtering."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks DESC;",
+      "output": "Highest marks first."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Sorting Rows",
+     "simple": "Sorting se rows ek predictable sequence me aate hain.",
+     "pro": "A sort key defines the comparison used to order rows; equal keys keep an unspecified relative order unless a tie-breaker is added.",
+     "points": [
+      "One key is enough for simple reports.",
+      "Equal keys need a tie-breaker.",
+      "The result is only guaranteed when the order is total."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks;",
+      "output": "Lowest marks first."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "ASC",
+     "simple": "ASC ascending order me sort karta hai — chhota se bada.",
+     "pro": "ASC is the default sort direction and orders values from smallest to largest, or A to Z for text.",
+     "points": [
+      "ASC is optional.",
+      "Numbers go low to high.",
+      "Text follows the collation."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks ASC;",
+      "output": "Lowest to highest marks."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "DESC",
+     "simple": "DESC descending order me sort karta hai — bada se chhota.",
+     "pro": "DESC orders values from largest to smallest, or Z to A for text.",
+     "points": [
+      "DESC reverses the comparison.",
+      "It is not a stable sort by itself.",
+      "Add a tie-breaker for deterministic pages."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks DESC;",
+      "output": "Highest to lowest marks."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Sorting Numeric Data",
+     "simple": "Numbers natural numeric order me sort hote hain, text order me nahi.",
+     "pro": "Numeric columns sort by value, so 9 comes before 10; storing numbers as text would sort 10 before 9.",
+     "points": [
+      "Use numeric types for numeric sorting.",
+      "Text sort is lexicographic.",
+      "Casting text to numeric changes the order."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks DESC;",
+      "output": "Marks sorted by numeric value."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Sorting Text Data",
+     "simple": "Text sort collation par depend karta hai; case aur language order badal sakta hai.",
+     "pro": "Text ordering follows the column collation, which controls case and locale rules; use LOWER() or a case-insensitive collation when needed.",
+     "points": [
+      "A and a may sort differently by collation.",
+      "Use LOWER(name) for case-insensitive order.",
+      "Use a deterministic tie-breaker."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students ORDER BY LOWER(name);",
+      "output": "Names sorted case-insensitively."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Sorting Date Values",
+     "simple": "Dates chronological order me sort hoti hain.",
+     "pro": "Date and timestamp values sort chronologically; DESC gives newest first.",
+     "points": [
+      "Earlier dates come first in ASC.",
+      "DESC gives the latest first.",
+      "Timestamps include time within the day."
+     ],
+     "example": {
+      "sql": "SELECT student_id, enrolled_on FROM enrollments ORDER BY enrolled_on DESC;",
+      "output": "Newest enrollments first."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Multiple Sort Keys",
+     "simple": "Pehla key main order deta hai, doosra key ties todta hai.",
+     "pro": "Multiple ORDER BY expressions are applied left to right: the first is primary, later keys break ties.",
+     "points": [
+      "Separate keys with commas.",
+      "Each key has its own direction.",
+      "The last key should make the order deterministic."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST, name ASC;",
+      "output": "Highest known marks first, ties alphabetical."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Sorting by Aliases and Expressions",
+     "simple": "ORDER BY alias ya expression use kar sakta hai.",
+     "pro": "ORDER BY can reference a select-list alias or repeat an expression, because it is evaluated after SELECT.",
+     "points": [
+      "Aliases work in ORDER BY.",
+      "Expressions can be sorted directly.",
+      "Aliases do not work in WHERE."
+     ],
+     "example": {
+      "sql": "SELECT name, marks * 2 AS doubled FROM students ORDER BY doubled DESC;",
+      "output": "Rows ordered by the doubled value."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "NULL Sorting",
+     "simple": "PostgreSQL me ASC default NULLs last, DESC default NULLs first.",
+     "pro": "By default PostgreSQL treats NULL as larger than any non-null value: ASC places NULLs last and DESC places them first; NULLS FIRST/LAST overrides it.",
+     "points": [
+      "ASC default: NULLS LAST.",
+      "DESC default: NULLS FIRST.",
+      "Be explicit in reports."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks ASC NULLS LAST;",
+      "output": "Known marks ascending, NULL marks last."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "LIMIT",
+     "simple": "LIMIT result ki maximum row count set karta hai.",
+     "pro": "LIMIT caps the number of rows returned after sorting; LIMIT without ORDER BY returns an arbitrary subset.",
+     "points": [
+      "LIMIT 0 returns no rows.",
+      "LIMIT ALL means no limit.",
+      "Use ORDER BY for meaningful top-N."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST LIMIT 3;",
+      "output": "Top three known marks."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "OFFSET",
+     "simple": "OFFSET starting rows skip karta hai.",
+     "pro": "OFFSET skips a number of rows after sorting and before the limit is applied.",
+     "points": [
+      "OFFSET 0 is the first row.",
+      "Large offsets still scan skipped rows.",
+      "Use with ORDER BY for stable pages."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST LIMIT 3 OFFSET 3;",
+      "output": "Rows 4 through 6 of known marks."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Pagination",
+     "simple": "Pagination me page size aur page number se LIMIT/OFFSET nikalte hain.",
+     "pro": "A page uses LIMIT page_size OFFSET (page - 1) * page_size, with a deterministic ORDER BY so rows do not shift between pages.",
+     "points": [
+      "Page 1 uses OFFSET 0.",
+      "Page 3 with size 10 uses OFFSET 20.",
+      "Always add a unique tie-breaker."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST, id ASC LIMIT 10 OFFSET 20;",
+      "output": "Page 3 of a 10-row page."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Top N Records",
+     "simple": "Top N ke liye ORDER BY DESC aur LIMIT N use karo.",
+     "pro": "Top-N queries sort by the ranking key descending and cap the result; ties need an explicit tie-breaker or a window function for exact semantics.",
+     "points": [
+      "ORDER BY the ranking key.",
+      "LIMIT N caps the rows.",
+      "Ties can make the cut arbitrary."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST LIMIT 5;",
+      "output": "Five highest known marks."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Bottom N Records",
+     "simple": "Bottom N ke liye ascending order aur LIMIT use karo.",
+     "pro": "Bottom-N queries sort ascending and cap the result; NULL placement can affect what counts as the bottom.",
+     "points": [
+      "ASC gives the smallest first.",
+      "NULLS LAST keeps unknown values out of the bottom.",
+      "Add a tie-breaker for stability."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks ASC NULLS LAST LIMIT 5;",
+      "output": "Five lowest known marks."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Deterministic Ordering",
+     "simple": "Deterministic order ke liye unique tie-breaker add karo.",
+     "pro": "A total ordering uses a unique key as the final sort expression, so equal values cannot swap between pages or runs.",
+     "points": [
+      "Add id as the last key.",
+      "Without it, LIMIT can change between runs.",
+      "Stable pages need a total order."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST, id ASC;",
+      "output": "Marks descending, NULLs last, id breaking every tie."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Positional ORDER BY",
+     "simple": "ORDER BY 2 select list ke doosre column ko refer karta hai.",
+     "pro": "ORDER BY can use a select-list position, but positional references are fragile when the projection changes and should be avoided in application SQL.",
+     "points": [
+      "Position 1 is the first output column.",
+      "It breaks when columns are reordered.",
+      "Prefer explicit names or aliases."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students ORDER BY 2 DESC;",
+      "output": "Rows ordered by marks, the second column."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "ORDER BY with WHERE",
+     "simple": "WHERE pehle filter karta hai, phir ORDER BY sort karta hai.",
+     "pro": "Logical evaluation filters rows in WHERE, projects them in SELECT, then sorts the surviving rows in ORDER BY.",
+     "points": [
+      "WHERE runs before ORDER BY.",
+      "Sorting only the filtered rows is cheaper.",
+      "LIMIT applies last."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE marks >= 60 ORDER BY marks DESC;",
+      "output": "Only passing rows, highest first."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Sorting Performance",
+     "simple": "Bade result ko sort karna costly hota hai; index madad kar sakta hai.",
+     "pro": "A sort may use memory or disk; a matching B-tree index can return rows already ordered and avoid a sort for prefix-ordered queries.",
+     "points": [
+      "Watch EXPLAIN for Sort nodes.",
+      "Indexes help matching ORDER BY prefixes.",
+      "Large OFFSET still skips rows."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT name FROM students ORDER BY marks DESC NULLS LAST LIMIT 10;",
+      "output": "An Index Scan or a Sort depending on available indexes."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Ranking Report",
+     "simple": "Ab filter, sort, tie-breaker aur limit mila kar ranking report banao.",
+     "pro": "A reliable ranking report combines a filter, a deterministic ORDER BY, an explicit NULL policy and a LIMIT, and is reviewed with EXPLAIN when it grows.",
+     "points": [
+      "Filter first.",
+      "Sort by the ranking key.",
+      "Break ties with id.",
+      "Cap the report with LIMIT."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE marks IS NOT NULL ORDER BY marks DESC, id ASC LIMIT 10;",
+      "output": "Top ten known marks with stable ties."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What does ORDER BY do?",
+      "options": [
+       "Sorts the result rows",
+       "Filters rows",
+       "Groups rows",
+       "Creates a table"
+      ],
+      "answer": "Sorts the result rows",
+      "why": "ORDER BY defines the final row order."
+     },
+     {
+      "q": "Which direction is the default?",
+      "options": [
+       "ASC",
+       "DESC",
+       "Random",
+       "None"
+      ],
+      "answer": "ASC",
+      "why": "ASC is assumed when no direction is written."
+     },
+     {
+      "q": "What does DESC do?",
+      "options": [
+       "Sorts largest to smallest",
+       "Sorts smallest to largest",
+       "Removes duplicates",
+       "Limits rows"
+      ],
+      "answer": "Sorts largest to smallest",
+      "why": "DESC reverses the comparison order."
+     },
+     {
+      "q": "How do you sort by marks highest first?",
+      "options": [
+       "ORDER BY marks DESC",
+       "ORDER BY marks ASC",
+       "ORDER BY marks",
+       "ORDER BY DESC marks"
+      ],
+      "answer": "ORDER BY marks DESC",
+      "why": "DESC puts the largest values first."
+     },
+     {
+      "q": "How do you break ties after marks?",
+      "options": [
+       "Add name ASC as a second key",
+       "Use LIMIT",
+       "Use OFFSET",
+       "Use DISTINCT"
+      ],
+      "answer": "Add name ASC as a second key",
+      "why": "Later sort keys break ties from earlier keys."
+     },
+     {
+      "q": "Can ORDER BY use a select-list alias?",
+      "options": [
+       "Yes",
+       "No",
+       "Only with AS",
+       "Only for numbers"
+      ],
+      "answer": "Yes",
+      "why": "ORDER BY is evaluated after SELECT, so aliases exist."
+     },
+     {
+      "q": "Does PostgreSQL put NULLs first or last for ASC?",
+      "options": [
+       "Last by default",
+       "First by default",
+       "Always first",
+       "Always last"
+      ],
+      "answer": "Last by default",
+      "why": "NULL sorts as larger than non-null values, so ASC puts it last."
+     },
+     {
+      "q": "Does PostgreSQL put NULLs first or last for DESC?",
+      "options": [
+       "First by default",
+       "Last by default",
+       "Always last",
+       "Never"
+      ],
+      "answer": "First by default",
+      "why": "DESC reverses the default, so NULLs come first."
+     },
+     {
+      "q": "Which clause overrides NULL placement?",
+      "options": [
+       "NULLS FIRST / NULLS LAST",
+       "LIMIT",
+       "OFFSET",
+       "DISTINCT"
+      ],
+      "answer": "NULLS FIRST / NULLS LAST",
+      "why": "Both are ORDER BY modifiers."
+     },
+     {
+      "q": "What does LIMIT 5 return?",
+      "options": [
+       "At most five rows",
+       "Exactly five rows",
+       "Five columns",
+       "Five pages"
+      ],
+      "answer": "At most five rows",
+      "why": "The result can have fewer rows."
+     },
+     {
+      "q": "What does OFFSET 10 do?",
+      "options": [
+       "Skips the first ten rows",
+       "Returns ten rows",
+       "Sorts ten rows",
+       "Deletes ten rows"
+      ],
+      "answer": "Skips the first ten rows",
+      "why": "OFFSET drops rows before the limit is applied."
+     },
+     {
+      "q": "What is page 3 with page size 10?",
+      "options": [
+       "LIMIT 10 OFFSET 20",
+       "LIMIT 20 OFFSET 10",
+       "LIMIT 3 OFFSET 10",
+       "LIMIT 10 OFFSET 3"
+      ],
+      "answer": "LIMIT 10 OFFSET 20",
+      "why": "Offset is (page - 1) × size."
+     },
+     {
+      "q": "What is the top-N pattern?",
+      "options": [
+       "ORDER BY key DESC LIMIT N",
+       "ORDER BY key ASC LIMIT N",
+       "LIMIT N without ORDER BY",
+       "OFFSET N"
+      ],
+      "answer": "ORDER BY key DESC LIMIT N",
+      "why": "Sort the ranking key descending, then cap."
+     },
+     {
+      "q": "What is the bottom-N pattern?",
+      "options": [
+       "ORDER BY key ASC LIMIT N",
+       "ORDER BY key DESC LIMIT N",
+       "LIMIT N only",
+       "OFFSET N only"
+      ],
+      "answer": "ORDER BY key ASC LIMIT N",
+      "why": "Ascending puts the smallest first."
+     },
+     {
+      "q": "Why add a unique tie-breaker?",
+      "options": [
+       "To make the order deterministic",
+       "To remove duplicates",
+       "To speed up filtering",
+       "To add an index"
+      ],
+      "answer": "To make the order deterministic",
+      "why": "A total order prevents equal keys from swapping."
+     },
+     {
+      "q": "What does ORDER BY 2 refer to?",
+      "options": [
+       "The second output column",
+       "The second table",
+       "Two rows",
+       "The second schema"
+      ],
+      "answer": "The second output column",
+      "why": "Positional ORDER BY references the select list."
+     },
+     {
+      "q": "Should application SQL use positional ORDER BY?",
+      "options": [
+       "No, it is fragile",
+       "Yes, always",
+       "Only with LIMIT",
+       "Only in PostgreSQL"
+      ],
+      "answer": "No, it is fragile",
+      "why": "Changing the projection can silently change the sort."
+     },
+     {
+      "q": "Does WHERE run before ORDER BY?",
+      "options": [
+       "Yes",
+       "No",
+       "They run together",
+       "ORDER BY runs first"
+      ],
+      "answer": "Yes",
+      "why": "Rows are filtered before they are sorted."
+     },
+     {
+      "q": "What does LIMIT without ORDER BY return?",
+      "options": [
+       "An arbitrary subset",
+       "The first rows by primary key",
+       "The last rows",
+       "An error"
+      ],
+      "answer": "An arbitrary subset",
+      "why": "Without ORDER BY there is no guaranteed row order."
+     },
+     {
+      "q": "Which clause applies last?",
+      "options": [
+       "LIMIT",
+       "WHERE",
+       "SELECT",
+       "ORDER BY"
+      ],
+      "answer": "LIMIT",
+      "why": "Logical order ends with LIMIT/OFFSET."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is ORDER BY?",
+      "answer": "The clause that sorts the final result set using one or more expressions."
+     },
+     {
+      "q": "What is the default sort direction?",
+      "answer": "ASC, from smallest to largest or A to Z."
+     },
+     {
+      "q": "How do you sort descending?",
+      "answer": "Add DESC after the sort expression."
+     },
+     {
+      "q": "How do multiple ORDER BY keys work?",
+      "answer": "They are applied left to right; later keys break ties from earlier keys."
+     },
+     {
+      "q": "Can ORDER BY use an alias?",
+      "answer": "Yes, because ORDER BY is evaluated after SELECT."
+     },
+     {
+      "q": "Can WHERE use a SELECT alias?",
+      "answer": "No, because WHERE runs before SELECT."
+     },
+     {
+      "q": "How does PostgreSQL sort NULLs by default?",
+      "answer": "As larger than non-null values: NULLS LAST for ASC and NULLS FIRST for DESC."
+     },
+     {
+      "q": "How do you force NULLs last?",
+      "answer": "Add NULLS LAST to the ORDER BY expression."
+     },
+     {
+      "q": "What does LIMIT do?",
+      "answer": "Caps the number of rows returned after sorting."
+     },
+     {
+      "q": "What does OFFSET do?",
+      "answer": "Skips a number of rows before the limit is applied."
+     },
+     {
+      "q": "How do you calculate a pagination offset?",
+      "answer": "Offset = (page - 1) × page_size, with page 1 at offset 0."
+     },
+     {
+      "q": "Why is LIMIT without ORDER BY unsafe?",
+      "answer": "The database may return any subset because no row order is guaranteed."
+     },
+     {
+      "q": "Why is a tie-breaker important for pagination?",
+      "answer": "Equal sort keys can swap between pages; a unique final key makes the order total."
+     },
+     {
+      "q": "What is top-N SQL?",
+      "answer": "ORDER BY ranking_key DESC LIMIT n, with a tie-breaker for stable results."
+     },
+     {
+      "q": "What is the difference between LIMIT and FETCH FIRST?",
+      "answer": "LIMIT is PostgreSQL/MySQL/SQLite syntax; FETCH FIRST is standard SQL and also supported by PostgreSQL."
+     },
+     {
+      "q": "Why can a large OFFSET be slow?",
+      "answer": "The database still has to scan and discard the skipped rows."
+     },
+     {
+      "q": "What is keyset pagination?",
+      "answer": "Paginating by a stable key, such as WHERE id > last_id ORDER BY id LIMIT n, instead of skipping a large offset."
+     },
+     {
+      "q": "How can an index help ORDER BY?",
+      "answer": "A B-tree index matching the sort prefix can return rows already ordered and avoid a sort."
+     },
+     {
+      "q": "Why does text sort vary?",
+      "answer": "Text ordering follows the collation, which controls case and locale rules."
+     },
+     {
+      "q": "Can ORDER BY use an expression?",
+      "answer": "Yes, including functions and arithmetic, but the expression must be evaluated for each row."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Sort marks ascending",
+      "task": "Return name and marks lowest first.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks ASC;",
+      "expected": "Lowest marks first."
+     },
+     {
+      "title": "Sort marks descending",
+      "task": "Return name and marks highest first.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC;",
+      "expected": "Highest marks first."
+     },
+     {
+      "title": "Sort names",
+      "task": "Return names alphabetically.",
+      "solution": "SELECT name FROM students ORDER BY name ASC;",
+      "expected": "A to Z under the collation."
+     },
+     {
+      "title": "Sort dates",
+      "task": "Return enrollments newest first.",
+      "solution": "SELECT student_id, enrolled_on FROM enrollments ORDER BY enrolled_on DESC;",
+      "expected": "Newest enrollment first."
+     },
+     {
+      "title": "Multiple keys",
+      "task": "Sort by marks descending, then name ascending.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC, name ASC;",
+      "expected": "Highest marks first, ties alphabetical."
+     },
+     {
+      "title": "Sort by alias",
+      "task": "Return name and marks doubled, ordered by doubled descending.",
+      "solution": "SELECT name, marks * 2 AS doubled FROM students ORDER BY doubled DESC;",
+      "expected": "Largest doubled value first."
+     },
+     {
+      "title": "Sort by expression",
+      "task": "Order by marks plus 5 descending.",
+      "solution": "SELECT name, marks + 5 AS boosted FROM students ORDER BY boosted DESC;",
+      "expected": "Largest boosted value first."
+     },
+     {
+      "title": "NULLs last",
+      "task": "Sort marks ascending with NULLs last.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks ASC NULLS LAST;",
+      "expected": "Known marks ascending, NULLs last."
+     },
+     {
+      "title": "NULLs first",
+      "task": "Sort marks descending with NULLs last.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST;",
+      "expected": "Highest first, NULLs last."
+     },
+     {
+      "title": "Limit three",
+      "task": "Return the top three by marks.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST, id ASC LIMIT 3;",
+      "expected": "Three highest known marks."
+     },
+     {
+      "title": "Offset three",
+      "task": "Skip the top three and return the next three.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST, id ASC LIMIT 3 OFFSET 3;",
+      "expected": "Rows 4 through 6 of known marks."
+     },
+     {
+      "title": "Page three",
+      "task": "Return page 3 with page size 10.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST, id ASC LIMIT 10 OFFSET 20;",
+      "expected": "Rows 21 through 30."
+     },
+     {
+      "title": "Top five",
+      "task": "Return the five highest marks.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST, id ASC LIMIT 5;",
+      "expected": "Five highest known marks."
+     },
+     {
+      "title": "Bottom five",
+      "task": "Return the five lowest known marks.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks ASC NULLS LAST LIMIT 5;",
+      "expected": "Five lowest non-null marks."
+     },
+     {
+      "title": "Deterministic ties",
+      "task": "Sort by marks descending with id as the tie-breaker.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST, id ASC;",
+      "expected": "A total order."
+     },
+     {
+      "title": "Positional order",
+      "task": "Order by the second output column descending.",
+      "solution": "SELECT name, marks FROM students ORDER BY 2 DESC NULLS LAST;",
+      "expected": "Highest known marks first."
+     },
+     {
+      "title": "Filter then sort",
+      "task": "Return students above 60, highest first.",
+      "solution": "SELECT name, marks FROM students WHERE marks > 60 ORDER BY marks DESC;",
+      "expected": "Filtered rows, highest first."
+     },
+     {
+      "title": "Check the plan",
+      "task": "Explain the top-ten marks query.",
+      "solution": "EXPLAIN SELECT name FROM students ORDER BY marks DESC NULLS LAST LIMIT 10;",
+      "expected": "A plan with an index scan or sort."
+     },
+     {
+      "title": "Standard fetch",
+      "task": "Return the top three using FETCH FIRST.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST FETCH FIRST 3 ROWS ONLY;",
+      "expected": "Three highest known marks."
+     },
+     {
+      "title": "Ranking report",
+      "task": "Return the top ten known marks with stable ties.",
+      "solution": "SELECT name, marks FROM students WHERE marks IS NOT NULL ORDER BY marks DESC, id ASC LIMIT 10;",
+      "expected": "Top ten known marks, ties by id."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why is ORDER BY without LIMIT potentially expensive?",
+      "answer": "The database may sort the entire result before returning any rows."
+     },
+     {
+      "q": "Why is LIMIT without ORDER BY arbitrary?",
+      "answer": "There is no guaranteed row order, so any subset may be chosen."
+     },
+     {
+      "q": "Why add a unique tie-breaker?",
+      "answer": "Equal sort keys can swap between runs and pages; a unique final key makes the order total."
+     },
+     {
+      "q": "Why does ASC put NULLs last in PostgreSQL?",
+      "answer": "NULL sorts as larger than any non-null value in the default ordering."
+     },
+     {
+      "q": "Why does DESC put NULLs first?",
+      "answer": "DESC reverses the default ordering, so the largest value (NULL) comes first."
+     },
+     {
+      "q": "Why can text sorting surprise you?",
+      "answer": "Collation controls case and locale rules, so A and a may not sort as expected."
+     },
+     {
+      "q": "Why does a large OFFSET get slower?",
+      "answer": "The server still scans and discards every skipped row."
+     },
+     {
+      "q": "Why is keyset pagination often faster?",
+      "answer": "It seeks directly after the last key instead of counting and discarding rows."
+     },
+     {
+      "q": "Why does an alias work in ORDER BY but not WHERE?",
+      "answer": "ORDER BY runs after SELECT defines the alias; WHERE runs before it."
+     },
+     {
+      "q": "Why is positional ORDER BY fragile?",
+      "answer": "Changing the select list reorders or removes the referenced position."
+     },
+     {
+      "q": "Why does WHERE run before ORDER BY?",
+      "answer": "Filtering first reduces the rows that must be sorted."
+     },
+     {
+      "q": "Why does SELECT DISTINCT restrict ORDER BY expressions?",
+      "answer": "For DISTINCT, ORDER BY expressions must appear in the select list so the sort is defined on the projected rows."
+     },
+     {
+      "q": "Why can an index satisfy ORDER BY?",
+      "answer": "A B-tree index matching the sort prefix returns rows in the requested order without a separate sort."
+     },
+     {
+      "q": "Why does LIMIT apply after ORDER BY?",
+      "answer": "The rows must be ordered before the first N can be chosen."
+     },
+     {
+      "q": "Why is ORDER BY random() expensive?",
+      "answer": "It computes a random value for every row and sorts the whole set with no useful index."
+     }
+    ],
+    "debug": [
+     {
+      "title": "LIMIT before ORDER BY",
+      "broken": "SELECT name FROM students LIMIT 3 ORDER BY marks DESC;",
+      "fix": "SELECT name FROM students ORDER BY marks DESC NULLS LAST LIMIT 3;",
+      "error": "syntax error at or near \"ORDER\"",
+      "expected": "Top three known marks."
+     },
+     {
+      "title": "Missing BY",
+      "broken": "SELECT name FROM students ORDER marks DESC;",
+      "fix": "SELECT name FROM students ORDER BY marks DESC;",
+      "error": "syntax error at or near \"marks\"",
+      "expected": "Highest marks first."
+     },
+     {
+      "title": "Position out of range",
+      "broken": "SELECT name, marks FROM students ORDER BY 3 DESC;",
+      "fix": "SELECT name, marks FROM students ORDER BY marks DESC;",
+      "error": "ORDER BY position 3 is not in select list",
+      "expected": "Highest marks first."
+     },
+     {
+      "title": "DISTINCT order expression",
+      "broken": "SELECT DISTINCT name FROM students ORDER BY marks DESC;",
+      "fix": "SELECT DISTINCT name, marks FROM students ORDER BY marks DESC;",
+      "error": "for SELECT DISTINCT, ORDER BY expressions must appear in select list",
+      "expected": "Distinct name-marks pairs, highest first."
+     },
+     {
+      "title": "Negative offset",
+      "broken": "SELECT name FROM students ORDER BY marks DESC OFFSET -1;",
+      "fix": "SELECT name FROM students ORDER BY marks DESC OFFSET 0;",
+      "error": "OFFSET must not be negative",
+      "expected": "All rows from the start."
+     },
+     {
+      "title": "Text limit",
+      "broken": "SELECT name FROM students ORDER BY marks DESC LIMIT 'three';",
+      "fix": "SELECT name FROM students ORDER BY marks DESC LIMIT 3;",
+      "error": "invalid input syntax for type bigint",
+      "expected": "Three rows."
+     },
+     {
+      "title": "Unstable page",
+      "broken": "SELECT name, marks FROM students ORDER BY marks DESC LIMIT 10 OFFSET 20;",
+      "fix": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST, id ASC LIMIT 10 OFFSET 20;",
+      "error": "Ties can move between pages",
+      "expected": "Stable page 3."
+     },
+     {
+      "title": "DESC NULL surprise",
+      "broken": "SELECT name, marks FROM students ORDER BY marks DESC;",
+      "fix": "SELECT name, marks FROM students ORDER BY marks DESC NULLS LAST;",
+      "error": "NULL marks appear first",
+      "expected": "Highest known marks first."
+     },
+     {
+      "title": "Alias in WHERE",
+      "broken": "SELECT name, marks AS score FROM students WHERE score > 80;",
+      "fix": "SELECT name, marks AS score FROM students WHERE marks > 80;",
+      "error": "column \"score\" does not exist",
+      "expected": "Students above 80."
+     },
+     {
+      "title": "ORDER BY after LIMIT",
+      "broken": "SELECT name FROM students ORDER BY marks DESC LIMIT 3 OFFSET 2;",
+      "fix": "SELECT name FROM students ORDER BY marks DESC, id ASC LIMIT 3 OFFSET 2;",
+      "error": "Ties can change which rows land on the page",
+      "expected": "A deterministic second page."
+     }
+    ],
+    "revision": [
+     {
+      "q": "What does ORDER BY do?",
+      "answer": "Sorts the final result rows."
+     },
+     {
+      "q": "Which direction is default?",
+      "answer": "ASC."
+     },
+     {
+      "q": "How do you sort highest first?",
+      "answer": "ORDER BY column DESC."
+     },
+     {
+      "q": "How do multiple keys work?",
+      "answer": "Left to right; later keys break ties."
+     },
+     {
+      "q": "Where does PostgreSQL put NULLs in ASC?",
+      "answer": "Last by default."
+     },
+     {
+      "q": "Where does PostgreSQL put NULLs in DESC?",
+      "answer": "First by default."
+     },
+     {
+      "q": "What does LIMIT do?",
+      "answer": "Caps the number of rows returned."
+     },
+     {
+      "q": "What does OFFSET do?",
+      "answer": "Skips rows before the limit."
+     },
+     {
+      "q": "What is the page 2 offset for size 10?",
+      "answer": "10."
+     },
+     {
+      "q": "Why add id as a tie-breaker?",
+      "answer": "To make the order total and pagination stable."
      }
     ]
    }
