@@ -14,13 +14,13 @@ Honest ledger for the C++ course. Counts are **records that shipped**, not targe
 | Debug challenges | 130 — five per module (broken program + real compiler/runtime error or declared wrong output + executed fix) |
 | Independent coding tasks | 131 — at least five per module (expected output executed) |
 | Interview bank | 260 verified-output questions beside 261 authored Q&A — **20+ per module** |
-| MCQ bank | 52, four distinct options each with an answer in them |
+| MCQ bank | 780, four distinct options each with an answer in them |
 | Defense bank | 52 authored Q&A with steps |
 | Mini projects / Project Labs | 26 / 26 |
 
 Published section counts: Learn 260, Interview 521, Coding Lab 131, Logic 260, Debug 130,
 Practice Solutions 260, Mini Project 26, Project Lab 26, Defense 52, Checkpoint 832.
-Per module: **Learn 10, Logic 10, Practice 10, Interview 20+**, Coding 5, Debug 5, MCQ 2,
+Per module: **Learn 10, Logic 10, Practice 10, Interview 20+**, Coding 5, Debug 5, MCQ 30,
 Defense 2.
 
 ## Architecture (same as NumPy and Pandas Mastery, separate records)
