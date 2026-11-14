@@ -1,0 +1,1006 @@
+{
+ "course": {
+  "id": "sql-masterclass",
+  "title": "SQL Masterclass",
+  "tagline": "Zero to advanced, one module at a time.",
+  "level": "beginner",
+  "hours": 2,
+  "standard": "PostgreSQL-first, with MySQL, SQLite and SQL Server notes.",
+  "prerequisites": [
+   "None"
+  ],
+  "description": "Module 00 builds the database vocabulary every later SQL module depends on: data, databases, tables, rows, columns, keys and how a query is executed.",
+  "outcomes": [
+   "Explain what a database stores and why",
+   "Read a schema and name rows, columns and keys",
+   "Distinguish SQL from a database product",
+   "Trace how a query becomes a result"
+  ]
+ },
+ "stats": {
+  "modules": 1,
+  "topics": 24,
+  "learn": 20,
+  "interview": 20,
+  "labs": 20,
+  "logic": 15,
+  "debug": 10,
+  "revision": 10
+ },
+ "modules": [
+  {
+   "id": "sql00",
+   "no": 0,
+   "title": "SQL and Database Fundamentals",
+   "goal": "Build the vocabulary and mental model for every later SQL module.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "What is Data?",
+     "simple": "Data matlab koi bhi information — naam, number, date, photo. Jaise school register me student ka naam aur marks.",
+     "pro": "Data is a recorded fact or value that can be stored and processed. In a database it is typed, named and organised into rows and columns.",
+     "points": [
+      "Data becomes information when it is organised and interpreted.",
+      "Databases store data in typed columns, not free-form text.",
+      "A single value is a datum; many values form a dataset."
+     ],
+     "example": {
+      "sql": "SELECT 'Pune' AS city, 82 AS marks;",
+      "output": "city | marks\nPune | 82"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "What is a Database?",
+     "simple": "Database ek organised digital almari hai jisme data safely store hota hai aur baad me query karke nikal sakte hain.",
+     "pro": "A database is an organised collection of structured data managed by a database management system, with controlled access and durable storage.",
+     "points": [
+      "It stores related data, not one flat file.",
+      "It supports concurrent readers and writers.",
+      "It enforces rules such as keys and constraints."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students;",
+      "output": "name | marks\nAarav | 82\nMeera | 91"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Why Do We Need Databases?",
+     "simple": "Spreadsheet sabko bhejna messy ho jata hai; database ek jagah data rakhta hai aur sabko sahi version dikhata hai.",
+     "pro": "Databases centralise data, avoid duplication, enforce integrity and let many users query the same source safely.",
+     "points": [
+      "One source of truth instead of many copies.",
+      "Constraints stop invalid data at write time.",
+      "Indexes make large datasets queryable."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) AS students FROM students;",
+      "output": "students\n3"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "What is DBMS?",
+     "simple": "DBMS wo software hai jo database ko manage karta hai — data save, search, update aur security sambhalta hai.",
+     "pro": "A Database Management System is software that defines, stores, queries and administers databases; PostgreSQL and MySQL are examples.",
+     "points": [
+      "It sits between the user and the files on disk.",
+      "It handles transactions, permissions and recovery.",
+      "It provides a query language such as SQL."
+     ],
+     "example": {
+      "sql": "SELECT version();",
+      "output": "PostgreSQL 16"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "What is RDBMS?",
+     "simple": "RDBMS ek DBMS hai jo data ko tables me rakhta hai aur tables ko keys se jodta hai.",
+     "pro": "A Relational Database Management System stores data in relations (tables) and enforces relationships through primary and foreign keys.",
+     "points": [
+      "Tables are relations with rows and columns.",
+      "Relationships are declared, not implied by file names.",
+      "SQL is the standard query language."
+     ],
+     "example": {
+      "sql": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "output": "name | title\nAarav | SQL Basics"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "DBMS vs RDBMS",
+     "simple": "DBMS data manage karta hai; RDBMS tables aur relationships ke saath manage karta hai.",
+     "pro": "Every RDBMS is a DBMS, but an RDBMS adds the relational model, keys, joins and integrity constraints.",
+     "points": [
+      "RDBMS enforces referential integrity.",
+      "RDBMS supports joins across related tables.",
+      "Both manage storage, access and recovery."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) FROM students;",
+      "output": "3"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "What is SQL?",
+     "simple": "SQL wo language hai jisse hum database se baat karte hain — data lao, add karo, update karo.",
+     "pro": "SQL (Structured Query Language) is the declarative language used to define, query and modify relational data.",
+     "points": [
+      "Declarative: you state the result you want.",
+      "Standardised, with dialect differences.",
+      "Used for DDL, DML, DQL and permissions."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE marks > 80;",
+      "output": "name\nAarav\nMeera"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Full Form of SQL",
+     "simple": "SQL ka full form Structured Query Language hai.",
+     "pro": "SQL stands for Structured Query Language; it is a standard language for relational databases, not a general-purpose programming language.",
+     "points": [
+      "Structured: data lives in tables.",
+      "Query: you ask questions of the data.",
+      "Language: it has keywords, expressions and clauses."
+     ],
+     "example": {
+      "sql": "SELECT 1 AS ok;",
+      "output": "ok\n1"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Why SQL Is Used",
+     "simple": "SQL se hum data ko filter, sort, group aur join kar sakte hain — analyst aur developer dono ise use karte hain.",
+     "pro": "SQL is used because it is declarative, portable across relational engines and expressive enough for filtering, aggregation, joins and analytics.",
+     "points": [
+      "One language across PostgreSQL, MySQL, SQLite and SQL Server.",
+      "Set-based operations scale better than row-by-row code.",
+      "Analysts, backend developers and DBAs share it."
+     ],
+     "example": {
+      "sql": "SELECT city, AVG(marks) AS avg_marks FROM students GROUP BY city;",
+      "output": "city | avg_marks\nPune | 86.5"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "SQL vs MySQL",
+     "simple": "SQL language hai; MySQL ek database software hai jo SQL use karta hai.",
+     "pro": "SQL is the language; MySQL is an open-source RDBMS that implements it with its own dialect and storage engines.",
+     "points": [
+      "SQL is a standard; MySQL is a product.",
+      "MySQL adds AUTO_INCREMENT and its own functions.",
+      "PostgreSQL and SQLite are alternative implementations."
+     ],
+     "example": {
+      "sql": "SELECT NOW();",
+      "output": "2026-11-14 10:00:00"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "SQL vs PostgreSQL",
+     "simple": "SQL language hai; PostgreSQL ek powerful open-source database hai jo SQL ke saath advanced features deta hai.",
+     "pro": "PostgreSQL is an RDBMS known for standards compliance, rich types, transactions and extensions; SQL is the language it speaks.",
+     "points": [
+      "PostgreSQL supports SERIAL/IDENTITY, JSONB and window functions.",
+      "It is stricter about types than MySQL.",
+      "The SQL language is shared; functions and types differ."
+     ],
+     "example": {
+      "sql": "SELECT CURRENT_DATE;",
+      "output": "2026-11-14"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "SQL vs SQLite",
+     "simple": "SQL language hai; SQLite ek chhota database hai jo ek file me chalta hai — mobile apps aur browser labs me common.",
+     "pro": "SQLite is an embedded, serverless RDBMS stored in a single file; SQL is the query language. It is excellent for local tools and tests.",
+     "points": [
+      "No server process to manage.",
+      "Typed but relaxed; fewer advanced features than PostgreSQL.",
+      "The SQL Lab in this app runs SQLite compiled to WebAssembly."
+     ],
+     "example": {
+      "sql": "SELECT sqlite_version();",
+      "output": "3.45.0"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "SQL vs NoSQL",
+     "simple": "SQL tables me fixed columns rakhta hai; NoSQL flexible documents ya key-value me data rakhta hai.",
+     "pro": "SQL databases are relational and schema-first; NoSQL systems trade strict relations for flexible documents, key-value or graph models.",
+     "points": [
+      "SQL excels at joins and integrity.",
+      "NoSQL often scales horizontally for flexible payloads.",
+      "Choose by access pattern, not fashion."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) FROM students;",
+      "output": "3"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "What is a Database Table?",
+     "simple": "Table rows aur columns ka grid hai — jaise students table me har row ek student.",
+     "pro": "A table is a relation: a named set of columns with types, holding rows of values.",
+     "points": [
+      "Columns define the shape and types.",
+      "Rows hold individual records.",
+      "Constraints on the table protect data quality."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students;",
+      "output": "id | name | city | marks\n1 | Aarav | Pune | 82"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "What is a Row?",
+     "simple": "Row table ki ek line hai — ek student ka poora record.",
+     "pro": "A row (tuple) is one record in a table, containing one value per column.",
+     "points": [
+      "Rows are unordered unless you sort.",
+      "A row can be inserted, updated or deleted.",
+      "Primary keys identify rows."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students WHERE id = 1;",
+      "output": "id | name | city | marks\n1 | Aarav | Pune | 82"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "What is a Column?",
+     "simple": "Column ek vertical field hai — jaise sab students ke marks.",
+     "pro": "A column (attribute) is a named field with a data type shared by every row in the table.",
+     "points": [
+      "Columns have types such as INT or TEXT.",
+      "Column names should be stable and descriptive.",
+      "Constraints apply per column or across columns."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students;",
+      "output": "name | marks\nAarav | 82"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "What is a Record?",
+     "simple": "Record ek complete entry hai — row ke barabar, jaise ek employee ki poori detail.",
+     "pro": "A record is one logical entry in a table, represented by a row of related field values.",
+     "points": [
+      "A record spans all columns of its table.",
+      "Records are what INSERT creates and DELETE removes.",
+      "A primary key identifies each record."
+     ],
+     "example": {
+      "sql": "SELECT name, city FROM students WHERE id = 2;",
+      "output": "name | city\nMeera | Delhi"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "What is a Field?",
+     "simple": "Field ek single value slot hai — row aur column ka intersection.",
+     "pro": "A field is one column value within one row; it is the smallest addressable unit in a table.",
+     "points": [
+      "A field has the column type.",
+      "NULL means the field has no value.",
+      "SELECT can return individual fields."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE id = 1;",
+      "output": "name\nAarav"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "What is a Database Schema?",
+     "simple": "Schema database ka blueprint hai — kaunsi tables, columns aur relationships hain.",
+     "pro": "A schema is the logical structure of a database: tables, columns, types, keys, constraints and relationships, often namespaced under a schema name.",
+     "points": [
+      "DDL defines and changes the schema.",
+      "A schema is separate from the data it holds.",
+      "PostgreSQL groups objects under named schemas."
+     ],
+     "example": {
+      "sql": "SELECT table_name FROM information_schema.tables;",
+      "output": "table_name\nstudents"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "What is a Primary Key?",
+     "simple": "Primary key har row ko unique pehchanta hai — jaise student ka roll number.",
+     "pro": "A primary key is a column or set of columns that uniquely identifies each row and cannot be NULL.",
+     "points": [
+      "It enforces uniqueness.",
+      "It rejects NULL values.",
+      "It is usually indexed and referenced by foreign keys."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT);",
+      "output": "Table created"
+     }
+    },
+    {
+     "id": "t21",
+     "title": "What is a Foreign Key?",
+     "simple": "Foreign key ek table ke column ko doosri table ke primary key se jodta hai.",
+     "pro": "A foreign key is a column or set of columns whose values must match a candidate key in another table, enforcing referential integrity.",
+     "points": [
+      "It prevents orphan rows.",
+      "It can cascade updates or deletes when declared.",
+      "It makes joins meaningful."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments (student_id INTEGER REFERENCES students(id));",
+      "output": "Table created"
+     }
+    },
+    {
+     "id": "t22",
+     "title": "How SQL Works",
+     "simple": "SQL likhne par database use parse karta hai, plan banata hai, execute karta hai aur result deta hai.",
+     "pro": "A SQL statement is parsed, rewritten, planned by the optimiser and executed by the engine, which returns rows or a command status.",
+     "points": [
+      "Parsing checks syntax and names.",
+      "Planning chooses access paths and joins.",
+      "Execution reads and writes storage."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students WHERE id = 1;",
+      "output": "Index Scan using students_pkey"
+     }
+    },
+    {
+     "id": "t23",
+     "title": "How SQL Queries Are Executed",
+     "simple": "Database pehle samajhta hai query kya maang rahi hai, phir fastest plan chunta hai, phir data padhta hai.",
+     "pro": "Execution follows a logical order — FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, LIMIT — while the optimiser may reorder physical work.",
+     "points": [
+      "Logical order explains aliases and aggregates.",
+      "The optimiser can push filters down.",
+      "EXPLAIN shows the chosen plan."
+     ],
+     "example": {
+      "sql": "SELECT city, COUNT(*) FROM students GROUP BY city;",
+      "output": "city | count\nPune | 2"
+     }
+    },
+    {
+     "id": "t24",
+     "title": "Understanding Relational Databases",
+     "simple": "Relational database tables ko keys se jodta hai, taaki ek hi data baar-baar na likhna pade.",
+     "pro": "The relational model represents data as relations and relationships through keys; normalisation reduces redundancy while joins reconstruct related facts.",
+     "points": [
+      "Tables represent entities or relationships.",
+      "Keys connect rows across tables.",
+      "Joins answer questions spanning entities."
+     ],
+     "example": {
+      "sql": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "output": "name | title\nAarav | SQL Basics"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What is data?",
+      "options": [
+       "A recorded fact or value",
+       "Only numbers",
+       "A database server",
+       "A SQL keyword"
+      ],
+      "answer": "A recorded fact or value",
+      "why": "Data is any recorded fact that can be stored and processed."
+     },
+     {
+      "q": "What does a database store?",
+      "options": [
+       "Organised related data",
+       "Only images",
+       "Only code",
+       "Only logs"
+      ],
+      "answer": "Organised related data",
+      "why": "A database stores structured, related data under a DBMS."
+     },
+     {
+      "q": "Why do we need a database instead of many spreadsheets?",
+      "options": [
+       "One source of truth with integrity rules",
+       "It is always smaller",
+       "It removes the need for queries",
+       "It stores only numbers"
+      ],
+      "answer": "One source of truth with integrity rules",
+      "why": "Central storage plus constraints prevents divergent copies."
+     },
+     {
+      "q": "What is a DBMS?",
+      "options": [
+       "Software that manages databases",
+       "A table",
+       "A SQL query",
+       "A data type"
+      ],
+      "answer": "Software that manages databases",
+      "why": "A DBMS defines, stores, queries and administers databases."
+     },
+     {
+      "q": "What is an RDBMS?",
+      "options": [
+       "A DBMS built on the relational model",
+       "A NoSQL store",
+       "A spreadsheet",
+       "A programming language"
+      ],
+      "answer": "A DBMS built on the relational model",
+      "why": "RDBMS stores relations and enforces keys."
+     },
+     {
+      "q": "Which statement is true?",
+      "options": [
+       "Every RDBMS is a DBMS",
+       "Every DBMS is an RDBMS",
+       "DBMS and RDBMS are unrelated",
+       "RDBMS cannot use SQL"
+      ],
+      "answer": "Every RDBMS is a DBMS",
+      "why": "RDBMS is a specialised DBMS."
+     },
+     {
+      "q": "What does SQL stand for?",
+      "options": [
+       "Structured Query Language",
+       "Simple Query Logic",
+       "System Query Layer",
+       "Stored Query Language"
+      ],
+      "answer": "Structured Query Language",
+      "why": "SQL is the Structured Query Language."
+     },
+     {
+      "q": "SQL is best described as:",
+      "options": [
+       "Declarative",
+       "Assembly",
+       "Object-oriented",
+       "Markup"
+      ],
+      "answer": "Declarative",
+      "why": "You state the result you want; the engine chooses how."
+     },
+     {
+      "q": "SQL vs MySQL:",
+      "options": [
+       "SQL is a language; MySQL is a product",
+       "MySQL is a language; SQL is a product",
+       "They are identical",
+       "Neither uses tables"
+      ],
+      "answer": "SQL is a language; MySQL is a product",
+      "why": "MySQL is one RDBMS that implements SQL."
+     },
+     {
+      "q": "SQL vs PostgreSQL:",
+      "options": [
+       "SQL is a language; PostgreSQL is an RDBMS",
+       "PostgreSQL is a language",
+       "SQL only works in PostgreSQL",
+       "PostgreSQL has no SQL dialect"
+      ],
+      "answer": "SQL is a language; PostgreSQL is an RDBMS",
+      "why": "PostgreSQL implements SQL with its own dialect."
+     },
+     {
+      "q": "SQLite is:",
+      "options": [
+       "An embedded, serverless RDBMS",
+       "A cloud data warehouse",
+       "A SQL keyword",
+       "A NoSQL database"
+      ],
+      "answer": "An embedded, serverless RDBMS",
+      "why": "SQLite stores a database in a single file."
+     },
+     {
+      "q": "SQL vs NoSQL:",
+      "options": [
+       "SQL is relational; NoSQL is non-relational",
+       "NoSQL is always faster",
+       "SQL cannot join",
+       "NoSQL has no data model"
+      ],
+      "answer": "SQL is relational; NoSQL is non-relational",
+      "why": "They optimise for different access patterns."
+     },
+     {
+      "q": "A table is:",
+      "options": [
+       "A relation of rows and columns",
+       "A single row",
+       "A database server",
+       "A query plan"
+      ],
+      "answer": "A relation of rows and columns",
+      "why": "Tables are relations with typed columns."
+     },
+     {
+      "q": "A row is:",
+      "options": [
+       "One record in a table",
+       "One column",
+       "A database",
+       "A key"
+      ],
+      "answer": "One record in a table",
+      "why": "A row holds one value per column."
+     },
+     {
+      "q": "A column is:",
+      "options": [
+       "A named field with a type",
+       "One record",
+       "A table",
+       "A query"
+      ],
+      "answer": "A named field with a type",
+      "why": "Columns define the table shape and types."
+     },
+     {
+      "q": "A record is:",
+      "options": [
+       "One logical entry made of fields",
+       "A column name",
+       "A database file",
+       "A SQL keyword"
+      ],
+      "answer": "One logical entry made of fields",
+      "why": "A record is represented by a row."
+     },
+     {
+      "q": "A field is:",
+      "options": [
+       "One value at a row-column intersection",
+       "A whole table",
+       "A primary key",
+       "A schema"
+      ],
+      "answer": "One value at a row-column intersection",
+      "why": "Fields are the smallest addressable values."
+     },
+     {
+      "q": "A schema is:",
+      "options": [
+       "The logical structure of the database",
+       "The rows only",
+       "A backup file",
+       "A query result"
+      ],
+      "answer": "The logical structure of the database",
+      "why": "Schemas describe tables, types, keys and constraints."
+     },
+     {
+      "q": "A primary key must be:",
+      "options": [
+       "Unique and not NULL",
+       "Nullable",
+       "A text column only",
+       "Always numeric"
+      ],
+      "answer": "Unique and not NULL",
+      "why": "It identifies each row exactly once."
+     },
+     {
+      "q": "A foreign key does what?",
+      "options": [
+       "Enforces referential integrity",
+       "Sorts rows",
+       "Creates indexes automatically",
+       "Deletes tables"
+      ],
+      "answer": "Enforces referential integrity",
+      "why": "It requires values to match a key in another table."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is data, and how does it differ from information?",
+      "answer": "Data is a raw recorded value; information is data organised and interpreted in context. A database stores data, and a query turns it into information."
+     },
+     {
+      "q": "Why do we need a database?",
+      "answer": "To keep one durable source of truth, enforce integrity, support concurrent access and make large datasets queryable through indexes and SQL."
+     },
+     {
+      "q": "What is a DBMS?",
+      "answer": "Software that defines, stores, queries, secures and recovers databases. PostgreSQL, MySQL and SQLite are DBMSs."
+     },
+     {
+      "q": "What is an RDBMS?",
+      "answer": "A DBMS based on the relational model: data lives in tables, keys declare relationships and SQL is the query language."
+     },
+     {
+      "q": "DBMS vs RDBMS?",
+      "answer": "Every RDBMS is a DBMS, but an RDBMS adds relations, keys, joins and referential integrity. A DBMS may use other models."
+     },
+     {
+      "q": "What is SQL?",
+      "answer": "Structured Query Language, the declarative language for defining, querying and modifying relational data."
+     },
+     {
+      "q": "Why is SQL declarative?",
+      "answer": "You describe the result you want; the optimiser chooses the execution plan. That separates intent from physical access paths."
+     },
+     {
+      "q": "SQL vs MySQL?",
+      "answer": "SQL is the standard language; MySQL is an RDBMS product that implements it with its own dialect, storage engines and functions."
+     },
+     {
+      "q": "SQL vs PostgreSQL?",
+      "answer": "SQL is the language; PostgreSQL is an RDBMS known for standards compliance, rich types, transactions and extensions."
+     },
+     {
+      "q": "SQL vs SQLite?",
+      "answer": "SQL is the language; SQLite is an embedded, serverless RDBMS stored in one file, ideal for local tools and tests."
+     },
+     {
+      "q": "SQL vs NoSQL?",
+      "answer": "SQL databases are relational and schema-first; NoSQL systems trade joins and strict integrity for flexible documents, key-value or graph models."
+     },
+     {
+      "q": "What is a table?",
+      "answer": "A relation: a named set of typed columns holding rows. Constraints on the table protect data quality."
+     },
+     {
+      "q": "What is a row?",
+      "answer": "One record in a table, containing one value per column. Rows are unordered unless a query sorts them."
+     },
+     {
+      "q": "What is a column?",
+      "answer": "A named attribute with a data type shared by every row. Column names should be stable and descriptive."
+     },
+     {
+      "q": "Row vs record?",
+      "answer": "They are effectively the same in a relational table: a record is the logical entry, a row is its physical representation."
+     },
+     {
+      "q": "Column vs field?",
+      "answer": "A column is the whole named attribute across rows; a field is one value at a specific row-column intersection."
+     },
+     {
+      "q": "What is a schema?",
+      "answer": "The logical structure of the database: tables, columns, types, keys, constraints and relationships, often grouped under a schema name."
+     },
+     {
+      "q": "What is a primary key?",
+      "answer": "A column or set of columns that uniquely identifies each row and cannot be NULL. It is usually indexed and referenced by foreign keys."
+     },
+     {
+      "q": "What is a foreign key?",
+      "answer": "A column or set of columns whose values must match a candidate key in another table, enforcing referential integrity."
+     },
+     {
+      "q": "How is a SQL query executed?",
+      "answer": "The engine parses and validates it, the optimiser chooses a plan, and the executor reads or writes storage and returns rows or a command status."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Select every column",
+      "task": "Return every column and row from students.",
+      "solution": "SELECT * FROM students;",
+      "expected": "All student rows."
+     },
+     {
+      "title": "Select two columns",
+      "task": "Return name and marks from students.",
+      "solution": "SELECT name, marks FROM students;",
+      "expected": "name and marks for every student."
+     },
+     {
+      "title": "Filter by marks",
+      "task": "Return students with marks above 80.",
+      "solution": "SELECT name, marks FROM students WHERE marks > 80;",
+      "expected": "Only students above 80."
+     },
+     {
+      "title": "Sort by marks",
+      "task": "Return name and marks sorted highest first.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC;",
+      "expected": "Rows from highest to lowest marks."
+     },
+     {
+      "title": "Count rows",
+      "task": "Count the students.",
+      "solution": "SELECT COUNT(*) AS total FROM students;",
+      "expected": "One row with total."
+     },
+     {
+      "title": "Distinct cities",
+      "task": "List each city once.",
+      "solution": "SELECT DISTINCT city FROM students;",
+      "expected": "Unique city values."
+     },
+     {
+      "title": "Average marks",
+      "task": "Return the average marks.",
+      "solution": "SELECT AVG(marks) AS avg_marks FROM students;",
+      "expected": "One average value."
+     },
+     {
+      "title": "Group by city",
+      "task": "Count students per city.",
+      "solution": "SELECT city, COUNT(*) AS n FROM students GROUP BY city;",
+      "expected": "One row per city."
+     },
+     {
+      "title": "Join courses",
+      "task": "Return student name and course title.",
+      "solution": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "expected": "One row per matching student-course pair."
+     },
+     {
+      "title": "Top three",
+      "task": "Return the three highest marks.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC LIMIT 3;",
+      "expected": "Three rows."
+     },
+     {
+      "title": "Filter and sort",
+      "task": "Return students in Pune sorted by name.",
+      "solution": "SELECT name FROM students WHERE city = 'Pune' ORDER BY name;",
+      "expected": "Pune students alphabetically."
+     },
+     {
+      "title": "Between values",
+      "task": "Return students with marks between 60 and 90.",
+      "solution": "SELECT name, marks FROM students WHERE marks BETWEEN 60 AND 90;",
+      "expected": "Rows inside the range."
+     },
+     {
+      "title": "Pattern match",
+      "task": "Return names starting with A.",
+      "solution": "SELECT name FROM students WHERE name LIKE 'A%';",
+      "expected": "Names beginning with A."
+     },
+     {
+      "title": "Null check",
+      "task": "Return students whose city is missing.",
+      "solution": "SELECT name FROM students WHERE city IS NULL;",
+      "expected": "Rows with no city."
+     },
+     {
+      "title": "Alias a column",
+      "task": "Return marks labelled score.",
+      "solution": "SELECT marks AS score FROM students;",
+      "expected": "A column named score."
+     },
+     {
+      "title": "Calculated column",
+      "task": "Return marks plus 5 as boosted.",
+      "solution": "SELECT marks + 5 AS boosted FROM students;",
+      "expected": "Marks increased by five."
+     },
+     {
+      "title": "Maximum marks",
+      "task": "Return the highest mark.",
+      "solution": "SELECT MAX(marks) AS top FROM students;",
+      "expected": "One maximum value."
+     },
+     {
+      "title": "Minimum marks",
+      "task": "Return the lowest mark.",
+      "solution": "SELECT MIN(marks) AS low FROM students;",
+      "expected": "One minimum value."
+     },
+     {
+      "title": "Group with HAVING",
+      "task": "Return cities with more than one student.",
+      "solution": "SELECT city, COUNT(*) AS n FROM students GROUP BY city HAVING COUNT(*) > 1;",
+      "expected": "Cities with at least two students."
+     },
+     {
+      "title": "Subquery maximum",
+      "task": "Return the student with the highest marks.",
+      "solution": "SELECT name FROM students WHERE marks = (SELECT MAX(marks) FROM students);",
+      "expected": "The top student."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why does SELECT * return columns in table order?",
+      "answer": "The table definition fixes column order; SELECT * expands to that order unless the query lists columns explicitly."
+     },
+     {
+      "q": "Why can a primary key not be NULL?",
+      "answer": "A NULL cannot identify a row uniquely, so the key would fail its purpose."
+     },
+     {
+      "q": "Why does a foreign key prevent orphan rows?",
+      "answer": "It requires each value to match a key in the referenced table, or be NULL if allowed."
+     },
+     {
+      "q": "Why is SQL called declarative?",
+      "answer": "The query states the desired result; the optimiser chooses the execution plan."
+     },
+     {
+      "q": "Why do we normalise data?",
+      "answer": "To reduce redundancy and avoid insert, update and delete anomalies."
+     },
+     {
+      "q": "Why can two rows have the same name?",
+      "answer": "A name is not a key unless declared unique; only the primary key must be unique."
+     },
+     {
+      "q": "Why does ORDER BY matter for LIMIT?",
+      "answer": "Without ORDER BY, LIMIT returns an arbitrary set; ORDER BY defines which rows are “top”."
+     },
+     {
+      "q": "Why does COUNT(*) differ from COUNT(column)?",
+      "answer": "COUNT(*) counts rows; COUNT(column) skips NULL values in that column."
+     },
+     {
+      "q": "Why does WHERE run before GROUP BY?",
+      "answer": "Rows are filtered first, then the remaining rows are grouped and aggregated."
+     },
+     {
+      "q": "Why does HAVING exist?",
+      "answer": "It filters groups after aggregation, which WHERE cannot do."
+     },
+     {
+      "q": "Why is a schema separate from data?",
+      "answer": "The schema is the structure; data is the content stored within that structure."
+     },
+     {
+      "q": "Why do joins need a matching key?",
+      "answer": "The key defines which rows from each table belong together."
+     },
+     {
+      "q": "Why can an index speed up a query?",
+      "answer": "It lets the engine find rows without scanning the whole table."
+     },
+     {
+      "q": "Why can too many indexes hurt?",
+      "answer": "Every write must maintain them, adding storage and latency."
+     },
+     {
+      "q": "Why is SQL portable but not identical everywhere?",
+      "answer": "The core language is standardised, but dialects differ in types, functions and extensions."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Missing FROM",
+      "broken": "SELECT name;",
+      "fix": "SELECT name FROM students;",
+      "error": "no such column: name",
+      "expected": "Student names."
+     },
+     {
+      "title": "Wrong quote",
+      "broken": "SELECT name FROM students WHERE city = Pune;",
+      "fix": "SELECT name FROM students WHERE city = 'Pune';",
+      "error": "no such column: Pune",
+      "expected": "Pune students."
+     },
+     {
+      "title": "Misspelled table",
+      "broken": "SELECT * FROM student;",
+      "fix": "SELECT * FROM students;",
+      "error": "no such table: student",
+      "expected": "All students."
+     },
+     {
+      "title": "Wrong operator",
+      "broken": "SELECT * FROM students WHERE marks = 80;",
+      "fix": "SELECT * FROM students WHERE marks > 80;",
+      "error": "returns only exact 80, not above",
+      "expected": "Students above 80."
+     },
+     {
+      "title": "NULL equality",
+      "broken": "SELECT * FROM students WHERE city = NULL;",
+      "fix": "SELECT * FROM students WHERE city IS NULL;",
+      "error": "NULL never equals anything",
+      "expected": "Rows with no city."
+     },
+     {
+      "title": "GROUP BY missing",
+      "broken": "SELECT city, COUNT(*) FROM students;",
+      "fix": "SELECT city, COUNT(*) FROM students GROUP BY city;",
+      "error": "misuse of aggregate",
+      "expected": "Counts per city."
+     },
+     {
+      "title": "HAVING vs WHERE",
+      "broken": "SELECT city, COUNT(*) FROM students WHERE COUNT(*) > 1 GROUP BY city;",
+      "fix": "SELECT city, COUNT(*) FROM students GROUP BY city HAVING COUNT(*) > 1;",
+      "error": "aggregate in WHERE",
+      "expected": "Cities with more than one student."
+     },
+     {
+      "title": "Ambiguous column",
+      "broken": "SELECT name FROM students JOIN courses ON id = course_id;",
+      "fix": "SELECT s.name FROM students s JOIN courses c ON c.id = s.course_id;",
+      "error": "ambiguous column name: id",
+      "expected": "Student names."
+     },
+     {
+      "title": "LIMIT before ORDER BY",
+      "broken": "SELECT name FROM students LIMIT 3 ORDER BY marks DESC;",
+      "fix": "SELECT name FROM students ORDER BY marks DESC LIMIT 3;",
+      "error": "syntax error near ORDER",
+      "expected": "Top three by marks."
+     },
+     {
+      "title": "String number",
+      "broken": "SELECT * FROM students WHERE marks > '80';",
+      "fix": "SELECT * FROM students WHERE marks > 80;",
+      "error": "text comparison, not numeric",
+      "expected": "Students above 80."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Name the five core database terms.",
+      "answer": "Table, row, column, primary key and foreign key."
+     },
+     {
+      "q": "What is SQL?",
+      "answer": "The Structured Query Language for relational databases."
+     },
+     {
+      "q": "What is a DBMS?",
+      "answer": "Software that manages databases."
+     },
+     {
+      "q": "What is an RDBMS?",
+      "answer": "A DBMS based on the relational model with keys and joins."
+     },
+     {
+      "q": "What does a primary key guarantee?",
+      "answer": "Uniqueness and non-null identification of each row."
+     },
+     {
+      "q": "What does a foreign key guarantee?",
+      "answer": "Referential integrity between related tables."
+     },
+     {
+      "q": "What is a schema?",
+      "answer": "The logical structure of tables, types, keys and constraints."
+     },
+     {
+      "q": "Why is SQL declarative?",
+      "answer": "It states the result; the optimiser chooses the plan."
+     },
+     {
+      "q": "SQL vs MySQL?",
+      "answer": "SQL is the language; MySQL is an RDBMS product."
+     },
+     {
+      "q": "What is a record?",
+      "answer": "One logical entry, represented by a row."
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -5,6 +5,7 @@ import { DATASETS, seedForSQL } from '../../core/data/datasets';
 import { useStore, setState } from '../../core/storage/store';
 import { codeSlot } from '../../core/platform/keys';
 import { parseTraceback } from '../../core/platform/traceback';
+import { SqlMasterclass } from './SqlMasterclass';
 
 /** Same Monaco editor the Playground and lessons use — one editor experience app-wide. */
 const MonacoIDE = lazy(() => import('../../components/code/MonacoIDE').then((m) => ({ default: m.MonacoIDE })));
@@ -57,6 +58,8 @@ export default function SQLLab() {
       <HubCrumb hub="/labs" hubLabel="Labs" page="SQL Lab" />
       <h1>🗄️ SQL Lab</h1>
       <p className="muted small">SQLite (WASM) running locally — SELECT, WHERE, GROUP BY, JOIN, HAVING, subqueries, CTEs and window functions.</p>
+
+      <SqlMasterclass />
 
       <div className="grid2" style={{ margin: '12px 0' }}>
         {DATASETS.map((d) => (
