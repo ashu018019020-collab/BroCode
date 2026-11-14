@@ -1,0 +1,252 @@
+{
+ "html01": {
+  "tasks": [
+   {
+    "title": "Client and server roles",
+    "statement": "Build a page with an h1 `Client and server` and two sections: Client with one paragraph, Server with one paragraph.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Client and server</title>\n</head>\n<body>\n  <h1>Client and server</h1>\n  <section>\n    <h2>Client</h2>\n    <p>The browser asks for a resource.</p>\n  </section>\n  <section>\n    <h2>Server</h2>\n    <p>The server answers with a response.</p>\n  </section>\n</body>\n</html>",
+    "expected": "Client and server\nClient\nThe browser asks for a resource.\nServer\nThe server answers with a response."
+   },
+   {
+    "title": "HTML version timeline",
+    "statement": "Create a page titled `HTML timeline` with an h1 and an ordered list of three milestones: 1991, 1997, 2014.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>HTML timeline</title>\n</head>\n<body>\n  <h1>HTML timeline</h1>\n  <ol>\n    <li>1991 — HTML is published</li>\n    <li>1997 — HTML 4 arrives</li>\n    <li>2014 — HTML5 is standardised</li>\n  </ol>\n</body>\n</html>",
+    "expected": "HTML timeline\n1. 1991 — HTML is published\n2. 1997 — HTML 4 arrives\n3. 2014 — HTML5 is standardised"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Content after the closing html tag",
+    "broken": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>Page</h1>\n</body>\n</html>\n<p>Extra text</p>",
+    "fix": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>Page</h1>\n  <p>Extra text</p>\n</body>\n</html>",
+    "error": "Content after the closing html tag: the parser moves it back into body, so the source no longer describes the document it produces.",
+    "fixedOutput": "Page\nExtra text"
+   }
+  ]
+ },
+ "html02": {
+  "tasks": [
+   {
+    "title": "Project folder tree",
+    "statement": "Build a page with an h1 `Project folders` and a nested unordered list for css, js and images, each with one child file.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Project folders</title>\n</head>\n<body>\n  <h1>Project folders</h1>\n  <ul>\n    <li>css\n      <ul><li>site.css</li></ul>\n    </li>\n    <li>js\n      <ul><li>app.js</li></ul>\n    </li>\n    <li>images\n      <ul><li>logo.png</li></ul>\n    </li>\n  </ul>\n</body>\n</html>",
+    "expected": "Project folders\n• css\n  • site.css\n• js\n  • app.js\n• images\n  • logo.png"
+   },
+   {
+    "title": "Developer tools steps",
+    "statement": "Write a page titled `Open developer tools` with an h1 and an ordered list of three steps: open the page, press the shortcut, inspect the element.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Open developer tools</title>\n</head>\n<body>\n  <h1>Open developer tools</h1>\n  <ol>\n    <li>Open the page in a browser.</li>\n    <li>Press F12 or the inspect shortcut.</li>\n    <li>Inspect the element you want to change.</li>\n  </ol>\n</body>\n</html>",
+    "expected": "Open developer tools\n1. Open the page in a browser.\n2. Press F12 or the inspect shortcut.\n3. Inspect the element you want to change."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A script tag closed with a slash",
+    "broken": "<script src=\"js/app.js\" />\n<h1>Page</h1>",
+    "fix": "<script src=\"js/app.js\"></script>\n<h1>Page</h1>",
+    "error": "Self-closing script: in HTML a script element is not void, so the parser keeps reading markup as script text and the heading disappears.",
+    "fixedOutput": "Page"
+   }
+  ]
+ },
+ "html03": {
+  "tasks": [
+   {
+    "title": "Language switch page",
+    "statement": "Build a page in English that contains one paragraph marked as Hindi with the lang attribute.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Language switch</title>\n</head>\n<body>\n  <h1>Language switch</h1>\n  <p lang=\"hi\">यह वाक्य हिंदी में है।</p>\n  <p>This sentence is in English.</p>\n</body>\n</html>",
+    "expected": "Language switch\nयह वाक्य हिंदी में है।\nThis sentence is in English."
+   },
+   {
+    "title": "Complete head checklist",
+    "statement": "Write a document whose head carries charset, viewport, description and title, with one h1 in the body.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <meta name=\"description\" content=\"A head checklist example.\">\n  <title>Head checklist</title>\n</head>\n<body>\n  <h1>Head checklist</h1>\n</body>\n</html>",
+    "expected": "Head checklist"
+   }
+  ],
+  "debug": [
+   {
+    "title": "The doctype after the html element",
+    "broken": "<html lang=\"en\">\n<!DOCTYPE html>\n<head>\n  <title>Late doctype</title>\n</head>\n<body>\n  <h1>Page</h1>\n</body>\n</html>",
+    "fix": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <title>Late doctype</title>\n</head>\n<body>\n  <h1>Page</h1>\n</body>\n</html>",
+    "error": "Doctype after the root element: it is ignored, the browser falls into quirks mode, and layout can differ from standards mode.",
+    "fixedOutput": "Page"
+   }
+  ]
+ },
+ "html04": {
+  "tasks": [
+   {
+    "title": "Disabled and hidden fields",
+    "statement": "Build a form with one labelled text input, one disabled input showing `locked` and one hidden field named `source`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Field states</title>\n</head>\n<body>\n  <form action=\"/save\" method=\"post\">\n    <label for=\"name\">Name</label>\n    <input id=\"name\" name=\"name\" type=\"text\">\n    <input name=\"code\" value=\"locked\" disabled>\n    <input type=\"hidden\" name=\"source\" value=\"lesson\">\n    <button type=\"submit\">Save</button>\n  </form>\n</body>\n</html>",
+    "expected": "Name [____________]\nlocked\nSave"
+   },
+   {
+    "title": "Editable note",
+    "statement": "Create a div with contenteditable, spellcheck off, a data-note-id of `n1` and one paragraph inside.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Editable note</title>\n</head>\n<body>\n  <div contenteditable=\"true\" spellcheck=\"false\" data-note-id=\"n1\">\n    <p>Edit this note.</p>\n  </div>\n</body>\n</html>",
+    "expected": "Edit this note. (editable)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A misspelled attribute name",
+    "broken": "<p classs=\"note\">Styled text</p>",
+    "fix": "<p class=\"note\">Styled text</p>",
+    "error": "Unknown attribute: the browser ignores classs silently, so the styling hook never matches and nothing looks wrong in the markup.",
+    "fixedOutput": "Styled text"
+   }
+  ]
+ },
+ "html05": {
+  "tasks": [
+   {
+    "title": "Aligned table in pre",
+    "statement": "Use pre and code to print two aligned rows: `name  marks` and `Ashu  92`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Aligned text</title>\n</head>\n<body>\n  <pre><code>name  marks\nAshu  92</code></pre>\n</body>\n</html>",
+    "expected": "name  marks\nAshu  92"
+   },
+   {
+    "title": "Address and time block",
+    "statement": "Build an address element containing a telephone link and a time element with a datetime value.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Contact block</title>\n</head>\n<body>\n  <address>\n    BroCode, Pune\n    <a href=\"tel:+911234567890\">+91 12345 67890</a>\n    <time datetime=\"2026-11-14\">14 November 2026</time>\n  </address>\n</body>\n</html>",
+    "expected": "BroCode, Pune +91 12345 67890 14 November 2026"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A block element inside an inline element",
+    "broken": "<strong><p>Warning</p></strong>",
+    "fix": "<p><strong>Warning</strong></p>",
+    "error": "Invalid nesting: a paragraph cannot live inside strong, so the parser splits the element and the intended emphasis is lost.",
+    "fixedOutput": "Warning"
+   }
+  ]
+ },
+ "html06": {
+  "tasks": [
+   {
+    "title": "Breadcrumb with a current page",
+    "statement": "Build a labelled breadcrumb navigation with an ordered list of Home, Courses and HTML, marking HTML as the current page.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Breadcrumb</title>\n</head>\n<body>\n  <nav aria-label=\"Breadcrumb\">\n    <ol>\n      <li><a href=\"index.html\">Home</a></li>\n      <li><a href=\"courses.html\">Courses</a></li>\n      <li><a href=\"html.html\" aria-current=\"page\">HTML</a></li>\n    </ol>\n  </nav>\n</body>\n</html>",
+    "expected": "Home\nCourses\nHTML"
+   },
+   {
+    "title": "Download list",
+    "statement": "Create an unordered list of two download links: `notes.pdf` and `slides.pdf`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Downloads</title>\n</head>\n<body>\n  <ul>\n    <li><a href=\"files/notes.pdf\" download>Notes (PDF)</a></li>\n    <li><a href=\"files/slides.pdf\" download>Slides (PDF)</a></li>\n  </ul>\n</body>\n</html>",
+    "expected": "• Notes (PDF)\n• Slides (PDF)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A placeholder link used for navigation",
+    "broken": "<a href=\"javascript:void(0)\">Pricing</a>",
+    "fix": "<a href=\"pricing.html\">Pricing</a>",
+    "error": "No real destination: the link cannot be opened in a new tab, bookmarked or followed by a crawler, and it breaks with JavaScript disabled.",
+    "fixedOutput": "Pricing"
+   }
+  ]
+ },
+ "html07": {
+  "tasks": [
+   {
+    "title": "Steps with nested notes",
+    "statement": "Build an ordered list of two steps; each item holds a paragraph and a nested unordered list with one note.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Lab steps</title>\n</head>\n<body>\n  <ol>\n    <li>\n      <p>Create the file.</p>\n      <ul><li>Name it index.html.</li></ul>\n    </li>\n    <li>\n      <p>Open it in a browser.</p>\n      <ul><li>Use a local server if needed.</li></ul>\n    </li>\n  </ol>\n</body>\n</html>",
+    "expected": "1. Create the file.\n   • Name it index.html.\n2. Open it in a browser.\n   • Use a local server if needed."
+   },
+   {
+    "title": "Term with two descriptions",
+    "statement": "Create a description list with the term HTML and two descriptions: markup language, and the structure layer of the web.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Glossary</title>\n</head>\n<body>\n  <dl>\n    <dt>HTML</dt>\n    <dd>A markup language.</dd>\n    <dd>The structure layer of the web.</dd>\n  </dl>\n</body>\n</html>",
+    "expected": "HTML\nA markup language.\nThe structure layer of the web."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A paragraph between list items",
+    "broken": "<ol>\n  <p>Steps</p>\n  <li>One</li>\n</ol>",
+    "fix": "<p>Steps</p>\n<ol>\n  <li>One</li>\n</ol>",
+    "error": "Invalid list child: a paragraph is not allowed directly inside ol, so the parser moves it out and the list loses its heading context.",
+    "fixedOutput": "Steps\n1. One"
+   }
+  ]
+ },
+ "html08": {
+  "tasks": [
+   {
+    "title": "Lazy image below the fold",
+    "statement": "Embed an image with lazy loading, async decoding, explicit width and height, and descriptive alt text.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Lazy image</title>\n</head>\n<body>\n  <img src=\"images/campus.jpg\" alt=\"Students walking outside the campus library\" width=\"640\" height=\"360\" loading=\"lazy\" decoding=\"async\">\n</body>\n</html>",
+    "expected": "Students walking outside the campus library (image, 640 by 360)"
+   },
+   {
+    "title": "srcset with sizes",
+    "statement": "Create an image with a 480w and a 960w candidate and a sizes value of 100vw.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Responsive image</title>\n</head>\n<body>\n  <img src=\"images/hero-960.jpg\"\n       srcset=\"images/hero-480.jpg 480w, images/hero-960.jpg 960w\"\n       sizes=\"100vw\"\n       alt=\"Campus at sunset\" width=\"960\" height=\"540\">\n</body>\n</html>",
+    "expected": "Campus at sunset (image, 960 by 540)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A srcset candidate with no width descriptor",
+    "broken": "<img src=\"small.jpg\" srcset=\"small.jpg 480w, large.jpg\" alt=\"Campus\">",
+    "fix": "<img src=\"small.jpg\" srcset=\"small.jpg 480w, large.jpg 960w\" alt=\"Campus\">",
+    "error": "Mixed descriptors: one candidate has a width and the other none, so the whole srcset is invalid and the browser falls back to src.",
+    "fixedOutput": "Campus (image)"
+   }
+  ]
+ },
+ "html09": {
+  "tasks": [
+   {
+    "title": "Comparison table with row headers",
+    "statement": "Build a two-row table where each first cell is a row header with scope row.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Comparison</title>\n</head>\n<body>\n  <table>\n    <caption>Plan comparison</caption>\n    <tr><th scope=\"col\">Feature</th><th scope=\"col\">Free</th></tr>\n    <tr><th scope=\"row\">Courses</th><td>3</td></tr>\n    <tr><th scope=\"row\">Labs</th><td>10</td></tr>\n  </table>\n</body>\n</html>",
+    "expected": "Plan comparison\nFeature | Free\nCourses | 3\nLabs | 10"
+   },
+   {
+    "title": "Abbreviation in a header cell",
+    "statement": "Use a th containing an abbr with the title `HyperText Markup Language` and the visible text HTML.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Abbreviation table</title>\n</head>\n<body>\n  <table>\n    <caption>Languages</caption>\n    <tr><th scope=\"col\"><abbr title=\"HyperText Markup Language\">HTML</abbr></th><th scope=\"col\">Year</th></tr>\n    <tr><td>HTML5</td><td>2014</td></tr>\n  </table>\n</body>\n</html>",
+    "expected": "Languages\nHTML | Year\nHTML5 | 2014"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A caption placed after the header row",
+    "broken": "<table>\n  <tr><th scope=\"col\">Subject</th><th scope=\"col\">Marks</th></tr>\n  <caption>Term marks</caption>\n  <tr><td>Maths</td><td>92</td></tr>\n</table>",
+    "fix": "<table>\n  <caption>Term marks</caption>\n  <tr><th scope=\"col\">Subject</th><th scope=\"col\">Marks</th></tr>\n  <tr><td>Maths</td><td>92</td></tr>\n</table>",
+    "error": "Misplaced caption: the caption must be the table’s first child, so a later one is ignored by the accessibility API.",
+    "fixedOutput": "Term marks\nSubject | Marks\nMaths | 92"
+   }
+  ]
+ },
+ "html10": {
+  "tasks": [
+   {
+    "title": "Article with its own header and footer",
+    "statement": "Build an article with a header containing an h2, one paragraph and a footer with a time element.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Article anatomy</title>\n</head>\n<body>\n  <article>\n    <header>\n      <h2>Semantic structure</h2>\n    </header>\n    <p>An article can own its header and footer.</p>\n    <footer>\n      <time datetime=\"2026-11-14\">14 November 2026</time>\n    </footer>\n  </article>\n</body>\n</html>",
+    "expected": "Semantic structure\nAn article can own its header and footer.\n14 November 2026"
+   },
+   {
+    "title": "Search landmark",
+    "statement": "Build a main with an h1 and a search form: role search, a labelled input and a submit button.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Search landmark</title>\n</head>\n<body>\n  <main>\n    <h1>Lessons</h1>\n    <form role=\"search\" action=\"/search\" method=\"get\">\n      <label for=\"q\">Search lessons</label>\n      <input id=\"q\" name=\"q\" type=\"search\">\n      <button type=\"submit\">Search</button>\n    </form>\n  </main>\n</body>\n</html>",
+    "expected": "Lessons\nSearch lessons [____________] Search"
+   }
+  ],
+  "debug": [
+   {
+    "title": "The main landmark nested inside the header",
+    "broken": "<header>\n  <main>\n    <h1>Page</h1>\n  </main>\n</header>",
+    "fix": "<header>\n  <p>Site name</p>\n</header>\n<main>\n  <h1>Page</h1>\n</main>",
+    "error": "Nested landmarks: main inside header is not a page region, so landmark navigation cannot jump to the primary content.",
+    "fixedOutput": "Site name\nPage"
+   }
+  ]
+ }
+}

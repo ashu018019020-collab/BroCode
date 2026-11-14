@@ -1,0 +1,252 @@
+{
+ "html11": {
+  "tasks": [
+   {
+    "title": "Newsletter form with consent",
+    "statement": "Build a form posting to `/newsletter` with a labelled email field, a required consent checkbox and a submit button.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Newsletter</title>\n</head>\n<body>\n  <form action=\"/newsletter\" method=\"post\">\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" required>\n    <label>\n      <input type=\"checkbox\" name=\"consent\" value=\"yes\" required>\n      I agree to receive the newsletter\n    </label>\n    <button type=\"submit\">Subscribe</button>\n  </form>\n</body>\n</html>",
+    "expected": "Email [____________]\nI agree to receive the newsletter (checkbox)\nSubscribe"
+   },
+   {
+    "title": "Booking form with date and time",
+    "statement": "Create a form with a labelled date input, a labelled time input and a labelled number input for guests, minimum 1 and maximum 6.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Booking</title>\n</head>\n<body>\n  <form action=\"/book\" method=\"post\">\n    <label for=\"date\">Date</label>\n    <input id=\"date\" name=\"date\" type=\"date\" required>\n    <label for=\"time\">Time</label>\n    <input id=\"time\" name=\"time\" type=\"time\" required>\n    <label for=\"guests\">Guests</label>\n    <input id=\"guests\" name=\"guests\" type=\"number\" min=\"1\" max=\"6\" value=\"2\">\n    <button type=\"submit\">Book</button>\n  </form>\n</body>\n</html>",
+    "expected": "Date [dd/mm/yyyy]\nTime [--:--]\nGuests [2]\nBook"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A select with no name",
+    "broken": "<label for=\"course\">Course</label>\n<select id=\"course\">\n  <option>HTML</option>\n  <option>CSS</option>\n</select>",
+    "fix": "<label for=\"course\">Course</label>\n<select id=\"course\" name=\"course\">\n  <option>HTML</option>\n  <option>CSS</option>\n</select>",
+    "error": "Unnamed select: the chosen option is never included in the form data, so the server always receives an empty course.",
+    "fixedOutput": "Course [HTML v]"
+   }
+  ]
+ },
+ "html12": {
+  "tasks": [
+   {
+    "title": "Password confirmation",
+    "statement": "Build a form with two password fields, both at least eight characters, with autocomplete set for a new password and a shared hint.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Set a password</title>\n</head>\n<body>\n  <form action=\"/password\" method=\"post\">\n    <label for=\"password\">Password</label>\n    <input id=\"password\" name=\"password\" type=\"password\" minlength=\"8\" autocomplete=\"new-password\" required aria-describedby=\"password-hint\">\n    <label for=\"confirm\">Confirm password</label>\n    <input id=\"confirm\" name=\"confirm\" type=\"password\" minlength=\"8\" autocomplete=\"new-password\" required>\n    <p id=\"password-hint\">At least eight characters.</p>\n    <button type=\"submit\">Save</button>\n  </form>\n</body>\n</html>",
+    "expected": "Password [____________]\nConfirm password [____________]\nAt least eight characters.\nSave"
+   },
+   {
+    "title": "Limited textarea",
+    "statement": "Create a labelled textarea limited to 200 characters and required, with a hint connected by aria-describedby.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Feedback</title>\n</head>\n<body>\n  <form action=\"/feedback\" method=\"post\">\n    <label for=\"message\">Message</label>\n    <textarea id=\"message\" name=\"message\" rows=\"4\" maxlength=\"200\" required aria-describedby=\"message-hint\"></textarea>\n    <p id=\"message-hint\">Up to 200 characters.</p>\n    <button type=\"submit\">Send</button>\n  </form>\n</body>\n</html>",
+    "expected": "Message [____________]\nUp to 200 characters.\nSend"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A radio group with no legend",
+    "broken": "<fieldset>\n  <label><input type=\"radio\" name=\"year\" value=\"1\"> First</label>\n  <label><input type=\"radio\" name=\"year\" value=\"2\"> Second</label>\n</fieldset>",
+    "fix": "<fieldset>\n  <legend>Year</legend>\n  <label><input type=\"radio\" name=\"year\" value=\"1\"> First</label>\n  <label><input type=\"radio\" name=\"year\" value=\"2\"> Second</label>\n</fieldset>",
+    "error": "Missing legend: the group has no accessible name, so a screen-reader user hears two options without knowing what they choose between.",
+    "fixedOutput": "Year\n( ) First\n( ) Second"
+   }
+  ]
+ },
+ "html13": {
+  "tasks": [
+   {
+    "title": "Video with fallback content",
+    "statement": "Embed a controlled video with an mp4 source and a fallback paragraph for browsers that cannot play it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Video fallback</title>\n</head>\n<body>\n  <video controls width=\"480\">\n    <source src=\"media/lesson.mp4\" type=\"video/mp4\">\n    <p>Your browser cannot play this video. <a href=\"media/lesson.mp4\">Download it instead</a>.</p>\n  </video>\n</body>\n</html>",
+    "expected": "Video player (480 wide); fallback text shown only when playback is unsupported"
+   },
+   {
+    "title": "Audio with two formats",
+    "statement": "Create an audio player with mp3 and ogg sources and preload set to metadata.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Audio formats</title>\n</head>\n<body>\n  <audio controls preload=\"metadata\">\n    <source src=\"media/theme.mp3\" type=\"audio/mpeg\">\n    <source src=\"media/theme.ogg\" type=\"audio/ogg\">\n  </audio>\n</body>\n</html>",
+    "expected": "Audio player with controls"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A src attribute that hides the sources",
+    "broken": "<video src=\"media/clip.mp4\" controls>\n  <source src=\"media/clip.webm\" type=\"video/webm\">\n</video>",
+    "fix": "<video controls>\n  <source src=\"media/clip.mp4\" type=\"video/mp4\">\n  <source src=\"media/clip.webm\" type=\"video/webm\">\n</video>",
+    "error": "src on the video wins: the browser never considers the source elements, so the webm alternative is dead markup.",
+    "fixedOutput": "Video player using the first supported source"
+   }
+  ]
+ },
+ "html14": {
+  "tasks": [
+   {
+    "title": "Article metadata",
+    "statement": "Write a head for an article: title, description, canonical, og:type article and article:published_time.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Semantic HTML explained | BroCode</title>\n  <meta name=\"description\" content=\"Why the element you choose changes what a page means.\">\n  <link rel=\"canonical\" href=\"https://mybrocode.vercel.app/blog/semantic-html\">\n  <meta property=\"og:type\" content=\"article\">\n  <meta property=\"article:published_time\" content=\"2026-11-14T09:00:00+05:30\">\n</head>\n<body></body>\n</html>",
+    "expected": "Tab title: Semantic HTML explained | BroCode"
+   },
+   {
+    "title": "Robots and canonical pair",
+    "statement": "Add an index/follow robots directive, a canonical URL and a description to a public page.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"robots\" content=\"index, follow\">\n  <meta name=\"description\" content=\"Public course page.\">\n  <link rel=\"canonical\" href=\"https://mybrocode.vercel.app/courses\">\n  <title>Courses | BroCode</title>\n</head>\n<body></body>\n</html>",
+    "expected": "Page is indexable with one canonical URL"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An Open Graph tag with no content",
+    "broken": "<meta property=\"og:title\">\n<meta property=\"og:description\" content=\"Learn HTML.\">",
+    "fix": "<meta property=\"og:title\" content=\"HTML Mastery\">\n<meta property=\"og:description\" content=\"Learn HTML.\">",
+    "error": "Empty content: the crawler sees a property with no value, so the shared card falls back to the page URL or shows nothing.",
+    "fixedOutput": "Link preview: HTML Mastery / Learn HTML."
+   }
+  ]
+ },
+ "html15": {
+  "tasks": [
+   {
+    "title": "Skip links to main and footer",
+    "statement": "Add two skip links (content and footer) and matching ids on main and footer.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Skip links</title>\n</head>\n<body>\n  <a href=\"#main\">Skip to content</a>\n  <a href=\"#footer\">Skip to footer</a>\n  <main id=\"main\">\n    <h1>Page</h1>\n    <p>Content starts here.</p>\n  </main>\n  <footer id=\"footer\"><p>Contact</p></footer>\n</body>\n</html>",
+    "expected": "Skip to content\nSkip to footer\nPage\nContent starts here.\nContact"
+   },
+   {
+    "title": "Required field with a visible hint",
+    "statement": "Create a labelled email input that is required and described by a hint paragraph.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Required field</title>\n</head>\n<body>\n  <form action=\"/subscribe\" method=\"post\">\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" required aria-describedby=\"email-hint\">\n    <p id=\"email-hint\">We only use this to send the course link.</p>\n    <button type=\"submit\">Send</button>\n  </form>\n</body>\n</html>",
+    "expected": "Email [____________]\nWe only use this to send the course link.\nSend"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An aria-label that contradicts the visible text",
+    "broken": "<button type=\"button\" aria-label=\"Submit\">Save</button>",
+    "fix": "<button type=\"button\">Save</button>",
+    "error": "Mismatched label: the accessible name becomes Submit while the button says Save, so voice-control users cannot activate it by the text they see.",
+    "fixedOutput": "Save (button named Save)"
+   }
+  ]
+ },
+ "html16": {
+  "tasks": [
+   {
+    "title": "Map embed with a fallback link",
+    "statement": "Embed a map iframe with a title and add a paragraph link for visitors who cannot load it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Find us</title>\n</head>\n<body>\n  <iframe src=\"https://example.com/map\" title=\"Campus map\" width=\"600\" height=\"400\"></iframe>\n  <p><a href=\"https://example.com/map\">Open the map in a new page</a></p>\n</body>\n</html>",
+    "expected": "Embedded campus map (600 by 400)\nOpen the map in a new page"
+   },
+   {
+    "title": "Lazy embed with no referrer",
+    "statement": "Create a lazy-loaded iframe that sends no referrer, with an explicit title and size.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Private embed</title>\n</head>\n<body>\n  <iframe\n    src=\"https://example.com/widget\"\n    title=\"Course widget\"\n    width=\"400\"\n    height=\"300\"\n    loading=\"lazy\"\n    referrerpolicy=\"no-referrer\"></iframe>\n</body>\n</html>",
+    "expected": "Embedded course widget (400 by 300)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A sandbox that re-enables same-origin",
+    "broken": "<iframe src=\"widget.html\" title=\"Widget\" sandbox=\"allow-scripts allow-same-origin\"></iframe>",
+    "fix": "<iframe src=\"widget.html\" title=\"Widget\" sandbox=\"allow-scripts\"></iframe>",
+    "error": "allow-scripts with allow-same-origin on same-origin content lets the frame remove its own sandbox and reach the parent page.",
+    "fixedOutput": "Sandboxed widget in an opaque origin"
+   }
+  ]
+ },
+ "html17": {
+  "tasks": [
+   {
+    "title": "Dialog with a form method dialog",
+    "statement": "Build a dialog with a paragraph and a form whose method is dialog and a Close button.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Dialog demo</title>\n</head>\n<body>\n  <dialog open>\n    <p>Saved successfully.</p>\n    <form method=\"dialog\">\n      <button value=\"close\">Close</button>\n    </form>\n  </dialog>\n</body>\n</html>",
+    "expected": "Modal dialog: Saved successfully. / Close"
+   },
+   {
+    "title": "Template card",
+    "statement": "Put an article with an h2 and a paragraph inside a template element.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Template card</title>\n</head>\n<body>\n  <template id=\"card-template\">\n    <article>\n      <h2>Card title</h2>\n      <p>Card body.</p>\n    </article>\n  </template>\n</body>\n</html>",
+    "expected": "Nothing visible: the template is inert until a script clones it"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A summary placed after the answer",
+    "broken": "<details>\n  <p>Hidden content</p>\n  <summary>More information</summary>\n</details>",
+    "fix": "<details>\n  <summary>More information</summary>\n  <p>Hidden content</p>\n</details>",
+    "error": "Summary not first: the disclosure uses the first summary as its label, so a later one is treated as ordinary content and the control loses its name.",
+    "fixedOutput": "More information\nHidden content"
+   }
+  ]
+ },
+ "html18": {
+  "tasks": [
+   {
+    "title": "Inline critical styles and external sheet",
+    "statement": "Add a small inline style block for the page background and link an external stylesheet.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Critical styles</title>\n  <style>\n    body { background: #fff7f2; }\n  </style>\n  <link rel=\"stylesheet\" href=\"css/site.css\">\n</head>\n<body>\n  <h1>Styled twice</h1>\n</body>\n</html>",
+    "expected": "Styled twice (inline background, external rules)"
+   },
+   {
+    "title": "Progressive form with a JS hook",
+    "statement": "Build a form that posts normally, a submit button carrying `data-submit`, and a deferred script.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <script src=\"js/app.js\" defer></script>\n  <title>Progressive form</title>\n</head>\n<body>\n  <form action=\"/save\" method=\"post\">\n    <label for=\"title\">Title</label>\n    <input id=\"title\" name=\"title\" type=\"text\">\n    <button type=\"submit\" data-submit=\"save\">Save</button>\n  </form>\n</body>\n</html>",
+    "expected": "Title [____________]\nSave (works with or without the script)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "noscript with a paragraph in the head",
+    "broken": "<head>\n  <title>No JS</title>\n  <noscript><p>Please enable JavaScript.</p></noscript>\n</head>",
+    "fix": "<head>\n  <title>No JS</title>\n</head>\n<body>\n  <noscript><p>Please enable JavaScript.</p></noscript>\n</body>",
+    "error": "Flow content inside head: noscript in the head may only contain link, style and meta, so the paragraph is moved into body anyway.",
+    "fixedOutput": "Please enable JavaScript."
+   }
+  ]
+ },
+ "html19": {
+  "tasks": [
+   {
+    "title": "Entity-safe page",
+    "statement": "Write a paragraph containing a literal ampersand, a less-than sign, a greater-than sign and a copyright sign, plus a code snippet showing `a < b`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Entities</title>\n</head>\n<body>\n  <p>AT&amp;T wrote 5 &lt; 7 &gt; 2 and owns &copy; 2026.</p>\n  <pre><code>a &lt; b</code></pre>\n</body>\n</html>",
+    "expected": "AT&T wrote 5 < 7 > 2 and owns © 2026.\na &lt; b"
+   },
+   {
+    "title": "Clean validator page",
+    "statement": "Write a page that passes validation: doctype, lang, charset, title, one main, one h1, an image with alt and a labelled input.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Valid page</title>\n</head>\n<body>\n  <main>\n    <h1>Valid page</h1>\n    <img src=\"badge.png\" alt=\"Validation passed\" width=\"120\" height=\"40\">\n    <form action=\"/save\" method=\"post\">\n      <label for=\"name\">Name</label>\n      <input id=\"name\" name=\"name\" type=\"text\">\n      <button type=\"submit\">Save</button>\n    </form>\n  </main>\n</body>\n</html>",
+    "expected": "Valid page\nValidation passed (image)\nName [____________]\nSave"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A closing tag on a void element",
+    "broken": "<p>Line one</p>\n<br></br>\n<p>Line two</p>",
+    "fix": "<p>Line one</p>\n<br>\n<p>Line two</p>",
+    "error": "Closing tag for a void element: the parser treats the end tag as an error and may insert a second break, so spacing doubles.",
+    "fixedOutput": "Line one\nLine two"
+   }
+  ]
+ },
+ "html20": {
+  "tasks": [
+   {
+    "title": "Capstone home hero",
+    "statement": "Build the capstone home page: shared header with nav, main with an h1, a section with a paragraph and a CTA link, and a footer.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>BroCode College | Home</title>\n</head>\n<body>\n  <header>\n    <nav><a href=\"index.html\">Home</a> <a href=\"courses.html\">Courses</a></nav>\n  </header>\n  <main>\n    <h1>Learn web development</h1>\n    <section>\n      <h2>Start with structure</h2>\n      <p>HTML comes before CSS and JavaScript.</p>\n      <a href=\"courses.html\">Browse courses</a>\n    </section>\n  </main>\n  <footer><p>BroCode College</p></footer>\n</body>\n</html>",
+    "expected": "Home Courses\nLearn web development\nStart with structure\nHTML comes before CSS and JavaScript.\nBrowse courses\nBroCode College"
+   },
+   {
+    "title": "Capstone contact with address",
+    "statement": "Build a contact page with an address block, a labelled email form and a footer.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Contact | BroCode College</title>\n</head>\n<body>\n  <main>\n    <h1>Contact</h1>\n    <address>\n      BroCode College, Pune\n      <a href=\"mailto:hello@brocode.dev\">hello@brocode.dev</a>\n    </address>\n    <form action=\"/contact\" method=\"post\">\n      <label for=\"email\">Your email</label>\n      <input id=\"email\" name=\"email\" type=\"email\" required>\n      <button type=\"submit\">Send</button>\n    </form>\n  </main>\n  <footer><p>BroCode College</p></footer>\n</body>\n</html>",
+    "expected": "Contact\nBroCode College, Pune hello@brocode.dev\nYour email [____________]\nSend\nBroCode College"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A file path that only works on the author’s computer",
+    "broken": "<a href=\"file:///C:/site/about.html\">About</a>",
+    "fix": "<a href=\"about.html\">About</a>",
+    "error": "Local file path: file URLs work only on that machine and are blocked for visitors, so the link is dead once the site is deployed.",
+    "fixedOutput": "About"
+   }
+  ]
+ }
+}
