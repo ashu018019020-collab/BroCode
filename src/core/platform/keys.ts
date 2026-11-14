@@ -152,12 +152,12 @@ export const C_LAB_PREFIX = 'clab:';
 export const ASSISTANT_MODULE_KEY = 'aiml:assistant:module';
 
 /**
- * Masterclass module completion: `mc:<courseId>:<moduleId>`.
- * One record per module, written when the learner finishes that module. The course id is part of the
- * key so SQL, MySQL and SQLite modules can never unlock each other.
+ * Masterclass topic completion: `mt:<courseId>:<moduleId>:<topicId>`.
+ * One record per checked topic. A module is complete only when every topic record in it is done, and
+ * the course id keeps SQL, MySQL and SQLite modules from unlocking each other.
  */
-export const masterclassModuleDone = (courseId: string, moduleId: string) => `mc:${courseId}:${moduleId}`;
-export const MASTERCLASS_PREFIX = 'mc:';
+export const masterclassTopicDone = (courseId: string, moduleId: string, topicId: string) => `mt:${courseId}:${moduleId}:${topicId}`;
+export const MASTERCLASS_TOPIC_PREFIX = 'mt:';
 
 // ---- the Java course's records ----
 /**

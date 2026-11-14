@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { ArrowRight, BookOpen, Bug, CheckCircle2, Code2, GraduationCap, HelpCircle, Layers, ListChecks, Lock } from 'lucide-react';
 import { useSqlMasterclass, type SqlMasterclassFile, type SqlModule, type SqlQuiz } from '../../core/data/sqlmasterclass';
-import { masterclassModuleDone } from '../../core/platform/keys';
-import { recordAttempt, useStore } from '../../core/storage/store';
+import { masterclassTopicDone } from '../../core/platform/keys';
+import { forgetAttempt, recordAttempt, useStore } from '../../core/storage/store';
 
 type BankKey = 'learn' | 'interview' | 'labs' | 'logic' | 'debug' | 'revision';
 const BANKS: { key: BankKey; label: string; icon: typeof BookOpen }[] = [
@@ -113,9 +113,21 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
   const modules = file?.modules ?? [];
   const module = useMemo(() => modules.find((m) => m.id === moduleId) ?? modules[0], [modules, moduleId]);
   const completed = useMemo(
-    () => new Set(modules.filter((m) => state.attempts[masterclassModuleDone(file.course.id, m.id)]?.done).map((m) => m.id)),
+    () => new Set(
+      modules
+        .filter((m) => m.topics.length > 0 && m.topics.every((t) => state.attempts[masterclassTopicDone(file.course.id, m.id, t.id)]?.done))
+        .map((m) => m.id),
+    ),
     [modules, state.attempts, file.course.id],
   );
+  const doneTopics = useMemo(() => {
+    if (!module) return new Set<string>();
+    return new Set(
+      module.topics
+        .filter((t) => state.attempts[masterclassTopicDone(file.course.id, module.id, t.id)]?.done)
+        .map((t) => t.id),
+    );
+  }, [module, state.attempts, file.course.id]);
   const moduleIndex = module ? modules.findIndex((m) => m.id === module.id) : -1;
   const nextModule = moduleIndex >= 0 ? modules[moduleIndex + 1] : undefined;
   const currentDone = module ? completed.has(module.id) : false;
@@ -125,8 +137,7 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
     return <div className="card"><div className="skeleton" style={{ height: 90 }} /></div>;
   }
 
-  const completeAndOpenNext = () => {
-    recordAttempt(masterclassModuleDone(file.course.id, module.id), { done: true });
+  const openNext = () => {
     if (!nextModule) {
       setNotice('Course complete — every published module is finished.');
       return;
@@ -136,6 +147,23 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
     setLevel('simple');
     setNotice(`Module ${String(module.no).padStart(2, '0')} complete. Module ${String(nextModule.no).padStart(2, '0')} unlocked and opened.`);
     requestAnimationFrame(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+
+  const toggleTopic = (topicId: string, checked: boolean) => {
+    const key = masterclassTopicDone(file.course.id, module.id, topicId);
+    if (checked) recordAttempt(key, { done: true });
+    else forgetAttempt(key);
+
+    const nextDone = new Set(doneTopics);
+    if (checked) nextDone.add(topicId);
+    else nextDone.delete(topicId);
+    const nowComplete = nextDone.size === module.topics.length;
+    if (!nowComplete) {
+      setNotice(null);
+      return;
+    }
+    if (currentDone) return;
+    openNext();
   };
 
   return (
@@ -152,7 +180,7 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
         </button>
       </div>
       <p className="small muted" style={{ margin: '6px 0 0' }}>
-        Module {String(module.no).padStart(2, '0')} — {module.title}. Finish it to unlock the next module. {file.course.tagline}
+        Module {String(module.no).padStart(2, '0')} — {module.title}. Check every topic to complete it; the last check unlocks and opens the next module. {file.course.tagline}
       </p>
 
       {open && (
@@ -177,6 +205,7 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
               );
             })}
             <span className="chip"><Layers size={11} /> {module.topics.length} topics</span>
+            <span className="chip"><CheckCircle2 size={11} /> {doneTopics.size}/{module.topics.length} checked</span>
             <span className="chip"><ListChecks size={11} /> {module.hours}h</span>
           </div>
 
@@ -212,17 +241,32 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
           </div>
 
           <div style={{ marginTop: 10 }}>
-            {module.topics.map((topic) => (
-              <div key={topic.id} className="card" style={{ marginBottom: 8 }}>
-                <b className="small">{topic.title}</b>
-                <p className="small" style={{ margin: '6px 0 0' }}>{level === 'simple' ? topic.simple : topic.pro}</p>
-                <ul className="small muted" style={{ margin: '6px 0 0', paddingLeft: 18 }}>
-                  {topic.points.map((point) => <li key={point}>{point}</li>)}
-                </ul>
-                <pre className="codeblock" style={{ margin: '8px 0 0' }}>{topic.example.sql}</pre>
-                <p className="small muted" style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap' }}><b>Output</b>{'\n'}{topic.example.output}</p>
-              </div>
-            ))}
+            {module.topics.map((topic) => {
+              const topicDone = doneTopics.has(topic.id);
+              return (
+                <div key={topic.id} className="card" style={{ marginBottom: 8, borderColor: topicDone ? 'var(--ok, #2e7d32)' : undefined }}>
+                  <div className="row spread" style={{ gap: 8, alignItems: 'flex-start' }}>
+                    <b className="small">{topic.title}</b>
+                    <button
+                      type="button"
+                      className={`chip ${topicDone ? 'easy' : ''}`}
+                      onClick={() => toggleTopic(topic.id, !topicDone)}
+                      aria-pressed={topicDone}
+                      title={topicDone ? 'Mark this topic as not read' : 'Mark this topic as read'}
+                      style={{ cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      {topicDone ? <CheckCircle2 size={11} /> : null} {topicDone ? 'Done' : 'Mark read'}
+                    </button>
+                  </div>
+                  <p className="small" style={{ margin: '6px 0 0' }}>{level === 'simple' ? topic.simple : topic.pro}</p>
+                  <ul className="small muted" style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                    {topic.points.map((point) => <li key={point}>{point}</li>)}
+                  </ul>
+                  <pre className="codeblock" style={{ margin: '8px 0 0' }}>{topic.example.sql}</pre>
+                  <p className="small muted" style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap' }}><b>Output</b>{'\n'}{topic.example.output}</p>
+                </div>
+              );
+            })}
           </div>
 
           <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 12 }}>
@@ -247,27 +291,35 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
 
           <div className="card" style={{ marginTop: 10, borderColor: currentDone ? 'var(--ok, #2e7d32)' : undefined }}>
             <div className="row spread" style={{ gap: 10, flexWrap: 'wrap' }}>
-              <div>
-                <b className="small">{currentDone ? 'Module complete' : 'Finished this module?'}</b>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <b className="small">{currentDone ? 'Module complete' : 'Topic checklist'}</b>
                 <p className="small muted" style={{ margin: '4px 0 0' }}>
                   {currentDone
                     ? nextModule
-                      ? 'The next module is unlocked. Open it when you are ready.'
-                      : 'You have finished every published module in this course.'
-                    : 'Mark it complete to unlock the next module. It opens automatically.'}
+                      ? `All ${module.topics.length} topics checked. Module ${String(nextModule.no).padStart(2, '0')} is unlocked.`
+                      : `All ${module.topics.length} topics checked. You have finished every published module.`
+                    : `${doneTopics.size} of ${module.topics.length} topics checked. Check every topic to complete this module and unlock the next one.`}
                 </p>
+                <div style={{ height: 6, marginTop: 8, borderRadius: 999, background: 'var(--line, #e5e7eb)', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${module.topics.length ? (doneTopics.size / module.topics.length) * 100 : 0}%`,
+                      borderRadius: 999,
+                      background: 'var(--accent, #2563eb)',
+                      transition: 'width 240ms ease',
+                    }}
+                  />
+                </div>
               </div>
-              <button
-                type="button"
-                className="btn small primary"
-                onClick={completeAndOpenNext}
-                disabled={currentDone && !nextModule}
-              >
-                {currentDone
-                  ? nextModule ? `Open Module ${String(nextModule.no).padStart(2, '0')}` : 'Course complete'
-                  : nextModule ? 'Finish & open next' : 'Finish course'}
-                {nextModule && <ArrowRight size={13} />}
-              </button>
+              {currentDone && nextModule && (
+                <button type="button" className="btn small primary" onClick={openNext}>
+                  Open Module {String(nextModule.no).padStart(2, '0')} <ArrowRight size={13} />
+                </button>
+              )}
+              {currentDone && !nextModule && (
+                <span className="chip easy"><CheckCircle2 size={11} /> Course complete</span>
+              )}
             </div>
           </div>
 
