@@ -45,6 +45,7 @@ for (const file of deepeningFiles) {
     target.topics.push(...(pack.topics || []));
     target.debug.push(...(pack.debug || []));
     target.tasks.push(...(pack.tasks || []));
+    if (pack.logic) target.logicBank = [...(target.logicBank || []), ...pack.logic];
     if (pack.interview) target.interviewBank = [...(target.interviewBank || []), ...pack.interview];
     if (pack.mcq) target.mcqBank = [...(target.mcqBank || []), ...pack.mcq];
   }
@@ -220,10 +221,15 @@ function buildSections(m) {
       starter: '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>Lab</title>\n</head>\n<body>\n  <!-- build the page the task asks for -->\n</body>\n</html>\n',
       solution: t.solution, expected: t.expected, difficulty: difficultyAt(i),
     })),
-    logic: topics.map((t, i) => ({
-      id: id('logic', i), q: `Predict exactly what the browser renders for this ${t.title.toLowerCase()} markup before you check.`,
-      code: t.code, answer: t.output, difficulty: difficultyAt(i),
-    })),
+    logic: [
+      ...topics.map((t, i) => ({
+        id: id('logic', i), q: `Predict exactly what the browser renders for this ${t.title.toLowerCase()} markup before you check.`,
+        code: t.code, answer: t.output, difficulty: difficultyAt(i),
+      })),
+      ...(m.logicBank || []).map((q, i) => ({
+        id: id('logic', 'd' + i), q: q.q, code: q.code, answer: q.answer, difficulty: difficultyAt(i + topics.length),
+      })),
+    ],
     debug: m.debug.map((d, i) => ({
       id: id('debug', i), title: d.title, code: d.broken, error: d.error, fix: d.fix,
       expected: d.fixedOutput, difficulty: difficultyAt(i),

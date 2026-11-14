@@ -20,15 +20,15 @@ rewriting the file it lives in.
 | --- | ---: | ---: | ---: |
 | Learn | 60 | 60 | 60 |
 | Interview | 100 | 160 | 160 |
-| Coding Lab | 20 | 60 | **100** |
-| Logic | 60 | 60 | 60 |
+| Coding Lab | 20 | 60 | **150** |
+| Logic | 60 | 60 | **100** |
 | Debug | 40 | 80 | **100** |
 | Practice Solutions | 60 | 60 | 60 |
 | Mini Project | 20 | 20 | 20 |
 | Project Lab | 20 | 20 | 20 |
 | Defense | 40 | 40 | 40 |
 | Checkpoint | 236 | 236 | 236 |
-| **Total** | **656** | **796** | **856** |
+| **Total** | **656** | **796** | **946** |
 
 20 modules, 42–45 records each. Difficulty split: 269 easy, 366 medium, 221 hard.
 
@@ -76,8 +76,8 @@ injection timed out.
 
 ## Gaps against the full brief — honest list
 
-1. **Coding labs: 100 shipped, 150 requested.** Five per module; 50 short.
-2. **Debug: 100 shipped — target met.** Logic is 60 of the 100 requested.
+1. **Coding labs: 150 shipped — target met.**
+2. **Debug: 100 shipped — target met.** Logic is 100 of the 100 requested — target met.
 3. **Interview: 160 shipped**, past the "at least 100" target. Each card still carries one answer,
    not the full nine-field interview card.
 4. **Projects: 20 mini projects + 20 labs shipped, the 15 curated projects and the capstone rubric
@@ -92,7 +92,6 @@ injection timed out.
 
 ## Next growth (in order)
 
-1. `deepening-3.json`: 50 more labs (→ 150) and 40 more logic questions (→ 100).
-2. `deepening-4.json`: the 15 curated projects with requirements, starter, rubric and reference
+1. `deepening-4.json`: the 15 curated projects with requirements, starter, rubric and reference
    solution, surfaced as a Projects tab on the course page.
 3. Playground: per-lab expected-output comparison and lab starter templates.

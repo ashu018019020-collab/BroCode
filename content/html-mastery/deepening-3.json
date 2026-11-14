@@ -1,0 +1,622 @@
+{
+ "html01": {
+  "tasks": [
+   {
+    "title": "Article with aside (HTML01)",
+    "statement": "Build an article with a heading, a paragraph and an aside that contains a related link.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Article</title></head>\n<body>\n  <article>\n    <h1>Semantic HTML</h1>\n    <p>Elements describe meaning, not appearance.</p>\n    <aside><p>Related: <a href=\"/docs\">documentation</a></p></aside>\n  </article>\n</body>\n</html>",
+    "expected": "Semantic HTML\nElements describe meaning, not appearance.\nRelated: documentation"
+   },
+   {
+    "title": "Figure with caption (HTML01)",
+    "statement": "Create a figure with an image and a figcaption describing it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Figure</title></head>\n<body>\n  <figure>\n    <img src=\"diagram.png\" alt=\"Semantic HTML diagram\" width=\"320\" height=\"180\">\n    <figcaption>Figure 1: how elements describe meaning.</figcaption>\n  </figure>\n</body>\n</html>",
+    "expected": "Semantic HTML diagram (image)\nFigure 1: how elements describe meaning."
+   },
+   {
+    "title": "Definition list (HTML01)",
+    "statement": "Build a definition list with three terms and their definitions.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Glossary</title></head>\n<body>\n  <dl>\n    <dt>Element</dt><dd>A building block of HTML.</dd>\n    <dt>Attribute</dt><dd>Extra information on an element.</dd>\n    <dt>Content</dt><dd>What sits between the tags.</dd>\n  </dl>\n</body>\n</html>",
+    "expected": "Element\nA building block of HTML.\nAttribute\nExtra information on an element.\nContent\nWhat sits between the tags."
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a figure with a figcaption render? (HTML01)",
+    "code": "<figure><img src=\"a.png\" alt=\"diagram\" width=\"100\" height=\"60\"><figcaption>Diagram A</figcaption></figure>",
+    "answer": "diagram (image)\nDiagram A"
+   },
+   {
+    "q": "What does an ordered list of two items render? (HTML01)",
+    "code": "<ol><li>First</li><li>Second</li></ol>",
+    "answer": "1. First\n2. Second"
+   }
+  ]
+ },
+ "html02": {
+  "tasks": [
+   {
+    "title": "Ordered steps (HTML02)",
+    "statement": "Create an ordered list of three steps for publishing a page.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Steps</title></head>\n<body>\n  <ol>\n    <li>Write the markup.</li>\n    <li>Validate it.</li>\n    <li>Deploy it.</li>\n  </ol>\n</body>\n</html>",
+    "expected": "1. Write the markup.\n2. Validate it.\n3. Deploy it."
+   },
+   {
+    "title": "Unordered features (HTML02)",
+    "statement": "Build an unordered list of three course features.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Features</title></head>\n<body>\n  <ul>\n    <li>Sandboxed playground</li>\n    <li>Authored expected outputs</li>\n    <li>Per-module progress</li>\n  </ul>\n</body>\n</html>",
+    "expected": "Sandboxed playground\nAuthored expected outputs\nPer-module progress"
+   },
+   {
+    "title": "Table of modules (HTML02)",
+    "statement": "Create a table with a caption, header row and two data rows.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Modules</title></head>\n<body>\n  <table>\n    <caption>HTML modules</caption>\n    <thead><tr><th>No.</th><th>Title</th></tr></thead>\n    <tbody>\n      <tr><td>1</td><td>Structure</td></tr>\n      <tr><td>2</td><td>Text</td></tr>\n    </tbody>\n  </table>\n</body>\n</html>",
+    "expected": "HTML modules\nNo. Title\n1 Structure\n2 Text"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a definition list with one term render? (HTML02)",
+    "code": "<dl><dt>Term</dt><dd>Definition</dd></dl>",
+    "answer": "Term\nDefinition"
+   },
+   {
+    "q": "What does a table with a caption and one row render? (HTML02)",
+    "code": "<table><caption>Items</caption><tr><td>One</td></tr></table>",
+    "answer": "Items\nOne"
+   }
+  ]
+ },
+ "html03": {
+  "tasks": [
+   {
+    "title": "Blockquote with cite (HTML03)",
+    "statement": "Build a blockquote with a citation link below it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Quote</title></head>\n<body>\n  <blockquote>\n    <p>HTML is the skeleton of the web.</p>\n  </blockquote>\n  <cite><a href=\"https://example.com\">BroCode</a></cite>\n</body>\n</html>",
+    "expected": "HTML is the skeleton of the web.\nBroCode"
+   },
+   {
+    "title": "Image with srcset (HTML03)",
+    "statement": "Create a responsive image using srcset and sizes.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Responsive image</title></head>\n<body>\n  <img src=\"photo-400.jpg\" srcset=\"photo-400.jpg 400w, photo-800.jpg 800w\" sizes=\"(max-width: 600px) 400px, 800px\" alt=\"Course photo\" width=\"800\" height=\"450\">\n</body>\n</html>",
+    "expected": "Course photo (responsive image)"
+   },
+   {
+    "title": "Lazy image (HTML03)",
+    "statement": "Add a lazy-loaded image with explicit dimensions and alt text.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Lazy</title></head>\n<body>\n  <img src=\"photo.jpg\" alt=\"Lazy photo\" width=\"640\" height=\"360\" loading=\"lazy\" decoding=\"async\">\n</body>\n</html>",
+    "expected": "Lazy photo"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a blockquote render? (HTML03)",
+    "code": "<blockquote><p>Quoted text.</p></blockquote>",
+    "answer": "Quoted text."
+   },
+   {
+    "q": "What does a time element with datetime render? (HTML03)",
+    "code": "<p>On <time datetime=\"2026-11-14\">14 Nov 2026</time>.</p>",
+    "answer": "On 14 Nov 2026."
+   }
+  ]
+ },
+ "html04": {
+  "tasks": [
+   {
+    "title": "Time element (HTML04)",
+    "statement": "Mark up a publication date with a time element carrying a datetime attribute.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Published</title></head>\n<body>\n  <article>\n    <h1>Released</h1>\n    <p>Published on <time datetime=\"2026-11-14\">14 November 2026</time>.</p>\n  </article>\n</body>\n</html>",
+    "expected": "Released\nPublished on 14 November 2026."
+   },
+   {
+    "title": "Article with aside (HTML04)",
+    "statement": "Build an article with a heading, a paragraph and an aside that contains a related link.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Article</title></head>\n<body>\n  <article>\n    <h1>Semantic HTML</h1>\n    <p>Elements describe meaning, not appearance.</p>\n    <aside><p>Related: <a href=\"/docs\">documentation</a></p></aside>\n  </article>\n</body>\n</html>",
+    "expected": "Semantic HTML\nElements describe meaning, not appearance.\nRelated: documentation"
+   },
+   {
+    "title": "Figure with caption (HTML04)",
+    "statement": "Create a figure with an image and a figcaption describing it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Figure</title></head>\n<body>\n  <figure>\n    <img src=\"diagram.png\" alt=\"Semantic HTML diagram\" width=\"320\" height=\"180\">\n    <figcaption>Figure 1: how elements describe meaning.</figcaption>\n  </figure>\n</body>\n</html>",
+    "expected": "Semantic HTML diagram (image)\nFigure 1: how elements describe meaning."
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does an aside render? (HTML04)",
+    "code": "<article><p>Main</p><aside><p>Side note</p></aside></article>",
+    "answer": "Main\nSide note"
+   },
+   {
+    "q": "What does a lazy image render? (HTML04)",
+    "code": "<img src=\"x.png\" alt=\"Lazy\" width=\"50\" height=\"30\" loading=\"lazy\">",
+    "answer": "Lazy"
+   }
+  ]
+ },
+ "html05": {
+  "tasks": [
+   {
+    "title": "Definition list (HTML05)",
+    "statement": "Build a definition list with three terms and their definitions.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Glossary</title></head>\n<body>\n  <dl>\n    <dt>Element</dt><dd>A building block of HTML.</dd>\n    <dt>Attribute</dt><dd>Extra information on an element.</dd>\n    <dt>Content</dt><dd>What sits between the tags.</dd>\n  </dl>\n</body>\n</html>",
+    "expected": "Element\nA building block of HTML.\nAttribute\nExtra information on an element.\nContent\nWhat sits between the tags."
+   },
+   {
+    "title": "Ordered steps (HTML05)",
+    "statement": "Create an ordered list of three steps for publishing a page.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Steps</title></head>\n<body>\n  <ol>\n    <li>Write the markup.</li>\n    <li>Validate it.</li>\n    <li>Deploy it.</li>\n  </ol>\n</body>\n</html>",
+    "expected": "1. Write the markup.\n2. Validate it.\n3. Deploy it."
+   },
+   {
+    "title": "Unordered features (HTML05)",
+    "statement": "Build an unordered list of three course features.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Features</title></head>\n<body>\n  <ul>\n    <li>Sandboxed playground</li>\n    <li>Authored expected outputs</li>\n    <li>Per-module progress</li>\n  </ul>\n</body>\n</html>",
+    "expected": "Sandboxed playground\nAuthored expected outputs\nPer-module progress"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a figure without a caption render? (HTML05)",
+    "code": "<figure><img src=\"b.png\" alt=\"chart\" width=\"80\" height=\"40\"></figure>",
+    "answer": "chart (image)"
+   },
+   {
+    "q": "What does an unordered list of two items render? (HTML05)",
+    "code": "<ul><li>Alpha</li><li>Beta</li></ul>",
+    "answer": "Alpha\nBeta"
+   }
+  ]
+ },
+ "html06": {
+  "tasks": [
+   {
+    "title": "Table of modules (HTML06)",
+    "statement": "Create a table with a caption, header row and two data rows.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Modules</title></head>\n<body>\n  <table>\n    <caption>HTML modules</caption>\n    <thead><tr><th>No.</th><th>Title</th></tr></thead>\n    <tbody>\n      <tr><td>1</td><td>Structure</td></tr>\n      <tr><td>2</td><td>Text</td></tr>\n    </tbody>\n  </table>\n</body>\n</html>",
+    "expected": "HTML modules\nNo. Title\n1 Structure\n2 Text"
+   },
+   {
+    "title": "Blockquote with cite (HTML06)",
+    "statement": "Build a blockquote with a citation link below it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Quote</title></head>\n<body>\n  <blockquote>\n    <p>HTML is the skeleton of the web.</p>\n  </blockquote>\n  <cite><a href=\"https://example.com\">BroCode</a></cite>\n</body>\n</html>",
+    "expected": "HTML is the skeleton of the web.\nBroCode"
+   },
+   {
+    "title": "Image with srcset (HTML06)",
+    "statement": "Create a responsive image using srcset and sizes.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Responsive image</title></head>\n<body>\n  <img src=\"photo-400.jpg\" srcset=\"photo-400.jpg 400w, photo-800.jpg 800w\" sizes=\"(max-width: 600px) 400px, 800px\" alt=\"Course photo\" width=\"800\" height=\"450\">\n</body>\n</html>",
+    "expected": "Course photo (responsive image)"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a figure with a figcaption render? (HTML06)",
+    "code": "<figure><img src=\"a.png\" alt=\"diagram\" width=\"100\" height=\"60\"><figcaption>Diagram A</figcaption></figure>",
+    "answer": "diagram (image)\nDiagram A"
+   },
+   {
+    "q": "What does an ordered list of two items render? (HTML06)",
+    "code": "<ol><li>First</li><li>Second</li></ol>",
+    "answer": "1. First\n2. Second"
+   }
+  ]
+ },
+ "html07": {
+  "tasks": [
+   {
+    "title": "Lazy image (HTML07)",
+    "statement": "Add a lazy-loaded image with explicit dimensions and alt text.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Lazy</title></head>\n<body>\n  <img src=\"photo.jpg\" alt=\"Lazy photo\" width=\"640\" height=\"360\" loading=\"lazy\" decoding=\"async\">\n</body>\n</html>",
+    "expected": "Lazy photo"
+   },
+   {
+    "title": "Time element (HTML07)",
+    "statement": "Mark up a publication date with a time element carrying a datetime attribute.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Published</title></head>\n<body>\n  <article>\n    <h1>Released</h1>\n    <p>Published on <time datetime=\"2026-11-14\">14 November 2026</time>.</p>\n  </article>\n</body>\n</html>",
+    "expected": "Released\nPublished on 14 November 2026."
+   },
+   {
+    "title": "Article with aside (HTML07)",
+    "statement": "Build an article with a heading, a paragraph and an aside that contains a related link.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Article</title></head>\n<body>\n  <article>\n    <h1>Semantic HTML</h1>\n    <p>Elements describe meaning, not appearance.</p>\n    <aside><p>Related: <a href=\"/docs\">documentation</a></p></aside>\n  </article>\n</body>\n</html>",
+    "expected": "Semantic HTML\nElements describe meaning, not appearance.\nRelated: documentation"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a definition list with one term render? (HTML07)",
+    "code": "<dl><dt>Term</dt><dd>Definition</dd></dl>",
+    "answer": "Term\nDefinition"
+   },
+   {
+    "q": "What does a table with a caption and one row render? (HTML07)",
+    "code": "<table><caption>Items</caption><tr><td>One</td></tr></table>",
+    "answer": "Items\nOne"
+   }
+  ]
+ },
+ "html08": {
+  "tasks": [
+   {
+    "title": "Figure with caption (HTML08)",
+    "statement": "Create a figure with an image and a figcaption describing it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Figure</title></head>\n<body>\n  <figure>\n    <img src=\"diagram.png\" alt=\"Semantic HTML diagram\" width=\"320\" height=\"180\">\n    <figcaption>Figure 1: how elements describe meaning.</figcaption>\n  </figure>\n</body>\n</html>",
+    "expected": "Semantic HTML diagram (image)\nFigure 1: how elements describe meaning."
+   },
+   {
+    "title": "Definition list (HTML08)",
+    "statement": "Build a definition list with three terms and their definitions.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Glossary</title></head>\n<body>\n  <dl>\n    <dt>Element</dt><dd>A building block of HTML.</dd>\n    <dt>Attribute</dt><dd>Extra information on an element.</dd>\n    <dt>Content</dt><dd>What sits between the tags.</dd>\n  </dl>\n</body>\n</html>",
+    "expected": "Element\nA building block of HTML.\nAttribute\nExtra information on an element.\nContent\nWhat sits between the tags."
+   },
+   {
+    "title": "Ordered steps (HTML08)",
+    "statement": "Create an ordered list of three steps for publishing a page.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Steps</title></head>\n<body>\n  <ol>\n    <li>Write the markup.</li>\n    <li>Validate it.</li>\n    <li>Deploy it.</li>\n  </ol>\n</body>\n</html>",
+    "expected": "1. Write the markup.\n2. Validate it.\n3. Deploy it."
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a blockquote render? (HTML08)",
+    "code": "<blockquote><p>Quoted text.</p></blockquote>",
+    "answer": "Quoted text."
+   },
+   {
+    "q": "What does a time element with datetime render? (HTML08)",
+    "code": "<p>On <time datetime=\"2026-11-14\">14 Nov 2026</time>.</p>",
+    "answer": "On 14 Nov 2026."
+   }
+  ]
+ },
+ "html09": {
+  "tasks": [
+   {
+    "title": "Unordered features (HTML09)",
+    "statement": "Build an unordered list of three course features.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Features</title></head>\n<body>\n  <ul>\n    <li>Sandboxed playground</li>\n    <li>Authored expected outputs</li>\n    <li>Per-module progress</li>\n  </ul>\n</body>\n</html>",
+    "expected": "Sandboxed playground\nAuthored expected outputs\nPer-module progress"
+   },
+   {
+    "title": "Table of modules (HTML09)",
+    "statement": "Create a table with a caption, header row and two data rows.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Modules</title></head>\n<body>\n  <table>\n    <caption>HTML modules</caption>\n    <thead><tr><th>No.</th><th>Title</th></tr></thead>\n    <tbody>\n      <tr><td>1</td><td>Structure</td></tr>\n      <tr><td>2</td><td>Text</td></tr>\n    </tbody>\n  </table>\n</body>\n</html>",
+    "expected": "HTML modules\nNo. Title\n1 Structure\n2 Text"
+   },
+   {
+    "title": "Blockquote with cite (HTML09)",
+    "statement": "Build a blockquote with a citation link below it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Quote</title></head>\n<body>\n  <blockquote>\n    <p>HTML is the skeleton of the web.</p>\n  </blockquote>\n  <cite><a href=\"https://example.com\">BroCode</a></cite>\n</body>\n</html>",
+    "expected": "HTML is the skeleton of the web.\nBroCode"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does an aside render? (HTML09)",
+    "code": "<article><p>Main</p><aside><p>Side note</p></aside></article>",
+    "answer": "Main\nSide note"
+   },
+   {
+    "q": "What does a lazy image render? (HTML09)",
+    "code": "<img src=\"x.png\" alt=\"Lazy\" width=\"50\" height=\"30\" loading=\"lazy\">",
+    "answer": "Lazy"
+   }
+  ]
+ },
+ "html10": {
+  "tasks": [
+   {
+    "title": "Image with srcset (HTML10)",
+    "statement": "Create a responsive image using srcset and sizes.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Responsive image</title></head>\n<body>\n  <img src=\"photo-400.jpg\" srcset=\"photo-400.jpg 400w, photo-800.jpg 800w\" sizes=\"(max-width: 600px) 400px, 800px\" alt=\"Course photo\" width=\"800\" height=\"450\">\n</body>\n</html>",
+    "expected": "Course photo (responsive image)"
+   },
+   {
+    "title": "Lazy image (HTML10)",
+    "statement": "Add a lazy-loaded image with explicit dimensions and alt text.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Lazy</title></head>\n<body>\n  <img src=\"photo.jpg\" alt=\"Lazy photo\" width=\"640\" height=\"360\" loading=\"lazy\" decoding=\"async\">\n</body>\n</html>",
+    "expected": "Lazy photo"
+   },
+   {
+    "title": "Time element (HTML10)",
+    "statement": "Mark up a publication date with a time element carrying a datetime attribute.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Published</title></head>\n<body>\n  <article>\n    <h1>Released</h1>\n    <p>Published on <time datetime=\"2026-11-14\">14 November 2026</time>.</p>\n  </article>\n</body>\n</html>",
+    "expected": "Released\nPublished on 14 November 2026."
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a figure without a caption render? (HTML10)",
+    "code": "<figure><img src=\"b.png\" alt=\"chart\" width=\"80\" height=\"40\"></figure>",
+    "answer": "chart (image)"
+   },
+   {
+    "q": "What does an unordered list of two items render? (HTML10)",
+    "code": "<ul><li>Alpha</li><li>Beta</li></ul>",
+    "answer": "Alpha\nBeta"
+   }
+  ]
+ },
+ "html11": {
+  "tasks": [
+   {
+    "title": "Article with aside (HTML11)",
+    "statement": "Build an article with a heading, a paragraph and an aside that contains a related link.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Article</title></head>\n<body>\n  <article>\n    <h1>Semantic HTML</h1>\n    <p>Elements describe meaning, not appearance.</p>\n    <aside><p>Related: <a href=\"/docs\">documentation</a></p></aside>\n  </article>\n</body>\n</html>",
+    "expected": "Semantic HTML\nElements describe meaning, not appearance.\nRelated: documentation"
+   },
+   {
+    "title": "Figure with caption (HTML11)",
+    "statement": "Create a figure with an image and a figcaption describing it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Figure</title></head>\n<body>\n  <figure>\n    <img src=\"diagram.png\" alt=\"Semantic HTML diagram\" width=\"320\" height=\"180\">\n    <figcaption>Figure 1: how elements describe meaning.</figcaption>\n  </figure>\n</body>\n</html>",
+    "expected": "Semantic HTML diagram (image)\nFigure 1: how elements describe meaning."
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a figure with a figcaption render? (HTML11)",
+    "code": "<figure><img src=\"a.png\" alt=\"diagram\" width=\"100\" height=\"60\"><figcaption>Diagram A</figcaption></figure>",
+    "answer": "diagram (image)\nDiagram A"
+   },
+   {
+    "q": "What does an ordered list of two items render? (HTML11)",
+    "code": "<ol><li>First</li><li>Second</li></ol>",
+    "answer": "1. First\n2. Second"
+   }
+  ]
+ },
+ "html12": {
+  "tasks": [
+   {
+    "title": "Ordered steps (HTML12)",
+    "statement": "Create an ordered list of three steps for publishing a page.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Steps</title></head>\n<body>\n  <ol>\n    <li>Write the markup.</li>\n    <li>Validate it.</li>\n    <li>Deploy it.</li>\n  </ol>\n</body>\n</html>",
+    "expected": "1. Write the markup.\n2. Validate it.\n3. Deploy it."
+   },
+   {
+    "title": "Unordered features (HTML12)",
+    "statement": "Build an unordered list of three course features.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Features</title></head>\n<body>\n  <ul>\n    <li>Sandboxed playground</li>\n    <li>Authored expected outputs</li>\n    <li>Per-module progress</li>\n  </ul>\n</body>\n</html>",
+    "expected": "Sandboxed playground\nAuthored expected outputs\nPer-module progress"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a definition list with one term render? (HTML12)",
+    "code": "<dl><dt>Term</dt><dd>Definition</dd></dl>",
+    "answer": "Term\nDefinition"
+   },
+   {
+    "q": "What does a table with a caption and one row render? (HTML12)",
+    "code": "<table><caption>Items</caption><tr><td>One</td></tr></table>",
+    "answer": "Items\nOne"
+   }
+  ]
+ },
+ "html13": {
+  "tasks": [
+   {
+    "title": "Blockquote with cite (HTML13)",
+    "statement": "Build a blockquote with a citation link below it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Quote</title></head>\n<body>\n  <blockquote>\n    <p>HTML is the skeleton of the web.</p>\n  </blockquote>\n  <cite><a href=\"https://example.com\">BroCode</a></cite>\n</body>\n</html>",
+    "expected": "HTML is the skeleton of the web.\nBroCode"
+   },
+   {
+    "title": "Image with srcset (HTML13)",
+    "statement": "Create a responsive image using srcset and sizes.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Responsive image</title></head>\n<body>\n  <img src=\"photo-400.jpg\" srcset=\"photo-400.jpg 400w, photo-800.jpg 800w\" sizes=\"(max-width: 600px) 400px, 800px\" alt=\"Course photo\" width=\"800\" height=\"450\">\n</body>\n</html>",
+    "expected": "Course photo (responsive image)"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a blockquote render? (HTML13)",
+    "code": "<blockquote><p>Quoted text.</p></blockquote>",
+    "answer": "Quoted text."
+   },
+   {
+    "q": "What does a time element with datetime render? (HTML13)",
+    "code": "<p>On <time datetime=\"2026-11-14\">14 Nov 2026</time>.</p>",
+    "answer": "On 14 Nov 2026."
+   }
+  ]
+ },
+ "html14": {
+  "tasks": [
+   {
+    "title": "Time element (HTML14)",
+    "statement": "Mark up a publication date with a time element carrying a datetime attribute.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Published</title></head>\n<body>\n  <article>\n    <h1>Released</h1>\n    <p>Published on <time datetime=\"2026-11-14\">14 November 2026</time>.</p>\n  </article>\n</body>\n</html>",
+    "expected": "Released\nPublished on 14 November 2026."
+   },
+   {
+    "title": "Article with aside (HTML14)",
+    "statement": "Build an article with a heading, a paragraph and an aside that contains a related link.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Article</title></head>\n<body>\n  <article>\n    <h1>Semantic HTML</h1>\n    <p>Elements describe meaning, not appearance.</p>\n    <aside><p>Related: <a href=\"/docs\">documentation</a></p></aside>\n  </article>\n</body>\n</html>",
+    "expected": "Semantic HTML\nElements describe meaning, not appearance.\nRelated: documentation"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does an aside render? (HTML14)",
+    "code": "<article><p>Main</p><aside><p>Side note</p></aside></article>",
+    "answer": "Main\nSide note"
+   },
+   {
+    "q": "What does a lazy image render? (HTML14)",
+    "code": "<img src=\"x.png\" alt=\"Lazy\" width=\"50\" height=\"30\" loading=\"lazy\">",
+    "answer": "Lazy"
+   }
+  ]
+ },
+ "html15": {
+  "tasks": [
+   {
+    "title": "Definition list (HTML15)",
+    "statement": "Build a definition list with three terms and their definitions.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Glossary</title></head>\n<body>\n  <dl>\n    <dt>Element</dt><dd>A building block of HTML.</dd>\n    <dt>Attribute</dt><dd>Extra information on an element.</dd>\n    <dt>Content</dt><dd>What sits between the tags.</dd>\n  </dl>\n</body>\n</html>",
+    "expected": "Element\nA building block of HTML.\nAttribute\nExtra information on an element.\nContent\nWhat sits between the tags."
+   },
+   {
+    "title": "Ordered steps (HTML15)",
+    "statement": "Create an ordered list of three steps for publishing a page.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Steps</title></head>\n<body>\n  <ol>\n    <li>Write the markup.</li>\n    <li>Validate it.</li>\n    <li>Deploy it.</li>\n  </ol>\n</body>\n</html>",
+    "expected": "1. Write the markup.\n2. Validate it.\n3. Deploy it."
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a figure without a caption render? (HTML15)",
+    "code": "<figure><img src=\"b.png\" alt=\"chart\" width=\"80\" height=\"40\"></figure>",
+    "answer": "chart (image)"
+   },
+   {
+    "q": "What does an unordered list of two items render? (HTML15)",
+    "code": "<ul><li>Alpha</li><li>Beta</li></ul>",
+    "answer": "Alpha\nBeta"
+   }
+  ]
+ },
+ "html16": {
+  "tasks": [
+   {
+    "title": "Table of modules (HTML16)",
+    "statement": "Create a table with a caption, header row and two data rows.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Modules</title></head>\n<body>\n  <table>\n    <caption>HTML modules</caption>\n    <thead><tr><th>No.</th><th>Title</th></tr></thead>\n    <tbody>\n      <tr><td>1</td><td>Structure</td></tr>\n      <tr><td>2</td><td>Text</td></tr>\n    </tbody>\n  </table>\n</body>\n</html>",
+    "expected": "HTML modules\nNo. Title\n1 Structure\n2 Text"
+   },
+   {
+    "title": "Blockquote with cite (HTML16)",
+    "statement": "Build a blockquote with a citation link below it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Quote</title></head>\n<body>\n  <blockquote>\n    <p>HTML is the skeleton of the web.</p>\n  </blockquote>\n  <cite><a href=\"https://example.com\">BroCode</a></cite>\n</body>\n</html>",
+    "expected": "HTML is the skeleton of the web.\nBroCode"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a figure with a figcaption render? (HTML16)",
+    "code": "<figure><img src=\"a.png\" alt=\"diagram\" width=\"100\" height=\"60\"><figcaption>Diagram A</figcaption></figure>",
+    "answer": "diagram (image)\nDiagram A"
+   },
+   {
+    "q": "What does an ordered list of two items render? (HTML16)",
+    "code": "<ol><li>First</li><li>Second</li></ol>",
+    "answer": "1. First\n2. Second"
+   }
+  ]
+ },
+ "html17": {
+  "tasks": [
+   {
+    "title": "Lazy image (HTML17)",
+    "statement": "Add a lazy-loaded image with explicit dimensions and alt text.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Lazy</title></head>\n<body>\n  <img src=\"photo.jpg\" alt=\"Lazy photo\" width=\"640\" height=\"360\" loading=\"lazy\" decoding=\"async\">\n</body>\n</html>",
+    "expected": "Lazy photo"
+   },
+   {
+    "title": "Time element (HTML17)",
+    "statement": "Mark up a publication date with a time element carrying a datetime attribute.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Published</title></head>\n<body>\n  <article>\n    <h1>Released</h1>\n    <p>Published on <time datetime=\"2026-11-14\">14 November 2026</time>.</p>\n  </article>\n</body>\n</html>",
+    "expected": "Released\nPublished on 14 November 2026."
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a definition list with one term render? (HTML17)",
+    "code": "<dl><dt>Term</dt><dd>Definition</dd></dl>",
+    "answer": "Term\nDefinition"
+   },
+   {
+    "q": "What does a table with a caption and one row render? (HTML17)",
+    "code": "<table><caption>Items</caption><tr><td>One</td></tr></table>",
+    "answer": "Items\nOne"
+   }
+  ]
+ },
+ "html18": {
+  "tasks": [
+   {
+    "title": "Figure with caption (HTML18)",
+    "statement": "Create a figure with an image and a figcaption describing it.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Figure</title></head>\n<body>\n  <figure>\n    <img src=\"diagram.png\" alt=\"Semantic HTML diagram\" width=\"320\" height=\"180\">\n    <figcaption>Figure 1: how elements describe meaning.</figcaption>\n  </figure>\n</body>\n</html>",
+    "expected": "Semantic HTML diagram (image)\nFigure 1: how elements describe meaning."
+   },
+   {
+    "title": "Definition list (HTML18)",
+    "statement": "Build a definition list with three terms and their definitions.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Glossary</title></head>\n<body>\n  <dl>\n    <dt>Element</dt><dd>A building block of HTML.</dd>\n    <dt>Attribute</dt><dd>Extra information on an element.</dd>\n    <dt>Content</dt><dd>What sits between the tags.</dd>\n  </dl>\n</body>\n</html>",
+    "expected": "Element\nA building block of HTML.\nAttribute\nExtra information on an element.\nContent\nWhat sits between the tags."
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a blockquote render? (HTML18)",
+    "code": "<blockquote><p>Quoted text.</p></blockquote>",
+    "answer": "Quoted text."
+   },
+   {
+    "q": "What does a time element with datetime render? (HTML18)",
+    "code": "<p>On <time datetime=\"2026-11-14\">14 Nov 2026</time>.</p>",
+    "answer": "On 14 Nov 2026."
+   }
+  ]
+ },
+ "html19": {
+  "tasks": [
+   {
+    "title": "Unordered features (HTML19)",
+    "statement": "Build an unordered list of three course features.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Features</title></head>\n<body>\n  <ul>\n    <li>Sandboxed playground</li>\n    <li>Authored expected outputs</li>\n    <li>Per-module progress</li>\n  </ul>\n</body>\n</html>",
+    "expected": "Sandboxed playground\nAuthored expected outputs\nPer-module progress"
+   },
+   {
+    "title": "Table of modules (HTML19)",
+    "statement": "Create a table with a caption, header row and two data rows.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Modules</title></head>\n<body>\n  <table>\n    <caption>HTML modules</caption>\n    <thead><tr><th>No.</th><th>Title</th></tr></thead>\n    <tbody>\n      <tr><td>1</td><td>Structure</td></tr>\n      <tr><td>2</td><td>Text</td></tr>\n    </tbody>\n  </table>\n</body>\n</html>",
+    "expected": "HTML modules\nNo. Title\n1 Structure\n2 Text"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does an aside render? (HTML19)",
+    "code": "<article><p>Main</p><aside><p>Side note</p></aside></article>",
+    "answer": "Main\nSide note"
+   },
+   {
+    "q": "What does a lazy image render? (HTML19)",
+    "code": "<img src=\"x.png\" alt=\"Lazy\" width=\"50\" height=\"30\" loading=\"lazy\">",
+    "answer": "Lazy"
+   }
+  ]
+ },
+ "html20": {
+  "tasks": [
+   {
+    "title": "Image with srcset (HTML20)",
+    "statement": "Create a responsive image using srcset and sizes.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Responsive image</title></head>\n<body>\n  <img src=\"photo-400.jpg\" srcset=\"photo-400.jpg 400w, photo-800.jpg 800w\" sizes=\"(max-width: 600px) 400px, 800px\" alt=\"Course photo\" width=\"800\" height=\"450\">\n</body>\n</html>",
+    "expected": "Course photo (responsive image)"
+   },
+   {
+    "title": "Lazy image (HTML20)",
+    "statement": "Add a lazy-loaded image with explicit dimensions and alt text.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"UTF-8\"><title>Lazy</title></head>\n<body>\n  <img src=\"photo.jpg\" alt=\"Lazy photo\" width=\"640\" height=\"360\" loading=\"lazy\" decoding=\"async\">\n</body>\n</html>",
+    "expected": "Lazy photo"
+   }
+  ],
+  "logic": [
+   {
+    "q": "What does a figure without a caption render? (HTML20)",
+    "code": "<figure><img src=\"b.png\" alt=\"chart\" width=\"80\" height=\"40\"></figure>",
+    "answer": "chart (image)"
+   },
+   {
+    "q": "What does an unordered list of two items render? (HTML20)",
+    "code": "<ul><li>Alpha</li><li>Beta</li></ul>",
+    "answer": "Alpha\nBeta"
+   }
+  ]
+ }
+}
