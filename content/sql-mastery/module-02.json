@@ -1,0 +1,1014 @@
+{
+ "course": {
+  "id": "sql-masterclass",
+  "title": "SQL Masterclass",
+  "tagline": "Zero to advanced, one module at a time.",
+  "level": "beginner",
+  "hours": 4,
+  "standard": "PostgreSQL-first, with MySQL, SQLite and SQL Server notes.",
+  "prerequisites": [
+   "Module 00",
+   "Module 01"
+  ],
+  "description": "Module 02 teaches PostgreSQL data types from integers and exact decimals to text, booleans, dates, timestamps and UUIDs, including casts and common errors.",
+  "outcomes": [
+   "Choose the right type for a column",
+   "Explain exact vs approximate numbers",
+   "Use CHAR, VARCHAR and TEXT correctly",
+   "Store dates, times and instants",
+   "Cast values explicitly",
+   "Diagnose common type errors"
+  ]
+ },
+ "modules": [
+  {
+   "id": "sql02",
+   "no": 2,
+   "title": "SQL Data Types",
+   "goal": "Choose correct PostgreSQL types and convert values safely.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "What Are SQL Data Types?",
+     "simple": "Data type batata hai ki column me kis tarah ki value store hogi — number, text, date ya true/false.",
+     "pro": "A data type defines the domain of values a column can hold, the storage representation and the operations PostgreSQL allows on it.",
+     "points": [
+      "Every column needs a type.",
+      "The type controls valid values and operators.",
+      "PostgreSQL checks types when rows are written."
+     ],
+     "example": {
+      "sql": "CREATE TABLE demo (id INTEGER, name TEXT);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Why Data Types Matter",
+     "simple": "Sahi type se data saaf rehta hai, storage bachta hai aur galat value galti se save nahi hoti.",
+     "pro": "Types enforce correctness, choose the right storage size and let the planner use the right operators and indexes.",
+     "points": [
+      "A wrong type can reject valid data or accept invalid data.",
+      "Numeric types keep arithmetic exact or approximate by design.",
+      "Text types differ in length rules and padding."
+     ],
+     "example": {
+      "sql": "CREATE TABLE demo (price NUMERIC(10,2));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "The Integer Family",
+     "simple": "Integer family me SMALLINT, INTEGER aur BIGINT aate hain — teeno whole numbers hain, bas range alag hai.",
+     "pro": "PostgreSQL has three integer types: smallint (2 bytes), integer (4 bytes) and bigint (8 bytes); all are exact whole numbers with different ranges.",
+     "points": [
+      "SMALLINT: -32768 to 32767.",
+      "INTEGER: about -2.1 billion to 2.1 billion.",
+      "BIGINT: about -9.2 quintillion to 9.2 quintillion."
+     ],
+     "example": {
+      "sql": "SELECT pg_typeof(1), pg_typeof(1::BIGINT);",
+      "output": "integer | bigint"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "SMALLINT",
+     "simple": "SMALLINT chhote whole numbers ke liye 2 bytes leta hai; range se bahar value error deti hai.",
+     "pro": "SMALLINT is a 2-byte signed integer with a range of -32768 to 32767, useful for small counts and compact rows.",
+     "points": [
+      "Use it only when the range is guaranteed.",
+      "A value of 32768 fails.",
+      "It is exact, unlike floating-point types."
+     ],
+     "example": {
+      "sql": "SELECT 32767::SMALLINT;",
+      "output": "32767"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "INTEGER",
+     "simple": "INTEGER sabse common whole-number type hai — 4 bytes aur lagbhag 2.1 billion tak.",
+     "pro": "INTEGER (INT) is a 4-byte signed integer from -2147483648 to 2147483647 and is the default choice for ids and counts.",
+     "points": [
+      "It is exact.",
+      "It is the usual primary-key type.",
+      "Overflow raises an error rather than wrapping."
+     ],
+     "example": {
+      "sql": "SELECT 2147483647::INTEGER;",
+      "output": "2147483647"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "BIGINT",
+     "simple": "BIGINT 8 bytes leta hai aur bahut bade whole numbers ke liye hai.",
+     "pro": "BIGINT is an 8-byte signed integer from -9223372036854775808 to 9223372036854775807, used for large counters and external ids.",
+     "points": [
+      "It is exact.",
+      "It costs twice the storage of INTEGER.",
+      "Use it for values that can outgrow 2.1 billion."
+     ],
+     "example": {
+      "sql": "SELECT 9223372036854775807::BIGINT;",
+      "output": "9223372036854775807"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "DECIMAL and NUMERIC",
+     "simple": "DECIMAL aur NUMERIC exact decimal numbers hain — paise jaise values ke liye.",
+     "pro": "DECIMAL is an alias for NUMERIC in PostgreSQL; both store exact numbers with a fixed precision and scale.",
+     "points": [
+      "Use NUMERIC for money and exact measurements.",
+      "DECIMAL and NUMERIC behave the same.",
+      "They are slower than binary floating point."
+     ],
+     "example": {
+      "sql": "SELECT 12.50::NUMERIC(6,2);",
+      "output": "12.50"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "NUMERIC Precision and Scale",
+     "simple": "NUMERIC(p,s) me p total digits aur s decimal ke baad ke digits hote hain.",
+     "pro": "NUMERIC(precision, scale) allows precision total digits, with scale digits after the decimal point; NUMERIC(5,2) stores up to 999.99.",
+     "points": [
+      "Precision counts all digits, not just the integer part.",
+      "Scale is the number of fractional digits.",
+      "A value that does not fit raises numeric field overflow."
+     ],
+     "example": {
+      "sql": "SELECT 999.99::NUMERIC(5,2);",
+      "output": "999.99"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "REAL",
+     "simple": "REAL 4-byte approximate floating-point number hai — speed acchi, exactness nahi.",
+     "pro": "REAL is a 4-byte single-precision floating-point type with about 6 significant digits; it is approximate, not exact.",
+     "points": [
+      "Use it for scientific measurements, not money.",
+      "Equality comparisons can surprise you.",
+      "It stores a binary approximation."
+     ],
+     "example": {
+      "sql": "SELECT 0.1::REAL;",
+      "output": "0.1"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "DOUBLE PRECISION",
+     "simple": "DOUBLE PRECISION 8-byte floating-point number hai — REAL se zyada precision, phir bhi approximate.",
+     "pro": "DOUBLE PRECISION is an 8-byte double-precision floating-point type with about 15 significant digits; it is approximate.",
+     "points": [
+      "It is not exact for decimal fractions.",
+      "Use NUMERIC when exactness matters.",
+      "It is the usual choice for scientific data."
+     ],
+     "example": {
+      "sql": "SELECT 1.23456789012345::DOUBLE PRECISION;",
+      "output": "1.23456789012345"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "CHAR",
+     "simple": "CHAR(n) fixed-length text hai — chhoti value ko spaces se pad karta hai.",
+     "pro": "CHAR(n) is blank-padded fixed-length character data; PostgreSQL physically pads to n characters and ignores trailing spaces in comparisons.",
+     "points": [
+      "CHAR(5) with ab is physically padded to 5 characters.",
+      "LENGTH() strips trailing spaces, so it returns 2; OCTET_LENGTH returns 5.",
+      "It is rarely the best choice in PostgreSQL."
+     ],
+     "example": {
+      "sql": "SELECT LENGTH('ab'::CHAR(5)), OCTET_LENGTH('ab'::CHAR(5));",
+      "output": "2 | 5"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "VARCHAR",
+     "simple": "VARCHAR(n) variable-length text hai, maximum n characters; chhoti value pad nahi hoti.",
+     "pro": "VARCHAR(n) stores variable-length text with a maximum of n characters and does not blank-pad shorter values.",
+     "points": [
+      "The limit is characters, not bytes.",
+      "A longer value raises an error on insert.",
+      "VARCHAR without n is allowed but behaves like TEXT."
+     ],
+     "example": {
+      "sql": "SELECT LENGTH('ab'::VARCHAR(5));",
+      "output": "2"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "TEXT",
+     "simple": "TEXT variable-length text hai jiski practical limit lagbhag 1 GB hai.",
+     "pro": "TEXT stores variable-length strings up to about 1 GB and has no declared length limit; in PostgreSQL it is not slower than VARCHAR.",
+     "points": [
+      "PostgreSQL stores TEXT, VARCHAR and CHAR similarly.",
+      "Use TEXT when no business limit exists.",
+      "Add CHECK constraints if a limit is a real rule."
+     ],
+     "example": {
+      "sql": "SELECT LENGTH('ab'::TEXT);",
+      "output": "2"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "BOOLEAN",
+     "simple": "BOOLEAN sirf true, false ya NULL rakhta hai.",
+     "pro": "BOOLEAN is a 1-byte type with three values: true, false and NULL; input accepts true/false, yes/no, on/off and 1/0.",
+     "points": [
+      "Do not use text for flags.",
+      "NULL means unknown, not false.",
+      "It reads clearly in queries."
+     ],
+     "example": {
+      "sql": "SELECT TRUE, FALSE, NULL::BOOLEAN;",
+      "output": "t | f |"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "DATE",
+     "simple": "DATE sirf calendar date rakhta hai — saal, mahina, din; time nahi.",
+     "pro": "DATE stores a calendar date without a time of day, using 4 bytes; it accepts ISO input such as 2026-01-15.",
+     "points": [
+      "It has no time component.",
+      "Use it for birthdays and joining dates.",
+      "Date arithmetic works with intervals."
+     ],
+     "example": {
+      "sql": "SELECT DATE '2026-01-15';",
+      "output": "2026-01-15"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "TIME",
+     "simple": "TIME din ka time rakhta hai — ghante, minute, second; date nahi.",
+     "pro": "TIME stores a time of day without a date, using 8 bytes; TIME WITH TIME ZONE also exists but is rarely appropriate.",
+     "points": [
+      "It has no date component.",
+      "Use it for opening hours and schedules.",
+      "Combine it with DATE when both are needed."
+     ],
+     "example": {
+      "sql": "SELECT TIME '10:30:00';",
+      "output": "10:30:00"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "TIMESTAMP",
+     "simple": "TIMESTAMP date aur time dono rakhta hai, lekin time zone nahi.",
+     "pro": "TIMESTAMP (without time zone) stores a date and time with no zone information; it records what the clock said, not an instant.",
+     "points": [
+      "It is wall-clock time.",
+      "It does not convert between zones.",
+      "Use it for local schedules with a known zone."
+     ],
+     "example": {
+      "sql": "SELECT TIMESTAMP '2026-01-15 10:30:00';",
+      "output": "2026-01-15 10:30:00"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "TIMESTAMPTZ",
+     "simple": "TIMESTAMPTZ actual instant store karta hai aur session ke time zone me dikhata hai.",
+     "pro": "TIMESTAMPTZ stores an absolute instant internally in UTC and displays it in the session time zone; it is the right type for events across zones.",
+     "points": [
+      "It stores an instant, not a wall clock.",
+      "The displayed offset depends on the session.",
+      "Use it for created_at and paid_at."
+     ],
+     "example": {
+      "sql": "SELECT TIMESTAMPTZ '2026-01-15 10:30:00+05:30';",
+      "output": "2026-01-15 05:00:00+00 (in a UTC session)"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "UUID",
+     "simple": "UUID 16-byte unique identifier hai — random ya generated, integer id ke alternative ke roop me.",
+     "pro": "UUID is a 16-byte universally unique identifier type; PostgreSQL can generate one with gen_random_uuid() and compare it efficiently.",
+     "points": [
+      "It avoids guessing sequential ids.",
+      "It is larger than an integer.",
+      "It is not automatically indexed."
+     ],
+     "example": {
+      "sql": "SELECT 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::UUID;",
+      "output": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Choosing the Right Type",
+     "simple": "Type choose karte waqt value ki nature, range, exactness aur storage dekho.",
+     "pro": "Choose by domain: exact whole numbers use integers, exact decimals use NUMERIC, timestamps use TIMESTAMPTZ, flags use BOOLEAN and unbounded text uses TEXT.",
+     "points": [
+      "Prefer the narrowest type that cannot overflow.",
+      "Use NUMERIC for money.",
+      "Use TIMESTAMPTZ for real-world events."
+     ],
+     "example": {
+      "sql": "CREATE TABLE payments (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, amount NUMERIC(12,2) NOT NULL, paid_at TIMESTAMPTZ NOT NULL DEFAULT now());",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t21",
+     "title": "Type Compatibility",
+     "simple": "Har type ko har doosre type ke saath mix nahi kar sakte; compatible types hi arithmetic ya comparison karte hain.",
+     "pro": "PostgreSQL resolves operators through type categories and casts; numeric types mix with numeric types, but text and integer do not compare without an explicit cast.",
+     "points": [
+      "Integer and numeric mix in arithmetic.",
+      "Text and integer are not implicitly equal.",
+      "Unknown string literals are coerced to the other operand type."
+     ],
+     "example": {
+      "sql": "SELECT 1 + 2 AS int_sum, 1.5 + 2 AS numeric_sum;",
+      "output": "3 | 3.5"
+     }
+    },
+    {
+     "id": "t22",
+     "title": "Implicit Conversion",
+     "simple": "Implicit conversion database khud karta hai, lekin PostgreSQL me yeh limited aur predictable hai.",
+     "pro": "An implicit cast is applied automatically by PostgreSQL when an operator or assignment needs a compatible type; PostgreSQL avoids risky implicit casts such as text to integer.",
+     "points": [
+      "Assignment casts apply on INSERT.",
+      "Unknown literals take the column type.",
+      "Do not rely on implicit text-to-number conversion."
+     ],
+     "example": {
+      "sql": "INSERT INTO demo (price) VALUES ('19.99');",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t23",
+     "title": "Explicit Conversion and CAST",
+     "simple": "Explicit conversion me aap khud CAST ya :: se type badalte hain.",
+     "pro": "CAST(value AS type) and the PostgreSQL shorthand value::type perform an explicit conversion and make the intent visible in the query.",
+     "points": [
+      "CAST is standard SQL.",
+      ":: is shorter PostgreSQL syntax.",
+      "An impossible conversion raises an error."
+     ],
+     "example": {
+      "sql": "SELECT CAST('42' AS INTEGER), '42'::INTEGER;",
+      "output": "42 | 42"
+     }
+    },
+    {
+     "id": "t24",
+     "title": "Common Data Type Errors",
+     "simple": "Galat type ya galat value se invalid input, overflow ya value-too-long error aata hai.",
+     "pro": "Common failures are invalid input syntax, numeric field overflow, value too long for type character varying(n) and cannot cast type X to Y.",
+     "points": [
+      "Read the first error and the supplied value.",
+      "Check precision and length before inserting.",
+      "Use explicit casts when the source is text."
+     ],
+     "example": {
+      "sql": "SELECT 'abc'::INTEGER;",
+      "output": "ERROR: invalid input syntax for type integer: \"abc\""
+     }
+    },
+    {
+     "id": "t25",
+     "title": "Designing an Employees Table",
+     "simple": "Ab sab types ko milakar ek real employees table design karte hain.",
+     "pro": "A production-shaped employees table uses an identity BIGINT key, bounded text, exact NUMERIC salary, BOOLEAN flags and DATE/TIMESTAMPTZ columns.",
+     "points": [
+      "Use identity instead of legacy SERIAL for new tables.",
+      "Constrain text lengths that are real business rules.",
+      "Store timestamps with time zone."
+     ],
+     "example": {
+      "sql": "CREATE TABLE employees (\n  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  name VARCHAR(80) NOT NULL,\n  salary NUMERIC(10,2) NOT NULL CHECK (salary >= 0),\n  active BOOLEAN NOT NULL DEFAULT TRUE,\n  joined_on DATE NOT NULL,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT now()\n);",
+      "output": "CREATE TABLE"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What does a column data type define?",
+      "options": [
+       "The kind of values and operations allowed",
+       "The table owner",
+       "The row order",
+       "The backup schedule"
+      ],
+      "answer": "The kind of values and operations allowed",
+      "why": "The type defines the value domain, storage and valid operators."
+     },
+     {
+      "q": "Which PostgreSQL type stores exact decimal values?",
+      "options": [
+       "NUMERIC",
+       "REAL",
+       "DOUBLE PRECISION",
+       "FLOAT4"
+      ],
+      "answer": "NUMERIC",
+      "why": "NUMERIC is exact; REAL and DOUBLE PRECISION are approximate."
+     },
+     {
+      "q": "What is the range of SMALLINT?",
+      "options": [
+       "-32768 to 32767",
+       "-128 to 127",
+       "0 to 65535",
+       "-2.1 billion to 2.1 billion"
+      ],
+      "answer": "-32768 to 32767",
+      "why": "SMALLINT is a 2-byte signed integer."
+     },
+     {
+      "q": "How many bytes does INTEGER use?",
+      "options": [
+       "4",
+       "2",
+       "8",
+       "16"
+      ],
+      "answer": "4",
+      "why": "INTEGER is a 4-byte signed integer."
+     },
+     {
+      "q": "How many bytes does BIGINT use?",
+      "options": [
+       "8",
+       "4",
+       "2",
+       "16"
+      ],
+      "answer": "8",
+      "why": "BIGINT is an 8-byte signed integer."
+     },
+     {
+      "q": "What is the largest value NUMERIC(8,2) can store?",
+      "options": [
+       "999999.99",
+       "99999999.99",
+       "999999.9",
+       "9999999.99"
+      ],
+      "answer": "999999.99",
+      "why": "Precision 8 with scale 2 leaves 6 integer digits."
+     },
+     {
+      "q": "Which type is approximate?",
+      "options": [
+       "REAL",
+       "NUMERIC",
+       "DECIMAL",
+       "INTEGER"
+      ],
+      "answer": "REAL",
+      "why": "REAL stores a binary floating-point approximation."
+     },
+     {
+      "q": "How many bytes does DOUBLE PRECISION use?",
+      "options": [
+       "8",
+       "4",
+       "16",
+       "2"
+      ],
+      "answer": "8",
+      "why": "DOUBLE PRECISION is an 8-byte floating-point type."
+     },
+     {
+      "q": "What does OCTET_LENGTH('ab'::CHAR(5)) return?",
+      "options": [
+       "5",
+       "2",
+       "7",
+       "0"
+      ],
+      "answer": "5",
+      "why": "CHAR(5) is physically blank-padded to five bytes; LENGTH() would strip the spaces and return 2."
+     },
+     {
+      "q": "What is LENGTH('ab'::VARCHAR(5))?",
+      "options": [
+       "2",
+       "5",
+       "7",
+       "0"
+      ],
+      "answer": "2",
+      "why": "VARCHAR does not pad shorter values."
+     },
+     {
+      "q": "What is the practical maximum size of TEXT?",
+      "options": [
+       "About 1 GB",
+       "255 bytes",
+       "8 KB",
+       "16 MB"
+      ],
+      "answer": "About 1 GB",
+      "why": "PostgreSQL TEXT can store up to about 1 GB."
+     },
+     {
+      "q": "Which values can BOOLEAN hold?",
+      "options": [
+       "true, false and NULL",
+       "Only true and false",
+       "Any integer",
+       "Only 1 and 0"
+      ],
+      "answer": "true, false and NULL",
+      "why": "BOOLEAN is three-valued: true, false and unknown (NULL)."
+     },
+     {
+      "q": "What does DATE store?",
+      "options": [
+       "A calendar date without time",
+       "A time without a date",
+       "A date and a time zone",
+       "A timestamp with an offset"
+      ],
+      "answer": "A calendar date without time",
+      "why": "DATE has no time-of-day component."
+     },
+     {
+      "q": "What does TIME store?",
+      "options": [
+       "A time of day without a date",
+       "A calendar date",
+       "A full timestamp",
+       "A time zone only"
+      ],
+      "answer": "A time of day without a date",
+      "why": "TIME stores hours, minutes and seconds without a date."
+     },
+     {
+      "q": "What does TIMESTAMP without time zone store?",
+      "options": [
+       "A date and wall-clock time with no zone",
+       "An absolute instant in UTC",
+       "Only a date",
+       "Only a time"
+      ],
+      "answer": "A date and wall-clock time with no zone",
+      "why": "TIMESTAMP records what the clock said, without zone conversion."
+     },
+     {
+      "q": "What does TIMESTAMPTZ store internally?",
+      "options": [
+       "An absolute instant in UTC",
+       "A local wall-clock time only",
+       "A date without time",
+       "A text offset only"
+      ],
+      "answer": "An absolute instant in UTC",
+      "why": "TIMESTAMPTZ stores an instant and displays it in the session zone."
+     },
+     {
+      "q": "How many bytes does UUID use?",
+      "options": [
+       "16",
+       "8",
+       "4",
+       "36"
+      ],
+      "answer": "16",
+      "why": "UUID is a 16-byte binary value; the text form is 36 characters."
+     },
+     {
+      "q": "Which type is best for money?",
+      "options": [
+       "NUMERIC",
+       "REAL",
+       "DOUBLE PRECISION",
+       "MONEY only"
+      ],
+      "answer": "NUMERIC",
+      "why": "NUMERIC is exact; floating-point types can lose cents."
+     },
+     {
+      "q": "Which is PostgreSQL explicit cast syntax?",
+      "options": [
+       "value::type",
+       "CAST value AS type",
+       "CONVERT(value, type)",
+       "value AS type"
+      ],
+      "answer": "value::type",
+      "why": "PostgreSQL supports the :: shorthand; CAST(value AS type) is standard SQL."
+     },
+     {
+      "q": "What does CAST(42.4 AS INTEGER) return?",
+      "options": [
+       "42",
+       "43",
+       "42.4",
+       "An error"
+      ],
+      "answer": "42",
+      "why": "PostgreSQL rounds numeric to the nearest integer when casting."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is a data type?",
+      "answer": "A definition of the values a column can hold, how they are stored and which operators are valid."
+     },
+     {
+      "q": "Why does choosing the right data type matter?",
+      "answer": "It enforces correctness, uses appropriate storage, enables the right operators and keeps indexes efficient."
+     },
+     {
+      "q": "What are the three PostgreSQL integer types?",
+      "answer": "SMALLINT (2 bytes), INTEGER (4 bytes) and BIGINT (8 bytes), all exact signed whole numbers with different ranges."
+     },
+     {
+      "q": "When would you use BIGINT instead of INTEGER?",
+      "answer": "When values can exceed about 2.1 billion, such as large counters, external ids or high-volume event tables."
+     },
+     {
+      "q": "What is the difference between NUMERIC and REAL?",
+      "answer": "NUMERIC is exact with a fixed precision and scale; REAL is an approximate 4-byte binary floating-point type."
+     },
+     {
+      "q": "Are DECIMAL and NUMERIC different in PostgreSQL?",
+      "answer": "No. DECIMAL is an alias for NUMERIC and they behave identically."
+     },
+     {
+      "q": "Explain NUMERIC(precision, scale).",
+      "answer": "Precision is the total number of significant digits; scale is the number of digits after the decimal point. NUMERIC(5,2) allows up to 999.99."
+     },
+     {
+      "q": "What is the difference between CHAR and VARCHAR?",
+      "answer": "CHAR(n) is blank-padded to exactly n characters; VARCHAR(n) is variable-length with a maximum of n and no padding."
+     },
+     {
+      "q": "Is VARCHAR faster than TEXT in PostgreSQL?",
+      "answer": "No. PostgreSQL stores all three character types similarly; choose by semantics, not by a performance myth."
+     },
+     {
+      "q": "When should you use CHAR?",
+      "answer": "Almost never for new schemas. Use it only for genuinely fixed-width codes where blank padding is acceptable."
+     },
+     {
+      "q": "How does BOOLEAN handle NULL?",
+      "answer": "NULL means unknown, not false. Three-valued logic applies in comparisons and CHECK constraints."
+     },
+     {
+      "q": "What is the difference between DATE and TIMESTAMP?",
+      "answer": "DATE stores only a calendar date; TIMESTAMP stores a date and wall-clock time without a zone."
+     },
+     {
+      "q": "What is the difference between TIMESTAMP and TIMESTAMPTZ?",
+      "answer": "TIMESTAMP stores a wall-clock value with no zone; TIMESTAMPTZ stores an absolute instant in UTC and displays it in the session zone."
+     },
+     {
+      "q": "When should you use TIMESTAMPTZ?",
+      "answer": "For real-world events such as created_at, paid_at or login time, especially when users or servers span time zones."
+     },
+     {
+      "q": "What are the trade-offs of UUID keys?",
+      "answer": "They are globally unique and hard to guess, but larger than integers and can hurt index locality when random."
+     },
+     {
+      "q": "What is the difference between SERIAL and IDENTITY?",
+      "answer": "SERIAL is a legacy pseudo-type that creates a sequence and default; GENERATED ... AS IDENTITY is standard SQL and the preferred choice for new tables."
+     },
+     {
+      "q": "What is an implicit conversion?",
+      "answer": "A cast PostgreSQL applies automatically when an operator or assignment requires a compatible type. PostgreSQL keeps these conservative."
+     },
+     {
+      "q": "What is an explicit conversion?",
+      "answer": "A cast you write with CAST(value AS type) or value::type, making the intent and possible failure visible."
+     },
+     {
+      "q": "Why does text = integer fail in PostgreSQL?",
+      "answer": "There is no implicit cast between text and integer for equality; cast one side explicitly, such as id::text = code."
+     },
+     {
+      "q": "What are common data type errors?",
+      "answer": "Invalid input syntax, numeric field overflow, value too long for varchar(n), and cannot cast type X to Y."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Create an employees table",
+      "task": "Create employees with id INTEGER, name VARCHAR(80), salary NUMERIC(10,2), active BOOLEAN and joined_on DATE.",
+      "solution": "CREATE TABLE employees (id INTEGER PRIMARY KEY, name VARCHAR(80) NOT NULL, salary NUMERIC(10,2), active BOOLEAN DEFAULT TRUE, joined_on DATE);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Insert a typed employee row",
+      "task": "Insert Aarav with 55000.50 salary, active, joined 2026-01-15.",
+      "solution": "INSERT INTO employees (id, name, salary, active, joined_on) VALUES (1, 'Aarav', 55000.50, TRUE, DATE '2026-01-15');",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Add a bounded column",
+      "task": "Add email VARCHAR(120) to employees.",
+      "solution": "ALTER TABLE employees ADD COLUMN email VARCHAR(120);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Cast salary to integer",
+      "task": "Return each name and salary rounded to an integer.",
+      "solution": "SELECT name, salary::INTEGER AS salary_int FROM employees;",
+      "expected": "Salary rounded to a whole number."
+     },
+     {
+      "title": "Cast text to date",
+      "task": "Convert the text 2026-01-15 to DATE.",
+      "solution": "SELECT '2026-01-15'::DATE;",
+      "expected": "2026-01-15"
+     },
+     {
+      "title": "Cast boolean to text",
+      "task": "Return the text form of TRUE.",
+      "solution": "SELECT TRUE::TEXT;",
+      "expected": "true"
+     },
+     {
+      "title": "Create a products table",
+      "task": "Create products with id INTEGER and price NUMERIC(8,2).",
+      "solution": "CREATE TABLE products (id INTEGER PRIMARY KEY, name VARCHAR(100), price NUMERIC(8,2));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Insert an exact price",
+      "task": "Insert a product with price 199.99.",
+      "solution": "INSERT INTO products (id, name, price) VALUES (1, 'Keyboard', 199.99);",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Measure CHAR padding",
+      "task": "Return the physical padded length of ab cast to CHAR(5).",
+      "solution": "SELECT OCTET_LENGTH('ab'::CHAR(5));",
+      "expected": "5"
+     },
+     {
+      "title": "Measure VARCHAR length",
+      "task": "Return the length of ab cast to VARCHAR(5).",
+      "solution": "SELECT LENGTH('ab'::VARCHAR(5));",
+      "expected": "2"
+     },
+     {
+      "title": "Create an events table",
+      "task": "Create events with id BIGINT, title TEXT and happened_at TIMESTAMPTZ.",
+      "solution": "CREATE TABLE events (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL, happened_at TIMESTAMPTZ NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Insert an offset timestamp",
+      "task": "Insert an event at 2026-01-15 10:30 +05:30.",
+      "solution": "INSERT INTO events (title, happened_at) VALUES ('Launch', TIMESTAMPTZ '2026-01-15 10:30:00+05:30');",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Create a UUID-keyed table",
+      "task": "Create app_users with a UUID primary key defaulting to gen_random_uuid().",
+      "solution": "CREATE TABLE app_users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), email TEXT UNIQUE NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Insert an explicit UUID",
+      "task": "Insert a user with the UUID a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11.",
+      "solution": "INSERT INTO app_users (id, email) VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'a@example.com');",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Integer to text",
+      "task": "Return 42 as text.",
+      "solution": "SELECT 42::TEXT;",
+      "expected": "42 (text)"
+     },
+     {
+      "title": "Text to numeric",
+      "task": "Return the text 42.50 as NUMERIC.",
+      "solution": "SELECT '42.50'::NUMERIC;",
+      "expected": "42.50"
+     },
+     {
+      "title": "Date to timestamp",
+      "task": "Convert 2026-01-15 to a timestamp.",
+      "solution": "SELECT '2026-01-15'::DATE::TIMESTAMP;",
+      "expected": "2026-01-15 00:00:00"
+     },
+     {
+      "title": "Use SMALLINT and BIGINT",
+      "task": "Create a table with a SMALLINT priority and BIGINT views.",
+      "solution": "CREATE TABLE counters (id INTEGER PRIMARY KEY, priority SMALLINT, views BIGINT);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Inspect column types",
+      "task": "List column names and data types for employees from information_schema.",
+      "solution": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'employees' ORDER BY ordinal_position;",
+      "expected": "One row per employee column with its type."
+     },
+     {
+      "title": "Alter a text column to integer",
+      "task": "Change a text age column to INTEGER using an explicit cast.",
+      "solution": "ALTER TABLE people ALTER COLUMN age TYPE INTEGER USING age::INTEGER;",
+      "expected": "ALTER TABLE"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why is NUMERIC preferred over REAL for money?",
+      "answer": "NUMERIC is exact; REAL stores a binary approximation that can lose cents."
+     },
+     {
+      "q": "Why should names generally not use CHAR?",
+      "answer": "CHAR blank-pads to a fixed width, which surprises comparisons and wastes space for variable-length names."
+     },
+     {
+      "q": "Why is TIMESTAMPTZ better than TIMESTAMP for created_at?",
+      "answer": "It stores an absolute instant, so the same event reads correctly in every time zone."
+     },
+     {
+      "q": "Why can a random UUID hurt index locality?",
+      "answer": "Random keys insert across the B-tree instead of appending, causing more page splits than sequential integers."
+     },
+     {
+      "q": "Why does 7 / 2 return 3?",
+      "answer": "Both operands are integers, so PostgreSQL performs integer division and truncates the fraction."
+     },
+     {
+      "q": "How do you get 3.5 from 7 and 2?",
+      "answer": "Cast at least one operand to NUMERIC, for example 7::NUMERIC / 2."
+     },
+     {
+      "q": "Why does NUMERIC(5,2) reject 1234.56?",
+      "answer": "The value needs four integer digits plus two fractional digits, exceeding the five total digits allowed."
+     },
+     {
+      "q": "Why does VARCHAR(5) reject a six-character value?",
+      "answer": "The declared maximum is five characters; PostgreSQL raises value too long for type character varying(5)."
+     },
+     {
+      "q": "Why does CHAR(5) compare equal to a shorter value?",
+      "answer": "CHAR is blank-padded, and PostgreSQL ignores trailing spaces in char comparisons."
+     },
+     {
+      "q": "Why is TEXT not a slow choice in PostgreSQL?",
+      "answer": "TEXT, VARCHAR and CHAR share a similar variable-length representation; the type name does not add a performance penalty."
+     },
+     {
+      "q": "Why does text = integer fail?",
+      "answer": "PostgreSQL has no implicit text-to-integer equality cast, so one side must be cast explicitly."
+     },
+     {
+      "q": "Why prefer IDENTITY over SERIAL for new tables?",
+      "answer": "IDENTITY is standard SQL, keeps sequence ownership explicit and avoids the legacy pseudo-type quirks of SERIAL."
+     },
+     {
+      "q": "Why store real-world event times in UTC?",
+      "answer": "UTC is an unambiguous instant; display conversion happens per session or application time zone."
+     },
+     {
+      "q": "Why avoid the MONEY type for new schemas?",
+      "answer": "MONEY depends on locale settings and has limited precision; NUMERIC is portable and explicit."
+     },
+     {
+      "q": "Why does CAST(42.6 AS INTEGER) return 43?",
+      "answer": "Casting numeric to integer rounds to the nearest whole number instead of truncating."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Overflowing NUMERIC",
+      "broken": "CREATE TABLE t (price NUMERIC(5,2));\nINSERT INTO t (price) VALUES (1234.56);",
+      "fix": "CREATE TABLE t (price NUMERIC(7,2));\nINSERT INTO t (price) VALUES (1234.56);",
+      "error": "numeric field overflow",
+      "expected": "The row inserts with 1234.56."
+     },
+     {
+      "title": "Text cast to integer",
+      "broken": "SELECT 'abc'::INTEGER;",
+      "fix": "SELECT '123'::INTEGER;",
+      "error": "invalid input syntax for type integer: \"abc\"",
+      "expected": "123"
+     },
+     {
+      "title": "Impossible date",
+      "broken": "SELECT '2026-02-30'::DATE;",
+      "fix": "SELECT '2026-02-28'::DATE;",
+      "error": "date/time field value out of range",
+      "expected": "2026-02-28"
+     },
+     {
+      "title": "Malformed UUID",
+      "broken": "SELECT 'not-a-uuid'::UUID;",
+      "fix": "SELECT 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::UUID;",
+      "error": "invalid input syntax for type uuid",
+      "expected": "The UUID value."
+     },
+     {
+      "title": "Malformed boolean",
+      "broken": "SELECT 'maybe'::BOOLEAN;",
+      "fix": "SELECT 'yes'::BOOLEAN;",
+      "error": "invalid input syntax for type boolean: \"maybe\"",
+      "expected": "t"
+     },
+     {
+      "title": "Text equals integer",
+      "broken": "SELECT '42' = 42;",
+      "fix": "SELECT '42'::INTEGER = 42;",
+      "error": "operator does not exist: text = integer",
+      "expected": "t"
+     },
+     {
+      "title": "Value too long",
+      "broken": "CREATE TABLE t (code VARCHAR(3));\nINSERT INTO t (code) VALUES ('ABCD');",
+      "fix": "CREATE TABLE t (code VARCHAR(4));\nINSERT INTO t (code) VALUES ('ABCD');",
+      "error": "value too long for type character varying(3)",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Integer division surprise",
+      "broken": "SELECT 1 / 2;",
+      "fix": "SELECT 1::NUMERIC / 2;",
+      "error": "Returns 0, not a fraction",
+      "expected": "0.50000000000000000000"
+     },
+     {
+      "title": "Boolean to date",
+      "broken": "SELECT CAST(TRUE AS DATE);",
+      "fix": "SELECT DATE '2026-01-15';",
+      "error": "cannot cast type boolean to date",
+      "expected": "2026-01-15"
+     },
+     {
+      "title": "Text column altered without USING",
+      "broken": "ALTER TABLE people ALTER COLUMN age TYPE INTEGER;",
+      "fix": "ALTER TABLE people ALTER COLUMN age TYPE INTEGER USING age::INTEGER;",
+      "error": "column \"age\" cannot be cast automatically to type integer",
+      "expected": "ALTER TABLE"
+     }
+    ],
+    "revision": [
+     {
+      "q": "Name the three integer types and their sizes.",
+      "answer": "SMALLINT 2 bytes, INTEGER 4 bytes, BIGINT 8 bytes."
+     },
+     {
+      "q": "Which type is exact for money?",
+      "answer": "NUMERIC (DECIMAL is its alias)."
+     },
+     {
+      "q": "What does NUMERIC(5,2) allow?",
+      "answer": "Up to 999.99 — three integer digits and two fractional digits."
+     },
+     {
+      "q": "CHAR vs VARCHAR?",
+      "answer": "CHAR is blank-padded fixed length; VARCHAR is variable length with a maximum."
+     },
+     {
+      "q": "Is TEXT slower than VARCHAR in PostgreSQL?",
+      "answer": "No; they share a similar representation."
+     },
+     {
+      "q": "DATE vs TIMESTAMP?",
+      "answer": "DATE has no time; TIMESTAMP has date and wall-clock time without a zone."
+     },
+     {
+      "q": "TIMESTAMP vs TIMESTAMPTZ?",
+      "answer": "TIMESTAMP stores a wall clock; TIMESTAMPTZ stores an instant and displays it in the session zone."
+     },
+     {
+      "q": "How do you write an explicit cast in PostgreSQL?",
+      "answer": "CAST(value AS type) or value::type."
+     },
+     {
+      "q": "Why does integer division lose fractions?",
+      "answer": "Both operands are integers, so the result is an integer."
+     },
+     {
+      "q": "How do you generate a UUID in PostgreSQL?",
+      "answer": "gen_random_uuid() on modern PostgreSQL."
+     }
+    ]
+   }
+  }
+ ]
+}
