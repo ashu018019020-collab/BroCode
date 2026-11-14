@@ -1,0 +1,950 @@
+{
+ "course": {
+  "id": "sql-masterclass",
+  "title": "SQL Masterclass",
+  "tagline": "Zero to advanced, one module at a time.",
+  "level": "intermediate",
+  "hours": 22,
+  "standard": "PostgreSQL-first, with MySQL, SQLite and SQL Server notes.",
+  "prerequisites": [
+   "Module 00",
+   "Module 01",
+   "Module 02",
+   "Module 03",
+   "Module 04",
+   "Module 05",
+   "Module 06",
+   "Module 07",
+   "Module 08",
+   "Module 09",
+   "Module 10"
+  ],
+  "description": "Module 11 teaches scalar, multi-row, correlated and EXISTS subqueries, derived tables, HAVING subqueries, CTEs, recursive CTEs and data-modifying CTEs.",
+  "outcomes": [
+   "Write scalar and multi-row subqueries",
+   "Use EXISTS and NOT EXISTS safely",
+   "Correlate a subquery correctly",
+   "Use derived tables and HAVING subqueries",
+   "Write single and multiple CTEs",
+   "Build recursive CTEs",
+   "Use data-modifying CTEs"
+  ]
+ },
+ "modules": [
+  {
+   "id": "sql11",
+   "no": 11,
+   "title": "Subqueries and CTEs",
+   "goal": "Break complex questions into correct, readable subqueries and CTEs.",
+   "level": "intermediate",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Introduction to Subqueries",
+     "simple": "Subquery ek query ke andar doosri query hoti hai.",
+     "pro": "A subquery is a SELECT nested inside another statement; it can supply a value, a row set or an existence test.",
+     "points": [
+      "Subqueries are parenthesized.",
+      "They run in the context of the outer query.",
+      "They can appear in SELECT, FROM, WHERE and HAVING."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE marks > (SELECT AVG(marks) FROM students);",
+      "output": "Students above the class average."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Types of Subqueries",
+     "simple": "Subquery scalar, multi-row ya correlated ho sakti hai.",
+     "pro": "Subqueries are classified by shape (scalar or multi-row) and by dependency (uncorrelated or correlated).",
+     "points": [
+      "Scalar returns one value.",
+      "Multi-row returns a set.",
+      "Correlated references the outer query."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE id IN (SELECT student_id FROM enrollments);",
+      "output": "Students with at least one enrollment."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Scalar Subquery",
+     "simple": "Scalar subquery ek row aur ek column deti hai.",
+     "pro": "A scalar subquery returns exactly one row and one column, so it can be used anywhere a single value is accepted.",
+     "points": [
+      "One row, one column.",
+      "No rows yields NULL.",
+      "Multiple rows raises an error."
+     ],
+     "example": {
+      "sql": "SELECT name, (SELECT AVG(marks) FROM students) AS class_average FROM students;",
+      "output": "Every student with the same class average."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Multi-row Subquery",
+     "simple": "Multi-row subquery multiple values deti hai; IN ya ANY/ALL ke saath use karo.",
+     "pro": "A multi-row subquery returns one column with many rows and is compared with IN, ANY or ALL rather than a plain equality.",
+     "points": [
+      "Use IN for membership.",
+      "ANY/ALL compare against a set.",
+      "A plain = with many rows fails."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE id IN (SELECT student_id FROM enrollments WHERE course_id = 10);",
+      "output": "Students enrolled in course 10."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Correlated Subquery",
+     "simple": "Correlated subquery outer query ke row par depend karti hai.",
+     "pro": "A correlated subquery references a column from the outer query, so conceptually it is evaluated for each outer row.",
+     "points": [
+      "It references the outer table.",
+      "It can be expensive without an index.",
+      "It is often rewritten as a join."
+     ],
+     "example": {
+      "sql": "SELECT s.name, (SELECT COUNT(*) FROM enrollments e WHERE e.student_id = s.id) AS courses FROM students s;",
+      "output": "Each student with their enrollment count."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Subquery in WHERE",
+     "simple": "WHERE me subquery se filter value ya set deti hai.",
+     "pro": "A subquery in WHERE can compare a column to a scalar or test membership and existence.",
+     "points": [
+      "Scalar comparisons use =, >, <, etc.",
+      "Sets use IN or ANY.",
+      "Existence uses EXISTS."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE marks > (SELECT AVG(marks) FROM students);",
+      "output": "Above-average students."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Subquery with IN",
+     "simple": "IN subquery ke result set me membership check karta hai.",
+     "pro": "IN tests whether a value equals any row returned by the subquery, and handles a multi-row result naturally.",
+     "points": [
+      "IN accepts many rows.",
+      "NULLs in the list can make NOT IN unsafe.",
+      "Duplicates in the subquery do not duplicate output."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE id IN (SELECT student_id FROM enrollments WHERE course_id = 10);",
+      "output": "Students enrolled in course 10, once each."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Subquery with EXISTS",
+     "simple": "EXISTS subquery ke row hone par true hota hai.",
+     "pro": "EXISTS returns true as soon as the subquery produces at least one row; the selected columns are irrelevant and the planner can stop early.",
+     "points": [
+      "EXISTS is a boolean test.",
+      "SELECT 1 is conventional.",
+      "It can short-circuit on the first match."
+     ],
+     "example": {
+      "sql": "SELECT s.name FROM students s WHERE EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "output": "Students with at least one enrollment."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Subquery with NOT EXISTS",
+     "simple": "NOT EXISTS tab true hota hai jab subquery koi row na de.",
+     "pro": "NOT EXISTS returns true when the correlated subquery produces no rows, making it a safe anti-join even with NULLs.",
+     "points": [
+      "It is the safe anti-join.",
+      "It handles NULLs predictably.",
+      "It usually beats NOT IN with nullable columns."
+     ],
+     "example": {
+      "sql": "SELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "output": "Students with no enrollments."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Subquery in SELECT",
+     "simple": "SELECT list me scalar subquery ek computed column deti hai.",
+     "pro": "A scalar subquery in the select list computes one value per output row and must return at most one row and one column.",
+     "points": [
+      "It must be scalar.",
+      "It runs per outer row when correlated.",
+      "It can be expensive on large results."
+     ],
+     "example": {
+      "sql": "SELECT s.name, (SELECT COUNT(*) FROM enrollments e WHERE e.student_id = s.id) AS courses FROM students s;",
+      "output": "Student names with course counts."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Subquery in FROM",
+     "simple": "FROM me subquery derived table ki tarah use hoti hai.",
+     "pro": "A subquery in FROM acts as a derived table and must have an alias in PostgreSQL; its columns are then queried like a normal table.",
+     "points": [
+      "The alias is mandatory.",
+      "It can aggregate before the outer query.",
+      "It is often called a derived table."
+     ],
+     "example": {
+      "sql": "SELECT t.course_id, t.total FROM (SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id) AS t WHERE t.total > 1;",
+      "output": "Courses with more than one enrollment."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Subquery in HAVING",
+     "simple": "HAVING me subquery aggregate result se compare kar sakti hai.",
+     "pro": "A subquery in HAVING supplies a scalar threshold or value after grouping, which is useful for comparing groups to a global aggregate.",
+     "points": [
+      "HAVING filters groups.",
+      "The subquery must be scalar.",
+      "WHERE filters rows before grouping."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id HAVING COUNT(*) > (SELECT AVG(cnt) FROM (SELECT COUNT(*) AS cnt FROM enrollments GROUP BY course_id) AS x);",
+      "output": "Courses above the average enrollment count."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Introduction to CTEs",
+     "simple": "CTE WITH clause se named temporary result set banata hai.",
+     "pro": "A common table expression is a named subquery defined with WITH and visible to the statement that follows it.",
+     "points": [
+      "WITH names the result.",
+      "It is scoped to one statement.",
+      "It improves readability and reuse."
+     ],
+     "example": {
+      "sql": "WITH high AS (SELECT name, marks FROM students WHERE marks > 80) SELECT * FROM high ORDER BY marks DESC;",
+      "output": "High scorers, highest first."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "CTE Syntax",
+     "simple": "WITH name AS (query) SELECT ... .",
+     "pro": "The syntax is WITH name [(columns)] AS (subquery) [, ...] SELECT ...; the CTE can be referenced like a table in the main query.",
+     "points": [
+      "WITH starts the statement.",
+      "The body is parenthesized.",
+      "The main query follows."
+     ],
+     "example": {
+      "sql": "WITH avg_marks AS (SELECT AVG(marks) AS avg FROM students) SELECT name FROM students, avg_marks WHERE marks > avg;",
+      "output": "Students above the average."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Multiple CTEs",
+     "simple": "Ek WITH me comma se multiple CTEs define karo.",
+     "pro": "Multiple CTEs are separated by commas and later CTEs can reference earlier ones, which lets a complex query read top to bottom.",
+     "points": [
+      "Separate with commas.",
+      "Later CTEs see earlier ones.",
+      "Keep each CTE focused."
+     ],
+     "example": {
+      "sql": "WITH high AS (SELECT * FROM students WHERE marks > 80), count_high AS (SELECT COUNT(*) AS n FROM high) SELECT * FROM count_high;",
+      "output": "The number of high scorers."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Recursive CTE",
+     "simple": "Recursive CTE anchor aur recursive term se hierarchy ya sequence banata hai.",
+     "pro": "WITH RECURSIVE runs an anchor term, then repeatedly runs a recursive term that references the CTE until it returns no rows.",
+     "points": [
+      "Use WITH RECURSIVE.",
+      "The anchor has no self-reference.",
+      "The recursive term needs a termination condition."
+     ],
+     "example": {
+      "sql": "WITH RECURSIVE nums AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM nums WHERE n < 5) SELECT * FROM nums;",
+      "output": "1 through 5."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "CTE vs Subquery",
+     "simple": "CTE named aur reusable hai; subquery inline hoti hai.",
+     "pro": "A CTE names a result for readability and reuse within one statement, while a subquery is inline; PostgreSQL may inline a non-recursive CTE unless MATERIALIZED is specified.",
+     "points": [
+      "CTEs can be referenced multiple times.",
+      "Subqueries are local to their expression.",
+      "Materialization can change performance."
+     ],
+     "example": {
+      "sql": "WITH avg_marks AS (SELECT AVG(marks) AS avg FROM students) SELECT name FROM students, avg_marks WHERE marks > avg;",
+      "output": "Above-average students using a CTE."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "CTE with DML",
+     "simple": "PostgreSQL me CTE ke andar INSERT/UPDATE/DELETE chal sakta hai.",
+     "pro": "A data-modifying CTE uses RETURNING to expose changed rows to the main query; the statement executes once and is atomic.",
+     "points": [
+      "DML CTEs need RETURNING to expose rows.",
+      "They execute exactly once.",
+      "They are PostgreSQL-specific."
+     ],
+     "example": {
+      "sql": "WITH deleted AS (DELETE FROM students WHERE marks < 60 RETURNING *) SELECT * FROM deleted;",
+      "output": "The deleted rows."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Common Subquery Errors",
+     "simple": "Multi-row scalar, missing alias aur NULL NOT IN sabse common errors hain.",
+     "pro": "Common failures are a scalar subquery returning multiple rows, a derived table without an alias, a missing correlation condition and NOT IN with NULLs.",
+     "points": [
+      "Check the subquery shape.",
+      "Alias every FROM subquery.",
+      "Prefer NOT EXISTS over NOT IN."
+     ],
+     "example": {
+      "sql": "SELECT name, (SELECT marks FROM students LIMIT 1) AS sample FROM students;",
+      "output": "A single sample mark per row."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Performance Considerations",
+     "simple": "Subqueries hamesha slow nahi hoti; shape aur indexes matter karte hain.",
+     "pro": "EXISTS can short-circuit, correlated subqueries can run per row, and CTE materialization can help or hurt; read EXPLAIN instead of guessing.",
+     "points": [
+      "EXISTS often stops at the first match.",
+      "Correlated subqueries need indexes.",
+      "CTEs may be inlined or materialized.",
+      "Measure with EXPLAIN ANALYZE."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT s.name FROM students s WHERE EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "output": "A plan showing a semi-join or nested loop."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What is a subquery?",
+      "options": [
+       "A query nested inside another statement",
+       "A copied table",
+       "An index",
+       "A transaction"
+      ],
+      "answer": "A query nested inside another statement",
+      "why": "It supplies a value or row set to the outer query."
+     },
+     {
+      "q": "What does a scalar subquery return?",
+      "options": [
+       "One row and one column",
+       "Many rows",
+       "Many columns",
+       "A table"
+      ],
+      "answer": "One row and one column",
+      "why": "A scalar is a single value."
+     },
+     {
+      "q": "What does a multi-row subquery return?",
+      "options": [
+       "One column with many rows",
+       "One row with many columns",
+       "Exactly two rows",
+       "A schema"
+      ],
+      "answer": "One column with many rows",
+      "why": "It is used with IN, ANY or ALL."
+     },
+     {
+      "q": "What makes a subquery correlated?",
+      "options": [
+       "It references the outer query",
+       "It has ORDER BY",
+       "It returns one row",
+       "It uses DISTINCT"
+      ],
+      "answer": "It references the outer query",
+      "why": "It depends on the current outer row."
+     },
+     {
+      "q": "Which operator tests membership in a subquery result?",
+      "options": [
+       "IN",
+       "LIKE",
+       "BETWEEN",
+       "IS NULL"
+      ],
+      "answer": "IN",
+      "why": "IN compares against a set of values."
+     },
+     {
+      "q": "What does EXISTS test?",
+      "options": [
+       "Whether the subquery returns any row",
+       "Whether a column is NULL",
+       "Whether two values are equal",
+       "Whether a table exists"
+      ],
+      "answer": "Whether the subquery returns any row",
+      "why": "EXISTS is a boolean existence test."
+     },
+     {
+      "q": "What does NOT EXISTS test?",
+      "options": [
+       "Whether the subquery returns no rows",
+       "Whether a column is NOT NULL",
+       "Whether a value is unique",
+       "Whether a table is empty"
+      ],
+      "answer": "Whether the subquery returns no rows",
+      "why": "It is the safe anti-join."
+     },
+     {
+      "q": "Where can a scalar subquery appear?",
+      "options": [
+       "In SELECT, WHERE or HAVING",
+       "Only in FROM",
+       "Only in ORDER BY",
+       "Only in GROUP BY"
+      ],
+      "answer": "In SELECT, WHERE or HAVING",
+      "why": "Anywhere a single value is accepted."
+     },
+     {
+      "q": "What must a subquery in FROM have?",
+      "options": [
+       "An alias",
+       "A primary key",
+       "An index",
+       "DISTINCT"
+      ],
+      "answer": "An alias",
+      "why": "PostgreSQL requires a derived-table alias."
+     },
+     {
+      "q": "Which clause filters groups using an aggregate?",
+      "options": [
+       "HAVING",
+       "WHERE",
+       "ORDER BY",
+       "LIMIT"
+      ],
+      "answer": "HAVING",
+      "why": "HAVING runs after grouping."
+     },
+     {
+      "q": "What does WITH define?",
+      "options": [
+       "A common table expression",
+       "A new table",
+       "An index",
+       "A trigger"
+      ],
+      "answer": "A common table expression",
+      "why": "WITH names a subquery for the statement."
+     },
+     {
+      "q": "How are multiple CTEs separated?",
+      "options": [
+       "Commas",
+       "Semicolons",
+       "AND",
+       "UNION"
+      ],
+      "answer": "Commas",
+      "why": "WITH a AS (...), b AS (...) ... ."
+     },
+     {
+      "q": "Which keyword enables a recursive CTE?",
+      "options": [
+       "RECURSIVE",
+       "REPEAT",
+       "LOOP",
+       "ITERATE"
+      ],
+      "answer": "RECURSIVE",
+      "why": "WITH RECURSIVE allows self-reference."
+     },
+     {
+      "q": "What are the two parts of a recursive CTE?",
+      "options": [
+       "Anchor and recursive term",
+       "SELECT and WHERE",
+       "INNER and OUTER",
+       "BEGIN and COMMIT"
+      ],
+      "answer": "Anchor and recursive term",
+      "why": "The anchor seeds the result; the recursive term expands it."
+     },
+     {
+      "q": "What terminates a recursive CTE?",
+      "options": [
+       "A condition that eventually returns no rows",
+       "LIMIT only",
+       "ORDER BY",
+       "A primary key"
+      ],
+      "answer": "A condition that eventually returns no rows",
+      "why": "Without termination it runs until cancelled."
+     },
+     {
+      "q": "How does a CTE differ from a subquery?",
+      "options": [
+       "It is named and reusable in the statement",
+       "It is always faster",
+       "It creates a permanent table",
+       "It cannot be joined"
+      ],
+      "answer": "It is named and reusable in the statement",
+      "why": "A CTE can be referenced more than once."
+     },
+     {
+      "q": "Which clause exposes changed rows from a DML CTE?",
+      "options": [
+       "RETURNING",
+       "OUTPUT",
+       "SELECT INTO",
+       "VALUES"
+      ],
+      "answer": "RETURNING",
+      "why": "RETURNING makes the changed rows available to the main query."
+     },
+     {
+      "q": "What error does a multi-row scalar subquery raise?",
+      "options": [
+       "More than one row returned",
+       "Division by zero",
+       "Ambiguous column",
+       "Syntax error"
+      ],
+      "answer": "More than one row returned",
+      "why": "A scalar slot cannot hold multiple rows."
+     },
+     {
+      "q": "Why is NOT IN unsafe with NULLs?",
+      "options": [
+       "NULL comparisons make the predicate unknown",
+       "It always returns all rows",
+       "It removes duplicates",
+       "It requires an alias"
+      ],
+      "answer": "NULL comparisons make the predicate unknown",
+      "why": "A NULL in the list can make NOT IN return no rows."
+     },
+     {
+      "q": "Which is usually the safer anti-join?",
+      "options": [
+       "NOT EXISTS",
+       "NOT IN",
+       "CROSS JOIN",
+       "NATURAL JOIN"
+      ],
+      "answer": "NOT EXISTS",
+      "why": "NOT EXISTS handles NULLs predictably."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is a subquery?",
+      "answer": "A SELECT nested inside another statement, used for a scalar value, a row set or an existence test."
+     },
+     {
+      "q": "What is a scalar subquery?",
+      "answer": "A subquery returning at most one row and one column, usable as a single value."
+     },
+     {
+      "q": "What is a multi-row subquery?",
+      "answer": "A subquery returning one column with many rows, used with IN, ANY or ALL."
+     },
+     {
+      "q": "What is a correlated subquery?",
+      "answer": "A subquery that references a column from the outer query and depends on the current outer row."
+     },
+     {
+      "q": "What is an uncorrelated subquery?",
+      "answer": "A subquery that can be evaluated independently of the outer query."
+     },
+     {
+      "q": "What is the difference between IN and EXISTS?",
+      "answer": "IN compares a value to a set; EXISTS tests whether any row exists and can short-circuit."
+     },
+     {
+      "q": "Why is NOT EXISTS safer than NOT IN?",
+      "answer": "NOT EXISTS handles NULLs predictably; NOT IN with a NULL can return no rows."
+     },
+     {
+      "q": "What is a derived table?",
+      "answer": "A subquery in FROM with an alias, queried like a table by the outer query."
+     },
+     {
+      "q": "Why does a FROM subquery need an alias?",
+      "answer": "PostgreSQL requires a name for the derived relation so its columns can be referenced."
+     },
+     {
+      "q": "What is a CTE?",
+      "answer": "A named subquery defined with WITH and visible to the statement that follows."
+     },
+     {
+      "q": "What are the advantages of a CTE?",
+      "answer": "Readability, reuse within one statement and a clean way to structure multi-step queries."
+     },
+     {
+      "q": "What is a recursive CTE?",
+      "answer": "A CTE with an anchor term and a recursive term that references itself until no more rows are produced."
+     },
+     {
+      "q": "What is the anchor term?",
+      "answer": "The non-recursive seed query that starts the recursive result."
+     },
+     {
+      "q": "What happens if a recursive CTE has no termination condition?",
+      "answer": "It keeps producing rows until the statement is cancelled or a resource limit is hit."
+     },
+     {
+      "q": "What is a data-modifying CTE?",
+      "answer": "A CTE containing INSERT, UPDATE or DELETE with RETURNING, whose rows the main query can read."
+     },
+     {
+      "q": "How many times does a data-modifying CTE execute?",
+      "answer": "Exactly once, even if the main query references it multiple times."
+     },
+     {
+      "q": "Does a CTE create a temporary table?",
+      "answer": "No; it is a named query scoped to one statement."
+     },
+     {
+      "q": "Are CTEs always materialized in PostgreSQL?",
+      "answer": "No; since PostgreSQL 12 non-recursive CTEs can be inlined, and MATERIALIZED / NOT MATERIALIZED can control it."
+     },
+     {
+      "q": "What is a semi-join?",
+      "answer": "A join that returns rows from one side when a match exists, without duplicating them for every match; EXISTS is a common form."
+     },
+     {
+      "q": "How do you performance-tune a correlated subquery?",
+      "answer": "Index the correlated columns, compare with an EXISTS or join rewrite, and inspect EXPLAIN ANALYZE."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Scalar average",
+      "task": "Return students above the class average.",
+      "solution": "SELECT name FROM students WHERE marks > (SELECT AVG(marks) FROM students);",
+      "expected": "Above-average students."
+     },
+     {
+      "title": "IN subquery",
+      "task": "Return students enrolled in course 10.",
+      "solution": "SELECT name FROM students WHERE id IN (SELECT student_id FROM enrollments WHERE course_id = 10);",
+      "expected": "Students in course 10."
+     },
+     {
+      "title": "ANY subquery",
+      "task": "Return students whose marks equal any applicant mark.",
+      "solution": "SELECT name FROM students WHERE marks = ANY (SELECT marks FROM applicants);",
+      "expected": "Students matching an applicant mark."
+     },
+     {
+      "title": "EXISTS",
+      "task": "Return students with at least one enrollment.",
+      "solution": "SELECT s.name FROM students s WHERE EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "expected": "Enrolled students."
+     },
+     {
+      "title": "NOT EXISTS",
+      "task": "Return students with no enrollments.",
+      "solution": "SELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "expected": "Unenrolled students."
+     },
+     {
+      "title": "Correlated count",
+      "task": "Return each student with their enrollment count.",
+      "solution": "SELECT s.name, (SELECT COUNT(*) FROM enrollments e WHERE e.student_id = s.id) AS courses FROM students s;",
+      "expected": "Every student and count."
+     },
+     {
+      "title": "Subquery in SELECT",
+      "task": "Return the class average on every row.",
+      "solution": "SELECT name, (SELECT AVG(marks) FROM students) AS class_average FROM students;",
+      "expected": "Every student with the same average."
+     },
+     {
+      "title": "Derived table",
+      "task": "Return courses with more than one enrollment.",
+      "solution": "SELECT t.course_id, t.total FROM (SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id) AS t WHERE t.total > 1;",
+      "expected": "Courses with total > 1."
+     },
+     {
+      "title": "Subquery in HAVING",
+      "task": "Return courses above the average enrollment count.",
+      "solution": "SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id HAVING COUNT(*) > (SELECT AVG(cnt) FROM (SELECT COUNT(*) AS cnt FROM enrollments GROUP BY course_id) AS x);",
+      "expected": "Above-average courses."
+     },
+     {
+      "title": "Basic CTE",
+      "task": "Return high scorers using a CTE.",
+      "solution": "WITH high AS (SELECT name, marks FROM students WHERE marks > 80) SELECT * FROM high ORDER BY marks DESC;",
+      "expected": "High scorers, highest first."
+     },
+     {
+      "title": "Multiple CTEs",
+      "task": "Count the high scorers using two CTEs.",
+      "solution": "WITH high AS (SELECT * FROM students WHERE marks > 80), count_high AS (SELECT COUNT(*) AS n FROM high) SELECT * FROM count_high;",
+      "expected": "The count."
+     },
+     {
+      "title": "Recursive numbers",
+      "task": "Generate 1 through 5 with a recursive CTE.",
+      "solution": "WITH RECURSIVE nums AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM nums WHERE n < 5) SELECT * FROM nums;",
+      "expected": "1, 2, 3, 4, 5."
+     },
+     {
+      "title": "Recursive hierarchy",
+      "task": "Return employees and their manager names.",
+      "solution": "WITH RECURSIVE chain AS (SELECT id, name, manager_id FROM employees WHERE manager_id IS NULL UNION ALL SELECT e.id, e.name, e.manager_id FROM employees e JOIN chain c ON e.manager_id = c.id) SELECT * FROM chain;",
+      "expected": "The hierarchy from the root down."
+     },
+     {
+      "title": "DML CTE delete",
+      "task": "Delete low marks and return the deleted rows.",
+      "solution": "WITH deleted AS (DELETE FROM students WHERE marks < 60 RETURNING *) SELECT * FROM deleted;",
+      "expected": "The deleted rows."
+     },
+     {
+      "title": "DML CTE update",
+      "task": "Raise low marks and return the updated rows.",
+      "solution": "WITH updated AS (UPDATE students SET marks = marks + 5 WHERE marks < 60 RETURNING *) SELECT * FROM updated;",
+      "expected": "The updated rows."
+     },
+     {
+      "title": "CTE vs subquery",
+      "task": "Rewrite the average filter as a CTE.",
+      "solution": "WITH avg_marks AS (SELECT AVG(marks) AS avg FROM students) SELECT name FROM students, avg_marks WHERE marks > avg;",
+      "expected": "Above-average students."
+     },
+     {
+      "title": "Materialized CTE",
+      "task": "Force the average CTE to materialize.",
+      "solution": "WITH avg_marks AS MATERIALIZED (SELECT AVG(marks) AS avg FROM students) SELECT name FROM students, avg_marks WHERE marks > avg;",
+      "expected": "Above-average students."
+     },
+     {
+      "title": "Explain EXISTS",
+      "task": "Explain the enrolled-students query.",
+      "solution": "EXPLAIN SELECT s.name FROM students s WHERE EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "expected": "A semi-join or nested-loop plan."
+     },
+     {
+      "title": "Top course count",
+      "task": "Return courses with the maximum enrollment count.",
+      "solution": "SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id HAVING COUNT(*) = (SELECT MAX(cnt) FROM (SELECT COUNT(*) AS cnt FROM enrollments GROUP BY course_id) AS x);",
+      "expected": "The largest course count."
+     },
+     {
+      "title": "Report with CTEs",
+      "task": "Build a course enrollment report with a CTE.",
+      "solution": "WITH counts AS (SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id) SELECT c.title, counts.total FROM courses c JOIN counts ON counts.course_id = c.id ORDER BY counts.total DESC;",
+      "expected": "Course titles with counts."
+     }
+    ],
+    "logic": [
+     {
+      "q": "When is a subquery uncorrelated?",
+      "answer": "When it can run independently of the outer query and returns the same result for every outer row."
+     },
+     {
+      "q": "Why can a correlated subquery be slower?",
+      "answer": "It may run once per outer row, so missing indexes multiply the work."
+     },
+     {
+      "q": "Why can EXISTS stop early?",
+      "answer": "It only needs one matching row to return true."
+     },
+     {
+      "q": "Why is NOT IN dangerous with NULLs?",
+      "answer": "A NULL comparison is unknown, so the predicate can fail for every row."
+     },
+     {
+      "q": "Why does a scalar subquery fail with multiple rows?",
+      "answer": "A single-value slot cannot represent more than one row."
+     },
+     {
+      "q": "Why must a FROM subquery have an alias?",
+      "answer": "The outer query needs a relation name to qualify its columns."
+     },
+     {
+      "q": "Why use a CTE instead of a nested subquery?",
+      "answer": "A CTE names each step and can be referenced multiple times, improving readability and reuse."
+     },
+     {
+      "q": "Why can a CTE hurt performance?",
+      "answer": "Materializing a large intermediate result can cost more than letting the planner inline and optimize the query."
+     },
+     {
+      "q": "Why can MATERIALIZED change a plan?",
+      "answer": "It forces the CTE result to be computed once instead of being inlined into the outer query."
+     },
+     {
+      "q": "Why does a recursive CTE need an anchor?",
+      "answer": "The anchor produces the starting rows; the recursive term expands from them."
+     },
+     {
+      "q": "Why does a recursive CTE need a termination condition?",
+      "answer": "Without one it keeps producing rows until cancelled or limited."
+     },
+     {
+      "q": "Why is a CTE scoped to one statement?",
+      "answer": "It is a named query, not a persistent table, and disappears when the statement ends."
+     },
+     {
+      "q": "Why does a data-modifying CTE execute once?",
+      "answer": "The statement runs the CTE once even if the main query references its output repeatedly."
+     },
+     {
+      "q": "Why can a subquery in SELECT be expensive?",
+      "answer": "A correlated scalar subquery may execute for every output row."
+     },
+     {
+      "q": "Why prefer EXISTS over IN for existence checks?",
+      "answer": "EXISTS expresses the intent directly and can short-circuit on the first match."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Scalar returns many rows",
+      "broken": "SELECT name, (SELECT marks FROM students) AS sample FROM students;",
+      "fix": "SELECT name, (SELECT marks FROM students LIMIT 1) AS sample FROM students;",
+      "error": "more than one row returned by a subquery used as an expression",
+      "expected": "One sample mark per row."
+     },
+     {
+      "title": "Missing derived alias",
+      "broken": "SELECT * FROM (SELECT name FROM students);",
+      "fix": "SELECT * FROM (SELECT name FROM students) AS s;",
+      "error": "subquery in FROM must have an alias",
+      "expected": "Student names."
+     },
+     {
+      "title": "Correlation missing",
+      "broken": "SELECT s.name FROM students s WHERE EXISTS (SELECT 1 FROM enrollments e);",
+      "fix": "SELECT s.name FROM students s WHERE EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "error": "Every student is returned when any enrollment exists",
+      "expected": "Only students with a matching enrollment."
+     },
+     {
+      "title": "NOT IN with NULL",
+      "broken": "SELECT name FROM students WHERE id NOT IN (SELECT student_id FROM enrollments);",
+      "fix": "SELECT name FROM students s WHERE NOT EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "error": "A NULL student_id can make the result empty",
+      "expected": "Students with no enrollment."
+     },
+     {
+      "title": "Recursive without termination",
+      "broken": "WITH RECURSIVE nums AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM nums) SELECT * FROM nums;",
+      "fix": "WITH RECURSIVE nums AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM nums WHERE n < 5) SELECT * FROM nums;",
+      "error": "Runs until cancelled",
+      "expected": "1 through 5."
+     },
+     {
+      "title": "Recursive keyword missing",
+      "broken": "WITH nums AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM nums WHERE n < 5) SELECT * FROM nums;",
+      "fix": "WITH RECURSIVE nums AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM nums WHERE n < 5) SELECT * FROM nums;",
+      "error": "recursive reference requires WITH RECURSIVE",
+      "expected": "1 through 5."
+     },
+     {
+      "title": "Duplicate CTE name",
+      "broken": "WITH x AS (SELECT 1), x AS (SELECT 2) SELECT * FROM x;",
+      "fix": "WITH x AS (SELECT 1), y AS (SELECT 2) SELECT * FROM x;",
+      "error": "WITH query name \"x\" specified more than once",
+      "expected": "One CTE named x."
+     },
+     {
+      "title": "ORDER BY in a subquery",
+      "broken": "SELECT * FROM (SELECT name FROM students ORDER BY marks DESC) AS s;",
+      "fix": "SELECT * FROM (SELECT name FROM students ORDER BY marks DESC LIMIT 3) AS s;",
+      "error": "The inner ORDER BY is not guaranteed to survive",
+      "expected": "A limited, ordered derived table."
+     },
+     {
+      "title": "COUNT in a scalar",
+      "broken": "SELECT name, (SELECT COUNT(*) FROM enrollments) AS courses FROM students;",
+      "fix": "SELECT s.name, (SELECT COUNT(*) FROM enrollments e WHERE e.student_id = s.id) AS courses FROM students s;",
+      "error": "Every row shows the total count, not the per-student count",
+      "expected": "Each student count."
+     },
+     {
+      "title": "DML CTE without RETURNING",
+      "broken": "WITH deleted AS (DELETE FROM students WHERE marks < 60) SELECT * FROM deleted;",
+      "fix": "WITH deleted AS (DELETE FROM students WHERE marks < 60 RETURNING *) SELECT * FROM deleted;",
+      "error": "WITH query \"deleted\" does not have a RETURNING clause",
+      "expected": "The deleted rows."
+     }
+    ],
+    "revision": [
+     {
+      "q": "What is a subquery?",
+      "answer": "A query nested inside another statement."
+     },
+     {
+      "q": "What is a scalar subquery?",
+      "answer": "A subquery returning one row and one column."
+     },
+     {
+      "q": "What is a correlated subquery?",
+      "answer": "A subquery that references the outer query."
+     },
+     {
+      "q": "What is IN used for?",
+      "answer": "Membership in a multi-row subquery result."
+     },
+     {
+      "q": "What is EXISTS used for?",
+      "answer": "Testing whether the subquery returns any row."
+     },
+     {
+      "q": "What is a derived table?",
+      "answer": "A subquery in FROM with an alias."
+     },
+     {
+      "q": "What is a CTE?",
+      "answer": "A named subquery defined with WITH."
+     },
+     {
+      "q": "What is a recursive CTE?",
+      "answer": "An anchor plus a self-referencing recursive term."
+     },
+     {
+      "q": "What does a DML CTE need?",
+      "answer": "RETURNING to expose changed rows."
+     },
+     {
+      "q": "What is safer than NOT IN?",
+      "answer": "NOT EXISTS."
+     }
+    ]
+   }
+  }
+ ]
+}
