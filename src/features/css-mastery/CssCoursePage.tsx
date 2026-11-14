@@ -38,7 +38,13 @@ export default function CssCoursePage() {
   const [lastPlace, saveLast] = useSavedAnswer(H_LAST_KEY);
   const report = useMemo(() => hReport(modules, state.attempts, lastPlace), [modules, state.attempts, lastPlace]);
   const [query, setQuery] = useState('');
+  const [levelFilter, setLevelFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all');
   const hits = useMemo(() => hSearch(modules, query), [modules, query]);
+  const visibleModules = useMemo(
+    () => (levelFilter === 'all' ? modules : modules.filter((m) => m.level === levelFilter)),
+    [modules, levelFilter],
+  );
+  const foundationModules = useMemo(() => modules.filter((m) => Number(m.id.slice(3)) <= 8), [modules]);
 
   const openPlace = (moduleId: string, section?: string) => {
     const next = new URLSearchParams(params);
@@ -94,6 +100,7 @@ export default function CssCoursePage() {
           <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
             <span className="chip"><BookOpen size={12} /> {stats.modules} modules</span>
             <span className="chip"><Target size={12} /> {stats.entries.toLocaleString()} records</span>
+            <span className="chip">{foundationModules.length} foundation · 50 interview items each</span>
             <span className="chip">{modules.reduce((a, m) => a + (m.hours || 0), 0)}h total</span>
           </div>
         </div>
@@ -149,8 +156,25 @@ export default function CssCoursePage() {
         )}
       </div>
 
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+        {(['all', 'beginner', 'intermediate', 'advanced'] as const).map((level) => (
+          <button
+            key={level}
+            type="button"
+            className={`chip ${levelFilter === level ? 'easy' : ''}`}
+            onClick={() => setLevelFilter(level)}
+            style={{ cursor: 'pointer', border: levelFilter === level ? '1px solid var(--blue, #2563eb)' : undefined }}
+          >
+            {level === 'all' ? 'All levels' : level.charAt(0).toUpperCase() + level.slice(1)}
+          </button>
+        ))}
+        <span className="small muted" style={{ alignSelf: 'center' }}>
+          {visibleModules.length} of {modules.length} modules
+        </span>
+      </div>
+
       <div className="tile-grid tile-grid-lg">
-        {modules.map((m) => {
+        {visibleModules.map((m) => {
           const done = hIsModuleComplete(m.id, state.attempts);
           const sectionsDone = N_SECTIONS.filter((s) => state.attempts[hSectionKey(m.id, s.key)]).length;
           const bank = stats.bank.modules[m.id];
@@ -166,6 +190,9 @@ export default function CssCoursePage() {
               </span>
               <span className="t" style={{ flex: 1, minWidth: 0 }}>
                 <b>{m.title}</b>
+                {Number(m.id.slice(3)) <= 8 && (
+                  <span className="chip" style={{ marginLeft: 6, fontSize: 10 }}>Foundation</span>
+                )}
                 <span>{m.entries} entries · {m.hours}h · {sectionsDone}/10 sections{done ? ' · complete' : ''}</span>
                 {bank && (
                   <span className="muted" style={{ display: 'block', marginTop: 3, fontSize: 11, lineHeight: 1.4 }}>
@@ -192,8 +219,11 @@ export default function CssCoursePage() {
           <span className="chip">{stats.bank.total} unique items</span>
         </div>
         <p className="small muted" style={{ margin: '6px 0 0' }}>
-          {stats.bank.perModule} per module against a target of {stats.bank.target}: {stats.bank.shortPerModule} short
-          in each module, {stats.bank.shortfall} across the course. Every number here is counted from the
+          {foundationModules.length} foundation modules carry 50 unique interview items each
+          ({foundationModules.reduce((a, m) => a + (m.sections?.interview?.length ?? 0), 0)} total);
+          the {modules.length - foundationModules.length} applied modules carry the remaining
+          {stats.bank.total - foundationModules.reduce((a, m) => a + (m.sections?.interview?.length ?? 0), 0)}
+          interview items. All {stats.bank.total} interview answers are distinct. Counts come from the
           records that shipped; the ledger in `CSS_COURSE_PROGRESS.md` states what is still open.
         </p>
       </div>

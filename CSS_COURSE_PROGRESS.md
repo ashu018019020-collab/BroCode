@@ -20,12 +20,12 @@ editing the module files or the generator.
   adding CSS, selectors, colour, units, typography, box model, display, borders, positioning,
   flexbox, grid, responsive, pseudo-classes, pseudo-elements, transitions/transforms, animation,
   variables/functions, modern CSS, forms/UI, architecture, debugging.
-- **848 records** across the ten sections:
+- **1192 records** across the ten sections:
 
 | Section | Records |
 |---|---|
 | Learn | 80 |
-| Interview | 136 |
+| Interview | 480 |
 | Coding Lab | 28 |
 | Logic | 80 |
 | Debug | 52 |
@@ -35,9 +35,9 @@ editing the module files or the generator.
 | Defense | 52 |
 | Checkpoint | 292 |
 
-- Modules 01–08 are the deepest: four Learn topics, three interview answers, three debug
-  challenges and three defense scenarios each, so selectors, syntax, colour, units, typography and
-  the box model get the extra space the course brief asked for.
+- Modules 01–08 are the foundation: 50 unique interview items each (400 total), four Learn topics,
+  three debug challenges and three defense scenarios each, so selectors, syntax, colour, units,
+  typography and the box model get the extra space the course brief asked for.
 - Every Learn/Logic/Practice record carries the module's own authored topic, a complete HTML
   document with its CSS and the result the browser paints for it.
 - Every Coding Lab task is independent of the taught snippet; every Debug entry is a broken sample
@@ -80,9 +80,9 @@ editing the module files or the generator.
 
 ## Honest gaps
 
-1. **Question-bank target:** 50 per module was the brief; the course ships ~35 per module (848 in
-   total). The deficit is counted in the page's bank card and here, never smoothed over. The
-   generator's `deepening-*.json` merge is the supported way to close it module by module.
+1. **Question-bank target:** foundation modules css01–css08 now ship 50 unique interview items each
+   (400 total); the 16 applied modules ship 5 each (80 total), 480 interview items across the course.
+   Closing the applied modules to 50 each is the next growth step, via `deepening-*.json` layers.
 2. **Coding Lab target:** 20 exercises per module was the brief; the course ships one independent
    task per module plus Practice rebuilds from each topic. The Practice section is not the same as
    twenty graded exercises.

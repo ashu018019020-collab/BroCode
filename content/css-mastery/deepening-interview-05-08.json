@@ -1,0 +1,706 @@
+{
+ "css05": {
+  "interview": [
+   {
+    "q": "What does the universal selector match, and why avoid it for styling?",
+    "answer": "An asterisk matches every element, so a styling rule reaches places you did not consider; it is useful in a reset but too broad for component design."
+   },
+   {
+    "q": "What does a type selector match?",
+    "answer": "Every element with that tag name, regardless of class or position, which makes it a good base rule and a poor way to style one instance."
+   },
+   {
+    "q": "How does a class selector match when an element has several classes?",
+    "answer": "It matches when the element's class attribute contains that exact token, so an element can satisfy several independent class rules at once."
+   },
+   {
+    "q": "Why can an element carry more than one class?",
+    "answer": "Classes compose: one supplies layout, another colour, another state, so behaviour can be combined without inventing a new selector for every combination."
+   },
+   {
+    "q": "Why is styling through IDs a problem?",
+    "answer": "An ID is unique, cannot be reused across components, and carries specificity high enough that later variations need heavier selectors to override it."
+   },
+   {
+    "q": "What happens when one selector in a comma list is invalid?",
+    "answer": "For an ordinary selector list the whole rule is dropped, because the browser cannot know which part of the list you meant."
+   },
+   {
+    "q": "How does the descendant combinator differ from the child combinator?",
+    "answer": "A space matches an ancestor at any depth; a greater-than sign matches only an element whose direct parent is the named one."
+   },
+   {
+    "q": "When is a child combinator the safer choice?",
+    "answer": "When a component's styles must not leak into nested copies of the same markup, since only the immediate children are affected."
+   },
+   {
+    "q": "What does the adjacent sibling combinator match?",
+    "answer": "The one element that immediately follows the first, with no other element between them, such as a label directly after an input."
+   },
+   {
+    "q": "What does the general sibling combinator match?",
+    "answer": "Every following sibling that matches the selector, not only the first, which is useful for a heading followed by several paragraphs."
+   },
+   {
+    "q": "How do you select an element that merely has an attribute?",
+    "answer": "Write the attribute name in brackets, such as [disabled], which matches any element carrying that attribute whatever its value."
+   },
+   {
+    "q": "How do you select an exact attribute value?",
+    "answer": "Use the equals form, such as [type=\"email\"], which matches only when the value is exactly that string."
+   },
+   {
+    "q": "What does the prefix attribute selector do?",
+    "answer": "[href^=\"https\"] matches values that begin with the given text, which is a common way to mark external links."
+   },
+   {
+    "q": "What does the suffix attribute selector do?",
+    "answer": "[href$=\".pdf\"] matches values that end with the text, useful for marking file types without adding another class."
+   },
+   {
+    "q": "What does the substring attribute selector do?",
+    "answer": "[class*=\"promo\"] matches any value containing that sequence, which is broad and should be used only when the naming is controlled."
+   },
+   {
+    "q": "What does the i flag change in an attribute selector?",
+    "answer": "It makes the value comparison ASCII case-insensitive, so [type=\"EMAIL\" i] also matches type=\"email\"."
+   },
+   {
+    "q": "What is the difference between a pseudo-class and a pseudo-element?",
+    "answer": "A pseudo-class selects an element in a state or position; a pseudo-element selects or generates a part of an element, such as its first line."
+   },
+   {
+    "q": "What does :not() do?",
+    "answer": "It excludes elements that match its argument, and it can be chained or given a complex list in modern browsers."
+   },
+   {
+    "q": "How does :is() choose its specificity?",
+    "answer": "It takes the specificity of the most specific selector in its argument list, so it can unexpectedly raise the weight of a rule."
+   },
+   {
+    "q": "Why use :where() instead of :is()?",
+    "answer": ":where() always contributes zero specificity, which makes it ideal for resets and base styles that must not outrank component rules."
+   },
+   {
+    "q": "What problem does :has() solve?",
+    "answer": "It lets a selector depend on a descendant or following sibling, so a parent can be styled because of a child's state without adding a class from script."
+   },
+   {
+    "q": "How does :nth-child() count elements?",
+    "answer": "It counts an element's position among all of its element siblings, so other types of siblings affect the result."
+   },
+   {
+    "q": "How is :nth-of-type() different?",
+    "answer": "It counts only siblings of the same element type, so intervening paragraphs do not change which heading is selected."
+   },
+   {
+    "q": "When does :first-child match?",
+    "answer": "Only when the element is the first element child of its parent; a text node before it does not count, but another element does."
+   },
+   {
+    "q": "What does :only-child match?",
+    "answer": "An element that is the sole element child of its parent, which is useful for layouts with one item instead of several."
+   },
+   {
+    "q": "What does :empty match, and what is the common surprise?",
+    "answer": "It matches an element with no children or text at all, and even a single whitespace character counts as text, so the element stops matching."
+   },
+   {
+    "q": "What is :root and how is it different from html?",
+    "answer": ":root matches the document's root element and has class-level specificity, while the type selector html has element-level specificity."
+   },
+   {
+    "q": "What specificity does :has() contribute?",
+    "answer": "It takes the specificity of its most specific argument, the same rule as :is(), so a complex argument raises the weight of the whole selector."
+   },
+   {
+    "q": "Why does one invalid selector break a whole selector list?",
+    "answer": "Without forgiving syntax the parser cannot decide which list item you intended, so it discards the rule rather than applying a partial match."
+   },
+   {
+    "q": "Are complex selectors actually slow?",
+    "answer": "Modern engines match right-to-left and optimise common cases, so readability and correctness matter far more than micro-optimising selector length."
+   },
+   {
+    "q": "Why avoid styling with IDs even when the markup has them?",
+    "answer": "IDs cannot repeat, so the style cannot be reused, and their weight makes every variation a specificity fight instead of a class change."
+   },
+   {
+    "q": "What does BEM encode in a class name?",
+    "answer": "A block, its elements with a double underscore, and modifiers with a double hyphen, so ownership and variation are readable from the markup."
+   },
+   {
+    "q": "Which attribute selectors are useful for form controls?",
+    "answer": "[type=\"email\"], [required], [disabled] and [aria-invalid=\"true\"] let CSS react to real control state without extra classes."
+   },
+   {
+    "q": "What does :lang() select?",
+    "answer": "Elements whose language matches the given value, including inherited language, so typography can change for a quoted foreign phrase."
+   },
+   {
+    "q": "What does :dir() select?",
+    "answer": "Elements whose directionality is left-to-right or right-to-left, which is useful for logical layout in bilingual documents."
+   },
+   {
+    "q": "What does :target match?",
+    "answer": "The element whose ID matches the URL fragment, which lets a page highlight the section a link jumped to."
+   },
+   {
+    "q": "What is :scope for?",
+    "answer": "It refers to the element a selector is scoped to, such as the root of querySelectorAll or a nested style scope."
+   },
+   {
+    "q": "What does & mean inside a nested CSS rule?",
+    "answer": "It stands for the parent selector, so & .child or &:hover builds the full selector without repeating the parent by hand."
+   },
+   {
+    "q": "What is the specificity of .nav a:hover?",
+    "answer": "Two class-level components and one element component, written 0-2-1, because .nav and :hover each count as a class."
+   },
+   {
+    "q": "What is the specificity of #id .class?",
+    "answer": "One ID and one class, written 1-1-0, so it beats any number of classes without an ID."
+   },
+   {
+    "q": "Why does duplicating selectors hurt maintenance?",
+    "answer": "Each copy drifts independently, and adding a variation means finding every duplicate or raising specificity until the newest rule wins."
+   },
+   {
+    "q": "How do you debug a selector that matches nothing?",
+    "answer": "Inspect the element, check the selector text against the DOM, confirm class case, and test the rule in the Styles panel before assuming the CSS file is wrong."
+   },
+   {
+    "q": "What does :has() change about CSS architecture?",
+    "answer": "It allows state to flow upward from a child, which removes some classes that script used to add, but it should be treated as an enhancement where support matters."
+   }
+  ]
+ },
+ "css06": {
+  "interview": [
+   {
+    "q": "How does a three-digit hex colour expand?",
+    "answer": "Each digit is doubled, so #f0a becomes #ff00aa; the shorthand is valid only when both digits of every pair are identical."
+   },
+   {
+    "q": "What does an eight-digit hex colour add?",
+    "answer": "The final pair is alpha, so #2563ebcc is the blue #2563eb at roughly eighty percent opacity."
+   },
+   {
+    "q": "What is the space-separated rgb() syntax?",
+    "answer": "It writes channels without commas and puts alpha after a slash, such as rgb(37 99 235 / 0.8), which is the modern form."
+   },
+   {
+    "q": "How is hsl() written?",
+    "answer": "Hue in degrees, saturation and lightness as percentages, with optional alpha after a slash, such as hsl(221 83% 53% / 0.9)."
+   },
+   {
+    "q": "What does the color() function allow?",
+    "answer": "It selects an explicit colour space, such as display-p3, which can express colours outside the sRGB gamut on capable displays."
+   },
+   {
+    "q": "Why use oklch() instead of hsl()?",
+    "answer": "OKLCH is perceptually uniform, so changing lightness or hue behaves more predictably and a palette keeps even contrast steps."
+   },
+   {
+    "q": "What does color-mix() do?",
+    "answer": "It blends two colours in a chosen colour space, which is useful for deriving hover or tint variants from a single token."
+   },
+   {
+    "q": "What is the difference between opacity and an alpha colour?",
+    "answer": "opacity fades the whole element including its children and border, while an alpha colour fades only that one paint."
+   },
+   {
+    "q": "What does currentColor refer to?",
+    "answer": "It resolves to the element's computed color, so a border or icon can follow the text colour without repeating the value."
+   },
+   {
+    "q": "Is transparent the same as a transparent black?",
+    "answer": "transparent is a named colour equal to transparent black, but using it as a background can still change how blending and shadows behave."
+   },
+   {
+    "q": "Why are named colours risky for a design system?",
+    "answer": "Names are limited and inconsistent across palettes, so a brand token expressed as a name is harder to adjust and version than a value."
+   },
+   {
+    "q": "What is a contrast ratio?",
+    "answer": "A ratio between the relative luminance of two colours, from 1:1 to 21:1, used to judge whether text is readable against its background."
+   },
+   {
+    "q": "What contrast does WCAG AA require for normal text?",
+    "answer": "At least 4.5:1 for normal-size text, measured between the text colour and the actual background behind it."
+   },
+   {
+    "q": "What contrast is required for large text?",
+    "answer": "At least 3:1, because larger glyphs remain legible at a lower ratio than body-size text."
+   },
+   {
+    "q": "What does background-color set?",
+    "answer": "The solid colour painted behind an element's content and padding, below any background image and inside the border box."
+   },
+   {
+    "q": "How do multiple background images stack?",
+    "answer": "The first layer in the list paints on top, and later layers paint beneath it, so an overlay gradient is written before the photo."
+   },
+   {
+    "q": "What does background-repeat control?",
+    "answer": "Whether and how an image tiles across the background; no-repeat shows one copy, while repeat-x or repeat-y tiles in one direction."
+   },
+   {
+    "q": "What is the difference between background-size cover and contain?",
+    "answer": "cover fills the box and may crop the image, while contain shows the whole image and may leave empty space."
+   },
+   {
+    "q": "What does background-position do?",
+    "answer": "It places the image within the painting area, using keywords, lengths or percentages, often combined with cover to choose the crop focus."
+   },
+   {
+    "q": "What does background-attachment: fixed do?",
+    "answer": "It fixes the background to the viewport so it does not move with the element's scroll, an effect that is often expensive on mobile."
+   },
+   {
+    "q": "Why is the background shorthand dangerous after setting a colour?",
+    "answer": "It resets every background longhand it owns, so a later shorthand without a colour can wipe the colour you set earlier."
+   },
+   {
+    "q": "How do you set the direction of a linear gradient?",
+    "answer": "Use an angle or a side keyword, such as linear-gradient(135deg, ...) or linear-gradient(to right, ...), before the colour stops."
+   },
+   {
+    "q": "How is a radial gradient positioned?",
+    "answer": "Its centre and shape are set before the stops, such as radial-gradient(circle at 30% 30%, ...), which changes where the colour bloom begins."
+   },
+   {
+    "q": "What is a conic gradient useful for?",
+    "answer": "It sweeps colour around a centre point, which suits pie charts, colour wheels and angular progress indicators."
+   },
+   {
+    "q": "What is a colour stop?",
+    "answer": "A colour paired with an optional position along the gradient line, which tells the browser where that colour must be reached."
+   },
+   {
+    "q": "What is a hard stop in a gradient?",
+    "answer": "Two stops at the same position create an abrupt edge instead of a blend, which can draw stripes or a sharp split background."
+   },
+   {
+    "q": "When do you use a repeating gradient?",
+    "answer": "When a small pattern must tile across a larger area, such as stripes or a progress track, using repeating-linear-gradient with a short cycle."
+   },
+   {
+    "q": "Why does a gradient sometimes show banding?",
+    "answer": "Too few colour steps across a large area reveal the 8-bit quantization, which can be reduced with subtle noise, dithering or a smoother colour space."
+   },
+   {
+    "q": "How do you place text over a photo reliably?",
+    "answer": "Paint a semi-transparent gradient or solid overlay as the top background layer, then choose a text colour that contrasts with the darkest part of that overlay."
+   },
+   {
+    "q": "Why set a background colour when using a background image?",
+    "answer": "If the image fails or loads slowly, the fallback colour keeps the text on a deliberate surface instead of the browser default."
+   },
+   {
+    "q": "What does background-blend-mode do?",
+    "answer": "It blends an element's background layers with each other, such as multiplying a texture into a colour, without affecting the content above them."
+   },
+   {
+    "q": "How is filter different from backdrop-filter?",
+    "answer": "filter affects the element's own rendering, while backdrop-filter blurs or adjusts whatever is painted behind the element."
+   },
+   {
+    "q": "How do you design colours for dark mode?",
+    "answer": "Define semantic tokens, then override their values in a dark scope; pure inversion is avoided because saturated colours and shadows behave differently on dark surfaces."
+   },
+   {
+    "q": "What are CSS system colours?",
+    "answer": "Keywords such as Canvas and CanvasText that follow the user's operating-system theme, which help a page fit forced-colours and high-contrast modes."
+   },
+   {
+    "q": "What is forced-colors mode?",
+    "answer": "A user setting where the browser replaces author colours with a limited system palette, so designs must keep borders, focus and meaning visible without colour alone."
+   },
+   {
+    "q": "Why does print need different colour decisions?",
+    "answer": "Printers handle ink and paper differently, backgrounds are often not printed, and light text on a dark background can become unreadable or waste ink."
+   },
+   {
+    "q": "What is colour management in CSS?",
+    "answer": "The browser maps declared colours into the display's colour space, which is why a wide-gamut P3 colour can look different from the same sRGB value."
+   },
+   {
+    "q": "Why keep a palette of raw colour tokens?",
+    "answer": "A small named palette gives one place to adjust values, while components reference semantic tokens built from it instead of inventing new hex codes."
+   },
+   {
+    "q": "What is a semantic colour token?",
+    "answer": "A name that describes a role, such as surface or danger, rather than a hue, so the value can change with theme while the meaning stays stable."
+   },
+   {
+    "q": "Which tools help verify contrast?",
+    "answer": "Browser DevTools' contrast readout, dedicated contrast checkers and automated accessibility audits, always measured against the real rendered background."
+   },
+   {
+    "q": "How do you make gradient text?",
+    "answer": "Clip the background to the text and make the text transparent, but keep a solid fallback because the technique can fail in forced-colours or older engines."
+   },
+   {
+    "q": "Why can large background images hurt performance?",
+    "answer": "They add download and decode cost, and a fixed or repainting background can force expensive work during scroll, especially on mobile GPUs."
+   },
+   {
+    "q": "Why is colour alone a poor way to convey meaning?",
+    "answer": "Readers with colour-vision deficiency, monochrome screens or forced-colours mode lose the distinction, so pair colour with text, icons, weight or pattern."
+   }
+  ]
+ },
+ "css07": {
+  "interview": [
+   {
+    "q": "What is a CSS pixel?",
+    "answer": "A logical unit resolved against the display's reference pixel, not a guarantee of one physical device pixel, which is why high-density screens scale it."
+   },
+   {
+    "q": "What does rem measure?",
+    "answer": "The root element's computed font size, so one rem follows the user's base size instead of a hard-coded pixel value."
+   },
+   {
+    "q": "What does em measure?",
+    "answer": "The element's own computed font size, or its parent's when used on font-size, which makes it relative and sometimes compounding."
+   },
+   {
+    "q": "A percentage width resolves against what?",
+    "answer": "The containing block's width, so the same fifty percent is a different number of pixels in a narrow and a wide parent."
+   },
+   {
+    "q": "When are vw and vh useful?",
+    "answer": "For sizes that should follow the viewport, such as a full-height hero or fluid type, though vw includes the scrollbar on desktop."
+   },
+   {
+    "q": "What do dvh, svh and lvh solve?",
+    "answer": "They separate the dynamic, small and large viewport heights on mobile, where browser chrome changes the visible area during scroll."
+   },
+   {
+    "q": "When do vmin and vmax help?",
+    "answer": "When a square or shape must follow the shorter or longer viewport side, so it stays proportional in both portrait and landscape."
+   },
+   {
+    "q": "What does the ch unit represent?",
+    "answer": "The width of the zero glyph in the current font, which makes it a useful approximation for limiting a line to a number of characters."
+   },
+   {
+    "q": "What does ex measure?",
+    "answer": "The x-height of the current font, a font-relative unit that is rarely used except for small optical adjustments."
+   },
+   {
+    "q": "What does fr mean in a grid track?",
+    "answer": "A fraction of the free space left after fixed tracks and gaps, so 1fr and 2fr split that space in a one-to-two ratio."
+   },
+   {
+    "q": "Which CSS units are absolute?",
+    "answer": "px, cm, mm, in, pt and pc are absolute in CSS terms, though px is still resolved against the reference pixel rather than a device dot."
+   },
+   {
+    "q": "When are physical units such as cm or pt still appropriate?",
+    "answer": "For print stylesheets and documents that must match paper dimensions, not for screen layout where zoom and density vary."
+   },
+   {
+    "q": "What is the default root font size?",
+    "answer": "Sixteen CSS pixels in most browsers, but it is a user preference, so rem-based layouts must not assume that number is fixed."
+   },
+   {
+    "q": "How does browser zoom interact with px and rem?",
+    "answer": "Zoom scales the whole layout, but a user's font-size preference changes the root size, which rem respects and px ignores for text."
+   },
+   {
+    "q": "Why does nested em sizing compound?",
+    "answer": "Each level multiplies its parent's computed size, so two nested 1.2em elements produce 1.44 times the outer size instead of 1.2."
+   },
+   {
+    "q": "Why is line-height better left unitless?",
+    "answer": "A unitless value multiplies the element's own font size, so nested text keeps the intended ratio instead of inheriting a fixed length."
+   },
+   {
+    "q": "What does calc() require around plus and minus?",
+    "answer": "Whitespace on both sides of the operator, because without it the parser can read the sign as part of a number or identifier."
+   },
+   {
+    "q": "What does min() choose?",
+    "answer": "The smallest of its arguments, allowing a width to shrink below a preferred value but never exceed a hard limit."
+   },
+   {
+    "q": "What does max() choose?",
+    "answer": "The largest of its arguments, which is useful for a minimum size that still grows with available space."
+   },
+   {
+    "q": "What are the three parts of clamp()?",
+    "answer": "A minimum, a preferred value and a maximum; the browser returns the preferred value bounded by the other two."
+   },
+   {
+    "q": "What does minmax() do in a grid track?",
+    "answer": "It sets a track's minimum and maximum size, so a column can shrink no further than the first value and grow no larger than the second."
+   },
+   {
+    "q": "How does fit-content behave?",
+    "answer": "It sizes to the content up to a limit, then stops growing, which is useful for chips and sidebars that should not stretch."
+   },
+   {
+    "q": "What does auto mean for width and height?",
+    "answer": "It lets the browser resolve the size from the layout context, such as filling a block or sizing to content, rather than a fixed number."
+   },
+   {
+    "q": "Why is zero allowed without a unit?",
+    "answer": "Zero is the same length in every unit, so the specification permits the bare number while other nonzero lengths require a unit."
+   },
+   {
+    "q": "What does percentage padding resolve against?",
+    "answer": "The containing block's inline size, even for vertical padding, which is why percentage padding can create surprising aspect ratios."
+   },
+   {
+    "q": "Why does percentage height often fail?",
+    "answer": "It needs a definite containing block height; if the parent's height is auto, the percentage has nothing to resolve against and is treated as auto."
+   },
+   {
+    "q": "What does aspect-ratio do?",
+    "answer": "It sets a preferred width-to-height ratio, letting one dimension follow the other while the box remains responsive."
+   },
+   {
+    "q": "What are container query units?",
+    "answer": "Units such as cqw and cqh that resolve against the nearest query container instead of the viewport, so a component can scale with its own space."
+   },
+   {
+    "q": "Can media queries use rem?",
+    "answer": "Yes, and doing so ties breakpoints to the user's root font size, so a reader who enlarges text gets the layout intended for a wider screen."
+   },
+   {
+    "q": "Why keep borders in px?",
+    "answer": "A one-pixel border usually expresses a hairline regardless of text size, while spacing and type should follow the user's scale."
+   },
+   {
+    "q": "What are resolution units used for?",
+    "answer": "dpi, dpcm and dppx describe pixel density, mainly in media queries for choosing sharper images on high-density displays."
+   },
+   {
+    "q": "What are angle units used for?",
+    "answer": "deg, grad, rad and turn describe rotation and gradient direction, with turn being a convenient full circle."
+   },
+   {
+    "q": "What are time units used for?",
+    "answer": "s and ms set transition and animation durations and delays; they are the only units accepted for those properties."
+   },
+   {
+    "q": "Why prefer fr over percentages in a grid?",
+    "answer": "fr distributes the space left after gaps and fixed tracks, so tracks do not overflow when gaps are added."
+   },
+   {
+    "q": "Why are viewport units unreliable for mobile height?",
+    "answer": "Mobile browser chrome changes the visible height during scroll, so vh can be taller than the actual visible area; dvh or svh reflect that behaviour."
+   },
+   {
+    "q": "How do you create fluid type?",
+    "answer": "Use clamp() with a viewport-relative preferred value, bounded by a readable minimum and maximum, instead of fixing a size per breakpoint."
+   },
+   {
+    "q": "How do you create fluid spacing?",
+    "answer": "Use clamp() or calc() on a spacing token, so gaps grow with the viewport within limits rather than jumping at breakpoints."
+   },
+   {
+    "q": "How do you convert between px and rem?",
+    "answer": "Divide the pixel value by the root font size, usually sixteen, so 24px becomes 1.5rem; the conversion is a design aid, not a runtime rule."
+   },
+   {
+    "q": "Why can a px-based design fail accessibility?",
+    "answer": "The text ignores the reader's font-size preference, so a user who enlarges text still sees the original size and may be unable to read it."
+   },
+   {
+    "q": "Why use rem for spacing as well as text?",
+    "answer": "Spacing tied to the root scale keeps the rhythm proportional when the reader changes text size, instead of leaving cramped gaps around larger type."
+   },
+   {
+    "q": "Why is ch useful for a reading measure?",
+    "answer": "A width in ch approximates characters per line, so a 65ch limit keeps a comfortable measure even when the font size changes."
+   },
+   {
+    "q": "How do you debug a unit mismatch?",
+    "answer": "Inspect the Computed panel for the resolved pixel value, then trace which parent or font size the relative unit resolved against."
+   },
+   {
+    "q": "Which unit should a beginner default to?",
+    "answer": "rem for type and spacing, percentages or fr for layout, and px for hairlines, then reach for viewport and container units only when the layout needs them."
+   }
+  ]
+ },
+ "css08": {
+  "interview": [
+   {
+    "q": "Why does font-family take an ordered stack?",
+    "answer": "The browser uses the first family it can render, so the order decides which available font wins before the generic fallback is reached."
+   },
+   {
+    "q": "Why must every stack end in a generic family?",
+    "answer": "A generic family is guaranteed to exist, so the page still gets a sensible serif, sans-serif or monospace instead of the browser's arbitrary default."
+   },
+   {
+    "q": "What is a web font?",
+    "answer": "A font file delivered by the page and declared with @font-face, which gives a consistent typeface instead of relying on installed fonts."
+   },
+   {
+    "q": "What does @font-face declare?",
+    "answer": "A font family name, one or more sources with formats, and descriptors such as weight, style and display behaviour."
+   },
+   {
+    "q": "What does font-display control?",
+    "answer": "How a web font behaves while it loads: swap shows fallback text immediately, block hides text briefly, and optional avoids late swaps."
+   },
+   {
+    "q": "Why preload a font file?",
+    "answer": "Preloading starts the request before the CSS that references it is parsed, which reduces the delay before the first text paint."
+   },
+   {
+    "q": "What is a flash of invisible text?",
+    "answer": "A period where the browser hides text while waiting for a web font, usually caused by a block period in font-display."
+   },
+   {
+    "q": "What do numeric font-weight values mean?",
+    "answer": "They range from 100 to 900 in increasing boldness, and a variable font can interpolate between them instead of jumping to named weights."
+   },
+   {
+    "q": "What is a variable font?",
+    "answer": "A single font file with axes for weight, width or slant, so the page can request intermediate values without downloading several files."
+   },
+   {
+    "q": "What does font-style control?",
+    "answer": "Whether the face is normal, italic or oblique, and the browser may synthesise a slant if the family lacks a real italic."
+   },
+   {
+    "q": "Why use a type scale instead of arbitrary sizes?",
+    "answer": "A small set of related sizes creates hierarchy and rhythm, while one-off font sizes make the page look uneven and hard to maintain."
+   },
+   {
+    "q": "Why express type sizes in rem?",
+    "answer": "rem follows the reader's root preference, so the whole scale grows together when the default font size is increased."
+   },
+   {
+    "q": "What does line-height: normal mean?",
+    "answer": "The font's own recommended line spacing, which varies by typeface and is rarely the value a designer wants for body text."
+   },
+   {
+    "q": "What is a readable measure?",
+    "answer": "Roughly 45 to 75 characters per line, often limited with ch, because lines that are too long or too short slow reading."
+   },
+   {
+    "q": "What does letter-spacing change?",
+    "answer": "The space between characters; small positive values can help uppercase labels, while large values hurt word recognition."
+   },
+   {
+    "q": "What does word-spacing change?",
+    "answer": "The space between words, which is rarely adjusted except for justified text or a specific display treatment."
+   },
+   {
+    "q": "What does text-align affect?",
+    "answer": "The alignment of inline content inside its block, such as left, right, center or justify, not the position of the block itself."
+   },
+   {
+    "q": "How do you remove an underline from a link accessibly?",
+    "answer": "Remove it only when another clear affordance remains, and always keep a visible focus and hover state so the link is still recognisable."
+   },
+   {
+    "q": "What does text-transform do?",
+    "answer": "It changes the rendered case without changing the underlying text, so uppercase labels remain readable to screen readers and copy-paste."
+   },
+   {
+    "q": "How does text-shadow differ from box-shadow?",
+    "answer": "text-shadow follows the glyph shapes and takes no spread or inset value, while box-shadow follows the element's box."
+   },
+   {
+    "q": "What does text-overflow require to work?",
+    "answer": "A single-line box with overflow hidden and white-space nowrap, otherwise the text wraps and there is no overflow to ellipsise."
+   },
+   {
+    "q": "What does white-space control?",
+    "answer": "Whether whitespace collapses, wraps or is preserved, which decides if text stays on one line or breaks at spaces."
+   },
+   {
+    "q": "What does overflow-wrap: anywhere do?",
+    "answer": "It allows a long unbreakable string to break at any point when needed, preventing it from forcing the container wider."
+   },
+   {
+    "q": "How is word-break different from overflow-wrap?",
+    "answer": "word-break changes the language's normal breaking rules, while overflow-wrap only intervenes when a word would otherwise overflow."
+   },
+   {
+    "q": "What does hyphens: auto do?",
+    "answer": "It lets the browser insert language-aware hyphenation at line ends, which can improve justification but needs the correct lang attribute."
+   },
+   {
+    "q": "What does text-wrap: balance do?",
+    "answer": "It distributes lines evenly in a short block such as a heading, avoiding a single orphan word on the last line."
+   },
+   {
+    "q": "What does font-variant control?",
+    "answer": "It selects alternate glyph sets such as small caps or old-style numerals, a higher-level switch than raw font features."
+   },
+   {
+    "q": "How do you enable tabular numbers?",
+    "answer": "Use font-variant-numeric: tabular-nums so digits share a width, which keeps columns of figures aligned."
+   },
+   {
+    "q": "How do you style a drop cap?",
+    "answer": "Use ::first-letter with a larger size and float, then check the line box so the cap does not collide with the first line."
+   },
+   {
+    "q": "What is vertical rhythm?",
+    "answer": "A consistent baseline spacing derived from line-height, so headings, paragraphs and margins land on the same grid instead of drifting."
+   },
+   {
+    "q": "How do you make type responsive without breakpoints?",
+    "answer": "Use clamp() with a viewport-relative middle value and a readable minimum and maximum, then test the extremes."
+   },
+   {
+    "q": "Why cap fluid type with clamp()?",
+    "answer": "Without a maximum, headings become absurdly large on wide screens; without a minimum, body text becomes unreadable on small ones."
+   },
+   {
+    "q": "What text spacing does WCAG expect?",
+    "answer": "Readers must be able to increase line height, paragraph spacing, letter spacing and word spacing without losing content or functionality."
+   },
+   {
+    "q": "Why is text contrast more than a colour choice?",
+    "answer": "The final ratio depends on the actual background, overlays and states, so a colour that passes on white can fail on an image or a tinted card."
+   },
+   {
+    "q": "How do web fonts affect performance?",
+    "answer": "They add requests and bytes, can delay text, and may cause layout shift when the fallback and web font have different metrics."
+   },
+   {
+    "q": "Why use system fonts on some projects?",
+    "answer": "They load instantly, match the platform and avoid layout shift, which is often the better trade-off for utility interfaces."
+   },
+   {
+    "q": "Why prefer SVG icons over an icon font?",
+    "answer": "SVG icons are individually accessible, styleable and crisp at any size, while icon fonts depend on private-use glyphs and can fail silently."
+   },
+   {
+    "q": "What are fallback font metrics?",
+    "answer": "The measurements used to match a fallback closely to the web font, reducing the size and position shift when the real font swaps in."
+   },
+   {
+    "q": "When should a font be self-hosted?",
+    "answer": "When the project needs control over privacy, caching and licensing, or the third-party font service is a performance or reliability risk."
+   },
+   {
+    "q": "What does font-smoothing change?",
+    "answer": "It alters glyph antialiasing on some platforms, which can make text look thinner or heavier but is not a reliable cross-browser design control."
+   },
+   {
+    "q": "How do you debug a typography problem?",
+    "answer": "Inspect the computed font family, size and line height, then check whether a fallback rendered, a rule was overridden, or the measure is wrong."
+   },
+   {
+    "q": "What are OpenType features in CSS?",
+    "answer": "Optional glyph behaviours such as ligatures, fractions or stylistic sets, enabled with font-feature-settings or higher-level font-variant properties."
+   },
+   {
+    "q": "Why limit a paragraph with ch rather than px?",
+    "answer": "ch scales with the font, so the measure stays proportional when the reader changes text size instead of becoming too wide or too narrow."
+   }
+  ]
+ }
+}

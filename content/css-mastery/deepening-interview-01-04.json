@@ -1,0 +1,706 @@
+{
+ "css01": {
+  "interview": [
+   {
+    "q": "What does the \"C\" in CSS describe?",
+    "answer": "It names the cascade: when several rules set the same property, the browser resolves them by importance, origin, cascade layer, specificity and source order instead of picking one at random."
+   },
+   {
+    "q": "Which three structures does a browser combine before it can paint?",
+    "answer": "It builds the DOM from the HTML, the CSSOM from the stylesheets, and the render tree from the nodes that will actually be painted."
+   },
+   {
+    "q": "What is the CSSOM?",
+    "answer": "The CSS Object Model is the parsed, object-shaped form of every stylesheet the document loaded, which the browser can match against DOM nodes."
+   },
+   {
+    "q": "Why can a stylesheet delay the first paint?",
+    "answer": "The browser treats CSS as render-blocking: painting before the styles arrive would show an unstyled page that then jumps, so it waits for the CSSOM."
+   },
+   {
+    "q": "What are user-agent styles?",
+    "answer": "They are the browser's own default stylesheet — the margins on a paragraph and the size of an h1 come from it, not from the page author."
+   },
+   {
+    "q": "Why is CSS called a declarative language?",
+    "answer": "You describe the result you want for a selector; you do not write the steps the browser must follow to compute or paint it."
+   },
+   {
+    "q": "What is the practical difference between content and presentation?",
+    "answer": "Content is the meaning carried by the markup; presentation is the set of choices about how that meaning is shown, and CSS holds only the second."
+   },
+   {
+    "q": "Why does disabling CSS still leave a readable document?",
+    "answer": "Because well-written HTML carries its meaning in elements and text, so the browser can present an unstyled but usable version without any stylesheet."
+   },
+   {
+    "q": "What is progressive enhancement in CSS terms?",
+    "answer": "Ship a usable baseline first, then add layout, colour and motion behind features or queries that support them, so a failure removes polish instead of the content."
+   },
+   {
+    "q": "Why separate structure and style when a team works on one page?",
+    "answer": "It lets content and design change independently, keeps one source of truth for repeated styling, and makes both parts reviewable without touching the other."
+   },
+   {
+    "q": "Is CSS a programming language?",
+    "answer": "No: it has no general variables-and-control-flow model for business logic, no input or output, and no way to persist state; it is a stylesheet language with a narrow computation model."
+   },
+   {
+    "q": "What kind of calculation can CSS actually do?",
+    "answer": "It can compute lengths and colours with functions such as calc, min, max and clamp, but it cannot loop over data or branch on values supplied at runtime."
+   },
+   {
+    "q": "What does source order decide in the cascade?",
+    "answer": "When importance, origin, layer and specificity are all equal, the declaration that appears later in the final order wins the property."
+   },
+   {
+    "q": "What is inheritance in CSS?",
+    "answer": "For properties that inherit, an element with no declaration of its own takes the computed value from its parent instead of the property's initial value."
+   },
+   {
+    "q": "Name three properties that inherit by default.",
+    "answer": "color, font-family and line-height inherit, which is why setting body typography styles the whole page without repeating a rule on every element."
+   },
+   {
+    "q": "Name a property that does not inherit and explain the consequence.",
+    "answer": "margin does not inherit, so a margin on a container never applies to its children and each child needs its own spacing decision."
+   },
+   {
+    "q": "Why does the box model matter before choosing a selector?",
+    "answer": "A selector only decides which elements are affected; the box model decides how much space those elements occupy, so a layout bug is often a box decision rather than a matching problem."
+   },
+   {
+    "q": "Why does an unstyled page usually show a serif font?",
+    "answer": "Most user-agent stylesheets set a default serif family, and the page has not yet supplied a font stack of its own."
+   },
+   {
+    "q": "What is a style sheet origin?",
+    "answer": "It is who supplied the CSS: the browser's user-agent sheet, the reader's user sheet, or the page author's sheet, and the origin participates in cascade priority."
+   },
+   {
+    "q": "Name the three author-level ways to attach CSS to a document.",
+    "answer": "An external stylesheet linked in the head, an internal style block, and an inline style attribute on one element."
+   },
+   {
+    "q": "Why do browsers ship experimental CSS behind flags?",
+    "answer": "The specification may still change, so a flag lets implementers gather feedback and lets developers test without exposing the behaviour to every site by default."
+   },
+   {
+    "q": "What is a vendor prefix and what does it signal?",
+    "answer": "A prefix such as -webkit- marks an early implementation of a property; it signals that the syntax may differ from the eventual standard and needs a fallback."
+   },
+   {
+    "q": "When is a vendor prefix appropriate?",
+    "answer": "Only when a required browser version needs it, with the unprefixed declaration present as well, so the prefixed rule can be removed when support arrives."
+   },
+   {
+    "q": "What does feature detection mean for CSS?",
+    "answer": "The stylesheet checks whether a feature is supported, usually with @supports, and applies the enhancement only where the browser can honour it."
+   },
+   {
+    "q": "How is progressive enhancement different from graceful degradation?",
+    "answer": "Enhancement starts from a working baseline and adds capability upward; degradation starts from the full experience and tries to keep it usable when something is missing."
+   },
+   {
+    "q": "Why is \"CSS3\" not a single specification?",
+    "answer": "CSS was split into independent modules — Grid, Color, Fonts, Media Queries — each with its own level and maturity, so there is no one CSS3 document to implement."
+   },
+   {
+    "q": "What is a CSS module in the standards sense?",
+    "answer": "It is a separate specification for one area of styling that can advance through levels without waiting for every other area."
+   },
+   {
+    "q": "What does the browser do with a property it does not know?",
+    "answer": "It drops that declaration and continues, so the rest of the rule and the rest of the stylesheet still apply."
+   },
+   {
+    "q": "Why is dropping an invalid declaration safer than rejecting the whole file?",
+    "answer": "It keeps old browsers usable while new CSS is added, and it lets a single typo fail locally instead of blanking an entire page."
+   },
+   {
+    "q": "How does CSS affect accessibility beyond colour?",
+    "answer": "It controls focus visibility, text size and spacing, motion, reading order on screen, and whether controls remain usable at zoom or in forced-colours mode."
+   },
+   {
+    "q": "Why is semantic HTML the best base for styling?",
+    "answer": "Elements that already describe their role give stable, meaningful selectors and remain understandable to assistive technology even before the CSS loads."
+   },
+   {
+    "q": "Why is colour contrast a CSS responsibility?",
+    "answer": "The author chooses the foreground and background values, and those two values determine the contrast ratio a reader actually experiences."
+   },
+   {
+    "q": "What is a CSS reset for?",
+    "answer": "It removes or normalises inconsistent user-agent defaults so the design starts from a predictable baseline across browsers."
+   },
+   {
+    "q": "Why is a design token better than a repeated literal?",
+    "answer": "One named value is reused everywhere, so a rebrand or theme change is a single edit and the light and dark versions cannot drift apart."
+   },
+   {
+    "q": "What makes a stylesheet maintainable?",
+    "answer": "Predictable naming, a small set of tokens, deliberate cascade layers and low specificity, so a new rule can be added without guessing what it will fight."
+   },
+   {
+    "q": "Why is CSS difficult to scale across a large team?",
+    "answer": "Selectors are global by default, so two people can style the same class from different files and only the cascade decides which intent survives."
+   },
+   {
+    "q": "What is critical CSS?",
+    "answer": "The subset of styles needed for the first screenful, often inlined in the head so the first paint does not wait for the full stylesheet request."
+   },
+   {
+    "q": "Why can unused CSS still cost performance?",
+    "answer": "Every byte must be downloaded and parsed before the CSSOM is complete, and render-blocking CSS delays the first paint whether or not its rules match anything."
+   },
+   {
+    "q": "What is the difference between layout and paint?",
+    "answer": "Layout computes each box's geometry and position; paint fills those boxes with pixels, so a change to geometry can force both stages."
+   },
+   {
+    "q": "Name two properties whose animation forces layout.",
+    "answer": "Animating width or top changes geometry on every frame, which makes the browser recompute layout instead of only compositing."
+   },
+   {
+    "q": "Why is transform cheaper than top for movement?",
+    "answer": "A transform can be handled by the compositor without re-running layout, while top changes the box's position in layout on each frame."
+   },
+   {
+    "q": "What can CSS animate without any JavaScript?",
+    "answer": "Transitions and keyframe animations can move, fade, scale and colour elements in response to states such as hover, focus or a class change."
+   },
+   {
+    "q": "Where does JavaScript still have to take over?",
+    "answer": "For business logic, data fetching, complex state machines and interactions that depend on values CSS cannot read, CSS states alone are not enough."
+   }
+  ]
+ },
+ "css02": {
+  "interview": [
+   {
+    "q": "What is the minimum file set for a styled page?",
+    "answer": "One HTML document with a link to one CSS file is enough; the stylesheet can contain every rule the page needs."
+   },
+   {
+    "q": "Why keep stylesheets in a css folder?",
+    "answer": "A predictable folder keeps relative paths short and consistent across pages, and separates authored styles from markup and assets."
+   },
+   {
+    "q": "How is a relative path resolved?",
+    "answer": "It is resolved against the URL of the document that contains it, so the same href works only while the page and the target keep that relationship."
+   },
+   {
+    "q": "What is the difference between /css/style.css and css/style.css?",
+    "answer": "The leading slash starts at the site root; the version without it starts at the current document's folder."
+   },
+   {
+    "q": "Why does an absolute file path break after deployment?",
+    "answer": "It names a location on the author's own machine, which does not exist on the server or on a visitor's device."
+   },
+   {
+    "q": "What does rel=\"stylesheet\" tell the browser?",
+    "answer": "It declares the linked resource's relationship: this file is a stylesheet to load and apply to the document."
+   },
+   {
+    "q": "What kinds of values can href take?",
+    "answer": "A URL or a relative path, including a data URL, though a normal external file is what caching and review depend on."
+   },
+   {
+    "q": "Why does the stylesheet's MIME type matter?",
+    "answer": "The browser applies a file served as text/css; a wrong type such as text/plain can make it fetch the file but refuse to treat it as CSS."
+   },
+   {
+    "q": "What happens when the CSS request returns 404?",
+    "answer": "The document still renders, but unstyled, and the Network panel and console show the failed request instead of a silent success."
+   },
+   {
+    "q": "Why does a page still render when its CSS is missing?",
+    "answer": "HTML parsing does not depend on the stylesheet, so the browser paints the document with user-agent defaults while the CSS request fails."
+   },
+   {
+    "q": "How do you confirm a stylesheet actually loaded?",
+    "answer": "Find its row in the Network panel for a 200 response, then confirm its rules appear in the Styles panel for a matching element."
+   },
+   {
+    "q": "What does the Network panel's status column tell you?",
+    "answer": "The HTTP result for each request: 200 means the file arrived, 304 means it was revalidated from cache, and 404 means the path is wrong."
+   },
+   {
+    "q": "What does the Styles panel show that the source file does not?",
+    "answer": "The live cascade: every matching rule, which declarations won, which were overridden, and the order the browser actually applied."
+   },
+   {
+    "q": "What does the Computed panel show?",
+    "answer": "The resolved value of each property after inheritance, units and functions have been evaluated, which is the number the layout engine used."
+   },
+   {
+    "q": "Why hard-refresh after changing CSS?",
+    "answer": "A hard refresh bypasses the cached copy and forces a fresh request, which proves whether the change or the cache is responsible."
+   },
+   {
+    "q": "How does browser caching affect CSS updates?",
+    "answer": "Until the cached response expires or is revalidated, the browser can keep applying the old stylesheet even though the server has a newer file."
+   },
+   {
+    "q": "What is cache busting?",
+    "answer": "Changing the URL — a content hash or a version query — so the browser treats the file as a new resource and downloads it."
+   },
+   {
+    "q": "Why do build tools put a hash in CSS filenames?",
+    "answer": "The hashed URL can be cached forever, and a new build produces a new URL automatically instead of relying on users to clear a cache."
+   },
+   {
+    "q": "How is file:// different from a local HTTP server for CSS?",
+    "answer": "A file URL gives pages an opaque origin with restricted fetch and font behaviour, while a local server matches the origin rules of production."
+   },
+   {
+    "q": "Why can file:// break web fonts?",
+    "answer": "Font requests are CORS-mode requests, and an opaque file origin cannot satisfy the same access rules a served page uses."
+   },
+   {
+    "q": "What is the viewport meta tag for?",
+    "answer": "It tells a mobile browser to use the device width as the layout viewport instead of a virtual desktop width, which makes media queries behave as designed."
+   },
+   {
+    "q": "Why should the stylesheet link sit in the head?",
+    "answer": "The browser discovers it before rendering the body, so the first paint can already use the correct styles."
+   },
+   {
+    "q": "What happens if the link is placed in the body?",
+    "answer": "It usually still applies, but discovery is later, so the page can flash unstyled and the first paint is delayed by a resource found too late."
+   },
+   {
+    "q": "Can one page load more than one stylesheet?",
+    "answer": "Yes, and all of them apply; their order, specificity and layers decide which declaration wins when they overlap."
+   },
+   {
+    "q": "How is the winner decided between two stylesheets?",
+    "answer": "Normal cascade rules apply: importance, origin, layer and specificity first, then the order the sheets were loaded for ties."
+   },
+   {
+    "q": "What is @import and why is it slower than link?",
+    "answer": "It loads another stylesheet from inside CSS, so the browser discovers it only after parsing the first file, creating a serial request chain."
+   },
+   {
+    "q": "What is stylesheet preloading?",
+    "answer": "A preload hint fetches a resource earlier without applying it, which can warm the cache before the stylesheet link is reached."
+   },
+   {
+    "q": "What is the media attribute on a link used for?",
+    "answer": "It conditionally applies the stylesheet, such as print-only rules or a sheet limited to a screen width range."
+   },
+   {
+    "q": "How do you provide a print stylesheet?",
+    "answer": "Link a sheet with media=\"print\" or wrap print rules in @media print inside the main stylesheet."
+   },
+   {
+    "q": "What is an alternate stylesheet?",
+    "answer": "A sheet linked with rel=\"alternate stylesheet\" and a title, which the browser offers as an optional theme rather than applying by default."
+   },
+   {
+    "q": "Why are filenames case-sensitive on some servers?",
+    "answer": "Linux filesystems distinguish Style.css from style.css, so a link that works on a case-insensitive machine can 404 after deployment."
+   },
+   {
+    "q": "Why avoid spaces in asset filenames?",
+    "answer": "Spaces must be percent-encoded, and a missed encoding in HTML, CSS or a build step produces a broken path that is hard to spot."
+   },
+   {
+    "q": "How does url() resolve inside a CSS file?",
+    "answer": "It resolves relative to the stylesheet's own location, not the HTML document, which is why moving a CSS file can break its images."
+   },
+   {
+    "q": "What is a CSS source map?",
+    "answer": "A file that maps minified or compiled CSS back to the authored source, so DevTools can show the original rule and line."
+   },
+   {
+    "q": "Why keep source maps out of production?",
+    "answer": "They expose original source structure and add bytes; they are a debugging aid, not part of the shipped design."
+   },
+   {
+    "q": "What does CSS validation catch?",
+    "answer": "Syntax errors, unknown properties and invalid values; it cannot tell you whether the design is readable or the selector is a good idea."
+   },
+   {
+    "q": "What does live reload do, and what does it not catch?",
+    "answer": "It refreshes the page when a file changes, but it does not catch a selector that matches nothing or a layout that breaks at another width."
+   },
+   {
+    "q": "Why configure the editor for the project?",
+    "answer": "Consistent encoding, line endings and formatting prevent noisy diffs and stop a saved file from changing bytes nobody meant to touch."
+   },
+   {
+    "q": "What does a formatting convention prevent?",
+    "answer": "It keeps diffs focused on real changes, makes missing semicolons visible, and stops reviewers from arguing about whitespace."
+   },
+   {
+    "q": "Why keep stylesheets in version control?",
+    "answer": "History shows why a rule changed, review catches accidental overrides, and a bad deploy can be reverted to a known stylesheet."
+   },
+   {
+    "q": "What should a CSS code review check?",
+    "answer": "Selector scope, token reuse, specificity, responsive behaviour, focus states, dead rules, and whether the change belongs in a shared file."
+   },
+   {
+    "q": "What is a performance budget for CSS?",
+    "answer": "A limit on bytes, requests or render-blocking time that a change must respect, so performance is a review criterion instead of an afterthought."
+   },
+   {
+    "q": "What belongs in a project setup checklist?",
+    "answer": "The correct link and path, a valid MIME type, a fresh cache, a working dev server, and confirmation in DevTools that the rules actually match."
+   }
+  ]
+ },
+ "css03": {
+  "interview": [
+   {
+    "q": "What are the parts of a CSS rule?",
+    "answer": "A selector, an opening brace, one or more declarations made of a property, a colon and a value, then a closing brace."
+   },
+   {
+    "q": "How does a selector list behave?",
+    "answer": "Each comma-separated selector matches independently; the declaration block applies to the union of everything any selector matches."
+   },
+   {
+    "q": "What separates one declaration from the next?",
+    "answer": "A semicolon ends each declaration, and the final one before a closing brace may be omitted."
+   },
+   {
+    "q": "Why is the colon required in a declaration?",
+    "answer": "It separates the property name from its value; without it the parser cannot tell where the name ends."
+   },
+   {
+    "q": "When is the last semicolon optional?",
+    "answer": "Immediately before a closing brace, but keeping it means a later insertion cannot accidentally join two declarations."
+   },
+   {
+    "q": "What is a declaration block?",
+    "answer": "The braces and their contents that hold all the declarations applied by the selector before them."
+   },
+   {
+    "q": "What is an at-rule, and name three.",
+    "answer": "A statement beginning with @ that controls how CSS is processed, such as @media, @supports and @keyframes."
+   },
+   {
+    "q": "What is the difference between a shorthand and a longhand?",
+    "answer": "A shorthand sets several longhand properties at once, while a longhand sets exactly one."
+   },
+   {
+    "q": "Why can a shorthand reset values you did not mention?",
+    "answer": "It assigns every longhand it owns, using the initial value for any part you omitted, so it can wipe an earlier declaration."
+   },
+   {
+    "q": "What happens when one rule contains the same property twice?",
+    "answer": "Both declarations are valid, and the later one wins for that property."
+   },
+   {
+    "q": "Why does whitespace matter in CSS?",
+    "answer": "It separates tokens; outside strings and selectors its amount is insignificant, but removing it where a separator is required changes the parse."
+   },
+   {
+    "q": "Are CSS property names case-sensitive?",
+    "answer": "No, standard property names are ASCII case-insensitive, although custom properties and some values are case-sensitive."
+   },
+   {
+    "q": "Are class names case-sensitive?",
+    "answer": "Yes in HTML documents, so .Card and .card are different selectors and only one will match the markup."
+   },
+   {
+    "q": "How do you write a comment that spans several lines?",
+    "answer": "Start with slash-star, write across as many lines as needed, and end with star-slash."
+   },
+   {
+    "q": "Why can CSS comments not be nested?",
+    "answer": "The first star-slash closes the comment, so an inner opening is just text and the following code can be swallowed or exposed."
+   },
+   {
+    "q": "What is a CSS function?",
+    "answer": "A value form with a name and parentheses, such as rgb(), calc() or var(), which the browser evaluates while computing the property."
+   },
+   {
+    "q": "What is calc() used for?",
+    "answer": "It performs arithmetic across compatible units at computed-value time, such as subtracting fixed padding from a percentage width."
+   },
+   {
+    "q": "What happens when var() references a missing property?",
+    "answer": "The fallback is used if one is supplied; otherwise the declaration becomes invalid at computed-value time."
+   },
+   {
+    "q": "What does \"invalid at computed-value time\" mean?",
+    "answer": "The declaration parsed but its substituted value is not valid for the property, so the property takes its inherited or initial value instead."
+   },
+   {
+    "q": "What is the difference between initial and inherited values?",
+    "answer": "initial is the value defined by the specification; inherited is the parent's computed value, used only for properties that inherit."
+   },
+   {
+    "q": "What does the inherit keyword force?",
+    "answer": "It makes the element take its parent's computed value even for a property that normally does not inherit."
+   },
+   {
+    "q": "What does the unset keyword do?",
+    "answer": "It resets an inherited property to inherit and a non-inherited property to its initial value."
+   },
+   {
+    "q": "What does the revert keyword do?",
+    "answer": "It discards the current origin or layer's value and falls back to the value from the previous origin in the cascade."
+   },
+   {
+    "q": "What does the all property do?",
+    "answer": "It resets almost every property at once, except direction and unicode-bidi, which are excluded for writing-mode reasons."
+   },
+   {
+    "q": "Why is all: unset risky?",
+    "answer": "It wipes every property, including ones a component relied on, and the resulting element is hard to debug because nothing in its own rules explains the state."
+   },
+   {
+    "q": "How does the CSS parser recover from an error?",
+    "answer": "It skips the malformed declaration or rule and resumes at the next boundary, so one mistake does not stop the rest of the file."
+   },
+   {
+    "q": "Why does one broken rule not blank the page?",
+    "answer": "Error recovery is part of the language: the browser drops only the invalid construct and keeps the valid rules around it."
+   },
+   {
+    "q": "How do you find a declaration the browser dropped?",
+    "answer": "Look for it in the Styles panel; a missing or struck-through declaration and a console warning usually identify the invalid value."
+   },
+   {
+    "q": "What is a CSS escape sequence for?",
+    "answer": "It represents a character that would otherwise be ambiguous in an identifier or string, such as a digit at the start of a class name."
+   },
+   {
+    "q": "Is @charset still required?",
+    "answer": "Rarely: an HTTP charset or a meta charset on the HTML document covers most cases, and @charset must be the very first bytes to count."
+   },
+   {
+    "q": "What is @namespace used for?",
+    "answer": "It binds a prefix to an XML namespace so selectors can target elements in documents such as inline SVG or XUL."
+   },
+   {
+    "q": "What does the & selector mean in nesting?",
+    "answer": "It refers to the parent selector, which lets a nested rule build compound selectors and pseudo-classes without repeating the parent."
+   },
+   {
+    "q": "Why does a nested rule need a parent?",
+    "answer": "Nesting resolves relative to the enclosing rule, so without one there is no selector for & or the implicit descendant relationship to attach to."
+   },
+   {
+    "q": "How is a custom property different from a normal property?",
+    "answer": "It stores an arbitrary token stream, inherits by default, and is substituted only when var() uses it, so it has no type until then."
+   },
+   {
+    "q": "Why can a custom property hold an apparently invalid value?",
+    "answer": "Its contents are not validated at declaration time; validity is checked when the value is substituted into a real property."
+   },
+   {
+    "q": "What does minification remove from CSS?",
+    "answer": "Comments and insignificant whitespace, and it may shorten values, while preserving the cascade and the meaning of each declaration."
+   },
+   {
+    "q": "Why does minification not change which rule wins?",
+    "answer": "It removes bytes, not selectors or order, so the same declarations remain in the same cascade positions."
+   },
+   {
+    "q": "How does source order work inside one rule?",
+    "answer": "For duplicate declarations of the same property, the last valid one in the block wins."
+   },
+   {
+    "q": "How do specificity and source order interact?",
+    "answer": "Specificity decides first; source order only breaks a tie when specificity, origin, importance and layer are equal."
+   },
+   {
+    "q": "What is the difference between a syntax error and a semantic error?",
+    "answer": "A syntax error breaks the parse; a semantic error parses but uses an unknown property or a value the property cannot accept, so it is dropped later."
+   },
+   {
+    "q": "Why is color: red valid but color red not?",
+    "answer": "The colon is the required separator between property and value, and without it the parser has no declaration to accept."
+   },
+   {
+    "q": "What makes a declaration invalid?",
+    "answer": "An unknown property, a value of the wrong type or unit, a missing colon, or a function whose arguments do not fit the grammar."
+   },
+   {
+    "q": "What is the fastest way to learn CSS syntax?",
+    "answer": "Write small complete documents, change one declaration at a time, and read the Styles panel to see exactly what the browser accepted or dropped."
+   }
+  ]
+ },
+ "css04": {
+  "interview": [
+   {
+    "q": "What are the three ways to attach CSS to HTML?",
+    "answer": "A linked external stylesheet, an internal style element in the head, and an inline style attribute on an element."
+   },
+   {
+    "q": "Which attachment method wins for normal author declarations?",
+    "answer": "An inline style wins over stylesheet selectors because the style attribute participates in the author origin with higher specificity."
+   },
+   {
+    "q": "Why is inline CSS hard to override?",
+    "answer": "Only a more important author declaration or a change to the attribute itself can beat it, so every later design change has to fight the markup."
+   },
+   {
+    "q": "When is inline CSS legitimate?",
+    "answer": "For generated documents such as email, for a single dynamic value that cannot be expressed as a class, and for throwaway prototypes."
+   },
+   {
+    "q": "Why is external CSS cacheable across pages?",
+    "answer": "Every page can reference the same URL, so the browser downloads it once and reuses the stored response on later navigations."
+   },
+   {
+    "q": "What does an internal style block scope to?",
+    "answer": "The document that contains it; no other page can use those rules unless the block is duplicated there."
+   },
+   {
+    "q": "Can internal and external styles conflict?",
+    "answer": "Yes, both are author styles, so the normal cascade decides which declaration wins for each property."
+   },
+   {
+    "q": "How is the winner decided when internal and external styles conflict?",
+    "answer": "Specificity and layers decide first; at equal weight the later declaration in document order wins."
+   },
+   {
+    "q": "Why does link order matter between two themes?",
+    "answer": "With equal specificity the later stylesheet wins, so a theme that must override another has to load after it."
+   },
+   {
+    "q": "What is the cascade order among author styles?",
+    "answer": "Importance, then cascade layers, then specificity, then source order; all four can matter in one conflict."
+   },
+   {
+    "q": "Where do user styles sit relative to author styles?",
+    "answer": "For normal declarations the author wins, but for important declarations the user origin wins, which is how reader overrides protect accessibility."
+   },
+   {
+    "q": "Why can a user stylesheet override a site?",
+    "answer": "A user !important declaration outranks an author !important declaration, so the reader can enforce contrast or motion preferences."
+   },
+   {
+    "q": "What does !important do to origin order?",
+    "answer": "It reverses the normal origin priority: important user declarations beat important author declarations, and both beat normal author styles."
+   },
+   {
+    "q": "Why is !important considered a last resort?",
+    "answer": "It breaks the cascade's normal reasoning, forces the next fix to be another important rule, and hides the real specificity problem."
+   },
+   {
+    "q": "What specificity does the style attribute have?",
+    "answer": "It is treated as an author declaration with a weight above any selector, so even an ID selector does not outrank it normally."
+   },
+   {
+    "q": "How do you override an inline style without !important?",
+    "answer": "Change or remove the attribute, or have the element's own stylesheet declaration win through importance; selector strength alone will not do it."
+   },
+   {
+    "q": "Why can a style attribute not express a pseudo-class?",
+    "answer": "It styles only the element's current state and has no selector, so :hover, :focus and media conditions are impossible inline."
+   },
+   {
+    "q": "Can a style attribute contain a media query?",
+    "answer": "No, the attribute holds declarations only; responsive changes need a stylesheet rule or a script that swaps values."
+   },
+   {
+    "q": "Why are style attributes common in email HTML?",
+    "answer": "Many email clients strip style elements and external links, so inline declarations are the most reliable way to carry the design."
+   },
+   {
+    "q": "What is CSS-in-JS?",
+    "answer": "It authors styles inside JavaScript, usually generating scoped class names and injecting a stylesheet at runtime or build time."
+   },
+   {
+    "q": "What trade-off does CSS-in-JS make?",
+    "answer": "It gains colocation and dynamic values, but adds runtime or bundle cost and can make the final cascade harder to inspect than plain CSS."
+   },
+   {
+    "q": "What is scoped CSS?",
+    "answer": "A build or framework technique that adds a unique attribute or class to selectors so rules cannot leak outside their component."
+   },
+   {
+    "q": "How does Shadow DOM isolate styles?",
+    "answer": "It gives a component its own tree and style scope, so page selectors do not reach in and component selectors do not leak out."
+   },
+   {
+    "q": "What is the difference between a linked stylesheet and @import?",
+    "answer": "A link is discovered while parsing HTML and fetched in parallel; @import is discovered only after the parent stylesheet is parsed, so it is serial."
+   },
+   {
+    "q": "Why is @import render-blocking?",
+    "answer": "The browser cannot finish the CSSOM until the imported sheet arrives, so the import chain delays the first paint."
+   },
+   {
+    "q": "How do you decide which rules belong in critical CSS?",
+    "answer": "Take only the styles for the first screenful — its layout, type and surfaces — measured from the rendered page, never the whole stylesheet."
+   },
+   {
+    "q": "Why inline critical CSS in the head?",
+    "answer": "It removes a network round trip from the first paint; the rest of the CSS can load afterwards without blocking the initial view."
+   },
+   {
+    "q": "What is a flash of unstyled content?",
+    "answer": "A frame or more of unstyled HTML shown before the stylesheet applies, usually caused by late or blocked CSS discovery."
+   },
+   {
+    "q": "How do you prevent a flash of unstyled content?",
+    "answer": "Put the stylesheet in the head, avoid late imports, and inline the critical rules that determine the first screen."
+   },
+   {
+    "q": "What makes a resource render-blocking?",
+    "answer": "The browser must load and process it before it can paint the first frame; CSS and synchronous scripts in the head are the common cases."
+   },
+   {
+    "q": "Why can a large stylesheet delay the first paint?",
+    "answer": "The CSSOM must be complete before the render tree is built, so every blocking byte adds to the time before anything can be painted."
+   },
+   {
+    "q": "What does media=\"print\" do on a link?",
+    "answer": "It marks the stylesheet for print output, so screen rendering does not apply it."
+   },
+   {
+    "q": "How do you test a print stylesheet?",
+    "answer": "Use the browser's print preview or DevTools' print emulation, then check page breaks, hidden navigation and readable contrast."
+   },
+   {
+    "q": "Can a linked stylesheet be disabled by script?",
+    "answer": "Yes, setting the link element's disabled property to true stops its rules from applying until it is re-enabled."
+   },
+   {
+    "q": "Why prefer classes over IDs for reusable styles?",
+    "answer": "Classes can repeat, carry lower specificity and compose with other classes, while an ID is unique and hard to override."
+   },
+   {
+    "q": "How does a Content Security Policy affect inline styles?",
+    "answer": "A strict style-src blocks inline style attributes and style elements unless a nonce or hash allows them, so external CSS is easier to secure."
+   },
+   {
+    "q": "What is Subresource Integrity for CSS?",
+    "answer": "An integrity hash on the link lets the browser refuse a stylesheet whose bytes do not match the expected digest."
+   },
+   {
+    "q": "Why is SRI less common for stylesheets?",
+    "answer": "It requires CORS-enabled responses and exact version pinning, so a CDN URL that changes breaks the hash and many teams use a bundled local copy instead."
+   },
+   {
+    "q": "What is the crossorigin attribute for on a link?",
+    "answer": "It makes the browser fetch the resource in CORS mode, which is required for integrity checks and for some font requests."
+   },
+   {
+    "q": "Why do font requests need CORS?",
+    "answer": "Fonts are fetched in CORS mode by specification, so the server must send the appropriate access headers or the font is blocked."
+   },
+   {
+    "q": "How do you migrate inline styles to a stylesheet safely?",
+    "answer": "Inventory each attribute, create a class with the same declarations, replace the attribute, and compare the computed styles before removing the old path."
+   },
+   {
+    "q": "What should a stylesheet loading checklist include?",
+    "answer": "The path and rel value, the served MIME type, load order, cache state, CSP allowances, and a DevTools check that the rules match."
+   },
+   {
+    "q": "How do you debug a stylesheet that loads but does not apply?",
+    "answer": "Check whether the selector matches, whether a more specific rule wins, whether a media query or layer excludes it, and whether the link is disabled."
+   }
+  ]
+ }
+}
