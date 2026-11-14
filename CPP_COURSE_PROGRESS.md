@@ -13,7 +13,7 @@ Honest ledger for the C++ course. Counts are **records that shipped**, not targe
 | Authored topics | 260 — ten per module, every program compiled and run with g++ 13.3 (`-std=c++17`) |
 | Debug challenges | 130 — five per module (broken program + real compiler/runtime error or declared wrong output + executed fix) |
 | Independent coding tasks | 131 — at least five per module (expected output executed) |
-| Interview bank | 260 verified-output questions beside 261 authored Q&A — **20+ per module** |
+| Interview bank | 260 verified-output questions beside 391 authored Q&A — **25 per module** |
 | MCQ bank | 780, four distinct options each with an answer in them |
 | Defense bank | 52 authored Q&A with steps |
 | Mini projects / Project Labs | 26 / 26 |
