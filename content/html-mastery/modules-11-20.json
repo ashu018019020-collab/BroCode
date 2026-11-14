@@ -46,7 +46,7 @@
    {
     "title": "Registration form",
     "statement": "Build a form with name, email and password fields, each with a matching label and a submit button.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/register\" method=\"post\">\n    <label for=\"name\">Name</label>\n    <input id=\"name\" name=\"name\" type=\"text\" required>\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" required>\n    <label for=\"password\">Password</label>\n    <input id=\"password\" name=\"password\" type=\"password\" required>\n    <button type=\"submit\">Create account</button>\n  </form>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Registration form</title>\n</head>\n<body>\n  <form action=\"/register\" method=\"post\">\n    <label for=\"name\">Name</label>\n    <input id=\"name\" name=\"name\" type=\"text\" required>\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" required>\n    <label for=\"password\">Password</label>\n    <input id=\"password\" name=\"password\" type=\"password\" required>\n    <button type=\"submit\">Create account</button>\n  </form>\n</body>\n</html>",
     "expected": "Name [____________]\nEmail [____________]\nPassword [____________]\nCreate account"
    }
   ],
@@ -170,7 +170,7 @@
    {
     "title": "Validated admission form",
     "statement": "Build a form with a required name (min 3 characters), an email and a course code matching three letters and three digits.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/admission\" method=\"post\">\n    <label for=\"name\">Name</label>\n    <input id=\"name\" name=\"name\" type=\"text\" minlength=\"3\" required>\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" required>\n    <label for=\"code\">Course code</label>\n    <input id=\"code\" name=\"code\" pattern=\"[A-Z]{3}[0-9]{3}\" required>\n    <button type=\"submit\">Apply</button>\n  </form>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Validated admission form</title>\n</head>\n<body>\n  <form action=\"/admission\" method=\"post\">\n    <label for=\"name\">Name</label>\n    <input id=\"name\" name=\"name\" type=\"text\" minlength=\"3\" required>\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" required>\n    <label for=\"code\">Course code</label>\n    <input id=\"code\" name=\"code\" pattern=\"[A-Z]{3}[0-9]{3}\" required>\n    <button type=\"submit\">Apply</button>\n  </form>\n</body>\n</html>",
     "expected": "Name [____________]\nEmail [____________]\nCourse code [____________]\nApply"
    }
   ],
@@ -294,7 +294,7 @@
    {
     "title": "Embed a captioned video",
     "statement": "Create a video player 480 pixels wide with an mp4 source and an English captions track.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <video controls width=\"480\">\n    <source src=\"lesson.mp4\" type=\"video/mp4\">\n    <track kind=\"captions\" src=\"lesson.vtt\" srclang=\"en\" label=\"English\">\n  </video>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Embed a captioned video</title>\n</head>\n<body>\n  <video controls width=\"480\">\n    <source src=\"lesson.mp4\" type=\"video/mp4\">\n    <track kind=\"captions\" src=\"lesson.vtt\" srclang=\"en\" label=\"English\">\n  </video>\n</body>\n</html>",
     "expected": "Video player (480 wide) with captions"
    }
   ],
@@ -542,7 +542,7 @@
    {
     "title": "Accessible search form",
     "statement": "Build a labelled search input, a submit button and a skip link to main content.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <a href=\"#main\">Skip to content</a>\n  <form role=\"search\">\n    <label for=\"q\">Search lessons</label>\n    <input id=\"q\" name=\"q\" type=\"search\">\n    <button type=\"submit\">Search</button>\n  </form>\n  <main id=\"main\">Results</main>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Accessible search form</title>\n</head>\n<body>\n  <a href=\"#main\">Skip to content</a>\n  <form role=\"search\">\n    <label for=\"q\">Search lessons</label>\n    <input id=\"q\" name=\"q\" type=\"search\">\n    <button type=\"submit\">Search</button>\n  </form>\n  <main id=\"main\">Results</main>\n</body>\n</html>",
     "expected": "Skip to content\nSearch lessons [____________] Search\nResults"
    }
   ],
@@ -666,7 +666,7 @@
    {
     "title": "Embed a titled map",
     "statement": "Create a lazy-loaded map iframe, 600 by 400, with a descriptive title.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <iframe src=\"https://example.com/map\" title=\"Campus map\" width=\"600\" height=\"400\" loading=\"lazy\"></iframe>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Embed a titled map</title>\n</head>\n<body>\n  <iframe src=\"https://example.com/map\" title=\"Campus map\" width=\"600\" height=\"400\" loading=\"lazy\"></iframe>\n</body>\n</html>",
     "expected": "Embedded campus map (600 by 400)"
    }
   ],
@@ -790,7 +790,7 @@
    {
     "title": "Course progress panel",
     "statement": "Show completion with a progress element and disk usage with a meter, both labelled.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <label for=\"done\">Lessons done</label>\n  <progress id=\"done\" value=\"4\" max=\"10\">4 of 10</progress>\n  <label for=\"disk\">Disk used</label>\n  <meter id=\"disk\" value=\"0.7\">70%</meter>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Course progress panel</title>\n</head>\n<body>\n  <label for=\"done\">Lessons done</label>\n  <progress id=\"done\" value=\"4\" max=\"10\">4 of 10</progress>\n  <label for=\"disk\">Disk used</label>\n  <meter id=\"disk\" value=\"0.7\">70%</meter>\n</body>\n</html>",
     "expected": "Lessons done 4 of 10\nDisk used 70%"
    }
   ],
@@ -914,7 +914,7 @@
    {
     "title": "Wire a data-attribute button",
     "statement": "Create a button with data-action=\"save\", link a deferred script and a stylesheet from the head.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n  <script src=\"js/app.js\" defer></script>\n</head>\n<body>\n  <button type=\"button\" data-action=\"save\">Save</button>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Wire a data-attribute button</title>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n  <script src=\"js/app.js\" defer></script>\n</head>\n<body>\n  <button type=\"button\" data-action=\"save\">Save</button>\n</body>\n</html>",
     "expected": "Save (button styled, behaviour ready)"
    }
   ],

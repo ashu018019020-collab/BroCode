@@ -4,13 +4,13 @@
    {
     "title": "Login form",
     "statement": "Build a form posting to `/login` with a labelled email field, a labelled password field and a submit button.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/login\" method=\"post\">\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" autocomplete=\"username\" required>\n    <label for=\"password\">Password</label>\n    <input id=\"password\" name=\"password\" type=\"password\" autocomplete=\"current-password\" required>\n    <button type=\"submit\">Sign in</button>\n  </form>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Login form</title>\n</head>\n<body>\n  <form action=\"/login\" method=\"post\">\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" autocomplete=\"username\" required>\n    <label for=\"password\">Password</label>\n    <input id=\"password\" name=\"password\" type=\"password\" autocomplete=\"current-password\" required>\n    <button type=\"submit\">Sign in</button>\n  </form>\n</body>\n</html>",
     "expected": "Email [____________]\nPassword [____________]\nSign in"
    },
    {
     "title": "Survey with a radio group and a select",
     "statement": "Create a fieldset with a legend and two radios, then a labelled select with an optgroup and two options.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/survey\" method=\"post\">\n    <fieldset>\n      <legend>Year</legend>\n      <label><input type=\"radio\" name=\"year\" value=\"1\"> First</label>\n      <label><input type=\"radio\" name=\"year\" value=\"2\"> Second</label>\n    </fieldset>\n    <label for=\"course\">Course</label>\n    <select id=\"course\" name=\"course\">\n      <optgroup label=\"Frontend\">\n        <option value=\"html\">HTML</option>\n        <option value=\"css\">CSS</option>\n      </optgroup>\n    </select>\n    <button type=\"submit\">Send</button>\n  </form>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Survey with a radio group and a select</title>\n</head>\n<body>\n  <form action=\"/survey\" method=\"post\">\n    <fieldset>\n      <legend>Year</legend>\n      <label><input type=\"radio\" name=\"year\" value=\"1\"> First</label>\n      <label><input type=\"radio\" name=\"year\" value=\"2\"> Second</label>\n    </fieldset>\n    <label for=\"course\">Course</label>\n    <select id=\"course\" name=\"course\">\n      <optgroup label=\"Frontend\">\n        <option value=\"html\">HTML</option>\n        <option value=\"css\">CSS</option>\n      </optgroup>\n    </select>\n    <button type=\"submit\">Send</button>\n  </form>\n</body>\n</html>",
     "expected": "Year\n( ) First\n( ) Second\nCourse [HTML v]\nSend"
    }
   ],
@@ -50,13 +50,13 @@
    {
     "title": "Resume upload form",
     "statement": "Build a multipart form with a required PDF file input, an accept filter and a hint connected with aria-describedby.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/upload\" method=\"post\" enctype=\"multipart/form-data\">\n    <label for=\"resume\">Resume</label>\n    <input id=\"resume\" name=\"resume\" type=\"file\" accept=\"application/pdf,.pdf\" required aria-describedby=\"resume-hint\">\n    <p id=\"resume-hint\">PDF only, up to 2 MB.</p>\n    <button type=\"submit\">Upload</button>\n  </form>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Resume upload form</title>\n</head>\n<body>\n  <form action=\"/upload\" method=\"post\" enctype=\"multipart/form-data\">\n    <label for=\"resume\">Resume</label>\n    <input id=\"resume\" name=\"resume\" type=\"file\" accept=\"application/pdf,.pdf\" required aria-describedby=\"resume-hint\">\n    <p id=\"resume-hint\">PDF only, up to 2 MB.</p>\n    <button type=\"submit\">Upload</button>\n  </form>\n</body>\n</html>",
     "expected": "Resume [Choose file]\nPDF only, up to 2 MB.\nUpload"
    },
    {
     "title": "Suggestion list input",
     "statement": "Create a labelled text input backed by a datalist of three course names, plus a readonly field showing the level.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/enrol\" method=\"post\">\n    <label for=\"course\">Course</label>\n    <input id=\"course\" name=\"course\" list=\"courses\">\n    <datalist id=\"courses\">\n      <option value=\"HTML Mastery\">\n      <option value=\"CSS Mastery\">\n      <option value=\"JavaScript Mastery\">\n    </datalist>\n    <label for=\"level\">Level</label>\n    <input id=\"level\" name=\"level\" value=\"Beginner to Advanced\" readonly>\n    <button type=\"submit\">Enrol</button>\n  </form>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Suggestion list input</title>\n</head>\n<body>\n  <form action=\"/enrol\" method=\"post\">\n    <label for=\"course\">Course</label>\n    <input id=\"course\" name=\"course\" list=\"courses\">\n    <datalist id=\"courses\">\n      <option value=\"HTML Mastery\">\n      <option value=\"CSS Mastery\">\n      <option value=\"JavaScript Mastery\">\n    </datalist>\n    <label for=\"level\">Level</label>\n    <input id=\"level\" name=\"level\" value=\"Beginner to Advanced\" readonly>\n    <button type=\"submit\">Enrol</button>\n  </form>\n</body>\n</html>",
     "expected": "Course [____________]\nLevel [Beginner to Advanced]\nEnrol"
    }
   ],
@@ -96,13 +96,13 @@
    {
     "title": "Audio with a transcript",
     "statement": "Embed a controlled audio player with an mp3 source and a link to a transcript page.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <audio controls preload=\"metadata\">\n    <source src=\"media/lesson.mp3\" type=\"audio/mpeg\">\n  </audio>\n  <p><a href=\"transcript.html\">Read the transcript</a></p>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Audio with a transcript</title>\n</head>\n<body>\n  <audio controls preload=\"metadata\">\n    <source src=\"media/lesson.mp3\" type=\"audio/mpeg\">\n  </audio>\n  <p><a href=\"transcript.html\">Read the transcript</a></p>\n</body>\n</html>",
     "expected": "Audio player with controls\nRead the transcript"
    },
    {
     "title": "Video with a poster and two sources",
     "statement": "Create a video player with a poster image, an mp4 and a webm source, and an English captions track.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <video controls width=\"480\" poster=\"media/poster.jpg\">\n    <source src=\"media/lesson.mp4\" type=\"video/mp4\">\n    <source src=\"media/lesson.webm\" type=\"video/webm\">\n    <track kind=\"captions\" src=\"media/lesson-en.vtt\" srclang=\"en\" label=\"English\">\n  </video>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Video with a poster and two sources</title>\n</head>\n<body>\n  <video controls width=\"480\" poster=\"media/poster.jpg\">\n    <source src=\"media/lesson.mp4\" type=\"video/mp4\">\n    <source src=\"media/lesson.webm\" type=\"video/webm\">\n    <track kind=\"captions\" src=\"media/lesson-en.vtt\" srclang=\"en\" label=\"English\">\n  </video>\n</body>\n</html>",
     "expected": "Video player (480 wide) with a poster and captions"
    }
   ],
@@ -188,13 +188,13 @@
    {
     "title": "Icon-only button",
     "statement": "Build a button containing an inline SVG search icon, with an accessible name and the icon hidden from the accessibility tree.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <button type=\"button\" aria-label=\"Search lessons\">\n    <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\">\n      <circle cx=\"10\" cy=\"10\" r=\"7\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"></circle>\n      <path d=\"M15 15l6 6\" stroke=\"currentColor\" stroke-width=\"2\"></path>\n    </svg>\n  </button>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Icon-only button</title>\n</head>\n<body>\n  <button type=\"button\" aria-label=\"Search lessons\">\n    <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\">\n      <circle cx=\"10\" cy=\"10\" r=\"7\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"></circle>\n      <path d=\"M15 15l6 6\" stroke=\"currentColor\" stroke-width=\"2\"></path>\n    </svg>\n  </button>\n</body>\n</html>",
     "expected": "Icon button announced as \"Search lessons\""
    },
    {
     "title": "Form with an inline error message",
     "statement": "Create a labelled email input marked invalid and described by an error paragraph.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/signup\" method=\"post\">\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" aria-invalid=\"true\" aria-describedby=\"email-error\" required>\n    <p id=\"email-error\">Enter an address like name@example.com.</p>\n    <button type=\"submit\">Continue</button>\n  </form>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Form with an inline error message</title>\n</head>\n<body>\n  <form action=\"/signup\" method=\"post\">\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" aria-invalid=\"true\" aria-describedby=\"email-error\" required>\n    <p id=\"email-error\">Enter an address like name@example.com.</p>\n    <button type=\"submit\">Continue</button>\n  </form>\n</body>\n</html>",
     "expected": "Email [____________]\nEnter an address like name@example.com.\nContinue"
    }
   ],
@@ -234,13 +234,13 @@
    {
     "title": "Titled video embed",
     "statement": "Embed a YouTube-style player with a descriptive title, lazy loading, explicit dimensions and fullscreen permission.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <iframe\n    src=\"https://www.youtube.com/embed/dQw4w9WgXcQ\"\n    title=\"HTML forms walkthrough\"\n    width=\"560\"\n    height=\"315\"\n    loading=\"lazy\"\n    allowfullscreen></iframe>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Titled video embed</title>\n</head>\n<body>\n  <iframe\n    src=\"https://www.youtube.com/embed/dQw4w9WgXcQ\"\n    title=\"HTML forms walkthrough\"\n    width=\"560\"\n    height=\"315\"\n    loading=\"lazy\"\n    allowfullscreen></iframe>\n</body>\n</html>",
     "expected": "Embedded video player (560 by 315)"
    },
    {
     "title": "Sandboxed inline demo",
     "statement": "Create an iframe with srcdoc containing a button, sandboxed so it may run scripts but nothing else.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <iframe\n    title=\"Sandboxed button demo\"\n    sandbox=\"allow-scripts\"\n    srcdoc=\"&lt;button type='button' onclick='this.textContent = &quot;Clicked&quot;'&gt;Try it&lt;/button&gt;\">\n  </iframe>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Sandboxed inline demo</title>\n</head>\n<body>\n  <iframe\n    title=\"Sandboxed button demo\"\n    sandbox=\"allow-scripts\"\n    srcdoc=\"&lt;button type='button' onclick='this.textContent = &quot;Clicked&quot;'&gt;Try it&lt;/button&gt;\">\n  </iframe>\n</body>\n</html>",
     "expected": "Try it (button inside the frame)"
    }
   ],
@@ -280,13 +280,13 @@
    {
     "title": "FAQ with details",
     "statement": "Build three details blocks, each with a summary question and a short answer, with the first one open.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <details open>\n    <summary>Do I need CSS first?</summary>\n    <p>No. HTML comes first.</p>\n  </details>\n  <details>\n    <summary>Is the playground free?</summary>\n    <p>Yes, it runs in your browser.</p>\n  </details>\n  <details>\n    <summary>Do I get a certificate?</summary>\n    <p>After the capstone, yes.</p>\n  </details>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>FAQ with details</title>\n</head>\n<body>\n  <details open>\n    <summary>Do I need CSS first?</summary>\n    <p>No. HTML comes first.</p>\n  </details>\n  <details>\n    <summary>Is the playground free?</summary>\n    <p>Yes, it runs in your browser.</p>\n  </details>\n  <details>\n    <summary>Do I get a certificate?</summary>\n    <p>After the capstone, yes.</p>\n  </details>\n</body>\n</html>",
     "expected": "Do I need CSS first?\nNo. HTML comes first.\nIs the playground free?\nYes, it runs in your browser.\nDo I get a certificate?\nAfter the capstone, yes."
    },
    {
     "title": "Progress and meter panel",
     "statement": "Show lessons done with a labelled progress element and disk usage with a labelled meter.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <label for=\"lessons\">Lessons done</label>\n  <progress id=\"lessons\" value=\"7\" max=\"20\">7 of 20</progress>\n  <label for=\"disk\">Disk used</label>\n  <meter id=\"disk\" value=\"0.65\">65%</meter>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Progress and meter panel</title>\n</head>\n<body>\n  <label for=\"lessons\">Lessons done</label>\n  <progress id=\"lessons\" value=\"7\" max=\"20\">7 of 20</progress>\n  <label for=\"disk\">Disk used</label>\n  <meter id=\"disk\" value=\"0.65\">65%</meter>\n</body>\n</html>",
     "expected": "Lessons done 7 of 20\nDisk used 65%"
    }
   ],
@@ -332,7 +332,7 @@
    {
     "title": "Works without JavaScript",
     "statement": "Build a form that submits normally and a noscript message explaining the enhancement.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/search\" method=\"get\">\n    <label for=\"q\">Search</label>\n    <input id=\"q\" name=\"q\" type=\"search\">\n    <button type=\"submit\">Search</button>\n  </form>\n  <noscript>\n    <p>Results load as a normal page without JavaScript.</p>\n  </noscript>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Works without JavaScript</title>\n</head>\n<body>\n  <form action=\"/search\" method=\"get\">\n    <label for=\"q\">Search</label>\n    <input id=\"q\" name=\"q\" type=\"search\">\n    <button type=\"submit\">Search</button>\n  </form>\n  <noscript>\n    <p>Results load as a normal page without JavaScript.</p>\n  </noscript>\n</body>\n</html>",
     "expected": "Search [____________]\nSearch\nResults load as a normal page without JavaScript."
    }
   ],
@@ -372,7 +372,7 @@
    {
     "title": "Repair a misnested page",
     "statement": "Rewrite this broken snippet as valid markup: a paragraph containing the text Intro followed by a div containing Block.",
-    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p>Intro</p>\n  <div>Block</div>\n</body>\n</html>",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Repair a misnested page</title>\n</head>\n<body>\n  <p>Intro</p>\n  <div>Block</div>\n</body>\n</html>",
     "expected": "Intro\nBlock"
    },
    {

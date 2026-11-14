@@ -60,7 +60,8 @@ the execution path for learners.
 - `PATH_ROUTE_ALLOWLIST` entry so the path-coverage test stays honest.
 - `npm run html-course` / `html-course:write`.
 - Own keys: `htmlmod:<module>:<section>`, `htmlans:<entry>` drafts, `htmllast` resume point.
-- Shared AI tutor card receives the learner's document as context.
+- The course page is standalone: the assistant card that sat under the playground was removed on
+  request, and the module records render above the module playground.
 
 ## Gaps against the full brief — honest list
 
@@ -73,8 +74,9 @@ the execution path for learners.
 5. **Playground** covers editor, Run, Reset, Copy, Example, Clear, full-screen, responsive widths and
    per-module drafts. It does not compare learner output against a lab's expected result, and it has
    no HTML-specific starter templates beyond the default document and the semantic example.
-6. **AI/voice tutor**: the existing assistant is reused with the document as context. There are no
-   HTML-specific tutor prompts, and voice behaviour is whatever the global assistant provides.
+6. **AI/voice tutor**: no assistant card is embedded in the HTML course surfaces (removed on
+   request), so the playground does not send its document to a tutor. There are no HTML-specific
+   tutor prompts; the global assistant is reachable from its own page.
 7. **Admin**: no new admin surface. The course is a generated artifact like C++ and is not editable
    from the Owner Control Center; content changes go through `content/html-mastery/` + the generator.
 

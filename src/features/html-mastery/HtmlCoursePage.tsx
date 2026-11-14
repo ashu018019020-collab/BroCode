@@ -19,8 +19,8 @@ import { HtmlPlayground } from './HtmlPlayground';
  * pure rules (`core/learning/htmlcourse.ts`), with its own `htmlmod:` progress family so no other
  * course can mark an HTML module complete.
  *
- * The live playground sits above the module list and inside every module, because writing markup and
- * seeing the browser render it is the point of the course.
+ * The module list comes first, then the live playground, then the course-level material; every module
+ * also carries its own playground because writing markup and seeing it render is the point.
  */
 export default function HtmlCoursePage() {
   const file = useHtmlCourse();
@@ -109,12 +109,6 @@ export default function HtmlCoursePage() {
       </div>
 
       <div className="sec-head" style={{ marginTop: 14 }}>
-        <h2><Play size={16} color="var(--orange, #e34f26)" /> HTML Playground</h2><span className="line" />
-        <span className="small muted">write markup · see the browser output</span>
-      </div>
-      <HtmlPlayground />
-
-      <div className="sec-head" style={{ marginTop: 14 }}>
         <h2><BookOpen size={16} color="var(--orange, #e34f26)" /> Modules</h2><span className="line" />
         <span className="small muted">{modules.length} modules · ten sections each</span>
       </div>
@@ -179,6 +173,12 @@ export default function HtmlCoursePage() {
           );
         })}
       </div>
+
+      <div className="sec-head" style={{ marginTop: 14 }}>
+        <h2><Play size={16} color="var(--orange, #e34f26)" /> HTML Playground</h2><span className="line" />
+        <span className="small muted">write markup · see the browser output</span>
+      </div>
+      <HtmlPlayground />
 
       <div className="card" style={{ marginTop: 10 }}>
         <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
@@ -316,15 +316,15 @@ function PModule({
         </p>
       </div>
 
-      {/* The playground travels with the module, so a lesson can be typed out immediately. */}
-      <div style={{ marginTop: 10 }}>
-        <HtmlPlayground moduleId={module.id} compact />
-      </div>
-
       <div style={{ marginTop: 10 }}>
         {entries.map((entry, i) => (
           <EntryCard key={entry.id} section={section} entry={entry} index={i} />
         ))}
+      </div>
+
+      {/* The playground travels with the module, below its records, so the lesson reads first. */}
+      <div style={{ marginTop: 10 }}>
+        <HtmlPlayground moduleId={module.id} compact />
       </div>
     </div>
   );

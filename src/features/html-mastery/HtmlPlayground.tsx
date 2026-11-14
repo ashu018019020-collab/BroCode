@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Code2, Copy, Expand, Play, RotateCcw, Shrink, Sparkles, Trash2 } from 'lucide-react';
 import { useSavedAnswer } from '../../core/storage/store';
-import { AssistantCard } from '../../components/shared/AssistantCard';
 import { EXAMPLE_HTML, STARTER_HTML } from './samples';
 
 /**
@@ -108,13 +107,6 @@ export function HtmlPlayground({ moduleId, compact = false }: { moduleId?: strin
         cookies, and it cannot navigate the page around it. Press Run after an edit.
       </p>
 
-      {/* The same tutor every other course uses: it receives this document as context, so
-          "why is my label not working?" is answered against the learner's own markup. */}
-      <AssistantCard
-        compact
-        embedded
-        context={{ code: draft, where: moduleId ? `HTML Mastery · ${moduleId} playground` : 'HTML Mastery · Playground' }}
-      />
     </div>
   );
 
