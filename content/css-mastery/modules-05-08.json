@@ -1,0 +1,538 @@
+[
+ {
+  "id": "css05",
+  "no": 5,
+  "title": "CSS Selectors From Zero",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "Target exactly the elements you mean with element, class, id, combinator and attribute selectors.",
+  "topics": [
+   {
+    "title": "Element, class, id and universal",
+    "body": "Element selector sabhi same tags ko pakadta hai, class repeat hoti hai aur dot se likhi jaati hai, id unique hoti hai aur hash se, universal star sab kuch.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Basic selectors</title>\n  <style>\n    * { box-sizing: border-box; }\n    p { color: #334155; }\n    .lead { font-size: 18px; }\n    #site-title { color: #0f172a; }\n  </style>\n</head>\n<body>\n  <h1 id=\"site-title\">Selectors</h1>\n  <p class=\"lead\">A lead paragraph.</p>\n  <p>A normal paragraph.</p>\n</body>\n</html>",
+    "output": "Selectors — dark heading, 18px lead paragraph, both paragraphs in #334155, every box border-box."
+   },
+   {
+    "title": "Grouping and the two combinators",
+    "body": "Comma se multiple selectors ek rule me aate hain. Space descendant batata hai, `>` sirf direct child.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Combinators</title>\n  <style>\n    h1, h2 { color: #1e3a8a; }\n    nav a { color: #2563eb; }\n    nav > a { font-weight: 700; }\n  </style>\n</head>\n<body>\n  <h1>Doc</h1>\n  <nav>\n    <a href=\"#\">Direct link</a>\n    <p><a href=\"#\">Nested link</a></p>\n  </nav>\n</body>\n</html>",
+    "output": "Doc and nav links blue; both links are descendants, only the direct link is bold."
+   },
+   {
+    "title": "Sibling selectors",
+    "body": "`+` turant agla sibling pakadta hai, `~` baad ke saare siblings. Ye tab useful hai jab heading ke baad wala paragraph special ho.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Siblings</title>\n  <style>\n    h2 + p { margin-top: 0; color: #7c3aed; }\n    h2 ~ p { line-height: 1.7; }\n  </style>\n</head>\n<body>\n  <h2>Title</h2>\n  <p>First paragraph.</p>\n  <p>Second paragraph.</p>\n</body>\n</html>",
+    "output": "First paragraph directly after the heading is purple and has no top margin; both paragraphs use 1.7 line height."
+   },
+   {
+    "title": "Attribute selectors",
+    "body": "Attribute selector attribute ki value ke hisaab se match karta hai — jaise external links, file type ya exact value.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Attributes</title>\n  <style>\n    a[href^=\"https\"] { color: #0f766e; }\n    a[href$=\".pdf\"] { font-weight: 700; }\n    input[type=\"email\"] { border: 2px solid #2563eb; }\n  </style>\n</head>\n<body>\n  <a href=\"https://example.com\">External</a>\n  <a href=\"files/notes.pdf\">Notes</a>\n  <input type=\"email\" aria-label=\"Email\">\n</body>\n</html>",
+    "output": "External link teal; PDF link bold; email input has a 2px blue border."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A class selector written without its dot",
+    "broken": "<style>\n  lead { font-size: 20px; }\n</style>\n<p class=\"lead\">Lead</p>",
+    "fix": "<style>\n  .lead { font-size: 20px; }\n</style>\n<p class=\"lead\">Lead</p>",
+    "error": "Missing dot: without it the selector looks for a lead element, which does not exist, so the class rule never matches.",
+    "fixedOutput": "Lead — paragraph at 20px."
+   },
+   {
+    "title": "A child selector used where a descendant was meant",
+    "broken": "<style>\n  nav > a { color: #b91c1c; }\n</style>\n<nav>\n  <div><a href=\"#\">Nested</a></div>\n</nav>",
+    "fix": "<style>\n  nav a { color: #b91c1c; }\n</style>\n<nav>\n  <div><a href=\"#\">Nested</a></div>\n</nav>",
+    "error": "Direct child only: the link is inside a div, so nav > a does not match it.",
+    "fixedOutput": "Nested — link in #b91c1c."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Style external and file links",
+    "statement": "Use attribute selectors to colour https links teal and bold links ending in .pdf.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Link types</title>\n  <style>\n    a[href^=\"https\"] { color: #0f766e; }\n    a[href$=\".pdf\"] { font-weight: 700; }\n  </style>\n</head>\n<body>\n  <a href=\"https://example.com\">External</a>\n  <a href=\"files/notes.pdf\">Notes</a>\n</body>\n</html>",
+    "expected": "External link teal; Notes link bold."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "When do you use a class instead of an id?",
+    "answer": "Classes are reusable and are the default styling hook. An id is unique, so it is reserved for fragment targets, label associations and one-off references, not for styles that repeat."
+   },
+   {
+    "q": "What is the difference between a space and a child combinator?",
+    "answer": "A space matches any descendant at any depth; > matches only elements whose direct parent is the one named. The child combinator is stricter and usually safer."
+   },
+   {
+    "q": "How specific is an attribute selector compared with a class?",
+    "answer": "An attribute selector and a class selector both count as one class-level component. Specificity is equal, so source order decides between them."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner styles with ids everywhere.",
+    "answer": "Ids cannot repeat and their specificity is hard to override, so the first variation forces a new id. Classes express reusable patterns and stay manageable.",
+    "steps": [
+     "Show two cards needing the same style.",
+     "Convert ids to classes.",
+     "Show a variation that now composes."
+    ]
+   },
+   {
+    "q": "Why not select by tag alone?",
+    "answer": "A tag selector hits every instance on the page, including ones that need a different treatment. A class scopes the intent to the elements that share it.",
+    "steps": [
+     "Style every p and show the side effect.",
+     "Add a class for the exception.",
+     "Keep the tag rule for the base."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which selector matches every element?",
+    "options": [
+     "#all",
+     ".all",
+     "*",
+     "all"
+    ],
+    "answer": "*",
+    "why": "The universal selector matches all elements."
+   },
+   {
+    "q": "Which selector matches the next sibling only?",
+    "options": [
+     "~",
+     "+",
+     ">",
+     " "
+    ],
+    "answer": "+",
+    "why": "The plus combinator matches the immediately following sibling."
+   }
+  ],
+  "mini": {
+   "title": "Navigation selector set",
+   "brief": "Style a nav, its links, the current link and an external link using four different selector types.",
+   "steps": [
+    "Write the markup.",
+    "Add class and attribute selectors.",
+    "Verify each rule targets only its element."
+   ]
+  },
+  "lab": {
+   "title": "Selector repair",
+   "brief": "Fix a stylesheet where a missing dot, a wrong combinator and a duplicated id break the intended design.",
+   "milestones": [
+    "Inspect which rules match.",
+    "Correct each selector.",
+    "Confirm the design."
+   ]
+  }
+ },
+ {
+  "id": "css06",
+  "no": 6,
+  "title": "CSS Colors and Backgrounds",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "Write colour in every useful format and compose backgrounds, gradients and overlays.",
+  "topics": [
+   {
+    "title": "Four ways to write a colour",
+    "body": "Named, hex, rgb aur hsl — chaaron same colour describe karte hain. Alpha ke liye rgba ya hsl me slash value use hoti hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Colours</title>\n  <style>\n    .named { color: tomato; }\n    .hex { color: #2563eb; }\n    .rgb { color: rgb(22 163 74); }\n    .hsl { color: hsl(262 83% 58%); }\n  </style>\n</head>\n<body>\n  <p class=\"named\">Named</p>\n  <p class=\"hex\">Hex</p>\n  <p class=\"rgb\">RGB</p>\n  <p class=\"hsl\">HSL</p>\n</body>\n</html>",
+    "output": "Four paragraphs: tomato, #2563eb blue, green, violet."
+   },
+   {
+    "title": "Background properties",
+    "body": "Background colour, image, repeat, size aur position alag properties hain. Image ko cover karna ho to size cover aur position center dete hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Background</title>\n  <style>\n    .hero {\n      background-color: #0f172a;\n      background-image: url(\"images/grid.svg\");\n      background-repeat: no-repeat;\n      background-size: cover;\n      background-position: center;\n      color: #f8fafc;\n      padding: 48px 24px;\n    }\n  </style>\n</head>\n<body>\n  <section class=\"hero\"><h1>Cover background</h1></section>\n</body>\n</html>",
+    "output": "Dark hero panel with a centred cover image and white heading."
+   },
+   {
+    "title": "Gradients are background images",
+    "body": "Gradient ek image hai, colour nahi. Isliye wo background-image me jaata hai aur uske upar text ke liye contrast alag se check karna padta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Gradient</title>\n  <style>\n    .banner {\n      background-image: linear-gradient(135deg, #2563eb, #7c3aed);\n      color: #ffffff;\n      padding: 40px 24px;\n      border-radius: 12px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"banner\"><h1>Gradient banner</h1></div>\n</body>\n</html>",
+    "output": "Rounded banner with a blue-to-violet diagonal gradient and white heading."
+   },
+   {
+    "title": "Layering a gradient over an image",
+    "body": "Multiple backgrounds comma se diye jaate hain; pehla layer sabse upar hota hai. Isse image ke upar dark overlay bana kar text readable rakhte hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Overlay</title>\n  <style>\n    .cover {\n      background-image: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url(\"images/campus.jpg\");\n      background-size: cover;\n      background-position: center;\n      color: #ffffff;\n      padding: 56px 24px;\n    }\n  </style>\n</head>\n<body>\n  <section class=\"cover\"><h1>Readable over a photo</h1></section>\n</body>\n</html>",
+    "output": "Photo background with a dark 70% overlay and white heading."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A five-digit hex colour",
+    "broken": "<style>\n  h1 { color: #ff000; }\n</style>\n<h1>Broken</h1>",
+    "fix": "<style>\n  h1 { color: #ff0000; }\n</style>\n<h1>Broken</h1>",
+    "error": "Invalid hex length: hex colours need three, four, six or eight digits, so a five-digit value is dropped.",
+    "fixedOutput": "Broken — heading in red."
+   },
+   {
+    "title": "A gradient with a missing comma",
+    "broken": "<style>\n  .banner { background-image: linear-gradient(to right #2563eb #7c3aed); }\n</style>",
+    "fix": "<style>\n  .banner { background-image: linear-gradient(to right, #2563eb, #7c3aed); }\n</style>",
+    "error": "Invalid gradient syntax: the arguments are not comma-separated, so the whole background-image declaration is dropped.",
+    "fixedOutput": "Banner with a left-to-right blue-to-violet gradient."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Gradient hero with readable text",
+    "statement": "Build a hero with a 135-degree blue-to-violet gradient, white text, 48px padding and 12px radius.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Hero</title>\n  <style>\n    .hero {\n      background-image: linear-gradient(135deg, #2563eb, #7c3aed);\n      color: #ffffff;\n      padding: 48px;\n      border-radius: 12px;\n    }\n  </style>\n</head>\n<body>\n  <section class=\"hero\"><h1>Build with CSS</h1></section>\n</body>\n</html>",
+    "expected": "Rounded hero with a diagonal blue-violet gradient and white heading."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Hex or HSL — which do you choose and why?",
+    "answer": "Hex is compact and familiar for fixed brand values. HSL is easier to reason about when deriving variants, because hue, saturation and lightness are separate numbers."
+   },
+   {
+    "q": "What is the difference between background and background-color?",
+    "answer": "background is a shorthand that resets every background property; background-color sets only the colour. Using the shorthand after a colour can wipe the earlier layer."
+   },
+   {
+    "q": "How do you keep text readable on a gradient?",
+    "answer": "Check contrast against the darkest and lightest part of the gradient, add a solid overlay behind the text, and never assume the middle of a gradient is the worst case."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner picks colours by eye only.",
+    "answer": "I check contrast with a tool, because a colour that looks fine on one monitor fails for low-vision users and in bright light.",
+    "steps": [
+     "Measure the contrast ratio.",
+     "Adjust lightness, not hue.",
+     "Re-measure."
+    ]
+   },
+   {
+    "q": "Why set a fallback background colour with an image?",
+    "answer": "If the image fails or is slow, the text still sits on a deliberate surface instead of the browser default.",
+    "steps": [
+     "Show the page with images blocked.",
+     "Add the colour.",
+     "Compare."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which format supports transparency directly?",
+    "options": [
+     "#fff",
+     "rgb(255 255 255)",
+     "hsl(0 0% 100%)",
+     "rgb(255 255 255 / 50%)"
+    ],
+    "answer": "rgb(255 255 255 / 50%)",
+    "why": "The slash syntax adds alpha to rgb."
+   },
+   {
+    "q": "In HSL, what does the H stand for?",
+    "options": [
+     "Height",
+     "Hue",
+     "Hardness",
+     "Highlight"
+    ],
+    "answer": "Hue",
+    "why": "Hue is the colour angle on the wheel."
+   }
+  ],
+  "mini": {
+   "title": "Colour card set",
+   "brief": "Build three cards using named, hex and HSL colours with matching backgrounds.",
+   "steps": [
+    "Pick three colours.",
+    "Apply each in a different format.",
+    "Check contrast for the text."
+   ]
+  },
+  "lab": {
+   "title": "Hero overlay",
+   "brief": "Create a photo hero with a gradient overlay and readable text.",
+   "milestones": [
+    "Add the image layer.",
+    "Add the overlay layer.",
+    "Verify contrast on the busiest area."
+   ]
+  }
+ },
+ {
+  "id": "css07",
+  "no": 7,
+  "title": "CSS Units and Measurements",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "Choose the right unit for text, spacing and layout, and use calc, min, max and clamp safely.",
+  "topics": [
+   {
+    "title": "px, rem and em",
+    "body": "px fixed hota hai, rem root font size par depend karta hai, em apne parent par. Text aur spacing ke liye rem predictable rehta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Units</title>\n  <style>\n    html { font-size: 16px; }\n    h1 { font-size: 2rem; }\n    .box { padding: 1rem; border: 2px solid #cbd5e1; }\n  </style>\n</head>\n<body>\n  <h1>Two rem heading</h1>\n  <div class=\"box\">One rem padding</div>\n</body>\n</html>",
+    "output": "Heading at 32px (2 × 16px); box with 16px padding and a 2px border."
+   },
+   {
+    "title": "Percentages and viewport units",
+    "body": "Percentage parent ke size se resolve hota hai. vw/vh viewport se — lekin 100vw scrollbar ki width bhi ginti hai, isliye horizontal scroll aa sakta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Viewport</title>\n  <style>\n    .half { width: 50%; background: #dbeafe; }\n    .tall { min-height: 50vh; background: #ede9fe; }\n  </style>\n</head>\n<body>\n  <div class=\"half\">Half the parent width</div>\n  <div class=\"tall\">At least half the viewport height</div>\n</body>\n</html>",
+    "output": "First block half the parent width in light blue; second block at least half the viewport tall in light violet."
+   },
+   {
+    "title": "calc, min, max and clamp",
+    "body": "calc mixed units jodta hai, min/max limits chunte hain, aur clamp ek fluid value ko floor aur ceiling ke beech rakhta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Functions</title>\n  <style>\n    .card { width: calc(100% - 32px); max-width: 720px; padding: 16px; background: #f8fafc; }\n    h1 { font-size: clamp(1.5rem, 4vw, 2.5rem); }\n  </style>\n</head>\n<body>\n  <div class=\"card\"><h1>Fluid heading</h1></div>\n</body>\n</html>",
+    "output": "Card 32px narrower than its parent, capped at 720px; heading between 24px and 40px depending on viewport."
+   },
+   {
+    "title": "Fractional units belong to Grid",
+    "body": "fr Grid ka free space batata hai. Flexbox me flex-grow use hota hai; fr sirf grid track me valid hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Fractions</title>\n  <style>\n    .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }\n    .grid > div { background: #e0f2fe; padding: 12px; }\n  </style>\n</head>\n<body>\n  <div class=\"grid\"><div>One</div><div>Two</div></div>\n</body>\n</html>",
+    "output": "Two columns in a 1:2 ratio with an 8px gap; both cells light blue."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A full-width element that scrolls sideways",
+    "broken": "<style>\n  .full { width: 100vw; }\n</style>\n<div class=\"full\">Full</div>",
+    "fix": "<style>\n  .full { width: 100%; }\n</style>\n<div class=\"full\">Full</div>",
+    "error": "100vw includes the scrollbar width on desktop, so the element is wider than the content area and creates horizontal scrolling.",
+    "fixedOutput": "Full — element exactly the content width, no sideways scroll."
+   },
+   {
+    "title": "Nested em sizes compounding",
+    "broken": "<style>\n  .outer { font-size: 1.2em; }\n  .inner { font-size: 1.2em; }\n</style>\n<div class=\"outer\"><div class=\"inner\">Text</div></div>",
+    "fix": "<style>\n  .outer { font-size: 1.2rem; }\n  .inner { font-size: 1.2rem; }\n</style>\n<div class=\"outer\"><div class=\"inner\">Text</div></div>",
+    "error": "Compounding em: each nested level multiplies its parent, so the inner text ends up 1.44 times the root instead of 1.2.",
+    "fixedOutput": "Text at a predictable 1.2rem in both blocks."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Fluid heading and rem spacing",
+    "statement": "Set a heading with clamp between 1.5rem and 2.5rem at 4vw, and give a card 1.5rem padding and 2rem bottom margin.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Fluid type</title>\n  <style>\n    h1 { font-size: clamp(1.5rem, 4vw, 2.5rem); }\n    .card { padding: 1.5rem; margin-bottom: 2rem; background: #f8fafc; }\n  </style>\n</head>\n<body>\n  <h1>Fluid heading</h1>\n  <div class=\"card\">Card with rem spacing</div>\n</body>\n</html>",
+    "expected": "Heading scales from 24px to 40px; card with 24px padding and 32px below."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "rem or em — when do you use each?",
+    "answer": "rem for anything that should follow the root scale: type, spacing, radii. em when a component should scale relative to its own font size, such as padding on a button."
+   },
+   {
+    "q": "Why can 100vw cause a horizontal scrollbar?",
+    "answer": "On desktop vw includes the vertical scrollbar width, while the content area does not. 100% follows the containing block and avoids the mismatch."
+   },
+   {
+    "q": "What does clamp actually do?",
+    "answer": "clamp(min, preferred, max) returns the preferred value, but never below the minimum or above the maximum. It is the standard way to make type fluid without media queries."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A design uses px for every font size.",
+    "answer": "px ignores the user’s font-size preference, which breaks zoom and accessibility. rem follows the root size and respects that setting.",
+    "steps": [
+     "Change the browser default font size.",
+     "Show the px page unchanged.",
+     "Switch to rem and show it scale."
+    ]
+   },
+   {
+    "q": "Why is a unitless line-height safer?",
+    "answer": "A unitless value multiplies the element’s own font size, so nested text keeps the intended ratio. A px line-height stays fixed and can overlap when the font grows.",
+    "steps": [
+     "Show a large heading with 20px line-height.",
+     "Switch to 1.2.",
+     "Compare."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "What does 1rem equal by default?",
+    "options": [
+     "10px",
+     "16px",
+     "100px",
+     "1%"
+    ],
+    "answer": "16px",
+    "why": "The default root font size is 16px."
+   },
+   {
+    "q": "Which unit shares free space in a Grid track?",
+    "options": [
+     "px",
+     "em",
+     "fr",
+     "vh"
+    ],
+    "answer": "fr",
+    "why": "fr distributes the free space of the grid container."
+   }
+  ],
+  "mini": {
+   "title": "Spacing scale",
+   "brief": "Build a page using only rem spacing values from a 4px scale.",
+   "steps": [
+    "Define the scale in comments.",
+    "Apply it to blocks.",
+    "Check the rhythm."
+   ]
+  },
+  "lab": {
+   "title": "Fluid hero",
+   "brief": "Make a hero heading and padding fluid with clamp and verify at 320px and 1280px.",
+   "milestones": [
+    "Set the clamp range.",
+    "Test both widths.",
+    "Confirm no overflow."
+   ]
+  }
+ },
+ {
+  "id": "css08",
+  "no": 8,
+  "title": "CSS Typography and Fonts",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "Build a readable type system with font stacks, weight, spacing and sensible line length.",
+  "topics": [
+   {
+    "title": "Font stacks and web fonts",
+    "body": "font-family ek stack leta hai: pehla available font jeetta hai, generic family fallback last me. Google Fonts link se web font load hota hai, hamesha fallback ke saath.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Fonts</title>\n  <style>\n    body { font-family: \"Inter\", system-ui, -apple-system, sans-serif; }\n    h1 { font-weight: 700; }\n  </style>\n</head>\n<body>\n  <h1>Inter or the system font</h1>\n  <p>Text falls back cleanly if Inter is unavailable.</p>\n</body>\n</html>",
+    "output": "Heading and paragraph in Inter when available, otherwise the system sans-serif."
+   },
+   {
+    "title": "Size, weight and line height",
+    "body": "Font size scale banata hai, weight hierarchy, aur line-height readability. Body ke liye 1.5 se 1.7 unitless line-height standard hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Scale</title>\n  <style>\n    body { font-size: 16px; line-height: 1.6; }\n    h1 { font-size: 2rem; font-weight: 700; }\n    .lead { font-size: 1.125rem; font-weight: 400; }\n  </style>\n</head>\n<body>\n  <h1>Readable scale</h1>\n  <p class=\"lead\">A slightly larger lead paragraph.</p>\n</body>\n</html>",
+    "output": "32px bold heading, 18px lead paragraph, body at 16px with 1.6 line height."
+   },
+   {
+    "title": "Text alignment and decoration",
+    "body": "Alignment block ke andar text rakhta hai, decoration links aur emphasis ke liye. Letter-spacing sirf uppercase labels jaise chhote text me subtle rakho.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Text</title>\n  <style>\n    .label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: #64748b; }\n    a { text-decoration: underline; text-underline-offset: 3px; }\n    .center { text-align: center; }\n  </style>\n</head>\n<body>\n  <p class=\"label\">New course</p>\n  <p class=\"center\"><a href=\"#\">Centred link</a></p>\n</body>\n</html>",
+    "output": "Small uppercase grey label with wide letter spacing; centred underlined link."
+   },
+   {
+    "title": "Line length and wrapping",
+    "body": "Readable text ki line 60–75 characters hoti hai. max-width ch me dene se line length font size ke saath scale karti hai, aur overflow-wrap long words todta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Measure</title>\n  <style>\n    .prose { max-width: 65ch; line-height: 1.7; overflow-wrap: break-word; }\n  </style>\n</head>\n<body>\n  <p class=\"prose\">A paragraph limited to about sixty-five characters per line, with long words allowed to break instead of overflowing.</p>\n</body>\n</html>",
+    "output": "Paragraph at most 65 characters wide, 1.7 line height, long words wrap."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A font stack with no generic fallback",
+    "broken": "<style>\n  body { font-family: \"Inter\"; }\n</style>",
+    "fix": "<style>\n  body { font-family: \"Inter\", system-ui, sans-serif; }\n</style>",
+    "error": "No fallback: if Inter is unavailable the browser uses its default serif, which breaks the intended design.",
+    "fixedOutput": "Text in Inter or the system sans-serif."
+   },
+   {
+    "title": "A line height smaller than the font",
+    "broken": "<style>\n  h1 { font-size: 40px; line-height: 0.8; }\n</style>\n<h1>Two lines<br>overlap</h1>",
+    "fix": "<style>\n  h1 { font-size: 40px; line-height: 1.15; }\n</style>\n<h1>Two lines<br>no overlap</h1>",
+    "error": "Line height below 1: the line boxes are shorter than the glyphs, so ascenders and descenders collide.",
+    "fixedOutput": "Two heading lines with clear space between them."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Article typography",
+    "statement": "Build an article with a 65ch measure, 1.7 line height, a 32px heading and a grey byline.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Article</title>\n  <style>\n    article { max-width: 65ch; line-height: 1.7; }\n    h1 { font-size: 2rem; line-height: 1.2; }\n    .byline { color: #64748b; font-size: 0.875rem; }\n  </style>\n</head>\n<body>\n  <article>\n    <h1>Readable article</h1>\n    <p class=\"byline\">By BroCode</p>\n    <p>Body copy stays inside a comfortable measure.</p>\n  </article>\n</body>\n</html>",
+    "expected": "Article capped at 65 characters per line; 32px heading, grey 14px byline, 1.7 body line height."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why does font-family take a list?",
+    "answer": "The browser uses the first family it can actually render. The list ends with a generic family so the page never falls back to an unrelated default."
+   },
+   {
+    "q": "Why is line-height usually unitless?",
+    "answer": "A unitless number multiplies the element’s own font size, so it scales with nested text instead of staying a fixed length."
+   },
+   {
+    "q": "What is FOUT and how do you reduce it?",
+    "answer": "Flash of unstyled text: fallback text is shown before the web font loads, then swaps. Preloading the font, using font-display and choosing a close fallback reduce the visible shift."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner sets body text to 12px to fit more.",
+    "answer": "Small text costs readability and fails accessibility expectations. A 16px base with a wider measure and tighter spacing fits content without shrinking it.",
+    "steps": [
+     "Show the 12px paragraph.",
+     "Raise it to 16px.",
+     "Adjust spacing and measure instead."
+    ]
+   },
+   {
+    "q": "Why cap the line length?",
+    "answer": "Long lines make the eye lose its place on the return sweep; very short lines break rhythm. A 60–75 character measure is the readable range.",
+    "steps": [
+     "Show a full-width paragraph.",
+     "Apply max-width 65ch.",
+     "Compare reading comfort."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which is a generic font family?",
+    "options": [
+     "Inter",
+     "Arial",
+     "sans-serif",
+     "Helvetica"
+    ],
+    "answer": "sans-serif",
+    "why": "Generic families are the guaranteed fallbacks."
+   },
+   {
+    "q": "Which property adds space between letters?",
+    "options": [
+     "word-spacing",
+     "letter-spacing",
+     "line-height",
+     "text-indent"
+    ],
+    "answer": "letter-spacing",
+    "why": "letter-spacing adjusts space between characters."
+   }
+  ],
+  "mini": {
+   "title": "Editorial page",
+   "brief": "Style a short article with one heading scale, a byline and a 65ch measure.",
+   "steps": [
+    "Set the base type.",
+    "Add the heading and byline.",
+    "Check the measure and line height."
+   ]
+  },
+  "lab": {
+   "title": "Type audit",
+   "brief": "Audit a page for font fallbacks, line length and line height, then fix what fails.",
+   "milestones": [
+    "List every font stack.",
+    "Measure the line length.",
+    "Adjust and re-check."
+   ]
+  }
+ }
+]

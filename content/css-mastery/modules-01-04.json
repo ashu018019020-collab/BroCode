@@ -1,0 +1,670 @@
+[
+ {
+  "id": "css01",
+  "no": 1,
+  "title": "Introduction to CSS",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Understand what CSS is, why it exists and how the browser turns a stylesheet into a painted page.",
+  "topics": [
+   {
+    "title": "The presentation layer",
+    "body": "HTML structure deta hai, CSS batata hai ki wo structure kaisa dikhega. CSS ke bina browser sirf default text dikhata hai — spacing, colour aur layout sab CSS se aate hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Hello CSS</title>\n  <style>\n    h1 {\n      color: #2563eb;\n      font-family: system-ui, sans-serif;\n    }\n  </style>\n</head>\n<body>\n  <h1>Hello CSS</h1>\n</body>\n</html>",
+    "output": "Hello CSS — bold 32px heading in #2563eb, system sans-serif, on a white page."
+   },
+   {
+    "title": "Same HTML, two appearances",
+    "body": "Ek hi markup do tarah se dikh sakta hai. Isliye design badalne ke liye HTML chhedna zaroori nahi — sirf CSS badlo.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Two looks</title>\n  <style>\n    .plain { color: #111827; }\n    .card {\n      background: #f1f5f9;\n      padding: 16px;\n      border-radius: 8px;\n    }\n  </style>\n</head>\n<body>\n  <p class=\"plain\">Plain paragraph</p>\n  <p class=\"card\">Card paragraph</p>\n</body>\n</html>",
+    "output": "Plain paragraph in default text; card paragraph with a #f1f5f9 background, 16px padding and rounded corners."
+   },
+   {
+    "title": "How the browser applies CSS",
+    "body": "Browser HTML parse karke DOM banata hai, CSS parse karke CSSOM, dono ko combine karke render tree banata hai. Uske baad layout aur paint hota hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>CSSOM</title>\n  <style>\n    p { color: #0f766e; }\n  </style>\n</head>\n<body>\n  <p>Styled by a rule</p>\n</body>\n</html>",
+    "output": "Styled by a rule — paragraph text in #0f766e."
+   },
+   {
+    "title": "What CSS cannot do",
+    "body": "CSS appearance control karta hai, logic nahi. Calculation, data saving aur decisions JavaScript ya server ka kaam hain; CSS sirf state ke hisaab se style badal sakta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Hover only</title>\n  <style>\n    button { background: #2563eb; color: #fff; padding: 8px 14px; border: 0; border-radius: 6px; }\n    button:hover { background: #1d4ed8; }\n  </style>\n</head>\n<body>\n  <button type=\"button\">Save</button>\n</body>\n</html>",
+    "output": "Blue Save button that darkens on hover; clicking it runs no logic by itself."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A class selector that matches nothing",
+    "broken": "<style>\n  .titel { color: red; }\n</style>\n<h1 class=\"title\">Broken</h1>",
+    "fix": "<style>\n  .title { color: red; }\n</style>\n<h1 class=\"title\">Broken</h1>",
+    "error": "Selector typo: the class is title but the rule says titel, so no element matches and the heading stays default.",
+    "fixedOutput": "Broken — heading in red."
+   },
+   {
+    "title": "CSS written outside a style element",
+    "broken": "<head>\n  <title>Broken</title>\n  h1 { color: red; }\n</head>\n<body>\n  <h1>Page</h1>\n</body>",
+    "fix": "<head>\n  <title>Broken</title>\n  <style>\n    h1 { color: red; }\n  </style>\n</head>\n<body>\n  <h1>Page</h1>\n</body>",
+    "error": "Raw CSS in the head is text: the parser moves it into the body, so the rule is displayed instead of applied.",
+    "fixedOutput": "Page — heading in red; no stray CSS text on the page."
+   },
+   {
+    "title": "A declaration with no colon",
+    "broken": "<style>\n  h1 { color red; }\n</style>\n<h1>Title</h1>",
+    "fix": "<style>\n  h1 { color: red; }\n</style>\n<h1>Title</h1>",
+    "error": "Missing colon: the declaration is invalid and dropped, while the rest of the stylesheet still applies.",
+    "fixedOutput": "Title — heading in red."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Style a heading",
+    "statement": "Write a complete page whose h1 is #2563eb, uses system-ui with a sans-serif fallback, and whose body text has line-height 1.6.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Styled heading</title>\n  <style>\n    body { font-family: system-ui, sans-serif; line-height: 1.6; }\n    h1 { color: #2563eb; }\n  </style>\n</head>\n<body>\n  <h1>CSS works</h1>\n  <p>One rule changes the whole heading.</p>\n</body>\n</html>",
+    "expected": "CSS works — blue heading, system font, 1.6 line height."
+   },
+   {
+    "title": "An intro card",
+    "statement": "Build a section with a #f8fafc background, 16px padding, 8px radius, a 640px maximum width and one paragraph.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Intro card</title>\n  <style>\n    .card {\n      background: #f8fafc;\n      padding: 16px;\n      border-radius: 8px;\n      max-width: 640px;\n    }\n  </style>\n</head>\n<body>\n  <section class=\"card\">\n    <p>This card has its own surface.</p>\n  </section>\n</body>\n</html>",
+    "expected": "A light #f8fafc card, 16px inner spacing, rounded corners, no wider than 640px."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is CSS and why is it separate from HTML?",
+    "answer": "CSS is the style language that describes how structured content should be presented. Keeping it separate lets one stylesheet serve many pages, lets the browser cache it, and lets a design change without editing content."
+   },
+   {
+    "q": "What does the cascade actually mean?",
+    "answer": "When several rules target the same element, the browser resolves them by importance, origin, cascade layers, specificity and source order. The winner supplies each property; it is not a single whole-rule victory."
+   },
+   {
+    "q": "What can CSS not do on its own?",
+    "answer": "It cannot compute business logic, store data, make network requests or respond to arbitrary input. Those need JavaScript or a server. CSS only reacts to states the browser exposes, such as hover, focus and media conditions."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A beginner asks why not put every style inline.",
+    "answer": "Inline styles cannot be reused, cached or overridden cleanly, and they mix presentation into the content. One external stylesheet keeps the design in a single reviewable place.",
+    "steps": [
+     "Show the same rule repeated on three pages.",
+     "Move it to a stylesheet.",
+     "Point out the cache and the single edit."
+    ]
+   },
+   {
+    "q": "Why teach HTML before CSS?",
+    "answer": "CSS targets structure. Without knowing elements, nesting and attributes there is nothing meaningful to select, and every example becomes unexplained magic.",
+    "steps": [
+     "Draw a small DOM.",
+     "Show a selector matching a node.",
+     "Then style it."
+    ]
+   },
+   {
+    "q": "How do you explain the presentation layer?",
+    "answer": "The page is a document with meaning; CSS is the set of decisions about how that meaning is displayed. Changing the decisions does not change the document.",
+    "steps": [
+     "Turn CSS off and show the content.",
+     "Turn it on and show the design.",
+     "Point out the HTML never changed."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "What does CSS stand for?",
+    "options": [
+     "Computer Style Sheets",
+     "Cascading Style Sheets",
+     "Creative Style System",
+     "Coded Style Syntax"
+    ],
+    "answer": "Cascading Style Sheets",
+    "why": "CSS is the Cascading Style Sheets language."
+   },
+   {
+    "q": "Which property changes the colour of text?",
+    "options": [
+     "background",
+     "color",
+     "font",
+     "border"
+    ],
+    "answer": "color",
+    "why": "The color property sets the foreground text colour."
+   },
+   {
+    "q": "Which task is NOT CSS responsibility?",
+    "options": [
+     "Spacing",
+     "Colour",
+     "Saving form data",
+     "Layout"
+    ],
+    "answer": "Saving form data",
+    "why": "Persisting data needs JavaScript or a server."
+   }
+  ],
+  "mini": {
+   "title": "Style a bio page",
+   "brief": "Take a plain biography page and give it a readable measure, one accent colour and a card surface.",
+   "steps": [
+    "Add a linked stylesheet.",
+    "Set a 640px maximum width.",
+    "Style the heading and the card."
+   ]
+  },
+  "lab": {
+   "title": "Before and after",
+   "brief": "Build one page twice — once with no CSS and once styled — and note what changed.",
+   "milestones": [
+    "Save the unstyled version.",
+    "Style the second copy.",
+    "List three presentation changes."
+   ]
+  }
+ },
+ {
+  "id": "css02",
+  "no": 2,
+  "title": "Setting Up the CSS Environment",
+  "level": "beginner",
+  "hours": 2,
+  "goal": "Create a project with a linked stylesheet, correct paths and working developer tools.",
+  "topics": [
+   {
+    "title": "Two files, one page",
+    "body": "Ek HTML file aur ek CSS file kaafi hai. HTML file me link tag se stylesheet judta hai, aur dono ek hi folder structure me rehte hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Setup</title>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n</head>\n<body>\n  <h1>Linked stylesheet</h1>\n</body>\n</html>",
+    "output": "Linked stylesheet — heading styled by css/style.css."
+   },
+   {
+    "title": "Relative paths resolve from the page",
+    "body": "Path current file ke folder se resolve hota hai. Isliye css/style.css ka matlab page ke saath wala css folder hai, computer ka absolute path nahi.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Path</title>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n</head>\n<body>\n  <p class=\"note\">Path resolved</p>\n</body>\n</html>",
+    "output": "Path resolved — paragraph styled because css/style.css exists beside the page."
+   },
+   {
+    "title": "The Styles panel is the source of truth",
+    "body": "DevTools ka Styles panel batata hai kaun si rule jeeti aur kaun si strike hui. Layout problems me pehle yahi dekho, guess mat karo.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Inspect</title>\n  <style>\n    p { color: #334155; }\n    .note { color: #b91c1c; }\n  </style>\n</head>\n<body>\n  <p class=\"note\">Inspect me</p>\n</body>\n</html>",
+    "output": "Inspect me — red text; the element rule is shown struck through in the Styles panel."
+   },
+   {
+    "title": "A predictable project folder",
+    "body": "index.html root me, css/js/images alag folders me. Isse har page ke relative paths same rehte hain aur file dhoondhna aasan hota hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Folders</title>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n</head>\n<body>\n  <h1>Folder structure</h1>\n</body>\n</html>",
+    "output": "Folder structure — page loads css/style.css from the project root."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A link with no rel attribute",
+    "broken": "<link href=\"css/style.css\">",
+    "fix": "<link rel=\"stylesheet\" href=\"css/style.css\">",
+    "error": "Missing rel: without rel=\"stylesheet\" the browser does not treat the file as a stylesheet, so it is fetched and ignored.",
+    "fixedOutput": "Styled page."
+   },
+   {
+    "title": "A path that assumes the wrong folder",
+    "broken": "<link rel=\"stylesheet\" href=\"style.css\">",
+    "fix": "<link rel=\"stylesheet\" href=\"css/style.css\">",
+    "error": "Wrong relative path: the browser asks for style.css beside index.html, but the file lives in css/.",
+    "fixedOutput": "Styled page."
+   },
+   {
+    "title": "A stylesheet with a text extension",
+    "broken": "<link rel=\"stylesheet\" href=\"css/style.txt\">",
+    "fix": "<link rel=\"stylesheet\" href=\"css/style.css\">",
+    "error": "Wrong extension and MIME type: the browser refuses to apply a file it does not receive as CSS.",
+    "fixedOutput": "Styled page."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Connect a stylesheet",
+    "statement": "Write a page that links css/site.css and contains an h1 and a paragraph with a class of intro.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Connected</title>\n  <link rel=\"stylesheet\" href=\"css/site.css\">\n</head>\n<body>\n  <h1>Connected</h1>\n  <p class=\"intro\">The stylesheet is linked.</p>\n</body>\n</html>",
+    "expected": "Connected — heading and intro paragraph styled by css/site.css."
+   },
+   {
+    "title": "A styled 404 page",
+    "statement": "Build a 404 page with a centred card, a large heading and a link back to index.html.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Not found</title>\n  <style>\n    body { font-family: system-ui, sans-serif; display: grid; place-items: center; min-height: 100vh; margin: 0; }\n    .card { padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; text-align: center; }\n    h1 { margin: 0 0 8px; font-size: 48px; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <h1>404</h1>\n    <p>That page does not exist.</p>\n    <a href=\"index.html\">Go home</a>\n  </div>\n</body>\n</html>",
+    "expected": "A centred bordered card with a 48px 404 heading, one sentence and a home link."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why is an external stylesheet preferred over a style block?",
+    "answer": "One file can serve every page, the browser caches it across navigation, and the design lives in one reviewable place. A style block is page-specific and has to be repeated."
+   },
+   {
+    "q": "What is the difference between file:// and a local server for CSS?",
+    "answer": "A file URL gives every page an opaque origin and can block modules and fetch, while a local server serves the project over HTTP with the same root-relative behaviour as production."
+   },
+   {
+    "q": "What does the Styles panel show that the source does not?",
+    "answer": "The live cascade: every rule that matched, which declarations won, which were overridden, and the computed value after inheritance and units are resolved."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner edits CSS but sees no change.",
+    "answer": "I check the file is saved, the link path resolves, and the browser is not serving a cached stylesheet before touching the rule.",
+    "steps": [
+     "Read the network entry for the CSS file.",
+     "Confirm the path and status.",
+     "Hard-refresh."
+    ]
+   },
+   {
+    "q": "Why not use an absolute file path in href?",
+    "answer": "It works only on that machine and breaks for every visitor and on every deploy. A relative path travels with the project.",
+    "steps": [
+     "Show the absolute path in the source.",
+     "Break it on another machine.",
+     "Replace it with a relative one."
+    ]
+   },
+   {
+    "q": "How do you explain rel=\"stylesheet\"?",
+    "answer": "It tells the browser what the linked file is for. Without it the file is just a resource, not a stylesheet to apply.",
+    "steps": [
+     "Remove rel and reload.",
+     "Show the unstyled page.",
+     "Put it back."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which rel value links a stylesheet?",
+    "options": [
+     "preload",
+     "stylesheet",
+     "icon",
+     "canonical"
+    ],
+    "answer": "stylesheet",
+    "why": "rel=\"stylesheet\" is what makes the file a stylesheet."
+   },
+   {
+    "q": "Where does the link element belong?",
+    "options": [
+     "Inside body",
+     "Inside head",
+     "After html",
+     "Inside a paragraph"
+    ],
+    "answer": "Inside head",
+    "why": "Stylesheet links are metadata and belong in the head."
+   },
+   {
+    "q": "Which file extension does a browser apply as CSS?",
+    "options": [
+     ".txt",
+     ".css",
+     ".style",
+     ".sheet"
+    ],
+    "answer": ".css",
+    "why": "The server sends .css as text/css and the browser applies it."
+   }
+  ],
+  "mini": {
+   "title": "Project skeleton",
+   "brief": "Create index.html, css/style.css and an images folder, then link the stylesheet and style one heading.",
+   "steps": [
+    "Make the folders.",
+    "Link the stylesheet.",
+    "Style the heading from the external file."
+   ]
+  },
+  "lab": {
+   "title": "Broken path repair",
+   "brief": "Repair a page with a missing rel, a wrong folder and a .txt stylesheet.",
+   "milestones": [
+    "Find each failed request.",
+    "Correct the link.",
+    "Confirm the styles apply."
+   ]
+  }
+ },
+ {
+  "id": "css03",
+  "no": 3,
+  "title": "Understanding CSS Syntax",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Read and write a CSS rule correctly, including declarations, comments and the errors that silently drop a rule.",
+  "topics": [
+   {
+    "title": "A rule is a selector plus declarations",
+    "body": "Selector batata hai kis element par lagega; declaration block me property-value pairs hote hain. Har declaration colon aur semicolon se judta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Rule anatomy</title>\n  <style>\n    p {\n      color: #1f2937;\n      line-height: 1.6;\n    }\n  </style>\n</head>\n<body>\n  <p>One selector, two declarations.</p>\n</body>\n</html>",
+    "output": "One selector, two declarations — dark grey paragraph at 1.6 line height."
+   },
+   {
+    "title": "Several declarations and comments",
+    "body": "Ek rule me jitni chahe declarations ho sakti hain. Comments `/* ... */` me likhte hain aur browser unhe ignore karta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Comments</title>\n  <style>\n    /* Card surface */\n    .card {\n      background: #ffffff;\n      padding: 16px;\n      border: 1px solid #e2e8f0;\n      border-radius: 8px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">Card</div>\n</body>\n</html>",
+    "output": "Card — white surface, 16px padding, 1px #e2e8f0 border and 8px rounded corners."
+   },
+   {
+    "title": "The three syntax errors that bite",
+    "body": "Missing colon, missing semicolon aur missing closing brace — teeno me browser rule drop ya merge kar deta hai, error page par nahi dikhta.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Errors</title>\n  <style>\n    h2 {\n      color: #7c3aed;\n      margin-bottom: 8px;\n    }\n    p { margin-top: 0; }\n  </style>\n</head>\n<body>\n  <h2>Correct syntax</h2>\n  <p>Both rules apply.</p>\n</body>\n</html>",
+    "output": "Correct syntax — purple heading with 8px bottom margin, paragraph with no top margin."
+   },
+   {
+    "title": "Format for the next reader",
+    "body": "Ek property per line, space after colon, semicolon har declaration ke baad. Formatting se bugs kam hote hain aur review aasan hota hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Formatted</title>\n  <style>\n    .box {\n      display: block;\n      padding: 12px 16px;\n      background: #eff6ff;\n      color: #1e3a8a;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"box\">Formatted rule</div>\n</body>\n</html>",
+    "output": "Formatted rule — light blue box with 12px/16px padding and dark blue text."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A declaration missing its colon",
+    "broken": "<style>\n  h1 { color blue; }\n</style>\n<h1>Title</h1>",
+    "fix": "<style>\n  h1 { color: blue; }\n</style>\n<h1>Title</h1>",
+    "error": "Missing colon: the declaration is invalid and dropped, and no console error tells you why the colour did not apply.",
+    "fixedOutput": "Title — heading in blue."
+   },
+   {
+    "title": "Two declarations with no semicolon between them",
+    "broken": "<style>\n  p {\n    color: #334155\n    margin-top: 0;\n  }\n</style>",
+    "fix": "<style>\n  p {\n    color: #334155;\n    margin-top: 0;\n  }\n</style>",
+    "error": "Missing semicolon: the parser reads the next property as part of the value, so both declarations are lost.",
+    "fixedOutput": "Paragraph in #334155 with no top margin."
+   },
+   {
+    "title": "A rule with no closing brace",
+    "broken": "<style>\n  h1 { color: #b91c1c;\n  p { color: #334155; }\n</style>",
+    "fix": "<style>\n  h1 { color: #b91c1c; }\n  p { color: #334155; }\n</style>",
+    "error": "Missing closing brace: the following rule is swallowed into the h1 block, so the paragraph never gets its colour.",
+    "fixedOutput": "Red heading and grey paragraph."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Write a paragraph rule",
+    "statement": "Style paragraphs with colour #334155, a 1.6 line height and a 16px bottom margin.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Paragraph rule</title>\n  <style>\n    p {\n      color: #334155;\n      line-height: 1.6;\n      margin-bottom: 16px;\n    }\n  </style>\n</head>\n<body>\n  <p>Readable paragraph text.</p>\n</body>\n</html>",
+    "expected": "Readable paragraph text in #334155, 1.6 line height, 16px below."
+   },
+   {
+    "title": "Two rules and a comment",
+    "statement": "Write a commented stylesheet with one rule for h2 and one for .note.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Two rules</title>\n  <style>\n    /* Section heading */\n    h2 { color: #0f172a; }\n    /* Small note */\n    .note { color: #64748b; font-size: 14px; }\n  </style>\n</head>\n<body>\n  <h2>Heading</h2>\n  <p class=\"note\">A small note.</p>\n</body>\n</html>",
+    "expected": "Heading in #0f172a; note in #64748b at 14px."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the difference between a rule and a declaration?",
+    "answer": "A rule is a selector plus a declaration block. A declaration is one property-value pair inside that block, ended by a semicolon."
+   },
+   {
+    "q": "What happens when one declaration is invalid?",
+    "answer": "Only that declaration is dropped. The rest of the rule and the rest of the stylesheet still apply, which is why a typo can look like a completely missing rule."
+   },
+   {
+    "q": "How do CSS comments work?",
+    "answer": "They start with slash-star and end with star-slash, may span lines, and cannot be nested. The browser removes them before parsing."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner asks whether the last semicolon is required.",
+    "answer": "It is optional before a closing brace but I keep it, because inserting another declaration later is the common edit and a missing semicolon then breaks two declarations at once.",
+    "steps": [
+     "Show a rule without the last semicolon.",
+     "Add a declaration after it.",
+     "Show the resulting failure."
+    ]
+   },
+   {
+    "q": "Why insist on one property per line?",
+    "answer": "Diffs become readable, a missing semicolon is visible, and review comments can point at one line. Minification is the build step’s job.",
+    "steps": [
+     "Show a one-line rule diff.",
+     "Reformat it.",
+     "Show the same diff again."
+    ]
+   },
+   {
+    "q": "Why does the browser not show a syntax error?",
+    "answer": "CSS error handling is designed to recover: it drops the bad declaration and continues. DevTools shows the surviving rules, not the ones that were discarded.",
+    "steps": [
+     "Open the Styles panel.",
+     "Point at a dropped declaration.",
+     "Fix it and watch it appear."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which part of a rule chooses the elements?",
+    "options": [
+     "Declaration",
+     "Selector",
+     "Property",
+     "Value"
+    ],
+    "answer": "Selector",
+    "why": "The selector is the part before the braces."
+   },
+   {
+    "q": "Which is valid CSS comment syntax?",
+    "options": [
+     "// comment",
+     "/* comment */",
+     "# comment",
+     "<!-- comment -->"
+    ],
+    "answer": "/* comment */",
+    "why": "CSS only supports slash-star block comments."
+   },
+   {
+    "q": "What does a missing closing brace usually cause?",
+    "options": [
+     "A page crash",
+     "The next rule being swallowed",
+     "The browser ignoring all CSS",
+     "A 404 request"
+    ],
+    "answer": "The next rule being swallowed",
+    "why": "The parser keeps reading until it finds a closing brace."
+   }
+  ],
+  "mini": {
+   "title": "Formatted stylesheet",
+   "brief": "Write five rules with comments, one property per line and consistent ordering.",
+   "steps": [
+    "Write the rules.",
+    "Add a comment above each.",
+    "Check every declaration ends with a semicolon."
+   ]
+  },
+  "lab": {
+   "title": "Syntax repair",
+   "brief": "Fix three broken rules: a missing colon, a missing semicolon and a missing brace.",
+   "milestones": [
+    "Reproduce each failure.",
+    "Fix one at a time.",
+    "Confirm the intended result."
+   ]
+  }
+ },
+ {
+  "id": "css04",
+  "no": 4,
+  "title": "Adding CSS to HTML",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Use external, internal and inline CSS correctly, and predict which declaration wins.",
+  "topics": [
+   {
+    "title": "External CSS is the default choice",
+    "body": "External file ek hi jagah se poore site ko style karti hai aur browser use cache karta hai. Isliye real projects me yahi method primary hota hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>External</title>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n</head>\n<body>\n  <h1 class=\"site-title\">External styles</h1>\n</body>\n</html>",
+    "output": "External styles — heading styled by css/style.css, cached across pages."
+   },
+   {
+    "title": "Internal CSS styles one page",
+    "body": "Style block head me us page tak seemit hota hai. Single-page demo ya critical above-the-fold styles ke liye useful hai, poore site ke liye nahi.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Internal</title>\n  <style>\n    h1 { color: #7c3aed; }\n  </style>\n</head>\n<body>\n  <h1>Internal styles</h1>\n</body>\n</html>",
+    "output": "Internal styles — heading in #7c3aed, applied only on this page."
+   },
+   {
+    "title": "Inline CSS is the last resort",
+    "body": "Style attribute ek element tak seemit hota hai, reuse nahi hota, aur specificity me sabse upar hota hai. Isliye ise exception ki tarah use karo, rule ki tarah nahi.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Inline</title>\n</head>\n<body>\n  <p style=\"color: #b91c1c; font-weight: 600;\">Inline styles</p>\n</body>\n</html>",
+    "output": "Inline styles — red, semibold paragraph; no other element can reuse that style."
+   },
+   {
+    "title": "Which declaration wins",
+    "body": "Author styles me inline normal declaration sabse strong hota hai, phir specificity aur source order. Isliye ek inline style ko external se override karna mushkil hota hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Precedence</title>\n  <style>\n    p { color: #2563eb; }\n  </style>\n</head>\n<body>\n  <p style=\"color: #16a34a;\">Green wins</p>\n</body>\n</html>",
+    "output": "Green wins — the inline declaration overrides the paragraph rule."
+   }
+  ],
+  "debug": [
+   {
+    "title": "An inline declaration with no colon",
+    "broken": "<p style=\"color red\">Text</p>",
+    "fix": "<p style=\"color: red\">Text</p>",
+    "error": "Invalid inline declaration: the browser drops it silently, exactly like a broken declaration in a stylesheet.",
+    "fixedOutput": "Text — paragraph in red."
+   },
+   {
+    "title": "A link whose rel is not stylesheet",
+    "broken": "<link rel=\"text/css\" href=\"css/style.css\">",
+    "fix": "<link rel=\"stylesheet\" href=\"css/style.css\">",
+    "error": "Wrong rel value: text/css is not a link relationship, so the file is requested but never applied.",
+    "fixedOutput": "Styled page."
+   },
+   {
+    "title": "Two stylesheets in the wrong order",
+    "broken": "<link rel=\"stylesheet\" href=\"css/theme-dark.css\">\n<link rel=\"stylesheet\" href=\"css/theme-light.css\">",
+    "fix": "<link rel=\"stylesheet\" href=\"css/theme-light.css\">\n<link rel=\"stylesheet\" href=\"css/theme-dark.css\">",
+    "error": "Source order decides ties: with equal specificity the later stylesheet wins, so the intended theme must load last.",
+    "fixedOutput": "Page renders with the dark theme."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "One page, three methods",
+    "statement": "Build a page with an external link, an internal style block and one inline style, each styling a different element.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Three methods</title>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n  <style>\n    h2 { color: #7c3aed; }\n  </style>\n</head>\n<body>\n  <h1>External heading</h1>\n  <h2>Internal heading</h2>\n  <p style=\"color: #b91c1c;\">Inline paragraph</p>\n</body>\n</html>",
+    "expected": "External heading from the file, internal heading in #7c3aed, inline paragraph in #b91c1c."
+   },
+   {
+    "title": "Override an external rule inline",
+    "statement": "Link a stylesheet that colours paragraphs blue, then override one paragraph inline to green.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Override</title>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n</head>\n<body>\n  <p>Blue paragraph</p>\n  <p style=\"color: #16a34a;\">Green paragraph</p>\n</body>\n</html>",
+    "expected": "First paragraph blue from the stylesheet; second paragraph green from the inline declaration."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why is external CSS preferred in production?",
+    "answer": "It is cached once for many pages, keeps content and presentation apart, and allows a whole site to be restyled from one file. Inline and internal styles cannot be shared."
+   },
+   {
+    "q": "Which wins between inline and external CSS?",
+    "answer": "An inline declaration wins at equal importance because the style attribute is treated as author origin with higher specificity. Only !important in the stylesheet, or a change of importance, overrides it."
+   },
+   {
+    "q": "How do you organise multiple stylesheets?",
+    "answer": "Load a reset or base layer first, then the design system, then page or component styles, so later files can rely on earlier tokens and win ties deliberately."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner uses inline styles to fix everything quickly.",
+    "answer": "It works until the second page needs the same look, or a hover state, or a media query. None of those are expressible inline.",
+    "steps": [
+     "Show the same inline style copied twice.",
+     "Move it to a class.",
+     "Add a hover state that inline cannot do."
+    ]
+   },
+   {
+    "q": "Why avoid !important?",
+    "answer": "It breaks the cascade instead of using it, forcing the next fix to be another !important. Specificity and source order should be fixed at the cause.",
+    "steps": [
+     "Show a rule that needed it.",
+     "Replace it with a better selector.",
+     "Remove the !important."
+    ]
+   },
+   {
+    "q": "When is inline CSS acceptable?",
+    "answer": "For generated HTML where a single value must be applied, such as an email template or a dynamic brand colour, and for prototyping. It is not a system.",
+    "steps": [
+     "Name a real exception.",
+     "Keep it out of shared components.",
+     "Document why."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which attribute links an external stylesheet?",
+    "options": [
+     "src",
+     "href",
+     "action",
+     "data"
+    ],
+    "answer": "href",
+    "why": "The link element uses href for the stylesheet URL."
+   },
+   {
+    "q": "Which method applies to exactly one element?",
+    "options": [
+     "External",
+     "Internal",
+     "Inline",
+     "Imported"
+    ],
+    "answer": "Inline",
+    "why": "The style attribute belongs to a single element."
+   },
+   {
+    "q": "Two equal-specificity rules compete. Which wins?",
+    "options": [
+     "The first",
+     "The later one",
+     "The shorter one",
+     "Neither"
+    ],
+    "answer": "The later one",
+    "why": "Source order breaks the tie."
+   }
+  ],
+  "mini": {
+   "title": "Theme switch comparison",
+   "brief": "Style one card three ways and note the trade-offs of each method.",
+   "steps": [
+    "Write the external version.",
+    "Write the internal version.",
+    "Write the inline version and compare."
+   ]
+  },
+  "lab": {
+   "title": "Method migration",
+   "brief": "Take a page with inline styles and move them into one external stylesheet without changing the look.",
+   "milestones": [
+    "Inventory the inline declarations.",
+    "Create classes.",
+    "Remove every style attribute."
+   ]
+  }
+ }
+]

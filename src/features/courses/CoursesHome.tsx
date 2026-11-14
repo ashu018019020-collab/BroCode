@@ -18,12 +18,14 @@ import { useNumpyCourse } from '../../core/data/ncourse';
 import { usePandasCourse } from '../../core/data/pcourse';
 import { useCppCourse } from '../../core/data/cppcourse';
 import { useHtmlCourse } from '../../core/data/htmlcourse';
+import { useCssCourse } from '../../core/data/csscourse';
 import { CLogo } from '../c-programming/CLogo';
 import { JLogo } from '../java-programming/JLogo';
 import { NLogo } from '../numpy-mastery/NLogo';
 import { PLogo } from '../pandas-mastery/PLogo';
 import { CppLogo } from '../cpp-mastery/CppLogo';
 import { HtmlLogo } from '../html-mastery/HtmlLogo';
+import { CssLogo } from '../css-mastery/CssLogo';
 
 /**
  * /courses — ONE grid of course cards, in the learning sequence.
@@ -48,6 +50,7 @@ export default function CoursesHome() {
   const pCourse = usePandasCourse();
   const cppCourse = useCppCourse();
   const htmlCourse = useHtmlCourse();
+  const cssCourse = useCssCourse();
   const pctOf = useSectionPct();
   /** Owner overrides when the database has them; the code-authored journey otherwise. */
   const { placements } = useCoursePlacements();
@@ -217,6 +220,25 @@ export default function CoursesHome() {
     );
   };
 
+  /**
+   * CSS Mastery follows HTML: a learner styles what they already know how to structure.
+   */
+  const renderCss = () => {
+    if (!cssCourse) return null;
+    return (
+      <Link
+        to="/css"
+        className="course-card cc-simple tone-blue"
+        data-agent-action="course:css-mastery"
+        data-agent-label="CSS Mastery"
+        title="CSS Mastery"
+      >
+        <span className="cc-logo"><CssLogo size={88} /></span>
+        <b className="cc-name">CSS Mastery</b>
+      </Link>
+    );
+  };
+
   const renderCpp = () => {
     if (!cppCourse) return null;
     return (
@@ -264,7 +286,7 @@ export default function CoursesHome() {
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
               {/* Java is a real card in the grid below, so it is counted here too — the header may
                   never say 12 while 13 cards are on screen. */}
-              <span className="chip">{visible.length + (cHidden ? 0 : 1) + 1 + (nCourse ? 1 : 0) + (pCourse ? 1 : 0) + (cppCourse ? 1 : 0) + (htmlCourse ? 1 : 0) + ownerVisible.length} {t('courses.coursesUnit')}</span>
+              <span className="chip">{visible.length + (cHidden ? 0 : 1) + 1 + (nCourse ? 1 : 0) + (pCourse ? 1 : 0) + (cppCourse ? 1 : 0) + (htmlCourse ? 1 : 0) + (cssCourse ? 1 : 0) + ownerVisible.length} {t('courses.coursesUnit')}</span>
               <span className="chip">{steps} {t('courses.stepsUnit')}</span>
               <span className="chip">{index.totals.items} {t('courses.itemsUnit')}</span>
             </div>
@@ -302,6 +324,7 @@ export default function CoursesHome() {
       {index && (
         <div className="course-grid">
           {renderHtml()}
+          {renderCss()}
           {renderN()}
           {renderP()}
           {renderCpp()}

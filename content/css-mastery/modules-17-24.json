@@ -1,0 +1,994 @@
+[
+ {
+  "id": "css17",
+  "no": 17,
+  "title": "Pseudo-Elements",
+  "level": "advanced",
+  "hours": 3,
+  "goal": "Generate decorative content and style parts of an element with ::before, ::after and text pseudo-elements.",
+  "topics": [
+   {
+    "title": "Generated content with before and after",
+    "body": "::before aur ::after element ke andar shuru aur aakhir me ek generated box banate hain. content zaroori hai, warna box paint nahi hota.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Badge</title>\n  <style>\n    .tag { position: relative; display: inline-block; padding: 6px 12px; background: #eff6ff; border-radius: 6px; }\n    .tag::after { content: \"New\"; margin-left: 8px; background: #2563eb; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 999px; }\n  </style>\n</head>\n<body>\n  <span class=\"tag\">Lesson</span>\n</body>\n</html>",
+    "output": "A light blue tag with a small blue “New” pill generated inside its right edge."
+   },
+   {
+    "title": "Styling parts of text",
+    "body": "::first-letter, ::first-line, ::placeholder aur ::selection text ke specific hisse style karte hain — markup badle bina.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Text parts</title>\n  <style>\n    .intro::first-letter { font-size: 2.5rem; font-weight: 700; float: left; line-height: 1; margin-right: 4px; }\n    .intro::first-line { font-weight: 600; }\n    input::placeholder { color: #94a3b8; }\n    ::selection { background: #bfdbfe; }\n  </style>\n</head>\n<body>\n  <p class=\"intro\">CSS can style the first letter and the first line without extra markup.</p>\n  <input placeholder=\"Email address\" aria-label=\"Email\">\n</body>\n</html>",
+    "output": "A large drop cap on the first letter, a bolder first line, grey placeholder text and a light blue selection."
+   },
+   {
+    "title": "Decorative elements without extra markup",
+    "body": "Icons, dividers aur overlays aksar ::before/::after se bante hain. Lekin important content generated content me mat rakho — screen readers aur copy-paste ke liye asli text better hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Divider</title>\n  <style>\n    .rule { display: flex; align-items: center; gap: 12px; color: #64748b; }\n    .rule::before, .rule::after { content: \"\"; flex: 1; height: 1px; background: #cbd5e1; }\n  </style>\n</head>\n<body>\n  <p class=\"rule\">or</p>\n</body>\n</html>",
+    "output": "The word “or” with a thin grey line filling the space on both sides."
+   }
+  ],
+  "debug": [
+   {
+    "title": "Generated content with no content property",
+    "broken": "<style>\n  .tag::after { margin-left: 8px; background: #2563eb; color: #fff; }\n</style>\n<span class=\"tag\">Lesson</span>",
+    "fix": "<style>\n  .tag::after { content: \"New\"; margin-left: 8px; background: #2563eb; color: #fff; }\n</style>\n<span class=\"tag\">Lesson</span>",
+    "error": "No content: without a content value the pseudo-element box is not generated, so none of the other declarations have anything to paint.",
+    "fixedOutput": "Lesson with a blue “New” pill."
+   },
+   {
+    "title": "A pseudo-element on a replaced element",
+    "broken": "<style>\n  img::before { content: \"Photo\"; color: #fff; }\n</style>\n<img src=\"images/campus.jpg\" alt=\"Campus\">",
+    "fix": "<style>\n  .figure::before { content: \"Photo\"; position: absolute; top: 8px; left: 8px; color: #fff; }\n  .figure { position: relative; display: inline-block; }\n</style>\n<div class=\"figure\"><img src=\"images/campus.jpg\" alt=\"Campus\"></div>",
+    "error": "Replaced elements: img, input and video do not render ::before or ::after, so the generated label never appears.",
+    "fixedOutput": "Photo label overlaid on the image by the wrapper."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A card with a generated badge",
+    "statement": "Build a card whose ::after adds a “Pro” badge in the top-right corner.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Pro card</title>\n  <style>\n    .card { position: relative; max-width: 300px; padding: 24px; background: #f8fafc; border-radius: 12px; }\n    .card::after { content: \"Pro\"; position: absolute; top: 12px; right: 12px; background: #0f172a; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 999px; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">Course card</div>\n</body>\n</html>",
+    "expected": "Light card with a small dark “Pro” pill in its top-right corner."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why does ::before need a content property?",
+    "answer": "Generated boxes only exist when content is set, even an empty string. Without it the pseudo-element has no box to style."
+   },
+   {
+    "q": "Is generated content accessible?",
+    "answer": "It is read by some screen readers depending on the content and browser, and it is not reliably selectable or translatable. Real content belongs in the markup."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner puts the entire button label in ::before.",
+    "answer": "If the generated content fails, the control has no label, and it may not be exposed correctly. The label belongs in the markup; pseudo-elements are decoration.",
+    "steps": [
+     "Remove the content.",
+     "Show the empty button.",
+     "Move the label into the element."
+    ]
+   },
+   {
+    "q": "Why prefer a real element over an overlay pseudo-element?",
+    "answer": "A pseudo-element cannot receive events or be individually selected or announced, so anything interactive needs a real element.",
+    "steps": [
+     "Try to click the overlay.",
+     "Compare with a real span.",
+     "Choose by interactivity."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which pseudo-element styles the first line of a paragraph?",
+    "options": [
+     "::before",
+     "::first-letter",
+     "::first-line",
+     "::selection"
+    ],
+    "answer": "::first-line",
+    "why": "::first-line targets the first formatted line."
+   },
+   {
+    "q": "Which property is required for ::after to render?",
+    "options": [
+     "display",
+     "content",
+     "position",
+     "visibility"
+    ],
+    "answer": "content",
+    "why": "Without content the pseudo-element box is not generated."
+   }
+  ],
+  "mini": {
+   "title": "Decorative heading",
+   "brief": "Add a generated underline to a heading without extra markup.",
+   "steps": [
+    "Write the ::after rule.",
+    "Set content to an empty string.",
+    "Size and position the bar."
+   ]
+  },
+  "lab": {
+   "title": "Badge and divider kit",
+   "brief": "Build three decorative patterns using only pseudo-elements.",
+   "milestones": [
+    "Create the badge.",
+    "Create the divider.",
+    "Check both with generated content disabled."
+   ]
+  }
+ },
+ {
+  "id": "css18",
+  "no": 18,
+  "title": "CSS Transitions and Transformations",
+  "level": "advanced",
+  "hours": 4,
+  "goal": "Animate state changes smoothly and move, rotate, scale or skew elements without affecting layout.",
+  "topics": [
+   {
+    "title": "Transitions need four decisions",
+    "body": "Transition property, duration, timing function aur delay batata hai. Sirf un properties par lagta hai jinke beech browser interpolate kar sakta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Transition</title>\n  <style>\n    .btn { background: #2563eb; color: #fff; padding: 10px 16px; border: 0; border-radius: 8px; transition: background-color 180ms ease, transform 180ms ease; }\n    .btn:hover { background: #1d4ed8; transform: translateY(-2px); }\n  </style>\n</head>\n<body>\n  <button class=\"btn\" type=\"button\">Hover me</button>\n</body>\n</html>",
+    "output": "Button darkens and lifts 2px over 180ms on hover; it does not jump."
+   },
+   {
+    "title": "Transform moves without reflow",
+    "body": "translate, rotate, scale aur skew element ko paint stage par badalte hain, isliye aas-paas ka layout nahi hilta. Multiple functions ek hi transform me likho.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Transform</title>\n  <style>\n    .card { padding: 24px; background: #f8fafc; border-radius: 12px; transition: transform 200ms ease; }\n    .card:hover { transform: translateY(-4px) scale(1.01); }\n  </style>\n</head>\n<body>\n  <div class=\"card\">Lift on hover</div>\n</body>\n</html>",
+    "output": "Card rises 4px and scales up 1% smoothly; the surrounding layout stays in place."
+   },
+   {
+    "title": "Transform origin and 3D",
+    "body": "transform-origin rotation ka centre badalta hai. perspective aur rotateX/rotateY depth ka illusion dete hain, lekin overuse motion sickness bhi de sakta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Origin</title>\n  <style>\n    .badge { display: inline-block; padding: 8px 12px; background: #ede9fe; transition: transform 240ms ease; transform-origin: left center; }\n    .badge:hover { transform: rotate(-4deg) scale(1.05); }\n  </style>\n</head>\n<body>\n  <span class=\"badge\">Rotate from the left</span>\n</body>\n</html>",
+    "output": "Badge rotates slightly anticlockwise from its left edge and grows 5% on hover."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A transition on display none",
+    "broken": "<style>\n  .panel { display: none; transition: opacity 200ms ease; }\n  .panel.open { display: block; opacity: 1; }\n</style>",
+    "fix": "<style>\n  .panel { opacity: 0; visibility: hidden; transition: opacity 200ms ease, visibility 200ms; }\n  .panel.open { opacity: 1; visibility: visible; }\n</style>",
+    "error": "display is not interpolable: the element jumps from no box to a box, so there are no intermediate frames to transition.",
+    "fixedOutput": "Panel fades in over 200ms."
+   },
+   {
+    "title": "Two transform declarations that cancel each other",
+    "broken": "<style>\n  .card:hover { transform: translateY(-4px); transform: scale(1.02); }\n</style>",
+    "fix": "<style>\n  .card:hover { transform: translateY(-4px) scale(1.02); }\n</style>",
+    "error": "Duplicate property: the second declaration overrides the first, so the card scales but never moves.",
+    "fixedOutput": "Card rises and scales together."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A card that lifts on hover",
+    "statement": "Build a card with a 200ms transform transition, a 4px lift and a slightly stronger shadow on hover.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Lift</title>\n  <style>\n    .card {\n      max-width: 320px;\n      padding: 24px;\n      background: #ffffff;\n      border-radius: 12px;\n      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);\n      transition: transform 200ms ease, box-shadow 200ms ease;\n    }\n    .card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16); }\n  </style>\n</head>\n<body>\n  <div class=\"card\">Hover to lift</div>\n</body>\n</html>",
+    "expected": "White card that rises 4px and gains a deeper shadow over 200ms on hover."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Which properties are cheap to animate?",
+    "answer": "transform and opacity, because they can be handled on the compositor without layout or paint. Animating width, top or box-shadow forces more work each frame."
+   },
+   {
+    "q": "What does transform do to layout?",
+    "answer": "Nothing. It changes the visual rendering after layout, so neighbours do not move and the original space is preserved."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner animates width for a progress bar.",
+    "answer": "Animating width triggers layout on every frame. A transform scaleX on an inner bar gives the same visual with far less work.",
+    "steps": [
+     "Show the layout cost in DevTools.",
+     "Switch to scaleX.",
+     "Compare frame times."
+    ]
+   },
+   {
+    "q": "Why respect reduced motion?",
+    "answer": "Large movement and parallax can cause nausea and vestibular symptoms. A prefers-reduced-motion query should remove or shorten non-essential motion.",
+    "steps": [
+     "Enable reduced motion.",
+     "Show the unchanged page.",
+     "Add the guard."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which property defines how long a transition takes?",
+    "options": [
+     "transition-delay",
+     "transition-duration",
+     "transition-property",
+     "transition-timing"
+    ],
+    "answer": "transition-duration",
+    "why": "Duration is the time the transition runs."
+   },
+   {
+    "q": "Which transform moves an element?",
+    "options": [
+     "rotate",
+     "scale",
+     "translate",
+     "skew"
+    ],
+    "answer": "translate",
+    "why": "translate shifts position without affecting layout."
+   }
+  ],
+  "mini": {
+   "title": "Button interaction kit",
+   "brief": "Give a button hover, active and focus-visible states with consistent timing.",
+   "steps": [
+    "Set the transition.",
+    "Add hover and active.",
+    "Check the focus ring."
+   ]
+  },
+  "lab": {
+   "title": "Motion audit",
+   "brief": "Replace two layout-animating properties with transform and opacity equivalents.",
+   "milestones": [
+    "Find the animated properties.",
+    "Rewrite with transform.",
+    "Verify the visual result."
+   ]
+  }
+ },
+ {
+  "id": "css19",
+  "no": 19,
+  "title": "CSS Animations",
+  "level": "advanced",
+  "hours": 4,
+  "goal": "Write keyframe animations, control their timing and provide a reduced-motion path.",
+  "topics": [
+   {
+    "title": "Keyframes and the animation shorthand",
+    "body": "@keyframes named steps define karta hai; animation property name, duration, easing, delay, iteration aur direction leti hai. Shorthand order careful rakho.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Keyframes</title>\n  <style>\n    @keyframes fade-up {\n      from { opacity: 0; transform: translateY(8px); }\n      to { opacity: 1; transform: translateY(0); }\n    }\n    .card { animation: fade-up 400ms ease-out both; padding: 24px; background: #f8fafc; border-radius: 12px; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">Fades up once</div>\n</body>\n</html>",
+    "output": "Card starts 8px lower and transparent, then fades into place over 400ms and stays there."
+   },
+   {
+    "title": "Iteration, direction and fill mode",
+    "body": "infinite repeat karta hai, alternate direction palat deta hai, aur fill mode animation ke baad ki state hold karta hai. Loader aur pulse isi se bante hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Pulse</title>\n  <style>\n    @keyframes pulse {\n      0%, 100% { opacity: 1; transform: scale(1); }\n      50% { opacity: 0.5; transform: scale(0.92); }\n    }\n    .dot { width: 16px; height: 16px; border-radius: 50%; background: #22c55e; animation: pulse 1.6s ease-in-out infinite; }\n  </style>\n</head>\n<body>\n  <span class=\"dot\"></span>\n</body>\n</html>",
+    "output": "A green dot that gently shrinks and fades to half opacity, then returns, forever."
+   },
+   {
+    "title": "Reduced motion and performance",
+    "body": "prefers-reduced-motion query essential motion ko kam ya band karta hai. Sirf transform aur opacity animate karo taaki layout aur paint ka kaam kam ho.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Reduced motion</title>\n  <style>\n    @keyframes float { 50% { transform: translateY(-6px); } }\n    .chip { display: inline-block; padding: 10px 16px; background: #e0e7ff; animation: float 2.4s ease-in-out infinite; }\n    @media (prefers-reduced-motion: reduce) { .chip { animation: none; } }\n  </style>\n</head>\n<body>\n  <span class=\"chip\">Floating chip</span>\n</body>\n</html>",
+    "output": "Chip bobs 6px up and down; with reduced motion enabled the animation stops completely."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A keyframes name that never matches",
+    "broken": "<style>\n  @keyframes fadeUp { from { opacity: 0; } to { opacity: 1; } }\n  .card { animation: fade-up 400ms ease both; }\n</style>",
+    "fix": "<style>\n  @keyframes fade-up { from { opacity: 0; } to { opacity: 1; } }\n  .card { animation: fade-up 400ms ease both; }\n</style>",
+    "error": "Name mismatch: keyframe names are case-sensitive and must match exactly, so no animation is attached.",
+    "fixedOutput": "Card fades in once over 400ms."
+   },
+   {
+    "title": "An animation that snaps back at the end",
+    "broken": "<style>\n  @keyframes lift { to { opacity: 0; transform: translateY(-8px); } }\n  .toast { animation: lift 300ms ease; }\n</style>",
+    "fix": "<style>\n  @keyframes lift { to { opacity: 0; transform: translateY(-8px); } }\n  .toast { animation: lift 300ms ease forwards; }\n</style>",
+    "error": "No fill mode: after the animation ends the element returns to its base style, so the toast flashes back into view.",
+    "fixedOutput": "Toast stays faded and lifted after the animation."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A reduced-motion-safe pulse",
+    "statement": "Build a status dot that pulses with transform and opacity, and stops when reduced motion is requested.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Status</title>\n  <style>\n    @keyframes pulse { 50% { opacity: 0.4; transform: scale(0.9); } }\n    .dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #22c55e; animation: pulse 1.8s ease-in-out infinite; }\n    @media (prefers-reduced-motion: reduce) { .dot { animation: none; } }\n  </style>\n</head>\n<body>\n  <span class=\"dot\"></span>\n</body>\n</html>",
+    "expected": "A green dot pulsing gently; it becomes a static dot with reduced motion."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Animation or transition — which do you use?",
+    "answer": "A transition interpolates between two states and needs a state change. An animation runs named keyframes with its own timing and can loop, so multi-step or repeating motion uses @keyframes."
+   },
+   {
+    "q": "Why can infinite animations hurt?",
+    "answer": "They keep the compositor and sometimes the main thread busy, drain battery, and distract or nauseate users. Use them for short, meaningful states and respect reduced motion."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner copies a spinner with 20 keyframe steps.",
+    "answer": "A few keyframes with transform are enough and cheaper. More steps only make sense for a specific visual path.",
+    "steps": [
+     "Show the step count.",
+     "Reduce to the essential poses.",
+     "Compare smoothness."
+    ]
+   },
+   {
+    "q": "Why guard an animation with reduced motion?",
+    "answer": "The user has told the system that motion makes them unwell. Ignoring it is an accessibility failure, not a style preference.",
+    "steps": [
+     "Enable the setting.",
+     "Show the difference.",
+     "Add the media query."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which at-rule defines animation steps?",
+    "options": [
+     "@media",
+     "@keyframes",
+     "@supports",
+     "@layer"
+    ],
+    "answer": "@keyframes",
+    "why": "Keyframes hold the animation poses."
+   },
+   {
+    "q": "Which value makes an animation repeat forever?",
+    "options": [
+     "infinite",
+     "loop",
+     "always",
+     "repeat"
+    ],
+    "answer": "infinite",
+    "why": "animation-iteration-count: infinite repeats indefinitely."
+   }
+  ],
+  "mini": {
+   "title": "Loader set",
+   "brief": "Build a spinner and a pulse dot with reduced-motion fallbacks.",
+   "steps": [
+    "Write both keyframes.",
+    "Add the media query.",
+    "Verify both stop."
+   ]
+  },
+  "lab": {
+   "title": "Toast entrance",
+   "brief": "Animate a toast in and out without leaving it stuck or snapping back.",
+   "milestones": [
+    "Animate the entrance.",
+    "Hold the final state.",
+    "Test reduced motion."
+   ]
+  }
+ },
+ {
+  "id": "css20",
+  "no": 20,
+  "title": "CSS Variables and Functions",
+  "level": "advanced",
+  "hours": 3,
+  "goal": "Centralise design decisions in custom properties and compute sizes with calc, clamp, min and max.",
+  "topics": [
+   {
+    "title": "Custom properties and var()",
+    "body": "Custom property `--name` value store karti hai aur var() se use hoti hai. Ye cascade follow karti hai, isliye component ke andar override kar sakte ho.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Tokens</title>\n  <style>\n    :root { --brand: #2563eb; --surface: #f8fafc; --radius: 10px; }\n    .card { background: var(--surface); border: 1px solid var(--brand); border-radius: var(--radius); padding: 16px; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">Token card</div>\n</body>\n</html>",
+    "output": "Card with a light surface, a blue border and a 10px radius, all from tokens."
+   },
+   {
+    "title": "Fallbacks and inheritance",
+    "body": "var() ka doosra argument fallback hai — variable missing ho to wo use hota hai. Custom property inherit hoti hai, isliye theme parent par set karke children me use hoti hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Fallback</title>\n  <style>\n    .card { --accent: #7c3aed; }\n    .card h2 { color: var(--accent, #2563eb); }\n    .card p { color: var(--muted, #475569); }\n  </style>\n</head>\n<body>\n  <div class=\"card\"><h2>Accent from the card</h2><p>Muted falls back.</p></div>\n</body>\n</html>",
+    "output": "Heading in violet from the card’s token; paragraph in #475569 because --muted is not defined."
+   },
+   {
+    "title": "Tokens with functions",
+    "body": "calc, min, max aur clamp tokens ke saath milkar ek chhota design system bana dete hain: spacing scale, fluid type aur max widths sab computed.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Computed tokens</title>\n  <style>\n    :root { --space: 1rem; --measure: 65ch; --step: clamp(1.5rem, 4vw, 2.5rem); }\n    .prose { max-width: min(var(--measure), 100% - 2 * var(--space)); padding: var(--space); }\n    h1 { font-size: var(--step); }\n  </style>\n</head>\n<body>\n  <article class=\"prose\"><h1>Computed tokens</h1><p>Width and type both come from tokens.</p></article>\n</body>\n</html>",
+    "output": "Article capped at 65ch or the container minus side padding, whichever is smaller; heading scales from 24px to 40px."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A custom property name typo with no fallback",
+    "broken": "<style>\n  :root { --brand: #2563eb; }\n  .btn { background: var(--barnd); color: #fff; }\n</style>\n<button class=\"btn\">Save</button>",
+    "fix": "<style>\n  :root { --brand: #2563eb; }\n  .btn { background: var(--brand); color: #fff; }\n</style>\n<button class=\"btn\">Save</button>",
+    "error": "Misspelled variable: var(--barnd) resolves to nothing, the background declaration becomes invalid, and the button falls back to its default surface.",
+    "fixedOutput": "Save button with the blue brand background."
+   },
+   {
+    "title": "A custom property used in a media query condition",
+    "broken": "<style>\n  :root { --bp: 640px; }\n  @media (min-width: var(--bp)) { .grid { grid-template-columns: 1fr 1fr; } }\n</style>",
+    "fix": "<style>\n  @media (min-width: 640px) { .grid { grid-template-columns: 1fr 1fr; } }\n</style>",
+    "error": "Custom properties are not substituted in media query conditions, so the condition is invalid and the block is ignored.",
+    "fixedOutput": "Two columns from 640px."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A light and dark token theme",
+    "statement": "Define surface, text and brand tokens on :root, then override them under .dark and apply them to a card.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Theme</title>\n  <style>\n    :root { --surface: #ffffff; --text: #0f172a; --brand: #2563eb; }\n    .dark { --surface: #0f172a; --text: #e2e8f0; --brand: #60a5fa; }\n    .card { background: var(--surface); color: var(--text); border: 1px solid var(--brand); padding: 20px; border-radius: 12px; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">Light card</div>\n  <div class=\"card dark\">Dark card</div>\n</body>\n</html>",
+    "expected": "Two cards: one light with dark text, one dark with light text, both using the same rules."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "How are custom properties different from Sass variables?",
+    "answer": "They are live CSS values that participate in the cascade and can be changed per element, per media query or at runtime. Sass variables are resolved at build time."
+   },
+   {
+    "q": "Why is var() invalid sometimes even with a fallback?",
+    "answer": "The fallback is used only when the property is missing or invalid at computed-value time. If the fallback itself is invalid, the declaration is still dropped."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner hardcodes the same blue in twelve files.",
+    "answer": "One token makes a rebrand a single edit and keeps light and dark themes consistent. Repeated literals drift.",
+    "steps": [
+     "Count the occurrences.",
+     "Replace with a token.",
+     "Change it once."
+    ]
+   },
+   {
+    "q": "Why not put every value in a variable?",
+    "answer": "Tokens should name decisions, not every number. A variable per declaration adds indirection without reuse and makes the stylesheet harder to read.",
+    "steps": [
+     "Show a one-use variable.",
+     "Inline the value.",
+     "Keep tokens for reused decisions."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which function reads a custom property?",
+    "options": [
+     "calc()",
+     "var()",
+     "env()",
+     "attr()"
+    ],
+    "answer": "var()",
+    "why": "var() substitutes a custom property value."
+   },
+   {
+    "q": "Where are global tokens usually declared?",
+    "options": [
+     ":root",
+     "body",
+     "html > *",
+     "@media"
+    ],
+    "answer": ":root",
+    "why": ":root matches the document element and is the usual token scope."
+   }
+  ],
+  "mini": {
+   "title": "Token sheet",
+   "brief": "Extract colour, spacing and radius tokens from an existing page into :root.",
+   "steps": [
+    "Inventory repeated values.",
+    "Name them.",
+    "Replace the literals."
+   ]
+  },
+  "lab": {
+   "title": "Theme switch",
+   "brief": "Build a page whose theme changes by adding one class, using only custom properties.",
+   "milestones": [
+    "Define both token sets.",
+    "Apply the class.",
+    "Verify every component follows."
+   ]
+  }
+ },
+ {
+  "id": "css21",
+  "no": 21,
+  "title": "Advanced CSS and Modern Features",
+  "level": "advanced",
+  "hours": 4,
+  "goal": "Understand the cascade, layers and specificity, and use modern layout and effects with progressive enhancement.",
+  "topics": [
+   {
+    "title": "Cascade, specificity and layers",
+    "body": "Cascade importance, origin, layer, specificity aur source order se resolve hota hai. @layer se aap poori stylesheet ki priority explicitly set kar sakte ho.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Layers</title>\n  <style>\n    @layer base, components;\n    @layer components { .btn { background: #2563eb; color: #fff; padding: 10px 16px; } }\n    @layer base { .btn { background: #e2e8f0; color: #0f172a; } }\n  </style>\n</head>\n<body>\n  <button class=\"btn\" type=\"button\">Layered</button>\n</body>\n</html>",
+    "output": "Blue button: components is declared after base in the layer order, so its rule wins despite both matching equally."
+   },
+   {
+    "title": "Feature queries, container queries and nesting",
+    "body": "@supports ek feature ke support par styles lagata hai, @container parent ki width par, aur nesting selectors ko ek doosre ke andar likhne deta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Container</title>\n  <style>\n    .card { container-type: inline-size; padding: 16px; background: #f8fafc; }\n    @container (min-width: 320px) { .card h2 { font-size: 1.5rem; } }\n    @supports (display: grid) { .card { display: grid; gap: 8px; } }\n  </style>\n</head>\n<body>\n  <div class=\"card\"><h2>Container aware</h2><p>Type grows with the card.</p></div>\n</body>\n</html>",
+    "output": "Card content stacked with an 8px gap; the heading grows when the card itself is at least 320px wide."
+   },
+   {
+    "title": "Modern effects with honest support",
+    "body": "aspect-ratio, object-fit, clip-path aur filters aaj widely supported hain; backdrop-filter aur some blend modes ko fallback chahiye. Feature ke saath support note karo.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Media</title>\n  <style>\n    .thumb { aspect-ratio: 16 / 9; width: 100%; object-fit: cover; border-radius: 10px; filter: saturate(1.1); }\n    .avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }\n  </style>\n</head>\n<body>\n  <img class=\"thumb\" src=\"images/wide.jpg\" alt=\"Wide thumbnail\">\n  <img class=\"avatar\" src=\"images/person.jpg\" alt=\"Avatar\">\n</body>\n</html>",
+    "output": "A 16:9 thumbnail that crops instead of stretching, and a circular avatar cropped to a square."
+   }
+  ],
+  "debug": [
+   {
+    "title": "Layer order that defeats the component",
+    "broken": "<style>\n  @layer components, base;\n  @layer base { .btn { background: #e2e8f0; } }\n  @layer components { .btn { background: #2563eb; } }\n</style>",
+    "fix": "<style>\n  @layer base, components;\n  @layer base { .btn { background: #e2e8f0; } }\n  @layer components { .btn { background: #2563eb; } }\n</style>",
+    "error": "Layer order reversed: the first declared layer has the lowest priority, so base overrides components no matter the source order.",
+    "fixedOutput": "Blue component button."
+   },
+   {
+    "title": "A fixed height that clips text",
+    "broken": "<style>\n  .card { height: 120px; overflow: hidden; padding: 16px; }\n</style>\n<div class=\"card\">A long description that needs more room than the fixed height allows.</div>",
+    "fix": "<style>\n  .card { min-height: 120px; padding: 16px; }\n</style>\n<div class=\"card\">A long description that grows the card instead of being clipped.</div>",
+    "error": "Fixed height: the box cannot grow with its content, so the text is cut off. min-height keeps the intended minimum and lets content expand.",
+    "fixedOutput": "Card at least 120px tall, text fully visible."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A container-aware card",
+    "statement": "Build a card with container-type inline-size and a heading that grows when the card is at least 320px wide.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Container card</title>\n  <style>\n    .card { container-type: inline-size; max-width: 420px; padding: 20px; background: #f8fafc; border-radius: 12px; }\n    .card h2 { font-size: 1.125rem; }\n    @container (min-width: 320px) { .card h2 { font-size: 1.5rem; } }\n  </style>\n</head>\n<body>\n  <div class=\"card\"><h2>Container aware</h2><p>The heading responds to the card.</p></div>\n</body>\n</html>",
+    "expected": "Card heading at 18px in a narrow container, 24px once the card is 320px wide."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "How do cascade layers change specificity?",
+    "answer": "They do not. Layers are compared before specificity: a rule in a higher-priority layer beats a more specific rule in a lower one. Specificity only decides inside the same layer."
+   },
+   {
+    "q": "When do you use @supports?",
+    "answer": "When a layout or effect has a genuine fallback, such as grid instead of floats or backdrop-filter instead of a solid surface. It should guard the enhancement, not the base experience."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner adds !important instead of fixing layers.",
+    "answer": "Important reverses the layer order and makes future overrides harder. Defining layer order explicitly solves the conflict at the source.",
+    "steps": [
+     "Show the conflict.",
+     "Declare the layer order.",
+     "Remove the !important."
+    ]
+   },
+   {
+    "q": "Why not use backdrop-filter everywhere?",
+    "answer": "It needs support and can be expensive, especially with large blurred areas. A solid or semi-transparent fallback keeps the UI legible where it is unavailable.",
+    "steps": [
+     "Disable the filter.",
+     "Show the fallback.",
+     "Add @supports."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which at-rule declares cascade layer order?",
+    "options": [
+     "@supports",
+     "@layer",
+     "@container",
+     "@scope"
+    ],
+    "answer": "@layer",
+    "why": "@layer declares and orders layers."
+   },
+   {
+    "q": "Which property crops an image to its box?",
+    "options": [
+     "object-position",
+     "object-fit",
+     "aspect-ratio",
+     "filter"
+    ],
+    "answer": "object-fit",
+    "why": "object-fit controls how the image fills its box."
+   }
+  ],
+  "mini": {
+   "title": "Layer structure",
+   "brief": "Split a stylesheet into reset, base, components and utilities layers.",
+   "steps": [
+    "Declare the order.",
+    "Move the rules.",
+    "Verify components beat base."
+   ]
+  },
+  "lab": {
+   "title": "Container component",
+   "brief": "Build a card that changes layout based on its own width, not the viewport.",
+   "milestones": [
+    "Add container-type.",
+    "Write the query.",
+    "Test in a narrow sidebar."
+   ]
+  }
+ },
+ {
+  "id": "css22",
+  "no": 22,
+  "title": "CSS Forms and UI Styling",
+  "level": "advanced",
+  "hours": 4,
+  "goal": "Style accessible forms and common UI components without breaking native behaviour.",
+  "topics": [
+   {
+    "title": "Inputs, labels and focus",
+    "body": "Inputs ko consistent height, padding, border aur radius do. Label ko input se jodo, focus-visible ring rakho aur placeholder ko label ka substitute mat banao.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Field</title>\n  <style>\n    .field { display: grid; gap: 6px; max-width: 320px; }\n    label { font-size: 14px; font-weight: 600; }\n    input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }\n    input:focus-visible { outline: 3px solid #bfdbfe; outline-offset: 1px; border-color: #2563eb; }\n  </style>\n</head>\n<body>\n  <div class=\"field\"><label for=\"email\">Email</label><input id=\"email\" type=\"email\" placeholder=\"you@example.com\"></div>\n</body>\n</html>",
+    "output": "A labelled email field with a 10px/12px padding, rounded border and a blue focus ring."
+   },
+   {
+    "title": "Selects, checkboxes and validation",
+    "body": "Select aur checkbox native behaviour retain karo; appearance:none sirf tab use karo jab custom indicator ho. :invalid aur :user-invalid se validation dikhao, red text ke bharose nahi.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Validation</title>\n  <style>\n    input:user-invalid { border-color: #dc2626; background: #fef2f2; }\n    input:user-valid { border-color: #16a34a; }\n    .check { display: flex; gap: 8px; align-items: center; }\n    .check input { width: 18px; height: 18px; accent-color: #2563eb; }\n  </style>\n</head>\n<body>\n  <input type=\"email\" required aria-label=\"Email\">\n  <label class=\"check\"><input type=\"checkbox\"> Remember me</label>\n</body>\n</html>",
+    "output": "Email field turns red only after invalid input is committed and green when valid; the checkbox uses the blue accent colour."
+   },
+   {
+    "title": "Cards, modals and tooltips",
+    "body": "UI components ke liye ek hi surface, radius aur shadow scale use karo. Modal ko fixed overlay aur focus management chahiye; CSS akela focus trap nahi bana sakta.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Modal</title>\n  <style>\n    .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); display: grid; place-items: center; }\n    .modal { background: #fff; padding: 24px; border-radius: 12px; max-width: 360px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25); }\n  </style>\n</head>\n<body>\n  <div class=\"overlay\"><div class=\"modal\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"t\"><h2 id=\"t\">Delete lesson?</h2><p>This cannot be undone.</p></div></div>\n</body>\n</html>",
+    "output": "A dimmed full-screen overlay with a centred white dialog, rounded corners and a deep shadow."
+   }
+  ],
+  "debug": [
+   {
+    "title": "appearance none with no replacement indicator",
+    "broken": "<style>\n  input[type=\"checkbox\"] { appearance: none; width: 18px; height: 18px; border: 1px solid #94a3b8; }\n</style>\n<label><input type=\"checkbox\"> I agree</label>",
+    "fix": "<style>\n  input[type=\"checkbox\"] { width: 18px; height: 18px; accent-color: #2563eb; }\n</style>\n<label><input type=\"checkbox\"> I agree</label>",
+    "error": "Native control removed: appearance:none hides the checkmark, and nothing draws a checked state, so the user cannot tell whether it is on.",
+    "fixedOutput": "A blue native checkbox that clearly shows checked and unchecked states."
+   },
+   {
+    "title": "A label that points at the wrong id",
+    "broken": "<style>\n  label { font-weight: 600; }\n</style>\n<label for=\"mail\">Email</label>\n<input id=\"email\" type=\"email\">",
+    "fix": "<style>\n  label { font-weight: 600; }\n</style>\n<label for=\"email\">Email</label>\n<input id=\"email\" type=\"email\">",
+    "error": "Mismatched for and id: clicking the label does not focus the field and assistive technology does not associate the two.",
+    "fixedOutput": "Clicking the label focuses the email input."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A registration form",
+    "statement": "Build a two-field registration form with labels, 10px padding, a blue focus ring and a full-width submit button.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Register</title>\n  <style>\n    form { display: grid; gap: 14px; max-width: 340px; }\n    label { font-size: 14px; font-weight: 600; }\n    input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }\n    input:focus-visible { outline: 3px solid #bfdbfe; border-color: #2563eb; }\n    button { padding: 11px 16px; border: 0; border-radius: 8px; background: #2563eb; color: #fff; font: inherit; font-weight: 600; }\n  </style>\n</head>\n<body>\n  <form>\n    <label for=\"name\">Name</label><input id=\"name\" type=\"text\">\n    <label for=\"email\">Email</label><input id=\"email\" type=\"email\">\n    <button type=\"submit\">Create account</button>\n  </form>\n</body>\n</html>",
+    "expected": "A stacked form with two labelled fields, blue focus rings and a full-width blue submit button."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why keep native form controls when custom styling exists?",
+    "answer": "Native controls bring keyboard behaviour, platform conventions and assistive-technology support. Replacing them means rebuilding all of that, usually incompletely."
+   },
+   {
+    "q": "What is the difference between :invalid and :user-invalid?",
+    "answer": ":invalid matches immediately, including an empty required field on first render. :user-invalid waits until the user has interacted and the value is still invalid, which avoids a form that is red before typing."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A designer wants placeholders instead of labels.",
+    "answer": "A placeholder disappears on typing and is not a reliable label. Keep a persistent visible label and use the placeholder only for an example.",
+    "steps": [
+     "Type into the field.",
+     "Show the lost hint.",
+     "Add a real label."
+    ]
+   },
+   {
+    "q": "Why not style a div as a checkbox?",
+    "answer": "It loses keyboard toggling, focus and the checked state exposed to assistive technology. A native input with accent-color is both accessible and styleable enough.",
+    "steps": [
+     "Tab to the div.",
+     "Show the missing toggle.",
+     "Use a real input."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which property tints a native checkbox?",
+    "options": [
+     "color",
+     "background",
+     "accent-color",
+     "border-color"
+    ],
+    "answer": "accent-color",
+    "why": "accent-color sets the native control accent."
+   },
+   {
+    "q": "Which attribute ties a label to an input?",
+    "options": [
+     "name",
+     "for",
+     "id",
+     "form"
+    ],
+    "answer": "for",
+    "why": "for must match the input id."
+   }
+  ],
+  "mini": {
+   "title": "Login card",
+   "brief": "Build a login card with two fields, a submit button and a visible focus order.",
+   "steps": [
+    "Add labels and inputs.",
+    "Style focus states.",
+    "Tab through the form."
+   ]
+  },
+  "lab": {
+   "title": "Accessible form pass",
+   "brief": "Audit a form for label association, focus visibility and error states, then fix it.",
+   "milestones": [
+    "Tab through the form.",
+    "Check every label.",
+    "Fix and retest."
+   ]
+  }
+ },
+ {
+  "id": "css23",
+  "no": 23,
+  "title": "CSS Architecture and Professional Workflow",
+  "level": "advanced",
+  "hours": 3,
+  "goal": "Organise stylesheets so a team can extend them without breaking existing components.",
+  "topics": [
+   {
+    "title": "Files, layers and naming",
+    "body": "CSS ko reset, tokens, base, components aur utilities me organise karo. Naming me intent rakho; BEM (block__element--modifier) collisions kam karta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>BEM</title>\n  <style>\n    .card { padding: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }\n    .card__title { margin: 0 0 6px; font-size: 1.125rem; }\n    .card__meta { color: #64748b; font-size: 0.875rem; }\n    .card--featured { border-color: #2563eb; box-shadow: 0 12px 30px rgba(37, 99, 235, 0.12); }\n  </style>\n</head>\n<body>\n  <article class=\"card card--featured\">\n    <h2 class=\"card__title\">BEM card</h2>\n    <p class=\"card__meta\">Block, element, modifier</p>\n  </article>\n</body>\n</html>",
+    "output": "A white card with a blue border and shadow because of the featured modifier, a clear title and grey meta text."
+   },
+   {
+    "title": "Reset or normalize",
+    "body": "Reset browser defaults ko zero karta hai, normalize inconsistencies ko fix karta hai. Aaj usually ek chhota modern reset aur apne tokens use hote hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Reset</title>\n  <style>\n    *, *::before, *::after { box-sizing: border-box; }\n    body { margin: 0; font-family: system-ui, sans-serif; line-height: 1.6; }\n    img { display: block; max-width: 100%; }\n    h1, h2, p { margin: 0 0 0.75em; }\n  </style>\n</head>\n<body>\n  <h1>Predictable defaults</h1>\n  <p>Margins, sizing and media behave consistently.</p>\n</body>\n</html>",
+    "output": "Heading and paragraph with consistent spacing and no page margin; images never overflow."
+   },
+   {
+    "title": "Plain CSS or a framework",
+    "body": "Plain CSS seekhne aur chhote projects ke liye best hai. Bootstrap ready components deta hai, Tailwind utility-first workflow. Framework tab chuno jab team aur project ka workflow match kare.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Decision</title>\n  <style>\n    /* Plain CSS: one component, explicit rules */\n    .alert { padding: 12px 16px; border-left: 4px solid #f59e0b; background: #fffbeb; border-radius: 6px; }\n  </style>\n</head>\n<body>\n  <div class=\"alert\" role=\"status\">Plain CSS stays readable for one component.</div>\n</body>\n</html>",
+    "output": "An amber alert strip with a 4px left border and light background."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A BEM modifier written as a separate class name",
+    "broken": "<style>\n  .card--featured { border-color: #2563eb; }\n</style>\n<article class=\"card card-featured\">Card</article>",
+    "fix": "<style>\n  .card--featured { border-color: #2563eb; }\n</style>\n<article class=\"card card--featured\">Card</article>",
+    "error": "Class name mismatch: the markup uses card-featured while the rule targets card--featured, so the modifier never applies.",
+    "fixedOutput": "Card with a blue border."
+   },
+   {
+    "title": "A reset that removes every list style globally",
+    "broken": "<style>\n  ul { list-style: none; padding: 0; }\n</style>\n<ul><li>Lesson one</li><li>Lesson two</li></ul>",
+    "fix": "<style>\n  .nav ul { list-style: none; padding: 0; }\n</style>\n<nav class=\"nav\"><ul><li>Lesson one</li><li>Lesson two</li></ul></nav>",
+    "error": "Global reset too broad: removing markers from every list makes real content lists unreadable as lists. Scope resets to the component that needs them.",
+    "fixedOutput": "Navigation list without markers; content lists elsewhere keep them."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "A BEM component",
+    "statement": "Build a card block with title and meta elements plus a featured modifier.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Component</title>\n  <style>\n    .card { padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; }\n    .card__title { margin: 0 0 6px; font-size: 1.125rem; }\n    .card__meta { margin: 0; color: #64748b; font-size: 0.875rem; }\n    .card--featured { border-color: #2563eb; }\n  </style>\n</head>\n<body>\n  <article class=\"card card--featured\"><h2 class=\"card__title\">Featured</h2><p class=\"card__meta\">One block, two elements, one modifier.</p></article>\n</body>\n</html>",
+    "expected": "A white card with a blue border when featured, a bold title and grey meta line."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What problem does BEM solve?",
+    "answer": "It makes class names predictable and collision-resistant by encoding block, element and modifier, so a team can read markup and know which stylesheet owns it."
+   },
+   {
+    "q": "Reset or normalize?",
+    "answer": "A reset removes defaults so every element starts from zero; normalize preserves useful defaults while fixing browser differences. Most modern projects use a small targeted reset plus tokens."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner wants a utility class for every property.",
+    "answer": "Utilities explode in number and hide intent in markup. Component classes keep the design decisions in CSS; utilities are best for spacing and layout exceptions.",
+    "steps": [
+     "Show a long utility string.",
+     "Extract a component class.",
+     "Compare readability."
+    ]
+   },
+   {
+    "q": "Why scope resets?",
+    "answer": "A global list-style:none removes meaning from content lists. Resets should target the components that need them, not every element of a type.",
+    "steps": [
+     "Show a content list without markers.",
+     "Scope the reset.",
+     "Compare."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "In BEM, what does the double underscore mark?",
+    "options": [
+     "A modifier",
+     "An element",
+     "A utility",
+     "A state"
+    ],
+    "answer": "An element",
+    "why": "Double underscore connects an element to its block."
+   },
+   {
+    "q": "What does a reset primarily do?",
+    "options": [
+     "Adds components",
+     "Removes browser defaults",
+     "Compiles CSS",
+     "Minifies files"
+    ],
+    "answer": "Removes browser defaults",
+    "why": "A reset zeroes out default styling."
+   }
+  ],
+  "mini": {
+   "title": "Component folder",
+   "brief": "Split a page into reset, tokens and three component files and document the order.",
+   "steps": [
+    "Create the files.",
+    "Set the import order.",
+    "Check for duplicate rules."
+   ]
+  },
+  "lab": {
+   "title": "BEM refactor",
+   "brief": "Rename a component’s classes to BEM and remove the resulting collisions.",
+   "milestones": [
+    "Map block and elements.",
+    "Rename markup and CSS.",
+    "Verify no visual change."
+   ]
+  }
+ },
+ {
+  "id": "css24",
+  "no": 24,
+  "title": "CSS Debugging and Optimization",
+  "level": "advanced",
+  "hours": 4,
+  "goal": "Find layout and specificity bugs in DevTools, then ship CSS that is fast and accessible.",
+  "topics": [
+   {
+    "title": "Inspect, computed and the box model",
+    "body": "DevTools me Styles panel batata hai kaun si rule jeeti, Computed final value, aur Box Model diagram size ka breakdown. Debugging hamesha in teen se shuru karo.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Inspect</title>\n  <style>\n    .card { width: 240px; padding: 16px; border: 2px solid #2563eb; box-sizing: border-box; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">Inspect the box model</div>\n</body>\n</html>",
+    "output": "Card with a 240px total width: 204px content, 32px padding, 4px border."
+   },
+   {
+    "title": "Debug layout, flex and grid",
+    "body": "Layout bugs ke liye element ke parent ka display, available space aur min-width check karo. Flex overflow aksar min-width:auto se aata hai; grid me track sizing dekho.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Debug layout</title>\n  <style>\n    .row { display: flex; gap: 12px; max-width: 320px; }\n    .row > div { min-width: 0; flex: 1; background: #f1f5f9; padding: 12px; overflow-wrap: anywhere; }\n  </style>\n</head>\n<body>\n  <div class=\"row\"><div>LongUnbreakableWordThatWouldOverflow</div><div>Second</div></div>\n</body>\n</html>",
+    "output": "Two equal columns inside 320px; the long word wraps instead of forcing the row wider."
+   },
+   {
+    "title": "Performance, unused CSS and accessibility",
+    "body": "Sirf transform aur opacity animate karo, unused selectors hatao aur minify build me karo. Contrast, focus visibility aur reduced motion ko release checklist ka hissa banao.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Checklist</title>\n  <style>\n    .cta { background: #1d4ed8; color: #ffffff; padding: 12px 18px; border-radius: 8px; }\n    .cta:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }\n    @media (prefers-reduced-motion: reduce) { .cta { transition: none; } }\n  </style>\n</head>\n<body>\n  <button class=\"cta\" type=\"button\">High contrast CTA</button>\n</body>\n</html>",
+    "output": "Deep blue button with white text at a contrast ratio above 4.5:1, a visible focus ring, and no motion when reduced motion is on."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A specificity conflict with no clear winner",
+    "broken": "<style>\n  .card .title { color: #2563eb; }\n  .card__title { color: #0f172a; }\n</style>\n<article class=\"card\"><h2 class=\"title card__title\">Title</h2></article>",
+    "fix": "<style>\n  .card__title { color: #0f172a; }\n  .card .card__title { color: #0f172a; }\n</style>\n<article class=\"card\"><h2 class=\"card__title\">Title</h2></article>",
+    "error": "Specificity conflict: the two-class rule beats the single-class rule, so the heading stays blue. One class system avoids the fight.",
+    "fixedOutput": "Heading in #0f172a from a single predictable rule."
+   },
+   {
+    "title": "A fixed height that hides overflow",
+    "broken": "<style>\n  .hero { height: 320px; overflow: hidden; padding: 24px; }\n</style>\n<section class=\"hero\"><h1>A heading that needs two lines on a phone</h1><p>And a paragraph.</p></section>",
+    "fix": "<style>\n  .hero { min-height: 320px; padding: 24px; }\n</style>\n<section class=\"hero\"><h1>A heading that needs two lines on a phone</h1><p>And a paragraph.</p></section>",
+    "error": "Fixed height: the box cannot grow with its content, so text is clipped on small screens. min-height keeps the design minimum without hiding content.",
+    "fixedOutput": "Hero at least 320px tall with all content visible."
+   }
+  ],
+  "tasks": [
+   {
+    "title": "An accessibility and performance pass",
+    "statement": "Fix a CTA that has low contrast, no focus ring and a width animation. Use a darker background and a transform-based transition.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>CTA</title>\n  <style>\n    .cta { background: #1d4ed8; color: #fff; padding: 12px 18px; border: 0; border-radius: 8px; transition: transform 160ms ease; }\n    .cta:hover { transform: translateY(-1px); }\n    .cta:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }\n    @media (prefers-reduced-motion: reduce) { .cta { transition: none; } }\n  </style>\n</head>\n<body>\n  <button class=\"cta\" type=\"button\">Get started</button>\n</body>\n</html>",
+    "expected": "High-contrast blue button, visible keyboard ring, a 1px lift on hover and no motion when reduced motion is requested."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "How do you debug “my CSS is not applying”?",
+    "answer": "Check the network entry and the selector match first, then the Styles panel for a winning rule, then specificity and source order. I change one variable at a time."
+   },
+   {
+    "q": "What causes layout thrash and how do you avoid it?",
+    "answer": "Reading layout properties and then writing styles repeatedly forces synchronous reflow. Batch reads, batch writes, and animate transform and opacity instead of geometry."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner adds more CSS to fight a bug.",
+    "answer": "Adding rules increases the chance of another conflict. I find which rule is winning and fix that rule instead of layering another one on top.",
+    "steps": [
+     "Inspect the winning rule.",
+     "Remove or adjust it.",
+     "Verify with one change."
+    ]
+   },
+   {
+    "q": "Why include accessibility in a debugging checklist?",
+    "answer": "Contrast, focus and reduced motion break for real users and are cheap to catch before release. They are functional requirements, not polish.",
+    "steps": [
+     "Run the contrast check.",
+     "Tab through the page.",
+     "Add the missing states."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which DevTools panel shows the final value of a property?",
+    "options": [
+     "Elements",
+     "Computed",
+     "Network",
+     "Console"
+    ],
+    "answer": "Computed",
+    "why": "The Computed panel shows resolved values after the cascade."
+   },
+   {
+    "q": "Which animation is cheapest for the browser?",
+    "options": [
+     "width",
+     "top",
+     "transform",
+     "margin"
+    ],
+    "answer": "transform",
+    "why": "transform can run on the compositor without layout."
+   }
+  ],
+  "mini": {
+   "title": "Bug hunt",
+   "brief": "Take a page with three layout bugs and document each cause before fixing it.",
+   "steps": [
+    "Reproduce each bug.",
+    "Inspect the winning rule.",
+    "Fix the cause and retest."
+   ]
+  },
+  "lab": {
+   "title": "Release audit",
+   "brief": "Run a CSS release checklist over a page: contrast, focus, reduced motion, unused rules and layout at three widths.",
+   "milestones": [
+    "Run each check.",
+    "Fix what fails.",
+    "Record the results."
+   ]
+  }
+ }
+]
