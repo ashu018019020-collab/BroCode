@@ -1,0 +1,997 @@
+{
+ "course": {
+  "id": "sql-masterclass",
+  "title": "SQL Masterclass",
+  "tagline": "Zero to advanced, one module at a time.",
+  "level": "beginner",
+  "hours": 2,
+  "standard": "PostgreSQL-first, with MySQL, SQLite and SQL Server notes.",
+  "prerequisites": [
+   "None"
+  ],
+  "description": "Module 01 sets up PostgreSQL, connects a client, creates a database and first table, inserts rows and reads the result.",
+  "outcomes": [
+   "Install and connect to PostgreSQL",
+   "Create a database and schema",
+   "Create a table with constraints",
+   "Insert and select rows",
+   "Read EXPLAIN and psql meta-commands"
+  ]
+ },
+ "modules": [
+  {
+   "id": "sql01",
+   "no": 1,
+   "title": "SQL Environment and First Query",
+   "goal": "Set up PostgreSQL and run a complete first workflow.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Introduction to SQL Editors",
+     "simple": "SQL editor wo jagah hai jahan query likhte hain aur Run dabate hain — pgAdmin, psql ya DBeaver.",
+     "pro": "An SQL editor is a client that connects to a database, lets you write statements and shows results or errors.",
+     "points": [
+      "Pick one editor and learn its shortcut for Run.",
+      "The editor is only a client; the server does the work.",
+      "Keep queries formatted for review."
+     ],
+     "example": {
+      "sql": "SELECT 1 AS ready;",
+      "output": "ready\n1"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Introduction to PostgreSQL",
+     "simple": "PostgreSQL ek powerful open-source relational database hai jo SQL ke saath advanced features deta hai.",
+     "pro": "PostgreSQL is an open-source client-server RDBMS with ACID transactions, rich types, extensions and strong SQL compliance.",
+     "points": [
+      "It runs as a server on port 5432 by default.",
+      "It supports schemas, roles and extensions.",
+      "It is stricter about types than MySQL."
+     ],
+     "example": {
+      "sql": "SELECT version();",
+      "output": "PostgreSQL 16"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "PostgreSQL Installation",
+     "simple": "PostgreSQL ko official installer, package manager ya Docker se install kar sakte hain.",
+     "pro": "Install PostgreSQL from the official packages, your OS package manager or a container image; the server and client tools install separately.",
+     "points": [
+      "Install the server and psql/pgAdmin.",
+      "Note the port and data directory.",
+      "Start the service after install."
+     ],
+     "example": {
+      "sql": "SELECT version();",
+      "output": "PostgreSQL 16"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "PostgreSQL Database Setup",
+     "simple": "Install ke baad ek database banate hain aur usme tables rakhte hain.",
+     "pro": "After the cluster is running, create a database owned by a role, then connect to it before creating objects.",
+     "points": [
+      "CREATE DATABASE needs a connection to another database.",
+      "The owner controls default privileges.",
+      "Encoding and locale are set at creation."
+     ],
+     "example": {
+      "sql": "CREATE DATABASE brocode_sql;",
+      "output": "CREATE DATABASE"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "pgAdmin Introduction",
+     "simple": "pgAdmin PostgreSQL ka graphical client hai — tables aur queries point-and-click me.",
+     "pro": "pgAdmin is a web/desktop client for PostgreSQL: it manages connections, databases, schemas, tables and the query tool.",
+     "points": [
+      "Use the Query Tool for SQL.",
+      "The object tree shows databases and schemas.",
+      "Refresh after DDL changes."
+     ],
+     "example": {
+      "sql": "SELECT current_database();",
+      "output": "brocode_sql"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "SQL Command Line Introduction",
+     "simple": "psql command line client hai — terminal se query chala sakte hain.",
+     "pro": "psql is PostgreSQL’s interactive terminal client; it supports meta-commands such as \\l, \\dt and \\d.",
+     "points": [
+      "Connect with psql -d database.",
+      "Meta-commands start with a backslash.",
+      "End SQL statements with a semicolon."
+     ],
+     "example": {
+      "sql": "\\dt",
+      "output": "List of relations"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Database Connection",
+     "simple": "Connection ka matlab client server se authenticate karke baat karta hai.",
+     "pro": "A connection authenticates a role to a database on a host/port and opens a session for statements.",
+     "points": [
+      "Host, port, database, user and password are the core settings.",
+      "SSL protects network traffic.",
+      "Each session has its own settings."
+     ],
+     "example": {
+      "sql": "SELECT current_user, current_database();",
+      "output": "learner | brocode_sql"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Creating Your First Database",
+     "simple": "Pehla database banane ke liye CREATE DATABASE chalao.",
+     "pro": "CREATE DATABASE creates a new database from a template; connect to an existing database to run it.",
+     "points": [
+      "Names are case-sensitive when quoted.",
+      "The creator becomes the owner.",
+      "Template1 is the default template."
+     ],
+     "example": {
+      "sql": "CREATE DATABASE school;",
+      "output": "CREATE DATABASE"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Opening a Database",
+     "simple": "Database kholne ke liye \\c ya client me connection choose karo.",
+     "pro": "Switch the current database with \\c in psql or by selecting the connection in a GUI client.",
+     "points": [
+      "The session’s current database changes.",
+      "Objects are resolved in the new database.",
+      "Reconnect after switching."
+     ],
+     "example": {
+      "sql": "\\c school",
+      "output": "You are now connected to database \"school\""
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Understanding Database Schemas",
+     "simple": "Schema database ke andar tables ka folder jaisa hai.",
+     "pro": "A schema is a namespace inside a database; public is the default, and search_path decides unqualified name resolution.",
+     "points": [
+      "CREATE SCHEMA creates a namespace.",
+      "Qualify as schema.table.",
+      "search_path controls lookup order."
+     ],
+     "example": {
+      "sql": "CREATE SCHEMA school;",
+      "output": "CREATE SCHEMA"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Creating Your First Table",
+     "simple": "Table banane ke liye columns aur types define karo.",
+     "pro": "CREATE TABLE declares columns, types and constraints; the table is created in the current schema.",
+     "points": [
+      "Every column needs a type.",
+      "Primary keys identify rows.",
+      "NOT NULL rejects missing values."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL, marks INTEGER);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Understanding SQL Statements",
+     "simple": "SQL statement ek command hai — SELECT, INSERT, CREATE, etc.",
+     "pro": "A statement is a complete SQL command terminated by a semicolon; it may return rows or a command tag.",
+     "points": [
+      "DDL changes structure.",
+      "DML changes rows.",
+      "DQL reads rows."
+     ],
+     "example": {
+      "sql": "SELECT 1;",
+      "output": "?column?\n1"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Writing Your First SELECT Query",
+     "simple": "SELECT se data padhte hain; * sab columns deta hai.",
+     "pro": "SELECT projects columns and rows; * expands to every column of the FROM relation.",
+     "points": [
+      "List columns explicitly in production.",
+      "FROM names the table.",
+      "WHERE filters rows."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students;",
+      "output": "All student rows"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Executing SQL Commands",
+     "simple": "Run dabao ya Ctrl+Enter; server query chalata hai.",
+     "pro": "Execution sends the statement to the server, which parses, plans, executes and returns a result or command tag.",
+     "points": [
+      "Check the result tag.",
+      "Errors identify the line and token.",
+      "Transactions group writes."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) FROM students;",
+      "output": "1"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Understanding Query Results",
+     "simple": "Result table rows aur columns me aata hai; command tag batata hai kitne rows affect hue.",
+     "pro": "A result set has columns and rows; DML returns a command tag such as INSERT 0 1 or UPDATE 2.",
+     "points": [
+      "SELECT returns rows.",
+      "INSERT/UPDATE/DELETE return counts.",
+      "NULL is not an empty string."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('Aarav', 82);",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Understanding SQL Errors",
+     "simple": "Error message batata hai kya galat hai — table, column ya syntax.",
+     "pro": "PostgreSQL errors include a severity, message, detail and position; read the first error before changing the query.",
+     "points": [
+      "relation does not exist means a missing table.",
+      "column does not exist means a missing name.",
+      "syntax error points at the token."
+     ],
+     "example": {
+      "sql": "SELECT * FROM student;",
+      "output": "ERROR: relation \"student\" does not exist"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "SQL Comments",
+     "simple": "Comments notes hote hain jo database ignore karta hai.",
+     "pro": "Use -- for a line comment and /* ... */ for a block comment; comments are stripped before execution.",
+     "points": [
+      "Comment why, not what.",
+      "Do not nest block comments.",
+      "Keep comments out of hot queries if noisy."
+     ],
+     "example": {
+      "sql": "-- first query\nSELECT 1;",
+      "output": "?column?\n1"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "SQL Keywords",
+     "simple": "Keywords reserved words hain jaise SELECT, FROM, WHERE.",
+     "pro": "Keywords are reserved tokens with fixed meaning; identifiers that collide must be quoted.",
+     "points": [
+      "Keywords are case-insensitive.",
+      "Do not name a column order.",
+      "Quote identifiers only when needed."
+     ],
+     "example": {
+      "sql": "SELECT 1 AS ready;",
+      "output": "ready\n1"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "SQL Naming Conventions",
+     "simple": "Tables aur columns ke naam clear aur consistent rakho.",
+     "pro": "Use lower_snake_case for identifiers, plural table names and descriptive column names; avoid reserved words.",
+     "points": [
+      "Be consistent across the schema.",
+      "Avoid quoted mixed-case names.",
+      "Name keys and constraints explicitly."
+     ],
+     "example": {
+      "sql": "CREATE TABLE course_enrollments (id INTEGER PRIMARY KEY);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "SQL Formatting Best Practices",
+     "simple": "Query ko multi-line likho taaki padhna easy ho.",
+     "pro": "Format clauses on their own lines, indent joins and keep keywords uppercase for scanability.",
+     "points": [
+      "SELECT, FROM, WHERE on separate lines.",
+      "Align JOIN conditions.",
+      "Keep one statement per semicolon."
+     ],
+     "example": {
+      "sql": "SELECT name,\n       marks\nFROM students\nWHERE marks > 80;",
+      "output": "Filtered rows"
+     }
+    },
+    {
+     "id": "t21",
+     "title": "Creating a Table with Constraints",
+     "simple": "Constraints data ko valid rakhte hain — NOT NULL, UNIQUE, CHECK.",
+     "pro": "Constraints enforce rules at write time: NOT NULL, UNIQUE, CHECK, PRIMARY KEY and FOREIGN KEY.",
+     "points": [
+      "Name constraints for easier migration.",
+      "CHECK is evaluated per row.",
+      "Foreign keys need matching values."
+     ],
+     "example": {
+      "sql": "CREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT NOT NULL UNIQUE);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t22",
+     "title": "Inserting Your First Row",
+     "simple": "INSERT se table me naya record add hota hai.",
+     "pro": "INSERT adds one or more rows; RETURNING can return generated values.",
+     "points": [
+      "List columns to avoid order bugs.",
+      "Strings use single quotes.",
+      "RETURNING is PostgreSQL-specific."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('Meera', 91) RETURNING id;",
+      "output": "id\n2"
+     }
+    },
+    {
+     "id": "t23",
+     "title": "Reading the Query Plan",
+     "simple": "EXPLAIN batata hai database query kaise chalayega.",
+     "pro": "EXPLAIN shows the planner’s access path; EXPLAIN ANALYZE runs the query and reports actual timing.",
+     "points": [
+      "Seq Scan means a full table scan.",
+      "Index Scan uses an index.",
+      "ANALYZE executes the statement."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students WHERE id = 1;",
+      "output": "Index Scan using students_pkey"
+     }
+    },
+    {
+     "id": "t24",
+     "title": "Your First Database Workflow",
+     "simple": "Database banao, connect karo, table banao, row daalo, SELECT se check karo.",
+     "pro": "The first workflow is create database → connect → create table → insert → select → inspect with \\d.",
+     "points": [
+      "Keep DDL and seed data separate.",
+      "Verify with SELECT.",
+      "Commit when the schema is stable."
+     ],
+     "example": {
+      "sql": "\\d students",
+      "output": "Table \"public.students\""
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What is an SQL editor?",
+      "options": [
+       "A client that sends SQL to a server",
+       "The database file",
+       "A table",
+       "A backup"
+      ],
+      "answer": "A client that sends SQL to a server",
+      "why": "Editors are clients; the server executes statements."
+     },
+     {
+      "q": "What does PostgreSQL run as?",
+      "options": [
+       "A client-server RDBMS",
+       "A spreadsheet",
+       "A file format only",
+       "A NoSQL store"
+      ],
+      "answer": "A client-server RDBMS",
+      "why": "The server owns data and clients connect to it."
+     },
+     {
+      "q": "Which command creates a database?",
+      "options": [
+       "CREATE DATABASE",
+       "CREATE TABLE",
+       "INSERT",
+       "SELECT"
+      ],
+      "answer": "CREATE DATABASE",
+      "why": "CREATE DATABASE creates a new database."
+     },
+     {
+      "q": "Which tool is PostgreSQL’s terminal client?",
+      "options": [
+       "psql",
+       "pgAdmin",
+       "DBeaver",
+       "MySQL Shell"
+      ],
+      "answer": "psql",
+      "why": "psql is the official command-line client."
+     },
+     {
+      "q": "What does pgAdmin provide?",
+      "options": [
+       "A graphical PostgreSQL client",
+       "A SQL engine",
+       "A storage engine",
+       "A backup format"
+      ],
+      "answer": "A graphical PostgreSQL client",
+      "why": "pgAdmin is a GUI for managing PostgreSQL."
+     },
+     {
+      "q": "What is a connection?",
+      "options": [
+       "An authenticated session to a database",
+       "A table",
+       "A row",
+       "An index"
+      ],
+      "answer": "An authenticated session to a database",
+      "why": "A connection authenticates a role and opens a session."
+     },
+     {
+      "q": "Which command switches databases in psql?",
+      "options": [
+       "\\c",
+       "\\dt",
+       "\\l",
+       "\\q"
+      ],
+      "answer": "\\c",
+      "why": "\\c connects to another database."
+     },
+     {
+      "q": "What is a schema?",
+      "options": [
+       "A namespace inside a database",
+       "A backup",
+       "A row",
+       "A server"
+      ],
+      "answer": "A namespace inside a database",
+      "why": "Schemas group tables and other objects."
+     },
+     {
+      "q": "Which statement creates a table?",
+      "options": [
+       "CREATE TABLE",
+       "CREATE ROW",
+       "INSERT TABLE",
+       "SELECT TABLE"
+      ],
+      "answer": "CREATE TABLE",
+      "why": "CREATE TABLE declares columns and constraints."
+     },
+     {
+      "q": "What does SELECT * return?",
+      "options": [
+       "Every column of the relation",
+       "Only the first column",
+       "Only one row",
+       "A schema"
+      ],
+      "answer": "Every column of the relation",
+      "why": "* expands to every column."
+     },
+     {
+      "q": "What does a DML command return?",
+      "options": [
+       "A command tag with affected rows",
+       "Always a result set",
+       "A schema",
+       "A backup"
+      ],
+      "answer": "A command tag with affected rows",
+      "why": "INSERT/UPDATE/DELETE return tags such as INSERT 0 1."
+     },
+     {
+      "q": "What does “relation does not exist” mean?",
+      "options": [
+       "The table is missing or misspelled",
+       "The password is wrong",
+       "The server is down",
+       "The row is NULL"
+      ],
+      "answer": "The table is missing or misspelled",
+      "why": "The name did not resolve to a relation."
+     },
+     {
+      "q": "How do you write a line comment?",
+      "options": [
+       "-- comment",
+       "# comment",
+       "// comment",
+       "<!-- comment -->"
+      ],
+      "answer": "-- comment",
+      "why": "PostgreSQL uses -- for line comments."
+     },
+     {
+      "q": "Are SQL keywords case-sensitive?",
+      "options": [
+       "No, they are case-insensitive",
+       "Yes, always lowercase",
+       "Yes, always uppercase",
+       "Only in psql"
+      ],
+      "answer": "No, they are case-insensitive",
+      "why": "SELECT and select are equivalent."
+     },
+     {
+      "q": "Which naming style is recommended?",
+      "options": [
+       "lower_snake_case",
+       "CamelCase with spaces",
+       "UPPERCASE WITH SPACES",
+       "Reserved words"
+      ],
+      "answer": "lower_snake_case",
+      "why": "It avoids quoting and reads consistently."
+     },
+     {
+      "q": "Why format a query across lines?",
+      "options": [
+       "It is easier to read and review",
+       "It runs faster",
+       "It creates an index",
+       "It commits automatically"
+      ],
+      "answer": "It is easier to read and review",
+      "why": "Formatting does not change execution, only readability."
+     },
+     {
+      "q": "Which constraint rejects NULL?",
+      "options": [
+       "NOT NULL",
+       "UNIQUE",
+       "CHECK",
+       "DEFAULT"
+      ],
+      "answer": "NOT NULL",
+      "why": "NOT NULL requires a value."
+     },
+     {
+      "q": "Which clause returns generated values after INSERT?",
+      "options": [
+       "RETURNING",
+       "OUTPUT",
+       "SELECT INTO",
+       "FETCH"
+      ],
+      "answer": "RETURNING",
+      "why": "RETURNING is PostgreSQL syntax for returning inserted rows."
+     },
+     {
+      "q": "What does EXPLAIN show?",
+      "options": [
+       "The planner’s access path",
+       "The table data",
+       "The backup log",
+       "The user list"
+      ],
+      "answer": "The planner’s access path",
+      "why": "EXPLAIN shows how the planner will execute the query."
+     },
+     {
+      "q": "What is the first database workflow?",
+      "options": [
+       "Create database, connect, create table, insert, select",
+       "Insert, drop, select, create",
+       "Backup, restore, drop",
+       "Grant, revoke, commit"
+      ],
+      "answer": "Create database, connect, create table, insert, select",
+      "why": "That is the natural order for a first database."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is PostgreSQL?",
+      "answer": "An open-source client-server RDBMS with ACID transactions, rich types, extensions and strong SQL compliance."
+     },
+     {
+      "q": "What is the difference between a database and a schema?",
+      "answer": "A database is a separate catalog with its own connections; a schema is a namespace inside a database that groups tables and other objects."
+     },
+     {
+      "q": "What is psql?",
+      "answer": "The official PostgreSQL command-line client. It supports SQL plus meta-commands such as \\dt and \\d."
+     },
+     {
+      "q": "What is pgAdmin?",
+      "answer": "A graphical client for PostgreSQL that manages connections, databases, schemas, tables and queries."
+     },
+     {
+      "q": "How do you connect to PostgreSQL?",
+      "answer": "Provide host, port, database, user and password (or use a local socket); the server authenticates the role and opens a session."
+     },
+     {
+      "q": "How do you create a database?",
+      "answer": "Run CREATE DATABASE name from a connection to an existing database; the creator becomes the owner."
+     },
+     {
+      "q": "How do you switch databases in psql?",
+      "answer": "Use \\c database_name. SQL sessions cannot switch databases with a SQL statement in PostgreSQL."
+     },
+     {
+      "q": "What is the default schema?",
+      "answer": "public. Unqualified names resolve through search_path, which normally starts with public."
+     },
+     {
+      "q": "How do you create a table?",
+      "answer": "CREATE TABLE name (column type constraints, ...); every column needs a type and optional constraints."
+     },
+     {
+      "q": "What is a primary key?",
+      "answer": "A column or set of columns that uniquely identifies each row and cannot be NULL."
+     },
+     {
+      "q": "What does NOT NULL do?",
+      "answer": "It rejects inserts or updates that leave the column without a value."
+     },
+     {
+      "q": "What does UNIQUE do?",
+      "answer": "It rejects duplicate non-NULL values in the column or column set."
+     },
+     {
+      "q": "What does CHECK do?",
+      "answer": "It rejects rows where the boolean expression is false or NULL."
+     },
+     {
+      "q": "What is a foreign key?",
+      "answer": "A column or set of columns whose values must match a candidate key in another table, enforcing referential integrity."
+     },
+     {
+      "q": "How do you insert a row?",
+      "answer": "INSERT INTO table (columns) VALUES (values); use RETURNING to get generated values."
+     },
+     {
+      "q": "What does SELECT * do?",
+      "answer": "It returns every column of the relation; listing columns explicitly is safer in production."
+     },
+     {
+      "q": "What does EXPLAIN do?",
+      "answer": "It shows the planner’s chosen access path without running the query; EXPLAIN ANALYZE also runs it."
+     },
+     {
+      "q": "What is a command tag?",
+      "answer": "The status line returned by DML/DDL, such as INSERT 0 1 or UPDATE 2, reporting affected rows."
+     },
+     {
+      "q": "How do you comment SQL?",
+      "answer": "Use -- for a line comment and /* ... */ for a block comment."
+     },
+     {
+      "q": "What is a good first workflow?",
+      "answer": "Create the database, connect, create tables, insert seed rows, select to verify, then inspect with \\d."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Create a database",
+      "task": "Create a database named brocode_sql.",
+      "solution": "CREATE DATABASE brocode_sql;",
+      "expected": "CREATE DATABASE"
+     },
+     {
+      "title": "Connect to the database",
+      "task": "Switch to brocode_sql in psql.",
+      "solution": "\\c brocode_sql",
+      "expected": "You are now connected."
+     },
+     {
+      "title": "Create a students table",
+      "task": "Create students with id, name, city and marks.",
+      "solution": "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL, city TEXT, marks INTEGER);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Insert one student",
+      "task": "Insert Aarav from Pune with 82 marks.",
+      "solution": "INSERT INTO students (name, city, marks) VALUES ('Aarav', 'Pune', 82);",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Insert multiple students",
+      "task": "Insert Meera and Kabir in one statement.",
+      "solution": "INSERT INTO students (name, city, marks) VALUES ('Meera','Delhi',91), ('Kabir','Pune',67);",
+      "expected": "INSERT 0 2"
+     },
+     {
+      "title": "Select all students",
+      "task": "Return every column and row.",
+      "solution": "SELECT * FROM students;",
+      "expected": "All student rows."
+     },
+     {
+      "title": "Select two columns",
+      "task": "Return name and marks.",
+      "solution": "SELECT name, marks FROM students;",
+      "expected": "name and marks for every student."
+     },
+     {
+      "title": "Filter by marks",
+      "task": "Return students above 80.",
+      "solution": "SELECT name, marks FROM students WHERE marks > 80;",
+      "expected": "Only students above 80."
+     },
+     {
+      "title": "Sort by marks",
+      "task": "Return name and marks highest first.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC;",
+      "expected": "Rows from highest to lowest."
+     },
+     {
+      "title": "Count rows",
+      "task": "Count the students.",
+      "solution": "SELECT COUNT(*) AS total FROM students;",
+      "expected": "One row with total."
+     },
+     {
+      "title": "Distinct cities",
+      "task": "List each city once.",
+      "solution": "SELECT DISTINCT city FROM students;",
+      "expected": "Unique city values."
+     },
+     {
+      "title": "Average marks",
+      "task": "Return the average marks.",
+      "solution": "SELECT AVG(marks) AS avg_marks FROM students;",
+      "expected": "One average value."
+     },
+     {
+      "title": "Group by city",
+      "task": "Count students per city.",
+      "solution": "SELECT city, COUNT(*) AS n FROM students GROUP BY city;",
+      "expected": "One row per city."
+     },
+     {
+      "title": "Join courses",
+      "task": "Return student name and course title.",
+      "solution": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "expected": "Matching student-course pairs."
+     },
+     {
+      "title": "Top three",
+      "task": "Return the three highest marks.",
+      "solution": "SELECT name, marks FROM students ORDER BY marks DESC LIMIT 3;",
+      "expected": "Three rows."
+     },
+     {
+      "title": "Filter and sort",
+      "task": "Return Pune students alphabetically.",
+      "solution": "SELECT name FROM students WHERE city = 'Pune' ORDER BY name;",
+      "expected": "Pune students sorted."
+     },
+     {
+      "title": "Between values",
+      "task": "Return marks between 60 and 90.",
+      "solution": "SELECT name, marks FROM students WHERE marks BETWEEN 60 AND 90;",
+      "expected": "Rows inside the range."
+     },
+     {
+      "title": "Pattern match",
+      "task": "Return names starting with A.",
+      "solution": "SELECT name FROM students WHERE name LIKE 'A%';",
+      "expected": "Names starting with A."
+     },
+     {
+      "title": "Add a column",
+      "task": "Add an email column to students.",
+      "solution": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Inspect the table",
+      "task": "Show the students table definition.",
+      "solution": "\\d students",
+      "expected": "Column list and constraints."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why does CREATE DATABASE fail inside a transaction?",
+      "answer": "PostgreSQL does not allow CREATE DATABASE in a transaction block; run it outside a transaction."
+     },
+     {
+      "q": "Why does an unquoted name fold to lowercase?",
+      "answer": "PostgreSQL folds unquoted identifiers to lowercase; quoted names preserve case."
+     },
+     {
+      "q": "Why does SELECT * break after a schema change?",
+      "answer": "It returns the new column set, which can break consumers that expected a fixed shape."
+     },
+     {
+      "q": "Why does a foreign key reject an insert?",
+      "answer": "The referenced key does not exist in the parent table."
+     },
+     {
+      "q": "Why does a CHECK constraint reject NULL?",
+      "answer": "A CHECK passes only when the expression is true; NULL is not true."
+     },
+     {
+      "q": "Why does ORDER BY matter for LIMIT?",
+      "answer": "Without ORDER BY, LIMIT returns an arbitrary set of rows."
+     },
+     {
+      "q": "Why does COUNT(column) differ from COUNT(*)?",
+      "answer": "COUNT(column) skips NULLs; COUNT(*) counts rows."
+     },
+     {
+      "q": "Why does WHERE run before GROUP BY?",
+      "answer": "Rows are filtered first, then the remaining rows are grouped."
+     },
+     {
+      "q": "Why is HAVING needed?",
+      "answer": "It filters groups after aggregation, which WHERE cannot do."
+     },
+     {
+      "q": "Why use RETURNING on INSERT?",
+      "answer": "It returns generated values such as ids in the same statement."
+     },
+     {
+      "q": "Why is EXPLAIN useful?",
+      "answer": "It shows the access path and helps spot sequential scans."
+     },
+     {
+      "q": "Why is a schema useful?",
+      "answer": "It namespaces objects and lets search_path resolve unqualified names."
+     },
+     {
+      "q": "Why does a transaction rollback?",
+      "answer": "An error aborts the transaction until ROLLBACK or COMMIT after a successful statement."
+     },
+     {
+      "q": "Why avoid reserved words as identifiers?",
+      "answer": "They require quoting and make queries harder to read."
+     },
+     {
+      "q": "Why keep DDL and seed data separate?",
+      "answer": "Schema changes and data can be reviewed, rerun and rolled back independently."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Missing semicolon",
+      "broken": "SELECT * FROM students",
+      "fix": "SELECT * FROM students;",
+      "error": "syntax error at end of input",
+      "expected": "All rows."
+     },
+     {
+      "title": "Wrong table name",
+      "broken": "SELECT * FROM student;",
+      "fix": "SELECT * FROM students;",
+      "error": "relation \"student\" does not exist",
+      "expected": "All rows."
+     },
+     {
+      "title": "Wrong column name",
+      "broken": "SELECT names FROM students;",
+      "fix": "SELECT name FROM students;",
+      "error": "column \"names\" does not exist",
+      "expected": "Student names."
+     },
+     {
+      "title": "Unquoted string",
+      "broken": "SELECT * FROM students WHERE city = Pune;",
+      "fix": "SELECT * FROM students WHERE city = 'Pune';",
+      "error": "column \"pune\" does not exist",
+      "expected": "Pune students."
+     },
+     {
+      "title": "NULL equality",
+      "broken": "SELECT * FROM students WHERE city = NULL;",
+      "fix": "SELECT * FROM students WHERE city IS NULL;",
+      "error": "NULL never equals anything",
+      "expected": "Rows with no city."
+     },
+     {
+      "title": "Grouping error",
+      "broken": "SELECT city, COUNT(*) FROM students;",
+      "fix": "SELECT city, COUNT(*) FROM students GROUP BY city;",
+      "error": "column must appear in GROUP BY",
+      "expected": "Counts per city."
+     },
+     {
+      "title": "Aggregate in WHERE",
+      "broken": "SELECT city FROM students WHERE COUNT(*) > 1 GROUP BY city;",
+      "fix": "SELECT city FROM students GROUP BY city HAVING COUNT(*) > 1;",
+      "error": "aggregate functions are not allowed in WHERE",
+      "expected": "Cities with more than one student."
+     },
+     {
+      "title": "Ambiguous column",
+      "broken": "SELECT name FROM students JOIN courses ON id = course_id;",
+      "fix": "SELECT s.name FROM students s JOIN courses c ON c.id = s.course_id;",
+      "error": "column reference \"id\" is ambiguous",
+      "expected": "Student names."
+     },
+     {
+      "title": "LIMIT before ORDER BY",
+      "broken": "SELECT name FROM students LIMIT 3 ORDER BY marks DESC;",
+      "fix": "SELECT name FROM students ORDER BY marks DESC LIMIT 3;",
+      "error": "syntax error near ORDER",
+      "expected": "Top three by marks."
+     },
+     {
+      "title": "Missing FROM",
+      "broken": "SELECT name;",
+      "fix": "SELECT name FROM students;",
+      "error": "column \"name\" does not exist",
+      "expected": "Student names."
+     }
+    ],
+    "revision": [
+     {
+      "q": "How do you create a database?",
+      "answer": "CREATE DATABASE name;"
+     },
+     {
+      "q": "How do you connect in psql?",
+      "answer": "psql -d database or \\c database."
+     },
+     {
+      "q": "What is a schema?",
+      "answer": "A namespace inside a database."
+     },
+     {
+      "q": "How do you create a table?",
+      "answer": "CREATE TABLE name (columns and constraints)."
+     },
+     {
+      "q": "How do you insert a row?",
+      "answer": "INSERT INTO table (columns) VALUES (values)."
+     },
+     {
+      "q": "How do you read rows?",
+      "answer": "SELECT columns FROM table WHERE condition."
+     },
+     {
+      "q": "What does EXPLAIN show?",
+      "answer": "The planner’s access path."
+     },
+     {
+      "q": "What is a command tag?",
+      "answer": "The status line returned by DML/DDL."
+     },
+     {
+      "q": "What is psql?",
+      "answer": "The PostgreSQL command-line client."
+     },
+     {
+      "q": "What is pgAdmin?",
+      "answer": "A graphical PostgreSQL client."
+     }
+    ]
+   }
+  }
+ ]
+}
