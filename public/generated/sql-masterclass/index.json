@@ -18,14 +18,14 @@
   ]
  },
  "stats": {
-  "modules": 4,
-  "topics": 93,
-  "learn": 80,
-  "interview": 80,
-  "labs": 80,
-  "logic": 60,
-  "debug": 40,
-  "revision": 40
+  "modules": 5,
+  "topics": 113,
+  "learn": 100,
+  "interview": 100,
+  "labs": 100,
+  "logic": 75,
+  "debug": 50,
+  "revision": 50
  },
  "modules": [
   {
@@ -3875,6 +3875,920 @@
      {
       "q": "What does ROLLBACK do?",
       "answer": "Discards the transaction’s uncommitted changes."
+     }
+    ]
+   }
+  },
+  {
+   "id": "sql04",
+   "no": 4,
+   "title": "CREATE DATABASE and CREATE TABLE",
+   "goal": "Build a correct, constrained PostgreSQL schema from scratch.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "CREATE DATABASE",
+     "simple": "CREATE DATABASE ek naya database banata hai — apne tables, schemas aur users ke saath.",
+     "pro": "CREATE DATABASE creates a new database catalog from a template; it must run outside a transaction block and requires the CREATEDB privilege or superuser.",
+     "points": [
+      "The creator becomes the owner unless OWNER is given.",
+      "It clones template1 by default.",
+      "You cannot run it inside BEGIN ... COMMIT."
+     ],
+     "example": {
+      "sql": "CREATE DATABASE school;",
+      "output": "CREATE DATABASE"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Database Naming Rules",
+     "simple": "Database ka naam clear aur consistent rakho; unquoted naam lowercase ban jaate hain.",
+     "pro": "Unquoted identifiers fold to lowercase, are limited to 63 bytes and should avoid reserved words; quoted mixed-case names must be quoted forever.",
+     "points": [
+      "Use lower_snake_case.",
+      "Avoid spaces and reserved words.",
+      "Names are limited to 63 bytes."
+     ],
+     "example": {
+      "sql": "CREATE DATABASE SchoolDB;",
+      "output": "Creates schooldb (unquoted names fold to lowercase)."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "CREATE DATABASE Options",
+     "simple": "Database banate waqt owner, template aur encoding choose kar sakte hain.",
+     "pro": "CREATE DATABASE accepts OWNER, TEMPLATE, ENCODING, locale, CONNECTION LIMIT and IS_TEMPLATE options; template0 is the safe base when changing encoding or locale.",
+     "points": [
+      "template1 carries local customizations.",
+      "template0 is pristine.",
+      "Set the owner explicitly in shared environments."
+     ],
+     "example": {
+      "sql": "CREATE DATABASE school OWNER analyst TEMPLATE template0 ENCODING 'UTF8';",
+      "output": "CREATE DATABASE"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "CREATE TABLE",
+     "simple": "CREATE TABLE columns, types aur rules ke saath naya table banata hai.",
+     "pro": "CREATE TABLE defines a relation with ordered columns, types and constraints; it is DDL and takes a lock on the new table name.",
+     "points": [
+      "Every column needs a type.",
+      "Constraints enforce rules at write time.",
+      "The table is created in the current schema."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Table Structure",
+     "simple": "Table structure ka matlab columns, unke types aur constraints ka plan.",
+     "pro": "A table structure is its ordered column list, data types, defaults, nullability and constraints; psql shows it with \\d.",
+     "points": [
+      "Column order is part of the definition.",
+      "Constraints protect data quality.",
+      "Indexes are separate objects."
+     ],
+     "example": {
+      "sql": "\\d students",
+      "output": "Table \"public.students\"\n id   | integer | not null\n name | text    | not null"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Defining Columns",
+     "simple": "Har column ka naam, type aur optional default ya constraint likho.",
+     "pro": "A column definition is `name type [constraints]`; defaults and constraints are evaluated when rows are written.",
+     "points": [
+      "Name columns by meaning.",
+      "Put NOT NULL on required fields.",
+      "Defaults apply when the column is omitted."
+     ],
+     "example": {
+      "sql": "CREATE TABLE courses (id INTEGER PRIMARY KEY, title VARCHAR(120) NOT NULL, credits SMALLINT NOT NULL DEFAULT 3);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Defining Data Types",
+     "simple": "Column ke liye sahi type choose karo — number, text, date ya boolean.",
+     "pro": "Choose types by domain: integers for counts, NUMERIC for exact decimals, TEXT/VARCHAR for strings, BOOLEAN for flags and TIMESTAMPTZ for instants.",
+     "points": [
+      "The type controls valid values and storage.",
+      "Use NUMERIC for money.",
+      "Use TIMESTAMPTZ for real-world events."
+     ],
+     "example": {
+      "sql": "CREATE TABLE marks (student_id INTEGER, score NUMERIC(5,2) CHECK (score BETWEEN 0 AND 100));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Column Constraints",
+     "simple": "Constraints rules hain — NOT NULL, UNIQUE, CHECK, DEFAULT, PRIMARY KEY, REFERENCES.",
+     "pro": "Column constraints enforce nullability, uniqueness, value ranges, defaults and referential integrity; named constraints are easier to migrate later.",
+     "points": [
+      "NOT NULL rejects missing values.",
+      "UNIQUE rejects duplicates.",
+      "CHECK rejects false predicates."
+     ],
+     "example": {
+      "sql": "CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, email TEXT UNIQUE NOT NULL, active BOOLEAN NOT NULL DEFAULT TRUE);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Creating Multiple Columns",
+     "simple": "Ek table me jitne columns chahiye, comma se likho.",
+     "pro": "A table can declare many columns in one CREATE TABLE; order is preserved and each column has its own type and constraints.",
+     "points": [
+      "Commas separate definitions.",
+      "Every column needs a type.",
+      "Keep related columns together."
+     ],
+     "example": {
+      "sql": "CREATE TABLE demo (id INTEGER, title TEXT, active BOOLEAN, created_at TIMESTAMPTZ DEFAULT now());",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Creating Multiple Tables",
+     "simple": "Ek schema me alag-alag tables banao — students, courses, enrollments.",
+     "pro": "Create related tables in dependency order: parent tables first, then tables with foreign keys.",
+     "points": [
+      "Create referenced tables before referencing tables.",
+      "Use consistent key types.",
+      "One statement per table is easier to review."
+     ],
+     "example": {
+      "sql": "CREATE TABLE teachers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nCREATE TABLE rooms (id INTEGER PRIMARY KEY, label TEXT NOT NULL);",
+      "output": "CREATE TABLE\nCREATE TABLE"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Table Schema",
+     "simple": "Schema table ka blueprint hai — columns, types, keys aur rules.",
+     "pro": "A table schema is its declared structure and constraints, distinct from the data it currently holds.",
+     "points": [
+      "Schema changes are migrations.",
+      "Data changes are DML.",
+      "Inspect both structure and data separately."
+     ],
+     "example": {
+      "sql": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'students' ORDER BY ordinal_position;",
+      "output": "One row per column with its type."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "CREATE SCHEMA and search_path",
+     "simple": "Schema database ke andar namespace hai; search_path batata hai unqualified naam kahan dhoondhna hai.",
+     "pro": "CREATE SCHEMA creates a namespace; search_path controls the order in which unqualified object names are resolved.",
+     "points": [
+      "public is the default schema.",
+      "Qualify as school.students.",
+      "Put trusted schemas first in search_path."
+     ],
+     "example": {
+      "sql": "CREATE SCHEMA school;\nSET search_path TO school, public;",
+      "output": "CREATE SCHEMA\nSET"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "CREATE TABLE AS",
+     "simple": "CREATE TABLE AS query ka result ek naye table me save karta hai.",
+     "pro": "CREATE TABLE AS creates a table and fills it from a SELECT; it copies column names and data but not most constraints or indexes.",
+     "points": [
+      "It is convenient for snapshots.",
+      "It does not copy primary keys automatically.",
+      "The command tag is SELECT N."
+     ],
+     "example": {
+      "sql": "CREATE TABLE top_students AS SELECT name, marks FROM students WHERE marks > 80;",
+      "output": "SELECT N"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Creating Tables from Existing Data",
+     "simple": "Existing table ki structure ya data se naya table bana sakte hain.",
+     "pro": "CREATE TABLE ... (LIKE source INCLUDING ALL) copies the structure; CREATE TABLE AS copies data; INSERT ... SELECT fills an existing table.",
+     "points": [
+      "LIKE copies no rows.",
+      "CTAS copies rows but not constraints.",
+      "INSERT ... SELECT keeps the target definition."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students_copy (LIKE students INCLUDING ALL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "IF NOT EXISTS",
+     "simple": "IF NOT EXISTS table already ho to error ke bajaye skip kar deta hai.",
+     "pro": "CREATE TABLE IF NOT EXISTS skips creation when the relation name already exists; it does not compare or migrate the existing definition.",
+     "points": [
+      "Useful in repeatable bootstrap scripts.",
+      "Not a migration tool.",
+      "It emits a notice when skipping."
+     ],
+     "example": {
+      "sql": "CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY);",
+      "output": "CREATE TABLE (or NOTICE: relation already exists, skipping)"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Table Naming Conventions",
+     "simple": "Table ka naam plural, lowercase aur descriptive rakho — students, course_enrollments.",
+     "pro": "Use lower_snake_case, plural nouns and descriptive relationship names; avoid reserved words and quoted mixed case.",
+     "points": [
+      "Be consistent across the schema.",
+      "Name join tables after both sides.",
+      "Keep names under 63 bytes."
+     ],
+     "example": {
+      "sql": "CREATE TABLE course_enrollments (student_id BIGINT, course_id INTEGER, enrolled_on DATE);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Inspecting Table Structure",
+     "simple": "Table banne ke baad \\d ya information_schema se structure check karo.",
+     "pro": "psql \\d shows columns, types, indexes and constraints; information_schema.columns is the portable catalog query.",
+     "points": [
+      "Inspect after every DDL change.",
+      "Check defaults and nullability.",
+      "Verify foreign keys explicitly."
+     ],
+     "example": {
+      "sql": "SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'courses';",
+      "output": "column_name | data_type | is_nullable"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Common CREATE Errors",
+     "simple": "CREATE fail ho sakta hai duplicate table, missing type, duplicate column ya missing parent table se.",
+     "pro": "Common failures are relation already exists, column specified more than once, missing type, invalid default, missing referenced relation and permission denied.",
+     "points": [
+      "Read the first error and the object name.",
+      "Use IF NOT EXISTS only when skipping is correct.",
+      "Create parent tables before foreign keys."
+     ],
+     "example": {
+      "sql": "CREATE TABLE bad (id);",
+      "output": "ERROR: column \"id\" has no type"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "CREATE TABLE with Foreign Keys",
+     "simple": "Foreign key child table ko parent table se jodta hai.",
+     "pro": "A foreign key references a candidate key in a parent table and enforces referential integrity; choose ON DELETE behaviour deliberately.",
+     "points": [
+      "The parent key must be UNIQUE or PRIMARY KEY.",
+      "ON DELETE CASCADE removes children.",
+      "Create the parent first."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Student Database Design",
+     "simple": "Ab students, courses aur enrollments ka real schema banate hain.",
+     "pro": "A small school schema uses students, courses and a junction table with a composite primary key and foreign keys to both parents.",
+     "points": [
+      "Every table has a primary key.",
+      "The junction table enforces one enrollment per pair.",
+      "Use consistent key types."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name VARCHAR(80) NOT NULL, email TEXT UNIQUE, marks INTEGER CHECK (marks BETWEEN 0 AND 100));\nCREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);\nCREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE, enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE × 3"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Which command creates a new database?",
+      "options": [
+       "CREATE DATABASE",
+       "CREATE TABLE",
+       "CREATE SCHEMA",
+       "INSERT"
+      ],
+      "answer": "CREATE DATABASE",
+      "why": "CREATE DATABASE creates a separate database catalog."
+     },
+     {
+      "q": "Can CREATE DATABASE run inside a transaction block?",
+      "options": [
+       "No",
+       "Yes, always",
+       "Only in psql",
+       "Only with IF NOT EXISTS"
+      ],
+      "answer": "No",
+      "why": "PostgreSQL rejects CREATE DATABASE inside BEGIN ... COMMIT."
+     },
+     {
+      "q": "What happens to unquoted database names?",
+      "options": [
+       "They fold to lowercase",
+       "They stay uppercase",
+       "They are rejected",
+       "They become quoted"
+      ],
+      "answer": "They fold to lowercase",
+      "why": "PostgreSQL folds unquoted identifiers to lowercase."
+     },
+     {
+      "q": "What is the maximum identifier length in PostgreSQL?",
+      "options": [
+       "63 bytes",
+       "32 bytes",
+       "128 bytes",
+       "255 bytes"
+      ],
+      "answer": "63 bytes",
+      "why": "Identifiers are limited to NAMEDATALEN - 1 bytes, 63 by default."
+     },
+     {
+      "q": "Which command creates a table?",
+      "options": [
+       "CREATE TABLE",
+       "CREATE ROW",
+       "MAKE TABLE",
+       "ADD TABLE"
+      ],
+      "answer": "CREATE TABLE",
+      "why": "CREATE TABLE defines columns and constraints."
+     },
+     {
+      "q": "What does CREATE TABLE AS do?",
+      "options": [
+       "Creates a table from a query result",
+       "Copies only constraints",
+       "Creates an index",
+       "Creates a schema"
+      ],
+      "answer": "Creates a table from a query result",
+      "why": "CTAS creates and fills a table from SELECT."
+     },
+     {
+      "q": "What does CREATE TABLE ... LIKE source INCLUDING ALL copy?",
+      "options": [
+       "Structure, not rows",
+       "Rows, not structure",
+       "Only indexes",
+       "Only data"
+      ],
+      "answer": "Structure, not rows",
+      "why": "LIKE copies the table definition; it does not copy rows."
+     },
+     {
+      "q": "Does CREATE TABLE AS copy primary keys and indexes automatically?",
+      "options": [
+       "No",
+       "Yes, all of them",
+       "Only primary keys",
+       "Only indexes"
+      ],
+      "answer": "No",
+      "why": "CTAS copies columns and data, not most constraints or indexes."
+     },
+     {
+      "q": "What does CREATE TABLE IF NOT EXISTS do when the table exists?",
+      "options": [
+       "Skips creation and emits a notice",
+       "Drops and recreates it",
+       "Adds missing columns",
+       "Fails with an error"
+      ],
+      "answer": "Skips creation and emits a notice",
+      "why": "It does not compare or migrate the existing definition."
+     },
+     {
+      "q": "Which schema is the default in a new PostgreSQL database?",
+      "options": [
+       "public",
+       "main",
+       "dbo",
+       "default"
+      ],
+      "answer": "public",
+      "why": "public is the default schema in a standard PostgreSQL database."
+     },
+     {
+      "q": "What does search_path control?",
+      "options": [
+       "Which schemas resolve unqualified names",
+       "The database encoding",
+       "The table owner",
+       "The backup location"
+      ],
+      "answer": "Which schemas resolve unqualified names",
+      "why": "search_path is the lookup order for unqualified object names."
+     },
+     {
+      "q": "Which constraint uniquely identifies each row?",
+      "options": [
+       "PRIMARY KEY",
+       "NOT NULL",
+       "CHECK",
+       "DEFAULT"
+      ],
+      "answer": "PRIMARY KEY",
+      "why": "A primary key is unique and not null."
+     },
+     {
+      "q": "Which constraint rejects NULL values?",
+      "options": [
+       "NOT NULL",
+       "UNIQUE",
+       "CHECK",
+       "REFERENCES"
+      ],
+      "answer": "NOT NULL",
+      "why": "NOT NULL requires a value."
+     },
+     {
+      "q": "Which constraint enforces a value range?",
+      "options": [
+       "CHECK",
+       "UNIQUE",
+       "DEFAULT",
+       "PRIMARY KEY"
+      ],
+      "answer": "CHECK",
+      "why": "CHECK accepts rows only when its predicate is true."
+     },
+     {
+      "q": "Which constraint links a child table to a parent?",
+      "options": [
+       "FOREIGN KEY",
+       "CHECK",
+       "UNIQUE",
+       "NOT NULL"
+      ],
+      "answer": "FOREIGN KEY",
+      "why": "A foreign key references a candidate key in another table."
+     },
+     {
+      "q": "Which identity syntax is preferred for new PostgreSQL tables?",
+      "options": [
+       "GENERATED ALWAYS AS IDENTITY",
+       "SERIAL",
+       "AUTO_INCREMENT",
+       "IDENTITY()"
+      ],
+      "answer": "GENERATED ALWAYS AS IDENTITY",
+      "why": "IDENTITY is standard SQL; SERIAL is legacy."
+     },
+     {
+      "q": "Which psql command shows a table definition?",
+      "options": [
+       "\\d students",
+       "\\l",
+       "\\c",
+       "\\q"
+      ],
+      "answer": "\\d students",
+      "why": "\\d describes columns, indexes and constraints."
+     },
+     {
+      "q": "Which catalog view lists column types?",
+      "options": [
+       "information_schema.columns",
+       "pg_stat_activity",
+       "pg_roles",
+       "pg_database"
+      ],
+      "answer": "information_schema.columns",
+      "why": "It exposes column metadata in a standard shape."
+     },
+     {
+      "q": "What does a duplicate column name in CREATE TABLE cause?",
+      "options": [
+       "An error",
+       "A warning only",
+       "A silent rename",
+       "A new table"
+      ],
+      "answer": "An error",
+      "why": "A table cannot have two columns with the same name."
+     },
+     {
+      "q": "Which privilege is needed to create a database?",
+      "options": [
+       "CREATEDB",
+       "SELECT",
+       "USAGE",
+       "EXECUTE"
+      ],
+      "answer": "CREATEDB",
+      "why": "The role needs CREATEDB or superuser status."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is the difference between a database and a schema?",
+      "answer": "A database is a separate catalog with its own connections; a schema is a namespace inside a database that groups objects."
+     },
+     {
+      "q": "Why can CREATE DATABASE not run in a transaction?",
+      "answer": "PostgreSQL does not allow database creation inside a transaction block, so it cannot be rolled back like a table change."
+     },
+     {
+      "q": "What is template1 vs template0?",
+      "answer": "template1 is the default template and may carry local customizations; template0 is pristine and is the safe base when changing encoding or locale."
+     },
+     {
+      "q": "Who owns a newly created database?",
+      "answer": "The role that created it, unless OWNER is specified."
+     },
+     {
+      "q": "Why does database encoding matter?",
+      "answer": "Encoding determines which characters can be stored and how text is represented; UTF8 is the usual choice for multilingual data."
+     },
+     {
+      "q": "What are PostgreSQL identifier rules?",
+      "answer": "Unquoted identifiers fold to lowercase, are limited to 63 bytes and must not be empty; reserved words need quoting."
+     },
+     {
+      "q": "What does CREATE TABLE define?",
+      "answer": "Ordered columns, their data types, defaults and constraints, plus table-level constraints and storage options."
+     },
+     {
+      "q": "What does a primary key guarantee?",
+      "answer": "Uniqueness and non-nullness for the key columns, backed by a unique index."
+     },
+     {
+      "q": "Does a foreign key require a unique parent key?",
+      "answer": "Yes. The referenced columns must be a primary key or have a unique constraint."
+     },
+     {
+      "q": "What does ON DELETE CASCADE do?",
+      "answer": "When the parent row is deleted, matching child rows are deleted automatically."
+     },
+     {
+      "q": "What is the difference between SERIAL and IDENTITY?",
+      "answer": "SERIAL is a legacy pseudo-type that creates a sequence and default; GENERATED AS IDENTITY is standard SQL and preferred for new tables."
+     },
+     {
+      "q": "What is the difference between CTAS and CREATE TABLE LIKE?",
+      "answer": "CTAS copies columns and rows from a query but not most constraints; LIKE copies the structure and can include constraints but no rows."
+     },
+     {
+      "q": "Why is IF NOT EXISTS not a migration tool?",
+      "answer": "It only checks the relation name; it does not add missing columns or reconcile a different definition."
+     },
+     {
+      "q": "What is search_path?",
+      "answer": "The ordered list of schemas PostgreSQL uses to resolve unqualified object names."
+     },
+     {
+      "q": "How do you inspect a table in psql?",
+      "answer": "Use \\d table for columns, indexes and constraints; \\d+ adds storage and description details."
+     },
+     {
+      "q": "What are common CREATE TABLE errors?",
+      "answer": "Relation already exists, duplicate column, missing type, invalid default, missing referenced table and permission denied."
+     },
+     {
+      "q": "Why qualify table names with a schema?",
+      "answer": "Qualification removes ambiguity and protects against a hostile or unexpected search_path."
+     },
+     {
+      "q": "What is a composite primary key?",
+      "answer": "A primary key made of two or more columns; the combination must be unique and none may be null."
+     },
+     {
+      "q": "Does CTAS copy indexes?",
+      "answer": "No. CTAS creates a new table and data; indexes and most constraints must be added separately."
+     },
+     {
+      "q": "What privilege is needed to create tables?",
+      "answer": "CREATE on the schema, plus USAGE on that schema; the role also needs a database connection."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Create a database",
+      "task": "Create a database named school.",
+      "solution": "CREATE DATABASE school;",
+      "expected": "CREATE DATABASE"
+     },
+     {
+      "title": "Create a schema",
+      "task": "Create a school schema.",
+      "solution": "CREATE SCHEMA school;",
+      "expected": "CREATE SCHEMA"
+     },
+     {
+      "title": "Create a students table",
+      "task": "Create students with id, name, email and marks.",
+      "solution": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name VARCHAR(80) NOT NULL, email TEXT UNIQUE, marks INTEGER CHECK (marks BETWEEN 0 AND 100));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Add constraints",
+      "task": "Create a courses table with a unique title and default credits.",
+      "solution": "CREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT UNIQUE NOT NULL, credits SMALLINT NOT NULL DEFAULT 3);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Create multiple columns",
+      "task": "Create a demo table with id, title, active and created_at.",
+      "solution": "CREATE TABLE demo (id INTEGER, title TEXT, active BOOLEAN, created_at TIMESTAMPTZ DEFAULT now());",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Create a second table",
+      "task": "Create teachers with id and name.",
+      "solution": "CREATE TABLE teachers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Create a foreign key",
+      "task": "Create enrollments referencing students and courses.",
+      "solution": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Create a table from a query",
+      "task": "Create top_students from students with marks above 80.",
+      "solution": "CREATE TABLE top_students AS SELECT name, marks FROM students WHERE marks > 80;",
+      "expected": "SELECT N"
+     },
+     {
+      "title": "Copy a table structure",
+      "task": "Create students_copy with the same structure as students.",
+      "solution": "CREATE TABLE students_copy (LIKE students INCLUDING ALL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Use IF NOT EXISTS",
+      "task": "Create students only if it does not exist.",
+      "solution": "CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY);",
+      "expected": "CREATE TABLE or a notice"
+     },
+     {
+      "title": "Inspect columns",
+      "task": "List column names and types for courses.",
+      "solution": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'courses' ORDER BY ordinal_position;",
+      "expected": "One row per course column."
+     },
+     {
+      "title": "Create an identity table",
+      "task": "Create users with an identity primary key.",
+      "solution": "CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, email TEXT UNIQUE NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Create a composite primary key",
+      "task": "Create enrollments with a composite key.",
+      "solution": "CREATE TABLE enrollments (student_id BIGINT, course_id INTEGER, PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Add a check constraint",
+      "task": "Create marks with a score between 0 and 100.",
+      "solution": "CREATE TABLE marks (student_id BIGINT, score NUMERIC(5,2) CHECK (score BETWEEN 0 AND 100));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Add a default",
+      "task": "Create tickets with a default status.",
+      "solution": "CREATE TABLE tickets (id INTEGER PRIMARY KEY, status TEXT NOT NULL DEFAULT 'open');",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Enforce unique email",
+      "task": "Create accounts with a unique email.",
+      "solution": "CREATE TABLE accounts (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, email TEXT UNIQUE NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Create in a schema",
+      "task": "Create school.students explicitly in the school schema.",
+      "solution": "CREATE TABLE school.students (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Cascade deletes",
+      "task": "Create an orders parent and an order_items child that deletes with it.",
+      "solution": "CREATE TABLE orders (id INTEGER PRIMARY KEY);\nCREATE TABLE order_items (order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE, product TEXT NOT NULL);",
+      "expected": "CREATE TABLE × 2"
+     },
+     {
+      "title": "Create a filtered snapshot",
+      "task": "Create student_names from students with the id and name columns.",
+      "solution": "CREATE TABLE student_names AS SELECT id, name FROM students;",
+      "expected": "SELECT N"
+     },
+     {
+      "title": "Build the school schema",
+      "task": "Create students, courses and enrollments in order.",
+      "solution": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name VARCHAR(80) NOT NULL, email TEXT UNIQUE, marks INTEGER CHECK (marks BETWEEN 0 AND 100));\nCREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);\nCREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL, PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE × 3"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why can CREATE DATABASE not be rolled back?",
+      "answer": "PostgreSQL forbids it inside a transaction block, so there is no transaction to roll back."
+     },
+     {
+      "q": "Why do unquoted names fold to lowercase?",
+      "answer": "PostgreSQL normalizes unquoted identifiers to lowercase; quoted names preserve case."
+     },
+     {
+      "q": "Why is 63 bytes the identifier limit?",
+      "answer": "PostgreSQL stores names in a fixed 64-byte field, leaving one byte for the terminator."
+     },
+     {
+      "q": "Why use a schema instead of many databases?",
+      "answer": "Schemas share one database and connection while still namespacing objects, which simplifies backups and cross-schema queries."
+     },
+     {
+      "q": "Why does a primary key create an index?",
+      "answer": "The unique index enforces uniqueness and speeds up lookups by key."
+     },
+     {
+      "q": "Why must a foreign key parent exist first?",
+      "answer": "The referenced table and key must exist when the constraint is created."
+     },
+     {
+      "q": "Why does CTAS not copy constraints?",
+      "answer": "It creates a new relation from a query result; constraints are not part of the query output."
+     },
+     {
+      "q": "Why does LIKE copy no rows?",
+      "answer": "LIKE copies the table definition only; data must be inserted separately."
+     },
+     {
+      "q": "Why is IF NOT EXISTS unsafe for migrations?",
+      "answer": "It silently accepts an existing table even if its columns or constraints differ from what the script expects."
+     },
+     {
+      "q": "Why should search_path start with trusted schemas?",
+      "answer": "An attacker who can create objects in an earlier schema could shadow functions or tables."
+     },
+     {
+      "q": "Why prefer IDENTITY over SERIAL?",
+      "answer": "IDENTITY is standard SQL, has explicit sequence ownership and avoids legacy pseudo-type behavior."
+     },
+     {
+      "q": "Why add NOT NULL and DEFAULT together?",
+      "answer": "The column is always present and gets a value when the insert omits it."
+     },
+     {
+      "q": "Why does a CHECK constraint allow NULL?",
+      "answer": "A CHECK passes when the predicate is true or NULL; add NOT NULL if NULL must be rejected."
+     },
+     {
+      "q": "Why is ON DELETE CASCADE risky?",
+      "answer": "One parent delete can remove many child rows; use it only for true ownership relationships."
+     },
+     {
+      "q": "Why inspect a table after DDL?",
+      "answer": "The actual columns, defaults and constraints are the source of truth; the script may have skipped or altered something."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Database creation inside a transaction",
+      "broken": "BEGIN;\nCREATE DATABASE school;\nCOMMIT;",
+      "fix": "CREATE DATABASE school;",
+      "error": "CREATE DATABASE cannot run inside a transaction block",
+      "expected": "CREATE DATABASE"
+     },
+     {
+      "title": "Table already exists",
+      "broken": "CREATE TABLE students (id INTEGER);\nCREATE TABLE students (id INTEGER);",
+      "fix": "CREATE TABLE students (id INTEGER);\nCREATE TABLE IF NOT EXISTS students (id INTEGER);",
+      "error": "relation \"students\" already exists",
+      "expected": "CREATE TABLE\nNOTICE: relation already exists, skipping"
+     },
+     {
+      "title": "Missing column type",
+      "broken": "CREATE TABLE bad (id);",
+      "fix": "CREATE TABLE bad (id INTEGER);",
+      "error": "column \"id\" has no type",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Duplicate column",
+      "broken": "CREATE TABLE t (id INTEGER, id TEXT);",
+      "fix": "CREATE TABLE t (id INTEGER, name TEXT);",
+      "error": "column \"id\" specified more than once",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Invalid default",
+      "broken": "CREATE TABLE t (id INTEGER DEFAULT 'abc');",
+      "fix": "CREATE TABLE t (id INTEGER DEFAULT 0);",
+      "error": "invalid input syntax for type integer",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Missing parent table",
+      "broken": "CREATE TABLE child (parent_id INTEGER REFERENCES parents(id));",
+      "fix": "CREATE TABLE parents (id INTEGER PRIMARY KEY);\nCREATE TABLE child (parent_id INTEGER REFERENCES parents(id));",
+      "error": "relation \"parents\" does not exist",
+      "expected": "CREATE TABLE\nCREATE TABLE"
+     },
+     {
+      "title": "Reserved word table name",
+      "broken": "CREATE TABLE order (id INTEGER);",
+      "fix": "CREATE TABLE orders (id INTEGER);",
+      "error": "syntax error at or near \"order\"",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "IF NOT EXISTS hides a mismatch",
+      "broken": "CREATE TABLE students (id INTEGER);\nCREATE TABLE IF NOT EXISTS students (id INTEGER, name TEXT);",
+      "fix": "ALTER TABLE students ADD COLUMN name TEXT;",
+      "error": "The second CREATE is skipped; name is never added",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "CTAS has no primary key",
+      "broken": "CREATE TABLE students_backup AS SELECT * FROM students;",
+      "fix": "CREATE TABLE students_backup AS SELECT * FROM students;\nALTER TABLE students_backup ADD PRIMARY KEY (id);",
+      "error": "The copy has no primary key",
+      "expected": "The backup gets a primary key."
+     },
+     {
+      "title": "Wrong schema qualification",
+      "broken": "CREATE TABLE school.students (id INTEGER);",
+      "fix": "CREATE SCHEMA school;\nCREATE TABLE school.students (id INTEGER);",
+      "error": "schema \"school\" does not exist",
+      "expected": "CREATE SCHEMA\nCREATE TABLE"
+     }
+    ],
+    "revision": [
+     {
+      "q": "How do you create a database?",
+      "answer": "CREATE DATABASE name; outside a transaction."
+     },
+     {
+      "q": "How do you create a schema?",
+      "answer": "CREATE SCHEMA name;"
+     },
+     {
+      "q": "How do you create a table?",
+      "answer": "CREATE TABLE name (column type constraints, ...);"
+     },
+     {
+      "q": "Which schema is used by default?",
+      "answer": "public."
+     },
+     {
+      "q": "What does search_path do?",
+      "answer": "It controls the lookup order for unqualified object names."
+     },
+     {
+      "q": "How do you copy a table structure without rows?",
+      "answer": "CREATE TABLE copy (LIKE source INCLUDING ALL);"
+     },
+     {
+      "q": "How do you create a table from a query?",
+      "answer": "CREATE TABLE name AS SELECT ...;"
+     },
+     {
+      "q": "What does IF NOT EXISTS do?",
+      "answer": "Skips creation if the relation name already exists."
+     },
+     {
+      "q": "How do you inspect a table in psql?",
+      "answer": "\\d table."
+     },
+     {
+      "q": "What is a composite primary key?",
+      "answer": "A primary key made of two or more columns."
      }
     ]
    }
