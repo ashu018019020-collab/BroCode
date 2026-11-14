@@ -18,14 +18,14 @@
   ]
  },
  "stats": {
-  "modules": 6,
-  "topics": 133,
-  "learn": 120,
-  "interview": 120,
-  "labs": 120,
-  "logic": 90,
-  "debug": 60,
-  "revision": 60
+  "modules": 7,
+  "topics": 153,
+  "learn": 140,
+  "interview": 140,
+  "labs": 140,
+  "logic": 105,
+  "debug": 70,
+  "revision": 70
  },
  "modules": [
   {
@@ -5703,6 +5703,920 @@
      {
       "q": "Why use a transaction?",
       "answer": "To commit or roll back related inserts as one unit."
+     }
+    ]
+   }
+  },
+  {
+   "id": "sql06",
+   "no": 6,
+   "title": "SELECT Statement",
+   "goal": "Read and shape result sets with correct projection and expressions.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Introduction to SELECT",
+     "simple": "SELECT database se data padhne ka command hai — jo columns chahiye, wo choose karta hai.",
+     "pro": "SELECT is DQL that projects a result set from one or more relations, evaluates expressions and returns rows without modifying stored data.",
+     "points": [
+      "SELECT is read-only.",
+      "It can return zero, one or many rows.",
+      "The result columns are defined by the select list."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students;",
+      "output": "One row per student with name and marks."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Basic SELECT Syntax",
+     "simple": "Basic shape: SELECT columns FROM table.",
+     "pro": "The core syntax is SELECT select_list FROM relation [WHERE ...] [ORDER BY ...] [LIMIT ...]; the select list defines the output columns.",
+     "points": [
+      "The select list comes first.",
+      "FROM names the source relation.",
+      "Clauses have a fixed order."
+     ],
+     "example": {
+      "sql": "SELECT id, name FROM students;",
+      "output": "id | name\n1  | Aarav"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "SELECT *",
+     "simple": "SELECT * table ke saare columns deta hai.",
+     "pro": "SELECT * expands to every column in the relation at planning time; it is convenient for exploration but fragile in production.",
+     "points": [
+      "It returns every column, including future ones.",
+      "Column order follows the table definition.",
+      "Avoid it in application queries."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students;",
+      "output": "Every column and row from students."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Selecting Specific Columns",
+     "simple": "Sirf zaroori columns choose karo — network aur result chhota rehta hai.",
+     "pro": "A projection list names the columns to return; omitted columns are not read into the result, which can reduce I/O and payload.",
+     "points": [
+      "Name each column explicitly.",
+      "The output order is the list order.",
+      "Fewer columns is usually cheaper."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students;",
+      "output": "name  | marks\nAarav | 82"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Selecting Multiple Columns",
+     "simple": "Comma se multiple columns likho.",
+     "pro": "Multiple columns are separated by commas and appear in the same order as the select list, regardless of table order.",
+     "points": [
+      "Commas separate expressions.",
+      "A trailing comma is a syntax error.",
+      "Duplicate expressions are allowed."
+     ],
+     "example": {
+      "sql": "SELECT id, name, email, marks FROM students;",
+      "output": "Four columns per student."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Column Aliases",
+     "simple": "Alias result column ka temporary naam hota hai.",
+     "pro": "An alias renames a result column for the query output; it does not rename the underlying table column.",
+     "points": [
+      "Aliases improve report readability.",
+      "The AS keyword is optional.",
+      "Aliases are not visible in WHERE in PostgreSQL."
+     ],
+     "example": {
+      "sql": "SELECT name AS student_name, marks AS score FROM students;",
+      "output": "student_name | score\nAarav        | 82"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "AS Keyword",
+     "simple": "AS alias ko explicit banata hai — padhne me clear.",
+     "pro": "AS introduces a column or table alias; it is optional for column aliases but required for some derived-table aliases.",
+     "points": [
+      "AS is optional for column aliases.",
+      "Quoted aliases preserve case and spaces.",
+      "Aliases last for the query only."
+     ],
+     "example": {
+      "sql": "SELECT name AS \"Student Name\" FROM students;",
+      "output": "Student Name\nAarav"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Calculated Columns",
+     "simple": "SELECT me expression se naya column bana sakte hain.",
+     "pro": "The select list can contain expressions, not just columns; each expression becomes an output column with a computed value per row.",
+     "points": [
+      "Calculations do not change stored data.",
+      "Use an alias to name the result.",
+      "The expression is evaluated per row."
+     ],
+     "example": {
+      "sql": "SELECT name, marks + 5 AS boosted FROM students;",
+      "output": "name  | boosted\nAarav | 87"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Arithmetic Operations",
+     "simple": "SELECT me +, -, *, /, % use kar sakte hain.",
+     "pro": "Arithmetic operators follow standard precedence; integer division truncates, while a numeric operand keeps the fraction.",
+     "points": [
+      "* and / bind tighter than + and -.",
+      "Use parentheses to force order.",
+      "Integer / integer truncates."
+     ],
+     "example": {
+      "sql": "SELECT 7 / 2 AS int_div, ROUND(7.0 / 2, 1) AS num_div;",
+      "output": "int_div | num_div\n3       | 3.5"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Concatenating Columns",
+     "simple": "|| operator strings ko jodta hai.",
+     "pro": "The || operator concatenates text; cast non-text values explicitly when the result must be predictable.",
+     "points": [
+      "|| is concatenation.",
+      "NULL concatenated with anything is NULL.",
+      "Cast numbers with ::text."
+     ],
+     "example": {
+      "sql": "SELECT name || ' scored ' || marks::text AS label FROM students;",
+      "output": "Aarav scored 82"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Selecting Expressions",
+     "simple": "SELECT me literals, functions aur arithmetic — sab expressions hain.",
+     "pro": "A select-list item can be a column, literal, function call or arithmetic expression; PostgreSQL names an unaliased expression ?column?.",
+     "points": [
+      "Expressions can be nested.",
+      "Use aliases for stable column names.",
+      "Functions run per row unless aggregated."
+     ],
+     "example": {
+      "sql": "SELECT 2 + 3 * 4 AS result;",
+      "output": "result\n14"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "SELECT DISTINCT",
+     "simple": "DISTINCT duplicate result rows hata deta hai.",
+     "pro": "SELECT DISTINCT removes duplicate rows from the final result after projection; it applies to the whole select list, not to one column.",
+     "points": [
+      "DISTINCT is applied after SELECT expressions.",
+      "It treats NULLs as equal for duplicate removal.",
+      "It can cost a sort or hash."
+     ],
+     "example": {
+      "sql": "SELECT DISTINCT marks FROM students;",
+      "output": "Each marks value once."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Duplicate Values",
+     "simple": "Table me same value kai rows me ho sakti hai; DISTINCT unhe ek baar dikhata hai.",
+     "pro": "Duplicates are normal in relational data unless a constraint forbids them; duplicate removal is a query-time decision, not a storage rule.",
+     "points": [
+      "A primary key prevents duplicate rows by key.",
+      "Other columns can repeat.",
+      "DISTINCT changes the result, not the table."
+     ],
+     "example": {
+      "sql": "SELECT marks FROM students;",
+      "output": "82, 91, 82, 67 (duplicates possible)."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "DISTINCT with Multiple Columns",
+     "simple": "Multiple columns ke saath DISTINCT unique combinations deta hai.",
+     "pro": "SELECT DISTINCT a, b removes duplicate pairs; it does not return one row per distinct a.",
+     "points": [
+      "The whole tuple is compared.",
+      "Column order does not change the set.",
+      "Use GROUP BY when you need aggregates per key."
+     ],
+     "example": {
+      "sql": "SELECT DISTINCT name, marks FROM students;",
+      "output": "Each unique name-and-marks pair once."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Logical Query Order",
+     "simple": "SQL likhne ka order aur database ke evaluate karne ka order alag hai.",
+     "pro": "Logical evaluation is FROM → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT, which explains alias visibility and filter timing.",
+     "points": [
+      "WHERE runs before SELECT.",
+      "Aliases are available in ORDER BY.",
+      "LIMIT runs last."
+     ],
+     "example": {
+      "sql": "SELECT name AS n FROM students ORDER BY n;",
+      "output": "Rows sorted by the alias n."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Understanding Query Results",
+     "simple": "Result ek table jaisa hota hai — columns aur rows; zero rows bhi valid result hai.",
+     "pro": "A SELECT result is a relation with named columns and zero or more rows; an empty result is not an error and does not mean NULL.",
+     "points": [
+      "Zero rows is a valid answer.",
+      "Column names come from the select list.",
+      "NULL is a value, not an empty result."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE marks > 100;",
+      "output": "Zero rows (not an error)."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "SELECT Query Execution",
+     "simple": "Database query ko parse, plan aur execute karta hai.",
+     "pro": "The server parses the statement, rewrites it, plans access paths, then executes; EXPLAIN shows the plan without running the query.",
+     "points": [
+      "Parsing checks syntax.",
+      "The planner chooses scans and joins.",
+      "EXPLAIN ANALYZE runs it."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students WHERE id = 1;",
+      "output": "Index Scan using students_pkey"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Common SELECT Mistakes",
+     "simple": "Common galtiyan: galat column, missing comma, alias WHERE me use karna, integer division bhoolna.",
+     "pro": "Typical mistakes are misspelled columns, trailing commas, assuming alias visibility in WHERE, integer division and expecting DISTINCT to apply to one column.",
+     "points": [
+      "Read the error position.",
+      "Check the select list commas.",
+      "Qualify ambiguous columns."
+     ],
+     "example": {
+      "sql": "SELECT names FROM students;",
+      "output": "ERROR: column \"names\" does not exist"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "SELECT Without FROM",
+     "simple": "PostgreSQL me FROM ke bina bhi expression select kar sakte hain.",
+     "pro": "SELECT without FROM evaluates the select list once and returns one row; it is useful for testing expressions and functions.",
+     "points": [
+      "No table means one synthetic row.",
+      "It is PostgreSQL-compatible.",
+      "Aliases name the output."
+     ],
+     "example": {
+      "sql": "SELECT 1 + 1 AS answer;",
+      "output": "answer\n2"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Student Report Query",
+     "simple": "Ab columns, alias, calculation aur concatenation mila kar report banao.",
+     "pro": "A report query combines projection, aliases and expressions to produce a readable result without changing the table.",
+     "points": [
+      "Name every output column.",
+      "Cast numbers before concatenation.",
+      "Keep the query deterministic."
+     ],
+     "example": {
+      "sql": "SELECT id, name AS student, marks, marks + 5 AS boosted, name || ' (' || marks::text || ')' AS label FROM students;",
+      "output": "A table with id, student, marks, boosted and label columns."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Which category does SELECT belong to?",
+      "options": [
+       "DQL",
+       "DML",
+       "DDL",
+       "DCL"
+      ],
+      "answer": "DQL",
+      "why": "SELECT reads data; many curricula call that DQL."
+     },
+     {
+      "q": "What does SELECT * return?",
+      "options": [
+       "Every column of the relation",
+       "Only the first column",
+       "Only one row",
+       "The table definition"
+      ],
+      "answer": "Every column of the relation",
+      "why": "* expands to every column at planning time."
+     },
+     {
+      "q": "How do you return only name and marks?",
+      "options": [
+       "SELECT name, marks FROM students;",
+       "SELECT * FROM students;",
+       "SELECT name marks;",
+       "SELECT ALL;"
+      ],
+      "answer": "SELECT name, marks FROM students;",
+      "why": "List the columns in the select list."
+     },
+     {
+      "q": "Which keyword gives a result column a temporary name?",
+      "options": [
+       "AS",
+       "FROM",
+       "WHERE",
+       "ORDER"
+      ],
+      "answer": "AS",
+      "why": "AS introduces a column alias."
+     },
+     {
+      "q": "Is AS required for a column alias?",
+      "options": [
+       "No, it is optional",
+       "Yes, always",
+       "Only in PostgreSQL",
+       "Only for numbers"
+      ],
+      "answer": "No, it is optional",
+      "why": "SELECT name n is a valid alias form."
+     },
+     {
+      "q": "What does SELECT 7 / 2 return?",
+      "options": [
+       "3",
+       "3.5",
+       "4",
+       "An error"
+      ],
+      "answer": "3",
+      "why": "Both operands are integers, so integer division truncates."
+     },
+     {
+      "q": "What does ROUND(7.0 / 2, 1) return?",
+      "options": [
+       "3.5",
+       "3",
+       "4",
+       "An error"
+      ],
+      "answer": "3.5",
+      "why": "7.0 is numeric, so the division keeps the fraction, and ROUND fixes the display scale."
+     },
+     {
+      "q": "Which operator concatenates text?",
+      "options": [
+       "||",
+       "+",
+       "&",
+       "CONCAT"
+      ],
+      "answer": "||",
+      "why": "PostgreSQL uses || for string concatenation."
+     },
+     {
+      "q": "What does SELECT DISTINCT do?",
+      "options": [
+       "Removes duplicate result rows",
+       "Removes duplicate table rows",
+       "Sorts the rows",
+       "Counts the rows"
+      ],
+      "answer": "Removes duplicate result rows",
+      "why": "DISTINCT removes duplicate projected rows."
+     },
+     {
+      "q": "Does DISTINCT apply to one column or the whole select list?",
+      "options": [
+       "The whole select list",
+       "Only the first column",
+       "Only numeric columns",
+       "Only the primary key"
+      ],
+      "answer": "The whole select list",
+      "why": "The entire projected tuple is compared."
+     },
+     {
+      "q": "Which clause runs first logically?",
+      "options": [
+       "FROM",
+       "SELECT",
+       "ORDER BY",
+       "LIMIT"
+      ],
+      "answer": "FROM",
+      "why": "The source rows are established before projection."
+     },
+     {
+      "q": "Can a column alias be used in WHERE in PostgreSQL?",
+      "options": [
+       "No",
+       "Yes, always",
+       "Only with AS",
+       "Only for numbers"
+      ],
+      "answer": "No",
+      "why": "WHERE is evaluated before SELECT, so the alias does not exist yet."
+     },
+     {
+      "q": "Can a column alias be used in ORDER BY?",
+      "options": [
+       "Yes",
+       "No",
+       "Only with AS",
+       "Only in MySQL"
+      ],
+      "answer": "Yes",
+      "why": "ORDER BY is evaluated after SELECT, so aliases are available."
+     },
+     {
+      "q": "Is SELECT 1; valid in PostgreSQL?",
+      "options": [
+       "Yes, it returns one row",
+       "No, FROM is required",
+       "Only in psql",
+       "Only with an alias"
+      ],
+      "answer": "Yes, it returns one row",
+      "why": "SELECT without FROM evaluates the expression once."
+     },
+     {
+      "q": "What is an unaliased expression column named?",
+      "options": [
+       "?column?",
+       "result",
+       "expr",
+       "NULL"
+      ],
+      "answer": "?column?",
+      "why": "PostgreSQL uses ?column? when no alias is given."
+     },
+     {
+      "q": "What does SELECT NULL return?",
+      "options": [
+       "One row with NULL",
+       "Zero rows",
+       "An error",
+       "An empty string"
+      ],
+      "answer": "One row with NULL",
+      "why": "NULL is a value, not an empty result."
+     },
+     {
+      "q": "How many columns does SELECT name FROM students return?",
+      "options": [
+       "One",
+       "Two",
+       "All columns",
+       "Zero"
+      ],
+      "answer": "One",
+      "why": "The select list has one item."
+     },
+     {
+      "q": "What does SELECT 2 + 3 * 4 return?",
+      "options": [
+       "14",
+       "20",
+       "10",
+       "9"
+      ],
+      "answer": "14",
+      "why": "Multiplication binds tighter than addition."
+     },
+     {
+      "q": "What does SELECT (2 + 3) * 4 return?",
+      "options": [
+       "20",
+       "14",
+       "10",
+       "9"
+      ],
+      "answer": "20",
+      "why": "Parentheses force the addition first."
+     },
+     {
+      "q": "What does a SELECT returning zero rows mean?",
+      "options": [
+       "A valid empty result",
+       "An error",
+       "A NULL row",
+       "A missing table"
+      ],
+      "answer": "A valid empty result",
+      "why": "No matching rows is a normal result set."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is SELECT?",
+      "answer": "DQL that projects a result set from relations and expressions without changing stored rows."
+     },
+     {
+      "q": "What is the basic SELECT syntax?",
+      "answer": "SELECT select_list FROM relation [WHERE ...] [ORDER BY ...] [LIMIT ...];"
+     },
+     {
+      "q": "What is the logical order of query evaluation?",
+      "answer": "FROM, WHERE, GROUP BY, HAVING, SELECT, DISTINCT, ORDER BY, LIMIT."
+     },
+     {
+      "q": "Why is SELECT * risky in production?",
+      "answer": "It returns every current and future column, can break consumers and transfers more data than needed."
+     },
+     {
+      "q": "What is a column alias?",
+      "answer": "A temporary name for a result column; it does not rename the table column."
+     },
+     {
+      "q": "Is AS required for an alias?",
+      "answer": "No, it is optional for column aliases, but it improves clarity."
+     },
+     {
+      "q": "How do you preserve spaces or case in an alias?",
+      "answer": "Double-quote it, for example AS \"Student Name\"."
+     },
+     {
+      "q": "What is the difference between DISTINCT and GROUP BY?",
+      "answer": "DISTINCT removes duplicate projected rows; GROUP BY forms groups for aggregates and can be paired with HAVING."
+     },
+     {
+      "q": "Does DISTINCT apply to one column or all selected columns?",
+      "answer": "All selected columns; the whole tuple is compared."
+     },
+     {
+      "q": "How does DISTINCT treat NULL?",
+      "answer": "It treats NULLs as equal for duplicate removal, so one NULL survives."
+     },
+     {
+      "q": "Why does 7 / 2 return 3?",
+      "answer": "Both operands are integers, so integer division truncates the fraction."
+     },
+     {
+      "q": "How do you get 3.5 from 7 and 2?",
+      "answer": "Use a numeric operand and round the display, for example ROUND(7.0 / 2, 1). A bare numeric division can display extra scale digits."
+     },
+     {
+      "q": "What does || do with NULL?",
+      "answer": "Concatenating NULL with anything returns NULL; use COALESCE if a fallback is needed."
+     },
+     {
+      "q": "Why is an unaliased expression column called ?column??",
+      "answer": "PostgreSQL needs a name; without an alias it uses ?column? for the expression."
+     },
+     {
+      "q": "Can SELECT run without FROM?",
+      "answer": "Yes. It evaluates the select list once and returns one row."
+     },
+     {
+      "q": "Is SELECT read-only?",
+      "answer": "It does not change stored rows, though it can call functions; it is DQL."
+     },
+     {
+      "q": "Why are aliases unavailable in WHERE?",
+      "answer": "Logical evaluation runs WHERE before SELECT, so the alias has not been defined yet."
+     },
+     {
+      "q": "Why are aliases available in ORDER BY?",
+      "answer": "ORDER BY runs after SELECT, so the projected alias exists."
+     },
+     {
+      "q": "What does an empty result set mean?",
+      "answer": "The query matched zero rows; it is not an error and not a NULL row."
+     },
+     {
+      "q": "What is the difference between a column and an expression in SELECT?",
+      "answer": "A column reads a stored value; an expression computes a new value per row."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Select every column",
+      "task": "Return every column and row from students.",
+      "solution": "SELECT * FROM students;",
+      "expected": "All student columns and rows."
+     },
+     {
+      "title": "Select two columns",
+      "task": "Return name and marks.",
+      "solution": "SELECT name, marks FROM students;",
+      "expected": "name and marks for every student."
+     },
+     {
+      "title": "Select one column",
+      "task": "Return only the name column.",
+      "solution": "SELECT name FROM students;",
+      "expected": "One column of names."
+     },
+     {
+      "title": "Alias a column",
+      "task": "Return name as student_name.",
+      "solution": "SELECT name AS student_name FROM students;",
+      "expected": "A column named student_name."
+     },
+     {
+      "title": "Alias without AS",
+      "task": "Return marks as score without the AS keyword.",
+      "solution": "SELECT marks score FROM students;",
+      "expected": "A column named score."
+     },
+     {
+      "title": "Calculate a column",
+      "task": "Return name and marks plus 5 as boosted.",
+      "solution": "SELECT name, marks + 5 AS boosted FROM students;",
+      "expected": "boosted is five higher than marks."
+     },
+     {
+      "title": "Integer division",
+      "task": "Return 7 / 2 as int_div.",
+      "solution": "SELECT 7 / 2 AS int_div;",
+      "expected": "3"
+     },
+     {
+      "title": "Numeric division",
+      "task": "Return 7.0 / 2 rounded to one decimal as num_div.",
+      "solution": "SELECT ROUND(7.0 / 2, 1) AS num_div;",
+      "expected": "3.5"
+     },
+     {
+      "title": "Concatenate a label",
+      "task": "Return name and marks as a label.",
+      "solution": "SELECT name || ' scored ' || marks::text AS label FROM students;",
+      "expected": "Aarav scored 82"
+     },
+     {
+      "title": "Select a literal",
+      "task": "Return the text ready as status.",
+      "solution": "SELECT 'ready' AS status;",
+      "expected": "ready"
+     },
+     {
+      "title": "Select without FROM",
+      "task": "Return 1 + 1 as answer.",
+      "solution": "SELECT 1 + 1 AS answer;",
+      "expected": "2"
+     },
+     {
+      "title": "Distinct marks",
+      "task": "Return each marks value once.",
+      "solution": "SELECT DISTINCT marks FROM students;",
+      "expected": "Unique marks values."
+     },
+     {
+      "title": "Distinct pairs",
+      "task": "Return each unique name and marks pair.",
+      "solution": "SELECT DISTINCT name, marks FROM students;",
+      "expected": "Unique name-marks pairs."
+     },
+     {
+      "title": "Operator precedence",
+      "task": "Return 2 + 3 * 4 as result.",
+      "solution": "SELECT 2 + 3 * 4 AS result;",
+      "expected": "14"
+     },
+     {
+      "title": "Parentheses",
+      "task": "Return (2 + 3) * 4 as result.",
+      "solution": "SELECT (2 + 3) * 4 AS result;",
+      "expected": "20"
+     },
+     {
+      "title": "Quoted alias",
+      "task": "Return name as \"Student Name\".",
+      "solution": "SELECT name AS \"Student Name\" FROM students;",
+      "expected": "A column with the exact header Student Name."
+     },
+     {
+      "title": "Filtered select",
+      "task": "Return name and marks for students above 80.",
+      "solution": "SELECT name, marks FROM students WHERE marks > 80;",
+      "expected": "Only students above 80."
+     },
+     {
+      "title": "Count rows",
+      "task": "Return the number of students.",
+      "solution": "SELECT COUNT(*) AS total FROM students;",
+      "expected": "One row with total."
+     },
+     {
+      "title": "Select NULL",
+      "task": "Return NULL as missing.",
+      "solution": "SELECT NULL AS missing;",
+      "expected": "One row with NULL."
+     },
+     {
+      "title": "Build a report row",
+      "task": "Return id, name, marks, marks plus 5 and a label.",
+      "solution": "SELECT id, name AS student, marks, marks + 5 AS boosted, name || ' (' || marks::text || ')' AS label FROM students;",
+      "expected": "Five report columns per student."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why can an alias not be used in WHERE?",
+      "answer": "WHERE is evaluated before SELECT, so the alias has not been defined yet."
+     },
+     {
+      "q": "Why is an alias available in ORDER BY?",
+      "answer": "ORDER BY is evaluated after SELECT, so the projected alias exists."
+     },
+     {
+      "q": "Why does DISTINCT apply to the whole select list?",
+      "answer": "It compares complete projected rows; there is no per-column mode."
+     },
+     {
+      "q": "Why can SELECT * break an application?",
+      "answer": "A new column changes the result shape and can break consumers that expect a fixed set."
+     },
+     {
+      "q": "Why does 7 / 2 return 3?",
+      "answer": "Both operands are integers, so integer division truncates."
+     },
+     {
+      "q": "Why does 7.0 / 2 keep the fraction?",
+      "answer": "7.0 is numeric, so the division uses numeric arithmetic."
+     },
+     {
+      "q": "Why does NULL || text return NULL?",
+      "answer": "Concatenation with an unknown value is unknown; use COALESCE to supply a default."
+     },
+     {
+      "q": "Why does multiplication run before addition?",
+      "answer": "SQL arithmetic gives * and / higher precedence than + and -."
+     },
+     {
+      "q": "Why do parentheses matter in expressions?",
+      "answer": "They override precedence and make the intended grouping explicit."
+     },
+     {
+      "q": "Why is an unaliased expression called ?column??",
+      "answer": "The result needs a name; PostgreSQL supplies a placeholder when none is given."
+     },
+     {
+      "q": "Why is SELECT without FROM useful?",
+      "answer": "It evaluates expressions and functions once without needing a table."
+     },
+     {
+      "q": "Why can DISTINCT be expensive?",
+      "answer": "It may sort or hash the whole result to find duplicates."
+     },
+     {
+      "q": "Why does a zero-row result not mean NULL?",
+      "answer": "Zero rows is an empty relation; NULL is a value inside a row."
+     },
+     {
+      "q": "Why quote an alias with spaces?",
+      "answer": "Unquoted identifiers cannot contain spaces and fold to lowercase; quotes preserve the exact text."
+     },
+     {
+      "q": "Why are SQL keywords case-insensitive?",
+      "answer": "The parser normalizes keywords, so SELECT and select mean the same thing."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Trailing comma",
+      "broken": "SELECT name, FROM students;",
+      "fix": "SELECT name FROM students;",
+      "error": "syntax error at or near \"FROM\"",
+      "expected": "One name column."
+     },
+     {
+      "title": "Wrong column name",
+      "broken": "SELECT names FROM students;",
+      "fix": "SELECT name FROM students;",
+      "error": "column \"names\" does not exist",
+      "expected": "One name column."
+     },
+     {
+      "title": "Alias in WHERE",
+      "broken": "SELECT name AS n FROM students WHERE n = 'Aarav';",
+      "fix": "SELECT name AS n FROM students WHERE name = 'Aarav';",
+      "error": "column \"n\" does not exist",
+      "expected": "The matching row."
+     },
+     {
+      "title": "Integer division surprise",
+      "broken": "SELECT 7 / 2 AS result;",
+      "fix": "SELECT ROUND(7.0 / 2, 1) AS result;",
+      "error": "Returns 3, not 3.5",
+      "expected": "3.5"
+     },
+     {
+      "title": "Precedence surprise",
+      "broken": "SELECT 2 + 3 * 4 AS result;",
+      "fix": "SELECT (2 + 3) * 4 AS result;",
+      "error": "Returns 14, not 20",
+      "expected": "20"
+     },
+     {
+      "title": "DISTINCT misconception",
+      "broken": "SELECT DISTINCT name, marks FROM students;",
+      "fix": "SELECT DISTINCT name FROM students;",
+      "error": "Returns unique pairs, not unique names",
+      "expected": "One row per unique name."
+     },
+     {
+      "title": "Missing expression",
+      "broken": "SELECT name, marks + FROM students;",
+      "fix": "SELECT name, marks + 5 AS boosted FROM students;",
+      "error": "syntax error at or near \"FROM\"",
+      "expected": "name and boosted columns."
+     },
+     {
+      "title": "Order by missing position",
+      "broken": "SELECT name, marks FROM students ORDER BY 3;",
+      "fix": "SELECT name, marks FROM students ORDER BY marks;",
+      "error": "ORDER BY position 3 is not in select list",
+      "expected": "Rows sorted by marks."
+     },
+     {
+      "title": "Unquoted alias with spaces",
+      "broken": "SELECT name AS Student Name FROM students;",
+      "fix": "SELECT name AS \"Student Name\" FROM students;",
+      "error": "syntax error at or near \"Name\"",
+      "expected": "A Student Name column."
+     },
+     {
+      "title": "Empty result is not NULL",
+      "broken": "SELECT name FROM students WHERE marks > 100;",
+      "fix": "SELECT COALESCE((SELECT name FROM students WHERE marks > 100 LIMIT 1), 'none') AS name;",
+      "error": "Returns zero rows, not a NULL row",
+      "expected": "One row with none."
+     }
+    ],
+    "revision": [
+     {
+      "q": "What does SELECT do?",
+      "answer": "Projects a result set from relations and expressions without changing stored rows."
+     },
+     {
+      "q": "What is the basic syntax?",
+      "answer": "SELECT columns FROM table;"
+     },
+     {
+      "q": "What does * mean?",
+      "answer": "Every column of the relation."
+     },
+     {
+      "q": "How do you alias a column?",
+      "answer": "SELECT name AS student_name;"
+     },
+     {
+      "q": "What does DISTINCT do?",
+      "answer": "Removes duplicate result rows across the whole select list."
+     },
+     {
+      "q": "Why does 7 / 2 return 3?",
+      "answer": "Integer division truncates."
+     },
+     {
+      "q": "How do you keep a fraction?",
+      "answer": "Use a numeric operand, such as 7.0 / 2."
+     },
+     {
+      "q": "Which operator concatenates strings?",
+      "answer": "||"
+     },
+     {
+      "q": "What is the logical order of evaluation?",
+      "answer": "FROM, WHERE, GROUP BY, HAVING, SELECT, DISTINCT, ORDER BY, LIMIT."
+     },
+     {
+      "q": "What does a zero-row result mean?",
+      "answer": "The query matched no rows; it is a valid empty result."
      }
     ]
    }
