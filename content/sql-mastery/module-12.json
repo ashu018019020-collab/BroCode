@@ -1,0 +1,952 @@
+{
+ "course": {
+  "id": "sql-masterclass",
+  "title": "SQL Masterclass",
+  "tagline": "Zero to advanced, one module at a time.",
+  "level": "intermediate",
+  "hours": 24,
+  "standard": "PostgreSQL-first, with MySQL, SQLite and SQL Server notes.",
+  "prerequisites": [
+   "Module 00",
+   "Module 01",
+   "Module 02",
+   "Module 03",
+   "Module 04",
+   "Module 05",
+   "Module 06",
+   "Module 07",
+   "Module 08",
+   "Module 09",
+   "Module 10",
+   "Module 11"
+  ],
+  "description": "Module 12 teaches COUNT, SUM, AVG, MIN and MAX, GROUP BY, HAVING, NULL rules, DISTINCT aggregates, grouping sets, FILTER and aggregation performance.",
+  "outcomes": [
+   "Use each aggregate correctly",
+   "Group by one or many columns",
+   "Filter rows versus groups",
+   "Handle NULL in aggregates",
+   "Count distinct values",
+   "Use ROLLUP, CUBE and GROUPING SETS",
+   "Diagnose inflated aggregates"
+  ]
+ },
+ "modules": [
+  {
+   "id": "sql12",
+   "no": 12,
+   "title": "Aggregate Functions and GROUP BY",
+   "goal": "Summarize rows at the right grain without inflating counts or averages.",
+   "level": "intermediate",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Introduction to Aggregates",
+     "simple": "Aggregate functions many rows ko ek summary value me reduce karte hain.",
+     "pro": "Aggregates consume a set of rows and return one value per group, turning detail rows into counts, totals, averages, minima and maxima.",
+     "points": [
+      "Aggregates collapse rows.",
+      "They can run over the whole table or per group.",
+      "They ignore NULL unless told otherwise."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*), AVG(marks) FROM students;",
+      "output": "One row with the row count and average."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "COUNT",
+     "simple": "COUNT rows ya non-null values ginata hai.",
+     "pro": "COUNT(*) counts rows, while COUNT(column) counts non-null values in that column.",
+     "points": [
+      "COUNT(*) includes every row.",
+      "COUNT(column) skips NULL.",
+      "COUNT never returns NULL."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) AS row_count FROM students;",
+      "output": "The number of student rows."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "SUM",
+     "simple": "SUM numeric values ka total deta hai.",
+     "pro": "SUM adds non-null numeric values and returns NULL when the input set has no non-null values.",
+     "points": [
+      "SUM ignores NULL.",
+      "No rows yields NULL, not 0.",
+      "Use COALESCE for a zero default."
+     ],
+     "example": {
+      "sql": "SELECT SUM(marks) AS total_marks FROM students;",
+      "output": "The sum of known marks."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "AVG",
+     "simple": "AVG non-null values ka average deta hai.",
+     "pro": "AVG divides the sum by the count of non-null values, so missing values reduce the denominator rather than counting as zero.",
+     "points": [
+      "NULLs are excluded from both parts.",
+      "AVG over no rows is NULL.",
+      "AVG(integer) returns numeric in PostgreSQL."
+     ],
+     "example": {
+      "sql": "SELECT AVG(marks) AS average_marks FROM students;",
+      "output": "The average of known marks."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "MIN and MAX",
+     "simple": "MIN smallest aur MAX largest value deta hai.",
+     "pro": "MIN and MAX return the smallest and largest non-null values, using the column type’s ordering.",
+     "points": [
+      "NULLs are ignored.",
+      "Text uses collation order.",
+      "Empty input returns NULL."
+     ],
+     "example": {
+      "sql": "SELECT MIN(marks) AS lowest, MAX(marks) AS highest FROM students;",
+      "output": "Lowest and highest known marks."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "GROUP BY",
+     "simple": "GROUP BY same values wale rows ko groups me baantta hai.",
+     "pro": "GROUP BY partitions rows by the grouping expressions; each group produces one output row and aggregates run inside each group.",
+     "points": [
+      "Every non-aggregated output column must be grouped.",
+      "NULLs form their own group.",
+      "Grouping happens before HAVING."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id;",
+      "output": "One row per course with its enrollment count."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "GROUP BY Multiple Columns",
+     "simple": "Multiple columns se composite groups bante hain.",
+     "pro": "Grouping by several columns produces one row for each distinct combination, in the order the expressions are listed.",
+     "points": [
+      "Each combination is a group.",
+      "Order of grouping columns does not change the groups.",
+      "More columns usually means smaller groups."
+     ],
+     "example": {
+      "sql": "SELECT course_id, grade, COUNT(*) AS total FROM enrollments GROUP BY course_id, grade;",
+      "output": "One row per course-grade combination."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "HAVING",
+     "simple": "HAVING groups ko filter karta hai.",
+     "pro": "HAVING filters groups after aggregation, so it can reference aggregate results that WHERE cannot see.",
+     "points": [
+      "HAVING runs after GROUP BY.",
+      "It can use aggregates.",
+      "It filters groups, not individual rows."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id HAVING COUNT(*) > 1;",
+      "output": "Courses with more than one enrollment."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "HAVING vs WHERE",
+     "simple": "WHERE rows filter karta hai; HAVING groups filter karta hai.",
+     "pro": "WHERE removes rows before grouping and can use only row-level predicates; HAVING removes groups after aggregation and can use aggregate predicates.",
+     "points": [
+      "WHERE runs before GROUP BY.",
+      "HAVING runs after GROUP BY.",
+      "Filtering early in WHERE is usually cheaper."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(*) AS total FROM enrollments WHERE grade IS NOT NULL GROUP BY course_id HAVING COUNT(*) > 1;",
+      "output": "Courses with more than one graded enrollment."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Aggregates and NULL",
+     "simple": "Aggregates NULL ko ignore karte hain, COUNT(*) ko chhod kar.",
+     "pro": "COUNT(column), SUM, AVG, MIN and MAX skip NULL inputs; COUNT(*) counts rows regardless of NULL values.",
+     "points": [
+      "SUM/AVG/MIN/MAX ignore NULL.",
+      "COUNT(column) ignores NULL.",
+      "COUNT(*) counts every row."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) AS row_count, COUNT(marks) AS known FROM students;",
+      "output": "All rows versus rows with a known mark."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "COUNT(*) vs COUNT(column)",
+     "simple": "COUNT(*) rows ginata hai; COUNT(column) sirf non-null values.",
+     "pro": "The difference matters after outer joins and with nullable columns: COUNT(*) counts the preserved row, COUNT(column) counts only real matches.",
+     "points": [
+      "COUNT(*) includes NULL rows.",
+      "COUNT(column) excludes NULL.",
+      "Use COUNT(right_key) for outer-join matches."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) AS row_count, COUNT(marks) AS known_marks FROM students;",
+      "output": "Two different counts over the same table."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "COUNT(DISTINCT ...)",
+     "simple": "COUNT(DISTINCT column) unique non-null values ginata hai.",
+     "pro": "DISTINCT inside an aggregate removes duplicate non-null values before the aggregate runs, which is useful for counting unique students, courses or days.",
+     "points": [
+      "NULL is excluded.",
+      "Duplicates collapse.",
+      "It can be more expensive than COUNT(*)."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(DISTINCT student_id) AS unique_students FROM enrollments;",
+      "output": "The number of distinct enrolled students."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Grouping by Expressions",
+     "simple": "GROUP BY column ke bajaye expression par bhi kar sakte hain.",
+     "pro": "Grouping by an expression lets you aggregate by month, category or computed bucket instead of raw column values.",
+     "points": [
+      "The expression defines the group.",
+      "Aliases can be used in PostgreSQL GROUP BY.",
+      "The same expression should be used consistently."
+     ],
+     "example": {
+      "sql": "SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY month ORDER BY month;",
+      "output": "Enrollment counts by month."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Aggregates with JOIN",
+     "simple": "Join ke baad aggregates related rows ko summarize karte hain.",
+     "pro": "Joining before grouping aggregates related rows, but a one-to-many join changes the grain and can inflate COUNT and SUM unless you count distinct keys or pre-aggregate.",
+     "points": [
+      "Check the join grain first.",
+      "COUNT(right_key) handles empty left rows.",
+      "Pre-aggregate before joining when needed."
+     ],
+     "example": {
+      "sql": "SELECT c.title, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "output": "Every course with its enrollment count, including zero."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Aggregates without GROUP BY",
+     "simple": "GROUP BY ke bina aggregate poore result ko ek row me summarize karta hai.",
+     "pro": "Without GROUP BY, the entire input is one group, so the query returns exactly one row even when the table is empty.",
+     "points": [
+      "No GROUP BY means one group.",
+      "Non-aggregated columns are not allowed.",
+      "Empty input still returns one row."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) AS row_count, AVG(marks) AS average FROM students;",
+      "output": "One summary row for the whole table."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "GROUPING SETS, ROLLUP and CUBE",
+     "simple": "Ye multiple grouping levels ek hi query me dete hain.",
+     "pro": "GROUPING SETS lists exact grouping combinations; ROLLUP adds subtotal levels from left to right; CUBE produces every combination.",
+     "points": [
+      "ROLLUP gives hierarchical subtotals.",
+      "CUBE gives all combinations.",
+      "GROUPING() distinguishes a real NULL from a subtotal placeholder."
+     ],
+     "example": {
+      "sql": "SELECT course_id, grade, COUNT(*) AS total FROM enrollments GROUP BY ROLLUP (course_id, grade);",
+      "output": "Course-grade rows plus course subtotals and a grand total."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "FILTER and Conditional Aggregates",
+     "simple": "FILTER se aggregate sirf matching rows par chalta hai.",
+     "pro": "FILTER (WHERE condition) restricts the rows an aggregate sees, enabling conditional counts and sums in one pass without CASE expressions.",
+     "points": [
+      "FILTER is PostgreSQL syntax.",
+      "It works with any aggregate.",
+      "It avoids separate queries for each condition."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) FILTER (WHERE marks >= 60) AS passed, COUNT(*) AS total FROM students;",
+      "output": "Passed count and total count in one row."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Common Aggregate Errors",
+     "simple": "Non-grouped columns aur WHERE me aggregates sabse common errors hain.",
+     "pro": "The common failures are selecting a non-grouped column, putting an aggregate in WHERE, missing GROUP BY and expecting COUNT(*) to count only matches after an outer join.",
+     "points": [
+      "Group or aggregate every output column.",
+      "Use HAVING for aggregate filters.",
+      "Check the join grain."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id HAVING COUNT(*) > 1;",
+      "output": "Grouped rows with an aggregate filter."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Performance of Aggregation",
+     "simple": "Aggregation memory aur indexes par depend karta hai.",
+     "pro": "The planner uses hash or group aggregation; filtering before grouping, indexing group keys and pre-aggregating before joins usually reduce the work.",
+     "points": [
+      "Filter in WHERE before grouping.",
+      "Index group keys when useful.",
+      "COUNT(DISTINCT) is costly.",
+      "Read EXPLAIN plans."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT course_id, COUNT(*) FROM enrollments GROUP BY course_id;",
+      "output": "A plan with HashAggregate or GroupAggregate."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Aggregation Examples",
+     "simple": "Ab counts, averages aur subtotals ko real reports me combine karo.",
+     "pro": "A reliable aggregate report states the grain, filters rows before grouping, chooses the right count, and uses HAVING or grouping sets for subtotals.",
+     "points": [
+      "State one row per what.",
+      "Filter before grouping.",
+      "Use the right COUNT.",
+      "Check empty groups and NULLs."
+     ],
+     "example": {
+      "sql": "SELECT c.title, COUNT(e.student_id) AS enrolled, ROUND(AVG(e.grade), 2) AS average_grade FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title ORDER BY enrolled DESC, c.title ASC;",
+      "output": "Course report with enrollment count and average grade."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What does an aggregate function do?",
+      "options": [
+       "Reduces many rows to one value",
+       "Adds a column",
+       "Creates an index",
+       "Sorts rows"
+      ],
+      "answer": "Reduces many rows to one value",
+      "why": "Aggregates summarize a set of rows."
+     },
+     {
+      "q": "What does COUNT(*) count?",
+      "options": [
+       "All rows",
+       "Non-null values only",
+       "Distinct rows only",
+       "Columns"
+      ],
+      "answer": "All rows",
+      "why": "COUNT(*) counts rows regardless of NULLs."
+     },
+     {
+      "q": "What does COUNT(column) count?",
+      "options": [
+       "Non-null values",
+       "All rows",
+       "Distinct values",
+       "NULL values"
+      ],
+      "answer": "Non-null values",
+      "why": "NULLs are skipped."
+     },
+     {
+      "q": "What does SUM ignore?",
+      "options": [
+       "NULL values",
+       "Zero values",
+       "Negative values",
+       "Duplicate values"
+      ],
+      "answer": "NULL values",
+      "why": "NULL is not a number to add."
+     },
+     {
+      "q": "What does AVG use as its denominator?",
+      "options": [
+       "The count of non-null values",
+       "The total row count",
+       "The number of columns",
+       "The maximum value"
+      ],
+      "answer": "The count of non-null values",
+      "why": "AVG ignores NULLs in both sum and count."
+     },
+     {
+      "q": "What does MIN return?",
+      "options": [
+       "The smallest non-null value",
+       "The first row",
+       "Zero",
+       "The count"
+      ],
+      "answer": "The smallest non-null value",
+      "why": "MIN uses the column ordering and ignores NULL."
+     },
+     {
+      "q": "What does GROUP BY do?",
+      "options": [
+       "Partitions rows into groups",
+       "Sorts the final output",
+       "Filters rows",
+       "Limits rows"
+      ],
+      "answer": "Partitions rows into groups",
+      "why": "Each group produces one output row."
+     },
+     {
+      "q": "What must every non-aggregated SELECT column do?",
+      "options": [
+       "Appear in GROUP BY",
+       "Be a primary key",
+       "Be an integer",
+       "Have an alias"
+      ],
+      "answer": "Appear in GROUP BY",
+      "why": "Otherwise the value is ambiguous within a group."
+     },
+     {
+      "q": "Which clause filters groups?",
+      "options": [
+       "HAVING",
+       "WHERE",
+       "ORDER BY",
+       "LIMIT"
+      ],
+      "answer": "HAVING",
+      "why": "HAVING runs after aggregation."
+     },
+     {
+      "q": "Which clause filters rows before grouping?",
+      "options": [
+       "WHERE",
+       "HAVING",
+       "ORDER BY",
+       "LIMIT"
+      ],
+      "answer": "WHERE",
+      "why": "WHERE runs before GROUP BY."
+     },
+     {
+      "q": "Can WHERE contain an aggregate?",
+      "options": [
+       "No",
+       "Yes",
+       "Only COUNT",
+       "Only with GROUP BY"
+      ],
+      "answer": "No",
+      "why": "Aggregates are evaluated after WHERE; use HAVING."
+     },
+     {
+      "q": "What does SUM return over no non-null rows?",
+      "options": [
+       "NULL",
+       "0",
+       "1",
+       "An error"
+      ],
+      "answer": "NULL",
+      "why": "There is no value to add; use COALESCE for zero."
+     },
+     {
+      "q": "What does COUNT(DISTINCT column) count?",
+      "options": [
+       "Unique non-null values",
+       "All rows",
+       "NULLs",
+       "Duplicate values"
+      ],
+      "answer": "Unique non-null values",
+      "why": "DISTINCT removes duplicates before counting."
+     },
+     {
+      "q": "What does GROUP BY ROLLUP produce?",
+      "options": [
+       "Hierarchical subtotals",
+       "Only one group",
+       "A random sample",
+       "A sorted table"
+      ],
+      "answer": "Hierarchical subtotals",
+      "why": "ROLLUP adds subtotal levels from left to right."
+     },
+     {
+      "q": "What does CUBE produce?",
+      "options": [
+       "Every grouping combination",
+       "Only grand totals",
+       "Only one column",
+       "A cross join"
+      ],
+      "answer": "Every grouping combination",
+      "why": "CUBE generates all combinations of the listed columns."
+     },
+     {
+      "q": "What does GROUPING() help identify?",
+      "options": [
+       "A subtotal NULL versus a real NULL",
+       "The number of rows",
+       "The average",
+       "The sort order"
+      ],
+      "answer": "A subtotal NULL versus a real NULL",
+      "why": "It flags which columns were grouped."
+     },
+     {
+      "q": "What does FILTER do in an aggregate?",
+      "options": [
+       "Restricts rows the aggregate sees",
+       "Sorts the groups",
+       "Removes duplicates",
+       "Creates a group"
+      ],
+      "answer": "Restricts rows the aggregate sees",
+      "why": "FILTER (WHERE ...) applies a condition to the aggregate input."
+     },
+     {
+      "q": "What happens if you select name with COUNT(*) and no GROUP BY?",
+      "options": [
+       "An error",
+       "One row per name",
+       "All rows",
+       "NULL"
+      ],
+      "answer": "An error",
+      "why": "name is not grouped or aggregated."
+     },
+     {
+      "q": "Which count is zero for an empty outer-join group?",
+      "options": [
+       "COUNT(right_key)",
+       "COUNT(*)",
+       "COUNT(1)",
+       "COUNT(*) FILTER"
+      ],
+      "answer": "COUNT(right_key)",
+      "why": "The right key is NULL when there is no match."
+     },
+     {
+      "q": "What is the main risk of aggregating after a one-to-many join?",
+      "options": [
+       "Inflated counts and sums",
+       "Lost columns",
+       "A syntax error",
+       "Automatic DISTINCT"
+      ],
+      "answer": "Inflated counts and sums",
+      "why": "The joined grain repeats parent rows."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is an aggregate function?",
+      "answer": "A function that summarizes a set of rows into one value, such as COUNT, SUM, AVG, MIN or MAX."
+     },
+     {
+      "q": "What is the difference between COUNT(*) and COUNT(column)?",
+      "answer": "COUNT(*) counts rows; COUNT(column) counts non-null values in that column."
+     },
+     {
+      "q": "How does SUM treat NULL?",
+      "answer": "It ignores NULL; if there are no non-null values it returns NULL."
+     },
+     {
+      "q": "How does AVG treat NULL?",
+      "answer": "It ignores NULL in both the sum and the denominator, averaging only known values."
+     },
+     {
+      "q": "What does GROUP BY do?",
+      "answer": "It partitions rows into groups by the grouping expressions and produces one output row per group."
+     },
+     {
+      "q": "Why must non-aggregated columns appear in GROUP BY?",
+      "answer": "A group can contain many rows, so the query cannot choose one value without a grouping rule."
+     },
+     {
+      "q": "What is the difference between WHERE and HAVING?",
+      "answer": "WHERE filters rows before grouping; HAVING filters groups after aggregation."
+     },
+     {
+      "q": "Can HAVING be used without GROUP BY?",
+      "answer": "Yes; the whole result is treated as one group."
+     },
+     {
+      "q": "What does COUNT(DISTINCT column) do?",
+      "answer": "Counts unique non-null values after removing duplicates."
+     },
+     {
+      "q": "What is a grouping set?",
+      "answer": "A specified combination of grouping columns; GROUPING SETS runs several combinations in one query."
+     },
+     {
+      "q": "What does ROLLUP do?",
+      "answer": "Produces hierarchical subtotals by grouping the listed columns from left to right, ending with a grand total."
+     },
+     {
+      "q": "What does CUBE do?",
+      "answer": "Produces every possible grouping combination of the listed columns."
+     },
+     {
+      "q": "Why does GROUPING() exist?",
+      "answer": "It distinguishes a NULL produced by a subtotal from a real NULL in the data."
+     },
+     {
+      "q": "What does FILTER do?",
+      "answer": "Restricts the rows an aggregate sees, enabling conditional counts and sums in one pass."
+     },
+     {
+      "q": "Why can a join inflate an aggregate?",
+      "answer": "A one-to-many join repeats the parent row for each child, so COUNT and SUM see more rows than the parent grain."
+     },
+     {
+      "q": "How do you count matches after a LEFT JOIN?",
+      "answer": "Use COUNT(right_table.key), which is zero when there is no match."
+     },
+     {
+      "q": "How do you return zero instead of NULL for an empty SUM?",
+      "answer": "Use COALESCE(SUM(column), 0)."
+     },
+     {
+      "q": "What is the grain of an aggregate result?",
+      "answer": "One row per distinct combination of grouped columns, or one row total without GROUP BY."
+     },
+     {
+      "q": "How does the planner compute aggregates?",
+      "answer": "With HashAggregate or GroupAggregate, depending on sorting, indexes, memory and statistics."
+     },
+     {
+      "q": "How can you speed up aggregation?",
+      "answer": "Filter early, index grouping columns, pre-aggregate before joins and avoid unnecessary COUNT(DISTINCT)."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Count rows",
+      "task": "Count all students.",
+      "solution": "SELECT COUNT(*) AS row_count FROM students;",
+      "expected": "The row count."
+     },
+     {
+      "title": "Count non-null",
+      "task": "Count all rows and known marks.",
+      "solution": "SELECT COUNT(*) AS row_count, COUNT(marks) AS known FROM students;",
+      "expected": "Two different counts."
+     },
+     {
+      "title": "Sum marks",
+      "task": "Return the total of known marks.",
+      "solution": "SELECT SUM(marks) AS total FROM students;",
+      "expected": "The sum."
+     },
+     {
+      "title": "Average marks",
+      "task": "Return the average known mark.",
+      "solution": "SELECT AVG(marks) AS average FROM students;",
+      "expected": "The average."
+     },
+     {
+      "title": "Min and max",
+      "task": "Return the lowest and highest marks.",
+      "solution": "SELECT MIN(marks) AS lowest, MAX(marks) AS highest FROM students;",
+      "expected": "Two values."
+     },
+     {
+      "title": "Group by course",
+      "task": "Count enrollments per course.",
+      "solution": "SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id;",
+      "expected": "One row per course."
+     },
+     {
+      "title": "Multiple grouping columns",
+      "task": "Count enrollments per course and grade.",
+      "solution": "SELECT course_id, grade, COUNT(*) AS total FROM enrollments GROUP BY course_id, grade;",
+      "expected": "One row per course-grade pair."
+     },
+     {
+      "title": "HAVING filter",
+      "task": "Return courses with more than one enrollment.",
+      "solution": "SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id HAVING COUNT(*) > 1;",
+      "expected": "Courses with total > 1."
+     },
+     {
+      "title": "WHERE before HAVING",
+      "task": "Count only graded enrollments, then keep courses above one.",
+      "solution": "SELECT course_id, COUNT(*) AS total FROM enrollments WHERE grade IS NOT NULL GROUP BY course_id HAVING COUNT(*) > 1;",
+      "expected": "Qualifying courses."
+     },
+     {
+      "title": "Count distinct",
+      "task": "Count unique enrolled students.",
+      "solution": "SELECT COUNT(DISTINCT student_id) AS students FROM enrollments;",
+      "expected": "The distinct count."
+     },
+     {
+      "title": "Group by expression",
+      "task": "Count enrollments by month.",
+      "solution": "SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY month ORDER BY month;",
+      "expected": "Monthly counts."
+     },
+     {
+      "title": "Left join count",
+      "task": "Count enrollments per course, including zero.",
+      "solution": "SELECT c.title, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "expected": "Every course with a count."
+     },
+     {
+      "title": "Aggregate join",
+      "task": "Return average grade per course title.",
+      "solution": "SELECT c.title, ROUND(AVG(e.grade), 2) AS average_grade FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "expected": "Average grade per course."
+     },
+     {
+      "title": "Aggregate without GROUP BY",
+      "task": "Return the total row count and average marks in one row.",
+      "solution": "SELECT COUNT(*) AS row_count, AVG(marks) AS average FROM students;",
+      "expected": "One summary row."
+     },
+     {
+      "title": "ROLLUP",
+      "task": "Return course-grade counts with subtotals.",
+      "solution": "SELECT course_id, grade, COUNT(*) AS total FROM enrollments GROUP BY ROLLUP (course_id, grade);",
+      "expected": "Detail rows plus subtotals."
+     },
+     {
+      "title": "CUBE",
+      "task": "Return every grouping combination of course and grade.",
+      "solution": "SELECT course_id, grade, COUNT(*) AS total FROM enrollments GROUP BY CUBE (course_id, grade);",
+      "expected": "All combinations."
+     },
+     {
+      "title": "GROUPING flag",
+      "task": "Mark subtotal rows in a ROLLUP.",
+      "solution": "SELECT course_id, GROUPING(course_id) AS is_total, COUNT(*) AS total FROM enrollments GROUP BY ROLLUP (course_id);",
+      "expected": "1 marks the grand total."
+     },
+     {
+      "title": "FILTER aggregate",
+      "task": "Count passed and total students in one row.",
+      "solution": "SELECT COUNT(*) FILTER (WHERE marks >= 60) AS passed, COUNT(*) AS total FROM students;",
+      "expected": "Two counts."
+     },
+     {
+      "title": "COALESCE sum",
+      "task": "Return zero for an empty sum.",
+      "solution": "SELECT COALESCE(SUM(marks), 0) AS total FROM students WHERE FALSE;",
+      "expected": "0."
+     },
+     {
+      "title": "Explain aggregation",
+      "task": "Explain the per-course count plan.",
+      "solution": "EXPLAIN SELECT course_id, COUNT(*) FROM enrollments GROUP BY course_id;",
+      "expected": "A HashAggregate or GroupAggregate plan."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why does COUNT(column) differ from COUNT(*)?",
+      "answer": "COUNT(column) skips NULL; COUNT(*) counts every row."
+     },
+     {
+      "q": "Why can SUM return NULL?",
+      "answer": "There are no non-null values to add, so the result is unknown rather than zero."
+     },
+     {
+      "q": "Why can AVG be misleading with NULLs?",
+      "answer": "It averages only known values, so the denominator is smaller than the row count."
+     },
+     {
+      "q": "Why does WHERE run before GROUP BY?",
+      "answer": "Filtering rows first reduces the data that must be grouped and aggregated."
+     },
+     {
+      "q": "Why does HAVING run after GROUP BY?",
+      "answer": "It needs the aggregate result for each group before it can filter groups."
+     },
+     {
+      "q": "Why must every non-aggregated column be grouped?",
+      "answer": "A group can contain many values; without grouping the output value is undefined."
+     },
+     {
+      "q": "Why can a primary key in GROUP BY allow other columns?",
+      "answer": "PostgreSQL recognizes functional dependency, so columns determined by the grouped key are allowed."
+     },
+     {
+      "q": "Why can a one-to-many join inflate SUM?",
+      "answer": "The parent value repeats for each child row, so it is added once per child."
+     },
+     {
+      "q": "Why is COUNT(DISTINCT) relatively expensive?",
+      "answer": "It must track unique values, often with sorting or hashing, instead of a simple counter."
+     },
+     {
+      "q": "Why do grouping sets produce NULLs?",
+      "answer": "A column that is not part of a grouping set has no single value for the subtotal row."
+     },
+     {
+      "q": "Why use GROUPING() with ROLLUP?",
+      "answer": "It distinguishes a subtotal placeholder from a real NULL in the grouped column."
+     },
+     {
+      "q": "Why is HAVING without GROUP BY legal?",
+      "answer": "The whole result is treated as one group, so aggregate filters can apply."
+     },
+     {
+      "q": "Why is an aggregate illegal in WHERE?",
+      "answer": "WHERE is evaluated before grouping, when the aggregate value does not exist yet."
+     },
+     {
+      "q": "Why can an index help GROUP BY?",
+      "answer": "An ordered index can supply grouped rows without a separate sort, enabling GroupAggregate."
+     },
+     {
+      "q": "Why pre-aggregate before joining?",
+      "answer": "It reduces the row count and prevents a one-to-many join from multiplying the values being summed."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Non-grouped column",
+      "broken": "SELECT name, COUNT(*) FROM students;",
+      "fix": "SELECT name, COUNT(*) FROM students GROUP BY name;",
+      "error": "column \"students.name\" must appear in the GROUP BY clause or be used in an aggregate function",
+      "expected": "One row per name."
+     },
+     {
+      "title": "Aggregate in WHERE",
+      "broken": "SELECT course_id, COUNT(*) FROM enrollments WHERE COUNT(*) > 1 GROUP BY course_id;",
+      "fix": "SELECT course_id, COUNT(*) FROM enrollments GROUP BY course_id HAVING COUNT(*) > 1;",
+      "error": "aggregate functions are not allowed in WHERE",
+      "expected": "Courses above one enrollment."
+     },
+     {
+      "title": "COUNT(DISTINCT *)",
+      "broken": "SELECT COUNT(DISTINCT *) FROM students;",
+      "fix": "SELECT COUNT(DISTINCT id) FROM students;",
+      "error": "syntax error at or near \"*\"",
+      "expected": "Distinct student ids."
+     },
+     {
+      "title": "Missing GROUP BY",
+      "broken": "SELECT course_id, grade, COUNT(*) FROM enrollments WHERE course_id = 10;",
+      "fix": "SELECT course_id, grade, COUNT(*) FROM enrollments WHERE course_id = 10 GROUP BY course_id, grade;",
+      "error": "a selected column must appear in GROUP BY or be aggregated",
+      "expected": "One row per grade in course 10."
+     },
+     {
+      "title": "HAVING used for rows",
+      "broken": "SELECT course_id, grade FROM enrollments GROUP BY course_id, grade HAVING grade IS NOT NULL;",
+      "fix": "SELECT course_id, grade FROM enrollments WHERE grade IS NOT NULL GROUP BY course_id, grade;",
+      "error": "It works, but filters after grouping instead of before",
+      "expected": "Only graded rows, filtered earlier."
+     },
+     {
+      "title": "COUNT(*) in a left join",
+      "broken": "SELECT c.title, COUNT(*) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "fix": "SELECT c.title, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "error": "Empty courses count as 1",
+      "expected": "Empty courses count as 0."
+     },
+     {
+      "title": "SUM of no rows",
+      "broken": "SELECT SUM(marks) AS total FROM students WHERE FALSE;",
+      "fix": "SELECT COALESCE(SUM(marks), 0) AS total FROM students WHERE FALSE;",
+      "error": "Returns NULL, not 0",
+      "expected": "0."
+     },
+     {
+      "title": "AVG denominator",
+      "broken": "SELECT AVG(COALESCE(marks, 0)) AS average FROM students;",
+      "fix": "SELECT AVG(marks) AS average FROM students;",
+      "error": "Missing marks are counted as zero, lowering the average",
+      "expected": "Average of known marks."
+     },
+     {
+      "title": "Group by position",
+      "broken": "SELECT course_id, COUNT(*) FROM enrollments GROUP BY 3;",
+      "fix": "SELECT course_id, COUNT(*) FROM enrollments GROUP BY course_id;",
+      "error": "GROUP BY position 3 is not in select list",
+      "expected": "One row per course."
+     },
+     {
+      "title": "HAVING without GROUP BY",
+      "broken": "SELECT course_id, COUNT(*) FROM enrollments HAVING COUNT(*) > 1;",
+      "fix": "SELECT course_id, COUNT(*) FROM enrollments GROUP BY course_id HAVING COUNT(*) > 1;",
+      "error": "column \"enrollments.course_id\" must appear in the GROUP BY clause or be used in an aggregate function",
+      "expected": "Courses above one enrollment."
+     }
+    ],
+    "revision": [
+     {
+      "q": "What does COUNT(*) count?",
+      "answer": "All rows."
+     },
+     {
+      "q": "What does COUNT(column) count?",
+      "answer": "Non-null values."
+     },
+     {
+      "q": "What does SUM ignore?",
+      "answer": "NULL values."
+     },
+     {
+      "q": "What does AVG divide by?",
+      "answer": "The count of non-null values."
+     },
+     {
+      "q": "What does GROUP BY do?",
+      "answer": "Partitions rows into groups."
+     },
+     {
+      "q": "What filters groups?",
+      "answer": "HAVING."
+     },
+     {
+      "q": "What filters rows before grouping?",
+      "answer": "WHERE."
+     },
+     {
+      "q": "What does COUNT(DISTINCT column) count?",
+      "answer": "Unique non-null values."
+     },
+     {
+      "q": "What does ROLLUP add?",
+      "answer": "Hierarchical subtotals."
+     },
+     {
+      "q": "Why can joins inflate aggregates?",
+      "answer": "One-to-many joins repeat parent rows."
+     }
+    ]
+   }
+  }
+ ]
+}
