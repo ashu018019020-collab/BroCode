@@ -1,0 +1,919 @@
+{
+ "modules": [
+  {
+   "id": "sql32",
+   "no": 32,
+   "title": "Backup, Restore and Recovery",
+   "goal": "Recover data predictably with tested backups and measured targets.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Backup Types",
+     "simple": "Logical aur physical backups alag use cases ke liye hain.",
+     "pro": "Logical backups export SQL or archive data, while physical backups copy database files and WAL for exact recovery.",
+     "points": [
+      "Logical is portable.",
+      "Physical is faster for large databases.",
+      "Both need testing."
+     ],
+     "example": {
+      "sql": "pg_dump -Fc brocode > brocode.dump",
+      "output": "A custom-format dump."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Logical Backup",
+     "simple": "Logical backup objects ko export karta hai.",
+     "pro": "pg_dump exports schema and data in a portable format that can restore into another cluster.",
+     "points": [
+      "Portable across versions.",
+      "Slower for huge databases.",
+      "It can be selective."
+     ],
+     "example": {
+      "sql": "pg_dump -Fc -f brocode.dump brocode",
+      "output": "A dump file."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Physical Backup",
+     "simple": "Physical backup data files aur WAL copy karta hai.",
+     "pro": "A physical backup copies the cluster’s data files and requires WAL for consistency and point-in-time recovery.",
+     "points": [
+      "Exact cluster copy.",
+      "Needs WAL.",
+      "Fast recovery for large data."
+     ],
+     "example": {
+      "sql": "pg_basebackup -D /backup/base -Ft -z -P",
+      "output": "A base backup."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "pg_dump",
+     "simple": "pg_dump logical backup tool hai.",
+     "pro": "pg_dump supports plain SQL, custom, directory and tar formats, with compression and selective objects.",
+     "points": [
+      "Use -Fc for custom format.",
+      "Use -j for parallel directory dumps.",
+      "Test the restore."
+     ],
+     "example": {
+      "sql": "pg_dump -Fc -f brocode.dump brocode",
+      "output": "A custom dump."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "pg_restore",
+     "simple": "pg_restore custom dump restore karta hai.",
+     "pro": "pg_restore can restore selectively, run in parallel and create objects in a target database.",
+     "points": [
+      "Use -d for the target.",
+      "Use -j for parallelism.",
+      "Check errors."
+     ],
+     "example": {
+      "sql": "pg_restore -d brocode_restore -j 4 brocode.dump",
+      "output": "A restored database."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "WAL",
+     "simple": "WAL changes ka ordered log hai.",
+     "pro": "Write-ahead logging records changes before data pages, enabling crash recovery and replication.",
+     "points": [
+      "WAL is required for durability.",
+      "It enables PITR.",
+      "Archive it continuously."
+     ],
+     "example": {
+      "sql": "SHOW wal_level;",
+      "output": "replica"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "PITR",
+     "simple": "Point-in-time recovery WAL replay se hota hai.",
+     "pro": "PITR restores a base backup and replays WAL up to a target time or LSN.",
+     "points": [
+      "Restore the base.",
+      "Configure recovery target.",
+      "Replay WAL."
+     ],
+     "example": {
+      "sql": "restore_command = 'cp /archive/%f %p'",
+      "output": "A recovery setting."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "RPO and RTO",
+     "simple": "RPO data loss bound hai; RTO downtime bound.",
+     "pro": "Recovery point objective is the maximum acceptable data loss, and recovery time objective is the maximum acceptable downtime.",
+     "points": [
+      "RPO drives backup frequency.",
+      "RTO drives restore speed.",
+      "Measure both."
+     ],
+     "example": {
+      "sql": "-- RPO 5 minutes, RTO 30 minutes",
+      "output": "Recovery targets."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Restore Testing",
+     "simple": "Backup tabhi useful hai jab restore test ho.",
+     "pro": "A backup is unproven until a restore has been timed and verified against known data.",
+     "points": [
+      "Restore regularly.",
+      "Measure duration.",
+      "Verify row counts."
+     ],
+     "example": {
+      "sql": "pg_restore -d brocode_test brocode.dump",
+      "output": "A tested restore."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Retention",
+     "simple": "Backups ko policy ke hisaab se rakho.",
+     "pro": "Retention balances recovery needs, storage cost and compliance, with daily, weekly and monthly tiers.",
+     "points": [
+      "Define retention.",
+      "Automate pruning.",
+      "Keep off-site copies."
+     ],
+     "example": {
+      "sql": "-- keep 7 daily, 4 weekly, 12 monthly",
+      "output": "A retention policy."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Encryption",
+     "simple": "Backups ko encrypt karo.",
+     "pro": "Backups contain sensitive data and must be encrypted at rest and in transit, with keys managed separately.",
+     "points": [
+      "Encrypt dumps.",
+      "Protect keys.",
+      "Test decryption."
+     ],
+     "example": {
+      "sql": "pg_dump -Fc brocode | gpg -c > brocode.dump.gpg",
+      "output": "An encrypted dump."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Backup Monitoring",
+     "simple": "Backup success aur age monitor karo.",
+     "pro": "Monitoring catches failed jobs, stale backups and storage exhaustion before a recovery is needed.",
+     "points": [
+      "Alert on failure.",
+      "Track age.",
+      "Track size."
+     ],
+     "example": {
+      "sql": "SELECT now() - max(completed_at) AS backup_age FROM backups;",
+      "output": "The age of the latest backup."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Common Backup Errors",
+     "simple": "Untested restores, missing WAL aur wrong permissions common errors hain.",
+     "pro": "Common failures are never testing a restore, archiving WAL to a full disk and restoring with insufficient privileges.",
+     "points": [
+      "Test restores.",
+      "Monitor WAL.",
+      "Check permissions."
+     ],
+     "example": {
+      "sql": "pg_restore -l brocode.dump | head",
+      "output": "A dump table of contents."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Partial Restore",
+     "simple": "Selective restore se ek table ya schema lao.",
+     "pro": "pg_restore -t or -n restores selected tables or schemas from a custom dump.",
+     "points": [
+      "Use -t for tables.",
+      "Use -n for schemas.",
+      "Verify dependencies."
+     ],
+     "example": {
+      "sql": "pg_restore -d brocode_restore -t students brocode.dump",
+      "output": "A restored table."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Backup Strategy",
+     "simple": "Full, incremental aur WAL archive ko combine karo.",
+     "pro": "A practical strategy uses periodic full backups, continuous WAL archiving and regular restore drills.",
+     "points": [
+      "Full base.",
+      "WAL archive.",
+      "Restore drills."
+     ],
+     "example": {
+      "sql": "-- weekly base backup plus continuous WAL archiving",
+      "output": "A recovery strategy."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Recovery Drill",
+     "simple": "Recovery ko timed practice banao.",
+     "pro": "A recovery drill restores into an isolated environment, measures RTO and validates application queries.",
+     "points": [
+      "Isolate the target.",
+      "Time the restore.",
+      "Run checks."
+     ],
+     "example": {
+      "sql": "createdb brocode_drill\npg_restore -d brocode_drill brocode.dump",
+      "output": "A drill database."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Disaster Recovery",
+     "simple": "Region ya provider failure ke liye plan banao.",
+     "pro": "Disaster recovery covers off-site copies, alternate infrastructure and clear ownership for recovery decisions.",
+     "points": [
+      "Off-site copies.",
+      "Alternate region.",
+      "Named owners."
+     ],
+     "example": {
+      "sql": "-- replicate backups to a second region",
+      "output": "A DR plan."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Backup Security",
+     "simple": "Backups least privilege aur audit ke saath protect karo.",
+     "pro": "Restrict who can read backups, audit access and separate backup credentials from application credentials.",
+     "points": [
+      "Restrict access.",
+      "Audit reads.",
+      "Separate credentials."
+     ],
+     "example": {
+      "sql": "REVOKE ALL ON FUNCTION pg_read_file(text) FROM PUBLIC;",
+      "output": "REVOKE"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Restore Verification",
+     "simple": "Restore ke baad counts aur constraints check karo.",
+     "pro": "Verification compares row counts, checks constraints and runs representative queries against the restored database.",
+     "points": [
+      "Compare counts.",
+      "Validate constraints.",
+      "Run smoke queries."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) FROM students;",
+      "output": "A restored row count."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Recovery Plan",
+     "simple": "Backup, WAL, restore test aur runbook ready rakho.",
+     "pro": "A production recovery plan documents the schedule, retention, encryption, restore steps, owners and measured targets.",
+     "points": [
+      "Schedule backups.",
+      "Archive WAL.",
+      "Test restores.",
+      "Document the runbook."
+     ],
+     "example": {
+      "sql": "pg_dump -Fc -f /backups/brocode.dump brocode",
+      "output": "A scheduled backup."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 32 · Backup Types: what is the main purpose?",
+      "options": [
+       "Backup Types: Logical aur physical backups alag use cases ke liye hain.",
+       "Logical Backup: Logical backup objects ko export karta hai.",
+       "RPO and RTO: RPO data loss bound hai; RTO downtime bound.",
+       "Partial Restore: Selective restore se ek table ya schema lao."
+      ],
+      "answer": "Backup Types: Logical aur physical backups alag use cases ke liye hain.",
+      "why": "Logical backups export SQL or archive data, while physical backups copy database files and WAL for exact recovery."
+     },
+     {
+      "q": "Module 32 · Logical Backup: what is the main purpose?",
+      "options": [
+       "Physical Backup: Physical backup data files aur WAL copy karta hai.",
+       "Restore Testing: Backup tabhi useful hai jab restore test ho.",
+       "Backup Strategy: Full, incremental aur WAL archive ko combine karo.",
+       "Logical Backup: Logical backup objects ko export karta hai."
+      ],
+      "answer": "Logical Backup: Logical backup objects ko export karta hai.",
+      "why": "pg_dump exports schema and data in a portable format that can restore into another cluster."
+     },
+     {
+      "q": "Module 32 · Physical Backup: what is the main purpose?",
+      "options": [
+       "Retention: Backups ko policy ke hisaab se rakho.",
+       "Recovery Drill: Recovery ko timed practice banao.",
+       "Physical Backup: Physical backup data files aur WAL copy karta hai.",
+       "pg_dump: pg_dump logical backup tool hai."
+      ],
+      "answer": "Physical Backup: Physical backup data files aur WAL copy karta hai.",
+      "why": "A physical backup copies the cluster’s data files and requires WAL for consistency and point-in-time recovery."
+     },
+     {
+      "q": "Module 32 · pg_dump: what is the main purpose?",
+      "options": [
+       "Disaster Recovery: Region ya provider failure ke liye plan banao.",
+       "pg_dump: pg_dump logical backup tool hai.",
+       "pg_restore: pg_restore custom dump restore karta hai.",
+       "Encryption: Backups ko encrypt karo."
+      ],
+      "answer": "pg_dump: pg_dump logical backup tool hai.",
+      "why": "pg_dump supports plain SQL, custom, directory and tar formats, with compression and selective objects."
+     },
+     {
+      "q": "Module 32 · pg_restore: what is the main purpose?",
+      "options": [
+       "pg_restore: pg_restore custom dump restore karta hai.",
+       "WAL: WAL changes ka ordered log hai.",
+       "Backup Monitoring: Backup success aur age monitor karo.",
+       "Backup Security: Backups least privilege aur audit ke saath protect karo."
+      ],
+      "answer": "pg_restore: pg_restore custom dump restore karta hai.",
+      "why": "pg_restore can restore selectively, run in parallel and create objects in a target database."
+     },
+     {
+      "q": "Module 32 · WAL: what is the main purpose?",
+      "options": [
+       "PITR: Point-in-time recovery WAL replay se hota hai.",
+       "Common Backup Errors: Untested restores, missing WAL aur wrong permissions common errors hain.",
+       "Restore Verification: Restore ke baad counts aur constraints check karo.",
+       "WAL: WAL changes ka ordered log hai."
+      ],
+      "answer": "WAL: WAL changes ka ordered log hai.",
+      "why": "Write-ahead logging records changes before data pages, enabling crash recovery and replication."
+     },
+     {
+      "q": "Module 32 · PITR: what is the main purpose?",
+      "options": [
+       "Partial Restore: Selective restore se ek table ya schema lao.",
+       "Practical Recovery Plan: Backup, WAL, restore test aur runbook ready rakho.",
+       "PITR: Point-in-time recovery WAL replay se hota hai.",
+       "RPO and RTO: RPO data loss bound hai; RTO downtime bound."
+      ],
+      "answer": "PITR: Point-in-time recovery WAL replay se hota hai.",
+      "why": "PITR restores a base backup and replays WAL up to a target time or LSN."
+     },
+     {
+      "q": "Module 32 · RPO and RTO: what is the main purpose?",
+      "options": [
+       "Backup Types: Logical aur physical backups alag use cases ke liye hain.",
+       "RPO and RTO: RPO data loss bound hai; RTO downtime bound.",
+       "Restore Testing: Backup tabhi useful hai jab restore test ho.",
+       "Backup Strategy: Full, incremental aur WAL archive ko combine karo."
+      ],
+      "answer": "RPO and RTO: RPO data loss bound hai; RTO downtime bound.",
+      "why": "Recovery point objective is the maximum acceptable data loss, and recovery time objective is the maximum acceptable downtime."
+     },
+     {
+      "q": "Module 32 · Restore Testing: what is the main purpose?",
+      "options": [
+       "Restore Testing: Backup tabhi useful hai jab restore test ho.",
+       "Retention: Backups ko policy ke hisaab se rakho.",
+       "Recovery Drill: Recovery ko timed practice banao.",
+       "Logical Backup: Logical backup objects ko export karta hai."
+      ],
+      "answer": "Restore Testing: Backup tabhi useful hai jab restore test ho.",
+      "why": "A backup is unproven until a restore has been timed and verified against known data."
+     },
+     {
+      "q": "Module 32 · Retention: what is the main purpose?",
+      "options": [
+       "Encryption: Backups ko encrypt karo.",
+       "Disaster Recovery: Region ya provider failure ke liye plan banao.",
+       "Physical Backup: Physical backup data files aur WAL copy karta hai.",
+       "Retention: Backups ko policy ke hisaab se rakho."
+      ],
+      "answer": "Retention: Backups ko policy ke hisaab se rakho.",
+      "why": "Retention balances recovery needs, storage cost and compliance, with daily, weekly and monthly tiers."
+     },
+     {
+      "q": "Module 32 · Encryption: what is the main purpose?",
+      "options": [
+       "Backup Security: Backups least privilege aur audit ke saath protect karo.",
+       "pg_dump: pg_dump logical backup tool hai.",
+       "Encryption: Backups ko encrypt karo.",
+       "Backup Monitoring: Backup success aur age monitor karo."
+      ],
+      "answer": "Encryption: Backups ko encrypt karo.",
+      "why": "Backups contain sensitive data and must be encrypted at rest and in transit, with keys managed separately."
+     },
+     {
+      "q": "Module 32 · Backup Monitoring: what is the main purpose?",
+      "options": [
+       "pg_restore: pg_restore custom dump restore karta hai.",
+       "Backup Monitoring: Backup success aur age monitor karo.",
+       "Common Backup Errors: Untested restores, missing WAL aur wrong permissions common errors hain.",
+       "Restore Verification: Restore ke baad counts aur constraints check karo."
+      ],
+      "answer": "Backup Monitoring: Backup success aur age monitor karo.",
+      "why": "Monitoring catches failed jobs, stale backups and storage exhaustion before a recovery is needed."
+     },
+     {
+      "q": "Module 32 · Common Backup Errors: what is the main purpose?",
+      "options": [
+       "Common Backup Errors: Untested restores, missing WAL aur wrong permissions common errors hain.",
+       "Partial Restore: Selective restore se ek table ya schema lao.",
+       "Practical Recovery Plan: Backup, WAL, restore test aur runbook ready rakho.",
+       "WAL: WAL changes ka ordered log hai."
+      ],
+      "answer": "Common Backup Errors: Untested restores, missing WAL aur wrong permissions common errors hain.",
+      "why": "Common failures are never testing a restore, archiving WAL to a full disk and restoring with insufficient privileges."
+     },
+     {
+      "q": "Module 32 · Partial Restore: what is the main purpose?",
+      "options": [
+       "Backup Strategy: Full, incremental aur WAL archive ko combine karo.",
+       "Backup Types: Logical aur physical backups alag use cases ke liye hain.",
+       "PITR: Point-in-time recovery WAL replay se hota hai.",
+       "Partial Restore: Selective restore se ek table ya schema lao."
+      ],
+      "answer": "Partial Restore: Selective restore se ek table ya schema lao.",
+      "why": "pg_restore -t or -n restores selected tables or schemas from a custom dump."
+     },
+     {
+      "q": "Module 32 · Backup Strategy: what is the main purpose?",
+      "options": [
+       "Logical Backup: Logical backup objects ko export karta hai.",
+       "RPO and RTO: RPO data loss bound hai; RTO downtime bound.",
+       "Backup Strategy: Full, incremental aur WAL archive ko combine karo.",
+       "Recovery Drill: Recovery ko timed practice banao."
+      ],
+      "answer": "Backup Strategy: Full, incremental aur WAL archive ko combine karo.",
+      "why": "A practical strategy uses periodic full backups, continuous WAL archiving and regular restore drills."
+     },
+     {
+      "q": "Module 32 · Recovery Drill: what is the main purpose?",
+      "options": [
+       "Restore Testing: Backup tabhi useful hai jab restore test ho.",
+       "Recovery Drill: Recovery ko timed practice banao.",
+       "Disaster Recovery: Region ya provider failure ke liye plan banao.",
+       "Physical Backup: Physical backup data files aur WAL copy karta hai."
+      ],
+      "answer": "Recovery Drill: Recovery ko timed practice banao.",
+      "why": "A recovery drill restores into an isolated environment, measures RTO and validates application queries."
+     },
+     {
+      "q": "Module 32 · Disaster Recovery: what is the main purpose?",
+      "options": [
+       "Disaster Recovery: Region ya provider failure ke liye plan banao.",
+       "Backup Security: Backups least privilege aur audit ke saath protect karo.",
+       "pg_dump: pg_dump logical backup tool hai.",
+       "Retention: Backups ko policy ke hisaab se rakho."
+      ],
+      "answer": "Disaster Recovery: Region ya provider failure ke liye plan banao.",
+      "why": "Disaster recovery covers off-site copies, alternate infrastructure and clear ownership for recovery decisions."
+     },
+     {
+      "q": "Module 32 · Backup Security: what is the main purpose?",
+      "options": [
+       "Restore Verification: Restore ke baad counts aur constraints check karo.",
+       "pg_restore: pg_restore custom dump restore karta hai.",
+       "Encryption: Backups ko encrypt karo.",
+       "Backup Security: Backups least privilege aur audit ke saath protect karo."
+      ],
+      "answer": "Backup Security: Backups least privilege aur audit ke saath protect karo.",
+      "why": "Restrict who can read backups, audit access and separate backup credentials from application credentials."
+     },
+     {
+      "q": "Module 32 · Restore Verification: what is the main purpose?",
+      "options": [
+       "WAL: WAL changes ka ordered log hai.",
+       "Backup Monitoring: Backup success aur age monitor karo.",
+       "Restore Verification: Restore ke baad counts aur constraints check karo.",
+       "Practical Recovery Plan: Backup, WAL, restore test aur runbook ready rakho."
+      ],
+      "answer": "Restore Verification: Restore ke baad counts aur constraints check karo.",
+      "why": "Verification compares row counts, checks constraints and runs representative queries against the restored database."
+     },
+     {
+      "q": "Module 32 · Practical Recovery Plan: what is the main purpose?",
+      "options": [
+       "Common Backup Errors: Untested restores, missing WAL aur wrong permissions common errors hain.",
+       "Practical Recovery Plan: Backup, WAL, restore test aur runbook ready rakho.",
+       "Backup Types: Logical aur physical backups alag use cases ke liye hain.",
+       "PITR: Point-in-time recovery WAL replay se hota hai."
+      ],
+      "answer": "Practical Recovery Plan: Backup, WAL, restore test aur runbook ready rakho.",
+      "why": "A production recovery plan documents the schedule, retention, encryption, restore steps, owners and measured targets."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 32 · Explain Backup Types in a production query.",
+      "answer": "Logical backups export SQL or archive data, while physical backups copy database files and WAL for exact recovery. Key rules: Logical is portable. Physical is faster for large databases. Both need testing."
+     },
+     {
+      "q": "Module 32 · Explain Logical Backup in a production query.",
+      "answer": "pg_dump exports schema and data in a portable format that can restore into another cluster. Key rules: Portable across versions. Slower for huge databases. It can be selective."
+     },
+     {
+      "q": "Module 32 · Explain Physical Backup in a production query.",
+      "answer": "A physical backup copies the cluster’s data files and requires WAL for consistency and point-in-time recovery. Key rules: Exact cluster copy. Needs WAL. Fast recovery for large data."
+     },
+     {
+      "q": "Module 32 · Explain pg_dump in a production query.",
+      "answer": "pg_dump supports plain SQL, custom, directory and tar formats, with compression and selective objects. Key rules: Use -Fc for custom format. Use -j for parallel directory dumps. Test the restore."
+     },
+     {
+      "q": "Module 32 · Explain pg_restore in a production query.",
+      "answer": "pg_restore can restore selectively, run in parallel and create objects in a target database. Key rules: Use -d for the target. Use -j for parallelism. Check errors."
+     },
+     {
+      "q": "Module 32 · Explain WAL in a production query.",
+      "answer": "Write-ahead logging records changes before data pages, enabling crash recovery and replication. Key rules: WAL is required for durability. It enables PITR. Archive it continuously."
+     },
+     {
+      "q": "Module 32 · Explain PITR in a production query.",
+      "answer": "PITR restores a base backup and replays WAL up to a target time or LSN. Key rules: Restore the base. Configure recovery target. Replay WAL."
+     },
+     {
+      "q": "Module 32 · Explain RPO and RTO in a production query.",
+      "answer": "Recovery point objective is the maximum acceptable data loss, and recovery time objective is the maximum acceptable downtime. Key rules: RPO drives backup frequency. RTO drives restore speed. Measure both."
+     },
+     {
+      "q": "Module 32 · Explain Restore Testing in a production query.",
+      "answer": "A backup is unproven until a restore has been timed and verified against known data. Key rules: Restore regularly. Measure duration. Verify row counts."
+     },
+     {
+      "q": "Module 32 · Explain Retention in a production query.",
+      "answer": "Retention balances recovery needs, storage cost and compliance, with daily, weekly and monthly tiers. Key rules: Define retention. Automate pruning. Keep off-site copies."
+     },
+     {
+      "q": "Module 32 · Explain Encryption in a production query.",
+      "answer": "Backups contain sensitive data and must be encrypted at rest and in transit, with keys managed separately. Key rules: Encrypt dumps. Protect keys. Test decryption."
+     },
+     {
+      "q": "Module 32 · Explain Backup Monitoring in a production query.",
+      "answer": "Monitoring catches failed jobs, stale backups and storage exhaustion before a recovery is needed. Key rules: Alert on failure. Track age. Track size."
+     },
+     {
+      "q": "Module 32 · Explain Common Backup Errors in a production query.",
+      "answer": "Common failures are never testing a restore, archiving WAL to a full disk and restoring with insufficient privileges. Key rules: Test restores. Monitor WAL. Check permissions."
+     },
+     {
+      "q": "Module 32 · Explain Partial Restore in a production query.",
+      "answer": "pg_restore -t or -n restores selected tables or schemas from a custom dump. Key rules: Use -t for tables. Use -n for schemas. Verify dependencies."
+     },
+     {
+      "q": "Module 32 · Explain Backup Strategy in a production query.",
+      "answer": "A practical strategy uses periodic full backups, continuous WAL archiving and regular restore drills. Key rules: Full base. WAL archive. Restore drills."
+     },
+     {
+      "q": "Module 32 · Explain Recovery Drill in a production query.",
+      "answer": "A recovery drill restores into an isolated environment, measures RTO and validates application queries. Key rules: Isolate the target. Time the restore. Run checks."
+     },
+     {
+      "q": "Module 32 · Explain Disaster Recovery in a production query.",
+      "answer": "Disaster recovery covers off-site copies, alternate infrastructure and clear ownership for recovery decisions. Key rules: Off-site copies. Alternate region. Named owners."
+     },
+     {
+      "q": "Module 32 · Explain Backup Security in a production query.",
+      "answer": "Restrict who can read backups, audit access and separate backup credentials from application credentials. Key rules: Restrict access. Audit reads. Separate credentials."
+     },
+     {
+      "q": "Module 32 · Explain Restore Verification in a production query.",
+      "answer": "Verification compares row counts, checks constraints and runs representative queries against the restored database. Key rules: Compare counts. Validate constraints. Run smoke queries."
+     },
+     {
+      "q": "Module 32 · Explain Practical Recovery Plan in a production query.",
+      "answer": "A production recovery plan documents the schedule, retention, encryption, restore steps, owners and measured targets. Key rules: Schedule backups. Archive WAL. Test restores. Document the runbook."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Backup Types",
+      "task": "Write a SQL example that demonstrates Backup Types.",
+      "solution": "pg_dump -Fc brocode > brocode.dump",
+      "expected": "A custom-format dump."
+     },
+     {
+      "title": "Logical Backup",
+      "task": "Write a SQL example that demonstrates Logical Backup.",
+      "solution": "pg_dump -Fc -f brocode.dump brocode",
+      "expected": "A dump file."
+     },
+     {
+      "title": "Physical Backup",
+      "task": "Write a SQL example that demonstrates Physical Backup.",
+      "solution": "pg_basebackup -D /backup/base -Ft -z -P",
+      "expected": "A base backup."
+     },
+     {
+      "title": "pg_dump",
+      "task": "Write a SQL example that demonstrates pg_dump.",
+      "solution": "pg_dump -Fc -f brocode.dump brocode",
+      "expected": "A custom dump."
+     },
+     {
+      "title": "pg_restore",
+      "task": "Write a SQL example that demonstrates pg_restore.",
+      "solution": "pg_restore -d brocode_restore -j 4 brocode.dump",
+      "expected": "A restored database."
+     },
+     {
+      "title": "WAL",
+      "task": "Write a SQL example that demonstrates WAL.",
+      "solution": "SHOW wal_level;",
+      "expected": "replica"
+     },
+     {
+      "title": "PITR",
+      "task": "Write a SQL example that demonstrates PITR.",
+      "solution": "restore_command = 'cp /archive/%f %p'",
+      "expected": "A recovery setting."
+     },
+     {
+      "title": "RPO and RTO",
+      "task": "Write a SQL example that demonstrates RPO and RTO.",
+      "solution": "-- RPO 5 minutes, RTO 30 minutes",
+      "expected": "Recovery targets."
+     },
+     {
+      "title": "Restore Testing",
+      "task": "Write a SQL example that demonstrates Restore Testing.",
+      "solution": "pg_restore -d brocode_test brocode.dump",
+      "expected": "A tested restore."
+     },
+     {
+      "title": "Retention",
+      "task": "Write a SQL example that demonstrates Retention.",
+      "solution": "-- keep 7 daily, 4 weekly, 12 monthly",
+      "expected": "A retention policy."
+     },
+     {
+      "title": "Encryption",
+      "task": "Write a SQL example that demonstrates Encryption.",
+      "solution": "pg_dump -Fc brocode | gpg -c > brocode.dump.gpg",
+      "expected": "An encrypted dump."
+     },
+     {
+      "title": "Backup Monitoring",
+      "task": "Write a SQL example that demonstrates Backup Monitoring.",
+      "solution": "SELECT now() - max(completed_at) AS backup_age FROM backups;",
+      "expected": "The age of the latest backup."
+     },
+     {
+      "title": "Common Backup Errors",
+      "task": "Write a SQL example that demonstrates Common Backup Errors.",
+      "solution": "pg_restore -l brocode.dump | head",
+      "expected": "A dump table of contents."
+     },
+     {
+      "title": "Partial Restore",
+      "task": "Write a SQL example that demonstrates Partial Restore.",
+      "solution": "pg_restore -d brocode_restore -t students brocode.dump",
+      "expected": "A restored table."
+     },
+     {
+      "title": "Backup Strategy",
+      "task": "Write a SQL example that demonstrates Backup Strategy.",
+      "solution": "-- weekly base backup plus continuous WAL archiving",
+      "expected": "A recovery strategy."
+     },
+     {
+      "title": "Recovery Drill",
+      "task": "Write a SQL example that demonstrates Recovery Drill.",
+      "solution": "createdb brocode_drill\npg_restore -d brocode_drill brocode.dump",
+      "expected": "A drill database."
+     },
+     {
+      "title": "Disaster Recovery",
+      "task": "Write a SQL example that demonstrates Disaster Recovery.",
+      "solution": "-- replicate backups to a second region",
+      "expected": "A DR plan."
+     },
+     {
+      "title": "Backup Security",
+      "task": "Write a SQL example that demonstrates Backup Security.",
+      "solution": "REVOKE ALL ON FUNCTION pg_read_file(text) FROM PUBLIC;",
+      "expected": "REVOKE"
+     },
+     {
+      "title": "Restore Verification",
+      "task": "Write a SQL example that demonstrates Restore Verification.",
+      "solution": "SELECT COUNT(*) FROM students;",
+      "expected": "A restored row count."
+     },
+     {
+      "title": "Practical Recovery Plan",
+      "task": "Write a SQL example that demonstrates Practical Recovery Plan.",
+      "solution": "pg_dump -Fc -f /backups/brocode.dump brocode",
+      "expected": "A scheduled backup."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 32 · Why does Backup Types matter?",
+      "answer": "Logical backups export SQL or archive data, while physical backups copy database files and WAL for exact recovery. Logical is portable. Physical is faster for large databases. Both need testing."
+     },
+     {
+      "q": "Module 32 · Why does Logical Backup matter?",
+      "answer": "pg_dump exports schema and data in a portable format that can restore into another cluster. Portable across versions. Slower for huge databases. It can be selective."
+     },
+     {
+      "q": "Module 32 · Why does Physical Backup matter?",
+      "answer": "A physical backup copies the cluster’s data files and requires WAL for consistency and point-in-time recovery. Exact cluster copy. Needs WAL. Fast recovery for large data."
+     },
+     {
+      "q": "Module 32 · Why does pg_dump matter?",
+      "answer": "pg_dump supports plain SQL, custom, directory and tar formats, with compression and selective objects. Use -Fc for custom format. Use -j for parallel directory dumps. Test the restore."
+     },
+     {
+      "q": "Module 32 · Why does pg_restore matter?",
+      "answer": "pg_restore can restore selectively, run in parallel and create objects in a target database. Use -d for the target. Use -j for parallelism. Check errors."
+     },
+     {
+      "q": "Module 32 · Why does WAL matter?",
+      "answer": "Write-ahead logging records changes before data pages, enabling crash recovery and replication. WAL is required for durability. It enables PITR. Archive it continuously."
+     },
+     {
+      "q": "Module 32 · Why does PITR matter?",
+      "answer": "PITR restores a base backup and replays WAL up to a target time or LSN. Restore the base. Configure recovery target. Replay WAL."
+     },
+     {
+      "q": "Module 32 · Why does RPO and RTO matter?",
+      "answer": "Recovery point objective is the maximum acceptable data loss, and recovery time objective is the maximum acceptable downtime. RPO drives backup frequency. RTO drives restore speed. Measure both."
+     },
+     {
+      "q": "Module 32 · Why does Restore Testing matter?",
+      "answer": "A backup is unproven until a restore has been timed and verified against known data. Restore regularly. Measure duration. Verify row counts."
+     },
+     {
+      "q": "Module 32 · Why does Retention matter?",
+      "answer": "Retention balances recovery needs, storage cost and compliance, with daily, weekly and monthly tiers. Define retention. Automate pruning. Keep off-site copies."
+     },
+     {
+      "q": "Module 32 · Why does Encryption matter?",
+      "answer": "Backups contain sensitive data and must be encrypted at rest and in transit, with keys managed separately. Encrypt dumps. Protect keys. Test decryption."
+     },
+     {
+      "q": "Module 32 · Why does Backup Monitoring matter?",
+      "answer": "Monitoring catches failed jobs, stale backups and storage exhaustion before a recovery is needed. Alert on failure. Track age. Track size."
+     },
+     {
+      "q": "Module 32 · Why does Common Backup Errors matter?",
+      "answer": "Common failures are never testing a restore, archiving WAL to a full disk and restoring with insufficient privileges. Test restores. Monitor WAL. Check permissions."
+     },
+     {
+      "q": "Module 32 · Why does Partial Restore matter?",
+      "answer": "pg_restore -t or -n restores selected tables or schemas from a custom dump. Use -t for tables. Use -n for schemas. Verify dependencies."
+     },
+     {
+      "q": "Module 32 · Why does Backup Strategy matter?",
+      "answer": "A practical strategy uses periodic full backups, continuous WAL archiving and regular restore drills. Full base. WAL archive. Restore drills."
+     }
+    ],
+    "debug": [
+     {
+      "title": "No WAL archive",
+      "broken": "archive_mode = off",
+      "fix": "archive_mode = on\narchive_command = 'cp %p /archive/%f'",
+      "error": "PITR is impossible without archived WAL",
+      "expected": "Continuous WAL archiving."
+     },
+     {
+      "title": "Untested backup",
+      "broken": "The backup job reports success every night.",
+      "fix": "Restore the dump into a test database and verify row counts each week.",
+      "error": "A corrupt backup looks successful until recovery",
+      "expected": "A proven restore."
+     },
+     {
+      "title": "Wrong restore database",
+      "broken": "pg_restore brocode.dump",
+      "fix": "pg_restore -d brocode_restore brocode.dump",
+      "error": "pg_restore needs a target database",
+      "expected": "A restored target."
+     },
+     {
+      "title": "Missing role",
+      "broken": "pg_restore -d brocode_restore brocode.dump",
+      "fix": "CREATE ROLE app_user;\npg_restore -d brocode_restore brocode.dump",
+      "error": "role \"app_user\" does not exist",
+      "expected": "The role exists before restore."
+     },
+     {
+      "title": "Disk full",
+      "broken": "archive_command = 'cp %p /archive/%f'",
+      "fix": "Monitor archive disk space and alert before it fills.",
+      "error": "WAL archiving stops and recovery cannot reach the target",
+      "expected": "Healthy archiving."
+     },
+     {
+      "title": "Encryption key lost",
+      "broken": "gpg -c brocode.dump",
+      "fix": "Store the encryption key in a separate secret manager and test decryption.",
+      "error": "The backup cannot be restored",
+      "expected": "A recoverable encrypted backup."
+     },
+     {
+      "title": "Retention too short",
+      "broken": "Delete every backup older than one day.",
+      "fix": "Keep daily, weekly and monthly tiers per the recovery policy.",
+      "error": "A delayed incident has no usable backup",
+      "expected": "A retention policy."
+     },
+     {
+      "title": "Permissions too open",
+      "broken": "chmod 777 /backups/brocode.dump",
+      "fix": "chmod 600 /backups/brocode.dump",
+      "error": "Every local user can read sensitive data",
+      "expected": "Restricted backup access."
+     },
+     {
+      "title": "No restore timing",
+      "broken": "Restore and hope it finishes.",
+      "fix": "Measure the restore and compare it with the RTO.",
+      "error": "The recovery time is unknown",
+      "expected": "A measured RTO."
+     },
+     {
+      "title": "Partial restore dependencies",
+      "broken": "pg_restore -d brocode_restore -t enrollments brocode.dump",
+      "fix": "Restore students and courses first, then enrollments.",
+      "error": "foreign key constraints fail",
+      "expected": "A dependency-ordered restore."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 32 · State one key rule for Backup Types.",
+      "answer": "Logical is portable."
+     },
+     {
+      "q": "Module 32 · State one key rule for Logical Backup.",
+      "answer": "Portable across versions."
+     },
+     {
+      "q": "Module 32 · State one key rule for Physical Backup.",
+      "answer": "Exact cluster copy."
+     },
+     {
+      "q": "Module 32 · State one key rule for pg_dump.",
+      "answer": "Use -Fc for custom format."
+     },
+     {
+      "q": "Module 32 · State one key rule for pg_restore.",
+      "answer": "Use -d for the target."
+     },
+     {
+      "q": "Module 32 · State one key rule for WAL.",
+      "answer": "WAL is required for durability."
+     },
+     {
+      "q": "Module 32 · State one key rule for PITR.",
+      "answer": "Restore the base."
+     },
+     {
+      "q": "Module 32 · State one key rule for RPO and RTO.",
+      "answer": "RPO drives backup frequency."
+     },
+     {
+      "q": "Module 32 · State one key rule for Restore Testing.",
+      "answer": "Restore regularly."
+     },
+     {
+      "q": "Module 32 · State one key rule for Retention.",
+      "answer": "Define retention."
+     }
+    ]
+   }
+  }
+ ]
+}

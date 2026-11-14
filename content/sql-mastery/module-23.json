@@ -1,0 +1,918 @@
+{
+ "modules": [
+  {
+   "id": "sql23",
+   "no": 23,
+   "title": "Full-Text Search",
+   "goal": "Build ranked, language-aware search instead of fragile LIKE patterns.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Full-Text Search Basics",
+     "simple": "FTS text ko tokens aur queries me match karta hai.",
+     "pro": "Full-text search parses documents into normalized lexemes and matches them against a query, with ranking and highlighting.",
+     "points": [
+      "It handles words, not just substrings.",
+      "It supports stemming and stop words.",
+      "It can be indexed with GIN."
+     ],
+     "example": {
+      "sql": "SELECT to_tsvector('simple', 'SQL joins and indexes') @@ to_tsquery('simple', 'join & index');",
+      "output": "true"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "tsvector",
+     "simple": "tsvector normalized lexemes ka sorted document hai.",
+     "pro": "A tsvector stores lexemes with positions, which is the document representation used by full-text search.",
+     "points": [
+      "It is not plain text.",
+      "Positions support phrase search.",
+      "It can be generated or stored."
+     ],
+     "example": {
+      "sql": "SELECT to_tsvector('english', 'The cats are running');",
+      "output": "'cat':2 'run':4"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "tsquery",
+     "simple": "tsquery search terms aur boolean operators rakhta hai.",
+     "pro": "A tsquery combines lexemes with &, |, ! and phrase operators.",
+     "points": [
+      "& means AND.",
+      "| means OR.",
+      "! means NOT."
+     ],
+     "example": {
+      "sql": "SELECT to_tsquery('english', 'sql & index');",
+      "output": "'sql' & 'index'"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "to_tsvector",
+     "simple": "to_tsvector document ko searchable form me badalta hai.",
+     "pro": "to_tsvector(config, text) normalizes a document using a text search configuration.",
+     "points": [
+      "Choose a language config.",
+      "It lowercases and stems.",
+      "It removes stop words."
+     ],
+     "example": {
+      "sql": "SELECT to_tsvector('english', 'The SQL course covers indexes');",
+      "output": "'cours':3 'cover':4 'index':6 'sql':2"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "to_tsquery",
+     "simple": "to_tsquery query string ko tsquery banata hai.",
+     "pro": "to_tsquery parses explicit operators and requires the caller to format the query safely.",
+     "points": [
+      "It accepts operators.",
+      "It can raise syntax errors.",
+      "Use parameters for user input."
+     ],
+     "example": {
+      "sql": "SELECT to_tsquery('english', 'sql & join');",
+      "output": "'sql' & 'join'"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "plainto_tsquery",
+     "simple": "plainto_tsquery user text ko safe AND query banata hai.",
+     "pro": "plainto_tsquery turns plain text into a tsquery by ANDing the lexemes, ignoring operators in the input.",
+     "points": [
+      "It is safer for raw input.",
+      "It uses AND semantics.",
+      "It removes stop words."
+     ],
+     "example": {
+      "sql": "SELECT plainto_tsquery('english', 'sql join');",
+      "output": "'sql' & 'join'"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "websearch_to_tsquery",
+     "simple": "websearch_to_tsquery search-engine style input samajhta hai.",
+     "pro": "websearch_to_tsquery supports quoted phrases, OR and minus terms without raising syntax errors on ordinary input.",
+     "points": [
+      "It is designed for user input.",
+      "Quotes create phrases.",
+      "Minus excludes terms."
+     ],
+     "example": {
+      "sql": "SELECT websearch_to_tsquery('english', 'sql -mysql');",
+      "output": "'sql' & !'mysql'"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Match Operator",
+     "simple": "@@ operator document aur query ko match karta hai.",
+     "pro": "The @@ operator returns true when a tsvector matches a tsquery.",
+     "points": [
+      "It is the core FTS predicate.",
+      "It can use a GIN index.",
+      "Both sides need matching types."
+     ],
+     "example": {
+      "sql": "SELECT title FROM courses WHERE to_tsvector('english', title) @@ plainto_tsquery('english', 'sql');",
+      "output": "Matching course titles."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Ranking",
+     "simple": "ts_rank relevance score deta hai.",
+     "pro": "ts_rank scores matches by term frequency and proximity, allowing the most relevant results first.",
+     "points": [
+      "Higher is more relevant.",
+      "Weights can favor title over body.",
+      "It is not a probability."
+     ],
+     "example": {
+      "sql": "SELECT title, ts_rank(to_tsvector('english', title), plainto_tsquery('english', 'sql')) AS rank FROM courses ORDER BY rank DESC;",
+      "output": "Titles ordered by relevance."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Highlighting",
+     "simple": "ts_headline matching text ko highlight karta hai.",
+     "pro": "ts_headline returns a snippet with query terms wrapped in markers, useful for search result previews.",
+     "points": [
+      "It works on the original text.",
+      "Markers are configurable.",
+      "It can be expensive."
+     ],
+     "example": {
+      "sql": "SELECT ts_headline('english', 'SQL joins and indexes are useful', plainto_tsquery('english', 'index'));",
+      "output": "SQL joins and <b>indexes</b> are useful"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Dictionaries",
+     "simple": "Dictionaries token normalization control karte hain.",
+     "pro": "Text search dictionaries define stop words, stemming and synonym rules for a configuration.",
+     "points": [
+      "They are language-specific.",
+      "They can be customized.",
+      "They affect both indexing and queries."
+     ],
+     "example": {
+      "sql": "SELECT * FROM pg_ts_dict;",
+      "output": "Available dictionaries."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Stop Words",
+     "simple": "Stop words common words hote hain jo search me ignore hote hain.",
+     "pro": "Stop words such as the and and are removed because they add little discriminating value.",
+     "points": [
+      "They reduce index size.",
+      "They can surprise phrase searches.",
+      "Configurations differ by language."
+     ],
+     "example": {
+      "sql": "SELECT to_tsvector('english', 'the quick brown fox');",
+      "output": "'brown':3 'fox':4 'quick':2"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Stemming",
+     "simple": "Stemming words ko root form me le aata hai.",
+     "pro": "Stemming maps variants such as run, runs and running to a shared lexeme, improving recall.",
+     "points": [
+      "It improves matching.",
+      "It can over-stem.",
+      "The language config controls it."
+     ],
+     "example": {
+      "sql": "SELECT to_tsvector('english', 'running runs');",
+      "output": "'run':1,2"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "GIN Index for FTS",
+     "simple": "GIN index full-text search ko fast karta hai.",
+     "pro": "A GIN index on the tsvector expression accelerates @@ queries.",
+     "points": [
+      "Index the exact expression.",
+      "Use the same configuration in queries.",
+      "It speeds reads but costs writes."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_courses_title_fts ON courses USING gin (to_tsvector('english', title));",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Search Configuration",
+     "simple": "Text search configuration language aur rules choose karti hai.",
+     "pro": "The configuration determines stop words, stemming and dictionary behavior; indexing and querying must use the same one.",
+     "points": [
+      "Use a consistent config.",
+      "simple does not stem.",
+      "Store a generated tsvector for control."
+     ],
+     "example": {
+      "sql": "SELECT to_tsvector('simple', 'running cats');",
+      "output": "'cats':2 'running':1"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Phrase Search",
+     "simple": "Phrase search words ke order aur adjacency ko match karta hai.",
+     "pro": "The <-> operator requires adjacent lexemes, while <n> allows a distance.",
+     "points": [
+      "Use <-> for adjacency.",
+      "Positions come from tsvector.",
+      "Stop words can affect phrases."
+     ],
+     "example": {
+      "sql": "SELECT to_tsquery('english', 'full <-> text');",
+      "output": "'full' <-> 'text'"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Prefix Search",
+     "simple": "Prefix search partial words match karta hai.",
+     "pro": "The :* operator matches lexemes with a prefix, useful for search-as-you-type.",
+     "points": [
+      "Use :* on the last term.",
+      "It can be expensive.",
+      "Combine with ranking."
+     ],
+     "example": {
+      "sql": "SELECT to_tsquery('english', 'index:*');",
+      "output": "'index':*"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Common FTS Errors",
+     "simple": "Config mismatch, wrong operators aur unindexed expressions common errors hain.",
+     "pro": "Common failures are querying a different configuration than the index, using LIKE for ranking, and forgetting to index the exact expression.",
+     "points": [
+      "Match configurations.",
+      "Use @@ not LIKE.",
+      "Index the expression."
+     ],
+     "example": {
+      "sql": "SELECT * FROM courses WHERE to_tsvector('english', title) @@ websearch_to_tsquery('english', 'sql');",
+      "output": "A safe search query."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "FTS vs LIKE",
+     "simple": "FTS words aur relevance deta hai; LIKE substrings deta hai.",
+     "pro": "LIKE is simple substring matching, while full-text search handles stemming, stop words, ranking and large documents.",
+     "points": [
+      "LIKE is literal.",
+      "FTS is linguistic.",
+      "FTS scales with GIN."
+     ],
+     "example": {
+      "sql": "SELECT title FROM courses WHERE title ILIKE '%sql%';",
+      "output": "A literal substring match."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Search",
+     "simple": "Search query, rank aur headline ko combine karo.",
+     "pro": "A practical search query filters with @@, orders by ts_rank and returns a headline snippet.",
+     "points": [
+      "Filter first.",
+      "Rank second.",
+      "Limit the results."
+     ],
+     "example": {
+      "sql": "SELECT title, ts_rank(to_tsvector('english', title), websearch_to_tsquery('english', 'sql')) AS rank FROM courses WHERE to_tsvector('english', title) @@ websearch_to_tsquery('english', 'sql') ORDER BY rank DESC LIMIT 10;",
+      "output": "Ranked search results."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 23 · Full-Text Search Basics: what is the main purpose?",
+      "options": [
+       "Full-Text Search Basics: FTS text ko tokens aur queries me match karta hai.",
+       "tsvector: tsvector normalized lexemes ka sorted document hai.",
+       "Match Operator: @@ operator document aur query ko match karta hai.",
+       "GIN Index for FTS: GIN index full-text search ko fast karta hai."
+      ],
+      "answer": "Full-Text Search Basics: FTS text ko tokens aur queries me match karta hai.",
+      "why": "Full-text search parses documents into normalized lexemes and matches them against a query, with ranking and highlighting."
+     },
+     {
+      "q": "Module 23 · tsvector: what is the main purpose?",
+      "options": [
+       "tsquery: tsquery search terms aur boolean operators rakhta hai.",
+       "Ranking: ts_rank relevance score deta hai.",
+       "Search Configuration: Text search configuration language aur rules choose karti hai.",
+       "tsvector: tsvector normalized lexemes ka sorted document hai."
+      ],
+      "answer": "tsvector: tsvector normalized lexemes ka sorted document hai.",
+      "why": "A tsvector stores lexemes with positions, which is the document representation used by full-text search."
+     },
+     {
+      "q": "Module 23 · tsquery: what is the main purpose?",
+      "options": [
+       "Highlighting: ts_headline matching text ko highlight karta hai.",
+       "Phrase Search: Phrase search words ke order aur adjacency ko match karta hai.",
+       "tsquery: tsquery search terms aur boolean operators rakhta hai.",
+       "to_tsvector: to_tsvector document ko searchable form me badalta hai."
+      ],
+      "answer": "tsquery: tsquery search terms aur boolean operators rakhta hai.",
+      "why": "A tsquery combines lexemes with &, |, ! and phrase operators."
+     },
+     {
+      "q": "Module 23 · to_tsvector: what is the main purpose?",
+      "options": [
+       "Prefix Search: Prefix search partial words match karta hai.",
+       "to_tsvector: to_tsvector document ko searchable form me badalta hai.",
+       "to_tsquery: to_tsquery query string ko tsquery banata hai.",
+       "Dictionaries: Dictionaries token normalization control karte hain."
+      ],
+      "answer": "to_tsvector: to_tsvector document ko searchable form me badalta hai.",
+      "why": "to_tsvector(config, text) normalizes a document using a text search configuration."
+     },
+     {
+      "q": "Module 23 · to_tsquery: what is the main purpose?",
+      "options": [
+       "to_tsquery: to_tsquery query string ko tsquery banata hai.",
+       "plainto_tsquery: plainto_tsquery user text ko safe AND query banata hai.",
+       "Stop Words: Stop words common words hote hain jo search me ignore hote hain.",
+       "Common FTS Errors: Config mismatch, wrong operators aur unindexed expressions common errors hain."
+      ],
+      "answer": "to_tsquery: to_tsquery query string ko tsquery banata hai.",
+      "why": "to_tsquery parses explicit operators and requires the caller to format the query safely."
+     },
+     {
+      "q": "Module 23 · plainto_tsquery: what is the main purpose?",
+      "options": [
+       "websearch_to_tsquery: websearch_to_tsquery search-engine style input samajhta hai.",
+       "Stemming: Stemming words ko root form me le aata hai.",
+       "FTS vs LIKE: FTS words aur relevance deta hai; LIKE substrings deta hai.",
+       "plainto_tsquery: plainto_tsquery user text ko safe AND query banata hai."
+      ],
+      "answer": "plainto_tsquery: plainto_tsquery user text ko safe AND query banata hai.",
+      "why": "plainto_tsquery turns plain text into a tsquery by ANDing the lexemes, ignoring operators in the input."
+     },
+     {
+      "q": "Module 23 · websearch_to_tsquery: what is the main purpose?",
+      "options": [
+       "GIN Index for FTS: GIN index full-text search ko fast karta hai.",
+       "Practical Search: Search query, rank aur headline ko combine karo.",
+       "websearch_to_tsquery: websearch_to_tsquery search-engine style input samajhta hai.",
+       "Match Operator: @@ operator document aur query ko match karta hai."
+      ],
+      "answer": "websearch_to_tsquery: websearch_to_tsquery search-engine style input samajhta hai.",
+      "why": "websearch_to_tsquery supports quoted phrases, OR and minus terms without raising syntax errors on ordinary input."
+     },
+     {
+      "q": "Module 23 · Match Operator: what is the main purpose?",
+      "options": [
+       "Full-Text Search Basics: FTS text ko tokens aur queries me match karta hai.",
+       "Match Operator: @@ operator document aur query ko match karta hai.",
+       "Ranking: ts_rank relevance score deta hai.",
+       "Search Configuration: Text search configuration language aur rules choose karti hai."
+      ],
+      "answer": "Match Operator: @@ operator document aur query ko match karta hai.",
+      "why": "The @@ operator returns true when a tsvector matches a tsquery."
+     },
+     {
+      "q": "Module 23 · Ranking: what is the main purpose?",
+      "options": [
+       "Ranking: ts_rank relevance score deta hai.",
+       "Highlighting: ts_headline matching text ko highlight karta hai.",
+       "Phrase Search: Phrase search words ke order aur adjacency ko match karta hai.",
+       "tsvector: tsvector normalized lexemes ka sorted document hai."
+      ],
+      "answer": "Ranking: ts_rank relevance score deta hai.",
+      "why": "ts_rank scores matches by term frequency and proximity, allowing the most relevant results first."
+     },
+     {
+      "q": "Module 23 · Highlighting: what is the main purpose?",
+      "options": [
+       "Dictionaries: Dictionaries token normalization control karte hain.",
+       "Prefix Search: Prefix search partial words match karta hai.",
+       "tsquery: tsquery search terms aur boolean operators rakhta hai.",
+       "Highlighting: ts_headline matching text ko highlight karta hai."
+      ],
+      "answer": "Highlighting: ts_headline matching text ko highlight karta hai.",
+      "why": "ts_headline returns a snippet with query terms wrapped in markers, useful for search result previews."
+     },
+     {
+      "q": "Module 23 · Dictionaries: what is the main purpose?",
+      "options": [
+       "Common FTS Errors: Config mismatch, wrong operators aur unindexed expressions common errors hain.",
+       "to_tsvector: to_tsvector document ko searchable form me badalta hai.",
+       "Dictionaries: Dictionaries token normalization control karte hain.",
+       "Stop Words: Stop words common words hote hain jo search me ignore hote hain."
+      ],
+      "answer": "Dictionaries: Dictionaries token normalization control karte hain.",
+      "why": "Text search dictionaries define stop words, stemming and synonym rules for a configuration."
+     },
+     {
+      "q": "Module 23 · Stop Words: what is the main purpose?",
+      "options": [
+       "to_tsquery: to_tsquery query string ko tsquery banata hai.",
+       "Stop Words: Stop words common words hote hain jo search me ignore hote hain.",
+       "Stemming: Stemming words ko root form me le aata hai.",
+       "FTS vs LIKE: FTS words aur relevance deta hai; LIKE substrings deta hai."
+      ],
+      "answer": "Stop Words: Stop words common words hote hain jo search me ignore hote hain.",
+      "why": "Stop words such as the and and are removed because they add little discriminating value."
+     },
+     {
+      "q": "Module 23 · Stemming: what is the main purpose?",
+      "options": [
+       "Stemming: Stemming words ko root form me le aata hai.",
+       "GIN Index for FTS: GIN index full-text search ko fast karta hai.",
+       "Practical Search: Search query, rank aur headline ko combine karo.",
+       "plainto_tsquery: plainto_tsquery user text ko safe AND query banata hai."
+      ],
+      "answer": "Stemming: Stemming words ko root form me le aata hai.",
+      "why": "Stemming maps variants such as run, runs and running to a shared lexeme, improving recall."
+     },
+     {
+      "q": "Module 23 · GIN Index for FTS: what is the main purpose?",
+      "options": [
+       "Search Configuration: Text search configuration language aur rules choose karti hai.",
+       "Full-Text Search Basics: FTS text ko tokens aur queries me match karta hai.",
+       "websearch_to_tsquery: websearch_to_tsquery search-engine style input samajhta hai.",
+       "GIN Index for FTS: GIN index full-text search ko fast karta hai."
+      ],
+      "answer": "GIN Index for FTS: GIN index full-text search ko fast karta hai.",
+      "why": "A GIN index on the tsvector expression accelerates @@ queries."
+     },
+     {
+      "q": "Module 23 · Search Configuration: what is the main purpose?",
+      "options": [
+       "tsvector: tsvector normalized lexemes ka sorted document hai.",
+       "Match Operator: @@ operator document aur query ko match karta hai.",
+       "Search Configuration: Text search configuration language aur rules choose karti hai.",
+       "Phrase Search: Phrase search words ke order aur adjacency ko match karta hai."
+      ],
+      "answer": "Search Configuration: Text search configuration language aur rules choose karti hai.",
+      "why": "The configuration determines stop words, stemming and dictionary behavior; indexing and querying must use the same one."
+     },
+     {
+      "q": "Module 23 · Phrase Search: what is the main purpose?",
+      "options": [
+       "Ranking: ts_rank relevance score deta hai.",
+       "Phrase Search: Phrase search words ke order aur adjacency ko match karta hai.",
+       "Prefix Search: Prefix search partial words match karta hai.",
+       "tsquery: tsquery search terms aur boolean operators rakhta hai."
+      ],
+      "answer": "Phrase Search: Phrase search words ke order aur adjacency ko match karta hai.",
+      "why": "The <-> operator requires adjacent lexemes, while <n> allows a distance."
+     },
+     {
+      "q": "Module 23 · Prefix Search: what is the main purpose?",
+      "options": [
+       "Prefix Search: Prefix search partial words match karta hai.",
+       "Common FTS Errors: Config mismatch, wrong operators aur unindexed expressions common errors hain.",
+       "to_tsvector: to_tsvector document ko searchable form me badalta hai.",
+       "Highlighting: ts_headline matching text ko highlight karta hai."
+      ],
+      "answer": "Prefix Search: Prefix search partial words match karta hai.",
+      "why": "The :* operator matches lexemes with a prefix, useful for search-as-you-type."
+     },
+     {
+      "q": "Module 23 · Common FTS Errors: what is the main purpose?",
+      "options": [
+       "FTS vs LIKE: FTS words aur relevance deta hai; LIKE substrings deta hai.",
+       "to_tsquery: to_tsquery query string ko tsquery banata hai.",
+       "Dictionaries: Dictionaries token normalization control karte hain.",
+       "Common FTS Errors: Config mismatch, wrong operators aur unindexed expressions common errors hain."
+      ],
+      "answer": "Common FTS Errors: Config mismatch, wrong operators aur unindexed expressions common errors hain.",
+      "why": "Common failures are querying a different configuration than the index, using LIKE for ranking, and forgetting to index the exact expression."
+     },
+     {
+      "q": "Module 23 · FTS vs LIKE: what is the main purpose?",
+      "options": [
+       "plainto_tsquery: plainto_tsquery user text ko safe AND query banata hai.",
+       "Stop Words: Stop words common words hote hain jo search me ignore hote hain.",
+       "FTS vs LIKE: FTS words aur relevance deta hai; LIKE substrings deta hai.",
+       "Practical Search: Search query, rank aur headline ko combine karo."
+      ],
+      "answer": "FTS vs LIKE: FTS words aur relevance deta hai; LIKE substrings deta hai.",
+      "why": "LIKE is simple substring matching, while full-text search handles stemming, stop words, ranking and large documents."
+     },
+     {
+      "q": "Module 23 · Practical Search: what is the main purpose?",
+      "options": [
+       "Stemming: Stemming words ko root form me le aata hai.",
+       "Practical Search: Search query, rank aur headline ko combine karo.",
+       "Full-Text Search Basics: FTS text ko tokens aur queries me match karta hai.",
+       "websearch_to_tsquery: websearch_to_tsquery search-engine style input samajhta hai."
+      ],
+      "answer": "Practical Search: Search query, rank aur headline ko combine karo.",
+      "why": "A practical search query filters with @@, orders by ts_rank and returns a headline snippet."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 23 · Explain Full-Text Search Basics in a production query.",
+      "answer": "Full-text search parses documents into normalized lexemes and matches them against a query, with ranking and highlighting. Key rules: It handles words, not just substrings. It supports stemming and stop words. It can be indexed with GIN."
+     },
+     {
+      "q": "Module 23 · Explain tsvector in a production query.",
+      "answer": "A tsvector stores lexemes with positions, which is the document representation used by full-text search. Key rules: It is not plain text. Positions support phrase search. It can be generated or stored."
+     },
+     {
+      "q": "Module 23 · Explain tsquery in a production query.",
+      "answer": "A tsquery combines lexemes with &, |, ! and phrase operators. Key rules: & means AND. | means OR. ! means NOT."
+     },
+     {
+      "q": "Module 23 · Explain to_tsvector in a production query.",
+      "answer": "to_tsvector(config, text) normalizes a document using a text search configuration. Key rules: Choose a language config. It lowercases and stems. It removes stop words."
+     },
+     {
+      "q": "Module 23 · Explain to_tsquery in a production query.",
+      "answer": "to_tsquery parses explicit operators and requires the caller to format the query safely. Key rules: It accepts operators. It can raise syntax errors. Use parameters for user input."
+     },
+     {
+      "q": "Module 23 · Explain plainto_tsquery in a production query.",
+      "answer": "plainto_tsquery turns plain text into a tsquery by ANDing the lexemes, ignoring operators in the input. Key rules: It is safer for raw input. It uses AND semantics. It removes stop words."
+     },
+     {
+      "q": "Module 23 · Explain websearch_to_tsquery in a production query.",
+      "answer": "websearch_to_tsquery supports quoted phrases, OR and minus terms without raising syntax errors on ordinary input. Key rules: It is designed for user input. Quotes create phrases. Minus excludes terms."
+     },
+     {
+      "q": "Module 23 · Explain Match Operator in a production query.",
+      "answer": "The @@ operator returns true when a tsvector matches a tsquery. Key rules: It is the core FTS predicate. It can use a GIN index. Both sides need matching types."
+     },
+     {
+      "q": "Module 23 · Explain Ranking in a production query.",
+      "answer": "ts_rank scores matches by term frequency and proximity, allowing the most relevant results first. Key rules: Higher is more relevant. Weights can favor title over body. It is not a probability."
+     },
+     {
+      "q": "Module 23 · Explain Highlighting in a production query.",
+      "answer": "ts_headline returns a snippet with query terms wrapped in markers, useful for search result previews. Key rules: It works on the original text. Markers are configurable. It can be expensive."
+     },
+     {
+      "q": "Module 23 · Explain Dictionaries in a production query.",
+      "answer": "Text search dictionaries define stop words, stemming and synonym rules for a configuration. Key rules: They are language-specific. They can be customized. They affect both indexing and queries."
+     },
+     {
+      "q": "Module 23 · Explain Stop Words in a production query.",
+      "answer": "Stop words such as the and and are removed because they add little discriminating value. Key rules: They reduce index size. They can surprise phrase searches. Configurations differ by language."
+     },
+     {
+      "q": "Module 23 · Explain Stemming in a production query.",
+      "answer": "Stemming maps variants such as run, runs and running to a shared lexeme, improving recall. Key rules: It improves matching. It can over-stem. The language config controls it."
+     },
+     {
+      "q": "Module 23 · Explain GIN Index for FTS in a production query.",
+      "answer": "A GIN index on the tsvector expression accelerates @@ queries. Key rules: Index the exact expression. Use the same configuration in queries. It speeds reads but costs writes."
+     },
+     {
+      "q": "Module 23 · Explain Search Configuration in a production query.",
+      "answer": "The configuration determines stop words, stemming and dictionary behavior; indexing and querying must use the same one. Key rules: Use a consistent config. simple does not stem. Store a generated tsvector for control."
+     },
+     {
+      "q": "Module 23 · Explain Phrase Search in a production query.",
+      "answer": "The <-> operator requires adjacent lexemes, while <n> allows a distance. Key rules: Use <-> for adjacency. Positions come from tsvector. Stop words can affect phrases."
+     },
+     {
+      "q": "Module 23 · Explain Prefix Search in a production query.",
+      "answer": "The :* operator matches lexemes with a prefix, useful for search-as-you-type. Key rules: Use :* on the last term. It can be expensive. Combine with ranking."
+     },
+     {
+      "q": "Module 23 · Explain Common FTS Errors in a production query.",
+      "answer": "Common failures are querying a different configuration than the index, using LIKE for ranking, and forgetting to index the exact expression. Key rules: Match configurations. Use @@ not LIKE. Index the expression."
+     },
+     {
+      "q": "Module 23 · Explain FTS vs LIKE in a production query.",
+      "answer": "LIKE is simple substring matching, while full-text search handles stemming, stop words, ranking and large documents. Key rules: LIKE is literal. FTS is linguistic. FTS scales with GIN."
+     },
+     {
+      "q": "Module 23 · Explain Practical Search in a production query.",
+      "answer": "A practical search query filters with @@, orders by ts_rank and returns a headline snippet. Key rules: Filter first. Rank second. Limit the results."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Full-Text Search Basics",
+      "task": "Write a SQL example that demonstrates Full-Text Search Basics.",
+      "solution": "SELECT to_tsvector('simple', 'SQL joins and indexes') @@ to_tsquery('simple', 'join & index');",
+      "expected": "true"
+     },
+     {
+      "title": "tsvector",
+      "task": "Write a SQL example that demonstrates tsvector.",
+      "solution": "SELECT to_tsvector('english', 'The cats are running');",
+      "expected": "'cat':2 'run':4"
+     },
+     {
+      "title": "tsquery",
+      "task": "Write a SQL example that demonstrates tsquery.",
+      "solution": "SELECT to_tsquery('english', 'sql & index');",
+      "expected": "'sql' & 'index'"
+     },
+     {
+      "title": "to_tsvector",
+      "task": "Write a SQL example that demonstrates to_tsvector.",
+      "solution": "SELECT to_tsvector('english', 'The SQL course covers indexes');",
+      "expected": "'cours':3 'cover':4 'index':6 'sql':2"
+     },
+     {
+      "title": "to_tsquery",
+      "task": "Write a SQL example that demonstrates to_tsquery.",
+      "solution": "SELECT to_tsquery('english', 'sql & join');",
+      "expected": "'sql' & 'join'"
+     },
+     {
+      "title": "plainto_tsquery",
+      "task": "Write a SQL example that demonstrates plainto_tsquery.",
+      "solution": "SELECT plainto_tsquery('english', 'sql join');",
+      "expected": "'sql' & 'join'"
+     },
+     {
+      "title": "websearch_to_tsquery",
+      "task": "Write a SQL example that demonstrates websearch_to_tsquery.",
+      "solution": "SELECT websearch_to_tsquery('english', 'sql -mysql');",
+      "expected": "'sql' & !'mysql'"
+     },
+     {
+      "title": "Match Operator",
+      "task": "Write a SQL example that demonstrates Match Operator.",
+      "solution": "SELECT title FROM courses WHERE to_tsvector('english', title) @@ plainto_tsquery('english', 'sql');",
+      "expected": "Matching course titles."
+     },
+     {
+      "title": "Ranking",
+      "task": "Write a SQL example that demonstrates Ranking.",
+      "solution": "SELECT title, ts_rank(to_tsvector('english', title), plainto_tsquery('english', 'sql')) AS rank FROM courses ORDER BY rank DESC;",
+      "expected": "Titles ordered by relevance."
+     },
+     {
+      "title": "Highlighting",
+      "task": "Write a SQL example that demonstrates Highlighting.",
+      "solution": "SELECT ts_headline('english', 'SQL joins and indexes are useful', plainto_tsquery('english', 'index'));",
+      "expected": "SQL joins and <b>indexes</b> are useful"
+     },
+     {
+      "title": "Dictionaries",
+      "task": "Write a SQL example that demonstrates Dictionaries.",
+      "solution": "SELECT * FROM pg_ts_dict;",
+      "expected": "Available dictionaries."
+     },
+     {
+      "title": "Stop Words",
+      "task": "Write a SQL example that demonstrates Stop Words.",
+      "solution": "SELECT to_tsvector('english', 'the quick brown fox');",
+      "expected": "'brown':3 'fox':4 'quick':2"
+     },
+     {
+      "title": "Stemming",
+      "task": "Write a SQL example that demonstrates Stemming.",
+      "solution": "SELECT to_tsvector('english', 'running runs');",
+      "expected": "'run':1,2"
+     },
+     {
+      "title": "GIN Index for FTS",
+      "task": "Write a SQL example that demonstrates GIN Index for FTS.",
+      "solution": "CREATE INDEX idx_courses_title_fts ON courses USING gin (to_tsvector('english', title));",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Search Configuration",
+      "task": "Write a SQL example that demonstrates Search Configuration.",
+      "solution": "SELECT to_tsvector('simple', 'running cats');",
+      "expected": "'cats':2 'running':1"
+     },
+     {
+      "title": "Phrase Search",
+      "task": "Write a SQL example that demonstrates Phrase Search.",
+      "solution": "SELECT to_tsquery('english', 'full <-> text');",
+      "expected": "'full' <-> 'text'"
+     },
+     {
+      "title": "Prefix Search",
+      "task": "Write a SQL example that demonstrates Prefix Search.",
+      "solution": "SELECT to_tsquery('english', 'index:*');",
+      "expected": "'index':*"
+     },
+     {
+      "title": "Common FTS Errors",
+      "task": "Write a SQL example that demonstrates Common FTS Errors.",
+      "solution": "SELECT * FROM courses WHERE to_tsvector('english', title) @@ websearch_to_tsquery('english', 'sql');",
+      "expected": "A safe search query."
+     },
+     {
+      "title": "FTS vs LIKE",
+      "task": "Write a SQL example that demonstrates FTS vs LIKE.",
+      "solution": "SELECT title FROM courses WHERE title ILIKE '%sql%';",
+      "expected": "A literal substring match."
+     },
+     {
+      "title": "Practical Search",
+      "task": "Write a SQL example that demonstrates Practical Search.",
+      "solution": "SELECT title, ts_rank(to_tsvector('english', title), websearch_to_tsquery('english', 'sql')) AS rank FROM courses WHERE to_tsvector('english', title) @@ websearch_to_tsquery('english', 'sql') ORDER BY rank DESC LIMIT 10;",
+      "expected": "Ranked search results."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 23 · Why does Full-Text Search Basics matter?",
+      "answer": "Full-text search parses documents into normalized lexemes and matches them against a query, with ranking and highlighting. It handles words, not just substrings. It supports stemming and stop words. It can be indexed with GIN."
+     },
+     {
+      "q": "Module 23 · Why does tsvector matter?",
+      "answer": "A tsvector stores lexemes with positions, which is the document representation used by full-text search. It is not plain text. Positions support phrase search. It can be generated or stored."
+     },
+     {
+      "q": "Module 23 · Why does tsquery matter?",
+      "answer": "A tsquery combines lexemes with &, |, ! and phrase operators. & means AND. | means OR. ! means NOT."
+     },
+     {
+      "q": "Module 23 · Why does to_tsvector matter?",
+      "answer": "to_tsvector(config, text) normalizes a document using a text search configuration. Choose a language config. It lowercases and stems. It removes stop words."
+     },
+     {
+      "q": "Module 23 · Why does to_tsquery matter?",
+      "answer": "to_tsquery parses explicit operators and requires the caller to format the query safely. It accepts operators. It can raise syntax errors. Use parameters for user input."
+     },
+     {
+      "q": "Module 23 · Why does plainto_tsquery matter?",
+      "answer": "plainto_tsquery turns plain text into a tsquery by ANDing the lexemes, ignoring operators in the input. It is safer for raw input. It uses AND semantics. It removes stop words."
+     },
+     {
+      "q": "Module 23 · Why does websearch_to_tsquery matter?",
+      "answer": "websearch_to_tsquery supports quoted phrases, OR and minus terms without raising syntax errors on ordinary input. It is designed for user input. Quotes create phrases. Minus excludes terms."
+     },
+     {
+      "q": "Module 23 · Why does Match Operator matter?",
+      "answer": "The @@ operator returns true when a tsvector matches a tsquery. It is the core FTS predicate. It can use a GIN index. Both sides need matching types."
+     },
+     {
+      "q": "Module 23 · Why does Ranking matter?",
+      "answer": "ts_rank scores matches by term frequency and proximity, allowing the most relevant results first. Higher is more relevant. Weights can favor title over body. It is not a probability."
+     },
+     {
+      "q": "Module 23 · Why does Highlighting matter?",
+      "answer": "ts_headline returns a snippet with query terms wrapped in markers, useful for search result previews. It works on the original text. Markers are configurable. It can be expensive."
+     },
+     {
+      "q": "Module 23 · Why does Dictionaries matter?",
+      "answer": "Text search dictionaries define stop words, stemming and synonym rules for a configuration. They are language-specific. They can be customized. They affect both indexing and queries."
+     },
+     {
+      "q": "Module 23 · Why does Stop Words matter?",
+      "answer": "Stop words such as the and and are removed because they add little discriminating value. They reduce index size. They can surprise phrase searches. Configurations differ by language."
+     },
+     {
+      "q": "Module 23 · Why does Stemming matter?",
+      "answer": "Stemming maps variants such as run, runs and running to a shared lexeme, improving recall. It improves matching. It can over-stem. The language config controls it."
+     },
+     {
+      "q": "Module 23 · Why does GIN Index for FTS matter?",
+      "answer": "A GIN index on the tsvector expression accelerates @@ queries. Index the exact expression. Use the same configuration in queries. It speeds reads but costs writes."
+     },
+     {
+      "q": "Module 23 · Why does Search Configuration matter?",
+      "answer": "The configuration determines stop words, stemming and dictionary behavior; indexing and querying must use the same one. Use a consistent config. simple does not stem. Store a generated tsvector for control."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Config mismatch",
+      "broken": "CREATE INDEX idx_fts ON courses USING gin (to_tsvector('english', title));\nSELECT * FROM courses WHERE to_tsvector('simple', title) @@ to_tsquery('simple', 'sql');",
+      "fix": "SELECT * FROM courses WHERE to_tsvector('english', title) @@ to_tsquery('english', 'sql');",
+      "error": "The query configuration does not match the index",
+      "expected": "An index-compatible query."
+     },
+     {
+      "title": "LIKE instead of FTS",
+      "broken": "SELECT * FROM courses WHERE title LIKE '%sql%';",
+      "fix": "SELECT * FROM courses WHERE to_tsvector('english', title) @@ websearch_to_tsquery('english', 'sql');",
+      "error": "LIKE cannot use the FTS index or ranking",
+      "expected": "A ranked FTS query."
+     },
+     {
+      "title": "to_tsquery injection",
+      "broken": "SELECT to_tsquery('english', 'sql &');",
+      "fix": "SELECT websearch_to_tsquery('english', 'sql &');",
+      "error": "syntax error in tsquery",
+      "expected": "A safe user query."
+     },
+     {
+      "title": "Missing expression index",
+      "broken": "CREATE INDEX idx_title ON courses (title);\nSELECT * FROM courses WHERE to_tsvector('english', title) @@ to_tsquery('english', 'sql');",
+      "fix": "CREATE INDEX idx_title_fts ON courses USING gin (to_tsvector('english', title));",
+      "error": "The plain title index cannot serve the FTS predicate",
+      "expected": "A GIN FTS index."
+     },
+     {
+      "title": "Wrong match operator",
+      "broken": "SELECT * FROM courses WHERE to_tsvector('english', title) = to_tsquery('english', 'sql');",
+      "fix": "SELECT * FROM courses WHERE to_tsvector('english', title) @@ to_tsquery('english', 'sql');",
+      "error": "operator does not exist: tsvector = tsquery",
+      "expected": "A match."
+     },
+     {
+      "title": "Phrase without positions",
+      "broken": "SELECT to_tsquery('english', 'full text');",
+      "fix": "SELECT to_tsquery('english', 'full <-> text');",
+      "error": "Two terms without an operator are not a phrase",
+      "expected": "A phrase query."
+     },
+     {
+      "title": "Stop word surprise",
+      "broken": "SELECT to_tsvector('english', 'the sql');",
+      "fix": "SELECT to_tsvector('simple', 'the sql');",
+      "error": "The stop word is removed",
+      "expected": "A vector that keeps the."
+     },
+     {
+      "title": "Ranking on unindexed text",
+      "broken": "SELECT title, ts_rank(title, to_tsquery('english', 'sql')) FROM courses;",
+      "fix": "SELECT title, ts_rank(to_tsvector('english', title), to_tsquery('english', 'sql')) FROM courses;",
+      "error": "ts_rank expects a tsvector",
+      "expected": "A ranked result."
+     },
+     {
+      "title": "Missing language config",
+      "broken": "SELECT to_tsvector(title) FROM courses;",
+      "fix": "SELECT to_tsvector('english', title) FROM courses;",
+      "error": "function to_tsvector(text) does not exist",
+      "expected": "A configured vector."
+     },
+     {
+      "title": "Headline markers",
+      "broken": "SELECT ts_headline(title, to_tsquery('english', 'sql')) FROM courses;",
+      "fix": "SELECT ts_headline('english', title, to_tsquery('english', 'sql')) FROM courses;",
+      "error": "function ts_headline(text, tsquery) does not exist",
+      "expected": "A highlighted snippet."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 23 · State one key rule for Full-Text Search Basics.",
+      "answer": "It handles words, not just substrings."
+     },
+     {
+      "q": "Module 23 · State one key rule for tsvector.",
+      "answer": "It is not plain text."
+     },
+     {
+      "q": "Module 23 · State one key rule for tsquery.",
+      "answer": "& means AND."
+     },
+     {
+      "q": "Module 23 · State one key rule for to_tsvector.",
+      "answer": "Choose a language config."
+     },
+     {
+      "q": "Module 23 · State one key rule for to_tsquery.",
+      "answer": "It accepts operators."
+     },
+     {
+      "q": "Module 23 · State one key rule for plainto_tsquery.",
+      "answer": "It is safer for raw input."
+     },
+     {
+      "q": "Module 23 · State one key rule for websearch_to_tsquery.",
+      "answer": "It is designed for user input."
+     },
+     {
+      "q": "Module 23 · State one key rule for Match Operator.",
+      "answer": "It is the core FTS predicate."
+     },
+     {
+      "q": "Module 23 · State one key rule for Ranking.",
+      "answer": "Higher is more relevant."
+     },
+     {
+      "q": "Module 23 · State one key rule for Highlighting.",
+      "answer": "It works on the original text."
+     }
+    ]
+   }
+  }
+ ]
+}

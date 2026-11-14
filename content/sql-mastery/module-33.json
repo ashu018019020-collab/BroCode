@@ -1,0 +1,921 @@
+{
+ "modules": [
+  {
+   "id": "sql33",
+   "no": 33,
+   "title": "Replication and High Availability",
+   "goal": "Keep a second copy ready and understand lag, failover and split-brain risks.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Replication Basics",
+     "simple": "Replication data ko doosre node par copy karta hai.",
+     "pro": "Replication streams changes from a primary to one or more replicas for availability and read scaling.",
+     "points": [
+      "Primary accepts writes.",
+      "Replicas receive changes.",
+      "Replication is not backup."
+     ],
+     "example": {
+      "sql": "SHOW wal_level;",
+      "output": "replica"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Streaming Replication",
+     "simple": "Streaming replication WAL continuously bhejta hai.",
+     "pro": "Physical streaming replication ships WAL records to a standby that applies them continuously.",
+     "points": [
+      "It copies the cluster.",
+      "It supports hot standby reads.",
+      "Lag is measured in WAL bytes or time."
+     ],
+     "example": {
+      "sql": "SELECT application_name, state, sync_state FROM pg_stat_replication;",
+      "output": "Connected standbys."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Logical Replication",
+     "simple": "Logical replication selected changes publish karta hai.",
+     "pro": "Logical replication decodes WAL into row changes and applies them through publications and subscriptions.",
+     "points": [
+      "It is table-level.",
+      "It can cross versions.",
+      "It does not copy the whole cluster."
+     ],
+     "example": {
+      "sql": "CREATE PUBLICATION app_pub FOR TABLE students, courses;",
+      "output": "CREATE PUBLICATION"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Primary and Replica",
+     "simple": "Primary writes leta hai; replica read-only hota hai.",
+     "pro": "A hot standby accepts read-only queries while applying WAL, so reporting can be isolated from write load.",
+     "points": [
+      "Writes go to the primary.",
+      "Replicas can serve reads.",
+      "Replica reads can be stale."
+     ],
+     "example": {
+      "sql": "SELECT pg_is_in_recovery();",
+      "output": "t on a standby."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Synchronous vs Asynchronous",
+     "simple": "Sync replication commit wait karta hai; async nahi.",
+     "pro": "Synchronous replication waits for a standby acknowledgement before commit, trading latency for lower data loss.",
+     "points": [
+      "Sync reduces RPO.",
+      "Async is faster.",
+      "Sync can block writes if the standby is slow."
+     ],
+     "example": {
+      "sql": "synchronous_commit = on",
+      "output": "A synchronous commit setting."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Failover",
+     "simple": "Failover replica ko primary banata hai.",
+     "pro": "Failover promotes a standby when the primary fails, ideally through an orchestrator that fences the old primary.",
+     "points": [
+      "Promote the standby.",
+      "Redirect clients.",
+      "Prevent split brain."
+     ],
+     "example": {
+      "sql": "SELECT pg_promote();",
+      "output": "t"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Replication Lag",
+     "simple": "Lag replica ki primary se doori batata hai.",
+     "pro": "Lag is the delay between a primary commit and its visibility on a replica, measured in time or LSN.",
+     "points": [
+      "Lag grows under load.",
+      "Read-your-writes can fail.",
+      "Monitor continuously."
+     ],
+     "example": {
+      "sql": "SELECT client_addr, replay_lag FROM pg_stat_replication;",
+      "output": "Current replica lag."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Read Scaling",
+     "simple": "Replicas read traffic distribute karte hain.",
+     "pro": "Read replicas offload reporting and read-heavy endpoints, but applications must tolerate stale reads.",
+     "points": [
+      "Route reads deliberately.",
+      "Do not send writes to replicas.",
+      "Handle lag-sensitive reads on the primary."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students;",
+      "output": "A read that can run on a replica."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Promotion",
+     "simple": "Promotion replica ko writable banata hai.",
+     "pro": "Promotion ends recovery and makes the standby a primary; it must be coordinated with client routing and fencing.",
+     "points": [
+      "Promote once.",
+      "Fence the old primary.",
+      "Update connection strings."
+     ],
+     "example": {
+      "sql": "SELECT pg_promote(true, 60);",
+      "output": "t"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Split Brain",
+     "simple": "Split brain do primaries ko accept karne ki state hai.",
+     "pro": "Split brain happens when the old primary and the promoted standby both accept writes, causing divergent data.",
+     "points": [
+      "Use fencing.",
+      "Use a quorum.",
+      "Reconcile carefully."
+     ],
+     "example": {
+      "sql": "-- Fence the old primary before promotion",
+      "output": "A single writable primary."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Conflict Handling",
+     "simple": "Logical replication conflicts resolve karne padte hain.",
+     "pro": "Logical replication can conflict on primary keys or constraints; the subscription can stop or skip depending on configuration.",
+     "points": [
+      "Monitor conflicts.",
+      "Design keys carefully.",
+      "Decide skip versus stop."
+     ],
+     "example": {
+      "sql": "SELECT * FROM pg_stat_subscription;",
+      "output": "Subscription status."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Replication Slots",
+     "simple": "Slot WAL retention ko control karta hai.",
+     "pro": "A replication slot prevents WAL removal until the consumer catches up, which protects replicas but can fill disk.",
+     "points": [
+      "Monitor slot lag.",
+      "Drop unused slots.",
+      "Set max_slot_wal_keep_size."
+     ],
+     "example": {
+      "sql": "SELECT slot_name, active, restart_lsn FROM pg_replication_slots;",
+      "output": "Replication slots."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Monitoring Replication",
+     "simple": "Lag, state aur slots monitor karo.",
+     "pro": "Monitoring tracks replication state, lag, slot retention and failover readiness.",
+     "points": [
+      "Track pg_stat_replication.",
+      "Track slot size.",
+      "Alert on lag."
+     ],
+     "example": {
+      "sql": "SELECT * FROM pg_stat_replication;",
+      "output": "Replication status."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Failover Testing",
+     "simple": "Failover ko regularly test karo.",
+     "pro": "A failover drill measures promotion time, application reconnection and data loss against RTO and RPO.",
+     "points": [
+      "Schedule drills.",
+      "Measure RTO.",
+      "Verify data."
+     ],
+     "example": {
+      "sql": "SELECT pg_promote();",
+      "output": "A tested promotion."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Read-Your-Writes",
+     "simple": "Lag-sensitive reads primary se karo.",
+     "pro": "After a write, a replica may not yet show it; route that user’s next read to the primary or wait for the LSN.",
+     "points": [
+      "Track write LSN.",
+      "Route sensitive reads.",
+      "Do not assume zero lag."
+     ],
+     "example": {
+      "sql": "SELECT pg_current_wal_lsn();",
+      "output": "The primary LSN."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Connection Routing",
+     "simple": "Clients ko primary aur replicas ke behes route karo.",
+     "pro": "A router or load balancer sends writes to the primary and reads to replicas, with health checks and failover awareness.",
+     "points": [
+      "Separate endpoints.",
+      "Health-check nodes.",
+      "Update routes on promotion."
+     ],
+     "example": {
+      "sql": "-- primary: db-primary:5432, replica: db-replica:5432",
+      "output": "Two endpoints."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Common Replication Errors",
+     "simple": "Lag, full disk aur split brain common failures hain.",
+     "pro": "Common failures are an inactive slot filling disk, a replica promoted while the old primary still writes, and reads routed to a lagging replica.",
+     "points": [
+      "Monitor slots.",
+      "Fence promotions.",
+      "Measure lag."
+     ],
+     "example": {
+      "sql": "SELECT slot_name, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) AS retained FROM pg_replication_slots;",
+      "output": "Retained WAL per slot."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "High Availability Design",
+     "simple": "HA ke liye redundancy, health checks aur failover chahiye.",
+     "pro": "High availability combines replicas, automated health checks, quorum and tested failover, not just a standby.",
+     "points": [
+      "Redundant nodes.",
+      "Health checks.",
+      "Automated promotion.",
+      "Client redirect."
+     ],
+     "example": {
+      "sql": "-- primary plus synchronous standby plus witness",
+      "output": "An HA topology."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Backup vs Replica",
+     "simple": "Replica backup nahi hai.",
+     "pro": "A replica protects availability but does not protect against accidental deletes, corruption or ransomware without separate backups.",
+     "points": [
+      "Replicas replicate mistakes.",
+      "Keep independent backups.",
+      "Test restores."
+     ],
+     "example": {
+      "sql": "-- Keep a separate encrypted backup even with replicas",
+      "output": "A backup requirement."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical HA Runbook",
+     "simple": "Detect, fence, promote, redirect, verify.",
+     "pro": "A runbook makes failover deterministic: detect the failure, fence the old primary, promote the standby, redirect clients and verify writes.",
+     "points": [
+      "Detect.",
+      "Fence.",
+      "Promote.",
+      "Redirect.",
+      "Verify."
+     ],
+     "example": {
+      "sql": "SELECT pg_promote();",
+      "output": "A promoted standby."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 33 · Replication Basics: what is the main purpose?",
+      "options": [
+       "Replication Basics: Replication data ko doosre node par copy karta hai.",
+       "Streaming Replication: Streaming replication WAL continuously bhejta hai.",
+       "Read Scaling: Replicas read traffic distribute karte hain.",
+       "Failover Testing: Failover ko regularly test karo."
+      ],
+      "answer": "Replication Basics: Replication data ko doosre node par copy karta hai.",
+      "why": "Replication streams changes from a primary to one or more replicas for availability and read scaling."
+     },
+     {
+      "q": "Module 33 · Streaming Replication: what is the main purpose?",
+      "options": [
+       "Logical Replication: Logical replication selected changes publish karta hai.",
+       "Promotion: Promotion replica ko writable banata hai.",
+       "Read-Your-Writes: Lag-sensitive reads primary se karo.",
+       "Streaming Replication: Streaming replication WAL continuously bhejta hai."
+      ],
+      "answer": "Streaming Replication: Streaming replication WAL continuously bhejta hai.",
+      "why": "Physical streaming replication ships WAL records to a standby that applies them continuously."
+     },
+     {
+      "q": "Module 33 · Logical Replication: what is the main purpose?",
+      "options": [
+       "Split Brain: Split brain do primaries ko accept karne ki state hai.",
+       "Connection Routing: Clients ko primary aur replicas ke behes route karo.",
+       "Logical Replication: Logical replication selected changes publish karta hai.",
+       "Primary and Replica: Primary writes leta hai; replica read-only hota hai."
+      ],
+      "answer": "Logical Replication: Logical replication selected changes publish karta hai.",
+      "why": "Logical replication decodes WAL into row changes and applies them through publications and subscriptions."
+     },
+     {
+      "q": "Module 33 · Primary and Replica: what is the main purpose?",
+      "options": [
+       "Common Replication Errors: Lag, full disk aur split brain common failures hain.",
+       "Primary and Replica: Primary writes leta hai; replica read-only hota hai.",
+       "Synchronous vs Asynchronous: Sync replication commit wait karta hai; async nahi.",
+       "Conflict Handling: Logical replication conflicts resolve karne padte hain."
+      ],
+      "answer": "Primary and Replica: Primary writes leta hai; replica read-only hota hai.",
+      "why": "A hot standby accepts read-only queries while applying WAL, so reporting can be isolated from write load."
+     },
+     {
+      "q": "Module 33 · Synchronous vs Asynchronous: what is the main purpose?",
+      "options": [
+       "Synchronous vs Asynchronous: Sync replication commit wait karta hai; async nahi.",
+       "Failover: Failover replica ko primary banata hai.",
+       "Replication Slots: Slot WAL retention ko control karta hai.",
+       "High Availability Design: HA ke liye redundancy, health checks aur failover chahiye."
+      ],
+      "answer": "Synchronous vs Asynchronous: Sync replication commit wait karta hai; async nahi.",
+      "why": "Synchronous replication waits for a standby acknowledgement before commit, trading latency for lower data loss."
+     },
+     {
+      "q": "Module 33 · Failover: what is the main purpose?",
+      "options": [
+       "Replication Lag: Lag replica ki primary se doori batata hai.",
+       "Monitoring Replication: Lag, state aur slots monitor karo.",
+       "Backup vs Replica: Replica backup nahi hai.",
+       "Failover: Failover replica ko primary banata hai."
+      ],
+      "answer": "Failover: Failover replica ko primary banata hai.",
+      "why": "Failover promotes a standby when the primary fails, ideally through an orchestrator that fences the old primary."
+     },
+     {
+      "q": "Module 33 · Replication Lag: what is the main purpose?",
+      "options": [
+       "Failover Testing: Failover ko regularly test karo.",
+       "Practical HA Runbook: Detect, fence, promote, redirect, verify.",
+       "Replication Lag: Lag replica ki primary se doori batata hai.",
+       "Read Scaling: Replicas read traffic distribute karte hain."
+      ],
+      "answer": "Replication Lag: Lag replica ki primary se doori batata hai.",
+      "why": "Lag is the delay between a primary commit and its visibility on a replica, measured in time or LSN."
+     },
+     {
+      "q": "Module 33 · Read Scaling: what is the main purpose?",
+      "options": [
+       "Replication Basics: Replication data ko doosre node par copy karta hai.",
+       "Read Scaling: Replicas read traffic distribute karte hain.",
+       "Promotion: Promotion replica ko writable banata hai.",
+       "Read-Your-Writes: Lag-sensitive reads primary se karo."
+      ],
+      "answer": "Read Scaling: Replicas read traffic distribute karte hain.",
+      "why": "Read replicas offload reporting and read-heavy endpoints, but applications must tolerate stale reads."
+     },
+     {
+      "q": "Module 33 · Promotion: what is the main purpose?",
+      "options": [
+       "Promotion: Promotion replica ko writable banata hai.",
+       "Split Brain: Split brain do primaries ko accept karne ki state hai.",
+       "Connection Routing: Clients ko primary aur replicas ke behes route karo.",
+       "Streaming Replication: Streaming replication WAL continuously bhejta hai."
+      ],
+      "answer": "Promotion: Promotion replica ko writable banata hai.",
+      "why": "Promotion ends recovery and makes the standby a primary; it must be coordinated with client routing and fencing."
+     },
+     {
+      "q": "Module 33 · Split Brain: what is the main purpose?",
+      "options": [
+       "Conflict Handling: Logical replication conflicts resolve karne padte hain.",
+       "Common Replication Errors: Lag, full disk aur split brain common failures hain.",
+       "Logical Replication: Logical replication selected changes publish karta hai.",
+       "Split Brain: Split brain do primaries ko accept karne ki state hai."
+      ],
+      "answer": "Split Brain: Split brain do primaries ko accept karne ki state hai.",
+      "why": "Split brain happens when the old primary and the promoted standby both accept writes, causing divergent data."
+     },
+     {
+      "q": "Module 33 · Conflict Handling: what is the main purpose?",
+      "options": [
+       "High Availability Design: HA ke liye redundancy, health checks aur failover chahiye.",
+       "Primary and Replica: Primary writes leta hai; replica read-only hota hai.",
+       "Conflict Handling: Logical replication conflicts resolve karne padte hain.",
+       "Replication Slots: Slot WAL retention ko control karta hai."
+      ],
+      "answer": "Conflict Handling: Logical replication conflicts resolve karne padte hain.",
+      "why": "Logical replication can conflict on primary keys or constraints; the subscription can stop or skip depending on configuration."
+     },
+     {
+      "q": "Module 33 · Replication Slots: what is the main purpose?",
+      "options": [
+       "Synchronous vs Asynchronous: Sync replication commit wait karta hai; async nahi.",
+       "Replication Slots: Slot WAL retention ko control karta hai.",
+       "Monitoring Replication: Lag, state aur slots monitor karo.",
+       "Backup vs Replica: Replica backup nahi hai."
+      ],
+      "answer": "Replication Slots: Slot WAL retention ko control karta hai.",
+      "why": "A replication slot prevents WAL removal until the consumer catches up, which protects replicas but can fill disk."
+     },
+     {
+      "q": "Module 33 · Monitoring Replication: what is the main purpose?",
+      "options": [
+       "Monitoring Replication: Lag, state aur slots monitor karo.",
+       "Failover Testing: Failover ko regularly test karo.",
+       "Practical HA Runbook: Detect, fence, promote, redirect, verify.",
+       "Failover: Failover replica ko primary banata hai."
+      ],
+      "answer": "Monitoring Replication: Lag, state aur slots monitor karo.",
+      "why": "Monitoring tracks replication state, lag, slot retention and failover readiness."
+     },
+     {
+      "q": "Module 33 · Failover Testing: what is the main purpose?",
+      "options": [
+       "Read-Your-Writes: Lag-sensitive reads primary se karo.",
+       "Replication Basics: Replication data ko doosre node par copy karta hai.",
+       "Replication Lag: Lag replica ki primary se doori batata hai.",
+       "Failover Testing: Failover ko regularly test karo."
+      ],
+      "answer": "Failover Testing: Failover ko regularly test karo.",
+      "why": "A failover drill measures promotion time, application reconnection and data loss against RTO and RPO."
+     },
+     {
+      "q": "Module 33 · Read-Your-Writes: what is the main purpose?",
+      "options": [
+       "Streaming Replication: Streaming replication WAL continuously bhejta hai.",
+       "Read Scaling: Replicas read traffic distribute karte hain.",
+       "Read-Your-Writes: Lag-sensitive reads primary se karo.",
+       "Connection Routing: Clients ko primary aur replicas ke behes route karo."
+      ],
+      "answer": "Read-Your-Writes: Lag-sensitive reads primary se karo.",
+      "why": "After a write, a replica may not yet show it; route that user’s next read to the primary or wait for the LSN."
+     },
+     {
+      "q": "Module 33 · Connection Routing: what is the main purpose?",
+      "options": [
+       "Promotion: Promotion replica ko writable banata hai.",
+       "Connection Routing: Clients ko primary aur replicas ke behes route karo.",
+       "Common Replication Errors: Lag, full disk aur split brain common failures hain.",
+       "Logical Replication: Logical replication selected changes publish karta hai."
+      ],
+      "answer": "Connection Routing: Clients ko primary aur replicas ke behes route karo.",
+      "why": "A router or load balancer sends writes to the primary and reads to replicas, with health checks and failover awareness."
+     },
+     {
+      "q": "Module 33 · Common Replication Errors: what is the main purpose?",
+      "options": [
+       "Common Replication Errors: Lag, full disk aur split brain common failures hain.",
+       "High Availability Design: HA ke liye redundancy, health checks aur failover chahiye.",
+       "Primary and Replica: Primary writes leta hai; replica read-only hota hai.",
+       "Split Brain: Split brain do primaries ko accept karne ki state hai."
+      ],
+      "answer": "Common Replication Errors: Lag, full disk aur split brain common failures hain.",
+      "why": "Common failures are an inactive slot filling disk, a replica promoted while the old primary still writes, and reads routed to a lagging replica."
+     },
+     {
+      "q": "Module 33 · High Availability Design: what is the main purpose?",
+      "options": [
+       "Backup vs Replica: Replica backup nahi hai.",
+       "Synchronous vs Asynchronous: Sync replication commit wait karta hai; async nahi.",
+       "Conflict Handling: Logical replication conflicts resolve karne padte hain.",
+       "High Availability Design: HA ke liye redundancy, health checks aur failover chahiye."
+      ],
+      "answer": "High Availability Design: HA ke liye redundancy, health checks aur failover chahiye.",
+      "why": "High availability combines replicas, automated health checks, quorum and tested failover, not just a standby."
+     },
+     {
+      "q": "Module 33 · Backup vs Replica: what is the main purpose?",
+      "options": [
+       "Failover: Failover replica ko primary banata hai.",
+       "Replication Slots: Slot WAL retention ko control karta hai.",
+       "Backup vs Replica: Replica backup nahi hai.",
+       "Practical HA Runbook: Detect, fence, promote, redirect, verify."
+      ],
+      "answer": "Backup vs Replica: Replica backup nahi hai.",
+      "why": "A replica protects availability but does not protect against accidental deletes, corruption or ransomware without separate backups."
+     },
+     {
+      "q": "Module 33 · Practical HA Runbook: what is the main purpose?",
+      "options": [
+       "Monitoring Replication: Lag, state aur slots monitor karo.",
+       "Practical HA Runbook: Detect, fence, promote, redirect, verify.",
+       "Replication Basics: Replication data ko doosre node par copy karta hai.",
+       "Replication Lag: Lag replica ki primary se doori batata hai."
+      ],
+      "answer": "Practical HA Runbook: Detect, fence, promote, redirect, verify.",
+      "why": "A runbook makes failover deterministic: detect the failure, fence the old primary, promote the standby, redirect clients and verify writes."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 33 · Explain Replication Basics in a production query.",
+      "answer": "Replication streams changes from a primary to one or more replicas for availability and read scaling. Key rules: Primary accepts writes. Replicas receive changes. Replication is not backup."
+     },
+     {
+      "q": "Module 33 · Explain Streaming Replication in a production query.",
+      "answer": "Physical streaming replication ships WAL records to a standby that applies them continuously. Key rules: It copies the cluster. It supports hot standby reads. Lag is measured in WAL bytes or time."
+     },
+     {
+      "q": "Module 33 · Explain Logical Replication in a production query.",
+      "answer": "Logical replication decodes WAL into row changes and applies them through publications and subscriptions. Key rules: It is table-level. It can cross versions. It does not copy the whole cluster."
+     },
+     {
+      "q": "Module 33 · Explain Primary and Replica in a production query.",
+      "answer": "A hot standby accepts read-only queries while applying WAL, so reporting can be isolated from write load. Key rules: Writes go to the primary. Replicas can serve reads. Replica reads can be stale."
+     },
+     {
+      "q": "Module 33 · Explain Synchronous vs Asynchronous in a production query.",
+      "answer": "Synchronous replication waits for a standby acknowledgement before commit, trading latency for lower data loss. Key rules: Sync reduces RPO. Async is faster. Sync can block writes if the standby is slow."
+     },
+     {
+      "q": "Module 33 · Explain Failover in a production query.",
+      "answer": "Failover promotes a standby when the primary fails, ideally through an orchestrator that fences the old primary. Key rules: Promote the standby. Redirect clients. Prevent split brain."
+     },
+     {
+      "q": "Module 33 · Explain Replication Lag in a production query.",
+      "answer": "Lag is the delay between a primary commit and its visibility on a replica, measured in time or LSN. Key rules: Lag grows under load. Read-your-writes can fail. Monitor continuously."
+     },
+     {
+      "q": "Module 33 · Explain Read Scaling in a production query.",
+      "answer": "Read replicas offload reporting and read-heavy endpoints, but applications must tolerate stale reads. Key rules: Route reads deliberately. Do not send writes to replicas. Handle lag-sensitive reads on the primary."
+     },
+     {
+      "q": "Module 33 · Explain Promotion in a production query.",
+      "answer": "Promotion ends recovery and makes the standby a primary; it must be coordinated with client routing and fencing. Key rules: Promote once. Fence the old primary. Update connection strings."
+     },
+     {
+      "q": "Module 33 · Explain Split Brain in a production query.",
+      "answer": "Split brain happens when the old primary and the promoted standby both accept writes, causing divergent data. Key rules: Use fencing. Use a quorum. Reconcile carefully."
+     },
+     {
+      "q": "Module 33 · Explain Conflict Handling in a production query.",
+      "answer": "Logical replication can conflict on primary keys or constraints; the subscription can stop or skip depending on configuration. Key rules: Monitor conflicts. Design keys carefully. Decide skip versus stop."
+     },
+     {
+      "q": "Module 33 · Explain Replication Slots in a production query.",
+      "answer": "A replication slot prevents WAL removal until the consumer catches up, which protects replicas but can fill disk. Key rules: Monitor slot lag. Drop unused slots. Set max_slot_wal_keep_size."
+     },
+     {
+      "q": "Module 33 · Explain Monitoring Replication in a production query.",
+      "answer": "Monitoring tracks replication state, lag, slot retention and failover readiness. Key rules: Track pg_stat_replication. Track slot size. Alert on lag."
+     },
+     {
+      "q": "Module 33 · Explain Failover Testing in a production query.",
+      "answer": "A failover drill measures promotion time, application reconnection and data loss against RTO and RPO. Key rules: Schedule drills. Measure RTO. Verify data."
+     },
+     {
+      "q": "Module 33 · Explain Read-Your-Writes in a production query.",
+      "answer": "After a write, a replica may not yet show it; route that user’s next read to the primary or wait for the LSN. Key rules: Track write LSN. Route sensitive reads. Do not assume zero lag."
+     },
+     {
+      "q": "Module 33 · Explain Connection Routing in a production query.",
+      "answer": "A router or load balancer sends writes to the primary and reads to replicas, with health checks and failover awareness. Key rules: Separate endpoints. Health-check nodes. Update routes on promotion."
+     },
+     {
+      "q": "Module 33 · Explain Common Replication Errors in a production query.",
+      "answer": "Common failures are an inactive slot filling disk, a replica promoted while the old primary still writes, and reads routed to a lagging replica. Key rules: Monitor slots. Fence promotions. Measure lag."
+     },
+     {
+      "q": "Module 33 · Explain High Availability Design in a production query.",
+      "answer": "High availability combines replicas, automated health checks, quorum and tested failover, not just a standby. Key rules: Redundant nodes. Health checks. Automated promotion. Client redirect."
+     },
+     {
+      "q": "Module 33 · Explain Backup vs Replica in a production query.",
+      "answer": "A replica protects availability but does not protect against accidental deletes, corruption or ransomware without separate backups. Key rules: Replicas replicate mistakes. Keep independent backups. Test restores."
+     },
+     {
+      "q": "Module 33 · Explain Practical HA Runbook in a production query.",
+      "answer": "A runbook makes failover deterministic: detect the failure, fence the old primary, promote the standby, redirect clients and verify writes. Key rules: Detect. Fence. Promote. Redirect. Verify."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Replication Basics",
+      "task": "Write a SQL example that demonstrates Replication Basics.",
+      "solution": "SHOW wal_level;",
+      "expected": "replica"
+     },
+     {
+      "title": "Streaming Replication",
+      "task": "Write a SQL example that demonstrates Streaming Replication.",
+      "solution": "SELECT application_name, state, sync_state FROM pg_stat_replication;",
+      "expected": "Connected standbys."
+     },
+     {
+      "title": "Logical Replication",
+      "task": "Write a SQL example that demonstrates Logical Replication.",
+      "solution": "CREATE PUBLICATION app_pub FOR TABLE students, courses;",
+      "expected": "CREATE PUBLICATION"
+     },
+     {
+      "title": "Primary and Replica",
+      "task": "Write a SQL example that demonstrates Primary and Replica.",
+      "solution": "SELECT pg_is_in_recovery();",
+      "expected": "t on a standby."
+     },
+     {
+      "title": "Synchronous vs Asynchronous",
+      "task": "Write a SQL example that demonstrates Synchronous vs Asynchronous.",
+      "solution": "synchronous_commit = on",
+      "expected": "A synchronous commit setting."
+     },
+     {
+      "title": "Failover",
+      "task": "Write a SQL example that demonstrates Failover.",
+      "solution": "SELECT pg_promote();",
+      "expected": "t"
+     },
+     {
+      "title": "Replication Lag",
+      "task": "Write a SQL example that demonstrates Replication Lag.",
+      "solution": "SELECT client_addr, replay_lag FROM pg_stat_replication;",
+      "expected": "Current replica lag."
+     },
+     {
+      "title": "Read Scaling",
+      "task": "Write a SQL example that demonstrates Read Scaling.",
+      "solution": "SELECT * FROM students;",
+      "expected": "A read that can run on a replica."
+     },
+     {
+      "title": "Promotion",
+      "task": "Write a SQL example that demonstrates Promotion.",
+      "solution": "SELECT pg_promote(true, 60);",
+      "expected": "t"
+     },
+     {
+      "title": "Split Brain",
+      "task": "Write a SQL example that demonstrates Split Brain.",
+      "solution": "-- Fence the old primary before promotion",
+      "expected": "A single writable primary."
+     },
+     {
+      "title": "Conflict Handling",
+      "task": "Write a SQL example that demonstrates Conflict Handling.",
+      "solution": "SELECT * FROM pg_stat_subscription;",
+      "expected": "Subscription status."
+     },
+     {
+      "title": "Replication Slots",
+      "task": "Write a SQL example that demonstrates Replication Slots.",
+      "solution": "SELECT slot_name, active, restart_lsn FROM pg_replication_slots;",
+      "expected": "Replication slots."
+     },
+     {
+      "title": "Monitoring Replication",
+      "task": "Write a SQL example that demonstrates Monitoring Replication.",
+      "solution": "SELECT * FROM pg_stat_replication;",
+      "expected": "Replication status."
+     },
+     {
+      "title": "Failover Testing",
+      "task": "Write a SQL example that demonstrates Failover Testing.",
+      "solution": "SELECT pg_promote();",
+      "expected": "A tested promotion."
+     },
+     {
+      "title": "Read-Your-Writes",
+      "task": "Write a SQL example that demonstrates Read-Your-Writes.",
+      "solution": "SELECT pg_current_wal_lsn();",
+      "expected": "The primary LSN."
+     },
+     {
+      "title": "Connection Routing",
+      "task": "Write a SQL example that demonstrates Connection Routing.",
+      "solution": "-- primary: db-primary:5432, replica: db-replica:5432",
+      "expected": "Two endpoints."
+     },
+     {
+      "title": "Common Replication Errors",
+      "task": "Write a SQL example that demonstrates Common Replication Errors.",
+      "solution": "SELECT slot_name, pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)) AS retained FROM pg_replication_slots;",
+      "expected": "Retained WAL per slot."
+     },
+     {
+      "title": "High Availability Design",
+      "task": "Write a SQL example that demonstrates High Availability Design.",
+      "solution": "-- primary plus synchronous standby plus witness",
+      "expected": "An HA topology."
+     },
+     {
+      "title": "Backup vs Replica",
+      "task": "Write a SQL example that demonstrates Backup vs Replica.",
+      "solution": "-- Keep a separate encrypted backup even with replicas",
+      "expected": "A backup requirement."
+     },
+     {
+      "title": "Practical HA Runbook",
+      "task": "Write a SQL example that demonstrates Practical HA Runbook.",
+      "solution": "SELECT pg_promote();",
+      "expected": "A promoted standby."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 33 · Why does Replication Basics matter?",
+      "answer": "Replication streams changes from a primary to one or more replicas for availability and read scaling. Primary accepts writes. Replicas receive changes. Replication is not backup."
+     },
+     {
+      "q": "Module 33 · Why does Streaming Replication matter?",
+      "answer": "Physical streaming replication ships WAL records to a standby that applies them continuously. It copies the cluster. It supports hot standby reads. Lag is measured in WAL bytes or time."
+     },
+     {
+      "q": "Module 33 · Why does Logical Replication matter?",
+      "answer": "Logical replication decodes WAL into row changes and applies them through publications and subscriptions. It is table-level. It can cross versions. It does not copy the whole cluster."
+     },
+     {
+      "q": "Module 33 · Why does Primary and Replica matter?",
+      "answer": "A hot standby accepts read-only queries while applying WAL, so reporting can be isolated from write load. Writes go to the primary. Replicas can serve reads. Replica reads can be stale."
+     },
+     {
+      "q": "Module 33 · Why does Synchronous vs Asynchronous matter?",
+      "answer": "Synchronous replication waits for a standby acknowledgement before commit, trading latency for lower data loss. Sync reduces RPO. Async is faster. Sync can block writes if the standby is slow."
+     },
+     {
+      "q": "Module 33 · Why does Failover matter?",
+      "answer": "Failover promotes a standby when the primary fails, ideally through an orchestrator that fences the old primary. Promote the standby. Redirect clients. Prevent split brain."
+     },
+     {
+      "q": "Module 33 · Why does Replication Lag matter?",
+      "answer": "Lag is the delay between a primary commit and its visibility on a replica, measured in time or LSN. Lag grows under load. Read-your-writes can fail. Monitor continuously."
+     },
+     {
+      "q": "Module 33 · Why does Read Scaling matter?",
+      "answer": "Read replicas offload reporting and read-heavy endpoints, but applications must tolerate stale reads. Route reads deliberately. Do not send writes to replicas. Handle lag-sensitive reads on the primary."
+     },
+     {
+      "q": "Module 33 · Why does Promotion matter?",
+      "answer": "Promotion ends recovery and makes the standby a primary; it must be coordinated with client routing and fencing. Promote once. Fence the old primary. Update connection strings."
+     },
+     {
+      "q": "Module 33 · Why does Split Brain matter?",
+      "answer": "Split brain happens when the old primary and the promoted standby both accept writes, causing divergent data. Use fencing. Use a quorum. Reconcile carefully."
+     },
+     {
+      "q": "Module 33 · Why does Conflict Handling matter?",
+      "answer": "Logical replication can conflict on primary keys or constraints; the subscription can stop or skip depending on configuration. Monitor conflicts. Design keys carefully. Decide skip versus stop."
+     },
+     {
+      "q": "Module 33 · Why does Replication Slots matter?",
+      "answer": "A replication slot prevents WAL removal until the consumer catches up, which protects replicas but can fill disk. Monitor slot lag. Drop unused slots. Set max_slot_wal_keep_size."
+     },
+     {
+      "q": "Module 33 · Why does Monitoring Replication matter?",
+      "answer": "Monitoring tracks replication state, lag, slot retention and failover readiness. Track pg_stat_replication. Track slot size. Alert on lag."
+     },
+     {
+      "q": "Module 33 · Why does Failover Testing matter?",
+      "answer": "A failover drill measures promotion time, application reconnection and data loss against RTO and RPO. Schedule drills. Measure RTO. Verify data."
+     },
+     {
+      "q": "Module 33 · Why does Read-Your-Writes matter?",
+      "answer": "After a write, a replica may not yet show it; route that user’s next read to the primary or wait for the LSN. Track write LSN. Route sensitive reads. Do not assume zero lag."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Writes on replica",
+      "broken": "INSERT INTO students (name) VALUES ('Zara');",
+      "fix": "INSERT INTO students (name) VALUES ('Zara') on the primary.",
+      "error": "cannot execute INSERT in a read-only transaction",
+      "expected": "A write on the primary."
+     },
+     {
+      "title": "Replica lag read",
+      "broken": "Write on primary, immediately read the same row from a replica.",
+      "fix": "Read from the primary until the replica reaches the write LSN.",
+      "error": "The replica may not have the row yet",
+      "expected": "A consistent read."
+     },
+     {
+      "title": "Inactive slot",
+      "broken": "SELECT slot_name FROM pg_replication_slots;",
+      "fix": "Drop the unused slot or restore its consumer, then monitor retained WAL.",
+      "error": "WAL accumulates until the disk fills",
+      "expected": "A healthy slot."
+     },
+     {
+      "title": "Split brain",
+      "broken": "Promote the standby while the old primary is still reachable.",
+      "fix": "Fence the old primary first, then promote.",
+      "error": "Two nodes accept writes",
+      "expected": "A single primary."
+     },
+     {
+      "title": "Async data loss",
+      "broken": "synchronous_commit = off",
+      "fix": "Use synchronous replication for data that cannot be lost.",
+      "error": "A crash can lose recent commits",
+      "expected": "A lower RPO."
+     },
+     {
+      "title": "Replica as backup",
+      "broken": "Delete the primary table and rely on the replica.",
+      "fix": "Restore from a separate backup.",
+      "error": "The delete replicates to the standby",
+      "expected": "A recoverable backup."
+     },
+     {
+      "title": "Slot disk growth",
+      "broken": "max_slot_wal_keep_size = -1",
+      "fix": "Set a bound and alert on retained WAL.",
+      "error": "A stalled consumer can fill the disk",
+      "expected": "Bounded WAL retention."
+     },
+     {
+      "title": "Wrong endpoint",
+      "broken": "Application writes to db-replica:5432.",
+      "fix": "Route writes to db-primary:5432.",
+      "error": "read-only transaction errors",
+      "expected": "Correct routing."
+     },
+     {
+      "title": "Promotion without redirect",
+      "broken": "SELECT pg_promote();",
+      "fix": "Promote, then update the application endpoint and verify writes.",
+      "error": "Clients still connect to the old primary",
+      "expected": "A completed failover."
+     },
+     {
+      "title": "Logical conflict",
+      "broken": "Subscription stops on a duplicate primary key.",
+      "fix": "Resolve the conflicting row and restart the subscription with a documented policy.",
+      "error": "duplicate key value violates unique constraint",
+      "expected": "A reconciled subscription."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 33 · State one key rule for Replication Basics.",
+      "answer": "Primary accepts writes."
+     },
+     {
+      "q": "Module 33 · State one key rule for Streaming Replication.",
+      "answer": "It copies the cluster."
+     },
+     {
+      "q": "Module 33 · State one key rule for Logical Replication.",
+      "answer": "It is table-level."
+     },
+     {
+      "q": "Module 33 · State one key rule for Primary and Replica.",
+      "answer": "Writes go to the primary."
+     },
+     {
+      "q": "Module 33 · State one key rule for Synchronous vs Asynchronous.",
+      "answer": "Sync reduces RPO."
+     },
+     {
+      "q": "Module 33 · State one key rule for Failover.",
+      "answer": "Promote the standby."
+     },
+     {
+      "q": "Module 33 · State one key rule for Replication Lag.",
+      "answer": "Lag grows under load."
+     },
+     {
+      "q": "Module 33 · State one key rule for Read Scaling.",
+      "answer": "Route reads deliberately."
+     },
+     {
+      "q": "Module 33 · State one key rule for Promotion.",
+      "answer": "Promote once."
+     },
+     {
+      "q": "Module 33 · State one key rule for Split Brain.",
+      "answer": "Use fencing."
+     }
+    ]
+   }
+  }
+ ]
+}

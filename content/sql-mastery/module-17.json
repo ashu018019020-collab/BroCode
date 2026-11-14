@@ -1,0 +1,918 @@
+{
+ "modules": [
+  {
+   "id": "sql17",
+   "no": 17,
+   "title": "Views and Materialized Views",
+   "goal": "Package queries behind stable relations and choose between live and materialized results.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "What Is a View?",
+     "simple": "View ek saved query hai jo table ki tarah query hoti hai.",
+     "pro": "A view is a named stored query; it has no independent rows and is evaluated when queried.",
+     "points": [
+      "Views store the query, not the data.",
+      "They simplify complex SQL.",
+      "They can restrict columns and rows."
+     ],
+     "example": {
+      "sql": "CREATE VIEW high_scorers AS SELECT id, name, marks FROM students WHERE marks >= 80;",
+      "output": "CREATE VIEW"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "CREATE VIEW",
+     "simple": "CREATE VIEW se named query banao.",
+     "pro": "CREATE VIEW name AS query defines a view over one or more relations.",
+     "points": [
+      "Name the view.",
+      "The query follows AS.",
+      "Column names come from the select list."
+     ],
+     "example": {
+      "sql": "CREATE VIEW student_names AS SELECT id, name FROM students;",
+      "output": "CREATE VIEW"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Querying a View",
+     "simple": "View ko normal table ki tarah SELECT karo.",
+     "pro": "A view can be used in SELECT, JOIN, WHERE and most places a table is allowed.",
+     "points": [
+      "Query it by name.",
+      "Its columns are the select-list columns.",
+      "The underlying query runs each time."
+     ],
+     "example": {
+      "sql": "SELECT * FROM student_names ORDER BY name;",
+      "output": "The projected student names."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "View as Abstraction",
+     "simple": "View complex joins ko simple interface deta hai.",
+     "pro": "A view hides join and filter details behind a stable name, so consumers do not repeat fragile SQL.",
+     "points": [
+      "Centralize reusable logic.",
+      "Expose only needed columns.",
+      "Change the view instead of every caller."
+     ],
+     "example": {
+      "sql": "CREATE VIEW course_roster AS SELECT c.title, s.name FROM courses c JOIN enrollments e ON e.course_id = c.id JOIN students s ON s.id = e.student_id;",
+      "output": "CREATE VIEW"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Updatable Views",
+     "simple": "Simple views ko INSERT/UPDATE/DELETE kiya ja sakta hai.",
+     "pro": "A view is automatically updatable when it maps rows one-to-one to a base table without aggregates, DISTINCT, GROUP BY or set operations.",
+     "points": [
+      "Simple projections are updatable.",
+      "Aggregates block updates.",
+      "Use INSTEAD OF triggers for complex views."
+     ],
+     "example": {
+      "sql": "CREATE VIEW student_names AS SELECT id, name FROM students;",
+      "output": "CREATE VIEW"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "WITH CHECK OPTION",
+     "simple": "WITH CHECK OPTION view ke filter ke bahar writes rokta hai.",
+     "pro": "WITH CHECK OPTION rejects inserts or updates that would make a row invisible through the view predicate.",
+     "points": [
+      "It protects the view contract.",
+      "It applies to writes.",
+      "It can be LOCAL or CASCADED."
+     ],
+     "example": {
+      "sql": "CREATE VIEW passing AS SELECT * FROM students WHERE marks >= 60 WITH CHECK OPTION;",
+      "output": "CREATE VIEW"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "CREATE OR REPLACE VIEW",
+     "simple": "Existing view ko replace karne ke liye OR REPLACE use karo.",
+     "pro": "CREATE OR REPLACE VIEW changes the query in place, but cannot change existing column names, order or types.",
+     "points": [
+      "It keeps dependencies.",
+      "Column shape must stay compatible.",
+      "Use DROP and CREATE for a redesign."
+     ],
+     "example": {
+      "sql": "CREATE OR REPLACE VIEW student_names AS SELECT id, name, email FROM students;",
+      "output": "CREATE VIEW"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Dropping Views",
+     "simple": "DROP VIEW view ko remove karta hai.",
+     "pro": "DROP VIEW removes the named query; CASCADE also drops dependent objects, while RESTRICT refuses if dependencies exist.",
+     "points": [
+      "DROP VIEW IF EXISTS is safe for scripts.",
+      "CASCADE can remove dependents.",
+      "The base tables remain."
+     ],
+     "example": {
+      "sql": "DROP VIEW IF EXISTS student_names;",
+      "output": "DROP VIEW"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "View Dependencies",
+     "simple": "Views doosri views aur tables par depend kar sakti hain.",
+     "pro": "PostgreSQL tracks dependencies, so dropping a referenced object may require CASCADE or fail with a dependency error.",
+     "points": [
+      "Check dependencies before dropping.",
+      "CASCADE is destructive.",
+      "information_schema.views lists definitions."
+     ],
+     "example": {
+      "sql": "SELECT table_name FROM information_schema.views WHERE table_schema = 'public';",
+      "output": "The public views."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Materialized Views",
+     "simple": "Materialized view result ko disk par store karta hai.",
+     "pro": "A materialized view stores the query result physically, so reads are fast but can be stale until refreshed.",
+     "points": [
+      "It stores rows.",
+      "It must be refreshed.",
+      "It can have indexes."
+     ],
+     "example": {
+      "sql": "CREATE MATERIALIZED VIEW course_counts AS SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id;",
+      "output": "SELECT 3"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "REFRESH MATERIALIZED VIEW",
+     "simple": "Refresh stored result ko dobara compute karta hai.",
+     "pro": "REFRESH MATERIALIZED VIEW reruns the query and replaces the stored rows.",
+     "points": [
+      "It can be expensive.",
+      "It locks the view by default.",
+      "CONCURRENTLY reduces blocking."
+     ],
+     "example": {
+      "sql": "REFRESH MATERIALIZED VIEW course_counts;",
+      "output": "REFRESH MATERIALIZED VIEW"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Concurrent Refresh",
+     "simple": "CONCURRENTLY refresh ke dauraan reads allow karta hai.",
+     "pro": "REFRESH MATERIALIZED VIEW CONCURRENTLY needs a unique index and avoids blocking readers, at the cost of more work.",
+     "points": [
+      "Requires a unique index.",
+      "Cannot run inside a transaction block.",
+      "It may be slower."
+     ],
+     "example": {
+      "sql": "CREATE UNIQUE INDEX course_counts_course_id ON course_counts (course_id);\nREFRESH MATERIALIZED VIEW CONCURRENTLY course_counts;",
+      "output": "CREATE INDEX\nREFRESH MATERIALIZED VIEW"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Indexing Materialized Views",
+     "simple": "Materialized view par index laga sakte hain.",
+     "pro": "Because a materialized view stores rows, it supports ordinary indexes for lookup and uniqueness.",
+     "points": [
+      "Index the refreshed rows.",
+      "A unique index enables concurrent refresh.",
+      "Refresh maintains the indexes."
+     ],
+     "example": {
+      "sql": "CREATE INDEX course_counts_total ON course_counts (total DESC);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "View vs Materialized View",
+     "simple": "View live hota hai; materialized view cached hota hai.",
+     "pro": "A view always reflects current base data, while a materialized view reflects the last refresh and can be stale.",
+     "points": [
+      "Views have no refresh cost.",
+      "Materialized views trade freshness for speed.",
+      "Choose by freshness requirements."
+     ],
+     "example": {
+      "sql": "SELECT * FROM course_counts;",
+      "output": "The last refreshed counts."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Security with Views",
+     "simple": "View se column-level access restrict kar sakte hain.",
+     "pro": "Granting access to a view can expose only selected columns and rows without granting the base table.",
+     "points": [
+      "Grant on the view.",
+      "Do not expose sensitive columns.",
+      "Views do not bypass underlying privileges unless security definer is used."
+     ],
+     "example": {
+      "sql": "GRANT SELECT ON student_names TO app_role;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Performance of Views",
+     "simple": "View apne aap me optimization cache nahi hai.",
+     "pro": "A plain view is expanded into the caller query and optimized with it; it does not store results or guarantee a fixed plan.",
+     "points": [
+      "The planner sees through simple views.",
+      "Complex views can still be expensive.",
+      "Materialize only when needed."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM high_scorers;",
+      "output": "A plan over the students table."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Common View Errors",
+     "simple": "Duplicate columns, bad replacements aur stale materialized data common errors hain.",
+     "pro": "Common failures are duplicate output names, replacing a view with an incompatible shape, refreshing without a unique index and forgetting that a materialized view is stale.",
+     "points": [
+      "Alias duplicate columns.",
+      "Keep replacement shapes compatible.",
+      "Refresh materialized views."
+     ],
+     "example": {
+      "sql": "CREATE VIEW v AS SELECT s.id AS student_id, c.id AS course_id FROM students s CROSS JOIN courses c;",
+      "output": "CREATE VIEW"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Practical Reporting View",
+     "simple": "Reporting view stable columns aur filters deta hai.",
+     "pro": "A reporting view joins and labels data once, giving dashboards a stable interface over changing tables.",
+     "points": [
+      "Name columns explicitly.",
+      "Keep the grain clear.",
+      "Document refresh expectations."
+     ],
+     "example": {
+      "sql": "CREATE VIEW enrollment_report AS SELECT c.title AS course, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "output": "CREATE VIEW"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Column Aliases in Views",
+     "simple": "View columns ko explicit names do.",
+     "pro": "Explicit aliases prevent duplicate names and keep the view contract stable when the underlying query changes.",
+     "points": [
+      "Alias expressions.",
+      "Alias duplicate names.",
+      "Column order is part of the contract."
+     ],
+     "example": {
+      "sql": "CREATE VIEW student_labels AS SELECT id AS student_id, name AS display_name FROM students;",
+      "output": "CREATE VIEW"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "View Maintenance",
+     "simple": "Views ko schema changes ke saath maintain karo.",
+     "pro": "Review dependencies, test replacements and refresh materialized views after data changes.",
+     "points": [
+      "Track dependent views.",
+      "Test CREATE OR REPLACE.",
+      "Schedule refreshes."
+     ],
+     "example": {
+      "sql": "SELECT * FROM pg_depend WHERE refobjid = 'students'::regclass;",
+      "output": "Dependencies on students."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 17 · What Is a View?: what is the main purpose?",
+      "options": [
+       "What Is a View?: View ek saved query hai jo table ki tarah query hoti hai.",
+       "CREATE VIEW: CREATE VIEW se named query banao.",
+       "Dropping Views: DROP VIEW view ko remove karta hai.",
+       "View vs Materialized View: View live hota hai; materialized view cached hota hai."
+      ],
+      "answer": "What Is a View?: View ek saved query hai jo table ki tarah query hoti hai.",
+      "why": "A view is a named stored query; it has no independent rows and is evaluated when queried."
+     },
+     {
+      "q": "Module 17 · CREATE VIEW: what is the main purpose?",
+      "options": [
+       "Querying a View: View ko normal table ki tarah SELECT karo.",
+       "View Dependencies: Views doosri views aur tables par depend kar sakti hain.",
+       "Security with Views: View se column-level access restrict kar sakte hain.",
+       "CREATE VIEW: CREATE VIEW se named query banao."
+      ],
+      "answer": "CREATE VIEW: CREATE VIEW se named query banao.",
+      "why": "CREATE VIEW name AS query defines a view over one or more relations."
+     },
+     {
+      "q": "Module 17 · Querying a View: what is the main purpose?",
+      "options": [
+       "Materialized Views: Materialized view result ko disk par store karta hai.",
+       "Performance of Views: View apne aap me optimization cache nahi hai.",
+       "Querying a View: View ko normal table ki tarah SELECT karo.",
+       "View as Abstraction: View complex joins ko simple interface deta hai."
+      ],
+      "answer": "Querying a View: View ko normal table ki tarah SELECT karo.",
+      "why": "A view can be used in SELECT, JOIN, WHERE and most places a table is allowed."
+     },
+     {
+      "q": "Module 17 · View as Abstraction: what is the main purpose?",
+      "options": [
+       "Common View Errors: Duplicate columns, bad replacements aur stale materialized data common errors hain.",
+       "View as Abstraction: View complex joins ko simple interface deta hai.",
+       "Updatable Views: Simple views ko INSERT/UPDATE/DELETE kiya ja sakta hai.",
+       "REFRESH MATERIALIZED VIEW: Refresh stored result ko dobara compute karta hai."
+      ],
+      "answer": "View as Abstraction: View complex joins ko simple interface deta hai.",
+      "why": "A view hides join and filter details behind a stable name, so consumers do not repeat fragile SQL."
+     },
+     {
+      "q": "Module 17 · Updatable Views: what is the main purpose?",
+      "options": [
+       "Updatable Views: Simple views ko INSERT/UPDATE/DELETE kiya ja sakta hai.",
+       "WITH CHECK OPTION: WITH CHECK OPTION view ke filter ke bahar writes rokta hai.",
+       "Concurrent Refresh: CONCURRENTLY refresh ke dauraan reads allow karta hai.",
+       "Practical Reporting View: Reporting view stable columns aur filters deta hai."
+      ],
+      "answer": "Updatable Views: Simple views ko INSERT/UPDATE/DELETE kiya ja sakta hai.",
+      "why": "A view is automatically updatable when it maps rows one-to-one to a base table without aggregates, DISTINCT, GROUP BY or set operations."
+     },
+     {
+      "q": "Module 17 · WITH CHECK OPTION: what is the main purpose?",
+      "options": [
+       "CREATE OR REPLACE VIEW: Existing view ko replace karne ke liye OR REPLACE use karo.",
+       "Indexing Materialized Views: Materialized view par index laga sakte hain.",
+       "Column Aliases in Views: View columns ko explicit names do.",
+       "WITH CHECK OPTION: WITH CHECK OPTION view ke filter ke bahar writes rokta hai."
+      ],
+      "answer": "WITH CHECK OPTION: WITH CHECK OPTION view ke filter ke bahar writes rokta hai.",
+      "why": "WITH CHECK OPTION rejects inserts or updates that would make a row invisible through the view predicate."
+     },
+     {
+      "q": "Module 17 · CREATE OR REPLACE VIEW: what is the main purpose?",
+      "options": [
+       "View vs Materialized View: View live hota hai; materialized view cached hota hai.",
+       "View Maintenance: Views ko schema changes ke saath maintain karo.",
+       "CREATE OR REPLACE VIEW: Existing view ko replace karne ke liye OR REPLACE use karo.",
+       "Dropping Views: DROP VIEW view ko remove karta hai."
+      ],
+      "answer": "CREATE OR REPLACE VIEW: Existing view ko replace karne ke liye OR REPLACE use karo.",
+      "why": "CREATE OR REPLACE VIEW changes the query in place, but cannot change existing column names, order or types."
+     },
+     {
+      "q": "Module 17 · Dropping Views: what is the main purpose?",
+      "options": [
+       "What Is a View?: View ek saved query hai jo table ki tarah query hoti hai.",
+       "Dropping Views: DROP VIEW view ko remove karta hai.",
+       "View Dependencies: Views doosri views aur tables par depend kar sakti hain.",
+       "Security with Views: View se column-level access restrict kar sakte hain."
+      ],
+      "answer": "Dropping Views: DROP VIEW view ko remove karta hai.",
+      "why": "DROP VIEW removes the named query; CASCADE also drops dependent objects, while RESTRICT refuses if dependencies exist."
+     },
+     {
+      "q": "Module 17 · View Dependencies: what is the main purpose?",
+      "options": [
+       "View Dependencies: Views doosri views aur tables par depend kar sakti hain.",
+       "Materialized Views: Materialized view result ko disk par store karta hai.",
+       "Performance of Views: View apne aap me optimization cache nahi hai.",
+       "CREATE VIEW: CREATE VIEW se named query banao."
+      ],
+      "answer": "View Dependencies: Views doosri views aur tables par depend kar sakti hain.",
+      "why": "PostgreSQL tracks dependencies, so dropping a referenced object may require CASCADE or fail with a dependency error."
+     },
+     {
+      "q": "Module 17 · Materialized Views: what is the main purpose?",
+      "options": [
+       "REFRESH MATERIALIZED VIEW: Refresh stored result ko dobara compute karta hai.",
+       "Common View Errors: Duplicate columns, bad replacements aur stale materialized data common errors hain.",
+       "Querying a View: View ko normal table ki tarah SELECT karo.",
+       "Materialized Views: Materialized view result ko disk par store karta hai."
+      ],
+      "answer": "Materialized Views: Materialized view result ko disk par store karta hai.",
+      "why": "A materialized view stores the query result physically, so reads are fast but can be stale until refreshed."
+     },
+     {
+      "q": "Module 17 · REFRESH MATERIALIZED VIEW: what is the main purpose?",
+      "options": [
+       "Practical Reporting View: Reporting view stable columns aur filters deta hai.",
+       "View as Abstraction: View complex joins ko simple interface deta hai.",
+       "REFRESH MATERIALIZED VIEW: Refresh stored result ko dobara compute karta hai.",
+       "Concurrent Refresh: CONCURRENTLY refresh ke dauraan reads allow karta hai."
+      ],
+      "answer": "REFRESH MATERIALIZED VIEW: Refresh stored result ko dobara compute karta hai.",
+      "why": "REFRESH MATERIALIZED VIEW reruns the query and replaces the stored rows."
+     },
+     {
+      "q": "Module 17 · Concurrent Refresh: what is the main purpose?",
+      "options": [
+       "Updatable Views: Simple views ko INSERT/UPDATE/DELETE kiya ja sakta hai.",
+       "Concurrent Refresh: CONCURRENTLY refresh ke dauraan reads allow karta hai.",
+       "Indexing Materialized Views: Materialized view par index laga sakte hain.",
+       "Column Aliases in Views: View columns ko explicit names do."
+      ],
+      "answer": "Concurrent Refresh: CONCURRENTLY refresh ke dauraan reads allow karta hai.",
+      "why": "REFRESH MATERIALIZED VIEW CONCURRENTLY needs a unique index and avoids blocking readers, at the cost of more work."
+     },
+     {
+      "q": "Module 17 · Indexing Materialized Views: what is the main purpose?",
+      "options": [
+       "Indexing Materialized Views: Materialized view par index laga sakte hain.",
+       "View vs Materialized View: View live hota hai; materialized view cached hota hai.",
+       "View Maintenance: Views ko schema changes ke saath maintain karo.",
+       "WITH CHECK OPTION: WITH CHECK OPTION view ke filter ke bahar writes rokta hai."
+      ],
+      "answer": "Indexing Materialized Views: Materialized view par index laga sakte hain.",
+      "why": "Because a materialized view stores rows, it supports ordinary indexes for lookup and uniqueness."
+     },
+     {
+      "q": "Module 17 · View vs Materialized View: what is the main purpose?",
+      "options": [
+       "Security with Views: View se column-level access restrict kar sakte hain.",
+       "What Is a View?: View ek saved query hai jo table ki tarah query hoti hai.",
+       "CREATE OR REPLACE VIEW: Existing view ko replace karne ke liye OR REPLACE use karo.",
+       "View vs Materialized View: View live hota hai; materialized view cached hota hai."
+      ],
+      "answer": "View vs Materialized View: View live hota hai; materialized view cached hota hai.",
+      "why": "A view always reflects current base data, while a materialized view reflects the last refresh and can be stale."
+     },
+     {
+      "q": "Module 17 · Security with Views: what is the main purpose?",
+      "options": [
+       "CREATE VIEW: CREATE VIEW se named query banao.",
+       "Dropping Views: DROP VIEW view ko remove karta hai.",
+       "Security with Views: View se column-level access restrict kar sakte hain.",
+       "Performance of Views: View apne aap me optimization cache nahi hai."
+      ],
+      "answer": "Security with Views: View se column-level access restrict kar sakte hain.",
+      "why": "Granting access to a view can expose only selected columns and rows without granting the base table."
+     },
+     {
+      "q": "Module 17 · Performance of Views: what is the main purpose?",
+      "options": [
+       "View Dependencies: Views doosri views aur tables par depend kar sakti hain.",
+       "Performance of Views: View apne aap me optimization cache nahi hai.",
+       "Common View Errors: Duplicate columns, bad replacements aur stale materialized data common errors hain.",
+       "Querying a View: View ko normal table ki tarah SELECT karo."
+      ],
+      "answer": "Performance of Views: View apne aap me optimization cache nahi hai.",
+      "why": "A plain view is expanded into the caller query and optimized with it; it does not store results or guarantee a fixed plan."
+     },
+     {
+      "q": "Module 17 · Common View Errors: what is the main purpose?",
+      "options": [
+       "Common View Errors: Duplicate columns, bad replacements aur stale materialized data common errors hain.",
+       "Practical Reporting View: Reporting view stable columns aur filters deta hai.",
+       "View as Abstraction: View complex joins ko simple interface deta hai.",
+       "Materialized Views: Materialized view result ko disk par store karta hai."
+      ],
+      "answer": "Common View Errors: Duplicate columns, bad replacements aur stale materialized data common errors hain.",
+      "why": "Common failures are duplicate output names, replacing a view with an incompatible shape, refreshing without a unique index and forgetting that a materialized view is stale."
+     },
+     {
+      "q": "Module 17 · Practical Reporting View: what is the main purpose?",
+      "options": [
+       "Column Aliases in Views: View columns ko explicit names do.",
+       "Updatable Views: Simple views ko INSERT/UPDATE/DELETE kiya ja sakta hai.",
+       "REFRESH MATERIALIZED VIEW: Refresh stored result ko dobara compute karta hai.",
+       "Practical Reporting View: Reporting view stable columns aur filters deta hai."
+      ],
+      "answer": "Practical Reporting View: Reporting view stable columns aur filters deta hai.",
+      "why": "A reporting view joins and labels data once, giving dashboards a stable interface over changing tables."
+     },
+     {
+      "q": "Module 17 · Column Aliases in Views: what is the main purpose?",
+      "options": [
+       "WITH CHECK OPTION: WITH CHECK OPTION view ke filter ke bahar writes rokta hai.",
+       "Concurrent Refresh: CONCURRENTLY refresh ke dauraan reads allow karta hai.",
+       "Column Aliases in Views: View columns ko explicit names do.",
+       "View Maintenance: Views ko schema changes ke saath maintain karo."
+      ],
+      "answer": "Column Aliases in Views: View columns ko explicit names do.",
+      "why": "Explicit aliases prevent duplicate names and keep the view contract stable when the underlying query changes."
+     },
+     {
+      "q": "Module 17 · View Maintenance: what is the main purpose?",
+      "options": [
+       "Indexing Materialized Views: Materialized view par index laga sakte hain.",
+       "View Maintenance: Views ko schema changes ke saath maintain karo.",
+       "What Is a View?: View ek saved query hai jo table ki tarah query hoti hai.",
+       "CREATE OR REPLACE VIEW: Existing view ko replace karne ke liye OR REPLACE use karo."
+      ],
+      "answer": "View Maintenance: Views ko schema changes ke saath maintain karo.",
+      "why": "Review dependencies, test replacements and refresh materialized views after data changes."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 17 · Explain What Is a View? in a production query.",
+      "answer": "A view is a named stored query; it has no independent rows and is evaluated when queried. Key rules: Views store the query, not the data. They simplify complex SQL. They can restrict columns and rows."
+     },
+     {
+      "q": "Module 17 · Explain CREATE VIEW in a production query.",
+      "answer": "CREATE VIEW name AS query defines a view over one or more relations. Key rules: Name the view. The query follows AS. Column names come from the select list."
+     },
+     {
+      "q": "Module 17 · Explain Querying a View in a production query.",
+      "answer": "A view can be used in SELECT, JOIN, WHERE and most places a table is allowed. Key rules: Query it by name. Its columns are the select-list columns. The underlying query runs each time."
+     },
+     {
+      "q": "Module 17 · Explain View as Abstraction in a production query.",
+      "answer": "A view hides join and filter details behind a stable name, so consumers do not repeat fragile SQL. Key rules: Centralize reusable logic. Expose only needed columns. Change the view instead of every caller."
+     },
+     {
+      "q": "Module 17 · Explain Updatable Views in a production query.",
+      "answer": "A view is automatically updatable when it maps rows one-to-one to a base table without aggregates, DISTINCT, GROUP BY or set operations. Key rules: Simple projections are updatable. Aggregates block updates. Use INSTEAD OF triggers for complex views."
+     },
+     {
+      "q": "Module 17 · Explain WITH CHECK OPTION in a production query.",
+      "answer": "WITH CHECK OPTION rejects inserts or updates that would make a row invisible through the view predicate. Key rules: It protects the view contract. It applies to writes. It can be LOCAL or CASCADED."
+     },
+     {
+      "q": "Module 17 · Explain CREATE OR REPLACE VIEW in a production query.",
+      "answer": "CREATE OR REPLACE VIEW changes the query in place, but cannot change existing column names, order or types. Key rules: It keeps dependencies. Column shape must stay compatible. Use DROP and CREATE for a redesign."
+     },
+     {
+      "q": "Module 17 · Explain Dropping Views in a production query.",
+      "answer": "DROP VIEW removes the named query; CASCADE also drops dependent objects, while RESTRICT refuses if dependencies exist. Key rules: DROP VIEW IF EXISTS is safe for scripts. CASCADE can remove dependents. The base tables remain."
+     },
+     {
+      "q": "Module 17 · Explain View Dependencies in a production query.",
+      "answer": "PostgreSQL tracks dependencies, so dropping a referenced object may require CASCADE or fail with a dependency error. Key rules: Check dependencies before dropping. CASCADE is destructive. information_schema.views lists definitions."
+     },
+     {
+      "q": "Module 17 · Explain Materialized Views in a production query.",
+      "answer": "A materialized view stores the query result physically, so reads are fast but can be stale until refreshed. Key rules: It stores rows. It must be refreshed. It can have indexes."
+     },
+     {
+      "q": "Module 17 · Explain REFRESH MATERIALIZED VIEW in a production query.",
+      "answer": "REFRESH MATERIALIZED VIEW reruns the query and replaces the stored rows. Key rules: It can be expensive. It locks the view by default. CONCURRENTLY reduces blocking."
+     },
+     {
+      "q": "Module 17 · Explain Concurrent Refresh in a production query.",
+      "answer": "REFRESH MATERIALIZED VIEW CONCURRENTLY needs a unique index and avoids blocking readers, at the cost of more work. Key rules: Requires a unique index. Cannot run inside a transaction block. It may be slower."
+     },
+     {
+      "q": "Module 17 · Explain Indexing Materialized Views in a production query.",
+      "answer": "Because a materialized view stores rows, it supports ordinary indexes for lookup and uniqueness. Key rules: Index the refreshed rows. A unique index enables concurrent refresh. Refresh maintains the indexes."
+     },
+     {
+      "q": "Module 17 · Explain View vs Materialized View in a production query.",
+      "answer": "A view always reflects current base data, while a materialized view reflects the last refresh and can be stale. Key rules: Views have no refresh cost. Materialized views trade freshness for speed. Choose by freshness requirements."
+     },
+     {
+      "q": "Module 17 · Explain Security with Views in a production query.",
+      "answer": "Granting access to a view can expose only selected columns and rows without granting the base table. Key rules: Grant on the view. Do not expose sensitive columns. Views do not bypass underlying privileges unless security definer is used."
+     },
+     {
+      "q": "Module 17 · Explain Performance of Views in a production query.",
+      "answer": "A plain view is expanded into the caller query and optimized with it; it does not store results or guarantee a fixed plan. Key rules: The planner sees through simple views. Complex views can still be expensive. Materialize only when needed."
+     },
+     {
+      "q": "Module 17 · Explain Common View Errors in a production query.",
+      "answer": "Common failures are duplicate output names, replacing a view with an incompatible shape, refreshing without a unique index and forgetting that a materialized view is stale. Key rules: Alias duplicate columns. Keep replacement shapes compatible. Refresh materialized views."
+     },
+     {
+      "q": "Module 17 · Explain Practical Reporting View in a production query.",
+      "answer": "A reporting view joins and labels data once, giving dashboards a stable interface over changing tables. Key rules: Name columns explicitly. Keep the grain clear. Document refresh expectations."
+     },
+     {
+      "q": "Module 17 · Explain Column Aliases in Views in a production query.",
+      "answer": "Explicit aliases prevent duplicate names and keep the view contract stable when the underlying query changes. Key rules: Alias expressions. Alias duplicate names. Column order is part of the contract."
+     },
+     {
+      "q": "Module 17 · Explain View Maintenance in a production query.",
+      "answer": "Review dependencies, test replacements and refresh materialized views after data changes. Key rules: Track dependent views. Test CREATE OR REPLACE. Schedule refreshes."
+     }
+    ],
+    "labs": [
+     {
+      "title": "What Is a View?",
+      "task": "Write a SQL example that demonstrates What Is a View?.",
+      "solution": "CREATE VIEW high_scorers AS SELECT id, name, marks FROM students WHERE marks >= 80;",
+      "expected": "CREATE VIEW"
+     },
+     {
+      "title": "CREATE VIEW",
+      "task": "Write a SQL example that demonstrates CREATE VIEW.",
+      "solution": "CREATE VIEW student_names AS SELECT id, name FROM students;",
+      "expected": "CREATE VIEW"
+     },
+     {
+      "title": "Querying a View",
+      "task": "Write a SQL example that demonstrates Querying a View.",
+      "solution": "SELECT * FROM student_names ORDER BY name;",
+      "expected": "The projected student names."
+     },
+     {
+      "title": "View as Abstraction",
+      "task": "Write a SQL example that demonstrates View as Abstraction.",
+      "solution": "CREATE VIEW course_roster AS SELECT c.title, s.name FROM courses c JOIN enrollments e ON e.course_id = c.id JOIN students s ON s.id = e.student_id;",
+      "expected": "CREATE VIEW"
+     },
+     {
+      "title": "Updatable Views",
+      "task": "Write a SQL example that demonstrates Updatable Views.",
+      "solution": "CREATE VIEW student_names AS SELECT id, name FROM students;",
+      "expected": "CREATE VIEW"
+     },
+     {
+      "title": "WITH CHECK OPTION",
+      "task": "Write a SQL example that demonstrates WITH CHECK OPTION.",
+      "solution": "CREATE VIEW passing AS SELECT * FROM students WHERE marks >= 60 WITH CHECK OPTION;",
+      "expected": "CREATE VIEW"
+     },
+     {
+      "title": "CREATE OR REPLACE VIEW",
+      "task": "Write a SQL example that demonstrates CREATE OR REPLACE VIEW.",
+      "solution": "CREATE OR REPLACE VIEW student_names AS SELECT id, name, email FROM students;",
+      "expected": "CREATE VIEW"
+     },
+     {
+      "title": "Dropping Views",
+      "task": "Write a SQL example that demonstrates Dropping Views.",
+      "solution": "DROP VIEW IF EXISTS student_names;",
+      "expected": "DROP VIEW"
+     },
+     {
+      "title": "View Dependencies",
+      "task": "Write a SQL example that demonstrates View Dependencies.",
+      "solution": "SELECT table_name FROM information_schema.views WHERE table_schema = 'public';",
+      "expected": "The public views."
+     },
+     {
+      "title": "Materialized Views",
+      "task": "Write a SQL example that demonstrates Materialized Views.",
+      "solution": "CREATE MATERIALIZED VIEW course_counts AS SELECT course_id, COUNT(*) AS total FROM enrollments GROUP BY course_id;",
+      "expected": "SELECT 3"
+     },
+     {
+      "title": "REFRESH MATERIALIZED VIEW",
+      "task": "Write a SQL example that demonstrates REFRESH MATERIALIZED VIEW.",
+      "solution": "REFRESH MATERIALIZED VIEW course_counts;",
+      "expected": "REFRESH MATERIALIZED VIEW"
+     },
+     {
+      "title": "Concurrent Refresh",
+      "task": "Write a SQL example that demonstrates Concurrent Refresh.",
+      "solution": "CREATE UNIQUE INDEX course_counts_course_id ON course_counts (course_id);\nREFRESH MATERIALIZED VIEW CONCURRENTLY course_counts;",
+      "expected": "CREATE INDEX\nREFRESH MATERIALIZED VIEW"
+     },
+     {
+      "title": "Indexing Materialized Views",
+      "task": "Write a SQL example that demonstrates Indexing Materialized Views.",
+      "solution": "CREATE INDEX course_counts_total ON course_counts (total DESC);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "View vs Materialized View",
+      "task": "Write a SQL example that demonstrates View vs Materialized View.",
+      "solution": "SELECT * FROM course_counts;",
+      "expected": "The last refreshed counts."
+     },
+     {
+      "title": "Security with Views",
+      "task": "Write a SQL example that demonstrates Security with Views.",
+      "solution": "GRANT SELECT ON student_names TO app_role;",
+      "expected": "GRANT"
+     },
+     {
+      "title": "Performance of Views",
+      "task": "Write a SQL example that demonstrates Performance of Views.",
+      "solution": "EXPLAIN SELECT * FROM high_scorers;",
+      "expected": "A plan over the students table."
+     },
+     {
+      "title": "Common View Errors",
+      "task": "Write a SQL example that demonstrates Common View Errors.",
+      "solution": "CREATE VIEW v AS SELECT s.id AS student_id, c.id AS course_id FROM students s CROSS JOIN courses c;",
+      "expected": "CREATE VIEW"
+     },
+     {
+      "title": "Practical Reporting View",
+      "task": "Write a SQL example that demonstrates Practical Reporting View.",
+      "solution": "CREATE VIEW enrollment_report AS SELECT c.title AS course, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "expected": "CREATE VIEW"
+     },
+     {
+      "title": "Column Aliases in Views",
+      "task": "Write a SQL example that demonstrates Column Aliases in Views.",
+      "solution": "CREATE VIEW student_labels AS SELECT id AS student_id, name AS display_name FROM students;",
+      "expected": "CREATE VIEW"
+     },
+     {
+      "title": "View Maintenance",
+      "task": "Write a SQL example that demonstrates View Maintenance.",
+      "solution": "SELECT * FROM pg_depend WHERE refobjid = 'students'::regclass;",
+      "expected": "Dependencies on students."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 17 · Why does What Is a View? matter?",
+      "answer": "A view is a named stored query; it has no independent rows and is evaluated when queried. Views store the query, not the data. They simplify complex SQL. They can restrict columns and rows."
+     },
+     {
+      "q": "Module 17 · Why does CREATE VIEW matter?",
+      "answer": "CREATE VIEW name AS query defines a view over one or more relations. Name the view. The query follows AS. Column names come from the select list."
+     },
+     {
+      "q": "Module 17 · Why does Querying a View matter?",
+      "answer": "A view can be used in SELECT, JOIN, WHERE and most places a table is allowed. Query it by name. Its columns are the select-list columns. The underlying query runs each time."
+     },
+     {
+      "q": "Module 17 · Why does View as Abstraction matter?",
+      "answer": "A view hides join and filter details behind a stable name, so consumers do not repeat fragile SQL. Centralize reusable logic. Expose only needed columns. Change the view instead of every caller."
+     },
+     {
+      "q": "Module 17 · Why does Updatable Views matter?",
+      "answer": "A view is automatically updatable when it maps rows one-to-one to a base table without aggregates, DISTINCT, GROUP BY or set operations. Simple projections are updatable. Aggregates block updates. Use INSTEAD OF triggers for complex views."
+     },
+     {
+      "q": "Module 17 · Why does WITH CHECK OPTION matter?",
+      "answer": "WITH CHECK OPTION rejects inserts or updates that would make a row invisible through the view predicate. It protects the view contract. It applies to writes. It can be LOCAL or CASCADED."
+     },
+     {
+      "q": "Module 17 · Why does CREATE OR REPLACE VIEW matter?",
+      "answer": "CREATE OR REPLACE VIEW changes the query in place, but cannot change existing column names, order or types. It keeps dependencies. Column shape must stay compatible. Use DROP and CREATE for a redesign."
+     },
+     {
+      "q": "Module 17 · Why does Dropping Views matter?",
+      "answer": "DROP VIEW removes the named query; CASCADE also drops dependent objects, while RESTRICT refuses if dependencies exist. DROP VIEW IF EXISTS is safe for scripts. CASCADE can remove dependents. The base tables remain."
+     },
+     {
+      "q": "Module 17 · Why does View Dependencies matter?",
+      "answer": "PostgreSQL tracks dependencies, so dropping a referenced object may require CASCADE or fail with a dependency error. Check dependencies before dropping. CASCADE is destructive. information_schema.views lists definitions."
+     },
+     {
+      "q": "Module 17 · Why does Materialized Views matter?",
+      "answer": "A materialized view stores the query result physically, so reads are fast but can be stale until refreshed. It stores rows. It must be refreshed. It can have indexes."
+     },
+     {
+      "q": "Module 17 · Why does REFRESH MATERIALIZED VIEW matter?",
+      "answer": "REFRESH MATERIALIZED VIEW reruns the query and replaces the stored rows. It can be expensive. It locks the view by default. CONCURRENTLY reduces blocking."
+     },
+     {
+      "q": "Module 17 · Why does Concurrent Refresh matter?",
+      "answer": "REFRESH MATERIALIZED VIEW CONCURRENTLY needs a unique index and avoids blocking readers, at the cost of more work. Requires a unique index. Cannot run inside a transaction block. It may be slower."
+     },
+     {
+      "q": "Module 17 · Why does Indexing Materialized Views matter?",
+      "answer": "Because a materialized view stores rows, it supports ordinary indexes for lookup and uniqueness. Index the refreshed rows. A unique index enables concurrent refresh. Refresh maintains the indexes."
+     },
+     {
+      "q": "Module 17 · Why does View vs Materialized View matter?",
+      "answer": "A view always reflects current base data, while a materialized view reflects the last refresh and can be stale. Views have no refresh cost. Materialized views trade freshness for speed. Choose by freshness requirements."
+     },
+     {
+      "q": "Module 17 · Why does Security with Views matter?",
+      "answer": "Granting access to a view can expose only selected columns and rows without granting the base table. Grant on the view. Do not expose sensitive columns. Views do not bypass underlying privileges unless security definer is used."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Duplicate view columns",
+      "broken": "CREATE VIEW v AS SELECT s.id, c.id FROM students s CROSS JOIN courses c;",
+      "fix": "CREATE VIEW v AS SELECT s.id AS student_id, c.id AS course_id FROM students s CROSS JOIN courses c;",
+      "error": "column \"id\" specified more than once",
+      "expected": "A view with two distinct columns."
+     },
+     {
+      "title": "View already exists",
+      "broken": "CREATE VIEW high_scorers AS SELECT id, name FROM students WHERE marks >= 80;",
+      "fix": "CREATE OR REPLACE VIEW high_scorers AS SELECT id, name FROM students WHERE marks >= 80;",
+      "error": "relation \"high_scorers\" already exists",
+      "expected": "The view is replaced."
+     },
+     {
+      "title": "Aggregate view update",
+      "broken": "UPDATE course_counts SET total = 0;",
+      "fix": "REFRESH MATERIALIZED VIEW course_counts;",
+      "error": "cannot update view \"course_counts\"",
+      "expected": "Fresh counts."
+     },
+     {
+      "title": "Concurrent refresh without index",
+      "broken": "REFRESH MATERIALIZED VIEW CONCURRENTLY course_counts;",
+      "fix": "CREATE UNIQUE INDEX course_counts_course_id ON course_counts (course_id);\nREFRESH MATERIALIZED VIEW CONCURRENTLY course_counts;",
+      "error": "cannot refresh materialized view \"course_counts\" concurrently",
+      "expected": "A concurrent refresh."
+     },
+     {
+      "title": "Drop with dependency",
+      "broken": "DROP VIEW student_names;",
+      "fix": "DROP VIEW student_names CASCADE;",
+      "error": "cannot drop view because other objects depend on it",
+      "expected": "The view and dependents are removed."
+     },
+     {
+      "title": "Check option violation",
+      "broken": "CREATE VIEW passing AS SELECT * FROM students WHERE marks >= 60 WITH CHECK OPTION;\nINSERT INTO passing (name, marks) VALUES ('Zara', 40);",
+      "fix": "INSERT INTO passing (name, marks) VALUES ('Zara', 75);",
+      "error": "new row violates check option for view \"passing\"",
+      "expected": "A passing row is inserted."
+     },
+     {
+      "title": "Stale materialized view",
+      "broken": "SELECT * FROM course_counts;",
+      "fix": "REFRESH MATERIALIZED VIEW course_counts;\nSELECT * FROM course_counts;",
+      "error": "The counts are from the last refresh",
+      "expected": "Current counts."
+     },
+     {
+      "title": "Replace changes column",
+      "broken": "CREATE OR REPLACE VIEW student_names AS SELECT id, name, email FROM students;",
+      "fix": "DROP VIEW student_names;\nCREATE VIEW student_names AS SELECT id, name, email FROM students;",
+      "error": "cannot change name of view column \"name\"",
+      "expected": "A redesigned view."
+     },
+     {
+      "title": "Wrong grant target",
+      "broken": "GRANT SELECT ON students TO app_role;",
+      "fix": "GRANT SELECT ON student_names TO app_role;",
+      "error": "The role can read sensitive base columns",
+      "expected": "Only the view columns are exposed."
+     },
+     {
+      "title": "View after drop",
+      "broken": "SELECT * FROM student_names;",
+      "fix": "CREATE VIEW student_names AS SELECT id, name FROM students;\nSELECT * FROM student_names;",
+      "error": "relation \"student_names\" does not exist",
+      "expected": "The view is available again."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 17 · State one key rule for What Is a View?.",
+      "answer": "Views store the query, not the data."
+     },
+     {
+      "q": "Module 17 · State one key rule for CREATE VIEW.",
+      "answer": "Name the view."
+     },
+     {
+      "q": "Module 17 · State one key rule for Querying a View.",
+      "answer": "Query it by name."
+     },
+     {
+      "q": "Module 17 · State one key rule for View as Abstraction.",
+      "answer": "Centralize reusable logic."
+     },
+     {
+      "q": "Module 17 · State one key rule for Updatable Views.",
+      "answer": "Simple projections are updatable."
+     },
+     {
+      "q": "Module 17 · State one key rule for WITH CHECK OPTION.",
+      "answer": "It protects the view contract."
+     },
+     {
+      "q": "Module 17 · State one key rule for CREATE OR REPLACE VIEW.",
+      "answer": "It keeps dependencies."
+     },
+     {
+      "q": "Module 17 · State one key rule for Dropping Views.",
+      "answer": "DROP VIEW IF EXISTS is safe for scripts."
+     },
+     {
+      "q": "Module 17 · State one key rule for View Dependencies.",
+      "answer": "Check dependencies before dropping."
+     },
+     {
+      "q": "Module 17 · State one key rule for Materialized Views.",
+      "answer": "It stores rows."
+     }
+    ]
+   }
+  }
+ ]
+}

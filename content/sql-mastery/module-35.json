@@ -1,0 +1,919 @@
+{
+ "modules": [
+  {
+   "id": "sql35",
+   "no": 35,
+   "title": "Data Warehousing and Star Schema",
+   "goal": "Model analytical data at a clear grain with facts, dimensions and history.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "OLTP vs OLAP",
+     "simple": "OLTP transactions chalata hai; OLAP analysis.",
+     "pro": "OLTP optimizes many small writes and point reads, while OLAP optimizes large scans, aggregation and historical analysis.",
+     "points": [
+      "OLTP is normalized.",
+      "OLAP is denormalized.",
+      "They have different workloads."
+     ],
+     "example": {
+      "sql": "-- OLTP: enroll one student; OLAP: enrollments by month",
+      "output": "Two different query shapes."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Fact Tables",
+     "simple": "Fact table measures aur foreign keys rakhta hai.",
+     "pro": "A fact table stores quantitative events at a defined grain, with foreign keys to dimensions.",
+     "points": [
+      "Measures are numeric.",
+      "Foreign keys to dimensions.",
+      "The grain is explicit."
+     ],
+     "example": {
+      "sql": "CREATE TABLE fact_enrollments (student_key BIGINT, course_key INTEGER, date_key DATE, count INTEGER);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Dimension Tables",
+     "simple": "Dimension table descriptive context deta hai.",
+     "pro": "Dimensions describe the who, what, where and when of a fact, with stable keys and attributes.",
+     "points": [
+      "Descriptive attributes.",
+      "One row per member.",
+      "Surrogate keys are common."
+     ],
+     "example": {
+      "sql": "CREATE TABLE dim_student (student_key BIGINT PRIMARY KEY, name TEXT, cohort_month DATE);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Star Schema",
+     "simple": "Star schema fact ko dimensions se jodta hai.",
+     "pro": "A star schema has a central fact table surrounded by denormalized dimensions, minimizing joins for analytics.",
+     "points": [
+      "One fact table.",
+      "Flat dimensions.",
+      "Simple joins."
+     ],
+     "example": {
+      "sql": "SELECT d.month, SUM(f.count) FROM fact_enrollments f JOIN dim_date d ON d.date_key = f.date_key GROUP BY d.month;",
+      "output": "Monthly enrollment totals."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Snowflake Schema",
+     "simple": "Snowflake schema dimensions ko normalize karta hai.",
+     "pro": "A snowflake schema splits dimensions into sub-dimensions, reducing duplication at the cost of more joins.",
+     "points": [
+      "More normalized.",
+      "More joins.",
+      "Star is simpler for BI."
+     ],
+     "example": {
+      "sql": "CREATE TABLE dim_course (course_key INTEGER PRIMARY KEY, title TEXT, department_key INTEGER);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Grain",
+     "simple": "Grain batata hai fact ki ek row kya represent karti hai.",
+     "pro": "The grain defines exactly what one fact row means, such as one enrollment per student per course.",
+     "points": [
+      "Declare the grain.",
+      "Never mix grains.",
+      "Aggregate after the fact."
+     ],
+     "example": {
+      "sql": "CREATE TABLE fact_enrollments (student_key BIGINT, course_key INTEGER, date_key DATE, PRIMARY KEY (student_key, course_key));",
+      "output": "One row per student-course."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Slowly Changing Dimensions",
+     "simple": "SCD history ya latest value rakhta hai.",
+     "pro": "Slowly changing dimensions preserve attribute history with version rows or current-value flags.",
+     "points": [
+      "Type 1 overwrites.",
+      "Type 2 adds versions.",
+      "Type 3 keeps limited history."
+     ],
+     "example": {
+      "sql": "CREATE TABLE dim_student (student_key BIGINT PRIMARY KEY, student_id BIGINT, name TEXT, valid_from DATE, valid_to DATE, is_current BOOLEAN);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Surrogate Keys",
+     "simple": "Warehouse surrogate keys stable integers hote hain.",
+     "pro": "A warehouse dimension uses a generated surrogate key so source natural keys can change without rewriting facts.",
+     "points": [
+      "Generated integer.",
+      "Stable for facts.",
+      "Natural key stays as an attribute."
+     ],
+     "example": {
+      "sql": "CREATE TABLE dim_student (student_key BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, student_id BIGINT UNIQUE, name TEXT);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "ETL vs ELT",
+     "simple": "ETL transform before load; ELT after load.",
+     "pro": "ETL transforms data before loading, while ELT loads raw data and transforms it inside the warehouse.",
+     "points": [
+      "ETL uses external compute.",
+      "ELT uses warehouse compute.",
+      "Both need orchestration."
+     ],
+     "example": {
+      "sql": "-- ELT: load raw, then transform with SQL",
+      "output": "A warehouse transformation."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Aggregates",
+     "simple": "Pre-aggregated tables reports fast karte hain.",
+     "pro": "Aggregate tables store rolled-up measures at a coarser grain for dashboards and repeated reports.",
+     "points": [
+      "Define the grain.",
+      "Refresh on schedule.",
+      "Document freshness."
+     ],
+     "example": {
+      "sql": "CREATE TABLE agg_monthly_enrollments AS SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY 1;",
+      "output": "SELECT N"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Materialized Views",
+     "simple": "Materialized view warehouse aggregate cache karta hai.",
+     "pro": "A materialized view stores a query result and is refreshed on a schedule or after loads.",
+     "points": [
+      "Good for repeated reports.",
+      "Needs refresh.",
+      "Can be indexed."
+     ],
+     "example": {
+      "sql": "CREATE MATERIALIZED VIEW mv_monthly_enrollments AS SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY 1;",
+      "output": "SELECT N"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Conformed Dimensions",
+     "simple": "Shared dimensions consistent definitions dete hain.",
+     "pro": "Conformed dimensions use the same keys and attributes across fact tables so metrics can be compared.",
+     "points": [
+      "Share keys.",
+      "Share definitions.",
+      "Govern changes."
+     ],
+     "example": {
+      "sql": "CREATE TABLE dim_date (date_key DATE PRIMARY KEY, month DATE, year INTEGER);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Factless Fact Tables",
+     "simple": "Factless fact table events ya coverage record karta hai.",
+     "pro": "A factless fact table records that an event occurred or a relationship exists, without a numeric measure.",
+     "points": [
+      "No measure.",
+      "Counts are derived.",
+      "Useful for coverage."
+     ],
+     "example": {
+      "sql": "CREATE TABLE fact_attendance (student_key BIGINT, date_key DATE, PRIMARY KEY (student_key, date_key));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Late-Arriving Data",
+     "simple": "Late data ko correct partition me load karo.",
+     "pro": "Late-arriving facts must land in the correct historical partition and trigger affected aggregate refreshes.",
+     "points": [
+      "Detect late data.",
+      "Load to the right date.",
+      "Refresh affected aggregates."
+     ],
+     "example": {
+      "sql": "INSERT INTO fact_enrollments VALUES (1, 10, DATE '2026-01-15', 1);",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Data Quality in Warehouse",
+     "simple": "Warehouse loads ko validate karo.",
+     "pro": "Warehouse quality checks catch duplicate facts, unknown dimension keys and impossible measures before publishing.",
+     "points": [
+      "Check keys.",
+      "Check duplicates.",
+      "Check measures."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) FROM fact_enrollments f LEFT JOIN dim_student d ON d.student_key = f.student_key WHERE d.student_key IS NULL;",
+      "output": "Orphan fact rows."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Warehouse Performance",
+     "simple": "Partition, sort aur pre-aggregate large facts.",
+     "pro": "Warehouse performance comes from columnar storage, partitioning, compression and pre-aggregation, not OLTP indexes alone.",
+     "points": [
+      "Partition by date.",
+      "Pre-aggregate.",
+      "Scan fewer columns."
+     ],
+     "example": {
+      "sql": "SELECT month, SUM(total) FROM agg_monthly_enrollments GROUP BY month;",
+      "output": "A fast aggregate query."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Common Modeling Errors",
+     "simple": "Mixed grain, missing keys aur duplicated facts common errors hain.",
+     "pro": "Common failures are mixing grains in one fact table, lacking dimension keys and reloading duplicates without a merge.",
+     "points": [
+      "One grain per fact.",
+      "Keys everywhere.",
+      "Idempotent loads."
+     ],
+     "example": {
+      "sql": "SELECT student_key, course_key, COUNT(*) FROM fact_enrollments GROUP BY 1,2 HAVING COUNT(*) > 1;",
+      "output": "Duplicate facts."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "BI Semantic Layer",
+     "simple": "Semantic layer metrics ko define karta hai.",
+     "pro": "A semantic layer centralizes metric definitions, joins and access rules so dashboards agree.",
+     "points": [
+      "Define metrics once.",
+      "Control joins.",
+      "Document ownership."
+     ],
+     "example": {
+      "sql": "-- metric: active students = distinct student_key with enrollment in period",
+      "output": "A metric definition."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Warehouse Governance",
+     "simple": "Ownership, lineage aur retention define karo.",
+     "pro": "Governance assigns owners, tracks lineage and sets retention and access policies for warehouse data.",
+     "points": [
+      "Assign owners.",
+      "Track lineage.",
+      "Set retention."
+     ],
+     "example": {
+      "sql": "-- document source, owner and refresh for each table",
+      "output": "A governance record."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Star Schema",
+     "simple": "Fact aur dimensions ko grain ke saath design karo.",
+     "pro": "A practical star schema starts from the business question, declares the grain, then adds conformed dimensions and measures.",
+     "points": [
+      "Question first.",
+      "Declare grain.",
+      "Add dimensions.",
+      "Add measures."
+     ],
+     "example": {
+      "sql": "CREATE TABLE fact_enrollments (student_key BIGINT, course_key INTEGER, date_key DATE, count INTEGER, PRIMARY KEY (student_key, course_key, date_key));",
+      "output": "CREATE TABLE"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 35 · OLTP vs OLAP: what is the main purpose?",
+      "options": [
+       "OLTP vs OLAP: OLTP transactions chalata hai; OLAP analysis.",
+       "Fact Tables: Fact table measures aur foreign keys rakhta hai.",
+       "Surrogate Keys: Warehouse surrogate keys stable integers hote hain.",
+       "Late-Arriving Data: Late data ko correct partition me load karo."
+      ],
+      "answer": "OLTP vs OLAP: OLTP transactions chalata hai; OLAP analysis.",
+      "why": "OLTP optimizes many small writes and point reads, while OLAP optimizes large scans, aggregation and historical analysis."
+     },
+     {
+      "q": "Module 35 · Fact Tables: what is the main purpose?",
+      "options": [
+       "Dimension Tables: Dimension table descriptive context deta hai.",
+       "ETL vs ELT: ETL transform before load; ELT after load.",
+       "Data Quality in Warehouse: Warehouse loads ko validate karo.",
+       "Fact Tables: Fact table measures aur foreign keys rakhta hai."
+      ],
+      "answer": "Fact Tables: Fact table measures aur foreign keys rakhta hai.",
+      "why": "A fact table stores quantitative events at a defined grain, with foreign keys to dimensions."
+     },
+     {
+      "q": "Module 35 · Dimension Tables: what is the main purpose?",
+      "options": [
+       "Aggregates: Pre-aggregated tables reports fast karte hain.",
+       "Warehouse Performance: Partition, sort aur pre-aggregate large facts.",
+       "Dimension Tables: Dimension table descriptive context deta hai.",
+       "Star Schema: Star schema fact ko dimensions se jodta hai."
+      ],
+      "answer": "Dimension Tables: Dimension table descriptive context deta hai.",
+      "why": "Dimensions describe the who, what, where and when of a fact, with stable keys and attributes."
+     },
+     {
+      "q": "Module 35 · Star Schema: what is the main purpose?",
+      "options": [
+       "Common Modeling Errors: Mixed grain, missing keys aur duplicated facts common errors hain.",
+       "Star Schema: Star schema fact ko dimensions se jodta hai.",
+       "Snowflake Schema: Snowflake schema dimensions ko normalize karta hai.",
+       "Materialized Views: Materialized view warehouse aggregate cache karta hai."
+      ],
+      "answer": "Star Schema: Star schema fact ko dimensions se jodta hai.",
+      "why": "A star schema has a central fact table surrounded by denormalized dimensions, minimizing joins for analytics."
+     },
+     {
+      "q": "Module 35 · Snowflake Schema: what is the main purpose?",
+      "options": [
+       "Snowflake Schema: Snowflake schema dimensions ko normalize karta hai.",
+       "Grain: Grain batata hai fact ki ek row kya represent karti hai.",
+       "Conformed Dimensions: Shared dimensions consistent definitions dete hain.",
+       "BI Semantic Layer: Semantic layer metrics ko define karta hai."
+      ],
+      "answer": "Snowflake Schema: Snowflake schema dimensions ko normalize karta hai.",
+      "why": "A snowflake schema splits dimensions into sub-dimensions, reducing duplication at the cost of more joins."
+     },
+     {
+      "q": "Module 35 · Grain: what is the main purpose?",
+      "options": [
+       "Slowly Changing Dimensions: SCD history ya latest value rakhta hai.",
+       "Factless Fact Tables: Factless fact table events ya coverage record karta hai.",
+       "Warehouse Governance: Ownership, lineage aur retention define karo.",
+       "Grain: Grain batata hai fact ki ek row kya represent karti hai."
+      ],
+      "answer": "Grain: Grain batata hai fact ki ek row kya represent karti hai.",
+      "why": "The grain defines exactly what one fact row means, such as one enrollment per student per course."
+     },
+     {
+      "q": "Module 35 · Slowly Changing Dimensions: what is the main purpose?",
+      "options": [
+       "Late-Arriving Data: Late data ko correct partition me load karo.",
+       "Practical Star Schema: Fact aur dimensions ko grain ke saath design karo.",
+       "Slowly Changing Dimensions: SCD history ya latest value rakhta hai.",
+       "Surrogate Keys: Warehouse surrogate keys stable integers hote hain."
+      ],
+      "answer": "Slowly Changing Dimensions: SCD history ya latest value rakhta hai.",
+      "why": "Slowly changing dimensions preserve attribute history with version rows or current-value flags."
+     },
+     {
+      "q": "Module 35 · Surrogate Keys: what is the main purpose?",
+      "options": [
+       "OLTP vs OLAP: OLTP transactions chalata hai; OLAP analysis.",
+       "Surrogate Keys: Warehouse surrogate keys stable integers hote hain.",
+       "ETL vs ELT: ETL transform before load; ELT after load.",
+       "Data Quality in Warehouse: Warehouse loads ko validate karo."
+      ],
+      "answer": "Surrogate Keys: Warehouse surrogate keys stable integers hote hain.",
+      "why": "A warehouse dimension uses a generated surrogate key so source natural keys can change without rewriting facts."
+     },
+     {
+      "q": "Module 35 · ETL vs ELT: what is the main purpose?",
+      "options": [
+       "ETL vs ELT: ETL transform before load; ELT after load.",
+       "Aggregates: Pre-aggregated tables reports fast karte hain.",
+       "Warehouse Performance: Partition, sort aur pre-aggregate large facts.",
+       "Fact Tables: Fact table measures aur foreign keys rakhta hai."
+      ],
+      "answer": "ETL vs ELT: ETL transform before load; ELT after load.",
+      "why": "ETL transforms data before loading, while ELT loads raw data and transforms it inside the warehouse."
+     },
+     {
+      "q": "Module 35 · Aggregates: what is the main purpose?",
+      "options": [
+       "Materialized Views: Materialized view warehouse aggregate cache karta hai.",
+       "Common Modeling Errors: Mixed grain, missing keys aur duplicated facts common errors hain.",
+       "Dimension Tables: Dimension table descriptive context deta hai.",
+       "Aggregates: Pre-aggregated tables reports fast karte hain."
+      ],
+      "answer": "Aggregates: Pre-aggregated tables reports fast karte hain.",
+      "why": "Aggregate tables store rolled-up measures at a coarser grain for dashboards and repeated reports."
+     },
+     {
+      "q": "Module 35 · Materialized Views: what is the main purpose?",
+      "options": [
+       "BI Semantic Layer: Semantic layer metrics ko define karta hai.",
+       "Star Schema: Star schema fact ko dimensions se jodta hai.",
+       "Materialized Views: Materialized view warehouse aggregate cache karta hai.",
+       "Conformed Dimensions: Shared dimensions consistent definitions dete hain."
+      ],
+      "answer": "Materialized Views: Materialized view warehouse aggregate cache karta hai.",
+      "why": "A materialized view stores a query result and is refreshed on a schedule or after loads."
+     },
+     {
+      "q": "Module 35 · Conformed Dimensions: what is the main purpose?",
+      "options": [
+       "Snowflake Schema: Snowflake schema dimensions ko normalize karta hai.",
+       "Conformed Dimensions: Shared dimensions consistent definitions dete hain.",
+       "Factless Fact Tables: Factless fact table events ya coverage record karta hai.",
+       "Warehouse Governance: Ownership, lineage aur retention define karo."
+      ],
+      "answer": "Conformed Dimensions: Shared dimensions consistent definitions dete hain.",
+      "why": "Conformed dimensions use the same keys and attributes across fact tables so metrics can be compared."
+     },
+     {
+      "q": "Module 35 · Factless Fact Tables: what is the main purpose?",
+      "options": [
+       "Factless Fact Tables: Factless fact table events ya coverage record karta hai.",
+       "Late-Arriving Data: Late data ko correct partition me load karo.",
+       "Practical Star Schema: Fact aur dimensions ko grain ke saath design karo.",
+       "Grain: Grain batata hai fact ki ek row kya represent karti hai."
+      ],
+      "answer": "Factless Fact Tables: Factless fact table events ya coverage record karta hai.",
+      "why": "A factless fact table records that an event occurred or a relationship exists, without a numeric measure."
+     },
+     {
+      "q": "Module 35 · Late-Arriving Data: what is the main purpose?",
+      "options": [
+       "Data Quality in Warehouse: Warehouse loads ko validate karo.",
+       "OLTP vs OLAP: OLTP transactions chalata hai; OLAP analysis.",
+       "Slowly Changing Dimensions: SCD history ya latest value rakhta hai.",
+       "Late-Arriving Data: Late data ko correct partition me load karo."
+      ],
+      "answer": "Late-Arriving Data: Late data ko correct partition me load karo.",
+      "why": "Late-arriving facts must land in the correct historical partition and trigger affected aggregate refreshes."
+     },
+     {
+      "q": "Module 35 · Data Quality in Warehouse: what is the main purpose?",
+      "options": [
+       "Fact Tables: Fact table measures aur foreign keys rakhta hai.",
+       "Surrogate Keys: Warehouse surrogate keys stable integers hote hain.",
+       "Data Quality in Warehouse: Warehouse loads ko validate karo.",
+       "Warehouse Performance: Partition, sort aur pre-aggregate large facts."
+      ],
+      "answer": "Data Quality in Warehouse: Warehouse loads ko validate karo.",
+      "why": "Warehouse quality checks catch duplicate facts, unknown dimension keys and impossible measures before publishing."
+     },
+     {
+      "q": "Module 35 · Warehouse Performance: what is the main purpose?",
+      "options": [
+       "ETL vs ELT: ETL transform before load; ELT after load.",
+       "Warehouse Performance: Partition, sort aur pre-aggregate large facts.",
+       "Common Modeling Errors: Mixed grain, missing keys aur duplicated facts common errors hain.",
+       "Dimension Tables: Dimension table descriptive context deta hai."
+      ],
+      "answer": "Warehouse Performance: Partition, sort aur pre-aggregate large facts.",
+      "why": "Warehouse performance comes from columnar storage, partitioning, compression and pre-aggregation, not OLTP indexes alone."
+     },
+     {
+      "q": "Module 35 · Common Modeling Errors: what is the main purpose?",
+      "options": [
+       "Common Modeling Errors: Mixed grain, missing keys aur duplicated facts common errors hain.",
+       "BI Semantic Layer: Semantic layer metrics ko define karta hai.",
+       "Star Schema: Star schema fact ko dimensions se jodta hai.",
+       "Aggregates: Pre-aggregated tables reports fast karte hain."
+      ],
+      "answer": "Common Modeling Errors: Mixed grain, missing keys aur duplicated facts common errors hain.",
+      "why": "Common failures are mixing grains in one fact table, lacking dimension keys and reloading duplicates without a merge."
+     },
+     {
+      "q": "Module 35 · BI Semantic Layer: what is the main purpose?",
+      "options": [
+       "Warehouse Governance: Ownership, lineage aur retention define karo.",
+       "Snowflake Schema: Snowflake schema dimensions ko normalize karta hai.",
+       "Materialized Views: Materialized view warehouse aggregate cache karta hai.",
+       "BI Semantic Layer: Semantic layer metrics ko define karta hai."
+      ],
+      "answer": "BI Semantic Layer: Semantic layer metrics ko define karta hai.",
+      "why": "A semantic layer centralizes metric definitions, joins and access rules so dashboards agree."
+     },
+     {
+      "q": "Module 35 · Warehouse Governance: what is the main purpose?",
+      "options": [
+       "Grain: Grain batata hai fact ki ek row kya represent karti hai.",
+       "Conformed Dimensions: Shared dimensions consistent definitions dete hain.",
+       "Warehouse Governance: Ownership, lineage aur retention define karo.",
+       "Practical Star Schema: Fact aur dimensions ko grain ke saath design karo."
+      ],
+      "answer": "Warehouse Governance: Ownership, lineage aur retention define karo.",
+      "why": "Governance assigns owners, tracks lineage and sets retention and access policies for warehouse data."
+     },
+     {
+      "q": "Module 35 · Practical Star Schema: what is the main purpose?",
+      "options": [
+       "Factless Fact Tables: Factless fact table events ya coverage record karta hai.",
+       "Practical Star Schema: Fact aur dimensions ko grain ke saath design karo.",
+       "OLTP vs OLAP: OLTP transactions chalata hai; OLAP analysis.",
+       "Slowly Changing Dimensions: SCD history ya latest value rakhta hai."
+      ],
+      "answer": "Practical Star Schema: Fact aur dimensions ko grain ke saath design karo.",
+      "why": "A practical star schema starts from the business question, declares the grain, then adds conformed dimensions and measures."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 35 · Explain OLTP vs OLAP in a production query.",
+      "answer": "OLTP optimizes many small writes and point reads, while OLAP optimizes large scans, aggregation and historical analysis. Key rules: OLTP is normalized. OLAP is denormalized. They have different workloads."
+     },
+     {
+      "q": "Module 35 · Explain Fact Tables in a production query.",
+      "answer": "A fact table stores quantitative events at a defined grain, with foreign keys to dimensions. Key rules: Measures are numeric. Foreign keys to dimensions. The grain is explicit."
+     },
+     {
+      "q": "Module 35 · Explain Dimension Tables in a production query.",
+      "answer": "Dimensions describe the who, what, where and when of a fact, with stable keys and attributes. Key rules: Descriptive attributes. One row per member. Surrogate keys are common."
+     },
+     {
+      "q": "Module 35 · Explain Star Schema in a production query.",
+      "answer": "A star schema has a central fact table surrounded by denormalized dimensions, minimizing joins for analytics. Key rules: One fact table. Flat dimensions. Simple joins."
+     },
+     {
+      "q": "Module 35 · Explain Snowflake Schema in a production query.",
+      "answer": "A snowflake schema splits dimensions into sub-dimensions, reducing duplication at the cost of more joins. Key rules: More normalized. More joins. Star is simpler for BI."
+     },
+     {
+      "q": "Module 35 · Explain Grain in a production query.",
+      "answer": "The grain defines exactly what one fact row means, such as one enrollment per student per course. Key rules: Declare the grain. Never mix grains. Aggregate after the fact."
+     },
+     {
+      "q": "Module 35 · Explain Slowly Changing Dimensions in a production query.",
+      "answer": "Slowly changing dimensions preserve attribute history with version rows or current-value flags. Key rules: Type 1 overwrites. Type 2 adds versions. Type 3 keeps limited history."
+     },
+     {
+      "q": "Module 35 · Explain Surrogate Keys in a production query.",
+      "answer": "A warehouse dimension uses a generated surrogate key so source natural keys can change without rewriting facts. Key rules: Generated integer. Stable for facts. Natural key stays as an attribute."
+     },
+     {
+      "q": "Module 35 · Explain ETL vs ELT in a production query.",
+      "answer": "ETL transforms data before loading, while ELT loads raw data and transforms it inside the warehouse. Key rules: ETL uses external compute. ELT uses warehouse compute. Both need orchestration."
+     },
+     {
+      "q": "Module 35 · Explain Aggregates in a production query.",
+      "answer": "Aggregate tables store rolled-up measures at a coarser grain for dashboards and repeated reports. Key rules: Define the grain. Refresh on schedule. Document freshness."
+     },
+     {
+      "q": "Module 35 · Explain Materialized Views in a production query.",
+      "answer": "A materialized view stores a query result and is refreshed on a schedule or after loads. Key rules: Good for repeated reports. Needs refresh. Can be indexed."
+     },
+     {
+      "q": "Module 35 · Explain Conformed Dimensions in a production query.",
+      "answer": "Conformed dimensions use the same keys and attributes across fact tables so metrics can be compared. Key rules: Share keys. Share definitions. Govern changes."
+     },
+     {
+      "q": "Module 35 · Explain Factless Fact Tables in a production query.",
+      "answer": "A factless fact table records that an event occurred or a relationship exists, without a numeric measure. Key rules: No measure. Counts are derived. Useful for coverage."
+     },
+     {
+      "q": "Module 35 · Explain Late-Arriving Data in a production query.",
+      "answer": "Late-arriving facts must land in the correct historical partition and trigger affected aggregate refreshes. Key rules: Detect late data. Load to the right date. Refresh affected aggregates."
+     },
+     {
+      "q": "Module 35 · Explain Data Quality in Warehouse in a production query.",
+      "answer": "Warehouse quality checks catch duplicate facts, unknown dimension keys and impossible measures before publishing. Key rules: Check keys. Check duplicates. Check measures."
+     },
+     {
+      "q": "Module 35 · Explain Warehouse Performance in a production query.",
+      "answer": "Warehouse performance comes from columnar storage, partitioning, compression and pre-aggregation, not OLTP indexes alone. Key rules: Partition by date. Pre-aggregate. Scan fewer columns."
+     },
+     {
+      "q": "Module 35 · Explain Common Modeling Errors in a production query.",
+      "answer": "Common failures are mixing grains in one fact table, lacking dimension keys and reloading duplicates without a merge. Key rules: One grain per fact. Keys everywhere. Idempotent loads."
+     },
+     {
+      "q": "Module 35 · Explain BI Semantic Layer in a production query.",
+      "answer": "A semantic layer centralizes metric definitions, joins and access rules so dashboards agree. Key rules: Define metrics once. Control joins. Document ownership."
+     },
+     {
+      "q": "Module 35 · Explain Warehouse Governance in a production query.",
+      "answer": "Governance assigns owners, tracks lineage and sets retention and access policies for warehouse data. Key rules: Assign owners. Track lineage. Set retention."
+     },
+     {
+      "q": "Module 35 · Explain Practical Star Schema in a production query.",
+      "answer": "A practical star schema starts from the business question, declares the grain, then adds conformed dimensions and measures. Key rules: Question first. Declare grain. Add dimensions. Add measures."
+     }
+    ],
+    "labs": [
+     {
+      "title": "OLTP vs OLAP",
+      "task": "Write a SQL example that demonstrates OLTP vs OLAP.",
+      "solution": "-- OLTP: enroll one student; OLAP: enrollments by month",
+      "expected": "Two different query shapes."
+     },
+     {
+      "title": "Fact Tables",
+      "task": "Write a SQL example that demonstrates Fact Tables.",
+      "solution": "CREATE TABLE fact_enrollments (student_key BIGINT, course_key INTEGER, date_key DATE, count INTEGER);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Dimension Tables",
+      "task": "Write a SQL example that demonstrates Dimension Tables.",
+      "solution": "CREATE TABLE dim_student (student_key BIGINT PRIMARY KEY, name TEXT, cohort_month DATE);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Star Schema",
+      "task": "Write a SQL example that demonstrates Star Schema.",
+      "solution": "SELECT d.month, SUM(f.count) FROM fact_enrollments f JOIN dim_date d ON d.date_key = f.date_key GROUP BY d.month;",
+      "expected": "Monthly enrollment totals."
+     },
+     {
+      "title": "Snowflake Schema",
+      "task": "Write a SQL example that demonstrates Snowflake Schema.",
+      "solution": "CREATE TABLE dim_course (course_key INTEGER PRIMARY KEY, title TEXT, department_key INTEGER);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Grain",
+      "task": "Write a SQL example that demonstrates Grain.",
+      "solution": "CREATE TABLE fact_enrollments (student_key BIGINT, course_key INTEGER, date_key DATE, PRIMARY KEY (student_key, course_key));",
+      "expected": "One row per student-course."
+     },
+     {
+      "title": "Slowly Changing Dimensions",
+      "task": "Write a SQL example that demonstrates Slowly Changing Dimensions.",
+      "solution": "CREATE TABLE dim_student (student_key BIGINT PRIMARY KEY, student_id BIGINT, name TEXT, valid_from DATE, valid_to DATE, is_current BOOLEAN);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Surrogate Keys",
+      "task": "Write a SQL example that demonstrates Surrogate Keys.",
+      "solution": "CREATE TABLE dim_student (student_key BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, student_id BIGINT UNIQUE, name TEXT);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "ETL vs ELT",
+      "task": "Write a SQL example that demonstrates ETL vs ELT.",
+      "solution": "-- ELT: load raw, then transform with SQL",
+      "expected": "A warehouse transformation."
+     },
+     {
+      "title": "Aggregates",
+      "task": "Write a SQL example that demonstrates Aggregates.",
+      "solution": "CREATE TABLE agg_monthly_enrollments AS SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY 1;",
+      "expected": "SELECT N"
+     },
+     {
+      "title": "Materialized Views",
+      "task": "Write a SQL example that demonstrates Materialized Views.",
+      "solution": "CREATE MATERIALIZED VIEW mv_monthly_enrollments AS SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY 1;",
+      "expected": "SELECT N"
+     },
+     {
+      "title": "Conformed Dimensions",
+      "task": "Write a SQL example that demonstrates Conformed Dimensions.",
+      "solution": "CREATE TABLE dim_date (date_key DATE PRIMARY KEY, month DATE, year INTEGER);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Factless Fact Tables",
+      "task": "Write a SQL example that demonstrates Factless Fact Tables.",
+      "solution": "CREATE TABLE fact_attendance (student_key BIGINT, date_key DATE, PRIMARY KEY (student_key, date_key));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Late-Arriving Data",
+      "task": "Write a SQL example that demonstrates Late-Arriving Data.",
+      "solution": "INSERT INTO fact_enrollments VALUES (1, 10, DATE '2026-01-15', 1);",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Data Quality in Warehouse",
+      "task": "Write a SQL example that demonstrates Data Quality in Warehouse.",
+      "solution": "SELECT COUNT(*) FROM fact_enrollments f LEFT JOIN dim_student d ON d.student_key = f.student_key WHERE d.student_key IS NULL;",
+      "expected": "Orphan fact rows."
+     },
+     {
+      "title": "Warehouse Performance",
+      "task": "Write a SQL example that demonstrates Warehouse Performance.",
+      "solution": "SELECT month, SUM(total) FROM agg_monthly_enrollments GROUP BY month;",
+      "expected": "A fast aggregate query."
+     },
+     {
+      "title": "Common Modeling Errors",
+      "task": "Write a SQL example that demonstrates Common Modeling Errors.",
+      "solution": "SELECT student_key, course_key, COUNT(*) FROM fact_enrollments GROUP BY 1,2 HAVING COUNT(*) > 1;",
+      "expected": "Duplicate facts."
+     },
+     {
+      "title": "BI Semantic Layer",
+      "task": "Write a SQL example that demonstrates BI Semantic Layer.",
+      "solution": "-- metric: active students = distinct student_key with enrollment in period",
+      "expected": "A metric definition."
+     },
+     {
+      "title": "Warehouse Governance",
+      "task": "Write a SQL example that demonstrates Warehouse Governance.",
+      "solution": "-- document source, owner and refresh for each table",
+      "expected": "A governance record."
+     },
+     {
+      "title": "Practical Star Schema",
+      "task": "Write a SQL example that demonstrates Practical Star Schema.",
+      "solution": "CREATE TABLE fact_enrollments (student_key BIGINT, course_key INTEGER, date_key DATE, count INTEGER, PRIMARY KEY (student_key, course_key, date_key));",
+      "expected": "CREATE TABLE"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 35 · Why does OLTP vs OLAP matter?",
+      "answer": "OLTP optimizes many small writes and point reads, while OLAP optimizes large scans, aggregation and historical analysis. OLTP is normalized. OLAP is denormalized. They have different workloads."
+     },
+     {
+      "q": "Module 35 · Why does Fact Tables matter?",
+      "answer": "A fact table stores quantitative events at a defined grain, with foreign keys to dimensions. Measures are numeric. Foreign keys to dimensions. The grain is explicit."
+     },
+     {
+      "q": "Module 35 · Why does Dimension Tables matter?",
+      "answer": "Dimensions describe the who, what, where and when of a fact, with stable keys and attributes. Descriptive attributes. One row per member. Surrogate keys are common."
+     },
+     {
+      "q": "Module 35 · Why does Star Schema matter?",
+      "answer": "A star schema has a central fact table surrounded by denormalized dimensions, minimizing joins for analytics. One fact table. Flat dimensions. Simple joins."
+     },
+     {
+      "q": "Module 35 · Why does Snowflake Schema matter?",
+      "answer": "A snowflake schema splits dimensions into sub-dimensions, reducing duplication at the cost of more joins. More normalized. More joins. Star is simpler for BI."
+     },
+     {
+      "q": "Module 35 · Why does Grain matter?",
+      "answer": "The grain defines exactly what one fact row means, such as one enrollment per student per course. Declare the grain. Never mix grains. Aggregate after the fact."
+     },
+     {
+      "q": "Module 35 · Why does Slowly Changing Dimensions matter?",
+      "answer": "Slowly changing dimensions preserve attribute history with version rows or current-value flags. Type 1 overwrites. Type 2 adds versions. Type 3 keeps limited history."
+     },
+     {
+      "q": "Module 35 · Why does Surrogate Keys matter?",
+      "answer": "A warehouse dimension uses a generated surrogate key so source natural keys can change without rewriting facts. Generated integer. Stable for facts. Natural key stays as an attribute."
+     },
+     {
+      "q": "Module 35 · Why does ETL vs ELT matter?",
+      "answer": "ETL transforms data before loading, while ELT loads raw data and transforms it inside the warehouse. ETL uses external compute. ELT uses warehouse compute. Both need orchestration."
+     },
+     {
+      "q": "Module 35 · Why does Aggregates matter?",
+      "answer": "Aggregate tables store rolled-up measures at a coarser grain for dashboards and repeated reports. Define the grain. Refresh on schedule. Document freshness."
+     },
+     {
+      "q": "Module 35 · Why does Materialized Views matter?",
+      "answer": "A materialized view stores a query result and is refreshed on a schedule or after loads. Good for repeated reports. Needs refresh. Can be indexed."
+     },
+     {
+      "q": "Module 35 · Why does Conformed Dimensions matter?",
+      "answer": "Conformed dimensions use the same keys and attributes across fact tables so metrics can be compared. Share keys. Share definitions. Govern changes."
+     },
+     {
+      "q": "Module 35 · Why does Factless Fact Tables matter?",
+      "answer": "A factless fact table records that an event occurred or a relationship exists, without a numeric measure. No measure. Counts are derived. Useful for coverage."
+     },
+     {
+      "q": "Module 35 · Why does Late-Arriving Data matter?",
+      "answer": "Late-arriving facts must land in the correct historical partition and trigger affected aggregate refreshes. Detect late data. Load to the right date. Refresh affected aggregates."
+     },
+     {
+      "q": "Module 35 · Why does Data Quality in Warehouse matter?",
+      "answer": "Warehouse quality checks catch duplicate facts, unknown dimension keys and impossible measures before publishing. Check keys. Check duplicates. Check measures."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Mixed grain",
+      "broken": "CREATE TABLE fact_sales (student_key BIGINT, course_key INTEGER, total_revenue NUMERIC, enrollment_count INTEGER);",
+      "fix": "Split into facts at one grain, or store one row per event and aggregate later.",
+      "error": "One row mixes revenue and enrollment count at different grains",
+      "expected": "A single clear grain."
+     },
+     {
+      "title": "Missing dimension",
+      "broken": "INSERT INTO fact_enrollments VALUES (999, 10, '2026-01-01', 1);",
+      "fix": "Insert the dimension row first, then the fact.",
+      "error": "foreign key violation on student_key",
+      "expected": "A complete fact row."
+     },
+     {
+      "title": "Duplicate facts",
+      "broken": "Reload the same fact file twice.",
+      "fix": "Use a merge or delete-and-insert by load window.",
+      "error": "Measures double",
+      "expected": "Idempotent loads."
+     },
+     {
+      "title": "SCD overwrite",
+      "broken": "UPDATE dim_student SET name = 'New Name';",
+      "fix": "Close the current version and insert a new one with valid_from.",
+      "error": "History is lost",
+      "expected": "A Type 2 history."
+     },
+     {
+      "title": "Surrogate key reuse",
+      "broken": "Reuse student_key 1 for a different student.",
+      "fix": "Generate a new surrogate key for each dimension version.",
+      "error": "Facts point to the wrong person",
+      "expected": "Stable surrogate keys."
+     },
+     {
+      "title": "No date dimension",
+      "broken": "GROUP BY enrolled_on;",
+      "fix": "Join dim_date and group by its month attribute.",
+      "error": "Reports cannot use fiscal or holiday attributes",
+      "expected": "A conformed date dimension."
+     },
+     {
+      "title": "Aggregate stale",
+      "broken": "SELECT * FROM agg_monthly_enrollments;",
+      "fix": "Refresh the aggregate after the load.",
+      "error": "The dashboard shows old totals",
+      "expected": "Fresh aggregates."
+     },
+     {
+      "title": "Wrong join key",
+      "broken": "JOIN dim_student d ON d.student_key = f.course_key;",
+      "fix": "JOIN dim_student d ON d.student_key = f.student_key;",
+      "error": "The join uses the wrong dimension key",
+      "expected": "Correct facts."
+     },
+     {
+      "title": "Orphan facts",
+      "broken": "Load facts before dimensions.",
+      "fix": "Load dimensions first or use a late-arriving dimension row.",
+      "error": "Dimension lookups return NULL",
+      "expected": "Complete dimensions."
+     },
+     {
+      "title": "No retention",
+      "broken": "Keep every raw event forever.",
+      "fix": "Define retention and archive cold partitions.",
+      "error": "Storage grows without bound",
+      "expected": "A retention policy."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 35 · State one key rule for OLTP vs OLAP.",
+      "answer": "OLTP is normalized."
+     },
+     {
+      "q": "Module 35 · State one key rule for Fact Tables.",
+      "answer": "Measures are numeric."
+     },
+     {
+      "q": "Module 35 · State one key rule for Dimension Tables.",
+      "answer": "Descriptive attributes."
+     },
+     {
+      "q": "Module 35 · State one key rule for Star Schema.",
+      "answer": "One fact table."
+     },
+     {
+      "q": "Module 35 · State one key rule for Snowflake Schema.",
+      "answer": "More normalized."
+     },
+     {
+      "q": "Module 35 · State one key rule for Grain.",
+      "answer": "Declare the grain."
+     },
+     {
+      "q": "Module 35 · State one key rule for Slowly Changing Dimensions.",
+      "answer": "Type 1 overwrites."
+     },
+     {
+      "q": "Module 35 · State one key rule for Surrogate Keys.",
+      "answer": "Generated integer."
+     },
+     {
+      "q": "Module 35 · State one key rule for ETL vs ELT.",
+      "answer": "ETL uses external compute."
+     },
+     {
+      "q": "Module 35 · State one key rule for Aggregates.",
+      "answer": "Define the grain."
+     }
+    ]
+   }
+  }
+ ]
+}

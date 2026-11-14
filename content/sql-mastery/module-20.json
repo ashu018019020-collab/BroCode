@@ -1,0 +1,919 @@
+{
+ "modules": [
+  {
+   "id": "sql20",
+   "no": 20,
+   "title": "Constraints and Data Integrity",
+   "goal": "Enforce correctness in the database instead of relying only on application code.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Constraints Overview",
+     "simple": "Constraints database me rules enforce karte hain.",
+     "pro": "Constraints reject invalid data at write time, protecting every application that shares the database.",
+     "points": [
+      "They enforce rules centrally.",
+      "They run on writes.",
+      "They make assumptions explicit."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100);",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "NOT NULL",
+     "simple": "NOT NULL missing values rokta hai.",
+     "pro": "NOT NULL requires a value on every row and is the only direct way to require presence.",
+     "points": [
+      "It rejects NULL.",
+      "It does not reject empty strings.",
+      "Add it after cleaning existing NULLs."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ALTER COLUMN name SET NOT NULL;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "UNIQUE",
+     "simple": "UNIQUE duplicate values rokta hai.",
+     "pro": "A unique constraint enforces distinct key values and creates a supporting unique index.",
+     "points": [
+      "It allows multiple NULLs by default.",
+      "It supports composite keys.",
+      "It is a constraint and an index."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE (email);",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "PRIMARY KEY",
+     "simple": "Primary key row ko uniquely identify karta hai.",
+     "pro": "A primary key is a unique, not-null constraint that identifies each row and is usually referenced by foreign keys.",
+     "points": [
+      "Unique and not null.",
+      "One per table.",
+      "It creates an index."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD CONSTRAINT students_pkey PRIMARY KEY (id);",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "FOREIGN KEY",
+     "simple": "Foreign key child rows ko parent se jodta hai.",
+     "pro": "A foreign key requires child values to exist in the parent key, preserving referential integrity.",
+     "points": [
+      "The parent key must be unique.",
+      "It can cascade actions.",
+      "It blocks orphan rows."
+     ],
+     "example": {
+      "sql": "ALTER TABLE enrollments ADD CONSTRAINT enrollments_student_fk FOREIGN KEY (student_id) REFERENCES students(id);",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "CHECK",
+     "simple": "CHECK row-level boolean rule enforce karta hai.",
+     "pro": "A CHECK constraint rejects rows where the expression is FALSE; UNKNOWN from NULL passes, so pair it with NOT NULL when needed.",
+     "points": [
+      "It rejects FALSE.",
+      "NULL passes as UNKNOWN.",
+      "It can use multiple columns."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100);",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "DEFAULT",
+     "simple": "DEFAULT missing value ke liye fallback deta hai.",
+     "pro": "A default supplies a value when an INSERT omits the column; it does not replace an explicit NULL.",
+     "points": [
+      "It applies on omission.",
+      "It can call functions.",
+      "It does not enforce presence."
+     ],
+     "example": {
+      "sql": "ALTER TABLE enrollments ALTER COLUMN enrolled_on SET DEFAULT CURRENT_DATE;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "ON DELETE CASCADE",
+     "simple": "Parent delete par child rows bhi delete hoti hain.",
+     "pro": "ON DELETE CASCADE automatically removes child rows when the referenced parent is deleted.",
+     "points": [
+      "Use with care.",
+      "It can delete more than expected.",
+      "RESTRICT is the safer default."
+     ],
+     "example": {
+      "sql": "ALTER TABLE enrollments DROP CONSTRAINT enrollments_student_fk;\nALTER TABLE enrollments ADD CONSTRAINT enrollments_student_fk FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "ON UPDATE CASCADE",
+     "simple": "Parent key update child me propagate hota hai.",
+     "pro": "ON UPDATE CASCADE updates child foreign keys when the parent key changes, which is useful for natural keys.",
+     "points": [
+      "It follows key changes.",
+      "It avoids orphans.",
+      "Surrogate keys reduce the need."
+     ],
+     "example": {
+      "sql": "ALTER TABLE enrollments ADD CONSTRAINT enrollments_student_fk FOREIGN KEY (student_id) REFERENCES students(id) ON UPDATE CASCADE;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Deferrable Constraints",
+     "simple": "Deferrable constraint transaction ke end tak wait kar sakta hai.",
+     "pro": "A DEFERRABLE constraint can be checked at statement end or transaction end, which helps circular references.",
+     "points": [
+      "INITIALLY IMMEDIATE is the default.",
+      "SET CONSTRAINTS changes timing.",
+      "Only some constraints are deferrable."
+     ],
+     "example": {
+      "sql": "ALTER TABLE enrollments ADD CONSTRAINT enrollments_student_fk FOREIGN KEY (student_id) REFERENCES students(id) DEFERRABLE INITIALLY DEFERRED;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "VALIDATE CONSTRAINT",
+     "simple": "NOT VALID constraint ko baad me validate karo.",
+     "pro": "Adding a foreign key or check with NOT VALID avoids a long initial scan; VALIDATE CONSTRAINT then checks existing rows.",
+     "points": [
+      "NOT VALID applies to new rows.",
+      "VALIDATE checks old rows.",
+      "It takes a lighter lock."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100) NOT VALID;\nALTER TABLE students VALIDATE CONSTRAINT marks_range;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Adding Constraints Safely",
+     "simple": "Existing data clean karke constraint add karo.",
+     "pro": "Adding a constraint fails if existing rows violate it, so clean or quarantine bad rows first.",
+     "points": [
+      "Find violations first.",
+      "Use NOT VALID for large tables.",
+      "Validate after the backfill."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students WHERE marks < 0 OR marks > 100;",
+      "output": "Violating rows before the constraint."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Dropping Constraints",
+     "simple": "Constraint drop karne se rule hat jaata hai.",
+     "pro": "ALTER TABLE ... DROP CONSTRAINT removes the rule; dropping a unique or primary key also removes its backing index.",
+     "points": [
+      "Know the constraint name.",
+      "CASCADE can remove dependents.",
+      "Re-adding may require a scan."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students DROP CONSTRAINT marks_range;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Unique NULLs",
+     "simple": "UNIQUE default multiple NULLs allow karta hai.",
+     "pro": "A regular unique constraint treats NULLs as distinct; PostgreSQL 15+ can use NULLS NOT DISTINCT to allow only one NULL.",
+     "points": [
+      "Multiple NULLs are allowed by default.",
+      "NULLS NOT DISTINCT changes that.",
+      "It is a data-model decision."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE NULLS NOT DISTINCT (email);",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Exclusion Constraints",
+     "simple": "Exclusion constraint overlapping ranges rokta hai.",
+     "pro": "An exclusion constraint uses a GiST index to reject rows whose values conflict under a chosen operator, such as overlapping date ranges.",
+     "points": [
+      "It needs btree_gist for equality columns.",
+      "It prevents overlaps.",
+      "It is advanced but powerful."
+     ],
+     "example": {
+      "sql": "ALTER TABLE bookings ADD CONSTRAINT no_overlap EXCLUDE USING gist (room_id WITH =, during WITH &&);",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Domain Constraints",
+     "simple": "Domain reusable constraint set deta hai.",
+     "pro": "A domain packages a base type with CHECK and NOT NULL rules that can be reused across columns.",
+     "points": [
+      "Create once, reuse often.",
+      "It can add NOT NULL and CHECK.",
+      "It keeps rules consistent."
+     ],
+     "example": {
+      "sql": "CREATE DOMAIN mark AS INTEGER CHECK (VALUE BETWEEN 0 AND 100);",
+      "output": "CREATE DOMAIN"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Constraint Naming",
+     "simple": "Constraints ko clear names do.",
+     "pro": "Explicit names make errors, migrations and drops predictable instead of relying on generated names.",
+     "points": [
+      "Name primary keys and foreign keys.",
+      "Use table_column_suffix.",
+      "Document the rule."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD CONSTRAINT students_marks_check CHECK (marks BETWEEN 0 AND 100);",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Common Constraint Errors",
+     "simple": "NULL, duplicates aur orphan rows common failures hain.",
+     "pro": "Common failures are NOT NULL violations, duplicate unique keys, foreign-key orphans and CHECK expressions that silently pass NULL.",
+     "points": [
+      "Read the constraint name.",
+      "Fix data before re-adding.",
+      "Remember NULL passes CHECK."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('Zara', 101);",
+      "output": "ERROR: violates check constraint"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Application vs Database Validation",
+     "simple": "Critical rules database me rakho.",
+     "pro": "Application validation improves UX, but database constraints are the final guard shared by every writer.",
+     "points": [
+      "Validate early in the app.",
+      "Enforce critical rules in the DB.",
+      "Do not duplicate contradictory rules."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100);",
+      "output": "A database-level guarantee."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Integrity Design",
+     "simple": "Keys, foreign keys aur checks ko schema design me plan karo.",
+     "pro": "A reliable schema combines primary keys, foreign keys, NOT NULL, CHECK and deliberate cascade actions.",
+     "points": [
+      "Start with keys.",
+      "Add foreign keys.",
+      "Add checks for domain rules.",
+      "Choose cascade behaviour explicitly."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 20 · Constraints Overview: what is the main purpose?",
+      "options": [
+       "Constraints Overview: Constraints database me rules enforce karte hain.",
+       "NOT NULL: NOT NULL missing values rokta hai.",
+       "ON DELETE CASCADE: Parent delete par child rows bhi delete hoti hain.",
+       "Unique NULLs: UNIQUE default multiple NULLs allow karta hai."
+      ],
+      "answer": "Constraints Overview: Constraints database me rules enforce karte hain.",
+      "why": "Constraints reject invalid data at write time, protecting every application that shares the database."
+     },
+     {
+      "q": "Module 20 · NOT NULL: what is the main purpose?",
+      "options": [
+       "UNIQUE: UNIQUE duplicate values rokta hai.",
+       "ON UPDATE CASCADE: Parent key update child me propagate hota hai.",
+       "Exclusion Constraints: Exclusion constraint overlapping ranges rokta hai.",
+       "NOT NULL: NOT NULL missing values rokta hai."
+      ],
+      "answer": "NOT NULL: NOT NULL missing values rokta hai.",
+      "why": "NOT NULL requires a value on every row and is the only direct way to require presence."
+     },
+     {
+      "q": "Module 20 · UNIQUE: what is the main purpose?",
+      "options": [
+       "Deferrable Constraints: Deferrable constraint transaction ke end tak wait kar sakta hai.",
+       "Domain Constraints: Domain reusable constraint set deta hai.",
+       "UNIQUE: UNIQUE duplicate values rokta hai.",
+       "PRIMARY KEY: Primary key row ko uniquely identify karta hai."
+      ],
+      "answer": "UNIQUE: UNIQUE duplicate values rokta hai.",
+      "why": "A unique constraint enforces distinct key values and creates a supporting unique index."
+     },
+     {
+      "q": "Module 20 · PRIMARY KEY: what is the main purpose?",
+      "options": [
+       "Constraint Naming: Constraints ko clear names do.",
+       "PRIMARY KEY: Primary key row ko uniquely identify karta hai.",
+       "FOREIGN KEY: Foreign key child rows ko parent se jodta hai.",
+       "VALIDATE CONSTRAINT: NOT VALID constraint ko baad me validate karo."
+      ],
+      "answer": "PRIMARY KEY: Primary key row ko uniquely identify karta hai.",
+      "why": "A primary key is a unique, not-null constraint that identifies each row and is usually referenced by foreign keys."
+     },
+     {
+      "q": "Module 20 · FOREIGN KEY: what is the main purpose?",
+      "options": [
+       "FOREIGN KEY: Foreign key child rows ko parent se jodta hai.",
+       "CHECK: CHECK row-level boolean rule enforce karta hai.",
+       "Adding Constraints Safely: Existing data clean karke constraint add karo.",
+       "Common Constraint Errors: NULL, duplicates aur orphan rows common failures hain."
+      ],
+      "answer": "FOREIGN KEY: Foreign key child rows ko parent se jodta hai.",
+      "why": "A foreign key requires child values to exist in the parent key, preserving referential integrity."
+     },
+     {
+      "q": "Module 20 · CHECK: what is the main purpose?",
+      "options": [
+       "DEFAULT: DEFAULT missing value ke liye fallback deta hai.",
+       "Dropping Constraints: Constraint drop karne se rule hat jaata hai.",
+       "Application vs Database Validation: Critical rules database me rakho.",
+       "CHECK: CHECK row-level boolean rule enforce karta hai."
+      ],
+      "answer": "CHECK: CHECK row-level boolean rule enforce karta hai.",
+      "why": "A CHECK constraint rejects rows where the expression is FALSE; UNKNOWN from NULL passes, so pair it with NOT NULL when needed."
+     },
+     {
+      "q": "Module 20 · DEFAULT: what is the main purpose?",
+      "options": [
+       "Unique NULLs: UNIQUE default multiple NULLs allow karta hai.",
+       "Practical Integrity Design: Keys, foreign keys aur checks ko schema design me plan karo.",
+       "DEFAULT: DEFAULT missing value ke liye fallback deta hai.",
+       "ON DELETE CASCADE: Parent delete par child rows bhi delete hoti hain."
+      ],
+      "answer": "DEFAULT: DEFAULT missing value ke liye fallback deta hai.",
+      "why": "A default supplies a value when an INSERT omits the column; it does not replace an explicit NULL."
+     },
+     {
+      "q": "Module 20 · ON DELETE CASCADE: what is the main purpose?",
+      "options": [
+       "Constraints Overview: Constraints database me rules enforce karte hain.",
+       "ON DELETE CASCADE: Parent delete par child rows bhi delete hoti hain.",
+       "ON UPDATE CASCADE: Parent key update child me propagate hota hai.",
+       "Exclusion Constraints: Exclusion constraint overlapping ranges rokta hai."
+      ],
+      "answer": "ON DELETE CASCADE: Parent delete par child rows bhi delete hoti hain.",
+      "why": "ON DELETE CASCADE automatically removes child rows when the referenced parent is deleted."
+     },
+     {
+      "q": "Module 20 · ON UPDATE CASCADE: what is the main purpose?",
+      "options": [
+       "ON UPDATE CASCADE: Parent key update child me propagate hota hai.",
+       "Deferrable Constraints: Deferrable constraint transaction ke end tak wait kar sakta hai.",
+       "Domain Constraints: Domain reusable constraint set deta hai.",
+       "NOT NULL: NOT NULL missing values rokta hai."
+      ],
+      "answer": "ON UPDATE CASCADE: Parent key update child me propagate hota hai.",
+      "why": "ON UPDATE CASCADE updates child foreign keys when the parent key changes, which is useful for natural keys."
+     },
+     {
+      "q": "Module 20 · Deferrable Constraints: what is the main purpose?",
+      "options": [
+       "VALIDATE CONSTRAINT: NOT VALID constraint ko baad me validate karo.",
+       "Constraint Naming: Constraints ko clear names do.",
+       "UNIQUE: UNIQUE duplicate values rokta hai.",
+       "Deferrable Constraints: Deferrable constraint transaction ke end tak wait kar sakta hai."
+      ],
+      "answer": "Deferrable Constraints: Deferrable constraint transaction ke end tak wait kar sakta hai.",
+      "why": "A DEFERRABLE constraint can be checked at statement end or transaction end, which helps circular references."
+     },
+     {
+      "q": "Module 20 · VALIDATE CONSTRAINT: what is the main purpose?",
+      "options": [
+       "Common Constraint Errors: NULL, duplicates aur orphan rows common failures hain.",
+       "PRIMARY KEY: Primary key row ko uniquely identify karta hai.",
+       "VALIDATE CONSTRAINT: NOT VALID constraint ko baad me validate karo.",
+       "Adding Constraints Safely: Existing data clean karke constraint add karo."
+      ],
+      "answer": "VALIDATE CONSTRAINT: NOT VALID constraint ko baad me validate karo.",
+      "why": "Adding a foreign key or check with NOT VALID avoids a long initial scan; VALIDATE CONSTRAINT then checks existing rows."
+     },
+     {
+      "q": "Module 20 · Adding Constraints Safely: what is the main purpose?",
+      "options": [
+       "FOREIGN KEY: Foreign key child rows ko parent se jodta hai.",
+       "Adding Constraints Safely: Existing data clean karke constraint add karo.",
+       "Dropping Constraints: Constraint drop karne se rule hat jaata hai.",
+       "Application vs Database Validation: Critical rules database me rakho."
+      ],
+      "answer": "Adding Constraints Safely: Existing data clean karke constraint add karo.",
+      "why": "Adding a constraint fails if existing rows violate it, so clean or quarantine bad rows first."
+     },
+     {
+      "q": "Module 20 · Dropping Constraints: what is the main purpose?",
+      "options": [
+       "Dropping Constraints: Constraint drop karne se rule hat jaata hai.",
+       "Unique NULLs: UNIQUE default multiple NULLs allow karta hai.",
+       "Practical Integrity Design: Keys, foreign keys aur checks ko schema design me plan karo.",
+       "CHECK: CHECK row-level boolean rule enforce karta hai."
+      ],
+      "answer": "Dropping Constraints: Constraint drop karne se rule hat jaata hai.",
+      "why": "ALTER TABLE ... DROP CONSTRAINT removes the rule; dropping a unique or primary key also removes its backing index."
+     },
+     {
+      "q": "Module 20 · Unique NULLs: what is the main purpose?",
+      "options": [
+       "Exclusion Constraints: Exclusion constraint overlapping ranges rokta hai.",
+       "Constraints Overview: Constraints database me rules enforce karte hain.",
+       "DEFAULT: DEFAULT missing value ke liye fallback deta hai.",
+       "Unique NULLs: UNIQUE default multiple NULLs allow karta hai."
+      ],
+      "answer": "Unique NULLs: UNIQUE default multiple NULLs allow karta hai.",
+      "why": "A regular unique constraint treats NULLs as distinct; PostgreSQL 15+ can use NULLS NOT DISTINCT to allow only one NULL."
+     },
+     {
+      "q": "Module 20 · Exclusion Constraints: what is the main purpose?",
+      "options": [
+       "NOT NULL: NOT NULL missing values rokta hai.",
+       "ON DELETE CASCADE: Parent delete par child rows bhi delete hoti hain.",
+       "Exclusion Constraints: Exclusion constraint overlapping ranges rokta hai.",
+       "Domain Constraints: Domain reusable constraint set deta hai."
+      ],
+      "answer": "Exclusion Constraints: Exclusion constraint overlapping ranges rokta hai.",
+      "why": "An exclusion constraint uses a GiST index to reject rows whose values conflict under a chosen operator, such as overlapping date ranges."
+     },
+     {
+      "q": "Module 20 · Domain Constraints: what is the main purpose?",
+      "options": [
+       "ON UPDATE CASCADE: Parent key update child me propagate hota hai.",
+       "Domain Constraints: Domain reusable constraint set deta hai.",
+       "Constraint Naming: Constraints ko clear names do.",
+       "UNIQUE: UNIQUE duplicate values rokta hai."
+      ],
+      "answer": "Domain Constraints: Domain reusable constraint set deta hai.",
+      "why": "A domain packages a base type with CHECK and NOT NULL rules that can be reused across columns."
+     },
+     {
+      "q": "Module 20 · Constraint Naming: what is the main purpose?",
+      "options": [
+       "Constraint Naming: Constraints ko clear names do.",
+       "Common Constraint Errors: NULL, duplicates aur orphan rows common failures hain.",
+       "PRIMARY KEY: Primary key row ko uniquely identify karta hai.",
+       "Deferrable Constraints: Deferrable constraint transaction ke end tak wait kar sakta hai."
+      ],
+      "answer": "Constraint Naming: Constraints ko clear names do.",
+      "why": "Explicit names make errors, migrations and drops predictable instead of relying on generated names."
+     },
+     {
+      "q": "Module 20 · Common Constraint Errors: what is the main purpose?",
+      "options": [
+       "Application vs Database Validation: Critical rules database me rakho.",
+       "FOREIGN KEY: Foreign key child rows ko parent se jodta hai.",
+       "VALIDATE CONSTRAINT: NOT VALID constraint ko baad me validate karo.",
+       "Common Constraint Errors: NULL, duplicates aur orphan rows common failures hain."
+      ],
+      "answer": "Common Constraint Errors: NULL, duplicates aur orphan rows common failures hain.",
+      "why": "Common failures are NOT NULL violations, duplicate unique keys, foreign-key orphans and CHECK expressions that silently pass NULL."
+     },
+     {
+      "q": "Module 20 · Application vs Database Validation: what is the main purpose?",
+      "options": [
+       "CHECK: CHECK row-level boolean rule enforce karta hai.",
+       "Adding Constraints Safely: Existing data clean karke constraint add karo.",
+       "Application vs Database Validation: Critical rules database me rakho.",
+       "Practical Integrity Design: Keys, foreign keys aur checks ko schema design me plan karo."
+      ],
+      "answer": "Application vs Database Validation: Critical rules database me rakho.",
+      "why": "Application validation improves UX, but database constraints are the final guard shared by every writer."
+     },
+     {
+      "q": "Module 20 · Practical Integrity Design: what is the main purpose?",
+      "options": [
+       "Dropping Constraints: Constraint drop karne se rule hat jaata hai.",
+       "Practical Integrity Design: Keys, foreign keys aur checks ko schema design me plan karo.",
+       "Constraints Overview: Constraints database me rules enforce karte hain.",
+       "DEFAULT: DEFAULT missing value ke liye fallback deta hai."
+      ],
+      "answer": "Practical Integrity Design: Keys, foreign keys aur checks ko schema design me plan karo.",
+      "why": "A reliable schema combines primary keys, foreign keys, NOT NULL, CHECK and deliberate cascade actions."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 20 · Explain Constraints Overview in a production query.",
+      "answer": "Constraints reject invalid data at write time, protecting every application that shares the database. Key rules: They enforce rules centrally. They run on writes. They make assumptions explicit."
+     },
+     {
+      "q": "Module 20 · Explain NOT NULL in a production query.",
+      "answer": "NOT NULL requires a value on every row and is the only direct way to require presence. Key rules: It rejects NULL. It does not reject empty strings. Add it after cleaning existing NULLs."
+     },
+     {
+      "q": "Module 20 · Explain UNIQUE in a production query.",
+      "answer": "A unique constraint enforces distinct key values and creates a supporting unique index. Key rules: It allows multiple NULLs by default. It supports composite keys. It is a constraint and an index."
+     },
+     {
+      "q": "Module 20 · Explain PRIMARY KEY in a production query.",
+      "answer": "A primary key is a unique, not-null constraint that identifies each row and is usually referenced by foreign keys. Key rules: Unique and not null. One per table. It creates an index."
+     },
+     {
+      "q": "Module 20 · Explain FOREIGN KEY in a production query.",
+      "answer": "A foreign key requires child values to exist in the parent key, preserving referential integrity. Key rules: The parent key must be unique. It can cascade actions. It blocks orphan rows."
+     },
+     {
+      "q": "Module 20 · Explain CHECK in a production query.",
+      "answer": "A CHECK constraint rejects rows where the expression is FALSE; UNKNOWN from NULL passes, so pair it with NOT NULL when needed. Key rules: It rejects FALSE. NULL passes as UNKNOWN. It can use multiple columns."
+     },
+     {
+      "q": "Module 20 · Explain DEFAULT in a production query.",
+      "answer": "A default supplies a value when an INSERT omits the column; it does not replace an explicit NULL. Key rules: It applies on omission. It can call functions. It does not enforce presence."
+     },
+     {
+      "q": "Module 20 · Explain ON DELETE CASCADE in a production query.",
+      "answer": "ON DELETE CASCADE automatically removes child rows when the referenced parent is deleted. Key rules: Use with care. It can delete more than expected. RESTRICT is the safer default."
+     },
+     {
+      "q": "Module 20 · Explain ON UPDATE CASCADE in a production query.",
+      "answer": "ON UPDATE CASCADE updates child foreign keys when the parent key changes, which is useful for natural keys. Key rules: It follows key changes. It avoids orphans. Surrogate keys reduce the need."
+     },
+     {
+      "q": "Module 20 · Explain Deferrable Constraints in a production query.",
+      "answer": "A DEFERRABLE constraint can be checked at statement end or transaction end, which helps circular references. Key rules: INITIALLY IMMEDIATE is the default. SET CONSTRAINTS changes timing. Only some constraints are deferrable."
+     },
+     {
+      "q": "Module 20 · Explain VALIDATE CONSTRAINT in a production query.",
+      "answer": "Adding a foreign key or check with NOT VALID avoids a long initial scan; VALIDATE CONSTRAINT then checks existing rows. Key rules: NOT VALID applies to new rows. VALIDATE checks old rows. It takes a lighter lock."
+     },
+     {
+      "q": "Module 20 · Explain Adding Constraints Safely in a production query.",
+      "answer": "Adding a constraint fails if existing rows violate it, so clean or quarantine bad rows first. Key rules: Find violations first. Use NOT VALID for large tables. Validate after the backfill."
+     },
+     {
+      "q": "Module 20 · Explain Dropping Constraints in a production query.",
+      "answer": "ALTER TABLE ... DROP CONSTRAINT removes the rule; dropping a unique or primary key also removes its backing index. Key rules: Know the constraint name. CASCADE can remove dependents. Re-adding may require a scan."
+     },
+     {
+      "q": "Module 20 · Explain Unique NULLs in a production query.",
+      "answer": "A regular unique constraint treats NULLs as distinct; PostgreSQL 15+ can use NULLS NOT DISTINCT to allow only one NULL. Key rules: Multiple NULLs are allowed by default. NULLS NOT DISTINCT changes that. It is a data-model decision."
+     },
+     {
+      "q": "Module 20 · Explain Exclusion Constraints in a production query.",
+      "answer": "An exclusion constraint uses a GiST index to reject rows whose values conflict under a chosen operator, such as overlapping date ranges. Key rules: It needs btree_gist for equality columns. It prevents overlaps. It is advanced but powerful."
+     },
+     {
+      "q": "Module 20 · Explain Domain Constraints in a production query.",
+      "answer": "A domain packages a base type with CHECK and NOT NULL rules that can be reused across columns. Key rules: Create once, reuse often. It can add NOT NULL and CHECK. It keeps rules consistent."
+     },
+     {
+      "q": "Module 20 · Explain Constraint Naming in a production query.",
+      "answer": "Explicit names make errors, migrations and drops predictable instead of relying on generated names. Key rules: Name primary keys and foreign keys. Use table_column_suffix. Document the rule."
+     },
+     {
+      "q": "Module 20 · Explain Common Constraint Errors in a production query.",
+      "answer": "Common failures are NOT NULL violations, duplicate unique keys, foreign-key orphans and CHECK expressions that silently pass NULL. Key rules: Read the constraint name. Fix data before re-adding. Remember NULL passes CHECK."
+     },
+     {
+      "q": "Module 20 · Explain Application vs Database Validation in a production query.",
+      "answer": "Application validation improves UX, but database constraints are the final guard shared by every writer. Key rules: Validate early in the app. Enforce critical rules in the DB. Do not duplicate contradictory rules."
+     },
+     {
+      "q": "Module 20 · Explain Practical Integrity Design in a production query.",
+      "answer": "A reliable schema combines primary keys, foreign keys, NOT NULL, CHECK and deliberate cascade actions. Key rules: Start with keys. Add foreign keys. Add checks for domain rules. Choose cascade behaviour explicitly."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Constraints Overview",
+      "task": "Write a SQL example that demonstrates Constraints Overview.",
+      "solution": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "NOT NULL",
+      "task": "Write a SQL example that demonstrates NOT NULL.",
+      "solution": "ALTER TABLE students ALTER COLUMN name SET NOT NULL;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "UNIQUE",
+      "task": "Write a SQL example that demonstrates UNIQUE.",
+      "solution": "ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE (email);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "PRIMARY KEY",
+      "task": "Write a SQL example that demonstrates PRIMARY KEY.",
+      "solution": "ALTER TABLE students ADD CONSTRAINT students_pkey PRIMARY KEY (id);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "FOREIGN KEY",
+      "task": "Write a SQL example that demonstrates FOREIGN KEY.",
+      "solution": "ALTER TABLE enrollments ADD CONSTRAINT enrollments_student_fk FOREIGN KEY (student_id) REFERENCES students(id);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "CHECK",
+      "task": "Write a SQL example that demonstrates CHECK.",
+      "solution": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "DEFAULT",
+      "task": "Write a SQL example that demonstrates DEFAULT.",
+      "solution": "ALTER TABLE enrollments ALTER COLUMN enrolled_on SET DEFAULT CURRENT_DATE;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "ON DELETE CASCADE",
+      "task": "Write a SQL example that demonstrates ON DELETE CASCADE.",
+      "solution": "ALTER TABLE enrollments DROP CONSTRAINT enrollments_student_fk;\nALTER TABLE enrollments ADD CONSTRAINT enrollments_student_fk FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "ON UPDATE CASCADE",
+      "task": "Write a SQL example that demonstrates ON UPDATE CASCADE.",
+      "solution": "ALTER TABLE enrollments ADD CONSTRAINT enrollments_student_fk FOREIGN KEY (student_id) REFERENCES students(id) ON UPDATE CASCADE;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Deferrable Constraints",
+      "task": "Write a SQL example that demonstrates Deferrable Constraints.",
+      "solution": "ALTER TABLE enrollments ADD CONSTRAINT enrollments_student_fk FOREIGN KEY (student_id) REFERENCES students(id) DEFERRABLE INITIALLY DEFERRED;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "VALIDATE CONSTRAINT",
+      "task": "Write a SQL example that demonstrates VALIDATE CONSTRAINT.",
+      "solution": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100) NOT VALID;\nALTER TABLE students VALIDATE CONSTRAINT marks_range;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Adding Constraints Safely",
+      "task": "Write a SQL example that demonstrates Adding Constraints Safely.",
+      "solution": "SELECT * FROM students WHERE marks < 0 OR marks > 100;",
+      "expected": "Violating rows before the constraint."
+     },
+     {
+      "title": "Dropping Constraints",
+      "task": "Write a SQL example that demonstrates Dropping Constraints.",
+      "solution": "ALTER TABLE students DROP CONSTRAINT marks_range;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Unique NULLs",
+      "task": "Write a SQL example that demonstrates Unique NULLs.",
+      "solution": "ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE NULLS NOT DISTINCT (email);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Exclusion Constraints",
+      "task": "Write a SQL example that demonstrates Exclusion Constraints.",
+      "solution": "ALTER TABLE bookings ADD CONSTRAINT no_overlap EXCLUDE USING gist (room_id WITH =, during WITH &&);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Domain Constraints",
+      "task": "Write a SQL example that demonstrates Domain Constraints.",
+      "solution": "CREATE DOMAIN mark AS INTEGER CHECK (VALUE BETWEEN 0 AND 100);",
+      "expected": "CREATE DOMAIN"
+     },
+     {
+      "title": "Constraint Naming",
+      "task": "Write a SQL example that demonstrates Constraint Naming.",
+      "solution": "ALTER TABLE students ADD CONSTRAINT students_marks_check CHECK (marks BETWEEN 0 AND 100);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Common Constraint Errors",
+      "task": "Write a SQL example that demonstrates Common Constraint Errors.",
+      "solution": "INSERT INTO students (name, marks) VALUES ('Zara', 101);",
+      "expected": "ERROR: violates check constraint"
+     },
+     {
+      "title": "Application vs Database Validation",
+      "task": "Write a SQL example that demonstrates Application vs Database Validation.",
+      "solution": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100);",
+      "expected": "A database-level guarantee."
+     },
+     {
+      "title": "Practical Integrity Design",
+      "task": "Write a SQL example that demonstrates Practical Integrity Design.",
+      "solution": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 20 · Why does Constraints Overview matter?",
+      "answer": "Constraints reject invalid data at write time, protecting every application that shares the database. They enforce rules centrally. They run on writes. They make assumptions explicit."
+     },
+     {
+      "q": "Module 20 · Why does NOT NULL matter?",
+      "answer": "NOT NULL requires a value on every row and is the only direct way to require presence. It rejects NULL. It does not reject empty strings. Add it after cleaning existing NULLs."
+     },
+     {
+      "q": "Module 20 · Why does UNIQUE matter?",
+      "answer": "A unique constraint enforces distinct key values and creates a supporting unique index. It allows multiple NULLs by default. It supports composite keys. It is a constraint and an index."
+     },
+     {
+      "q": "Module 20 · Why does PRIMARY KEY matter?",
+      "answer": "A primary key is a unique, not-null constraint that identifies each row and is usually referenced by foreign keys. Unique and not null. One per table. It creates an index."
+     },
+     {
+      "q": "Module 20 · Why does FOREIGN KEY matter?",
+      "answer": "A foreign key requires child values to exist in the parent key, preserving referential integrity. The parent key must be unique. It can cascade actions. It blocks orphan rows."
+     },
+     {
+      "q": "Module 20 · Why does CHECK matter?",
+      "answer": "A CHECK constraint rejects rows where the expression is FALSE; UNKNOWN from NULL passes, so pair it with NOT NULL when needed. It rejects FALSE. NULL passes as UNKNOWN. It can use multiple columns."
+     },
+     {
+      "q": "Module 20 · Why does DEFAULT matter?",
+      "answer": "A default supplies a value when an INSERT omits the column; it does not replace an explicit NULL. It applies on omission. It can call functions. It does not enforce presence."
+     },
+     {
+      "q": "Module 20 · Why does ON DELETE CASCADE matter?",
+      "answer": "ON DELETE CASCADE automatically removes child rows when the referenced parent is deleted. Use with care. It can delete more than expected. RESTRICT is the safer default."
+     },
+     {
+      "q": "Module 20 · Why does ON UPDATE CASCADE matter?",
+      "answer": "ON UPDATE CASCADE updates child foreign keys when the parent key changes, which is useful for natural keys. It follows key changes. It avoids orphans. Surrogate keys reduce the need."
+     },
+     {
+      "q": "Module 20 · Why does Deferrable Constraints matter?",
+      "answer": "A DEFERRABLE constraint can be checked at statement end or transaction end, which helps circular references. INITIALLY IMMEDIATE is the default. SET CONSTRAINTS changes timing. Only some constraints are deferrable."
+     },
+     {
+      "q": "Module 20 · Why does VALIDATE CONSTRAINT matter?",
+      "answer": "Adding a foreign key or check with NOT VALID avoids a long initial scan; VALIDATE CONSTRAINT then checks existing rows. NOT VALID applies to new rows. VALIDATE checks old rows. It takes a lighter lock."
+     },
+     {
+      "q": "Module 20 · Why does Adding Constraints Safely matter?",
+      "answer": "Adding a constraint fails if existing rows violate it, so clean or quarantine bad rows first. Find violations first. Use NOT VALID for large tables. Validate after the backfill."
+     },
+     {
+      "q": "Module 20 · Why does Dropping Constraints matter?",
+      "answer": "ALTER TABLE ... DROP CONSTRAINT removes the rule; dropping a unique or primary key also removes its backing index. Know the constraint name. CASCADE can remove dependents. Re-adding may require a scan."
+     },
+     {
+      "q": "Module 20 · Why does Unique NULLs matter?",
+      "answer": "A regular unique constraint treats NULLs as distinct; PostgreSQL 15+ can use NULLS NOT DISTINCT to allow only one NULL. Multiple NULLs are allowed by default. NULLS NOT DISTINCT changes that. It is a data-model decision."
+     },
+     {
+      "q": "Module 20 · Why does Exclusion Constraints matter?",
+      "answer": "An exclusion constraint uses a GiST index to reject rows whose values conflict under a chosen operator, such as overlapping date ranges. It needs btree_gist for equality columns. It prevents overlaps. It is advanced but powerful."
+     }
+    ],
+    "debug": [
+     {
+      "title": "NOT NULL violation",
+      "broken": "INSERT INTO students (name) VALUES (NULL);",
+      "fix": "INSERT INTO students (name) VALUES ('Zara');",
+      "error": "null value in column \"name\" violates not-null constraint",
+      "expected": "A valid student."
+     },
+     {
+      "title": "Unique violation",
+      "broken": "INSERT INTO students (email) VALUES ('a@example.com'), ('a@example.com');",
+      "fix": "INSERT INTO students (email) VALUES ('a@example.com'), ('b@example.com');",
+      "error": "duplicate key value violates unique constraint",
+      "expected": "Two distinct emails."
+     },
+     {
+      "title": "Foreign key orphan",
+      "broken": "INSERT INTO enrollments (student_id, course_id) VALUES (999, 10);",
+      "fix": "INSERT INTO enrollments (student_id, course_id) VALUES (1, 10);",
+      "error": "violates foreign key constraint",
+      "expected": "A valid enrollment."
+     },
+     {
+      "title": "CHECK violation",
+      "broken": "INSERT INTO students (name, marks) VALUES ('Zara', 101);",
+      "fix": "INSERT INTO students (name, marks) VALUES ('Zara', 99);",
+      "error": "violates check constraint",
+      "expected": "A valid mark."
+     },
+     {
+      "title": "Cascade surprise",
+      "broken": "DELETE FROM students WHERE id = 1;",
+      "fix": "Review the ON DELETE action before deleting, or use RESTRICT for protected parents.",
+      "error": "Child enrollments are deleted automatically",
+      "expected": "A deliberate delete."
+     },
+     {
+      "title": "NOT VALID not validated",
+      "broken": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100) NOT VALID;",
+      "fix": "ALTER TABLE students VALIDATE CONSTRAINT marks_range;",
+      "error": "Existing violating rows are not checked yet",
+      "expected": "A validated constraint."
+     },
+     {
+      "title": "Duplicate constraint name",
+      "broken": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks >= 0);\nALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks <= 100);",
+      "fix": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100);",
+      "error": "constraint \"marks_range\" for relation \"students\" already exists",
+      "expected": "One constraint."
+     },
+     {
+      "title": "Drop wrong table",
+      "broken": "ALTER TABLE courses DROP CONSTRAINT marks_range;",
+      "fix": "ALTER TABLE students DROP CONSTRAINT marks_range;",
+      "error": "constraint \"marks_range\" of relation \"courses\" does not exist",
+      "expected": "The constraint is dropped."
+     },
+     {
+      "title": "Unique NULL assumption",
+      "broken": "ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE (email);",
+      "fix": "ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE NULLS NOT DISTINCT (email);",
+      "error": "Multiple NULL emails are still allowed",
+      "expected": "At most one NULL email."
+     },
+     {
+      "title": "Deferrable misuse",
+      "broken": "ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE (email) DEFERRABLE INITIALLY DEFERRED;",
+      "fix": "ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE (email);",
+      "error": "This unique constraint does not need deferral",
+      "expected": "An immediate unique check."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 20 · State one key rule for Constraints Overview.",
+      "answer": "They enforce rules centrally."
+     },
+     {
+      "q": "Module 20 · State one key rule for NOT NULL.",
+      "answer": "It rejects NULL."
+     },
+     {
+      "q": "Module 20 · State one key rule for UNIQUE.",
+      "answer": "It allows multiple NULLs by default."
+     },
+     {
+      "q": "Module 20 · State one key rule for PRIMARY KEY.",
+      "answer": "Unique and not null."
+     },
+     {
+      "q": "Module 20 · State one key rule for FOREIGN KEY.",
+      "answer": "The parent key must be unique."
+     },
+     {
+      "q": "Module 20 · State one key rule for CHECK.",
+      "answer": "It rejects FALSE."
+     },
+     {
+      "q": "Module 20 · State one key rule for DEFAULT.",
+      "answer": "It applies on omission."
+     },
+     {
+      "q": "Module 20 · State one key rule for ON DELETE CASCADE.",
+      "answer": "Use with care."
+     },
+     {
+      "q": "Module 20 · State one key rule for ON UPDATE CASCADE.",
+      "answer": "It follows key changes."
+     },
+     {
+      "q": "Module 20 · State one key rule for Deferrable Constraints.",
+      "answer": "INITIALLY IMMEDIATE is the default."
+     }
+    ]
+   }
+  }
+ ]
+}

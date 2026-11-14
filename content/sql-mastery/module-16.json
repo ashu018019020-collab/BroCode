@@ -1,0 +1,918 @@
+{
+ "modules": [
+  {
+   "id": "sql16",
+   "no": 16,
+   "title": "Advanced Window Functions and Frames",
+   "goal": "Use ranking, frames and distribution functions for serious analytical queries.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Ranking vs Row Number",
+     "simple": "Ranking ties ko same number deta hai; row number unique rehta hai.",
+     "pro": "RANK shares numbers across ties and leaves gaps, DENSE_RANK shares without gaps, and ROW_NUMBER is unique but arbitrary on ties.",
+     "points": [
+      "Choose by tie semantics.",
+      "ROW_NUMBER needs a total order.",
+      "DENSE_RANK is compact."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, RANK() OVER (ORDER BY marks DESC) AS r, DENSE_RANK() OVER (ORDER BY marks DESC) AS d, ROW_NUMBER() OVER (ORDER BY marks DESC, id) AS rn FROM students;",
+      "output": "Three different ranking numbers."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Top N per Group",
+     "simple": "Partitioned row numbers se har group ka top N nikaalo.",
+     "pro": "Top-N per group ranks rows inside each partition and filters the rank in an outer query.",
+     "points": [
+      "Partition by the group.",
+      "Order by the ranking key.",
+      "Filter the rank outside."
+     ],
+     "example": {
+      "sql": "WITH ranked AS (SELECT course_id, student_id, ROW_NUMBER() OVER (PARTITION BY course_id ORDER BY student_id) AS rn FROM enrollments) SELECT * FROM ranked WHERE rn <= 3;",
+      "output": "Three rows per course."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Running Totals",
+     "simple": "Running total ordered rows ko accumulate karta hai.",
+     "pro": "A running total uses SUM with an unbounded preceding frame and restarts per partition.",
+     "points": [
+      "Order by a stable key.",
+      "Use UNBOUNDED PRECEDING.",
+      "Partition for group totals."
+     ],
+     "example": {
+      "sql": "SELECT id, marks, SUM(marks) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running FROM students;",
+      "output": "A cumulative total."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Moving Averages",
+     "simple": "Moving average window ke andar ke rows ka average deta hai.",
+     "pro": "A moving average uses a bounded frame and a stable order so each row sees the same number of neighbors.",
+     "points": [
+      "Pick the frame width.",
+      "Use ROWS for exact counts.",
+      "Use RANGE for date windows."
+     ],
+     "example": {
+      "sql": "SELECT id, marks, AVG(marks) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS moving_avg FROM students;",
+      "output": "A three-row average."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Frame Boundaries",
+     "simple": "Frame ka start aur end explicitly set karo.",
+     "pro": "Frame boundaries use UNBOUNDED PRECEDING, n PRECEDING, CURRENT ROW, n FOLLOWING and UNBOUNDED FOLLOWING.",
+     "points": [
+      "Start must not follow end.",
+      "The default frame is RANGE UNBOUNDED PRECEDING TO CURRENT ROW.",
+      "Frames require ORDER BY."
+     ],
+     "example": {
+      "sql": "SELECT id, marks, SUM(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS nearby FROM students;",
+      "output": "A three-row neighborhood."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "ROWS Frame",
+     "simple": "ROWS physical row offsets par kaam karta hai.",
+     "pro": "ROWS counts actual rows, so duplicate ORDER BY values are still separate frame positions.",
+     "points": [
+      "Exact row counts.",
+      "Duplicates are separate.",
+      "Good for moving averages."
+     ],
+     "example": {
+      "sql": "SELECT id, marks, AVG(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS avg2 FROM students;",
+      "output": "A two-row average."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "RANGE Frame",
+     "simple": "RANGE ORDER BY values ke ranges par kaam karta hai.",
+     "pro": "RANGE includes peer rows with equal ORDER BY values, so duplicates move through the frame together.",
+     "points": [
+      "Peers share a frame.",
+      "Good for value ranges.",
+      "Date ranges use intervals."
+     ],
+     "example": {
+      "sql": "SELECT marks, SUM(marks) OVER (ORDER BY marks RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cumulative FROM students;",
+      "output": "Tied marks receive the same cumulative value."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "GROUPS Frame",
+     "simple": "GROUPS peer groups ke offsets par kaam karta hai.",
+     "pro": "GROUPS counts peer groups rather than physical rows, which is useful when ties should be one unit.",
+     "points": [
+      "Groups are peer sets.",
+      "It sits between ROWS and RANGE.",
+      "It needs ORDER BY."
+     ],
+     "example": {
+      "sql": "SELECT marks, AVG(marks) OVER (ORDER BY marks GROUPS BETWEEN 1 PRECEDING AND CURRENT ROW) AS grouped_avg FROM students;",
+      "output": "Averages over the previous peer group and the current group."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "EXCLUDE Clause",
+     "simple": "EXCLUDE current row ya peers ko frame se hataata hai.",
+     "pro": "EXCLUDE CURRENT ROW, EXCLUDE GROUP and EXCLUDE TIES remove rows from the frame for calculations such as leave-one-out averages.",
+     "points": [
+      "It applies after the frame.",
+      "PostgreSQL supports it.",
+      "It is useful for comparisons."
+     ],
+     "example": {
+      "sql": "SELECT id, marks, AVG(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING EXCLUDE CURRENT ROW) AS neighbor_avg FROM students;",
+      "output": "Average of the two neighbors."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "LAG and LEAD",
+     "simple": "LAG previous aur LEAD next row deta hai.",
+     "pro": "LAG and LEAD compare a row with an earlier or later row using an offset and optional default.",
+     "points": [
+      "Offset defaults to 1.",
+      "Order must be deterministic.",
+      "Partition for group-local comparisons."
+     ],
+     "example": {
+      "sql": "SELECT id, marks, marks - LAG(marks) OVER (ORDER BY id) AS delta FROM students;",
+      "output": "The change from the previous mark."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "FIRST_VALUE and LAST_VALUE",
+     "simple": "Frame ke first aur last value dete hain.",
+     "pro": "FIRST_VALUE and LAST_VALUE return boundary values from the frame, so the frame definition determines the result.",
+     "points": [
+      "They respect the frame.",
+      "LAST_VALUE needs a full frame for the last row.",
+      "Partition for group boundaries."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, FIRST_VALUE(name) OVER (PARTITION BY marks ORDER BY id) AS first_peer FROM students;",
+      "output": "The first student at each mark."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "NTH_VALUE",
+     "simple": "NTH_VALUE frame ka Nth row deta hai.",
+     "pro": "NTH_VALUE returns the value at a one-based position inside the frame, with an optional direction.",
+     "points": [
+      "Position is one-based.",
+      "The frame must include the row.",
+      "It returns NULL when absent."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, NTH_VALUE(name, 2) OVER (ORDER BY marks DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS second_name FROM students;",
+      "output": "The second-highest name on every row."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "PERCENT_RANK",
+     "simple": "PERCENT_RANK relative percentile rank deta hai.",
+     "pro": "PERCENT_RANK returns (rank - 1) / (rows - 1), giving a value from 0 to 1 for ordered rows.",
+     "points": [
+      "It uses RANK semantics.",
+      "The best row is 0.",
+      "The worst row is 1."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, PERCENT_RANK() OVER (ORDER BY marks) AS pct FROM students;",
+      "output": "A percentile from 0 to 1."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "CUME_DIST",
+     "simple": "CUME_DIST cumulative distribution deta hai.",
+     "pro": "CUME_DIST returns the fraction of rows at or below the current peer group, always greater than zero and at most one.",
+     "points": [
+      "It includes peers.",
+      "It is cumulative.",
+      "It differs from PERCENT_RANK."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, CUME_DIST() OVER (ORDER BY marks) AS cume FROM students;",
+      "output": "The cumulative fraction."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "NTILE Buckets",
+     "simple": "NTILE ordered rows ko equal buckets me baantta hai.",
+     "pro": "NTILE(n) assigns bucket numbers from 1 to n, with earlier buckets taking the extra rows.",
+     "points": [
+      "It needs an order.",
+      "Buckets differ by at most one.",
+      "It is good for quartiles."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, NTILE(4) OVER (ORDER BY marks DESC) AS quartile FROM students;",
+      "output": "A quartile number."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Percent of Total",
+     "simple": "Window sum se row ka percent of total nikaalo.",
+     "pro": "Dividing a row value by SUM over an empty window produces its share of the total without a separate aggregate query.",
+     "points": [
+      "Use SUM(...) OVER ().",
+      "Guard against zero.",
+      "Round at display time."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, ROUND(100.0 * marks / SUM(marks) OVER (), 2) AS pct FROM students;",
+      "output": "Each mark as a percentage of the total."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Difference from Previous",
+     "simple": "LAG se previous value ka difference nikaalo.",
+     "pro": "Subtracting LAG from the current value gives a row-to-row delta, with NULL for the first row.",
+     "points": [
+      "Order by the event key.",
+      "Handle the first NULL.",
+      "Partition for restarts."
+     ],
+     "example": {
+      "sql": "SELECT id, marks, marks - LAG(marks) OVER (ORDER BY id) AS delta FROM students;",
+      "output": "The change from the prior row."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Median with PERCENTILE_CONT",
+     "simple": "PERCENTILE_CONT continuous percentile deta hai.",
+     "pro": "PERCENTILE_CONT interpolates between values to return a continuous percentile, commonly the median at 0.5.",
+     "points": [
+      "It uses WITHIN GROUP.",
+      "It interpolates.",
+      "It returns one row per group."
+     ],
+     "example": {
+      "sql": "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY marks) AS median FROM students;",
+      "output": "The median mark."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Mode with MODE",
+     "simple": "MODE sabse frequent value deta hai.",
+     "pro": "MODE() WITHIN GROUP returns the most frequent input value, and PostgreSQL picks the first one when there is a tie.",
+     "points": [
+      "It uses WITHIN GROUP.",
+      "It ignores NULL.",
+      "Ties are resolved arbitrarily."
+     ],
+     "example": {
+      "sql": "SELECT MODE() WITHIN GROUP (ORDER BY marks) AS mode FROM students;",
+      "output": "The most common mark."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Ranking Report",
+     "simple": "Ranking, percent of total aur top N ko report me combine karo.",
+     "pro": "A production ranking report uses a CTE for window calculations, filters the rank outside and presents a stable order.",
+     "points": [
+      "Calculate windows in a CTE.",
+      "Filter in the outer query.",
+      "Order the final report."
+     ],
+     "example": {
+      "sql": "WITH ranked AS (SELECT name, marks, RANK() OVER (ORDER BY marks DESC) AS r, ROUND(100.0 * marks / SUM(marks) OVER (), 2) AS pct FROM students) SELECT * FROM ranked WHERE r <= 5 ORDER BY r;",
+      "output": "Top five with rank and share."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 16 · Ranking vs Row Number: what is the main purpose?",
+      "options": [
+       "Ranking vs Row Number: Ranking ties ko same number deta hai; row number unique rehta hai.",
+       "Top N per Group: Partitioned row numbers se har group ka top N nikaalo.",
+       "GROUPS Frame: GROUPS peer groups ke offsets par kaam karta hai.",
+       "CUME_DIST: CUME_DIST cumulative distribution deta hai."
+      ],
+      "answer": "Ranking vs Row Number: Ranking ties ko same number deta hai; row number unique rehta hai.",
+      "why": "RANK shares numbers across ties and leaves gaps, DENSE_RANK shares without gaps, and ROW_NUMBER is unique but arbitrary on ties."
+     },
+     {
+      "q": "Module 16 · Top N per Group: what is the main purpose?",
+      "options": [
+       "Running Totals: Running total ordered rows ko accumulate karta hai.",
+       "EXCLUDE Clause: EXCLUDE current row ya peers ko frame se hataata hai.",
+       "NTILE Buckets: NTILE ordered rows ko equal buckets me baantta hai.",
+       "Top N per Group: Partitioned row numbers se har group ka top N nikaalo."
+      ],
+      "answer": "Top N per Group: Partitioned row numbers se har group ka top N nikaalo.",
+      "why": "Top-N per group ranks rows inside each partition and filters the rank in an outer query."
+     },
+     {
+      "q": "Module 16 · Running Totals: what is the main purpose?",
+      "options": [
+       "LAG and LEAD: LAG previous aur LEAD next row deta hai.",
+       "Percent of Total: Window sum se row ka percent of total nikaalo.",
+       "Running Totals: Running total ordered rows ko accumulate karta hai.",
+       "Moving Averages: Moving average window ke andar ke rows ka average deta hai."
+      ],
+      "answer": "Running Totals: Running total ordered rows ko accumulate karta hai.",
+      "why": "A running total uses SUM with an unbounded preceding frame and restarts per partition."
+     },
+     {
+      "q": "Module 16 · Moving Averages: what is the main purpose?",
+      "options": [
+       "Difference from Previous: LAG se previous value ka difference nikaalo.",
+       "Moving Averages: Moving average window ke andar ke rows ka average deta hai.",
+       "Frame Boundaries: Frame ka start aur end explicitly set karo.",
+       "FIRST_VALUE and LAST_VALUE: Frame ke first aur last value dete hain."
+      ],
+      "answer": "Moving Averages: Moving average window ke andar ke rows ka average deta hai.",
+      "why": "A moving average uses a bounded frame and a stable order so each row sees the same number of neighbors."
+     },
+     {
+      "q": "Module 16 · Frame Boundaries: what is the main purpose?",
+      "options": [
+       "Frame Boundaries: Frame ka start aur end explicitly set karo.",
+       "ROWS Frame: ROWS physical row offsets par kaam karta hai.",
+       "NTH_VALUE: NTH_VALUE frame ka Nth row deta hai.",
+       "Median with PERCENTILE_CONT: PERCENTILE_CONT continuous percentile deta hai."
+      ],
+      "answer": "Frame Boundaries: Frame ka start aur end explicitly set karo.",
+      "why": "Frame boundaries use UNBOUNDED PRECEDING, n PRECEDING, CURRENT ROW, n FOLLOWING and UNBOUNDED FOLLOWING."
+     },
+     {
+      "q": "Module 16 · ROWS Frame: what is the main purpose?",
+      "options": [
+       "RANGE Frame: RANGE ORDER BY values ke ranges par kaam karta hai.",
+       "PERCENT_RANK: PERCENT_RANK relative percentile rank deta hai.",
+       "Mode with MODE: MODE sabse frequent value deta hai.",
+       "ROWS Frame: ROWS physical row offsets par kaam karta hai."
+      ],
+      "answer": "ROWS Frame: ROWS physical row offsets par kaam karta hai.",
+      "why": "ROWS counts actual rows, so duplicate ORDER BY values are still separate frame positions."
+     },
+     {
+      "q": "Module 16 · RANGE Frame: what is the main purpose?",
+      "options": [
+       "CUME_DIST: CUME_DIST cumulative distribution deta hai.",
+       "Practical Ranking Report: Ranking, percent of total aur top N ko report me combine karo.",
+       "RANGE Frame: RANGE ORDER BY values ke ranges par kaam karta hai.",
+       "GROUPS Frame: GROUPS peer groups ke offsets par kaam karta hai."
+      ],
+      "answer": "RANGE Frame: RANGE ORDER BY values ke ranges par kaam karta hai.",
+      "why": "RANGE includes peer rows with equal ORDER BY values, so duplicates move through the frame together."
+     },
+     {
+      "q": "Module 16 · GROUPS Frame: what is the main purpose?",
+      "options": [
+       "Ranking vs Row Number: Ranking ties ko same number deta hai; row number unique rehta hai.",
+       "GROUPS Frame: GROUPS peer groups ke offsets par kaam karta hai.",
+       "EXCLUDE Clause: EXCLUDE current row ya peers ko frame se hataata hai.",
+       "NTILE Buckets: NTILE ordered rows ko equal buckets me baantta hai."
+      ],
+      "answer": "GROUPS Frame: GROUPS peer groups ke offsets par kaam karta hai.",
+      "why": "GROUPS counts peer groups rather than physical rows, which is useful when ties should be one unit."
+     },
+     {
+      "q": "Module 16 · EXCLUDE Clause: what is the main purpose?",
+      "options": [
+       "EXCLUDE Clause: EXCLUDE current row ya peers ko frame se hataata hai.",
+       "LAG and LEAD: LAG previous aur LEAD next row deta hai.",
+       "Percent of Total: Window sum se row ka percent of total nikaalo.",
+       "Top N per Group: Partitioned row numbers se har group ka top N nikaalo."
+      ],
+      "answer": "EXCLUDE Clause: EXCLUDE current row ya peers ko frame se hataata hai.",
+      "why": "EXCLUDE CURRENT ROW, EXCLUDE GROUP and EXCLUDE TIES remove rows from the frame for calculations such as leave-one-out averages."
+     },
+     {
+      "q": "Module 16 · LAG and LEAD: what is the main purpose?",
+      "options": [
+       "FIRST_VALUE and LAST_VALUE: Frame ke first aur last value dete hain.",
+       "Difference from Previous: LAG se previous value ka difference nikaalo.",
+       "Running Totals: Running total ordered rows ko accumulate karta hai.",
+       "LAG and LEAD: LAG previous aur LEAD next row deta hai."
+      ],
+      "answer": "LAG and LEAD: LAG previous aur LEAD next row deta hai.",
+      "why": "LAG and LEAD compare a row with an earlier or later row using an offset and optional default."
+     },
+     {
+      "q": "Module 16 · FIRST_VALUE and LAST_VALUE: what is the main purpose?",
+      "options": [
+       "Median with PERCENTILE_CONT: PERCENTILE_CONT continuous percentile deta hai.",
+       "Moving Averages: Moving average window ke andar ke rows ka average deta hai.",
+       "FIRST_VALUE and LAST_VALUE: Frame ke first aur last value dete hain.",
+       "NTH_VALUE: NTH_VALUE frame ka Nth row deta hai."
+      ],
+      "answer": "FIRST_VALUE and LAST_VALUE: Frame ke first aur last value dete hain.",
+      "why": "FIRST_VALUE and LAST_VALUE return boundary values from the frame, so the frame definition determines the result."
+     },
+     {
+      "q": "Module 16 · NTH_VALUE: what is the main purpose?",
+      "options": [
+       "Frame Boundaries: Frame ka start aur end explicitly set karo.",
+       "NTH_VALUE: NTH_VALUE frame ka Nth row deta hai.",
+       "PERCENT_RANK: PERCENT_RANK relative percentile rank deta hai.",
+       "Mode with MODE: MODE sabse frequent value deta hai."
+      ],
+      "answer": "NTH_VALUE: NTH_VALUE frame ka Nth row deta hai.",
+      "why": "NTH_VALUE returns the value at a one-based position inside the frame, with an optional direction."
+     },
+     {
+      "q": "Module 16 · PERCENT_RANK: what is the main purpose?",
+      "options": [
+       "PERCENT_RANK: PERCENT_RANK relative percentile rank deta hai.",
+       "CUME_DIST: CUME_DIST cumulative distribution deta hai.",
+       "Practical Ranking Report: Ranking, percent of total aur top N ko report me combine karo.",
+       "ROWS Frame: ROWS physical row offsets par kaam karta hai."
+      ],
+      "answer": "PERCENT_RANK: PERCENT_RANK relative percentile rank deta hai.",
+      "why": "PERCENT_RANK returns (rank - 1) / (rows - 1), giving a value from 0 to 1 for ordered rows."
+     },
+     {
+      "q": "Module 16 · CUME_DIST: what is the main purpose?",
+      "options": [
+       "NTILE Buckets: NTILE ordered rows ko equal buckets me baantta hai.",
+       "Ranking vs Row Number: Ranking ties ko same number deta hai; row number unique rehta hai.",
+       "RANGE Frame: RANGE ORDER BY values ke ranges par kaam karta hai.",
+       "CUME_DIST: CUME_DIST cumulative distribution deta hai."
+      ],
+      "answer": "CUME_DIST: CUME_DIST cumulative distribution deta hai.",
+      "why": "CUME_DIST returns the fraction of rows at or below the current peer group, always greater than zero and at most one."
+     },
+     {
+      "q": "Module 16 · NTILE Buckets: what is the main purpose?",
+      "options": [
+       "Top N per Group: Partitioned row numbers se har group ka top N nikaalo.",
+       "GROUPS Frame: GROUPS peer groups ke offsets par kaam karta hai.",
+       "NTILE Buckets: NTILE ordered rows ko equal buckets me baantta hai.",
+       "Percent of Total: Window sum se row ka percent of total nikaalo."
+      ],
+      "answer": "NTILE Buckets: NTILE ordered rows ko equal buckets me baantta hai.",
+      "why": "NTILE(n) assigns bucket numbers from 1 to n, with earlier buckets taking the extra rows."
+     },
+     {
+      "q": "Module 16 · Percent of Total: what is the main purpose?",
+      "options": [
+       "EXCLUDE Clause: EXCLUDE current row ya peers ko frame se hataata hai.",
+       "Percent of Total: Window sum se row ka percent of total nikaalo.",
+       "Difference from Previous: LAG se previous value ka difference nikaalo.",
+       "Running Totals: Running total ordered rows ko accumulate karta hai."
+      ],
+      "answer": "Percent of Total: Window sum se row ka percent of total nikaalo.",
+      "why": "Dividing a row value by SUM over an empty window produces its share of the total without a separate aggregate query."
+     },
+     {
+      "q": "Module 16 · Difference from Previous: what is the main purpose?",
+      "options": [
+       "Difference from Previous: LAG se previous value ka difference nikaalo.",
+       "Median with PERCENTILE_CONT: PERCENTILE_CONT continuous percentile deta hai.",
+       "Moving Averages: Moving average window ke andar ke rows ka average deta hai.",
+       "LAG and LEAD: LAG previous aur LEAD next row deta hai."
+      ],
+      "answer": "Difference from Previous: LAG se previous value ka difference nikaalo.",
+      "why": "Subtracting LAG from the current value gives a row-to-row delta, with NULL for the first row."
+     },
+     {
+      "q": "Module 16 · Median with PERCENTILE_CONT: what is the main purpose?",
+      "options": [
+       "Mode with MODE: MODE sabse frequent value deta hai.",
+       "Frame Boundaries: Frame ka start aur end explicitly set karo.",
+       "FIRST_VALUE and LAST_VALUE: Frame ke first aur last value dete hain.",
+       "Median with PERCENTILE_CONT: PERCENTILE_CONT continuous percentile deta hai."
+      ],
+      "answer": "Median with PERCENTILE_CONT: PERCENTILE_CONT continuous percentile deta hai.",
+      "why": "PERCENTILE_CONT interpolates between values to return a continuous percentile, commonly the median at 0.5."
+     },
+     {
+      "q": "Module 16 · Mode with MODE: what is the main purpose?",
+      "options": [
+       "ROWS Frame: ROWS physical row offsets par kaam karta hai.",
+       "NTH_VALUE: NTH_VALUE frame ka Nth row deta hai.",
+       "Mode with MODE: MODE sabse frequent value deta hai.",
+       "Practical Ranking Report: Ranking, percent of total aur top N ko report me combine karo."
+      ],
+      "answer": "Mode with MODE: MODE sabse frequent value deta hai.",
+      "why": "MODE() WITHIN GROUP returns the most frequent input value, and PostgreSQL picks the first one when there is a tie."
+     },
+     {
+      "q": "Module 16 · Practical Ranking Report: what is the main purpose?",
+      "options": [
+       "PERCENT_RANK: PERCENT_RANK relative percentile rank deta hai.",
+       "Practical Ranking Report: Ranking, percent of total aur top N ko report me combine karo.",
+       "Ranking vs Row Number: Ranking ties ko same number deta hai; row number unique rehta hai.",
+       "RANGE Frame: RANGE ORDER BY values ke ranges par kaam karta hai."
+      ],
+      "answer": "Practical Ranking Report: Ranking, percent of total aur top N ko report me combine karo.",
+      "why": "A production ranking report uses a CTE for window calculations, filters the rank outside and presents a stable order."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 16 · Explain Ranking vs Row Number in a production query.",
+      "answer": "RANK shares numbers across ties and leaves gaps, DENSE_RANK shares without gaps, and ROW_NUMBER is unique but arbitrary on ties. Key rules: Choose by tie semantics. ROW_NUMBER needs a total order. DENSE_RANK is compact."
+     },
+     {
+      "q": "Module 16 · Explain Top N per Group in a production query.",
+      "answer": "Top-N per group ranks rows inside each partition and filters the rank in an outer query. Key rules: Partition by the group. Order by the ranking key. Filter the rank outside."
+     },
+     {
+      "q": "Module 16 · Explain Running Totals in a production query.",
+      "answer": "A running total uses SUM with an unbounded preceding frame and restarts per partition. Key rules: Order by a stable key. Use UNBOUNDED PRECEDING. Partition for group totals."
+     },
+     {
+      "q": "Module 16 · Explain Moving Averages in a production query.",
+      "answer": "A moving average uses a bounded frame and a stable order so each row sees the same number of neighbors. Key rules: Pick the frame width. Use ROWS for exact counts. Use RANGE for date windows."
+     },
+     {
+      "q": "Module 16 · Explain Frame Boundaries in a production query.",
+      "answer": "Frame boundaries use UNBOUNDED PRECEDING, n PRECEDING, CURRENT ROW, n FOLLOWING and UNBOUNDED FOLLOWING. Key rules: Start must not follow end. The default frame is RANGE UNBOUNDED PRECEDING TO CURRENT ROW. Frames require ORDER BY."
+     },
+     {
+      "q": "Module 16 · Explain ROWS Frame in a production query.",
+      "answer": "ROWS counts actual rows, so duplicate ORDER BY values are still separate frame positions. Key rules: Exact row counts. Duplicates are separate. Good for moving averages."
+     },
+     {
+      "q": "Module 16 · Explain RANGE Frame in a production query.",
+      "answer": "RANGE includes peer rows with equal ORDER BY values, so duplicates move through the frame together. Key rules: Peers share a frame. Good for value ranges. Date ranges use intervals."
+     },
+     {
+      "q": "Module 16 · Explain GROUPS Frame in a production query.",
+      "answer": "GROUPS counts peer groups rather than physical rows, which is useful when ties should be one unit. Key rules: Groups are peer sets. It sits between ROWS and RANGE. It needs ORDER BY."
+     },
+     {
+      "q": "Module 16 · Explain EXCLUDE Clause in a production query.",
+      "answer": "EXCLUDE CURRENT ROW, EXCLUDE GROUP and EXCLUDE TIES remove rows from the frame for calculations such as leave-one-out averages. Key rules: It applies after the frame. PostgreSQL supports it. It is useful for comparisons."
+     },
+     {
+      "q": "Module 16 · Explain LAG and LEAD in a production query.",
+      "answer": "LAG and LEAD compare a row with an earlier or later row using an offset and optional default. Key rules: Offset defaults to 1. Order must be deterministic. Partition for group-local comparisons."
+     },
+     {
+      "q": "Module 16 · Explain FIRST_VALUE and LAST_VALUE in a production query.",
+      "answer": "FIRST_VALUE and LAST_VALUE return boundary values from the frame, so the frame definition determines the result. Key rules: They respect the frame. LAST_VALUE needs a full frame for the last row. Partition for group boundaries."
+     },
+     {
+      "q": "Module 16 · Explain NTH_VALUE in a production query.",
+      "answer": "NTH_VALUE returns the value at a one-based position inside the frame, with an optional direction. Key rules: Position is one-based. The frame must include the row. It returns NULL when absent."
+     },
+     {
+      "q": "Module 16 · Explain PERCENT_RANK in a production query.",
+      "answer": "PERCENT_RANK returns (rank - 1) / (rows - 1), giving a value from 0 to 1 for ordered rows. Key rules: It uses RANK semantics. The best row is 0. The worst row is 1."
+     },
+     {
+      "q": "Module 16 · Explain CUME_DIST in a production query.",
+      "answer": "CUME_DIST returns the fraction of rows at or below the current peer group, always greater than zero and at most one. Key rules: It includes peers. It is cumulative. It differs from PERCENT_RANK."
+     },
+     {
+      "q": "Module 16 · Explain NTILE Buckets in a production query.",
+      "answer": "NTILE(n) assigns bucket numbers from 1 to n, with earlier buckets taking the extra rows. Key rules: It needs an order. Buckets differ by at most one. It is good for quartiles."
+     },
+     {
+      "q": "Module 16 · Explain Percent of Total in a production query.",
+      "answer": "Dividing a row value by SUM over an empty window produces its share of the total without a separate aggregate query. Key rules: Use SUM(...) OVER (). Guard against zero. Round at display time."
+     },
+     {
+      "q": "Module 16 · Explain Difference from Previous in a production query.",
+      "answer": "Subtracting LAG from the current value gives a row-to-row delta, with NULL for the first row. Key rules: Order by the event key. Handle the first NULL. Partition for restarts."
+     },
+     {
+      "q": "Module 16 · Explain Median with PERCENTILE_CONT in a production query.",
+      "answer": "PERCENTILE_CONT interpolates between values to return a continuous percentile, commonly the median at 0.5. Key rules: It uses WITHIN GROUP. It interpolates. It returns one row per group."
+     },
+     {
+      "q": "Module 16 · Explain Mode with MODE in a production query.",
+      "answer": "MODE() WITHIN GROUP returns the most frequent input value, and PostgreSQL picks the first one when there is a tie. Key rules: It uses WITHIN GROUP. It ignores NULL. Ties are resolved arbitrarily."
+     },
+     {
+      "q": "Module 16 · Explain Practical Ranking Report in a production query.",
+      "answer": "A production ranking report uses a CTE for window calculations, filters the rank outside and presents a stable order. Key rules: Calculate windows in a CTE. Filter in the outer query. Order the final report."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Ranking vs Row Number",
+      "task": "Write a SQL example that demonstrates Ranking vs Row Number.",
+      "solution": "SELECT name, marks, RANK() OVER (ORDER BY marks DESC) AS r, DENSE_RANK() OVER (ORDER BY marks DESC) AS d, ROW_NUMBER() OVER (ORDER BY marks DESC, id) AS rn FROM students;",
+      "expected": "Three different ranking numbers."
+     },
+     {
+      "title": "Top N per Group",
+      "task": "Write a SQL example that demonstrates Top N per Group.",
+      "solution": "WITH ranked AS (SELECT course_id, student_id, ROW_NUMBER() OVER (PARTITION BY course_id ORDER BY student_id) AS rn FROM enrollments) SELECT * FROM ranked WHERE rn <= 3;",
+      "expected": "Three rows per course."
+     },
+     {
+      "title": "Running Totals",
+      "task": "Write a SQL example that demonstrates Running Totals.",
+      "solution": "SELECT id, marks, SUM(marks) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running FROM students;",
+      "expected": "A cumulative total."
+     },
+     {
+      "title": "Moving Averages",
+      "task": "Write a SQL example that demonstrates Moving Averages.",
+      "solution": "SELECT id, marks, AVG(marks) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS moving_avg FROM students;",
+      "expected": "A three-row average."
+     },
+     {
+      "title": "Frame Boundaries",
+      "task": "Write a SQL example that demonstrates Frame Boundaries.",
+      "solution": "SELECT id, marks, SUM(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS nearby FROM students;",
+      "expected": "A three-row neighborhood."
+     },
+     {
+      "title": "ROWS Frame",
+      "task": "Write a SQL example that demonstrates ROWS Frame.",
+      "solution": "SELECT id, marks, AVG(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS avg2 FROM students;",
+      "expected": "A two-row average."
+     },
+     {
+      "title": "RANGE Frame",
+      "task": "Write a SQL example that demonstrates RANGE Frame.",
+      "solution": "SELECT marks, SUM(marks) OVER (ORDER BY marks RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cumulative FROM students;",
+      "expected": "Tied marks receive the same cumulative value."
+     },
+     {
+      "title": "GROUPS Frame",
+      "task": "Write a SQL example that demonstrates GROUPS Frame.",
+      "solution": "SELECT marks, AVG(marks) OVER (ORDER BY marks GROUPS BETWEEN 1 PRECEDING AND CURRENT ROW) AS grouped_avg FROM students;",
+      "expected": "Averages over the previous peer group and the current group."
+     },
+     {
+      "title": "EXCLUDE Clause",
+      "task": "Write a SQL example that demonstrates EXCLUDE Clause.",
+      "solution": "SELECT id, marks, AVG(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING EXCLUDE CURRENT ROW) AS neighbor_avg FROM students;",
+      "expected": "Average of the two neighbors."
+     },
+     {
+      "title": "LAG and LEAD",
+      "task": "Write a SQL example that demonstrates LAG and LEAD.",
+      "solution": "SELECT id, marks, marks - LAG(marks) OVER (ORDER BY id) AS delta FROM students;",
+      "expected": "The change from the previous mark."
+     },
+     {
+      "title": "FIRST_VALUE and LAST_VALUE",
+      "task": "Write a SQL example that demonstrates FIRST_VALUE and LAST_VALUE.",
+      "solution": "SELECT name, marks, FIRST_VALUE(name) OVER (PARTITION BY marks ORDER BY id) AS first_peer FROM students;",
+      "expected": "The first student at each mark."
+     },
+     {
+      "title": "NTH_VALUE",
+      "task": "Write a SQL example that demonstrates NTH_VALUE.",
+      "solution": "SELECT name, marks, NTH_VALUE(name, 2) OVER (ORDER BY marks DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS second_name FROM students;",
+      "expected": "The second-highest name on every row."
+     },
+     {
+      "title": "PERCENT_RANK",
+      "task": "Write a SQL example that demonstrates PERCENT_RANK.",
+      "solution": "SELECT name, marks, PERCENT_RANK() OVER (ORDER BY marks) AS pct FROM students;",
+      "expected": "A percentile from 0 to 1."
+     },
+     {
+      "title": "CUME_DIST",
+      "task": "Write a SQL example that demonstrates CUME_DIST.",
+      "solution": "SELECT name, marks, CUME_DIST() OVER (ORDER BY marks) AS cume FROM students;",
+      "expected": "The cumulative fraction."
+     },
+     {
+      "title": "NTILE Buckets",
+      "task": "Write a SQL example that demonstrates NTILE Buckets.",
+      "solution": "SELECT name, marks, NTILE(4) OVER (ORDER BY marks DESC) AS quartile FROM students;",
+      "expected": "A quartile number."
+     },
+     {
+      "title": "Percent of Total",
+      "task": "Write a SQL example that demonstrates Percent of Total.",
+      "solution": "SELECT name, marks, ROUND(100.0 * marks / SUM(marks) OVER (), 2) AS pct FROM students;",
+      "expected": "Each mark as a percentage of the total."
+     },
+     {
+      "title": "Difference from Previous",
+      "task": "Write a SQL example that demonstrates Difference from Previous.",
+      "solution": "SELECT id, marks, marks - LAG(marks) OVER (ORDER BY id) AS delta FROM students;",
+      "expected": "The change from the prior row."
+     },
+     {
+      "title": "Median with PERCENTILE_CONT",
+      "task": "Write a SQL example that demonstrates Median with PERCENTILE_CONT.",
+      "solution": "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY marks) AS median FROM students;",
+      "expected": "The median mark."
+     },
+     {
+      "title": "Mode with MODE",
+      "task": "Write a SQL example that demonstrates Mode with MODE.",
+      "solution": "SELECT MODE() WITHIN GROUP (ORDER BY marks) AS mode FROM students;",
+      "expected": "The most common mark."
+     },
+     {
+      "title": "Practical Ranking Report",
+      "task": "Write a SQL example that demonstrates Practical Ranking Report.",
+      "solution": "WITH ranked AS (SELECT name, marks, RANK() OVER (ORDER BY marks DESC) AS r, ROUND(100.0 * marks / SUM(marks) OVER (), 2) AS pct FROM students) SELECT * FROM ranked WHERE r <= 5 ORDER BY r;",
+      "expected": "Top five with rank and share."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 16 · Why does Ranking vs Row Number matter?",
+      "answer": "RANK shares numbers across ties and leaves gaps, DENSE_RANK shares without gaps, and ROW_NUMBER is unique but arbitrary on ties. Choose by tie semantics. ROW_NUMBER needs a total order. DENSE_RANK is compact."
+     },
+     {
+      "q": "Module 16 · Why does Top N per Group matter?",
+      "answer": "Top-N per group ranks rows inside each partition and filters the rank in an outer query. Partition by the group. Order by the ranking key. Filter the rank outside."
+     },
+     {
+      "q": "Module 16 · Why does Running Totals matter?",
+      "answer": "A running total uses SUM with an unbounded preceding frame and restarts per partition. Order by a stable key. Use UNBOUNDED PRECEDING. Partition for group totals."
+     },
+     {
+      "q": "Module 16 · Why does Moving Averages matter?",
+      "answer": "A moving average uses a bounded frame and a stable order so each row sees the same number of neighbors. Pick the frame width. Use ROWS for exact counts. Use RANGE for date windows."
+     },
+     {
+      "q": "Module 16 · Why does Frame Boundaries matter?",
+      "answer": "Frame boundaries use UNBOUNDED PRECEDING, n PRECEDING, CURRENT ROW, n FOLLOWING and UNBOUNDED FOLLOWING. Start must not follow end. The default frame is RANGE UNBOUNDED PRECEDING TO CURRENT ROW. Frames require ORDER BY."
+     },
+     {
+      "q": "Module 16 · Why does ROWS Frame matter?",
+      "answer": "ROWS counts actual rows, so duplicate ORDER BY values are still separate frame positions. Exact row counts. Duplicates are separate. Good for moving averages."
+     },
+     {
+      "q": "Module 16 · Why does RANGE Frame matter?",
+      "answer": "RANGE includes peer rows with equal ORDER BY values, so duplicates move through the frame together. Peers share a frame. Good for value ranges. Date ranges use intervals."
+     },
+     {
+      "q": "Module 16 · Why does GROUPS Frame matter?",
+      "answer": "GROUPS counts peer groups rather than physical rows, which is useful when ties should be one unit. Groups are peer sets. It sits between ROWS and RANGE. It needs ORDER BY."
+     },
+     {
+      "q": "Module 16 · Why does EXCLUDE Clause matter?",
+      "answer": "EXCLUDE CURRENT ROW, EXCLUDE GROUP and EXCLUDE TIES remove rows from the frame for calculations such as leave-one-out averages. It applies after the frame. PostgreSQL supports it. It is useful for comparisons."
+     },
+     {
+      "q": "Module 16 · Why does LAG and LEAD matter?",
+      "answer": "LAG and LEAD compare a row with an earlier or later row using an offset and optional default. Offset defaults to 1. Order must be deterministic. Partition for group-local comparisons."
+     },
+     {
+      "q": "Module 16 · Why does FIRST_VALUE and LAST_VALUE matter?",
+      "answer": "FIRST_VALUE and LAST_VALUE return boundary values from the frame, so the frame definition determines the result. They respect the frame. LAST_VALUE needs a full frame for the last row. Partition for group boundaries."
+     },
+     {
+      "q": "Module 16 · Why does NTH_VALUE matter?",
+      "answer": "NTH_VALUE returns the value at a one-based position inside the frame, with an optional direction. Position is one-based. The frame must include the row. It returns NULL when absent."
+     },
+     {
+      "q": "Module 16 · Why does PERCENT_RANK matter?",
+      "answer": "PERCENT_RANK returns (rank - 1) / (rows - 1), giving a value from 0 to 1 for ordered rows. It uses RANK semantics. The best row is 0. The worst row is 1."
+     },
+     {
+      "q": "Module 16 · Why does CUME_DIST matter?",
+      "answer": "CUME_DIST returns the fraction of rows at or below the current peer group, always greater than zero and at most one. It includes peers. It is cumulative. It differs from PERCENT_RANK."
+     },
+     {
+      "q": "Module 16 · Why does NTILE Buckets matter?",
+      "answer": "NTILE(n) assigns bucket numbers from 1 to n, with earlier buckets taking the extra rows. It needs an order. Buckets differ by at most one. It is good for quartiles."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Top N filtered too early",
+      "broken": "SELECT course_id, student_id, ROW_NUMBER() OVER (PARTITION BY course_id ORDER BY student_id) AS rn FROM enrollments WHERE rn <= 3;",
+      "fix": "WITH ranked AS (SELECT course_id, student_id, ROW_NUMBER() OVER (PARTITION BY course_id ORDER BY student_id) AS rn FROM enrollments) SELECT * FROM ranked WHERE rn <= 3;",
+      "error": "column \"rn\" does not exist",
+      "expected": "Three rows per course."
+     },
+     {
+      "title": "Default frame surprise",
+      "broken": "SELECT id, marks, LAST_VALUE(marks) OVER (ORDER BY id) AS last_mark FROM students;",
+      "fix": "SELECT id, marks, LAST_VALUE(marks) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_mark FROM students;",
+      "error": "LAST_VALUE sees only up to the current row",
+      "expected": "The true last mark."
+     },
+     {
+      "title": "RANGE with integer offsets",
+      "broken": "SELECT id, marks, SUM(marks) OVER (ORDER BY id RANGE BETWEEN 1 PRECEDING AND CURRENT ROW) FROM students;",
+      "fix": "SELECT id, marks, SUM(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) FROM students;",
+      "error": "RANGE offsets must match the ORDER BY type",
+      "expected": "A two-row sum."
+     },
+     {
+      "title": "Missing ORDER BY",
+      "broken": "SELECT id, SUM(marks) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) FROM students;",
+      "fix": "SELECT id, SUM(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) FROM students;",
+      "error": "frame requires an ORDER BY",
+      "expected": "A two-row running sum."
+     },
+     {
+      "title": "PERCENTILE without WITHIN GROUP",
+      "broken": "SELECT PERCENTILE_CONT(0.5) OVER (ORDER BY marks) FROM students;",
+      "fix": "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY marks) FROM students;",
+      "error": "PERCENTILE_CONT is an ordered-set aggregate",
+      "expected": "The median."
+     },
+     {
+      "title": "MODE as a window",
+      "broken": "SELECT MODE(marks) OVER () FROM students;",
+      "fix": "SELECT MODE() WITHIN GROUP (ORDER BY marks) FROM students;",
+      "error": "MODE is not a window function",
+      "expected": "The most common mark."
+     },
+     {
+      "title": "NTILE without order",
+      "broken": "SELECT NTILE(4) OVER () FROM students;",
+      "fix": "SELECT NTILE(4) OVER (ORDER BY marks DESC) FROM students;",
+      "error": "NTILE needs an ORDER BY",
+      "expected": "Quartiles."
+     },
+     {
+      "title": "Wrong NTH_VALUE index",
+      "broken": "SELECT NTH_VALUE(name, 0) OVER (ORDER BY marks DESC) FROM students;",
+      "fix": "SELECT NTH_VALUE(name, 1) OVER (ORDER BY marks DESC) FROM students;",
+      "error": "NTH_VALUE position must be greater than zero",
+      "expected": "The first name."
+     },
+     {
+      "title": "Exclusion syntax",
+      "broken": "SELECT AVG(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING EXCLUDE) FROM students;",
+      "fix": "SELECT AVG(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING EXCLUDE CURRENT ROW) FROM students;",
+      "error": "syntax error at or near \")\"",
+      "expected": "Neighbor average."
+     },
+     {
+      "title": "Percent divide by zero",
+      "broken": "SELECT 100 * marks / SUM(marks) OVER () FROM students;",
+      "fix": "SELECT 100.0 * marks / NULLIF(SUM(marks) OVER (), 0) FROM students;",
+      "error": "division by zero when the total is zero",
+      "expected": "A safe percentage."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 16 · State one key rule for Ranking vs Row Number.",
+      "answer": "Choose by tie semantics."
+     },
+     {
+      "q": "Module 16 · State one key rule for Top N per Group.",
+      "answer": "Partition by the group."
+     },
+     {
+      "q": "Module 16 · State one key rule for Running Totals.",
+      "answer": "Order by a stable key."
+     },
+     {
+      "q": "Module 16 · State one key rule for Moving Averages.",
+      "answer": "Pick the frame width."
+     },
+     {
+      "q": "Module 16 · State one key rule for Frame Boundaries.",
+      "answer": "Start must not follow end."
+     },
+     {
+      "q": "Module 16 · State one key rule for ROWS Frame.",
+      "answer": "Exact row counts."
+     },
+     {
+      "q": "Module 16 · State one key rule for RANGE Frame.",
+      "answer": "Peers share a frame."
+     },
+     {
+      "q": "Module 16 · State one key rule for GROUPS Frame.",
+      "answer": "Groups are peer sets."
+     },
+     {
+      "q": "Module 16 · State one key rule for EXCLUDE Clause.",
+      "answer": "It applies after the frame."
+     },
+     {
+      "q": "Module 16 · State one key rule for LAG and LEAD.",
+      "answer": "Offset defaults to 1."
+     }
+    ]
+   }
+  }
+ ]
+}

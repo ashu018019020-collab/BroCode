@@ -1,0 +1,919 @@
+{
+ "modules": [
+  {
+   "id": "sql21",
+   "no": 21,
+   "title": "Database Design and Normalization",
+   "goal": "Model entities and relationships so the schema stays correct as it grows.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Data Modeling Basics",
+     "simple": "Schema design entities, attributes aur relationships se shuru hota hai.",
+     "pro": "Data modeling identifies the nouns, their attributes and the relationships before tables are written.",
+     "points": [
+      "Find entities.",
+      "List attributes.",
+      "Define relationships."
+     ],
+     "example": {
+      "sql": "-- students, courses and enrollments are the core entities",
+      "output": "A three-entity model."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Entities",
+     "simple": "Entity ek real-world object ya concept hai.",
+     "pro": "An entity becomes a table, with each row representing one instance of that concept.",
+     "points": [
+      "Students are an entity.",
+      "Courses are an entity.",
+      "Enrollments connect them."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Attributes",
+     "simple": "Attributes entity ke properties hote hain.",
+     "pro": "Attributes become columns with a type, nullability and constraints that reflect the domain.",
+     "points": [
+      "Choose precise types.",
+      "Mark required attributes.",
+      "Avoid overloaded columns."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE, marks INTEGER CHECK (marks BETWEEN 0 AND 100));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Keys",
+     "simple": "Keys rows ko identify aur relate karte hain.",
+     "pro": "A primary key identifies a row; a foreign key references another table’s key and enforces the relationship.",
+     "points": [
+      "Primary key is unique and not null.",
+      "Foreign keys enforce relationships.",
+      "Keys should be stable."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Relationships",
+     "simple": "Relationships cardinality batate hain.",
+     "pro": "Relationships are one-to-one, one-to-many or many-to-many; the cardinality determines where keys live.",
+     "points": [
+      "1:1 shares a key.",
+      "1:N puts the foreign key on the many side.",
+      "M:N needs a junction table."
+     ],
+     "example": {
+      "sql": "CREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "One-to-One",
+     "simple": "1:1 relationship me har row ka ek partner hota hai.",
+     "pro": "A one-to-one relationship uses a unique foreign key or a shared primary key, often to split optional or sensitive data.",
+     "points": [
+      "Use a unique foreign key.",
+      "Sharing the primary key is common.",
+      "Do not use it for unrelated data."
+     ],
+     "example": {
+      "sql": "CREATE TABLE student_profiles (student_id BIGINT PRIMARY KEY REFERENCES students(id), bio TEXT);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "One-to-Many",
+     "simple": "1:N relationship me parent ke multiple children hote hain.",
+     "pro": "The foreign key lives on the many side, pointing back to the one parent.",
+     "points": [
+      "Parent key is referenced.",
+      "Child holds the foreign key.",
+      "Index the foreign key."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Many-to-Many",
+     "simple": "M:N relationship ke liye junction table chahiye.",
+     "pro": "A junction table stores one row per pair and can carry relationship attributes such as enrollment date.",
+     "points": [
+      "Two foreign keys.",
+      "Composite primary key.",
+      "Relationship attributes live here."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Normalization",
+     "simple": "Normalization duplication aur update anomalies kam karta hai.",
+     "pro": "Normalization organizes data into related tables so each fact is stored once and updated in one place.",
+     "points": [
+      "Reduce duplication.",
+      "Avoid update anomalies.",
+      "Normalize first, denormalize deliberately."
+     ],
+     "example": {
+      "sql": "CREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "First Normal Form",
+     "simple": "1NF atomic values aur repeating groups hataata hai.",
+     "pro": "First normal form requires atomic column values and no repeating groups or arrays masquerading as columns.",
+     "points": [
+      "One value per cell.",
+      "No repeating columns.",
+      "Give each row a key."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Second Normal Form",
+     "simple": "2NF partial dependencies hataata hai.",
+     "pro": "Second normal form removes attributes that depend on only part of a composite key.",
+     "points": [
+      "Start with 1NF.",
+      "Check composite keys.",
+      "Move partial dependencies out."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments (student_id BIGINT, course_id INTEGER, grade TEXT, PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Third Normal Form",
+     "simple": "3NF transitive dependencies hataata hai.",
+     "pro": "Third normal form removes non-key attributes that depend on other non-key attributes.",
+     "points": [
+      "Start with 2NF.",
+      "Move derived facts out.",
+      "Keep each fact once."
+     ],
+     "example": {
+      "sql": "CREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "BCNF",
+     "simple": "BCNF strong normal form hai.",
+     "pro": "Boyce-Codd normal form requires every determinant to be a candidate key, removing remaining anomalies from overlapping keys.",
+     "points": [
+      "Stronger than 3NF.",
+      "Check all determinants.",
+      "Split overlapping keys."
+     ],
+     "example": {
+      "sql": "CREATE TABLE course_rooms (course_id INTEGER, room TEXT, PRIMARY KEY (course_id, room));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Denormalization",
+     "simple": "Denormalization performance ke liye duplication add karta hai.",
+     "pro": "Denormalization deliberately duplicates or precomputes data to speed reads, accepting extra write complexity.",
+     "points": [
+      "Measure first.",
+      "Document the duplication.",
+      "Keep it synchronized."
+     ],
+     "example": {
+      "sql": "ALTER TABLE courses ADD COLUMN enrolled_count INTEGER NOT NULL DEFAULT 0;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Surrogate vs Natural Keys",
+     "simple": "Surrogate key generated hota hai; natural key business value hai.",
+     "pro": "A surrogate key is a generated identifier, while a natural key comes from the domain; surrogate keys are stable and compact.",
+     "points": [
+      "Surrogates are stable.",
+      "Natural keys can change.",
+      "Keep a unique natural key when needed."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, email TEXT UNIQUE);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Junction Tables",
+     "simple": "Junction table M:N relationship ko rows me todta hai.",
+     "pro": "A junction table has foreign keys to both sides and usually a composite primary key over the pair.",
+     "points": [
+      "One row per relationship.",
+      "Add relationship attributes.",
+      "Index both foreign keys."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Audit Columns",
+     "simple": "Audit columns created/updated timestamps rakhte hain.",
+     "pro": "created_at and updated_at columns make data changes observable and support debugging and reporting.",
+     "points": [
+      "Default created_at to now.",
+      "Update updated_at deliberately.",
+      "Store timestamps with time zone."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Soft Deletes",
+     "simple": "Soft delete row ko flag karta hai, remove nahi.",
+     "pro": "A deleted_at timestamp hides rows without physically removing them, but every query must filter it.",
+     "points": [
+      "Add deleted_at.",
+      "Filter in queries or views.",
+      "Hard-delete when policy requires."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD COLUMN deleted_at TIMESTAMPTZ;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Schema Naming",
+     "simple": "Clear names schema ko understandable banate hain.",
+     "pro": "Consistent table, column and constraint names reduce mistakes and make migrations predictable.",
+     "points": [
+      "Use snake_case.",
+      "Plural table names are common.",
+      "Name keys and constraints explicitly."
+     ],
+     "example": {
+      "sql": "CREATE TABLE course_enrollments (student_id BIGINT, course_id INTEGER, PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical School Schema",
+     "simple": "Students, courses aur enrollments ka clean schema banao.",
+     "pro": "A school schema uses students and courses as entities and enrollments as the many-to-many junction with its own attributes.",
+     "points": [
+      "Keys first.",
+      "Foreign keys next.",
+      "Constraints last.",
+      "Index relationship columns."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE);\nCREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);\nCREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE, enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE × 3"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 21 · Data Modeling Basics: what is the main purpose?",
+      "options": [
+       "Data Modeling Basics: Schema design entities, attributes aur relationships se shuru hota hai.",
+       "Entities: Entity ek real-world object ya concept hai.",
+       "Many-to-Many: M:N relationship ke liye junction table chahiye.",
+       "Denormalization: Denormalization performance ke liye duplication add karta hai."
+      ],
+      "answer": "Data Modeling Basics: Schema design entities, attributes aur relationships se shuru hota hai.",
+      "why": "Data modeling identifies the nouns, their attributes and the relationships before tables are written."
+     },
+     {
+      "q": "Module 21 · Entities: what is the main purpose?",
+      "options": [
+       "Attributes: Attributes entity ke properties hote hain.",
+       "Normalization: Normalization duplication aur update anomalies kam karta hai.",
+       "Surrogate vs Natural Keys: Surrogate key generated hota hai; natural key business value hai.",
+       "Entities: Entity ek real-world object ya concept hai."
+      ],
+      "answer": "Entities: Entity ek real-world object ya concept hai.",
+      "why": "An entity becomes a table, with each row representing one instance of that concept."
+     },
+     {
+      "q": "Module 21 · Attributes: what is the main purpose?",
+      "options": [
+       "First Normal Form: 1NF atomic values aur repeating groups hataata hai.",
+       "Junction Tables: Junction table M:N relationship ko rows me todta hai.",
+       "Attributes: Attributes entity ke properties hote hain.",
+       "Keys: Keys rows ko identify aur relate karte hain."
+      ],
+      "answer": "Attributes: Attributes entity ke properties hote hain.",
+      "why": "Attributes become columns with a type, nullability and constraints that reflect the domain."
+     },
+     {
+      "q": "Module 21 · Keys: what is the main purpose?",
+      "options": [
+       "Audit Columns: Audit columns created/updated timestamps rakhte hain.",
+       "Keys: Keys rows ko identify aur relate karte hain.",
+       "Relationships: Relationships cardinality batate hain.",
+       "Second Normal Form: 2NF partial dependencies hataata hai."
+      ],
+      "answer": "Keys: Keys rows ko identify aur relate karte hain.",
+      "why": "A primary key identifies a row; a foreign key references another table’s key and enforces the relationship."
+     },
+     {
+      "q": "Module 21 · Relationships: what is the main purpose?",
+      "options": [
+       "Relationships: Relationships cardinality batate hain.",
+       "One-to-One: 1:1 relationship me har row ka ek partner hota hai.",
+       "Third Normal Form: 3NF transitive dependencies hataata hai.",
+       "Soft Deletes: Soft delete row ko flag karta hai, remove nahi."
+      ],
+      "answer": "Relationships: Relationships cardinality batate hain.",
+      "why": "Relationships are one-to-one, one-to-many or many-to-many; the cardinality determines where keys live."
+     },
+     {
+      "q": "Module 21 · One-to-One: what is the main purpose?",
+      "options": [
+       "One-to-Many: 1:N relationship me parent ke multiple children hote hain.",
+       "BCNF: BCNF strong normal form hai.",
+       "Schema Naming: Clear names schema ko understandable banate hain.",
+       "One-to-One: 1:1 relationship me har row ka ek partner hota hai."
+      ],
+      "answer": "One-to-One: 1:1 relationship me har row ka ek partner hota hai.",
+      "why": "A one-to-one relationship uses a unique foreign key or a shared primary key, often to split optional or sensitive data."
+     },
+     {
+      "q": "Module 21 · One-to-Many: what is the main purpose?",
+      "options": [
+       "Denormalization: Denormalization performance ke liye duplication add karta hai.",
+       "Practical School Schema: Students, courses aur enrollments ka clean schema banao.",
+       "One-to-Many: 1:N relationship me parent ke multiple children hote hain.",
+       "Many-to-Many: M:N relationship ke liye junction table chahiye."
+      ],
+      "answer": "One-to-Many: 1:N relationship me parent ke multiple children hote hain.",
+      "why": "The foreign key lives on the many side, pointing back to the one parent."
+     },
+     {
+      "q": "Module 21 · Many-to-Many: what is the main purpose?",
+      "options": [
+       "Data Modeling Basics: Schema design entities, attributes aur relationships se shuru hota hai.",
+       "Many-to-Many: M:N relationship ke liye junction table chahiye.",
+       "Normalization: Normalization duplication aur update anomalies kam karta hai.",
+       "Surrogate vs Natural Keys: Surrogate key generated hota hai; natural key business value hai."
+      ],
+      "answer": "Many-to-Many: M:N relationship ke liye junction table chahiye.",
+      "why": "A junction table stores one row per pair and can carry relationship attributes such as enrollment date."
+     },
+     {
+      "q": "Module 21 · Normalization: what is the main purpose?",
+      "options": [
+       "Normalization: Normalization duplication aur update anomalies kam karta hai.",
+       "First Normal Form: 1NF atomic values aur repeating groups hataata hai.",
+       "Junction Tables: Junction table M:N relationship ko rows me todta hai.",
+       "Entities: Entity ek real-world object ya concept hai."
+      ],
+      "answer": "Normalization: Normalization duplication aur update anomalies kam karta hai.",
+      "why": "Normalization organizes data into related tables so each fact is stored once and updated in one place."
+     },
+     {
+      "q": "Module 21 · First Normal Form: what is the main purpose?",
+      "options": [
+       "Second Normal Form: 2NF partial dependencies hataata hai.",
+       "Audit Columns: Audit columns created/updated timestamps rakhte hain.",
+       "Attributes: Attributes entity ke properties hote hain.",
+       "First Normal Form: 1NF atomic values aur repeating groups hataata hai."
+      ],
+      "answer": "First Normal Form: 1NF atomic values aur repeating groups hataata hai.",
+      "why": "First normal form requires atomic column values and no repeating groups or arrays masquerading as columns."
+     },
+     {
+      "q": "Module 21 · Second Normal Form: what is the main purpose?",
+      "options": [
+       "Soft Deletes: Soft delete row ko flag karta hai, remove nahi.",
+       "Keys: Keys rows ko identify aur relate karte hain.",
+       "Second Normal Form: 2NF partial dependencies hataata hai.",
+       "Third Normal Form: 3NF transitive dependencies hataata hai."
+      ],
+      "answer": "Second Normal Form: 2NF partial dependencies hataata hai.",
+      "why": "Second normal form removes attributes that depend on only part of a composite key."
+     },
+     {
+      "q": "Module 21 · Third Normal Form: what is the main purpose?",
+      "options": [
+       "Relationships: Relationships cardinality batate hain.",
+       "Third Normal Form: 3NF transitive dependencies hataata hai.",
+       "BCNF: BCNF strong normal form hai.",
+       "Schema Naming: Clear names schema ko understandable banate hain."
+      ],
+      "answer": "Third Normal Form: 3NF transitive dependencies hataata hai.",
+      "why": "Third normal form removes non-key attributes that depend on other non-key attributes."
+     },
+     {
+      "q": "Module 21 · BCNF: what is the main purpose?",
+      "options": [
+       "BCNF: BCNF strong normal form hai.",
+       "Denormalization: Denormalization performance ke liye duplication add karta hai.",
+       "Practical School Schema: Students, courses aur enrollments ka clean schema banao.",
+       "One-to-One: 1:1 relationship me har row ka ek partner hota hai."
+      ],
+      "answer": "BCNF: BCNF strong normal form hai.",
+      "why": "Boyce-Codd normal form requires every determinant to be a candidate key, removing remaining anomalies from overlapping keys."
+     },
+     {
+      "q": "Module 21 · Denormalization: what is the main purpose?",
+      "options": [
+       "Surrogate vs Natural Keys: Surrogate key generated hota hai; natural key business value hai.",
+       "Data Modeling Basics: Schema design entities, attributes aur relationships se shuru hota hai.",
+       "One-to-Many: 1:N relationship me parent ke multiple children hote hain.",
+       "Denormalization: Denormalization performance ke liye duplication add karta hai."
+      ],
+      "answer": "Denormalization: Denormalization performance ke liye duplication add karta hai.",
+      "why": "Denormalization deliberately duplicates or precomputes data to speed reads, accepting extra write complexity."
+     },
+     {
+      "q": "Module 21 · Surrogate vs Natural Keys: what is the main purpose?",
+      "options": [
+       "Entities: Entity ek real-world object ya concept hai.",
+       "Many-to-Many: M:N relationship ke liye junction table chahiye.",
+       "Surrogate vs Natural Keys: Surrogate key generated hota hai; natural key business value hai.",
+       "Junction Tables: Junction table M:N relationship ko rows me todta hai."
+      ],
+      "answer": "Surrogate vs Natural Keys: Surrogate key generated hota hai; natural key business value hai.",
+      "why": "A surrogate key is a generated identifier, while a natural key comes from the domain; surrogate keys are stable and compact."
+     },
+     {
+      "q": "Module 21 · Junction Tables: what is the main purpose?",
+      "options": [
+       "Normalization: Normalization duplication aur update anomalies kam karta hai.",
+       "Junction Tables: Junction table M:N relationship ko rows me todta hai.",
+       "Audit Columns: Audit columns created/updated timestamps rakhte hain.",
+       "Attributes: Attributes entity ke properties hote hain."
+      ],
+      "answer": "Junction Tables: Junction table M:N relationship ko rows me todta hai.",
+      "why": "A junction table has foreign keys to both sides and usually a composite primary key over the pair."
+     },
+     {
+      "q": "Module 21 · Audit Columns: what is the main purpose?",
+      "options": [
+       "Audit Columns: Audit columns created/updated timestamps rakhte hain.",
+       "Soft Deletes: Soft delete row ko flag karta hai, remove nahi.",
+       "Keys: Keys rows ko identify aur relate karte hain.",
+       "First Normal Form: 1NF atomic values aur repeating groups hataata hai."
+      ],
+      "answer": "Audit Columns: Audit columns created/updated timestamps rakhte hain.",
+      "why": "created_at and updated_at columns make data changes observable and support debugging and reporting."
+     },
+     {
+      "q": "Module 21 · Soft Deletes: what is the main purpose?",
+      "options": [
+       "Schema Naming: Clear names schema ko understandable banate hain.",
+       "Relationships: Relationships cardinality batate hain.",
+       "Second Normal Form: 2NF partial dependencies hataata hai.",
+       "Soft Deletes: Soft delete row ko flag karta hai, remove nahi."
+      ],
+      "answer": "Soft Deletes: Soft delete row ko flag karta hai, remove nahi.",
+      "why": "A deleted_at timestamp hides rows without physically removing them, but every query must filter it."
+     },
+     {
+      "q": "Module 21 · Schema Naming: what is the main purpose?",
+      "options": [
+       "One-to-One: 1:1 relationship me har row ka ek partner hota hai.",
+       "Third Normal Form: 3NF transitive dependencies hataata hai.",
+       "Schema Naming: Clear names schema ko understandable banate hain.",
+       "Practical School Schema: Students, courses aur enrollments ka clean schema banao."
+      ],
+      "answer": "Schema Naming: Clear names schema ko understandable banate hain.",
+      "why": "Consistent table, column and constraint names reduce mistakes and make migrations predictable."
+     },
+     {
+      "q": "Module 21 · Practical School Schema: what is the main purpose?",
+      "options": [
+       "BCNF: BCNF strong normal form hai.",
+       "Practical School Schema: Students, courses aur enrollments ka clean schema banao.",
+       "Data Modeling Basics: Schema design entities, attributes aur relationships se shuru hota hai.",
+       "One-to-Many: 1:N relationship me parent ke multiple children hote hain."
+      ],
+      "answer": "Practical School Schema: Students, courses aur enrollments ka clean schema banao.",
+      "why": "A school schema uses students and courses as entities and enrollments as the many-to-many junction with its own attributes."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 21 · Explain Data Modeling Basics in a production query.",
+      "answer": "Data modeling identifies the nouns, their attributes and the relationships before tables are written. Key rules: Find entities. List attributes. Define relationships."
+     },
+     {
+      "q": "Module 21 · Explain Entities in a production query.",
+      "answer": "An entity becomes a table, with each row representing one instance of that concept. Key rules: Students are an entity. Courses are an entity. Enrollments connect them."
+     },
+     {
+      "q": "Module 21 · Explain Attributes in a production query.",
+      "answer": "Attributes become columns with a type, nullability and constraints that reflect the domain. Key rules: Choose precise types. Mark required attributes. Avoid overloaded columns."
+     },
+     {
+      "q": "Module 21 · Explain Keys in a production query.",
+      "answer": "A primary key identifies a row; a foreign key references another table’s key and enforces the relationship. Key rules: Primary key is unique and not null. Foreign keys enforce relationships. Keys should be stable."
+     },
+     {
+      "q": "Module 21 · Explain Relationships in a production query.",
+      "answer": "Relationships are one-to-one, one-to-many or many-to-many; the cardinality determines where keys live. Key rules: 1:1 shares a key. 1:N puts the foreign key on the many side. M:N needs a junction table."
+     },
+     {
+      "q": "Module 21 · Explain One-to-One in a production query.",
+      "answer": "A one-to-one relationship uses a unique foreign key or a shared primary key, often to split optional or sensitive data. Key rules: Use a unique foreign key. Sharing the primary key is common. Do not use it for unrelated data."
+     },
+     {
+      "q": "Module 21 · Explain One-to-Many in a production query.",
+      "answer": "The foreign key lives on the many side, pointing back to the one parent. Key rules: Parent key is referenced. Child holds the foreign key. Index the foreign key."
+     },
+     {
+      "q": "Module 21 · Explain Many-to-Many in a production query.",
+      "answer": "A junction table stores one row per pair and can carry relationship attributes such as enrollment date. Key rules: Two foreign keys. Composite primary key. Relationship attributes live here."
+     },
+     {
+      "q": "Module 21 · Explain Normalization in a production query.",
+      "answer": "Normalization organizes data into related tables so each fact is stored once and updated in one place. Key rules: Reduce duplication. Avoid update anomalies. Normalize first, denormalize deliberately."
+     },
+     {
+      "q": "Module 21 · Explain First Normal Form in a production query.",
+      "answer": "First normal form requires atomic column values and no repeating groups or arrays masquerading as columns. Key rules: One value per cell. No repeating columns. Give each row a key."
+     },
+     {
+      "q": "Module 21 · Explain Second Normal Form in a production query.",
+      "answer": "Second normal form removes attributes that depend on only part of a composite key. Key rules: Start with 1NF. Check composite keys. Move partial dependencies out."
+     },
+     {
+      "q": "Module 21 · Explain Third Normal Form in a production query.",
+      "answer": "Third normal form removes non-key attributes that depend on other non-key attributes. Key rules: Start with 2NF. Move derived facts out. Keep each fact once."
+     },
+     {
+      "q": "Module 21 · Explain BCNF in a production query.",
+      "answer": "Boyce-Codd normal form requires every determinant to be a candidate key, removing remaining anomalies from overlapping keys. Key rules: Stronger than 3NF. Check all determinants. Split overlapping keys."
+     },
+     {
+      "q": "Module 21 · Explain Denormalization in a production query.",
+      "answer": "Denormalization deliberately duplicates or precomputes data to speed reads, accepting extra write complexity. Key rules: Measure first. Document the duplication. Keep it synchronized."
+     },
+     {
+      "q": "Module 21 · Explain Surrogate vs Natural Keys in a production query.",
+      "answer": "A surrogate key is a generated identifier, while a natural key comes from the domain; surrogate keys are stable and compact. Key rules: Surrogates are stable. Natural keys can change. Keep a unique natural key when needed."
+     },
+     {
+      "q": "Module 21 · Explain Junction Tables in a production query.",
+      "answer": "A junction table has foreign keys to both sides and usually a composite primary key over the pair. Key rules: One row per relationship. Add relationship attributes. Index both foreign keys."
+     },
+     {
+      "q": "Module 21 · Explain Audit Columns in a production query.",
+      "answer": "created_at and updated_at columns make data changes observable and support debugging and reporting. Key rules: Default created_at to now. Update updated_at deliberately. Store timestamps with time zone."
+     },
+     {
+      "q": "Module 21 · Explain Soft Deletes in a production query.",
+      "answer": "A deleted_at timestamp hides rows without physically removing them, but every query must filter it. Key rules: Add deleted_at. Filter in queries or views. Hard-delete when policy requires."
+     },
+     {
+      "q": "Module 21 · Explain Schema Naming in a production query.",
+      "answer": "Consistent table, column and constraint names reduce mistakes and make migrations predictable. Key rules: Use snake_case. Plural table names are common. Name keys and constraints explicitly."
+     },
+     {
+      "q": "Module 21 · Explain Practical School Schema in a production query.",
+      "answer": "A school schema uses students and courses as entities and enrollments as the many-to-many junction with its own attributes. Key rules: Keys first. Foreign keys next. Constraints last. Index relationship columns."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Data Modeling Basics",
+      "task": "Write a SQL example that demonstrates Data Modeling Basics.",
+      "solution": "-- students, courses and enrollments are the core entities",
+      "expected": "A three-entity model."
+     },
+     {
+      "title": "Entities",
+      "task": "Write a SQL example that demonstrates Entities.",
+      "solution": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Attributes",
+      "task": "Write a SQL example that demonstrates Attributes.",
+      "solution": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE, marks INTEGER CHECK (marks BETWEEN 0 AND 100));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Keys",
+      "task": "Write a SQL example that demonstrates Keys.",
+      "solution": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Relationships",
+      "task": "Write a SQL example that demonstrates Relationships.",
+      "solution": "CREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "One-to-One",
+      "task": "Write a SQL example that demonstrates One-to-One.",
+      "solution": "CREATE TABLE student_profiles (student_id BIGINT PRIMARY KEY REFERENCES students(id), bio TEXT);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "One-to-Many",
+      "task": "Write a SQL example that demonstrates One-to-Many.",
+      "solution": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Many-to-Many",
+      "task": "Write a SQL example that demonstrates Many-to-Many.",
+      "solution": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Normalization",
+      "task": "Write a SQL example that demonstrates Normalization.",
+      "solution": "CREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "First Normal Form",
+      "task": "Write a SQL example that demonstrates First Normal Form.",
+      "solution": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Second Normal Form",
+      "task": "Write a SQL example that demonstrates Second Normal Form.",
+      "solution": "CREATE TABLE enrollments (student_id BIGINT, course_id INTEGER, grade TEXT, PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Third Normal Form",
+      "task": "Write a SQL example that demonstrates Third Normal Form.",
+      "solution": "CREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "BCNF",
+      "task": "Write a SQL example that demonstrates BCNF.",
+      "solution": "CREATE TABLE course_rooms (course_id INTEGER, room TEXT, PRIMARY KEY (course_id, room));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Denormalization",
+      "task": "Write a SQL example that demonstrates Denormalization.",
+      "solution": "ALTER TABLE courses ADD COLUMN enrolled_count INTEGER NOT NULL DEFAULT 0;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Surrogate vs Natural Keys",
+      "task": "Write a SQL example that demonstrates Surrogate vs Natural Keys.",
+      "solution": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, email TEXT UNIQUE);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Junction Tables",
+      "task": "Write a SQL example that demonstrates Junction Tables.",
+      "solution": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Audit Columns",
+      "task": "Write a SQL example that demonstrates Audit Columns.",
+      "solution": "ALTER TABLE students ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Soft Deletes",
+      "task": "Write a SQL example that demonstrates Soft Deletes.",
+      "solution": "ALTER TABLE students ADD COLUMN deleted_at TIMESTAMPTZ;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Schema Naming",
+      "task": "Write a SQL example that demonstrates Schema Naming.",
+      "solution": "CREATE TABLE course_enrollments (student_id BIGINT, course_id INTEGER, PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Practical School Schema",
+      "task": "Write a SQL example that demonstrates Practical School Schema.",
+      "solution": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE);\nCREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);\nCREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE, enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE × 3"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 21 · Why does Data Modeling Basics matter?",
+      "answer": "Data modeling identifies the nouns, their attributes and the relationships before tables are written. Find entities. List attributes. Define relationships."
+     },
+     {
+      "q": "Module 21 · Why does Entities matter?",
+      "answer": "An entity becomes a table, with each row representing one instance of that concept. Students are an entity. Courses are an entity. Enrollments connect them."
+     },
+     {
+      "q": "Module 21 · Why does Attributes matter?",
+      "answer": "Attributes become columns with a type, nullability and constraints that reflect the domain. Choose precise types. Mark required attributes. Avoid overloaded columns."
+     },
+     {
+      "q": "Module 21 · Why does Keys matter?",
+      "answer": "A primary key identifies a row; a foreign key references another table’s key and enforces the relationship. Primary key is unique and not null. Foreign keys enforce relationships. Keys should be stable."
+     },
+     {
+      "q": "Module 21 · Why does Relationships matter?",
+      "answer": "Relationships are one-to-one, one-to-many or many-to-many; the cardinality determines where keys live. 1:1 shares a key. 1:N puts the foreign key on the many side. M:N needs a junction table."
+     },
+     {
+      "q": "Module 21 · Why does One-to-One matter?",
+      "answer": "A one-to-one relationship uses a unique foreign key or a shared primary key, often to split optional or sensitive data. Use a unique foreign key. Sharing the primary key is common. Do not use it for unrelated data."
+     },
+     {
+      "q": "Module 21 · Why does One-to-Many matter?",
+      "answer": "The foreign key lives on the many side, pointing back to the one parent. Parent key is referenced. Child holds the foreign key. Index the foreign key."
+     },
+     {
+      "q": "Module 21 · Why does Many-to-Many matter?",
+      "answer": "A junction table stores one row per pair and can carry relationship attributes such as enrollment date. Two foreign keys. Composite primary key. Relationship attributes live here."
+     },
+     {
+      "q": "Module 21 · Why does Normalization matter?",
+      "answer": "Normalization organizes data into related tables so each fact is stored once and updated in one place. Reduce duplication. Avoid update anomalies. Normalize first, denormalize deliberately."
+     },
+     {
+      "q": "Module 21 · Why does First Normal Form matter?",
+      "answer": "First normal form requires atomic column values and no repeating groups or arrays masquerading as columns. One value per cell. No repeating columns. Give each row a key."
+     },
+     {
+      "q": "Module 21 · Why does Second Normal Form matter?",
+      "answer": "Second normal form removes attributes that depend on only part of a composite key. Start with 1NF. Check composite keys. Move partial dependencies out."
+     },
+     {
+      "q": "Module 21 · Why does Third Normal Form matter?",
+      "answer": "Third normal form removes non-key attributes that depend on other non-key attributes. Start with 2NF. Move derived facts out. Keep each fact once."
+     },
+     {
+      "q": "Module 21 · Why does BCNF matter?",
+      "answer": "Boyce-Codd normal form requires every determinant to be a candidate key, removing remaining anomalies from overlapping keys. Stronger than 3NF. Check all determinants. Split overlapping keys."
+     },
+     {
+      "q": "Module 21 · Why does Denormalization matter?",
+      "answer": "Denormalization deliberately duplicates or precomputes data to speed reads, accepting extra write complexity. Measure first. Document the duplication. Keep it synchronized."
+     },
+     {
+      "q": "Module 21 · Why does Surrogate vs Natural Keys matter?",
+      "answer": "A surrogate key is a generated identifier, while a natural key comes from the domain; surrogate keys are stable and compact. Surrogates are stable. Natural keys can change. Keep a unique natural key when needed."
+     }
+    ],
+    "debug": [
+     {
+      "title": "M:N without junction",
+      "broken": "CREATE TABLE students (id BIGINT PRIMARY KEY, course_ids INTEGER[]);",
+      "fix": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), PRIMARY KEY (student_id, course_id));",
+      "error": "An array hides the many-to-many relationship and its constraints",
+      "expected": "A proper junction table."
+     },
+     {
+      "title": "Duplicated course title",
+      "broken": "CREATE TABLE enrollments (student_id BIGINT, course_id INTEGER, course_title TEXT);",
+      "fix": "CREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT);\nCREATE TABLE enrollments (student_id BIGINT, course_id INTEGER REFERENCES courses(id));",
+      "error": "The title is duplicated on every enrollment",
+      "expected": "One title per course."
+     },
+     {
+      "title": "No primary key",
+      "broken": "CREATE TABLE students (name TEXT, email TEXT);",
+      "fix": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT, email TEXT);",
+      "error": "Rows cannot be identified reliably",
+      "expected": "A keyed table."
+     },
+     {
+      "title": "Wrong foreign key type",
+      "broken": "CREATE TABLE enrollments (student_id INTEGER REFERENCES students(id));",
+      "fix": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id));",
+      "error": "Key types should match",
+      "expected": "A matching foreign key."
+     },
+     {
+      "title": "NULL in composite key",
+      "broken": "CREATE TABLE enrollments (student_id BIGINT, course_id INTEGER, PRIMARY KEY (student_id, course_id));",
+      "fix": "ALTER TABLE enrollments ALTER COLUMN student_id SET NOT NULL;\nALTER TABLE enrollments ALTER COLUMN course_id SET NOT NULL;",
+      "error": "Primary key columns cannot be NULL",
+      "expected": "A valid composite key."
+     },
+     {
+      "title": "Soft delete forgotten",
+      "broken": "SELECT * FROM students;",
+      "fix": "SELECT * FROM students WHERE deleted_at IS NULL;",
+      "error": "Deleted rows still appear",
+      "expected": "Only active students."
+     },
+     {
+      "title": "Over-normalization",
+      "broken": "CREATE TABLE names (id BIGINT PRIMARY KEY, first TEXT, last TEXT);\nCREATE TABLE student_names (student_id BIGINT, name_id BIGINT);",
+      "fix": "CREATE TABLE students (id BIGINT PRIMARY KEY, first_name TEXT, last_name TEXT);",
+      "error": "Splitting a simple attribute adds joins with little benefit",
+      "expected": "A simpler model."
+     },
+     {
+      "title": "Missing audit column",
+      "broken": "CREATE TABLE students (id BIGINT PRIMARY KEY, name TEXT);",
+      "fix": "CREATE TABLE students (id BIGINT PRIMARY KEY, name TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());",
+      "error": "No record of when the row was created",
+      "expected": "An auditable row."
+     },
+     {
+      "title": "Inconsistent naming",
+      "broken": "CREATE TABLE CourseEnrollments (StudentID BIGINT, course_id INTEGER);",
+      "fix": "CREATE TABLE course_enrollments (student_id BIGINT, course_id INTEGER);",
+      "error": "Mixed casing and naming cause mistakes",
+      "expected": "Consistent snake_case."
+     },
+     {
+      "title": "Cascade surprise",
+      "broken": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE);",
+      "fix": "Choose RESTRICT for data you must not lose, or keep CASCADE and document it.",
+      "error": "Deleting a student silently removes enrollments",
+      "expected": "A deliberate delete policy."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 21 · State one key rule for Data Modeling Basics.",
+      "answer": "Find entities."
+     },
+     {
+      "q": "Module 21 · State one key rule for Entities.",
+      "answer": "Students are an entity."
+     },
+     {
+      "q": "Module 21 · State one key rule for Attributes.",
+      "answer": "Choose precise types."
+     },
+     {
+      "q": "Module 21 · State one key rule for Keys.",
+      "answer": "Primary key is unique and not null."
+     },
+     {
+      "q": "Module 21 · State one key rule for Relationships.",
+      "answer": "1:1 shares a key."
+     },
+     {
+      "q": "Module 21 · State one key rule for One-to-One.",
+      "answer": "Use a unique foreign key."
+     },
+     {
+      "q": "Module 21 · State one key rule for One-to-Many.",
+      "answer": "Parent key is referenced."
+     },
+     {
+      "q": "Module 21 · State one key rule for Many-to-Many.",
+      "answer": "Two foreign keys."
+     },
+     {
+      "q": "Module 21 · State one key rule for Normalization.",
+      "answer": "Reduce duplication."
+     },
+     {
+      "q": "Module 21 · State one key rule for First Normal Form.",
+      "answer": "One value per cell."
+     }
+    ]
+   }
+  }
+ ]
+}

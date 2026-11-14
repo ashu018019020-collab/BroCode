@@ -1,0 +1,931 @@
+{
+ "modules": [
+  {
+   "id": "sql36",
+   "no": 36,
+   "title": "Capstone: Production SQL",
+   "goal": "Ship a complete, safe and observable SQL feature from schema to runbook.",
+   "level": "advanced",
+   "hours": 3,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Requirements",
+     "simple": "Feature ko measurable requirements me todo.",
+     "pro": "A production SQL feature starts with the questions, freshness, volume, access and recovery requirements.",
+     "points": [
+      "Define the questions.",
+      "State freshness.",
+      "Estimate volume.",
+      "Name the users."
+     ],
+     "example": {
+      "sql": "-- requirement: monthly enrollment count, refreshed hourly, read-only dashboard",
+      "output": "A written requirement."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Schema Design",
+     "simple": "Schema requirements ko tables aur keys me badle.",
+     "pro": "The schema reflects entities, relationships, constraints and the expected query grain.",
+     "points": [
+      "Model entities.",
+      "Add keys.",
+      "Add constraints.",
+      "Index relationships."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Index Plan",
+     "simple": "Indexes real queries se justify karo.",
+     "pro": "An index plan lists the top queries, their predicates and the smallest indexes that support them.",
+     "points": [
+      "List top queries.",
+      "Match predicates.",
+      "Measure usage."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_enrollments_course_date ON enrollments (course_id, enrolled_on);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Query Design",
+     "simple": "Query ko grain, filters aur joins ke saath likho.",
+     "pro": "A production query states its grain, filters early, joins on indexed keys and avoids unnecessary columns.",
+     "points": [
+      "State grain.",
+      "Filter early.",
+      "Join on keys.",
+      "Select only needed columns."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(DISTINCT student_id) AS students FROM enrollments WHERE enrolled_on >= CURRENT_DATE - INTERVAL '30 days' GROUP BY course_id;",
+      "output": "Distinct students per course."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Transactions",
+     "simple": "Multi-step writes ko atomic banao.",
+     "pro": "A production write uses a transaction, validates the affected count and commits only after verification.",
+     "points": [
+      "Begin.",
+      "Modify.",
+      "Verify.",
+      "Commit or roll back."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 91 WHERE id = 1 RETURNING id, marks;\nCOMMIT;",
+      "output": "A verified update."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Security",
+     "simple": "Feature ko least privilege aur RLS ke saath ship karo.",
+     "pro": "Production access uses a dedicated role, minimal grants and row-level policies for tenant or user data.",
+     "points": [
+      "Dedicated role.",
+      "Minimal grants.",
+      "RLS where needed."
+     ],
+     "example": {
+      "sql": "GRANT SELECT ON enrollment_report TO reporting_role;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Migrations",
+     "simple": "Schema change ko expand-contract se deploy karo.",
+     "pro": "A production migration is versioned, tested, lock-aware and reversible or forward-fixable.",
+     "points": [
+      "Version it.",
+      "Test it.",
+      "Set lock_timeout.",
+      "Plan rollback."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD COLUMN IF NOT EXISTS contact_email TEXT;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Monitoring",
+     "simple": "Errors, latency aur lag monitor karo.",
+     "pro": "Monitoring covers query latency, error rates, replication lag, lock waits and disk growth.",
+     "points": [
+      "Track latency.",
+      "Track errors.",
+      "Alert on lag."
+     ],
+     "example": {
+      "sql": "SELECT query, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;",
+      "output": "Slow statements."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Performance",
+     "simple": "Plan aur measurement se optimize karo.",
+     "pro": "Performance work starts from a baseline plan, changes one thing and verifies the new runtime.",
+     "points": [
+      "Baseline.",
+      "Read plan.",
+      "Change one thing.",
+      "Measure."
+     ],
+     "example": {
+      "sql": "EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM enrollments WHERE course_id = 10;",
+      "output": "A measured plan."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Testing",
+     "simple": "Unit, integration aur data tests likho.",
+     "pro": "Tests cover query results, constraint behavior, permissions and migration paths against realistic data.",
+     "points": [
+      "Test results.",
+      "Test constraints.",
+      "Test permissions.",
+      "Test migrations."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) FROM enrollments WHERE course_id = 10;",
+      "output": "A result to assert."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Documentation",
+     "simple": "Schema, queries aur runbooks document karo.",
+     "pro": "Documentation explains the grain, owners, refresh cadence, access rules and recovery steps.",
+     "points": [
+      "Document grain.",
+      "Document owners.",
+      "Document runbooks."
+     ],
+     "example": {
+      "sql": "-- enrollment_report: one row per course, refreshed hourly",
+      "output": "A documented contract."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Incident Response",
+     "simple": "Failure par detect, contain, recover, learn.",
+     "pro": "An incident runbook detects the issue, contains impact, restores service and records a blameless follow-up.",
+     "points": [
+      "Detect.",
+      "Contain.",
+      "Recover.",
+      "Review."
+     ],
+     "example": {
+      "sql": "SELECT pid, state, wait_event FROM pg_stat_activity WHERE state <> 'idle';",
+      "output": "Active sessions."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Capacity Planning",
+     "simple": "Growth ko measure karke plan karo.",
+     "pro": "Capacity planning tracks table and index growth, connection counts and IOPS against expected growth.",
+     "points": [
+      "Track growth.",
+      "Forecast.",
+      "Test at volume."
+     ],
+     "example": {
+      "sql": "SELECT pg_size_pretty(pg_total_relation_size('enrollments'));",
+      "output": "The table size."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Data Retention",
+     "simple": "Old data ko policy ke saath archive karo.",
+     "pro": "Retention detaches or deletes old partitions and archives them according to legal and product requirements.",
+     "points": [
+      "Define retention.",
+      "Archive.",
+      "Verify deletion."
+     ],
+     "example": {
+      "sql": "ALTER TABLE events DETACH PARTITION events_2024;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Access Review",
+     "simple": "Privileges ko regularly review karo.",
+     "pro": "An access review removes stale roles, excessive grants and unused credentials.",
+     "points": [
+      "List roles.",
+      "Review grants.",
+      "Remove stale access."
+     ],
+     "example": {
+      "sql": "SELECT rolname, rolcanlogin FROM pg_roles;",
+      "output": "Role inventory."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Backup and Restore",
+     "simple": "Feature ke data ke liye restore test karo.",
+     "pro": "A production feature confirms its data is covered by backups and restores within the recovery targets.",
+     "points": [
+      "Confirm coverage.",
+      "Test restore.",
+      "Measure RTO."
+     ],
+     "example": {
+      "sql": "pg_restore -d brocode_test brocode.dump",
+      "output": "A tested restore."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Release Checklist",
+     "simple": "Schema, code, tests, monitoring aur rollback ready karo.",
+     "pro": "The release checklist verifies migrations, compatibility, permissions, observability and rollback before deploy.",
+     "points": [
+      "Migration ready.",
+      "Tests pass.",
+      "Monitoring ready.",
+      "Rollback ready."
+     ],
+     "example": {
+      "sql": "-- release: migration, code, smoke test, monitor",
+      "output": "A release plan."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Post-Launch Review",
+     "simple": "Launch ke baad metrics aur incidents review karo.",
+     "pro": "A post-launch review compares actual latency, errors and data quality with the plan and records follow-ups.",
+     "points": [
+      "Compare metrics.",
+      "Review incidents.",
+      "Record follow-ups."
+     ],
+     "example": {
+      "sql": "SELECT query, calls, mean_exec_time FROM pg_stat_statements ORDER BY calls DESC LIMIT 10;",
+      "output": "Post-launch query profile."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Production Anti-Patterns",
+     "simple": "SELECT *, missing WHERE aur long transactions avoid karo.",
+     "pro": "Common production anti-patterns are unbounded queries, missing predicates, long transactions, over-indexing and untested migrations.",
+     "points": [
+      "Bound queries.",
+      "Use predicates.",
+      "Keep transactions short.",
+      "Test changes."
+     ],
+     "example": {
+      "sql": "SELECT id, name FROM students WHERE id = $1;",
+      "output": "A bounded, targeted query."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Capstone Delivery",
+     "simple": "End-to-end feature ko production standard par ship karo.",
+     "pro": "The capstone combines schema, indexes, queries, transactions, security, migrations, monitoring, tests and a runbook.",
+     "points": [
+      "Design.",
+      "Build.",
+      "Test.",
+      "Secure.",
+      "Monitor.",
+      "Document."
+     ],
+     "example": {
+      "sql": "SELECT c.title, COUNT(DISTINCT e.student_id) AS students FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title ORDER BY students DESC;",
+      "output": "A production-ready enrollment report."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 36 · Requirements: what is the main purpose?",
+      "options": [
+       "Requirements: Feature ko measurable requirements me todo.",
+       "Schema Design: Schema requirements ko tables aur keys me badle.",
+       "Monitoring: Errors, latency aur lag monitor karo.",
+       "Data Retention: Old data ko policy ke saath archive karo."
+      ],
+      "answer": "Requirements: Feature ko measurable requirements me todo.",
+      "why": "A production SQL feature starts with the questions, freshness, volume, access and recovery requirements."
+     },
+     {
+      "q": "Module 36 · Schema Design: what is the main purpose?",
+      "options": [
+       "Index Plan: Indexes real queries se justify karo.",
+       "Performance: Plan aur measurement se optimize karo.",
+       "Access Review: Privileges ko regularly review karo.",
+       "Schema Design: Schema requirements ko tables aur keys me badle."
+      ],
+      "answer": "Schema Design: Schema requirements ko tables aur keys me badle.",
+      "why": "The schema reflects entities, relationships, constraints and the expected query grain."
+     },
+     {
+      "q": "Module 36 · Index Plan: what is the main purpose?",
+      "options": [
+       "Testing: Unit, integration aur data tests likho.",
+       "Backup and Restore: Feature ke data ke liye restore test karo.",
+       "Index Plan: Indexes real queries se justify karo.",
+       "Query Design: Query ko grain, filters aur joins ke saath likho."
+      ],
+      "answer": "Index Plan: Indexes real queries se justify karo.",
+      "why": "An index plan lists the top queries, their predicates and the smallest indexes that support them."
+     },
+     {
+      "q": "Module 36 · Query Design: what is the main purpose?",
+      "options": [
+       "Release Checklist: Schema, code, tests, monitoring aur rollback ready karo.",
+       "Query Design: Query ko grain, filters aur joins ke saath likho.",
+       "Transactions: Multi-step writes ko atomic banao.",
+       "Documentation: Schema, queries aur runbooks document karo."
+      ],
+      "answer": "Query Design: Query ko grain, filters aur joins ke saath likho.",
+      "why": "A production query states its grain, filters early, joins on indexed keys and avoids unnecessary columns."
+     },
+     {
+      "q": "Module 36 · Transactions: what is the main purpose?",
+      "options": [
+       "Transactions: Multi-step writes ko atomic banao.",
+       "Security: Feature ko least privilege aur RLS ke saath ship karo.",
+       "Incident Response: Failure par detect, contain, recover, learn.",
+       "Post-Launch Review: Launch ke baad metrics aur incidents review karo."
+      ],
+      "answer": "Transactions: Multi-step writes ko atomic banao.",
+      "why": "A production write uses a transaction, validates the affected count and commits only after verification."
+     },
+     {
+      "q": "Module 36 · Security: what is the main purpose?",
+      "options": [
+       "Migrations: Schema change ko expand-contract se deploy karo.",
+       "Capacity Planning: Growth ko measure karke plan karo.",
+       "Production Anti-Patterns: SELECT *, missing WHERE aur long transactions avoid karo.",
+       "Security: Feature ko least privilege aur RLS ke saath ship karo."
+      ],
+      "answer": "Security: Feature ko least privilege aur RLS ke saath ship karo.",
+      "why": "Production access uses a dedicated role, minimal grants and row-level policies for tenant or user data."
+     },
+     {
+      "q": "Module 36 · Migrations: what is the main purpose?",
+      "options": [
+       "Data Retention: Old data ko policy ke saath archive karo.",
+       "Capstone Delivery: End-to-end feature ko production standard par ship karo.",
+       "Migrations: Schema change ko expand-contract se deploy karo.",
+       "Monitoring: Errors, latency aur lag monitor karo."
+      ],
+      "answer": "Migrations: Schema change ko expand-contract se deploy karo.",
+      "why": "A production migration is versioned, tested, lock-aware and reversible or forward-fixable."
+     },
+     {
+      "q": "Module 36 · Monitoring: what is the main purpose?",
+      "options": [
+       "Requirements: Feature ko measurable requirements me todo.",
+       "Monitoring: Errors, latency aur lag monitor karo.",
+       "Performance: Plan aur measurement se optimize karo.",
+       "Access Review: Privileges ko regularly review karo."
+      ],
+      "answer": "Monitoring: Errors, latency aur lag monitor karo.",
+      "why": "Monitoring covers query latency, error rates, replication lag, lock waits and disk growth."
+     },
+     {
+      "q": "Module 36 · Performance: what is the main purpose?",
+      "options": [
+       "Performance: Plan aur measurement se optimize karo.",
+       "Testing: Unit, integration aur data tests likho.",
+       "Backup and Restore: Feature ke data ke liye restore test karo.",
+       "Schema Design: Schema requirements ko tables aur keys me badle."
+      ],
+      "answer": "Performance: Plan aur measurement se optimize karo.",
+      "why": "Performance work starts from a baseline plan, changes one thing and verifies the new runtime."
+     },
+     {
+      "q": "Module 36 · Testing: what is the main purpose?",
+      "options": [
+       "Documentation: Schema, queries aur runbooks document karo.",
+       "Release Checklist: Schema, code, tests, monitoring aur rollback ready karo.",
+       "Index Plan: Indexes real queries se justify karo.",
+       "Testing: Unit, integration aur data tests likho."
+      ],
+      "answer": "Testing: Unit, integration aur data tests likho.",
+      "why": "Tests cover query results, constraint behavior, permissions and migration paths against realistic data."
+     },
+     {
+      "q": "Module 36 · Documentation: what is the main purpose?",
+      "options": [
+       "Post-Launch Review: Launch ke baad metrics aur incidents review karo.",
+       "Query Design: Query ko grain, filters aur joins ke saath likho.",
+       "Documentation: Schema, queries aur runbooks document karo.",
+       "Incident Response: Failure par detect, contain, recover, learn."
+      ],
+      "answer": "Documentation: Schema, queries aur runbooks document karo.",
+      "why": "Documentation explains the grain, owners, refresh cadence, access rules and recovery steps."
+     },
+     {
+      "q": "Module 36 · Incident Response: what is the main purpose?",
+      "options": [
+       "Transactions: Multi-step writes ko atomic banao.",
+       "Incident Response: Failure par detect, contain, recover, learn.",
+       "Capacity Planning: Growth ko measure karke plan karo.",
+       "Production Anti-Patterns: SELECT *, missing WHERE aur long transactions avoid karo."
+      ],
+      "answer": "Incident Response: Failure par detect, contain, recover, learn.",
+      "why": "An incident runbook detects the issue, contains impact, restores service and records a blameless follow-up."
+     },
+     {
+      "q": "Module 36 · Capacity Planning: what is the main purpose?",
+      "options": [
+       "Capacity Planning: Growth ko measure karke plan karo.",
+       "Data Retention: Old data ko policy ke saath archive karo.",
+       "Capstone Delivery: End-to-end feature ko production standard par ship karo.",
+       "Security: Feature ko least privilege aur RLS ke saath ship karo."
+      ],
+      "answer": "Capacity Planning: Growth ko measure karke plan karo.",
+      "why": "Capacity planning tracks table and index growth, connection counts and IOPS against expected growth."
+     },
+     {
+      "q": "Module 36 · Data Retention: what is the main purpose?",
+      "options": [
+       "Access Review: Privileges ko regularly review karo.",
+       "Requirements: Feature ko measurable requirements me todo.",
+       "Migrations: Schema change ko expand-contract se deploy karo.",
+       "Data Retention: Old data ko policy ke saath archive karo."
+      ],
+      "answer": "Data Retention: Old data ko policy ke saath archive karo.",
+      "why": "Retention detaches or deletes old partitions and archives them according to legal and product requirements."
+     },
+     {
+      "q": "Module 36 · Access Review: what is the main purpose?",
+      "options": [
+       "Schema Design: Schema requirements ko tables aur keys me badle.",
+       "Monitoring: Errors, latency aur lag monitor karo.",
+       "Access Review: Privileges ko regularly review karo.",
+       "Backup and Restore: Feature ke data ke liye restore test karo."
+      ],
+      "answer": "Access Review: Privileges ko regularly review karo.",
+      "why": "An access review removes stale roles, excessive grants and unused credentials."
+     },
+     {
+      "q": "Module 36 · Backup and Restore: what is the main purpose?",
+      "options": [
+       "Performance: Plan aur measurement se optimize karo.",
+       "Backup and Restore: Feature ke data ke liye restore test karo.",
+       "Release Checklist: Schema, code, tests, monitoring aur rollback ready karo.",
+       "Index Plan: Indexes real queries se justify karo."
+      ],
+      "answer": "Backup and Restore: Feature ke data ke liye restore test karo.",
+      "why": "A production feature confirms its data is covered by backups and restores within the recovery targets."
+     },
+     {
+      "q": "Module 36 · Release Checklist: what is the main purpose?",
+      "options": [
+       "Release Checklist: Schema, code, tests, monitoring aur rollback ready karo.",
+       "Post-Launch Review: Launch ke baad metrics aur incidents review karo.",
+       "Query Design: Query ko grain, filters aur joins ke saath likho.",
+       "Testing: Unit, integration aur data tests likho."
+      ],
+      "answer": "Release Checklist: Schema, code, tests, monitoring aur rollback ready karo.",
+      "why": "The release checklist verifies migrations, compatibility, permissions, observability and rollback before deploy."
+     },
+     {
+      "q": "Module 36 · Post-Launch Review: what is the main purpose?",
+      "options": [
+       "Production Anti-Patterns: SELECT *, missing WHERE aur long transactions avoid karo.",
+       "Transactions: Multi-step writes ko atomic banao.",
+       "Documentation: Schema, queries aur runbooks document karo.",
+       "Post-Launch Review: Launch ke baad metrics aur incidents review karo."
+      ],
+      "answer": "Post-Launch Review: Launch ke baad metrics aur incidents review karo.",
+      "why": "A post-launch review compares actual latency, errors and data quality with the plan and records follow-ups."
+     },
+     {
+      "q": "Module 36 · Production Anti-Patterns: what is the main purpose?",
+      "options": [
+       "Security: Feature ko least privilege aur RLS ke saath ship karo.",
+       "Incident Response: Failure par detect, contain, recover, learn.",
+       "Production Anti-Patterns: SELECT *, missing WHERE aur long transactions avoid karo.",
+       "Capstone Delivery: End-to-end feature ko production standard par ship karo."
+      ],
+      "answer": "Production Anti-Patterns: SELECT *, missing WHERE aur long transactions avoid karo.",
+      "why": "Common production anti-patterns are unbounded queries, missing predicates, long transactions, over-indexing and untested migrations."
+     },
+     {
+      "q": "Module 36 · Capstone Delivery: what is the main purpose?",
+      "options": [
+       "Capacity Planning: Growth ko measure karke plan karo.",
+       "Capstone Delivery: End-to-end feature ko production standard par ship karo.",
+       "Requirements: Feature ko measurable requirements me todo.",
+       "Migrations: Schema change ko expand-contract se deploy karo."
+      ],
+      "answer": "Capstone Delivery: End-to-end feature ko production standard par ship karo.",
+      "why": "The capstone combines schema, indexes, queries, transactions, security, migrations, monitoring, tests and a runbook."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 36 · Explain Requirements in a production query.",
+      "answer": "A production SQL feature starts with the questions, freshness, volume, access and recovery requirements. Key rules: Define the questions. State freshness. Estimate volume. Name the users."
+     },
+     {
+      "q": "Module 36 · Explain Schema Design in a production query.",
+      "answer": "The schema reflects entities, relationships, constraints and the expected query grain. Key rules: Model entities. Add keys. Add constraints. Index relationships."
+     },
+     {
+      "q": "Module 36 · Explain Index Plan in a production query.",
+      "answer": "An index plan lists the top queries, their predicates and the smallest indexes that support them. Key rules: List top queries. Match predicates. Measure usage."
+     },
+     {
+      "q": "Module 36 · Explain Query Design in a production query.",
+      "answer": "A production query states its grain, filters early, joins on indexed keys and avoids unnecessary columns. Key rules: State grain. Filter early. Join on keys. Select only needed columns."
+     },
+     {
+      "q": "Module 36 · Explain Transactions in a production query.",
+      "answer": "A production write uses a transaction, validates the affected count and commits only after verification. Key rules: Begin. Modify. Verify. Commit or roll back."
+     },
+     {
+      "q": "Module 36 · Explain Security in a production query.",
+      "answer": "Production access uses a dedicated role, minimal grants and row-level policies for tenant or user data. Key rules: Dedicated role. Minimal grants. RLS where needed."
+     },
+     {
+      "q": "Module 36 · Explain Migrations in a production query.",
+      "answer": "A production migration is versioned, tested, lock-aware and reversible or forward-fixable. Key rules: Version it. Test it. Set lock_timeout. Plan rollback."
+     },
+     {
+      "q": "Module 36 · Explain Monitoring in a production query.",
+      "answer": "Monitoring covers query latency, error rates, replication lag, lock waits and disk growth. Key rules: Track latency. Track errors. Alert on lag."
+     },
+     {
+      "q": "Module 36 · Explain Performance in a production query.",
+      "answer": "Performance work starts from a baseline plan, changes one thing and verifies the new runtime. Key rules: Baseline. Read plan. Change one thing. Measure."
+     },
+     {
+      "q": "Module 36 · Explain Testing in a production query.",
+      "answer": "Tests cover query results, constraint behavior, permissions and migration paths against realistic data. Key rules: Test results. Test constraints. Test permissions. Test migrations."
+     },
+     {
+      "q": "Module 36 · Explain Documentation in a production query.",
+      "answer": "Documentation explains the grain, owners, refresh cadence, access rules and recovery steps. Key rules: Document grain. Document owners. Document runbooks."
+     },
+     {
+      "q": "Module 36 · Explain Incident Response in a production query.",
+      "answer": "An incident runbook detects the issue, contains impact, restores service and records a blameless follow-up. Key rules: Detect. Contain. Recover. Review."
+     },
+     {
+      "q": "Module 36 · Explain Capacity Planning in a production query.",
+      "answer": "Capacity planning tracks table and index growth, connection counts and IOPS against expected growth. Key rules: Track growth. Forecast. Test at volume."
+     },
+     {
+      "q": "Module 36 · Explain Data Retention in a production query.",
+      "answer": "Retention detaches or deletes old partitions and archives them according to legal and product requirements. Key rules: Define retention. Archive. Verify deletion."
+     },
+     {
+      "q": "Module 36 · Explain Access Review in a production query.",
+      "answer": "An access review removes stale roles, excessive grants and unused credentials. Key rules: List roles. Review grants. Remove stale access."
+     },
+     {
+      "q": "Module 36 · Explain Backup and Restore in a production query.",
+      "answer": "A production feature confirms its data is covered by backups and restores within the recovery targets. Key rules: Confirm coverage. Test restore. Measure RTO."
+     },
+     {
+      "q": "Module 36 · Explain Release Checklist in a production query.",
+      "answer": "The release checklist verifies migrations, compatibility, permissions, observability and rollback before deploy. Key rules: Migration ready. Tests pass. Monitoring ready. Rollback ready."
+     },
+     {
+      "q": "Module 36 · Explain Post-Launch Review in a production query.",
+      "answer": "A post-launch review compares actual latency, errors and data quality with the plan and records follow-ups. Key rules: Compare metrics. Review incidents. Record follow-ups."
+     },
+     {
+      "q": "Module 36 · Explain Production Anti-Patterns in a production query.",
+      "answer": "Common production anti-patterns are unbounded queries, missing predicates, long transactions, over-indexing and untested migrations. Key rules: Bound queries. Use predicates. Keep transactions short. Test changes."
+     },
+     {
+      "q": "Module 36 · Explain Capstone Delivery in a production query.",
+      "answer": "The capstone combines schema, indexes, queries, transactions, security, migrations, monitoring, tests and a runbook. Key rules: Design. Build. Test. Secure. Monitor. Document."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Requirements",
+      "task": "Write a SQL example that demonstrates Requirements.",
+      "solution": "-- requirement: monthly enrollment count, refreshed hourly, read-only dashboard",
+      "expected": "A written requirement."
+     },
+     {
+      "title": "Schema Design",
+      "task": "Write a SQL example that demonstrates Schema Design.",
+      "solution": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Index Plan",
+      "task": "Write a SQL example that demonstrates Index Plan.",
+      "solution": "CREATE INDEX idx_enrollments_course_date ON enrollments (course_id, enrolled_on);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Query Design",
+      "task": "Write a SQL example that demonstrates Query Design.",
+      "solution": "SELECT course_id, COUNT(DISTINCT student_id) AS students FROM enrollments WHERE enrolled_on >= CURRENT_DATE - INTERVAL '30 days' GROUP BY course_id;",
+      "expected": "Distinct students per course."
+     },
+     {
+      "title": "Transactions",
+      "task": "Write a SQL example that demonstrates Transactions.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 91 WHERE id = 1 RETURNING id, marks;\nCOMMIT;",
+      "expected": "A verified update."
+     },
+     {
+      "title": "Security",
+      "task": "Write a SQL example that demonstrates Security.",
+      "solution": "GRANT SELECT ON enrollment_report TO reporting_role;",
+      "expected": "GRANT"
+     },
+     {
+      "title": "Migrations",
+      "task": "Write a SQL example that demonstrates Migrations.",
+      "solution": "ALTER TABLE students ADD COLUMN IF NOT EXISTS contact_email TEXT;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Monitoring",
+      "task": "Write a SQL example that demonstrates Monitoring.",
+      "solution": "SELECT query, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;",
+      "expected": "Slow statements."
+     },
+     {
+      "title": "Performance",
+      "task": "Write a SQL example that demonstrates Performance.",
+      "solution": "EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM enrollments WHERE course_id = 10;",
+      "expected": "A measured plan."
+     },
+     {
+      "title": "Testing",
+      "task": "Write a SQL example that demonstrates Testing.",
+      "solution": "SELECT COUNT(*) FROM enrollments WHERE course_id = 10;",
+      "expected": "A result to assert."
+     },
+     {
+      "title": "Documentation",
+      "task": "Write a SQL example that demonstrates Documentation.",
+      "solution": "-- enrollment_report: one row per course, refreshed hourly",
+      "expected": "A documented contract."
+     },
+     {
+      "title": "Incident Response",
+      "task": "Write a SQL example that demonstrates Incident Response.",
+      "solution": "SELECT pid, state, wait_event FROM pg_stat_activity WHERE state <> 'idle';",
+      "expected": "Active sessions."
+     },
+     {
+      "title": "Capacity Planning",
+      "task": "Write a SQL example that demonstrates Capacity Planning.",
+      "solution": "SELECT pg_size_pretty(pg_total_relation_size('enrollments'));",
+      "expected": "The table size."
+     },
+     {
+      "title": "Data Retention",
+      "task": "Write a SQL example that demonstrates Data Retention.",
+      "solution": "ALTER TABLE events DETACH PARTITION events_2024;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Access Review",
+      "task": "Write a SQL example that demonstrates Access Review.",
+      "solution": "SELECT rolname, rolcanlogin FROM pg_roles;",
+      "expected": "Role inventory."
+     },
+     {
+      "title": "Backup and Restore",
+      "task": "Write a SQL example that demonstrates Backup and Restore.",
+      "solution": "pg_restore -d brocode_test brocode.dump",
+      "expected": "A tested restore."
+     },
+     {
+      "title": "Release Checklist",
+      "task": "Write a SQL example that demonstrates Release Checklist.",
+      "solution": "-- release: migration, code, smoke test, monitor",
+      "expected": "A release plan."
+     },
+     {
+      "title": "Post-Launch Review",
+      "task": "Write a SQL example that demonstrates Post-Launch Review.",
+      "solution": "SELECT query, calls, mean_exec_time FROM pg_stat_statements ORDER BY calls DESC LIMIT 10;",
+      "expected": "Post-launch query profile."
+     },
+     {
+      "title": "Production Anti-Patterns",
+      "task": "Write a SQL example that demonstrates Production Anti-Patterns.",
+      "solution": "SELECT id, name FROM students WHERE id = $1;",
+      "expected": "A bounded, targeted query."
+     },
+     {
+      "title": "Capstone Delivery",
+      "task": "Write a SQL example that demonstrates Capstone Delivery.",
+      "solution": "SELECT c.title, COUNT(DISTINCT e.student_id) AS students FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title ORDER BY students DESC;",
+      "expected": "A production-ready enrollment report."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 36 · Why does Requirements matter?",
+      "answer": "A production SQL feature starts with the questions, freshness, volume, access and recovery requirements. Define the questions. State freshness. Estimate volume. Name the users."
+     },
+     {
+      "q": "Module 36 · Why does Schema Design matter?",
+      "answer": "The schema reflects entities, relationships, constraints and the expected query grain. Model entities. Add keys. Add constraints. Index relationships."
+     },
+     {
+      "q": "Module 36 · Why does Index Plan matter?",
+      "answer": "An index plan lists the top queries, their predicates and the smallest indexes that support them. List top queries. Match predicates. Measure usage."
+     },
+     {
+      "q": "Module 36 · Why does Query Design matter?",
+      "answer": "A production query states its grain, filters early, joins on indexed keys and avoids unnecessary columns. State grain. Filter early. Join on keys. Select only needed columns."
+     },
+     {
+      "q": "Module 36 · Why does Transactions matter?",
+      "answer": "A production write uses a transaction, validates the affected count and commits only after verification. Begin. Modify. Verify. Commit or roll back."
+     },
+     {
+      "q": "Module 36 · Why does Security matter?",
+      "answer": "Production access uses a dedicated role, minimal grants and row-level policies for tenant or user data. Dedicated role. Minimal grants. RLS where needed."
+     },
+     {
+      "q": "Module 36 · Why does Migrations matter?",
+      "answer": "A production migration is versioned, tested, lock-aware and reversible or forward-fixable. Version it. Test it. Set lock_timeout. Plan rollback."
+     },
+     {
+      "q": "Module 36 · Why does Monitoring matter?",
+      "answer": "Monitoring covers query latency, error rates, replication lag, lock waits and disk growth. Track latency. Track errors. Alert on lag."
+     },
+     {
+      "q": "Module 36 · Why does Performance matter?",
+      "answer": "Performance work starts from a baseline plan, changes one thing and verifies the new runtime. Baseline. Read plan. Change one thing. Measure."
+     },
+     {
+      "q": "Module 36 · Why does Testing matter?",
+      "answer": "Tests cover query results, constraint behavior, permissions and migration paths against realistic data. Test results. Test constraints. Test permissions. Test migrations."
+     },
+     {
+      "q": "Module 36 · Why does Documentation matter?",
+      "answer": "Documentation explains the grain, owners, refresh cadence, access rules and recovery steps. Document grain. Document owners. Document runbooks."
+     },
+     {
+      "q": "Module 36 · Why does Incident Response matter?",
+      "answer": "An incident runbook detects the issue, contains impact, restores service and records a blameless follow-up. Detect. Contain. Recover. Review."
+     },
+     {
+      "q": "Module 36 · Why does Capacity Planning matter?",
+      "answer": "Capacity planning tracks table and index growth, connection counts and IOPS against expected growth. Track growth. Forecast. Test at volume."
+     },
+     {
+      "q": "Module 36 · Why does Data Retention matter?",
+      "answer": "Retention detaches or deletes old partitions and archives them according to legal and product requirements. Define retention. Archive. Verify deletion."
+     },
+     {
+      "q": "Module 36 · Why does Access Review matter?",
+      "answer": "An access review removes stale roles, excessive grants and unused credentials. List roles. Review grants. Remove stale access."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Unbounded query",
+      "broken": "SELECT * FROM enrollments;",
+      "fix": "SELECT student_id, course_id FROM enrollments WHERE enrolled_on >= CURRENT_DATE - INTERVAL '30 days';",
+      "error": "The query scans and returns everything",
+      "expected": "A bounded, targeted query."
+     },
+     {
+      "title": "Missing WHERE",
+      "broken": "UPDATE students SET marks = 0;",
+      "fix": "UPDATE students SET marks = 0 WHERE id = 1;",
+      "error": "Every row is updated",
+      "expected": "One row changes."
+     },
+     {
+      "title": "Long transaction",
+      "broken": "BEGIN;\nSELECT * FROM students;\n-- wait for user input\nCOMMIT;",
+      "fix": "Keep the transaction open only around the database work.",
+      "error": "Locks and snapshots are held during the wait",
+      "expected": "A short transaction."
+     },
+     {
+      "title": "Over-indexed table",
+      "broken": "Create an index for every column.",
+      "fix": "Keep only indexes justified by real queries and verify usage.",
+      "error": "Writes slow down and storage grows",
+      "expected": "A lean index plan."
+     },
+     {
+      "title": "Unsafe migration",
+      "broken": "ALTER TABLE students ADD COLUMN email TEXT NOT NULL DEFAULT md5(random()::text);",
+      "fix": "Add nullable, backfill, then set NOT NULL.",
+      "error": "The table can rewrite under a long lock",
+      "expected": "A staged migration."
+     },
+     {
+      "title": "No permissions test",
+      "broken": "GRANT ALL ON ALL TABLES IN SCHEMA public TO app_user;",
+      "fix": "Grant only the needed tables and verify with the application role.",
+      "error": "The app can read and write everything",
+      "expected": "Least privilege."
+     },
+     {
+      "title": "No monitoring",
+      "broken": "Deploy and wait for a user report.",
+      "fix": "Add latency, error and lag alerts before launch.",
+      "error": "Failures are discovered late",
+      "expected": "Observable production."
+     },
+     {
+      "title": "Unrestored backup",
+      "broken": "Assume the nightly backup works.",
+      "fix": "Restore it into a test database and verify row counts.",
+      "error": "The backup may be unusable",
+      "expected": "A proven restore."
+     },
+     {
+      "title": "Wrong grain report",
+      "broken": "SELECT COUNT(*) FROM students JOIN enrollments ON enrollments.student_id = students.id;",
+      "fix": "SELECT COUNT(DISTINCT students.id) FROM students JOIN enrollments ON enrollments.student_id = students.id;",
+      "error": "Students with multiple enrollments count multiple times",
+      "expected": "A distinct student count."
+     },
+     {
+      "title": "No rollback plan",
+      "broken": "Deploy the migration with no reverse path.",
+      "fix": "Write and test a rollback or forward-fix before deploying.",
+      "error": "A failed release has no recovery step",
+      "expected": "A rehearsed release."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 36 · State one key rule for Requirements.",
+      "answer": "Define the questions."
+     },
+     {
+      "q": "Module 36 · State one key rule for Schema Design.",
+      "answer": "Model entities."
+     },
+     {
+      "q": "Module 36 · State one key rule for Index Plan.",
+      "answer": "List top queries."
+     },
+     {
+      "q": "Module 36 · State one key rule for Query Design.",
+      "answer": "State grain."
+     },
+     {
+      "q": "Module 36 · State one key rule for Transactions.",
+      "answer": "Begin."
+     },
+     {
+      "q": "Module 36 · State one key rule for Security.",
+      "answer": "Dedicated role."
+     },
+     {
+      "q": "Module 36 · State one key rule for Migrations.",
+      "answer": "Version it."
+     },
+     {
+      "q": "Module 36 · State one key rule for Monitoring.",
+      "answer": "Track latency."
+     },
+     {
+      "q": "Module 36 · State one key rule for Performance.",
+      "answer": "Baseline."
+     },
+     {
+      "q": "Module 36 · State one key rule for Testing.",
+      "answer": "Test results."
+     }
+    ]
+   }
+  }
+ ]
+}

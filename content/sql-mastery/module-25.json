@@ -1,0 +1,918 @@
+{
+ "modules": [
+  {
+   "id": "sql25",
+   "no": 25,
+   "title": "Triggers",
+   "goal": "Automate database-side reactions without hiding business logic or creating recursion.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Trigger Basics",
+     "simple": "Trigger event par automatically chalne wala function hai.",
+     "pro": "A trigger binds a function to INSERT, UPDATE, DELETE or TRUNCATE events on a table.",
+     "points": [
+      "It runs automatically.",
+      "It calls a trigger function.",
+      "It can run before or after the event."
+     ],
+     "example": {
+      "sql": "CREATE TRIGGER set_updated_at BEFORE UPDATE ON students FOR EACH ROW EXECUTE FUNCTION touch_updated_at();",
+      "output": "CREATE TRIGGER"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "BEFORE Trigger",
+     "simple": "BEFORE trigger row change se pehle chalta hai.",
+     "pro": "A BEFORE trigger can validate or modify NEW before the row is written.",
+     "points": [
+      "It can change NEW.",
+      "It can reject the row.",
+      "It runs once per affected row."
+     ],
+     "example": {
+      "sql": "CREATE TRIGGER validate_marks BEFORE INSERT OR UPDATE ON students FOR EACH ROW EXECUTE FUNCTION validate_marks();",
+      "output": "CREATE TRIGGER"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "AFTER Trigger",
+     "simple": "AFTER trigger change ke baad chalta hai.",
+     "pro": "An AFTER trigger observes the committed row change and is used for auditing and side effects.",
+     "points": [
+      "It sees the final row.",
+      "It cannot change NEW for the write.",
+      "It can queue more work."
+     ],
+     "example": {
+      "sql": "CREATE TRIGGER audit_students AFTER INSERT OR UPDATE OR DELETE ON students FOR EACH ROW EXECUTE FUNCTION audit_students();",
+      "output": "CREATE TRIGGER"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Row vs Statement Triggers",
+     "simple": "Row trigger har row par chalta hai; statement trigger ek baar.",
+     "pro": "FOR EACH ROW fires per affected row, while FOR EACH STATEMENT fires once per statement.",
+     "points": [
+      "Row triggers see NEW/OLD.",
+      "Statement triggers are cheaper for bulk work.",
+      "Transition tables work with statement triggers."
+     ],
+     "example": {
+      "sql": "CREATE TRIGGER audit_students AFTER UPDATE ON students FOR EACH STATEMENT EXECUTE FUNCTION audit_students();",
+      "output": "CREATE TRIGGER"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Trigger Function",
+     "simple": "Trigger function trigger context me chalta hai.",
+     "pro": "A trigger function returns trigger and uses NEW, OLD, TG_OP and TG_TABLE_NAME.",
+     "points": [
+      "Return NEW for row triggers.",
+      "Return NULL to skip the operation.",
+      "Declare LANGUAGE plpgsql."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION touch_updated_at() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "NEW and OLD",
+     "simple": "NEW naya row hai; OLD purana row.",
+     "pro": "NEW holds the proposed row for INSERT/UPDATE, OLD holds the previous row for UPDATE/DELETE.",
+     "points": [
+      "INSERT has NEW only.",
+      "DELETE has OLD only.",
+      "UPDATE has both."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION log_change() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE NOTICE '% -> %', OLD.marks, NEW.marks; RETURN NEW; END; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Validation Trigger",
+     "simple": "Trigger complex validation kar sakta hai.",
+     "pro": "A trigger can enforce rules that span tables or need procedural logic beyond a CHECK constraint.",
+     "points": [
+      "Prefer CHECK for simple rules.",
+      "Use triggers for cross-row rules.",
+      "Raise a clear exception."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION require_email() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.email IS NULL THEN RAISE EXCEPTION 'email required'; END IF; RETURN NEW; END; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Audit Trigger",
+     "simple": "Audit trigger changes ko history table me likhta hai.",
+     "pro": "An audit trigger records who changed what and when, usually in an append-only table.",
+     "points": [
+      "Capture TG_OP.",
+      "Store old and new values.",
+      "Keep the audit insert durable."
+     ],
+     "example": {
+      "sql": "CREATE TABLE student_audit (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, student_id BIGINT, action TEXT, changed_at TIMESTAMPTZ DEFAULT NOW());",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Timestamp Trigger",
+     "simple": "Timestamp trigger updated_at maintain karta hai.",
+     "pro": "A BEFORE UPDATE trigger sets updated_at automatically so every writer gets the same behavior.",
+     "points": [
+      "Set NEW.updated_at.",
+      "Return NEW.",
+      "Do not rely on the app."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION touch_updated_at() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Trigger Order",
+     "simple": "Same event par multiple triggers alphabetical order me chalte hain.",
+     "pro": "PostgreSQL fires triggers of the same kind in name order, so name them deliberately when order matters.",
+     "points": [
+      "Order is by name.",
+      "Use BEFORE for validation.",
+      "Use AFTER for side effects."
+     ],
+     "example": {
+      "sql": "CREATE TRIGGER a_validate BEFORE INSERT ON students FOR EACH ROW EXECUTE FUNCTION validate_marks();",
+      "output": "CREATE TRIGGER"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Enabling and Disabling",
+     "simple": "Trigger ko temporarily disable kar sakte hain.",
+     "pro": "ALTER TABLE ... DISABLE TRIGGER helps bulk loads but bypasses important rules.",
+     "points": [
+      "Disable only during controlled maintenance.",
+      "Re-enable immediately.",
+      "Foreign-key triggers are special."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students DISABLE TRIGGER validate_marks;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Dropping Triggers",
+     "simple": "DROP TRIGGER trigger hataata hai.",
+     "pro": "Drop the trigger before dropping its function, or use CASCADE deliberately.",
+     "points": [
+      "Name the table and trigger.",
+      "IF EXISTS is script-safe.",
+      "The function remains until dropped."
+     ],
+     "example": {
+      "sql": "DROP TRIGGER IF EXISTS validate_marks ON students;",
+      "output": "DROP TRIGGER"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Trigger vs Constraint",
+     "simple": "Simple rules constraints me rakho; complex side effects triggers me.",
+     "pro": "Constraints are declarative and optimized; triggers are procedural and easier to misuse.",
+     "points": [
+      "Prefer constraints.",
+      "Use triggers for auditing.",
+      "Document every trigger."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100);",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Trigger Recursion",
+     "simple": "Trigger apne hi table par write karke recursion bana sakta hai.",
+     "pro": "A trigger that updates its own table can fire itself again; guard with conditions or a depth check.",
+     "points": [
+      "Avoid self-updates.",
+      "Use WHEN clauses.",
+      "Test the recursion path."
+     ],
+     "example": {
+      "sql": "CREATE TRIGGER touch_updated_at BEFORE UPDATE ON students FOR EACH ROW WHEN (OLD.marks IS DISTINCT FROM NEW.marks) EXECUTE FUNCTION touch_updated_at();",
+      "output": "CREATE TRIGGER"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Trigger Performance",
+     "simple": "Row triggers bulk operations ko slow karte hain.",
+     "pro": "Every row trigger adds function-call and write overhead, especially during large updates.",
+     "points": [
+      "Prefer set-based SQL.",
+      "Use statement triggers when possible.",
+      "Measure bulk loads."
+     ],
+     "example": {
+      "sql": "EXPLAIN ANALYZE UPDATE students SET marks = marks + 1;",
+      "output": "A plan with trigger overhead."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Common Trigger Errors",
+     "simple": "Missing RETURN, wrong timing aur recursion common errors hain.",
+     "pro": "Common failures are forgetting RETURN NEW, using AFTER to modify the row, and triggering an infinite update loop.",
+     "points": [
+      "Return NEW in BEFORE row triggers.",
+      "Use BEFORE to modify.",
+      "Guard recursion."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION bad_trigger() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.marks = 0; RETURN NEW; END; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Auditing",
+     "simple": "Audit trail append-only aur queryable hona chahiye.",
+     "pro": "A good audit table records the operation, key, before and after values, actor and timestamp.",
+     "points": [
+      "Record the actor.",
+      "Store before/after.",
+      "Never update audit rows."
+     ],
+     "example": {
+      "sql": "CREATE TABLE audit_log (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, table_name TEXT, action TEXT, row_data JSONB, changed_at TIMESTAMPTZ DEFAULT NOW());",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Trigger Security",
+     "simple": "Trigger function privileges carefully set karo.",
+     "pro": "Triggers run with the function owner’s privileges when SECURITY DEFINER is used, so validate inputs and fix search_path.",
+     "points": [
+      "Avoid SECURITY DEFINER by default.",
+      "Set search_path.",
+      "Do not trust NEW blindly."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION audit_students() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN INSERT INTO audit_log (table_name, action, row_data) VALUES (TG_TABLE_NAME, TG_OP, to_jsonb(NEW)); RETURN NEW; END; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Practical Trigger",
+     "simple": "updated_at aur audit trigger ko combine karo.",
+     "pro": "A practical trigger sets updated_at and writes an audit row in one controlled function.",
+     "points": [
+      "Set the timestamp first.",
+      "Write the audit row.",
+      "Return the final NEW."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION before_student_update() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at = NOW(); INSERT INTO student_audit (student_id, action) VALUES (NEW.id, TG_OP); RETURN NEW; END; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Trigger Maintenance",
+     "simple": "Triggers ko version aur test karo.",
+     "pro": "Track trigger definitions, test them with bulk changes and review them during migrations.",
+     "points": [
+      "List triggers per table.",
+      "Test with multi-row statements.",
+      "Drop obsolete triggers."
+     ],
+     "example": {
+      "sql": "SELECT tgname, tgrelid::regclass FROM pg_trigger WHERE NOT tgisinternal;",
+      "output": "The user-defined triggers."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 25 · Trigger Basics: what is the main purpose?",
+      "options": [
+       "Trigger Basics: Trigger event par automatically chalne wala function hai.",
+       "BEFORE Trigger: BEFORE trigger row change se pehle chalta hai.",
+       "Audit Trigger: Audit trigger changes ko history table me likhta hai.",
+       "Trigger Recursion: Trigger apne hi table par write karke recursion bana sakta hai."
+      ],
+      "answer": "Trigger Basics: Trigger event par automatically chalne wala function hai.",
+      "why": "A trigger binds a function to INSERT, UPDATE, DELETE or TRUNCATE events on a table."
+     },
+     {
+      "q": "Module 25 · BEFORE Trigger: what is the main purpose?",
+      "options": [
+       "AFTER Trigger: AFTER trigger change ke baad chalta hai.",
+       "Timestamp Trigger: Timestamp trigger updated_at maintain karta hai.",
+       "Trigger Performance: Row triggers bulk operations ko slow karte hain.",
+       "BEFORE Trigger: BEFORE trigger row change se pehle chalta hai."
+      ],
+      "answer": "BEFORE Trigger: BEFORE trigger row change se pehle chalta hai.",
+      "why": "A BEFORE trigger can validate or modify NEW before the row is written."
+     },
+     {
+      "q": "Module 25 · AFTER Trigger: what is the main purpose?",
+      "options": [
+       "Trigger Order: Same event par multiple triggers alphabetical order me chalte hain.",
+       "Common Trigger Errors: Missing RETURN, wrong timing aur recursion common errors hain.",
+       "AFTER Trigger: AFTER trigger change ke baad chalta hai.",
+       "Row vs Statement Triggers: Row trigger har row par chalta hai; statement trigger ek baar."
+      ],
+      "answer": "AFTER Trigger: AFTER trigger change ke baad chalta hai.",
+      "why": "An AFTER trigger observes the committed row change and is used for auditing and side effects."
+     },
+     {
+      "q": "Module 25 · Row vs Statement Triggers: what is the main purpose?",
+      "options": [
+       "Auditing: Audit trail append-only aur queryable hona chahiye.",
+       "Row vs Statement Triggers: Row trigger har row par chalta hai; statement trigger ek baar.",
+       "Trigger Function: Trigger function trigger context me chalta hai.",
+       "Enabling and Disabling: Trigger ko temporarily disable kar sakte hain."
+      ],
+      "answer": "Row vs Statement Triggers: Row trigger har row par chalta hai; statement trigger ek baar.",
+      "why": "FOR EACH ROW fires per affected row, while FOR EACH STATEMENT fires once per statement."
+     },
+     {
+      "q": "Module 25 · Trigger Function: what is the main purpose?",
+      "options": [
+       "Trigger Function: Trigger function trigger context me chalta hai.",
+       "NEW and OLD: NEW naya row hai; OLD purana row.",
+       "Dropping Triggers: DROP TRIGGER trigger hataata hai.",
+       "Trigger Security: Trigger function privileges carefully set karo."
+      ],
+      "answer": "Trigger Function: Trigger function trigger context me chalta hai.",
+      "why": "A trigger function returns trigger and uses NEW, OLD, TG_OP and TG_TABLE_NAME."
+     },
+     {
+      "q": "Module 25 · NEW and OLD: what is the main purpose?",
+      "options": [
+       "Validation Trigger: Trigger complex validation kar sakta hai.",
+       "Trigger vs Constraint: Simple rules constraints me rakho; complex side effects triggers me.",
+       "Practical Trigger: updated_at aur audit trigger ko combine karo.",
+       "NEW and OLD: NEW naya row hai; OLD purana row."
+      ],
+      "answer": "NEW and OLD: NEW naya row hai; OLD purana row.",
+      "why": "NEW holds the proposed row for INSERT/UPDATE, OLD holds the previous row for UPDATE/DELETE."
+     },
+     {
+      "q": "Module 25 · Validation Trigger: what is the main purpose?",
+      "options": [
+       "Trigger Recursion: Trigger apne hi table par write karke recursion bana sakta hai.",
+       "Trigger Maintenance: Triggers ko version aur test karo.",
+       "Validation Trigger: Trigger complex validation kar sakta hai.",
+       "Audit Trigger: Audit trigger changes ko history table me likhta hai."
+      ],
+      "answer": "Validation Trigger: Trigger complex validation kar sakta hai.",
+      "why": "A trigger can enforce rules that span tables or need procedural logic beyond a CHECK constraint."
+     },
+     {
+      "q": "Module 25 · Audit Trigger: what is the main purpose?",
+      "options": [
+       "Trigger Basics: Trigger event par automatically chalne wala function hai.",
+       "Audit Trigger: Audit trigger changes ko history table me likhta hai.",
+       "Timestamp Trigger: Timestamp trigger updated_at maintain karta hai.",
+       "Trigger Performance: Row triggers bulk operations ko slow karte hain."
+      ],
+      "answer": "Audit Trigger: Audit trigger changes ko history table me likhta hai.",
+      "why": "An audit trigger records who changed what and when, usually in an append-only table."
+     },
+     {
+      "q": "Module 25 · Timestamp Trigger: what is the main purpose?",
+      "options": [
+       "Timestamp Trigger: Timestamp trigger updated_at maintain karta hai.",
+       "Trigger Order: Same event par multiple triggers alphabetical order me chalte hain.",
+       "Common Trigger Errors: Missing RETURN, wrong timing aur recursion common errors hain.",
+       "BEFORE Trigger: BEFORE trigger row change se pehle chalta hai."
+      ],
+      "answer": "Timestamp Trigger: Timestamp trigger updated_at maintain karta hai.",
+      "why": "A BEFORE UPDATE trigger sets updated_at automatically so every writer gets the same behavior."
+     },
+     {
+      "q": "Module 25 · Trigger Order: what is the main purpose?",
+      "options": [
+       "Enabling and Disabling: Trigger ko temporarily disable kar sakte hain.",
+       "Auditing: Audit trail append-only aur queryable hona chahiye.",
+       "AFTER Trigger: AFTER trigger change ke baad chalta hai.",
+       "Trigger Order: Same event par multiple triggers alphabetical order me chalte hain."
+      ],
+      "answer": "Trigger Order: Same event par multiple triggers alphabetical order me chalte hain.",
+      "why": "PostgreSQL fires triggers of the same kind in name order, so name them deliberately when order matters."
+     },
+     {
+      "q": "Module 25 · Enabling and Disabling: what is the main purpose?",
+      "options": [
+       "Trigger Security: Trigger function privileges carefully set karo.",
+       "Row vs Statement Triggers: Row trigger har row par chalta hai; statement trigger ek baar.",
+       "Enabling and Disabling: Trigger ko temporarily disable kar sakte hain.",
+       "Dropping Triggers: DROP TRIGGER trigger hataata hai."
+      ],
+      "answer": "Enabling and Disabling: Trigger ko temporarily disable kar sakte hain.",
+      "why": "ALTER TABLE ... DISABLE TRIGGER helps bulk loads but bypasses important rules."
+     },
+     {
+      "q": "Module 25 · Dropping Triggers: what is the main purpose?",
+      "options": [
+       "Trigger Function: Trigger function trigger context me chalta hai.",
+       "Dropping Triggers: DROP TRIGGER trigger hataata hai.",
+       "Trigger vs Constraint: Simple rules constraints me rakho; complex side effects triggers me.",
+       "Practical Trigger: updated_at aur audit trigger ko combine karo."
+      ],
+      "answer": "Dropping Triggers: DROP TRIGGER trigger hataata hai.",
+      "why": "Drop the trigger before dropping its function, or use CASCADE deliberately."
+     },
+     {
+      "q": "Module 25 · Trigger vs Constraint: what is the main purpose?",
+      "options": [
+       "Trigger vs Constraint: Simple rules constraints me rakho; complex side effects triggers me.",
+       "Trigger Recursion: Trigger apne hi table par write karke recursion bana sakta hai.",
+       "Trigger Maintenance: Triggers ko version aur test karo.",
+       "NEW and OLD: NEW naya row hai; OLD purana row."
+      ],
+      "answer": "Trigger vs Constraint: Simple rules constraints me rakho; complex side effects triggers me.",
+      "why": "Constraints are declarative and optimized; triggers are procedural and easier to misuse."
+     },
+     {
+      "q": "Module 25 · Trigger Recursion: what is the main purpose?",
+      "options": [
+       "Trigger Performance: Row triggers bulk operations ko slow karte hain.",
+       "Trigger Basics: Trigger event par automatically chalne wala function hai.",
+       "Validation Trigger: Trigger complex validation kar sakta hai.",
+       "Trigger Recursion: Trigger apne hi table par write karke recursion bana sakta hai."
+      ],
+      "answer": "Trigger Recursion: Trigger apne hi table par write karke recursion bana sakta hai.",
+      "why": "A trigger that updates its own table can fire itself again; guard with conditions or a depth check."
+     },
+     {
+      "q": "Module 25 · Trigger Performance: what is the main purpose?",
+      "options": [
+       "BEFORE Trigger: BEFORE trigger row change se pehle chalta hai.",
+       "Audit Trigger: Audit trigger changes ko history table me likhta hai.",
+       "Trigger Performance: Row triggers bulk operations ko slow karte hain.",
+       "Common Trigger Errors: Missing RETURN, wrong timing aur recursion common errors hain."
+      ],
+      "answer": "Trigger Performance: Row triggers bulk operations ko slow karte hain.",
+      "why": "Every row trigger adds function-call and write overhead, especially during large updates."
+     },
+     {
+      "q": "Module 25 · Common Trigger Errors: what is the main purpose?",
+      "options": [
+       "Timestamp Trigger: Timestamp trigger updated_at maintain karta hai.",
+       "Common Trigger Errors: Missing RETURN, wrong timing aur recursion common errors hain.",
+       "Auditing: Audit trail append-only aur queryable hona chahiye.",
+       "AFTER Trigger: AFTER trigger change ke baad chalta hai."
+      ],
+      "answer": "Common Trigger Errors: Missing RETURN, wrong timing aur recursion common errors hain.",
+      "why": "Common failures are forgetting RETURN NEW, using AFTER to modify the row, and triggering an infinite update loop."
+     },
+     {
+      "q": "Module 25 · Auditing: what is the main purpose?",
+      "options": [
+       "Auditing: Audit trail append-only aur queryable hona chahiye.",
+       "Trigger Security: Trigger function privileges carefully set karo.",
+       "Row vs Statement Triggers: Row trigger har row par chalta hai; statement trigger ek baar.",
+       "Trigger Order: Same event par multiple triggers alphabetical order me chalte hain."
+      ],
+      "answer": "Auditing: Audit trail append-only aur queryable hona chahiye.",
+      "why": "A good audit table records the operation, key, before and after values, actor and timestamp."
+     },
+     {
+      "q": "Module 25 · Trigger Security: what is the main purpose?",
+      "options": [
+       "Practical Trigger: updated_at aur audit trigger ko combine karo.",
+       "Trigger Function: Trigger function trigger context me chalta hai.",
+       "Enabling and Disabling: Trigger ko temporarily disable kar sakte hain.",
+       "Trigger Security: Trigger function privileges carefully set karo."
+      ],
+      "answer": "Trigger Security: Trigger function privileges carefully set karo.",
+      "why": "Triggers run with the function owner’s privileges when SECURITY DEFINER is used, so validate inputs and fix search_path."
+     },
+     {
+      "q": "Module 25 · Practical Trigger: what is the main purpose?",
+      "options": [
+       "NEW and OLD: NEW naya row hai; OLD purana row.",
+       "Dropping Triggers: DROP TRIGGER trigger hataata hai.",
+       "Practical Trigger: updated_at aur audit trigger ko combine karo.",
+       "Trigger Maintenance: Triggers ko version aur test karo."
+      ],
+      "answer": "Practical Trigger: updated_at aur audit trigger ko combine karo.",
+      "why": "A practical trigger sets updated_at and writes an audit row in one controlled function."
+     },
+     {
+      "q": "Module 25 · Trigger Maintenance: what is the main purpose?",
+      "options": [
+       "Trigger vs Constraint: Simple rules constraints me rakho; complex side effects triggers me.",
+       "Trigger Maintenance: Triggers ko version aur test karo.",
+       "Trigger Basics: Trigger event par automatically chalne wala function hai.",
+       "Validation Trigger: Trigger complex validation kar sakta hai."
+      ],
+      "answer": "Trigger Maintenance: Triggers ko version aur test karo.",
+      "why": "Track trigger definitions, test them with bulk changes and review them during migrations."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 25 · Explain Trigger Basics in a production query.",
+      "answer": "A trigger binds a function to INSERT, UPDATE, DELETE or TRUNCATE events on a table. Key rules: It runs automatically. It calls a trigger function. It can run before or after the event."
+     },
+     {
+      "q": "Module 25 · Explain BEFORE Trigger in a production query.",
+      "answer": "A BEFORE trigger can validate or modify NEW before the row is written. Key rules: It can change NEW. It can reject the row. It runs once per affected row."
+     },
+     {
+      "q": "Module 25 · Explain AFTER Trigger in a production query.",
+      "answer": "An AFTER trigger observes the committed row change and is used for auditing and side effects. Key rules: It sees the final row. It cannot change NEW for the write. It can queue more work."
+     },
+     {
+      "q": "Module 25 · Explain Row vs Statement Triggers in a production query.",
+      "answer": "FOR EACH ROW fires per affected row, while FOR EACH STATEMENT fires once per statement. Key rules: Row triggers see NEW/OLD. Statement triggers are cheaper for bulk work. Transition tables work with statement triggers."
+     },
+     {
+      "q": "Module 25 · Explain Trigger Function in a production query.",
+      "answer": "A trigger function returns trigger and uses NEW, OLD, TG_OP and TG_TABLE_NAME. Key rules: Return NEW for row triggers. Return NULL to skip the operation. Declare LANGUAGE plpgsql."
+     },
+     {
+      "q": "Module 25 · Explain NEW and OLD in a production query.",
+      "answer": "NEW holds the proposed row for INSERT/UPDATE, OLD holds the previous row for UPDATE/DELETE. Key rules: INSERT has NEW only. DELETE has OLD only. UPDATE has both."
+     },
+     {
+      "q": "Module 25 · Explain Validation Trigger in a production query.",
+      "answer": "A trigger can enforce rules that span tables or need procedural logic beyond a CHECK constraint. Key rules: Prefer CHECK for simple rules. Use triggers for cross-row rules. Raise a clear exception."
+     },
+     {
+      "q": "Module 25 · Explain Audit Trigger in a production query.",
+      "answer": "An audit trigger records who changed what and when, usually in an append-only table. Key rules: Capture TG_OP. Store old and new values. Keep the audit insert durable."
+     },
+     {
+      "q": "Module 25 · Explain Timestamp Trigger in a production query.",
+      "answer": "A BEFORE UPDATE trigger sets updated_at automatically so every writer gets the same behavior. Key rules: Set NEW.updated_at. Return NEW. Do not rely on the app."
+     },
+     {
+      "q": "Module 25 · Explain Trigger Order in a production query.",
+      "answer": "PostgreSQL fires triggers of the same kind in name order, so name them deliberately when order matters. Key rules: Order is by name. Use BEFORE for validation. Use AFTER for side effects."
+     },
+     {
+      "q": "Module 25 · Explain Enabling and Disabling in a production query.",
+      "answer": "ALTER TABLE ... DISABLE TRIGGER helps bulk loads but bypasses important rules. Key rules: Disable only during controlled maintenance. Re-enable immediately. Foreign-key triggers are special."
+     },
+     {
+      "q": "Module 25 · Explain Dropping Triggers in a production query.",
+      "answer": "Drop the trigger before dropping its function, or use CASCADE deliberately. Key rules: Name the table and trigger. IF EXISTS is script-safe. The function remains until dropped."
+     },
+     {
+      "q": "Module 25 · Explain Trigger vs Constraint in a production query.",
+      "answer": "Constraints are declarative and optimized; triggers are procedural and easier to misuse. Key rules: Prefer constraints. Use triggers for auditing. Document every trigger."
+     },
+     {
+      "q": "Module 25 · Explain Trigger Recursion in a production query.",
+      "answer": "A trigger that updates its own table can fire itself again; guard with conditions or a depth check. Key rules: Avoid self-updates. Use WHEN clauses. Test the recursion path."
+     },
+     {
+      "q": "Module 25 · Explain Trigger Performance in a production query.",
+      "answer": "Every row trigger adds function-call and write overhead, especially during large updates. Key rules: Prefer set-based SQL. Use statement triggers when possible. Measure bulk loads."
+     },
+     {
+      "q": "Module 25 · Explain Common Trigger Errors in a production query.",
+      "answer": "Common failures are forgetting RETURN NEW, using AFTER to modify the row, and triggering an infinite update loop. Key rules: Return NEW in BEFORE row triggers. Use BEFORE to modify. Guard recursion."
+     },
+     {
+      "q": "Module 25 · Explain Auditing in a production query.",
+      "answer": "A good audit table records the operation, key, before and after values, actor and timestamp. Key rules: Record the actor. Store before/after. Never update audit rows."
+     },
+     {
+      "q": "Module 25 · Explain Trigger Security in a production query.",
+      "answer": "Triggers run with the function owner’s privileges when SECURITY DEFINER is used, so validate inputs and fix search_path. Key rules: Avoid SECURITY DEFINER by default. Set search_path. Do not trust NEW blindly."
+     },
+     {
+      "q": "Module 25 · Explain Practical Trigger in a production query.",
+      "answer": "A practical trigger sets updated_at and writes an audit row in one controlled function. Key rules: Set the timestamp first. Write the audit row. Return the final NEW."
+     },
+     {
+      "q": "Module 25 · Explain Trigger Maintenance in a production query.",
+      "answer": "Track trigger definitions, test them with bulk changes and review them during migrations. Key rules: List triggers per table. Test with multi-row statements. Drop obsolete triggers."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Trigger Basics",
+      "task": "Write a SQL example that demonstrates Trigger Basics.",
+      "solution": "CREATE TRIGGER set_updated_at BEFORE UPDATE ON students FOR EACH ROW EXECUTE FUNCTION touch_updated_at();",
+      "expected": "CREATE TRIGGER"
+     },
+     {
+      "title": "BEFORE Trigger",
+      "task": "Write a SQL example that demonstrates BEFORE Trigger.",
+      "solution": "CREATE TRIGGER validate_marks BEFORE INSERT OR UPDATE ON students FOR EACH ROW EXECUTE FUNCTION validate_marks();",
+      "expected": "CREATE TRIGGER"
+     },
+     {
+      "title": "AFTER Trigger",
+      "task": "Write a SQL example that demonstrates AFTER Trigger.",
+      "solution": "CREATE TRIGGER audit_students AFTER INSERT OR UPDATE OR DELETE ON students FOR EACH ROW EXECUTE FUNCTION audit_students();",
+      "expected": "CREATE TRIGGER"
+     },
+     {
+      "title": "Row vs Statement Triggers",
+      "task": "Write a SQL example that demonstrates Row vs Statement Triggers.",
+      "solution": "CREATE TRIGGER audit_students AFTER UPDATE ON students FOR EACH STATEMENT EXECUTE FUNCTION audit_students();",
+      "expected": "CREATE TRIGGER"
+     },
+     {
+      "title": "Trigger Function",
+      "task": "Write a SQL example that demonstrates Trigger Function.",
+      "solution": "CREATE FUNCTION touch_updated_at() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "NEW and OLD",
+      "task": "Write a SQL example that demonstrates NEW and OLD.",
+      "solution": "CREATE FUNCTION log_change() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE NOTICE '% -> %', OLD.marks, NEW.marks; RETURN NEW; END; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Validation Trigger",
+      "task": "Write a SQL example that demonstrates Validation Trigger.",
+      "solution": "CREATE FUNCTION require_email() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.email IS NULL THEN RAISE EXCEPTION 'email required'; END IF; RETURN NEW; END; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Audit Trigger",
+      "task": "Write a SQL example that demonstrates Audit Trigger.",
+      "solution": "CREATE TABLE student_audit (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, student_id BIGINT, action TEXT, changed_at TIMESTAMPTZ DEFAULT NOW());",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Timestamp Trigger",
+      "task": "Write a SQL example that demonstrates Timestamp Trigger.",
+      "solution": "CREATE FUNCTION touch_updated_at() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Trigger Order",
+      "task": "Write a SQL example that demonstrates Trigger Order.",
+      "solution": "CREATE TRIGGER a_validate BEFORE INSERT ON students FOR EACH ROW EXECUTE FUNCTION validate_marks();",
+      "expected": "CREATE TRIGGER"
+     },
+     {
+      "title": "Enabling and Disabling",
+      "task": "Write a SQL example that demonstrates Enabling and Disabling.",
+      "solution": "ALTER TABLE students DISABLE TRIGGER validate_marks;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Dropping Triggers",
+      "task": "Write a SQL example that demonstrates Dropping Triggers.",
+      "solution": "DROP TRIGGER IF EXISTS validate_marks ON students;",
+      "expected": "DROP TRIGGER"
+     },
+     {
+      "title": "Trigger vs Constraint",
+      "task": "Write a SQL example that demonstrates Trigger vs Constraint.",
+      "solution": "ALTER TABLE students ADD CONSTRAINT marks_range CHECK (marks BETWEEN 0 AND 100);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Trigger Recursion",
+      "task": "Write a SQL example that demonstrates Trigger Recursion.",
+      "solution": "CREATE TRIGGER touch_updated_at BEFORE UPDATE ON students FOR EACH ROW WHEN (OLD.marks IS DISTINCT FROM NEW.marks) EXECUTE FUNCTION touch_updated_at();",
+      "expected": "CREATE TRIGGER"
+     },
+     {
+      "title": "Trigger Performance",
+      "task": "Write a SQL example that demonstrates Trigger Performance.",
+      "solution": "EXPLAIN ANALYZE UPDATE students SET marks = marks + 1;",
+      "expected": "A plan with trigger overhead."
+     },
+     {
+      "title": "Common Trigger Errors",
+      "task": "Write a SQL example that demonstrates Common Trigger Errors.",
+      "solution": "CREATE FUNCTION bad_trigger() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.marks = 0; RETURN NEW; END; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Auditing",
+      "task": "Write a SQL example that demonstrates Auditing.",
+      "solution": "CREATE TABLE audit_log (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, table_name TEXT, action TEXT, row_data JSONB, changed_at TIMESTAMPTZ DEFAULT NOW());",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Trigger Security",
+      "task": "Write a SQL example that demonstrates Trigger Security.",
+      "solution": "CREATE FUNCTION audit_students() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN INSERT INTO audit_log (table_name, action, row_data) VALUES (TG_TABLE_NAME, TG_OP, to_jsonb(NEW)); RETURN NEW; END; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Practical Trigger",
+      "task": "Write a SQL example that demonstrates Practical Trigger.",
+      "solution": "CREATE FUNCTION before_student_update() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at = NOW(); INSERT INTO student_audit (student_id, action) VALUES (NEW.id, TG_OP); RETURN NEW; END; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Trigger Maintenance",
+      "task": "Write a SQL example that demonstrates Trigger Maintenance.",
+      "solution": "SELECT tgname, tgrelid::regclass FROM pg_trigger WHERE NOT tgisinternal;",
+      "expected": "The user-defined triggers."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 25 · Why does Trigger Basics matter?",
+      "answer": "A trigger binds a function to INSERT, UPDATE, DELETE or TRUNCATE events on a table. It runs automatically. It calls a trigger function. It can run before or after the event."
+     },
+     {
+      "q": "Module 25 · Why does BEFORE Trigger matter?",
+      "answer": "A BEFORE trigger can validate or modify NEW before the row is written. It can change NEW. It can reject the row. It runs once per affected row."
+     },
+     {
+      "q": "Module 25 · Why does AFTER Trigger matter?",
+      "answer": "An AFTER trigger observes the committed row change and is used for auditing and side effects. It sees the final row. It cannot change NEW for the write. It can queue more work."
+     },
+     {
+      "q": "Module 25 · Why does Row vs Statement Triggers matter?",
+      "answer": "FOR EACH ROW fires per affected row, while FOR EACH STATEMENT fires once per statement. Row triggers see NEW/OLD. Statement triggers are cheaper for bulk work. Transition tables work with statement triggers."
+     },
+     {
+      "q": "Module 25 · Why does Trigger Function matter?",
+      "answer": "A trigger function returns trigger and uses NEW, OLD, TG_OP and TG_TABLE_NAME. Return NEW for row triggers. Return NULL to skip the operation. Declare LANGUAGE plpgsql."
+     },
+     {
+      "q": "Module 25 · Why does NEW and OLD matter?",
+      "answer": "NEW holds the proposed row for INSERT/UPDATE, OLD holds the previous row for UPDATE/DELETE. INSERT has NEW only. DELETE has OLD only. UPDATE has both."
+     },
+     {
+      "q": "Module 25 · Why does Validation Trigger matter?",
+      "answer": "A trigger can enforce rules that span tables or need procedural logic beyond a CHECK constraint. Prefer CHECK for simple rules. Use triggers for cross-row rules. Raise a clear exception."
+     },
+     {
+      "q": "Module 25 · Why does Audit Trigger matter?",
+      "answer": "An audit trigger records who changed what and when, usually in an append-only table. Capture TG_OP. Store old and new values. Keep the audit insert durable."
+     },
+     {
+      "q": "Module 25 · Why does Timestamp Trigger matter?",
+      "answer": "A BEFORE UPDATE trigger sets updated_at automatically so every writer gets the same behavior. Set NEW.updated_at. Return NEW. Do not rely on the app."
+     },
+     {
+      "q": "Module 25 · Why does Trigger Order matter?",
+      "answer": "PostgreSQL fires triggers of the same kind in name order, so name them deliberately when order matters. Order is by name. Use BEFORE for validation. Use AFTER for side effects."
+     },
+     {
+      "q": "Module 25 · Why does Enabling and Disabling matter?",
+      "answer": "ALTER TABLE ... DISABLE TRIGGER helps bulk loads but bypasses important rules. Disable only during controlled maintenance. Re-enable immediately. Foreign-key triggers are special."
+     },
+     {
+      "q": "Module 25 · Why does Dropping Triggers matter?",
+      "answer": "Drop the trigger before dropping its function, or use CASCADE deliberately. Name the table and trigger. IF EXISTS is script-safe. The function remains until dropped."
+     },
+     {
+      "q": "Module 25 · Why does Trigger vs Constraint matter?",
+      "answer": "Constraints are declarative and optimized; triggers are procedural and easier to misuse. Prefer constraints. Use triggers for auditing. Document every trigger."
+     },
+     {
+      "q": "Module 25 · Why does Trigger Recursion matter?",
+      "answer": "A trigger that updates its own table can fire itself again; guard with conditions or a depth check. Avoid self-updates. Use WHEN clauses. Test the recursion path."
+     },
+     {
+      "q": "Module 25 · Why does Trigger Performance matter?",
+      "answer": "Every row trigger adds function-call and write overhead, especially during large updates. Prefer set-based SQL. Use statement triggers when possible. Measure bulk loads."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Missing RETURN",
+      "broken": "CREATE FUNCTION touch() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at = NOW(); END; $$;",
+      "fix": "CREATE FUNCTION touch() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$;",
+      "error": "control reached end of trigger procedure without RETURN",
+      "expected": "The row is updated."
+     },
+     {
+      "title": "AFTER cannot modify",
+      "broken": "CREATE TRIGGER t AFTER UPDATE ON students FOR EACH ROW EXECUTE FUNCTION touch_updated_at();",
+      "fix": "CREATE TRIGGER t BEFORE UPDATE ON students FOR EACH ROW EXECUTE FUNCTION touch_updated_at();",
+      "error": "NEW changes in an AFTER trigger do not affect the stored row",
+      "expected": "The timestamp is set before writing."
+     },
+     {
+      "title": "Row trigger on truncate",
+      "broken": "CREATE TRIGGER t BEFORE TRUNCATE ON students FOR EACH ROW EXECUTE FUNCTION touch();",
+      "fix": "CREATE TRIGGER t BEFORE TRUNCATE ON students FOR EACH STATEMENT EXECUTE FUNCTION touch();",
+      "error": "TRUNCATE does not support FOR EACH ROW",
+      "expected": "A statement-level truncate trigger."
+     },
+     {
+      "title": "Recursive update",
+      "broken": "CREATE TRIGGER t AFTER UPDATE ON students FOR EACH ROW EXECUTE FUNCTION update_student();",
+      "fix": "Add a WHEN condition or a guard column so the trigger does not update the same row again.",
+      "error": "stack depth limit exceeded",
+      "expected": "A guarded trigger."
+     },
+     {
+      "title": "Wrong trigger return",
+      "broken": "CREATE FUNCTION f() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END; $$;",
+      "fix": "Return NEW when the row should proceed.",
+      "error": "The operation is skipped",
+      "expected": "The row is written."
+     },
+     {
+      "title": "Missing function",
+      "broken": "CREATE TRIGGER t BEFORE UPDATE ON students FOR EACH ROW EXECUTE FUNCTION missing_fn();",
+      "fix": "CREATE FUNCTION missing_fn() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END; $$;\nCREATE TRIGGER t BEFORE UPDATE ON students FOR EACH ROW EXECUTE FUNCTION missing_fn();",
+      "error": "function missing_fn() does not exist",
+      "expected": "The trigger is created."
+     },
+     {
+      "title": "Trigger name collision",
+      "broken": "CREATE TRIGGER t BEFORE UPDATE ON students FOR EACH ROW EXECUTE FUNCTION touch();\nCREATE TRIGGER t BEFORE INSERT ON students FOR EACH ROW EXECUTE FUNCTION touch();",
+      "fix": "Use distinct trigger names for each event.",
+      "error": "trigger \"t\" for relation \"students\" already exists",
+      "expected": "Two triggers."
+     },
+     {
+      "title": "Audit without actor",
+      "broken": "INSERT INTO audit_log (action) VALUES (TG_OP);",
+      "fix": "INSERT INTO audit_log (action, actor) VALUES (TG_OP, current_user);",
+      "error": "The audit row cannot identify who changed the data",
+      "expected": "An attributable audit row."
+     },
+     {
+      "title": "Disable forgotten",
+      "broken": "ALTER TABLE students DISABLE TRIGGER validate_marks;",
+      "fix": "ALTER TABLE students ENABLE TRIGGER validate_marks;",
+      "error": "Validation is bypassed indefinitely",
+      "expected": "Validation restored."
+     },
+     {
+      "title": "Drop function first",
+      "broken": "DROP FUNCTION touch_updated_at();",
+      "fix": "DROP TRIGGER touch_updated_at ON students;\nDROP FUNCTION touch_updated_at();",
+      "error": "cannot drop function because other objects depend on it",
+      "expected": "Both objects removed."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 25 · State one key rule for Trigger Basics.",
+      "answer": "It runs automatically."
+     },
+     {
+      "q": "Module 25 · State one key rule for BEFORE Trigger.",
+      "answer": "It can change NEW."
+     },
+     {
+      "q": "Module 25 · State one key rule for AFTER Trigger.",
+      "answer": "It sees the final row."
+     },
+     {
+      "q": "Module 25 · State one key rule for Row vs Statement Triggers.",
+      "answer": "Row triggers see NEW/OLD."
+     },
+     {
+      "q": "Module 25 · State one key rule for Trigger Function.",
+      "answer": "Return NEW for row triggers."
+     },
+     {
+      "q": "Module 25 · State one key rule for NEW and OLD.",
+      "answer": "INSERT has NEW only."
+     },
+     {
+      "q": "Module 25 · State one key rule for Validation Trigger.",
+      "answer": "Prefer CHECK for simple rules."
+     },
+     {
+      "q": "Module 25 · State one key rule for Audit Trigger.",
+      "answer": "Capture TG_OP."
+     },
+     {
+      "q": "Module 25 · State one key rule for Timestamp Trigger.",
+      "answer": "Set NEW.updated_at."
+     },
+     {
+      "q": "Module 25 · State one key rule for Trigger Order.",
+      "answer": "Order is by name."
+     }
+    ]
+   }
+  }
+ ]
+}

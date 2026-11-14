@@ -1,0 +1,919 @@
+{
+ "modules": [
+  {
+   "id": "sql28",
+   "no": 28,
+   "title": "Partitioning",
+   "goal": "Split large tables for pruning, maintenance and retention without breaking queries.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Partitioning Basics",
+     "simple": "Partitioning table ko smaller pieces me todta hai.",
+     "pro": "A partitioned table routes rows into child partitions by a partition key, while queries use the parent name.",
+     "points": [
+      "The parent is logical.",
+      "Partitions are physical.",
+      "The key controls routing."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments_partitioned (student_id BIGINT, course_id INTEGER, enrolled_on DATE NOT NULL) PARTITION BY RANGE (enrolled_on);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Range Partitioning",
+     "simple": "Range partition values ke intervals banata hai.",
+     "pro": "Range partitioning assigns rows to partitions based on value ranges such as months or years.",
+     "points": [
+      "Good for dates.",
+      "Boundaries are explicit.",
+      "A default partition catches gaps."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments_2026 PARTITION OF enrollments_partitioned FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "List Partitioning",
+     "simple": "List partition discrete values ke liye hota hai.",
+     "pro": "List partitioning assigns rows to partitions by an explicit value list, such as region or status.",
+     "points": [
+      "Good for categories.",
+      "Each value belongs to one partition.",
+      "Unknown values need a default."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students_in PARTITION OF students PARTITION BY LIST (region);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Hash Partitioning",
+     "simple": "Hash partition rows ko evenly distribute karta hai.",
+     "pro": "Hash partitioning applies a hash to the key and routes rows to a fixed number of partitions.",
+     "points": [
+      "Good for even distribution.",
+      "No natural range pruning.",
+      "Choose a stable key."
+     ],
+     "example": {
+      "sql": "CREATE TABLE events_hash PARTITION OF events FOR VALUES WITH (MODULUS 4, REMAINDER 0);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Partition Key",
+     "simple": "Partition key routing aur pruning decide karta hai.",
+     "pro": "The partition key determines which partition stores a row and which partitions a query can skip.",
+     "points": [
+      "Choose a common filter.",
+      "Keep it immutable.",
+      "Include it in primary keys."
+     ],
+     "example": {
+      "sql": "CREATE TABLE events (id BIGINT, created_at DATE NOT NULL, payload JSONB) PARTITION BY RANGE (created_at);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Partition Pruning",
+     "simple": "Pruning irrelevant partitions skip karta hai.",
+     "pro": "The planner prunes partitions whose bounds cannot match the query predicate, reducing scan work.",
+     "points": [
+      "Use the partition key in predicates.",
+      "Avoid functions on the key.",
+      "Check EXPLAIN."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM enrollments_partitioned WHERE enrolled_on >= '2026-01-01';",
+      "output": "A plan touching only matching partitions."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Creating Partitions",
+     "simple": "CREATE TABLE PARTITION OF child banata hai.",
+     "pro": "A partition is created with CREATE TABLE ... PARTITION OF parent FOR VALUES ... and inherits the parent columns.",
+     "points": [
+      "Create before inserting.",
+      "Bounds must not overlap.",
+      "Use a default partition carefully."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments_2025 PARTITION OF enrollments_partitioned FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Attaching Partitions",
+     "simple": "Existing table ko partition attach kar sakte hain.",
+     "pro": "ATTACH PARTITION adds an existing table after validating its rows against the bounds.",
+     "points": [
+      "Validate the data first.",
+      "It can lock.",
+      "Use CHECK constraints to speed validation."
+     ],
+     "example": {
+      "sql": "ALTER TABLE enrollments_partitioned ATTACH PARTITION enrollments_2025 FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Detaching Partitions",
+     "simple": "DETACH PARTITION partition ko parent se alag karta hai.",
+     "pro": "DETACH PARTITION removes a child from the partitioned table while keeping its data as a standalone table.",
+     "points": [
+      "It is useful for retention.",
+      "CONCURRENTLY reduces locking.",
+      "The table remains."
+     ],
+     "example": {
+      "sql": "ALTER TABLE enrollments_partitioned DETACH PARTITION enrollments_2025;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Indexes on Partitions",
+     "simple": "Partitioned indexes parent par bhi bante hain.",
+     "pro": "Indexes created on the parent are propagated to partitions, and each child can also have its own indexes.",
+     "points": [
+      "Create on the parent.",
+      "Check child indexes.",
+      "Unique indexes need the key."
+     ],
+     "example": {
+      "sql": "CREATE INDEX enrollments_partitioned_student ON enrollments_partitioned (student_id);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Constraints on Partitions",
+     "simple": "Partitioned tables constraints inherit karte hain.",
+     "pro": "CHECK, NOT NULL and foreign keys apply to partitions; unique constraints must include the partition key.",
+     "points": [
+      "Primary keys include the key.",
+      "Foreign keys work per partition.",
+      "Validation can be costly."
+     ],
+     "example": {
+      "sql": "ALTER TABLE enrollments_partitioned ADD PRIMARY KEY (student_id, course_id, enrolled_on);",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Default Partition",
+     "simple": "Default partition unmatched rows ko catch karta hai.",
+     "pro": "A DEFAULT partition stores rows that match no other partition, preventing insert failures but hiding gaps.",
+     "points": [
+      "It catches mistakes.",
+      "It can grow large.",
+      "Move rows before adding bounds."
+     ],
+     "example": {
+      "sql": "CREATE TABLE enrollments_default PARTITION OF enrollments_partitioned DEFAULT;",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Partition Maintenance",
+     "simple": "Old partitions detach aur archive karo.",
+     "pro": "Retention usually detaches or drops old partitions instead of running a huge DELETE.",
+     "points": [
+      "Detach old data.",
+      "Archive externally.",
+      "Drop when safe."
+     ],
+     "example": {
+      "sql": "ALTER TABLE enrollments_partitioned DETACH PARTITION enrollments_2024;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Partition vs Sharding",
+     "simple": "Partitioning ek database ke andar hota hai; sharding servers me.",
+     "pro": "Partitioning splits a table inside one PostgreSQL instance, while sharding distributes data across independent servers.",
+     "points": [
+      "Partitioning is local.",
+      "Sharding is distributed.",
+      "Both need a key."
+     ],
+     "example": {
+      "sql": "-- Partitioning keeps one connection and one catalog",
+      "output": "A local partition strategy."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Common Partition Errors",
+     "simple": "Overlapping bounds, missing key aur no pruning common errors hain.",
+     "pro": "Common failures are overlapping partition bounds, queries that do not filter the key, and unique constraints missing the partition key.",
+     "points": [
+      "Keep bounds disjoint.",
+      "Filter the key.",
+      "Include the key in unique constraints."
+     ],
+     "example": {
+      "sql": "SELECT * FROM enrollments_partitioned WHERE enrolled_on >= '2026-01-01' AND enrolled_on < '2027-01-01';",
+      "output": "A prunable query."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Partition Performance",
+     "simple": "Partitioning scan kam karta hai, planning badha sakta hai.",
+     "pro": "Partitioning helps when queries prune and maintenance targets individual partitions, but too many partitions increase planning and catalog overhead.",
+     "points": [
+      "Prune aggressively.",
+      "Avoid hundreds of tiny partitions.",
+      "Measure planning time."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM enrollments_partitioned WHERE enrolled_on = '2026-05-01';",
+      "output": "A single-partition plan."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Monitoring Partitions",
+     "simple": "Partition sizes aur row counts monitor karo.",
+     "pro": "Monitor child sizes and growth so retention and vacuum keep up with the workload.",
+     "points": [
+      "Check reltuples.",
+      "Watch default partition growth.",
+      "Automate new partitions."
+     ],
+     "example": {
+      "sql": "SELECT relname, reltuples FROM pg_class WHERE relname LIKE 'enrollments_%';",
+      "output": "Partition row estimates."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Time Partitioning",
+     "simple": "Time-based range partitioning common pattern hai.",
+     "pro": "Monthly or yearly partitions make retention and time-range queries cheap.",
+     "points": [
+      "Create future partitions.",
+      "Detach old ones.",
+      "Keep a default only as a safety net."
+     ],
+     "example": {
+      "sql": "CREATE TABLE events_2026_01 PARTITION OF events FOR VALUES FROM ('2026-01-01') TO ('2026-02-01');",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Subpartitioning",
+     "simple": "Partition ko further partition kar sakte hain.",
+     "pro": "A partition can itself be partitioned, enabling multi-level strategies such as year then region.",
+     "points": [
+      "Use sparingly.",
+      "More levels increase planning.",
+      "Keep pruning keys aligned."
+     ],
+     "example": {
+      "sql": "CREATE TABLE events_2026 PARTITION OF events FOR VALUES FROM ('2026-01-01') TO ('2027-01-01') PARTITION BY LIST (region);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Partitioning",
+     "simple": "Partition key ko query pattern se choose karo.",
+     "pro": "Choose a key that appears in common filters and supports retention, then verify pruning with EXPLAIN.",
+     "points": [
+      "Match query filters.",
+      "Plan retention.",
+      "Test pruning.",
+      "Monitor growth."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM events WHERE created_at >= '2026-01-01' AND created_at < '2026-02-01';",
+      "output": "A pruned plan."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 28 · Partitioning Basics: what is the main purpose?",
+      "options": [
+       "Partitioning Basics: Partitioning table ko smaller pieces me todta hai.",
+       "Range Partitioning: Range partition values ke intervals banata hai.",
+       "Attaching Partitions: Existing table ko partition attach kar sakte hain.",
+       "Partition vs Sharding: Partitioning ek database ke andar hota hai; sharding servers me."
+      ],
+      "answer": "Partitioning Basics: Partitioning table ko smaller pieces me todta hai.",
+      "why": "A partitioned table routes rows into child partitions by a partition key, while queries use the parent name."
+     },
+     {
+      "q": "Module 28 · Range Partitioning: what is the main purpose?",
+      "options": [
+       "List Partitioning: List partition discrete values ke liye hota hai.",
+       "Detaching Partitions: DETACH PARTITION partition ko parent se alag karta hai.",
+       "Common Partition Errors: Overlapping bounds, missing key aur no pruning common errors hain.",
+       "Range Partitioning: Range partition values ke intervals banata hai."
+      ],
+      "answer": "Range Partitioning: Range partition values ke intervals banata hai.",
+      "why": "Range partitioning assigns rows to partitions based on value ranges such as months or years."
+     },
+     {
+      "q": "Module 28 · List Partitioning: what is the main purpose?",
+      "options": [
+       "Indexes on Partitions: Partitioned indexes parent par bhi bante hain.",
+       "Partition Performance: Partitioning scan kam karta hai, planning badha sakta hai.",
+       "List Partitioning: List partition discrete values ke liye hota hai.",
+       "Hash Partitioning: Hash partition rows ko evenly distribute karta hai."
+      ],
+      "answer": "List Partitioning: List partition discrete values ke liye hota hai.",
+      "why": "List partitioning assigns rows to partitions by an explicit value list, such as region or status."
+     },
+     {
+      "q": "Module 28 · Hash Partitioning: what is the main purpose?",
+      "options": [
+       "Monitoring Partitions: Partition sizes aur row counts monitor karo.",
+       "Hash Partitioning: Hash partition rows ko evenly distribute karta hai.",
+       "Partition Key: Partition key routing aur pruning decide karta hai.",
+       "Constraints on Partitions: Partitioned tables constraints inherit karte hain."
+      ],
+      "answer": "Hash Partitioning: Hash partition rows ko evenly distribute karta hai.",
+      "why": "Hash partitioning applies a hash to the key and routes rows to a fixed number of partitions."
+     },
+     {
+      "q": "Module 28 · Partition Key: what is the main purpose?",
+      "options": [
+       "Partition Key: Partition key routing aur pruning decide karta hai.",
+       "Partition Pruning: Pruning irrelevant partitions skip karta hai.",
+       "Default Partition: Default partition unmatched rows ko catch karta hai.",
+       "Time Partitioning: Time-based range partitioning common pattern hai."
+      ],
+      "answer": "Partition Key: Partition key routing aur pruning decide karta hai.",
+      "why": "The partition key determines which partition stores a row and which partitions a query can skip."
+     },
+     {
+      "q": "Module 28 · Partition Pruning: what is the main purpose?",
+      "options": [
+       "Creating Partitions: CREATE TABLE PARTITION OF child banata hai.",
+       "Partition Maintenance: Old partitions detach aur archive karo.",
+       "Subpartitioning: Partition ko further partition kar sakte hain.",
+       "Partition Pruning: Pruning irrelevant partitions skip karta hai."
+      ],
+      "answer": "Partition Pruning: Pruning irrelevant partitions skip karta hai.",
+      "why": "The planner prunes partitions whose bounds cannot match the query predicate, reducing scan work."
+     },
+     {
+      "q": "Module 28 · Creating Partitions: what is the main purpose?",
+      "options": [
+       "Partition vs Sharding: Partitioning ek database ke andar hota hai; sharding servers me.",
+       "Practical Partitioning: Partition key ko query pattern se choose karo.",
+       "Creating Partitions: CREATE TABLE PARTITION OF child banata hai.",
+       "Attaching Partitions: Existing table ko partition attach kar sakte hain."
+      ],
+      "answer": "Creating Partitions: CREATE TABLE PARTITION OF child banata hai.",
+      "why": "A partition is created with CREATE TABLE ... PARTITION OF parent FOR VALUES ... and inherits the parent columns."
+     },
+     {
+      "q": "Module 28 · Attaching Partitions: what is the main purpose?",
+      "options": [
+       "Partitioning Basics: Partitioning table ko smaller pieces me todta hai.",
+       "Attaching Partitions: Existing table ko partition attach kar sakte hain.",
+       "Detaching Partitions: DETACH PARTITION partition ko parent se alag karta hai.",
+       "Common Partition Errors: Overlapping bounds, missing key aur no pruning common errors hain."
+      ],
+      "answer": "Attaching Partitions: Existing table ko partition attach kar sakte hain.",
+      "why": "ATTACH PARTITION adds an existing table after validating its rows against the bounds."
+     },
+     {
+      "q": "Module 28 · Detaching Partitions: what is the main purpose?",
+      "options": [
+       "Detaching Partitions: DETACH PARTITION partition ko parent se alag karta hai.",
+       "Indexes on Partitions: Partitioned indexes parent par bhi bante hain.",
+       "Partition Performance: Partitioning scan kam karta hai, planning badha sakta hai.",
+       "Range Partitioning: Range partition values ke intervals banata hai."
+      ],
+      "answer": "Detaching Partitions: DETACH PARTITION partition ko parent se alag karta hai.",
+      "why": "DETACH PARTITION removes a child from the partitioned table while keeping its data as a standalone table."
+     },
+     {
+      "q": "Module 28 · Indexes on Partitions: what is the main purpose?",
+      "options": [
+       "Constraints on Partitions: Partitioned tables constraints inherit karte hain.",
+       "Monitoring Partitions: Partition sizes aur row counts monitor karo.",
+       "List Partitioning: List partition discrete values ke liye hota hai.",
+       "Indexes on Partitions: Partitioned indexes parent par bhi bante hain."
+      ],
+      "answer": "Indexes on Partitions: Partitioned indexes parent par bhi bante hain.",
+      "why": "Indexes created on the parent are propagated to partitions, and each child can also have its own indexes."
+     },
+     {
+      "q": "Module 28 · Constraints on Partitions: what is the main purpose?",
+      "options": [
+       "Time Partitioning: Time-based range partitioning common pattern hai.",
+       "Hash Partitioning: Hash partition rows ko evenly distribute karta hai.",
+       "Constraints on Partitions: Partitioned tables constraints inherit karte hain.",
+       "Default Partition: Default partition unmatched rows ko catch karta hai."
+      ],
+      "answer": "Constraints on Partitions: Partitioned tables constraints inherit karte hain.",
+      "why": "CHECK, NOT NULL and foreign keys apply to partitions; unique constraints must include the partition key."
+     },
+     {
+      "q": "Module 28 · Default Partition: what is the main purpose?",
+      "options": [
+       "Partition Key: Partition key routing aur pruning decide karta hai.",
+       "Default Partition: Default partition unmatched rows ko catch karta hai.",
+       "Partition Maintenance: Old partitions detach aur archive karo.",
+       "Subpartitioning: Partition ko further partition kar sakte hain."
+      ],
+      "answer": "Default Partition: Default partition unmatched rows ko catch karta hai.",
+      "why": "A DEFAULT partition stores rows that match no other partition, preventing insert failures but hiding gaps."
+     },
+     {
+      "q": "Module 28 · Partition Maintenance: what is the main purpose?",
+      "options": [
+       "Partition Maintenance: Old partitions detach aur archive karo.",
+       "Partition vs Sharding: Partitioning ek database ke andar hota hai; sharding servers me.",
+       "Practical Partitioning: Partition key ko query pattern se choose karo.",
+       "Partition Pruning: Pruning irrelevant partitions skip karta hai."
+      ],
+      "answer": "Partition Maintenance: Old partitions detach aur archive karo.",
+      "why": "Retention usually detaches or drops old partitions instead of running a huge DELETE."
+     },
+     {
+      "q": "Module 28 · Partition vs Sharding: what is the main purpose?",
+      "options": [
+       "Common Partition Errors: Overlapping bounds, missing key aur no pruning common errors hain.",
+       "Partitioning Basics: Partitioning table ko smaller pieces me todta hai.",
+       "Creating Partitions: CREATE TABLE PARTITION OF child banata hai.",
+       "Partition vs Sharding: Partitioning ek database ke andar hota hai; sharding servers me."
+      ],
+      "answer": "Partition vs Sharding: Partitioning ek database ke andar hota hai; sharding servers me.",
+      "why": "Partitioning splits a table inside one PostgreSQL instance, while sharding distributes data across independent servers."
+     },
+     {
+      "q": "Module 28 · Common Partition Errors: what is the main purpose?",
+      "options": [
+       "Range Partitioning: Range partition values ke intervals banata hai.",
+       "Attaching Partitions: Existing table ko partition attach kar sakte hain.",
+       "Common Partition Errors: Overlapping bounds, missing key aur no pruning common errors hain.",
+       "Partition Performance: Partitioning scan kam karta hai, planning badha sakta hai."
+      ],
+      "answer": "Common Partition Errors: Overlapping bounds, missing key aur no pruning common errors hain.",
+      "why": "Common failures are overlapping partition bounds, queries that do not filter the key, and unique constraints missing the partition key."
+     },
+     {
+      "q": "Module 28 · Partition Performance: what is the main purpose?",
+      "options": [
+       "Detaching Partitions: DETACH PARTITION partition ko parent se alag karta hai.",
+       "Partition Performance: Partitioning scan kam karta hai, planning badha sakta hai.",
+       "Monitoring Partitions: Partition sizes aur row counts monitor karo.",
+       "List Partitioning: List partition discrete values ke liye hota hai."
+      ],
+      "answer": "Partition Performance: Partitioning scan kam karta hai, planning badha sakta hai.",
+      "why": "Partitioning helps when queries prune and maintenance targets individual partitions, but too many partitions increase planning and catalog overhead."
+     },
+     {
+      "q": "Module 28 · Monitoring Partitions: what is the main purpose?",
+      "options": [
+       "Monitoring Partitions: Partition sizes aur row counts monitor karo.",
+       "Time Partitioning: Time-based range partitioning common pattern hai.",
+       "Hash Partitioning: Hash partition rows ko evenly distribute karta hai.",
+       "Indexes on Partitions: Partitioned indexes parent par bhi bante hain."
+      ],
+      "answer": "Monitoring Partitions: Partition sizes aur row counts monitor karo.",
+      "why": "Monitor child sizes and growth so retention and vacuum keep up with the workload."
+     },
+     {
+      "q": "Module 28 · Time Partitioning: what is the main purpose?",
+      "options": [
+       "Subpartitioning: Partition ko further partition kar sakte hain.",
+       "Partition Key: Partition key routing aur pruning decide karta hai.",
+       "Constraints on Partitions: Partitioned tables constraints inherit karte hain.",
+       "Time Partitioning: Time-based range partitioning common pattern hai."
+      ],
+      "answer": "Time Partitioning: Time-based range partitioning common pattern hai.",
+      "why": "Monthly or yearly partitions make retention and time-range queries cheap."
+     },
+     {
+      "q": "Module 28 · Subpartitioning: what is the main purpose?",
+      "options": [
+       "Partition Pruning: Pruning irrelevant partitions skip karta hai.",
+       "Default Partition: Default partition unmatched rows ko catch karta hai.",
+       "Subpartitioning: Partition ko further partition kar sakte hain.",
+       "Practical Partitioning: Partition key ko query pattern se choose karo."
+      ],
+      "answer": "Subpartitioning: Partition ko further partition kar sakte hain.",
+      "why": "A partition can itself be partitioned, enabling multi-level strategies such as year then region."
+     },
+     {
+      "q": "Module 28 · Practical Partitioning: what is the main purpose?",
+      "options": [
+       "Partition Maintenance: Old partitions detach aur archive karo.",
+       "Practical Partitioning: Partition key ko query pattern se choose karo.",
+       "Partitioning Basics: Partitioning table ko smaller pieces me todta hai.",
+       "Creating Partitions: CREATE TABLE PARTITION OF child banata hai."
+      ],
+      "answer": "Practical Partitioning: Partition key ko query pattern se choose karo.",
+      "why": "Choose a key that appears in common filters and supports retention, then verify pruning with EXPLAIN."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 28 · Explain Partitioning Basics in a production query.",
+      "answer": "A partitioned table routes rows into child partitions by a partition key, while queries use the parent name. Key rules: The parent is logical. Partitions are physical. The key controls routing."
+     },
+     {
+      "q": "Module 28 · Explain Range Partitioning in a production query.",
+      "answer": "Range partitioning assigns rows to partitions based on value ranges such as months or years. Key rules: Good for dates. Boundaries are explicit. A default partition catches gaps."
+     },
+     {
+      "q": "Module 28 · Explain List Partitioning in a production query.",
+      "answer": "List partitioning assigns rows to partitions by an explicit value list, such as region or status. Key rules: Good for categories. Each value belongs to one partition. Unknown values need a default."
+     },
+     {
+      "q": "Module 28 · Explain Hash Partitioning in a production query.",
+      "answer": "Hash partitioning applies a hash to the key and routes rows to a fixed number of partitions. Key rules: Good for even distribution. No natural range pruning. Choose a stable key."
+     },
+     {
+      "q": "Module 28 · Explain Partition Key in a production query.",
+      "answer": "The partition key determines which partition stores a row and which partitions a query can skip. Key rules: Choose a common filter. Keep it immutable. Include it in primary keys."
+     },
+     {
+      "q": "Module 28 · Explain Partition Pruning in a production query.",
+      "answer": "The planner prunes partitions whose bounds cannot match the query predicate, reducing scan work. Key rules: Use the partition key in predicates. Avoid functions on the key. Check EXPLAIN."
+     },
+     {
+      "q": "Module 28 · Explain Creating Partitions in a production query.",
+      "answer": "A partition is created with CREATE TABLE ... PARTITION OF parent FOR VALUES ... and inherits the parent columns. Key rules: Create before inserting. Bounds must not overlap. Use a default partition carefully."
+     },
+     {
+      "q": "Module 28 · Explain Attaching Partitions in a production query.",
+      "answer": "ATTACH PARTITION adds an existing table after validating its rows against the bounds. Key rules: Validate the data first. It can lock. Use CHECK constraints to speed validation."
+     },
+     {
+      "q": "Module 28 · Explain Detaching Partitions in a production query.",
+      "answer": "DETACH PARTITION removes a child from the partitioned table while keeping its data as a standalone table. Key rules: It is useful for retention. CONCURRENTLY reduces locking. The table remains."
+     },
+     {
+      "q": "Module 28 · Explain Indexes on Partitions in a production query.",
+      "answer": "Indexes created on the parent are propagated to partitions, and each child can also have its own indexes. Key rules: Create on the parent. Check child indexes. Unique indexes need the key."
+     },
+     {
+      "q": "Module 28 · Explain Constraints on Partitions in a production query.",
+      "answer": "CHECK, NOT NULL and foreign keys apply to partitions; unique constraints must include the partition key. Key rules: Primary keys include the key. Foreign keys work per partition. Validation can be costly."
+     },
+     {
+      "q": "Module 28 · Explain Default Partition in a production query.",
+      "answer": "A DEFAULT partition stores rows that match no other partition, preventing insert failures but hiding gaps. Key rules: It catches mistakes. It can grow large. Move rows before adding bounds."
+     },
+     {
+      "q": "Module 28 · Explain Partition Maintenance in a production query.",
+      "answer": "Retention usually detaches or drops old partitions instead of running a huge DELETE. Key rules: Detach old data. Archive externally. Drop when safe."
+     },
+     {
+      "q": "Module 28 · Explain Partition vs Sharding in a production query.",
+      "answer": "Partitioning splits a table inside one PostgreSQL instance, while sharding distributes data across independent servers. Key rules: Partitioning is local. Sharding is distributed. Both need a key."
+     },
+     {
+      "q": "Module 28 · Explain Common Partition Errors in a production query.",
+      "answer": "Common failures are overlapping partition bounds, queries that do not filter the key, and unique constraints missing the partition key. Key rules: Keep bounds disjoint. Filter the key. Include the key in unique constraints."
+     },
+     {
+      "q": "Module 28 · Explain Partition Performance in a production query.",
+      "answer": "Partitioning helps when queries prune and maintenance targets individual partitions, but too many partitions increase planning and catalog overhead. Key rules: Prune aggressively. Avoid hundreds of tiny partitions. Measure planning time."
+     },
+     {
+      "q": "Module 28 · Explain Monitoring Partitions in a production query.",
+      "answer": "Monitor child sizes and growth so retention and vacuum keep up with the workload. Key rules: Check reltuples. Watch default partition growth. Automate new partitions."
+     },
+     {
+      "q": "Module 28 · Explain Time Partitioning in a production query.",
+      "answer": "Monthly or yearly partitions make retention and time-range queries cheap. Key rules: Create future partitions. Detach old ones. Keep a default only as a safety net."
+     },
+     {
+      "q": "Module 28 · Explain Subpartitioning in a production query.",
+      "answer": "A partition can itself be partitioned, enabling multi-level strategies such as year then region. Key rules: Use sparingly. More levels increase planning. Keep pruning keys aligned."
+     },
+     {
+      "q": "Module 28 · Explain Practical Partitioning in a production query.",
+      "answer": "Choose a key that appears in common filters and supports retention, then verify pruning with EXPLAIN. Key rules: Match query filters. Plan retention. Test pruning. Monitor growth."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Partitioning Basics",
+      "task": "Write a SQL example that demonstrates Partitioning Basics.",
+      "solution": "CREATE TABLE enrollments_partitioned (student_id BIGINT, course_id INTEGER, enrolled_on DATE NOT NULL) PARTITION BY RANGE (enrolled_on);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Range Partitioning",
+      "task": "Write a SQL example that demonstrates Range Partitioning.",
+      "solution": "CREATE TABLE enrollments_2026 PARTITION OF enrollments_partitioned FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "List Partitioning",
+      "task": "Write a SQL example that demonstrates List Partitioning.",
+      "solution": "CREATE TABLE students_in PARTITION OF students PARTITION BY LIST (region);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Hash Partitioning",
+      "task": "Write a SQL example that demonstrates Hash Partitioning.",
+      "solution": "CREATE TABLE events_hash PARTITION OF events FOR VALUES WITH (MODULUS 4, REMAINDER 0);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Partition Key",
+      "task": "Write a SQL example that demonstrates Partition Key.",
+      "solution": "CREATE TABLE events (id BIGINT, created_at DATE NOT NULL, payload JSONB) PARTITION BY RANGE (created_at);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Partition Pruning",
+      "task": "Write a SQL example that demonstrates Partition Pruning.",
+      "solution": "EXPLAIN SELECT * FROM enrollments_partitioned WHERE enrolled_on >= '2026-01-01';",
+      "expected": "A plan touching only matching partitions."
+     },
+     {
+      "title": "Creating Partitions",
+      "task": "Write a SQL example that demonstrates Creating Partitions.",
+      "solution": "CREATE TABLE enrollments_2025 PARTITION OF enrollments_partitioned FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Attaching Partitions",
+      "task": "Write a SQL example that demonstrates Attaching Partitions.",
+      "solution": "ALTER TABLE enrollments_partitioned ATTACH PARTITION enrollments_2025 FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Detaching Partitions",
+      "task": "Write a SQL example that demonstrates Detaching Partitions.",
+      "solution": "ALTER TABLE enrollments_partitioned DETACH PARTITION enrollments_2025;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Indexes on Partitions",
+      "task": "Write a SQL example that demonstrates Indexes on Partitions.",
+      "solution": "CREATE INDEX enrollments_partitioned_student ON enrollments_partitioned (student_id);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Constraints on Partitions",
+      "task": "Write a SQL example that demonstrates Constraints on Partitions.",
+      "solution": "ALTER TABLE enrollments_partitioned ADD PRIMARY KEY (student_id, course_id, enrolled_on);",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Default Partition",
+      "task": "Write a SQL example that demonstrates Default Partition.",
+      "solution": "CREATE TABLE enrollments_default PARTITION OF enrollments_partitioned DEFAULT;",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Partition Maintenance",
+      "task": "Write a SQL example that demonstrates Partition Maintenance.",
+      "solution": "ALTER TABLE enrollments_partitioned DETACH PARTITION enrollments_2024;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Partition vs Sharding",
+      "task": "Write a SQL example that demonstrates Partition vs Sharding.",
+      "solution": "-- Partitioning keeps one connection and one catalog",
+      "expected": "A local partition strategy."
+     },
+     {
+      "title": "Common Partition Errors",
+      "task": "Write a SQL example that demonstrates Common Partition Errors.",
+      "solution": "SELECT * FROM enrollments_partitioned WHERE enrolled_on >= '2026-01-01' AND enrolled_on < '2027-01-01';",
+      "expected": "A prunable query."
+     },
+     {
+      "title": "Partition Performance",
+      "task": "Write a SQL example that demonstrates Partition Performance.",
+      "solution": "EXPLAIN SELECT * FROM enrollments_partitioned WHERE enrolled_on = '2026-05-01';",
+      "expected": "A single-partition plan."
+     },
+     {
+      "title": "Monitoring Partitions",
+      "task": "Write a SQL example that demonstrates Monitoring Partitions.",
+      "solution": "SELECT relname, reltuples FROM pg_class WHERE relname LIKE 'enrollments_%';",
+      "expected": "Partition row estimates."
+     },
+     {
+      "title": "Time Partitioning",
+      "task": "Write a SQL example that demonstrates Time Partitioning.",
+      "solution": "CREATE TABLE events_2026_01 PARTITION OF events FOR VALUES FROM ('2026-01-01') TO ('2026-02-01');",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Subpartitioning",
+      "task": "Write a SQL example that demonstrates Subpartitioning.",
+      "solution": "CREATE TABLE events_2026 PARTITION OF events FOR VALUES FROM ('2026-01-01') TO ('2027-01-01') PARTITION BY LIST (region);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Practical Partitioning",
+      "task": "Write a SQL example that demonstrates Practical Partitioning.",
+      "solution": "EXPLAIN SELECT * FROM events WHERE created_at >= '2026-01-01' AND created_at < '2026-02-01';",
+      "expected": "A pruned plan."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 28 · Why does Partitioning Basics matter?",
+      "answer": "A partitioned table routes rows into child partitions by a partition key, while queries use the parent name. The parent is logical. Partitions are physical. The key controls routing."
+     },
+     {
+      "q": "Module 28 · Why does Range Partitioning matter?",
+      "answer": "Range partitioning assigns rows to partitions based on value ranges such as months or years. Good for dates. Boundaries are explicit. A default partition catches gaps."
+     },
+     {
+      "q": "Module 28 · Why does List Partitioning matter?",
+      "answer": "List partitioning assigns rows to partitions by an explicit value list, such as region or status. Good for categories. Each value belongs to one partition. Unknown values need a default."
+     },
+     {
+      "q": "Module 28 · Why does Hash Partitioning matter?",
+      "answer": "Hash partitioning applies a hash to the key and routes rows to a fixed number of partitions. Good for even distribution. No natural range pruning. Choose a stable key."
+     },
+     {
+      "q": "Module 28 · Why does Partition Key matter?",
+      "answer": "The partition key determines which partition stores a row and which partitions a query can skip. Choose a common filter. Keep it immutable. Include it in primary keys."
+     },
+     {
+      "q": "Module 28 · Why does Partition Pruning matter?",
+      "answer": "The planner prunes partitions whose bounds cannot match the query predicate, reducing scan work. Use the partition key in predicates. Avoid functions on the key. Check EXPLAIN."
+     },
+     {
+      "q": "Module 28 · Why does Creating Partitions matter?",
+      "answer": "A partition is created with CREATE TABLE ... PARTITION OF parent FOR VALUES ... and inherits the parent columns. Create before inserting. Bounds must not overlap. Use a default partition carefully."
+     },
+     {
+      "q": "Module 28 · Why does Attaching Partitions matter?",
+      "answer": "ATTACH PARTITION adds an existing table after validating its rows against the bounds. Validate the data first. It can lock. Use CHECK constraints to speed validation."
+     },
+     {
+      "q": "Module 28 · Why does Detaching Partitions matter?",
+      "answer": "DETACH PARTITION removes a child from the partitioned table while keeping its data as a standalone table. It is useful for retention. CONCURRENTLY reduces locking. The table remains."
+     },
+     {
+      "q": "Module 28 · Why does Indexes on Partitions matter?",
+      "answer": "Indexes created on the parent are propagated to partitions, and each child can also have its own indexes. Create on the parent. Check child indexes. Unique indexes need the key."
+     },
+     {
+      "q": "Module 28 · Why does Constraints on Partitions matter?",
+      "answer": "CHECK, NOT NULL and foreign keys apply to partitions; unique constraints must include the partition key. Primary keys include the key. Foreign keys work per partition. Validation can be costly."
+     },
+     {
+      "q": "Module 28 · Why does Default Partition matter?",
+      "answer": "A DEFAULT partition stores rows that match no other partition, preventing insert failures but hiding gaps. It catches mistakes. It can grow large. Move rows before adding bounds."
+     },
+     {
+      "q": "Module 28 · Why does Partition Maintenance matter?",
+      "answer": "Retention usually detaches or drops old partitions instead of running a huge DELETE. Detach old data. Archive externally. Drop when safe."
+     },
+     {
+      "q": "Module 28 · Why does Partition vs Sharding matter?",
+      "answer": "Partitioning splits a table inside one PostgreSQL instance, while sharding distributes data across independent servers. Partitioning is local. Sharding is distributed. Both need a key."
+     },
+     {
+      "q": "Module 28 · Why does Common Partition Errors matter?",
+      "answer": "Common failures are overlapping partition bounds, queries that do not filter the key, and unique constraints missing the partition key. Keep bounds disjoint. Filter the key. Include the key in unique constraints."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Overlapping bounds",
+      "broken": "CREATE TABLE p1 PARTITION OF events FOR VALUES FROM ('2026-01-01') TO ('2026-07-01');\nCREATE TABLE p2 PARTITION OF events FOR VALUES FROM ('2026-06-01') TO ('2027-01-01');",
+      "fix": "CREATE TABLE p2 PARTITION OF events FOR VALUES FROM ('2026-07-01') TO ('2027-01-01');",
+      "error": "partition \"p2\" would overlap partition \"p1\"",
+      "expected": "Disjoint partitions."
+     },
+     {
+      "title": "No partition for row",
+      "broken": "INSERT INTO events (id, created_at) VALUES (1, '2028-01-01');",
+      "fix": "CREATE TABLE events_2028 PARTITION OF events FOR VALUES FROM ('2028-01-01') TO ('2029-01-01');",
+      "error": "no partition of relation \"events\" found for row",
+      "expected": "The row has a partition."
+     },
+     {
+      "title": "Unique key missing partition column",
+      "broken": "ALTER TABLE events ADD PRIMARY KEY (id);",
+      "fix": "ALTER TABLE events ADD PRIMARY KEY (id, created_at);",
+      "error": "unique constraint on partitioned table must include all partition key columns",
+      "expected": "A valid partitioned key."
+     },
+     {
+      "title": "Function blocks pruning",
+      "broken": "EXPLAIN SELECT * FROM events WHERE DATE_TRUNC('month', created_at) = '2026-01-01';",
+      "fix": "EXPLAIN SELECT * FROM events WHERE created_at >= '2026-01-01' AND created_at < '2026-02-01';",
+      "error": "The function on the key prevents partition pruning",
+      "expected": "A prunable range."
+     },
+     {
+      "title": "Default partition growth",
+      "broken": "CREATE TABLE events_default PARTITION OF events DEFAULT;",
+      "fix": "Create explicit partitions for expected ranges and keep the default as a temporary safety net.",
+      "error": "The default partition accumulates unexpected rows",
+      "expected": "A planned partition set."
+     },
+     {
+      "title": "Attach without validation",
+      "broken": "ALTER TABLE events ATTACH PARTITION old_events FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');",
+      "fix": "ALTER TABLE old_events ADD CONSTRAINT old_events_check CHECK (created_at >= '2024-01-01' AND created_at < '2025-01-01');\nALTER TABLE events ATTACH PARTITION old_events FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');",
+      "error": "The attach scans and locks to validate rows",
+      "expected": "A faster validated attach."
+     },
+     {
+      "title": "Detach missing partition",
+      "broken": "ALTER TABLE events DETACH PARTITION events_2024;",
+      "fix": "ALTER TABLE events DETACH PARTITION events_2024 CONCURRENTLY;",
+      "error": "A normal detach can block concurrent work",
+      "expected": "A concurrent detach."
+     },
+     {
+      "title": "Query misses key",
+      "broken": "SELECT * FROM events WHERE id = 1;",
+      "fix": "SELECT * FROM events WHERE id = 1 AND created_at >= '2026-01-01';",
+      "error": "The query scans every partition",
+      "expected": "A pruned query."
+     },
+     {
+      "title": "Too many partitions",
+      "broken": "CREATE TABLE events_2026_01_01 PARTITION OF events FOR VALUES FROM ('2026-01-01') TO ('2026-01-02');",
+      "fix": "Use monthly partitions instead of daily partitions unless the workload truly needs daily pruning.",
+      "error": "Planning and catalog overhead grows",
+      "expected": "A manageable partition count."
+     },
+     {
+      "title": "Drop parent",
+      "broken": "DROP TABLE events;",
+      "fix": "DROP TABLE events CASCADE;",
+      "error": "cannot drop table events because other objects depend on it",
+      "expected": "The partitioned table and children are removed."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 28 · State one key rule for Partitioning Basics.",
+      "answer": "The parent is logical."
+     },
+     {
+      "q": "Module 28 · State one key rule for Range Partitioning.",
+      "answer": "Good for dates."
+     },
+     {
+      "q": "Module 28 · State one key rule for List Partitioning.",
+      "answer": "Good for categories."
+     },
+     {
+      "q": "Module 28 · State one key rule for Hash Partitioning.",
+      "answer": "Good for even distribution."
+     },
+     {
+      "q": "Module 28 · State one key rule for Partition Key.",
+      "answer": "Choose a common filter."
+     },
+     {
+      "q": "Module 28 · State one key rule for Partition Pruning.",
+      "answer": "Use the partition key in predicates."
+     },
+     {
+      "q": "Module 28 · State one key rule for Creating Partitions.",
+      "answer": "Create before inserting."
+     },
+     {
+      "q": "Module 28 · State one key rule for Attaching Partitions.",
+      "answer": "Validate the data first."
+     },
+     {
+      "q": "Module 28 · State one key rule for Detaching Partitions.",
+      "answer": "It is useful for retention."
+     },
+     {
+      "q": "Module 28 · State one key rule for Indexes on Partitions.",
+      "answer": "Create on the parent."
+     }
+    ]
+   }
+  }
+ ]
+}

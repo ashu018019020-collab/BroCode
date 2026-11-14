@@ -1,0 +1,920 @@
+{
+ "modules": [
+  {
+   "id": "sql26",
+   "no": 26,
+   "title": "Advanced Indexing",
+   "goal": "Use specialized indexes and index-only access without over-indexing the database.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Index Types Review",
+     "simple": "B-tree, hash, GIN, GiST aur BRIN alag workloads ke liye hain.",
+     "pro": "PostgreSQL index types target different data shapes: B-tree for ordered scalars, hash for equality, GIN for composites, GiST for ranges and BRIN for correlated large tables.",
+     "points": [
+      "Match the type to the data.",
+      "B-tree is the default.",
+      "Specialized indexes need operator classes."
+     ],
+     "example": {
+      "sql": "SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'students';",
+      "output": "The table indexes."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "B-tree Deep Dive",
+     "simple": "B-tree ordered comparisons aur ranges support karta hai.",
+     "pro": "A B-tree keeps keys ordered, supporting equality, ranges, prefix LIKE and ORDER BY.",
+     "points": [
+      "It is balanced.",
+      "It supports ordering.",
+      "It handles duplicates."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_students_marks ON students (marks DESC);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Composite Index Order",
+     "simple": "Composite index ka order left-to-right use hota hai.",
+     "pro": "A composite B-tree can serve queries on its leading columns; later columns are useful only when earlier ones are constrained.",
+     "points": [
+      "Put equality first.",
+      "Ranges come later.",
+      "A skipped leading column weakens use."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_enrollments_student_course ON enrollments (student_id, course_id);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Covering Indexes",
+     "simple": "INCLUDE payload columns index-only scan dete hain.",
+     "pro": "INCLUDE adds non-key columns so the index can satisfy a query without heap access.",
+     "points": [
+      "INCLUDE is not part of the key.",
+      "It increases size.",
+      "Visibility map affects index-only scans."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_students_marks_include ON students (marks) INCLUDE (name);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Partial Indexes",
+     "simple": "Partial index predicate se index chhota hota hai.",
+     "pro": "A partial index stores only rows matching its WHERE clause and is useful for rare or active subsets.",
+     "points": [
+      "The query must imply the predicate.",
+      "It saves space.",
+      "It speeds writes versus a full index."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_students_high_marks ON students (marks) WHERE marks >= 90;",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Expression Indexes",
+     "simple": "Expression index computed values ko index karta hai.",
+     "pro": "An expression index stores a function result, such as LOWER(email), and serves queries using the same expression.",
+     "points": [
+      "Match the expression.",
+      "It is useful for case-insensitive lookups.",
+      "It costs write CPU."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_students_lower_email ON students (LOWER(email));",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "GIN Indexes",
+     "simple": "GIN composite values ke containment ke liye hai.",
+     "pro": "GIN builds an inverted index for arrays, JSONB and text search, accelerating containment and existence operators.",
+     "points": [
+      "Good for @>, ?, @@.",
+      "Updates can be expensive.",
+      "Choose the right opclass."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_students_name_gin ON students USING gin (to_tsvector('simple', name));",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "GiST Indexes",
+     "simple": "GiST ranges, geometry aur nearest-neighbor ke liye hai.",
+     "pro": "GiST supports balanced search trees over complex types and powers exclusion constraints.",
+     "points": [
+      "Good for ranges.",
+      "Supports KNN.",
+      "Needs the right extension."
+     ],
+     "example": {
+      "sql": "CREATE EXTENSION IF NOT EXISTS btree_gist;\nCREATE INDEX idx_enrollments_date_gist ON enrollments USING gist (enrolled_on);",
+      "output": "CREATE EXTENSION\nCREATE INDEX"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "BRIN Indexes",
+     "simple": "BRIN large ordered tables ke liye compact hai.",
+     "pro": "BRIN stores block-range summaries, making it tiny and effective when a column correlates with physical order, such as timestamps.",
+     "points": [
+      "Very small.",
+      "Good for append-only data.",
+      "Less precise than B-tree."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_enrollments_date_brin ON enrollments USING brin (enrolled_on);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Hash Indexes",
+     "simple": "Hash index equality-only lookup deta hai.",
+     "pro": "A hash index stores hash codes and supports equality, but not ordering or ranges.",
+     "points": [
+      "Equality only.",
+      "Rarely better than B-tree.",
+      "It cannot support ORDER BY."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_students_email_hash ON students USING hash (email);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Index-Only Scans",
+     "simple": "Index-only scan heap visit bachata hai.",
+     "pro": "When all requested columns are in the index and the visibility map is favorable, PostgreSQL can answer from the index alone.",
+     "points": [
+      "Use INCLUDE.",
+      "VACUUM maintains visibility.",
+      "Check EXPLAIN for Heap Fetches."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT name FROM students WHERE marks > 90;",
+      "output": "An Index Only Scan when covered."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Index Bloat",
+     "simple": "Updates index bloat create karte hain.",
+     "pro": "Dead index entries accumulate after updates and deletes, increasing size and slowing scans until cleanup.",
+     "points": [
+      "Monitor size.",
+      "VACUUM regularly.",
+      "REINDEX when needed."
+     ],
+     "example": {
+      "sql": "SELECT pg_size_pretty(pg_relation_size('idx_students_marks'));",
+      "output": "The index size."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "REINDEX",
+     "simple": "REINDEX index rebuild karta hai.",
+     "pro": "REINDEX rebuilds an index to remove bloat or repair corruption; it can lock the index or table.",
+     "points": [
+      "Use CONCURRENTLY when available.",
+      "It needs free space.",
+      "It can be slow."
+     ],
+     "example": {
+      "sql": "REINDEX INDEX CONCURRENTLY idx_students_marks;",
+      "output": "REINDEX"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Concurrent Index Creation",
+     "simple": "CONCURRENTLY live writes allow karta hai.",
+     "pro": "CREATE INDEX CONCURRENTLY builds without blocking writes but takes longer and cannot run in a transaction block.",
+     "points": [
+      "Avoids write locks.",
+      "Can fail and leave an invalid index.",
+      "Run outside a transaction."
+     ],
+     "example": {
+      "sql": "CREATE INDEX CONCURRENTLY idx_students_marks ON students (marks);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Index Selectivity",
+     "simple": "Selectivity index ki usefulness batati hai.",
+     "pro": "An index is most useful when the predicate returns a small fraction of rows; low selectivity may favor a sequential scan.",
+     "points": [
+      "High selectivity is better.",
+      "Statistics matter.",
+      "Test with real data."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(DISTINCT marks)::numeric / COUNT(*) FROM students;",
+      "output": "A selectivity fraction."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Multi-Column Selectivity",
+     "simple": "Combined predicates index order decide karte hain.",
+     "pro": "The planner estimates combined selectivity, so index columns should match the most common equality and range combinations.",
+     "points": [
+      "Equality columns first.",
+      "Range columns later.",
+      "Read the plan."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_students_marks_name ON students (marks, name);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Common Advanced Mistakes",
+     "simple": "Over-indexing, wrong opclass aur unused indexes common mistakes hain.",
+     "pro": "Common failures are adding indexes for every column, using GIN where B-tree fits, and never checking index usage.",
+     "points": [
+      "Measure usage.",
+      "Match operator classes.",
+      "Drop unused indexes."
+     ],
+     "example": {
+      "sql": "SELECT indexrelname, idx_scan FROM pg_stat_user_indexes ORDER BY idx_scan;",
+      "output": "Index usage counts."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Monitoring Indexes",
+     "simple": "pg_stat_user_indexes usage dikhata hai.",
+     "pro": "Index statistics show scans and tuple reads, helping identify unused or ineffective indexes.",
+     "points": [
+      "Check idx_scan.",
+      "Reset stats after changes.",
+      "Correlate with query load."
+     ],
+     "example": {
+      "sql": "SELECT relname, indexrelname, idx_scan FROM pg_stat_user_indexes;",
+      "output": "Per-index scan counts."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Practical Tuning",
+     "simple": "Slow query se index plan tak.",
+     "pro": "A disciplined tuning loop captures the query, reads its plan, adds the smallest useful index and measures again.",
+     "points": [
+      "Capture the query.",
+      "Read the plan.",
+      "Add one index.",
+      "Measure before and after."
+     ],
+     "example": {
+      "sql": "EXPLAIN (ANALYZE, BUFFERS) SELECT name FROM students WHERE marks > 90 ORDER BY marks DESC;",
+      "output": "A plan with timing and buffer use."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Index Maintenance Plan",
+     "simple": "Indexes ko create, monitor aur retire karo.",
+     "pro": "A production index plan includes creation standards, usage review, bloat monitoring and safe removal of unused indexes.",
+     "points": [
+      "Name consistently.",
+      "Build concurrently.",
+      "Review usage monthly.",
+      "Drop with evidence."
+     ],
+     "example": {
+      "sql": "SELECT * FROM pg_stat_user_indexes WHERE idx_scan = 0;",
+      "output": "Candidates for review."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 26 · Index Types Review: what is the main purpose?",
+      "options": [
+       "Index Types Review: B-tree, hash, GIN, GiST aur BRIN alag workloads ke liye hain.",
+       "B-tree Deep Dive: B-tree ordered comparisons aur ranges support karta hai.",
+       "GiST Indexes: GiST ranges, geometry aur nearest-neighbor ke liye hai.",
+       "Concurrent Index Creation: CONCURRENTLY live writes allow karta hai."
+      ],
+      "answer": "Index Types Review: B-tree, hash, GIN, GiST aur BRIN alag workloads ke liye hain.",
+      "why": "PostgreSQL index types target different data shapes: B-tree for ordered scalars, hash for equality, GIN for composites, GiST for ranges and BRIN for correlated large tables."
+     },
+     {
+      "q": "Module 26 · B-tree Deep Dive: what is the main purpose?",
+      "options": [
+       "Composite Index Order: Composite index ka order left-to-right use hota hai.",
+       "BRIN Indexes: BRIN large ordered tables ke liye compact hai.",
+       "Index Selectivity: Selectivity index ki usefulness batati hai.",
+       "B-tree Deep Dive: B-tree ordered comparisons aur ranges support karta hai."
+      ],
+      "answer": "B-tree Deep Dive: B-tree ordered comparisons aur ranges support karta hai.",
+      "why": "A B-tree keeps keys ordered, supporting equality, ranges, prefix LIKE and ORDER BY."
+     },
+     {
+      "q": "Module 26 · Composite Index Order: what is the main purpose?",
+      "options": [
+       "Hash Indexes: Hash index equality-only lookup deta hai.",
+       "Multi-Column Selectivity: Combined predicates index order decide karte hain.",
+       "Composite Index Order: Composite index ka order left-to-right use hota hai.",
+       "Covering Indexes: INCLUDE payload columns index-only scan dete hain."
+      ],
+      "answer": "Composite Index Order: Composite index ka order left-to-right use hota hai.",
+      "why": "A composite B-tree can serve queries on its leading columns; later columns are useful only when earlier ones are constrained."
+     },
+     {
+      "q": "Module 26 · Covering Indexes: what is the main purpose?",
+      "options": [
+       "Common Advanced Mistakes: Over-indexing, wrong opclass aur unused indexes common mistakes hain.",
+       "Covering Indexes: INCLUDE payload columns index-only scan dete hain.",
+       "Partial Indexes: Partial index predicate se index chhota hota hai.",
+       "Index-Only Scans: Index-only scan heap visit bachata hai."
+      ],
+      "answer": "Covering Indexes: INCLUDE payload columns index-only scan dete hain.",
+      "why": "INCLUDE adds non-key columns so the index can satisfy a query without heap access."
+     },
+     {
+      "q": "Module 26 · Partial Indexes: what is the main purpose?",
+      "options": [
+       "Partial Indexes: Partial index predicate se index chhota hota hai.",
+       "Expression Indexes: Expression index computed values ko index karta hai.",
+       "Index Bloat: Updates index bloat create karte hain.",
+       "Monitoring Indexes: pg_stat_user_indexes usage dikhata hai."
+      ],
+      "answer": "Partial Indexes: Partial index predicate se index chhota hota hai.",
+      "why": "A partial index stores only rows matching its WHERE clause and is useful for rare or active subsets."
+     },
+     {
+      "q": "Module 26 · Expression Indexes: what is the main purpose?",
+      "options": [
+       "GIN Indexes: GIN composite values ke containment ke liye hai.",
+       "REINDEX: REINDEX index rebuild karta hai.",
+       "Practical Tuning: Slow query se index plan tak.",
+       "Expression Indexes: Expression index computed values ko index karta hai."
+      ],
+      "answer": "Expression Indexes: Expression index computed values ko index karta hai.",
+      "why": "An expression index stores a function result, such as LOWER(email), and serves queries using the same expression."
+     },
+     {
+      "q": "Module 26 · GIN Indexes: what is the main purpose?",
+      "options": [
+       "Concurrent Index Creation: CONCURRENTLY live writes allow karta hai.",
+       "Index Maintenance Plan: Indexes ko create, monitor aur retire karo.",
+       "GIN Indexes: GIN composite values ke containment ke liye hai.",
+       "GiST Indexes: GiST ranges, geometry aur nearest-neighbor ke liye hai."
+      ],
+      "answer": "GIN Indexes: GIN composite values ke containment ke liye hai.",
+      "why": "GIN builds an inverted index for arrays, JSONB and text search, accelerating containment and existence operators."
+     },
+     {
+      "q": "Module 26 · GiST Indexes: what is the main purpose?",
+      "options": [
+       "Index Types Review: B-tree, hash, GIN, GiST aur BRIN alag workloads ke liye hain.",
+       "GiST Indexes: GiST ranges, geometry aur nearest-neighbor ke liye hai.",
+       "BRIN Indexes: BRIN large ordered tables ke liye compact hai.",
+       "Index Selectivity: Selectivity index ki usefulness batati hai."
+      ],
+      "answer": "GiST Indexes: GiST ranges, geometry aur nearest-neighbor ke liye hai.",
+      "why": "GiST supports balanced search trees over complex types and powers exclusion constraints."
+     },
+     {
+      "q": "Module 26 · BRIN Indexes: what is the main purpose?",
+      "options": [
+       "BRIN Indexes: BRIN large ordered tables ke liye compact hai.",
+       "Hash Indexes: Hash index equality-only lookup deta hai.",
+       "Multi-Column Selectivity: Combined predicates index order decide karte hain.",
+       "B-tree Deep Dive: B-tree ordered comparisons aur ranges support karta hai."
+      ],
+      "answer": "BRIN Indexes: BRIN large ordered tables ke liye compact hai.",
+      "why": "BRIN stores block-range summaries, making it tiny and effective when a column correlates with physical order, such as timestamps."
+     },
+     {
+      "q": "Module 26 · Hash Indexes: what is the main purpose?",
+      "options": [
+       "Index-Only Scans: Index-only scan heap visit bachata hai.",
+       "Common Advanced Mistakes: Over-indexing, wrong opclass aur unused indexes common mistakes hain.",
+       "Composite Index Order: Composite index ka order left-to-right use hota hai.",
+       "Hash Indexes: Hash index equality-only lookup deta hai."
+      ],
+      "answer": "Hash Indexes: Hash index equality-only lookup deta hai.",
+      "why": "A hash index stores hash codes and supports equality, but not ordering or ranges."
+     },
+     {
+      "q": "Module 26 · Index-Only Scans: what is the main purpose?",
+      "options": [
+       "Monitoring Indexes: pg_stat_user_indexes usage dikhata hai.",
+       "Covering Indexes: INCLUDE payload columns index-only scan dete hain.",
+       "Index-Only Scans: Index-only scan heap visit bachata hai.",
+       "Index Bloat: Updates index bloat create karte hain."
+      ],
+      "answer": "Index-Only Scans: Index-only scan heap visit bachata hai.",
+      "why": "When all requested columns are in the index and the visibility map is favorable, PostgreSQL can answer from the index alone."
+     },
+     {
+      "q": "Module 26 · Index Bloat: what is the main purpose?",
+      "options": [
+       "Partial Indexes: Partial index predicate se index chhota hota hai.",
+       "Index Bloat: Updates index bloat create karte hain.",
+       "REINDEX: REINDEX index rebuild karta hai.",
+       "Practical Tuning: Slow query se index plan tak."
+      ],
+      "answer": "Index Bloat: Updates index bloat create karte hain.",
+      "why": "Dead index entries accumulate after updates and deletes, increasing size and slowing scans until cleanup."
+     },
+     {
+      "q": "Module 26 · REINDEX: what is the main purpose?",
+      "options": [
+       "REINDEX: REINDEX index rebuild karta hai.",
+       "Concurrent Index Creation: CONCURRENTLY live writes allow karta hai.",
+       "Index Maintenance Plan: Indexes ko create, monitor aur retire karo.",
+       "Expression Indexes: Expression index computed values ko index karta hai."
+      ],
+      "answer": "REINDEX: REINDEX index rebuild karta hai.",
+      "why": "REINDEX rebuilds an index to remove bloat or repair corruption; it can lock the index or table."
+     },
+     {
+      "q": "Module 26 · Concurrent Index Creation: what is the main purpose?",
+      "options": [
+       "Index Selectivity: Selectivity index ki usefulness batati hai.",
+       "Index Types Review: B-tree, hash, GIN, GiST aur BRIN alag workloads ke liye hain.",
+       "GIN Indexes: GIN composite values ke containment ke liye hai.",
+       "Concurrent Index Creation: CONCURRENTLY live writes allow karta hai."
+      ],
+      "answer": "Concurrent Index Creation: CONCURRENTLY live writes allow karta hai.",
+      "why": "CREATE INDEX CONCURRENTLY builds without blocking writes but takes longer and cannot run in a transaction block."
+     },
+     {
+      "q": "Module 26 · Index Selectivity: what is the main purpose?",
+      "options": [
+       "B-tree Deep Dive: B-tree ordered comparisons aur ranges support karta hai.",
+       "GiST Indexes: GiST ranges, geometry aur nearest-neighbor ke liye hai.",
+       "Index Selectivity: Selectivity index ki usefulness batati hai.",
+       "Multi-Column Selectivity: Combined predicates index order decide karte hain."
+      ],
+      "answer": "Index Selectivity: Selectivity index ki usefulness batati hai.",
+      "why": "An index is most useful when the predicate returns a small fraction of rows; low selectivity may favor a sequential scan."
+     },
+     {
+      "q": "Module 26 · Multi-Column Selectivity: what is the main purpose?",
+      "options": [
+       "BRIN Indexes: BRIN large ordered tables ke liye compact hai.",
+       "Multi-Column Selectivity: Combined predicates index order decide karte hain.",
+       "Common Advanced Mistakes: Over-indexing, wrong opclass aur unused indexes common mistakes hain.",
+       "Composite Index Order: Composite index ka order left-to-right use hota hai."
+      ],
+      "answer": "Multi-Column Selectivity: Combined predicates index order decide karte hain.",
+      "why": "The planner estimates combined selectivity, so index columns should match the most common equality and range combinations."
+     },
+     {
+      "q": "Module 26 · Common Advanced Mistakes: what is the main purpose?",
+      "options": [
+       "Common Advanced Mistakes: Over-indexing, wrong opclass aur unused indexes common mistakes hain.",
+       "Monitoring Indexes: pg_stat_user_indexes usage dikhata hai.",
+       "Covering Indexes: INCLUDE payload columns index-only scan dete hain.",
+       "Hash Indexes: Hash index equality-only lookup deta hai."
+      ],
+      "answer": "Common Advanced Mistakes: Over-indexing, wrong opclass aur unused indexes common mistakes hain.",
+      "why": "Common failures are adding indexes for every column, using GIN where B-tree fits, and never checking index usage."
+     },
+     {
+      "q": "Module 26 · Monitoring Indexes: what is the main purpose?",
+      "options": [
+       "Practical Tuning: Slow query se index plan tak.",
+       "Partial Indexes: Partial index predicate se index chhota hota hai.",
+       "Index-Only Scans: Index-only scan heap visit bachata hai.",
+       "Monitoring Indexes: pg_stat_user_indexes usage dikhata hai."
+      ],
+      "answer": "Monitoring Indexes: pg_stat_user_indexes usage dikhata hai.",
+      "why": "Index statistics show scans and tuple reads, helping identify unused or ineffective indexes."
+     },
+     {
+      "q": "Module 26 · Practical Tuning: what is the main purpose?",
+      "options": [
+       "Expression Indexes: Expression index computed values ko index karta hai.",
+       "Index Bloat: Updates index bloat create karte hain.",
+       "Practical Tuning: Slow query se index plan tak.",
+       "Index Maintenance Plan: Indexes ko create, monitor aur retire karo."
+      ],
+      "answer": "Practical Tuning: Slow query se index plan tak.",
+      "why": "A disciplined tuning loop captures the query, reads its plan, adds the smallest useful index and measures again."
+     },
+     {
+      "q": "Module 26 · Index Maintenance Plan: what is the main purpose?",
+      "options": [
+       "REINDEX: REINDEX index rebuild karta hai.",
+       "Index Maintenance Plan: Indexes ko create, monitor aur retire karo.",
+       "Index Types Review: B-tree, hash, GIN, GiST aur BRIN alag workloads ke liye hain.",
+       "GIN Indexes: GIN composite values ke containment ke liye hai."
+      ],
+      "answer": "Index Maintenance Plan: Indexes ko create, monitor aur retire karo.",
+      "why": "A production index plan includes creation standards, usage review, bloat monitoring and safe removal of unused indexes."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 26 · Explain Index Types Review in a production query.",
+      "answer": "PostgreSQL index types target different data shapes: B-tree for ordered scalars, hash for equality, GIN for composites, GiST for ranges and BRIN for correlated large tables. Key rules: Match the type to the data. B-tree is the default. Specialized indexes need operator classes."
+     },
+     {
+      "q": "Module 26 · Explain B-tree Deep Dive in a production query.",
+      "answer": "A B-tree keeps keys ordered, supporting equality, ranges, prefix LIKE and ORDER BY. Key rules: It is balanced. It supports ordering. It handles duplicates."
+     },
+     {
+      "q": "Module 26 · Explain Composite Index Order in a production query.",
+      "answer": "A composite B-tree can serve queries on its leading columns; later columns are useful only when earlier ones are constrained. Key rules: Put equality first. Ranges come later. A skipped leading column weakens use."
+     },
+     {
+      "q": "Module 26 · Explain Covering Indexes in a production query.",
+      "answer": "INCLUDE adds non-key columns so the index can satisfy a query without heap access. Key rules: INCLUDE is not part of the key. It increases size. Visibility map affects index-only scans."
+     },
+     {
+      "q": "Module 26 · Explain Partial Indexes in a production query.",
+      "answer": "A partial index stores only rows matching its WHERE clause and is useful for rare or active subsets. Key rules: The query must imply the predicate. It saves space. It speeds writes versus a full index."
+     },
+     {
+      "q": "Module 26 · Explain Expression Indexes in a production query.",
+      "answer": "An expression index stores a function result, such as LOWER(email), and serves queries using the same expression. Key rules: Match the expression. It is useful for case-insensitive lookups. It costs write CPU."
+     },
+     {
+      "q": "Module 26 · Explain GIN Indexes in a production query.",
+      "answer": "GIN builds an inverted index for arrays, JSONB and text search, accelerating containment and existence operators. Key rules: Good for @>, ?, @@. Updates can be expensive. Choose the right opclass."
+     },
+     {
+      "q": "Module 26 · Explain GiST Indexes in a production query.",
+      "answer": "GiST supports balanced search trees over complex types and powers exclusion constraints. Key rules: Good for ranges. Supports KNN. Needs the right extension."
+     },
+     {
+      "q": "Module 26 · Explain BRIN Indexes in a production query.",
+      "answer": "BRIN stores block-range summaries, making it tiny and effective when a column correlates with physical order, such as timestamps. Key rules: Very small. Good for append-only data. Less precise than B-tree."
+     },
+     {
+      "q": "Module 26 · Explain Hash Indexes in a production query.",
+      "answer": "A hash index stores hash codes and supports equality, but not ordering or ranges. Key rules: Equality only. Rarely better than B-tree. It cannot support ORDER BY."
+     },
+     {
+      "q": "Module 26 · Explain Index-Only Scans in a production query.",
+      "answer": "When all requested columns are in the index and the visibility map is favorable, PostgreSQL can answer from the index alone. Key rules: Use INCLUDE. VACUUM maintains visibility. Check EXPLAIN for Heap Fetches."
+     },
+     {
+      "q": "Module 26 · Explain Index Bloat in a production query.",
+      "answer": "Dead index entries accumulate after updates and deletes, increasing size and slowing scans until cleanup. Key rules: Monitor size. VACUUM regularly. REINDEX when needed."
+     },
+     {
+      "q": "Module 26 · Explain REINDEX in a production query.",
+      "answer": "REINDEX rebuilds an index to remove bloat or repair corruption; it can lock the index or table. Key rules: Use CONCURRENTLY when available. It needs free space. It can be slow."
+     },
+     {
+      "q": "Module 26 · Explain Concurrent Index Creation in a production query.",
+      "answer": "CREATE INDEX CONCURRENTLY builds without blocking writes but takes longer and cannot run in a transaction block. Key rules: Avoids write locks. Can fail and leave an invalid index. Run outside a transaction."
+     },
+     {
+      "q": "Module 26 · Explain Index Selectivity in a production query.",
+      "answer": "An index is most useful when the predicate returns a small fraction of rows; low selectivity may favor a sequential scan. Key rules: High selectivity is better. Statistics matter. Test with real data."
+     },
+     {
+      "q": "Module 26 · Explain Multi-Column Selectivity in a production query.",
+      "answer": "The planner estimates combined selectivity, so index columns should match the most common equality and range combinations. Key rules: Equality columns first. Range columns later. Read the plan."
+     },
+     {
+      "q": "Module 26 · Explain Common Advanced Mistakes in a production query.",
+      "answer": "Common failures are adding indexes for every column, using GIN where B-tree fits, and never checking index usage. Key rules: Measure usage. Match operator classes. Drop unused indexes."
+     },
+     {
+      "q": "Module 26 · Explain Monitoring Indexes in a production query.",
+      "answer": "Index statistics show scans and tuple reads, helping identify unused or ineffective indexes. Key rules: Check idx_scan. Reset stats after changes. Correlate with query load."
+     },
+     {
+      "q": "Module 26 · Explain Practical Tuning in a production query.",
+      "answer": "A disciplined tuning loop captures the query, reads its plan, adds the smallest useful index and measures again. Key rules: Capture the query. Read the plan. Add one index. Measure before and after."
+     },
+     {
+      "q": "Module 26 · Explain Index Maintenance Plan in a production query.",
+      "answer": "A production index plan includes creation standards, usage review, bloat monitoring and safe removal of unused indexes. Key rules: Name consistently. Build concurrently. Review usage monthly. Drop with evidence."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Index Types Review",
+      "task": "Write a SQL example that demonstrates Index Types Review.",
+      "solution": "SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'students';",
+      "expected": "The table indexes."
+     },
+     {
+      "title": "B-tree Deep Dive",
+      "task": "Write a SQL example that demonstrates B-tree Deep Dive.",
+      "solution": "CREATE INDEX idx_students_marks ON students (marks DESC);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Composite Index Order",
+      "task": "Write a SQL example that demonstrates Composite Index Order.",
+      "solution": "CREATE INDEX idx_enrollments_student_course ON enrollments (student_id, course_id);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Covering Indexes",
+      "task": "Write a SQL example that demonstrates Covering Indexes.",
+      "solution": "CREATE INDEX idx_students_marks_include ON students (marks) INCLUDE (name);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Partial Indexes",
+      "task": "Write a SQL example that demonstrates Partial Indexes.",
+      "solution": "CREATE INDEX idx_students_high_marks ON students (marks) WHERE marks >= 90;",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Expression Indexes",
+      "task": "Write a SQL example that demonstrates Expression Indexes.",
+      "solution": "CREATE INDEX idx_students_lower_email ON students (LOWER(email));",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "GIN Indexes",
+      "task": "Write a SQL example that demonstrates GIN Indexes.",
+      "solution": "CREATE INDEX idx_students_name_gin ON students USING gin (to_tsvector('simple', name));",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "GiST Indexes",
+      "task": "Write a SQL example that demonstrates GiST Indexes.",
+      "solution": "CREATE EXTENSION IF NOT EXISTS btree_gist;\nCREATE INDEX idx_enrollments_date_gist ON enrollments USING gist (enrolled_on);",
+      "expected": "CREATE EXTENSION\nCREATE INDEX"
+     },
+     {
+      "title": "BRIN Indexes",
+      "task": "Write a SQL example that demonstrates BRIN Indexes.",
+      "solution": "CREATE INDEX idx_enrollments_date_brin ON enrollments USING brin (enrolled_on);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Hash Indexes",
+      "task": "Write a SQL example that demonstrates Hash Indexes.",
+      "solution": "CREATE INDEX idx_students_email_hash ON students USING hash (email);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Index-Only Scans",
+      "task": "Write a SQL example that demonstrates Index-Only Scans.",
+      "solution": "EXPLAIN SELECT name FROM students WHERE marks > 90;",
+      "expected": "An Index Only Scan when covered."
+     },
+     {
+      "title": "Index Bloat",
+      "task": "Write a SQL example that demonstrates Index Bloat.",
+      "solution": "SELECT pg_size_pretty(pg_relation_size('idx_students_marks'));",
+      "expected": "The index size."
+     },
+     {
+      "title": "REINDEX",
+      "task": "Write a SQL example that demonstrates REINDEX.",
+      "solution": "REINDEX INDEX CONCURRENTLY idx_students_marks;",
+      "expected": "REINDEX"
+     },
+     {
+      "title": "Concurrent Index Creation",
+      "task": "Write a SQL example that demonstrates Concurrent Index Creation.",
+      "solution": "CREATE INDEX CONCURRENTLY idx_students_marks ON students (marks);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Index Selectivity",
+      "task": "Write a SQL example that demonstrates Index Selectivity.",
+      "solution": "SELECT COUNT(DISTINCT marks)::numeric / COUNT(*) FROM students;",
+      "expected": "A selectivity fraction."
+     },
+     {
+      "title": "Multi-Column Selectivity",
+      "task": "Write a SQL example that demonstrates Multi-Column Selectivity.",
+      "solution": "CREATE INDEX idx_students_marks_name ON students (marks, name);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Common Advanced Mistakes",
+      "task": "Write a SQL example that demonstrates Common Advanced Mistakes.",
+      "solution": "SELECT indexrelname, idx_scan FROM pg_stat_user_indexes ORDER BY idx_scan;",
+      "expected": "Index usage counts."
+     },
+     {
+      "title": "Monitoring Indexes",
+      "task": "Write a SQL example that demonstrates Monitoring Indexes.",
+      "solution": "SELECT relname, indexrelname, idx_scan FROM pg_stat_user_indexes;",
+      "expected": "Per-index scan counts."
+     },
+     {
+      "title": "Practical Tuning",
+      "task": "Write a SQL example that demonstrates Practical Tuning.",
+      "solution": "EXPLAIN (ANALYZE, BUFFERS) SELECT name FROM students WHERE marks > 90 ORDER BY marks DESC;",
+      "expected": "A plan with timing and buffer use."
+     },
+     {
+      "title": "Index Maintenance Plan",
+      "task": "Write a SQL example that demonstrates Index Maintenance Plan.",
+      "solution": "SELECT * FROM pg_stat_user_indexes WHERE idx_scan = 0;",
+      "expected": "Candidates for review."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 26 · Why does Index Types Review matter?",
+      "answer": "PostgreSQL index types target different data shapes: B-tree for ordered scalars, hash for equality, GIN for composites, GiST for ranges and BRIN for correlated large tables. Match the type to the data. B-tree is the default. Specialized indexes need operator classes."
+     },
+     {
+      "q": "Module 26 · Why does B-tree Deep Dive matter?",
+      "answer": "A B-tree keeps keys ordered, supporting equality, ranges, prefix LIKE and ORDER BY. It is balanced. It supports ordering. It handles duplicates."
+     },
+     {
+      "q": "Module 26 · Why does Composite Index Order matter?",
+      "answer": "A composite B-tree can serve queries on its leading columns; later columns are useful only when earlier ones are constrained. Put equality first. Ranges come later. A skipped leading column weakens use."
+     },
+     {
+      "q": "Module 26 · Why does Covering Indexes matter?",
+      "answer": "INCLUDE adds non-key columns so the index can satisfy a query without heap access. INCLUDE is not part of the key. It increases size. Visibility map affects index-only scans."
+     },
+     {
+      "q": "Module 26 · Why does Partial Indexes matter?",
+      "answer": "A partial index stores only rows matching its WHERE clause and is useful for rare or active subsets. The query must imply the predicate. It saves space. It speeds writes versus a full index."
+     },
+     {
+      "q": "Module 26 · Why does Expression Indexes matter?",
+      "answer": "An expression index stores a function result, such as LOWER(email), and serves queries using the same expression. Match the expression. It is useful for case-insensitive lookups. It costs write CPU."
+     },
+     {
+      "q": "Module 26 · Why does GIN Indexes matter?",
+      "answer": "GIN builds an inverted index for arrays, JSONB and text search, accelerating containment and existence operators. Good for @>, ?, @@. Updates can be expensive. Choose the right opclass."
+     },
+     {
+      "q": "Module 26 · Why does GiST Indexes matter?",
+      "answer": "GiST supports balanced search trees over complex types and powers exclusion constraints. Good for ranges. Supports KNN. Needs the right extension."
+     },
+     {
+      "q": "Module 26 · Why does BRIN Indexes matter?",
+      "answer": "BRIN stores block-range summaries, making it tiny and effective when a column correlates with physical order, such as timestamps. Very small. Good for append-only data. Less precise than B-tree."
+     },
+     {
+      "q": "Module 26 · Why does Hash Indexes matter?",
+      "answer": "A hash index stores hash codes and supports equality, but not ordering or ranges. Equality only. Rarely better than B-tree. It cannot support ORDER BY."
+     },
+     {
+      "q": "Module 26 · Why does Index-Only Scans matter?",
+      "answer": "When all requested columns are in the index and the visibility map is favorable, PostgreSQL can answer from the index alone. Use INCLUDE. VACUUM maintains visibility. Check EXPLAIN for Heap Fetches."
+     },
+     {
+      "q": "Module 26 · Why does Index Bloat matter?",
+      "answer": "Dead index entries accumulate after updates and deletes, increasing size and slowing scans until cleanup. Monitor size. VACUUM regularly. REINDEX when needed."
+     },
+     {
+      "q": "Module 26 · Why does REINDEX matter?",
+      "answer": "REINDEX rebuilds an index to remove bloat or repair corruption; it can lock the index or table. Use CONCURRENTLY when available. It needs free space. It can be slow."
+     },
+     {
+      "q": "Module 26 · Why does Concurrent Index Creation matter?",
+      "answer": "CREATE INDEX CONCURRENTLY builds without blocking writes but takes longer and cannot run in a transaction block. Avoids write locks. Can fail and leave an invalid index. Run outside a transaction."
+     },
+     {
+      "q": "Module 26 · Why does Index Selectivity matter?",
+      "answer": "An index is most useful when the predicate returns a small fraction of rows; low selectivity may favor a sequential scan. High selectivity is better. Statistics matter. Test with real data."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Wrong operator class",
+      "broken": "CREATE INDEX idx_title ON courses USING gin (title);",
+      "fix": "CREATE INDEX idx_title_fts ON courses USING gin (to_tsvector('english', title));",
+      "error": "data type text has no default operator class for access method \"gin\"",
+      "expected": "A valid GIN expression index."
+     },
+     {
+      "title": "BRIN on random data",
+      "broken": "CREATE INDEX idx_students_marks_brin ON students USING brin (marks);",
+      "fix": "CREATE INDEX idx_students_marks ON students (marks);",
+      "error": "BRIN is ineffective when values are not physically correlated",
+      "expected": "A B-tree index."
+     },
+     {
+      "title": "Covering index wrong column",
+      "broken": "CREATE INDEX idx_students_name ON students (marks) INCLUDE (email);\nSELECT name FROM students WHERE marks > 90;",
+      "fix": "CREATE INDEX idx_students_name ON students (marks) INCLUDE (name);",
+      "error": "The requested column is not covered",
+      "expected": "An index-only scan."
+     },
+     {
+      "title": "Partial predicate mismatch",
+      "broken": "CREATE INDEX idx_high ON students (marks) WHERE marks > 90;\nSELECT * FROM students WHERE marks >= 80;",
+      "fix": "CREATE INDEX idx_high ON students (marks) WHERE marks >= 80;",
+      "error": "The query predicate does not imply the partial predicate",
+      "expected": "A usable partial index."
+     },
+     {
+      "title": "Expression mismatch",
+      "broken": "CREATE INDEX idx_lower ON students (LOWER(name));\nSELECT * FROM students WHERE name = 'Aarav';",
+      "fix": "SELECT * FROM students WHERE LOWER(name) = LOWER('Aarav');",
+      "error": "The expression index is not used by the plain predicate",
+      "expected": "A matching expression query."
+     },
+     {
+      "title": "Invalid concurrent index",
+      "broken": "CREATE INDEX CONCURRENTLY idx_bad ON students (missing_column);",
+      "fix": "CREATE INDEX CONCURRENTLY idx_bad ON students (marks);",
+      "error": "column \"missing_column\" does not exist",
+      "expected": "A valid concurrent index."
+     },
+     {
+      "title": "Reindex in transaction",
+      "broken": "BEGIN;\nREINDEX INDEX CONCURRENTLY idx_students_marks;\nCOMMIT;",
+      "fix": "REINDEX INDEX CONCURRENTLY idx_students_marks;",
+      "error": "REINDEX CONCURRENTLY cannot run inside a transaction block",
+      "expected": "A concurrent rebuild."
+     },
+     {
+      "title": "Unused index",
+      "broken": "SELECT * FROM pg_stat_user_indexes WHERE idx_scan = 0;",
+      "fix": "Review the index and drop it only after confirming no query depends on it.",
+      "error": "The index still consumes writes and space",
+      "expected": "A justified index set."
+     },
+     {
+      "title": "Hash range query",
+      "broken": "CREATE INDEX idx_marks_hash ON students USING hash (marks);\nSELECT * FROM students WHERE marks > 90;",
+      "fix": "CREATE INDEX idx_marks ON students (marks);",
+      "error": "The hash index cannot serve a range predicate",
+      "expected": "A B-tree range index."
+     },
+     {
+      "title": "Too many indexes",
+      "broken": "CREATE INDEX idx_1 ON students (name);\nCREATE INDEX idx_2 ON students (email);\nCREATE INDEX idx_3 ON students (marks);",
+      "fix": "Keep only indexes used by real queries and verify with pg_stat_user_indexes.",
+      "error": "Every write maintains all indexes",
+      "expected": "A leaner index set."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 26 · State one key rule for Index Types Review.",
+      "answer": "Match the type to the data."
+     },
+     {
+      "q": "Module 26 · State one key rule for B-tree Deep Dive.",
+      "answer": "It is balanced."
+     },
+     {
+      "q": "Module 26 · State one key rule for Composite Index Order.",
+      "answer": "Put equality first."
+     },
+     {
+      "q": "Module 26 · State one key rule for Covering Indexes.",
+      "answer": "INCLUDE is not part of the key."
+     },
+     {
+      "q": "Module 26 · State one key rule for Partial Indexes.",
+      "answer": "The query must imply the predicate."
+     },
+     {
+      "q": "Module 26 · State one key rule for Expression Indexes.",
+      "answer": "Match the expression."
+     },
+     {
+      "q": "Module 26 · State one key rule for GIN Indexes.",
+      "answer": "Good for @>, ?, @@."
+     },
+     {
+      "q": "Module 26 · State one key rule for GiST Indexes.",
+      "answer": "Good for ranges."
+     },
+     {
+      "q": "Module 26 · State one key rule for BRIN Indexes.",
+      "answer": "Very small."
+     },
+     {
+      "q": "Module 26 · State one key rule for Hash Indexes.",
+      "answer": "Equality only."
+     }
+    ]
+   }
+  }
+ ]
+}

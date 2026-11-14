@@ -1,0 +1,923 @@
+{
+ "modules": [
+  {
+   "id": "sql31",
+   "no": 31,
+   "title": "Migrations and Schema Evolution",
+   "goal": "Change production schemas safely, reversibly and without long locks.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Migration Basics",
+     "simple": "Migration schema change ko versioned step me badalta hai.",
+     "pro": "A migration is a versioned, repeatable change applied in order to every environment.",
+     "points": [
+      "One change per migration.",
+      "Version the file.",
+      "Apply in order."
+     ],
+     "example": {
+      "sql": "-- 001_add_student_email.sql\nALTER TABLE students ADD COLUMN email TEXT;",
+      "output": "A versioned migration."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Versioned Migrations",
+     "simple": "Migration files ka ordered history hota hai.",
+     "pro": "A migration tool records applied versions so each change runs once per environment.",
+     "points": [
+      "Use numeric prefixes.",
+      "Store applied versions.",
+      "Never edit applied migrations."
+     ],
+     "example": {
+      "sql": "SELECT version, applied_at FROM schema_migrations ORDER BY version;",
+      "output": "The migration history."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Up and Down",
+     "simple": "Forward aur rollback migration likho.",
+     "pro": "An up migration applies the change and a down migration reverses it when safe.",
+     "points": [
+      "Write both directions.",
+      "Test the down path.",
+      "Some data changes are irreversible."
+     ],
+     "example": {
+      "sql": "-- up: ADD COLUMN email TEXT\n-- down: DROP COLUMN email",
+      "output": "A reversible pair."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Idempotency",
+     "simple": "Migration dobara chalne par safe hona chahiye.",
+     "pro": "Idempotent migrations use IF NOT EXISTS and guards so a retry does not fail halfway.",
+     "points": [
+      "Use IF NOT EXISTS.",
+      "Guard data changes.",
+      "Record completion."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Adding Columns",
+     "simple": "Naye column ko nullable ya default ke saath add karo.",
+     "pro": "Adding a nullable column is cheap; adding NOT NULL with a volatile default can rewrite or lock the table.",
+     "points": [
+      "Add nullable first.",
+      "Backfill separately.",
+      "Add NOT NULL last."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Dropping Columns",
+     "simple": "Column drop karne se pehle usage check karo.",
+     "pro": "Dropping a column breaks dependent code and views, so expand-contract and deprecate first.",
+     "points": [
+      "Search usage.",
+      "Deploy code first.",
+      "Drop after a grace period."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students DROP COLUMN IF EXISTS legacy_email;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Renaming",
+     "simple": "Rename ko expand-contract se karo.",
+     "pro": "Renaming a column or table breaks old code; add the new name, dual-write, migrate readers, then remove the old one.",
+     "points": [
+      "Add new.",
+      "Dual-write.",
+      "Migrate readers.",
+      "Remove old."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students RENAME COLUMN email TO contact_email;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Backfills",
+     "simple": "Backfill data ko batches me karo.",
+     "pro": "A backfill updates existing rows in small batches to avoid long locks and huge transactions.",
+     "points": [
+      "Batch by key.",
+      "Commit each batch.",
+      "Make it resumable."
+     ],
+     "example": {
+      "sql": "UPDATE students SET email = 'unknown@example.com' WHERE id BETWEEN 1 AND 1000 AND email IS NULL;",
+      "output": "UPDATE 1000"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Online Migrations",
+     "simple": "Live traffic ke saath migration plan karo.",
+     "pro": "Online migrations avoid long exclusive locks and keep the old and new shapes compatible during rollout.",
+     "points": [
+      "Use concurrent index builds.",
+      "Avoid table rewrites.",
+      "Deploy compatible code."
+     ],
+     "example": {
+      "sql": "CREATE INDEX CONCURRENTLY idx_students_email ON students (email);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Locks",
+     "simple": "Migrations locks ko samajh kar chalao.",
+     "pro": "ALTER TABLE often takes a lock that blocks reads or writes; check lock levels and set lock_timeout.",
+     "points": [
+      "Know the lock level.",
+      "Set lock_timeout.",
+      "Run at low traffic."
+     ],
+     "example": {
+      "sql": "SET lock_timeout = '5s';",
+      "output": "SET"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Transactions",
+     "simple": "Transactional DDL use karo jahan possible ho.",
+     "pro": "PostgreSQL supports transactional DDL, so a failed migration can roll back cleanly; concurrent index builds are an exception.",
+     "points": [
+      "Wrap in a transaction.",
+      "Check tool behavior.",
+      "Avoid long transactions."
+     ],
+     "example": {
+      "sql": "BEGIN;\nALTER TABLE students ADD COLUMN email TEXT;\nCOMMIT;",
+      "output": "BEGIN\nALTER TABLE\nCOMMIT"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Rollbacks",
+     "simple": "Rollback plan deploy se pehle likho.",
+     "pro": "A rollback plan covers code, schema and data, and is tested before production.",
+     "points": [
+      "Test the down migration.",
+      "Keep backups.",
+      "Know the recovery time."
+     ],
+     "example": {
+      "sql": "-- down migration\nALTER TABLE students DROP COLUMN IF EXISTS email;",
+      "output": "A tested rollback."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Data Migrations",
+     "simple": "Schema change ke saath data transform karo.",
+     "pro": "Data migrations move or reshape values, often in batches with validation before and after.",
+     "points": [
+      "Validate before.",
+      "Transform in batches.",
+      "Verify counts."
+     ],
+     "example": {
+      "sql": "UPDATE students SET marks = 0 WHERE marks IS NULL;",
+      "output": "UPDATE N"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Zero-Downtime",
+     "simple": "Expand, migrate, contract sequence follow karo.",
+     "pro": "Zero-downtime changes add compatible structures, migrate data and readers, then remove the old structures.",
+     "points": [
+      "Expand.",
+      "Dual-write.",
+      "Migrate.",
+      "Contract."
+     ],
+     "example": {
+      "sql": "-- 1 add new column, 2 backfill, 3 switch code, 4 drop old",
+      "output": "A four-step rollout."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Expand and Contract",
+     "simple": "Compatibility window rakho.",
+     "pro": "The expand-contract pattern keeps old and new schemas working together during deployment.",
+     "points": [
+      "Add before removing.",
+      "Support both readers.",
+      "Remove after verification."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD COLUMN contact_email TEXT;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Testing Migrations",
+     "simple": "Migrations ko real data copy par test karo.",
+     "pro": "Test on a production-like snapshot, measure lock time and verify both up and down paths.",
+     "points": [
+      "Use realistic data.",
+      "Measure duration.",
+      "Test rollback."
+     ],
+     "example": {
+      "sql": "-- run migration against a staging snapshot",
+      "output": "A tested migration."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Migration Tools",
+     "simple": "Tool version, lock aur transaction behavior samjho.",
+     "pro": "Tools such as Flyway, Liquibase, Alembic and Prisma differ in transaction handling, locking and rollback support.",
+     "points": [
+      "Know the tool.",
+      "Review generated SQL.",
+      "Keep migrations in version control."
+     ],
+     "example": {
+      "sql": "SELECT * FROM schema_migrations ORDER BY version;",
+      "output": "Applied versions."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Production Checklist",
+     "simple": "Backup, lock timeout, monitoring aur rollback ready rakho.",
+     "pro": "A production migration checklist covers backup, compatibility, lock timeouts, observability and a tested rollback.",
+     "points": [
+      "Backup first.",
+      "Set lock_timeout.",
+      "Watch errors.",
+      "Have a rollback."
+     ],
+     "example": {
+      "sql": "SET statement_timeout = '30s';\nSET lock_timeout = '5s';",
+      "output": "SET\nSET"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Common Migration Errors",
+     "simple": "Long locks, missing defaults aur irreversible drops common errors hain.",
+     "pro": "Common failures are rewriting a large table, adding NOT NULL without a backfill, and dropping a column still used by old code.",
+     "points": [
+      "Avoid rewrites.",
+      "Backfill first.",
+      "Deprecate before dropping."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT;",
+      "output": "A safe additive change."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Migration",
+     "simple": "Add a column, backfill, constrain and switch code.",
+     "pro": "A practical migration adds a nullable column, backfills in batches, adds the constraint, deploys code and removes the old path.",
+     "points": [
+      "Add nullable.",
+      "Backfill.",
+      "Constrain.",
+      "Deploy.",
+      "Clean up."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD COLUMN IF NOT EXISTS contact_email TEXT;\nUPDATE students SET contact_email = email WHERE contact_email IS NULL;",
+      "output": "ALTER TABLE\nUPDATE N"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 31 · Migration Basics: what is the main purpose?",
+      "options": [
+       "Migration Basics: Migration schema change ko versioned step me badalta hai.",
+       "Versioned Migrations: Migration files ka ordered history hota hai.",
+       "Backfills: Backfill data ko batches me karo.",
+       "Zero-Downtime: Expand, migrate, contract sequence follow karo."
+      ],
+      "answer": "Migration Basics: Migration schema change ko versioned step me badalta hai.",
+      "why": "A migration is a versioned, repeatable change applied in order to every environment."
+     },
+     {
+      "q": "Module 31 · Versioned Migrations: what is the main purpose?",
+      "options": [
+       "Up and Down: Forward aur rollback migration likho.",
+       "Online Migrations: Live traffic ke saath migration plan karo.",
+       "Expand and Contract: Compatibility window rakho.",
+       "Versioned Migrations: Migration files ka ordered history hota hai."
+      ],
+      "answer": "Versioned Migrations: Migration files ka ordered history hota hai.",
+      "why": "A migration tool records applied versions so each change runs once per environment."
+     },
+     {
+      "q": "Module 31 · Up and Down: what is the main purpose?",
+      "options": [
+       "Locks: Migrations locks ko samajh kar chalao.",
+       "Testing Migrations: Migrations ko real data copy par test karo.",
+       "Up and Down: Forward aur rollback migration likho.",
+       "Idempotency: Migration dobara chalne par safe hona chahiye."
+      ],
+      "answer": "Up and Down: Forward aur rollback migration likho.",
+      "why": "An up migration applies the change and a down migration reverses it when safe."
+     },
+     {
+      "q": "Module 31 · Idempotency: what is the main purpose?",
+      "options": [
+       "Migration Tools: Tool version, lock aur transaction behavior samjho.",
+       "Idempotency: Migration dobara chalne par safe hona chahiye.",
+       "Adding Columns: Naye column ko nullable ya default ke saath add karo.",
+       "Transactions: Transactional DDL use karo jahan possible ho."
+      ],
+      "answer": "Idempotency: Migration dobara chalne par safe hona chahiye.",
+      "why": "Idempotent migrations use IF NOT EXISTS and guards so a retry does not fail halfway."
+     },
+     {
+      "q": "Module 31 · Adding Columns: what is the main purpose?",
+      "options": [
+       "Adding Columns: Naye column ko nullable ya default ke saath add karo.",
+       "Dropping Columns: Column drop karne se pehle usage check karo.",
+       "Rollbacks: Rollback plan deploy se pehle likho.",
+       "Production Checklist: Backup, lock timeout, monitoring aur rollback ready rakho."
+      ],
+      "answer": "Adding Columns: Naye column ko nullable ya default ke saath add karo.",
+      "why": "Adding a nullable column is cheap; adding NOT NULL with a volatile default can rewrite or lock the table."
+     },
+     {
+      "q": "Module 31 · Dropping Columns: what is the main purpose?",
+      "options": [
+       "Renaming: Rename ko expand-contract se karo.",
+       "Data Migrations: Schema change ke saath data transform karo.",
+       "Common Migration Errors: Long locks, missing defaults aur irreversible drops common errors hain.",
+       "Dropping Columns: Column drop karne se pehle usage check karo."
+      ],
+      "answer": "Dropping Columns: Column drop karne se pehle usage check karo.",
+      "why": "Dropping a column breaks dependent code and views, so expand-contract and deprecate first."
+     },
+     {
+      "q": "Module 31 · Renaming: what is the main purpose?",
+      "options": [
+       "Zero-Downtime: Expand, migrate, contract sequence follow karo.",
+       "Practical Migration: Add a column, backfill, constrain and switch code.",
+       "Renaming: Rename ko expand-contract se karo.",
+       "Backfills: Backfill data ko batches me karo."
+      ],
+      "answer": "Renaming: Rename ko expand-contract se karo.",
+      "why": "Renaming a column or table breaks old code; add the new name, dual-write, migrate readers, then remove the old one."
+     },
+     {
+      "q": "Module 31 · Backfills: what is the main purpose?",
+      "options": [
+       "Migration Basics: Migration schema change ko versioned step me badalta hai.",
+       "Backfills: Backfill data ko batches me karo.",
+       "Online Migrations: Live traffic ke saath migration plan karo.",
+       "Expand and Contract: Compatibility window rakho."
+      ],
+      "answer": "Backfills: Backfill data ko batches me karo.",
+      "why": "A backfill updates existing rows in small batches to avoid long locks and huge transactions."
+     },
+     {
+      "q": "Module 31 · Online Migrations: what is the main purpose?",
+      "options": [
+       "Online Migrations: Live traffic ke saath migration plan karo.",
+       "Locks: Migrations locks ko samajh kar chalao.",
+       "Testing Migrations: Migrations ko real data copy par test karo.",
+       "Versioned Migrations: Migration files ka ordered history hota hai."
+      ],
+      "answer": "Online Migrations: Live traffic ke saath migration plan karo.",
+      "why": "Online migrations avoid long exclusive locks and keep the old and new shapes compatible during rollout."
+     },
+     {
+      "q": "Module 31 · Locks: what is the main purpose?",
+      "options": [
+       "Transactions: Transactional DDL use karo jahan possible ho.",
+       "Migration Tools: Tool version, lock aur transaction behavior samjho.",
+       "Up and Down: Forward aur rollback migration likho.",
+       "Locks: Migrations locks ko samajh kar chalao."
+      ],
+      "answer": "Locks: Migrations locks ko samajh kar chalao.",
+      "why": "ALTER TABLE often takes a lock that blocks reads or writes; check lock levels and set lock_timeout."
+     },
+     {
+      "q": "Module 31 · Transactions: what is the main purpose?",
+      "options": [
+       "Production Checklist: Backup, lock timeout, monitoring aur rollback ready rakho.",
+       "Idempotency: Migration dobara chalne par safe hona chahiye.",
+       "Transactions: Transactional DDL use karo jahan possible ho.",
+       "Rollbacks: Rollback plan deploy se pehle likho."
+      ],
+      "answer": "Transactions: Transactional DDL use karo jahan possible ho.",
+      "why": "PostgreSQL supports transactional DDL, so a failed migration can roll back cleanly; concurrent index builds are an exception."
+     },
+     {
+      "q": "Module 31 · Rollbacks: what is the main purpose?",
+      "options": [
+       "Adding Columns: Naye column ko nullable ya default ke saath add karo.",
+       "Rollbacks: Rollback plan deploy se pehle likho.",
+       "Data Migrations: Schema change ke saath data transform karo.",
+       "Common Migration Errors: Long locks, missing defaults aur irreversible drops common errors hain."
+      ],
+      "answer": "Rollbacks: Rollback plan deploy se pehle likho.",
+      "why": "A rollback plan covers code, schema and data, and is tested before production."
+     },
+     {
+      "q": "Module 31 · Data Migrations: what is the main purpose?",
+      "options": [
+       "Data Migrations: Schema change ke saath data transform karo.",
+       "Zero-Downtime: Expand, migrate, contract sequence follow karo.",
+       "Practical Migration: Add a column, backfill, constrain and switch code.",
+       "Dropping Columns: Column drop karne se pehle usage check karo."
+      ],
+      "answer": "Data Migrations: Schema change ke saath data transform karo.",
+      "why": "Data migrations move or reshape values, often in batches with validation before and after."
+     },
+     {
+      "q": "Module 31 · Zero-Downtime: what is the main purpose?",
+      "options": [
+       "Expand and Contract: Compatibility window rakho.",
+       "Migration Basics: Migration schema change ko versioned step me badalta hai.",
+       "Renaming: Rename ko expand-contract se karo.",
+       "Zero-Downtime: Expand, migrate, contract sequence follow karo."
+      ],
+      "answer": "Zero-Downtime: Expand, migrate, contract sequence follow karo.",
+      "why": "Zero-downtime changes add compatible structures, migrate data and readers, then remove the old structures."
+     },
+     {
+      "q": "Module 31 · Expand and Contract: what is the main purpose?",
+      "options": [
+       "Versioned Migrations: Migration files ka ordered history hota hai.",
+       "Backfills: Backfill data ko batches me karo.",
+       "Expand and Contract: Compatibility window rakho.",
+       "Testing Migrations: Migrations ko real data copy par test karo."
+      ],
+      "answer": "Expand and Contract: Compatibility window rakho.",
+      "why": "The expand-contract pattern keeps old and new schemas working together during deployment."
+     },
+     {
+      "q": "Module 31 · Testing Migrations: what is the main purpose?",
+      "options": [
+       "Online Migrations: Live traffic ke saath migration plan karo.",
+       "Testing Migrations: Migrations ko real data copy par test karo.",
+       "Migration Tools: Tool version, lock aur transaction behavior samjho.",
+       "Up and Down: Forward aur rollback migration likho."
+      ],
+      "answer": "Testing Migrations: Migrations ko real data copy par test karo.",
+      "why": "Test on a production-like snapshot, measure lock time and verify both up and down paths."
+     },
+     {
+      "q": "Module 31 · Migration Tools: what is the main purpose?",
+      "options": [
+       "Migration Tools: Tool version, lock aur transaction behavior samjho.",
+       "Production Checklist: Backup, lock timeout, monitoring aur rollback ready rakho.",
+       "Idempotency: Migration dobara chalne par safe hona chahiye.",
+       "Locks: Migrations locks ko samajh kar chalao."
+      ],
+      "answer": "Migration Tools: Tool version, lock aur transaction behavior samjho.",
+      "why": "Tools such as Flyway, Liquibase, Alembic and Prisma differ in transaction handling, locking and rollback support."
+     },
+     {
+      "q": "Module 31 · Production Checklist: what is the main purpose?",
+      "options": [
+       "Common Migration Errors: Long locks, missing defaults aur irreversible drops common errors hain.",
+       "Adding Columns: Naye column ko nullable ya default ke saath add karo.",
+       "Transactions: Transactional DDL use karo jahan possible ho.",
+       "Production Checklist: Backup, lock timeout, monitoring aur rollback ready rakho."
+      ],
+      "answer": "Production Checklist: Backup, lock timeout, monitoring aur rollback ready rakho.",
+      "why": "A production migration checklist covers backup, compatibility, lock timeouts, observability and a tested rollback."
+     },
+     {
+      "q": "Module 31 · Common Migration Errors: what is the main purpose?",
+      "options": [
+       "Dropping Columns: Column drop karne se pehle usage check karo.",
+       "Rollbacks: Rollback plan deploy se pehle likho.",
+       "Common Migration Errors: Long locks, missing defaults aur irreversible drops common errors hain.",
+       "Practical Migration: Add a column, backfill, constrain and switch code."
+      ],
+      "answer": "Common Migration Errors: Long locks, missing defaults aur irreversible drops common errors hain.",
+      "why": "Common failures are rewriting a large table, adding NOT NULL without a backfill, and dropping a column still used by old code."
+     },
+     {
+      "q": "Module 31 · Practical Migration: what is the main purpose?",
+      "options": [
+       "Data Migrations: Schema change ke saath data transform karo.",
+       "Practical Migration: Add a column, backfill, constrain and switch code.",
+       "Migration Basics: Migration schema change ko versioned step me badalta hai.",
+       "Renaming: Rename ko expand-contract se karo."
+      ],
+      "answer": "Practical Migration: Add a column, backfill, constrain and switch code.",
+      "why": "A practical migration adds a nullable column, backfills in batches, adds the constraint, deploys code and removes the old path."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 31 · Explain Migration Basics in a production query.",
+      "answer": "A migration is a versioned, repeatable change applied in order to every environment. Key rules: One change per migration. Version the file. Apply in order."
+     },
+     {
+      "q": "Module 31 · Explain Versioned Migrations in a production query.",
+      "answer": "A migration tool records applied versions so each change runs once per environment. Key rules: Use numeric prefixes. Store applied versions. Never edit applied migrations."
+     },
+     {
+      "q": "Module 31 · Explain Up and Down in a production query.",
+      "answer": "An up migration applies the change and a down migration reverses it when safe. Key rules: Write both directions. Test the down path. Some data changes are irreversible."
+     },
+     {
+      "q": "Module 31 · Explain Idempotency in a production query.",
+      "answer": "Idempotent migrations use IF NOT EXISTS and guards so a retry does not fail halfway. Key rules: Use IF NOT EXISTS. Guard data changes. Record completion."
+     },
+     {
+      "q": "Module 31 · Explain Adding Columns in a production query.",
+      "answer": "Adding a nullable column is cheap; adding NOT NULL with a volatile default can rewrite or lock the table. Key rules: Add nullable first. Backfill separately. Add NOT NULL last."
+     },
+     {
+      "q": "Module 31 · Explain Dropping Columns in a production query.",
+      "answer": "Dropping a column breaks dependent code and views, so expand-contract and deprecate first. Key rules: Search usage. Deploy code first. Drop after a grace period."
+     },
+     {
+      "q": "Module 31 · Explain Renaming in a production query.",
+      "answer": "Renaming a column or table breaks old code; add the new name, dual-write, migrate readers, then remove the old one. Key rules: Add new. Dual-write. Migrate readers. Remove old."
+     },
+     {
+      "q": "Module 31 · Explain Backfills in a production query.",
+      "answer": "A backfill updates existing rows in small batches to avoid long locks and huge transactions. Key rules: Batch by key. Commit each batch. Make it resumable."
+     },
+     {
+      "q": "Module 31 · Explain Online Migrations in a production query.",
+      "answer": "Online migrations avoid long exclusive locks and keep the old and new shapes compatible during rollout. Key rules: Use concurrent index builds. Avoid table rewrites. Deploy compatible code."
+     },
+     {
+      "q": "Module 31 · Explain Locks in a production query.",
+      "answer": "ALTER TABLE often takes a lock that blocks reads or writes; check lock levels and set lock_timeout. Key rules: Know the lock level. Set lock_timeout. Run at low traffic."
+     },
+     {
+      "q": "Module 31 · Explain Transactions in a production query.",
+      "answer": "PostgreSQL supports transactional DDL, so a failed migration can roll back cleanly; concurrent index builds are an exception. Key rules: Wrap in a transaction. Check tool behavior. Avoid long transactions."
+     },
+     {
+      "q": "Module 31 · Explain Rollbacks in a production query.",
+      "answer": "A rollback plan covers code, schema and data, and is tested before production. Key rules: Test the down migration. Keep backups. Know the recovery time."
+     },
+     {
+      "q": "Module 31 · Explain Data Migrations in a production query.",
+      "answer": "Data migrations move or reshape values, often in batches with validation before and after. Key rules: Validate before. Transform in batches. Verify counts."
+     },
+     {
+      "q": "Module 31 · Explain Zero-Downtime in a production query.",
+      "answer": "Zero-downtime changes add compatible structures, migrate data and readers, then remove the old structures. Key rules: Expand. Dual-write. Migrate. Contract."
+     },
+     {
+      "q": "Module 31 · Explain Expand and Contract in a production query.",
+      "answer": "The expand-contract pattern keeps old and new schemas working together during deployment. Key rules: Add before removing. Support both readers. Remove after verification."
+     },
+     {
+      "q": "Module 31 · Explain Testing Migrations in a production query.",
+      "answer": "Test on a production-like snapshot, measure lock time and verify both up and down paths. Key rules: Use realistic data. Measure duration. Test rollback."
+     },
+     {
+      "q": "Module 31 · Explain Migration Tools in a production query.",
+      "answer": "Tools such as Flyway, Liquibase, Alembic and Prisma differ in transaction handling, locking and rollback support. Key rules: Know the tool. Review generated SQL. Keep migrations in version control."
+     },
+     {
+      "q": "Module 31 · Explain Production Checklist in a production query.",
+      "answer": "A production migration checklist covers backup, compatibility, lock timeouts, observability and a tested rollback. Key rules: Backup first. Set lock_timeout. Watch errors. Have a rollback."
+     },
+     {
+      "q": "Module 31 · Explain Common Migration Errors in a production query.",
+      "answer": "Common failures are rewriting a large table, adding NOT NULL without a backfill, and dropping a column still used by old code. Key rules: Avoid rewrites. Backfill first. Deprecate before dropping."
+     },
+     {
+      "q": "Module 31 · Explain Practical Migration in a production query.",
+      "answer": "A practical migration adds a nullable column, backfills in batches, adds the constraint, deploys code and removes the old path. Key rules: Add nullable. Backfill. Constrain. Deploy. Clean up."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Migration Basics",
+      "task": "Write a SQL example that demonstrates Migration Basics.",
+      "solution": "-- 001_add_student_email.sql\nALTER TABLE students ADD COLUMN email TEXT;",
+      "expected": "A versioned migration."
+     },
+     {
+      "title": "Versioned Migrations",
+      "task": "Write a SQL example that demonstrates Versioned Migrations.",
+      "solution": "SELECT version, applied_at FROM schema_migrations ORDER BY version;",
+      "expected": "The migration history."
+     },
+     {
+      "title": "Up and Down",
+      "task": "Write a SQL example that demonstrates Up and Down.",
+      "solution": "-- up: ADD COLUMN email TEXT\n-- down: DROP COLUMN email",
+      "expected": "A reversible pair."
+     },
+     {
+      "title": "Idempotency",
+      "task": "Write a SQL example that demonstrates Idempotency.",
+      "solution": "ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Adding Columns",
+      "task": "Write a SQL example that demonstrates Adding Columns.",
+      "solution": "ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Dropping Columns",
+      "task": "Write a SQL example that demonstrates Dropping Columns.",
+      "solution": "ALTER TABLE students DROP COLUMN IF EXISTS legacy_email;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Renaming",
+      "task": "Write a SQL example that demonstrates Renaming.",
+      "solution": "ALTER TABLE students RENAME COLUMN email TO contact_email;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Backfills",
+      "task": "Write a SQL example that demonstrates Backfills.",
+      "solution": "UPDATE students SET email = 'unknown@example.com' WHERE id BETWEEN 1 AND 1000 AND email IS NULL;",
+      "expected": "UPDATE 1000"
+     },
+     {
+      "title": "Online Migrations",
+      "task": "Write a SQL example that demonstrates Online Migrations.",
+      "solution": "CREATE INDEX CONCURRENTLY idx_students_email ON students (email);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Locks",
+      "task": "Write a SQL example that demonstrates Locks.",
+      "solution": "SET lock_timeout = '5s';",
+      "expected": "SET"
+     },
+     {
+      "title": "Transactions",
+      "task": "Write a SQL example that demonstrates Transactions.",
+      "solution": "BEGIN;\nALTER TABLE students ADD COLUMN email TEXT;\nCOMMIT;",
+      "expected": "BEGIN\nALTER TABLE\nCOMMIT"
+     },
+     {
+      "title": "Rollbacks",
+      "task": "Write a SQL example that demonstrates Rollbacks.",
+      "solution": "-- down migration\nALTER TABLE students DROP COLUMN IF EXISTS email;",
+      "expected": "A tested rollback."
+     },
+     {
+      "title": "Data Migrations",
+      "task": "Write a SQL example that demonstrates Data Migrations.",
+      "solution": "UPDATE students SET marks = 0 WHERE marks IS NULL;",
+      "expected": "UPDATE N"
+     },
+     {
+      "title": "Zero-Downtime",
+      "task": "Write a SQL example that demonstrates Zero-Downtime.",
+      "solution": "-- 1 add new column, 2 backfill, 3 switch code, 4 drop old",
+      "expected": "A four-step rollout."
+     },
+     {
+      "title": "Expand and Contract",
+      "task": "Write a SQL example that demonstrates Expand and Contract.",
+      "solution": "ALTER TABLE students ADD COLUMN contact_email TEXT;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Testing Migrations",
+      "task": "Write a SQL example that demonstrates Testing Migrations.",
+      "solution": "-- run migration against a staging snapshot",
+      "expected": "A tested migration."
+     },
+     {
+      "title": "Migration Tools",
+      "task": "Write a SQL example that demonstrates Migration Tools.",
+      "solution": "SELECT * FROM schema_migrations ORDER BY version;",
+      "expected": "Applied versions."
+     },
+     {
+      "title": "Production Checklist",
+      "task": "Write a SQL example that demonstrates Production Checklist.",
+      "solution": "SET statement_timeout = '30s';\nSET lock_timeout = '5s';",
+      "expected": "SET\nSET"
+     },
+     {
+      "title": "Common Migration Errors",
+      "task": "Write a SQL example that demonstrates Common Migration Errors.",
+      "solution": "ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT;",
+      "expected": "A safe additive change."
+     },
+     {
+      "title": "Practical Migration",
+      "task": "Write a SQL example that demonstrates Practical Migration.",
+      "solution": "ALTER TABLE students ADD COLUMN IF NOT EXISTS contact_email TEXT;\nUPDATE students SET contact_email = email WHERE contact_email IS NULL;",
+      "expected": "ALTER TABLE\nUPDATE N"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 31 · Why does Migration Basics matter?",
+      "answer": "A migration is a versioned, repeatable change applied in order to every environment. One change per migration. Version the file. Apply in order."
+     },
+     {
+      "q": "Module 31 · Why does Versioned Migrations matter?",
+      "answer": "A migration tool records applied versions so each change runs once per environment. Use numeric prefixes. Store applied versions. Never edit applied migrations."
+     },
+     {
+      "q": "Module 31 · Why does Up and Down matter?",
+      "answer": "An up migration applies the change and a down migration reverses it when safe. Write both directions. Test the down path. Some data changes are irreversible."
+     },
+     {
+      "q": "Module 31 · Why does Idempotency matter?",
+      "answer": "Idempotent migrations use IF NOT EXISTS and guards so a retry does not fail halfway. Use IF NOT EXISTS. Guard data changes. Record completion."
+     },
+     {
+      "q": "Module 31 · Why does Adding Columns matter?",
+      "answer": "Adding a nullable column is cheap; adding NOT NULL with a volatile default can rewrite or lock the table. Add nullable first. Backfill separately. Add NOT NULL last."
+     },
+     {
+      "q": "Module 31 · Why does Dropping Columns matter?",
+      "answer": "Dropping a column breaks dependent code and views, so expand-contract and deprecate first. Search usage. Deploy code first. Drop after a grace period."
+     },
+     {
+      "q": "Module 31 · Why does Renaming matter?",
+      "answer": "Renaming a column or table breaks old code; add the new name, dual-write, migrate readers, then remove the old one. Add new. Dual-write. Migrate readers. Remove old."
+     },
+     {
+      "q": "Module 31 · Why does Backfills matter?",
+      "answer": "A backfill updates existing rows in small batches to avoid long locks and huge transactions. Batch by key. Commit each batch. Make it resumable."
+     },
+     {
+      "q": "Module 31 · Why does Online Migrations matter?",
+      "answer": "Online migrations avoid long exclusive locks and keep the old and new shapes compatible during rollout. Use concurrent index builds. Avoid table rewrites. Deploy compatible code."
+     },
+     {
+      "q": "Module 31 · Why does Locks matter?",
+      "answer": "ALTER TABLE often takes a lock that blocks reads or writes; check lock levels and set lock_timeout. Know the lock level. Set lock_timeout. Run at low traffic."
+     },
+     {
+      "q": "Module 31 · Why does Transactions matter?",
+      "answer": "PostgreSQL supports transactional DDL, so a failed migration can roll back cleanly; concurrent index builds are an exception. Wrap in a transaction. Check tool behavior. Avoid long transactions."
+     },
+     {
+      "q": "Module 31 · Why does Rollbacks matter?",
+      "answer": "A rollback plan covers code, schema and data, and is tested before production. Test the down migration. Keep backups. Know the recovery time."
+     },
+     {
+      "q": "Module 31 · Why does Data Migrations matter?",
+      "answer": "Data migrations move or reshape values, often in batches with validation before and after. Validate before. Transform in batches. Verify counts."
+     },
+     {
+      "q": "Module 31 · Why does Zero-Downtime matter?",
+      "answer": "Zero-downtime changes add compatible structures, migrate data and readers, then remove the old structures. Expand. Dual-write. Migrate. Contract."
+     },
+     {
+      "q": "Module 31 · Why does Expand and Contract matter?",
+      "answer": "The expand-contract pattern keeps old and new schemas working together during deployment. Add before removing. Support both readers. Remove after verification."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Long lock",
+      "broken": "ALTER TABLE students ADD COLUMN email TEXT NOT NULL DEFAULT md5(random()::text);",
+      "fix": "ALTER TABLE students ADD COLUMN email TEXT;\nUPDATE students SET email = 'unknown@example.com' WHERE email IS NULL;\nALTER TABLE students ALTER COLUMN email SET NOT NULL;",
+      "error": "A volatile default can rewrite the table under a lock",
+      "expected": "A staged migration."
+     },
+     {
+      "title": "Non-concurrent index",
+      "broken": "CREATE INDEX idx_students_email ON students (email);",
+      "fix": "CREATE INDEX CONCURRENTLY idx_students_email ON students (email);",
+      "error": "A normal build blocks writes",
+      "expected": "A concurrent build."
+     },
+     {
+      "title": "Drop before code",
+      "broken": "ALTER TABLE students DROP COLUMN email;",
+      "fix": "Deploy code that no longer reads email, wait, then drop the column.",
+      "error": "Old application instances still query email",
+      "expected": "A compatible rollout."
+     },
+     {
+      "title": "Missing IF NOT EXISTS",
+      "broken": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "fix": "ALTER TABLE students ADD COLUMN IF NOT EXISTS email TEXT;",
+      "error": "column \"email\" of relation \"students\" already exists",
+      "expected": "A retry-safe migration."
+     },
+     {
+      "title": "Backfill in one transaction",
+      "broken": "UPDATE students SET email = 'unknown@example.com' WHERE email IS NULL;",
+      "fix": "Batch by id and commit each batch.",
+      "error": "A huge transaction holds locks and bloats WAL",
+      "expected": "A resumable backfill."
+     },
+     {
+      "title": "Rename breaks readers",
+      "broken": "ALTER TABLE students RENAME COLUMN email TO contact_email;",
+      "fix": "Add contact_email, dual-write, migrate readers, then remove email.",
+      "error": "Old code cannot find email",
+      "expected": "A compatible rename."
+     },
+     {
+      "title": "Lock timeout missing",
+      "broken": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "fix": "SET lock_timeout = '5s';\nALTER TABLE students ADD COLUMN email TEXT;",
+      "error": "The migration can wait behind a long transaction",
+      "expected": "A bounded wait."
+     },
+     {
+      "title": "Irreversible down",
+      "broken": "-- down: DROP TABLE students;",
+      "fix": "-- down: DROP COLUMN email;",
+      "error": "The rollback destroys data",
+      "expected": "A safe reverse."
+     },
+     {
+      "title": "Concurrent in transaction",
+      "broken": "BEGIN;\nCREATE INDEX CONCURRENTLY idx_students_email ON students (email);\nCOMMIT;",
+      "fix": "CREATE INDEX CONCURRENTLY idx_students_email ON students (email);",
+      "error": "CREATE INDEX CONCURRENTLY cannot run inside a transaction block",
+      "expected": "A concurrent build."
+     },
+     {
+      "title": "No verification",
+      "broken": "Run the migration and deploy immediately.",
+      "fix": "Verify row counts, constraints and application errors before removing the old path.",
+      "error": "The change may be silently incomplete",
+      "expected": "A verified rollout."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 31 · State one key rule for Migration Basics.",
+      "answer": "One change per migration."
+     },
+     {
+      "q": "Module 31 · State one key rule for Versioned Migrations.",
+      "answer": "Use numeric prefixes."
+     },
+     {
+      "q": "Module 31 · State one key rule for Up and Down.",
+      "answer": "Write both directions."
+     },
+     {
+      "q": "Module 31 · State one key rule for Idempotency.",
+      "answer": "Use IF NOT EXISTS."
+     },
+     {
+      "q": "Module 31 · State one key rule for Adding Columns.",
+      "answer": "Add nullable first."
+     },
+     {
+      "q": "Module 31 · State one key rule for Dropping Columns.",
+      "answer": "Search usage."
+     },
+     {
+      "q": "Module 31 · State one key rule for Renaming.",
+      "answer": "Add new."
+     },
+     {
+      "q": "Module 31 · State one key rule for Backfills.",
+      "answer": "Batch by key."
+     },
+     {
+      "q": "Module 31 · State one key rule for Online Migrations.",
+      "answer": "Use concurrent index builds."
+     },
+     {
+      "q": "Module 31 · State one key rule for Locks.",
+      "answer": "Know the lock level."
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,919 @@
+{
+ "modules": [
+  {
+   "id": "sql22",
+   "no": 22,
+   "title": "JSON and JSONB",
+   "goal": "Store, query, index and update semi-structured data without losing relational discipline.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "JSON vs JSONB",
+     "simple": "JSON text hai; JSONB parsed binary hai.",
+     "pro": "JSON stores the original text, while JSONB parses it into a binary form that supports indexing and efficient operators.",
+     "points": [
+      "JSON preserves formatting.",
+      "JSONB is usually the better default.",
+      "JSONB loses key order and duplicates."
+     ],
+     "example": {
+      "sql": "SELECT '{\"name\":\"Aarav\"}'::jsonb AS data;",
+      "output": "A parsed JSONB value."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "JSON Literals",
+     "simple": "JSON literal quoted object ya array hota hai.",
+     "pro": "A JSON literal is cast with ::json or ::jsonb and can contain objects, arrays, strings, numbers, booleans and null.",
+     "points": [
+      "Use single quotes around the literal.",
+      "Cast to jsonb.",
+      "JSON null is not SQL NULL."
+     ],
+     "example": {
+      "sql": "SELECT '{\"name\":\"Aarav\",\"marks\":90}'::jsonb AS student;",
+      "output": "A student object."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Storing JSONB",
+     "simple": "JSONB column semi-structured data ke liye hota hai.",
+     "pro": "A jsonb column stores flexible attributes while the table keeps relational keys and constraints.",
+     "points": [
+      "Use jsonb for queryable documents.",
+      "Keep stable fields as columns.",
+      "Add a CHECK for jsonb_typeof."
+     ],
+     "example": {
+      "sql": "CREATE TABLE events (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, payload JSONB NOT NULL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Arrow Operator",
+     "simple": "-> JSON value ko JSON ke roop me nikaalta hai.",
+     "pro": "The -> operator returns a JSONB value, preserving quotes and structure for chaining.",
+     "points": [
+      "Returns jsonb.",
+      "Works with object keys and array indexes.",
+      "Chain it for nested values."
+     ],
+     "example": {
+      "sql": "SELECT payload->'name' AS name_json FROM events;",
+      "output": "\"Aarav\""
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Text Arrow Operator",
+     "simple": "->> JSON value ko text me nikaalta hai.",
+     "pro": "The ->> operator returns text, which is what you usually want for comparisons and display.",
+     "points": [
+      "Returns text.",
+      "Casts numbers and booleans to text.",
+      "Use it in WHERE and ORDER BY."
+     ],
+     "example": {
+      "sql": "SELECT payload->>'name' AS name FROM events;",
+      "output": "Aarav"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Path Operators",
+     "simple": "#> and #>> nested paths nikaalte hain.",
+     "pro": "#> returns a JSONB value at a path array and #>> returns text at that path.",
+     "points": [
+      "The path is a text array.",
+      "Use braces in a literal.",
+      "Chain arrows for simple paths."
+     ],
+     "example": {
+      "sql": "SELECT payload#>'{address,city}' AS city_json, payload#>>'{address,city}' AS city FROM events;",
+      "output": "The nested city value and text."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "JSONB Operators",
+     "simple": "JSONB mein containment, existence aur deletion operators hote hain.",
+     "pro": "JSONB supports @>, ?, ?|, ?&, ||, -, #- and path operators for querying and editing documents.",
+     "points": [
+      "@> tests containment.",
+      "? tests key existence.",
+      "|| merges objects."
+     ],
+     "example": {
+      "sql": "SELECT payload || '{\"active\":true}'::jsonb AS merged FROM events;",
+      "output": "The object with active added."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Containment",
+     "simple": "@> check karta hai ki JSONB doosre ko contain karta hai.",
+     "pro": "The @> operator tests whether the left JSONB contains the right structure, including nested keys and array elements.",
+     "points": [
+      "It is indexable with GIN.",
+      "Objects match by key/value.",
+      "Arrays match elements."
+     ],
+     "example": {
+      "sql": "SELECT * FROM events WHERE payload @> '{\"active\":true}'::jsonb;",
+      "output": "Events containing active true."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Key Existence",
+     "simple": "? operator key ya array element ki existence check karta hai.",
+     "pro": "The ? operator tests whether a top-level key or array string exists; ?| and ?& test any or all keys.",
+     "points": [
+      "? tests one key.",
+      "?| tests any key.",
+      "?& tests all keys."
+     ],
+     "example": {
+      "sql": "SELECT * FROM events WHERE payload ? 'email';",
+      "output": "Events with an email key."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "jsonb_each",
+     "simple": "jsonb_each object ko key/value rows me todta hai.",
+     "pro": "jsonb_each expands a top-level object into rows, enabling relational processing of dynamic keys.",
+     "points": [
+      "It returns key and value.",
+      "jsonb_each_text returns text.",
+      "Use it in a lateral join."
+     ],
+     "example": {
+      "sql": "SELECT key, value FROM events, LATERAL jsonb_each(payload);",
+      "output": "One row per top-level key."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "jsonb_array_elements",
+     "simple": "jsonb_array_elements array ko rows me todta hai.",
+     "pro": "jsonb_array_elements expands a JSON array into one row per element, which is useful for tags and line items.",
+     "points": [
+      "It requires an array.",
+      "Use WITH ORDINALITY for positions.",
+      "It can multiply rows."
+     ],
+     "example": {
+      "sql": "SELECT value FROM events, LATERAL jsonb_array_elements(payload->'tags');",
+      "output": "One row per tag."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Building JSON",
+     "simple": "jsonb_build_object aur jsonb_build_array JSON banate hain.",
+     "pro": "jsonb_build_object and jsonb_build_array construct JSONB from SQL values, and jsonb_agg aggregates rows into an array.",
+     "points": [
+      "Build objects from key/value pairs.",
+      "Build arrays from values.",
+      "Aggregate rows with jsonb_agg."
+     ],
+     "example": {
+      "sql": "SELECT jsonb_build_object('name', name, 'marks', marks) AS student FROM students;",
+      "output": "A JSON object per student."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Updating JSONB",
+     "simple": "jsonb_set nested value update karta hai.",
+     "pro": "jsonb_set replaces a value at a path, with an optional create_missing flag.",
+     "points": [
+      "The path is a text array.",
+      "The new value is JSONB.",
+      "Missing paths are left alone unless create_missing is true."
+     ],
+     "example": {
+      "sql": "UPDATE events SET payload = jsonb_set(payload, '{active}', 'true'::jsonb) WHERE id = 1;",
+      "output": "UPDATE 1"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Deleting Keys",
+     "simple": "Minus operator key ya array element hataata hai.",
+     "pro": "The - operator removes a top-level key or array element, while #- removes a nested path.",
+     "points": [
+      "- removes a key.",
+      "- integer removes an array element.",
+      "#- removes a path."
+     ],
+     "example": {
+      "sql": "UPDATE events SET payload = payload - 'email' WHERE id = 1;",
+      "output": "UPDATE 1"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "JSON Path",
+     "simple": "jsonb_path_query JSONPath expressions chalata hai.",
+     "pro": "jsonb_path_query evaluates a SQL/JSON path and returns matching values, supporting filters and recursive descent.",
+     "points": [
+      "Paths start with $.",
+      "It can return multiple rows.",
+      "It supports filter expressions."
+     ],
+     "example": {
+      "sql": "SELECT jsonb_path_query(payload, '$.tags[*]') FROM events;",
+      "output": "Each tag value."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Indexing JSONB",
+     "simple": "GIN index JSONB containment aur existence ko fast karta hai.",
+     "pro": "A GIN index on a jsonb column accelerates @>, ?, ?| and ?& queries.",
+     "points": [
+      "Use gin (column).",
+      "jsonb_ops is the default.",
+      "jsonb_path_ops is smaller for containment."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_events_payload ON events USING gin (payload);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "JSON vs Relational",
+     "simple": "Stable fields columns me rakho; flexible fields JSONB me.",
+     "pro": "Relational columns give typed constraints and joins, while JSONB gives flexibility for sparse or evolving attributes.",
+     "points": [
+      "Do not hide core keys in JSON.",
+      "Use JSONB for optional metadata.",
+      "Index the paths you query."
+     ],
+     "example": {
+      "sql": "CREATE TABLE events (id BIGINT PRIMARY KEY, kind TEXT NOT NULL, payload JSONB NOT NULL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Validation",
+     "simple": "JSONB type aur shape ko CHECK se validate karo.",
+     "pro": "A CHECK constraint can require an object or a specific key, but deep schema validation often belongs in the application or a JSON schema validator.",
+     "points": [
+      "Use jsonb_typeof.",
+      "Check required keys.",
+      "Do not overconstrain flexible payloads."
+     ],
+     "example": {
+      "sql": "ALTER TABLE events ADD CONSTRAINT payload_object CHECK (jsonb_typeof(payload) = 'object');",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Common JSON Errors",
+     "simple": "Missing casts, wrong arrows aur array assumptions common errors hain.",
+     "pro": "Common failures are comparing jsonb to text, using -> when ->> is needed, and calling array functions on a non-array.",
+     "points": [
+      "Cast literals to jsonb.",
+      "Use ->> for text.",
+      "Check jsonb_typeof before array expansion."
+     ],
+     "example": {
+      "sql": "SELECT payload->>'name' FROM events WHERE payload->>'active' = 'true';",
+      "output": "Text comparison done correctly."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical API Data",
+     "simple": "JSONB ko API payload, audit metadata aur flexible settings ke liye use karo.",
+     "pro": "A practical JSONB design keeps identity and relationships relational and stores the flexible payload with a GIN index for the queries that matter.",
+     "points": [
+      "Keep keys relational.",
+      "Store the payload.",
+      "Index searched paths.",
+      "Validate the top level."
+     ],
+     "example": {
+      "sql": "CREATE TABLE api_events (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, kind TEXT NOT NULL, payload JSONB NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\nCREATE INDEX api_events_payload_gin ON api_events USING gin (payload);",
+      "output": "CREATE TABLE\nCREATE INDEX"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 22 · JSON vs JSONB: what is the main purpose?",
+      "options": [
+       "JSON vs JSONB: JSON text hai; JSONB parsed binary hai.",
+       "JSON Literals: JSON literal quoted object ya array hota hai.",
+       "Containment: @> check karta hai ki JSONB doosre ko contain karta hai.",
+       "Deleting Keys: Minus operator key ya array element hataata hai."
+      ],
+      "answer": "JSON vs JSONB: JSON text hai; JSONB parsed binary hai.",
+      "why": "JSON stores the original text, while JSONB parses it into a binary form that supports indexing and efficient operators."
+     },
+     {
+      "q": "Module 22 · JSON Literals: what is the main purpose?",
+      "options": [
+       "Storing JSONB: JSONB column semi-structured data ke liye hota hai.",
+       "Key Existence: ? operator key ya array element ki existence check karta hai.",
+       "JSON Path: jsonb_path_query JSONPath expressions chalata hai.",
+       "JSON Literals: JSON literal quoted object ya array hota hai."
+      ],
+      "answer": "JSON Literals: JSON literal quoted object ya array hota hai.",
+      "why": "A JSON literal is cast with ::json or ::jsonb and can contain objects, arrays, strings, numbers, booleans and null."
+     },
+     {
+      "q": "Module 22 · Storing JSONB: what is the main purpose?",
+      "options": [
+       "jsonb_each: jsonb_each object ko key/value rows me todta hai.",
+       "Indexing JSONB: GIN index JSONB containment aur existence ko fast karta hai.",
+       "Storing JSONB: JSONB column semi-structured data ke liye hota hai.",
+       "Arrow Operator: -> JSON value ko JSON ke roop me nikaalta hai."
+      ],
+      "answer": "Storing JSONB: JSONB column semi-structured data ke liye hota hai.",
+      "why": "A jsonb column stores flexible attributes while the table keeps relational keys and constraints."
+     },
+     {
+      "q": "Module 22 · Arrow Operator: what is the main purpose?",
+      "options": [
+       "JSON vs Relational: Stable fields columns me rakho; flexible fields JSONB me.",
+       "Arrow Operator: -> JSON value ko JSON ke roop me nikaalta hai.",
+       "Text Arrow Operator: ->> JSON value ko text me nikaalta hai.",
+       "jsonb_array_elements: jsonb_array_elements array ko rows me todta hai."
+      ],
+      "answer": "Arrow Operator: -> JSON value ko JSON ke roop me nikaalta hai.",
+      "why": "The -> operator returns a JSONB value, preserving quotes and structure for chaining."
+     },
+     {
+      "q": "Module 22 · Text Arrow Operator: what is the main purpose?",
+      "options": [
+       "Text Arrow Operator: ->> JSON value ko text me nikaalta hai.",
+       "Path Operators: #> and #>> nested paths nikaalte hain.",
+       "Building JSON: jsonb_build_object aur jsonb_build_array JSON banate hain.",
+       "Validation: JSONB type aur shape ko CHECK se validate karo."
+      ],
+      "answer": "Text Arrow Operator: ->> JSON value ko text me nikaalta hai.",
+      "why": "The ->> operator returns text, which is what you usually want for comparisons and display."
+     },
+     {
+      "q": "Module 22 · Path Operators: what is the main purpose?",
+      "options": [
+       "JSONB Operators: JSONB mein containment, existence aur deletion operators hote hain.",
+       "Updating JSONB: jsonb_set nested value update karta hai.",
+       "Common JSON Errors: Missing casts, wrong arrows aur array assumptions common errors hain.",
+       "Path Operators: #> and #>> nested paths nikaalte hain."
+      ],
+      "answer": "Path Operators: #> and #>> nested paths nikaalte hain.",
+      "why": "#> returns a JSONB value at a path array and #>> returns text at that path."
+     },
+     {
+      "q": "Module 22 · JSONB Operators: what is the main purpose?",
+      "options": [
+       "Deleting Keys: Minus operator key ya array element hataata hai.",
+       "Practical API Data: JSONB ko API payload, audit metadata aur flexible settings ke liye use karo.",
+       "JSONB Operators: JSONB mein containment, existence aur deletion operators hote hain.",
+       "Containment: @> check karta hai ki JSONB doosre ko contain karta hai."
+      ],
+      "answer": "JSONB Operators: JSONB mein containment, existence aur deletion operators hote hain.",
+      "why": "JSONB supports @>, ?, ?|, ?&, ||, -, #- and path operators for querying and editing documents."
+     },
+     {
+      "q": "Module 22 · Containment: what is the main purpose?",
+      "options": [
+       "JSON vs JSONB: JSON text hai; JSONB parsed binary hai.",
+       "Containment: @> check karta hai ki JSONB doosre ko contain karta hai.",
+       "Key Existence: ? operator key ya array element ki existence check karta hai.",
+       "JSON Path: jsonb_path_query JSONPath expressions chalata hai."
+      ],
+      "answer": "Containment: @> check karta hai ki JSONB doosre ko contain karta hai.",
+      "why": "The @> operator tests whether the left JSONB contains the right structure, including nested keys and array elements."
+     },
+     {
+      "q": "Module 22 · Key Existence: what is the main purpose?",
+      "options": [
+       "Key Existence: ? operator key ya array element ki existence check karta hai.",
+       "jsonb_each: jsonb_each object ko key/value rows me todta hai.",
+       "Indexing JSONB: GIN index JSONB containment aur existence ko fast karta hai.",
+       "JSON Literals: JSON literal quoted object ya array hota hai."
+      ],
+      "answer": "Key Existence: ? operator key ya array element ki existence check karta hai.",
+      "why": "The ? operator tests whether a top-level key or array string exists; ?| and ?& test any or all keys."
+     },
+     {
+      "q": "Module 22 · jsonb_each: what is the main purpose?",
+      "options": [
+       "jsonb_array_elements: jsonb_array_elements array ko rows me todta hai.",
+       "JSON vs Relational: Stable fields columns me rakho; flexible fields JSONB me.",
+       "Storing JSONB: JSONB column semi-structured data ke liye hota hai.",
+       "jsonb_each: jsonb_each object ko key/value rows me todta hai."
+      ],
+      "answer": "jsonb_each: jsonb_each object ko key/value rows me todta hai.",
+      "why": "jsonb_each expands a top-level object into rows, enabling relational processing of dynamic keys."
+     },
+     {
+      "q": "Module 22 · jsonb_array_elements: what is the main purpose?",
+      "options": [
+       "Validation: JSONB type aur shape ko CHECK se validate karo.",
+       "Arrow Operator: -> JSON value ko JSON ke roop me nikaalta hai.",
+       "jsonb_array_elements: jsonb_array_elements array ko rows me todta hai.",
+       "Building JSON: jsonb_build_object aur jsonb_build_array JSON banate hain."
+      ],
+      "answer": "jsonb_array_elements: jsonb_array_elements array ko rows me todta hai.",
+      "why": "jsonb_array_elements expands a JSON array into one row per element, which is useful for tags and line items."
+     },
+     {
+      "q": "Module 22 · Building JSON: what is the main purpose?",
+      "options": [
+       "Text Arrow Operator: ->> JSON value ko text me nikaalta hai.",
+       "Building JSON: jsonb_build_object aur jsonb_build_array JSON banate hain.",
+       "Updating JSONB: jsonb_set nested value update karta hai.",
+       "Common JSON Errors: Missing casts, wrong arrows aur array assumptions common errors hain."
+      ],
+      "answer": "Building JSON: jsonb_build_object aur jsonb_build_array JSON banate hain.",
+      "why": "jsonb_build_object and jsonb_build_array construct JSONB from SQL values, and jsonb_agg aggregates rows into an array."
+     },
+     {
+      "q": "Module 22 · Updating JSONB: what is the main purpose?",
+      "options": [
+       "Updating JSONB: jsonb_set nested value update karta hai.",
+       "Deleting Keys: Minus operator key ya array element hataata hai.",
+       "Practical API Data: JSONB ko API payload, audit metadata aur flexible settings ke liye use karo.",
+       "Path Operators: #> and #>> nested paths nikaalte hain."
+      ],
+      "answer": "Updating JSONB: jsonb_set nested value update karta hai.",
+      "why": "jsonb_set replaces a value at a path, with an optional create_missing flag."
+     },
+     {
+      "q": "Module 22 · Deleting Keys: what is the main purpose?",
+      "options": [
+       "JSON Path: jsonb_path_query JSONPath expressions chalata hai.",
+       "JSON vs JSONB: JSON text hai; JSONB parsed binary hai.",
+       "JSONB Operators: JSONB mein containment, existence aur deletion operators hote hain.",
+       "Deleting Keys: Minus operator key ya array element hataata hai."
+      ],
+      "answer": "Deleting Keys: Minus operator key ya array element hataata hai.",
+      "why": "The - operator removes a top-level key or array element, while #- removes a nested path."
+     },
+     {
+      "q": "Module 22 · JSON Path: what is the main purpose?",
+      "options": [
+       "JSON Literals: JSON literal quoted object ya array hota hai.",
+       "Containment: @> check karta hai ki JSONB doosre ko contain karta hai.",
+       "JSON Path: jsonb_path_query JSONPath expressions chalata hai.",
+       "Indexing JSONB: GIN index JSONB containment aur existence ko fast karta hai."
+      ],
+      "answer": "JSON Path: jsonb_path_query JSONPath expressions chalata hai.",
+      "why": "jsonb_path_query evaluates a SQL/JSON path and returns matching values, supporting filters and recursive descent."
+     },
+     {
+      "q": "Module 22 · Indexing JSONB: what is the main purpose?",
+      "options": [
+       "Key Existence: ? operator key ya array element ki existence check karta hai.",
+       "Indexing JSONB: GIN index JSONB containment aur existence ko fast karta hai.",
+       "JSON vs Relational: Stable fields columns me rakho; flexible fields JSONB me.",
+       "Storing JSONB: JSONB column semi-structured data ke liye hota hai."
+      ],
+      "answer": "Indexing JSONB: GIN index JSONB containment aur existence ko fast karta hai.",
+      "why": "A GIN index on a jsonb column accelerates @>, ?, ?| and ?& queries."
+     },
+     {
+      "q": "Module 22 · JSON vs Relational: what is the main purpose?",
+      "options": [
+       "JSON vs Relational: Stable fields columns me rakho; flexible fields JSONB me.",
+       "Validation: JSONB type aur shape ko CHECK se validate karo.",
+       "Arrow Operator: -> JSON value ko JSON ke roop me nikaalta hai.",
+       "jsonb_each: jsonb_each object ko key/value rows me todta hai."
+      ],
+      "answer": "JSON vs Relational: Stable fields columns me rakho; flexible fields JSONB me.",
+      "why": "Relational columns give typed constraints and joins, while JSONB gives flexibility for sparse or evolving attributes."
+     },
+     {
+      "q": "Module 22 · Validation: what is the main purpose?",
+      "options": [
+       "Common JSON Errors: Missing casts, wrong arrows aur array assumptions common errors hain.",
+       "Text Arrow Operator: ->> JSON value ko text me nikaalta hai.",
+       "jsonb_array_elements: jsonb_array_elements array ko rows me todta hai.",
+       "Validation: JSONB type aur shape ko CHECK se validate karo."
+      ],
+      "answer": "Validation: JSONB type aur shape ko CHECK se validate karo.",
+      "why": "A CHECK constraint can require an object or a specific key, but deep schema validation often belongs in the application or a JSON schema validator."
+     },
+     {
+      "q": "Module 22 · Common JSON Errors: what is the main purpose?",
+      "options": [
+       "Path Operators: #> and #>> nested paths nikaalte hain.",
+       "Building JSON: jsonb_build_object aur jsonb_build_array JSON banate hain.",
+       "Common JSON Errors: Missing casts, wrong arrows aur array assumptions common errors hain.",
+       "Practical API Data: JSONB ko API payload, audit metadata aur flexible settings ke liye use karo."
+      ],
+      "answer": "Common JSON Errors: Missing casts, wrong arrows aur array assumptions common errors hain.",
+      "why": "Common failures are comparing jsonb to text, using -> when ->> is needed, and calling array functions on a non-array."
+     },
+     {
+      "q": "Module 22 · Practical API Data: what is the main purpose?",
+      "options": [
+       "Updating JSONB: jsonb_set nested value update karta hai.",
+       "Practical API Data: JSONB ko API payload, audit metadata aur flexible settings ke liye use karo.",
+       "JSON vs JSONB: JSON text hai; JSONB parsed binary hai.",
+       "JSONB Operators: JSONB mein containment, existence aur deletion operators hote hain."
+      ],
+      "answer": "Practical API Data: JSONB ko API payload, audit metadata aur flexible settings ke liye use karo.",
+      "why": "A practical JSONB design keeps identity and relationships relational and stores the flexible payload with a GIN index for the queries that matter."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 22 · Explain JSON vs JSONB in a production query.",
+      "answer": "JSON stores the original text, while JSONB parses it into a binary form that supports indexing and efficient operators. Key rules: JSON preserves formatting. JSONB is usually the better default. JSONB loses key order and duplicates."
+     },
+     {
+      "q": "Module 22 · Explain JSON Literals in a production query.",
+      "answer": "A JSON literal is cast with ::json or ::jsonb and can contain objects, arrays, strings, numbers, booleans and null. Key rules: Use single quotes around the literal. Cast to jsonb. JSON null is not SQL NULL."
+     },
+     {
+      "q": "Module 22 · Explain Storing JSONB in a production query.",
+      "answer": "A jsonb column stores flexible attributes while the table keeps relational keys and constraints. Key rules: Use jsonb for queryable documents. Keep stable fields as columns. Add a CHECK for jsonb_typeof."
+     },
+     {
+      "q": "Module 22 · Explain Arrow Operator in a production query.",
+      "answer": "The -> operator returns a JSONB value, preserving quotes and structure for chaining. Key rules: Returns jsonb. Works with object keys and array indexes. Chain it for nested values."
+     },
+     {
+      "q": "Module 22 · Explain Text Arrow Operator in a production query.",
+      "answer": "The ->> operator returns text, which is what you usually want for comparisons and display. Key rules: Returns text. Casts numbers and booleans to text. Use it in WHERE and ORDER BY."
+     },
+     {
+      "q": "Module 22 · Explain Path Operators in a production query.",
+      "answer": "#> returns a JSONB value at a path array and #>> returns text at that path. Key rules: The path is a text array. Use braces in a literal. Chain arrows for simple paths."
+     },
+     {
+      "q": "Module 22 · Explain JSONB Operators in a production query.",
+      "answer": "JSONB supports @>, ?, ?|, ?&, ||, -, #- and path operators for querying and editing documents. Key rules: @> tests containment. ? tests key existence. || merges objects."
+     },
+     {
+      "q": "Module 22 · Explain Containment in a production query.",
+      "answer": "The @> operator tests whether the left JSONB contains the right structure, including nested keys and array elements. Key rules: It is indexable with GIN. Objects match by key/value. Arrays match elements."
+     },
+     {
+      "q": "Module 22 · Explain Key Existence in a production query.",
+      "answer": "The ? operator tests whether a top-level key or array string exists; ?| and ?& test any or all keys. Key rules: ? tests one key. ?| tests any key. ?& tests all keys."
+     },
+     {
+      "q": "Module 22 · Explain jsonb_each in a production query.",
+      "answer": "jsonb_each expands a top-level object into rows, enabling relational processing of dynamic keys. Key rules: It returns key and value. jsonb_each_text returns text. Use it in a lateral join."
+     },
+     {
+      "q": "Module 22 · Explain jsonb_array_elements in a production query.",
+      "answer": "jsonb_array_elements expands a JSON array into one row per element, which is useful for tags and line items. Key rules: It requires an array. Use WITH ORDINALITY for positions. It can multiply rows."
+     },
+     {
+      "q": "Module 22 · Explain Building JSON in a production query.",
+      "answer": "jsonb_build_object and jsonb_build_array construct JSONB from SQL values, and jsonb_agg aggregates rows into an array. Key rules: Build objects from key/value pairs. Build arrays from values. Aggregate rows with jsonb_agg."
+     },
+     {
+      "q": "Module 22 · Explain Updating JSONB in a production query.",
+      "answer": "jsonb_set replaces a value at a path, with an optional create_missing flag. Key rules: The path is a text array. The new value is JSONB. Missing paths are left alone unless create_missing is true."
+     },
+     {
+      "q": "Module 22 · Explain Deleting Keys in a production query.",
+      "answer": "The - operator removes a top-level key or array element, while #- removes a nested path. Key rules: - removes a key. - integer removes an array element. #- removes a path."
+     },
+     {
+      "q": "Module 22 · Explain JSON Path in a production query.",
+      "answer": "jsonb_path_query evaluates a SQL/JSON path and returns matching values, supporting filters and recursive descent. Key rules: Paths start with $. It can return multiple rows. It supports filter expressions."
+     },
+     {
+      "q": "Module 22 · Explain Indexing JSONB in a production query.",
+      "answer": "A GIN index on a jsonb column accelerates @>, ?, ?| and ?& queries. Key rules: Use gin (column). jsonb_ops is the default. jsonb_path_ops is smaller for containment."
+     },
+     {
+      "q": "Module 22 · Explain JSON vs Relational in a production query.",
+      "answer": "Relational columns give typed constraints and joins, while JSONB gives flexibility for sparse or evolving attributes. Key rules: Do not hide core keys in JSON. Use JSONB for optional metadata. Index the paths you query."
+     },
+     {
+      "q": "Module 22 · Explain Validation in a production query.",
+      "answer": "A CHECK constraint can require an object or a specific key, but deep schema validation often belongs in the application or a JSON schema validator. Key rules: Use jsonb_typeof. Check required keys. Do not overconstrain flexible payloads."
+     },
+     {
+      "q": "Module 22 · Explain Common JSON Errors in a production query.",
+      "answer": "Common failures are comparing jsonb to text, using -> when ->> is needed, and calling array functions on a non-array. Key rules: Cast literals to jsonb. Use ->> for text. Check jsonb_typeof before array expansion."
+     },
+     {
+      "q": "Module 22 · Explain Practical API Data in a production query.",
+      "answer": "A practical JSONB design keeps identity and relationships relational and stores the flexible payload with a GIN index for the queries that matter. Key rules: Keep keys relational. Store the payload. Index searched paths. Validate the top level."
+     }
+    ],
+    "labs": [
+     {
+      "title": "JSON vs JSONB",
+      "task": "Write a SQL example that demonstrates JSON vs JSONB.",
+      "solution": "SELECT '{\"name\":\"Aarav\"}'::jsonb AS data;",
+      "expected": "A parsed JSONB value."
+     },
+     {
+      "title": "JSON Literals",
+      "task": "Write a SQL example that demonstrates JSON Literals.",
+      "solution": "SELECT '{\"name\":\"Aarav\",\"marks\":90}'::jsonb AS student;",
+      "expected": "A student object."
+     },
+     {
+      "title": "Storing JSONB",
+      "task": "Write a SQL example that demonstrates Storing JSONB.",
+      "solution": "CREATE TABLE events (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, payload JSONB NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Arrow Operator",
+      "task": "Write a SQL example that demonstrates Arrow Operator.",
+      "solution": "SELECT payload->'name' AS name_json FROM events;",
+      "expected": "\"Aarav\""
+     },
+     {
+      "title": "Text Arrow Operator",
+      "task": "Write a SQL example that demonstrates Text Arrow Operator.",
+      "solution": "SELECT payload->>'name' AS name FROM events;",
+      "expected": "Aarav"
+     },
+     {
+      "title": "Path Operators",
+      "task": "Write a SQL example that demonstrates Path Operators.",
+      "solution": "SELECT payload#>'{address,city}' AS city_json, payload#>>'{address,city}' AS city FROM events;",
+      "expected": "The nested city value and text."
+     },
+     {
+      "title": "JSONB Operators",
+      "task": "Write a SQL example that demonstrates JSONB Operators.",
+      "solution": "SELECT payload || '{\"active\":true}'::jsonb AS merged FROM events;",
+      "expected": "The object with active added."
+     },
+     {
+      "title": "Containment",
+      "task": "Write a SQL example that demonstrates Containment.",
+      "solution": "SELECT * FROM events WHERE payload @> '{\"active\":true}'::jsonb;",
+      "expected": "Events containing active true."
+     },
+     {
+      "title": "Key Existence",
+      "task": "Write a SQL example that demonstrates Key Existence.",
+      "solution": "SELECT * FROM events WHERE payload ? 'email';",
+      "expected": "Events with an email key."
+     },
+     {
+      "title": "jsonb_each",
+      "task": "Write a SQL example that demonstrates jsonb_each.",
+      "solution": "SELECT key, value FROM events, LATERAL jsonb_each(payload);",
+      "expected": "One row per top-level key."
+     },
+     {
+      "title": "jsonb_array_elements",
+      "task": "Write a SQL example that demonstrates jsonb_array_elements.",
+      "solution": "SELECT value FROM events, LATERAL jsonb_array_elements(payload->'tags');",
+      "expected": "One row per tag."
+     },
+     {
+      "title": "Building JSON",
+      "task": "Write a SQL example that demonstrates Building JSON.",
+      "solution": "SELECT jsonb_build_object('name', name, 'marks', marks) AS student FROM students;",
+      "expected": "A JSON object per student."
+     },
+     {
+      "title": "Updating JSONB",
+      "task": "Write a SQL example that demonstrates Updating JSONB.",
+      "solution": "UPDATE events SET payload = jsonb_set(payload, '{active}', 'true'::jsonb) WHERE id = 1;",
+      "expected": "UPDATE 1"
+     },
+     {
+      "title": "Deleting Keys",
+      "task": "Write a SQL example that demonstrates Deleting Keys.",
+      "solution": "UPDATE events SET payload = payload - 'email' WHERE id = 1;",
+      "expected": "UPDATE 1"
+     },
+     {
+      "title": "JSON Path",
+      "task": "Write a SQL example that demonstrates JSON Path.",
+      "solution": "SELECT jsonb_path_query(payload, '$.tags[*]') FROM events;",
+      "expected": "Each tag value."
+     },
+     {
+      "title": "Indexing JSONB",
+      "task": "Write a SQL example that demonstrates Indexing JSONB.",
+      "solution": "CREATE INDEX idx_events_payload ON events USING gin (payload);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "JSON vs Relational",
+      "task": "Write a SQL example that demonstrates JSON vs Relational.",
+      "solution": "CREATE TABLE events (id BIGINT PRIMARY KEY, kind TEXT NOT NULL, payload JSONB NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Validation",
+      "task": "Write a SQL example that demonstrates Validation.",
+      "solution": "ALTER TABLE events ADD CONSTRAINT payload_object CHECK (jsonb_typeof(payload) = 'object');",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Common JSON Errors",
+      "task": "Write a SQL example that demonstrates Common JSON Errors.",
+      "solution": "SELECT payload->>'name' FROM events WHERE payload->>'active' = 'true';",
+      "expected": "Text comparison done correctly."
+     },
+     {
+      "title": "Practical API Data",
+      "task": "Write a SQL example that demonstrates Practical API Data.",
+      "solution": "CREATE TABLE api_events (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, kind TEXT NOT NULL, payload JSONB NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());\nCREATE INDEX api_events_payload_gin ON api_events USING gin (payload);",
+      "expected": "CREATE TABLE\nCREATE INDEX"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 22 · Why does JSON vs JSONB matter?",
+      "answer": "JSON stores the original text, while JSONB parses it into a binary form that supports indexing and efficient operators. JSON preserves formatting. JSONB is usually the better default. JSONB loses key order and duplicates."
+     },
+     {
+      "q": "Module 22 · Why does JSON Literals matter?",
+      "answer": "A JSON literal is cast with ::json or ::jsonb and can contain objects, arrays, strings, numbers, booleans and null. Use single quotes around the literal. Cast to jsonb. JSON null is not SQL NULL."
+     },
+     {
+      "q": "Module 22 · Why does Storing JSONB matter?",
+      "answer": "A jsonb column stores flexible attributes while the table keeps relational keys and constraints. Use jsonb for queryable documents. Keep stable fields as columns. Add a CHECK for jsonb_typeof."
+     },
+     {
+      "q": "Module 22 · Why does Arrow Operator matter?",
+      "answer": "The -> operator returns a JSONB value, preserving quotes and structure for chaining. Returns jsonb. Works with object keys and array indexes. Chain it for nested values."
+     },
+     {
+      "q": "Module 22 · Why does Text Arrow Operator matter?",
+      "answer": "The ->> operator returns text, which is what you usually want for comparisons and display. Returns text. Casts numbers and booleans to text. Use it in WHERE and ORDER BY."
+     },
+     {
+      "q": "Module 22 · Why does Path Operators matter?",
+      "answer": "#> returns a JSONB value at a path array and #>> returns text at that path. The path is a text array. Use braces in a literal. Chain arrows for simple paths."
+     },
+     {
+      "q": "Module 22 · Why does JSONB Operators matter?",
+      "answer": "JSONB supports @>, ?, ?|, ?&, ||, -, #- and path operators for querying and editing documents. @> tests containment. ? tests key existence. || merges objects."
+     },
+     {
+      "q": "Module 22 · Why does Containment matter?",
+      "answer": "The @> operator tests whether the left JSONB contains the right structure, including nested keys and array elements. It is indexable with GIN. Objects match by key/value. Arrays match elements."
+     },
+     {
+      "q": "Module 22 · Why does Key Existence matter?",
+      "answer": "The ? operator tests whether a top-level key or array string exists; ?| and ?& test any or all keys. ? tests one key. ?| tests any key. ?& tests all keys."
+     },
+     {
+      "q": "Module 22 · Why does jsonb_each matter?",
+      "answer": "jsonb_each expands a top-level object into rows, enabling relational processing of dynamic keys. It returns key and value. jsonb_each_text returns text. Use it in a lateral join."
+     },
+     {
+      "q": "Module 22 · Why does jsonb_array_elements matter?",
+      "answer": "jsonb_array_elements expands a JSON array into one row per element, which is useful for tags and line items. It requires an array. Use WITH ORDINALITY for positions. It can multiply rows."
+     },
+     {
+      "q": "Module 22 · Why does Building JSON matter?",
+      "answer": "jsonb_build_object and jsonb_build_array construct JSONB from SQL values, and jsonb_agg aggregates rows into an array. Build objects from key/value pairs. Build arrays from values. Aggregate rows with jsonb_agg."
+     },
+     {
+      "q": "Module 22 · Why does Updating JSONB matter?",
+      "answer": "jsonb_set replaces a value at a path, with an optional create_missing flag. The path is a text array. The new value is JSONB. Missing paths are left alone unless create_missing is true."
+     },
+     {
+      "q": "Module 22 · Why does Deleting Keys matter?",
+      "answer": "The - operator removes a top-level key or array element, while #- removes a nested path. - removes a key. - integer removes an array element. #- removes a path."
+     },
+     {
+      "q": "Module 22 · Why does JSON Path matter?",
+      "answer": "jsonb_path_query evaluates a SQL/JSON path and returns matching values, supporting filters and recursive descent. Paths start with $. It can return multiple rows. It supports filter expressions."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Text comparison",
+      "broken": "SELECT * FROM events WHERE payload->'active' = 'true';",
+      "fix": "SELECT * FROM events WHERE payload->>'active' = 'true';",
+      "error": "operator does not exist: jsonb = unknown",
+      "expected": "A text comparison."
+     },
+     {
+      "title": "Missing cast",
+      "broken": "SELECT * FROM events WHERE payload @> '{\"active\":true}';",
+      "fix": "SELECT * FROM events WHERE payload @> '{\"active\":true}'::jsonb;",
+      "error": "operator does not exist: jsonb @> unknown",
+      "expected": "A JSONB containment query."
+     },
+     {
+      "title": "Array on object",
+      "broken": "SELECT jsonb_array_elements(payload) FROM events;",
+      "fix": "SELECT jsonb_array_elements(payload->'tags') FROM events;",
+      "error": "cannot extract elements from an object",
+      "expected": "Array elements."
+     },
+     {
+      "title": "Wrong path arrow",
+      "broken": "SELECT payload->'address'->'city' FROM events;",
+      "fix": "SELECT payload#>>'{address,city}' FROM events;",
+      "error": "The result is still JSONB, not text",
+      "expected": "The city as text."
+     },
+     {
+      "title": "Index not used",
+      "broken": "CREATE INDEX idx_payload_name ON events ((payload->>'name'));\nSELECT * FROM events WHERE payload @> '{\"name\":\"Aarav\"}';",
+      "fix": "CREATE INDEX idx_payload_gin ON events USING gin (payload);",
+      "error": "The expression index does not match the containment predicate",
+      "expected": "A GIN index for containment."
+     },
+     {
+      "title": "JSON null confusion",
+      "broken": "SELECT * FROM events WHERE payload->>'email' IS NULL;",
+      "fix": "SELECT * FROM events WHERE NOT payload ? 'email' OR payload->'email' = 'null'::jsonb;",
+      "error": "SQL NULL and JSON null are different",
+      "expected": "Both missing and JSON null handled."
+     },
+     {
+      "title": "Set missing path",
+      "broken": "UPDATE events SET payload = jsonb_set(payload, '{address,city}', '\"Pune\"');",
+      "fix": "UPDATE events SET payload = jsonb_set(payload, '{address,city}', '\"Pune\"', true);",
+      "error": "The path is missing and create_missing is false",
+      "expected": "The nested value is created."
+     },
+     {
+      "title": "Delete array element",
+      "broken": "UPDATE events SET payload = payload - 'tags';",
+      "fix": "UPDATE events SET payload = payload #- '{tags,0}';",
+      "error": "The whole tags array is removed",
+      "expected": "One array element is removed."
+     },
+     {
+      "title": "Invalid JSON literal",
+      "broken": "SELECT '{\"name\":}'::jsonb;",
+      "fix": "SELECT '{\"name\":\"Aarav\"}'::jsonb;",
+      "error": "invalid input syntax for type json",
+      "expected": "A valid object."
+     },
+     {
+      "title": "Wrong JSON type check",
+      "broken": "ALTER TABLE events ADD CONSTRAINT payload_object CHECK (payload IS NOT NULL);",
+      "fix": "ALTER TABLE events ADD CONSTRAINT payload_object CHECK (jsonb_typeof(payload) = 'object');",
+      "error": "An array or scalar is still accepted",
+      "expected": "Only objects are accepted."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 22 · State one key rule for JSON vs JSONB.",
+      "answer": "JSON preserves formatting."
+     },
+     {
+      "q": "Module 22 · State one key rule for JSON Literals.",
+      "answer": "Use single quotes around the literal."
+     },
+     {
+      "q": "Module 22 · State one key rule for Storing JSONB.",
+      "answer": "Use jsonb for queryable documents."
+     },
+     {
+      "q": "Module 22 · State one key rule for Arrow Operator.",
+      "answer": "Returns jsonb."
+     },
+     {
+      "q": "Module 22 · State one key rule for Text Arrow Operator.",
+      "answer": "Returns text."
+     },
+     {
+      "q": "Module 22 · State one key rule for Path Operators.",
+      "answer": "The path is a text array."
+     },
+     {
+      "q": "Module 22 · State one key rule for JSONB Operators.",
+      "answer": "@> tests containment."
+     },
+     {
+      "q": "Module 22 · State one key rule for Containment.",
+      "answer": "It is indexable with GIN."
+     },
+     {
+      "q": "Module 22 · State one key rule for Key Existence.",
+      "answer": "? tests one key."
+     },
+     {
+      "q": "Module 22 · State one key rule for jsonb_each.",
+      "answer": "It returns key and value."
+     }
+    ]
+   }
+  }
+ ]
+}

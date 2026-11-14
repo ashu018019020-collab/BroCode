@@ -1,0 +1,919 @@
+{
+ "modules": [
+  {
+   "id": "sql29",
+   "no": 29,
+   "title": "Security and Permissions",
+   "goal": "Give each role only the access it needs and keep privileged code defensible.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Roles",
+     "simple": "Role user ya group ka identity hai.",
+     "pro": "PostgreSQL roles represent both login users and privilege groups, and roles can be members of other roles.",
+     "points": [
+      "Roles can log in or own objects.",
+      "Membership inherits privileges.",
+      "Use groups for shared access."
+     ],
+     "example": {
+      "sql": "CREATE ROLE app_read NOLOGIN;",
+      "output": "CREATE ROLE"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "CREATE ROLE",
+     "simple": "CREATE ROLE naya role banata hai.",
+     "pro": "CREATE ROLE defines a role with optional LOGIN, PASSWORD, VALID UNTIL and connection limits.",
+     "points": [
+      "Use LOGIN for users.",
+      "Use NOLOGIN for groups.",
+      "Never share human accounts."
+     ],
+     "example": {
+      "sql": "CREATE ROLE app_user LOGIN PASSWORD 'change-me';",
+      "output": "CREATE ROLE"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "GRANT",
+     "simple": "GRANT privileges deta hai.",
+     "pro": "GRANT assigns object or role privileges such as SELECT, INSERT, UPDATE, DELETE, USAGE and EXECUTE.",
+     "points": [
+      "Grant the minimum.",
+      "Revoke PUBLIC defaults.",
+      "Grant on schemas too."
+     ],
+     "example": {
+      "sql": "GRANT SELECT ON students TO app_read;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "REVOKE",
+     "simple": "REVOKE privileges wapas leta hai.",
+     "pro": "REVOKE removes previously granted privileges and can cascade through role membership.",
+     "points": [
+      "Revoke unused access.",
+      "Check dependencies.",
+      "CASCADE removes dependent grants."
+     ],
+     "example": {
+      "sql": "REVOKE DELETE ON students FROM app_read;",
+      "output": "REVOKE"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Object Privileges",
+     "simple": "Tables, sequences aur functions ke apne privileges hote hain.",
+     "pro": "Object privileges control specific actions on tables, sequences, functions and views.",
+     "points": [
+      "Sequences need USAGE.",
+      "Functions need EXECUTE.",
+      "Views can hide base tables."
+     ],
+     "example": {
+      "sql": "GRANT USAGE, SELECT ON SEQUENCE students_id_seq TO app_user;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Schema Privileges",
+     "simple": "Schema USAGE objects tak access deta hai.",
+     "pro": "A role needs USAGE on a schema before it can reference objects inside it.",
+     "points": [
+      "USAGE allows name resolution.",
+      "CREATE allows new objects.",
+      "Grant schema access deliberately."
+     ],
+     "example": {
+      "sql": "GRANT USAGE ON SCHEMA public TO app_read;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Default Privileges",
+     "simple": "Default privileges future objects ke liye apply hote hain.",
+     "pro": "ALTER DEFAULT PRIVILEGES sets grants for objects created later by a specific role.",
+     "points": [
+      "It affects future objects.",
+      "It is role-specific.",
+      "Existing objects need explicit grants."
+     ],
+     "example": {
+      "sql": "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO app_read;",
+      "output": "ALTER DEFAULT PRIVILEGES"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Row-Level Security",
+     "simple": "RLS row-level access control deta hai.",
+     "pro": "Row-level security adds policies that filter rows per role, even when the table privilege is granted.",
+     "points": [
+      "Enable RLS on the table.",
+      "Write policies per command.",
+      "Owners bypass RLS unless forced."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ENABLE ROW LEVEL SECURITY;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "RLS Policies",
+     "simple": "Policy batati hai kaunsi rows dikhengi.",
+     "pro": "A policy uses USING for visibility and WITH CHECK for writes, scoped by command and role.",
+     "points": [
+      "USING filters reads.",
+      "WITH CHECK validates writes.",
+      "Policies combine permissively by default."
+     ],
+     "example": {
+      "sql": "CREATE POLICY student_self ON students FOR SELECT USING (id = current_setting('app.user_id')::bigint);",
+      "output": "CREATE POLICY"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Security Definer",
+     "simple": "SECURITY DEFINER owner ke rights se chalta hai.",
+     "pro": "A security definer function runs with the owner’s privileges, so it must validate inputs and fix search_path.",
+     "points": [
+      "Use sparingly.",
+      "Set search_path.",
+      "Do not expose arbitrary SQL."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION admin_count() RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$ SELECT COUNT(*) FROM students; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Search Path",
+     "simple": "Search path unqualified names resolve karta hai.",
+     "pro": "A mutable search_path lets a caller shadow functions or tables, so privileged routines should pin it.",
+     "points": [
+      "Set search_path explicitly.",
+      "Qualify objects.",
+      "Avoid SECURITY DEFINER with user schemas."
+     ],
+     "example": {
+      "sql": "SET search_path = public, pg_temp;",
+      "output": "SET"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Least Privilege",
+     "simple": "Har role ko sirf zaroori access do.",
+     "pro": "Least privilege limits blast radius: read-only roles read, writers write only their tables, and admin access is rare.",
+     "points": [
+      "Start with no access.",
+      "Grant explicitly.",
+      "Review regularly."
+     ],
+     "example": {
+      "sql": "GRANT SELECT ON students, courses TO app_read;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Auditing",
+     "simple": "Sensitive actions log karo.",
+     "pro": "Audit logs record who accessed or changed sensitive data, using triggers, pgAudit or application logs.",
+     "points": [
+      "Log access and changes.",
+      "Protect the audit log.",
+      "Retain per policy."
+     ],
+     "example": {
+      "sql": "CREATE TABLE access_log (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, actor TEXT, action TEXT, at TIMESTAMPTZ DEFAULT NOW());",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Encryption",
+     "simple": "Data at rest aur in transit encrypt karo.",
+     "pro": "TLS protects connections, while disk encryption and column-level encryption protect stored data.",
+     "points": [
+      "Use TLS.",
+      "Encrypt disks.",
+      "Hash passwords, never encrypt them reversibly."
+     ],
+     "example": {
+      "sql": "SHOW ssl;",
+      "output": "on"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Secrets",
+     "simple": "Passwords aur keys code me na rakho.",
+     "pro": "Secrets belong in a secret manager or environment, rotated regularly and never committed to source control.",
+     "points": [
+      "Do not hardcode secrets.",
+      "Rotate credentials.",
+      "Limit who can read them."
+     ],
+     "example": {
+      "sql": "-- Store the password in a secret manager, not in SQL or Git",
+      "output": "A protected secret."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Common Security Errors",
+     "simple": "Public grants, shared accounts aur unsafe definer functions common errors hain.",
+     "pro": "Common failures are leaving PUBLIC privileges, sharing one login for all users, and creating SECURITY DEFINER functions with a mutable search_path.",
+     "points": [
+      "Revoke PUBLIC.",
+      "Use individual accounts.",
+      "Pin search_path."
+     ],
+     "example": {
+      "sql": "REVOKE ALL ON SCHEMA public FROM PUBLIC;",
+      "output": "REVOKE"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Application Role",
+     "simple": "App ka dedicated limited role hona chahiye.",
+     "pro": "The application connects with a role that has only the DML and sequence rights it needs, not superuser.",
+     "points": [
+      "No superuser.",
+      "Only needed tables.",
+      "Separate read and write roles."
+     ],
+     "example": {
+      "sql": "GRANT SELECT, INSERT, UPDATE, DELETE ON students, courses, enrollments TO app_user;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Read-Only Role",
+     "simple": "Reporting role ko SELECT-only access do.",
+     "pro": "A read-only role can query approved views without changing data.",
+     "points": [
+      "Grant SELECT only.",
+      "Use views for column limits.",
+      "Set statement timeout."
+     ],
+     "example": {
+      "sql": "GRANT SELECT ON enrollment_report TO reporting_role;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Monitoring Access",
+     "simple": "Privilege changes monitor karo.",
+     "pro": "Review role memberships, grants and failed logins so unexpected access is caught early.",
+     "points": [
+      "Review grants.",
+      "Alert on failures.",
+      "Track role changes."
+     ],
+     "example": {
+      "sql": "SELECT rolname, rolsuper, rolcanlogin FROM pg_roles;",
+      "output": "Role attributes."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Hardening",
+     "simple": "Roles, RLS, TLS aur least privilege ko combine karo.",
+     "pro": "A hardened database uses separate roles, minimal grants, RLS for tenant data, TLS and audited privileged functions.",
+     "points": [
+      "Separate roles.",
+      "Minimal grants.",
+      "RLS for tenants.",
+      "Audit privileged actions."
+     ],
+     "example": {
+      "sql": "REVOKE ALL ON SCHEMA public FROM PUBLIC;\nGRANT USAGE ON SCHEMA public TO app_user;\nGRANT SELECT, INSERT, UPDATE, DELETE ON students TO app_user;",
+      "output": "REVOKE\nGRANT\nGRANT"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 29 · Roles: what is the main purpose?",
+      "options": [
+       "Roles: Role user ya group ka identity hai.",
+       "CREATE ROLE: CREATE ROLE naya role banata hai.",
+       "Row-Level Security: RLS row-level access control deta hai.",
+       "Encryption: Data at rest aur in transit encrypt karo."
+      ],
+      "answer": "Roles: Role user ya group ka identity hai.",
+      "why": "PostgreSQL roles represent both login users and privilege groups, and roles can be members of other roles."
+     },
+     {
+      "q": "Module 29 · CREATE ROLE: what is the main purpose?",
+      "options": [
+       "GRANT: GRANT privileges deta hai.",
+       "RLS Policies: Policy batati hai kaunsi rows dikhengi.",
+       "Secrets: Passwords aur keys code me na rakho.",
+       "CREATE ROLE: CREATE ROLE naya role banata hai."
+      ],
+      "answer": "CREATE ROLE: CREATE ROLE naya role banata hai.",
+      "why": "CREATE ROLE defines a role with optional LOGIN, PASSWORD, VALID UNTIL and connection limits."
+     },
+     {
+      "q": "Module 29 · GRANT: what is the main purpose?",
+      "options": [
+       "Security Definer: SECURITY DEFINER owner ke rights se chalta hai.",
+       "Common Security Errors: Public grants, shared accounts aur unsafe definer functions common errors hain.",
+       "GRANT: GRANT privileges deta hai.",
+       "REVOKE: REVOKE privileges wapas leta hai."
+      ],
+      "answer": "GRANT: GRANT privileges deta hai.",
+      "why": "GRANT assigns object or role privileges such as SELECT, INSERT, UPDATE, DELETE, USAGE and EXECUTE."
+     },
+     {
+      "q": "Module 29 · REVOKE: what is the main purpose?",
+      "options": [
+       "Application Role: App ka dedicated limited role hona chahiye.",
+       "REVOKE: REVOKE privileges wapas leta hai.",
+       "Object Privileges: Tables, sequences aur functions ke apne privileges hote hain.",
+       "Search Path: Search path unqualified names resolve karta hai."
+      ],
+      "answer": "REVOKE: REVOKE privileges wapas leta hai.",
+      "why": "REVOKE removes previously granted privileges and can cascade through role membership."
+     },
+     {
+      "q": "Module 29 · Object Privileges: what is the main purpose?",
+      "options": [
+       "Object Privileges: Tables, sequences aur functions ke apne privileges hote hain.",
+       "Schema Privileges: Schema USAGE objects tak access deta hai.",
+       "Least Privilege: Har role ko sirf zaroori access do.",
+       "Read-Only Role: Reporting role ko SELECT-only access do."
+      ],
+      "answer": "Object Privileges: Tables, sequences aur functions ke apne privileges hote hain.",
+      "why": "Object privileges control specific actions on tables, sequences, functions and views."
+     },
+     {
+      "q": "Module 29 · Schema Privileges: what is the main purpose?",
+      "options": [
+       "Default Privileges: Default privileges future objects ke liye apply hote hain.",
+       "Auditing: Sensitive actions log karo.",
+       "Monitoring Access: Privilege changes monitor karo.",
+       "Schema Privileges: Schema USAGE objects tak access deta hai."
+      ],
+      "answer": "Schema Privileges: Schema USAGE objects tak access deta hai.",
+      "why": "A role needs USAGE on a schema before it can reference objects inside it."
+     },
+     {
+      "q": "Module 29 · Default Privileges: what is the main purpose?",
+      "options": [
+       "Encryption: Data at rest aur in transit encrypt karo.",
+       "Practical Hardening: Roles, RLS, TLS aur least privilege ko combine karo.",
+       "Default Privileges: Default privileges future objects ke liye apply hote hain.",
+       "Row-Level Security: RLS row-level access control deta hai."
+      ],
+      "answer": "Default Privileges: Default privileges future objects ke liye apply hote hain.",
+      "why": "ALTER DEFAULT PRIVILEGES sets grants for objects created later by a specific role."
+     },
+     {
+      "q": "Module 29 · Row-Level Security: what is the main purpose?",
+      "options": [
+       "Roles: Role user ya group ka identity hai.",
+       "Row-Level Security: RLS row-level access control deta hai.",
+       "RLS Policies: Policy batati hai kaunsi rows dikhengi.",
+       "Secrets: Passwords aur keys code me na rakho."
+      ],
+      "answer": "Row-Level Security: RLS row-level access control deta hai.",
+      "why": "Row-level security adds policies that filter rows per role, even when the table privilege is granted."
+     },
+     {
+      "q": "Module 29 · RLS Policies: what is the main purpose?",
+      "options": [
+       "RLS Policies: Policy batati hai kaunsi rows dikhengi.",
+       "Security Definer: SECURITY DEFINER owner ke rights se chalta hai.",
+       "Common Security Errors: Public grants, shared accounts aur unsafe definer functions common errors hain.",
+       "CREATE ROLE: CREATE ROLE naya role banata hai."
+      ],
+      "answer": "RLS Policies: Policy batati hai kaunsi rows dikhengi.",
+      "why": "A policy uses USING for visibility and WITH CHECK for writes, scoped by command and role."
+     },
+     {
+      "q": "Module 29 · Security Definer: what is the main purpose?",
+      "options": [
+       "Search Path: Search path unqualified names resolve karta hai.",
+       "Application Role: App ka dedicated limited role hona chahiye.",
+       "GRANT: GRANT privileges deta hai.",
+       "Security Definer: SECURITY DEFINER owner ke rights se chalta hai."
+      ],
+      "answer": "Security Definer: SECURITY DEFINER owner ke rights se chalta hai.",
+      "why": "A security definer function runs with the owner’s privileges, so it must validate inputs and fix search_path."
+     },
+     {
+      "q": "Module 29 · Search Path: what is the main purpose?",
+      "options": [
+       "Read-Only Role: Reporting role ko SELECT-only access do.",
+       "REVOKE: REVOKE privileges wapas leta hai.",
+       "Search Path: Search path unqualified names resolve karta hai.",
+       "Least Privilege: Har role ko sirf zaroori access do."
+      ],
+      "answer": "Search Path: Search path unqualified names resolve karta hai.",
+      "why": "A mutable search_path lets a caller shadow functions or tables, so privileged routines should pin it."
+     },
+     {
+      "q": "Module 29 · Least Privilege: what is the main purpose?",
+      "options": [
+       "Object Privileges: Tables, sequences aur functions ke apne privileges hote hain.",
+       "Least Privilege: Har role ko sirf zaroori access do.",
+       "Auditing: Sensitive actions log karo.",
+       "Monitoring Access: Privilege changes monitor karo."
+      ],
+      "answer": "Least Privilege: Har role ko sirf zaroori access do.",
+      "why": "Least privilege limits blast radius: read-only roles read, writers write only their tables, and admin access is rare."
+     },
+     {
+      "q": "Module 29 · Auditing: what is the main purpose?",
+      "options": [
+       "Auditing: Sensitive actions log karo.",
+       "Encryption: Data at rest aur in transit encrypt karo.",
+       "Practical Hardening: Roles, RLS, TLS aur least privilege ko combine karo.",
+       "Schema Privileges: Schema USAGE objects tak access deta hai."
+      ],
+      "answer": "Auditing: Sensitive actions log karo.",
+      "why": "Audit logs record who accessed or changed sensitive data, using triggers, pgAudit or application logs."
+     },
+     {
+      "q": "Module 29 · Encryption: what is the main purpose?",
+      "options": [
+       "Secrets: Passwords aur keys code me na rakho.",
+       "Roles: Role user ya group ka identity hai.",
+       "Default Privileges: Default privileges future objects ke liye apply hote hain.",
+       "Encryption: Data at rest aur in transit encrypt karo."
+      ],
+      "answer": "Encryption: Data at rest aur in transit encrypt karo.",
+      "why": "TLS protects connections, while disk encryption and column-level encryption protect stored data."
+     },
+     {
+      "q": "Module 29 · Secrets: what is the main purpose?",
+      "options": [
+       "CREATE ROLE: CREATE ROLE naya role banata hai.",
+       "Row-Level Security: RLS row-level access control deta hai.",
+       "Secrets: Passwords aur keys code me na rakho.",
+       "Common Security Errors: Public grants, shared accounts aur unsafe definer functions common errors hain."
+      ],
+      "answer": "Secrets: Passwords aur keys code me na rakho.",
+      "why": "Secrets belong in a secret manager or environment, rotated regularly and never committed to source control."
+     },
+     {
+      "q": "Module 29 · Common Security Errors: what is the main purpose?",
+      "options": [
+       "RLS Policies: Policy batati hai kaunsi rows dikhengi.",
+       "Common Security Errors: Public grants, shared accounts aur unsafe definer functions common errors hain.",
+       "Application Role: App ka dedicated limited role hona chahiye.",
+       "GRANT: GRANT privileges deta hai."
+      ],
+      "answer": "Common Security Errors: Public grants, shared accounts aur unsafe definer functions common errors hain.",
+      "why": "Common failures are leaving PUBLIC privileges, sharing one login for all users, and creating SECURITY DEFINER functions with a mutable search_path."
+     },
+     {
+      "q": "Module 29 · Application Role: what is the main purpose?",
+      "options": [
+       "Application Role: App ka dedicated limited role hona chahiye.",
+       "Read-Only Role: Reporting role ko SELECT-only access do.",
+       "REVOKE: REVOKE privileges wapas leta hai.",
+       "Security Definer: SECURITY DEFINER owner ke rights se chalta hai."
+      ],
+      "answer": "Application Role: App ka dedicated limited role hona chahiye.",
+      "why": "The application connects with a role that has only the DML and sequence rights it needs, not superuser."
+     },
+     {
+      "q": "Module 29 · Read-Only Role: what is the main purpose?",
+      "options": [
+       "Monitoring Access: Privilege changes monitor karo.",
+       "Object Privileges: Tables, sequences aur functions ke apne privileges hote hain.",
+       "Search Path: Search path unqualified names resolve karta hai.",
+       "Read-Only Role: Reporting role ko SELECT-only access do."
+      ],
+      "answer": "Read-Only Role: Reporting role ko SELECT-only access do.",
+      "why": "A read-only role can query approved views without changing data."
+     },
+     {
+      "q": "Module 29 · Monitoring Access: what is the main purpose?",
+      "options": [
+       "Schema Privileges: Schema USAGE objects tak access deta hai.",
+       "Least Privilege: Har role ko sirf zaroori access do.",
+       "Monitoring Access: Privilege changes monitor karo.",
+       "Practical Hardening: Roles, RLS, TLS aur least privilege ko combine karo."
+      ],
+      "answer": "Monitoring Access: Privilege changes monitor karo.",
+      "why": "Review role memberships, grants and failed logins so unexpected access is caught early."
+     },
+     {
+      "q": "Module 29 · Practical Hardening: what is the main purpose?",
+      "options": [
+       "Auditing: Sensitive actions log karo.",
+       "Practical Hardening: Roles, RLS, TLS aur least privilege ko combine karo.",
+       "Roles: Role user ya group ka identity hai.",
+       "Default Privileges: Default privileges future objects ke liye apply hote hain."
+      ],
+      "answer": "Practical Hardening: Roles, RLS, TLS aur least privilege ko combine karo.",
+      "why": "A hardened database uses separate roles, minimal grants, RLS for tenant data, TLS and audited privileged functions."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 29 · Explain Roles in a production query.",
+      "answer": "PostgreSQL roles represent both login users and privilege groups, and roles can be members of other roles. Key rules: Roles can log in or own objects. Membership inherits privileges. Use groups for shared access."
+     },
+     {
+      "q": "Module 29 · Explain CREATE ROLE in a production query.",
+      "answer": "CREATE ROLE defines a role with optional LOGIN, PASSWORD, VALID UNTIL and connection limits. Key rules: Use LOGIN for users. Use NOLOGIN for groups. Never share human accounts."
+     },
+     {
+      "q": "Module 29 · Explain GRANT in a production query.",
+      "answer": "GRANT assigns object or role privileges such as SELECT, INSERT, UPDATE, DELETE, USAGE and EXECUTE. Key rules: Grant the minimum. Revoke PUBLIC defaults. Grant on schemas too."
+     },
+     {
+      "q": "Module 29 · Explain REVOKE in a production query.",
+      "answer": "REVOKE removes previously granted privileges and can cascade through role membership. Key rules: Revoke unused access. Check dependencies. CASCADE removes dependent grants."
+     },
+     {
+      "q": "Module 29 · Explain Object Privileges in a production query.",
+      "answer": "Object privileges control specific actions on tables, sequences, functions and views. Key rules: Sequences need USAGE. Functions need EXECUTE. Views can hide base tables."
+     },
+     {
+      "q": "Module 29 · Explain Schema Privileges in a production query.",
+      "answer": "A role needs USAGE on a schema before it can reference objects inside it. Key rules: USAGE allows name resolution. CREATE allows new objects. Grant schema access deliberately."
+     },
+     {
+      "q": "Module 29 · Explain Default Privileges in a production query.",
+      "answer": "ALTER DEFAULT PRIVILEGES sets grants for objects created later by a specific role. Key rules: It affects future objects. It is role-specific. Existing objects need explicit grants."
+     },
+     {
+      "q": "Module 29 · Explain Row-Level Security in a production query.",
+      "answer": "Row-level security adds policies that filter rows per role, even when the table privilege is granted. Key rules: Enable RLS on the table. Write policies per command. Owners bypass RLS unless forced."
+     },
+     {
+      "q": "Module 29 · Explain RLS Policies in a production query.",
+      "answer": "A policy uses USING for visibility and WITH CHECK for writes, scoped by command and role. Key rules: USING filters reads. WITH CHECK validates writes. Policies combine permissively by default."
+     },
+     {
+      "q": "Module 29 · Explain Security Definer in a production query.",
+      "answer": "A security definer function runs with the owner’s privileges, so it must validate inputs and fix search_path. Key rules: Use sparingly. Set search_path. Do not expose arbitrary SQL."
+     },
+     {
+      "q": "Module 29 · Explain Search Path in a production query.",
+      "answer": "A mutable search_path lets a caller shadow functions or tables, so privileged routines should pin it. Key rules: Set search_path explicitly. Qualify objects. Avoid SECURITY DEFINER with user schemas."
+     },
+     {
+      "q": "Module 29 · Explain Least Privilege in a production query.",
+      "answer": "Least privilege limits blast radius: read-only roles read, writers write only their tables, and admin access is rare. Key rules: Start with no access. Grant explicitly. Review regularly."
+     },
+     {
+      "q": "Module 29 · Explain Auditing in a production query.",
+      "answer": "Audit logs record who accessed or changed sensitive data, using triggers, pgAudit or application logs. Key rules: Log access and changes. Protect the audit log. Retain per policy."
+     },
+     {
+      "q": "Module 29 · Explain Encryption in a production query.",
+      "answer": "TLS protects connections, while disk encryption and column-level encryption protect stored data. Key rules: Use TLS. Encrypt disks. Hash passwords, never encrypt them reversibly."
+     },
+     {
+      "q": "Module 29 · Explain Secrets in a production query.",
+      "answer": "Secrets belong in a secret manager or environment, rotated regularly and never committed to source control. Key rules: Do not hardcode secrets. Rotate credentials. Limit who can read them."
+     },
+     {
+      "q": "Module 29 · Explain Common Security Errors in a production query.",
+      "answer": "Common failures are leaving PUBLIC privileges, sharing one login for all users, and creating SECURITY DEFINER functions with a mutable search_path. Key rules: Revoke PUBLIC. Use individual accounts. Pin search_path."
+     },
+     {
+      "q": "Module 29 · Explain Application Role in a production query.",
+      "answer": "The application connects with a role that has only the DML and sequence rights it needs, not superuser. Key rules: No superuser. Only needed tables. Separate read and write roles."
+     },
+     {
+      "q": "Module 29 · Explain Read-Only Role in a production query.",
+      "answer": "A read-only role can query approved views without changing data. Key rules: Grant SELECT only. Use views for column limits. Set statement timeout."
+     },
+     {
+      "q": "Module 29 · Explain Monitoring Access in a production query.",
+      "answer": "Review role memberships, grants and failed logins so unexpected access is caught early. Key rules: Review grants. Alert on failures. Track role changes."
+     },
+     {
+      "q": "Module 29 · Explain Practical Hardening in a production query.",
+      "answer": "A hardened database uses separate roles, minimal grants, RLS for tenant data, TLS and audited privileged functions. Key rules: Separate roles. Minimal grants. RLS for tenants. Audit privileged actions."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Roles",
+      "task": "Write a SQL example that demonstrates Roles.",
+      "solution": "CREATE ROLE app_read NOLOGIN;",
+      "expected": "CREATE ROLE"
+     },
+     {
+      "title": "CREATE ROLE",
+      "task": "Write a SQL example that demonstrates CREATE ROLE.",
+      "solution": "CREATE ROLE app_user LOGIN PASSWORD 'change-me';",
+      "expected": "CREATE ROLE"
+     },
+     {
+      "title": "GRANT",
+      "task": "Write a SQL example that demonstrates GRANT.",
+      "solution": "GRANT SELECT ON students TO app_read;",
+      "expected": "GRANT"
+     },
+     {
+      "title": "REVOKE",
+      "task": "Write a SQL example that demonstrates REVOKE.",
+      "solution": "REVOKE DELETE ON students FROM app_read;",
+      "expected": "REVOKE"
+     },
+     {
+      "title": "Object Privileges",
+      "task": "Write a SQL example that demonstrates Object Privileges.",
+      "solution": "GRANT USAGE, SELECT ON SEQUENCE students_id_seq TO app_user;",
+      "expected": "GRANT"
+     },
+     {
+      "title": "Schema Privileges",
+      "task": "Write a SQL example that demonstrates Schema Privileges.",
+      "solution": "GRANT USAGE ON SCHEMA public TO app_read;",
+      "expected": "GRANT"
+     },
+     {
+      "title": "Default Privileges",
+      "task": "Write a SQL example that demonstrates Default Privileges.",
+      "solution": "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO app_read;",
+      "expected": "ALTER DEFAULT PRIVILEGES"
+     },
+     {
+      "title": "Row-Level Security",
+      "task": "Write a SQL example that demonstrates Row-Level Security.",
+      "solution": "ALTER TABLE students ENABLE ROW LEVEL SECURITY;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "RLS Policies",
+      "task": "Write a SQL example that demonstrates RLS Policies.",
+      "solution": "CREATE POLICY student_self ON students FOR SELECT USING (id = current_setting('app.user_id')::bigint);",
+      "expected": "CREATE POLICY"
+     },
+     {
+      "title": "Security Definer",
+      "task": "Write a SQL example that demonstrates Security Definer.",
+      "solution": "CREATE FUNCTION admin_count() RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$ SELECT COUNT(*) FROM students; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Search Path",
+      "task": "Write a SQL example that demonstrates Search Path.",
+      "solution": "SET search_path = public, pg_temp;",
+      "expected": "SET"
+     },
+     {
+      "title": "Least Privilege",
+      "task": "Write a SQL example that demonstrates Least Privilege.",
+      "solution": "GRANT SELECT ON students, courses TO app_read;",
+      "expected": "GRANT"
+     },
+     {
+      "title": "Auditing",
+      "task": "Write a SQL example that demonstrates Auditing.",
+      "solution": "CREATE TABLE access_log (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, actor TEXT, action TEXT, at TIMESTAMPTZ DEFAULT NOW());",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Encryption",
+      "task": "Write a SQL example that demonstrates Encryption.",
+      "solution": "SHOW ssl;",
+      "expected": "on"
+     },
+     {
+      "title": "Secrets",
+      "task": "Write a SQL example that demonstrates Secrets.",
+      "solution": "-- Store the password in a secret manager, not in SQL or Git",
+      "expected": "A protected secret."
+     },
+     {
+      "title": "Common Security Errors",
+      "task": "Write a SQL example that demonstrates Common Security Errors.",
+      "solution": "REVOKE ALL ON SCHEMA public FROM PUBLIC;",
+      "expected": "REVOKE"
+     },
+     {
+      "title": "Application Role",
+      "task": "Write a SQL example that demonstrates Application Role.",
+      "solution": "GRANT SELECT, INSERT, UPDATE, DELETE ON students, courses, enrollments TO app_user;",
+      "expected": "GRANT"
+     },
+     {
+      "title": "Read-Only Role",
+      "task": "Write a SQL example that demonstrates Read-Only Role.",
+      "solution": "GRANT SELECT ON enrollment_report TO reporting_role;",
+      "expected": "GRANT"
+     },
+     {
+      "title": "Monitoring Access",
+      "task": "Write a SQL example that demonstrates Monitoring Access.",
+      "solution": "SELECT rolname, rolsuper, rolcanlogin FROM pg_roles;",
+      "expected": "Role attributes."
+     },
+     {
+      "title": "Practical Hardening",
+      "task": "Write a SQL example that demonstrates Practical Hardening.",
+      "solution": "REVOKE ALL ON SCHEMA public FROM PUBLIC;\nGRANT USAGE ON SCHEMA public TO app_user;\nGRANT SELECT, INSERT, UPDATE, DELETE ON students TO app_user;",
+      "expected": "REVOKE\nGRANT\nGRANT"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 29 · Why does Roles matter?",
+      "answer": "PostgreSQL roles represent both login users and privilege groups, and roles can be members of other roles. Roles can log in or own objects. Membership inherits privileges. Use groups for shared access."
+     },
+     {
+      "q": "Module 29 · Why does CREATE ROLE matter?",
+      "answer": "CREATE ROLE defines a role with optional LOGIN, PASSWORD, VALID UNTIL and connection limits. Use LOGIN for users. Use NOLOGIN for groups. Never share human accounts."
+     },
+     {
+      "q": "Module 29 · Why does GRANT matter?",
+      "answer": "GRANT assigns object or role privileges such as SELECT, INSERT, UPDATE, DELETE, USAGE and EXECUTE. Grant the minimum. Revoke PUBLIC defaults. Grant on schemas too."
+     },
+     {
+      "q": "Module 29 · Why does REVOKE matter?",
+      "answer": "REVOKE removes previously granted privileges and can cascade through role membership. Revoke unused access. Check dependencies. CASCADE removes dependent grants."
+     },
+     {
+      "q": "Module 29 · Why does Object Privileges matter?",
+      "answer": "Object privileges control specific actions on tables, sequences, functions and views. Sequences need USAGE. Functions need EXECUTE. Views can hide base tables."
+     },
+     {
+      "q": "Module 29 · Why does Schema Privileges matter?",
+      "answer": "A role needs USAGE on a schema before it can reference objects inside it. USAGE allows name resolution. CREATE allows new objects. Grant schema access deliberately."
+     },
+     {
+      "q": "Module 29 · Why does Default Privileges matter?",
+      "answer": "ALTER DEFAULT PRIVILEGES sets grants for objects created later by a specific role. It affects future objects. It is role-specific. Existing objects need explicit grants."
+     },
+     {
+      "q": "Module 29 · Why does Row-Level Security matter?",
+      "answer": "Row-level security adds policies that filter rows per role, even when the table privilege is granted. Enable RLS on the table. Write policies per command. Owners bypass RLS unless forced."
+     },
+     {
+      "q": "Module 29 · Why does RLS Policies matter?",
+      "answer": "A policy uses USING for visibility and WITH CHECK for writes, scoped by command and role. USING filters reads. WITH CHECK validates writes. Policies combine permissively by default."
+     },
+     {
+      "q": "Module 29 · Why does Security Definer matter?",
+      "answer": "A security definer function runs with the owner’s privileges, so it must validate inputs and fix search_path. Use sparingly. Set search_path. Do not expose arbitrary SQL."
+     },
+     {
+      "q": "Module 29 · Why does Search Path matter?",
+      "answer": "A mutable search_path lets a caller shadow functions or tables, so privileged routines should pin it. Set search_path explicitly. Qualify objects. Avoid SECURITY DEFINER with user schemas."
+     },
+     {
+      "q": "Module 29 · Why does Least Privilege matter?",
+      "answer": "Least privilege limits blast radius: read-only roles read, writers write only their tables, and admin access is rare. Start with no access. Grant explicitly. Review regularly."
+     },
+     {
+      "q": "Module 29 · Why does Auditing matter?",
+      "answer": "Audit logs record who accessed or changed sensitive data, using triggers, pgAudit or application logs. Log access and changes. Protect the audit log. Retain per policy."
+     },
+     {
+      "q": "Module 29 · Why does Encryption matter?",
+      "answer": "TLS protects connections, while disk encryption and column-level encryption protect stored data. Use TLS. Encrypt disks. Hash passwords, never encrypt them reversibly."
+     },
+     {
+      "q": "Module 29 · Why does Secrets matter?",
+      "answer": "Secrets belong in a secret manager or environment, rotated regularly and never committed to source control. Do not hardcode secrets. Rotate credentials. Limit who can read them."
+     }
+    ],
+    "debug": [
+     {
+      "title": "PUBLIC schema access",
+      "broken": "GRANT ALL ON SCHEMA public TO PUBLIC;",
+      "fix": "REVOKE ALL ON SCHEMA public FROM PUBLIC;\nGRANT USAGE ON SCHEMA public TO app_user;",
+      "error": "Every role can create objects in public",
+      "expected": "Only approved roles have access."
+     },
+     {
+      "title": "Shared login",
+      "broken": "CREATE ROLE app LOGIN PASSWORD 'shared';",
+      "fix": "Create one role per application or user and rotate credentials.",
+      "error": "Actions cannot be attributed to a person",
+      "expected": "Attributable access."
+     },
+     {
+      "title": "Superuser app",
+      "broken": "GRANT app_user TO app;",
+      "fix": "GRANT SELECT, INSERT, UPDATE, DELETE ON students TO app;",
+      "error": "The application can do anything",
+      "expected": "A limited application role."
+     },
+     {
+      "title": "RLS not enabled",
+      "broken": "CREATE POLICY p ON students USING (id = 1);",
+      "fix": "ALTER TABLE students ENABLE ROW LEVEL SECURITY;\nCREATE POLICY p ON students USING (id = 1);",
+      "error": "The policy has no effect until RLS is enabled",
+      "expected": "RLS enforced."
+     },
+     {
+      "title": "Owner bypasses RLS",
+      "broken": "ALTER TABLE students ENABLE ROW LEVEL SECURITY;",
+      "fix": "ALTER TABLE students FORCE ROW LEVEL SECURITY;",
+      "error": "The table owner still bypasses policies",
+      "expected": "Policies apply to the owner too."
+     },
+     {
+      "title": "Definer search path",
+      "broken": "CREATE FUNCTION f() RETURNS void LANGUAGE sql SECURITY DEFINER AS $$ SELECT 1; $$;",
+      "fix": "CREATE FUNCTION f() RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$ SELECT 1; $$;",
+      "error": "A caller-controlled search_path can hijack names",
+      "expected": "A fixed search path."
+     },
+     {
+      "title": "Missing sequence grant",
+      "broken": "GRANT INSERT ON students TO app_user;",
+      "fix": "GRANT INSERT ON students TO app_user;\nGRANT USAGE, SELECT ON SEQUENCE students_id_seq TO app_user;",
+      "error": "permission denied for sequence students_id_seq",
+      "expected": "Inserts can use the identity sequence."
+     },
+     {
+      "title": "Revoke without schema",
+      "broken": "REVOKE SELECT ON students FROM app_read;",
+      "fix": "REVOKE SELECT ON students FROM app_read;\nREVOKE USAGE ON SCHEMA public FROM app_read;",
+      "error": "The role can still resolve objects it cannot read",
+      "expected": "Access is fully removed."
+     },
+     {
+      "title": "Password in code",
+      "broken": "CREATE ROLE app LOGIN PASSWORD 'secret';",
+      "fix": "Create the role without a literal password and set it from a secret manager.",
+      "error": "The password is exposed in logs and source",
+      "expected": "A protected credential."
+     },
+     {
+      "title": "Default privileges missed",
+      "broken": "GRANT SELECT ON students TO app_read;",
+      "fix": "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO app_read;",
+      "error": "Future tables are not readable",
+      "expected": "Future tables inherit the grant."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 29 · State one key rule for Roles.",
+      "answer": "Roles can log in or own objects."
+     },
+     {
+      "q": "Module 29 · State one key rule for CREATE ROLE.",
+      "answer": "Use LOGIN for users."
+     },
+     {
+      "q": "Module 29 · State one key rule for GRANT.",
+      "answer": "Grant the minimum."
+     },
+     {
+      "q": "Module 29 · State one key rule for REVOKE.",
+      "answer": "Revoke unused access."
+     },
+     {
+      "q": "Module 29 · State one key rule for Object Privileges.",
+      "answer": "Sequences need USAGE."
+     },
+     {
+      "q": "Module 29 · State one key rule for Schema Privileges.",
+      "answer": "USAGE allows name resolution."
+     },
+     {
+      "q": "Module 29 · State one key rule for Default Privileges.",
+      "answer": "It affects future objects."
+     },
+     {
+      "q": "Module 29 · State one key rule for Row-Level Security.",
+      "answer": "Enable RLS on the table."
+     },
+     {
+      "q": "Module 29 · State one key rule for RLS Policies.",
+      "answer": "USING filters reads."
+     },
+     {
+      "q": "Module 29 · State one key rule for Security Definer.",
+      "answer": "Use sparingly."
+     }
+    ]
+   }
+  }
+ ]
+}

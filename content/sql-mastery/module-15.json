@@ -1,0 +1,918 @@
+{
+ "modules": [
+  {
+   "id": "sql15",
+   "no": 15,
+   "title": "Window Functions",
+   "goal": "Compute rankings, running totals and row comparisons without collapsing rows.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Window Function Basics",
+     "simple": "Window functions har row ke saath related rows par calculate karte hain.",
+     "pro": "A window function computes across a set of related rows while keeping every row in the result.",
+     "points": [
+      "OVER defines the window.",
+      "Rows are not collapsed.",
+      "The result can be ranked or accumulated."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, SUM(marks) OVER () AS total FROM students;",
+      "output": "Every student plus the overall total."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "OVER Clause",
+     "simple": "OVER window ka shape batata hai.",
+     "pro": "OVER introduces the window specification and can include PARTITION BY, ORDER BY and a frame.",
+     "points": [
+      "OVER is mandatory.",
+      "Empty OVER means the whole result.",
+      "It follows the function call."
+     ],
+     "example": {
+      "sql": "SELECT name, RANK() OVER (ORDER BY marks DESC) AS rank FROM students;",
+      "output": "A rank for every student."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "PARTITION BY",
+     "simple": "PARTITION BY rows ko independent groups me todta hai.",
+     "pro": "PARTITION BY restarts the window calculation for each group without removing rows.",
+     "points": [
+      "Each partition is independent.",
+      "It is like GROUP BY without collapsing.",
+      "Missing it makes one global window."
+     ],
+     "example": {
+      "sql": "SELECT course_id, student_id, COUNT(*) OVER (PARTITION BY course_id) AS enrolled FROM enrollments;",
+      "output": "Enrollment count repeated per course row."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "ORDER BY in Windows",
+     "simple": "Window ORDER BY calculation ka sequence set karta hai.",
+     "pro": "ORDER BY inside OVER defines the row order used by ranking, lag and running calculations.",
+     "points": [
+      "It is separate from final ORDER BY.",
+      "It controls the frame direction.",
+      "Ties need a deterministic key."
+     ],
+     "example": {
+      "sql": "SELECT name, ROW_NUMBER() OVER (ORDER BY marks DESC, id ASC) AS rn FROM students;",
+      "output": "A deterministic row number."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "ROW_NUMBER",
+     "simple": "ROW_NUMBER har row ko unique sequence number deta hai.",
+     "pro": "ROW_NUMBER assigns 1, 2, 3 and so on in window order, even when values tie.",
+     "points": [
+      "It is unique per partition.",
+      "Ties are broken arbitrarily unless the ORDER BY is total.",
+      "It is useful for top-N per group."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, ROW_NUMBER() OVER (ORDER BY marks DESC, id ASC) AS rn FROM students;",
+      "output": "A unique rank per row."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "RANK",
+     "simple": "RANK ties ko same rank deta hai aur gaps chhodta hai.",
+     "pro": "RANK assigns the same rank to tied rows and leaves gaps after a tie.",
+     "points": [
+      "Ties share a rank.",
+      "Gaps appear after ties.",
+      "It follows competition ranking."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, RANK() OVER (ORDER BY marks DESC) AS rank FROM students;",
+      "output": "Ties share a rank, then gaps."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "DENSE_RANK",
+     "simple": "DENSE_RANK ties ko same rank deta hai bina gaps ke.",
+     "pro": "DENSE_RANK gives tied rows the same rank but does not leave gaps.",
+     "points": [
+      "Ties share a rank.",
+      "No gaps appear.",
+      "It is useful for grade bands."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, DENSE_RANK() OVER (ORDER BY marks DESC) AS rank FROM students;",
+      "output": "Consecutive ranks with ties."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "NTILE",
+     "simple": "NTILE rows ko N buckets me baantta hai.",
+     "pro": "NTILE(n) divides the ordered rows into n buckets, putting larger buckets first when the rows do not divide evenly.",
+     "points": [
+      "Buckets are numbered 1 to n.",
+      "Rows are ordered first.",
+      "Sizes differ by at most one."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, NTILE(4) OVER (ORDER BY marks DESC) AS quartile FROM students;",
+      "output": "A quartile from 1 to 4."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "LAG",
+     "simple": "LAG previous row ki value deta hai.",
+     "pro": "LAG returns a value from an earlier row in the window, with an optional offset and default.",
+     "points": [
+      "Offset defaults to 1.",
+      "The default is NULL.",
+      "It is useful for deltas."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, LAG(marks) OVER (ORDER BY id) AS previous FROM students;",
+      "output": "The previous student mark."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "LEAD",
+     "simple": "LEAD next row ki value deta hai.",
+     "pro": "LEAD returns a value from a later row in the window, with an optional offset and default.",
+     "points": [
+      "Offset defaults to 1.",
+      "The last row gets NULL.",
+      "It is useful for next-step analysis."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, LEAD(marks) OVER (ORDER BY id) AS next_mark FROM students;",
+      "output": "The next student mark."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "FIRST_VALUE",
+     "simple": "FIRST_VALUE window ke first row ki value deta hai.",
+     "pro": "FIRST_VALUE returns the value from the first row of the window frame, which is often the group leader.",
+     "points": [
+      "It respects the frame.",
+      "It can be partitioned.",
+      "It is useful for comparisons."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, FIRST_VALUE(name) OVER (ORDER BY marks DESC) AS top_name FROM students;",
+      "output": "Every row shows the top name."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "LAST_VALUE",
+     "simple": "LAST_VALUE frame ke last row ki value deta hai.",
+     "pro": "LAST_VALUE returns the last row of the current frame; with the default frame that is often the current row, so an explicit full frame is usually needed.",
+     "points": [
+      "The default frame ends at the current row.",
+      "Use UNBOUNDED FOLLOWING for the true last row.",
+      "It respects PARTITION BY."
+     ],
+     "example": {
+      "sql": "SELECT name, LAST_VALUE(name) OVER (ORDER BY marks DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_name FROM students;",
+      "output": "Every row shows the lowest-ranked name."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Running Totals",
+     "simple": "Running total current row tak accumulate karta hai.",
+     "pro": "A running total uses SUM with an ordered frame from the start of the partition to the current row.",
+     "points": [
+      "Order the rows.",
+      "Use an unbounded preceding frame.",
+      "Partition to restart per group."
+     ],
+     "example": {
+      "sql": "SELECT id, marks, SUM(marks) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running FROM students;",
+      "output": "A cumulative mark total."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Moving Averages",
+     "simple": "Moving average nearby rows ka average deta hai.",
+     "pro": "A moving average uses a bounded frame such as two preceding rows through the current row.",
+     "points": [
+      "Choose the frame width.",
+      "Order by a stable key.",
+      "Partition when averages restart."
+     ],
+     "example": {
+      "sql": "SELECT id, marks, AVG(marks) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS moving_avg FROM students;",
+      "output": "A three-row moving average."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Window Frames",
+     "simple": "Frame batata hai kaunse rows current calculation me shaamil hain.",
+     "pro": "A frame clause defines the start and end boundaries inside the partition, using ROWS, RANGE or GROUPS.",
+     "points": [
+      "Frames apply to ordered windows.",
+      "ROWS counts physical rows.",
+      "RANGE counts value ranges."
+     ],
+     "example": {
+      "sql": "SELECT id, marks, SUM(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS nearby FROM students;",
+      "output": "A three-row neighborhood sum."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "ROWS vs RANGE",
+     "simple": "ROWS physical rows ginata hai; RANGE value ranges par kaam karta hai.",
+     "pro": "ROWS addresses physical row offsets, while RANGE groups peers with equal ORDER BY values before applying the boundary.",
+     "points": [
+      "ROWS is precise for row counts.",
+      "RANGE includes peer rows.",
+      "Duplicates behave differently."
+     ],
+     "example": {
+      "sql": "SELECT marks, SUM(marks) OVER (ORDER BY marks RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cumulative FROM students;",
+      "output": "Peers receive the same cumulative value."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Named Windows",
+     "simple": "WINDOW clause ek window ko naam dekar reuse karta hai.",
+     "pro": "A named window defined in WINDOW can be reused by several window functions in the same query.",
+     "points": [
+      "Define it after FROM.",
+      "Reference it in OVER.",
+      "It reduces repetition."
+     ],
+     "example": {
+      "sql": "SELECT course_id, student_id, ROW_NUMBER() OVER w AS rn FROM enrollments WINDOW w AS (PARTITION BY course_id ORDER BY student_id);",
+      "output": "A reusable per-course ordering."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Window vs GROUP BY",
+     "simple": "GROUP BY rows collapse karta hai; window rows preserve karta hai.",
+     "pro": "GROUP BY returns one row per group, while a window function returns one row per input row with the group calculation attached.",
+     "points": [
+      "GROUP BY changes the grain.",
+      "Windows preserve the grain.",
+      "Both can use partitions."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(*) OVER (PARTITION BY course_id) AS enrolled FROM enrollments;",
+      "output": "Every enrollment row with its course count."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Window Performance",
+     "simple": "Window functions sort aur memory use kar sakte hain.",
+     "pro": "Window execution often requires sorting by partition and order keys, so matching indexes and narrow frames reduce the cost.",
+     "points": [
+      "Index the partition and order keys.",
+      "Narrow the frame when possible.",
+      "Read EXPLAIN for WindowAgg."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT name, ROW_NUMBER() OVER (ORDER BY marks DESC) FROM students;",
+      "output": "A plan with a WindowAgg and Sort."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Window Report",
+     "simple": "Windows se ranking, running totals aur per-group top N banao.",
+     "pro": "A practical report combines a partition, an order, a ranking function and an outer filter on the rank alias.",
+     "points": [
+      "Rank in a CTE or subquery.",
+      "Filter the rank outside.",
+      "State the result grain."
+     ],
+     "example": {
+      "sql": "WITH ranked AS (SELECT course_id, student_id, ROW_NUMBER() OVER (PARTITION BY course_id ORDER BY student_id) AS rn FROM enrollments) SELECT * FROM ranked WHERE rn <= 3;",
+      "output": "The first three students per course."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 15 · Window Function Basics: what is the main purpose?",
+      "options": [
+       "Window Function Basics: Window functions har row ke saath related rows par calculate karte hain.",
+       "OVER Clause: OVER window ka shape batata hai.",
+       "NTILE: NTILE rows ko N buckets me baantta hai.",
+       "Moving Averages: Moving average nearby rows ka average deta hai."
+      ],
+      "answer": "Window Function Basics: Window functions har row ke saath related rows par calculate karte hain.",
+      "why": "A window function computes across a set of related rows while keeping every row in the result."
+     },
+     {
+      "q": "Module 15 · OVER Clause: what is the main purpose?",
+      "options": [
+       "PARTITION BY: PARTITION BY rows ko independent groups me todta hai.",
+       "LAG: LAG previous row ki value deta hai.",
+       "Window Frames: Frame batata hai kaunse rows current calculation me shaamil hain.",
+       "OVER Clause: OVER window ka shape batata hai."
+      ],
+      "answer": "OVER Clause: OVER window ka shape batata hai.",
+      "why": "OVER introduces the window specification and can include PARTITION BY, ORDER BY and a frame."
+     },
+     {
+      "q": "Module 15 · PARTITION BY: what is the main purpose?",
+      "options": [
+       "LEAD: LEAD next row ki value deta hai.",
+       "ROWS vs RANGE: ROWS physical rows ginata hai; RANGE value ranges par kaam karta hai.",
+       "PARTITION BY: PARTITION BY rows ko independent groups me todta hai.",
+       "ORDER BY in Windows: Window ORDER BY calculation ka sequence set karta hai."
+      ],
+      "answer": "PARTITION BY: PARTITION BY rows ko independent groups me todta hai.",
+      "why": "PARTITION BY restarts the window calculation for each group without removing rows."
+     },
+     {
+      "q": "Module 15 · ORDER BY in Windows: what is the main purpose?",
+      "options": [
+       "Named Windows: WINDOW clause ek window ko naam dekar reuse karta hai.",
+       "ORDER BY in Windows: Window ORDER BY calculation ka sequence set karta hai.",
+       "ROW_NUMBER: ROW_NUMBER har row ko unique sequence number deta hai.",
+       "FIRST_VALUE: FIRST_VALUE window ke first row ki value deta hai."
+      ],
+      "answer": "ORDER BY in Windows: Window ORDER BY calculation ka sequence set karta hai.",
+      "why": "ORDER BY inside OVER defines the row order used by ranking, lag and running calculations."
+     },
+     {
+      "q": "Module 15 · ROW_NUMBER: what is the main purpose?",
+      "options": [
+       "ROW_NUMBER: ROW_NUMBER har row ko unique sequence number deta hai.",
+       "RANK: RANK ties ko same rank deta hai aur gaps chhodta hai.",
+       "LAST_VALUE: LAST_VALUE frame ke last row ki value deta hai.",
+       "Window vs GROUP BY: GROUP BY rows collapse karta hai; window rows preserve karta hai."
+      ],
+      "answer": "ROW_NUMBER: ROW_NUMBER har row ko unique sequence number deta hai.",
+      "why": "ROW_NUMBER assigns 1, 2, 3 and so on in window order, even when values tie."
+     },
+     {
+      "q": "Module 15 · RANK: what is the main purpose?",
+      "options": [
+       "DENSE_RANK: DENSE_RANK ties ko same rank deta hai bina gaps ke.",
+       "Running Totals: Running total current row tak accumulate karta hai.",
+       "Window Performance: Window functions sort aur memory use kar sakte hain.",
+       "RANK: RANK ties ko same rank deta hai aur gaps chhodta hai."
+      ],
+      "answer": "RANK: RANK ties ko same rank deta hai aur gaps chhodta hai.",
+      "why": "RANK assigns the same rank to tied rows and leaves gaps after a tie."
+     },
+     {
+      "q": "Module 15 · DENSE_RANK: what is the main purpose?",
+      "options": [
+       "Moving Averages: Moving average nearby rows ka average deta hai.",
+       "Practical Window Report: Windows se ranking, running totals aur per-group top N banao.",
+       "DENSE_RANK: DENSE_RANK ties ko same rank deta hai bina gaps ke.",
+       "NTILE: NTILE rows ko N buckets me baantta hai."
+      ],
+      "answer": "DENSE_RANK: DENSE_RANK ties ko same rank deta hai bina gaps ke.",
+      "why": "DENSE_RANK gives tied rows the same rank but does not leave gaps."
+     },
+     {
+      "q": "Module 15 · NTILE: what is the main purpose?",
+      "options": [
+       "Window Function Basics: Window functions har row ke saath related rows par calculate karte hain.",
+       "NTILE: NTILE rows ko N buckets me baantta hai.",
+       "LAG: LAG previous row ki value deta hai.",
+       "Window Frames: Frame batata hai kaunse rows current calculation me shaamil hain."
+      ],
+      "answer": "NTILE: NTILE rows ko N buckets me baantta hai.",
+      "why": "NTILE(n) divides the ordered rows into n buckets, putting larger buckets first when the rows do not divide evenly."
+     },
+     {
+      "q": "Module 15 · LAG: what is the main purpose?",
+      "options": [
+       "LAG: LAG previous row ki value deta hai.",
+       "LEAD: LEAD next row ki value deta hai.",
+       "ROWS vs RANGE: ROWS physical rows ginata hai; RANGE value ranges par kaam karta hai.",
+       "OVER Clause: OVER window ka shape batata hai."
+      ],
+      "answer": "LAG: LAG previous row ki value deta hai.",
+      "why": "LAG returns a value from an earlier row in the window, with an optional offset and default."
+     },
+     {
+      "q": "Module 15 · LEAD: what is the main purpose?",
+      "options": [
+       "FIRST_VALUE: FIRST_VALUE window ke first row ki value deta hai.",
+       "Named Windows: WINDOW clause ek window ko naam dekar reuse karta hai.",
+       "PARTITION BY: PARTITION BY rows ko independent groups me todta hai.",
+       "LEAD: LEAD next row ki value deta hai."
+      ],
+      "answer": "LEAD: LEAD next row ki value deta hai.",
+      "why": "LEAD returns a value from a later row in the window, with an optional offset and default."
+     },
+     {
+      "q": "Module 15 · FIRST_VALUE: what is the main purpose?",
+      "options": [
+       "Window vs GROUP BY: GROUP BY rows collapse karta hai; window rows preserve karta hai.",
+       "ORDER BY in Windows: Window ORDER BY calculation ka sequence set karta hai.",
+       "FIRST_VALUE: FIRST_VALUE window ke first row ki value deta hai.",
+       "LAST_VALUE: LAST_VALUE frame ke last row ki value deta hai."
+      ],
+      "answer": "FIRST_VALUE: FIRST_VALUE window ke first row ki value deta hai.",
+      "why": "FIRST_VALUE returns the value from the first row of the window frame, which is often the group leader."
+     },
+     {
+      "q": "Module 15 · LAST_VALUE: what is the main purpose?",
+      "options": [
+       "ROW_NUMBER: ROW_NUMBER har row ko unique sequence number deta hai.",
+       "LAST_VALUE: LAST_VALUE frame ke last row ki value deta hai.",
+       "Running Totals: Running total current row tak accumulate karta hai.",
+       "Window Performance: Window functions sort aur memory use kar sakte hain."
+      ],
+      "answer": "LAST_VALUE: LAST_VALUE frame ke last row ki value deta hai.",
+      "why": "LAST_VALUE returns the last row of the current frame; with the default frame that is often the current row, so an explicit full frame is usually needed."
+     },
+     {
+      "q": "Module 15 · Running Totals: what is the main purpose?",
+      "options": [
+       "Running Totals: Running total current row tak accumulate karta hai.",
+       "Moving Averages: Moving average nearby rows ka average deta hai.",
+       "Practical Window Report: Windows se ranking, running totals aur per-group top N banao.",
+       "RANK: RANK ties ko same rank deta hai aur gaps chhodta hai."
+      ],
+      "answer": "Running Totals: Running total current row tak accumulate karta hai.",
+      "why": "A running total uses SUM with an ordered frame from the start of the partition to the current row."
+     },
+     {
+      "q": "Module 15 · Moving Averages: what is the main purpose?",
+      "options": [
+       "Window Frames: Frame batata hai kaunse rows current calculation me shaamil hain.",
+       "Window Function Basics: Window functions har row ke saath related rows par calculate karte hain.",
+       "DENSE_RANK: DENSE_RANK ties ko same rank deta hai bina gaps ke.",
+       "Moving Averages: Moving average nearby rows ka average deta hai."
+      ],
+      "answer": "Moving Averages: Moving average nearby rows ka average deta hai.",
+      "why": "A moving average uses a bounded frame such as two preceding rows through the current row."
+     },
+     {
+      "q": "Module 15 · Window Frames: what is the main purpose?",
+      "options": [
+       "OVER Clause: OVER window ka shape batata hai.",
+       "NTILE: NTILE rows ko N buckets me baantta hai.",
+       "Window Frames: Frame batata hai kaunse rows current calculation me shaamil hain.",
+       "ROWS vs RANGE: ROWS physical rows ginata hai; RANGE value ranges par kaam karta hai."
+      ],
+      "answer": "Window Frames: Frame batata hai kaunse rows current calculation me shaamil hain.",
+      "why": "A frame clause defines the start and end boundaries inside the partition, using ROWS, RANGE or GROUPS."
+     },
+     {
+      "q": "Module 15 · ROWS vs RANGE: what is the main purpose?",
+      "options": [
+       "LAG: LAG previous row ki value deta hai.",
+       "ROWS vs RANGE: ROWS physical rows ginata hai; RANGE value ranges par kaam karta hai.",
+       "Named Windows: WINDOW clause ek window ko naam dekar reuse karta hai.",
+       "PARTITION BY: PARTITION BY rows ko independent groups me todta hai."
+      ],
+      "answer": "ROWS vs RANGE: ROWS physical rows ginata hai; RANGE value ranges par kaam karta hai.",
+      "why": "ROWS addresses physical row offsets, while RANGE groups peers with equal ORDER BY values before applying the boundary."
+     },
+     {
+      "q": "Module 15 · Named Windows: what is the main purpose?",
+      "options": [
+       "Named Windows: WINDOW clause ek window ko naam dekar reuse karta hai.",
+       "Window vs GROUP BY: GROUP BY rows collapse karta hai; window rows preserve karta hai.",
+       "ORDER BY in Windows: Window ORDER BY calculation ka sequence set karta hai.",
+       "LEAD: LEAD next row ki value deta hai."
+      ],
+      "answer": "Named Windows: WINDOW clause ek window ko naam dekar reuse karta hai.",
+      "why": "A named window defined in WINDOW can be reused by several window functions in the same query."
+     },
+     {
+      "q": "Module 15 · Window vs GROUP BY: what is the main purpose?",
+      "options": [
+       "Window Performance: Window functions sort aur memory use kar sakte hain.",
+       "ROW_NUMBER: ROW_NUMBER har row ko unique sequence number deta hai.",
+       "FIRST_VALUE: FIRST_VALUE window ke first row ki value deta hai.",
+       "Window vs GROUP BY: GROUP BY rows collapse karta hai; window rows preserve karta hai."
+      ],
+      "answer": "Window vs GROUP BY: GROUP BY rows collapse karta hai; window rows preserve karta hai.",
+      "why": "GROUP BY returns one row per group, while a window function returns one row per input row with the group calculation attached."
+     },
+     {
+      "q": "Module 15 · Window Performance: what is the main purpose?",
+      "options": [
+       "RANK: RANK ties ko same rank deta hai aur gaps chhodta hai.",
+       "LAST_VALUE: LAST_VALUE frame ke last row ki value deta hai.",
+       "Window Performance: Window functions sort aur memory use kar sakte hain.",
+       "Practical Window Report: Windows se ranking, running totals aur per-group top N banao."
+      ],
+      "answer": "Window Performance: Window functions sort aur memory use kar sakte hain.",
+      "why": "Window execution often requires sorting by partition and order keys, so matching indexes and narrow frames reduce the cost."
+     },
+     {
+      "q": "Module 15 · Practical Window Report: what is the main purpose?",
+      "options": [
+       "Running Totals: Running total current row tak accumulate karta hai.",
+       "Practical Window Report: Windows se ranking, running totals aur per-group top N banao.",
+       "Window Function Basics: Window functions har row ke saath related rows par calculate karte hain.",
+       "DENSE_RANK: DENSE_RANK ties ko same rank deta hai bina gaps ke."
+      ],
+      "answer": "Practical Window Report: Windows se ranking, running totals aur per-group top N banao.",
+      "why": "A practical report combines a partition, an order, a ranking function and an outer filter on the rank alias."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 15 · Explain Window Function Basics in a production query.",
+      "answer": "A window function computes across a set of related rows while keeping every row in the result. Key rules: OVER defines the window. Rows are not collapsed. The result can be ranked or accumulated."
+     },
+     {
+      "q": "Module 15 · Explain OVER Clause in a production query.",
+      "answer": "OVER introduces the window specification and can include PARTITION BY, ORDER BY and a frame. Key rules: OVER is mandatory. Empty OVER means the whole result. It follows the function call."
+     },
+     {
+      "q": "Module 15 · Explain PARTITION BY in a production query.",
+      "answer": "PARTITION BY restarts the window calculation for each group without removing rows. Key rules: Each partition is independent. It is like GROUP BY without collapsing. Missing it makes one global window."
+     },
+     {
+      "q": "Module 15 · Explain ORDER BY in Windows in a production query.",
+      "answer": "ORDER BY inside OVER defines the row order used by ranking, lag and running calculations. Key rules: It is separate from final ORDER BY. It controls the frame direction. Ties need a deterministic key."
+     },
+     {
+      "q": "Module 15 · Explain ROW_NUMBER in a production query.",
+      "answer": "ROW_NUMBER assigns 1, 2, 3 and so on in window order, even when values tie. Key rules: It is unique per partition. Ties are broken arbitrarily unless the ORDER BY is total. It is useful for top-N per group."
+     },
+     {
+      "q": "Module 15 · Explain RANK in a production query.",
+      "answer": "RANK assigns the same rank to tied rows and leaves gaps after a tie. Key rules: Ties share a rank. Gaps appear after ties. It follows competition ranking."
+     },
+     {
+      "q": "Module 15 · Explain DENSE_RANK in a production query.",
+      "answer": "DENSE_RANK gives tied rows the same rank but does not leave gaps. Key rules: Ties share a rank. No gaps appear. It is useful for grade bands."
+     },
+     {
+      "q": "Module 15 · Explain NTILE in a production query.",
+      "answer": "NTILE(n) divides the ordered rows into n buckets, putting larger buckets first when the rows do not divide evenly. Key rules: Buckets are numbered 1 to n. Rows are ordered first. Sizes differ by at most one."
+     },
+     {
+      "q": "Module 15 · Explain LAG in a production query.",
+      "answer": "LAG returns a value from an earlier row in the window, with an optional offset and default. Key rules: Offset defaults to 1. The default is NULL. It is useful for deltas."
+     },
+     {
+      "q": "Module 15 · Explain LEAD in a production query.",
+      "answer": "LEAD returns a value from a later row in the window, with an optional offset and default. Key rules: Offset defaults to 1. The last row gets NULL. It is useful for next-step analysis."
+     },
+     {
+      "q": "Module 15 · Explain FIRST_VALUE in a production query.",
+      "answer": "FIRST_VALUE returns the value from the first row of the window frame, which is often the group leader. Key rules: It respects the frame. It can be partitioned. It is useful for comparisons."
+     },
+     {
+      "q": "Module 15 · Explain LAST_VALUE in a production query.",
+      "answer": "LAST_VALUE returns the last row of the current frame; with the default frame that is often the current row, so an explicit full frame is usually needed. Key rules: The default frame ends at the current row. Use UNBOUNDED FOLLOWING for the true last row. It respects PARTITION BY."
+     },
+     {
+      "q": "Module 15 · Explain Running Totals in a production query.",
+      "answer": "A running total uses SUM with an ordered frame from the start of the partition to the current row. Key rules: Order the rows. Use an unbounded preceding frame. Partition to restart per group."
+     },
+     {
+      "q": "Module 15 · Explain Moving Averages in a production query.",
+      "answer": "A moving average uses a bounded frame such as two preceding rows through the current row. Key rules: Choose the frame width. Order by a stable key. Partition when averages restart."
+     },
+     {
+      "q": "Module 15 · Explain Window Frames in a production query.",
+      "answer": "A frame clause defines the start and end boundaries inside the partition, using ROWS, RANGE or GROUPS. Key rules: Frames apply to ordered windows. ROWS counts physical rows. RANGE counts value ranges."
+     },
+     {
+      "q": "Module 15 · Explain ROWS vs RANGE in a production query.",
+      "answer": "ROWS addresses physical row offsets, while RANGE groups peers with equal ORDER BY values before applying the boundary. Key rules: ROWS is precise for row counts. RANGE includes peer rows. Duplicates behave differently."
+     },
+     {
+      "q": "Module 15 · Explain Named Windows in a production query.",
+      "answer": "A named window defined in WINDOW can be reused by several window functions in the same query. Key rules: Define it after FROM. Reference it in OVER. It reduces repetition."
+     },
+     {
+      "q": "Module 15 · Explain Window vs GROUP BY in a production query.",
+      "answer": "GROUP BY returns one row per group, while a window function returns one row per input row with the group calculation attached. Key rules: GROUP BY changes the grain. Windows preserve the grain. Both can use partitions."
+     },
+     {
+      "q": "Module 15 · Explain Window Performance in a production query.",
+      "answer": "Window execution often requires sorting by partition and order keys, so matching indexes and narrow frames reduce the cost. Key rules: Index the partition and order keys. Narrow the frame when possible. Read EXPLAIN for WindowAgg."
+     },
+     {
+      "q": "Module 15 · Explain Practical Window Report in a production query.",
+      "answer": "A practical report combines a partition, an order, a ranking function and an outer filter on the rank alias. Key rules: Rank in a CTE or subquery. Filter the rank outside. State the result grain."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Window Function Basics",
+      "task": "Write a SQL example that demonstrates Window Function Basics.",
+      "solution": "SELECT name, marks, SUM(marks) OVER () AS total FROM students;",
+      "expected": "Every student plus the overall total."
+     },
+     {
+      "title": "OVER Clause",
+      "task": "Write a SQL example that demonstrates OVER Clause.",
+      "solution": "SELECT name, RANK() OVER (ORDER BY marks DESC) AS rank FROM students;",
+      "expected": "A rank for every student."
+     },
+     {
+      "title": "PARTITION BY",
+      "task": "Write a SQL example that demonstrates PARTITION BY.",
+      "solution": "SELECT course_id, student_id, COUNT(*) OVER (PARTITION BY course_id) AS enrolled FROM enrollments;",
+      "expected": "Enrollment count repeated per course row."
+     },
+     {
+      "title": "ORDER BY in Windows",
+      "task": "Write a SQL example that demonstrates ORDER BY in Windows.",
+      "solution": "SELECT name, ROW_NUMBER() OVER (ORDER BY marks DESC, id ASC) AS rn FROM students;",
+      "expected": "A deterministic row number."
+     },
+     {
+      "title": "ROW_NUMBER",
+      "task": "Write a SQL example that demonstrates ROW_NUMBER.",
+      "solution": "SELECT name, marks, ROW_NUMBER() OVER (ORDER BY marks DESC, id ASC) AS rn FROM students;",
+      "expected": "A unique rank per row."
+     },
+     {
+      "title": "RANK",
+      "task": "Write a SQL example that demonstrates RANK.",
+      "solution": "SELECT name, marks, RANK() OVER (ORDER BY marks DESC) AS rank FROM students;",
+      "expected": "Ties share a rank, then gaps."
+     },
+     {
+      "title": "DENSE_RANK",
+      "task": "Write a SQL example that demonstrates DENSE_RANK.",
+      "solution": "SELECT name, marks, DENSE_RANK() OVER (ORDER BY marks DESC) AS rank FROM students;",
+      "expected": "Consecutive ranks with ties."
+     },
+     {
+      "title": "NTILE",
+      "task": "Write a SQL example that demonstrates NTILE.",
+      "solution": "SELECT name, marks, NTILE(4) OVER (ORDER BY marks DESC) AS quartile FROM students;",
+      "expected": "A quartile from 1 to 4."
+     },
+     {
+      "title": "LAG",
+      "task": "Write a SQL example that demonstrates LAG.",
+      "solution": "SELECT name, marks, LAG(marks) OVER (ORDER BY id) AS previous FROM students;",
+      "expected": "The previous student mark."
+     },
+     {
+      "title": "LEAD",
+      "task": "Write a SQL example that demonstrates LEAD.",
+      "solution": "SELECT name, marks, LEAD(marks) OVER (ORDER BY id) AS next_mark FROM students;",
+      "expected": "The next student mark."
+     },
+     {
+      "title": "FIRST_VALUE",
+      "task": "Write a SQL example that demonstrates FIRST_VALUE.",
+      "solution": "SELECT name, marks, FIRST_VALUE(name) OVER (ORDER BY marks DESC) AS top_name FROM students;",
+      "expected": "Every row shows the top name."
+     },
+     {
+      "title": "LAST_VALUE",
+      "task": "Write a SQL example that demonstrates LAST_VALUE.",
+      "solution": "SELECT name, LAST_VALUE(name) OVER (ORDER BY marks DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_name FROM students;",
+      "expected": "Every row shows the lowest-ranked name."
+     },
+     {
+      "title": "Running Totals",
+      "task": "Write a SQL example that demonstrates Running Totals.",
+      "solution": "SELECT id, marks, SUM(marks) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running FROM students;",
+      "expected": "A cumulative mark total."
+     },
+     {
+      "title": "Moving Averages",
+      "task": "Write a SQL example that demonstrates Moving Averages.",
+      "solution": "SELECT id, marks, AVG(marks) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS moving_avg FROM students;",
+      "expected": "A three-row moving average."
+     },
+     {
+      "title": "Window Frames",
+      "task": "Write a SQL example that demonstrates Window Frames.",
+      "solution": "SELECT id, marks, SUM(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS nearby FROM students;",
+      "expected": "A three-row neighborhood sum."
+     },
+     {
+      "title": "ROWS vs RANGE",
+      "task": "Write a SQL example that demonstrates ROWS vs RANGE.",
+      "solution": "SELECT marks, SUM(marks) OVER (ORDER BY marks RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cumulative FROM students;",
+      "expected": "Peers receive the same cumulative value."
+     },
+     {
+      "title": "Named Windows",
+      "task": "Write a SQL example that demonstrates Named Windows.",
+      "solution": "SELECT course_id, student_id, ROW_NUMBER() OVER w AS rn FROM enrollments WINDOW w AS (PARTITION BY course_id ORDER BY student_id);",
+      "expected": "A reusable per-course ordering."
+     },
+     {
+      "title": "Window vs GROUP BY",
+      "task": "Write a SQL example that demonstrates Window vs GROUP BY.",
+      "solution": "SELECT course_id, COUNT(*) OVER (PARTITION BY course_id) AS enrolled FROM enrollments;",
+      "expected": "Every enrollment row with its course count."
+     },
+     {
+      "title": "Window Performance",
+      "task": "Write a SQL example that demonstrates Window Performance.",
+      "solution": "EXPLAIN SELECT name, ROW_NUMBER() OVER (ORDER BY marks DESC) FROM students;",
+      "expected": "A plan with a WindowAgg and Sort."
+     },
+     {
+      "title": "Practical Window Report",
+      "task": "Write a SQL example that demonstrates Practical Window Report.",
+      "solution": "WITH ranked AS (SELECT course_id, student_id, ROW_NUMBER() OVER (PARTITION BY course_id ORDER BY student_id) AS rn FROM enrollments) SELECT * FROM ranked WHERE rn <= 3;",
+      "expected": "The first three students per course."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 15 · Why does Window Function Basics matter?",
+      "answer": "A window function computes across a set of related rows while keeping every row in the result. OVER defines the window. Rows are not collapsed. The result can be ranked or accumulated."
+     },
+     {
+      "q": "Module 15 · Why does OVER Clause matter?",
+      "answer": "OVER introduces the window specification and can include PARTITION BY, ORDER BY and a frame. OVER is mandatory. Empty OVER means the whole result. It follows the function call."
+     },
+     {
+      "q": "Module 15 · Why does PARTITION BY matter?",
+      "answer": "PARTITION BY restarts the window calculation for each group without removing rows. Each partition is independent. It is like GROUP BY without collapsing. Missing it makes one global window."
+     },
+     {
+      "q": "Module 15 · Why does ORDER BY in Windows matter?",
+      "answer": "ORDER BY inside OVER defines the row order used by ranking, lag and running calculations. It is separate from final ORDER BY. It controls the frame direction. Ties need a deterministic key."
+     },
+     {
+      "q": "Module 15 · Why does ROW_NUMBER matter?",
+      "answer": "ROW_NUMBER assigns 1, 2, 3 and so on in window order, even when values tie. It is unique per partition. Ties are broken arbitrarily unless the ORDER BY is total. It is useful for top-N per group."
+     },
+     {
+      "q": "Module 15 · Why does RANK matter?",
+      "answer": "RANK assigns the same rank to tied rows and leaves gaps after a tie. Ties share a rank. Gaps appear after ties. It follows competition ranking."
+     },
+     {
+      "q": "Module 15 · Why does DENSE_RANK matter?",
+      "answer": "DENSE_RANK gives tied rows the same rank but does not leave gaps. Ties share a rank. No gaps appear. It is useful for grade bands."
+     },
+     {
+      "q": "Module 15 · Why does NTILE matter?",
+      "answer": "NTILE(n) divides the ordered rows into n buckets, putting larger buckets first when the rows do not divide evenly. Buckets are numbered 1 to n. Rows are ordered first. Sizes differ by at most one."
+     },
+     {
+      "q": "Module 15 · Why does LAG matter?",
+      "answer": "LAG returns a value from an earlier row in the window, with an optional offset and default. Offset defaults to 1. The default is NULL. It is useful for deltas."
+     },
+     {
+      "q": "Module 15 · Why does LEAD matter?",
+      "answer": "LEAD returns a value from a later row in the window, with an optional offset and default. Offset defaults to 1. The last row gets NULL. It is useful for next-step analysis."
+     },
+     {
+      "q": "Module 15 · Why does FIRST_VALUE matter?",
+      "answer": "FIRST_VALUE returns the value from the first row of the window frame, which is often the group leader. It respects the frame. It can be partitioned. It is useful for comparisons."
+     },
+     {
+      "q": "Module 15 · Why does LAST_VALUE matter?",
+      "answer": "LAST_VALUE returns the last row of the current frame; with the default frame that is often the current row, so an explicit full frame is usually needed. The default frame ends at the current row. Use UNBOUNDED FOLLOWING for the true last row. It respects PARTITION BY."
+     },
+     {
+      "q": "Module 15 · Why does Running Totals matter?",
+      "answer": "A running total uses SUM with an ordered frame from the start of the partition to the current row. Order the rows. Use an unbounded preceding frame. Partition to restart per group."
+     },
+     {
+      "q": "Module 15 · Why does Moving Averages matter?",
+      "answer": "A moving average uses a bounded frame such as two preceding rows through the current row. Choose the frame width. Order by a stable key. Partition when averages restart."
+     },
+     {
+      "q": "Module 15 · Why does Window Frames matter?",
+      "answer": "A frame clause defines the start and end boundaries inside the partition, using ROWS, RANGE or GROUPS. Frames apply to ordered windows. ROWS counts physical rows. RANGE counts value ranges."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Window in WHERE",
+      "broken": "SELECT name FROM students WHERE ROW_NUMBER() OVER (ORDER BY marks DESC) = 1;",
+      "fix": "WITH ranked AS (SELECT name, ROW_NUMBER() OVER (ORDER BY marks DESC) AS rn FROM students) SELECT name FROM ranked WHERE rn = 1;",
+      "error": "window functions are not allowed in WHERE",
+      "expected": "The top student."
+     },
+     {
+      "title": "Missing OVER",
+      "broken": "SELECT name, ROW_NUMBER() FROM students;",
+      "fix": "SELECT name, ROW_NUMBER() OVER (ORDER BY marks DESC) FROM students;",
+      "error": "window function row_number requires an OVER clause",
+      "expected": "A rank per row."
+     },
+     {
+      "title": "LAST_VALUE default frame",
+      "broken": "SELECT name, LAST_VALUE(name) OVER (ORDER BY marks DESC) AS last_name FROM students;",
+      "fix": "SELECT name, LAST_VALUE(name) OVER (ORDER BY marks DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_name FROM students;",
+      "error": "LAST_VALUE returns the current row with the default frame",
+      "expected": "The true last row."
+     },
+     {
+      "title": "Reversed frame",
+      "broken": "SELECT name, SUM(marks) OVER (ORDER BY id ROWS BETWEEN 1 FOLLOWING AND 1 PRECEDING) FROM students;",
+      "fix": "SELECT name, SUM(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) FROM students;",
+      "error": "frame starting boundary cannot follow ending boundary",
+      "expected": "A three-row sum."
+     },
+     {
+      "title": "Window in GROUP BY",
+      "broken": "SELECT name, ROW_NUMBER() OVER () FROM students GROUP BY name;",
+      "fix": "SELECT name, ROW_NUMBER() OVER (ORDER BY name) FROM students;",
+      "error": "window functions are not allowed in GROUP BY",
+      "expected": "One row per student."
+     },
+     {
+      "title": "Rank alias in WHERE",
+      "broken": "SELECT name, ROW_NUMBER() OVER (ORDER BY marks DESC) AS rn FROM students WHERE rn = 1;",
+      "fix": "WITH ranked AS (SELECT name, ROW_NUMBER() OVER (ORDER BY marks DESC) AS rn FROM students) SELECT name FROM ranked WHERE rn = 1;",
+      "error": "column \"rn\" does not exist",
+      "expected": "The top student."
+     },
+     {
+      "title": "Missing partition",
+      "broken": "SELECT course_id, student_id, ROW_NUMBER() OVER (ORDER BY student_id) AS rn FROM enrollments;",
+      "fix": "SELECT course_id, student_id, ROW_NUMBER() OVER (PARTITION BY course_id ORDER BY student_id) AS rn FROM enrollments;",
+      "error": "Numbering continues across courses",
+      "expected": "Numbering restarts per course."
+     },
+     {
+      "title": "Nested window",
+      "broken": "SELECT ROW_NUMBER() OVER (ORDER BY RANK() OVER (ORDER BY marks DESC)) FROM students;",
+      "fix": "WITH ranked AS (SELECT name, RANK() OVER (ORDER BY marks DESC) AS r FROM students) SELECT ROW_NUMBER() OVER (ORDER BY r) FROM ranked;",
+      "error": "window functions cannot be nested",
+      "expected": "A derived ranking."
+     },
+     {
+      "title": "Missing column",
+      "broken": "SELECT student_id, COUNT(*) OVER (PARTITION BY course_id) FROM students;",
+      "fix": "SELECT student_id, COUNT(*) OVER (PARTITION BY course_id) FROM enrollments;",
+      "error": "column \"course_id\" does not exist",
+      "expected": "Counts by course."
+     },
+     {
+      "title": "Incomplete frame",
+      "broken": "SELECT name, SUM(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING) FROM students;",
+      "fix": "SELECT name, SUM(marks) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) FROM students;",
+      "error": "syntax error at or near \")\"",
+      "expected": "A two-row running sum."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 15 · State one key rule for Window Function Basics.",
+      "answer": "OVER defines the window."
+     },
+     {
+      "q": "Module 15 · State one key rule for OVER Clause.",
+      "answer": "OVER is mandatory."
+     },
+     {
+      "q": "Module 15 · State one key rule for PARTITION BY.",
+      "answer": "Each partition is independent."
+     },
+     {
+      "q": "Module 15 · State one key rule for ORDER BY in Windows.",
+      "answer": "It is separate from final ORDER BY."
+     },
+     {
+      "q": "Module 15 · State one key rule for ROW_NUMBER.",
+      "answer": "It is unique per partition."
+     },
+     {
+      "q": "Module 15 · State one key rule for RANK.",
+      "answer": "Ties share a rank."
+     },
+     {
+      "q": "Module 15 · State one key rule for DENSE_RANK.",
+      "answer": "Ties share a rank."
+     },
+     {
+      "q": "Module 15 · State one key rule for NTILE.",
+      "answer": "Buckets are numbered 1 to n."
+     },
+     {
+      "q": "Module 15 · State one key rule for LAG.",
+      "answer": "Offset defaults to 1."
+     },
+     {
+      "q": "Module 15 · State one key rule for LEAD.",
+      "answer": "Offset defaults to 1."
+     }
+    ]
+   }
+  }
+ ]
+}

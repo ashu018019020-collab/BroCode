@@ -1,0 +1,919 @@
+{
+ "modules": [
+  {
+   "id": "sql30",
+   "no": 30,
+   "title": "SQL Injection and Safe Querying",
+   "goal": "Treat every input as untrusted and keep SQL structure separate from data.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Injection Basics",
+     "simple": "Injection input ko SQL code banata hai.",
+     "pro": "SQL injection happens when untrusted input is concatenated into a query and changes its structure.",
+     "points": [
+      "Input must not become code.",
+      "Parameters separate data.",
+      "Every database API is a boundary."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students WHERE name = 'Aarav' OR '1'='1';",
+      "output": "The OR makes the predicate always true."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "String Concatenation",
+     "simple": "Input ko query string me jodna dangerous hai.",
+     "pro": "Concatenating user input into SQL lets quotes and operators escape the intended value.",
+     "points": [
+      "Avoid building SQL with + or ||.",
+      "Use placeholders.",
+      "Never trust client validation."
+     ],
+     "example": {
+      "sql": "query = \"SELECT * FROM students WHERE name = '\" + input + \"'\";",
+      "output": "A vulnerable query."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Prepared Statements",
+     "simple": "Prepared statements query structure fix karte hain.",
+     "pro": "A prepared statement parses the SQL once and supplies values separately, so input cannot change the structure.",
+     "points": [
+      "Parse first.",
+      "Bind values later.",
+      "Use the driver API."
+     ],
+     "example": {
+      "sql": "PREPARE find_student (text) AS SELECT * FROM students WHERE name = $1;\nEXECUTE find_student('Aarav');",
+      "output": "PREPARE\nA matching row"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Parameterized Queries",
+     "simple": "Placeholders values ko safely bind karte hain.",
+     "pro": "Parameterized queries use $1, ? or named placeholders supplied by the driver, never string interpolation.",
+     "points": [
+      "Use $1 in PostgreSQL.",
+      "Bind every value.",
+      "Do not concatenate identifiers."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students WHERE name = $1;",
+      "output": "A parameterized query."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "ORM Safety",
+     "simple": "ORM raw fragments aur unsafe order clauses se bachna.",
+     "pro": "ORMs are safe for normal bound values but can expose injection through raw SQL, order-by strings and identifier interpolation.",
+     "points": [
+      "Prefer the query builder.",
+      "Bind raw fragments.",
+      "Whitelist sort columns."
+     ],
+     "example": {
+      "sql": "Student.where(\"name = ?\", input)",
+      "output": "A bound ORM predicate."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Identifier Quoting",
+     "simple": "Identifiers ko quote karo, values ko bind.",
+     "pro": "Identifiers cannot be parameterized like values; validate them against an allowlist and quote them correctly.",
+     "points": [
+      "Use quote_ident in dynamic SQL.",
+      "Allowlist table and column names.",
+      "Do not quote values as identifiers."
+     ],
+     "example": {
+      "sql": "SELECT quote_ident('students');",
+      "output": "students"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Dynamic SQL",
+     "simple": "Dynamic SQL identifiers ke liye allowlist use karo.",
+     "pro": "When a table or column must be dynamic, build it from a fixed allowlist and use format with %I for identifiers.",
+     "points": [
+      "Use format with %I.",
+      "Allowlist names.",
+      "Bind values separately."
+     ],
+     "example": {
+      "sql": "EXECUTE format('SELECT * FROM %I WHERE id = $1', table_name) USING student_id;",
+      "output": "A safely formatted dynamic query."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Input Validation",
+     "simple": "Validation format check karta hai, injection stop nahi karta.",
+     "pro": "Validation improves data quality but is not a substitute for parameterization because valid input can still contain SQL syntax.",
+     "points": [
+      "Validate type and length.",
+      "Still bind values.",
+      "Never rely on validation alone."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students WHERE email = $1;",
+      "output": "A bound email."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Least Privilege",
+     "simple": "Database role ko minimum rights do.",
+     "pro": "A compromised query can do less damage when the application role cannot drop tables or read unrelated schemas.",
+     "points": [
+      "No superuser.",
+      "Grant only needed tables.",
+      "Separate admin access."
+     ],
+     "example": {
+      "sql": "GRANT SELECT, INSERT, UPDATE, DELETE ON students TO app_user;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Error Leakage",
+     "simple": "Errors me schema details leak na karo.",
+     "pro": "Detailed database errors help attackers map tables and columns; return a generic message and log the detail server-side.",
+     "points": [
+      "Log internally.",
+      "Show generic errors.",
+      "Do not echo SQL."
+     ],
+     "example": {
+      "sql": "ERROR: relation \"students\" does not exist",
+      "output": "A message that should not reach the client."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Stored Procedure Safety",
+     "simple": "Procedures bhi dynamic SQL se vulnerable ho sakti hain.",
+     "pro": "PL/pgSQL EXECUTE with concatenated input is injection-prone; use USING and format %I.",
+     "points": [
+      "Bind with USING.",
+      "Quote identifiers with %I.",
+      "Validate allowlists."
+     ],
+     "example": {
+      "sql": "EXECUTE format('SELECT * FROM %I WHERE id = $1', table_name) USING student_id;",
+      "output": "A safe procedure query."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Escaping Is Not Enough",
+     "simple": "Manual escaping fragile hota hai.",
+     "pro": "Escaping depends on the database, encoding and context; parameterization removes the need to escape values at all.",
+     "points": [
+      "Do not hand-roll escaping.",
+      "Use driver parameters.",
+      "Keep SQL structure static."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students WHERE name = $1;",
+      "output": "A parameterized query."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Second-Order Injection",
+     "simple": "Stored input baad me query me unsafe use ho sakta hai.",
+     "pro": "Second-order injection occurs when safely stored data is later concatenated into dynamic SQL without binding.",
+     "points": [
+      "Treat stored data as untrusted.",
+      "Bind on every use.",
+      "Audit dynamic reporting tools."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students WHERE name = $1;",
+      "output": "A bound lookup."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Common Injection Patterns",
+     "simple": "OR 1=1, UNION aur comment tricks common hain.",
+     "pro": "Classic payloads alter predicates, append UNION queries or comment out the rest of the statement.",
+     "points": [
+      "Never concatenate.",
+      "Test with quotes and operators.",
+      "Use allowlists."
+     ],
+     "example": {
+      "sql": "input = \"' OR '1'='1\";",
+      "output": "A payload that must remain data."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Testing for Injection",
+     "simple": "Quotes, comments aur boolean payloads se test karo.",
+     "pro": "Security tests should confirm that quotes, UNION and time-based payloads are treated as literal data.",
+     "points": [
+      "Test quote handling.",
+      "Test UNION.",
+      "Test boolean and time payloads."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students WHERE name = $1;",
+      "output": "A query that treats the payload as text."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Logging",
+     "simple": "Queries log karo but secrets redact karo.",
+     "pro": "Slow-query and audit logs help detect attacks, but they must not store passwords or tokens.",
+     "points": [
+      "Log parameters carefully.",
+      "Redact secrets.",
+      "Alert on patterns."
+     ],
+     "example": {
+      "sql": "ALTER SYSTEM SET log_min_duration_statement = 1000;",
+      "output": "ALTER SYSTEM"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "WAF Is Not Enough",
+     "simple": "WAF layer help karta hai, root fix parameterization hai.",
+     "pro": "A web application firewall can block known payloads but cannot repair unsafe SQL or second-order paths.",
+     "points": [
+      "Use WAF as defense in depth.",
+      "Fix the query.",
+      "Do not rely on signatures."
+     ],
+     "example": {
+      "sql": "-- Parameterize the query; the WAF is only an extra layer",
+      "output": "A layered defense."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Safe Query Review",
+     "simple": "Review me string building aur dynamic SQL dhoondo.",
+     "pro": "A safe-query review looks for concatenation, raw SQL, dynamic identifiers and privileged roles.",
+     "points": [
+      "Search for string building.",
+      "Check raw ORM calls.",
+      "Verify allowlists."
+     ],
+     "example": {
+      "sql": "SELECT * FROM students WHERE id = $1;",
+      "output": "A reviewed parameterized query."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Safe JSON and Arrays",
+     "simple": "JSON input ko parse karo, SQL me string na jodo.",
+     "pro": "JSON and array inputs should be bound as values or parsed with typed functions, not interpolated into SQL.",
+     "points": [
+      "Bind JSON as a parameter.",
+      "Use jsonb operators.",
+      "Validate shape."
+     ],
+     "example": {
+      "sql": "SELECT * FROM events WHERE payload @> $1::jsonb;",
+      "output": "A bound JSONB predicate."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Secure Query",
+     "simple": "Static SQL, bound values, allowlisted identifiers aur limited role.",
+     "pro": "A secure query keeps structure static, binds all data, validates identifiers against an allowlist and runs with least privilege.",
+     "points": [
+      "Static structure.",
+      "Bound values.",
+      "Allowlisted identifiers.",
+      "Least privilege."
+     ],
+     "example": {
+      "sql": "SELECT id, name FROM students WHERE email = $1;",
+      "output": "A secure lookup."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 30 · Injection Basics: what is the main purpose?",
+      "options": [
+       "Injection Basics: Injection input ko SQL code banata hai.",
+       "String Concatenation: Input ko query string me jodna dangerous hai.",
+       "Input Validation: Validation format check karta hai, injection stop nahi karta.",
+       "Common Injection Patterns: OR 1=1, UNION aur comment tricks common hain."
+      ],
+      "answer": "Injection Basics: Injection input ko SQL code banata hai.",
+      "why": "SQL injection happens when untrusted input is concatenated into a query and changes its structure."
+     },
+     {
+      "q": "Module 30 · String Concatenation: what is the main purpose?",
+      "options": [
+       "Prepared Statements: Prepared statements query structure fix karte hain.",
+       "Least Privilege: Database role ko minimum rights do.",
+       "Testing for Injection: Quotes, comments aur boolean payloads se test karo.",
+       "String Concatenation: Input ko query string me jodna dangerous hai."
+      ],
+      "answer": "String Concatenation: Input ko query string me jodna dangerous hai.",
+      "why": "Concatenating user input into SQL lets quotes and operators escape the intended value."
+     },
+     {
+      "q": "Module 30 · Prepared Statements: what is the main purpose?",
+      "options": [
+       "Error Leakage: Errors me schema details leak na karo.",
+       "Logging: Queries log karo but secrets redact karo.",
+       "Prepared Statements: Prepared statements query structure fix karte hain.",
+       "Parameterized Queries: Placeholders values ko safely bind karte hain."
+      ],
+      "answer": "Prepared Statements: Prepared statements query structure fix karte hain.",
+      "why": "A prepared statement parses the SQL once and supplies values separately, so input cannot change the structure."
+     },
+     {
+      "q": "Module 30 · Parameterized Queries: what is the main purpose?",
+      "options": [
+       "WAF Is Not Enough: WAF layer help karta hai, root fix parameterization hai.",
+       "Parameterized Queries: Placeholders values ko safely bind karte hain.",
+       "ORM Safety: ORM raw fragments aur unsafe order clauses se bachna.",
+       "Stored Procedure Safety: Procedures bhi dynamic SQL se vulnerable ho sakti hain."
+      ],
+      "answer": "Parameterized Queries: Placeholders values ko safely bind karte hain.",
+      "why": "Parameterized queries use $1, ? or named placeholders supplied by the driver, never string interpolation."
+     },
+     {
+      "q": "Module 30 · ORM Safety: what is the main purpose?",
+      "options": [
+       "ORM Safety: ORM raw fragments aur unsafe order clauses se bachna.",
+       "Identifier Quoting: Identifiers ko quote karo, values ko bind.",
+       "Escaping Is Not Enough: Manual escaping fragile hota hai.",
+       "Safe Query Review: Review me string building aur dynamic SQL dhoondo."
+      ],
+      "answer": "ORM Safety: ORM raw fragments aur unsafe order clauses se bachna.",
+      "why": "ORMs are safe for normal bound values but can expose injection through raw SQL, order-by strings and identifier interpolation."
+     },
+     {
+      "q": "Module 30 · Identifier Quoting: what is the main purpose?",
+      "options": [
+       "Dynamic SQL: Dynamic SQL identifiers ke liye allowlist use karo.",
+       "Second-Order Injection: Stored input baad me query me unsafe use ho sakta hai.",
+       "Safe JSON and Arrays: JSON input ko parse karo, SQL me string na jodo.",
+       "Identifier Quoting: Identifiers ko quote karo, values ko bind."
+      ],
+      "answer": "Identifier Quoting: Identifiers ko quote karo, values ko bind.",
+      "why": "Identifiers cannot be parameterized like values; validate them against an allowlist and quote them correctly."
+     },
+     {
+      "q": "Module 30 · Dynamic SQL: what is the main purpose?",
+      "options": [
+       "Common Injection Patterns: OR 1=1, UNION aur comment tricks common hain.",
+       "Practical Secure Query: Static SQL, bound values, allowlisted identifiers aur limited role.",
+       "Dynamic SQL: Dynamic SQL identifiers ke liye allowlist use karo.",
+       "Input Validation: Validation format check karta hai, injection stop nahi karta."
+      ],
+      "answer": "Dynamic SQL: Dynamic SQL identifiers ke liye allowlist use karo.",
+      "why": "When a table or column must be dynamic, build it from a fixed allowlist and use format with %I for identifiers."
+     },
+     {
+      "q": "Module 30 · Input Validation: what is the main purpose?",
+      "options": [
+       "Injection Basics: Injection input ko SQL code banata hai.",
+       "Input Validation: Validation format check karta hai, injection stop nahi karta.",
+       "Least Privilege: Database role ko minimum rights do.",
+       "Testing for Injection: Quotes, comments aur boolean payloads se test karo."
+      ],
+      "answer": "Input Validation: Validation format check karta hai, injection stop nahi karta.",
+      "why": "Validation improves data quality but is not a substitute for parameterization because valid input can still contain SQL syntax."
+     },
+     {
+      "q": "Module 30 · Least Privilege: what is the main purpose?",
+      "options": [
+       "Least Privilege: Database role ko minimum rights do.",
+       "Error Leakage: Errors me schema details leak na karo.",
+       "Logging: Queries log karo but secrets redact karo.",
+       "String Concatenation: Input ko query string me jodna dangerous hai."
+      ],
+      "answer": "Least Privilege: Database role ko minimum rights do.",
+      "why": "A compromised query can do less damage when the application role cannot drop tables or read unrelated schemas."
+     },
+     {
+      "q": "Module 30 · Error Leakage: what is the main purpose?",
+      "options": [
+       "Stored Procedure Safety: Procedures bhi dynamic SQL se vulnerable ho sakti hain.",
+       "WAF Is Not Enough: WAF layer help karta hai, root fix parameterization hai.",
+       "Prepared Statements: Prepared statements query structure fix karte hain.",
+       "Error Leakage: Errors me schema details leak na karo."
+      ],
+      "answer": "Error Leakage: Errors me schema details leak na karo.",
+      "why": "Detailed database errors help attackers map tables and columns; return a generic message and log the detail server-side."
+     },
+     {
+      "q": "Module 30 · Stored Procedure Safety: what is the main purpose?",
+      "options": [
+       "Safe Query Review: Review me string building aur dynamic SQL dhoondo.",
+       "Parameterized Queries: Placeholders values ko safely bind karte hain.",
+       "Stored Procedure Safety: Procedures bhi dynamic SQL se vulnerable ho sakti hain.",
+       "Escaping Is Not Enough: Manual escaping fragile hota hai."
+      ],
+      "answer": "Stored Procedure Safety: Procedures bhi dynamic SQL se vulnerable ho sakti hain.",
+      "why": "PL/pgSQL EXECUTE with concatenated input is injection-prone; use USING and format %I."
+     },
+     {
+      "q": "Module 30 · Escaping Is Not Enough: what is the main purpose?",
+      "options": [
+       "ORM Safety: ORM raw fragments aur unsafe order clauses se bachna.",
+       "Escaping Is Not Enough: Manual escaping fragile hota hai.",
+       "Second-Order Injection: Stored input baad me query me unsafe use ho sakta hai.",
+       "Safe JSON and Arrays: JSON input ko parse karo, SQL me string na jodo."
+      ],
+      "answer": "Escaping Is Not Enough: Manual escaping fragile hota hai.",
+      "why": "Escaping depends on the database, encoding and context; parameterization removes the need to escape values at all."
+     },
+     {
+      "q": "Module 30 · Second-Order Injection: what is the main purpose?",
+      "options": [
+       "Second-Order Injection: Stored input baad me query me unsafe use ho sakta hai.",
+       "Common Injection Patterns: OR 1=1, UNION aur comment tricks common hain.",
+       "Practical Secure Query: Static SQL, bound values, allowlisted identifiers aur limited role.",
+       "Identifier Quoting: Identifiers ko quote karo, values ko bind."
+      ],
+      "answer": "Second-Order Injection: Stored input baad me query me unsafe use ho sakta hai.",
+      "why": "Second-order injection occurs when safely stored data is later concatenated into dynamic SQL without binding."
+     },
+     {
+      "q": "Module 30 · Common Injection Patterns: what is the main purpose?",
+      "options": [
+       "Testing for Injection: Quotes, comments aur boolean payloads se test karo.",
+       "Injection Basics: Injection input ko SQL code banata hai.",
+       "Dynamic SQL: Dynamic SQL identifiers ke liye allowlist use karo.",
+       "Common Injection Patterns: OR 1=1, UNION aur comment tricks common hain."
+      ],
+      "answer": "Common Injection Patterns: OR 1=1, UNION aur comment tricks common hain.",
+      "why": "Classic payloads alter predicates, append UNION queries or comment out the rest of the statement."
+     },
+     {
+      "q": "Module 30 · Testing for Injection: what is the main purpose?",
+      "options": [
+       "String Concatenation: Input ko query string me jodna dangerous hai.",
+       "Input Validation: Validation format check karta hai, injection stop nahi karta.",
+       "Testing for Injection: Quotes, comments aur boolean payloads se test karo.",
+       "Logging: Queries log karo but secrets redact karo."
+      ],
+      "answer": "Testing for Injection: Quotes, comments aur boolean payloads se test karo.",
+      "why": "Security tests should confirm that quotes, UNION and time-based payloads are treated as literal data."
+     },
+     {
+      "q": "Module 30 · Logging: what is the main purpose?",
+      "options": [
+       "Least Privilege: Database role ko minimum rights do.",
+       "Logging: Queries log karo but secrets redact karo.",
+       "WAF Is Not Enough: WAF layer help karta hai, root fix parameterization hai.",
+       "Prepared Statements: Prepared statements query structure fix karte hain."
+      ],
+      "answer": "Logging: Queries log karo but secrets redact karo.",
+      "why": "Slow-query and audit logs help detect attacks, but they must not store passwords or tokens."
+     },
+     {
+      "q": "Module 30 · WAF Is Not Enough: what is the main purpose?",
+      "options": [
+       "WAF Is Not Enough: WAF layer help karta hai, root fix parameterization hai.",
+       "Safe Query Review: Review me string building aur dynamic SQL dhoondo.",
+       "Parameterized Queries: Placeholders values ko safely bind karte hain.",
+       "Error Leakage: Errors me schema details leak na karo."
+      ],
+      "answer": "WAF Is Not Enough: WAF layer help karta hai, root fix parameterization hai.",
+      "why": "A web application firewall can block known payloads but cannot repair unsafe SQL or second-order paths."
+     },
+     {
+      "q": "Module 30 · Safe Query Review: what is the main purpose?",
+      "options": [
+       "Safe JSON and Arrays: JSON input ko parse karo, SQL me string na jodo.",
+       "ORM Safety: ORM raw fragments aur unsafe order clauses se bachna.",
+       "Stored Procedure Safety: Procedures bhi dynamic SQL se vulnerable ho sakti hain.",
+       "Safe Query Review: Review me string building aur dynamic SQL dhoondo."
+      ],
+      "answer": "Safe Query Review: Review me string building aur dynamic SQL dhoondo.",
+      "why": "A safe-query review looks for concatenation, raw SQL, dynamic identifiers and privileged roles."
+     },
+     {
+      "q": "Module 30 · Safe JSON and Arrays: what is the main purpose?",
+      "options": [
+       "Identifier Quoting: Identifiers ko quote karo, values ko bind.",
+       "Escaping Is Not Enough: Manual escaping fragile hota hai.",
+       "Safe JSON and Arrays: JSON input ko parse karo, SQL me string na jodo.",
+       "Practical Secure Query: Static SQL, bound values, allowlisted identifiers aur limited role."
+      ],
+      "answer": "Safe JSON and Arrays: JSON input ko parse karo, SQL me string na jodo.",
+      "why": "JSON and array inputs should be bound as values or parsed with typed functions, not interpolated into SQL."
+     },
+     {
+      "q": "Module 30 · Practical Secure Query: what is the main purpose?",
+      "options": [
+       "Second-Order Injection: Stored input baad me query me unsafe use ho sakta hai.",
+       "Practical Secure Query: Static SQL, bound values, allowlisted identifiers aur limited role.",
+       "Injection Basics: Injection input ko SQL code banata hai.",
+       "Dynamic SQL: Dynamic SQL identifiers ke liye allowlist use karo."
+      ],
+      "answer": "Practical Secure Query: Static SQL, bound values, allowlisted identifiers aur limited role.",
+      "why": "A secure query keeps structure static, binds all data, validates identifiers against an allowlist and runs with least privilege."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 30 · Explain Injection Basics in a production query.",
+      "answer": "SQL injection happens when untrusted input is concatenated into a query and changes its structure. Key rules: Input must not become code. Parameters separate data. Every database API is a boundary."
+     },
+     {
+      "q": "Module 30 · Explain String Concatenation in a production query.",
+      "answer": "Concatenating user input into SQL lets quotes and operators escape the intended value. Key rules: Avoid building SQL with + or ||. Use placeholders. Never trust client validation."
+     },
+     {
+      "q": "Module 30 · Explain Prepared Statements in a production query.",
+      "answer": "A prepared statement parses the SQL once and supplies values separately, so input cannot change the structure. Key rules: Parse first. Bind values later. Use the driver API."
+     },
+     {
+      "q": "Module 30 · Explain Parameterized Queries in a production query.",
+      "answer": "Parameterized queries use $1, ? or named placeholders supplied by the driver, never string interpolation. Key rules: Use $1 in PostgreSQL. Bind every value. Do not concatenate identifiers."
+     },
+     {
+      "q": "Module 30 · Explain ORM Safety in a production query.",
+      "answer": "ORMs are safe for normal bound values but can expose injection through raw SQL, order-by strings and identifier interpolation. Key rules: Prefer the query builder. Bind raw fragments. Whitelist sort columns."
+     },
+     {
+      "q": "Module 30 · Explain Identifier Quoting in a production query.",
+      "answer": "Identifiers cannot be parameterized like values; validate them against an allowlist and quote them correctly. Key rules: Use quote_ident in dynamic SQL. Allowlist table and column names. Do not quote values as identifiers."
+     },
+     {
+      "q": "Module 30 · Explain Dynamic SQL in a production query.",
+      "answer": "When a table or column must be dynamic, build it from a fixed allowlist and use format with %I for identifiers. Key rules: Use format with %I. Allowlist names. Bind values separately."
+     },
+     {
+      "q": "Module 30 · Explain Input Validation in a production query.",
+      "answer": "Validation improves data quality but is not a substitute for parameterization because valid input can still contain SQL syntax. Key rules: Validate type and length. Still bind values. Never rely on validation alone."
+     },
+     {
+      "q": "Module 30 · Explain Least Privilege in a production query.",
+      "answer": "A compromised query can do less damage when the application role cannot drop tables or read unrelated schemas. Key rules: No superuser. Grant only needed tables. Separate admin access."
+     },
+     {
+      "q": "Module 30 · Explain Error Leakage in a production query.",
+      "answer": "Detailed database errors help attackers map tables and columns; return a generic message and log the detail server-side. Key rules: Log internally. Show generic errors. Do not echo SQL."
+     },
+     {
+      "q": "Module 30 · Explain Stored Procedure Safety in a production query.",
+      "answer": "PL/pgSQL EXECUTE with concatenated input is injection-prone; use USING and format %I. Key rules: Bind with USING. Quote identifiers with %I. Validate allowlists."
+     },
+     {
+      "q": "Module 30 · Explain Escaping Is Not Enough in a production query.",
+      "answer": "Escaping depends on the database, encoding and context; parameterization removes the need to escape values at all. Key rules: Do not hand-roll escaping. Use driver parameters. Keep SQL structure static."
+     },
+     {
+      "q": "Module 30 · Explain Second-Order Injection in a production query.",
+      "answer": "Second-order injection occurs when safely stored data is later concatenated into dynamic SQL without binding. Key rules: Treat stored data as untrusted. Bind on every use. Audit dynamic reporting tools."
+     },
+     {
+      "q": "Module 30 · Explain Common Injection Patterns in a production query.",
+      "answer": "Classic payloads alter predicates, append UNION queries or comment out the rest of the statement. Key rules: Never concatenate. Test with quotes and operators. Use allowlists."
+     },
+     {
+      "q": "Module 30 · Explain Testing for Injection in a production query.",
+      "answer": "Security tests should confirm that quotes, UNION and time-based payloads are treated as literal data. Key rules: Test quote handling. Test UNION. Test boolean and time payloads."
+     },
+     {
+      "q": "Module 30 · Explain Logging in a production query.",
+      "answer": "Slow-query and audit logs help detect attacks, but they must not store passwords or tokens. Key rules: Log parameters carefully. Redact secrets. Alert on patterns."
+     },
+     {
+      "q": "Module 30 · Explain WAF Is Not Enough in a production query.",
+      "answer": "A web application firewall can block known payloads but cannot repair unsafe SQL or second-order paths. Key rules: Use WAF as defense in depth. Fix the query. Do not rely on signatures."
+     },
+     {
+      "q": "Module 30 · Explain Safe Query Review in a production query.",
+      "answer": "A safe-query review looks for concatenation, raw SQL, dynamic identifiers and privileged roles. Key rules: Search for string building. Check raw ORM calls. Verify allowlists."
+     },
+     {
+      "q": "Module 30 · Explain Safe JSON and Arrays in a production query.",
+      "answer": "JSON and array inputs should be bound as values or parsed with typed functions, not interpolated into SQL. Key rules: Bind JSON as a parameter. Use jsonb operators. Validate shape."
+     },
+     {
+      "q": "Module 30 · Explain Practical Secure Query in a production query.",
+      "answer": "A secure query keeps structure static, binds all data, validates identifiers against an allowlist and runs with least privilege. Key rules: Static structure. Bound values. Allowlisted identifiers. Least privilege."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Injection Basics",
+      "task": "Write a SQL example that demonstrates Injection Basics.",
+      "solution": "SELECT * FROM students WHERE name = 'Aarav' OR '1'='1';",
+      "expected": "The OR makes the predicate always true."
+     },
+     {
+      "title": "String Concatenation",
+      "task": "Write a SQL example that demonstrates String Concatenation.",
+      "solution": "query = \"SELECT * FROM students WHERE name = '\" + input + \"'\";",
+      "expected": "A vulnerable query."
+     },
+     {
+      "title": "Prepared Statements",
+      "task": "Write a SQL example that demonstrates Prepared Statements.",
+      "solution": "PREPARE find_student (text) AS SELECT * FROM students WHERE name = $1;\nEXECUTE find_student('Aarav');",
+      "expected": "PREPARE\nA matching row"
+     },
+     {
+      "title": "Parameterized Queries",
+      "task": "Write a SQL example that demonstrates Parameterized Queries.",
+      "solution": "SELECT * FROM students WHERE name = $1;",
+      "expected": "A parameterized query."
+     },
+     {
+      "title": "ORM Safety",
+      "task": "Write a SQL example that demonstrates ORM Safety.",
+      "solution": "Student.where(\"name = ?\", input)",
+      "expected": "A bound ORM predicate."
+     },
+     {
+      "title": "Identifier Quoting",
+      "task": "Write a SQL example that demonstrates Identifier Quoting.",
+      "solution": "SELECT quote_ident('students');",
+      "expected": "students"
+     },
+     {
+      "title": "Dynamic SQL",
+      "task": "Write a SQL example that demonstrates Dynamic SQL.",
+      "solution": "EXECUTE format('SELECT * FROM %I WHERE id = $1', table_name) USING student_id;",
+      "expected": "A safely formatted dynamic query."
+     },
+     {
+      "title": "Input Validation",
+      "task": "Write a SQL example that demonstrates Input Validation.",
+      "solution": "SELECT * FROM students WHERE email = $1;",
+      "expected": "A bound email."
+     },
+     {
+      "title": "Least Privilege",
+      "task": "Write a SQL example that demonstrates Least Privilege.",
+      "solution": "GRANT SELECT, INSERT, UPDATE, DELETE ON students TO app_user;",
+      "expected": "GRANT"
+     },
+     {
+      "title": "Error Leakage",
+      "task": "Write a SQL example that demonstrates Error Leakage.",
+      "solution": "ERROR: relation \"students\" does not exist",
+      "expected": "A message that should not reach the client."
+     },
+     {
+      "title": "Stored Procedure Safety",
+      "task": "Write a SQL example that demonstrates Stored Procedure Safety.",
+      "solution": "EXECUTE format('SELECT * FROM %I WHERE id = $1', table_name) USING student_id;",
+      "expected": "A safe procedure query."
+     },
+     {
+      "title": "Escaping Is Not Enough",
+      "task": "Write a SQL example that demonstrates Escaping Is Not Enough.",
+      "solution": "SELECT * FROM students WHERE name = $1;",
+      "expected": "A parameterized query."
+     },
+     {
+      "title": "Second-Order Injection",
+      "task": "Write a SQL example that demonstrates Second-Order Injection.",
+      "solution": "SELECT * FROM students WHERE name = $1;",
+      "expected": "A bound lookup."
+     },
+     {
+      "title": "Common Injection Patterns",
+      "task": "Write a SQL example that demonstrates Common Injection Patterns.",
+      "solution": "input = \"' OR '1'='1\";",
+      "expected": "A payload that must remain data."
+     },
+     {
+      "title": "Testing for Injection",
+      "task": "Write a SQL example that demonstrates Testing for Injection.",
+      "solution": "SELECT * FROM students WHERE name = $1;",
+      "expected": "A query that treats the payload as text."
+     },
+     {
+      "title": "Logging",
+      "task": "Write a SQL example that demonstrates Logging.",
+      "solution": "ALTER SYSTEM SET log_min_duration_statement = 1000;",
+      "expected": "ALTER SYSTEM"
+     },
+     {
+      "title": "WAF Is Not Enough",
+      "task": "Write a SQL example that demonstrates WAF Is Not Enough.",
+      "solution": "-- Parameterize the query; the WAF is only an extra layer",
+      "expected": "A layered defense."
+     },
+     {
+      "title": "Safe Query Review",
+      "task": "Write a SQL example that demonstrates Safe Query Review.",
+      "solution": "SELECT * FROM students WHERE id = $1;",
+      "expected": "A reviewed parameterized query."
+     },
+     {
+      "title": "Safe JSON and Arrays",
+      "task": "Write a SQL example that demonstrates Safe JSON and Arrays.",
+      "solution": "SELECT * FROM events WHERE payload @> $1::jsonb;",
+      "expected": "A bound JSONB predicate."
+     },
+     {
+      "title": "Practical Secure Query",
+      "task": "Write a SQL example that demonstrates Practical Secure Query.",
+      "solution": "SELECT id, name FROM students WHERE email = $1;",
+      "expected": "A secure lookup."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 30 · Why does Injection Basics matter?",
+      "answer": "SQL injection happens when untrusted input is concatenated into a query and changes its structure. Input must not become code. Parameters separate data. Every database API is a boundary."
+     },
+     {
+      "q": "Module 30 · Why does String Concatenation matter?",
+      "answer": "Concatenating user input into SQL lets quotes and operators escape the intended value. Avoid building SQL with + or ||. Use placeholders. Never trust client validation."
+     },
+     {
+      "q": "Module 30 · Why does Prepared Statements matter?",
+      "answer": "A prepared statement parses the SQL once and supplies values separately, so input cannot change the structure. Parse first. Bind values later. Use the driver API."
+     },
+     {
+      "q": "Module 30 · Why does Parameterized Queries matter?",
+      "answer": "Parameterized queries use $1, ? or named placeholders supplied by the driver, never string interpolation. Use $1 in PostgreSQL. Bind every value. Do not concatenate identifiers."
+     },
+     {
+      "q": "Module 30 · Why does ORM Safety matter?",
+      "answer": "ORMs are safe for normal bound values but can expose injection through raw SQL, order-by strings and identifier interpolation. Prefer the query builder. Bind raw fragments. Whitelist sort columns."
+     },
+     {
+      "q": "Module 30 · Why does Identifier Quoting matter?",
+      "answer": "Identifiers cannot be parameterized like values; validate them against an allowlist and quote them correctly. Use quote_ident in dynamic SQL. Allowlist table and column names. Do not quote values as identifiers."
+     },
+     {
+      "q": "Module 30 · Why does Dynamic SQL matter?",
+      "answer": "When a table or column must be dynamic, build it from a fixed allowlist and use format with %I for identifiers. Use format with %I. Allowlist names. Bind values separately."
+     },
+     {
+      "q": "Module 30 · Why does Input Validation matter?",
+      "answer": "Validation improves data quality but is not a substitute for parameterization because valid input can still contain SQL syntax. Validate type and length. Still bind values. Never rely on validation alone."
+     },
+     {
+      "q": "Module 30 · Why does Least Privilege matter?",
+      "answer": "A compromised query can do less damage when the application role cannot drop tables or read unrelated schemas. No superuser. Grant only needed tables. Separate admin access."
+     },
+     {
+      "q": "Module 30 · Why does Error Leakage matter?",
+      "answer": "Detailed database errors help attackers map tables and columns; return a generic message and log the detail server-side. Log internally. Show generic errors. Do not echo SQL."
+     },
+     {
+      "q": "Module 30 · Why does Stored Procedure Safety matter?",
+      "answer": "PL/pgSQL EXECUTE with concatenated input is injection-prone; use USING and format %I. Bind with USING. Quote identifiers with %I. Validate allowlists."
+     },
+     {
+      "q": "Module 30 · Why does Escaping Is Not Enough matter?",
+      "answer": "Escaping depends on the database, encoding and context; parameterization removes the need to escape values at all. Do not hand-roll escaping. Use driver parameters. Keep SQL structure static."
+     },
+     {
+      "q": "Module 30 · Why does Second-Order Injection matter?",
+      "answer": "Second-order injection occurs when safely stored data is later concatenated into dynamic SQL without binding. Treat stored data as untrusted. Bind on every use. Audit dynamic reporting tools."
+     },
+     {
+      "q": "Module 30 · Why does Common Injection Patterns matter?",
+      "answer": "Classic payloads alter predicates, append UNION queries or comment out the rest of the statement. Never concatenate. Test with quotes and operators. Use allowlists."
+     },
+     {
+      "q": "Module 30 · Why does Testing for Injection matter?",
+      "answer": "Security tests should confirm that quotes, UNION and time-based payloads are treated as literal data. Test quote handling. Test UNION. Test boolean and time payloads."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Classic concatenation",
+      "broken": "query = \"SELECT * FROM students WHERE name = '\" + name + \"'\";",
+      "fix": "query = \"SELECT * FROM students WHERE name = $1\"; values = [name];",
+      "error": "The input can change the predicate",
+      "expected": "A bound query."
+     },
+     {
+      "title": "UNION payload",
+      "broken": "input = \"' UNION SELECT password FROM users --\";",
+      "fix": "Bind input as a value; never concatenate it into SQL.",
+      "error": "The attacker appends a second result set",
+      "expected": "The payload is literal text."
+     },
+     {
+      "title": "ORDER BY injection",
+      "broken": "query = \"SELECT * FROM students ORDER BY \" + sort;",
+      "fix": "Allowlist sort columns and use quote_ident, e.g. ORDER BY id.",
+      "error": "ORDER BY cannot be a bound value",
+      "expected": "A safe sort column."
+     },
+     {
+      "title": "Table name injection",
+      "broken": "query = \"SELECT * FROM \" + table;",
+      "fix": "Allowlist the table name and quote it with format('%I', table).",
+      "error": "The table name changes the statement",
+      "expected": "A known table."
+     },
+     {
+      "title": "Escaping alone",
+      "broken": "query = \"SELECT * FROM students WHERE name = '\" + input.replace(/'/g, \"''\") + \"'\";",
+      "fix": "Use a parameter instead of manual escaping.",
+      "error": "Encoding and context can defeat the escape",
+      "expected": "A parameterized query."
+     },
+     {
+      "title": "Error leak",
+      "broken": "Return the raw PostgreSQL error to the browser.",
+      "fix": "Log the error server-side and return a generic message.",
+      "error": "The schema and SQL are exposed",
+      "expected": "A safe error response."
+     },
+     {
+      "title": "Procedure concatenation",
+      "broken": "EXECUTE 'SELECT * FROM students WHERE id = ' || student_id;",
+      "fix": "EXECUTE 'SELECT * FROM students WHERE id = $1' USING student_id;",
+      "error": "The input becomes SQL",
+      "expected": "A bound procedure query."
+     },
+     {
+      "title": "Second-order injection",
+      "broken": "SELECT * FROM students WHERE name = '\" || stored_name || \"'\";",
+      "fix": "SELECT * FROM students WHERE name = $1;",
+      "error": "Stored data is still untrusted",
+      "expected": "A bound lookup."
+     },
+     {
+      "title": "Overprivileged app",
+      "broken": "GRANT ALL ON ALL TABLES IN SCHEMA public TO app_user;",
+      "fix": "GRANT SELECT, INSERT, UPDATE, DELETE ON students TO app_user;",
+      "error": "A compromised query can touch every table",
+      "expected": "A limited role."
+     },
+     {
+      "title": "Dynamic identifier unquoted",
+      "broken": "EXECUTE 'SELECT * FROM ' || table_name;",
+      "fix": "EXECUTE format('SELECT * FROM %I', table_name);",
+      "error": "A crafted identifier breaks the statement",
+      "expected": "A quoted identifier."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 30 · State one key rule for Injection Basics.",
+      "answer": "Input must not become code."
+     },
+     {
+      "q": "Module 30 · State one key rule for String Concatenation.",
+      "answer": "Avoid building SQL with + or ||."
+     },
+     {
+      "q": "Module 30 · State one key rule for Prepared Statements.",
+      "answer": "Parse first."
+     },
+     {
+      "q": "Module 30 · State one key rule for Parameterized Queries.",
+      "answer": "Use $1 in PostgreSQL."
+     },
+     {
+      "q": "Module 30 · State one key rule for ORM Safety.",
+      "answer": "Prefer the query builder."
+     },
+     {
+      "q": "Module 30 · State one key rule for Identifier Quoting.",
+      "answer": "Use quote_ident in dynamic SQL."
+     },
+     {
+      "q": "Module 30 · State one key rule for Dynamic SQL.",
+      "answer": "Use format with %I."
+     },
+     {
+      "q": "Module 30 · State one key rule for Input Validation.",
+      "answer": "Validate type and length."
+     },
+     {
+      "q": "Module 30 · State one key rule for Least Privilege.",
+      "answer": "No superuser."
+     },
+     {
+      "q": "Module 30 · State one key rule for Error Leakage.",
+      "answer": "Log internally."
+     }
+    ]
+   }
+  }
+ ]
+}

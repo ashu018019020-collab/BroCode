@@ -1,0 +1,920 @@
+{
+ "modules": [
+  {
+   "id": "sql19",
+   "no": 19,
+   "title": "Transactions and Concurrency",
+   "goal": "Make multi-step changes atomic and reason about isolation and locks.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Transaction Basics",
+     "simple": "Transaction multiple statements ko ek unit banata hai.",
+     "pro": "A transaction groups statements so they commit together or roll back together.",
+     "points": [
+      "All-or-nothing.",
+      "It protects multi-step changes.",
+      "It ends with COMMIT or ROLLBACK."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "output": "BEGIN\nUPDATE 1\nCOMMIT"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "BEGIN",
+     "simple": "BEGIN transaction start karta hai.",
+     "pro": "BEGIN starts an explicit transaction block and disables autocommit until the block ends.",
+     "points": [
+      "It starts the unit.",
+      "It can be implicit in some clients.",
+      "Nested BEGIN warns."
+     ],
+     "example": {
+      "sql": "BEGIN;",
+      "output": "BEGIN"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "COMMIT",
+     "simple": "COMMIT changes ko permanent karta hai.",
+     "pro": "COMMIT makes the transaction’s changes visible and durable, then ends the block.",
+     "points": [
+      "It makes changes permanent.",
+      "It releases locks.",
+      "It cannot be undone afterward."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "output": "COMMIT"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "ROLLBACK",
+     "simple": "ROLLBACK changes ko undo karta hai.",
+     "pro": "ROLLBACK discards all changes in the transaction and releases its locks.",
+     "points": [
+      "It undoes the block.",
+      "It works after errors.",
+      "It cannot undo a committed transaction."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 0 WHERE id = 1;\nROLLBACK;",
+      "output": "ROLLBACK"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "ACID",
+     "simple": "ACID atomicity, consistency, isolation aur durability deta hai.",
+     "pro": "ACID describes atomicity, consistency, isolation and durability, the guarantees that make transactions trustworthy.",
+     "points": [
+      "Atomic: all or nothing.",
+      "Consistent: rules hold.",
+      "Isolated: concurrent work is controlled.",
+      "Durable: committed data survives."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = marks + 1 WHERE id = 1;\nCOMMIT;",
+      "output": "A durable atomic change."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Isolation Levels",
+     "simple": "Isolation level concurrent transactions ke visibility rules set karta hai.",
+     "pro": "PostgreSQL supports Read Committed, Repeatable Read and Serializable, each trading concurrency for stronger guarantees.",
+     "points": [
+      "Read Committed is the default.",
+      "Repeatable Read is snapshot-based.",
+      "Serializable can abort transactions."
+     ],
+     "example": {
+      "sql": "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;",
+      "output": "SET"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Read Committed",
+     "simple": "Read Committed har statement ko naya snapshot deta hai.",
+     "pro": "Read Committed sees data committed before each statement starts, so the same query can see different rows within one transaction.",
+     "points": [
+      "Default level.",
+      "Statement-level snapshot.",
+      "Non-repeatable reads are possible."
+     ],
+     "example": {
+      "sql": "BEGIN ISOLATION LEVEL READ COMMITTED;\nSELECT marks FROM students WHERE id = 1;\nCOMMIT;",
+      "output": "A statement-level view."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Repeatable Read",
+     "simple": "Repeatable Read transaction ke snapshot ko stable rakhta hai.",
+     "pro": "Repeatable Read uses one snapshot for the whole transaction, preventing non-repeatable reads but allowing serialization failures on write conflicts.",
+     "points": [
+      "Stable snapshot.",
+      "No non-repeatable reads.",
+      "Writes can fail with serialization errors."
+     ],
+     "example": {
+      "sql": "BEGIN ISOLATION LEVEL REPEATABLE READ;\nSELECT marks FROM students WHERE id = 1;\nCOMMIT;",
+      "output": "A stable transaction view."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Serializable",
+     "simple": "Serializable strongest isolation deta hai.",
+     "pro": "Serializable makes concurrent transactions behave as if they ran one at a time, aborting when a serialization conflict is detected.",
+     "points": [
+      "Strongest guarantee.",
+      "Retries are required.",
+      "It can reduce concurrency."
+     ],
+     "example": {
+      "sql": "BEGIN ISOLATION LEVEL SERIALIZABLE;\nUPDATE students SET marks = marks + 1 WHERE id = 1;\nCOMMIT;",
+      "output": "A serializable transaction."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Dirty Read",
+     "simple": "Dirty read uncommitted data dikhata hai.",
+     "pro": "A dirty read sees another transaction’s uncommitted changes; PostgreSQL does not allow it at any isolation level.",
+     "points": [
+      "Uncommitted data.",
+      "Not possible in PostgreSQL.",
+      "It would break atomicity."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 99 WHERE id = 1;\n-- another session cannot read 99 yet\nROLLBACK;",
+      "output": "The other session sees the old value."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Non-repeatable Read",
+     "simple": "Non-repeatable read same row ko do baar different dikhata hai.",
+     "pro": "A non-repeatable read occurs when a row changes between two reads in the same transaction; Read Committed allows it, Repeatable Read prevents it.",
+     "points": [
+      "Same row, different value.",
+      "Read Committed allows it.",
+      "Repeatable Read blocks it."
+     ],
+     "example": {
+      "sql": "BEGIN ISOLATION LEVEL REPEATABLE READ;\nSELECT marks FROM students WHERE id = 1;\nSELECT marks FROM students WHERE id = 1;\nCOMMIT;",
+      "output": "Both reads see the same snapshot."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Phantom Read",
+     "simple": "Phantom read naye rows ko dobara query me dikhata hai.",
+     "pro": "A phantom read occurs when a re-run query sees new rows that match the predicate; stronger isolation prevents it.",
+     "points": [
+      "New matching rows.",
+      "Repeatable Read prevents most cases.",
+      "Serializable prevents anomalies."
+     ],
+     "example": {
+      "sql": "BEGIN ISOLATION LEVEL SERIALIZABLE;\nSELECT COUNT(*) FROM students WHERE marks > 90;\nCOMMIT;",
+      "output": "A consistent count."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Row Locks",
+     "simple": "Row locks competing updates ko serialize karte hain.",
+     "pro": "UPDATE and DELETE take row-level locks that block conflicting writes until the transaction ends.",
+     "points": [
+      "Locks are held to commit.",
+      "Readers usually do not block.",
+      "Long transactions hold locks longer."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "output": "The row is locked until commit."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "SELECT FOR UPDATE",
+     "simple": "SELECT FOR UPDATE rows ko lock karta hai.",
+     "pro": "SELECT ... FOR UPDATE locks selected rows so another transaction cannot change them before you do.",
+     "points": [
+      "Use inside a transaction.",
+      "It blocks competing writers.",
+      "It can deadlock."
+     ],
+     "example": {
+      "sql": "BEGIN;\nSELECT * FROM students WHERE id = 1 FOR UPDATE;\nUPDATE students SET marks = marks + 1 WHERE id = 1;\nCOMMIT;",
+      "output": "A locked read-modify-write."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Deadlocks",
+     "simple": "Deadlock do transactions ke circular lock wait se hota hai.",
+     "pro": "A deadlock occurs when transactions wait on each other’s locks; PostgreSQL detects it and aborts one transaction.",
+     "points": [
+      "Avoid inconsistent lock order.",
+      "Keep transactions short.",
+      "Retry the aborted transaction."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nUPDATE students SET marks = 80 WHERE id = 2;\nCOMMIT;",
+      "output": "A consistent lock order helps."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Savepoints",
+     "simple": "Savepoint partial rollback allow karta hai.",
+     "pro": "SAVEPOINT marks a point inside a transaction; ROLLBACK TO undoes work after it without ending the whole block.",
+     "points": [
+      "Create with SAVEPOINT.",
+      "Roll back to the name.",
+      "Release when done."
+     ],
+     "example": {
+      "sql": "BEGIN;\nSAVEPOINT before_update;\nUPDATE students SET marks = 0 WHERE id = 1;\nROLLBACK TO before_update;\nCOMMIT;",
+      "output": "The update is undone."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Autocommit",
+     "simple": "Autocommit har statement ko apna transaction banata hai.",
+     "pro": "With autocommit on, each statement commits immediately; an explicit BEGIN groups statements until COMMIT or ROLLBACK.",
+     "points": [
+      "Default in many clients.",
+      "BEGIN disables it temporarily.",
+      "Multi-step work needs a block."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "output": "An explicit transaction."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Long Transactions",
+     "simple": "Long transactions locks aur vacuum ko rok sakte hain.",
+     "pro": "Long-running transactions hold locks, retain snapshots and delay vacuum cleanup, so keep them short.",
+     "points": [
+      "Short blocks are safer.",
+      "Avoid user think-time.",
+      "Monitor pg_stat_activity."
+     ],
+     "example": {
+      "sql": "SELECT pid, state, xact_start FROM pg_stat_activity WHERE xact_start IS NOT NULL;",
+      "output": "Long-running transactions."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Common Transaction Errors",
+     "simple": "Missing COMMIT, wrong isolation aur deadlock retries common errors hain.",
+     "pro": "Common failures are forgetting to commit, assuming ROLLBACK works after commit, and not retrying serialization or deadlock failures.",
+     "points": [
+      "End every block.",
+      "Retry transient failures.",
+      "Do not hold locks during UI waits."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "output": "A complete transaction."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Transaction Pattern",
+     "simple": "Begin, validate, modify, verify, commit ya rollback.",
+     "pro": "A safe write transaction previews the target, performs the change, verifies affected rows and commits only when the result is correct.",
+     "points": [
+      "Preview first.",
+      "Check the row count.",
+      "Commit or roll back explicitly.",
+      "Handle retries."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 91 WHERE id = 1 RETURNING id, marks;\nCOMMIT;",
+      "output": "A verified update."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 19 · Transaction Basics: what is the main purpose?",
+      "options": [
+       "Transaction Basics: Transaction multiple statements ko ek unit banata hai.",
+       "BEGIN: BEGIN transaction start karta hai.",
+       "Repeatable Read: Repeatable Read transaction ke snapshot ko stable rakhta hai.",
+       "SELECT FOR UPDATE: SELECT FOR UPDATE rows ko lock karta hai."
+      ],
+      "answer": "Transaction Basics: Transaction multiple statements ko ek unit banata hai.",
+      "why": "A transaction groups statements so they commit together or roll back together."
+     },
+     {
+      "q": "Module 19 · BEGIN: what is the main purpose?",
+      "options": [
+       "COMMIT: COMMIT changes ko permanent karta hai.",
+       "Serializable: Serializable strongest isolation deta hai.",
+       "Deadlocks: Deadlock do transactions ke circular lock wait se hota hai.",
+       "BEGIN: BEGIN transaction start karta hai."
+      ],
+      "answer": "BEGIN: BEGIN transaction start karta hai.",
+      "why": "BEGIN starts an explicit transaction block and disables autocommit until the block ends."
+     },
+     {
+      "q": "Module 19 · COMMIT: what is the main purpose?",
+      "options": [
+       "Dirty Read: Dirty read uncommitted data dikhata hai.",
+       "Savepoints: Savepoint partial rollback allow karta hai.",
+       "COMMIT: COMMIT changes ko permanent karta hai.",
+       "ROLLBACK: ROLLBACK changes ko undo karta hai."
+      ],
+      "answer": "COMMIT: COMMIT changes ko permanent karta hai.",
+      "why": "COMMIT makes the transaction’s changes visible and durable, then ends the block."
+     },
+     {
+      "q": "Module 19 · ROLLBACK: what is the main purpose?",
+      "options": [
+       "Autocommit: Autocommit har statement ko apna transaction banata hai.",
+       "ROLLBACK: ROLLBACK changes ko undo karta hai.",
+       "ACID: ACID atomicity, consistency, isolation aur durability deta hai.",
+       "Non-repeatable Read: Non-repeatable read same row ko do baar different dikhata hai."
+      ],
+      "answer": "ROLLBACK: ROLLBACK changes ko undo karta hai.",
+      "why": "ROLLBACK discards all changes in the transaction and releases its locks."
+     },
+     {
+      "q": "Module 19 · ACID: what is the main purpose?",
+      "options": [
+       "ACID: ACID atomicity, consistency, isolation aur durability deta hai.",
+       "Isolation Levels: Isolation level concurrent transactions ke visibility rules set karta hai.",
+       "Phantom Read: Phantom read naye rows ko dobara query me dikhata hai.",
+       "Long Transactions: Long transactions locks aur vacuum ko rok sakte hain."
+      ],
+      "answer": "ACID: ACID atomicity, consistency, isolation aur durability deta hai.",
+      "why": "ACID describes atomicity, consistency, isolation and durability, the guarantees that make transactions trustworthy."
+     },
+     {
+      "q": "Module 19 · Isolation Levels: what is the main purpose?",
+      "options": [
+       "Read Committed: Read Committed har statement ko naya snapshot deta hai.",
+       "Row Locks: Row locks competing updates ko serialize karte hain.",
+       "Common Transaction Errors: Missing COMMIT, wrong isolation aur deadlock retries common errors hain.",
+       "Isolation Levels: Isolation level concurrent transactions ke visibility rules set karta hai."
+      ],
+      "answer": "Isolation Levels: Isolation level concurrent transactions ke visibility rules set karta hai.",
+      "why": "PostgreSQL supports Read Committed, Repeatable Read and Serializable, each trading concurrency for stronger guarantees."
+     },
+     {
+      "q": "Module 19 · Read Committed: what is the main purpose?",
+      "options": [
+       "SELECT FOR UPDATE: SELECT FOR UPDATE rows ko lock karta hai.",
+       "Practical Transaction Pattern: Begin, validate, modify, verify, commit ya rollback.",
+       "Read Committed: Read Committed har statement ko naya snapshot deta hai.",
+       "Repeatable Read: Repeatable Read transaction ke snapshot ko stable rakhta hai."
+      ],
+      "answer": "Read Committed: Read Committed har statement ko naya snapshot deta hai.",
+      "why": "Read Committed sees data committed before each statement starts, so the same query can see different rows within one transaction."
+     },
+     {
+      "q": "Module 19 · Repeatable Read: what is the main purpose?",
+      "options": [
+       "Transaction Basics: Transaction multiple statements ko ek unit banata hai.",
+       "Repeatable Read: Repeatable Read transaction ke snapshot ko stable rakhta hai.",
+       "Serializable: Serializable strongest isolation deta hai.",
+       "Deadlocks: Deadlock do transactions ke circular lock wait se hota hai."
+      ],
+      "answer": "Repeatable Read: Repeatable Read transaction ke snapshot ko stable rakhta hai.",
+      "why": "Repeatable Read uses one snapshot for the whole transaction, preventing non-repeatable reads but allowing serialization failures on write conflicts."
+     },
+     {
+      "q": "Module 19 · Serializable: what is the main purpose?",
+      "options": [
+       "Serializable: Serializable strongest isolation deta hai.",
+       "Dirty Read: Dirty read uncommitted data dikhata hai.",
+       "Savepoints: Savepoint partial rollback allow karta hai.",
+       "BEGIN: BEGIN transaction start karta hai."
+      ],
+      "answer": "Serializable: Serializable strongest isolation deta hai.",
+      "why": "Serializable makes concurrent transactions behave as if they ran one at a time, aborting when a serialization conflict is detected."
+     },
+     {
+      "q": "Module 19 · Dirty Read: what is the main purpose?",
+      "options": [
+       "Non-repeatable Read: Non-repeatable read same row ko do baar different dikhata hai.",
+       "Autocommit: Autocommit har statement ko apna transaction banata hai.",
+       "COMMIT: COMMIT changes ko permanent karta hai.",
+       "Dirty Read: Dirty read uncommitted data dikhata hai."
+      ],
+      "answer": "Dirty Read: Dirty read uncommitted data dikhata hai.",
+      "why": "A dirty read sees another transaction’s uncommitted changes; PostgreSQL does not allow it at any isolation level."
+     },
+     {
+      "q": "Module 19 · Non-repeatable Read: what is the main purpose?",
+      "options": [
+       "Long Transactions: Long transactions locks aur vacuum ko rok sakte hain.",
+       "ROLLBACK: ROLLBACK changes ko undo karta hai.",
+       "Non-repeatable Read: Non-repeatable read same row ko do baar different dikhata hai.",
+       "Phantom Read: Phantom read naye rows ko dobara query me dikhata hai."
+      ],
+      "answer": "Non-repeatable Read: Non-repeatable read same row ko do baar different dikhata hai.",
+      "why": "A non-repeatable read occurs when a row changes between two reads in the same transaction; Read Committed allows it, Repeatable Read prevents it."
+     },
+     {
+      "q": "Module 19 · Phantom Read: what is the main purpose?",
+      "options": [
+       "ACID: ACID atomicity, consistency, isolation aur durability deta hai.",
+       "Phantom Read: Phantom read naye rows ko dobara query me dikhata hai.",
+       "Row Locks: Row locks competing updates ko serialize karte hain.",
+       "Common Transaction Errors: Missing COMMIT, wrong isolation aur deadlock retries common errors hain."
+      ],
+      "answer": "Phantom Read: Phantom read naye rows ko dobara query me dikhata hai.",
+      "why": "A phantom read occurs when a re-run query sees new rows that match the predicate; stronger isolation prevents it."
+     },
+     {
+      "q": "Module 19 · Row Locks: what is the main purpose?",
+      "options": [
+       "Row Locks: Row locks competing updates ko serialize karte hain.",
+       "SELECT FOR UPDATE: SELECT FOR UPDATE rows ko lock karta hai.",
+       "Practical Transaction Pattern: Begin, validate, modify, verify, commit ya rollback.",
+       "Isolation Levels: Isolation level concurrent transactions ke visibility rules set karta hai."
+      ],
+      "answer": "Row Locks: Row locks competing updates ko serialize karte hain.",
+      "why": "UPDATE and DELETE take row-level locks that block conflicting writes until the transaction ends."
+     },
+     {
+      "q": "Module 19 · SELECT FOR UPDATE: what is the main purpose?",
+      "options": [
+       "Deadlocks: Deadlock do transactions ke circular lock wait se hota hai.",
+       "Transaction Basics: Transaction multiple statements ko ek unit banata hai.",
+       "Read Committed: Read Committed har statement ko naya snapshot deta hai.",
+       "SELECT FOR UPDATE: SELECT FOR UPDATE rows ko lock karta hai."
+      ],
+      "answer": "SELECT FOR UPDATE: SELECT FOR UPDATE rows ko lock karta hai.",
+      "why": "SELECT ... FOR UPDATE locks selected rows so another transaction cannot change them before you do."
+     },
+     {
+      "q": "Module 19 · Deadlocks: what is the main purpose?",
+      "options": [
+       "BEGIN: BEGIN transaction start karta hai.",
+       "Repeatable Read: Repeatable Read transaction ke snapshot ko stable rakhta hai.",
+       "Deadlocks: Deadlock do transactions ke circular lock wait se hota hai.",
+       "Savepoints: Savepoint partial rollback allow karta hai."
+      ],
+      "answer": "Deadlocks: Deadlock do transactions ke circular lock wait se hota hai.",
+      "why": "A deadlock occurs when transactions wait on each other’s locks; PostgreSQL detects it and aborts one transaction."
+     },
+     {
+      "q": "Module 19 · Savepoints: what is the main purpose?",
+      "options": [
+       "Serializable: Serializable strongest isolation deta hai.",
+       "Savepoints: Savepoint partial rollback allow karta hai.",
+       "Autocommit: Autocommit har statement ko apna transaction banata hai.",
+       "COMMIT: COMMIT changes ko permanent karta hai."
+      ],
+      "answer": "Savepoints: Savepoint partial rollback allow karta hai.",
+      "why": "SAVEPOINT marks a point inside a transaction; ROLLBACK TO undoes work after it without ending the whole block."
+     },
+     {
+      "q": "Module 19 · Autocommit: what is the main purpose?",
+      "options": [
+       "Autocommit: Autocommit har statement ko apna transaction banata hai.",
+       "Long Transactions: Long transactions locks aur vacuum ko rok sakte hain.",
+       "ROLLBACK: ROLLBACK changes ko undo karta hai.",
+       "Dirty Read: Dirty read uncommitted data dikhata hai."
+      ],
+      "answer": "Autocommit: Autocommit har statement ko apna transaction banata hai.",
+      "why": "With autocommit on, each statement commits immediately; an explicit BEGIN groups statements until COMMIT or ROLLBACK."
+     },
+     {
+      "q": "Module 19 · Long Transactions: what is the main purpose?",
+      "options": [
+       "Common Transaction Errors: Missing COMMIT, wrong isolation aur deadlock retries common errors hain.",
+       "ACID: ACID atomicity, consistency, isolation aur durability deta hai.",
+       "Non-repeatable Read: Non-repeatable read same row ko do baar different dikhata hai.",
+       "Long Transactions: Long transactions locks aur vacuum ko rok sakte hain."
+      ],
+      "answer": "Long Transactions: Long transactions locks aur vacuum ko rok sakte hain.",
+      "why": "Long-running transactions hold locks, retain snapshots and delay vacuum cleanup, so keep them short."
+     },
+     {
+      "q": "Module 19 · Common Transaction Errors: what is the main purpose?",
+      "options": [
+       "Isolation Levels: Isolation level concurrent transactions ke visibility rules set karta hai.",
+       "Phantom Read: Phantom read naye rows ko dobara query me dikhata hai.",
+       "Common Transaction Errors: Missing COMMIT, wrong isolation aur deadlock retries common errors hain.",
+       "Practical Transaction Pattern: Begin, validate, modify, verify, commit ya rollback."
+      ],
+      "answer": "Common Transaction Errors: Missing COMMIT, wrong isolation aur deadlock retries common errors hain.",
+      "why": "Common failures are forgetting to commit, assuming ROLLBACK works after commit, and not retrying serialization or deadlock failures."
+     },
+     {
+      "q": "Module 19 · Practical Transaction Pattern: what is the main purpose?",
+      "options": [
+       "Row Locks: Row locks competing updates ko serialize karte hain.",
+       "Practical Transaction Pattern: Begin, validate, modify, verify, commit ya rollback.",
+       "Transaction Basics: Transaction multiple statements ko ek unit banata hai.",
+       "Read Committed: Read Committed har statement ko naya snapshot deta hai."
+      ],
+      "answer": "Practical Transaction Pattern: Begin, validate, modify, verify, commit ya rollback.",
+      "why": "A safe write transaction previews the target, performs the change, verifies affected rows and commits only when the result is correct."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 19 · Explain Transaction Basics in a production query.",
+      "answer": "A transaction groups statements so they commit together or roll back together. Key rules: All-or-nothing. It protects multi-step changes. It ends with COMMIT or ROLLBACK."
+     },
+     {
+      "q": "Module 19 · Explain BEGIN in a production query.",
+      "answer": "BEGIN starts an explicit transaction block and disables autocommit until the block ends. Key rules: It starts the unit. It can be implicit in some clients. Nested BEGIN warns."
+     },
+     {
+      "q": "Module 19 · Explain COMMIT in a production query.",
+      "answer": "COMMIT makes the transaction’s changes visible and durable, then ends the block. Key rules: It makes changes permanent. It releases locks. It cannot be undone afterward."
+     },
+     {
+      "q": "Module 19 · Explain ROLLBACK in a production query.",
+      "answer": "ROLLBACK discards all changes in the transaction and releases its locks. Key rules: It undoes the block. It works after errors. It cannot undo a committed transaction."
+     },
+     {
+      "q": "Module 19 · Explain ACID in a production query.",
+      "answer": "ACID describes atomicity, consistency, isolation and durability, the guarantees that make transactions trustworthy. Key rules: Atomic: all or nothing. Consistent: rules hold. Isolated: concurrent work is controlled. Durable: committed data survives."
+     },
+     {
+      "q": "Module 19 · Explain Isolation Levels in a production query.",
+      "answer": "PostgreSQL supports Read Committed, Repeatable Read and Serializable, each trading concurrency for stronger guarantees. Key rules: Read Committed is the default. Repeatable Read is snapshot-based. Serializable can abort transactions."
+     },
+     {
+      "q": "Module 19 · Explain Read Committed in a production query.",
+      "answer": "Read Committed sees data committed before each statement starts, so the same query can see different rows within one transaction. Key rules: Default level. Statement-level snapshot. Non-repeatable reads are possible."
+     },
+     {
+      "q": "Module 19 · Explain Repeatable Read in a production query.",
+      "answer": "Repeatable Read uses one snapshot for the whole transaction, preventing non-repeatable reads but allowing serialization failures on write conflicts. Key rules: Stable snapshot. No non-repeatable reads. Writes can fail with serialization errors."
+     },
+     {
+      "q": "Module 19 · Explain Serializable in a production query.",
+      "answer": "Serializable makes concurrent transactions behave as if they ran one at a time, aborting when a serialization conflict is detected. Key rules: Strongest guarantee. Retries are required. It can reduce concurrency."
+     },
+     {
+      "q": "Module 19 · Explain Dirty Read in a production query.",
+      "answer": "A dirty read sees another transaction’s uncommitted changes; PostgreSQL does not allow it at any isolation level. Key rules: Uncommitted data. Not possible in PostgreSQL. It would break atomicity."
+     },
+     {
+      "q": "Module 19 · Explain Non-repeatable Read in a production query.",
+      "answer": "A non-repeatable read occurs when a row changes between two reads in the same transaction; Read Committed allows it, Repeatable Read prevents it. Key rules: Same row, different value. Read Committed allows it. Repeatable Read blocks it."
+     },
+     {
+      "q": "Module 19 · Explain Phantom Read in a production query.",
+      "answer": "A phantom read occurs when a re-run query sees new rows that match the predicate; stronger isolation prevents it. Key rules: New matching rows. Repeatable Read prevents most cases. Serializable prevents anomalies."
+     },
+     {
+      "q": "Module 19 · Explain Row Locks in a production query.",
+      "answer": "UPDATE and DELETE take row-level locks that block conflicting writes until the transaction ends. Key rules: Locks are held to commit. Readers usually do not block. Long transactions hold locks longer."
+     },
+     {
+      "q": "Module 19 · Explain SELECT FOR UPDATE in a production query.",
+      "answer": "SELECT ... FOR UPDATE locks selected rows so another transaction cannot change them before you do. Key rules: Use inside a transaction. It blocks competing writers. It can deadlock."
+     },
+     {
+      "q": "Module 19 · Explain Deadlocks in a production query.",
+      "answer": "A deadlock occurs when transactions wait on each other’s locks; PostgreSQL detects it and aborts one transaction. Key rules: Avoid inconsistent lock order. Keep transactions short. Retry the aborted transaction."
+     },
+     {
+      "q": "Module 19 · Explain Savepoints in a production query.",
+      "answer": "SAVEPOINT marks a point inside a transaction; ROLLBACK TO undoes work after it without ending the whole block. Key rules: Create with SAVEPOINT. Roll back to the name. Release when done."
+     },
+     {
+      "q": "Module 19 · Explain Autocommit in a production query.",
+      "answer": "With autocommit on, each statement commits immediately; an explicit BEGIN groups statements until COMMIT or ROLLBACK. Key rules: Default in many clients. BEGIN disables it temporarily. Multi-step work needs a block."
+     },
+     {
+      "q": "Module 19 · Explain Long Transactions in a production query.",
+      "answer": "Long-running transactions hold locks, retain snapshots and delay vacuum cleanup, so keep them short. Key rules: Short blocks are safer. Avoid user think-time. Monitor pg_stat_activity."
+     },
+     {
+      "q": "Module 19 · Explain Common Transaction Errors in a production query.",
+      "answer": "Common failures are forgetting to commit, assuming ROLLBACK works after commit, and not retrying serialization or deadlock failures. Key rules: End every block. Retry transient failures. Do not hold locks during UI waits."
+     },
+     {
+      "q": "Module 19 · Explain Practical Transaction Pattern in a production query.",
+      "answer": "A safe write transaction previews the target, performs the change, verifies affected rows and commits only when the result is correct. Key rules: Preview first. Check the row count. Commit or roll back explicitly. Handle retries."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Transaction Basics",
+      "task": "Write a SQL example that demonstrates Transaction Basics.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "expected": "BEGIN\nUPDATE 1\nCOMMIT"
+     },
+     {
+      "title": "BEGIN",
+      "task": "Write a SQL example that demonstrates BEGIN.",
+      "solution": "BEGIN;",
+      "expected": "BEGIN"
+     },
+     {
+      "title": "COMMIT",
+      "task": "Write a SQL example that demonstrates COMMIT.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "expected": "COMMIT"
+     },
+     {
+      "title": "ROLLBACK",
+      "task": "Write a SQL example that demonstrates ROLLBACK.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 0 WHERE id = 1;\nROLLBACK;",
+      "expected": "ROLLBACK"
+     },
+     {
+      "title": "ACID",
+      "task": "Write a SQL example that demonstrates ACID.",
+      "solution": "BEGIN;\nUPDATE students SET marks = marks + 1 WHERE id = 1;\nCOMMIT;",
+      "expected": "A durable atomic change."
+     },
+     {
+      "title": "Isolation Levels",
+      "task": "Write a SQL example that demonstrates Isolation Levels.",
+      "solution": "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;",
+      "expected": "SET"
+     },
+     {
+      "title": "Read Committed",
+      "task": "Write a SQL example that demonstrates Read Committed.",
+      "solution": "BEGIN ISOLATION LEVEL READ COMMITTED;\nSELECT marks FROM students WHERE id = 1;\nCOMMIT;",
+      "expected": "A statement-level view."
+     },
+     {
+      "title": "Repeatable Read",
+      "task": "Write a SQL example that demonstrates Repeatable Read.",
+      "solution": "BEGIN ISOLATION LEVEL REPEATABLE READ;\nSELECT marks FROM students WHERE id = 1;\nCOMMIT;",
+      "expected": "A stable transaction view."
+     },
+     {
+      "title": "Serializable",
+      "task": "Write a SQL example that demonstrates Serializable.",
+      "solution": "BEGIN ISOLATION LEVEL SERIALIZABLE;\nUPDATE students SET marks = marks + 1 WHERE id = 1;\nCOMMIT;",
+      "expected": "A serializable transaction."
+     },
+     {
+      "title": "Dirty Read",
+      "task": "Write a SQL example that demonstrates Dirty Read.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 99 WHERE id = 1;\n-- another session cannot read 99 yet\nROLLBACK;",
+      "expected": "The other session sees the old value."
+     },
+     {
+      "title": "Non-repeatable Read",
+      "task": "Write a SQL example that demonstrates Non-repeatable Read.",
+      "solution": "BEGIN ISOLATION LEVEL REPEATABLE READ;\nSELECT marks FROM students WHERE id = 1;\nSELECT marks FROM students WHERE id = 1;\nCOMMIT;",
+      "expected": "Both reads see the same snapshot."
+     },
+     {
+      "title": "Phantom Read",
+      "task": "Write a SQL example that demonstrates Phantom Read.",
+      "solution": "BEGIN ISOLATION LEVEL SERIALIZABLE;\nSELECT COUNT(*) FROM students WHERE marks > 90;\nCOMMIT;",
+      "expected": "A consistent count."
+     },
+     {
+      "title": "Row Locks",
+      "task": "Write a SQL example that demonstrates Row Locks.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "expected": "The row is locked until commit."
+     },
+     {
+      "title": "SELECT FOR UPDATE",
+      "task": "Write a SQL example that demonstrates SELECT FOR UPDATE.",
+      "solution": "BEGIN;\nSELECT * FROM students WHERE id = 1 FOR UPDATE;\nUPDATE students SET marks = marks + 1 WHERE id = 1;\nCOMMIT;",
+      "expected": "A locked read-modify-write."
+     },
+     {
+      "title": "Deadlocks",
+      "task": "Write a SQL example that demonstrates Deadlocks.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nUPDATE students SET marks = 80 WHERE id = 2;\nCOMMIT;",
+      "expected": "A consistent lock order helps."
+     },
+     {
+      "title": "Savepoints",
+      "task": "Write a SQL example that demonstrates Savepoints.",
+      "solution": "BEGIN;\nSAVEPOINT before_update;\nUPDATE students SET marks = 0 WHERE id = 1;\nROLLBACK TO before_update;\nCOMMIT;",
+      "expected": "The update is undone."
+     },
+     {
+      "title": "Autocommit",
+      "task": "Write a SQL example that demonstrates Autocommit.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "expected": "An explicit transaction."
+     },
+     {
+      "title": "Long Transactions",
+      "task": "Write a SQL example that demonstrates Long Transactions.",
+      "solution": "SELECT pid, state, xact_start FROM pg_stat_activity WHERE xact_start IS NOT NULL;",
+      "expected": "Long-running transactions."
+     },
+     {
+      "title": "Common Transaction Errors",
+      "task": "Write a SQL example that demonstrates Common Transaction Errors.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "expected": "A complete transaction."
+     },
+     {
+      "title": "Practical Transaction Pattern",
+      "task": "Write a SQL example that demonstrates Practical Transaction Pattern.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 91 WHERE id = 1 RETURNING id, marks;\nCOMMIT;",
+      "expected": "A verified update."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 19 · Why does Transaction Basics matter?",
+      "answer": "A transaction groups statements so they commit together or roll back together. All-or-nothing. It protects multi-step changes. It ends with COMMIT or ROLLBACK."
+     },
+     {
+      "q": "Module 19 · Why does BEGIN matter?",
+      "answer": "BEGIN starts an explicit transaction block and disables autocommit until the block ends. It starts the unit. It can be implicit in some clients. Nested BEGIN warns."
+     },
+     {
+      "q": "Module 19 · Why does COMMIT matter?",
+      "answer": "COMMIT makes the transaction’s changes visible and durable, then ends the block. It makes changes permanent. It releases locks. It cannot be undone afterward."
+     },
+     {
+      "q": "Module 19 · Why does ROLLBACK matter?",
+      "answer": "ROLLBACK discards all changes in the transaction and releases its locks. It undoes the block. It works after errors. It cannot undo a committed transaction."
+     },
+     {
+      "q": "Module 19 · Why does ACID matter?",
+      "answer": "ACID describes atomicity, consistency, isolation and durability, the guarantees that make transactions trustworthy. Atomic: all or nothing. Consistent: rules hold. Isolated: concurrent work is controlled. Durable: committed data survives."
+     },
+     {
+      "q": "Module 19 · Why does Isolation Levels matter?",
+      "answer": "PostgreSQL supports Read Committed, Repeatable Read and Serializable, each trading concurrency for stronger guarantees. Read Committed is the default. Repeatable Read is snapshot-based. Serializable can abort transactions."
+     },
+     {
+      "q": "Module 19 · Why does Read Committed matter?",
+      "answer": "Read Committed sees data committed before each statement starts, so the same query can see different rows within one transaction. Default level. Statement-level snapshot. Non-repeatable reads are possible."
+     },
+     {
+      "q": "Module 19 · Why does Repeatable Read matter?",
+      "answer": "Repeatable Read uses one snapshot for the whole transaction, preventing non-repeatable reads but allowing serialization failures on write conflicts. Stable snapshot. No non-repeatable reads. Writes can fail with serialization errors."
+     },
+     {
+      "q": "Module 19 · Why does Serializable matter?",
+      "answer": "Serializable makes concurrent transactions behave as if they ran one at a time, aborting when a serialization conflict is detected. Strongest guarantee. Retries are required. It can reduce concurrency."
+     },
+     {
+      "q": "Module 19 · Why does Dirty Read matter?",
+      "answer": "A dirty read sees another transaction’s uncommitted changes; PostgreSQL does not allow it at any isolation level. Uncommitted data. Not possible in PostgreSQL. It would break atomicity."
+     },
+     {
+      "q": "Module 19 · Why does Non-repeatable Read matter?",
+      "answer": "A non-repeatable read occurs when a row changes between two reads in the same transaction; Read Committed allows it, Repeatable Read prevents it. Same row, different value. Read Committed allows it. Repeatable Read blocks it."
+     },
+     {
+      "q": "Module 19 · Why does Phantom Read matter?",
+      "answer": "A phantom read occurs when a re-run query sees new rows that match the predicate; stronger isolation prevents it. New matching rows. Repeatable Read prevents most cases. Serializable prevents anomalies."
+     },
+     {
+      "q": "Module 19 · Why does Row Locks matter?",
+      "answer": "UPDATE and DELETE take row-level locks that block conflicting writes until the transaction ends. Locks are held to commit. Readers usually do not block. Long transactions hold locks longer."
+     },
+     {
+      "q": "Module 19 · Why does SELECT FOR UPDATE matter?",
+      "answer": "SELECT ... FOR UPDATE locks selected rows so another transaction cannot change them before you do. Use inside a transaction. It blocks competing writers. It can deadlock."
+     },
+     {
+      "q": "Module 19 · Why does Deadlocks matter?",
+      "answer": "A deadlock occurs when transactions wait on each other’s locks; PostgreSQL detects it and aborts one transaction. Avoid inconsistent lock order. Keep transactions short. Retry the aborted transaction."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Missing COMMIT",
+      "broken": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;",
+      "fix": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nCOMMIT;",
+      "error": "The change stays uncommitted and locks are held",
+      "expected": "A committed update."
+     },
+     {
+      "title": "Rollback after commit",
+      "broken": "BEGIN;\nUPDATE students SET marks = 0 WHERE id = 1;\nCOMMIT;\nROLLBACK;",
+      "fix": "BEGIN;\nUPDATE students SET marks = 0 WHERE id = 1;\nROLLBACK;",
+      "error": "ROLLBACK has nothing to undo after COMMIT",
+      "expected": "The update is undone."
+     },
+     {
+      "title": "Savepoint typo",
+      "broken": "BEGIN;\nSAVEPOINT before_update;\nUPDATE students SET marks = 0 WHERE id = 1;\nROLLBACK TO before_update_typo;\nCOMMIT;",
+      "fix": "ROLLBACK TO before_update;",
+      "error": "savepoint \"before_update_typo\" does not exist",
+      "expected": "Rollback to the real savepoint."
+     },
+     {
+      "title": "Deadlock order",
+      "broken": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1;\nUPDATE students SET marks = 80 WHERE id = 2;\nCOMMIT;",
+      "fix": "Use one consistent order in every transaction, such as id 1 then id 2.",
+      "error": "deadlock detected",
+      "expected": "No circular wait."
+     },
+     {
+      "title": "FOR UPDATE outside block",
+      "broken": "SELECT * FROM students WHERE id = 1 FOR UPDATE;",
+      "fix": "BEGIN;\nSELECT * FROM students WHERE id = 1 FOR UPDATE;\nCOMMIT;",
+      "error": "The row lock is released immediately without a transaction",
+      "expected": "A held lock."
+     },
+     {
+      "title": "Serialization failure",
+      "broken": "BEGIN ISOLATION LEVEL SERIALIZABLE;\nUPDATE students SET marks = marks + 1 WHERE id = 1;\nCOMMIT;",
+      "fix": "Retry the whole transaction after a serialization failure.",
+      "error": "could not serialize access due to concurrent update",
+      "expected": "A successful retry."
+     },
+     {
+      "title": "Truncate lock",
+      "broken": "TRUNCATE students;",
+      "fix": "DELETE FROM students WHERE id = 1;",
+      "error": "TRUNCATE takes an ACCESS EXCLUSIVE lock",
+      "expected": "A targeted delete."
+     },
+     {
+      "title": "Long transaction",
+      "broken": "BEGIN;\nSELECT * FROM students;\n-- wait for a user response\nCOMMIT;",
+      "fix": "Keep the transaction open only around the database work.",
+      "error": "Locks and snapshots are held during the wait",
+      "expected": "A short transaction."
+     },
+     {
+      "title": "Function COMMIT",
+      "broken": "CREATE FUNCTION f() RETURNS void AS $$ BEGIN COMMIT; END; $$ LANGUAGE plpgsql;",
+      "fix": "Use a procedure for transaction control, or remove COMMIT from the function.",
+      "error": "COMMIT is not allowed in a function",
+      "expected": "A valid function."
+     },
+     {
+      "title": "Isolation after query",
+      "broken": "BEGIN;\nSELECT 1;\nSET TRANSACTION ISOLATION LEVEL SERIALIZABLE;",
+      "fix": "BEGIN ISOLATION LEVEL SERIALIZABLE;\nSELECT 1;",
+      "error": "SET TRANSACTION must be called before any query",
+      "expected": "The transaction starts serializable."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 19 · State one key rule for Transaction Basics.",
+      "answer": "All-or-nothing."
+     },
+     {
+      "q": "Module 19 · State one key rule for BEGIN.",
+      "answer": "It starts the unit."
+     },
+     {
+      "q": "Module 19 · State one key rule for COMMIT.",
+      "answer": "It makes changes permanent."
+     },
+     {
+      "q": "Module 19 · State one key rule for ROLLBACK.",
+      "answer": "It undoes the block."
+     },
+     {
+      "q": "Module 19 · State one key rule for ACID.",
+      "answer": "Atomic: all or nothing."
+     },
+     {
+      "q": "Module 19 · State one key rule for Isolation Levels.",
+      "answer": "Read Committed is the default."
+     },
+     {
+      "q": "Module 19 · State one key rule for Read Committed.",
+      "answer": "Default level."
+     },
+     {
+      "q": "Module 19 · State one key rule for Repeatable Read.",
+      "answer": "Stable snapshot."
+     },
+     {
+      "q": "Module 19 · State one key rule for Serializable.",
+      "answer": "Strongest guarantee."
+     },
+     {
+      "q": "Module 19 · State one key rule for Dirty Read.",
+      "answer": "Uncommitted data."
+     }
+    ]
+   }
+  }
+ ]
+}

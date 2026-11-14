@@ -1,0 +1,919 @@
+{
+ "modules": [
+  {
+   "id": "sql34",
+   "no": 34,
+   "title": "Analytics and Reporting",
+   "goal": "Turn transactional rows into cohorts, funnels, retention and time-series reports.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Reporting SQL",
+     "simple": "Reporting queries business questions ko rows me badalte hain.",
+     "pro": "A reporting query defines the grain, filters the population, aggregates the measure and orders the result.",
+     "points": [
+      "State the grain.",
+      "Define the population.",
+      "Choose the measure."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(*) AS enrolled FROM enrollments GROUP BY course_id ORDER BY enrolled DESC;",
+      "output": "Enrollment counts per course."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Cohort Analysis",
+     "simple": "Cohort users ko shared start period me group karta hai.",
+     "pro": "A cohort groups entities by their first event period and tracks later behavior within each cohort.",
+     "points": [
+      "Define the cohort date.",
+      "Group by cohort.",
+      "Measure later activity."
+     ],
+     "example": {
+      "sql": "SELECT DATE_TRUNC('month', MIN(enrolled_on)) AS cohort, student_id FROM enrollments GROUP BY student_id;",
+      "output": "A first-enrollment cohort per student."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Funnel Analysis",
+     "simple": "Funnel steps ke conversions count karta hai.",
+     "pro": "A funnel counts how many entities reach each step, usually with conditional aggregation or self-joins.",
+     "points": [
+      "Define ordered steps.",
+      "Count distinct entities.",
+      "Compare step counts."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(DISTINCT student_id) FILTER (WHERE course_id = 10) AS step1 FROM enrollments;",
+      "output": "Students at step one."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Retention",
+     "simple": "Retention wapas aane wale users count karta hai.",
+     "pro": "Retention compares a cohort’s later activity with its original size, often by period.",
+     "points": [
+      "Define active.",
+      "Fix the cohort.",
+      "Calculate the ratio."
+     ],
+     "example": {
+      "sql": "SELECT student_id, COUNT(DISTINCT course_id) AS courses FROM enrollments GROUP BY student_id HAVING COUNT(DISTINCT course_id) > 1;",
+      "output": "Students with more than one course."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Time Series",
+     "simple": "Time series periods ke measures dikhata hai.",
+     "pro": "Time-series reports bucket dates with DATE_TRUNC and fill missing periods when the chart requires continuity.",
+     "points": [
+      "Bucket the date.",
+      "Aggregate the measure.",
+      "Fill gaps explicitly."
+     ],
+     "example": {
+      "sql": "SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY month ORDER BY month;",
+      "output": "Monthly enrollment counts."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Pivot with CASE",
+     "simple": "CASE se rows ko columns me pivot karo.",
+     "pro": "Conditional aggregation pivots categories into columns without a dedicated pivot operator.",
+     "points": [
+      "One CASE per column.",
+      "Aggregate each CASE.",
+      "Group by the row key."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(*) FILTER (WHERE enrolled_on >= DATE '2026-01-01') AS recent, COUNT(*) FILTER (WHERE enrolled_on < DATE '2026-01-01') AS older FROM enrollments GROUP BY course_id;",
+      "output": "Course rows with recent and older count columns."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Crosstab",
+     "simple": "Crosstab rows aur columns ka matrix banata hai.",
+     "pro": "The tablefunc crosstab function turns long category rows into a wide matrix.",
+     "points": [
+      "Enable tablefunc.",
+      "Define row and category columns.",
+      "Name the output columns."
+     ],
+     "example": {
+      "sql": "SELECT * FROM crosstab('SELECT course_id, EXTRACT(YEAR FROM enrolled_on)::int, COUNT(*) FROM enrollments GROUP BY 1,2 ORDER BY 1,2') AS ct(course_id int, y2025 bigint, y2026 bigint);",
+      "output": "A course-by-year matrix."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Running Totals",
+     "simple": "Running totals cumulative progress dikhate hain.",
+     "pro": "A window SUM ordered by time produces cumulative totals for charts and targets.",
+     "points": [
+      "Order by the period.",
+      "Use an unbounded frame.",
+      "Partition when needed."
+     ],
+     "example": {
+      "sql": "SELECT enrolled_on, COUNT(*) AS day_count, SUM(COUNT(*)) OVER (ORDER BY enrolled_on) AS running FROM enrollments GROUP BY enrolled_on ORDER BY enrolled_on;",
+      "output": "A cumulative enrollment count."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Percent of Total",
+     "simple": "Percent of total share dikhata hai.",
+     "pro": "Divide the group measure by a window total to show each row’s share of the whole.",
+     "points": [
+      "Use SUM(...) OVER ().",
+      "Guard zero.",
+      "Round for display."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(*) AS total, ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) AS pct FROM enrollments GROUP BY course_id;",
+      "output": "Each course share of enrollments."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Ranking",
+     "simple": "Ranking report ko ordered priority deta hai.",
+     "pro": "Window ranking orders groups by a measure while preserving every group row.",
+     "points": [
+      "Rank by the measure.",
+      "Break ties.",
+      "Filter after ranking."
+     ],
+     "example": {
+      "sql": "SELECT course_id, COUNT(*) AS total, RANK() OVER (ORDER BY COUNT(*) DESC) AS rank FROM enrollments GROUP BY course_id;",
+      "output": "Courses ranked by enrollment."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Period Comparisons",
+     "simple": "Previous period se compare karo.",
+     "pro": "LAG or self-joins compare a period with the prior period, producing growth and deltas.",
+     "points": [
+      "Order periods.",
+      "Use LAG.",
+      "Handle missing periods."
+     ],
+     "example": {
+      "sql": "SELECT month, total, total - LAG(total) OVER (ORDER BY month) AS delta FROM monthly_counts;",
+      "output": "Month-over-month change."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Cohort Retention Table",
+     "simple": "Cohort ke har period ki retention calculate karo.",
+     "pro": "A cohort retention table joins each entity’s cohort month to later activity months and counts distinct returning entities.",
+     "points": [
+      "Cohort month.",
+      "Activity month.",
+      "Count distinct entities.",
+      "Divide by cohort size."
+     ],
+     "example": {
+      "sql": "SELECT DATE_TRUNC('month', e.enrolled_on) AS activity_month, COUNT(DISTINCT e.student_id) AS active FROM enrollments e GROUP BY activity_month ORDER BY activity_month;",
+      "output": "Active students per month."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Common Reporting Errors",
+     "simple": "Wrong grain, double counting aur timezone bugs common errors hain.",
+     "pro": "Common failures are joining one-to-many tables before aggregating, counting rows instead of entities, and mixing time zones.",
+     "points": [
+      "Check the grain.",
+      "Count distinct entities.",
+      "Normalize time zones."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(DISTINCT student_id) FROM enrollments;",
+      "output": "A non-duplicated entity count."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Reporting Performance",
+     "simple": "Pre-aggregate aur index reporting queries.",
+     "pro": "Reports often scan large ranges; pre-aggregation, materialized views and date indexes reduce repeated work.",
+     "points": [
+      "Filter on dates.",
+      "Pre-aggregate.",
+      "Refresh materialized views."
+     ],
+     "example": {
+      "sql": "CREATE INDEX idx_enrollments_date ON enrollments (enrolled_on);",
+      "output": "CREATE INDEX"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Dashboard Queries",
+     "simple": "Dashboard ke liye fast, stable queries chahiye.",
+     "pro": "Dashboard queries should be bounded, indexed and cached where freshness allows.",
+     "points": [
+      "Bound the date range.",
+      "Limit rows.",
+      "Cache or materialize."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) FROM enrollments WHERE enrolled_on >= CURRENT_DATE - INTERVAL '30 days';",
+      "output": "Last 30 days count."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Export Queries",
+     "simple": "Export ke liye deterministic ordering aur columns do.",
+     "pro": "Exports need stable column names, explicit ordering and no accidental row limits.",
+     "points": [
+      "Order explicitly.",
+      "Select explicit columns.",
+      "Avoid SELECT *. "
+     ],
+     "example": {
+      "sql": "SELECT student_id, course_id, enrolled_on FROM enrollments ORDER BY enrolled_on, student_id;",
+      "output": "A deterministic export."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Data Quality Checks",
+     "simple": "Reporting se pehle data quality check karo.",
+     "pro": "Checks catch NULLs, duplicates, orphan keys and impossible values before they distort a report.",
+     "points": [
+      "Check duplicates.",
+      "Check orphans.",
+      "Check ranges."
+     ],
+     "example": {
+      "sql": "SELECT student_id, course_id, COUNT(*) FROM enrollments GROUP BY 1,2 HAVING COUNT(*) > 1;",
+      "output": "Duplicate enrollments."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Timezone Reporting",
+     "simple": "Timestamps ko ek timezone me report karo.",
+     "pro": "TIMESTAMPTZ stores instants; convert to the reporting time zone before truncating dates.",
+     "points": [
+      "Store timestamptz.",
+      "Convert at the boundary.",
+      "Document the zone."
+     ],
+     "example": {
+      "sql": "SELECT DATE_TRUNC('day', enrolled_on AT TIME ZONE 'Asia/Kolkata') AS day, COUNT(*) FROM enrollments GROUP BY day;",
+      "output": "Daily counts in IST."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Narrative Metrics",
+     "simple": "Metrics ke saath denominator aur definition do.",
+     "pro": "A trustworthy report states the denominator, the time window and the exact definition of each metric.",
+     "points": [
+      "Define the metric.",
+      "Show the denominator.",
+      "State the window."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) FILTER (WHERE marks >= 60) AS passed, COUNT(*) AS total FROM students;",
+      "output": "Passed and total with a clear denominator."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Dashboard",
+     "simple": "Cohort, funnel aur time series ko combine karo.",
+     "pro": "A practical dashboard query produces one row per period with counts, shares and comparisons, bounded to a recent window.",
+     "points": [
+      "Bound the window.",
+      "Use CTEs.",
+      "Keep the grain explicit."
+     ],
+     "example": {
+      "sql": "WITH monthly AS (SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY month) SELECT month, total, total - LAG(total) OVER (ORDER BY month) AS delta FROM monthly ORDER BY month;",
+      "output": "A monthly dashboard series."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 34 · Reporting SQL: what is the main purpose?",
+      "options": [
+       "Reporting SQL: Reporting queries business questions ko rows me badalte hain.",
+       "Cohort Analysis: Cohort users ko shared start period me group karta hai.",
+       "Running Totals: Running totals cumulative progress dikhate hain.",
+       "Reporting Performance: Pre-aggregate aur index reporting queries."
+      ],
+      "answer": "Reporting SQL: Reporting queries business questions ko rows me badalte hain.",
+      "why": "A reporting query defines the grain, filters the population, aggregates the measure and orders the result."
+     },
+     {
+      "q": "Module 34 · Cohort Analysis: what is the main purpose?",
+      "options": [
+       "Funnel Analysis: Funnel steps ke conversions count karta hai.",
+       "Percent of Total: Percent of total share dikhata hai.",
+       "Dashboard Queries: Dashboard ke liye fast, stable queries chahiye.",
+       "Cohort Analysis: Cohort users ko shared start period me group karta hai."
+      ],
+      "answer": "Cohort Analysis: Cohort users ko shared start period me group karta hai.",
+      "why": "A cohort groups entities by their first event period and tracks later behavior within each cohort."
+     },
+     {
+      "q": "Module 34 · Funnel Analysis: what is the main purpose?",
+      "options": [
+       "Ranking: Ranking report ko ordered priority deta hai.",
+       "Export Queries: Export ke liye deterministic ordering aur columns do.",
+       "Funnel Analysis: Funnel steps ke conversions count karta hai.",
+       "Retention: Retention wapas aane wale users count karta hai."
+      ],
+      "answer": "Funnel Analysis: Funnel steps ke conversions count karta hai.",
+      "why": "A funnel counts how many entities reach each step, usually with conditional aggregation or self-joins."
+     },
+     {
+      "q": "Module 34 · Retention: what is the main purpose?",
+      "options": [
+       "Data Quality Checks: Reporting se pehle data quality check karo.",
+       "Retention: Retention wapas aane wale users count karta hai.",
+       "Time Series: Time series periods ke measures dikhata hai.",
+       "Period Comparisons: Previous period se compare karo."
+      ],
+      "answer": "Retention: Retention wapas aane wale users count karta hai.",
+      "why": "Retention compares a cohort’s later activity with its original size, often by period."
+     },
+     {
+      "q": "Module 34 · Time Series: what is the main purpose?",
+      "options": [
+       "Time Series: Time series periods ke measures dikhata hai.",
+       "Pivot with CASE: CASE se rows ko columns me pivot karo.",
+       "Cohort Retention Table: Cohort ke har period ki retention calculate karo.",
+       "Timezone Reporting: Timestamps ko ek timezone me report karo."
+      ],
+      "answer": "Time Series: Time series periods ke measures dikhata hai.",
+      "why": "Time-series reports bucket dates with DATE_TRUNC and fill missing periods when the chart requires continuity."
+     },
+     {
+      "q": "Module 34 · Pivot with CASE: what is the main purpose?",
+      "options": [
+       "Crosstab: Crosstab rows aur columns ka matrix banata hai.",
+       "Common Reporting Errors: Wrong grain, double counting aur timezone bugs common errors hain.",
+       "Narrative Metrics: Metrics ke saath denominator aur definition do.",
+       "Pivot with CASE: CASE se rows ko columns me pivot karo."
+      ],
+      "answer": "Pivot with CASE: CASE se rows ko columns me pivot karo.",
+      "why": "Conditional aggregation pivots categories into columns without a dedicated pivot operator."
+     },
+     {
+      "q": "Module 34 · Crosstab: what is the main purpose?",
+      "options": [
+       "Reporting Performance: Pre-aggregate aur index reporting queries.",
+       "Practical Dashboard: Cohort, funnel aur time series ko combine karo.",
+       "Crosstab: Crosstab rows aur columns ka matrix banata hai.",
+       "Running Totals: Running totals cumulative progress dikhate hain."
+      ],
+      "answer": "Crosstab: Crosstab rows aur columns ka matrix banata hai.",
+      "why": "The tablefunc crosstab function turns long category rows into a wide matrix."
+     },
+     {
+      "q": "Module 34 · Running Totals: what is the main purpose?",
+      "options": [
+       "Reporting SQL: Reporting queries business questions ko rows me badalte hain.",
+       "Running Totals: Running totals cumulative progress dikhate hain.",
+       "Percent of Total: Percent of total share dikhata hai.",
+       "Dashboard Queries: Dashboard ke liye fast, stable queries chahiye."
+      ],
+      "answer": "Running Totals: Running totals cumulative progress dikhate hain.",
+      "why": "A window SUM ordered by time produces cumulative totals for charts and targets."
+     },
+     {
+      "q": "Module 34 · Percent of Total: what is the main purpose?",
+      "options": [
+       "Percent of Total: Percent of total share dikhata hai.",
+       "Ranking: Ranking report ko ordered priority deta hai.",
+       "Export Queries: Export ke liye deterministic ordering aur columns do.",
+       "Cohort Analysis: Cohort users ko shared start period me group karta hai."
+      ],
+      "answer": "Percent of Total: Percent of total share dikhata hai.",
+      "why": "Divide the group measure by a window total to show each row’s share of the whole."
+     },
+     {
+      "q": "Module 34 · Ranking: what is the main purpose?",
+      "options": [
+       "Period Comparisons: Previous period se compare karo.",
+       "Data Quality Checks: Reporting se pehle data quality check karo.",
+       "Funnel Analysis: Funnel steps ke conversions count karta hai.",
+       "Ranking: Ranking report ko ordered priority deta hai."
+      ],
+      "answer": "Ranking: Ranking report ko ordered priority deta hai.",
+      "why": "Window ranking orders groups by a measure while preserving every group row."
+     },
+     {
+      "q": "Module 34 · Period Comparisons: what is the main purpose?",
+      "options": [
+       "Timezone Reporting: Timestamps ko ek timezone me report karo.",
+       "Retention: Retention wapas aane wale users count karta hai.",
+       "Period Comparisons: Previous period se compare karo.",
+       "Cohort Retention Table: Cohort ke har period ki retention calculate karo."
+      ],
+      "answer": "Period Comparisons: Previous period se compare karo.",
+      "why": "LAG or self-joins compare a period with the prior period, producing growth and deltas."
+     },
+     {
+      "q": "Module 34 · Cohort Retention Table: what is the main purpose?",
+      "options": [
+       "Time Series: Time series periods ke measures dikhata hai.",
+       "Cohort Retention Table: Cohort ke har period ki retention calculate karo.",
+       "Common Reporting Errors: Wrong grain, double counting aur timezone bugs common errors hain.",
+       "Narrative Metrics: Metrics ke saath denominator aur definition do."
+      ],
+      "answer": "Cohort Retention Table: Cohort ke har period ki retention calculate karo.",
+      "why": "A cohort retention table joins each entity’s cohort month to later activity months and counts distinct returning entities."
+     },
+     {
+      "q": "Module 34 · Common Reporting Errors: what is the main purpose?",
+      "options": [
+       "Common Reporting Errors: Wrong grain, double counting aur timezone bugs common errors hain.",
+       "Reporting Performance: Pre-aggregate aur index reporting queries.",
+       "Practical Dashboard: Cohort, funnel aur time series ko combine karo.",
+       "Pivot with CASE: CASE se rows ko columns me pivot karo."
+      ],
+      "answer": "Common Reporting Errors: Wrong grain, double counting aur timezone bugs common errors hain.",
+      "why": "Common failures are joining one-to-many tables before aggregating, counting rows instead of entities, and mixing time zones."
+     },
+     {
+      "q": "Module 34 · Reporting Performance: what is the main purpose?",
+      "options": [
+       "Dashboard Queries: Dashboard ke liye fast, stable queries chahiye.",
+       "Reporting SQL: Reporting queries business questions ko rows me badalte hain.",
+       "Crosstab: Crosstab rows aur columns ka matrix banata hai.",
+       "Reporting Performance: Pre-aggregate aur index reporting queries."
+      ],
+      "answer": "Reporting Performance: Pre-aggregate aur index reporting queries.",
+      "why": "Reports often scan large ranges; pre-aggregation, materialized views and date indexes reduce repeated work."
+     },
+     {
+      "q": "Module 34 · Dashboard Queries: what is the main purpose?",
+      "options": [
+       "Cohort Analysis: Cohort users ko shared start period me group karta hai.",
+       "Running Totals: Running totals cumulative progress dikhate hain.",
+       "Dashboard Queries: Dashboard ke liye fast, stable queries chahiye.",
+       "Export Queries: Export ke liye deterministic ordering aur columns do."
+      ],
+      "answer": "Dashboard Queries: Dashboard ke liye fast, stable queries chahiye.",
+      "why": "Dashboard queries should be bounded, indexed and cached where freshness allows."
+     },
+     {
+      "q": "Module 34 · Export Queries: what is the main purpose?",
+      "options": [
+       "Percent of Total: Percent of total share dikhata hai.",
+       "Export Queries: Export ke liye deterministic ordering aur columns do.",
+       "Data Quality Checks: Reporting se pehle data quality check karo.",
+       "Funnel Analysis: Funnel steps ke conversions count karta hai."
+      ],
+      "answer": "Export Queries: Export ke liye deterministic ordering aur columns do.",
+      "why": "Exports need stable column names, explicit ordering and no accidental row limits."
+     },
+     {
+      "q": "Module 34 · Data Quality Checks: what is the main purpose?",
+      "options": [
+       "Data Quality Checks: Reporting se pehle data quality check karo.",
+       "Timezone Reporting: Timestamps ko ek timezone me report karo.",
+       "Retention: Retention wapas aane wale users count karta hai.",
+       "Ranking: Ranking report ko ordered priority deta hai."
+      ],
+      "answer": "Data Quality Checks: Reporting se pehle data quality check karo.",
+      "why": "Checks catch NULLs, duplicates, orphan keys and impossible values before they distort a report."
+     },
+     {
+      "q": "Module 34 · Timezone Reporting: what is the main purpose?",
+      "options": [
+       "Narrative Metrics: Metrics ke saath denominator aur definition do.",
+       "Time Series: Time series periods ke measures dikhata hai.",
+       "Period Comparisons: Previous period se compare karo.",
+       "Timezone Reporting: Timestamps ko ek timezone me report karo."
+      ],
+      "answer": "Timezone Reporting: Timestamps ko ek timezone me report karo.",
+      "why": "TIMESTAMPTZ stores instants; convert to the reporting time zone before truncating dates."
+     },
+     {
+      "q": "Module 34 · Narrative Metrics: what is the main purpose?",
+      "options": [
+       "Pivot with CASE: CASE se rows ko columns me pivot karo.",
+       "Cohort Retention Table: Cohort ke har period ki retention calculate karo.",
+       "Narrative Metrics: Metrics ke saath denominator aur definition do.",
+       "Practical Dashboard: Cohort, funnel aur time series ko combine karo."
+      ],
+      "answer": "Narrative Metrics: Metrics ke saath denominator aur definition do.",
+      "why": "A trustworthy report states the denominator, the time window and the exact definition of each metric."
+     },
+     {
+      "q": "Module 34 · Practical Dashboard: what is the main purpose?",
+      "options": [
+       "Common Reporting Errors: Wrong grain, double counting aur timezone bugs common errors hain.",
+       "Practical Dashboard: Cohort, funnel aur time series ko combine karo.",
+       "Reporting SQL: Reporting queries business questions ko rows me badalte hain.",
+       "Crosstab: Crosstab rows aur columns ka matrix banata hai."
+      ],
+      "answer": "Practical Dashboard: Cohort, funnel aur time series ko combine karo.",
+      "why": "A practical dashboard query produces one row per period with counts, shares and comparisons, bounded to a recent window."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 34 · Explain Reporting SQL in a production query.",
+      "answer": "A reporting query defines the grain, filters the population, aggregates the measure and orders the result. Key rules: State the grain. Define the population. Choose the measure."
+     },
+     {
+      "q": "Module 34 · Explain Cohort Analysis in a production query.",
+      "answer": "A cohort groups entities by their first event period and tracks later behavior within each cohort. Key rules: Define the cohort date. Group by cohort. Measure later activity."
+     },
+     {
+      "q": "Module 34 · Explain Funnel Analysis in a production query.",
+      "answer": "A funnel counts how many entities reach each step, usually with conditional aggregation or self-joins. Key rules: Define ordered steps. Count distinct entities. Compare step counts."
+     },
+     {
+      "q": "Module 34 · Explain Retention in a production query.",
+      "answer": "Retention compares a cohort’s later activity with its original size, often by period. Key rules: Define active. Fix the cohort. Calculate the ratio."
+     },
+     {
+      "q": "Module 34 · Explain Time Series in a production query.",
+      "answer": "Time-series reports bucket dates with DATE_TRUNC and fill missing periods when the chart requires continuity. Key rules: Bucket the date. Aggregate the measure. Fill gaps explicitly."
+     },
+     {
+      "q": "Module 34 · Explain Pivot with CASE in a production query.",
+      "answer": "Conditional aggregation pivots categories into columns without a dedicated pivot operator. Key rules: One CASE per column. Aggregate each CASE. Group by the row key."
+     },
+     {
+      "q": "Module 34 · Explain Crosstab in a production query.",
+      "answer": "The tablefunc crosstab function turns long category rows into a wide matrix. Key rules: Enable tablefunc. Define row and category columns. Name the output columns."
+     },
+     {
+      "q": "Module 34 · Explain Running Totals in a production query.",
+      "answer": "A window SUM ordered by time produces cumulative totals for charts and targets. Key rules: Order by the period. Use an unbounded frame. Partition when needed."
+     },
+     {
+      "q": "Module 34 · Explain Percent of Total in a production query.",
+      "answer": "Divide the group measure by a window total to show each row’s share of the whole. Key rules: Use SUM(...) OVER (). Guard zero. Round for display."
+     },
+     {
+      "q": "Module 34 · Explain Ranking in a production query.",
+      "answer": "Window ranking orders groups by a measure while preserving every group row. Key rules: Rank by the measure. Break ties. Filter after ranking."
+     },
+     {
+      "q": "Module 34 · Explain Period Comparisons in a production query.",
+      "answer": "LAG or self-joins compare a period with the prior period, producing growth and deltas. Key rules: Order periods. Use LAG. Handle missing periods."
+     },
+     {
+      "q": "Module 34 · Explain Cohort Retention Table in a production query.",
+      "answer": "A cohort retention table joins each entity’s cohort month to later activity months and counts distinct returning entities. Key rules: Cohort month. Activity month. Count distinct entities. Divide by cohort size."
+     },
+     {
+      "q": "Module 34 · Explain Common Reporting Errors in a production query.",
+      "answer": "Common failures are joining one-to-many tables before aggregating, counting rows instead of entities, and mixing time zones. Key rules: Check the grain. Count distinct entities. Normalize time zones."
+     },
+     {
+      "q": "Module 34 · Explain Reporting Performance in a production query.",
+      "answer": "Reports often scan large ranges; pre-aggregation, materialized views and date indexes reduce repeated work. Key rules: Filter on dates. Pre-aggregate. Refresh materialized views."
+     },
+     {
+      "q": "Module 34 · Explain Dashboard Queries in a production query.",
+      "answer": "Dashboard queries should be bounded, indexed and cached where freshness allows. Key rules: Bound the date range. Limit rows. Cache or materialize."
+     },
+     {
+      "q": "Module 34 · Explain Export Queries in a production query.",
+      "answer": "Exports need stable column names, explicit ordering and no accidental row limits. Key rules: Order explicitly. Select explicit columns. Avoid SELECT *. "
+     },
+     {
+      "q": "Module 34 · Explain Data Quality Checks in a production query.",
+      "answer": "Checks catch NULLs, duplicates, orphan keys and impossible values before they distort a report. Key rules: Check duplicates. Check orphans. Check ranges."
+     },
+     {
+      "q": "Module 34 · Explain Timezone Reporting in a production query.",
+      "answer": "TIMESTAMPTZ stores instants; convert to the reporting time zone before truncating dates. Key rules: Store timestamptz. Convert at the boundary. Document the zone."
+     },
+     {
+      "q": "Module 34 · Explain Narrative Metrics in a production query.",
+      "answer": "A trustworthy report states the denominator, the time window and the exact definition of each metric. Key rules: Define the metric. Show the denominator. State the window."
+     },
+     {
+      "q": "Module 34 · Explain Practical Dashboard in a production query.",
+      "answer": "A practical dashboard query produces one row per period with counts, shares and comparisons, bounded to a recent window. Key rules: Bound the window. Use CTEs. Keep the grain explicit."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Reporting SQL",
+      "task": "Write a SQL example that demonstrates Reporting SQL.",
+      "solution": "SELECT course_id, COUNT(*) AS enrolled FROM enrollments GROUP BY course_id ORDER BY enrolled DESC;",
+      "expected": "Enrollment counts per course."
+     },
+     {
+      "title": "Cohort Analysis",
+      "task": "Write a SQL example that demonstrates Cohort Analysis.",
+      "solution": "SELECT DATE_TRUNC('month', MIN(enrolled_on)) AS cohort, student_id FROM enrollments GROUP BY student_id;",
+      "expected": "A first-enrollment cohort per student."
+     },
+     {
+      "title": "Funnel Analysis",
+      "task": "Write a SQL example that demonstrates Funnel Analysis.",
+      "solution": "SELECT COUNT(DISTINCT student_id) FILTER (WHERE course_id = 10) AS step1 FROM enrollments;",
+      "expected": "Students at step one."
+     },
+     {
+      "title": "Retention",
+      "task": "Write a SQL example that demonstrates Retention.",
+      "solution": "SELECT student_id, COUNT(DISTINCT course_id) AS courses FROM enrollments GROUP BY student_id HAVING COUNT(DISTINCT course_id) > 1;",
+      "expected": "Students with more than one course."
+     },
+     {
+      "title": "Time Series",
+      "task": "Write a SQL example that demonstrates Time Series.",
+      "solution": "SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY month ORDER BY month;",
+      "expected": "Monthly enrollment counts."
+     },
+     {
+      "title": "Pivot with CASE",
+      "task": "Write a SQL example that demonstrates Pivot with CASE.",
+      "solution": "SELECT course_id, COUNT(*) FILTER (WHERE enrolled_on >= DATE '2026-01-01') AS recent, COUNT(*) FILTER (WHERE enrolled_on < DATE '2026-01-01') AS older FROM enrollments GROUP BY course_id;",
+      "expected": "Course rows with recent and older count columns."
+     },
+     {
+      "title": "Crosstab",
+      "task": "Write a SQL example that demonstrates Crosstab.",
+      "solution": "SELECT * FROM crosstab('SELECT course_id, EXTRACT(YEAR FROM enrolled_on)::int, COUNT(*) FROM enrollments GROUP BY 1,2 ORDER BY 1,2') AS ct(course_id int, y2025 bigint, y2026 bigint);",
+      "expected": "A course-by-year matrix."
+     },
+     {
+      "title": "Running Totals",
+      "task": "Write a SQL example that demonstrates Running Totals.",
+      "solution": "SELECT enrolled_on, COUNT(*) AS day_count, SUM(COUNT(*)) OVER (ORDER BY enrolled_on) AS running FROM enrollments GROUP BY enrolled_on ORDER BY enrolled_on;",
+      "expected": "A cumulative enrollment count."
+     },
+     {
+      "title": "Percent of Total",
+      "task": "Write a SQL example that demonstrates Percent of Total.",
+      "solution": "SELECT course_id, COUNT(*) AS total, ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) AS pct FROM enrollments GROUP BY course_id;",
+      "expected": "Each course share of enrollments."
+     },
+     {
+      "title": "Ranking",
+      "task": "Write a SQL example that demonstrates Ranking.",
+      "solution": "SELECT course_id, COUNT(*) AS total, RANK() OVER (ORDER BY COUNT(*) DESC) AS rank FROM enrollments GROUP BY course_id;",
+      "expected": "Courses ranked by enrollment."
+     },
+     {
+      "title": "Period Comparisons",
+      "task": "Write a SQL example that demonstrates Period Comparisons.",
+      "solution": "SELECT month, total, total - LAG(total) OVER (ORDER BY month) AS delta FROM monthly_counts;",
+      "expected": "Month-over-month change."
+     },
+     {
+      "title": "Cohort Retention Table",
+      "task": "Write a SQL example that demonstrates Cohort Retention Table.",
+      "solution": "SELECT DATE_TRUNC('month', e.enrolled_on) AS activity_month, COUNT(DISTINCT e.student_id) AS active FROM enrollments e GROUP BY activity_month ORDER BY activity_month;",
+      "expected": "Active students per month."
+     },
+     {
+      "title": "Common Reporting Errors",
+      "task": "Write a SQL example that demonstrates Common Reporting Errors.",
+      "solution": "SELECT COUNT(DISTINCT student_id) FROM enrollments;",
+      "expected": "A non-duplicated entity count."
+     },
+     {
+      "title": "Reporting Performance",
+      "task": "Write a SQL example that demonstrates Reporting Performance.",
+      "solution": "CREATE INDEX idx_enrollments_date ON enrollments (enrolled_on);",
+      "expected": "CREATE INDEX"
+     },
+     {
+      "title": "Dashboard Queries",
+      "task": "Write a SQL example that demonstrates Dashboard Queries.",
+      "solution": "SELECT COUNT(*) FROM enrollments WHERE enrolled_on >= CURRENT_DATE - INTERVAL '30 days';",
+      "expected": "Last 30 days count."
+     },
+     {
+      "title": "Export Queries",
+      "task": "Write a SQL example that demonstrates Export Queries.",
+      "solution": "SELECT student_id, course_id, enrolled_on FROM enrollments ORDER BY enrolled_on, student_id;",
+      "expected": "A deterministic export."
+     },
+     {
+      "title": "Data Quality Checks",
+      "task": "Write a SQL example that demonstrates Data Quality Checks.",
+      "solution": "SELECT student_id, course_id, COUNT(*) FROM enrollments GROUP BY 1,2 HAVING COUNT(*) > 1;",
+      "expected": "Duplicate enrollments."
+     },
+     {
+      "title": "Timezone Reporting",
+      "task": "Write a SQL example that demonstrates Timezone Reporting.",
+      "solution": "SELECT DATE_TRUNC('day', enrolled_on AT TIME ZONE 'Asia/Kolkata') AS day, COUNT(*) FROM enrollments GROUP BY day;",
+      "expected": "Daily counts in IST."
+     },
+     {
+      "title": "Narrative Metrics",
+      "task": "Write a SQL example that demonstrates Narrative Metrics.",
+      "solution": "SELECT COUNT(*) FILTER (WHERE marks >= 60) AS passed, COUNT(*) AS total FROM students;",
+      "expected": "Passed and total with a clear denominator."
+     },
+     {
+      "title": "Practical Dashboard",
+      "task": "Write a SQL example that demonstrates Practical Dashboard.",
+      "solution": "WITH monthly AS (SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY month) SELECT month, total, total - LAG(total) OVER (ORDER BY month) AS delta FROM monthly ORDER BY month;",
+      "expected": "A monthly dashboard series."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 34 · Why does Reporting SQL matter?",
+      "answer": "A reporting query defines the grain, filters the population, aggregates the measure and orders the result. State the grain. Define the population. Choose the measure."
+     },
+     {
+      "q": "Module 34 · Why does Cohort Analysis matter?",
+      "answer": "A cohort groups entities by their first event period and tracks later behavior within each cohort. Define the cohort date. Group by cohort. Measure later activity."
+     },
+     {
+      "q": "Module 34 · Why does Funnel Analysis matter?",
+      "answer": "A funnel counts how many entities reach each step, usually with conditional aggregation or self-joins. Define ordered steps. Count distinct entities. Compare step counts."
+     },
+     {
+      "q": "Module 34 · Why does Retention matter?",
+      "answer": "Retention compares a cohort’s later activity with its original size, often by period. Define active. Fix the cohort. Calculate the ratio."
+     },
+     {
+      "q": "Module 34 · Why does Time Series matter?",
+      "answer": "Time-series reports bucket dates with DATE_TRUNC and fill missing periods when the chart requires continuity. Bucket the date. Aggregate the measure. Fill gaps explicitly."
+     },
+     {
+      "q": "Module 34 · Why does Pivot with CASE matter?",
+      "answer": "Conditional aggregation pivots categories into columns without a dedicated pivot operator. One CASE per column. Aggregate each CASE. Group by the row key."
+     },
+     {
+      "q": "Module 34 · Why does Crosstab matter?",
+      "answer": "The tablefunc crosstab function turns long category rows into a wide matrix. Enable tablefunc. Define row and category columns. Name the output columns."
+     },
+     {
+      "q": "Module 34 · Why does Running Totals matter?",
+      "answer": "A window SUM ordered by time produces cumulative totals for charts and targets. Order by the period. Use an unbounded frame. Partition when needed."
+     },
+     {
+      "q": "Module 34 · Why does Percent of Total matter?",
+      "answer": "Divide the group measure by a window total to show each row’s share of the whole. Use SUM(...) OVER (). Guard zero. Round for display."
+     },
+     {
+      "q": "Module 34 · Why does Ranking matter?",
+      "answer": "Window ranking orders groups by a measure while preserving every group row. Rank by the measure. Break ties. Filter after ranking."
+     },
+     {
+      "q": "Module 34 · Why does Period Comparisons matter?",
+      "answer": "LAG or self-joins compare a period with the prior period, producing growth and deltas. Order periods. Use LAG. Handle missing periods."
+     },
+     {
+      "q": "Module 34 · Why does Cohort Retention Table matter?",
+      "answer": "A cohort retention table joins each entity’s cohort month to later activity months and counts distinct returning entities. Cohort month. Activity month. Count distinct entities. Divide by cohort size."
+     },
+     {
+      "q": "Module 34 · Why does Common Reporting Errors matter?",
+      "answer": "Common failures are joining one-to-many tables before aggregating, counting rows instead of entities, and mixing time zones. Check the grain. Count distinct entities. Normalize time zones."
+     },
+     {
+      "q": "Module 34 · Why does Reporting Performance matter?",
+      "answer": "Reports often scan large ranges; pre-aggregation, materialized views and date indexes reduce repeated work. Filter on dates. Pre-aggregate. Refresh materialized views."
+     },
+     {
+      "q": "Module 34 · Why does Dashboard Queries matter?",
+      "answer": "Dashboard queries should be bounded, indexed and cached where freshness allows. Bound the date range. Limit rows. Cache or materialize."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Double counting",
+      "broken": "SELECT COUNT(*) FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "fix": "SELECT COUNT(DISTINCT s.id) FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "error": "One student with three enrollments counts three times",
+      "expected": "A distinct student count."
+     },
+     {
+      "title": "Wrong grain",
+      "broken": "SELECT course_id, COUNT(*) FROM enrollments JOIN students ON students.id = enrollments.student_id;",
+      "fix": "SELECT course_id, COUNT(DISTINCT student_id) FROM enrollments GROUP BY course_id;",
+      "error": "The join changes the row grain",
+      "expected": "A per-course distinct count."
+     },
+     {
+      "title": "Missing date bound",
+      "broken": "SELECT * FROM enrollments;",
+      "fix": "SELECT * FROM enrollments WHERE enrolled_on >= CURRENT_DATE - INTERVAL '30 days';",
+      "error": "The report scans the full history",
+      "expected": "A bounded report."
+     },
+     {
+      "title": "Timezone mix",
+      "broken": "SELECT DATE_TRUNC('day', enrolled_on) FROM enrollments;",
+      "fix": "SELECT DATE_TRUNC('day', enrolled_on AT TIME ZONE 'Asia/Kolkata') FROM enrollments;",
+      "error": "Days are bucketed in the session zone",
+      "expected": "Explicit reporting-zone days."
+     },
+     {
+      "title": "Pivot without aggregate",
+      "broken": "SELECT course_id, CASE WHEN enrolled_on >= DATE '2026-01-01' THEN 1 ELSE 0 END FROM enrollments;",
+      "fix": "SELECT course_id, COUNT(*) FILTER (WHERE enrolled_on >= DATE '2026-01-01') AS recent FROM enrollments GROUP BY course_id;",
+      "error": "The CASE is not aggregated",
+      "expected": "One row per course."
+     },
+     {
+      "title": "Funnel counts rows",
+      "broken": "SELECT COUNT(*) FROM enrollments WHERE course_id = 10;",
+      "fix": "SELECT COUNT(DISTINCT student_id) FROM enrollments WHERE course_id = 10;",
+      "error": "A student can appear multiple times",
+      "expected": "Distinct students at the step."
+     },
+     {
+      "title": "LAG missing order",
+      "broken": "SELECT total, LAG(total) OVER () FROM monthly_counts;",
+      "fix": "SELECT total, LAG(total) OVER (ORDER BY month) FROM monthly_counts;",
+      "error": "The previous row is arbitrary",
+      "expected": "A chronological comparison."
+     },
+     {
+      "title": "Percent of zero",
+      "broken": "SELECT 100 * total / SUM(total) OVER () FROM monthly_counts;",
+      "fix": "SELECT 100.0 * total / NULLIF(SUM(total) OVER (), 0) FROM monthly_counts;",
+      "error": "division by zero when the total is zero",
+      "expected": "A safe percentage."
+     },
+     {
+      "title": "Cohort wrong key",
+      "broken": "SELECT DATE_TRUNC('month', enrolled_on) AS cohort, COUNT(*) FROM enrollments GROUP BY cohort;",
+      "fix": "Group by the student first-enrollment month, then track later activity.",
+      "error": "The cohort is the activity month, not the first month",
+      "expected": "A real cohort."
+     },
+     {
+      "title": "Report without order",
+      "broken": "SELECT course_id, COUNT(*) FROM enrollments GROUP BY course_id;",
+      "fix": "SELECT course_id, COUNT(*) FROM enrollments GROUP BY course_id ORDER BY course_id;",
+      "error": "The export order is not guaranteed",
+      "expected": "A deterministic report."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 34 · State one key rule for Reporting SQL.",
+      "answer": "State the grain."
+     },
+     {
+      "q": "Module 34 · State one key rule for Cohort Analysis.",
+      "answer": "Define the cohort date."
+     },
+     {
+      "q": "Module 34 · State one key rule for Funnel Analysis.",
+      "answer": "Define ordered steps."
+     },
+     {
+      "q": "Module 34 · State one key rule for Retention.",
+      "answer": "Define active."
+     },
+     {
+      "q": "Module 34 · State one key rule for Time Series.",
+      "answer": "Bucket the date."
+     },
+     {
+      "q": "Module 34 · State one key rule for Pivot with CASE.",
+      "answer": "One CASE per column."
+     },
+     {
+      "q": "Module 34 · State one key rule for Crosstab.",
+      "answer": "Enable tablefunc."
+     },
+     {
+      "q": "Module 34 · State one key rule for Running Totals.",
+      "answer": "Order by the period."
+     },
+     {
+      "q": "Module 34 · State one key rule for Percent of Total.",
+      "answer": "Use SUM(...) OVER ()."
+     },
+     {
+      "q": "Module 34 · State one key rule for Ranking.",
+      "answer": "Rank by the measure."
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,920 @@
+{
+ "modules": [
+  {
+   "id": "sql27",
+   "no": 27,
+   "title": "Query Optimization",
+   "goal": "Read plans, find the real bottleneck and improve queries with measurements.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Optimization Process",
+     "simple": "Measure, read plan, change one thing, measure again.",
+     "pro": "Optimization starts with a slow query and its plan, not with guesses about indexes or configuration.",
+     "points": [
+      "Reproduce the query.",
+      "Read the plan.",
+      "Change one variable.",
+      "Measure again."
+     ],
+     "example": {
+      "sql": "EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM enrollments WHERE course_id = 10;",
+      "output": "A measured baseline."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "EXPLAIN",
+     "simple": "EXPLAIN plan estimates dikhata hai.",
+     "pro": "EXPLAIN shows access paths, joins and costs without executing the query.",
+     "points": [
+      "No execution.",
+      "Estimates use statistics.",
+      "Look for scans and sorts."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students WHERE marks > 90;",
+      "output": "An estimated plan."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "EXPLAIN ANALYZE",
+     "simple": "EXPLAIN ANALYZE actual runtime dikhata hai.",
+     "pro": "EXPLAIN ANALYZE executes the query and reports actual rows, loops and timing.",
+     "points": [
+      "It runs the query.",
+      "Compare estimated and actual rows.",
+      "Use BUFFERS for I/O detail."
+     ],
+     "example": {
+      "sql": "EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM students WHERE marks > 90;",
+      "output": "Actual timing and buffers."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Seq Scan",
+     "simple": "Seq scan poora table padhta hai.",
+     "pro": "A sequential scan reads every heap page and is often correct for small tables or large result fractions.",
+     "points": [
+      "Good for large fractions.",
+      "Bad for selective filters.",
+      "Check table size."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students;",
+      "output": "A Seq Scan plan."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Index Scan",
+     "simple": "Index scan index se rows dhoondhta hai.",
+     "pro": "An index scan follows the index and fetches matching heap rows, ideal for selective predicates.",
+     "points": [
+      "Good for few rows.",
+      "Random I/O costs.",
+      "Ordering may be free."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students WHERE id = 1;",
+      "output": "An Index Scan."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Bitmap Heap Scan",
+     "simple": "Bitmap scan medium selectivity ke liye hota hai.",
+     "pro": "A bitmap heap scan combines index matches and visits heap pages in physical order.",
+     "points": [
+      "Good for medium selectivity.",
+      "Combines indexes.",
+      "Loses ordering."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students WHERE marks BETWEEN 60 AND 70;",
+      "output": "A Bitmap Heap Scan."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Nested Loop",
+     "simple": "Nested loop small outer input ke liye achha hai.",
+     "pro": "A nested loop scans the inner side for each outer row, which is efficient when the outer set is small and the inner side is indexed.",
+     "points": [
+      "Good for small outer sets.",
+      "Index the inner join key.",
+      "Watch loop counts."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id WHERE s.id = 1;",
+      "output": "A Nested Loop plan."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Hash Join",
+     "simple": "Hash join large unsorted inputs ke liye hota hai.",
+     "pro": "A hash join builds a hash table from one input and probes it with the other, avoiding repeated inner scans.",
+     "points": [
+      "Good for large sets.",
+      "Needs memory.",
+      "No useful order."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "output": "A Hash Join plan."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Merge Join",
+     "simple": "Merge join sorted inputs ko merge karta hai.",
+     "pro": "A merge join reads both inputs in join-key order and merges them, often benefiting from indexes.",
+     "points": [
+      "Inputs must be sorted.",
+      "Good for large ordered data.",
+      "Can avoid a hash table."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id ORDER BY s.id;",
+      "output": "A Merge Join plan."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Sort",
+     "simple": "Sort query ko order karta hai aur memory/disk use karta hai.",
+     "pro": "A Sort node appears when an index cannot provide the required order; large sorts spill to disk.",
+     "points": [
+      "Watch sort method.",
+      "Indexes can avoid sorts.",
+      "LIMIT can reduce work."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students ORDER BY marks DESC;",
+      "output": "A Sort node."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "HashAggregate",
+     "simple": "HashAggregate groups rows in memory.",
+     "pro": "A HashAggregate builds a hash table of groups, while GroupAggregate can use sorted input.",
+     "points": [
+      "Hash is common.",
+      "Memory can spill.",
+      "Sorted input favors GroupAggregate."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT course_id, COUNT(*) FROM enrollments GROUP BY course_id;",
+      "output": "A HashAggregate plan."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Statistics",
+     "simple": "Planner statistics estimates banane ke liye use hote hain.",
+     "pro": "Row estimates, distinct counts and histograms drive join order and access-path choices.",
+     "points": [
+      "Stale stats cause bad plans.",
+      "ANALYZE refreshes them.",
+      "Extended stats help correlations."
+     ],
+     "example": {
+      "sql": "SELECT attname, n_distinct FROM pg_stats WHERE tablename = 'students';",
+      "output": "Column statistics."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "ANALYZE",
+     "simple": "ANALYZE statistics refresh karta hai.",
+     "pro": "ANALYZE samples table data and updates planner statistics without locking the table for long.",
+     "points": [
+      "Run after large changes.",
+      "It is cheap.",
+      "Autovacuum does it automatically."
+     ],
+     "example": {
+      "sql": "ANALYZE students;",
+      "output": "ANALYZE"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Selectivity",
+     "simple": "Selectivity predicate ki filtering power hai.",
+     "pro": "High selectivity means few rows survive and usually favors an index; low selectivity favors a scan.",
+     "points": [
+      "Unique predicates are selective.",
+      "Planner estimates matter.",
+      "Use real data."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students WHERE email = 'a@example.com';",
+      "output": "A selective index plan."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "CTE Materialization",
+     "simple": "CTE materialization plan ko badal sakta hai.",
+     "pro": "A materialized CTE is computed once and stored, which can help or hurt depending on reuse and row counts.",
+     "points": [
+      "MATERIALIZED forces it.",
+      "NOT MATERIALIZED inlines it.",
+      "Measure both."
+     ],
+     "example": {
+      "sql": "EXPLAIN WITH avg_marks AS MATERIALIZED (SELECT AVG(marks) AS average FROM students) SELECT * FROM students, avg_marks WHERE marks > average;",
+      "output": "A plan with a CTE Scan."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Subquery Rewrites",
+     "simple": "Subquery ko join ya EXISTS me rewrite karo.",
+     "pro": "Correlated subqueries can become joins or semi-joins, often improving plans and avoiding repeated work.",
+     "points": [
+      "EXISTS is a semi-join.",
+      "JOIN can duplicate rows.",
+      "Measure the rewrite."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT s.name FROM students s WHERE EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "output": "A semi-join plan."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Join Order",
+     "simple": "Join order planner choose karta hai.",
+     "pro": "The planner reorders joins based on statistics and cost; written order is not execution order.",
+     "points": [
+      "Do not force order by nesting.",
+      "Keep statistics fresh.",
+      "Read the actual plan."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "output": "The chosen join order."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Common Bottlenecks",
+     "simple": "Missing indexes, stale stats aur huge sorts common bottlenecks hain.",
+     "pro": "Most slow queries come from sequential scans on selective filters, bad estimates, missing join indexes or large sorts.",
+     "points": [
+      "Check scans.",
+      "Check estimates.",
+      "Check sorts."
+     ],
+     "example": {
+      "sql": "EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM enrollments ORDER BY enrolled_on DESC LIMIT 10;",
+      "output": "A plan exposing the bottleneck."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Benchmarking",
+     "simple": "Benchmark realistic data aur concurrency ke saath karo.",
+     "pro": "A benchmark needs realistic data volume, warm and cold cache runs, and concurrent load before it proves an improvement.",
+     "points": [
+      "Use real data size.",
+      "Measure multiple runs.",
+      "Watch concurrency."
+     ],
+     "example": {
+      "sql": "EXPLAIN (ANALYZE, BUFFERS) SELECT COUNT(*) FROM enrollments;",
+      "output": "A repeatable measurement."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Tuning",
+     "simple": "Slow query ko plan, index aur rewrite se tune karo.",
+     "pro": "A practical tuning loop documents the baseline, changes one thing, verifies the plan and measures the new runtime.",
+     "points": [
+      "Baseline first.",
+      "Change one thing.",
+      "Verify the plan.",
+      "Record the result."
+     ],
+     "example": {
+      "sql": "EXPLAIN (ANALYZE, BUFFERS) SELECT s.name, COUNT(e.course_id) FROM students s LEFT JOIN enrollments e ON e.student_id = s.id GROUP BY s.id, s.name;",
+      "output": "A measured plan."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 27 · Optimization Process: what is the main purpose?",
+      "options": [
+       "Optimization Process: Measure, read plan, change one thing, measure again.",
+       "EXPLAIN: EXPLAIN plan estimates dikhata hai.",
+       "Hash Join: Hash join large unsorted inputs ke liye hota hai.",
+       "Selectivity: Selectivity predicate ki filtering power hai."
+      ],
+      "answer": "Optimization Process: Measure, read plan, change one thing, measure again.",
+      "why": "Optimization starts with a slow query and its plan, not with guesses about indexes or configuration."
+     },
+     {
+      "q": "Module 27 · EXPLAIN: what is the main purpose?",
+      "options": [
+       "EXPLAIN ANALYZE: EXPLAIN ANALYZE actual runtime dikhata hai.",
+       "Merge Join: Merge join sorted inputs ko merge karta hai.",
+       "CTE Materialization: CTE materialization plan ko badal sakta hai.",
+       "EXPLAIN: EXPLAIN plan estimates dikhata hai."
+      ],
+      "answer": "EXPLAIN: EXPLAIN plan estimates dikhata hai.",
+      "why": "EXPLAIN shows access paths, joins and costs without executing the query."
+     },
+     {
+      "q": "Module 27 · EXPLAIN ANALYZE: what is the main purpose?",
+      "options": [
+       "Sort: Sort query ko order karta hai aur memory/disk use karta hai.",
+       "Subquery Rewrites: Subquery ko join ya EXISTS me rewrite karo.",
+       "EXPLAIN ANALYZE: EXPLAIN ANALYZE actual runtime dikhata hai.",
+       "Seq Scan: Seq scan poora table padhta hai."
+      ],
+      "answer": "EXPLAIN ANALYZE: EXPLAIN ANALYZE actual runtime dikhata hai.",
+      "why": "EXPLAIN ANALYZE executes the query and reports actual rows, loops and timing."
+     },
+     {
+      "q": "Module 27 · Seq Scan: what is the main purpose?",
+      "options": [
+       "Join Order: Join order planner choose karta hai.",
+       "Seq Scan: Seq scan poora table padhta hai.",
+       "Index Scan: Index scan index se rows dhoondhta hai.",
+       "HashAggregate: HashAggregate groups rows in memory."
+      ],
+      "answer": "Seq Scan: Seq scan poora table padhta hai.",
+      "why": "A sequential scan reads every heap page and is often correct for small tables or large result fractions."
+     },
+     {
+      "q": "Module 27 · Index Scan: what is the main purpose?",
+      "options": [
+       "Index Scan: Index scan index se rows dhoondhta hai.",
+       "Bitmap Heap Scan: Bitmap scan medium selectivity ke liye hota hai.",
+       "Statistics: Planner statistics estimates banane ke liye use hote hain.",
+       "Common Bottlenecks: Missing indexes, stale stats aur huge sorts common bottlenecks hain."
+      ],
+      "answer": "Index Scan: Index scan index se rows dhoondhta hai.",
+      "why": "An index scan follows the index and fetches matching heap rows, ideal for selective predicates."
+     },
+     {
+      "q": "Module 27 · Bitmap Heap Scan: what is the main purpose?",
+      "options": [
+       "Nested Loop: Nested loop small outer input ke liye achha hai.",
+       "ANALYZE: ANALYZE statistics refresh karta hai.",
+       "Benchmarking: Benchmark realistic data aur concurrency ke saath karo.",
+       "Bitmap Heap Scan: Bitmap scan medium selectivity ke liye hota hai."
+      ],
+      "answer": "Bitmap Heap Scan: Bitmap scan medium selectivity ke liye hota hai.",
+      "why": "A bitmap heap scan combines index matches and visits heap pages in physical order."
+     },
+     {
+      "q": "Module 27 · Nested Loop: what is the main purpose?",
+      "options": [
+       "Selectivity: Selectivity predicate ki filtering power hai.",
+       "Practical Tuning: Slow query ko plan, index aur rewrite se tune karo.",
+       "Nested Loop: Nested loop small outer input ke liye achha hai.",
+       "Hash Join: Hash join large unsorted inputs ke liye hota hai."
+      ],
+      "answer": "Nested Loop: Nested loop small outer input ke liye achha hai.",
+      "why": "A nested loop scans the inner side for each outer row, which is efficient when the outer set is small and the inner side is indexed."
+     },
+     {
+      "q": "Module 27 · Hash Join: what is the main purpose?",
+      "options": [
+       "Optimization Process: Measure, read plan, change one thing, measure again.",
+       "Hash Join: Hash join large unsorted inputs ke liye hota hai.",
+       "Merge Join: Merge join sorted inputs ko merge karta hai.",
+       "CTE Materialization: CTE materialization plan ko badal sakta hai."
+      ],
+      "answer": "Hash Join: Hash join large unsorted inputs ke liye hota hai.",
+      "why": "A hash join builds a hash table from one input and probes it with the other, avoiding repeated inner scans."
+     },
+     {
+      "q": "Module 27 · Merge Join: what is the main purpose?",
+      "options": [
+       "Merge Join: Merge join sorted inputs ko merge karta hai.",
+       "Sort: Sort query ko order karta hai aur memory/disk use karta hai.",
+       "Subquery Rewrites: Subquery ko join ya EXISTS me rewrite karo.",
+       "EXPLAIN: EXPLAIN plan estimates dikhata hai."
+      ],
+      "answer": "Merge Join: Merge join sorted inputs ko merge karta hai.",
+      "why": "A merge join reads both inputs in join-key order and merges them, often benefiting from indexes."
+     },
+     {
+      "q": "Module 27 · Sort: what is the main purpose?",
+      "options": [
+       "HashAggregate: HashAggregate groups rows in memory.",
+       "Join Order: Join order planner choose karta hai.",
+       "EXPLAIN ANALYZE: EXPLAIN ANALYZE actual runtime dikhata hai.",
+       "Sort: Sort query ko order karta hai aur memory/disk use karta hai."
+      ],
+      "answer": "Sort: Sort query ko order karta hai aur memory/disk use karta hai.",
+      "why": "A Sort node appears when an index cannot provide the required order; large sorts spill to disk."
+     },
+     {
+      "q": "Module 27 · HashAggregate: what is the main purpose?",
+      "options": [
+       "Common Bottlenecks: Missing indexes, stale stats aur huge sorts common bottlenecks hain.",
+       "Seq Scan: Seq scan poora table padhta hai.",
+       "HashAggregate: HashAggregate groups rows in memory.",
+       "Statistics: Planner statistics estimates banane ke liye use hote hain."
+      ],
+      "answer": "HashAggregate: HashAggregate groups rows in memory.",
+      "why": "A HashAggregate builds a hash table of groups, while GroupAggregate can use sorted input."
+     },
+     {
+      "q": "Module 27 · Statistics: what is the main purpose?",
+      "options": [
+       "Index Scan: Index scan index se rows dhoondhta hai.",
+       "Statistics: Planner statistics estimates banane ke liye use hote hain.",
+       "ANALYZE: ANALYZE statistics refresh karta hai.",
+       "Benchmarking: Benchmark realistic data aur concurrency ke saath karo."
+      ],
+      "answer": "Statistics: Planner statistics estimates banane ke liye use hote hain.",
+      "why": "Row estimates, distinct counts and histograms drive join order and access-path choices."
+     },
+     {
+      "q": "Module 27 · ANALYZE: what is the main purpose?",
+      "options": [
+       "ANALYZE: ANALYZE statistics refresh karta hai.",
+       "Selectivity: Selectivity predicate ki filtering power hai.",
+       "Practical Tuning: Slow query ko plan, index aur rewrite se tune karo.",
+       "Bitmap Heap Scan: Bitmap scan medium selectivity ke liye hota hai."
+      ],
+      "answer": "ANALYZE: ANALYZE statistics refresh karta hai.",
+      "why": "ANALYZE samples table data and updates planner statistics without locking the table for long."
+     },
+     {
+      "q": "Module 27 · Selectivity: what is the main purpose?",
+      "options": [
+       "CTE Materialization: CTE materialization plan ko badal sakta hai.",
+       "Optimization Process: Measure, read plan, change one thing, measure again.",
+       "Nested Loop: Nested loop small outer input ke liye achha hai.",
+       "Selectivity: Selectivity predicate ki filtering power hai."
+      ],
+      "answer": "Selectivity: Selectivity predicate ki filtering power hai.",
+      "why": "High selectivity means few rows survive and usually favors an index; low selectivity favors a scan."
+     },
+     {
+      "q": "Module 27 · CTE Materialization: what is the main purpose?",
+      "options": [
+       "EXPLAIN: EXPLAIN plan estimates dikhata hai.",
+       "Hash Join: Hash join large unsorted inputs ke liye hota hai.",
+       "CTE Materialization: CTE materialization plan ko badal sakta hai.",
+       "Subquery Rewrites: Subquery ko join ya EXISTS me rewrite karo."
+      ],
+      "answer": "CTE Materialization: CTE materialization plan ko badal sakta hai.",
+      "why": "A materialized CTE is computed once and stored, which can help or hurt depending on reuse and row counts."
+     },
+     {
+      "q": "Module 27 · Subquery Rewrites: what is the main purpose?",
+      "options": [
+       "Merge Join: Merge join sorted inputs ko merge karta hai.",
+       "Subquery Rewrites: Subquery ko join ya EXISTS me rewrite karo.",
+       "Join Order: Join order planner choose karta hai.",
+       "EXPLAIN ANALYZE: EXPLAIN ANALYZE actual runtime dikhata hai."
+      ],
+      "answer": "Subquery Rewrites: Subquery ko join ya EXISTS me rewrite karo.",
+      "why": "Correlated subqueries can become joins or semi-joins, often improving plans and avoiding repeated work."
+     },
+     {
+      "q": "Module 27 · Join Order: what is the main purpose?",
+      "options": [
+       "Join Order: Join order planner choose karta hai.",
+       "Common Bottlenecks: Missing indexes, stale stats aur huge sorts common bottlenecks hain.",
+       "Seq Scan: Seq scan poora table padhta hai.",
+       "Sort: Sort query ko order karta hai aur memory/disk use karta hai."
+      ],
+      "answer": "Join Order: Join order planner choose karta hai.",
+      "why": "The planner reorders joins based on statistics and cost; written order is not execution order."
+     },
+     {
+      "q": "Module 27 · Common Bottlenecks: what is the main purpose?",
+      "options": [
+       "Benchmarking: Benchmark realistic data aur concurrency ke saath karo.",
+       "Index Scan: Index scan index se rows dhoondhta hai.",
+       "HashAggregate: HashAggregate groups rows in memory.",
+       "Common Bottlenecks: Missing indexes, stale stats aur huge sorts common bottlenecks hain."
+      ],
+      "answer": "Common Bottlenecks: Missing indexes, stale stats aur huge sorts common bottlenecks hain.",
+      "why": "Most slow queries come from sequential scans on selective filters, bad estimates, missing join indexes or large sorts."
+     },
+     {
+      "q": "Module 27 · Benchmarking: what is the main purpose?",
+      "options": [
+       "Bitmap Heap Scan: Bitmap scan medium selectivity ke liye hota hai.",
+       "Statistics: Planner statistics estimates banane ke liye use hote hain.",
+       "Benchmarking: Benchmark realistic data aur concurrency ke saath karo.",
+       "Practical Tuning: Slow query ko plan, index aur rewrite se tune karo."
+      ],
+      "answer": "Benchmarking: Benchmark realistic data aur concurrency ke saath karo.",
+      "why": "A benchmark needs realistic data volume, warm and cold cache runs, and concurrent load before it proves an improvement."
+     },
+     {
+      "q": "Module 27 · Practical Tuning: what is the main purpose?",
+      "options": [
+       "ANALYZE: ANALYZE statistics refresh karta hai.",
+       "Practical Tuning: Slow query ko plan, index aur rewrite se tune karo.",
+       "Optimization Process: Measure, read plan, change one thing, measure again.",
+       "Nested Loop: Nested loop small outer input ke liye achha hai."
+      ],
+      "answer": "Practical Tuning: Slow query ko plan, index aur rewrite se tune karo.",
+      "why": "A practical tuning loop documents the baseline, changes one thing, verifies the plan and measures the new runtime."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 27 · Explain Optimization Process in a production query.",
+      "answer": "Optimization starts with a slow query and its plan, not with guesses about indexes or configuration. Key rules: Reproduce the query. Read the plan. Change one variable. Measure again."
+     },
+     {
+      "q": "Module 27 · Explain EXPLAIN in a production query.",
+      "answer": "EXPLAIN shows access paths, joins and costs without executing the query. Key rules: No execution. Estimates use statistics. Look for scans and sorts."
+     },
+     {
+      "q": "Module 27 · Explain EXPLAIN ANALYZE in a production query.",
+      "answer": "EXPLAIN ANALYZE executes the query and reports actual rows, loops and timing. Key rules: It runs the query. Compare estimated and actual rows. Use BUFFERS for I/O detail."
+     },
+     {
+      "q": "Module 27 · Explain Seq Scan in a production query.",
+      "answer": "A sequential scan reads every heap page and is often correct for small tables or large result fractions. Key rules: Good for large fractions. Bad for selective filters. Check table size."
+     },
+     {
+      "q": "Module 27 · Explain Index Scan in a production query.",
+      "answer": "An index scan follows the index and fetches matching heap rows, ideal for selective predicates. Key rules: Good for few rows. Random I/O costs. Ordering may be free."
+     },
+     {
+      "q": "Module 27 · Explain Bitmap Heap Scan in a production query.",
+      "answer": "A bitmap heap scan combines index matches and visits heap pages in physical order. Key rules: Good for medium selectivity. Combines indexes. Loses ordering."
+     },
+     {
+      "q": "Module 27 · Explain Nested Loop in a production query.",
+      "answer": "A nested loop scans the inner side for each outer row, which is efficient when the outer set is small and the inner side is indexed. Key rules: Good for small outer sets. Index the inner join key. Watch loop counts."
+     },
+     {
+      "q": "Module 27 · Explain Hash Join in a production query.",
+      "answer": "A hash join builds a hash table from one input and probes it with the other, avoiding repeated inner scans. Key rules: Good for large sets. Needs memory. No useful order."
+     },
+     {
+      "q": "Module 27 · Explain Merge Join in a production query.",
+      "answer": "A merge join reads both inputs in join-key order and merges them, often benefiting from indexes. Key rules: Inputs must be sorted. Good for large ordered data. Can avoid a hash table."
+     },
+     {
+      "q": "Module 27 · Explain Sort in a production query.",
+      "answer": "A Sort node appears when an index cannot provide the required order; large sorts spill to disk. Key rules: Watch sort method. Indexes can avoid sorts. LIMIT can reduce work."
+     },
+     {
+      "q": "Module 27 · Explain HashAggregate in a production query.",
+      "answer": "A HashAggregate builds a hash table of groups, while GroupAggregate can use sorted input. Key rules: Hash is common. Memory can spill. Sorted input favors GroupAggregate."
+     },
+     {
+      "q": "Module 27 · Explain Statistics in a production query.",
+      "answer": "Row estimates, distinct counts and histograms drive join order and access-path choices. Key rules: Stale stats cause bad plans. ANALYZE refreshes them. Extended stats help correlations."
+     },
+     {
+      "q": "Module 27 · Explain ANALYZE in a production query.",
+      "answer": "ANALYZE samples table data and updates planner statistics without locking the table for long. Key rules: Run after large changes. It is cheap. Autovacuum does it automatically."
+     },
+     {
+      "q": "Module 27 · Explain Selectivity in a production query.",
+      "answer": "High selectivity means few rows survive and usually favors an index; low selectivity favors a scan. Key rules: Unique predicates are selective. Planner estimates matter. Use real data."
+     },
+     {
+      "q": "Module 27 · Explain CTE Materialization in a production query.",
+      "answer": "A materialized CTE is computed once and stored, which can help or hurt depending on reuse and row counts. Key rules: MATERIALIZED forces it. NOT MATERIALIZED inlines it. Measure both."
+     },
+     {
+      "q": "Module 27 · Explain Subquery Rewrites in a production query.",
+      "answer": "Correlated subqueries can become joins or semi-joins, often improving plans and avoiding repeated work. Key rules: EXISTS is a semi-join. JOIN can duplicate rows. Measure the rewrite."
+     },
+     {
+      "q": "Module 27 · Explain Join Order in a production query.",
+      "answer": "The planner reorders joins based on statistics and cost; written order is not execution order. Key rules: Do not force order by nesting. Keep statistics fresh. Read the actual plan."
+     },
+     {
+      "q": "Module 27 · Explain Common Bottlenecks in a production query.",
+      "answer": "Most slow queries come from sequential scans on selective filters, bad estimates, missing join indexes or large sorts. Key rules: Check scans. Check estimates. Check sorts."
+     },
+     {
+      "q": "Module 27 · Explain Benchmarking in a production query.",
+      "answer": "A benchmark needs realistic data volume, warm and cold cache runs, and concurrent load before it proves an improvement. Key rules: Use real data size. Measure multiple runs. Watch concurrency."
+     },
+     {
+      "q": "Module 27 · Explain Practical Tuning in a production query.",
+      "answer": "A practical tuning loop documents the baseline, changes one thing, verifies the plan and measures the new runtime. Key rules: Baseline first. Change one thing. Verify the plan. Record the result."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Optimization Process",
+      "task": "Write a SQL example that demonstrates Optimization Process.",
+      "solution": "EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM enrollments WHERE course_id = 10;",
+      "expected": "A measured baseline."
+     },
+     {
+      "title": "EXPLAIN",
+      "task": "Write a SQL example that demonstrates EXPLAIN.",
+      "solution": "EXPLAIN SELECT * FROM students WHERE marks > 90;",
+      "expected": "An estimated plan."
+     },
+     {
+      "title": "EXPLAIN ANALYZE",
+      "task": "Write a SQL example that demonstrates EXPLAIN ANALYZE.",
+      "solution": "EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM students WHERE marks > 90;",
+      "expected": "Actual timing and buffers."
+     },
+     {
+      "title": "Seq Scan",
+      "task": "Write a SQL example that demonstrates Seq Scan.",
+      "solution": "EXPLAIN SELECT * FROM students;",
+      "expected": "A Seq Scan plan."
+     },
+     {
+      "title": "Index Scan",
+      "task": "Write a SQL example that demonstrates Index Scan.",
+      "solution": "EXPLAIN SELECT * FROM students WHERE id = 1;",
+      "expected": "An Index Scan."
+     },
+     {
+      "title": "Bitmap Heap Scan",
+      "task": "Write a SQL example that demonstrates Bitmap Heap Scan.",
+      "solution": "EXPLAIN SELECT * FROM students WHERE marks BETWEEN 60 AND 70;",
+      "expected": "A Bitmap Heap Scan."
+     },
+     {
+      "title": "Nested Loop",
+      "task": "Write a SQL example that demonstrates Nested Loop.",
+      "solution": "EXPLAIN SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id WHERE s.id = 1;",
+      "expected": "A Nested Loop plan."
+     },
+     {
+      "title": "Hash Join",
+      "task": "Write a SQL example that demonstrates Hash Join.",
+      "solution": "EXPLAIN SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "expected": "A Hash Join plan."
+     },
+     {
+      "title": "Merge Join",
+      "task": "Write a SQL example that demonstrates Merge Join.",
+      "solution": "EXPLAIN SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id ORDER BY s.id;",
+      "expected": "A Merge Join plan."
+     },
+     {
+      "title": "Sort",
+      "task": "Write a SQL example that demonstrates Sort.",
+      "solution": "EXPLAIN SELECT * FROM students ORDER BY marks DESC;",
+      "expected": "A Sort node."
+     },
+     {
+      "title": "HashAggregate",
+      "task": "Write a SQL example that demonstrates HashAggregate.",
+      "solution": "EXPLAIN SELECT course_id, COUNT(*) FROM enrollments GROUP BY course_id;",
+      "expected": "A HashAggregate plan."
+     },
+     {
+      "title": "Statistics",
+      "task": "Write a SQL example that demonstrates Statistics.",
+      "solution": "SELECT attname, n_distinct FROM pg_stats WHERE tablename = 'students';",
+      "expected": "Column statistics."
+     },
+     {
+      "title": "ANALYZE",
+      "task": "Write a SQL example that demonstrates ANALYZE.",
+      "solution": "ANALYZE students;",
+      "expected": "ANALYZE"
+     },
+     {
+      "title": "Selectivity",
+      "task": "Write a SQL example that demonstrates Selectivity.",
+      "solution": "EXPLAIN SELECT * FROM students WHERE email = 'a@example.com';",
+      "expected": "A selective index plan."
+     },
+     {
+      "title": "CTE Materialization",
+      "task": "Write a SQL example that demonstrates CTE Materialization.",
+      "solution": "EXPLAIN WITH avg_marks AS MATERIALIZED (SELECT AVG(marks) AS average FROM students) SELECT * FROM students, avg_marks WHERE marks > average;",
+      "expected": "A plan with a CTE Scan."
+     },
+     {
+      "title": "Subquery Rewrites",
+      "task": "Write a SQL example that demonstrates Subquery Rewrites.",
+      "solution": "EXPLAIN SELECT s.name FROM students s WHERE EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "expected": "A semi-join plan."
+     },
+     {
+      "title": "Join Order",
+      "task": "Write a SQL example that demonstrates Join Order.",
+      "solution": "EXPLAIN SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "expected": "The chosen join order."
+     },
+     {
+      "title": "Common Bottlenecks",
+      "task": "Write a SQL example that demonstrates Common Bottlenecks.",
+      "solution": "EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM enrollments ORDER BY enrolled_on DESC LIMIT 10;",
+      "expected": "A plan exposing the bottleneck."
+     },
+     {
+      "title": "Benchmarking",
+      "task": "Write a SQL example that demonstrates Benchmarking.",
+      "solution": "EXPLAIN (ANALYZE, BUFFERS) SELECT COUNT(*) FROM enrollments;",
+      "expected": "A repeatable measurement."
+     },
+     {
+      "title": "Practical Tuning",
+      "task": "Write a SQL example that demonstrates Practical Tuning.",
+      "solution": "EXPLAIN (ANALYZE, BUFFERS) SELECT s.name, COUNT(e.course_id) FROM students s LEFT JOIN enrollments e ON e.student_id = s.id GROUP BY s.id, s.name;",
+      "expected": "A measured plan."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 27 · Why does Optimization Process matter?",
+      "answer": "Optimization starts with a slow query and its plan, not with guesses about indexes or configuration. Reproduce the query. Read the plan. Change one variable. Measure again."
+     },
+     {
+      "q": "Module 27 · Why does EXPLAIN matter?",
+      "answer": "EXPLAIN shows access paths, joins and costs without executing the query. No execution. Estimates use statistics. Look for scans and sorts."
+     },
+     {
+      "q": "Module 27 · Why does EXPLAIN ANALYZE matter?",
+      "answer": "EXPLAIN ANALYZE executes the query and reports actual rows, loops and timing. It runs the query. Compare estimated and actual rows. Use BUFFERS for I/O detail."
+     },
+     {
+      "q": "Module 27 · Why does Seq Scan matter?",
+      "answer": "A sequential scan reads every heap page and is often correct for small tables or large result fractions. Good for large fractions. Bad for selective filters. Check table size."
+     },
+     {
+      "q": "Module 27 · Why does Index Scan matter?",
+      "answer": "An index scan follows the index and fetches matching heap rows, ideal for selective predicates. Good for few rows. Random I/O costs. Ordering may be free."
+     },
+     {
+      "q": "Module 27 · Why does Bitmap Heap Scan matter?",
+      "answer": "A bitmap heap scan combines index matches and visits heap pages in physical order. Good for medium selectivity. Combines indexes. Loses ordering."
+     },
+     {
+      "q": "Module 27 · Why does Nested Loop matter?",
+      "answer": "A nested loop scans the inner side for each outer row, which is efficient when the outer set is small and the inner side is indexed. Good for small outer sets. Index the inner join key. Watch loop counts."
+     },
+     {
+      "q": "Module 27 · Why does Hash Join matter?",
+      "answer": "A hash join builds a hash table from one input and probes it with the other, avoiding repeated inner scans. Good for large sets. Needs memory. No useful order."
+     },
+     {
+      "q": "Module 27 · Why does Merge Join matter?",
+      "answer": "A merge join reads both inputs in join-key order and merges them, often benefiting from indexes. Inputs must be sorted. Good for large ordered data. Can avoid a hash table."
+     },
+     {
+      "q": "Module 27 · Why does Sort matter?",
+      "answer": "A Sort node appears when an index cannot provide the required order; large sorts spill to disk. Watch sort method. Indexes can avoid sorts. LIMIT can reduce work."
+     },
+     {
+      "q": "Module 27 · Why does HashAggregate matter?",
+      "answer": "A HashAggregate builds a hash table of groups, while GroupAggregate can use sorted input. Hash is common. Memory can spill. Sorted input favors GroupAggregate."
+     },
+     {
+      "q": "Module 27 · Why does Statistics matter?",
+      "answer": "Row estimates, distinct counts and histograms drive join order and access-path choices. Stale stats cause bad plans. ANALYZE refreshes them. Extended stats help correlations."
+     },
+     {
+      "q": "Module 27 · Why does ANALYZE matter?",
+      "answer": "ANALYZE samples table data and updates planner statistics without locking the table for long. Run after large changes. It is cheap. Autovacuum does it automatically."
+     },
+     {
+      "q": "Module 27 · Why does Selectivity matter?",
+      "answer": "High selectivity means few rows survive and usually favors an index; low selectivity favors a scan. Unique predicates are selective. Planner estimates matter. Use real data."
+     },
+     {
+      "q": "Module 27 · Why does CTE Materialization matter?",
+      "answer": "A materialized CTE is computed once and stored, which can help or hurt depending on reuse and row counts. MATERIALIZED forces it. NOT MATERIALIZED inlines it. Measure both."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Stale statistics",
+      "broken": "EXPLAIN SELECT * FROM students WHERE marks > 90;",
+      "fix": "ANALYZE students;\nEXPLAIN SELECT * FROM students WHERE marks > 90;",
+      "error": "The estimate may be far from reality",
+      "expected": "A plan from fresh stats."
+     },
+     {
+      "title": "Missing join index",
+      "broken": "SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id WHERE s.id = 1;",
+      "fix": "CREATE INDEX idx_enrollments_student ON enrollments (student_id);",
+      "error": "The join repeatedly scans enrollments",
+      "expected": "An indexed join."
+     },
+     {
+      "title": "Sort without index",
+      "broken": "SELECT * FROM students ORDER BY marks DESC LIMIT 10;",
+      "fix": "CREATE INDEX idx_students_marks ON students (marks DESC);",
+      "error": "The query sorts the whole table",
+      "expected": "An ordered index scan."
+     },
+     {
+      "title": "Function on column",
+      "broken": "SELECT * FROM students WHERE LOWER(email) = 'a@example.com';",
+      "fix": "CREATE INDEX idx_students_lower_email ON students (LOWER(email));",
+      "error": "The plain email index is not used",
+      "expected": "An expression index match."
+     },
+     {
+      "title": "OR prevents index",
+      "broken": "SELECT * FROM students WHERE marks = 90 OR name = 'Aarav';",
+      "fix": "SELECT * FROM students WHERE marks = 90\nUNION\nSELECT * FROM students WHERE name = 'Aarav';",
+      "error": "The OR may force a sequential scan",
+      "expected": "Two index-friendly branches."
+     },
+     {
+      "title": "Wide SELECT",
+      "broken": "SELECT * FROM students WHERE marks > 90;",
+      "fix": "SELECT id, name FROM students WHERE marks > 90;",
+      "error": "Fetching every column increases I/O",
+      "expected": "A narrower result."
+     },
+     {
+      "title": "LIMIT without ORDER BY",
+      "broken": "SELECT * FROM students LIMIT 10;",
+      "fix": "SELECT * FROM students ORDER BY id LIMIT 10;",
+      "error": "The rows are arbitrary",
+      "expected": "A deterministic page."
+     },
+     {
+      "title": "Nested loop explosion",
+      "broken": "SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "fix": "Ensure both join keys are indexed and compare the plan at realistic volume.",
+      "error": "The inner side is scanned for every outer row",
+      "expected": "An efficient join strategy."
+     },
+     {
+      "title": "CTE materialized unnecessarily",
+      "broken": "WITH big AS MATERIALIZED (SELECT * FROM enrollments) SELECT * FROM big WHERE course_id = 10;",
+      "fix": "WITH big AS NOT MATERIALIZED (SELECT * FROM enrollments) SELECT * FROM big WHERE course_id = 10;",
+      "error": "The CTE is fully materialized before filtering",
+      "expected": "An inlined, filtered query."
+     },
+     {
+      "title": "EXPLAIN without execution",
+      "broken": "EXPLAIN SELECT * FROM students WHERE marks > 90;",
+      "fix": "EXPLAIN ANALYZE SELECT * FROM students WHERE marks > 90;",
+      "error": "Only estimates are shown",
+      "expected": "Actual runtime and rows."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 27 · State one key rule for Optimization Process.",
+      "answer": "Reproduce the query."
+     },
+     {
+      "q": "Module 27 · State one key rule for EXPLAIN.",
+      "answer": "No execution."
+     },
+     {
+      "q": "Module 27 · State one key rule for EXPLAIN ANALYZE.",
+      "answer": "It runs the query."
+     },
+     {
+      "q": "Module 27 · State one key rule for Seq Scan.",
+      "answer": "Good for large fractions."
+     },
+     {
+      "q": "Module 27 · State one key rule for Index Scan.",
+      "answer": "Good for few rows."
+     },
+     {
+      "q": "Module 27 · State one key rule for Bitmap Heap Scan.",
+      "answer": "Good for medium selectivity."
+     },
+     {
+      "q": "Module 27 · State one key rule for Nested Loop.",
+      "answer": "Good for small outer sets."
+     },
+     {
+      "q": "Module 27 · State one key rule for Hash Join.",
+      "answer": "Good for large sets."
+     },
+     {
+      "q": "Module 27 · State one key rule for Merge Join.",
+      "answer": "Inputs must be sorted."
+     },
+     {
+      "q": "Module 27 · State one key rule for Sort.",
+      "answer": "Watch sort method."
+     }
+    ]
+   }
+  }
+ ]
+}

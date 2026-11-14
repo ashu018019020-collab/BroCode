@@ -1,0 +1,918 @@
+{
+ "modules": [
+  {
+   "id": "sql24",
+   "no": 24,
+   "title": "Stored Functions and Procedures",
+   "goal": "Put reusable logic in the database with the right volatility, security and transaction rules.",
+   "level": "advanced",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Function vs Procedure",
+     "simple": "Function value return karta hai; procedure transaction control kar sakta hai.",
+     "pro": "Functions return a value and run inside the caller’s statement, while procedures are invoked with CALL and can manage transactions.",
+     "points": [
+      "Functions return values.",
+      "Procedures use CALL.",
+      "Procedures can COMMIT."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION student_count() RETURNS bigint LANGUAGE sql AS $$ SELECT COUNT(*) FROM students; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "CREATE FUNCTION",
+     "simple": "CREATE FUNCTION named routine banata hai.",
+     "pro": "CREATE FUNCTION defines a routine with parameters, a return type, a language and a body.",
+     "points": [
+      "Name the function.",
+      "Declare parameters.",
+      "Choose the language."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION double_marks(p_marks integer) RETURNS integer LANGUAGE sql AS $$ SELECT p_marks * 2; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "RETURNS",
+     "simple": "RETURNS function ka output type batata hai.",
+     "pro": "The RETURNS clause declares a scalar, table, set or void result and must match what the body produces.",
+     "points": [
+      "Use RETURNS TABLE for rows.",
+      "Use SETOF for sets.",
+      "RETURNS void means no value."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION student_name(p_id bigint) RETURNS text LANGUAGE sql AS $$ SELECT name FROM students WHERE id = p_id; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "SQL Functions",
+     "simple": "SQL function body plain SQL ho sakta hai.",
+     "pro": "A LANGUAGE sql function can contain SQL statements and is often inlined by the planner.",
+     "points": [
+      "Simple and optimizable.",
+      "Can return scalar or table.",
+      "No procedural loops."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION high_scorers() RETURNS TABLE (id bigint, name text) LANGUAGE sql AS $$ SELECT id, name FROM students WHERE marks >= 80; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "PL/pgSQL Basics",
+     "simple": "PL/pgSQL procedural language hai.",
+     "pro": "PL/pgSQL adds variables, control flow, exceptions and multiple statements to database routines.",
+     "points": [
+      "Use BEGIN and END.",
+      "Declare variables.",
+      "Return explicitly."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION grade_band(p_marks integer) RETURNS text LANGUAGE plpgsql AS $$ BEGIN IF p_marks >= 90 THEN RETURN 'A'; ELSE RETURN 'B'; END IF; END; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Parameters",
+     "simple": "Function parameters input aur output ho sakte hain.",
+     "pro": "Parameters can be IN, OUT or INOUT; OUT parameters can define a result row without RETURNS TABLE.",
+     "points": [
+      "IN is the default.",
+      "OUT adds a result column.",
+      "Name parameters clearly."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION add_marks(p_id bigint, p_delta integer) RETURNS void LANGUAGE sql AS $$ UPDATE students SET marks = marks + p_delta WHERE id = p_id; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "Returning Tables",
+     "simple": "RETURNS TABLE se multi-row result do.",
+     "pro": "RETURNS TABLE declares named output columns and lets the function return a set of rows.",
+     "points": [
+      "Declare column names and types.",
+      "Return a SELECT.",
+      "Use it like a table."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION course_roster(p_course integer) RETURNS TABLE (student_id bigint, name text) LANGUAGE sql AS $$ SELECT s.id, s.name FROM students s JOIN enrollments e ON e.student_id = s.id WHERE e.course_id = p_course; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "CREATE PROCEDURE",
+     "simple": "Procedure CALL se chalti hai aur transaction control kar sakti hai.",
+     "pro": "CREATE PROCEDURE defines a routine invoked with CALL; procedures can commit or roll back inside their body.",
+     "points": [
+      "Use CALL.",
+      "Transaction control is allowed.",
+      "No return value."
+     ],
+     "example": {
+      "sql": "CREATE PROCEDURE archive_low_marks() LANGUAGE plpgsql AS $$ BEGIN DELETE FROM students WHERE marks < 60; COMMIT; END; $$;",
+      "output": "CREATE PROCEDURE"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "CALL",
+     "simple": "CALL procedure ko invoke karta hai.",
+     "pro": "CALL executes a procedure with arguments and does not return a result set.",
+     "points": [
+      "Use CALL, not SELECT.",
+      "Arguments follow the name.",
+      "It can manage transactions."
+     ],
+     "example": {
+      "sql": "CALL archive_low_marks();",
+      "output": "CALL"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Transaction Control",
+     "simple": "Procedure ke andar COMMIT/ROLLBACK allowed hai.",
+     "pro": "Procedures can commit or roll back, but functions cannot; this is the key operational difference.",
+     "points": [
+      "Functions cannot COMMIT.",
+      "Procedures can COMMIT.",
+      "Be careful with partial success."
+     ],
+     "example": {
+      "sql": "CREATE PROCEDURE safe_archive() LANGUAGE plpgsql AS $$ BEGIN DELETE FROM students WHERE marks < 60; COMMIT; END; $$;",
+      "output": "CREATE PROCEDURE"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Exception Handling",
+     "simple": "PL/pgSQL EXCEPTION block errors pakadta hai.",
+     "pro": "An EXCEPTION block catches errors, lets you log or recover, and can re-raise with RAISE.",
+     "points": [
+      "Wrap risky statements.",
+      "Use GET STACKED DIAGNOSTICS.",
+      "Re-raise when unsure."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION safe_divide(a numeric, b numeric) RETURNS numeric LANGUAGE plpgsql AS $$ BEGIN RETURN a / b; EXCEPTION WHEN division_by_zero THEN RETURN NULL; END; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "SECURITY DEFINER",
+     "simple": "SECURITY DEFINER function owner ke privileges se chalta hai.",
+     "pro": "A SECURITY DEFINER function runs with the privileges of its owner, so it must lock down search_path and validate inputs.",
+     "points": [
+      "It can grant controlled access.",
+      "Set search_path explicitly.",
+      "Avoid dynamic SQL with untrusted input."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION admin_count() RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$ SELECT COUNT(*) FROM students; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Volatility",
+     "simple": "Volatility function ke side effects aur caching batati hai.",
+     "pro": "IMMUTABLE means same inputs always produce the same result, STABLE means constant within a statement, and VOLATILE can change or write.",
+     "points": [
+      "IMMUTABLE is strictest.",
+      "STABLE reads the database.",
+      "VOLATILE is the default for writes."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION double_marks(p_marks integer) RETURNS integer LANGUAGE sql IMMUTABLE AS $$ SELECT p_marks * 2; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Function Overloading",
+     "simple": "Same name with different parameter types allowed hai.",
+     "pro": "PostgreSQL resolves overloaded functions by argument types, so ambiguous calls can fail.",
+     "points": [
+      "Overload by argument types.",
+      "Avoid ambiguous defaults.",
+      "Cast calls when needed."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION label(p_marks integer) RETURNS text LANGUAGE sql AS $$ SELECT 'number'; $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Dropping Routines",
+     "simple": "DROP FUNCTION/PROCEDURE routine hataata hai.",
+     "pro": "DROP FUNCTION or DROP PROCEDURE removes a routine; CASCADE also removes dependent objects.",
+     "points": [
+      "Specify argument types.",
+      "Use IF EXISTS in scripts.",
+      "CASCADE is destructive."
+     ],
+     "example": {
+      "sql": "DROP FUNCTION IF EXISTS double_marks(integer);",
+      "output": "DROP FUNCTION"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Common Routine Errors",
+     "simple": "Return mismatch, missing language aur transaction misuse common errors hain.",
+     "pro": "Common failures are a return type mismatch, a missing LANGUAGE clause, COMMIT inside a function and ambiguous overloads.",
+     "points": [
+      "Match RETURNS.",
+      "Declare LANGUAGE.",
+      "Use procedures for transactions."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION bad() RETURNS integer LANGUAGE sql AS $$ SELECT 'text'; $$;",
+      "output": "ERROR: invalid input syntax for type integer"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Routine Performance",
+     "simple": "SQL functions inline; PL/pgSQL loops can be slow.",
+     "pro": "Simple SQL functions can be inlined and optimized, while procedural row-by-row loops often lose to set-based SQL.",
+     "points": [
+      "Prefer set-based SQL.",
+      "Mark volatility correctly.",
+      "Read the plan for function calls."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT double_marks(marks) FROM students;",
+      "output": "A plan showing the function call."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Testing Routines",
+     "simple": "Functions ko known inputs aur edge cases se test karo.",
+     "pro": "Test return values, NULL inputs, empty sets and error paths before relying on a routine in production.",
+     "points": [
+      "Test NULL.",
+      "Test empty input.",
+      "Test error handling."
+     ],
+     "example": {
+      "sql": "SELECT double_marks(NULL) AS doubled;",
+      "output": "NULL"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Practical Function",
+     "simple": "Reusable validation ya calculation function banao.",
+     "pro": "A practical function keeps a single rule in one place and is marked with the correct volatility and security.",
+     "points": [
+      "Name it clearly.",
+      "Type the parameters.",
+      "Document the contract."
+     ],
+     "example": {
+      "sql": "CREATE FUNCTION is_passing(p_marks integer) RETURNS boolean LANGUAGE sql IMMUTABLE AS $$ SELECT COALESCE(p_marks >= 60, false); $$;",
+      "output": "CREATE FUNCTION"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Routine Maintenance",
+     "simple": "Routines ko version karo aur dependencies check karo.",
+     "pro": "Routine changes can break callers, so track signatures, test replacements and inspect dependencies before dropping.",
+     "points": [
+      "Track signatures.",
+      "Use CREATE OR REPLACE carefully.",
+      "Check pg_depend."
+     ],
+     "example": {
+      "sql": "SELECT proname, pg_get_function_identity_arguments(oid) FROM pg_proc WHERE proname = 'double_marks';",
+      "output": "The routine signature."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Module 24 · Function vs Procedure: what is the main purpose?",
+      "options": [
+       "Function vs Procedure: Function value return karta hai; procedure transaction control kar sakta hai.",
+       "CREATE FUNCTION: CREATE FUNCTION named routine banata hai.",
+       "CREATE PROCEDURE: Procedure CALL se chalti hai aur transaction control kar sakti hai.",
+       "Function Overloading: Same name with different parameter types allowed hai."
+      ],
+      "answer": "Function vs Procedure: Function value return karta hai; procedure transaction control kar sakta hai.",
+      "why": "Functions return a value and run inside the caller’s statement, while procedures are invoked with CALL and can manage transactions."
+     },
+     {
+      "q": "Module 24 · CREATE FUNCTION: what is the main purpose?",
+      "options": [
+       "RETURNS: RETURNS function ka output type batata hai.",
+       "CALL: CALL procedure ko invoke karta hai.",
+       "Dropping Routines: DROP FUNCTION/PROCEDURE routine hataata hai.",
+       "CREATE FUNCTION: CREATE FUNCTION named routine banata hai."
+      ],
+      "answer": "CREATE FUNCTION: CREATE FUNCTION named routine banata hai.",
+      "why": "CREATE FUNCTION defines a routine with parameters, a return type, a language and a body."
+     },
+     {
+      "q": "Module 24 · RETURNS: what is the main purpose?",
+      "options": [
+       "Transaction Control: Procedure ke andar COMMIT/ROLLBACK allowed hai.",
+       "Common Routine Errors: Return mismatch, missing language aur transaction misuse common errors hain.",
+       "RETURNS: RETURNS function ka output type batata hai.",
+       "SQL Functions: SQL function body plain SQL ho sakta hai."
+      ],
+      "answer": "RETURNS: RETURNS function ka output type batata hai.",
+      "why": "The RETURNS clause declares a scalar, table, set or void result and must match what the body produces."
+     },
+     {
+      "q": "Module 24 · SQL Functions: what is the main purpose?",
+      "options": [
+       "Routine Performance: SQL functions inline; PL/pgSQL loops can be slow.",
+       "SQL Functions: SQL function body plain SQL ho sakta hai.",
+       "PL/pgSQL Basics: PL/pgSQL procedural language hai.",
+       "Exception Handling: PL/pgSQL EXCEPTION block errors pakadta hai."
+      ],
+      "answer": "SQL Functions: SQL function body plain SQL ho sakta hai.",
+      "why": "A LANGUAGE sql function can contain SQL statements and is often inlined by the planner."
+     },
+     {
+      "q": "Module 24 · PL/pgSQL Basics: what is the main purpose?",
+      "options": [
+       "PL/pgSQL Basics: PL/pgSQL procedural language hai.",
+       "Parameters: Function parameters input aur output ho sakte hain.",
+       "SECURITY DEFINER: SECURITY DEFINER function owner ke privileges se chalta hai.",
+       "Testing Routines: Functions ko known inputs aur edge cases se test karo."
+      ],
+      "answer": "PL/pgSQL Basics: PL/pgSQL procedural language hai.",
+      "why": "PL/pgSQL adds variables, control flow, exceptions and multiple statements to database routines."
+     },
+     {
+      "q": "Module 24 · Parameters: what is the main purpose?",
+      "options": [
+       "Returning Tables: RETURNS TABLE se multi-row result do.",
+       "Volatility: Volatility function ke side effects aur caching batati hai.",
+       "Practical Function: Reusable validation ya calculation function banao.",
+       "Parameters: Function parameters input aur output ho sakte hain."
+      ],
+      "answer": "Parameters: Function parameters input aur output ho sakte hain.",
+      "why": "Parameters can be IN, OUT or INOUT; OUT parameters can define a result row without RETURNS TABLE."
+     },
+     {
+      "q": "Module 24 · Returning Tables: what is the main purpose?",
+      "options": [
+       "Function Overloading: Same name with different parameter types allowed hai.",
+       "Routine Maintenance: Routines ko version karo aur dependencies check karo.",
+       "Returning Tables: RETURNS TABLE se multi-row result do.",
+       "CREATE PROCEDURE: Procedure CALL se chalti hai aur transaction control kar sakti hai."
+      ],
+      "answer": "Returning Tables: RETURNS TABLE se multi-row result do.",
+      "why": "RETURNS TABLE declares named output columns and lets the function return a set of rows."
+     },
+     {
+      "q": "Module 24 · CREATE PROCEDURE: what is the main purpose?",
+      "options": [
+       "Function vs Procedure: Function value return karta hai; procedure transaction control kar sakta hai.",
+       "CREATE PROCEDURE: Procedure CALL se chalti hai aur transaction control kar sakti hai.",
+       "CALL: CALL procedure ko invoke karta hai.",
+       "Dropping Routines: DROP FUNCTION/PROCEDURE routine hataata hai."
+      ],
+      "answer": "CREATE PROCEDURE: Procedure CALL se chalti hai aur transaction control kar sakti hai.",
+      "why": "CREATE PROCEDURE defines a routine invoked with CALL; procedures can commit or roll back inside their body."
+     },
+     {
+      "q": "Module 24 · CALL: what is the main purpose?",
+      "options": [
+       "CALL: CALL procedure ko invoke karta hai.",
+       "Transaction Control: Procedure ke andar COMMIT/ROLLBACK allowed hai.",
+       "Common Routine Errors: Return mismatch, missing language aur transaction misuse common errors hain.",
+       "CREATE FUNCTION: CREATE FUNCTION named routine banata hai."
+      ],
+      "answer": "CALL: CALL procedure ko invoke karta hai.",
+      "why": "CALL executes a procedure with arguments and does not return a result set."
+     },
+     {
+      "q": "Module 24 · Transaction Control: what is the main purpose?",
+      "options": [
+       "Exception Handling: PL/pgSQL EXCEPTION block errors pakadta hai.",
+       "Routine Performance: SQL functions inline; PL/pgSQL loops can be slow.",
+       "RETURNS: RETURNS function ka output type batata hai.",
+       "Transaction Control: Procedure ke andar COMMIT/ROLLBACK allowed hai."
+      ],
+      "answer": "Transaction Control: Procedure ke andar COMMIT/ROLLBACK allowed hai.",
+      "why": "Procedures can commit or roll back, but functions cannot; this is the key operational difference."
+     },
+     {
+      "q": "Module 24 · Exception Handling: what is the main purpose?",
+      "options": [
+       "Testing Routines: Functions ko known inputs aur edge cases se test karo.",
+       "SQL Functions: SQL function body plain SQL ho sakta hai.",
+       "Exception Handling: PL/pgSQL EXCEPTION block errors pakadta hai.",
+       "SECURITY DEFINER: SECURITY DEFINER function owner ke privileges se chalta hai."
+      ],
+      "answer": "Exception Handling: PL/pgSQL EXCEPTION block errors pakadta hai.",
+      "why": "An EXCEPTION block catches errors, lets you log or recover, and can re-raise with RAISE."
+     },
+     {
+      "q": "Module 24 · SECURITY DEFINER: what is the main purpose?",
+      "options": [
+       "PL/pgSQL Basics: PL/pgSQL procedural language hai.",
+       "SECURITY DEFINER: SECURITY DEFINER function owner ke privileges se chalta hai.",
+       "Volatility: Volatility function ke side effects aur caching batati hai.",
+       "Practical Function: Reusable validation ya calculation function banao."
+      ],
+      "answer": "SECURITY DEFINER: SECURITY DEFINER function owner ke privileges se chalta hai.",
+      "why": "A SECURITY DEFINER function runs with the privileges of its owner, so it must lock down search_path and validate inputs."
+     },
+     {
+      "q": "Module 24 · Volatility: what is the main purpose?",
+      "options": [
+       "Volatility: Volatility function ke side effects aur caching batati hai.",
+       "Function Overloading: Same name with different parameter types allowed hai.",
+       "Routine Maintenance: Routines ko version karo aur dependencies check karo.",
+       "Parameters: Function parameters input aur output ho sakte hain."
+      ],
+      "answer": "Volatility: Volatility function ke side effects aur caching batati hai.",
+      "why": "IMMUTABLE means same inputs always produce the same result, STABLE means constant within a statement, and VOLATILE can change or write."
+     },
+     {
+      "q": "Module 24 · Function Overloading: what is the main purpose?",
+      "options": [
+       "Dropping Routines: DROP FUNCTION/PROCEDURE routine hataata hai.",
+       "Function vs Procedure: Function value return karta hai; procedure transaction control kar sakta hai.",
+       "Returning Tables: RETURNS TABLE se multi-row result do.",
+       "Function Overloading: Same name with different parameter types allowed hai."
+      ],
+      "answer": "Function Overloading: Same name with different parameter types allowed hai.",
+      "why": "PostgreSQL resolves overloaded functions by argument types, so ambiguous calls can fail."
+     },
+     {
+      "q": "Module 24 · Dropping Routines: what is the main purpose?",
+      "options": [
+       "CREATE FUNCTION: CREATE FUNCTION named routine banata hai.",
+       "CREATE PROCEDURE: Procedure CALL se chalti hai aur transaction control kar sakti hai.",
+       "Dropping Routines: DROP FUNCTION/PROCEDURE routine hataata hai.",
+       "Common Routine Errors: Return mismatch, missing language aur transaction misuse common errors hain."
+      ],
+      "answer": "Dropping Routines: DROP FUNCTION/PROCEDURE routine hataata hai.",
+      "why": "DROP FUNCTION or DROP PROCEDURE removes a routine; CASCADE also removes dependent objects."
+     },
+     {
+      "q": "Module 24 · Common Routine Errors: what is the main purpose?",
+      "options": [
+       "CALL: CALL procedure ko invoke karta hai.",
+       "Common Routine Errors: Return mismatch, missing language aur transaction misuse common errors hain.",
+       "Routine Performance: SQL functions inline; PL/pgSQL loops can be slow.",
+       "RETURNS: RETURNS function ka output type batata hai."
+      ],
+      "answer": "Common Routine Errors: Return mismatch, missing language aur transaction misuse common errors hain.",
+      "why": "Common failures are a return type mismatch, a missing LANGUAGE clause, COMMIT inside a function and ambiguous overloads."
+     },
+     {
+      "q": "Module 24 · Routine Performance: what is the main purpose?",
+      "options": [
+       "Routine Performance: SQL functions inline; PL/pgSQL loops can be slow.",
+       "Testing Routines: Functions ko known inputs aur edge cases se test karo.",
+       "SQL Functions: SQL function body plain SQL ho sakta hai.",
+       "Transaction Control: Procedure ke andar COMMIT/ROLLBACK allowed hai."
+      ],
+      "answer": "Routine Performance: SQL functions inline; PL/pgSQL loops can be slow.",
+      "why": "Simple SQL functions can be inlined and optimized, while procedural row-by-row loops often lose to set-based SQL."
+     },
+     {
+      "q": "Module 24 · Testing Routines: what is the main purpose?",
+      "options": [
+       "Practical Function: Reusable validation ya calculation function banao.",
+       "PL/pgSQL Basics: PL/pgSQL procedural language hai.",
+       "Exception Handling: PL/pgSQL EXCEPTION block errors pakadta hai.",
+       "Testing Routines: Functions ko known inputs aur edge cases se test karo."
+      ],
+      "answer": "Testing Routines: Functions ko known inputs aur edge cases se test karo.",
+      "why": "Test return values, NULL inputs, empty sets and error paths before relying on a routine in production."
+     },
+     {
+      "q": "Module 24 · Practical Function: what is the main purpose?",
+      "options": [
+       "Parameters: Function parameters input aur output ho sakte hain.",
+       "SECURITY DEFINER: SECURITY DEFINER function owner ke privileges se chalta hai.",
+       "Practical Function: Reusable validation ya calculation function banao.",
+       "Routine Maintenance: Routines ko version karo aur dependencies check karo."
+      ],
+      "answer": "Practical Function: Reusable validation ya calculation function banao.",
+      "why": "A practical function keeps a single rule in one place and is marked with the correct volatility and security."
+     },
+     {
+      "q": "Module 24 · Routine Maintenance: what is the main purpose?",
+      "options": [
+       "Volatility: Volatility function ke side effects aur caching batati hai.",
+       "Routine Maintenance: Routines ko version karo aur dependencies check karo.",
+       "Function vs Procedure: Function value return karta hai; procedure transaction control kar sakta hai.",
+       "Returning Tables: RETURNS TABLE se multi-row result do."
+      ],
+      "answer": "Routine Maintenance: Routines ko version karo aur dependencies check karo.",
+      "why": "Routine changes can break callers, so track signatures, test replacements and inspect dependencies before dropping."
+     }
+    ],
+    "interview": [
+     {
+      "q": "Module 24 · Explain Function vs Procedure in a production query.",
+      "answer": "Functions return a value and run inside the caller’s statement, while procedures are invoked with CALL and can manage transactions. Key rules: Functions return values. Procedures use CALL. Procedures can COMMIT."
+     },
+     {
+      "q": "Module 24 · Explain CREATE FUNCTION in a production query.",
+      "answer": "CREATE FUNCTION defines a routine with parameters, a return type, a language and a body. Key rules: Name the function. Declare parameters. Choose the language."
+     },
+     {
+      "q": "Module 24 · Explain RETURNS in a production query.",
+      "answer": "The RETURNS clause declares a scalar, table, set or void result and must match what the body produces. Key rules: Use RETURNS TABLE for rows. Use SETOF for sets. RETURNS void means no value."
+     },
+     {
+      "q": "Module 24 · Explain SQL Functions in a production query.",
+      "answer": "A LANGUAGE sql function can contain SQL statements and is often inlined by the planner. Key rules: Simple and optimizable. Can return scalar or table. No procedural loops."
+     },
+     {
+      "q": "Module 24 · Explain PL/pgSQL Basics in a production query.",
+      "answer": "PL/pgSQL adds variables, control flow, exceptions and multiple statements to database routines. Key rules: Use BEGIN and END. Declare variables. Return explicitly."
+     },
+     {
+      "q": "Module 24 · Explain Parameters in a production query.",
+      "answer": "Parameters can be IN, OUT or INOUT; OUT parameters can define a result row without RETURNS TABLE. Key rules: IN is the default. OUT adds a result column. Name parameters clearly."
+     },
+     {
+      "q": "Module 24 · Explain Returning Tables in a production query.",
+      "answer": "RETURNS TABLE declares named output columns and lets the function return a set of rows. Key rules: Declare column names and types. Return a SELECT. Use it like a table."
+     },
+     {
+      "q": "Module 24 · Explain CREATE PROCEDURE in a production query.",
+      "answer": "CREATE PROCEDURE defines a routine invoked with CALL; procedures can commit or roll back inside their body. Key rules: Use CALL. Transaction control is allowed. No return value."
+     },
+     {
+      "q": "Module 24 · Explain CALL in a production query.",
+      "answer": "CALL executes a procedure with arguments and does not return a result set. Key rules: Use CALL, not SELECT. Arguments follow the name. It can manage transactions."
+     },
+     {
+      "q": "Module 24 · Explain Transaction Control in a production query.",
+      "answer": "Procedures can commit or roll back, but functions cannot; this is the key operational difference. Key rules: Functions cannot COMMIT. Procedures can COMMIT. Be careful with partial success."
+     },
+     {
+      "q": "Module 24 · Explain Exception Handling in a production query.",
+      "answer": "An EXCEPTION block catches errors, lets you log or recover, and can re-raise with RAISE. Key rules: Wrap risky statements. Use GET STACKED DIAGNOSTICS. Re-raise when unsure."
+     },
+     {
+      "q": "Module 24 · Explain SECURITY DEFINER in a production query.",
+      "answer": "A SECURITY DEFINER function runs with the privileges of its owner, so it must lock down search_path and validate inputs. Key rules: It can grant controlled access. Set search_path explicitly. Avoid dynamic SQL with untrusted input."
+     },
+     {
+      "q": "Module 24 · Explain Volatility in a production query.",
+      "answer": "IMMUTABLE means same inputs always produce the same result, STABLE means constant within a statement, and VOLATILE can change or write. Key rules: IMMUTABLE is strictest. STABLE reads the database. VOLATILE is the default for writes."
+     },
+     {
+      "q": "Module 24 · Explain Function Overloading in a production query.",
+      "answer": "PostgreSQL resolves overloaded functions by argument types, so ambiguous calls can fail. Key rules: Overload by argument types. Avoid ambiguous defaults. Cast calls when needed."
+     },
+     {
+      "q": "Module 24 · Explain Dropping Routines in a production query.",
+      "answer": "DROP FUNCTION or DROP PROCEDURE removes a routine; CASCADE also removes dependent objects. Key rules: Specify argument types. Use IF EXISTS in scripts. CASCADE is destructive."
+     },
+     {
+      "q": "Module 24 · Explain Common Routine Errors in a production query.",
+      "answer": "Common failures are a return type mismatch, a missing LANGUAGE clause, COMMIT inside a function and ambiguous overloads. Key rules: Match RETURNS. Declare LANGUAGE. Use procedures for transactions."
+     },
+     {
+      "q": "Module 24 · Explain Routine Performance in a production query.",
+      "answer": "Simple SQL functions can be inlined and optimized, while procedural row-by-row loops often lose to set-based SQL. Key rules: Prefer set-based SQL. Mark volatility correctly. Read the plan for function calls."
+     },
+     {
+      "q": "Module 24 · Explain Testing Routines in a production query.",
+      "answer": "Test return values, NULL inputs, empty sets and error paths before relying on a routine in production. Key rules: Test NULL. Test empty input. Test error handling."
+     },
+     {
+      "q": "Module 24 · Explain Practical Function in a production query.",
+      "answer": "A practical function keeps a single rule in one place and is marked with the correct volatility and security. Key rules: Name it clearly. Type the parameters. Document the contract."
+     },
+     {
+      "q": "Module 24 · Explain Routine Maintenance in a production query.",
+      "answer": "Routine changes can break callers, so track signatures, test replacements and inspect dependencies before dropping. Key rules: Track signatures. Use CREATE OR REPLACE carefully. Check pg_depend."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Function vs Procedure",
+      "task": "Write a SQL example that demonstrates Function vs Procedure.",
+      "solution": "CREATE FUNCTION student_count() RETURNS bigint LANGUAGE sql AS $$ SELECT COUNT(*) FROM students; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "CREATE FUNCTION",
+      "task": "Write a SQL example that demonstrates CREATE FUNCTION.",
+      "solution": "CREATE FUNCTION double_marks(p_marks integer) RETURNS integer LANGUAGE sql AS $$ SELECT p_marks * 2; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "RETURNS",
+      "task": "Write a SQL example that demonstrates RETURNS.",
+      "solution": "CREATE FUNCTION student_name(p_id bigint) RETURNS text LANGUAGE sql AS $$ SELECT name FROM students WHERE id = p_id; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "SQL Functions",
+      "task": "Write a SQL example that demonstrates SQL Functions.",
+      "solution": "CREATE FUNCTION high_scorers() RETURNS TABLE (id bigint, name text) LANGUAGE sql AS $$ SELECT id, name FROM students WHERE marks >= 80; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "PL/pgSQL Basics",
+      "task": "Write a SQL example that demonstrates PL/pgSQL Basics.",
+      "solution": "CREATE FUNCTION grade_band(p_marks integer) RETURNS text LANGUAGE plpgsql AS $$ BEGIN IF p_marks >= 90 THEN RETURN 'A'; ELSE RETURN 'B'; END IF; END; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Parameters",
+      "task": "Write a SQL example that demonstrates Parameters.",
+      "solution": "CREATE FUNCTION add_marks(p_id bigint, p_delta integer) RETURNS void LANGUAGE sql AS $$ UPDATE students SET marks = marks + p_delta WHERE id = p_id; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Returning Tables",
+      "task": "Write a SQL example that demonstrates Returning Tables.",
+      "solution": "CREATE FUNCTION course_roster(p_course integer) RETURNS TABLE (student_id bigint, name text) LANGUAGE sql AS $$ SELECT s.id, s.name FROM students s JOIN enrollments e ON e.student_id = s.id WHERE e.course_id = p_course; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "CREATE PROCEDURE",
+      "task": "Write a SQL example that demonstrates CREATE PROCEDURE.",
+      "solution": "CREATE PROCEDURE archive_low_marks() LANGUAGE plpgsql AS $$ BEGIN DELETE FROM students WHERE marks < 60; COMMIT; END; $$;",
+      "expected": "CREATE PROCEDURE"
+     },
+     {
+      "title": "CALL",
+      "task": "Write a SQL example that demonstrates CALL.",
+      "solution": "CALL archive_low_marks();",
+      "expected": "CALL"
+     },
+     {
+      "title": "Transaction Control",
+      "task": "Write a SQL example that demonstrates Transaction Control.",
+      "solution": "CREATE PROCEDURE safe_archive() LANGUAGE plpgsql AS $$ BEGIN DELETE FROM students WHERE marks < 60; COMMIT; END; $$;",
+      "expected": "CREATE PROCEDURE"
+     },
+     {
+      "title": "Exception Handling",
+      "task": "Write a SQL example that demonstrates Exception Handling.",
+      "solution": "CREATE FUNCTION safe_divide(a numeric, b numeric) RETURNS numeric LANGUAGE plpgsql AS $$ BEGIN RETURN a / b; EXCEPTION WHEN division_by_zero THEN RETURN NULL; END; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "SECURITY DEFINER",
+      "task": "Write a SQL example that demonstrates SECURITY DEFINER.",
+      "solution": "CREATE FUNCTION admin_count() RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$ SELECT COUNT(*) FROM students; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Volatility",
+      "task": "Write a SQL example that demonstrates Volatility.",
+      "solution": "CREATE FUNCTION double_marks(p_marks integer) RETURNS integer LANGUAGE sql IMMUTABLE AS $$ SELECT p_marks * 2; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Function Overloading",
+      "task": "Write a SQL example that demonstrates Function Overloading.",
+      "solution": "CREATE FUNCTION label(p_marks integer) RETURNS text LANGUAGE sql AS $$ SELECT 'number'; $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Dropping Routines",
+      "task": "Write a SQL example that demonstrates Dropping Routines.",
+      "solution": "DROP FUNCTION IF EXISTS double_marks(integer);",
+      "expected": "DROP FUNCTION"
+     },
+     {
+      "title": "Common Routine Errors",
+      "task": "Write a SQL example that demonstrates Common Routine Errors.",
+      "solution": "CREATE FUNCTION bad() RETURNS integer LANGUAGE sql AS $$ SELECT 'text'; $$;",
+      "expected": "ERROR: invalid input syntax for type integer"
+     },
+     {
+      "title": "Routine Performance",
+      "task": "Write a SQL example that demonstrates Routine Performance.",
+      "solution": "EXPLAIN SELECT double_marks(marks) FROM students;",
+      "expected": "A plan showing the function call."
+     },
+     {
+      "title": "Testing Routines",
+      "task": "Write a SQL example that demonstrates Testing Routines.",
+      "solution": "SELECT double_marks(NULL) AS doubled;",
+      "expected": "NULL"
+     },
+     {
+      "title": "Practical Function",
+      "task": "Write a SQL example that demonstrates Practical Function.",
+      "solution": "CREATE FUNCTION is_passing(p_marks integer) RETURNS boolean LANGUAGE sql IMMUTABLE AS $$ SELECT COALESCE(p_marks >= 60, false); $$;",
+      "expected": "CREATE FUNCTION"
+     },
+     {
+      "title": "Routine Maintenance",
+      "task": "Write a SQL example that demonstrates Routine Maintenance.",
+      "solution": "SELECT proname, pg_get_function_identity_arguments(oid) FROM pg_proc WHERE proname = 'double_marks';",
+      "expected": "The routine signature."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Module 24 · Why does Function vs Procedure matter?",
+      "answer": "Functions return a value and run inside the caller’s statement, while procedures are invoked with CALL and can manage transactions. Functions return values. Procedures use CALL. Procedures can COMMIT."
+     },
+     {
+      "q": "Module 24 · Why does CREATE FUNCTION matter?",
+      "answer": "CREATE FUNCTION defines a routine with parameters, a return type, a language and a body. Name the function. Declare parameters. Choose the language."
+     },
+     {
+      "q": "Module 24 · Why does RETURNS matter?",
+      "answer": "The RETURNS clause declares a scalar, table, set or void result and must match what the body produces. Use RETURNS TABLE for rows. Use SETOF for sets. RETURNS void means no value."
+     },
+     {
+      "q": "Module 24 · Why does SQL Functions matter?",
+      "answer": "A LANGUAGE sql function can contain SQL statements and is often inlined by the planner. Simple and optimizable. Can return scalar or table. No procedural loops."
+     },
+     {
+      "q": "Module 24 · Why does PL/pgSQL Basics matter?",
+      "answer": "PL/pgSQL adds variables, control flow, exceptions and multiple statements to database routines. Use BEGIN and END. Declare variables. Return explicitly."
+     },
+     {
+      "q": "Module 24 · Why does Parameters matter?",
+      "answer": "Parameters can be IN, OUT or INOUT; OUT parameters can define a result row without RETURNS TABLE. IN is the default. OUT adds a result column. Name parameters clearly."
+     },
+     {
+      "q": "Module 24 · Why does Returning Tables matter?",
+      "answer": "RETURNS TABLE declares named output columns and lets the function return a set of rows. Declare column names and types. Return a SELECT. Use it like a table."
+     },
+     {
+      "q": "Module 24 · Why does CREATE PROCEDURE matter?",
+      "answer": "CREATE PROCEDURE defines a routine invoked with CALL; procedures can commit or roll back inside their body. Use CALL. Transaction control is allowed. No return value."
+     },
+     {
+      "q": "Module 24 · Why does CALL matter?",
+      "answer": "CALL executes a procedure with arguments and does not return a result set. Use CALL, not SELECT. Arguments follow the name. It can manage transactions."
+     },
+     {
+      "q": "Module 24 · Why does Transaction Control matter?",
+      "answer": "Procedures can commit or roll back, but functions cannot; this is the key operational difference. Functions cannot COMMIT. Procedures can COMMIT. Be careful with partial success."
+     },
+     {
+      "q": "Module 24 · Why does Exception Handling matter?",
+      "answer": "An EXCEPTION block catches errors, lets you log or recover, and can re-raise with RAISE. Wrap risky statements. Use GET STACKED DIAGNOSTICS. Re-raise when unsure."
+     },
+     {
+      "q": "Module 24 · Why does SECURITY DEFINER matter?",
+      "answer": "A SECURITY DEFINER function runs with the privileges of its owner, so it must lock down search_path and validate inputs. It can grant controlled access. Set search_path explicitly. Avoid dynamic SQL with untrusted input."
+     },
+     {
+      "q": "Module 24 · Why does Volatility matter?",
+      "answer": "IMMUTABLE means same inputs always produce the same result, STABLE means constant within a statement, and VOLATILE can change or write. IMMUTABLE is strictest. STABLE reads the database. VOLATILE is the default for writes."
+     },
+     {
+      "q": "Module 24 · Why does Function Overloading matter?",
+      "answer": "PostgreSQL resolves overloaded functions by argument types, so ambiguous calls can fail. Overload by argument types. Avoid ambiguous defaults. Cast calls when needed."
+     },
+     {
+      "q": "Module 24 · Why does Dropping Routines matter?",
+      "answer": "DROP FUNCTION or DROP PROCEDURE removes a routine; CASCADE also removes dependent objects. Specify argument types. Use IF EXISTS in scripts. CASCADE is destructive."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Missing language",
+      "broken": "CREATE FUNCTION double_marks(p integer) RETURNS integer AS $$ SELECT p * 2; $$;",
+      "fix": "CREATE FUNCTION double_marks(p integer) RETURNS integer LANGUAGE sql AS $$ SELECT p * 2; $$;",
+      "error": "no language specified",
+      "expected": "A valid function."
+     },
+     {
+      "title": "Return mismatch",
+      "broken": "CREATE FUNCTION bad() RETURNS integer LANGUAGE sql AS $$ SELECT 'text'; $$;",
+      "fix": "CREATE FUNCTION bad() RETURNS text LANGUAGE sql AS $$ SELECT 'text'; $$;",
+      "error": "invalid input syntax for type integer",
+      "expected": "A matching return type."
+     },
+     {
+      "title": "COMMIT in function",
+      "broken": "CREATE FUNCTION f() RETURNS void LANGUAGE plpgsql AS $$ BEGIN COMMIT; END; $$;",
+      "fix": "CREATE PROCEDURE p() LANGUAGE plpgsql AS $$ BEGIN COMMIT; END; $$;",
+      "error": "COMMIT is not allowed in a function",
+      "expected": "A procedure that can commit."
+     },
+     {
+      "title": "SELECT a procedure",
+      "broken": "SELECT archive_low_marks();",
+      "fix": "CALL archive_low_marks();",
+      "error": "archive_low_marks is a procedure",
+      "expected": "The procedure runs."
+     },
+     {
+      "title": "Ambiguous overload",
+      "broken": "CREATE FUNCTION f(integer) RETURNS text LANGUAGE sql AS $$ SELECT 'int'; $$;\nCREATE FUNCTION f(bigint) RETURNS text LANGUAGE sql AS $$ SELECT 'big'; $$;\nSELECT f(1);",
+      "fix": "SELECT f(1::integer);",
+      "error": "function f(integer) is not unique",
+      "expected": "A typed call."
+     },
+     {
+      "title": "Search path risk",
+      "broken": "CREATE FUNCTION admin_count() RETURNS bigint LANGUAGE sql SECURITY DEFINER AS $$ SELECT COUNT(*) FROM students; $$;",
+      "fix": "CREATE FUNCTION admin_count() RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$ SELECT COUNT(*) FROM students; $$;",
+      "error": "A caller-controlled search_path can hijack names",
+      "expected": "A fixed search path."
+     },
+     {
+      "title": "Volatility lie",
+      "broken": "CREATE FUNCTION now_text() RETURNS text LANGUAGE sql IMMUTABLE AS $$ SELECT NOW()::text; $$;",
+      "fix": "CREATE FUNCTION now_text() RETURNS text LANGUAGE sql STABLE AS $$ SELECT NOW()::text; $$;",
+      "error": "An IMMUTABLE function must not change over time",
+      "expected": "A STABLE function."
+     },
+     {
+      "title": "Drop without signature",
+      "broken": "DROP FUNCTION double_marks;",
+      "fix": "DROP FUNCTION double_marks(integer);",
+      "error": "function name is not unique",
+      "expected": "The intended function is dropped."
+     },
+     {
+      "title": "Exception swallowed",
+      "broken": "CREATE FUNCTION f() RETURNS void LANGUAGE plpgsql AS $$ BEGIN INSERT INTO missing_table VALUES (1); EXCEPTION WHEN OTHERS THEN NULL; END; $$;",
+      "fix": "CREATE FUNCTION f() RETURNS void LANGUAGE plpgsql AS $$ BEGIN INSERT INTO missing_table VALUES (1); EXCEPTION WHEN OTHERS THEN RAISE; END; $$;",
+      "error": "The error is silently swallowed",
+      "expected": "The error is re-raised."
+     },
+     {
+      "title": "Set-returning misuse",
+      "broken": "SELECT * FROM high_scorers;",
+      "fix": "SELECT * FROM high_scorers();",
+      "error": "relation \"high_scorers\" does not exist",
+      "expected": "The rows are returned."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Module 24 · State one key rule for Function vs Procedure.",
+      "answer": "Functions return values."
+     },
+     {
+      "q": "Module 24 · State one key rule for CREATE FUNCTION.",
+      "answer": "Name the function."
+     },
+     {
+      "q": "Module 24 · State one key rule for RETURNS.",
+      "answer": "Use RETURNS TABLE for rows."
+     },
+     {
+      "q": "Module 24 · State one key rule for SQL Functions.",
+      "answer": "Simple and optimizable."
+     },
+     {
+      "q": "Module 24 · State one key rule for PL/pgSQL Basics.",
+      "answer": "Use BEGIN and END."
+     },
+     {
+      "q": "Module 24 · State one key rule for Parameters.",
+      "answer": "IN is the default."
+     },
+     {
+      "q": "Module 24 · State one key rule for Returning Tables.",
+      "answer": "Declare column names and types."
+     },
+     {
+      "q": "Module 24 · State one key rule for CREATE PROCEDURE.",
+      "answer": "Use CALL."
+     },
+     {
+      "q": "Module 24 · State one key rule for CALL.",
+      "answer": "Use CALL, not SELECT."
+     },
+     {
+      "q": "Module 24 · State one key rule for Transaction Control.",
+      "answer": "Functions cannot COMMIT."
+     }
+    ]
+   }
+  }
+ ]
+}
