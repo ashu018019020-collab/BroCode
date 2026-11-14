@@ -332,6 +332,7 @@ export const PATH_ROUTE_ALLOWLIST: string[] = [
   '/cpp',                 // the C++ Mastery course — same rule: modules, not path cards
   '/html',                // the HTML Mastery course — same rule: modules, not path cards
   '/css',                 // the CSS Mastery course — same rule: modules, not path cards
+  '/mysql',               // the MySQL Complete Masterclass — same rule: modules, not path cards
   '/track/:trackSlug',    // owned by the 8 TRACK_DEFS cards
   '/lesson/:sid/:stage',  // owned by the 8 TRACK_DEFS cards
   '/lesson/:sid',

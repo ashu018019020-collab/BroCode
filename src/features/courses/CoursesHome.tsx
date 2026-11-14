@@ -19,6 +19,7 @@ import { usePandasCourse } from '../../core/data/pcourse';
 import { useCppCourse } from '../../core/data/cppcourse';
 import { useHtmlCourse } from '../../core/data/htmlcourse';
 import { useCssCourse } from '../../core/data/csscourse';
+import { useMysqlMasterclass } from '../../core/data/mysqlmasterclass';
 import { CLogo } from '../c-programming/CLogo';
 import { JLogo } from '../java-programming/JLogo';
 import { NLogo } from '../numpy-mastery/NLogo';
@@ -26,6 +27,7 @@ import { PLogo } from '../pandas-mastery/PLogo';
 import { CppLogo } from '../cpp-mastery/CppLogo';
 import { HtmlLogo } from '../html-mastery/HtmlLogo';
 import { CssLogo } from '../css-mastery/CssLogo';
+import { MysqlLogo } from '../mysql-mastery/MysqlLogo';
 
 /**
  * /courses — ONE grid of course cards, in the learning sequence.
@@ -51,6 +53,7 @@ export default function CoursesHome() {
   const cppCourse = useCppCourse();
   const htmlCourse = useHtmlCourse();
   const cssCourse = useCssCourse();
+  const mysqlCourse = useMysqlMasterclass();
   const pctOf = useSectionPct();
   /** Owner overrides when the database has them; the code-authored journey otherwise. */
   const { placements } = useCoursePlacements();
@@ -239,6 +242,23 @@ export default function CoursesHome() {
     );
   };
 
+  /** MySQL Complete Masterclass is its own course page and card, beside the other mastery courses. */
+  const renderMysql = () => {
+    if (!mysqlCourse) return null;
+    return (
+      <Link
+        to="/mysql"
+        className="course-card cc-simple tone-orange"
+        data-agent-action="course:mysql-masterclass"
+        data-agent-label="MySQL Complete Masterclass"
+        title="MySQL Complete Masterclass"
+      >
+        <span className="cc-logo"><MysqlLogo size={88} /></span>
+        <b className="cc-name">MySQL Complete Masterclass</b>
+      </Link>
+    );
+  };
+
   const renderCpp = () => {
     if (!cppCourse) return null;
     return (
@@ -328,6 +348,7 @@ export default function CoursesHome() {
           {renderN()}
           {renderP()}
           {renderCpp()}
+          {renderMysql()}
           <Link
             to="/java"
             className="course-card cc-simple tone-amber"

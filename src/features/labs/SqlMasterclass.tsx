@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, Bug, Check, Code2, GraduationCap, HelpCircle, Layers, ListChecks } from 'lucide-react';
-import { useSqlMasterclass, type SqlModule, type SqlQuiz } from '../../core/data/sqlmasterclass';
+import { useSqlMasterclass, type SqlMasterclassFile, type SqlModule, type SqlQuiz } from '../../core/data/sqlmasterclass';
 
 type BankKey = 'learn' | 'interview' | 'labs' | 'logic' | 'debug' | 'revision';
 const BANKS: { key: BankKey; label: string; icon: typeof BookOpen }[] = [
@@ -100,8 +100,7 @@ function Bank({ module, bank }: { module: SqlModule; bank: BankKey }) {
   );
 }
 
-export function SqlMasterclass() {
-  const file = useSqlMasterclass();
+export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: SqlMasterclassFile; label?: string }) {
   const [open, setOpen] = useState(false);
   const [level, setLevel] = useState<'simple' | 'pro'>('simple');
   const [moduleId, setModuleId] = useState('sql00');
@@ -109,7 +108,7 @@ export function SqlMasterclass() {
   const modules = file?.modules ?? [];
   const module = useMemo(() => modules.find((m) => m.id === moduleId) ?? modules[0], [modules, moduleId]);
 
-  if (!file || !module) {
+  if (!module) {
     return <div className="card"><div className="skeleton" style={{ height: 90 }} /></div>;
   }
 
@@ -117,7 +116,7 @@ export function SqlMasterclass() {
     <div className="card" style={{ marginTop: 10 }}>
       <div className="row spread" style={{ gap: 10, flexWrap: 'wrap' }}>
         <div className="row" style={{ gap: 8 }}>
-          <span className="chip"><GraduationCap size={12} /> SQL MASTERCLASS</span>
+          <span className="chip"><GraduationCap size={12} /> {label}</span>
           <b>{file.course.title}</b>
           <span className="chip">{file.stats.topics} topics</span>
           <span className="chip">{file.stats.learn + file.stats.interview + file.stats.labs + file.stats.logic + file.stats.debug + file.stats.revision} bank items</span>
@@ -207,4 +206,11 @@ export function SqlMasterclass() {
       )}
     </div>
   );
+}
+
+/** SQL Lab wrapper: the panel plus the SQL Masterclass artifact. */
+export function SqlMasterclass() {
+  const file = useSqlMasterclass();
+  if (!file) return <div className="card"><div className="skeleton" style={{ height: 90 }} /></div>;
+  return <MasterclassPanel file={file} />;
 }
