@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, Check, ChevronLeft, ChevronRight, GraduationCap, Play, Target, Trophy } from 'lucide-react';
 import { useHtmlCourse } from '../../core/data/htmlcourse';
@@ -28,6 +28,12 @@ export default function HtmlCoursePage() {
   const [params, setParams] = useSearchParams();
   const modules = file?.modules ?? [];
   const open = modules.find((m) => m.id === params.get('module')) ?? null;
+
+  /* A module (or the module list) opens at the top: the list is long, and keeping the old scroll
+     position made a freshly opened module start halfway down. */
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [open?.id]);
   const progress = useMemo(() => hProgress(modules, state.attempts), [modules, state.attempts]);
   const [lastPlace, saveLast] = useSavedAnswer(H_LAST_KEY);
   const report = useMemo(() => hReport(modules, state.attempts, lastPlace), [modules, state.attempts, lastPlace]);
