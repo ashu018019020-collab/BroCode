@@ -1,0 +1,952 @@
+{
+ "course": {
+  "id": "sql-masterclass",
+  "title": "SQL Masterclass",
+  "tagline": "Zero to advanced, one module at a time.",
+  "level": "intermediate",
+  "hours": 26,
+  "standard": "PostgreSQL-first, with MySQL, SQLite and SQL Server notes.",
+  "prerequisites": [
+   "Module 00",
+   "Module 01",
+   "Module 02",
+   "Module 03",
+   "Module 04",
+   "Module 05",
+   "Module 06",
+   "Module 07",
+   "Module 08",
+   "Module 09",
+   "Module 10",
+   "Module 11",
+   "Module 12"
+  ],
+  "description": "Module 13 teaches CASE, COALESCE, NULLIF, GREATEST and LEAST, three-valued logic, NULL joins, aggregates, constraints and conditional reporting.",
+  "outcomes": [
+   "Write simple and searched CASE",
+   "Use CASE in filtering and ordering",
+   "Bucket rows with CASE and GROUP BY",
+   "Handle NULL with COALESCE and NULLIF",
+   "Reason about three-valued logic",
+   "Avoid NULL join and NOT IN traps",
+   "Build conditional reports"
+  ]
+ },
+ "modules": [
+  {
+   "id": "sql13",
+   "no": 13,
+   "title": "CASE, Conditional Logic and NULL Handling",
+   "goal": "Express conditional logic correctly and treat NULL as unknown, not empty.",
+   "level": "intermediate",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Introduction to CASE",
+     "simple": "CASE SQL me if/else ki tarah conditional value deta hai.",
+     "pro": "CASE evaluates conditions in order and returns the value from the first matching branch, making it the standard SQL conditional expression.",
+     "points": [
+      "CASE returns a value.",
+      "Branches are evaluated in order.",
+      "ELSE is optional."
+     ],
+     "example": {
+      "sql": "SELECT name, CASE WHEN marks >= 60 THEN 'Pass' ELSE 'Fail' END AS result FROM students;",
+      "output": "Pass or Fail per student."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Simple CASE",
+     "simple": "Simple CASE ek expression ko fixed values se compare karta hai.",
+     "pro": "The simple form CASE expression WHEN value THEN result compares one expression for equality against each WHEN value.",
+     "points": [
+      "It is equality-only.",
+      "WHEN NULL never matches.",
+      "Use searched CASE for NULL or ranges."
+     ],
+     "example": {
+      "sql": "SELECT grade, CASE grade WHEN 'A' THEN 'Excellent' WHEN 'B' THEN 'Good' ELSE 'Needs work' END AS comment FROM enrollments;",
+      "output": "A comment per letter grade."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Searched CASE",
+     "simple": "Searched CASE har WHEN me arbitrary boolean condition leta hai.",
+     "pro": "The searched form CASE WHEN condition THEN result evaluates independent boolean conditions, so it can express ranges, NULL checks and compound logic.",
+     "points": [
+      "Conditions are boolean.",
+      "The first true branch wins.",
+      "It can test IS NULL."
+     ],
+     "example": {
+      "sql": "SELECT name, CASE WHEN marks >= 90 THEN 'A' WHEN marks >= 75 THEN 'B' WHEN marks IS NULL THEN 'Missing' ELSE 'C' END AS band FROM students;",
+      "output": "A grade band per student."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "CASE Evaluation Order",
+     "simple": "CASE pehla true branch leta hai; baad wale branches chhoot jaate hain.",
+     "pro": "CASE stops at the first true condition, so a broad condition placed before a narrow one makes the narrow branch unreachable.",
+     "points": [
+      "Order branches from specific to broad.",
+      "Only one branch returns.",
+      "Unused branches are not evaluated."
+     ],
+     "example": {
+      "sql": "SELECT marks, CASE WHEN marks >= 60 THEN 'Pass' WHEN marks >= 90 THEN 'Distinction' ELSE 'Fail' END AS result FROM students;",
+      "output": "Distinction is unreachable because 90 also passes."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "CASE in SELECT",
+     "simple": "SELECT list me CASE computed column banata hai.",
+     "pro": "CASE in the select list derives a label, bucket or flag without changing stored data.",
+     "points": [
+      "It does not modify the table.",
+      "Alias the result for readability.",
+      "All branches should return compatible types."
+     ],
+     "example": {
+      "sql": "SELECT name, marks, CASE WHEN marks >= 60 THEN 'Pass' ELSE 'Fail' END AS result FROM students;",
+      "output": "Each row gets a derived result column."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "CASE in WHERE",
+     "simple": "WHERE me CASE conditional predicate bana sakta hai.",
+     "pro": "CASE can produce a boolean inside WHERE, but a plain OR/AND expression is usually clearer and more index-friendly.",
+     "points": [
+      "CASE must return a boolean here.",
+      "It can hide index-friendly predicates.",
+      "Prefer explicit boolean logic."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE CASE WHEN marks IS NULL THEN FALSE ELSE marks >= 60 END;",
+      "output": "Students with a known passing mark."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "CASE in ORDER BY",
+     "simple": "CASE se custom sort order define kar sakte hain.",
+     "pro": "CASE in ORDER BY maps values to sort ranks, enabling a business-defined order instead of alphabetical or numeric order.",
+     "points": [
+      "Return sortable values.",
+      "Use ELSE for unmatched values.",
+      "The CASE is evaluated per row."
+     ],
+     "example": {
+      "sql": "SELECT title FROM courses ORDER BY CASE title WHEN 'SQL' THEN 1 WHEN 'Python' THEN 2 ELSE 3 END;",
+      "output": "SQL first, Python second, everything else after."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "CASE in GROUP BY",
+     "simple": "CASE se rows ko custom buckets me group kar sakte hain.",
+     "pro": "Grouping by a CASE expression creates buckets such as pass/fail or grade bands, and each bucket can then be aggregated.",
+     "points": [
+      "GROUP BY the same expression.",
+      "Alias the bucket for readability.",
+      "NULL needs its own branch."
+     ],
+     "example": {
+      "sql": "SELECT CASE WHEN marks >= 60 THEN 'Pass' ELSE 'Fail' END AS result, COUNT(*) AS total FROM students GROUP BY result;",
+      "output": "Pass and fail counts."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "CASE with Aggregates",
+     "simple": "CASE aggregate ke andar conditional value deta hai.",
+     "pro": "CASE inside SUM or COUNT lets one query compute several conditional totals without scanning the table repeatedly.",
+     "points": [
+      "SUM(CASE ... THEN 1 ELSE 0 END) counts conditions.",
+      "COUNT(CASE ... THEN 1 END) counts non-null matches.",
+      "ELSE 0 avoids NULL sums."
+     ],
+     "example": {
+      "sql": "SELECT SUM(CASE WHEN marks >= 60 THEN 1 ELSE 0 END) AS passed, COUNT(*) AS total FROM students;",
+      "output": "Passed and total counts."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Conditional Aggregation",
+     "simple": "Conditional aggregation ek hi pass me multiple metrics deta hai.",
+     "pro": "Conditional aggregation combines CASE or FILTER with aggregates to produce pass counts, fail counts and totals in one grouped query.",
+     "points": [
+      "CASE works on every database.",
+      "FILTER is PostgreSQL-specific.",
+      "Keep the conditions mutually clear."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) FILTER (WHERE marks >= 60) AS passed, COUNT(*) FILTER (WHERE marks < 60) AS failed FROM students;",
+      "output": "Passed and failed counts."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "COALESCE",
+     "simple": "COALESCE pehla non-null value deta hai.",
+     "pro": "COALESCE returns the first non-null argument, making it the standard way to supply a fallback for nullable columns.",
+     "points": [
+      "Arguments are evaluated left to right.",
+      "All-null input returns NULL.",
+      "Types must be compatible."
+     ],
+     "example": {
+      "sql": "SELECT name, COALESCE(email, 'none') AS email FROM students;",
+      "output": "A fallback for missing emails."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "NULLIF",
+     "simple": "NULLIF equal values ko NULL bana deta hai.",
+     "pro": "NULLIF(a, b) returns NULL when a equals b and otherwise returns a; it is commonly used to turn zero denominators or blank strings into NULL.",
+     "points": [
+      "Equality comparison.",
+      "Useful for division guards.",
+      "The result type follows the first argument."
+     ],
+     "example": {
+      "sql": "SELECT marks / NULLIF(marks, 0) AS ratio FROM students;",
+      "output": "NULL instead of division by zero."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "GREATEST and LEAST",
+     "simple": "GREATEST maximum aur LEAST minimum choose karte hain.",
+     "pro": "GREATEST returns the largest argument and LEAST the smallest; in PostgreSQL they ignore NULL arguments and return NULL only when every argument is NULL.",
+     "points": [
+      "They compare values, not rows.",
+      "PostgreSQL ignores NULL inputs.",
+      "MySQL differs on NULL."
+     ],
+     "example": {
+      "sql": "SELECT GREATEST(marks, 0) AS floored, LEAST(marks, 100) AS capped FROM students;",
+      "output": "Marks clamped to 0–100."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "NULL and Three-Valued Logic",
+     "simple": "NULL unknown hai, false nahi.",
+     "pro": "SQL logic has three values: TRUE, FALSE and UNKNOWN; comparisons with NULL produce UNKNOWN, and WHERE keeps only TRUE rows.",
+     "points": [
+      "NULL is not zero or empty.",
+      "NULL = NULL is UNKNOWN.",
+      "UNKNOWN is filtered out by WHERE."
+     ],
+     "example": {
+      "sql": "SELECT NULL = NULL AS equal, NULL IS NULL AS is_null;",
+      "output": "NULL | true"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "IS NULL and IS NOT NULL",
+     "simple": "NULL check ke liye IS NULL use karo, = NULL nahi.",
+     "pro": "IS NULL and IS NOT NULL are the only direct NULL tests; equality with NULL is always UNKNOWN.",
+     "points": [
+      "= NULL never matches.",
+      "IS NULL matches missing values.",
+      "IS NOT NULL matches known values."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE email IS NULL;",
+      "output": "Students with no email."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "NULL in Joins and IN",
+     "simple": "NULL join keys match nahi karte; NOT IN NULL se empty ho sakta hai.",
+     "pro": "Equality joins skip NULL keys, and a NULL in a NOT IN list makes the predicate UNKNOWN for every row.",
+     "points": [
+      "NULL = NULL is not true.",
+      "Use NOT EXISTS for anti-joins.",
+      "Use IS NOT DISTINCT FROM for null-safe matching."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE id NOT IN (SELECT student_id FROM enrollments WHERE student_id IS NOT NULL);",
+      "output": "Students whose id is not in the known list."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "NULL in Aggregates and GROUP BY",
+     "simple": "Aggregates NULL ignore karte hain; GROUP BY NULL ko ek group banata hai.",
+     "pro": "COUNT(column), SUM, AVG, MIN and MAX skip NULL, while GROUP BY treats all NULLs as one group; COUNT(*) still counts every row.",
+     "points": [
+      "COUNT(*) includes NULL rows.",
+      "COUNT(column) skips NULL.",
+      "NULLs group together."
+     ],
+     "example": {
+      "sql": "SELECT COUNT(*) AS rows, COUNT(marks) AS known FROM students;",
+      "output": "All rows versus known marks."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "NULL in Constraints and Uniqueness",
+     "simple": "CHECK NULL par pass hota hai; UNIQUE multiple NULLs allow karta hai.",
+     "pro": "A CHECK constraint passes when its expression is UNKNOWN, so a nullable column needs NOT NULL to enforce presence; a regular UNIQUE constraint allows multiple NULLs.",
+     "points": [
+      "CHECK does not reject NULL.",
+      "NOT NULL enforces presence.",
+      "UNIQUE allows multiple NULLs unless NULLS NOT DISTINCT."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE marks IS NULL;",
+      "output": "Rows a CHECK (marks >= 0) still allowed."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Common CASE and NULL Errors",
+     "simple": "Missing END, WHEN NULL aur = NULL sabse common mistakes hain.",
+     "pro": "Common failures are a missing END, a simple CASE trying to match NULL, an unreachable branch, equality with NULL and NOT IN with a NULL subquery.",
+     "points": [
+      "Use searched CASE for NULL.",
+      "Always close CASE with END.",
+      "Order branches correctly.",
+      "Use IS NULL, not = NULL."
+     ],
+     "example": {
+      "sql": "SELECT name, CASE WHEN marks IS NULL THEN 0 ELSE marks END AS safe_marks FROM students;",
+      "output": "Missing marks become zero."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Conditional Reporting",
+     "simple": "CASE aur NULL handling ko reports me combine karo.",
+     "pro": "A reliable conditional report handles missing values explicitly, orders buckets intentionally and verifies that every row falls into exactly one branch.",
+     "points": [
+      "Handle NULL first.",
+      "Make buckets mutually exclusive.",
+      "Check the totals against the row count."
+     ],
+     "example": {
+      "sql": "SELECT COALESCE(CASE WHEN marks >= 90 THEN 'A' WHEN marks >= 75 THEN 'B' WHEN marks >= 60 THEN 'C' WHEN marks IS NOT NULL THEN 'F' END, 'Missing') AS band, COUNT(*) AS total FROM students GROUP BY band ORDER BY band;",
+      "output": "Grade-band counts with a missing bucket."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What does CASE return?",
+      "options": [
+       "A value from the first matching branch",
+       "A table",
+       "A boolean only",
+       "An index"
+      ],
+      "answer": "A value from the first matching branch",
+      "why": "CASE is a conditional expression."
+     },
+     {
+      "q": "Which CASE form supports ranges?",
+      "options": [
+       "Searched CASE",
+       "Simple CASE",
+       "Both equally",
+       "Neither"
+      ],
+      "answer": "Searched CASE",
+      "why": "Searched CASE accepts arbitrary boolean conditions."
+     },
+     {
+      "q": "Which CASE form compares one expression for equality?",
+      "options": [
+       "Simple CASE",
+       "Searched CASE",
+       "Both",
+       "Neither"
+      ],
+      "answer": "Simple CASE",
+      "why": "Simple CASE is equality-only."
+     },
+     {
+      "q": "Does simple CASE WHEN NULL match a NULL value?",
+      "options": [
+       "No",
+       "Yes",
+       "Only in PostgreSQL",
+       "Only with ELSE"
+      ],
+      "answer": "No",
+      "why": "Equality with NULL is UNKNOWN; use searched CASE with IS NULL."
+     },
+     {
+      "q": "What happens if no branch matches and there is no ELSE?",
+      "options": [
+       "NULL is returned",
+       "An error is raised",
+       "The first row is returned",
+       "Zero is returned"
+      ],
+      "answer": "NULL is returned",
+      "why": "ELSE is optional and defaults to NULL."
+     },
+     {
+      "q": "Which branch wins when several conditions are true?",
+      "options": [
+       "The first one",
+       "The last one",
+       "The most specific one",
+       "All of them"
+      ],
+      "answer": "The first one",
+      "why": "CASE stops at the first true condition."
+     },
+     {
+      "q": "Where can CASE be used?",
+      "options": [
+       "In SELECT, WHERE, ORDER BY and GROUP BY",
+       "Only in SELECT",
+       "Only in WHERE",
+       "Only in ORDER BY"
+      ],
+      "answer": "In SELECT, WHERE, ORDER BY and GROUP BY",
+      "why": "CASE is an expression usable wherever a value is accepted."
+     },
+     {
+      "q": "What does COALESCE return?",
+      "options": [
+       "The first non-null argument",
+       "The last non-null argument",
+       "Always NULL",
+       "The smallest value"
+      ],
+      "answer": "The first non-null argument",
+      "why": "It supplies a fallback for NULL."
+     },
+     {
+      "q": "What does NULLIF(a, b) return when a = b?",
+      "options": [
+       "NULL",
+       "a",
+       "b",
+       "Zero"
+      ],
+      "answer": "NULL",
+      "why": "NULLIF turns equal values into NULL."
+     },
+     {
+      "q": "What is NULLIF commonly used to prevent?",
+      "options": [
+       "Division by zero",
+       "Duplicate rows",
+       "Ambiguous columns",
+       "Syntax errors"
+      ],
+      "answer": "Division by zero",
+      "why": "NULLIF(denominator, 0) turns a zero denominator into NULL."
+     },
+     {
+      "q": "Does PostgreSQL GREATEST ignore NULL arguments?",
+      "options": [
+       "Yes",
+       "No",
+       "Only for numbers",
+       "Only for text"
+      ],
+      "answer": "Yes",
+      "why": "It ignores NULL and returns NULL only if all arguments are NULL."
+     },
+     {
+      "q": "What does NULL = NULL evaluate to?",
+      "options": [
+       "UNKNOWN",
+       "TRUE",
+       "FALSE",
+       "0"
+      ],
+      "answer": "UNKNOWN",
+      "why": "NULL is not equal to anything, including itself."
+     },
+     {
+      "q": "Which predicate matches NULL?",
+      "options": [
+       "IS NULL",
+       "= NULL",
+       "<> NULL",
+       "LIKE NULL"
+      ],
+      "answer": "IS NULL",
+      "why": "Only IS NULL directly tests for NULL."
+     },
+     {
+      "q": "What does WHERE do with UNKNOWN?",
+      "options": [
+       "Filters it out",
+       "Keeps it",
+       "Converts it to FALSE",
+       "Raises an error"
+      ],
+      "answer": "Filters it out",
+      "why": "WHERE keeps only TRUE rows."
+     },
+     {
+      "q": "Do NULL join keys match each other?",
+      "options": [
+       "No",
+       "Yes",
+       "Only with LEFT JOIN",
+       "Only with CROSS JOIN"
+      ],
+      "answer": "No",
+      "why": "Equality with NULL is UNKNOWN."
+     },
+     {
+      "q": "What does a NULL in a NOT IN list do?",
+      "options": [
+       "Can make the result empty",
+       "Is ignored",
+       "Matches everything",
+       "Raises an error"
+      ],
+      "answer": "Can make the result empty",
+      "why": "The comparison becomes UNKNOWN for every row."
+     },
+     {
+      "q": "Does COUNT(*) count NULL rows?",
+      "options": [
+       "Yes",
+       "No",
+       "Only NULL marks",
+       "Only with GROUP BY"
+      ],
+      "answer": "Yes",
+      "why": "COUNT(*) counts rows, not values."
+     },
+     {
+      "q": "Does COUNT(column) count NULL values?",
+      "options": [
+       "No",
+       "Yes",
+       "Only in PostgreSQL",
+       "Only with DISTINCT"
+      ],
+      "answer": "No",
+      "why": "COUNT(column) skips NULL."
+     },
+     {
+      "q": "How does GROUP BY treat NULLs?",
+      "options": [
+       "As one group",
+       "As separate rows",
+       "It removes them",
+       "It raises an error"
+      ],
+      "answer": "As one group",
+      "why": "NULLs compare equal for grouping."
+     },
+     {
+      "q": "What does a CHECK constraint do with NULL?",
+      "options": [
+       "Passes it as UNKNOWN",
+       "Always rejects it",
+       "Converts it to zero",
+       "Raises an error"
+      ],
+      "answer": "Passes it as UNKNOWN",
+      "why": "A CHECK only rejects FALSE; use NOT NULL for presence."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is CASE?",
+      "answer": "A standard SQL conditional expression that returns the value of the first matching branch."
+     },
+     {
+      "q": "What is the difference between simple and searched CASE?",
+      "answer": "Simple CASE compares one expression for equality; searched CASE evaluates independent boolean conditions."
+     },
+     {
+      "q": "Why does simple CASE fail to match NULL?",
+      "answer": "It uses equality, and NULL = NULL is UNKNOWN; use searched CASE with IS NULL."
+     },
+     {
+      "q": "What happens when no CASE branch matches?",
+      "answer": "Without ELSE the result is NULL."
+     },
+     {
+      "q": "What does COALESCE do?",
+      "answer": "Returns the first non-null argument, or NULL if all are null."
+     },
+     {
+      "q": "What does NULLIF do?",
+      "answer": "Returns NULL when the two arguments are equal, otherwise the first argument."
+     },
+     {
+      "q": "Why use NULLIF(denominator, 0)?",
+      "answer": "It turns a zero denominator into NULL, avoiding division by zero."
+     },
+     {
+      "q": "How do GREATEST and LEAST treat NULL in PostgreSQL?",
+      "answer": "They ignore NULL arguments and return NULL only when every argument is NULL."
+     },
+     {
+      "q": "What are the three SQL truth values?",
+      "answer": "TRUE, FALSE and UNKNOWN."
+     },
+     {
+      "q": "What is NULL?",
+      "answer": "A marker for an unknown or missing value, not zero or an empty string."
+     },
+     {
+      "q": "Why does = NULL never match?",
+      "answer": "Equality with NULL is UNKNOWN, and WHERE keeps only TRUE."
+     },
+     {
+      "q": "When should you use IS NULL?",
+      "answer": "Whenever you need to test whether a value is missing."
+     },
+     {
+      "q": "Why is NOT IN risky with NULLs?",
+      "answer": "A NULL in the list makes the predicate UNKNOWN for every row, potentially returning no rows."
+     },
+     {
+      "q": "How do you do a null-safe equality join?",
+      "answer": "Use IS NOT DISTINCT FROM when NULL should match NULL."
+     },
+     {
+      "q": "How do aggregates treat NULL?",
+      "answer": "COUNT(column), SUM, AVG, MIN and MAX ignore NULL; COUNT(*) counts rows."
+     },
+     {
+      "q": "How does GROUP BY treat NULL?",
+      "answer": "It groups all NULLs together as one group."
+     },
+     {
+      "q": "How does a CHECK constraint treat NULL?",
+      "answer": "The check passes because NULL yields UNKNOWN, not FALSE; NOT NULL is needed to require a value."
+     },
+     {
+      "q": "How does UNIQUE treat NULL?",
+      "answer": "A regular UNIQUE constraint allows multiple NULLs; PostgreSQL 15+ can use NULLS NOT DISTINCT."
+     },
+     {
+      "q": "How do you count passed and failed rows in one query?",
+      "answer": "Use conditional aggregation with CASE or FILTER."
+     },
+     {
+      "q": "Why order CASE branches carefully?",
+      "answer": "The first true branch wins, so a broad branch can make later specific branches unreachable."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Simple CASE",
+      "task": "Label letter grades as Excellent, Good or Needs work.",
+      "solution": "SELECT grade, CASE grade WHEN 'A' THEN 'Excellent' WHEN 'B' THEN 'Good' ELSE 'Needs work' END AS comment FROM enrollments;",
+      "expected": "A comment per grade."
+     },
+     {
+      "title": "Searched CASE",
+      "task": "Band marks into A, B, C or Missing.",
+      "solution": "SELECT name, CASE WHEN marks >= 90 THEN 'A' WHEN marks >= 75 THEN 'B' WHEN marks IS NULL THEN 'Missing' ELSE 'C' END AS band FROM students;",
+      "expected": "A band per student."
+     },
+     {
+      "title": "Case order",
+      "task": "Write a CASE where distinction is reachable.",
+      "solution": "SELECT marks, CASE WHEN marks >= 90 THEN 'Distinction' WHEN marks >= 60 THEN 'Pass' ELSE 'Fail' END AS result FROM students;",
+      "expected": "Distinction for 90+."
+     },
+     {
+      "title": "CASE in WHERE",
+      "task": "Return students with a known passing mark.",
+      "solution": "SELECT name FROM students WHERE CASE WHEN marks IS NULL THEN FALSE ELSE marks >= 60 END;",
+      "expected": "Known passing students."
+     },
+     {
+      "title": "CASE in ORDER BY",
+      "task": "Order SQL first, Python second, others last.",
+      "solution": "SELECT title FROM courses ORDER BY CASE title WHEN 'SQL' THEN 1 WHEN 'Python' THEN 2 ELSE 3 END;",
+      "expected": "Custom course order."
+     },
+     {
+      "title": "CASE in GROUP BY",
+      "task": "Count pass and fail buckets.",
+      "solution": "SELECT CASE WHEN marks >= 60 THEN 'Pass' ELSE 'Fail' END AS result, COUNT(*) AS total FROM students GROUP BY result;",
+      "expected": "Two bucket counts."
+     },
+     {
+      "title": "Conditional SUM",
+      "task": "Return passed and total counts.",
+      "solution": "SELECT SUM(CASE WHEN marks >= 60 THEN 1 ELSE 0 END) AS passed, COUNT(*) AS total FROM students;",
+      "expected": "Two counts."
+     },
+     {
+      "title": "FILTER alternative",
+      "task": "Return passed and failed counts with FILTER.",
+      "solution": "SELECT COUNT(*) FILTER (WHERE marks >= 60) AS passed, COUNT(*) FILTER (WHERE marks < 60) AS failed FROM students;",
+      "expected": "Two counts."
+     },
+     {
+      "title": "COALESCE",
+      "task": "Show none for a missing email.",
+      "solution": "SELECT name, COALESCE(email, 'none') AS email FROM students;",
+      "expected": "Every row has an email value."
+     },
+     {
+      "title": "NULLIF",
+      "task": "Avoid division by zero with NULLIF.",
+      "solution": "SELECT marks / NULLIF(marks, 0) AS ratio FROM students;",
+      "expected": "NULL for a zero mark."
+     },
+     {
+      "title": "GREATEST and LEAST",
+      "task": "Clamp marks between 0 and 100.",
+      "solution": "SELECT GREATEST(marks, 0) AS floored, LEAST(marks, 100) AS capped FROM students;",
+      "expected": "Clamped values."
+     },
+     {
+      "title": "NULL comparison",
+      "task": "Show that NULL = NULL is UNKNOWN.",
+      "solution": "SELECT NULL = NULL AS equal, NULL IS NULL AS is_null;",
+      "expected": "NULL | true"
+     },
+     {
+      "title": "IS NULL",
+      "task": "Return students without an email.",
+      "solution": "SELECT name FROM students WHERE email IS NULL;",
+      "expected": "Students with no email."
+     },
+     {
+      "title": "Null-safe join",
+      "task": "Match students and applicants even when emails are NULL.",
+      "solution": "SELECT s.name, a.marks FROM students s JOIN applicants a ON s.email IS NOT DISTINCT FROM a.email;",
+      "expected": "NULL emails match each other."
+     },
+     {
+      "title": "NOT IN with NULL",
+      "task": "Return students not in a known id list, safely.",
+      "solution": "SELECT name FROM students WHERE id NOT IN (SELECT student_id FROM enrollments WHERE student_id IS NOT NULL);",
+      "expected": "Only known non-matches."
+     },
+     {
+      "title": "Count NULLs",
+      "task": "Count all rows and known marks.",
+      "solution": "SELECT COUNT(*) AS row_count, COUNT(marks) AS known FROM students;",
+      "expected": "Two counts."
+     },
+     {
+      "title": "Check NULL constraint",
+      "task": "Show that a CHECK allows a NULL mark.",
+      "solution": "INSERT INTO students (name, marks) VALUES ('Zara', NULL) RETURNING id, marks;",
+      "expected": "The row is accepted."
+     },
+     {
+      "title": "Unique NULLs",
+      "task": "Insert two students with NULL emails.",
+      "solution": "INSERT INTO students (name, email) VALUES ('A', NULL), ('B', NULL) RETURNING id, email;",
+      "expected": "Both rows are accepted."
+     },
+     {
+      "title": "Conditional report",
+      "task": "Count grade bands including Missing.",
+      "solution": "SELECT COALESCE(CASE WHEN marks >= 90 THEN 'A' WHEN marks >= 75 THEN 'B' WHEN marks >= 60 THEN 'C' WHEN marks IS NOT NULL THEN 'F' END, 'Missing') AS band, COUNT(*) AS total FROM students GROUP BY band ORDER BY band;",
+      "expected": "One row per band."
+     },
+     {
+      "title": "CASE in UPDATE",
+      "task": "Replace NULL marks with zero.",
+      "solution": "UPDATE students SET marks = CASE WHEN marks IS NULL THEN 0 ELSE marks END RETURNING id, marks;",
+      "expected": "Updated rows."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why does branch order matter in CASE?",
+      "answer": "The first true branch wins, so a broad condition can shadow a later specific condition."
+     },
+     {
+      "q": "Why does simple CASE not match NULL?",
+      "answer": "It uses equality, and NULL = NULL is UNKNOWN, not TRUE."
+     },
+     {
+      "q": "Why is CASE in WHERE often a bad idea?",
+      "answer": "It can hide index-friendly predicates and make the filter harder for the planner to optimize."
+     },
+     {
+      "q": "Why use COALESCE instead of CASE for a fallback?",
+      "answer": "COALESCE expresses the first-non-null intent directly and is shorter."
+     },
+     {
+      "q": "Why use NULLIF before division?",
+      "answer": "It converts a zero denominator into NULL, so the division returns NULL instead of erroring."
+     },
+     {
+      "q": "Why do GREATEST and LEAST behave differently across databases?",
+      "answer": "PostgreSQL ignores NULL arguments, while some databases return NULL if any argument is NULL."
+     },
+     {
+      "q": "Why is NULL not equal to zero?",
+      "answer": "NULL means unknown or missing; zero is a known numeric value."
+     },
+     {
+      "q": "Why does WHERE drop UNKNOWN?",
+      "answer": "WHERE keeps only rows whose predicate is TRUE; UNKNOWN is not TRUE."
+     },
+     {
+      "q": "Why is NOT IN unsafe with NULLs?",
+      "answer": "A NULL in the list makes the comparison UNKNOWN for every row, so nothing is returned."
+     },
+     {
+      "q": "Why use IS NOT DISTINCT FROM in a join?",
+      "answer": "It treats NULL as equal to NULL when the business rule requires matching missing keys."
+     },
+     {
+      "q": "Why does COUNT(*) include NULL rows?",
+      "answer": "It counts rows, not values, so NULL columns do not matter."
+     },
+     {
+      "q": "Why does COUNT(column) skip NULL?",
+      "answer": "It counts only known values in that column."
+     },
+     {
+      "q": "Why do NULLs form one GROUP BY group?",
+      "answer": "Grouping treats NULLs as equal to each other for partitioning."
+     },
+     {
+      "q": "Why does a CHECK constraint allow NULL?",
+      "answer": "A CHECK rejects only FALSE; NULL produces UNKNOWN, which passes."
+     },
+     {
+      "q": "Why does UNIQUE allow multiple NULLs?",
+      "answer": "NULLs are not considered equal for a regular unique index; use NULLS NOT DISTINCT if that is wrong."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Simple CASE with NULL",
+      "broken": "SELECT name, CASE email WHEN NULL THEN 'missing' ELSE 'known' END AS state FROM students;",
+      "fix": "SELECT name, CASE WHEN email IS NULL THEN 'missing' ELSE 'known' END AS state FROM students;",
+      "error": "The NULL branch never matches",
+      "expected": "Missing emails labelled correctly."
+     },
+     {
+      "title": "Missing END",
+      "broken": "SELECT CASE WHEN marks >= 60 THEN 'Pass' FROM students;",
+      "fix": "SELECT CASE WHEN marks >= 60 THEN 'Pass' ELSE 'Fail' END FROM students;",
+      "error": "syntax error at end of input",
+      "expected": "Pass or Fail."
+     },
+     {
+      "title": "Unreachable branch",
+      "broken": "SELECT CASE WHEN marks >= 60 THEN 'Pass' WHEN marks >= 90 THEN 'Distinction' ELSE 'Fail' END FROM students;",
+      "fix": "SELECT CASE WHEN marks >= 90 THEN 'Distinction' WHEN marks >= 60 THEN 'Pass' ELSE 'Fail' END FROM students;",
+      "error": "Distinction is never returned",
+      "expected": "Distinction for 90+."
+     },
+     {
+      "title": "Equals NULL",
+      "broken": "SELECT name FROM students WHERE email = NULL;",
+      "fix": "SELECT name FROM students WHERE email IS NULL;",
+      "error": "No rows are returned",
+      "expected": "Students with no email."
+     },
+     {
+      "title": "NOT IN with NULL",
+      "broken": "SELECT name FROM students WHERE id NOT IN (SELECT student_id FROM enrollments);",
+      "fix": "SELECT name FROM students s WHERE NOT EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "error": "A NULL student_id can make the result empty",
+      "expected": "Students with no enrollment."
+     },
+     {
+      "title": "COALESCE all NULL",
+      "broken": "SELECT COALESCE(email, NULL) AS email FROM students;",
+      "fix": "SELECT COALESCE(email, 'none') AS email FROM students;",
+      "error": "The fallback is NULL, so nothing is filled",
+      "expected": "A visible fallback."
+     },
+     {
+      "title": "NULLIF denominator",
+      "broken": "SELECT 100 / 0 AS ratio;",
+      "fix": "SELECT 100 / NULLIF(0, 0) AS ratio;",
+      "error": "division by zero",
+      "expected": "NULL for a zero mark."
+     },
+     {
+      "title": "CASE type mismatch",
+      "broken": "SELECT CASE WHEN marks >= 60 THEN 1 ELSE 'fail' END FROM students;",
+      "fix": "SELECT CASE WHEN marks >= 60 THEN 1 ELSE 0 END FROM students;",
+      "error": "invalid input syntax for type integer: \"fail\"",
+      "expected": "1 or 0."
+     },
+     {
+      "title": "CHECK allows NULL",
+      "broken": "CREATE TABLE t (marks INTEGER CHECK (marks >= 0));",
+      "fix": "CREATE TABLE t (marks INTEGER NOT NULL CHECK (marks >= 0));",
+      "error": "A NULL mark is accepted",
+      "expected": "Marks are required."
+     },
+     {
+      "title": "UNIQUE NULLs",
+      "broken": "CREATE TABLE t (email TEXT UNIQUE);",
+      "fix": "CREATE TABLE t (email TEXT, UNIQUE NULLS NOT DISTINCT (email));",
+      "error": "Multiple NULL emails are allowed",
+      "expected": "At most one NULL email."
+     }
+    ],
+    "revision": [
+     {
+      "q": "What does CASE return?",
+      "answer": "The first matching branch value."
+     },
+     {
+      "q": "Which CASE form handles ranges?",
+      "answer": "Searched CASE."
+     },
+     {
+      "q": "What happens without ELSE?",
+      "answer": "The result is NULL when no branch matches."
+     },
+     {
+      "q": "What does COALESCE do?",
+      "answer": "Returns the first non-null argument."
+     },
+     {
+      "q": "What does NULLIF do?",
+      "answer": "Returns NULL when two values are equal."
+     },
+     {
+      "q": "What is NULL = NULL?",
+      "answer": "UNKNOWN."
+     },
+     {
+      "q": "How do you test for NULL?",
+      "answer": "IS NULL or IS NOT NULL."
+     },
+     {
+      "q": "What does WHERE do with UNKNOWN?",
+      "answer": "Filters it out."
+     },
+     {
+      "q": "Why is NOT IN unsafe with NULL?",
+      "answer": "It can make the whole predicate UNKNOWN."
+     },
+     {
+      "q": "What does a CHECK do with NULL?",
+      "answer": "It passes as UNKNOWN."
+     }
+    ]
+   }
+  }
+ ]
+}
