@@ -1,0 +1,940 @@
+{
+ "course": {
+  "id": "sql-masterclass",
+  "title": "SQL Masterclass",
+  "tagline": "Zero to advanced, one module at a time.",
+  "level": "beginner",
+  "hours": 6,
+  "standard": "PostgreSQL-first, with MySQL, SQLite and SQL Server notes.",
+  "prerequisites": [
+   "Module 00",
+   "Module 01",
+   "Module 02"
+  ],
+  "description": "Module 03 teaches the SQL command categories, what each command changes, and how to choose safely between DELETE, TRUNCATE and DROP.",
+  "outcomes": [
+   "Classify any common SQL command",
+   "Use DDL, DML, DQL, DCL and TCL correctly",
+   "Choose between DELETE, TRUNCATE and DROP",
+   "Grant and revoke privileges",
+   "Commit and roll back transactions",
+   "Recognise utility commands"
+  ]
+ },
+ "modules": [
+  {
+   "id": "sql03",
+   "no": 3,
+   "title": "SQL Commands and Categories",
+   "goal": "Classify SQL commands and use the right one safely.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "What Are SQL Commands?",
+     "simple": "SQL command ek instruction hai jo database ko kuch karne bolta hai — data laana, badalna, structure banana ya permission dena.",
+     "pro": "An SQL command is a statement the server parses and executes; commands are grouped by intent such as defining structure, manipulating rows, querying, controlling access or managing transactions.",
+     "points": [
+      "A statement ends with a semicolon.",
+      "The command category describes its job, not its difficulty.",
+      "PostgreSQL also has utility commands such as EXPLAIN and VACUUM."
+     ],
+     "example": {
+      "sql": "SELECT 1 AS ready;",
+      "output": "ready\n1"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "DDL — Data Definition Language",
+     "simple": "DDL structure define karta hai — table, schema, index, view.",
+     "pro": "DDL defines and changes database objects: CREATE, ALTER, DROP, TRUNCATE, COMMENT and RENAME.",
+     "points": [
+      "DDL changes the schema, not individual row values.",
+      "In PostgreSQL, most DDL is transactional.",
+      "DDL takes locks that can block concurrent work."
+     ],
+     "example": {
+      "sql": "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "DML — Data Manipulation Language",
+     "simple": "DML rows ke data ko badalta hai — insert, update, delete.",
+     "pro": "DML changes row data: INSERT, UPDATE, DELETE and MERGE; it is transactional and can be filtered with WHERE.",
+     "points": [
+      "DML works inside the table structure.",
+      "Every DML statement can be rolled back in PostgreSQL.",
+      "RETURNING exposes changed rows."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (id, name) VALUES (1, 'Aarav');",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "DQL — Data Query Language",
+     "simple": "DQL data padhne ke liye hai — mainly SELECT.",
+     "pro": "DQL reads data without changing it; SELECT is the core DQL statement, including joins, aggregates and window functions.",
+     "points": [
+      "DQL does not modify rows.",
+      "Some curricula fold DQL into DML; both names describe SELECT.",
+      "SELECT can call functions and use CTEs."
+     ],
+     "example": {
+      "sql": "SELECT id, name FROM students;",
+      "output": "One row per student."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "DCL — Data Control Language",
+     "simple": "DCL permissions deta aur hataata hai — GRANT aur REVOKE.",
+     "pro": "DCL manages privileges and access: GRANT and REVOKE on databases, schemas, tables, sequences and functions.",
+     "points": [
+      "Roles are the subjects of privileges.",
+      "Least privilege keeps production safe.",
+      "GRANT and REVOKE are transactional in PostgreSQL."
+     ],
+     "example": {
+      "sql": "GRANT SELECT ON students TO analyst;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "TCL — Transaction Control Language",
+     "simple": "TCL transaction ko control karta hai — BEGIN, COMMIT, ROLLBACK, SAVEPOINT.",
+     "pro": "TCL groups statements into atomic units: BEGIN/START TRANSACTION, COMMIT, ROLLBACK and SAVEPOINT.",
+     "points": [
+      "A transaction ends with COMMIT or ROLLBACK.",
+      "An error aborts the transaction until rollback.",
+      "SAVEPOINT allows partial rollback."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET name = 'Aarav S' WHERE id = 1;\nCOMMIT;",
+      "output": "BEGIN\nUPDATE 1\nCOMMIT"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "CREATE",
+     "simple": "CREATE naya object banata hai — database, schema, table, view, index, role.",
+     "pro": "CREATE defines a new database object with its columns, constraints, options and owner.",
+     "points": [
+      "CREATE TABLE needs column names and types.",
+      "CREATE is DDL.",
+      "Use IF NOT EXISTS when re-running scripts."
+     ],
+     "example": {
+      "sql": "CREATE TABLE courses (id INTEGER PRIMARY KEY, title TEXT NOT NULL);",
+      "output": "CREATE TABLE"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "ALTER",
+     "simple": "ALTER existing object ki definition badalta hai — column add, type change, constraint add.",
+     "pro": "ALTER modifies an existing object; ALTER TABLE can add/drop columns, change types, rename objects and manage constraints.",
+     "points": [
+      "ALTER is DDL.",
+      "Some changes rewrite the table and take time.",
+      "Use USING when a type change needs an explicit cast."
+     ],
+     "example": {
+      "sql": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "output": "ALTER TABLE"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "DROP",
+     "simple": "DROP object ko poora hata deta hai — structure, data aur uske dependents.",
+     "pro": "DROP removes an object and its data; DROP TABLE, DROP VIEW, DROP INDEX, DROP SCHEMA and DROP DATABASE are DDL.",
+     "points": [
+      "DROP is destructive and usually irreversible.",
+      "Use IF EXISTS for idempotent scripts.",
+      "CASCADE also drops dependent objects; use it deliberately."
+     ],
+     "example": {
+      "sql": "DROP TABLE IF EXISTS students;",
+      "output": "DROP TABLE"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "TRUNCATE",
+     "simple": "TRUNCATE table ke saare rows jaldi hata deta hai, table structure rehta hai.",
+     "pro": "TRUNCATE removes every row from a table in one operation, resets storage, keeps the table and is transactional in PostgreSQL.",
+     "points": [
+      "TRUNCATE has no WHERE clause.",
+      "RESTART IDENTITY resets sequences.",
+      "It does not fire row-level DELETE triggers."
+     ],
+     "example": {
+      "sql": "TRUNCATE TABLE students RESTART IDENTITY CASCADE;",
+      "output": "TRUNCATE TABLE"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "SELECT",
+     "simple": "SELECT data padhta hai — columns, rows aur expressions.",
+     "pro": "SELECT projects columns and filters rows; it is DQL and the most common read command.",
+     "points": [
+      "SELECT does not change stored rows.",
+      "Use explicit columns in production.",
+      "ORDER BY and LIMIT shape the result."
+     ],
+     "example": {
+      "sql": "SELECT id, name FROM students WHERE id = 1;",
+      "output": "1 | Aarav"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "INSERT",
+     "simple": "INSERT table me naye rows add karta hai.",
+     "pro": "INSERT adds one or more rows; RETURNING returns generated values such as identity ids.",
+     "points": [
+      "List columns explicitly.",
+      "INSERT ... SELECT copies rows from a query.",
+      "A failed INSERT does not add a partial row."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (id, name) VALUES (2, 'Meera') RETURNING id;",
+      "output": "id\n2"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "UPDATE",
+     "simple": "UPDATE existing rows ke values badalta hai.",
+     "pro": "UPDATE changes column values for rows matched by WHERE; without WHERE every row is updated.",
+     "points": [
+      "Always test the WHERE with SELECT first.",
+      "RETURNING shows what changed.",
+      "An UPDATE can fire row-level triggers."
+     ],
+     "example": {
+      "sql": "UPDATE students SET name = 'Aarav Sharma' WHERE id = 1 RETURNING id, name;",
+      "output": "1 | Aarav Sharma"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "DELETE",
+     "simple": "DELETE selected rows ko hataata hai, structure rehta hai.",
+     "pro": "DELETE removes rows matched by WHERE; without WHERE every row is deleted.",
+     "points": [
+      "DELETE can be filtered and rolled back.",
+      "It fires row-level DELETE triggers.",
+      "It does not reset identity sequences."
+     ],
+     "example": {
+      "sql": "DELETE FROM students WHERE id = 2 RETURNING id;",
+      "output": "id\n2"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "GRANT",
+     "simple": "GRANT role ko permission deta hai — read, write, execute.",
+     "pro": "GRANT gives privileges on objects to roles; privileges include SELECT, INSERT, UPDATE, DELETE, USAGE and EXECUTE.",
+     "points": [
+      "Grant the minimum needed.",
+      "Schema USAGE is often required before table access.",
+      "GRANT is DCL."
+     ],
+     "example": {
+      "sql": "GRANT SELECT, INSERT ON students TO analyst;",
+      "output": "GRANT"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "REVOKE",
+     "simple": "REVOKE di hui permission wapas leta hai.",
+     "pro": "REVOKE removes privileges from roles; CASCADE also revokes dependent grants, RESTRICT refuses if dependents exist.",
+     "points": [
+      "REVOKE ALL removes every privilege on the object.",
+      "Test the role after revoking.",
+      "REVOKE is DCL."
+     ],
+     "example": {
+      "sql": "REVOKE INSERT ON students FROM analyst;",
+      "output": "REVOKE"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "COMMIT",
+     "simple": "COMMIT transaction ke changes ko permanent karta hai.",
+     "pro": "COMMIT ends the transaction and makes its changes durable and visible to other sessions.",
+     "points": [
+      "Commit only when the unit is complete.",
+      "COMMIT releases locks.",
+      "An aborted transaction cannot be committed."
+     ],
+     "example": {
+      "sql": "BEGIN;\nINSERT INTO students (id, name) VALUES (3, 'Kabir');\nCOMMIT;",
+      "output": "BEGIN\nINSERT 0 1\nCOMMIT"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "ROLLBACK",
+     "simple": "ROLLBACK transaction ke uncommitted changes ko undo karta hai.",
+     "pro": "ROLLBACK aborts the current transaction and discards its changes; ROLLBACK TO SAVEPOINT undoes only the work after that savepoint.",
+     "points": [
+      "Rollback is your safety net.",
+      "An error puts the transaction in a failed state.",
+      "DROP DATABASE cannot be rolled back because it cannot run in a transaction."
+     ],
+     "example": {
+      "sql": "BEGIN;\nDELETE FROM students;\nROLLBACK;",
+      "output": "BEGIN\nDELETE 3\nROLLBACK"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Command Differences and Classification",
+     "simple": "Har command ka category alag hai; same result alag commands se aa sakta hai, par risk aur locking alag hoti hai.",
+     "pro": "Classify commands by intent: DDL changes structure, DML changes rows, DQL reads, DCL controls access and TCL controls transactions; some commands are utility commands outside the five groups.",
+     "points": [
+      "DELETE vs TRUNCATE vs DROP differ in scope and recovery.",
+      "TRUNCATE is commonly grouped with DDL but is transactional in PostgreSQL.",
+      "SELECT is DQL even though some teams call it DML."
+     ],
+     "example": {
+      "sql": "SELECT 'DDL' AS category, 'CREATE TABLE' AS command\nUNION ALL SELECT 'DML', 'INSERT'\nUNION ALL SELECT 'DQL', 'SELECT';",
+      "output": "DDL | CREATE TABLE\nDML | INSERT\nDQL | SELECT"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Command Classification",
+     "simple": "Practice me command dekho aur bolo — structure, data, read, permission ya transaction.",
+     "pro": "In practice, read the verb and the target: CREATE/ALTER/DROP/TRUNCATE are DDL, INSERT/UPDATE/DELETE/MERGE are DML, SELECT is DQL, GRANT/REVOKE are DCL and BEGIN/COMMIT/ROLLBACK/SAVEPOINT are TCL.",
+     "points": [
+      "EXPLAIN, VACUUM, ANALYZE and COPY are utility commands.",
+      "MERGE is DML in PostgreSQL 15+.",
+      "The category guides review, permissions and rollback planning."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT * FROM students WHERE id = 1;",
+      "output": "Utility command: shows the query plan."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "Which category does CREATE TABLE belong to?",
+      "options": [
+       "DDL",
+       "DML",
+       "DQL",
+       "DCL"
+      ],
+      "answer": "DDL",
+      "why": "CREATE defines schema objects, which is DDL."
+     },
+     {
+      "q": "Which category does INSERT belong to?",
+      "options": [
+       "DML",
+       "DDL",
+       "DQL",
+       "TCL"
+      ],
+      "answer": "DML",
+      "why": "INSERT changes row data, which is DML."
+     },
+     {
+      "q": "Which category does SELECT belong to?",
+      "options": [
+       "DQL",
+       "DML",
+       "DDL",
+       "DCL"
+      ],
+      "answer": "DQL",
+      "why": "SELECT reads data; many curricula name that DQL."
+     },
+     {
+      "q": "Which category does GRANT belong to?",
+      "options": [
+       "DCL",
+       "DDL",
+       "DML",
+       "TCL"
+      ],
+      "answer": "DCL",
+      "why": "GRANT controls privileges, which is DCL."
+     },
+     {
+      "q": "Which category does COMMIT belong to?",
+      "options": [
+       "TCL",
+       "DCL",
+       "DDL",
+       "DQL"
+      ],
+      "answer": "TCL",
+      "why": "COMMIT ends a transaction, which is TCL."
+     },
+     {
+      "q": "Which command removes all rows but keeps the table?",
+      "options": [
+       "TRUNCATE",
+       "DROP",
+       "DELETE",
+       "ALTER"
+      ],
+      "answer": "TRUNCATE",
+      "why": "TRUNCATE removes rows and keeps the table definition."
+     },
+     {
+      "q": "Which command removes the table structure and its data?",
+      "options": [
+       "DROP TABLE",
+       "TRUNCATE TABLE",
+       "DELETE FROM",
+       "ALTER TABLE"
+      ],
+      "answer": "DROP TABLE",
+      "why": "DROP removes the object itself."
+     },
+     {
+      "q": "Which command adds a column to an existing table?",
+      "options": [
+       "ALTER TABLE",
+       "CREATE TABLE",
+       "UPDATE",
+       "INSERT"
+      ],
+      "answer": "ALTER TABLE",
+      "why": "ALTER changes an existing table definition."
+     },
+     {
+      "q": "Which command can use a WHERE clause?",
+      "options": [
+       "DELETE",
+       "TRUNCATE",
+       "DROP",
+       "CREATE"
+      ],
+      "answer": "DELETE",
+      "why": "DELETE supports WHERE; TRUNCATE does not."
+     },
+     {
+      "q": "Which command fires row-level DELETE triggers?",
+      "options": [
+       "DELETE",
+       "TRUNCATE",
+       "DROP",
+       "ALTER"
+      ],
+      "answer": "DELETE",
+      "why": "DELETE removes rows one by one and fires row triggers; TRUNCATE does not."
+     },
+     {
+      "q": "Which command gives a role read access?",
+      "options": [
+       "GRANT SELECT",
+       "REVOKE SELECT",
+       "COMMIT",
+       "ALTER"
+      ],
+      "answer": "GRANT SELECT",
+      "why": "GRANT adds a privilege to a role."
+     },
+     {
+      "q": "Which command removes a privilege?",
+      "options": [
+       "REVOKE",
+       "GRANT",
+       "DROP",
+       "ROLLBACK"
+      ],
+      "answer": "REVOKE",
+      "why": "REVOKE takes a privilege away."
+     },
+     {
+      "q": "Which command makes transaction changes durable?",
+      "options": [
+       "COMMIT",
+       "ROLLBACK",
+       "BEGIN",
+       "SAVEPOINT"
+      ],
+      "answer": "COMMIT",
+      "why": "COMMIT ends the transaction and persists its changes."
+     },
+     {
+      "q": "Which command undoes uncommitted changes?",
+      "options": [
+       "ROLLBACK",
+       "COMMIT",
+       "GRANT",
+       "TRUNCATE"
+      ],
+      "answer": "ROLLBACK",
+      "why": "ROLLBACK aborts the transaction."
+     },
+     {
+      "q": "Which command starts a transaction in PostgreSQL?",
+      "options": [
+       "BEGIN",
+       "START",
+       "OPEN",
+       "COMMIT"
+      ],
+      "answer": "BEGIN",
+      "why": "BEGIN or START TRANSACTION starts a transaction."
+     },
+     {
+      "q": "Which command is DDL?",
+      "options": [
+       "TRUNCATE",
+       "INSERT",
+       "SELECT",
+       "GRANT"
+      ],
+      "answer": "TRUNCATE",
+      "why": "TRUNCATE is commonly grouped with DDL because it resets table storage."
+     },
+     {
+      "q": "Which command is DML?",
+      "options": [
+       "MERGE",
+       "CREATE",
+       "REVOKE",
+       "COMMIT"
+      ],
+      "answer": "MERGE",
+      "why": "MERGE inserts, updates or deletes rows, so it is DML."
+     },
+     {
+      "q": "Which command is a utility command, not DML?",
+      "options": [
+       "EXPLAIN",
+       "UPDATE",
+       "DELETE",
+       "INSERT"
+      ],
+      "answer": "EXPLAIN",
+      "why": "EXPLAIN reports a plan and does not change rows."
+     },
+     {
+      "q": "Which statement is true about TRUNCATE in PostgreSQL?",
+      "options": [
+       "It can be rolled back",
+       "It automatically commits",
+       "It accepts WHERE",
+       "It fires row DELETE triggers"
+      ],
+      "answer": "It can be rolled back",
+      "why": "PostgreSQL TRUNCATE is transactional, unlike MySQL where it causes an implicit commit."
+     },
+     {
+      "q": "What happens to an UPDATE without WHERE?",
+      "options": [
+       "Every row is updated",
+       "No row is updated",
+       "Only the first row is updated",
+       "The statement fails"
+      ],
+      "answer": "Every row is updated",
+      "why": "Without a WHERE predicate, UPDATE targets the whole table."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What are the five common SQL command categories?",
+      "answer": "DDL, DML, DQL, DCL and TCL. Utility commands such as EXPLAIN and VACUUM sit outside those five."
+     },
+     {
+      "q": "What is DDL?",
+      "answer": "Data Definition Language defines and changes schema objects: CREATE, ALTER, DROP, TRUNCATE, COMMENT and RENAME."
+     },
+     {
+      "q": "What is DML?",
+      "answer": "Data Manipulation Language changes row data: INSERT, UPDATE, DELETE and MERGE."
+     },
+     {
+      "q": "Is SELECT DML or DQL?",
+      "answer": "It is DQL in the five-category model. Some teams call it DML because it operates on data, but it does not modify rows."
+     },
+     {
+      "q": "What is DCL?",
+      "answer": "Data Control Language manages privileges: GRANT and REVOKE."
+     },
+     {
+      "q": "What is TCL?",
+      "answer": "Transaction Control Language manages transactions: BEGIN/START TRANSACTION, COMMIT, ROLLBACK and SAVEPOINT."
+     },
+     {
+      "q": "What is the difference between CREATE and ALTER?",
+      "answer": "CREATE makes a new object; ALTER changes an existing object definition."
+     },
+     {
+      "q": "What is the difference between DROP and TRUNCATE?",
+      "answer": "DROP removes the object and its data; TRUNCATE removes every row but keeps the table definition."
+     },
+     {
+      "q": "What is the difference between DELETE and TRUNCATE?",
+      "answer": "DELETE can filter with WHERE, fires row triggers and is row-by-row; TRUNCATE removes all rows in one operation, has no WHERE, does not fire row DELETE triggers and resets storage."
+     },
+     {
+      "q": "Is TRUNCATE transactional in PostgreSQL?",
+      "answer": "Yes. It can be rolled back in PostgreSQL. In MySQL, TRUNCATE causes an implicit commit."
+     },
+     {
+      "q": "Does DELETE reset an identity sequence?",
+      "answer": "No. DELETE leaves the sequence alone; TRUNCATE ... RESTART IDENTITY resets it."
+     },
+     {
+      "q": "Why is UPDATE without WHERE dangerous?",
+      "answer": "It updates every row in the table. Test the predicate with SELECT and use a transaction."
+     },
+     {
+      "q": "What does RETURNING do?",
+      "answer": "It returns rows affected by INSERT, UPDATE or DELETE in the same statement, including generated ids."
+     },
+     {
+      "q": "What is the difference between GRANT and REVOKE?",
+      "answer": "GRANT gives privileges to a role; REVOKE removes them."
+     },
+     {
+      "q": "Why is schema USAGE needed before table access?",
+      "answer": "Object names live in a schema. A role needs USAGE on the schema and a privilege on the table to query it."
+     },
+     {
+      "q": "What is the difference between COMMIT and ROLLBACK?",
+      "answer": "COMMIT makes transaction changes durable; ROLLBACK discards them."
+     },
+     {
+      "q": "What is a SAVEPOINT?",
+      "answer": "A named point inside a transaction; ROLLBACK TO SAVEPOINT undoes only the work after it."
+     },
+     {
+      "q": "Can CREATE DATABASE run inside a transaction?",
+      "answer": "No. PostgreSQL rejects CREATE DATABASE and DROP DATABASE inside a transaction block."
+     },
+     {
+      "q": "Which commands are utility commands?",
+      "answer": "EXPLAIN, VACUUM, ANALYZE and COPY are utility commands; they are not DDL, DML, DQL, DCL or TCL."
+     },
+     {
+      "q": "Is MERGE DML?",
+      "answer": "Yes. PostgreSQL 15+ supports MERGE, which inserts, updates or deletes rows in one statement."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Create a table",
+      "task": "Create a students table with id and name.",
+      "solution": "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+      "expected": "CREATE TABLE"
+     },
+     {
+      "title": "Alter the table",
+      "task": "Add an email column.",
+      "solution": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Insert a row",
+      "task": "Insert id 1, Aarav.",
+      "solution": "INSERT INTO students (id, name) VALUES (1, 'Aarav');",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Read the row",
+      "task": "Select id and name for id 1.",
+      "solution": "SELECT id, name FROM students WHERE id = 1;",
+      "expected": "1 | Aarav"
+     },
+     {
+      "title": "Update the row",
+      "task": "Rename id 1 to Aarav Sharma.",
+      "solution": "UPDATE students SET name = 'Aarav Sharma' WHERE id = 1;",
+      "expected": "UPDATE 1"
+     },
+     {
+      "title": "Delete the row",
+      "task": "Delete id 1.",
+      "solution": "DELETE FROM students WHERE id = 1;",
+      "expected": "DELETE 1"
+     },
+     {
+      "title": "Truncate the table",
+      "task": "Remove every row and keep the table.",
+      "solution": "TRUNCATE TABLE students;",
+      "expected": "TRUNCATE TABLE"
+     },
+     {
+      "title": "Drop the table",
+      "task": "Remove the students table if it exists.",
+      "solution": "DROP TABLE IF EXISTS students;",
+      "expected": "DROP TABLE"
+     },
+     {
+      "title": "Create a role",
+      "task": "Create analyst as a login role.",
+      "solution": "CREATE ROLE analyst LOGIN;",
+      "expected": "CREATE ROLE"
+     },
+     {
+      "title": "Grant read access",
+      "task": "Give analyst SELECT on students.",
+      "solution": "GRANT SELECT ON students TO analyst;",
+      "expected": "GRANT"
+     },
+     {
+      "title": "Revoke write access",
+      "task": "Remove INSERT on students from analyst.",
+      "solution": "REVOKE INSERT ON students FROM analyst;",
+      "expected": "REVOKE"
+     },
+     {
+      "title": "Commit a transaction",
+      "task": "Insert id 2, Meera, and commit.",
+      "solution": "BEGIN;\nINSERT INTO students (id, name) VALUES (2, 'Meera');\nCOMMIT;",
+      "expected": "BEGIN\nINSERT 0 1\nCOMMIT"
+     },
+     {
+      "title": "Rollback a transaction",
+      "task": "Delete every row, then rollback.",
+      "solution": "BEGIN;\nDELETE FROM students;\nROLLBACK;",
+      "expected": "BEGIN\nDELETE N\nROLLBACK"
+     },
+     {
+      "title": "Use a savepoint",
+      "task": "Insert one row, save, insert another, roll back to the savepoint.",
+      "solution": "BEGIN;\nINSERT INTO students (id, name) VALUES (3, 'Kabir');\nSAVEPOINT s1;\nINSERT INTO students (id, name) VALUES (4, 'Isha');\nROLLBACK TO SAVEPOINT s1;\nCOMMIT;",
+      "expected": "Only the first insert survives."
+     },
+     {
+      "title": "Truncate and restart identity",
+      "task": "Remove every row and reset the identity sequence.",
+      "solution": "TRUNCATE TABLE students RESTART IDENTITY;",
+      "expected": "TRUNCATE TABLE"
+     },
+     {
+      "title": "Create a table from a query",
+      "task": "Create students_backup from students.",
+      "solution": "CREATE TABLE students_backup AS SELECT * FROM students;",
+      "expected": "SELECT N"
+     },
+     {
+      "title": "Insert from a query",
+      "task": "Copy every students row into students_backup.",
+      "solution": "INSERT INTO students_backup SELECT * FROM students;",
+      "expected": "INSERT 0 N"
+     },
+     {
+      "title": "Update with RETURNING",
+      "task": "Update id 2 and return the changed row.",
+      "solution": "UPDATE students SET name = 'Meera S' WHERE id = 2 RETURNING id, name;",
+      "expected": "2 | Meera S"
+     },
+     {
+      "title": "Delete with RETURNING",
+      "task": "Delete id 2 and return it.",
+      "solution": "DELETE FROM students WHERE id = 2 RETURNING id, name;",
+      "expected": "2 | Meera S"
+     },
+     {
+      "title": "Classify a command",
+      "task": "Classify EXPLAIN SELECT * FROM students.",
+      "solution": "SELECT 'utility' AS category, 'EXPLAIN' AS command;",
+      "expected": "utility | EXPLAIN"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why is TRUNCATE faster than DELETE for all rows?",
+      "answer": "TRUNCATE removes the table storage in one operation instead of scanning and deleting rows one by one."
+     },
+     {
+      "q": "Why is DELETE often safer than TRUNCATE?",
+      "answer": "DELETE supports WHERE, fires row triggers and can be rolled back row by row; TRUNCATE always removes every row."
+     },
+     {
+      "q": "Why is DROP more dangerous than TRUNCATE?",
+      "answer": "DROP removes the table definition, data, indexes and constraints; TRUNCATE keeps the table."
+     },
+     {
+      "q": "Why can PostgreSQL roll back TRUNCATE?",
+      "answer": "PostgreSQL implements TRUNCATE transactionally, so it can be undone before COMMIT."
+     },
+     {
+      "q": "Why does MySQL commit after TRUNCATE?",
+      "answer": "MySQL performs an implicit commit for TRUNCATE, so it cannot be rolled back there."
+     },
+     {
+      "q": "Why does TRUNCATE not fire row-level DELETE triggers?",
+      "answer": "It does not delete rows one by one; PostgreSQL offers statement-level TRUNCATE triggers instead."
+     },
+     {
+      "q": "Why should GRANT follow least privilege?",
+      "answer": "A role should get only the privileges its job needs, limiting the damage of a mistake or a compromised account."
+     },
+     {
+      "q": "Why is schema USAGE required?",
+      "answer": "The role must be able to resolve names in the schema before table privileges can be used."
+     },
+     {
+      "q": "Why is UPDATE without WHERE a production incident?",
+      "answer": "It changes every row in the table, and a mistaken predicate can corrupt the whole dataset."
+     },
+     {
+      "q": "Why test a WHERE with SELECT before DELETE?",
+      "answer": "The SELECT shows exactly which rows will be removed before the destructive statement runs."
+     },
+     {
+      "q": "Why is SELECT classified as DQL?",
+      "answer": "It reads rows without modifying them; DQL exists to separate reading from DML."
+     },
+     {
+      "q": "Why is CREATE TABLE AS classified as DDL?",
+      "answer": "It creates a new table object, even though its source is a query."
+     },
+     {
+      "q": "Why is EXPLAIN not DML?",
+      "answer": "It reports the planner’s access path and does not change rows."
+     },
+     {
+      "q": "Why is MERGE DML?",
+      "answer": "MERGE can insert, update or delete rows based on a source relation."
+     },
+     {
+      "q": "Why can DROP DATABASE not be rolled back?",
+      "answer": "PostgreSQL does not allow DROP DATABASE inside a transaction block."
+     }
+    ],
+    "debug": [
+     {
+      "title": "UPDATE without WHERE",
+      "broken": "UPDATE students SET name = 'Aarav';",
+      "fix": "UPDATE students SET name = 'Aarav' WHERE id = 1;",
+      "error": "Every row is renamed",
+      "expected": "Only id 1 changes."
+     },
+     {
+      "title": "TRUNCATE with WHERE",
+      "broken": "TRUNCATE TABLE students WHERE id = 1;",
+      "fix": "DELETE FROM students WHERE id = 1;",
+      "error": "syntax error at or near \"WHERE\"",
+      "expected": "Only id 1 is removed."
+     },
+     {
+      "title": "Missing ON in GRANT",
+      "broken": "GRANT SELECT students TO analyst;",
+      "fix": "GRANT SELECT ON students TO analyst;",
+      "error": "syntax error at or near \"students\"",
+      "expected": "GRANT"
+     },
+     {
+      "title": "Wrong REVOKE preposition",
+      "broken": "REVOKE SELECT ON students TO analyst;",
+      "fix": "REVOKE SELECT ON students FROM analyst;",
+      "error": "syntax error at or near \"TO\"",
+      "expected": "REVOKE"
+     },
+     {
+      "title": "COMMIT without a transaction",
+      "broken": "INSERT INTO students (id, name) VALUES (9, 'Zoya');\nCOMMIT;",
+      "fix": "BEGIN;\nINSERT INTO students (id, name) VALUES (9, 'Zoya');\nCOMMIT;",
+      "error": "WARNING: there is no transaction in progress",
+      "expected": "BEGIN\nINSERT 0 1\nCOMMIT"
+     },
+     {
+      "title": "CREATE DATABASE inside a transaction",
+      "broken": "BEGIN;\nCREATE DATABASE school;\nCOMMIT;",
+      "fix": "CREATE DATABASE school;",
+      "error": "CREATE DATABASE cannot run inside a transaction block",
+      "expected": "CREATE DATABASE"
+     },
+     {
+      "title": "ADD COLUMN without a type",
+      "broken": "ALTER TABLE students ADD COLUMN email;",
+      "fix": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "error": "syntax error at or near \";\"",
+      "expected": "ALTER TABLE"
+     },
+     {
+      "title": "Duplicate primary key",
+      "broken": "INSERT INTO students (id, name) VALUES (1, 'Aarav');\nINSERT INTO students (id, name) VALUES (1, 'Meera');",
+      "fix": "INSERT INTO students (id, name) VALUES (1, 'Aarav');\nINSERT INTO students (id, name) VALUES (2, 'Meera');",
+      "error": "duplicate key value violates unique constraint",
+      "expected": "Two rows with ids 1 and 2."
+     },
+     {
+      "title": "Delete then read",
+      "broken": "DROP TABLE students;\nSELECT * FROM students;",
+      "fix": "TRUNCATE TABLE students;\nSELECT * FROM students;",
+      "error": "relation \"students\" does not exist",
+      "expected": "An empty result set."
+     },
+     {
+      "title": "Rollback after an error",
+      "broken": "BEGIN;\nINSERT INTO students (id, name) VALUES (1, NULL);\nCOMMIT;",
+      "fix": "BEGIN;\nINSERT INTO students (id, name) VALUES (1, NULL);\nROLLBACK;",
+      "error": "null value in column \"name\" violates not-null constraint",
+      "expected": "The transaction is rolled back; no row is added."
+     }
+    ],
+    "revision": [
+     {
+      "q": "Name the five SQL command categories.",
+      "answer": "DDL, DML, DQL, DCL and TCL."
+     },
+     {
+      "q": "Which commands are DDL?",
+      "answer": "CREATE, ALTER, DROP, TRUNCATE, COMMENT and RENAME."
+     },
+     {
+      "q": "Which commands are DML?",
+      "answer": "INSERT, UPDATE, DELETE and MERGE."
+     },
+     {
+      "q": "Which command is DQL?",
+      "answer": "SELECT."
+     },
+     {
+      "q": "Which commands are DCL?",
+      "answer": "GRANT and REVOKE."
+     },
+     {
+      "q": "Which commands are TCL?",
+      "answer": "BEGIN/START TRANSACTION, COMMIT, ROLLBACK and SAVEPOINT."
+     },
+     {
+      "q": "DELETE vs TRUNCATE?",
+      "answer": "DELETE can filter and fires row triggers; TRUNCATE removes all rows, has no WHERE and keeps the table."
+     },
+     {
+      "q": "TRUNCATE vs DROP?",
+      "answer": "TRUNCATE keeps the table definition; DROP removes the table entirely."
+     },
+     {
+      "q": "What does COMMIT do?",
+      "answer": "Makes the transaction’s changes durable."
+     },
+     {
+      "q": "What does ROLLBACK do?",
+      "answer": "Discards the transaction’s uncommitted changes."
+     }
+    ]
+   }
+  }
+ ]
+}
