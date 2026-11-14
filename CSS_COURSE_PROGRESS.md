@@ -26,7 +26,7 @@ editing the module files or the generator.
 |---|---|
 | Learn | 80 |
 | Interview | 1200 |
-| Coding Lab | 28 |
+| Coding Lab | 240 |
 | Logic | 80 |
 | Debug | 52 |
 | Practice Solutions | 80 |

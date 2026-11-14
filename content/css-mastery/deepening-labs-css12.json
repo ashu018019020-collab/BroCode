@@ -1,0 +1,60 @@
+{
+ "css12": {
+  "tasks": [
+   {
+    "title": "Lab 2: Centered card with shadow",
+    "statement": "Build a centered white card with rounded corners and a soft shadow on a light grey background. The card must be at most 420px wide.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>CSS Lab</title>\n<style>\nbody { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f1f5f9; font-family: system-ui, sans-serif; }\n.card { max-width: 420px; width: 100%; padding: 24px; border-radius: 12px; background: #ffffff; box-shadow: 0 8px 24px rgba(15,23,42,0.12); }\nh1 { margin: 0 0 8px; color: #2965f1; }\np { margin: 0; color: #475569; }\n</style>\n</head>\n<body>\n<div class=\"card\"><h1>Hello BroCode</h1><p>My CSS journey starts here.</p></div>\n</body>\n</html>",
+    "expected": "A centered white card with rounded corners and a soft shadow on a light grey background."
+   },
+   {
+    "title": "Lab 3: Responsive two-column grid",
+    "statement": "Create a responsive layout with two equal columns on wide screens that stack into one column on narrow screens using CSS Grid.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>CSS Lab</title>\n<style>\nbody { margin: 0; padding: 24px; font-family: system-ui, sans-serif; }\n.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }\n.card { padding: 20px; border-radius: 10px; background: #ffffff; box-shadow: 0 4px 12px rgba(15,23,42,0.08); }\n@media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }\n</style>\n</head>\n<body>\n<div class=\"grid\"><div class=\"card\">Column one</div><div class=\"card\">Column two</div></div>\n</body>\n</html>",
+    "expected": "Two equal columns on wide screens that stack into one column on narrow screens."
+   },
+   {
+    "title": "Lab 4: Form with focus and invalid states",
+    "statement": "Style a small form so inputs show a blue focus ring and a red border when invalid.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>CSS Lab</title>\n<style>\nbody { margin: 0; padding: 24px; font-family: system-ui, sans-serif; background: #f8fafc; }\nform { max-width: 360px; display: grid; gap: 12px; }\nlabel { font-size: 14px; color: #334155; }\ninput { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }\ninput:focus { outline: none; border-color: #2965f1; box-shadow: 0 0 0 3px rgba(41,101,241,0.2); }\ninput:invalid { border-color: #dc2626; }\nbutton { padding: 10px 16px; border: 0; border-radius: 8px; background: #2965f1; color: #fff; font: inherit; cursor: pointer; }\n</style>\n</head>\n<body>\n<form><label>Email<input type=\"email\" required placeholder=\"you@example.com\"></label><button>Submit</button></form>\n</body>\n</html>",
+    "expected": "A form with inputs that show a blue focus ring and a red border when invalid."
+   },
+   {
+    "title": "Lab 5: Horizontal navigation bar",
+    "statement": "Build a navigation bar with the logo on the left and links on the right using Flexbox.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>CSS Lab</title>\n<style>\nbody { margin: 0; font-family: system-ui, sans-serif; }\nnav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: #0f172a; color: #fff; }\n.links { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; }\n.links a { color: #cbd5e1; text-decoration: none; }\n.links a:hover { color: #fff; }\n</style>\n</head>\n<body>\n<nav><strong>BroCode</strong><ul class=\"links\"><li><a href=\"#\">Courses</a></li><li><a href=\"#\">Practice</a></li><li><a href=\"#\">Career</a></li></ul></nav>\n</body>\n</html>",
+    "expected": "A horizontal nav bar with the logo on the left and links on the right."
+   },
+   {
+    "title": "Lab 6: Button hover and active states",
+    "statement": "Create buttons that darken on hover and shrink slightly on click.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>CSS Lab</title>\n<style>\nbody { margin: 0; padding: 24px; font-family: system-ui, sans-serif; display: flex; gap: 12px; }\n.btn { padding: 10px 16px; border: 0; border-radius: 8px; background: #2965f1; color: #fff; font: inherit; cursor: pointer; transition: background 0.15s, transform 0.1s; }\n.btn:hover { background: #1d4ed8; }\n.btn:active { transform: scale(0.97); }\n.btn.secondary { background: #64748b; }\n.btn.secondary:hover { background: #475569; }\n</style>\n</head>\n<body>\n<button class=\"btn\">Primary</button><button class=\"btn secondary\">Secondary</button>\n</body>\n</html>",
+    "expected": "Buttons that darken on hover and shrink slightly on click."
+   },
+   {
+    "title": "Lab 7: Responsive image gallery",
+    "statement": "Build a responsive image gallery that reflows from multiple columns to one using auto-fit.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>CSS Lab</title>\n<style>\nbody { margin: 0; padding: 24px; font-family: system-ui, sans-serif; background: #f8fafc; }\n.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }\n.gallery img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; display: block; }\n</style>\n</head>\n<body>\n<div class=\"gallery\"><img src=\"https://picsum.photos/seed/a/320/320\" alt=\"\"><img src=\"https://picsum.photos/seed/b/320/320\" alt=\"\"><img src=\"https://picsum.photos/seed/c/320/320\" alt=\"\"><img src=\"https://picsum.photos/seed/d/320/320\" alt=\"\"></div>\n</body>\n</html>",
+    "expected": "A responsive grid of images that reflows from multiple columns to one."
+   },
+   {
+    "title": "Lab 8: Sticky header",
+    "statement": "Create a page with a header that stays at the top while the content scrolls.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>CSS Lab</title>\n<style>\nbody { margin: 0; font-family: system-ui, sans-serif; }\nheader { position: sticky; top: 0; background: #0f172a; color: #fff; padding: 12px 24px; z-index: 10; }\nmain { padding: 24px; line-height: 1.6; }\n</style>\n</head>\n<body>\n<header>Sticky header</header>\n<main><p>Scroll content.</p><p style=\"height:1200px\"></p></main>\n</body>\n</html>",
+    "expected": "A header that stays at the top while the content scrolls."
+   },
+   {
+    "title": "Lab 9: Light and dark theme with variables",
+    "statement": "Use CSS custom properties to switch between light and dark themes with a class toggle.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>CSS Lab</title>\n<style>\n:root { --bg: #ffffff; --text: #0f172a; --card: #f1f5f9; }\n.dark { --bg: #0f172a; --text: #f8fafc; --card: #1e293b; }\nbody { margin: 0; padding: 24px; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; transition: background 0.2s, color 0.2s; }\n.card { padding: 20px; border-radius: 10px; background: var(--card); }\n</style>\n</head>\n<body class=\"dark\">\n<div class=\"card\">Themed card</div>\n</body>\n</html>",
+    "expected": "A page that renders in dark theme using CSS variables."
+   },
+   {
+    "title": "Lab 10: Modal overlay",
+    "statement": "Build a modal dialog with a dimmed backdrop and a centered panel.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>CSS Lab</title>\n<style>\nbody { margin: 0; font-family: system-ui, sans-serif; }\n.backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: grid; place-items: center; }\n.modal { background: #fff; padding: 24px; border-radius: 12px; max-width: 360px; width: 90%; box-shadow: 0 24px 60px rgba(15,23,42,0.3); }\n.modal h2 { margin: 0 0 8px; }\n</style>\n</head>\n<body>\n<div class=\"backdrop\"><div class=\"modal\"><h2>Modal title</h2><p>Modal content goes here.</p></div></div>\n</body>\n</html>",
+    "expected": "A centered modal panel with a dimmed backdrop."
+   }
+  ]
+ }
+}
