@@ -52,6 +52,7 @@ const JCoursePage = lazy(() => import('../features/java-programming/JCoursePage'
 const NumpyCoursePage = lazy(() => import('../features/numpy-mastery/NCoursePage'));
 const PandasCoursePage = lazy(() => import('../features/pandas-mastery/PCoursePage'));
 const CppCoursePage = lazy(() => import('../features/cpp-mastery/CppCoursePage'));
+const HtmlCoursePage = lazy(() => import('../features/html-mastery/HtmlCoursePage'));
 const JLessonPage = lazy(() => import('../features/java-programming/JLessonPage'));
 const TrackOverview = lazy(() => import('../features/learning/TrackOverview'));
 const QuestionBank = lazy(() => import('../features/practice/QuestionBank'));
@@ -946,6 +947,7 @@ function Shell() {
               <Route path="/numpy" element={<Protect><NumpyCoursePage /></Protect>} />
               <Route path="/pandas" element={<Protect><PandasCoursePage /></Protect>} />
               <Route path="/cpp" element={<Protect><CppCoursePage /></Protect>} />
+              <Route path="/html" element={<Protect><HtmlCoursePage /></Protect>} />
               <Route path="/java/:moduleId" element={<Protect><JLessonPage /></Protect>} />
               <Route path="/course/:slug" element={<Protect><CoursePage /></Protect>} />
               <Route path="/course/:slug/:step" element={<Protect><StepPage /></Protect>} />

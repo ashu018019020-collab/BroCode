@@ -1,0 +1,1242 @@
+[
+ {
+  "id": "html11",
+  "no": 11,
+  "title": "HTML Forms — Complete Fundamentals",
+  "level": "beginner",
+  "hours": 4,
+  "goal": "Build a labelled form with the right input types and submit behaviour.",
+  "topics": [
+   {
+    "title": "A form needs a method and an action",
+    "body": "`action` batata hai data kahan jaayega aur `method` batata hai kaise. GET URL me data bhejta hai, POST body me.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/register\" method=\"post\">\n    <label for=\"name\">Name</label>\n    <input id=\"name\" name=\"name\" type=\"text\">\n    <button type=\"submit\">Send</button>\n  </form>\n</body>\n</html>",
+    "output": "Name [____________]\nSend"
+   },
+   {
+    "title": "label for connects text to the input",
+    "body": "`for` attribute input ki `id` se match hona chahiye. Clicking the label focuses the input, and screen readers announce the pair.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <label for=\"email\">Email</label>\n  <input id=\"email\" name=\"email\" type=\"email\">\n</body>\n</html>",
+    "output": "Email [____________]"
+   },
+   {
+    "title": "Input types choose a keyboard and validation",
+    "body": "`type=\"email\"`, `tel`, `date` aur `number` mobile keyboard aur basic validation badalte hain, lekin server-side check phir bhi zaroori hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <label for=\"phone\">Phone</label>\n  <input id=\"phone\" name=\"phone\" type=\"tel\">\n  <label for=\"dob\">Date of birth</label>\n  <input id=\"dob\" name=\"dob\" type=\"date\">\n</body>\n</html>",
+    "output": "Phone [____________]\nDate of birth [dd/mm/yyyy]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A label with no matching id",
+    "broken": "<label for=\"mail\">Email</label>\n<input id=\"email\" name=\"email\" type=\"email\">",
+    "fix": "<label for=\"email\">Email</label>\n<input id=\"email\" name=\"email\" type=\"email\">",
+    "error": "Broken label association: for points at a missing id, so clicking the label does nothing and the input has no accessible name.",
+    "fixedOutput": "Email [____________]"
+   },
+   {
+    "title": "A submit button that does not submit",
+    "broken": "<form action=\"/save\" method=\"post\">\n  <button>Save</button>\n</form>",
+    "fix": "<form action=\"/save\" method=\"post\">\n  <button type=\"submit\">Save</button>\n</form>",
+    "error": "Missing type: inside a form the default is submit, but an explicit type prevents surprises when the button is reused elsewhere.",
+    "fixedOutput": "Save"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Registration form",
+    "statement": "Build a form with name, email and password fields, each with a matching label and a submit button.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/register\" method=\"post\">\n    <label for=\"name\">Name</label>\n    <input id=\"name\" name=\"name\" type=\"text\" required>\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" required>\n    <label for=\"password\">Password</label>\n    <input id=\"password\" name=\"password\" type=\"password\" required>\n    <button type=\"submit\">Create account</button>\n  </form>\n</body>\n</html>",
+    "expected": "Name [____________]\nEmail [____________]\nPassword [____________]\nCreate account"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the difference between GET and POST?",
+    "answer": "GET appends the data to the URL, which makes it visible, bookmarkable and length-limited. POST sends it in the request body, which suits state-changing submissions and larger payloads."
+   },
+   {
+    "q": "Why does every input need a name attribute?",
+    "answer": "The name is the key submitted with the value. Without it the field is not included in the form data at all."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner complains that clicking the label does nothing.",
+    "answer": "I check that for matches an id exactly; a typo silently breaks the association.",
+    "steps": [
+     "Read the for value.",
+     "Read the input id.",
+     "Align them."
+    ]
+   },
+   {
+    "q": "Why not rely on placeholder instead of label?",
+    "answer": "A placeholder disappears as soon as typing starts and is not a reliable accessible name. The label stays visible and is announced.",
+    "steps": [
+     "Show the field after typing.",
+     "Show the label association.",
+     "Replace placeholder-only fields."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which method sends form data in the URL query string?",
+    "options": [
+     "POST",
+     "GET",
+     "PUT",
+     "PATCH"
+    ],
+    "answer": "GET",
+    "why": "GET appends the fields to the URL."
+   },
+   {
+    "q": "Which attribute associates a label with an input?",
+    "options": [
+     "name",
+     "id",
+     "for",
+     "type"
+    ],
+    "answer": "for",
+    "why": "The for value must equal the input id."
+   }
+  ],
+  "mini": {
+   "title": "Contact form",
+   "brief": "Build a contact form with name, email, message and a submit button, all labelled.",
+   "steps": [
+    "Add three labelled fields.",
+    "Use the right input types.",
+    "Submit to a placeholder action."
+   ]
+  },
+  "lab": {
+   "title": "Form accessibility audit",
+   "brief": "Audit a form with missing labels, duplicate ids and an unlabelled textarea, then repair it.",
+   "milestones": [
+    "List each control and its label.",
+    "Fix associations.",
+    "Check keyboard order."
+   ]
+  }
+ },
+ {
+  "id": "html12",
+  "no": 12,
+  "title": "Advanced Forms and Validation",
+  "level": "intermediate",
+  "hours": 4,
+  "goal": "Use native constraints, grouped controls and file uploads correctly.",
+  "topics": [
+   {
+    "title": "Required, pattern and length constrain input",
+    "body": "`required`, `minlength`, `maxlength` aur `pattern` browser ko batate hain valid input kya hai. Ye UX hai, security nahi.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form>\n    <label for=\"code\">Course code</label>\n    <input id=\"code\" name=\"code\" pattern=\"[A-Z]{3}[0-9]{3}\" required>\n  </form>\n</body>\n</html>",
+    "output": "Course code [____________]"
+   },
+   {
+    "title": "fieldset groups related controls",
+    "body": "`fieldset` aur `legend` radio group ko ek naam dete hain, taaki screen reader bataye ki ye choices kis sawaal ki hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <fieldset>\n    <legend>Year</legend>\n    <label><input type=\"radio\" name=\"year\" value=\"1\"> First</label>\n    <label><input type=\"radio\" name=\"year\" value=\"2\"> Second</label>\n  </fieldset>\n</body>\n</html>",
+    "output": "Year\n( ) First\n( ) Second"
+   },
+   {
+    "title": "File uploads need the right encoding",
+    "body": "File input ke saath form ka `enctype=\"multipart/form-data\"` hona chahiye, warna sirf file name bhejta hai, file nahi.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/upload\" method=\"post\" enctype=\"multipart/form-data\">\n    <label for=\"resume\">Resume</label>\n    <input id=\"resume\" name=\"resume\" type=\"file\" accept=\".pdf\">\n  </form>\n</body>\n</html>",
+    "output": "Resume [Choose file]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Radio buttons with different names",
+    "broken": "<input type=\"radio\" name=\"a\" value=\"yes\">\n<input type=\"radio\" name=\"b\" value=\"no\">",
+    "fix": "<input type=\"radio\" name=\"answer\" value=\"yes\">\n<input type=\"radio\" name=\"answer\" value=\"no\">",
+    "error": "Different names put each radio in its own group, so both can be selected at once.",
+    "fixedOutput": "( ) yes\n( ) no"
+   },
+   {
+    "title": "A file form without multipart encoding",
+    "broken": "<form action=\"/upload\" method=\"post\">\n  <input type=\"file\" name=\"resume\">\n</form>",
+    "fix": "<form action=\"/upload\" method=\"post\" enctype=\"multipart/form-data\">\n  <input type=\"file\" name=\"resume\">\n</form>",
+    "error": "Wrong encoding: the server receives only the file name instead of the file contents.",
+    "fixedOutput": "Choose file"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Validated admission form",
+    "statement": "Build a form with a required name (min 3 characters), an email and a course code matching three letters and three digits.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/admission\" method=\"post\">\n    <label for=\"name\">Name</label>\n    <input id=\"name\" name=\"name\" type=\"text\" minlength=\"3\" required>\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" required>\n    <label for=\"code\">Course code</label>\n    <input id=\"code\" name=\"code\" pattern=\"[A-Z]{3}[0-9]{3}\" required>\n    <button type=\"submit\">Apply</button>\n  </form>\n</body>\n</html>",
+    "expected": "Name [____________]\nEmail [____________]\nCourse code [____________]\nApply"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Is native HTML validation enough for security?",
+    "answer": "No. It improves user experience but can be bypassed by disabling JavaScript, editing the DOM or sending a direct request. The server must validate every field again."
+   },
+   {
+    "q": "When should an input be disabled instead of readonly?",
+    "answer": "Readonly keeps the value submitted but prevents editing. Disabled removes the control from submission and from the tab order, so it is for values that must not be sent."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner’s pattern does not match and they cannot see why.",
+    "answer": "I test the pattern against a known-good value, check the anchors, and explain that pattern is fully anchored in HTML.",
+    "steps": [
+     "Test one valid value.",
+     "Check character classes.",
+     "Show the browser’s validation message."
+    ]
+   },
+   {
+    "q": "Why group radios in a fieldset?",
+    "answer": "Without a legend the group has no question attached, so a screen-reader user hears the options but not what they are choosing.",
+    "steps": [
+     "Show the options alone.",
+     "Add the legend.",
+     "Hear the group announced."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which attribute limits the number of characters a user can type?",
+    "options": [
+     "min",
+     "maxlength",
+     "size",
+     "pattern"
+    ],
+    "answer": "maxlength",
+    "why": "maxlength caps the input length."
+   },
+   {
+    "q": "Which enctype is required for file uploads?",
+    "options": [
+     "application/json",
+     "text/plain",
+     "multipart/form-data",
+     "application/x-www-form-urlencoded"
+    ],
+    "answer": "multipart/form-data",
+    "why": "Files need the multipart encoding."
+   }
+  ],
+  "mini": {
+   "title": "Scholarship form",
+   "brief": "Build a form with a radio group for year, a checkbox for consent and a validated pincode.",
+   "steps": [
+    "Group radios with fieldset.",
+    "Add one required checkbox.",
+    "Constrain the pincode with pattern."
+   ]
+  },
+  "lab": {
+   "title": "Validation repair",
+   "brief": "Fix a form where radios are ungrouped, a file input never uploads and a pattern accepts invalid codes.",
+   "milestones": [
+    "Group the radios.",
+    "Add the encoding.",
+    "Rewrite the pattern and test it."
+   ]
+  }
+ },
+ {
+  "id": "html13",
+  "no": 13,
+  "title": "Audio and Video",
+  "level": "intermediate",
+  "hours": 3,
+  "goal": "Embed media with controls, captions and sensible loading behaviour.",
+  "topics": [
+   {
+    "title": "video needs controls and a source",
+    "body": "`controls` player UI deta hai. `source` se multiple formats diye jaate hain aur browser pehla supported chunta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <video controls width=\"320\">\n    <source src=\"intro.mp4\" type=\"video/mp4\">\n  </video>\n</body>\n</html>",
+    "output": "Video player (320 wide) with controls"
+   },
+   {
+    "title": "Captions are part of the content",
+    "body": "`track kind=\"captions\"` se subtitles judte hain. Deaf users ke liye captions aur noisy environment me sabke liye useful hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <video controls width=\"320\">\n    <source src=\"intro.mp4\" type=\"video/mp4\">\n    <track kind=\"captions\" src=\"intro.vtt\" srclang=\"en\" label=\"English\">\n  </video>\n</body>\n</html>",
+    "output": "Video player with captions available"
+   },
+   {
+    "title": "audio uses the same source pattern",
+    "body": "`audio` me bhi `source` aur `controls` hote hain. Autoplay sound ke saath blocked hota hai, isliye `muted` ke bina bharosa mat karo.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <audio controls>\n    <source src=\"theme.mp3\" type=\"audio/mpeg\">\n  </audio>\n</body>\n</html>",
+    "output": "Audio player with controls"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A video with no controls",
+    "broken": "<video src=\"intro.mp4\"></video>",
+    "fix": "<video src=\"intro.mp4\" controls></video>",
+    "error": "No controls: the visitor cannot play, pause or seek the media.",
+    "fixedOutput": "Video player with controls"
+   },
+   {
+    "title": "Autoplay with sound",
+    "broken": "<video src=\"ad.mp4\" autoplay></video>",
+    "fix": "<video src=\"ad.mp4\" autoplay muted playsinline></video>",
+    "error": "Autoplay with audio is blocked by most browsers, so the video never starts; muted autoplay is the supported pattern.",
+    "fixedOutput": "Silent autoplaying video"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Embed a captioned video",
+    "statement": "Create a video player 480 pixels wide with an mp4 source and an English captions track.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <video controls width=\"480\">\n    <source src=\"lesson.mp4\" type=\"video/mp4\">\n    <track kind=\"captions\" src=\"lesson.vtt\" srclang=\"en\" label=\"English\">\n  </video>\n</body>\n</html>",
+    "expected": "Video player (480 wide) with captions"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why does autoplay often fail?",
+    "answer": "Browsers block audible autoplay to protect users from unexpected sound. Muted autoplay is allowed, and playsinline keeps iOS from opening fullscreen."
+   },
+   {
+    "q": "What does the track element add?",
+    "answer": "Timed text tracks: captions, subtitles, descriptions or chapters, linked to the media and selectable by the user."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner’s video is black on iPhone.",
+    "answer": "I check the codec and the playsinline attribute; Safari requires a supported codec and otherwise goes fullscreen.",
+    "steps": [
+     "Check the source type.",
+     "Add playsinline.",
+     "Test on the device."
+    ]
+   },
+   {
+    "q": "Why are captions not optional?",
+    "answer": "They are the text alternative for audio, and they also help in silent or noisy environments. Without them the media is inaccessible.",
+    "steps": [
+     "Play without sound.",
+     "Show the caption track.",
+     "Explain the audience."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which attribute shows the browser’s media controls?",
+    "options": [
+     "autoplay",
+     "controls",
+     "loop",
+     "muted"
+    ],
+    "answer": "controls",
+    "why": "controls renders play, pause and volume UI."
+   },
+   {
+    "q": "Which element links a caption file to a video?",
+    "options": [
+     "source",
+     "track",
+     "caption",
+     "text"
+    ],
+    "answer": "track",
+    "why": "track references the WebVTT file and its kind."
+   }
+  ],
+  "mini": {
+   "title": "Media card",
+   "brief": "Build a card with a short video, a caption track and a text transcript link.",
+   "steps": [
+    "Add the video and source.",
+    "Attach the VTT track.",
+    "Link a transcript page."
+   ]
+  },
+  "lab": {
+   "title": "Playback debugging",
+   "brief": "Diagnose a video that never plays: wrong MIME type, missing controls and blocked autoplay.",
+   "milestones": [
+    "Check the source type.",
+    "Add controls.",
+    "Replace autoplay with muted autoplay."
+   ]
+  }
+ },
+ {
+  "id": "html14",
+  "no": 14,
+  "title": "HTML Head, Metadata and SEO",
+  "level": "intermediate",
+  "hours": 3,
+  "goal": "Write metadata that controls the tab, sharing cards, indexing and language.",
+  "topics": [
+   {
+    "title": "The title and description are the search result",
+    "body": "`title` result ka heading banta hai aur meta description snippet. Dono page ke content ko honestly describe karein.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <title>HTML Course | BroCode</title>\n  <meta name=\"description\" content=\"Learn HTML from zero with lessons, labs and projects.\">\n</head>\n<body></body>\n</html>",
+    "output": "Tab title: HTML Course | BroCode"
+   },
+   {
+    "title": "Open Graph controls the shared card",
+    "body": "Social platforms `og:title`, `og:description` aur `og:image` padhte hain. Inke bina link preview khaali ya random aata hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta property=\"og:title\" content=\"HTML Course\">\n  <meta property=\"og:description\" content=\"Beginner to advanced HTML.\">\n  <meta property=\"og:image\" content=\"https://example.com/card.png\">\n</head>\n<body></body>\n</html>",
+    "output": "Link preview: HTML Course / Beginner to advanced HTML."
+   },
+   {
+    "title": "Link resources with the right hints",
+    "body": "Stylesheet `link rel=\"stylesheet\"` se aata hai. Scripts `defer` ke saath parse ke baad chalte hain, isliye render block nahi karte.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n  <script src=\"js/app.js\" defer></script>\n</head>\n<body></body>\n</html>",
+    "output": "Page styled; script runs after parsing"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A relative canonical URL",
+    "broken": "<link rel=\"canonical\" href=\"/html\">",
+    "fix": "<link rel=\"canonical\" href=\"https://example.com/html\">",
+    "error": "Relative canonical: crawlers need the absolute preferred URL to consolidate duplicates.",
+    "fixedOutput": "Canonical URL set"
+   },
+   {
+    "title": "A blocking script in the head",
+    "broken": "<head>\n  <script src=\"app.js\"></script>\n</head>",
+    "fix": "<head>\n  <script src=\"app.js\" defer></script>\n</head>",
+    "error": "Render-blocking script: the parser stops until the file downloads and runs, delaying first paint.",
+    "fixedOutput": "Page renders, then script runs"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Write a shareable head",
+    "statement": "Add a title, description, canonical URL, og:title, og:description and og:image.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Admissions | BroCode</title>\n  <meta name=\"description\" content=\"Apply for the BroCode HTML course.\">\n  <link rel=\"canonical\" href=\"https://example.com/admissions\">\n  <meta property=\"og:title\" content=\"Admissions | BroCode\">\n  <meta property=\"og:description\" content=\"Apply for the HTML course.\">\n  <meta property=\"og:image\" content=\"https://example.com/admissions.png\">\n</head>\n<body></body>\n</html>",
+    "expected": "Tab title: Admissions | BroCode"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Does the meta description affect ranking?",
+    "answer": "Not directly. It influences the snippet users see, which affects click-through, and a misleading description is often replaced by the search engine with page text."
+   },
+   {
+    "q": "What is the difference between defer and async?",
+    "answer": "Both download in parallel. defer preserves document order and runs after parsing; async runs as soon as it is ready and can execute in any order."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A shared link shows no preview image.",
+    "answer": "I check that og:image is an absolute URL, publicly reachable and large enough for the platform’s card.",
+    "steps": [
+     "Fetch the image URL.",
+     "Check its size and type.",
+     "Refresh the platform cache."
+    ]
+   },
+   {
+    "q": "Why not put every script at the bottom?",
+    "answer": "defer in the head achieves the same non-blocking behaviour while keeping resource declarations together and order guaranteed.",
+    "steps": [
+     "Compare blocking and deferred.",
+     "Show network timing.",
+     "Keep scripts declared in the head."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which meta tag controls the snippet description?",
+    "options": [
+     "og:title",
+     "description",
+     "viewport",
+     "robots"
+    ],
+    "answer": "description",
+    "why": "The description meta supplies the search snippet."
+   },
+   {
+    "q": "Which attribute makes a script run after parsing in order?",
+    "options": [
+     "async",
+     "defer",
+     "type=module only",
+     "nomodule"
+    ],
+    "answer": "defer",
+    "why": "defer waits for parsing and preserves order."
+   }
+  ],
+  "mini": {
+   "title": "SEO head checklist",
+   "brief": "Write a head with charset, viewport, title, description, canonical and three Open Graph tags.",
+   "steps": [
+    "Add the required meta.",
+    "Use absolute URLs.",
+    "Validate the head."
+   ]
+  },
+  "lab": {
+   "title": "Share card test",
+   "brief": "Build a page with Open Graph tags and verify the preview with a link-preview tool.",
+   "milestones": [
+    "Add the tags.",
+    "Check the image URL.",
+    "Record the preview result."
+   ]
+  }
+ },
+ {
+  "id": "html15",
+  "no": 15,
+  "title": "HTML Accessibility",
+  "level": "advanced",
+  "hours": 4,
+  "goal": "Make pages usable with a keyboard and a screen reader using native semantics first.",
+  "topics": [
+   {
+    "title": "Use native elements before ARIA",
+    "body": "`button` pehle se focusable, clickable aur announced hai. Div par role aur keydown lagane se zyada kaam aur zyada bugs hote hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <button type=\"button\">Save</button>\n</body>\n</html>",
+    "output": "Save (button)"
+   },
+   {
+    "title": "Every image and control needs a name",
+    "body": "Alt text, labels aur visible link text accessible name dete hain. Naam ke bina control screen reader ke liye \"button\" hi rehta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <label for=\"search\">Search</label>\n  <input id=\"search\" name=\"q\" type=\"search\">\n  <button type=\"submit\">Go</button>\n</body>\n</html>",
+    "output": "Search [____________] Go"
+   },
+   {
+    "title": "Keyboard focus must stay visible",
+    "body": "Tab se sab interactive cheezein reachable honi chahiye aur focus ring dikhna chahiye. `outline: none` bina replacement ke accessibility todta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <a href=\"#main\">Skip to content</a>\n  <main id=\"main\">Content</main>\n</body>\n</html>",
+    "output": "Skip to content\nContent"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A clickable div pretending to be a button",
+    "broken": "<div onclick=\"save()\">Save</div>",
+    "fix": "<button type=\"button\" onclick=\"save()\">Save</button>",
+    "error": "Not focusable and no role: keyboard users cannot reach it, and screen readers do not announce a button.",
+    "fixedOutput": "Save (button)"
+   },
+   {
+    "title": "A form input with only a placeholder",
+    "broken": "<input type=\"email\" placeholder=\"Email\">",
+    "fix": "<label for=\"email\">Email</label>\n<input id=\"email\" type=\"email\" placeholder=\"you@example.com\">",
+    "error": "Placeholder as the only label: the field has no persistent accessible name once typing starts.",
+    "fixedOutput": "Email [you@example.com]"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Accessible search form",
+    "statement": "Build a labelled search input, a submit button and a skip link to main content.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <a href=\"#main\">Skip to content</a>\n  <form role=\"search\">\n    <label for=\"q\">Search lessons</label>\n    <input id=\"q\" name=\"q\" type=\"search\">\n    <button type=\"submit\">Search</button>\n  </form>\n  <main id=\"main\">Results</main>\n</body>\n</html>",
+    "expected": "Skip to content\nSearch lessons [____________] Search\nResults"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the first rule of ARIA?",
+    "answer": "Do not use ARIA if a native element already provides the semantics. Native elements carry keyboard behaviour and accessibility support that a role alone does not."
+   },
+   {
+    "q": "What makes a focus indicator accessible?",
+    "answer": "It must be visible against the background and not removed without an equivalent replacement. Keyboard users rely on it to know where they are."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A designer wants outline removed.",
+    "answer": "I keep a visible custom focus style instead of removing it, because keyboard users lose their position otherwise.",
+    "steps": [
+     "Show tab navigation.",
+     "Add a focus-visible style.",
+     "Confirm contrast."
+    ]
+   },
+   {
+    "q": "How do you test accessibility without a screen reader?",
+    "answer": "Keyboard-only navigation, the accessibility tree in dev tools and automated checks catch many issues, though a real screen-reader pass is still the reference.",
+    "steps": [
+     "Tab through the page.",
+     "Inspect the accessibility tree.",
+     "Run an automated audit."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which element is keyboard accessible by default?",
+    "options": [
+     "div",
+     "span",
+     "button",
+     "p"
+    ],
+    "answer": "button",
+    "why": "button is focusable and activates with Enter and Space."
+   },
+   {
+    "q": "What should a decorative image use?",
+    "options": [
+     "alt=\"image\"",
+     "alt=\"\"",
+     "No alt",
+     "role=\"img\""
+    ],
+    "answer": "alt=\"\"",
+    "why": "An empty alt removes it from the accessibility tree."
+   }
+  ],
+  "mini": {
+   "title": "Keyboard audit",
+   "brief": "Tab through a page and record every element that cannot be reached or has no visible focus.",
+   "steps": [
+    "Tab from the address bar.",
+    "Log unreachable controls.",
+    "Add focus styles."
+   ]
+  },
+  "lab": {
+   "title": "ARIA cleanup",
+   "brief": "Replace three custom role divs with native elements and verify the accessibility tree.",
+   "milestones": [
+    "Identify the custom controls.",
+    "Swap in native elements.",
+    "Compare the tree before and after."
+   ]
+  }
+ },
+ {
+  "id": "html16",
+  "no": 16,
+  "title": "Iframes and Embedding",
+  "level": "intermediate",
+  "hours": 2,
+  "goal": "Embed external content safely with titles, sandboxing and lazy loading.",
+  "topics": [
+   {
+    "title": "An iframe needs a title",
+    "body": "`title` iframe ka accessible name hai; screen reader batata hai ki embedded content kya hai. Iske bina \"frame\" hi sunaai deta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <iframe src=\"https://example.com/map\" title=\"Campus map\" width=\"600\" height=\"400\"></iframe>\n</body>\n</html>",
+    "output": "Embedded campus map (600 by 400)"
+   },
+   {
+    "title": "sandbox limits what the frame can do",
+    "body": "`sandbox` default me scripts, forms aur navigation block karta hai. Sirf jo chahiye wahi allow karo, poori permission mat do.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <iframe src=\"https://example.com/widget\" title=\"Widget\" sandbox=\"allow-scripts\"></iframe>\n</body>\n</html>",
+    "output": "Embedded widget with scripts only"
+   },
+   {
+    "title": "Lazy loading keeps the first paint fast",
+    "body": "`loading=\"lazy\"` iframe ko viewport ke paas aane tak load nahi karta, isliye below-the-fold embeds page ko slow nahi karte.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <iframe src=\"https://example.com/video\" title=\"Lesson video\" loading=\"lazy\" width=\"560\" height=\"315\"></iframe>\n</body>\n</html>",
+    "output": "Video embed loads when scrolled into view"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An iframe with no title",
+    "broken": "<iframe src=\"https://example.com/map\"></iframe>",
+    "fix": "<iframe src=\"https://example.com/map\" title=\"Campus map\"></iframe>",
+    "error": "Missing title: the frame has no accessible name, so its purpose is unknown to assistive technology.",
+    "fixedOutput": "Embedded campus map"
+   },
+   {
+    "title": "An iframe with no sandbox for untrusted content",
+    "broken": "<iframe src=\"https://untrusted.example/widget\"></iframe>",
+    "fix": "<iframe src=\"https://untrusted.example/widget\" sandbox=\"allow-scripts\" title=\"Widget\"></iframe>",
+    "error": "No sandbox: the embedded page runs with the full privileges its origin allows, including navigation and forms.",
+    "fixedOutput": "Sandboxed widget"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Embed a titled map",
+    "statement": "Create a lazy-loaded map iframe, 600 by 400, with a descriptive title.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <iframe src=\"https://example.com/map\" title=\"Campus map\" width=\"600\" height=\"400\" loading=\"lazy\"></iframe>\n</body>\n</html>",
+    "expected": "Embedded campus map (600 by 400)"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why is an iframe a performance and security concern?",
+    "answer": "It loads a second document with its own resources and scripts. Without a sandbox it can navigate the top page, and it adds a network request that can delay the page."
+   },
+   {
+    "q": "When should content be embedded instead of linked?",
+    "answer": "When the surrounding page needs it in context, such as a map or a video. If it is a full independent page, a link is simpler and safer."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner embeds an untrusted widget with scripts and forms.",
+    "answer": "I add sandbox and allow only what the widget needs, then verify the widget still works.",
+    "steps": [
+     "Add sandbox.",
+     "Grant one permission at a time.",
+     "Test the embed."
+    ]
+   },
+   {
+    "q": "Why add a title to every iframe?",
+    "answer": "The title is the only thing a screen-reader user hears before entering the frame, so it must name the embedded content.",
+    "steps": [
+     "List frames by title.",
+     "Compare an untitled frame.",
+     "Write descriptive titles."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which attribute names an iframe for assistive technology?",
+    "options": [
+     "name",
+     "title",
+     "alt",
+     "aria-hidden"
+    ],
+    "answer": "title",
+    "why": "The title attribute supplies the frame’s accessible name."
+   },
+   {
+    "q": "Which attribute postpones loading until needed?",
+    "options": [
+     "defer",
+     "async",
+     "loading=\"lazy\"",
+     "preload"
+    ],
+    "answer": "loading=\"lazy\"",
+    "why": "Lazy loading defers off-screen iframes."
+   }
+  ],
+  "mini": {
+   "title": "Safe embed card",
+   "brief": "Build an embed card with a sandboxed iframe, a title and a fallback link.",
+   "steps": [
+    "Add the iframe.",
+    "Sandbox it.",
+    "Add a link for unsupported browsers."
+   ]
+  },
+  "lab": {
+   "title": "Embed hardening",
+   "brief": "Harden a page with two iframes: one map and one untrusted widget.",
+   "milestones": [
+    "Title both frames.",
+    "Sandbox the untrusted one.",
+    "Lazy-load the below-fold frame."
+   ]
+  }
+ },
+ {
+  "id": "html17",
+  "no": 17,
+  "title": "Advanced Native HTML Elements",
+  "level": "intermediate",
+  "hours": 3,
+  "goal": "Use details, dialog, progress, meter, template and data elements appropriately.",
+  "topics": [
+   {
+    "title": "progress reports completion",
+    "body": "`progress` value aur max ke saath task completion dikhata hai. Iska use loading indicator aur course completion dono ke liye hota hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <label for=\"done\">Lessons done</label>\n  <progress id=\"done\" value=\"4\" max=\"10\">4 of 10</progress>\n</body>\n</html>",
+    "output": "Lessons done [====      ] 4 of 10"
+   },
+   {
+    "title": "meter shows a measurement in a range",
+    "body": "`meter` known range me measurement dikhata hai, jaise disk usage. `progress` task completion ke liye hai; dono ko mix mat karo.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <label for=\"disk\">Disk used</label>\n  <meter id=\"disk\" value=\"0.7\">70%</meter>\n</body>\n</html>",
+    "output": "Disk used [=======   ] 70%"
+   },
+   {
+    "title": "dialog is a native modal or popover",
+    "body": "`dialog` `showModal()` ke saath focus trap aur Escape handling deta hai. Custom div modal se kam code aur better accessibility.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <dialog id=\"help\">\n    <p>Need help?</p>\n    <button type=\"button\">Close</button>\n  </dialog>\n</body>\n</html>",
+    "output": "Modal dialog: Need help? / Close"
+   }
+  ],
+  "debug": [
+   {
+    "title": "meter used for task progress",
+    "broken": "<meter value=\"4\" max=\"10\">4 of 10</meter>",
+    "fix": "<progress value=\"4\" max=\"10\">4 of 10</progress>",
+    "error": "Wrong element: meter measures a value in a known range, while progress reports completion of a task.",
+    "fixedOutput": "4 of 10 complete"
+   },
+   {
+    "title": "A dialog opened without showModal",
+    "broken": "<dialog id=\"box\">Content</dialog>",
+    "fix": "<dialog id=\"box\">Content</dialog>\n<script>\n  document.getElementById(\"box\").showModal();\n</script>",
+    "error": "Dialog never opened: the element is in the DOM but hidden until show() or showModal() is called.",
+    "fixedOutput": "Modal dialog: Content"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Course progress panel",
+    "statement": "Show completion with a progress element and disk usage with a meter, both labelled.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <label for=\"done\">Lessons done</label>\n  <progress id=\"done\" value=\"4\" max=\"10\">4 of 10</progress>\n  <label for=\"disk\">Disk used</label>\n  <meter id=\"disk\" value=\"0.7\">70%</meter>\n</body>\n</html>",
+    "expected": "Lessons done 4 of 10\nDisk used 70%"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the difference between progress and meter?",
+    "answer": "progress reports how much of a task is complete and may be indeterminate. meter displays a measurement inside a known range with low/high/optimum semantics."
+   },
+   {
+    "q": "What does the template element do?",
+    "answer": "It holds inert markup that is not rendered or executed. Scripts clone its content when the element is actually needed."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner builds a modal from divs.",
+    "answer": "The dialog element gives focus management, Escape handling and a backdrop natively, with less code to get wrong.",
+    "steps": [
+     "Show the div modal.",
+     "Replace it with dialog.",
+     "Test focus and Escape."
+    ]
+   },
+   {
+    "q": "Why not use progress for a score?",
+    "answer": "A score is a measurement, not task completion. meter carries the range semantics that assistive technology can announce meaningfully.",
+    "steps": [
+     "Compare the two elements.",
+     "Pick by meaning.",
+     "Label the value."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which element reports completion of a task?",
+    "options": [
+     "meter",
+     "progress",
+     "output",
+     "data"
+    ],
+    "answer": "progress",
+    "why": "progress is defined for task completion."
+   },
+   {
+    "q": "Which method opens a dialog as a modal?",
+    "options": [
+     "open()",
+     "show()",
+     "showModal()",
+     "display()"
+    ],
+    "answer": "showModal()",
+    "why": "showModal makes it modal and manages focus."
+   }
+  ],
+  "mini": {
+   "title": "FAQ with details",
+   "brief": "Build a four-question FAQ with details, summary and one open by default.",
+   "steps": [
+    "Add four details blocks.",
+    "Write short answers.",
+    "Set the first one open."
+   ]
+  },
+  "lab": {
+   "title": "Native widgets pass",
+   "brief": "Replace a custom progress bar, a custom modal and a custom tooltip with native elements where possible.",
+   "milestones": [
+    "Swap progress and dialog.",
+    "Keep custom tooltip only if needed.",
+    "Test with keyboard."
+   ]
+  }
+ },
+ {
+  "id": "html18",
+  "no": 18,
+  "title": "HTML with CSS and JavaScript",
+  "level": "intermediate",
+  "hours": 3,
+  "goal": "Connect structure to styling and behaviour without confusing responsibilities.",
+  "topics": [
+   {
+    "title": "Link CSS instead of styling inline",
+    "body": "External stylesheet cache hoti hai aur saare pages par reuse hoti hai. Inline style sirf one-off exception ke liye.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n</head>\n<body>\n  <h1 class=\"title\">Styled by a file</h1>\n</body>\n</html>",
+    "output": "Styled heading (from css/style.css)"
+   },
+   {
+    "title": "Scripts should not block parsing",
+    "body": "`defer` script ko parse ke baad chalata hai aur order preserve karta hai, isliye DOM ready milta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <button id=\"go\">Go</button>\n  <script src=\"js/app.js\" defer></script>\n</body>\n</html>",
+    "output": "Go (button; behaviour attached after parsing)"
+   },
+   {
+    "title": "Data attributes connect HTML to JavaScript",
+    "body": "`data-*` se behaviour ke liye values HTML me rakhi jaati hain, aur script `dataset` se padhta hai. Isse markup aur logic ka contract clear rehta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <button data-action=\"save\">Save</button>\n</body>\n</html>",
+    "output": "Save (button with data-action=\"save\")"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A script in the head with no defer",
+    "broken": "<head>\n  <script src=\"app.js\"></script>\n</head>\n<body>\n  <button id=\"go\">Go</button>\n</body>",
+    "fix": "<head>\n  <script src=\"app.js\" defer></script>\n</head>\n<body>\n  <button id=\"go\">Go</button>\n</body>",
+    "error": "Blocking script before the body: the parser stops, and if the script queries the button it runs before the element exists.",
+    "fixedOutput": "Page renders, then script runs"
+   },
+   {
+    "title": "A class used as a JavaScript id",
+    "broken": "document.getElementById(\"js-save\")",
+    "fix": "document.querySelector(\"[data-action=\"save\"]\")",
+    "error": "Mismatched hook: the element has no id, so the lookup returns null and the handler never attaches.",
+    "fixedOutput": "Save (button wired)"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Wire a data-attribute button",
+    "statement": "Create a button with data-action=\"save\", link a deferred script and a stylesheet from the head.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <link rel=\"stylesheet\" href=\"css/style.css\">\n  <script src=\"js/app.js\" defer></script>\n</head>\n<body>\n  <button type=\"button\" data-action=\"save\">Save</button>\n</body>\n</html>",
+    "expected": "Save (button styled, behaviour ready)"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why keep CSS and JavaScript out of HTML?",
+    "answer": "Each file has one responsibility, which makes caching, testing and reuse possible. Inline code also bypasses the content security policy and is harder to review."
+   },
+   {
+    "q": "What is the DOM and how does JavaScript change it?",
+    "answer": "The DOM is the browser’s object model of the document. Scripts create, remove, move and modify nodes, and the browser re-renders the affected parts."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner styles everything inline for speed.",
+    "answer": "Inline styles cannot be cached or reused and they override external rules, which makes later changes harder.",
+    "steps": [
+     "Show the same rule repeated.",
+     "Move it to a stylesheet.",
+     "Confirm the result."
+    ]
+   },
+   {
+    "q": "Why use data attributes instead of ids for behaviour?",
+    "answer": "Ids must be unique and often carry styling or fragment meaning. A data attribute names the behaviour explicitly and can repeat.",
+    "steps": [
+     "Compare both hooks.",
+     "Switch to data-action.",
+     "Keep ids for labels and fragments."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which script attribute preserves order and waits for parsing?",
+    "options": [
+     "async",
+     "defer",
+     "type",
+     "src"
+    ],
+    "answer": "defer",
+    "why": "defer runs after parsing in document order."
+   },
+   {
+    "q": "How does JavaScript read data-action?",
+    "options": [
+     "element.id",
+     "element.dataset.action",
+     "element.class",
+     "element.name"
+    ],
+    "answer": "element.dataset.action",
+    "why": "dataset exposes data-* attributes in camelCase."
+   }
+  ],
+  "mini": {
+   "title": "Interactive counter",
+   "brief": "Build a button and output element with a deferred script that increments a counter.",
+   "steps": [
+    "Add the markup hooks.",
+    "Write the deferred script.",
+    "Verify clicks update the output."
+   ]
+  },
+  "lab": {
+   "title": "Separation refactor",
+   "brief": "Move inline styles and inline handlers out of a page into external files.",
+   "milestones": [
+    "Extract CSS.",
+    "Extract JS.",
+    "Confirm behaviour is unchanged."
+   ]
+  }
+ },
+ {
+  "id": "html19",
+  "no": 19,
+  "title": "HTML Debugging, Validation and Best Practices",
+  "level": "advanced",
+  "hours": 3,
+  "goal": "Find and fix real markup defects with dev tools, validation and a production checklist.",
+  "topics": [
+   {
+    "title": "The inspector shows the parser’s result",
+    "body": "Browser invalid nesting ko auto-correct karta hai, isliye Elements panel aapke source se alag ho sakta hai. Difference hi bug ka clue hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p>One\n  <div>Two</div>\n</body>\n</html>",
+    "output": "One\nTwo (the parser closes the p before the div)"
+   },
+   {
+    "title": "Validate instead of guessing",
+    "body": "W3C validator missing closing tags, duplicate attributes aur invalid nesting pakadta hai. Har error ka line number hota hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <img src=\"a.png\" alt=\"A\">\n</body>\n</html>",
+    "output": "Valid document"
+   },
+   {
+    "title": "A production checklist catches the boring bugs",
+    "body": "Unique title, alt text, labels, valid links, one main, correct lang aur lazy images — ye checklist har page par repeat hoti hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><title>Checklist</title></head>\n<body>\n  <main><h1>Ready to ship</h1></main>\n</body>\n</html>",
+    "output": "Ready to ship"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A block element inside a paragraph",
+    "broken": "<p>Intro <div>Block</div></p>",
+    "fix": "<p>Intro</p>\n<div>Block</div>",
+    "error": "Invalid nesting: p cannot contain a div, so the parser closes the paragraph early and the layout breaks.",
+    "fixedOutput": "Intro\nBlock"
+   },
+   {
+    "title": "A duplicate attribute",
+    "broken": "<img src=\"a.png\" src=\"b.png\" alt=\"Logo\">",
+    "fix": "<img src=\"b.png\" alt=\"Logo\">",
+    "error": "Duplicate attribute: the first value is ignored by the parser, so the image is not the one the author expected.",
+    "fixedOutput": "Logo (image from b.png)"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Ship checklist page",
+    "statement": "Write a valid page with a title, lang, one main, one h1 and an image with alt.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Ship checklist</title>\n</head>\n<body>\n  <main>\n    <h1>Ready</h1>\n    <img src=\"badge.png\" alt=\"Build passing\">\n  </main>\n</body>\n</html>",
+    "expected": "Ready\nBuild passing (image)"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why does the parsed DOM differ from the source?",
+    "answer": "The parser applies error recovery to invalid markup, closing or moving elements to produce a valid tree. The inspector shows that repaired result."
+   },
+   {
+    "q": "What does the W3C validator check?",
+    "answer": "Conformance to the HTML standard: syntax, allowed nesting, required attributes and duplicate attributes. It does not check visual design or accessibility completeness."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A page looks fine but fails validation.",
+    "answer": "The browser repaired the markup, which may still break scripts or assistive technology. I fix the source rather than relying on recovery.",
+    "steps": [
+     "Run the validator.",
+     "Fix the first error.",
+     "Re-validate."
+    ]
+   },
+   {
+    "q": "How do you debug a layout that shifts?",
+    "answer": "I check image dimensions, late-loading embeds and fonts, then reserve space so the layout does not move.",
+    "steps": [
+     "Measure layout shift.",
+     "Add width and height.",
+     "Re-measure."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "What does the HTML validator check?",
+    "options": [
+     "Visual design",
+     "Standard conformance",
+     "Server performance",
+     "SEO ranking"
+    ],
+    "answer": "Standard conformance",
+    "why": "It checks syntax and allowed structure, not design."
+   },
+   {
+    "q": "Which practice prevents layout shift from images?",
+    "options": [
+     "lazy loading only",
+     "explicit width and height",
+     "alt text",
+     "srcset"
+    ],
+    "answer": "explicit width and height",
+    "why": "Reserved space stops content from jumping when the image loads."
+   }
+  ],
+  "mini": {
+   "title": "Bug hunt",
+   "brief": "Take a page with five deliberate defects, find them with the validator and dev tools, and fix each.",
+   "steps": [
+    "Run the validator.",
+    "Reproduce each defect.",
+    "Fix and re-validate."
+   ]
+  },
+  "lab": {
+   "title": "Production audit",
+   "brief": "Audit a page against the production checklist and produce a fixed version.",
+   "milestones": [
+    "Check title, lang, alt and labels.",
+    "Validate the markup.",
+    "Re-test keyboard navigation."
+   ]
+  }
+ },
+ {
+  "id": "html20",
+  "no": 20,
+  "title": "HTML Projects and Final Assessment",
+  "level": "advanced",
+  "hours": 6,
+  "goal": "Build a complete multi-page site with semantic structure, accessible forms and valid markup.",
+  "topics": [
+   {
+    "title": "Plan the pages before writing markup",
+    "body": "Information architecture pehle decide karo: kaunse pages, kaunse landmarks, kaunse shared sections. Isse markup consistent rehta hai.",
+    "code": "index.html\nabout.html\nservices.html\ncontact.html",
+    "output": "Four pages planned: home, about, services, contact"
+   },
+   {
+    "title": "Share one structure across pages",
+    "body": "Header, nav aur footer har page par same rakho. Sirf main badalta hai, isliye navigation aur skip link consistent rehte hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <header><nav><a href=\"index.html\">Home</a></nav></header>\n  <main><h1>Services</h1></main>\n  <footer>BroCode</footer>\n</body>\n</html>",
+    "output": "Home\nServices\nBroCode"
+   },
+   {
+    "title": "Ship only after the checklist passes",
+    "body": "Doctype, lang, unique title, one main, labelled form, alt text, valid links aur zero validator errors — tab project complete mana jaata hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><title>Contact | BroCode</title></head>\n<body>\n  <main>\n    <h1>Contact</h1>\n    <form action=\"/contact\" method=\"post\">\n      <label for=\"email\">Email</label>\n      <input id=\"email\" name=\"email\" type=\"email\" required>\n      <button type=\"submit\">Send</button>\n    </form>\n  </main>\n</body>\n</html>",
+    "output": "Contact\nEmail [____________]\nSend"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A capstone page with no main landmark",
+    "broken": "<body>\n  <h1>Services</h1>\n  <p>What we build</p>\n</body>",
+    "fix": "<body>\n  <main>\n    <h1>Services</h1>\n    <p>What we build</p>\n  </main>\n</body>",
+    "error": "No main landmark: assistive technology cannot jump to the page’s primary content.",
+    "fixedOutput": "Services\nWhat we build"
+   },
+   {
+    "title": "A navigation that differs on every page",
+    "broken": "index.html: <a href=\"index.html\">Home</a>\nabout.html: <a href=\"index.html\">Back</a>",
+    "fix": "Both pages: <a href=\"index.html\">Home</a>",
+    "error": "Inconsistent navigation: labels that change between pages make the site harder to learn and to audit.",
+    "fixedOutput": "Home"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Capstone contact page",
+    "statement": "Build a page with a shared header/nav, a main with h1, a labelled email form and a footer.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Contact | BroCode</title>\n</head>\n<body>\n  <header><nav><a href=\"index.html\">Home</a></nav></header>\n  <main>\n    <h1>Contact</h1>\n    <form action=\"/contact\" method=\"post\">\n      <label for=\"email\">Email</label>\n      <input id=\"email\" name=\"email\" type=\"email\" required>\n      <button type=\"submit\">Send</button>\n    </form>\n  </main>\n  <footer>BroCode</footer>\n</body>\n</html>",
+    "expected": "Home\nContact\nEmail [____________]\nSend\nBroCode"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "How do you structure a multi-page site in plain HTML?",
+    "answer": "Give every page the same header, nav, main and footer, link pages with relative URLs and keep shared assets in predictable folders. The main region changes per page."
+   },
+   {
+    "q": "What would you check before calling a site production ready?",
+    "answer": "Valid markup, one main landmark, unique titles and descriptions, labelled controls, alt text, working links, responsive images and a keyboard pass."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner wants to skip the checklist to ship faster.",
+    "answer": "The checklist is the cheapest test we have; fixing a broken form or missing label after launch costs far more.",
+    "steps": [
+     "Show one defect and its user impact.",
+     "Run the checklist.",
+     "Ship after it passes."
+    ]
+   },
+   {
+    "q": "How do you review an HTML project?",
+    "answer": "Structure first, then semantics, then accessibility, then validity, and only then visual polish.",
+    "steps": [
+     "Read the outline.",
+     "Check landmarks and labels.",
+     "Validate and test with the keyboard."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which landmark appears once and holds the page’s primary content?",
+    "options": [
+     "header",
+     "nav",
+     "main",
+     "footer"
+    ],
+    "answer": "main",
+    "why": "main is the unique primary content landmark."
+   },
+   {
+    "q": "What is the best first step for a multi-page project?",
+    "options": [
+     "Pick colours",
+     "Plan pages and shared structure",
+     "Add JavaScript",
+     "Write CSS"
+    ],
+    "answer": "Plan pages and shared structure",
+    "why": "Structure decisions drive every page’s markup."
+   }
+  ],
+  "mini": {
+   "title": "Portfolio capstone",
+   "brief": "Build a four-page accessible site: home, about, projects and contact, sharing one structure.",
+   "steps": [
+    "Plan the pages.",
+    "Build the shared header and nav.",
+    "Add the contact form and validate every page."
+   ]
+  },
+  "lab": {
+   "title": "Final assessment",
+   "brief": "Ship the capstone and pass the checklist: valid HTML, semantic landmarks, labelled form, alt text and keyboard navigation.",
+   "milestones": [
+    "Validate all four pages.",
+    "Run the keyboard pass.",
+    "Record the evaluation rubric."
+   ]
+  }
+ }
+]

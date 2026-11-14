@@ -1,0 +1,1242 @@
+[
+ {
+  "id": "html01",
+  "no": 1,
+  "title": "Introduction to Web Development",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Understand how the web works and where HTML fits between the browser, the server and the other frontend languages.",
+  "topics": [
+   {
+    "title": "A browser turns HTML into a page",
+    "body": "HTML file browser ko milta hai, browser use parse karke DOM banata hai aur screen par render karta hai. Bina HTML ke page ke paas structure hi nahi hota.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>Hello BroCode</h1>\n</body>\n</html>",
+    "output": "Hello BroCode"
+   },
+   {
+    "title": "Structure, style and behaviour",
+    "body": "HTML structure deta hai, CSS look deta hai aur JavaScript behaviour. Teen alag responsibilities hain, isliye teen alag files me rakhi jaati hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>HTML</h1>\n  <p>structure</p>\n</body>\n</html>",
+    "output": "HTML\nstructure"
+   },
+   {
+    "title": "Static and dynamic pages",
+    "body": "Static page har visitor ko wahi HTML bhejta hai. Dynamic page server ya JavaScript se HTML badalta hai, lekin browser ko phir bhi HTML hi milta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p>Rendered on the server</p>\n</body>\n</html>",
+    "output": "Rendered on the server"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A missing closing body tag",
+    "broken": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>BroCode</h1>",
+    "fix": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>BroCode</h1>\n</body>\n</html>",
+    "error": "Invalid document: the body is never closed, so later markup has no defined end.",
+    "fixedOutput": "BroCode"
+   },
+   {
+    "title": "A page without a doctype",
+    "broken": "<html lang=\"en\">\n<body>\n  <h1>BroCode</h1>\n</body>\n</html>",
+    "fix": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>BroCode</h1>\n</body>\n</html>",
+    "error": "Missing doctype: the browser falls into quirks mode and may lay the page out differently.",
+    "fixedOutput": "BroCode"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Write your first valid page",
+    "statement": "Create a page with a doctype, an English lang attribute, one h1 saying `My first page` and one paragraph saying `HTML structure`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>First page</title>\n</head>\n<body>\n  <h1>My first page</h1>\n  <p>HTML structure</p>\n</body>\n</html>",
+    "expected": "My first page\nHTML structure"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is HTML and what is it not?",
+    "answer": "HTML is a markup language that describes the structure and meaning of content. It is not a programming language: it has no loops, variables or logic; CSS handles presentation and JavaScript handles behaviour."
+   },
+   {
+    "q": "How does a browser turn an HTML file into a page?",
+    "answer": "It parses the bytes into characters, tokens and nodes, builds the DOM, combines it with CSS rules into a render tree, lays out the boxes and paints them. Scripts can change the DOM before or after painting."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A beginner says HTML is a programming language. How do you correct that gently?",
+    "answer": "I show that HTML has no control flow or variables, then show where CSS and JavaScript fit, so the correction teaches the model instead of only naming it.",
+    "steps": [
+     "Ask them what a program must be able to do.",
+     "Show that HTML only describes structure.",
+     "Show one CSS rule and one JavaScript line for contrast."
+    ]
+   },
+   {
+    "q": "Why teach the document tree before tags?",
+    "answer": "Once the tree is clear, nesting, indentation and closing tags stop being arbitrary rules and become the shape of the document.",
+    "steps": [
+     "Draw a small page as a tree.",
+     "Map each node to a tag.",
+     "Show what happens when a branch is not closed."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which language is responsible for the structure of a web page?",
+    "options": [
+     "CSS",
+     "HTML",
+     "JavaScript",
+     "SQL"
+    ],
+    "answer": "HTML",
+    "why": "HTML describes structure and meaning; CSS styles it and JavaScript adds behaviour."
+   },
+   {
+    "q": "What does the browser build from the HTML document?",
+    "options": [
+     "A database",
+     "The DOM",
+     "A stylesheet",
+     "A server"
+    ],
+    "answer": "The DOM",
+    "why": "The document object model is the tree the browser parses and renders."
+   }
+  ],
+  "mini": {
+   "title": "Inspect a real page",
+   "brief": "Open any website, view its source and list the doctype, the title and three semantic elements it uses.",
+   "steps": [
+    "Open view-source for the page.",
+    "Note the doctype and lang attributes.",
+    "List three structural elements and what they contain."
+   ]
+  },
+  "lab": {
+   "title": "Static page walkthrough",
+   "brief": "Write a one-page static document and explain which parts are structure, style and behaviour.",
+   "milestones": [
+    "Valid doctype and lang.",
+    "One heading and one paragraph.",
+    "A comment marking where CSS and JS would go."
+   ]
+  }
+ },
+ {
+  "id": "html02",
+  "no": 2,
+  "title": "Setting Up Your Environment",
+  "level": "beginner",
+  "hours": 2,
+  "goal": "Create a project folder, write index.html and open it in a browser with working developer tools.",
+  "topics": [
+   {
+    "title": "A project starts with index.html",
+    "body": "Server aur browser dono `index.html` ko default entry point maante hain. Isliye project ka pehla file yahi naam rakha jaata hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>My project</title>\n</head>\n<body>\n  <h1>Project ready</h1>\n</body>\n</html>",
+    "output": "Project ready"
+   },
+   {
+    "title": "Folder structure keeps paths short",
+    "body": "HTML, CSS, JS aur images alag folders me rakhne se relative paths predictable rehte hain aur file dhoondhna aasan hota hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <img src=\"images/logo.png\" alt=\"BroCode logo\">\n</body>\n</html>",
+    "output": "BroCode logo (image)"
+   },
+   {
+    "title": "Developer tools show the live DOM",
+    "body": "Elements panel parsed DOM dikhata hai, source file nahi. Isliye browser ke add kiye gaye nodes aur aapke file ke tags me farq ho sakta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p>Inspect me</p>\n</body>\n</html>",
+    "output": "Inspect me"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A file saved with the wrong extension",
+    "broken": "index.txt\n\n<h1>BroCode</h1>",
+    "fix": "index.html\n\n<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>BroCode</h1>\n</body>\n</html>",
+    "error": "Wrong extension: the browser shows the file as plain text instead of parsing markup.",
+    "fixedOutput": "BroCode"
+   },
+   {
+    "title": "A stylesheet linked from the wrong folder",
+    "broken": "<link rel=\"stylesheet\" href=\"style.css\">",
+    "fix": "<link rel=\"stylesheet\" href=\"css/style.css\">",
+    "error": "Broken path: the browser requests a file that is not there, so the styles never load.",
+    "fixedOutput": "Unstyled page"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Create a starter template",
+    "statement": "Write a reusable starter with doctype, charset, viewport, title `Starter` and an empty body containing a comment.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Starter</title>\n</head>\n<body>\n  <!-- page content goes here -->\n</body>\n</html>",
+    "expected": "Starter (tab title only)"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why does the HTML file need a charset declaration?",
+    "answer": "Without it the browser guesses the encoding and can misread non-ASCII characters. `meta charset=\"UTF-8\"` states the encoding before the text is decoded."
+   },
+   {
+    "q": "What is the difference between viewing source and inspecting the DOM?",
+    "answer": "View source shows the bytes the server sent. The inspector shows the live DOM after parsing and any script changes, which is why the two can differ."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner cannot see their changes. What do you check first?",
+    "answer": "I check whether they saved the file and whether the browser is loading that same file, because those two account for most \"nothing happened\" reports.",
+    "steps": [
+     "Confirm the file is saved.",
+     "Confirm the address bar path matches the file.",
+     "Hard-refresh to bypass the cache."
+    ]
+   },
+   {
+    "q": "Why insist on a folder per project?",
+    "answer": "Relative paths only stay correct when the structure is stable. A predictable layout prevents broken images and stylesheets as the project grows.",
+    "steps": [
+     "Show a correct tree.",
+     "Show a broken relative path.",
+     "Fix the path together."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which file name does a web server use as the default page?",
+    "options": [
+     "main.html",
+     "index.html",
+     "home.html",
+     "page.html"
+    ],
+    "answer": "index.html",
+    "why": "index.html is the conventional directory index."
+   },
+   {
+    "q": "Which meta tag controls mobile layout width?",
+    "options": [
+     "charset",
+     "viewport",
+     "description",
+     "robots"
+    ],
+    "answer": "viewport",
+    "why": "The viewport meta tag tells the browser how to scale the layout on small screens."
+   }
+  ],
+  "mini": {
+   "title": "Project skeleton",
+   "brief": "Create a folder with index.html, css/style.css and images/, and link the stylesheet from the page.",
+   "steps": [
+    "Create the folders.",
+    "Add a valid starter page.",
+    "Link the stylesheet with the correct relative path."
+   ]
+  },
+  "lab": {
+   "title": "Broken path repair",
+   "brief": "Take a page with two broken asset paths and repair them without moving files.",
+   "milestones": [
+    "Identify both broken requests in the network panel.",
+    "Correct each relative path.",
+    "Confirm both assets load."
+   ]
+  }
+ },
+ {
+  "id": "html03",
+  "no": 3,
+  "title": "HTML Document Structure",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Write every required part of an HTML document and explain what each line does.",
+  "topics": [
+   {
+    "title": "The doctype is not a tag",
+    "body": "`<!DOCTYPE html>` browser ko standards mode me chalata hai. Ye element nahi hai, isliye ise close nahi karte.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p>Standards mode</p>\n</body>\n</html>",
+    "output": "Standards mode"
+   },
+   {
+    "title": "The head describes the document",
+    "body": "`head` ka content page par nazar nahi aata; ye browser ko encoding, title aur metadata batata hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>BroCode HTML</title>\n</head>\n<body></body>\n</html>",
+    "output": "Tab title: BroCode HTML"
+   },
+   {
+    "title": "The body is what the visitor sees",
+    "body": "Sirf `body` ke andar ka content render hota hai. Structure aur semantics wahin likhe jaate hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>Visible</h1>\n  <p>Also visible</p>\n</body>\n</html>",
+    "output": "Visible\nAlso visible"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A title placed in the body",
+    "broken": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <title>Wrong place</title>\n  <h1>Page</h1>\n</body>\n</html>",
+    "fix": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <title>Wrong place</title>\n</head>\n<body>\n  <h1>Page</h1>\n</body>\n</html>",
+    "error": "Misplaced title: the document title must live in the head, not in visible content.",
+    "fixedOutput": "Page"
+   },
+   {
+    "title": "Two head elements",
+    "broken": "<!DOCTYPE html>\n<html lang=\"en\">\n<head><title>One</title></head>\n<head><meta charset=\"UTF-8\"></head>\n<body></body>\n</html>",
+    "fix": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <title>One</title>\n  <meta charset=\"UTF-8\">\n</head>\n<body></body>\n</html>",
+    "error": "Invalid structure: a document has one head, so the parser merges the stray content unpredictably.",
+    "fixedOutput": "Tab title: One"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Write a complete document",
+    "statement": "Produce a document with doctype, lang, charset, viewport, title `Lesson 3` and a body with one h1 `Structure`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Lesson 3</title>\n</head>\n<body>\n  <h1>Structure</h1>\n</body>\n</html>",
+    "expected": "Structure"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What happens if the doctype is missing?",
+    "answer": "The browser uses quirks mode, which emulates legacy layout behaviour. Box sizing and other rules can differ, so the page may look different from the standards-mode design."
+   },
+   {
+    "q": "Why does html need a lang attribute?",
+    "answer": "It tells assistive technology and search engines which language the content is in, which affects pronunciation, spell-check and translation."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner asks why the title does not appear on the page.",
+    "answer": "I explain the difference between document metadata and rendered content, then show the title in the browser tab so the concept becomes visible.",
+    "steps": [
+     "Point at the tab.",
+     "Show the title element in the head.",
+     "Contrast it with an h1 in the body."
+    ]
+   },
+   {
+    "q": "How do you explain the document tree without jargon?",
+    "answer": "I draw the page as boxes inside boxes, then name parent, child and sibling on that drawing before using the terms in code.",
+    "steps": [
+     "Draw html containing head and body.",
+     "Nest one heading inside body.",
+     "Name the relationships."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Where does the visible page content belong?",
+    "options": [
+     "head",
+     "body",
+     "title",
+     "meta"
+    ],
+    "answer": "body",
+    "why": "Only body content is rendered in the viewport."
+   },
+   {
+    "q": "Which element sets the text shown in the browser tab?",
+    "options": [
+     "h1",
+     "title",
+     "meta",
+     "header"
+    ],
+    "answer": "title",
+    "why": "The title element supplies the document title."
+   }
+  ],
+  "mini": {
+   "title": "Metadata card",
+   "brief": "Write a document whose head carries charset, viewport, title and description, and whose body carries one heading.",
+   "steps": [
+    "Add the four head elements.",
+    "Add one h1.",
+    "Confirm the tab title."
+   ]
+  },
+  "lab": {
+   "title": "Structure audit",
+   "brief": "Audit three pages and record which required document parts each one has or misses.",
+   "milestones": [
+    "Check doctype, lang, charset, viewport and title.",
+    "Record findings in a table.",
+    "Fix the page that misses the most."
+   ]
+  }
+ },
+ {
+  "id": "html04",
+  "no": 4,
+  "title": "Elements, Tags and Attributes",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Tell tags, elements and attributes apart, and use global attributes correctly.",
+  "topics": [
+   {
+    "title": "An element is a tag plus its content",
+    "body": "Opening tag, content aur closing tag milkar element banate hain. `img` jaise void elements ka closing tag nahi hota.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p id=\"intro\">A paragraph element</p>\n  <img src=\"logo.png\" alt=\"Logo\">\n</body>\n</html>",
+    "output": "A paragraph element\nLogo (image)"
+   },
+   {
+    "title": "Attributes configure an element",
+    "body": "Attribute name-value pair hota hai aur opening tag me likha jaata hai. `id` unique hota hai, `class` repeat ho sakti hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p id=\"main\" class=\"note\">Configured</p>\n</body>\n</html>",
+    "output": "Configured"
+   },
+   {
+    "title": "data-* attributes carry your own data",
+    "body": "`data-*` custom values store karte hain jo JavaScript padh sakta hai, bina class ya id ko misuse kiye.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <button data-action=\"save\">Save</button>\n</body>\n</html>",
+    "output": "Save"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An attribute value without quotes",
+    "broken": "<p class=note>Hello</p>",
+    "fix": "<p class=\"note\">Hello</p>",
+    "error": "Unquoted value with no spaces happens to parse, but the moment the value contains a space the attribute breaks.",
+    "fixedOutput": "Hello"
+   },
+   {
+    "title": "A duplicated id",
+    "broken": "<p id=\"intro\">One</p>\n<p id=\"intro\">Two</p>",
+    "fix": "<p id=\"intro\">One</p>\n<p id=\"summary\">Two</p>",
+    "error": "Duplicate id: ids must be unique, and scripts or labels will target only the first match.",
+    "fixedOutput": "One\nTwo"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Annotate one element",
+    "statement": "Write a paragraph with a unique id, two classes, a title and a data-role attribute.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p id=\"intro\" class=\"note muted\" title=\"Introduction\" data-role=\"summary\">Annotated</p>\n</body>\n</html>",
+    "expected": "Annotated"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the difference between an id and a class?",
+    "answer": "An id is unique in the document and is used for fragment links and one-off targeting. A class is reusable across many elements and is the normal styling hook."
+   },
+   {
+    "q": "What are void elements?",
+    "answer": "Elements that cannot have content, such as `img`, `br`, `input` and `meta`. They have no closing tag; a trailing slash is allowed but not required in HTML."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "Why not use id for styling?",
+    "answer": "An id cannot repeat, so a style tied to it cannot be reused, and specificity becomes hard to override. Classes express reusable patterns.",
+    "steps": [
+     "Show two elements needing the same style.",
+     "Show the id duplication problem.",
+     "Convert the id to a class."
+    ]
+   },
+   {
+    "q": "How do you explain attributes to a beginner?",
+    "answer": "I call them settings on a tag, like the size and colour chosen when buying a shirt, then show name=\"value\" in a real tag.",
+    "steps": [
+     "Name the attribute.",
+     "Show its value.",
+     "Remove it and show what changes."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which attribute must be unique in a document?",
+    "options": [
+     "class",
+     "id",
+     "lang",
+     "title"
+    ],
+    "answer": "id",
+    "why": "Ids are unique; classes are reusable."
+   },
+   {
+    "q": "Which is a void element?",
+    "options": [
+     "p",
+     "img",
+     "section",
+     "li"
+    ],
+    "answer": "img",
+    "why": "img has no content and no closing tag."
+   }
+  ],
+  "mini": {
+   "title": "Element inventory",
+   "brief": "Mark up a short profile using five different elements and at least three attributes.",
+   "steps": [
+    "Choose five elements.",
+    "Add id, class and data-* where useful.",
+    "Check that ids are unique."
+   ]
+  },
+  "lab": {
+   "title": "Attribute repair",
+   "brief": "Fix a page with an unquoted attribute, a duplicate id and a class used as an id.",
+   "milestones": [
+    "Quote every value.",
+    "Make ids unique.",
+    "Move repeatable styling to classes."
+   ]
+  }
+ },
+ {
+  "id": "html05",
+  "no": 5,
+  "title": "Headings, Paragraphs and Text",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Use headings for hierarchy and inline elements for meaning rather than appearance.",
+  "topics": [
+   {
+    "title": "Headings form an outline",
+    "body": "`h1` se `h6` tak hierarchy banati hai. Screen readers aur search engines isi outline se page ka structure samajhte hain, isliye level skip nahi karte.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>Course</h1>\n  <h2>Module</h2>\n  <p>Paragraph text.</p>\n</body>\n</html>",
+    "output": "Course\nModule\nParagraph text."
+   },
+   {
+    "title": "strong and em carry meaning",
+    "body": "`strong` importance batata hai aur `em` stress. `b` aur `i` sirf visual offset hain, isliye meaning ke liye strong/em use karo.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p><strong>Important</strong> and <em>emphasised</em></p>\n</body>\n</html>",
+    "output": "Important and emphasised"
+   },
+   {
+    "title": "pre keeps whitespace, code marks code",
+    "body": "`pre` whitespace aur line breaks preserve karta hai, `code` machine-readable code batata hai. Dono saath use hote hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <pre><code>int main() {\n  return 0;\n}</code></pre>\n</body>\n</html>",
+    "output": "int main() {\n  return 0;\n}"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A heading level skipped for size",
+    "broken": "<h1>Course</h1>\n<h4>Module</h4>",
+    "fix": "<h1>Course</h1>\n<h2>Module</h2>",
+    "error": "Skipped heading level: the outline jumps from 1 to 4, which confuses assistive technology.",
+    "fixedOutput": "Course\nModule"
+   },
+   {
+    "title": "A line break used to make a paragraph",
+    "broken": "First line<br>Second line",
+    "fix": "<p>First line</p>\n<p>Second line</p>",
+    "error": "Layout misuse: br creates line breaks inside one block, not two paragraphs of content.",
+    "fixedOutput": "First line\nSecond line"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Mark up a course outline",
+    "statement": "Write one h1, two h2 headings and a paragraph containing strong and em text.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>HTML Mastery</h1>\n  <h2>Text</h2>\n  <h2>Structure</h2>\n  <p><strong>Read</strong> then <em>practise</em>.</p>\n</body>\n</html>",
+    "expected": "HTML Mastery\nText\nStructure\nRead then practise."
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why should heading levels not be chosen by size?",
+    "answer": "Size is a styling decision for CSS. The heading level describes the document outline, and skipping levels breaks navigation for screen-reader users and weakens SEO structure."
+   },
+   {
+    "q": "When is blockquote appropriate?",
+    "answer": "For an extended quotation from another source. Short inline quotations use `q`. Neither should be used just to indent text."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner uses br for spacing. What do you suggest?",
+    "answer": "I show that spacing belongs to CSS margins, while br is for meaningful line breaks such as addresses or poetry.",
+    "steps": [
+     "Show the spacing result.",
+     "Replace br with a margin rule.",
+     "Keep br only where the break is content."
+    ]
+   },
+   {
+    "q": "Why teach pre and code together?",
+    "answer": "code names the content as code; pre preserves its whitespace. Together they show a snippet exactly as written.",
+    "steps": [
+     "Show a snippet without pre.",
+     "Show it with pre and code.",
+     "Explain which element did what."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which element marks important text?",
+    "options": [
+     "b",
+     "strong",
+     "i",
+     "small"
+    ],
+    "answer": "strong",
+    "why": "strong conveys importance; b is a visual offset without meaning."
+   },
+   {
+    "q": "Which element preserves spaces and line breaks?",
+    "options": [
+     "p",
+     "pre",
+     "span",
+     "br"
+    ],
+    "answer": "pre",
+    "why": "pre keeps the source whitespace exactly."
+   }
+  ],
+  "mini": {
+   "title": "Article typography",
+   "brief": "Mark up a short article with a correct heading outline, quotes, code and an abbreviation.",
+   "steps": [
+    "Write one h1 and two h2.",
+    "Add a blockquote and a code block.",
+    "Add an abbr with a title."
+   ]
+  },
+  "lab": {
+   "title": "Outline repair",
+   "brief": "Fix a page whose headings skip levels and whose paragraphs are separated by br tags.",
+   "milestones": [
+    "Rebuild the heading outline.",
+    "Replace layout brs with paragraphs.",
+    "Validate the result."
+   ]
+  }
+ },
+ {
+  "id": "html06",
+  "no": 6,
+  "title": "Links and Navigation",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Build absolute, relative, internal and contact links, and make navigation usable.",
+  "topics": [
+   {
+    "title": "href decides the destination",
+    "body": "Absolute URL poora address hota hai, relative URL current file ke hisaab se resolve hota hai. Isliye project ke andar relative links rakhe jaate hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <a href=\"about.html\">About</a>\n  <a href=\"https://example.com\">External</a>\n</body>\n</html>",
+    "output": "About\nExternal"
+   },
+   {
+    "title": "Fragments jump inside a page",
+    "body": "`#id` same page ke element par le jaata hai. Isi se table of contents aur section navigation banti hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <a href=\"#details\">Skip to details</a>\n  <h2 id=\"details\">Details</h2>\n</body>\n</html>",
+    "output": "Skip to details\nDetails"
+   },
+   {
+    "title": "Link text must describe the destination",
+    "body": "Screen reader user links ki list sunte hain. \"Click here\" meaningless hai; \"Admission form\" batata hai kahan jaayega.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <a href=\"admission.html\">Admission form</a>\n</body>\n</html>",
+    "output": "Admission form"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A new tab opened without rel",
+    "broken": "<a href=\"https://example.com\" target=\"_blank\">External</a>",
+    "fix": "<a href=\"https://example.com\" target=\"_blank\" rel=\"noopener noreferrer\">External</a>",
+    "error": "Missing rel: the opened page can access window.opener and navigate the original tab.",
+    "fixedOutput": "External"
+   },
+   {
+    "title": "A relative link that leaves the folder",
+    "broken": "<a href=\"pages/about.html\">About</a>",
+    "fix": "<a href=\"about.html\">About</a>",
+    "error": "Broken relative path: pages/about.html is resolved from the current folder and does not exist there.",
+    "fixedOutput": "About"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Build a three-link navigation",
+    "statement": "Create a nav with links to index.html, about.html and a mailto link, with descriptive text.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <nav>\n    <a href=\"index.html\">Home</a>\n    <a href=\"about.html\">About</a>\n    <a href=\"mailto:hello@brocode.dev\">Email us</a>\n  </nav>\n</body>\n</html>",
+    "expected": "Home\nAbout\nEmail us"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the difference between absolute and relative URLs?",
+    "answer": "An absolute URL contains the scheme and host and works from anywhere. A relative URL is resolved against the current document’s location, which keeps a project portable."
+   },
+   {
+    "q": "Why is target=\"_blank\" paired with rel=\"noopener\"?",
+    "answer": "The new page receives window.opener unless noopener is set, which allows reverse tabnabbing. noopener severs that reference; noreferrer also hides the referrer."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner reports a broken link that works on their machine.",
+    "answer": "I compare the address bar path with the href, because a relative path that assumes a folder is the usual cause.",
+    "steps": [
+     "Read the resolved URL in dev tools.",
+     "Compare it with the file system.",
+     "Fix the relative path."
+    ]
+   },
+   {
+    "q": "How do you explain link text quality?",
+    "answer": "I have them listen to a list of links read aloud; \"click here\" repeated five times shows the problem immediately.",
+    "steps": [
+     "List the links by text only.",
+     "Ask which destination each one names.",
+     "Rewrite the vague ones."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which link opens the visitor’s email client?",
+    "options": [
+     "tel:",
+     "mailto:",
+     "https:",
+     "#"
+    ],
+    "answer": "mailto:",
+    "why": "The mailto scheme composes an email instead of navigating to a page."
+   },
+   {
+    "q": "What does href=\"#details\" target?",
+    "options": [
+     "A file named details",
+     "The element with id details",
+     "A new tab",
+     "The page top"
+    ],
+    "answer": "The element with id details",
+    "why": "A fragment identifier scrolls to the matching id."
+   }
+  ],
+  "mini": {
+   "title": "Breadcrumb navigation",
+   "brief": "Add a breadcrumb trail Home / Courses / HTML to three pages with correct relative links.",
+   "steps": [
+    "Create the three pages.",
+    "Add a nav with the trail.",
+    "Link each level correctly."
+   ]
+  },
+  "lab": {
+   "title": "Link audit",
+   "brief": "Audit a five-page site for broken relative links, vague link text and unsafe target usage.",
+   "milestones": [
+    "List every link and its resolved URL.",
+    "Fix broken paths.",
+    "Rewrite vague text and add rel."
+   ]
+  }
+ },
+ {
+  "id": "html07",
+  "no": 7,
+  "title": "Lists",
+  "level": "beginner",
+  "hours": 2,
+  "goal": "Choose ordered, unordered and description lists, and nest them correctly.",
+  "topics": [
+   {
+    "title": "ul for unordered, ol for ordered",
+    "body": "Jab order matter karta hai to `ol`, jab sirf items ka group ho to `ul`. Har item `li` ke andar hota hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <ul>\n    <li>HTML</li>\n    <li>CSS</li>\n  </ul>\n</body>\n</html>",
+    "output": "• HTML\n• CSS"
+   },
+   {
+    "title": "Nested lists go inside the parent li",
+    "body": "Nested list ko `li` ke andar rakhna padta hai, warna wo parent item ka part nahi banegi.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <ul>\n    <li>Frontend\n      <ul>\n        <li>HTML</li>\n      </ul>\n    </li>\n  </ul>\n</body>\n</html>",
+    "output": "• Frontend\n  • HTML"
+   },
+   {
+    "title": "dl pairs terms with descriptions",
+    "body": "Description list me `dt` term aur `dd` explanation hota hai. Ye glossary aur metadata ke liye sahi hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <dl>\n    <dt>HTML</dt>\n    <dd>Markup language</dd>\n  </dl>\n</body>\n</html>",
+    "output": "HTML\nMarkup language"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A list item outside its list",
+    "broken": "<li>HTML</li>\n<li>CSS</li>",
+    "fix": "<ul>\n  <li>HTML</li>\n  <li>CSS</li>\n</ul>",
+    "error": "Orphan list items: li is only valid inside ul, ol or menu, so the structure is invalid.",
+    "fixedOutput": "• HTML\n• CSS"
+   },
+   {
+    "title": "A nested list placed after the li",
+    "broken": "<ul>\n  <li>Frontend</li>\n  <ul><li>HTML</li></ul>\n</ul>",
+    "fix": "<ul>\n  <li>Frontend\n    <ul><li>HTML</li></ul>\n  </li>\n</ul>",
+    "error": "Misplaced nesting: the inner list is a sibling of the item, not its child, which changes the structure.",
+    "fixedOutput": "• Frontend\n  • HTML"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Build a nested course menu",
+    "statement": "Create an unordered list with two modules, each containing two lessons.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <ul>\n    <li>Module 1\n      <ul>\n        <li>Tags</li>\n        <li>Attributes</li>\n      </ul>\n    </li>\n    <li>Module 2\n      <ul>\n        <li>Links</li>\n        <li>Lists</li>\n      </ul>\n    </li>\n  </ul>\n</body>\n</html>",
+    "expected": "• Module 1\n  • Tags\n  • Attributes\n• Module 2\n  • Links\n  • Lists"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "When is an ordered list the correct choice?",
+    "answer": "When the sequence matters, such as steps, rankings or instructions. If reordering would not change the meaning, an unordered list is more accurate."
+   },
+   {
+    "q": "Why should navigation be a list of links?",
+    "answer": "A list exposes the number of items and groups them for assistive technology, while each link keeps its own destination. It also degrades gracefully without CSS."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner uses divs for a menu. What do you suggest?",
+    "answer": "A nav containing a ul of links gives the same layout with structure that assistive technology understands.",
+    "steps": [
+     "Show the div version.",
+     "Rebuild with nav, ul and li.",
+     "Style it the same with CSS."
+    ]
+   },
+   {
+    "q": "How do you teach nesting?",
+    "answer": "I show the parent li as a folder and the nested list as its contents, then indent the markup so the shape is visible.",
+    "steps": [
+     "Draw the tree.",
+     "Indent the markup.",
+     "Validate the nesting."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which element defines a description term?",
+    "options": [
+     "dd",
+     "dt",
+     "li",
+     "dl"
+    ],
+    "answer": "dt",
+    "why": "dt is the term; dd is its description."
+   },
+   {
+    "q": "Where must a nested list be placed?",
+    "options": [
+     "Before the parent li",
+     "Inside the parent li",
+     "After the closing ul",
+     "Inside a p"
+    ],
+    "answer": "Inside the parent li",
+    "why": "A nested list belongs to the item it describes."
+   }
+  ],
+  "mini": {
+   "title": "Recipe page",
+   "brief": "Mark up a recipe with an ordered list of steps and an unordered list of ingredients.",
+   "steps": [
+    "Add the ingredients list.",
+    "Add the numbered steps.",
+    "Nest one substitution note."
+   ]
+  },
+  "lab": {
+   "title": "Menu semantics",
+   "brief": "Convert a div-based menu into nav + ul + li without changing its appearance.",
+   "milestones": [
+    "Replace the wrappers.",
+    "Keep the links.",
+    "Confirm the layout is unchanged."
+   ]
+  }
+ },
+ {
+  "id": "html08",
+  "no": 8,
+  "title": "Images and Responsive Images",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Embed accessible images, choose formats and serve the right size to each screen.",
+  "topics": [
+   {
+    "title": "alt is required for meaning",
+    "body": "`alt` image ka text alternative hai. Informative image me description, decorative image me `alt=\"\"` taaki screen reader use skip kare.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <img src=\"logo.png\" alt=\"BroCode logo\" width=\"120\" height=\"40\">\n</body>\n</html>",
+    "output": "BroCode logo (image, 120 by 40)"
+   },
+   {
+    "title": "figure groups an image with its caption",
+    "body": "`figure` image aur uski caption ko ek unit banata hai; `figcaption` caption deta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <figure>\n    <img src=\"chart.png\" alt=\"Marks rising from 60 to 90\">\n    <figcaption>Term results</figcaption>\n  </figure>\n</body>\n</html>",
+    "output": "Marks rising from 60 to 90\nTerm results"
+   },
+   {
+    "title": "srcset lets the browser choose",
+    "body": "`srcset` me multiple widths aur `sizes` me layout width dete hain; browser network aur screen ke hisaab se sahi file chunta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <img src=\"small.jpg\" srcset=\"small.jpg 480w, large.jpg 960w\" sizes=\"(max-width: 600px) 480px, 960px\" alt=\"Campus\">\n</body>\n</html>",
+    "output": "Campus (image)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An image with no alt",
+    "broken": "<img src=\"logo.png\">",
+    "fix": "<img src=\"logo.png\" alt=\"BroCode logo\">",
+    "error": "Missing alt: a screen reader announces the file name, and the image has no text alternative if it fails to load.",
+    "fixedOutput": "BroCode logo (image)"
+   },
+   {
+    "title": "Decorative image announced by the reader",
+    "broken": "<img src=\"divider.png\" alt=\"divider\">",
+    "fix": "<img src=\"divider.png\" alt=\"\">",
+    "error": "Decorative image given alt text: it adds noise for screen-reader users instead of being skipped.",
+    "fixedOutput": "Divider line (decorative)"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Write an accessible figure",
+    "statement": "Create a figure with an informative image, explicit width and height, and a caption.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <figure>\n    <img src=\"campus.jpg\" alt=\"Students walking outside the campus library\" width=\"640\" height=\"360\">\n    <figcaption>Main campus</figcaption>\n  </figure>\n</body>\n</html>",
+    "expected": "Students walking outside the campus library\nMain campus"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why set width and height on an image?",
+    "answer": "The browser reserves space before the image loads, which prevents layout shift. CSS can still override the rendered size."
+   },
+   {
+    "q": "When is alt=\"\" correct?",
+    "answer": "When the image is purely decorative and adds no information, so assistive technology should skip it. Omitting alt entirely is different and leaves the file name to be announced."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "How do you decide between alt text and a caption?",
+    "answer": "Alt describes the image for someone who cannot see it; the caption is visible context for everyone. If the caption already carries the meaning, alt can be shorter.",
+    "steps": [
+     "Ask what the image contributes.",
+     "Write the alt for that purpose.",
+     "Put visible context in figcaption."
+    ]
+   },
+   {
+    "q": "Why not ship one huge image for every screen?",
+    "answer": "Mobile users pay for the bytes and the decode time. srcset lets the browser pick a smaller file when the layout does not need the large one.",
+    "steps": [
+     "Measure a large image on mobile.",
+     "Add srcset widths.",
+     "Compare the transferred size."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "What should alt contain for a decorative image?",
+    "options": [
+     "The file name",
+     "A long description",
+     "An empty string",
+     "The word image"
+    ],
+    "answer": "An empty string",
+    "why": "alt=\"\" tells assistive technology to ignore the image."
+   },
+   {
+    "q": "Which attribute offers multiple image widths to the browser?",
+    "options": [
+     "sizes",
+     "srcset",
+     "media",
+     "picture"
+    ],
+    "answer": "srcset",
+    "why": "srcset lists candidate resources with width or density descriptors."
+   }
+  ],
+  "mini": {
+   "title": "Gallery page",
+   "brief": "Build a three-image gallery with figures, captions and correct alt text.",
+   "steps": [
+    "Add three figures.",
+    "Write purpose-specific alt text.",
+    "Set width and height."
+   ]
+  },
+  "lab": {
+   "title": "Responsive image pass",
+   "brief": "Add srcset and sizes to a hero image and verify the browser picks a smaller file on mobile width.",
+   "milestones": [
+    "Export two widths.",
+    "Add srcset and sizes.",
+    "Check the network panel at 400px and 1200px."
+   ]
+  }
+ },
+ {
+  "id": "html09",
+  "no": 9,
+  "title": "Tables",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Build accessible data tables with captions, header cells and spans.",
+  "topics": [
+   {
+    "title": "A table is for data, not layout",
+    "body": "Rows aur columns ka relationship data hota hai. Layout ke liye table use karna accessibility aur responsiveness dono todta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <table>\n    <tr><th>Subject</th><th>Marks</th></tr>\n    <tr><td>Maths</td><td>92</td></tr>\n  </table>\n</body>\n</html>",
+    "output": "Subject | Marks\nMaths | 92"
+   },
+   {
+    "title": "caption and scope explain the table",
+    "body": "`caption` table ka title deta hai aur `scope=\"col\"` batata hai ki header kis column par lagta hai. Screen reader isi se cells padhta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <table>\n    <caption>Term marks</caption>\n    <tr><th scope=\"col\">Subject</th><th scope=\"col\">Marks</th></tr>\n    <tr><td>Maths</td><td>92</td></tr>\n  </table>\n</body>\n</html>",
+    "output": "Term marks\nSubject | Marks\nMaths | 92"
+   },
+   {
+    "title": "colspan and rowspan merge cells",
+    "body": "`colspan` ek cell ko multiple columns me failata hai aur `rowspan` multiple rows me. Merged cells ke saath header order check karna zaroori hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <table>\n    <tr><th colspan=\"2\">Term 1</th></tr>\n    <tr><td>Maths</td><td>92</td></tr>\n  </table>\n</body>\n</html>",
+    "output": "Term 1\nMaths | 92"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Data cells marked as headers",
+    "broken": "<table>\n  <tr><td>Subject</td><td>Marks</td></tr>\n  <tr><td>Maths</td><td>92</td></tr>\n</table>",
+    "fix": "<table>\n  <tr><th scope=\"col\">Subject</th><th scope=\"col\">Marks</th></tr>\n  <tr><td>Maths</td><td>92</td></tr>\n</table>",
+    "error": "Header row uses td: the cells are data to the parser, so the table has no accessible header.",
+    "fixedOutput": "Subject | Marks\nMaths | 92"
+   },
+   {
+    "title": "A merged cell without adjusting the row",
+    "broken": "<table>\n  <tr><th colspan=\"2\">Term</th></tr>\n  <tr><td>Maths</td></tr>\n</table>",
+    "fix": "<table>\n  <tr><th colspan=\"2\">Term</th></tr>\n  <tr><td>Maths</td><td>92</td></tr>\n</table>",
+    "error": "Column count mismatch: the merged header spans two columns while the body row supplies one cell.",
+    "fixedOutput": "Term\nMaths | 92"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Build a marksheet",
+    "statement": "Create a table with a caption, two column headers and two subject rows.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <table>\n    <caption>Term marks</caption>\n    <thead>\n      <tr><th scope=\"col\">Subject</th><th scope=\"col\">Marks</th></tr>\n    </thead>\n    <tbody>\n      <tr><td>Maths</td><td>92</td></tr>\n      <tr><td>Science</td><td>88</td></tr>\n    </tbody>\n  </table>\n</body>\n</html>",
+    "expected": "Term marks\nSubject | Marks\nMaths | 92\nScience | 88"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "Why is scope important on a th element?",
+    "answer": "It tells assistive technology whether the header applies to its column or its row, so each data cell is announced with the right label."
+   },
+   {
+    "q": "Why should tables not be used for page layout?",
+    "answer": "A layout table has no data relationship, so screen readers announce meaningless row and column context, and the structure cannot reflow on small screens."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A learner’s table looks fine but fails accessibility review. What do you check?",
+    "answer": "I check for a caption, header cells with scope, and whether the visual layout depends on merged cells without matching structure.",
+    "steps": [
+     "Read the table with headers only.",
+     "Check caption and scope.",
+     "Verify the column counts."
+    ]
+   },
+   {
+    "q": "How do you explain colspan?",
+    "answer": "I describe a single cell stretching across two columns, then show the header row and body row counts must still agree.",
+    "steps": [
+     "Draw the grid.",
+     "Span one header cell.",
+     "Count the cells in each row."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which element provides the table’s accessible title?",
+    "options": [
+     "thead",
+     "caption",
+     "summary",
+     "title"
+    ],
+    "answer": "caption",
+    "why": "caption is the visible, accessible name of the table."
+   },
+   {
+    "q": "Which attribute merges cells across rows?",
+    "options": [
+     "colspan",
+     "rowspan",
+     "scope",
+     "span"
+    ],
+    "answer": "rowspan",
+    "why": "rowspan makes one cell occupy several rows."
+   }
+  ],
+  "mini": {
+   "title": "College timetable",
+   "brief": "Build a weekly timetable with a time column, day headers and one merged lunch row.",
+   "steps": [
+    "Add the header row.",
+    "Fill five day rows.",
+    "Merge the lunch break across all days."
+   ]
+  },
+  "lab": {
+   "title": "Table accessibility repair",
+   "brief": "Fix a table that uses td headers, has no caption and mismatched merged cells.",
+   "milestones": [
+    "Convert headers to th with scope.",
+    "Add a caption.",
+    "Align the column counts."
+   ]
+  }
+ },
+ {
+  "id": "html10",
+  "no": 10,
+  "title": "Semantic HTML5",
+  "level": "beginner",
+  "hours": 3,
+  "goal": "Choose semantic landmarks and elements that describe the page instead of divs.",
+  "topics": [
+   {
+    "title": "Landmarks describe page regions",
+    "body": "`header`, `nav`, `main`, `aside` aur `footer` page ke regions batate hain. Screen reader user in landmarks ke beech jump kar sakta hai.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <header>Site header</header>\n  <nav>Main navigation</nav>\n  <main>Lesson content</main>\n  <footer>Copyright</footer>\n</body>\n</html>",
+    "output": "Site header\nMain navigation\nLesson content\nCopyright"
+   },
+   {
+    "title": "section and article are not divs",
+    "body": "`article` self-contained content hai, `section` ek themed group. Sirf styling ke liye div use karo, semantics ke liye nahi.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <main>\n    <article>\n      <h2>Post title</h2>\n      <p>Post body</p>\n    </article>\n  </main>\n</body>\n</html>",
+    "output": "Post title\nPost body"
+   },
+   {
+    "title": "details and summary collapse content",
+    "body": "`details` native disclosure widget hai; `summary` uska clickable label. JavaScript ke bina FAQ bana sakte hain.",
+    "code": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <details>\n    <summary>What is HTML?</summary>\n    <p>A markup language.</p>\n  </details>\n</body>\n</html>",
+    "output": "What is HTML? (collapsed)\nA markup language. (when opened)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Two main elements on one page",
+    "broken": "<main>One</main>\n<main>Two</main>",
+    "fix": "<main>One and two</main>",
+    "error": "Two main landmarks: main must be unique, so assistive technology has no single content region to jump to.",
+    "fixedOutput": "One and two"
+   },
+   {
+    "title": "A div used for navigation",
+    "broken": "<div class=\"nav\">\n  <a href=\"index.html\">Home</a>\n</div>",
+    "fix": "<nav>\n  <a href=\"index.html\">Home</a>\n</nav>",
+    "error": "No nav landmark: the link group is invisible to landmark navigation.",
+    "fixedOutput": "Home"
+   }
+  ],
+  "tasks": [
+   {
+    "title": "Build a semantic page shell",
+    "statement": "Create header, nav, main with one article, aside and footer.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <header>BroCode</header>\n  <nav><a href=\"index.html\">Home</a></nav>\n  <main>\n    <article>\n      <h1>Lesson</h1>\n      <p>Content</p>\n    </article>\n    <aside>Related</aside>\n  </main>\n  <footer>Footer</footer>\n</body>\n</html>",
+    "expected": "BroCode\nHome\nLesson\nContent\nRelated\nFooter"
+   }
+  ],
+  "interviewBank": [
+   {
+    "q": "What is the difference between section and div?",
+    "answer": "A section groups content around a heading and carries meaning; a div is a generic container with no semantics. If a region has no heading or purpose, div is correct."
+   },
+   {
+    "q": "Why is semantic HTML good for SEO?",
+    "answer": "Search engines read the same structure assistive technology does: headings, landmarks, links and article boundaries. Meaningful markup makes that structure unambiguous."
+   }
+  ],
+  "defenseBank": [
+   {
+    "q": "A teammate says divs are faster. How do you respond?",
+    "answer": "A div and a nav render the same box; the difference is meaning. The cost is none, and the accessibility benefit is real.",
+    "steps": [
+     "Compare the DOM shape.",
+     "Show landmark navigation.",
+     "Keep divs only for layout."
+    ]
+   },
+   {
+    "q": "How do you choose article over section?",
+    "answer": "If the content would make sense syndicated on its own, it is an article. If it only makes sense as part of the page, a section is enough.",
+    "steps": [
+     "Ask if it stands alone.",
+     "Check whether it has a heading.",
+     "Pick the element from that answer."
+    ]
+   }
+  ],
+  "mcqBank": [
+   {
+    "q": "Which element marks the dominant content of a page?",
+    "options": [
+     "section",
+     "main",
+     "article",
+     "aside"
+    ],
+    "answer": "main",
+    "why": "main is the unique primary content landmark."
+   },
+   {
+    "q": "Which pair creates a native collapsible panel?",
+    "options": [
+     "dialog and form",
+     "details and summary",
+     "section and header",
+     "template and slot"
+    ],
+    "answer": "details and summary",
+    "why": "details supplies the disclosure and summary its label."
+   }
+  ],
+  "mini": {
+   "title": "Blog page shell",
+   "brief": "Build a semantic blog page with a header, nav, three articles and a footer.",
+   "steps": [
+    "Add the landmarks.",
+    "Give each article a heading.",
+    "Validate the outline."
+   ]
+  },
+  "lab": {
+   "title": "Div soup refactor",
+   "brief": "Refactor a div-only page into semantic landmarks without changing its look.",
+   "milestones": [
+    "Identify the regions.",
+    "Replace wrappers with landmarks.",
+    "Confirm the appearance is unchanged."
+   ]
+  }
+ }
+]
