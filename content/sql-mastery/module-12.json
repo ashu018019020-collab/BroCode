@@ -338,8 +338,8 @@
       "Check empty groups and NULLs."
      ],
      "example": {
-      "sql": "SELECT c.title, COUNT(e.student_id) AS enrolled, ROUND(AVG(e.grade), 2) AS average_grade FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title ORDER BY enrolled DESC, c.title ASC;",
-      "output": "Course report with enrollment count and average grade."
+      "sql": "SELECT c.title, COUNT(e.student_id) AS enrolled, ROUND(AVG(s.marks), 2) AS average_marks FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id LEFT JOIN students s ON s.id = e.student_id GROUP BY c.id, c.title ORDER BY enrolled DESC, c.title ASC;",
+      "output": "Course report with enrollment count and average marks."
      }
     }
    ],
@@ -723,9 +723,9 @@
      },
      {
       "title": "Aggregate join",
-      "task": "Return average grade per course title.",
-      "solution": "SELECT c.title, ROUND(AVG(e.grade), 2) AS average_grade FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
-      "expected": "Average grade per course."
+      "task": "Return average marks per course title.",
+      "solution": "SELECT c.title, ROUND(AVG(s.marks), 2) AS average_marks FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id LEFT JOIN students s ON s.id = e.student_id GROUP BY c.id, c.title;",
+      "expected": "Average marks per course."
      },
      {
       "title": "Aggregate without GROUP BY",

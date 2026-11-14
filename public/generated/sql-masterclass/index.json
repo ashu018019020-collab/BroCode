@@ -4172,7 +4172,7 @@
       "Create the parent first."
      ],
      "example": {
-      "sql": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "sql": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, grade TEXT, PRIMARY KEY (student_id, course_id));",
       "output": "CREATE TABLE"
      }
     },
@@ -4187,7 +4187,7 @@
       "Use consistent key types."
      ],
      "example": {
-      "sql": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name VARCHAR(80) NOT NULL, email TEXT UNIQUE, marks INTEGER CHECK (marks BETWEEN 0 AND 100));\nCREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);\nCREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE, enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "sql": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name VARCHAR(80) NOT NULL, email TEXT UNIQUE, marks INTEGER CHECK (marks BETWEEN 0 AND 100));\nCREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL, credits SMALLINT NOT NULL DEFAULT 3);\nCREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE, enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, grade TEXT, PRIMARY KEY (student_id, course_id));",
       "output": "CREATE TABLE × 3"
      }
     }
@@ -4537,7 +4537,7 @@
      {
       "title": "Create a foreign key",
       "task": "Create enrollments referencing students and courses.",
-      "solution": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, PRIMARY KEY (student_id, course_id));",
+      "solution": "CREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL DEFAULT CURRENT_DATE, grade TEXT, PRIMARY KEY (student_id, course_id));",
       "expected": "CREATE TABLE"
      },
      {
@@ -4615,7 +4615,7 @@
      {
       "title": "Build the school schema",
       "task": "Create students, courses and enrollments in order.",
-      "solution": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name VARCHAR(80) NOT NULL, email TEXT UNIQUE, marks INTEGER CHECK (marks BETWEEN 0 AND 100));\nCREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL);\nCREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL, PRIMARY KEY (student_id, course_id));",
+      "solution": "CREATE TABLE students (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name VARCHAR(80) NOT NULL, email TEXT UNIQUE, marks INTEGER CHECK (marks BETWEEN 0 AND 100));\nCREATE TABLE courses (id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, title TEXT NOT NULL, credits SMALLINT NOT NULL DEFAULT 3);\nCREATE TABLE enrollments (student_id BIGINT REFERENCES students(id) ON DELETE CASCADE, course_id INTEGER REFERENCES courses(id), enrolled_on DATE NOT NULL, grade TEXT, PRIMARY KEY (student_id, course_id));",
       "expected": "CREATE TABLE × 3"
      }
     ],
@@ -11565,8 +11565,8 @@
       "Check empty groups and NULLs."
      ],
      "example": {
-      "sql": "SELECT c.title, COUNT(e.student_id) AS enrolled, ROUND(AVG(e.grade), 2) AS average_grade FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title ORDER BY enrolled DESC, c.title ASC;",
-      "output": "Course report with enrollment count and average grade."
+      "sql": "SELECT c.title, COUNT(e.student_id) AS enrolled, ROUND(AVG(s.marks), 2) AS average_marks FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id LEFT JOIN students s ON s.id = e.student_id GROUP BY c.id, c.title ORDER BY enrolled DESC, c.title ASC;",
+      "output": "Course report with enrollment count and average marks."
      }
     }
    ],
@@ -11950,9 +11950,9 @@
      },
      {
       "title": "Aggregate join",
-      "task": "Return average grade per course title.",
-      "solution": "SELECT c.title, ROUND(AVG(e.grade), 2) AS average_grade FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
-      "expected": "Average grade per course."
+      "task": "Return average marks per course title.",
+      "solution": "SELECT c.title, ROUND(AVG(s.marks), 2) AS average_marks FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id LEFT JOIN students s ON s.id = e.student_id GROUP BY c.id, c.title;",
+      "expected": "Average marks per course."
      },
      {
       "title": "Aggregate without GROUP BY",
