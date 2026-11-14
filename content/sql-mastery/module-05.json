@@ -1,0 +1,943 @@
+{
+ "course": {
+  "id": "sql-masterclass",
+  "title": "SQL Masterclass",
+  "tagline": "Zero to advanced, one module at a time.",
+  "level": "beginner",
+  "hours": 10,
+  "standard": "PostgreSQL-first, with MySQL, SQLite and SQL Server notes.",
+  "prerequisites": [
+   "Module 00",
+   "Module 01",
+   "Module 02",
+   "Module 03",
+   "Module 04"
+  ],
+  "description": "Module 05 teaches INSERT from a single row to bulk loads, generated ids, RETURNING, INSERT ... SELECT, conflict handling and safe transactional writes.",
+  "outcomes": [
+   "Insert one or many rows",
+   "Name target columns safely",
+   "Use defaults and NULL correctly",
+   "Capture generated ids with RETURNING",
+   "Copy rows with INSERT ... SELECT",
+   "Handle duplicates and upserts",
+   "Diagnose constraint errors"
+  ]
+ },
+ "modules": [
+  {
+   "id": "sql05",
+   "no": 5,
+   "title": "INSERT Statement",
+   "goal": "Write safe, correct INSERTs and handle conflicts deliberately.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "What Is INSERT?",
+     "simple": "INSERT table me naya row add karta hai.",
+     "pro": "INSERT is DML that adds one or more rows to a table, checks every constraint and returns a command tag such as INSERT 0 1.",
+     "points": [
+      "INSERT changes data, not structure.",
+      "Every row must satisfy the table constraints.",
+      "A failed multi-row INSERT adds no rows from that statement."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('Aarav', 82);",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "INSERT INTO Syntax",
+     "simple": "INSERT INTO table (columns) VALUES (values) — yahi basic shape hai.",
+     "pro": "The general form is INSERT INTO table (column list) VALUES (row), (row), ... with an optional RETURNING clause.",
+     "points": [
+      "Name the target columns explicitly.",
+      "The value count must match the column count.",
+      "Strings use single quotes."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('Meera', 91);",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Inserting a Single Row",
+     "simple": "Ek row ke liye ek VALUES group likho.",
+     "pro": "A single-row INSERT supplies one parenthesized value list and inserts exactly one row or fails atomically.",
+     "points": [
+      "One row is one VALUES group.",
+      "Constraints are checked before the row is stored.",
+      "The command tag reports 1 inserted row."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('Kabir', 67);",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Inserting Multiple Rows",
+     "simple": "Ek hi INSERT me comma se multiple rows daal sakte hain.",
+     "pro": "A multi-row INSERT uses several VALUES groups in one statement, which is faster than many separate round trips and is atomic for the statement.",
+     "points": [
+      "Each group needs the same column count.",
+      "One bad row fails the whole statement.",
+      "The tag reports the number of inserted rows."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('Isha', 88), ('Zoya', 74), ('Dev', 59);",
+      "output": "INSERT 0 3"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Inserting Specific Columns",
+     "simple": "Jin columns ki value hai unka naam likho; baaki defaults ya NULL lete hain.",
+     "pro": "Listing only the columns you supply lets defaults, identity values and nullable columns fill the rest.",
+     "points": [
+      "Omitted identity columns are generated.",
+      "Omitted nullable columns become NULL.",
+      "Omitted columns with defaults use the default."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name) VALUES ('Anaya');",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Column Order and VALUES",
+     "simple": "Bina column list ke VALUES table ke column order par depend karta hai — ye fragile hai.",
+     "pro": "INSERT INTO table VALUES (...) maps values by the table’s physical column order; adding or reordering a column can silently break the statement.",
+     "points": [
+      "Prefer an explicit column list.",
+      "Column order changes are migrations.",
+      "A count mismatch raises an error."
+     ],
+     "example": {
+      "sql": "INSERT INTO students OVERRIDING SYSTEM VALUE VALUES (1, 'Rohan', 'rohan@example.com', 77);",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t07",
+     "title": "DEFAULT VALUES",
+     "simple": "Agar har column ka default ya identity ho, to DEFAULT VALUES se khali row banao.",
+     "pro": "INSERT INTO table DEFAULT VALUES inserts a row using every column’s default; it fails if a required column has no default.",
+     "points": [
+      "Useful for all-default settings rows.",
+      "Identity columns generate automatically.",
+      "A NOT NULL column without a default rejects it."
+     ],
+     "example": {
+      "sql": "INSERT INTO settings DEFAULT VALUES;",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "NULL Values and Defaults",
+     "simple": "NULL ka matlab unknown value hai; DEFAULT ka matlab column ka predefined value.",
+     "pro": "NULL is an explicit unknown value, while DEFAULT asks PostgreSQL to use the column default; they are not interchangeable.",
+     "points": [
+      "NULL is not an empty string or zero.",
+      "DEFAULT in VALUES uses the column default.",
+      "NOT NULL rejects an explicit NULL."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('Meera', NULL);",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "RETURNING",
+     "simple": "RETURNING inserted row ki values wapas deta hai — jaise naya id.",
+     "pro": "RETURNING returns rows produced by the INSERT, including generated identity values and defaults, in the same statement.",
+     "points": [
+      "RETURNING is PostgreSQL syntax.",
+      "It avoids a second SELECT for the new id.",
+      "RETURNING * returns every inserted column."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('Aarav', 82) RETURNING id, name;",
+      "output": "id | name\n1  | Aarav"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "INSERT INTO SELECT",
+     "simple": "Ek query ka result doosri table me insert kar sakte hain.",
+     "pro": "INSERT INTO target (columns) SELECT ... copies rows from a query; the selected columns must match the target list in number and compatible types.",
+     "points": [
+      "It can insert zero rows.",
+      "Constraints are checked per row.",
+      "ORDER BY and LIMIT can shape the source."
+     ],
+     "example": {
+      "sql": "INSERT INTO students_backup (name, marks) SELECT name, marks FROM students;",
+      "output": "INSERT 0 N"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Inserting From a Query with All Columns",
+     "simple": "Agar dono tables ka structure same hai to SELECT * se copy kar sakte hain.",
+     "pro": "INSERT INTO target SELECT * FROM source works only when column order, count and types line up; explicit columns are safer across schema changes.",
+     "points": [
+      "SELECT * depends on both table shapes.",
+      "A column added to one table breaks the copy.",
+      "Prefer naming the columns."
+     ],
+     "example": {
+      "sql": "INSERT INTO students_backup SELECT * FROM students;",
+      "output": "INSERT 0 N"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Identity Columns and INSERT",
+     "simple": "Identity column khud value banata hai; explicit value dene par rules hain.",
+     "pro": "GENERATED ALWAYS AS IDENTITY rejects explicit values unless OVERRIDING SYSTEM VALUE is used; GENERATED BY DEFAULT accepts them.",
+     "points": [
+      "Let the database generate ids.",
+      "Use OVERRIDING SYSTEM VALUE only for migrations.",
+      "SERIAL is the legacy alternative."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (id, name) OVERRIDING SYSTEM VALUE VALUES (10, 'Kabir');",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "Handling Duplicate Rows with ON CONFLICT DO NOTHING",
+     "simple": "Duplicate unique value aaye to ON CONFLICT DO NOTHING us row ko skip kar deta hai.",
+     "pro": "ON CONFLICT DO NOTHING suppresses a unique or exclusion violation for the targeted conflict and inserts the remaining rows.",
+     "points": [
+      "The conflict target must match a unique constraint.",
+      "Skipped rows are not returned by RETURNING.",
+      "Without a target it handles any conflict."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (email, name) VALUES ('a@example.com', 'Aarav') ON CONFLICT (email) DO NOTHING;",
+      "output": "INSERT 0 0 (or INSERT 0 1 when new)"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Upsert with ON CONFLICT DO UPDATE",
+     "simple": "Conflict aaye to naya row insert karne ke bajaye existing row update kar sakte hain.",
+     "pro": "ON CONFLICT (target) DO UPDATE SET ... performs an upsert; EXCLUDED holds the proposed row values.",
+     "points": [
+      "The target needs a unique constraint.",
+      "EXCLUDED refers to the row you tried to insert.",
+      "Do not hit the same row twice in one statement."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (email, name, marks) VALUES ('a@example.com', 'Aarav S', 90)\nON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, marks = EXCLUDED.marks;",
+      "output": "INSERT 0 1"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "INSERT Errors and Constraints",
+     "simple": "INSERT fail hota hai jab NOT NULL, UNIQUE, CHECK, FOREIGN KEY ya type violate ho.",
+     "pro": "Constraint violations abort the statement: not-null, unique, check, foreign key, invalid input syntax and value too long are the common failures.",
+     "points": [
+      "Read the constraint name in the error.",
+      "One failed statement adds no rows.",
+      "Fix the value, not the constraint, unless the rule is wrong."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name) VALUES (NULL);",
+      "output": "ERROR: null value in column \"name\" violates not-null constraint"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "Safe Insertion and Transactions",
+     "simple": "Important inserts ko transaction me karo taaki failure par rollback ho sake.",
+     "pro": "Wrap related inserts in BEGIN ... COMMIT; an error aborts the transaction and ROLLBACK discards every uncommitted change.",
+     "points": [
+      "Test on sample data first.",
+      "Commit only when the whole unit is correct.",
+      "Use savepoints for partial recovery."
+     ],
+     "example": {
+      "sql": "BEGIN;\nINSERT INTO students (name, marks) VALUES ('Aarav', 82);\nINSERT INTO enrollments (student_id, course_id) VALUES (1, 10);\nCOMMIT;",
+      "output": "BEGIN\nINSERT 0 1\nINSERT 0 1\nCOMMIT"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Bulk Insert Performance",
+     "simple": "Bahut rows ke liye multi-row INSERT ya COPY use karo; ek-ek INSERT slow hota hai.",
+     "pro": "Multi-row VALUES reduces round trips; COPY is the fastest bulk-load path for large files, at the cost of fewer per-row controls.",
+     "points": [
+      "Batch hundreds of rows per statement.",
+      "COPY is a utility command.",
+      "Indexes and triggers still cost time per row."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('A', 60), ('B', 70), ('C', 80);",
+      "output": "INSERT 0 3"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "INSERT ... RETURNING Generated IDs",
+     "simple": "Naya id chahiye to RETURNING id use karo — alag SELECT ki zaroorat nahi.",
+     "pro": "RETURNING id captures generated identity values for each inserted row, including multi-row inserts.",
+     "points": [
+      "The order of returned rows follows insertion order in practice.",
+      "RETURNING can return defaults too.",
+      "Do not assume ids are contiguous."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name) VALUES ('Isha'), ('Dev') RETURNING id;",
+      "output": "id\n1\n2"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "INSERT Best Practices",
+     "simple": "Columns name karo, values validate karo aur bulk operations batch me karo.",
+     "pro": "Production INSERTs name columns, supply typed values, handle conflicts deliberately, batch where useful and run inside a transaction when rows belong together.",
+     "points": [
+      "Never rely on column order.",
+      "Do not hide every conflict with DO NOTHING.",
+      "Use RETURNING for generated values."
+     ],
+     "example": {
+      "sql": "INSERT INTO students (name, marks) VALUES ('Anaya', 95) RETURNING id, name, marks;",
+      "output": "1 | Anaya | 95"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Student Enrollment Insert",
+     "simple": "Students aur enrollments me related rows ek transaction me daalo.",
+     "pro": "A real enrollment flow inserts the student, captures the generated id with RETURNING, then inserts the enrollment row in the same transaction.",
+     "points": [
+      "The parent row must exist before the child.",
+      "Use the returned id, not a guessed one.",
+      "Commit only after both inserts succeed."
+     ],
+     "example": {
+      "sql": "BEGIN;\nWITH new_student AS (\n  INSERT INTO students (name, email) VALUES ('Aarav', 'aarav@example.com') RETURNING id\n)\nINSERT INTO enrollments (student_id, course_id)\nSELECT id, 10 FROM new_student;\nCOMMIT;",
+      "output": "BEGIN\nINSERT 0 1\nCOMMIT"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What does INSERT do?",
+      "options": [
+       "Adds rows to a table",
+       "Creates a table",
+       "Reads rows",
+       "Deletes rows"
+      ],
+      "answer": "Adds rows to a table",
+      "why": "INSERT is DML that adds one or more rows."
+     },
+     {
+      "q": "Which clause supplies the values for an INSERT?",
+      "options": [
+       "VALUES",
+       "WHERE",
+       "SET",
+       "FROM"
+      ],
+      "answer": "VALUES",
+      "why": "VALUES supplies one or more row value groups."
+     },
+     {
+      "q": "How many rows does a single VALUES group insert?",
+      "options": [
+       "One",
+       "Two",
+       "All rows",
+       "Zero"
+      ],
+      "answer": "One",
+      "why": "One parenthesized group is one row."
+     },
+     {
+      "q": "How do you insert three rows in one statement?",
+      "options": [
+       "Three comma-separated VALUES groups",
+       "Three separate INSERTs only",
+       "One group with three values",
+       "A CREATE TABLE"
+      ],
+      "answer": "Three comma-separated VALUES groups",
+      "why": "Multi-row INSERT uses multiple value groups."
+     },
+     {
+      "q": "Why list target columns explicitly?",
+      "options": [
+       "It is safer when the table changes",
+       "It makes the query slower",
+       "It is required by SQL",
+       "It removes constraints"
+      ],
+      "answer": "It is safer when the table changes",
+      "why": "Explicit columns do not depend on physical column order."
+     },
+     {
+      "q": "What does INSERT INTO table DEFAULT VALUES do?",
+      "options": [
+       "Inserts a row using defaults",
+       "Deletes all rows",
+       "Creates a default table",
+       "Inserts NULL into every column"
+      ],
+      "answer": "Inserts a row using defaults",
+      "why": "It uses each column default and identity generation."
+     },
+     {
+      "q": "What is the difference between NULL and DEFAULT?",
+      "options": [
+       "NULL is unknown; DEFAULT uses the column default",
+       "They are identical",
+       "DEFAULT is always NULL",
+       "NULL is zero"
+      ],
+      "answer": "NULL is unknown; DEFAULT uses the column default",
+      "why": "They are different values in an INSERT."
+     },
+     {
+      "q": "What does RETURNING do?",
+      "options": [
+       "Returns inserted rows in the same statement",
+       "Rolls back the insert",
+       "Creates an index",
+       "Returns the table definition"
+      ],
+      "answer": "Returns inserted rows in the same statement",
+      "why": "RETURNING exposes generated ids and inserted values."
+     },
+     {
+      "q": "Which statement copies rows from a query?",
+      "options": [
+       "INSERT INTO ... SELECT",
+       "CREATE TABLE ... LIKE",
+       "ALTER TABLE",
+       "TRUNCATE"
+      ],
+      "answer": "INSERT INTO ... SELECT",
+      "why": "It inserts the result of a SELECT into the target table."
+     },
+     {
+      "q": "What does INSERT INTO target SELECT * FROM source require?",
+      "options": [
+       "Matching column count and compatible types",
+       "Matching table names",
+       "A foreign key",
+       "No constraints"
+      ],
+      "answer": "Matching column count and compatible types",
+      "why": "The source columns must line up with the target columns."
+     },
+     {
+      "q": "What does GENERATED ALWAYS AS IDENTITY do with an explicit value?",
+      "options": [
+       "Rejects it unless OVERRIDING SYSTEM VALUE is used",
+       "Accepts it always",
+       "Ignores the column",
+       "Converts it to NULL"
+      ],
+      "answer": "Rejects it unless OVERRIDING SYSTEM VALUE is used",
+      "why": "ALWAYS protects the generated identity."
+     },
+     {
+      "q": "What does ON CONFLICT DO NOTHING do?",
+      "options": [
+       "Skips a row that violates the conflict target",
+       "Deletes the conflicting row",
+       "Updates the conflicting row",
+       "Creates a new table"
+      ],
+      "answer": "Skips a row that violates the conflict target",
+      "why": "It suppresses the conflict instead of raising an error."
+     },
+     {
+      "q": "What does EXCLUDED refer to in an upsert?",
+      "options": [
+       "The proposed inserted row",
+       "The existing row",
+       "A deleted row",
+       "The table"
+      ],
+      "answer": "The proposed inserted row",
+      "why": "EXCLUDED holds the values you tried to insert."
+     },
+     {
+      "q": "What happens when one row in a multi-row INSERT violates a constraint?",
+      "options": [
+       "The whole statement fails and adds no rows",
+       "Only that row is skipped",
+       "The constraint is disabled",
+       "The table is dropped"
+      ],
+      "answer": "The whole statement fails and adds no rows",
+      "why": "The statement is atomic."
+     },
+     {
+      "q": "Which error means a required column was omitted?",
+      "options": [
+       "NOT NULL violation",
+       "Unique violation",
+       "Foreign key violation",
+       "Syntax error"
+      ],
+      "answer": "NOT NULL violation",
+      "why": "The omitted column has no value and is NOT NULL."
+     },
+     {
+      "q": "Which command is best for loading a huge file?",
+      "options": [
+       "COPY",
+       "INSERT one row at a time",
+       "SELECT",
+       "ALTER TABLE"
+      ],
+      "answer": "COPY",
+      "why": "COPY is the bulk-load utility for large datasets."
+     },
+     {
+      "q": "What does INSERT ... RETURNING id help capture?",
+      "options": [
+       "Generated identity values",
+       "The table owner",
+       "The schema name",
+       "The transaction id"
+      ],
+      "answer": "Generated identity values",
+      "why": "RETURNING returns the new ids without a second query."
+     },
+     {
+      "q": "What is the safest way to run related inserts?",
+      "options": [
+       "Inside a transaction",
+       "With autocommit off only",
+       "One by one without checks",
+       "With TRUNCATE first"
+      ],
+      "answer": "Inside a transaction",
+      "why": "A transaction lets you commit all related rows or roll them all back."
+     },
+     {
+      "q": "Does a failed INSERT leave a partial row?",
+      "options": [
+       "No",
+       "Yes, always",
+       "Only for multi-row inserts",
+       "Only with RETURNING"
+      ],
+      "answer": "No",
+      "why": "A failed statement is atomic and adds no rows."
+     },
+     {
+      "q": "Which is PostgreSQL-specific in this module?",
+      "options": [
+       "RETURNING",
+       "INSERT INTO",
+       "VALUES",
+       "DEFAULT VALUES"
+      ],
+      "answer": "RETURNING",
+      "why": "RETURNING is PostgreSQL syntax; some other databases support it too, but not all."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is INSERT?",
+      "answer": "DML that adds one or more rows to a table and checks every constraint."
+     },
+     {
+      "q": "What is the basic INSERT syntax?",
+      "answer": "INSERT INTO table (columns) VALUES (values); with optional RETURNING."
+     },
+     {
+      "q": "How do you insert multiple rows?",
+      "answer": "Use multiple comma-separated VALUES groups in one INSERT."
+     },
+     {
+      "q": "Why is an explicit column list recommended?",
+      "answer": "It is independent of physical column order and keeps working when unrelated columns are added."
+     },
+     {
+      "q": "What happens if the column count and value count differ?",
+      "answer": "PostgreSQL raises a syntax error; the statement inserts nothing."
+     },
+     {
+      "q": "What does DEFAULT VALUES do?",
+      "answer": "Inserts one row using every column default; it fails if a required column has no default."
+     },
+     {
+      "q": "What is the difference between NULL and DEFAULT in VALUES?",
+      "answer": "NULL stores an unknown value; DEFAULT asks for the column default."
+     },
+     {
+      "q": "What does RETURNING do?",
+      "answer": "Returns inserted rows, including generated ids and defaults, in the same statement."
+     },
+     {
+      "q": "How does INSERT INTO SELECT work?",
+      "answer": "It inserts the rows produced by a SELECT; the target and source columns must match in number and compatible types."
+     },
+     {
+      "q": "What is an identity column?",
+      "answer": "A column whose value is generated from an attached sequence; GENERATED ALWAYS is the standard form."
+     },
+     {
+      "q": "How do you insert an explicit value into GENERATED ALWAYS AS IDENTITY?",
+      "answer": "Add OVERRIDING SYSTEM VALUE to the INSERT; use it only for migrations or imports."
+     },
+     {
+      "q": "What does ON CONFLICT DO NOTHING do?",
+      "answer": "Skips a row that would violate the targeted unique or exclusion constraint."
+     },
+     {
+      "q": "What does ON CONFLICT DO UPDATE do?",
+      "answer": "Performs an upsert: updates the existing row with values from the proposed row."
+     },
+     {
+      "q": "What is EXCLUDED?",
+      "answer": "A pseudo-table holding the values proposed by the INSERT, used in the DO UPDATE SET clause."
+     },
+     {
+      "q": "What is a common INSERT error?",
+      "answer": "NOT NULL, UNIQUE, CHECK or foreign-key violation, invalid input syntax or value too long."
+     },
+     {
+      "q": "Is a multi-row INSERT atomic?",
+      "answer": "Yes. If any row fails, the whole statement inserts no rows."
+     },
+     {
+      "q": "Why use a transaction for related inserts?",
+      "answer": "It lets you commit the whole unit or roll it back when a later insert fails."
+     },
+     {
+      "q": "How do you bulk load a large file?",
+      "answer": "Use COPY, which is much faster than row-by-row INSERTs."
+     },
+     {
+      "q": "What does INSERT ... RETURNING id solve?",
+      "answer": "It returns generated ids immediately, avoiding a race-prone follow-up SELECT."
+     },
+     {
+      "q": "What is an upsert?",
+      "answer": "Insert a row, or update the existing row when a unique conflict occurs."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Insert one student",
+      "task": "Insert Aarav with 82 marks.",
+      "solution": "INSERT INTO students (name, marks) VALUES ('Aarav', 82);",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Insert multiple students",
+      "task": "Insert Meera 91 and Kabir 67 in one statement.",
+      "solution": "INSERT INTO students (name, marks) VALUES ('Meera', 91), ('Kabir', 67);",
+      "expected": "INSERT 0 2"
+     },
+     {
+      "title": "Insert specific columns",
+      "task": "Insert Anaya with only a name.",
+      "solution": "INSERT INTO students (name) VALUES ('Anaya');",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Insert with explicit columns",
+      "task": "Insert id 1, Rohan, 77 using a column list and an explicit identity value.",
+      "solution": "INSERT INTO students (id, name, marks) OVERRIDING SYSTEM VALUE VALUES (1, 'Rohan', 77);",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Return the new id",
+      "task": "Insert Isha and return the generated id.",
+      "solution": "INSERT INTO students (name) VALUES ('Isha') RETURNING id;",
+      "expected": "id\n1"
+     },
+     {
+      "title": "Insert with NULL marks",
+      "task": "Insert Dev with NULL marks.",
+      "solution": "INSERT INTO students (name, marks) VALUES ('Dev', NULL);",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Insert default values",
+      "task": "Insert a row into settings using all defaults.",
+      "solution": "INSERT INTO settings DEFAULT VALUES;",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Copy from a query",
+      "task": "Create students_backup like students, then copy names and marks into it.",
+      "solution": "CREATE TABLE students_backup (LIKE students INCLUDING ALL);\nINSERT INTO students_backup (name, marks) SELECT name, marks FROM students;",
+      "expected": "CREATE TABLE\nINSERT 0 N"
+     },
+     {
+      "title": "Copy all columns",
+      "task": "Copy every students column into students_backup.",
+      "solution": "INSERT INTO students_backup SELECT * FROM students;",
+      "expected": "INSERT 0 N"
+     },
+     {
+      "title": "Copy filtered rows",
+      "task": "Copy students with marks above 80 into top_students.",
+      "solution": "INSERT INTO top_students (name, marks) SELECT name, marks FROM students WHERE marks > 80;",
+      "expected": "INSERT 0 N"
+     },
+     {
+      "title": "Insert an explicit identity",
+      "task": "Insert id 10 with OVERRIDING SYSTEM VALUE.",
+      "solution": "INSERT INTO students (id, name) OVERRIDING SYSTEM VALUE VALUES (10, 'Kabir');",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Ignore a duplicate email",
+      "task": "Insert a student, doing nothing on an email conflict.",
+      "solution": "INSERT INTO students (email, name) VALUES ('a@example.com', 'Aarav') ON CONFLICT (email) DO NOTHING;",
+      "expected": "INSERT 0 0 or INSERT 0 1"
+     },
+     {
+      "title": "Upsert a student",
+      "task": "Update name and marks when the email already exists.",
+      "solution": "INSERT INTO students (email, name, marks) VALUES ('a@example.com', 'Aarav S', 90) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, marks = EXCLUDED.marks;",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Insert and return the row",
+      "task": "Insert Zoya with 74 marks and return all columns.",
+      "solution": "INSERT INTO students (name, marks) VALUES ('Zoya', 74) RETURNING *;",
+      "expected": "One row with the new values."
+     },
+     {
+      "title": "Insert a batch",
+      "task": "Insert three students in one statement.",
+      "solution": "INSERT INTO students (name, marks) VALUES ('A', 60), ('B', 70), ('C', 80);",
+      "expected": "INSERT 0 3"
+     },
+     {
+      "title": "Insert from a limited query",
+      "task": "Copy the top two students by marks into top_students.",
+      "solution": "INSERT INTO top_students (name, marks) SELECT name, marks FROM students ORDER BY marks DESC LIMIT 2;",
+      "expected": "INSERT 0 2"
+     },
+     {
+      "title": "Insert an enrollment",
+      "task": "Enroll student 1 in course 10.",
+      "solution": "INSERT INTO enrollments (student_id, course_id) VALUES (1, 10);",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Insert a student and enrollment",
+      "task": "Insert Aarav, capture the id, then enroll that student in course 10.",
+      "solution": "WITH new_student AS (\n  INSERT INTO students (name) VALUES ('Aarav') RETURNING id\n)\nINSERT INTO enrollments (student_id, course_id)\nSELECT id, 10 FROM new_student;",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Return multiple generated ids",
+      "task": "Insert two students and return both ids.",
+      "solution": "INSERT INTO students (name) VALUES ('Isha'), ('Dev') RETURNING id;",
+      "expected": "Two id rows."
+     },
+     {
+      "title": "Insert with a transaction",
+      "task": "Insert a student and an enrollment in one transaction.",
+      "solution": "BEGIN;\nINSERT INTO students (name) VALUES ('Aarav');\nINSERT INTO enrollments (student_id, course_id) VALUES (1, 10);\nCOMMIT;",
+      "expected": "BEGIN\nINSERT 0 1\nINSERT 0 1\nCOMMIT"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why is an explicit column list safer than relying on column order?",
+      "answer": "Adding or reordering a column changes the physical order; an explicit list keeps the statement correct."
+     },
+     {
+      "q": "Why is a multi-row INSERT faster than many single-row INSERTs?",
+      "answer": "It sends one statement and one round trip instead of many network and planning cycles."
+     },
+     {
+      "q": "Why does one bad row fail a multi-row INSERT?",
+      "answer": "The statement is atomic; a constraint violation aborts the whole statement."
+     },
+     {
+      "q": "Why is NULL different from DEFAULT?",
+      "answer": "NULL stores an unknown value; DEFAULT asks PostgreSQL to apply the column default."
+     },
+     {
+      "q": "Why does DEFAULT VALUES fail on a NOT NULL column without a default?",
+      "answer": "There is no value to store, so the not-null constraint rejects the row."
+     },
+     {
+      "q": "Why is RETURNING useful after an INSERT?",
+      "answer": "It returns generated ids and defaults without a second query or a race."
+     },
+     {
+      "q": "Why does INSERT INTO SELECT need matching columns?",
+      "answer": "The selected values are mapped positionally to the target column list."
+     },
+     {
+      "q": "Why does GENERATED ALWAYS reject an explicit id?",
+      "answer": "ALWAYS protects the sequence-generated value; OVERRIDING SYSTEM VALUE is the deliberate escape hatch."
+     },
+     {
+      "q": "Why does ON CONFLICT need a unique constraint?",
+      "answer": "PostgreSQL must know which conflict the target identifies; without a matching unique or exclusion constraint it cannot arbitrate."
+     },
+     {
+      "q": "Why can ON CONFLICT DO UPDATE affect one row twice?",
+      "answer": "If the proposed rows contain the same conflict key twice, PostgreSQL cannot update the same existing row twice and raises an error."
+     },
+     {
+      "q": "Why is DO NOTHING dangerous as a default?",
+      "answer": "It silently hides data-quality problems that should be fixed or reported."
+     },
+     {
+      "q": "Why use a transaction for a student plus enrollment?",
+      "answer": "The two rows belong together; a failure in the second should not leave a half-written flow."
+     },
+     {
+      "q": "Why is COPY faster than INSERT for bulk data?",
+      "answer": "COPY streams rows with far less per-row overhead and fewer round trips."
+     },
+     {
+      "q": "Why can INSERT fire triggers?",
+      "answer": "Row-level INSERT triggers run for each inserted row; they are part of the write cost."
+     },
+     {
+      "q": "Why should you not assume generated ids are contiguous?",
+      "answer": "Rolled-back inserts and sequences can leave gaps; ids are unique, not gapless."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Column count mismatch",
+      "broken": "INSERT INTO students (name, marks) VALUES ('Aarav');",
+      "fix": "INSERT INTO students (name, marks) VALUES ('Aarav', 82);",
+      "error": "INSERT has more target columns than expressions",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Too many values",
+      "broken": "INSERT INTO students (name) VALUES ('Aarav', 82);",
+      "fix": "INSERT INTO students (name, marks) VALUES ('Aarav', 82);",
+      "error": "INSERT has more expressions than target columns",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "NOT NULL violation",
+      "broken": "INSERT INTO students (name) VALUES (NULL);",
+      "fix": "INSERT INTO students (name) VALUES ('Aarav');",
+      "error": "null value in column \"name\" violates not-null constraint",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Duplicate primary key",
+      "broken": "INSERT INTO students (id, name) OVERRIDING SYSTEM VALUE VALUES (1, 'Aarav');\nINSERT INTO students (id, name) OVERRIDING SYSTEM VALUE VALUES (1, 'Meera');",
+      "fix": "INSERT INTO students (id, name) OVERRIDING SYSTEM VALUE VALUES (1, 'Aarav');\nINSERT INTO students (id, name) OVERRIDING SYSTEM VALUE VALUES (2, 'Meera');",
+      "error": "duplicate key value violates unique constraint",
+      "expected": "Two rows with ids 1 and 2."
+     },
+     {
+      "title": "Duplicate unique email",
+      "broken": "INSERT INTO students (email, name) VALUES ('a@x.com', 'Aarav');\nINSERT INTO students (email, name) VALUES ('a@x.com', 'Meera');",
+      "fix": "INSERT INTO students (email, name) VALUES ('a@x.com', 'Aarav');\nINSERT INTO students (email, name) VALUES ('b@x.com', 'Meera');",
+      "error": "duplicate key value violates unique constraint",
+      "expected": "Two rows with different emails."
+     },
+     {
+      "title": "Invalid integer",
+      "broken": "INSERT INTO students (name, marks) VALUES ('Aarav', 'abc');",
+      "fix": "INSERT INTO students (name, marks) VALUES ('Aarav', 82);",
+      "error": "invalid input syntax for type integer",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "CHECK violation",
+      "broken": "INSERT INTO students (name, marks) VALUES ('Aarav', 101);",
+      "fix": "INSERT INTO students (name, marks) VALUES ('Aarav', 95);",
+      "error": "violates check constraint",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Missing conflict target",
+      "broken": "INSERT INTO students (email, name) VALUES ('a@x.com', 'Aarav') ON CONFLICT (missing) DO NOTHING;",
+      "fix": "INSERT INTO students (email, name) VALUES ('a@x.com', 'Aarav') ON CONFLICT (email) DO NOTHING;",
+      "error": "there is no unique or exclusion constraint matching the ON CONFLICT specification",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Explicit identity rejected",
+      "broken": "INSERT INTO students (id, name) VALUES (10, 'Kabir');",
+      "fix": "INSERT INTO students (id, name) OVERRIDING SYSTEM VALUE VALUES (10, 'Kabir');",
+      "error": "cannot insert a non-DEFAULT value into column \"id\"",
+      "expected": "INSERT 0 1"
+     },
+     {
+      "title": "Foreign key violation",
+      "broken": "INSERT INTO enrollments (student_id, course_id) VALUES (999, 10);",
+      "fix": "INSERT INTO enrollments (student_id, course_id) VALUES (1, 10);",
+      "error": "violates foreign key constraint",
+      "expected": "INSERT 0 1"
+     }
+    ],
+    "revision": [
+     {
+      "q": "What is the basic INSERT shape?",
+      "answer": "INSERT INTO table (columns) VALUES (values);"
+     },
+     {
+      "q": "How do you insert multiple rows?",
+      "answer": "Use comma-separated VALUES groups."
+     },
+     {
+      "q": "Why name the columns?",
+      "answer": "It avoids dependence on physical column order."
+     },
+     {
+      "q": "What does DEFAULT VALUES do?",
+      "answer": "Inserts a row using every column default."
+     },
+     {
+      "q": "What does RETURNING do?",
+      "answer": "Returns inserted rows, including generated ids."
+     },
+     {
+      "q": "How do you insert from a query?",
+      "answer": "INSERT INTO target (columns) SELECT ...;"
+     },
+     {
+      "q": "How do you skip a duplicate?",
+      "answer": "ON CONFLICT (unique_column) DO NOTHING."
+     },
+     {
+      "q": "How do you upsert?",
+      "answer": "ON CONFLICT (unique_column) DO UPDATE SET ... ."
+     },
+     {
+      "q": "What is EXCLUDED?",
+      "answer": "The proposed inserted row in an upsert."
+     },
+     {
+      "q": "Why use a transaction?",
+      "answer": "To commit or roll back related inserts as one unit."
+     }
+    ]
+   }
+  }
+ ]
+}
