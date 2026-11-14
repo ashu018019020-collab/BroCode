@@ -11,33 +11,35 @@ src/core/data/htmlcourse.ts               loader for the artifact
 src/features/html-mastery/                page, official HTML5 mark, sandboxed playground
 ```
 
+Growth layers live in `deepening-*.json` and merge into a module by id, so a module grows without
+rewriting the file it lives in.
+
 ## Published counts (counted from the artifact, 2026-11-14)
 
-| Section | Records |
-| --- | ---: |
-| Learn | 60 |
-| Interview | 100 |
-| Coding Lab | 20 |
-| Logic | 60 |
-| Debug | 40 |
-| Practice Solutions | 60 |
-| Mini Project | 20 |
-| Project Lab | 20 |
-| Defense | 40 |
-| Checkpoint | 236 |
-| **Total** | **656** |
+| Section | Layer 1 | With deepening-1 | Section | Layer 1 | With deepening-1 |
+| --- | ---: | ---: | --- | ---: | ---: |
+| Learn | 60 | 60 | Practice Solutions | 60 | 60 |
+| Interview | 100 | **160** | Mini Project | 20 | 20 |
+| Coding Lab | 20 | **60** | Project Lab | 20 | 20 |
+| Logic | 60 | 60 | Defense | 40 | 40 |
+| Debug | 40 | **80** | Checkpoint | 236 | 236 |
+| **Total** | **656** | **796** | | | |
 
-20 modules, 32–35 records each. Difficulty split: 209 easy, 286 medium, 161 hard.
+20 modules, 39–42 records each. Difficulty split: 249 easy, 326 medium, 221 hard.
 
-Question-bank categories (an item can count in more than one, so these do not sum to 656):
-concept 80, output 280, quiz 160, written 60, coding 20, debug 40, project 40.
+Question-bank categories (an item can count in more than one, so these do not sum to 796):
+concept 140, output 280, quiz 160, written 60, coding 60, debug 80, project 40.
 
 Quiz composition: 40 authored MCQs, 60 true/false, 60 fill-in-the-blank, plus topic prediction
 checkpoints. Written checkpoints carry a three-line self-assessment rubric.
 
+`deepening-1a.json` / `deepening-1b.json` add, for every module: 2 independent coding labs, 2 debug
+challenges (broken + fixed markup), and 3 interview questions. That is 40 labs, 40 debug pairs and
+60 interview answers.
+
 ## What was actually verified
 
-- `node scripts/html-course.cjs` (dry run) and `--write`: 20 modules, 656 entries, no duplicate ids,
+- `node scripts/html-course.cjs` (dry run) and `--write`: 20 modules, 796 entries, no duplicate ids,
   no duplicate question text inside a section, no empty section, every MCQ answer is one of its four
   options, every coding task and debug fix carries an output.
 - `npm run typecheck`: clean.
@@ -62,13 +64,12 @@ the execution path for learners.
 
 ## Gaps against the full brief — honest list
 
-1. **Coding labs: 20 shipped, 150 requested.** One independent lab per module; the growth layers have
-   not been authored yet.
-2. **Projects: 20 mini projects + 20 labs shipped, the 15 curated projects and the capstone rubric
+1. **Coding labs: 60 shipped, 150 requested.** Three per module now; still 90 short.
+2. **Debug/Logic: 80 + 60 shipped, 100 + 100 requested.**
+3. **Interview: 160 shipped**, past the "at least 100" target. The authored cards still carry one
+   answer each, not the full nine-field interview card.
+4. **Projects: 20 mini projects + 20 labs shipped, the 15 curated projects and the capstone rubric
    are not.** Module 20 teaches the capstone structure but no separate graded rubric page exists.
-3. **Logic/Debug: 60 + 40 shipped, 100 + 100 requested.** Growth layers still open.
-4. **Interview: 100 shipped**, which meets the "at least 100" target; the scenario and follow-up
-   depth is one follow-up field, not the full nine-field interview card.
 5. **Playground** covers editor, Run, Reset, Copy, Example, Clear, full-screen, responsive widths and
    per-module drafts. It does not compare learner output against a lab's expected result, and it has
    no HTML-specific starter templates beyond the default document and the semantic example.
@@ -79,9 +80,9 @@ the execution path for learners.
 
 ## Next growth (in order)
 
-1. `deepening-1.json`: one extra topic, one extra coding task and one extra debug pair for each of the
-   20 modules (→ 40 labs, 80 debug).
-2. `deepening-2.json`: 5 interview questions and 3 MCQs per module (→ 200 interview, 100 MCQ).
-3. `deepening-3.json`: the 15 curated projects with requirements, starter, rubric and reference
+1. `deepening-2.json`: 2 more labs and 1 more debug pair per module (→ 100 labs, 100 debug), plus
+   1 more interview question per module (→ 180 interview).
+2. `deepening-3.json`: further labs toward 150 and a second logic pass toward 100.
+3. `deepening-4.json`: the 15 curated projects with requirements, starter, rubric and reference
    solution, surfaced as a Projects tab on the course page.
 4. Playground: per-lab expected-output comparison and lab starter templates.

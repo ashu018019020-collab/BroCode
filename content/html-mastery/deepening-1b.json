@@ -1,0 +1,462 @@
+{
+ "html11": {
+  "tasks": [
+   {
+    "title": "Login form",
+    "statement": "Build a form posting to `/login` with a labelled email field, a labelled password field and a submit button.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/login\" method=\"post\">\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" autocomplete=\"username\" required>\n    <label for=\"password\">Password</label>\n    <input id=\"password\" name=\"password\" type=\"password\" autocomplete=\"current-password\" required>\n    <button type=\"submit\">Sign in</button>\n  </form>\n</body>\n</html>",
+    "expected": "Email [____________]\nPassword [____________]\nSign in"
+   },
+   {
+    "title": "Survey with a radio group and a select",
+    "statement": "Create a fieldset with a legend and two radios, then a labelled select with an optgroup and two options.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/survey\" method=\"post\">\n    <fieldset>\n      <legend>Year</legend>\n      <label><input type=\"radio\" name=\"year\" value=\"1\"> First</label>\n      <label><input type=\"radio\" name=\"year\" value=\"2\"> Second</label>\n    </fieldset>\n    <label for=\"course\">Course</label>\n    <select id=\"course\" name=\"course\">\n      <optgroup label=\"Frontend\">\n        <option value=\"html\">HTML</option>\n        <option value=\"css\">CSS</option>\n      </optgroup>\n    </select>\n    <button type=\"submit\">Send</button>\n  </form>\n</body>\n</html>",
+    "expected": "Year\n( ) First\n( ) Second\nCourse [HTML v]\nSend"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A password form that puts the value in the URL",
+    "broken": "<form action=\"/login\" method=\"get\">\n  <label for=\"password\">Password</label>\n  <input id=\"password\" name=\"password\" type=\"password\">\n  <button type=\"submit\">Sign in</button>\n</form>",
+    "fix": "<form action=\"/login\" method=\"post\">\n  <label for=\"password\">Password</label>\n  <input id=\"password\" name=\"password\" type=\"password\">\n  <button type=\"submit\">Sign in</button>\n</form>",
+    "error": "GET submits the password in the query string, where it lands in history, logs and referrers. Credentials belong in a POST body.",
+    "fixedOutput": "Password [____________]\nSign in"
+   },
+   {
+    "title": "A reset button that submits instead",
+    "broken": "<form action=\"/save\">\n  <input name=\"title\" value=\"Draft\">\n  <button>Reset</button>\n</form>",
+    "fix": "<form action=\"/save\">\n  <input name=\"title\" value=\"Draft\">\n  <button type=\"reset\">Reset</button>\n</form>",
+    "error": "Missing type: a button inside a form defaults to submit, so the control labelled Reset saves the form instead of clearing it.",
+    "fixedOutput": "Title [Draft]\nReset"
+   }
+  ],
+  "interview": [
+   {
+    "q": "GET or POST for a login form, and why?",
+    "answer": "POST. GET puts the credentials in the URL, which is stored in history, server logs and referrer headers, and it can be triggered by a link or prefetch."
+   },
+   {
+    "q": "Why must every input have a name?",
+    "answer": "The name is the key in the submitted form data. Without it the control is omitted from the submission entirely, no matter what the user typed."
+   },
+   {
+    "q": "What actually happens when a form submits?",
+    "answer": "The browser validates the controls, builds a form data set from the successful controls, encodes it according to the method and enctype, sends the request to the action URL and navigates to the response."
+   }
+  ]
+ },
+ "html12": {
+  "tasks": [
+   {
+    "title": "Resume upload form",
+    "statement": "Build a multipart form with a required PDF file input, an accept filter and a hint connected with aria-describedby.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/upload\" method=\"post\" enctype=\"multipart/form-data\">\n    <label for=\"resume\">Resume</label>\n    <input id=\"resume\" name=\"resume\" type=\"file\" accept=\"application/pdf,.pdf\" required aria-describedby=\"resume-hint\">\n    <p id=\"resume-hint\">PDF only, up to 2 MB.</p>\n    <button type=\"submit\">Upload</button>\n  </form>\n</body>\n</html>",
+    "expected": "Resume [Choose file]\nPDF only, up to 2 MB.\nUpload"
+   },
+   {
+    "title": "Suggestion list input",
+    "statement": "Create a labelled text input backed by a datalist of three course names, plus a readonly field showing the level.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/enrol\" method=\"post\">\n    <label for=\"course\">Course</label>\n    <input id=\"course\" name=\"course\" list=\"courses\">\n    <datalist id=\"courses\">\n      <option value=\"HTML Mastery\">\n      <option value=\"CSS Mastery\">\n      <option value=\"JavaScript Mastery\">\n    </datalist>\n    <label for=\"level\">Level</label>\n    <input id=\"level\" name=\"level\" value=\"Beginner to Advanced\" readonly>\n    <button type=\"submit\">Enrol</button>\n  </form>\n</body>\n</html>",
+    "expected": "Course [____________]\nLevel [Beginner to Advanced]\nEnrol"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An impossible number range",
+    "broken": "<label for=\"age\">Age</label>\n<input id=\"age\" name=\"age\" type=\"number\" min=\"18\" max=\"10\">",
+    "fix": "<label for=\"age\">Age</label>\n<input id=\"age\" name=\"age\" type=\"number\" min=\"10\" max=\"18\">",
+    "error": "Inverted range: no value can satisfy both constraints, so the browser reports every entry as invalid.",
+    "fixedOutput": "Age [____]"
+   },
+   {
+    "title": "Checkboxes that never submit",
+    "broken": "<label><input type=\"checkbox\"> I agree</label>",
+    "fix": "<label><input type=\"checkbox\" name=\"consent\" value=\"yes\"> I agree</label>",
+    "error": "Missing name and value: an unnamed control is never included in the form data, so the server cannot tell whether it was ticked.",
+    "fixedOutput": "I agree (checkbox)"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Client-side validation versus server-side — what do you tell a junior?",
+    "answer": "Client-side validation is a convenience for the user; server-side validation is the security boundary. The client can be bypassed by disabling scripts, editing the DOM or sending a direct request."
+   },
+   {
+    "q": "readonly or disabled — which one?",
+    "answer": "readonly keeps the value visible and submitted but not editable. disabled removes it from submission, from the tab order and usually from the accessibility tree."
+   },
+   {
+    "q": "How do you add a pattern without making errors unusable?",
+    "answer": "Keep the pattern simple and documented next to the field, give a concrete example, keep the label visible, and never rely on the pattern alone: validate again on the server and return a specific message."
+   }
+  ]
+ },
+ "html13": {
+  "tasks": [
+   {
+    "title": "Audio with a transcript",
+    "statement": "Embed a controlled audio player with an mp3 source and a link to a transcript page.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <audio controls preload=\"metadata\">\n    <source src=\"media/lesson.mp3\" type=\"audio/mpeg\">\n  </audio>\n  <p><a href=\"transcript.html\">Read the transcript</a></p>\n</body>\n</html>",
+    "expected": "Audio player with controls\nRead the transcript"
+   },
+   {
+    "title": "Video with a poster and two sources",
+    "statement": "Create a video player with a poster image, an mp4 and a webm source, and an English captions track.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <video controls width=\"480\" poster=\"media/poster.jpg\">\n    <source src=\"media/lesson.mp4\" type=\"video/mp4\">\n    <source src=\"media/lesson.webm\" type=\"video/webm\">\n    <track kind=\"captions\" src=\"media/lesson-en.vtt\" srclang=\"en\" label=\"English\">\n  </video>\n</body>\n</html>",
+    "expected": "Video player (480 wide) with a poster and captions"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A caption track with no language",
+    "broken": "<track kind=\"captions\" src=\"lesson.vtt\" label=\"English\">",
+    "fix": "<track kind=\"captions\" src=\"lesson.vtt\" srclang=\"en\" label=\"English\">",
+    "error": "Missing srclang: a caption track needs a language, and the browser may refuse to offer it in the caption menu.",
+    "fixedOutput": "Video with captions"
+   },
+   {
+    "title": "Audio that autoplays with sound",
+    "broken": "<audio src=\"theme.mp3\" autoplay></audio>",
+    "fix": "<audio src=\"theme.mp3\" autoplay muted></audio>",
+    "error": "Audible autoplay is blocked by most browsers, so the media never starts; the supported pattern is muted autoplay with a visible control.",
+    "fixedOutput": "Silent audio player"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the difference between captions and subtitles?",
+    "answer": "Captions transcribe dialogue and meaningful sounds for viewers who cannot hear the audio. Subtitles translate dialogue for viewers who can hear it but do not understand the language."
+   },
+   {
+    "q": "mp4 or webm — how do you choose?",
+    "answer": "Offer both with source elements: mp4 with H.264 has the widest device support, webm often compresses better. The browser picks the first type it can play."
+   },
+   {
+    "q": "Why do browsers restrict autoplay?",
+    "answer": "Unexpected sound is hostile to users and costly on mobile data, so browsers require a user gesture for audible playback. Muted autoplay and playsinline are the supported exceptions."
+   }
+  ]
+ },
+ "html14": {
+  "tasks": [
+   {
+    "title": "Product page metadata",
+    "statement": "Write a head with a title, description, canonical URL, og:type product, og:title and twitter:card summary.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>HTML Mastery | BroCode</title>\n  <meta name=\"description\" content=\"Twenty modules from document structure to accessibility.\">\n  <link rel=\"canonical\" href=\"https://mybrocode.vercel.app/courses/html\">\n  <meta property=\"og:type\" content=\"product\">\n  <meta property=\"og:title\" content=\"HTML Mastery\">\n  <meta name=\"twitter:card\" content=\"summary\">\n</head>\n<body></body>\n</html>",
+    "expected": "Tab title: HTML Mastery | BroCode"
+   },
+   {
+    "title": "Favicon and theme colour",
+    "statement": "Add an SVG favicon, a theme-color and a web app manifest link.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"theme-color\" content=\"#e34f26\">\n  <link rel=\"icon\" href=\"/favicon.svg\" type=\"image/svg+xml\">\n  <link rel=\"manifest\" href=\"/manifest.webmanifest\">\n  <title>BroCode</title>\n</head>\n<body></body>\n</html>",
+    "expected": "Tab shows the favicon; browser chrome uses the theme colour"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Two title elements",
+    "broken": "<head>\n  <title>Home</title>\n  <title>BroCode</title>\n</head>",
+    "fix": "<head>\n  <title>Home | BroCode</title>\n</head>",
+    "error": "Duplicate title: the parser keeps the first and drops the rest, so the intended title never appears.",
+    "fixedOutput": "Tab title: Home | BroCode"
+   },
+   {
+    "title": "Noindex left on a public page",
+    "broken": "<meta name=\"robots\" content=\"noindex\">",
+    "fix": "<meta name=\"robots\" content=\"index, follow\">",
+    "error": "Staging directive shipped to production: search engines are told to drop the page, which can take weeks to reverse.",
+    "fixedOutput": "Page is indexable"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What problem does the canonical link solve?",
+    "answer": "It names the preferred URL when the same content is reachable at several addresses, so ranking signals consolidate on one page instead of being split."
+   },
+   {
+    "q": "How do you audit a page’s metadata?",
+    "answer": "Check one title, one description, one canonical, the Open Graph set and the favicon in the head; verify with link preview tools and a crawler view, not just the source."
+   },
+   {
+    "q": "noindex or a robots.txt disallow — what is the difference?",
+    "answer": "noindex is a per-page directive that lets a crawler fetch the page and then drop it from results. Disallow blocks fetching, so a noindex inside a disallowed page is never seen."
+   }
+  ]
+ },
+ "html15": {
+  "tasks": [
+   {
+    "title": "Icon-only button",
+    "statement": "Build a button containing an inline SVG search icon, with an accessible name and the icon hidden from the accessibility tree.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <button type=\"button\" aria-label=\"Search lessons\">\n    <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\">\n      <circle cx=\"10\" cy=\"10\" r=\"7\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"></circle>\n      <path d=\"M15 15l6 6\" stroke=\"currentColor\" stroke-width=\"2\"></path>\n    </svg>\n  </button>\n</body>\n</html>",
+    "expected": "Icon button announced as \"Search lessons\""
+   },
+   {
+    "title": "Form with an inline error message",
+    "statement": "Create a labelled email input marked invalid and described by an error paragraph.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/signup\" method=\"post\">\n    <label for=\"email\">Email</label>\n    <input id=\"email\" name=\"email\" type=\"email\" aria-invalid=\"true\" aria-describedby=\"email-error\" required>\n    <p id=\"email-error\">Enter an address like name@example.com.</p>\n    <button type=\"submit\">Continue</button>\n  </form>\n</body>\n</html>",
+    "expected": "Email [____________]\nEnter an address like name@example.com.\nContinue"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A link pretending to be a button",
+    "broken": "<a href=\"#\" onclick=\"save()\">Save</a>",
+    "fix": "<button type=\"button\" onclick=\"save()\">Save</button>",
+    "error": "No button role and no keyboard activation: Enter follows a link, Space does nothing, and the control is announced as a link.",
+    "fixedOutput": "Save (button)"
+   },
+   {
+    "title": "A meaningful image hidden from assistive technology",
+    "broken": "<img src=\"chart.png\" alt=\"Term results\" aria-hidden=\"true\">",
+    "fix": "<img src=\"chart.png\" alt=\"Marks rose from 60 to 90 across three terms\">",
+    "error": "aria-hidden on a content image removes it from the accessibility tree, so the information it carries is lost to screen-reader users.",
+    "fixedOutput": "Marks rose from 60 to 90 across three terms (image)"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the accessibility tree?",
+    "answer": "The browser’s representation of the page for assistive technology: roles, names, states and relationships derived from the DOM, CSS and ARIA. It is what a screen reader actually navigates."
+   },
+   {
+    "q": "When is ARIA necessary?",
+    "answer": "When no native element expresses the pattern, or when a native element needs an additional name, state or relationship. If a native element already provides the semantics, ARIA only adds risk."
+   },
+   {
+    "q": "How do you test keyboard accessibility?",
+    "answer": "Unplug the mouse: tab through every control in a logical order, confirm a visible focus indicator, operate menus and dialogs with Enter, Space, Escape and arrows, and check that focus never disappears behind a layer."
+   }
+  ]
+ },
+ "html16": {
+  "tasks": [
+   {
+    "title": "Titled video embed",
+    "statement": "Embed a YouTube-style player with a descriptive title, lazy loading, explicit dimensions and fullscreen permission.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <iframe\n    src=\"https://www.youtube.com/embed/dQw4w9WgXcQ\"\n    title=\"HTML forms walkthrough\"\n    width=\"560\"\n    height=\"315\"\n    loading=\"lazy\"\n    allowfullscreen></iframe>\n</body>\n</html>",
+    "expected": "Embedded video player (560 by 315)"
+   },
+   {
+    "title": "Sandboxed inline demo",
+    "statement": "Create an iframe with srcdoc containing a button, sandboxed so it may run scripts but nothing else.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <iframe\n    title=\"Sandboxed button demo\"\n    sandbox=\"allow-scripts\"\n    srcdoc=\"&lt;button type='button' onclick='this.textContent = &quot;Clicked&quot;'&gt;Try it&lt;/button&gt;\">\n  </iframe>\n</body>\n</html>",
+    "expected": "Try it (button inside the frame)"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A sandbox that blocks the widget",
+    "broken": "<iframe src=\"https://example.com/widget\" sandbox=\"\" title=\"Widget\"></iframe>",
+    "fix": "<iframe src=\"https://example.com/widget\" sandbox=\"allow-scripts\" title=\"Widget\"></iframe>",
+    "error": "Empty sandbox: scripts, forms and popups are all blocked, so an interactive widget renders but does nothing.",
+    "fixedOutput": "Interactive widget inside the frame"
+   },
+   {
+    "title": "An insecure embed on an HTTPS page",
+    "broken": "<iframe src=\"http://example.com/map\" title=\"Map\"></iframe>",
+    "fix": "<iframe src=\"https://example.com/map\" title=\"Map\"></iframe>",
+    "error": "Mixed content: an http subresource on an https page is blocked by the browser, leaving an empty frame.",
+    "fixedOutput": "Embedded map"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What risks does an iframe introduce?",
+    "answer": "It loads a second document with its own scripts and network access, can attempt top navigation and popups, adds a request that can delay the page, and can capture keyboard focus inside content you do not control."
+   },
+   {
+    "q": "What does a sandbox without allow-same-origin guarantee?",
+    "answer": "The framed document gets an opaque origin: it cannot read cookies or storage for its own origin and cannot reach the parent through same-origin access. Combined with allow-scripts it can still run its own code."
+   },
+   {
+    "q": "When is an iframe the wrong tool?",
+    "answer": "For embedding your own page structure, for navigation, and for layout. If the content is yours, render it in the document; if it is a full independent page, a link is safer and faster."
+   }
+  ]
+ },
+ "html17": {
+  "tasks": [
+   {
+    "title": "FAQ with details",
+    "statement": "Build three details blocks, each with a summary question and a short answer, with the first one open.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <details open>\n    <summary>Do I need CSS first?</summary>\n    <p>No. HTML comes first.</p>\n  </details>\n  <details>\n    <summary>Is the playground free?</summary>\n    <p>Yes, it runs in your browser.</p>\n  </details>\n  <details>\n    <summary>Do I get a certificate?</summary>\n    <p>After the capstone, yes.</p>\n  </details>\n</body>\n</html>",
+    "expected": "Do I need CSS first?\nNo. HTML comes first.\nIs the playground free?\nYes, it runs in your browser.\nDo I get a certificate?\nAfter the capstone, yes."
+   },
+   {
+    "title": "Progress and meter panel",
+    "statement": "Show lessons done with a labelled progress element and disk usage with a labelled meter.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <label for=\"lessons\">Lessons done</label>\n  <progress id=\"lessons\" value=\"7\" max=\"20\">7 of 20</progress>\n  <label for=\"disk\">Disk used</label>\n  <meter id=\"disk\" value=\"0.65\">65%</meter>\n</body>\n</html>",
+    "expected": "Lessons done 7 of 20\nDisk used 65%"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A details block with no summary",
+    "broken": "<details>\n  <p>Hidden content</p>\n</details>",
+    "fix": "<details>\n  <summary>More information</summary>\n  <p>Hidden content</p>\n</details>",
+    "error": "Missing summary: the disclosure has no label, so the user sees an unlabelled marker with no idea what it opens.",
+    "fixedOutput": "More information\nHidden content"
+   },
+   {
+    "title": "A progress bar with no maximum",
+    "broken": "<label for=\"done\">Lessons done</label>\n<progress id=\"done\" value=\"7\">7</progress>",
+    "fix": "<label for=\"done\">Lessons done</label>\n<progress id=\"done\" value=\"7\" max=\"20\">7 of 20</progress>",
+    "error": "Missing max: progress defaults to a maximum of 1, so a value of 7 is out of range and the bar cannot represent the real fraction.",
+    "fixedOutput": "Lessons done 7 of 20"
+   }
+  ],
+  "interview": [
+   {
+    "q": "dialog or a custom modal div?",
+    "answer": "dialog gives focus management, Escape handling, a backdrop and top-layer rendering natively. A div modal has to reimplement all of it and usually gets focus trapping wrong."
+   },
+   {
+    "q": "progress or meter?",
+    "answer": "progress reports completion of a task and may be indeterminate. meter displays a measurement in a known range with low, high and optimum semantics."
+   },
+   {
+    "q": "What is the template element for?",
+    "answer": "Holding inert markup that is not rendered or executed until a script clones it. It is the native way to keep reusable fragments in the document."
+   }
+  ]
+ },
+ "html18": {
+  "tasks": [
+   {
+    "title": "External styles and deferred behaviour",
+    "statement": "Link `css/app.css`, load `js/app.js` with defer, and add a button carrying `data-action=\"save\"`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <link rel=\"stylesheet\" href=\"css/app.css\">\n  <script src=\"js/app.js\" defer></script>\n  <title>Wired page</title>\n</head>\n<body>\n  <button type=\"button\" data-action=\"save\">Save</button>\n</body>\n</html>",
+    "expected": "Save (button styled and wired)"
+   },
+   {
+    "title": "Works without JavaScript",
+    "statement": "Build a form that submits normally and a noscript message explaining the enhancement.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/search\" method=\"get\">\n    <label for=\"q\">Search</label>\n    <input id=\"q\" name=\"q\" type=\"search\">\n    <button type=\"submit\">Search</button>\n  </form>\n  <noscript>\n    <p>Results load as a normal page without JavaScript.</p>\n  </noscript>\n</body>\n</html>",
+    "expected": "Search [____________]\nSearch\nResults load as a normal page without JavaScript."
+   }
+  ],
+  "debug": [
+   {
+    "title": "defer on an inline script",
+    "broken": "<script defer>\n  document.querySelector(\"#go\").addEventListener(\"click\", () => {});\n</script>\n<button id=\"go\">Go</button>",
+    "fix": "<script src=\"js/app.js\" defer></script>\n<button id=\"go\">Go</button>",
+    "error": "defer is ignored for inline scripts: the code runs immediately, before the button exists, so the lookup returns null.",
+    "fixedOutput": "Go (button wired)"
+   },
+   {
+    "title": "A stylesheet limited to print",
+    "broken": "<link rel=\"stylesheet\" href=\"css/app.css\" media=\"print\">",
+    "fix": "<link rel=\"stylesheet\" href=\"css/app.css\">",
+    "error": "A print media attribute: the browser downloads the stylesheet but applies it only when printing, so the screen stays unstyled.",
+    "fixedOutput": "Styled page"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Where should script tags go, and why?",
+    "answer": "In the head with defer for most pages: download starts early, execution waits for parsing and keeps document order. A classic script without defer blocks parsing and should sit at the end of body if it must."
+   },
+   {
+    "q": "How do HTML and JavaScript communicate without tight coupling?",
+    "answer": "Through a small contract: ids for labels and fragments, data attributes for behaviour values, and events instead of inline handlers. The markup does not need to know how the script works."
+   },
+   {
+    "q": "What happens if the stylesheet fails to load?",
+    "answer": "The HTML still renders in document order with the browser’s default styles. That is why structure and reading order must make sense without CSS, and why critical layout should not depend on a single remote file."
+   }
+  ]
+ },
+ "html19": {
+  "tasks": [
+   {
+    "title": "Repair a misnested page",
+    "statement": "Rewrite this broken snippet as valid markup: a paragraph containing the text Intro followed by a div containing Block.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p>Intro</p>\n  <div>Block</div>\n</body>\n</html>",
+    "expected": "Intro\nBlock"
+   },
+   {
+    "title": "Pre-launch checklist page",
+    "statement": "Build a page that satisfies the checklist: lang, charset, unique title, one main, one h1, an image with alt and a labelled input.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Launch checklist</title>\n</head>\n<body>\n  <main>\n    <h1>Ready to ship</h1>\n    <img src=\"badge.png\" alt=\"Accessibility check passed\" width=\"120\" height=\"40\">\n    <form action=\"/subscribe\" method=\"post\">\n      <label for=\"email\">Email</label>\n      <input id=\"email\" name=\"email\" type=\"email\" required>\n      <button type=\"submit\">Subscribe</button>\n    </form>\n  </main>\n</body>\n</html>",
+    "expected": "Ready to ship\nAccessibility check passed (image)\nEmail [____________]\nSubscribe"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A link wrapped around the wrong heading boundary",
+    "broken": "<a href=\"post.html\"><h2>Post title</a></h2>",
+    "fix": "<a href=\"post.html\"><h2>Post title</h2></a>",
+    "error": "Misnested tags: the parser closes the anchor before the heading ends, so the link may cover less than intended and the DOM differs from the source.",
+    "fixedOutput": "Post title (linked heading)"
+   },
+   {
+    "title": "An unescaped ampersand in a URL",
+    "broken": "<a href=\"search.html?q=html&page=2\">Search results</a>",
+    "fix": "<a href=\"search.html?q=html&amp;page=2\">Search results</a>",
+    "error": "Raw ampersand: validators read it as the start of a character reference, and the query can be parsed incorrectly.",
+    "fixedOutput": "Search results"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you debug a page that renders differently from its source?",
+    "answer": "Compare the Elements panel with the original response: the parser repairs invalid nesting, and scripts may have changed the tree. The first difference points at the markup that caused it."
+   },
+   {
+    "q": "What does the W3C validator not catch?",
+    "answer": "Accessibility quality, whether the heading order matches the content, misleading alt text, vague link text, visual design and performance. It checks conformance, not judgement."
+   },
+   {
+    "q": "What is your pre-launch HTML checklist?",
+    "answer": "Valid markup, one h1 and a sane outline, lang and charset, unique title and description, alt text, labelled controls, working links, one main landmark, keyboard pass and no console errors."
+   }
+  ]
+ },
+ "html20": {
+  "tasks": [
+   {
+    "title": "Capstone about page",
+    "statement": "Build an About page that shares the capstone header, nav and footer, with a main, an h1, one section and one paragraph.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>About | BroCode</title>\n</head>\n<body>\n  <header>\n    <nav><a href=\"index.html\">Home</a> <a href=\"about.html\">About</a></nav>\n  </header>\n  <main>\n    <h1>About us</h1>\n    <section>\n      <h2>Why we teach</h2>\n      <p>Structure first, then style, then behaviour.</p>\n    </section>\n  </main>\n  <footer><p>BroCode</p></footer>\n</body>\n</html>",
+    "expected": "Home About\nAbout us\nWhy we teach\nStructure first, then style, then behaviour.\nBroCode"
+   },
+   {
+    "title": "Capstone services page",
+    "statement": "Build a Services page with three article cards, each with an h2 and a list of two features, plus one call-to-action link.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Services | BroCode</title>\n</head>\n<body>\n  <main>\n    <h1>Services</h1>\n    <article>\n      <h2>HTML audit</h2>\n      <ul><li>Structure review</li><li>Accessibility fixes</li></ul>\n    </article>\n    <article>\n      <h2>Landing pages</h2>\n      <ul><li>Semantic markup</li><li>Metadata</li></ul>\n    </article>\n    <article>\n      <h2>Training</h2>\n      <ul><li>Team workshops</li><li>Code reviews</li></ul>\n    </article>\n    <a href=\"contact.html\">Start a project</a>\n  </main>\n</body>\n</html>",
+    "expected": "Services\nHTML audit\n• Structure review\n• Accessibility fixes\nLanding pages\n• Semantic markup\n• Metadata\nTraining\n• Team workshops\n• Code reviews\nStart a project"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A page in a subfolder breaking its links",
+    "broken": "<!-- pages/services.html -->\n<a href=\"about.html\">About</a>",
+    "fix": "<!-- pages/services.html -->\n<a href=\"../about.html\">About</a>",
+    "error": "Wrong depth: from pages/, about.html resolves to pages/about.html. The parent directory is written as two dots and a slash.",
+    "fixedOutput": "About"
+   },
+   {
+    "title": "A contact form that posts to itself",
+    "broken": "<form method=\"post\">\n  <label for=\"email\">Email</label>\n  <input id=\"email\" name=\"email\" type=\"email\">\n  <button type=\"submit\">Send</button>\n</form>",
+    "fix": "<form action=\"/contact\" method=\"post\">\n  <label for=\"email\">Email</label>\n  <input id=\"email\" name=\"email\" type=\"email\">\n  <button type=\"submit\">Send</button>\n</form>",
+    "error": "Missing action: the form submits to the current URL, so the same page is returned and nothing is delivered to the contact handler.",
+    "fixedOutput": "Email [____________]\nSend"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you plan a multi-page site?",
+    "answer": "Decide the pages and their purpose, the shared header, nav and footer, the folder structure for assets, and the URL scheme before writing markup. Every page then differs only inside main."
+   },
+   {
+    "q": "What do you check before handing a site to a client?",
+    "answer": "Every page valid and linked, navigation consistent, forms reaching a real handler, alt text and labels present, metadata set, keyboard and mobile pass, and no console or 404 errors."
+   },
+   {
+    "q": "How do you keep shared markup consistent without a framework?",
+    "answer": "Keep one reference page as the template, copy its header and footer verbatim, keep relative paths and labels identical, and validate after every change so drift is caught immediately."
+   }
+  ]
+ }
+}

@@ -1,0 +1,462 @@
+{
+ "html01": {
+  "tasks": [
+   {
+    "title": "Explain the request flow",
+    "statement": "Build a page with an h1 `How the web works` and an ordered list of three steps: browser sends a request, server sends a response, browser renders the page.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>How the web works</h1>\n  <ol>\n    <li>Browser sends a request</li>\n    <li>Server sends a response</li>\n    <li>Browser renders the page</li>\n  </ol>\n</body>\n</html>",
+    "expected": "How the web works\n1. Browser sends a request\n2. Server sends a response\n3. Browser renders the page"
+   },
+   {
+    "title": "Two kinds of page",
+    "statement": "Create a page titled `Static vs dynamic` with two sections, each with an h2 and one paragraph.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Static vs dynamic</title>\n</head>\n<body>\n  <h1>Static vs dynamic</h1>\n  <section>\n    <h2>Static</h2>\n    <p>The same file is sent to every visitor.</p>\n  </section>\n  <section>\n    <h2>Dynamic</h2>\n    <p>The server or a script builds the HTML per request.</p>\n  </section>\n</body>\n</html>",
+    "expected": "Static vs dynamic\nStatic\nThe same file is sent to every visitor.\nDynamic\nThe server or a script builds the HTML per request."
+   }
+  ],
+  "debug": [
+   {
+    "title": "The page has no root element",
+    "broken": "<!DOCTYPE html>\n<head>\n  <title>Broken</title>\n</head>\n<body>\n  <h1>Broken</h1>\n</body>",
+    "fix": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <title>Broken</title>\n</head>\n<body>\n  <h1>Broken</h1>\n</body>\n</html>",
+    "error": "Missing html root and lang: the parser invents the root element, so the document has no declared language for assistive technology.",
+    "fixedOutput": "Broken"
+   },
+   {
+    "title": "A comment swallows the page",
+    "broken": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <!-- <h1>Title</h1>\n  <p>Visible text</p>\n</body>\n</html>",
+    "fix": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <!-- <h1>Title</h1> -->\n  <p>Visible text</p>\n</body>\n</html>",
+    "error": "Unclosed comment: everything after the opening marker is comment text, so the paragraph never renders.",
+    "fixedOutput": "Visible text"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Walk me through what happens between typing a URL and seeing the page.",
+    "answer": "The browser resolves the host with DNS, opens a connection and negotiates TLS, sends an HTTP request, receives the response, parses HTML into the DOM, fetches CSS and scripts, builds the render tree, lays out boxes and paints, then runs scripts that may change the DOM."
+   },
+   {
+    "q": "Is HTML a programming language? How do you answer that in an interview?",
+    "answer": "HTML is a markup language: it describes structure and meaning, with no variables, control flow or computation. The honest answer names what it is, then points out that the platform as a whole — HTML, CSS and JavaScript — is programmable."
+   },
+   {
+    "q": "When would you choose a static page over a dynamic one?",
+    "answer": "When the content changes rarely and is the same for every visitor: static files cache well, cost less to serve and are easy to audit. A dynamic page is worth it when the response depends on the user, the data or the request."
+   }
+  ]
+ },
+ "html02": {
+  "tasks": [
+   {
+    "title": "Project skeleton page",
+    "statement": "Create a page with a stylesheet at `css/site.css`, a deferred script at `js/app.js`, and an h1 `Workspace ready`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Workspace</title>\n  <link rel=\"stylesheet\" href=\"css/site.css\">\n  <script src=\"js/app.js\" defer></script>\n</head>\n<body>\n  <h1>Workspace ready</h1>\n</body>\n</html>",
+    "expected": "Workspace ready"
+   },
+   {
+    "title": "A helpful 404 page",
+    "statement": "Build a page titled `Page not found` with an h1, one sentence and a relative link back to `index.html`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Page not found</title>\n</head>\n<body>\n  <h1>Page not found</h1>\n  <p>That address does not exist on this site.</p>\n  <a href=\"index.html\">Back to the home page</a>\n</body>\n</html>",
+    "expected": "Page not found\nThat address does not exist on this site.\nBack to the home page"
+   }
+  ],
+  "debug": [
+   {
+    "title": "The stylesheet never loads",
+    "broken": "<link rel=\"stylesheet\" href=\"style.css\">",
+    "fix": "<link rel=\"stylesheet\" href=\"css/style.css\">",
+    "error": "Wrong relative path: the browser requests style.css in the page folder, but the file lives in css/.",
+    "fixedOutput": "Styled page"
+   },
+   {
+    "title": "The script runs before the button exists",
+    "broken": "<head>\n  <script src=\"js/app.js\"></script>\n</head>\n<body>\n  <button id=\"go\">Go</button>\n</body>",
+    "fix": "<head>\n  <script src=\"js/app.js\" defer></script>\n</head>\n<body>\n  <button id=\"go\">Go</button>\n</body>",
+    "error": "Blocking script in the head: it executes while the parser is still above the button, so the lookup returns null.",
+    "fixedOutput": "Go (button wired after parsing)"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why is index.html the entry point?",
+    "answer": "It is the conventional directory index: a server maps a request for a folder to index.html, and every hosting platform supports it without configuration."
+   },
+   {
+    "q": "What is the difference between opening a file with file:// and serving it over HTTP?",
+    "answer": "A file URL has no origin, so modules, fetch and some storage APIs are restricted. Over HTTP the page has an origin, relative requests work the way they will in production, and cookies and service workers are available."
+   },
+   {
+    "q": "Which files belong in a project root?",
+    "answer": "The entry document, the project configuration and top-level folders such as css, js, images and assets. Build output and dependencies stay out of version control."
+   }
+  ]
+ },
+ "html03": {
+  "tasks": [
+   {
+    "title": "Minimal valid document",
+    "statement": "Write a document with doctype, lang, charset, a title and one h1 `Minimal`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Minimal</title>\n</head>\n<body>\n  <h1>Minimal</h1>\n</body>\n</html>",
+    "expected": "Minimal"
+   },
+   {
+    "title": "Document with a description",
+    "statement": "Add a meta description and one HTML comment above the body content.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"description\" content=\"A minimal HTML document.\">\n  <title>Document</title>\n</head>\n<body>\n  <!-- The visible page starts here -->\n  <p>One paragraph.</p>\n</body>\n</html>",
+    "expected": "One paragraph."
+   }
+  ],
+  "debug": [
+   {
+    "title": "Charset declared too late",
+    "broken": "<head>\n  <title>Café</title>\n  <meta charset=\"UTF-8\">\n</head>",
+    "fix": "<head>\n  <meta charset=\"UTF-8\">\n  <title>Café</title>\n</head>",
+    "error": "Late charset: the browser has already decoded text before reading the declaration, so non-ASCII characters can arrive corrupted.",
+    "fixedOutput": "Café"
+   },
+   {
+    "title": "Head is never closed",
+    "broken": "<head>\n  <meta charset=\"UTF-8\">\n  <title>Broken</title>\n<body>\n  <h1>Page</h1>\n</body>",
+    "fix": "<head>\n  <meta charset=\"UTF-8\">\n  <title>Broken</title>\n</head>\n<body>\n  <h1>Page</h1>\n</body>",
+    "error": "Missing closing head tag: the parser closes it implicitly at body, which hides a structural mistake that a validator would report.",
+    "fixedOutput": "Page"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does the browser do before it renders anything?",
+    "answer": "It decodes the bytes, tokenises the markup, builds the DOM, discovers stylesheets and scripts, and only then computes styles and layout. Rendering waits on blocking resources it finds in the head."
+   },
+   {
+    "q": "Why is the doctype not an element?",
+    "answer": "It is a document type declaration that selects standards mode. It has no content, no closing tag and no node in the DOM tree."
+   },
+   {
+    "q": "What belongs in head versus body?",
+    "answer": "Head holds metadata and resource declarations: charset, title, description, stylesheets, scripts. Body holds the content the visitor sees and interacts with."
+   }
+  ]
+ },
+ "html04": {
+  "tasks": [
+   {
+    "title": "Data-driven card",
+    "statement": "Build an article with a unique id, two classes, `data-level=\"beginner\"`, an h2 and a paragraph.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <article id=\"card-1\" class=\"card compact\" data-level=\"beginner\">\n    <h2>First lesson</h2>\n    <p>Attributes describe this card.</p>\n  </article>\n</body>\n</html>",
+    "expected": "First lesson\nAttributes describe this card."
+   },
+   {
+    "title": "Form controls with attributes",
+    "statement": "Create a labelled input with a placeholder, a maximum length and an autocomplete hint, plus a hidden field.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <form action=\"/save\" method=\"post\">\n    <label for=\"name\">Name</label>\n    <input id=\"name\" name=\"name\" type=\"text\" maxlength=\"40\" autocomplete=\"name\" placeholder=\"Ashu\">\n    <input type=\"hidden\" name=\"source\" value=\"course\">\n    <button type=\"submit\">Save</button>\n  </form>\n</body>\n</html>",
+    "expected": "Name [Ashu]\nSave"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An unquoted value with a space",
+    "broken": "<p class=note muted>Read this</p>",
+    "fix": "<p class=\"note muted\">Read this</p>",
+    "error": "Unquoted attribute value: the parser stops the value at the space, so the element gets an incomplete class list.",
+    "fixedOutput": "Read this"
+   },
+   {
+    "title": "A data attribute written in camelCase",
+    "broken": "<div data-userId=\"42\">Profile</div>",
+    "fix": "<div data-user-id=\"42\">Profile</div>",
+    "error": "Attribute names are lowercased by the parser, so a script reading dataset.userId never matches data-userId in the source.",
+    "fixedOutput": "Profile"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What is the difference between an attribute and a property?",
+    "answer": "The attribute is what the markup declares; the property is the live value on the DOM object. They start equal but diverge: typing in an input changes the property, not the attribute."
+   },
+   {
+    "q": "When should you use a data-* attribute instead of a class?",
+    "answer": "When the value is data for behaviour or configuration rather than a styling hook. Classes describe presentation patterns; data attributes carry values that scripts read."
+   },
+   {
+    "q": "Name three global attributes you actually use and say why.",
+    "answer": "id for unique targets and labels, class for reusable styling hooks, and lang for language changes inside a document. Others worth naming are hidden, title, tabindex and data-*."
+   }
+  ]
+ },
+ "html05": {
+  "tasks": [
+   {
+    "title": "Article with a quotation",
+    "statement": "Write an h1, an h2, a blockquote with a citation link, and a pre/code block containing the text `a < b` escaped.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <h1>Quoting code</h1>\n  <h2>From the standard</h2>\n  <blockquote cite=\"https://html.spec.whatwg.org/\">\n    <p>Markup describes meaning.</p>\n  </blockquote>\n  <pre><code>a &lt; b</code></pre>\n</body>\n</html>",
+    "expected": "Quoting code\nFrom the standard\nMarkup describes meaning.\na &lt; b"
+   },
+   {
+    "title": "Inline semantics sentence",
+    "statement": "Build one paragraph using strong, em, mark, small, sup and sub without changing the words around them.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <p><strong>Read</strong> the <em>whole</em> error, <mark>then</mark> retry. <small>v1.2</small> H<sub>2</sub>O and 2<sup>3</sup>.</p>\n</body>\n</html>",
+    "expected": "Read the whole error, then retry. v1.2 H2O and 23."
+   }
+  ],
+  "debug": [
+   {
+    "title": "Bold used where importance is meant",
+    "broken": "<p><b>Do not delete this file.</b></p>",
+    "fix": "<p><strong>Do not delete this file.</strong></p>",
+    "error": "b is a visual offset with no importance; strong carries the meaning that assistive technology and search tools can read.",
+    "fixedOutput": "Do not delete this file."
+   },
+   {
+    "title": "An unescaped angle bracket in code",
+    "broken": "<pre><code>if (a < b) { run(); }</code></pre>",
+    "fix": "<pre><code>if (a &lt; b) { run(); }</code></pre>",
+    "error": "A raw less-than sign inside code starts a tag, so the parser drops or rearranges the rest of the snippet.",
+    "fixedOutput": "if (a < b) { run(); }"
+   }
+  ],
+  "interview": [
+   {
+    "q": "When is the br element the right choice?",
+    "answer": "When the line break is part of the content: an address, a poem, a short piece of dialogue. It is not a spacing tool; margins belong to CSS."
+   },
+   {
+    "q": "strong versus b, em versus i — what is the difference?",
+    "answer": "strong and em carry semantic stress or importance; b and i are presentational offsets. They can look identical, but only the semantic pair is announced and interpreted."
+   },
+   {
+    "q": "How do you mark up a code snippet that contains angle brackets?",
+    "answer": "Use pre and code and escape the less-than sign as an entity and the ampersand as its entity. Otherwise the parser treats the snippet as markup."
+   }
+  ]
+ },
+ "html06": {
+  "tasks": [
+   {
+    "title": "Skip link and section navigation",
+    "statement": "Add a skip link to `#main`, a nav with two fragment links, and a main element with those ids.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <a href=\"#main\">Skip to content</a>\n  <nav>\n    <a href=\"#install\">Install</a>\n    <a href=\"#run\">Run</a>\n  </nav>\n  <main id=\"main\">\n    <h1>Guide</h1>\n    <h2 id=\"install\">Install</h2>\n    <h2 id=\"run\">Run</h2>\n  </main>\n</body>\n</html>",
+    "expected": "Skip to content\nInstall\nRun\nGuide\nInstall\nRun"
+   },
+   {
+    "title": "Contact and download links",
+    "statement": "Create a mailto link with a subject, a tel link and a download link to `notes.pdf`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <a href=\"mailto:hello@brocode.dev?subject=HTML%20course\">Email us</a>\n  <a href=\"tel:+911234567890\">Call us</a>\n  <a href=\"files/notes.pdf\" download>Download notes</a>\n</body>\n</html>",
+    "expected": "Email us\nCall us\nDownload notes"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A fragment that goes nowhere",
+    "broken": "<a href=\"#pricing\">Pricing</a>\n<h2 id=\"price\">Pricing</h2>",
+    "fix": "<a href=\"#pricing\">Pricing</a>\n<h2 id=\"pricing\">Pricing</h2>",
+    "error": "Fragment mismatch: the href and the id differ by one letter, so the link does nothing except change the URL.",
+    "fixedOutput": "Pricing\nPricing"
+   },
+   {
+    "title": "A telephone link with the wrong scheme",
+    "broken": "<a href=\"phone:+911234567890\">Call us</a>",
+    "fix": "<a href=\"tel:+911234567890\">Call us</a>",
+    "error": "Unknown scheme: there is no phone handler, so the browser treats the link as a broken address instead of opening the dialler.",
+    "fixedOutput": "Call us"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How does the browser resolve a relative URL?",
+    "answer": "Against the document’s base URL: the directory of the current page unless a base element says otherwise. That is why the same href resolves differently on pages in different folders."
+   },
+   {
+    "q": "What is reverse tabnabbing and how do you prevent it?",
+    "answer": "A page opened with target blank can reach window.opener and navigate the original tab. The noopener relationship removes that reference; noreferrer also hides the referrer."
+   },
+   {
+    "q": "How would you structure navigation for a ten-page site?",
+    "answer": "One shared nav with a short, stable set of top-level links, current-page indication, a skip link before it, and consistent order on every page. Deeper pages get breadcrumbs rather than more top-level items."
+   }
+  ]
+ },
+ "html07": {
+  "tasks": [
+   {
+    "title": "Nested table of contents",
+    "statement": "Build an ordered list of two chapters, each containing an unordered list of two lesson links.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <ol>\n    <li>Chapter one\n      <ul>\n        <li><a href=\"#tags\">Tags</a></li>\n        <li><a href=\"#attrs\">Attributes</a></li>\n      </ul>\n    </li>\n    <li>Chapter two\n      <ul>\n        <li><a href=\"#links\">Links</a></li>\n        <li><a href=\"#lists\">Lists</a></li>\n      </ul>\n    </li>\n  </ol>\n</body>\n</html>",
+    "expected": "1. Chapter one\n   • Tags\n   • Attributes\n2. Chapter two\n   • Links\n   • Lists"
+   },
+   {
+    "title": "Glossary entry list",
+    "statement": "Create a description list with three terms and one description each.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <dl>\n    <dt>Tag</dt>\n    <dd>The markup that opens or closes an element.</dd>\n    <dt>Element</dt>\n    <dd>The tag plus its content.</dd>\n    <dt>Attribute</dt>\n    <dd>A name and value that configures an element.</dd>\n  </dl>\n</body>\n</html>",
+    "expected": "Tag\nThe markup that opens or closes an element.\nElement\nThe tag plus its content.\nAttribute\nA name and value that configures an element."
+   }
+  ],
+  "debug": [
+   {
+    "title": "Divs between a list and its items",
+    "broken": "<ul>\n  <div><li>HTML</li></div>\n  <div><li>CSS</li></div>\n</ul>",
+    "fix": "<ul>\n  <li>HTML</li>\n  <li>CSS</li>\n</ul>",
+    "error": "Invalid list children: ul may only contain li, so the wrappers make the structure invalid and can confuse list navigation.",
+    "fixedOutput": "• HTML\n• CSS"
+   },
+   {
+    "title": "Description list built from list items",
+    "broken": "<dl>\n  <li>HTML — markup language</li>\n</dl>",
+    "fix": "<dl>\n  <dt>HTML</dt>\n  <dd>Markup language</dd>\n</dl>",
+    "error": "Wrong children: dl pairs dt with dd; li is not allowed, so the term and description relation is lost.",
+    "fixedOutput": "HTML\nMarkup language"
+   }
+  ],
+  "interview": [
+   {
+    "q": "Why should a navigation menu be a list of links?",
+    "answer": "A list groups the items so assistive technology announces the count and the boundaries, and each link keeps its own destination. Styling with CSS does not require giving up the structure."
+   },
+   {
+    "q": "ol, ul or dl — how do you choose?",
+    "answer": "ol when order changes the meaning, ul when it does not, dl when you are pairing terms with descriptions."
+   },
+   {
+    "q": "How does a screen reader announce a list?",
+    "answer": "It announces the list and its item count, then each item. That context disappears when a list is replaced with plain links or divs."
+   }
+  ]
+ },
+ "html08": {
+  "tasks": [
+   {
+    "title": "Picture with a modern format",
+    "statement": "Create a picture element with a WebP source and an img fallback, both carrying the same descriptive alt text.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <picture>\n    <source srcset=\"images/hero.webp\" type=\"image/webp\">\n    <img src=\"images/hero.jpg\" alt=\"Students studying in the campus library\" width=\"640\" height=\"360\">\n  </picture>\n</body>\n</html>",
+    "expected": "Students studying in the campus library (image, 640 by 360)"
+   },
+   {
+    "title": "Figure with a credit",
+    "statement": "Add a figure with an image, a caption and a small credit line inside the caption.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <figure>\n    <img src=\"images/chart.png\" alt=\"Marks rising from 60 to 90 across three terms\" width=\"480\" height=\"300\">\n    <figcaption>\n      Term results\n      <small>Source: examination cell</small>\n    </figcaption>\n  </figure>\n</body>\n</html>",
+    "expected": "Marks rising from 60 to 90 across three terms\nTerm results\nSource: examination cell"
+   }
+  ],
+  "debug": [
+   {
+    "title": "An empty alt written as a bare attribute",
+    "broken": "<img src=\"logo.png\" alt>",
+    "fix": "<img src=\"logo.png\" alt=\"BroCode logo\">",
+    "error": "Boolean-style alt: an empty attribute value is allowed, but here it announces nothing meaningful for a logo that identifies the site.",
+    "fixedOutput": "BroCode logo (image)"
+   },
+   {
+    "title": "An image path with the wrong case",
+    "broken": "<img src=\"images/Logo.PNG\" alt=\"Logo\">",
+    "fix": "<img src=\"images/logo.png\" alt=\"Logo\">",
+    "error": "Case mismatch: Linux servers are case-sensitive, so the uppercase path is a 404 even though it works on a Windows machine.",
+    "fixedOutput": "Logo (image)"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you write alt text for a chart?",
+    "answer": "State the message the chart carries, not its shape: what is compared, the direction of the change and the range. If the exact numbers matter, provide them in a table next to it."
+   },
+   {
+    "q": "What does srcset actually let the browser decide?",
+    "answer": "Which candidate resource to download, based on viewport width, pixel density and the sizes declaration. The author supplies candidates; the browser picks, and it may pick differently after a resize."
+   },
+   {
+    "q": "Why can lazy loading hurt the largest contentful paint?",
+    "answer": "A lazy image in the initial viewport is not fetched until layout discovers it, which delays the largest paint. Hero images should load eagerly; below-the-fold images are the lazy ones."
+   }
+  ]
+ },
+ "html09": {
+  "tasks": [
+   {
+    "title": "Timetable with a merged break",
+    "statement": "Build a table with a caption, a header row of three columns, and one body row whose first cell spans all three columns for lunch.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <table>\n    <caption>Monday timetable</caption>\n    <thead>\n      <tr><th scope=\"col\">Time</th><th scope=\"col\">Subject</th><th scope=\"col\">Room</th></tr>\n    </thead>\n    <tbody>\n      <tr><td>9:00</td><td>Maths</td><td>101</td></tr>\n      <tr><td colspan=\"3\">Lunch break</td></tr>\n    </tbody>\n  </table>\n</body>\n</html>",
+    "expected": "Monday timetable\nTime | Subject | Room\n9:00 | Maths | 101\nLunch break"
+   },
+   {
+    "title": "Marksheet with a footer total",
+    "statement": "Add a tfoot row that spans two columns with the label `Total` and one cell with `180`.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <table>\n    <caption>Term marks</caption>\n    <thead>\n      <tr><th scope=\"col\">Subject</th><th scope=\"col\">Marks</th><th scope=\"col\">Out of</th></tr>\n    </thead>\n    <tbody>\n      <tr><td>Maths</td><td>92</td><td>100</td></tr>\n      <tr><td>Science</td><td>88</td><td>100</td></tr>\n    </tbody>\n    <tfoot>\n      <tr><td colspan=\"2\">Total</td><td>180</td></tr>\n    </tfoot>\n  </table>\n</body>\n</html>",
+    "expected": "Term marks\nSubject | Marks | Out of\nMaths | 92 | 100\nScience | 88 | 100\nTotal | 180"
+   }
+  ],
+  "debug": [
+   {
+    "title": "A merged cell with an extra neighbour",
+    "broken": "<tr>\n  <td colspan=\"2\">Lunch</td>\n  <td>Free</td>\n</tr>",
+    "fix": "<tr>\n  <td colspan=\"2\">Lunch</td>\n</tr>",
+    "error": "Column overflow: the row declares three columns while the header has two, so the table grid no longer lines up.",
+    "fixedOutput": "Lunch"
+   },
+   {
+    "title": "A layout built from a table",
+    "broken": "<table>\n  <tr><td>Navigation</td></tr>\n  <tr><td>Content</td></tr>\n</table>",
+    "fix": "<nav>Navigation</nav>\n<main>Content</main>",
+    "error": "No data relationship: a layout table creates meaningless row and column context for assistive technology and cannot reflow like block content.",
+    "fixedOutput": "Navigation\nContent"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do you make a table accessible?",
+    "answer": "Add a caption, use header cells with scope col or row, keep one header per column or row, avoid layout tables, and make sure merged cells still leave every row with the right number of columns."
+   },
+   {
+    "q": "When is a table the wrong element?",
+    "answer": "For page layout, for lists of unrelated items, and for anything that needs to reflow as a single column on a phone. If there is no row-and-column relationship, it is not tabular data."
+   },
+   {
+    "q": "What pitfalls come with rowspan and colspan?",
+    "answer": "They change the grid, so later rows must supply the remaining cells; screen readers rely on the resulting header relationships, and responsive CSS cannot simply stack cells without breaking the pairing."
+   }
+  ]
+ },
+ "html10": {
+  "tasks": [
+   {
+    "title": "Blog index with three posts",
+    "statement": "Build a main element with three articles, each with an h2, a time element with a datetime attribute, and a footer link.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <main>\n    <h1>Blog</h1>\n    <article>\n      <h2>Semantic HTML</h2>\n      <time datetime=\"2026-11-01\">1 November 2026</time>\n      <footer><a href=\"posts/semantic.html\">Read more</a></footer>\n    </article>\n    <article>\n      <h2>Forms</h2>\n      <time datetime=\"2026-11-05\">5 November 2026</time>\n      <footer><a href=\"posts/forms.html\">Read more</a></footer>\n    </article>\n    <article>\n      <h2>Accessibility</h2>\n      <time datetime=\"2026-11-09\">9 November 2026</time>\n      <footer><a href=\"posts/a11y.html\">Read more</a></footer>\n    </article>\n  </main>\n</body>\n</html>",
+    "expected": "Blog\nSemantic HTML\n1 November 2026\nRead more\nForms\n5 November 2026\nRead more\nAccessibility\n9 November 2026\nRead more"
+   },
+   {
+    "title": "Product page landmarks",
+    "statement": "Create a header with an h1, a nav, a main with a section and an aside, and a page footer with a details FAQ.",
+    "solution": "<!DOCTYPE html>\n<html lang=\"en\">\n<body>\n  <header>\n    <h1>BroCode Pro</h1>\n    <nav><a href=\"#plans\">Plans</a></nav>\n  </header>\n  <main>\n    <section id=\"plans\">\n      <h2>Plans</h2>\n      <p>One plan, every course.</p>\n    </section>\n    <aside>\n      <h2>Related</h2>\n      <p>Student discount.</p>\n    </aside>\n  </main>\n  <footer>\n    <details>\n      <summary>Refund policy</summary>\n      <p>Seven days, no questions.</p>\n    </details>\n  </footer>\n</body>\n</html>",
+    "expected": "BroCode Pro\nPlans\nPlans\nOne plan, every course.\nRelated\nStudent discount.\nRefund policy\nSeven days, no questions."
+   }
+  ],
+  "debug": [
+   {
+    "title": "A section used only for spacing",
+    "broken": "<section>\n  <p>First paragraph</p>\n</section>\n<section>\n  <p>Second paragraph</p>\n</section>",
+    "fix": "<div>\n  <p>First paragraph</p>\n</div>\n<div>\n  <p>Second paragraph</p>\n</div>",
+    "error": "Section without a heading and without a theme is just a container: it adds a region with no accessible name.",
+    "fixedOutput": "First paragraph\nSecond paragraph"
+   },
+   {
+    "title": "The page footer nested inside main",
+    "broken": "<main>\n  <h1>Shop</h1>\n  <footer><p>Copyright BroCode</p></footer>\n</main>",
+    "fix": "<main>\n  <h1>Shop</h1>\n</main>\n<footer><p>Copyright BroCode</p></footer>",
+    "error": "Footer inside main describes the main content, not the page, so the site-wide footer landmark disappears.",
+    "fixedOutput": "Shop\nCopyright BroCode"
+   }
+  ],
+  "interview": [
+   {
+    "q": "How do landmarks help keyboard and screen-reader users?",
+    "answer": "They expose the page’s regions to a landmark list, so a user can jump straight to main, navigation, search or the footer instead of tabbing through everything."
+   },
+   {
+    "q": "section, article or div — how do you decide?",
+    "answer": "Article if the content stands alone and could be syndicated; section if it is a themed part of the page that has a heading; div if it is only a styling or scripting container."
+   },
+   {
+    "q": "Does semantic HTML improve SEO? What actually matters?",
+    "answer": "Semantics make the structure unambiguous for crawlers, but ranking is driven by content quality, links, performance and intent matching. Semantic markup helps interpretation and accessibility more than it moves rankings by itself."
+   }
+  ]
+ }
+}
