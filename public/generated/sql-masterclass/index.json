@@ -18,14 +18,14 @@
   ]
  },
  "stats": {
-  "modules": 7,
-  "topics": 153,
-  "learn": 140,
-  "interview": 140,
-  "labs": 140,
-  "logic": 105,
-  "debug": 70,
-  "revision": 70
+  "modules": 8,
+  "topics": 177,
+  "learn": 160,
+  "interview": 160,
+  "labs": 160,
+  "logic": 120,
+  "debug": 80,
+  "revision": 80
  },
  "modules": [
   {
@@ -6617,6 +6617,980 @@
      {
       "q": "What does a zero-row result mean?",
       "answer": "The query matched no rows; it is a valid empty result."
+     }
+    ]
+   }
+  },
+  {
+   "id": "sql07",
+   "no": 7,
+   "title": "WHERE Clause and Filtering",
+   "goal": "Write precise predicates and avoid NULL and precedence traps.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Introduction to WHERE",
+     "simple": "WHERE rows ko filter karta hai — sirf matching rows result me aate hain.",
+     "pro": "WHERE is a row-level filter evaluated after FROM and before GROUP BY; it keeps only rows whose predicate is true.",
+     "points": [
+      "WHERE works on individual rows.",
+      "False or unknown rows are removed.",
+      "It runs before aggregation."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE marks > 80;",
+      "output": "Only students above 80."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "Filtering Rows",
+     "simple": "Filter lagane se result chhota aur relevant hota hai.",
+     "pro": "A predicate is a boolean expression; rows with a true result pass, while false and NULL results are discarded.",
+     "points": [
+      "A predicate returns true, false or unknown.",
+      "Unknown behaves like false for filtering.",
+      "Combine predicates for precise filters."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE marks >= 60;",
+      "output": "Students with 60 or more."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Equality (=)",
+     "simple": "= exact match check karta hai.",
+     "pro": "The equality operator compares two values and returns true only when they are equal; NULL never equals anything.",
+     "points": [
+      "Use single quotes for strings.",
+      "Double quotes are identifiers, not strings.",
+      "Equality is case-sensitive for text."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE name = 'Aarav';",
+      "output": "Aarav | 82"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Inequality (!= and <>)",
+     "simple": "Not equal ke liye <> ya != use karo.",
+     "pro": "Both <> and != mean not equal in PostgreSQL; <> is the SQL-standard spelling.",
+     "points": [
+      "<> is portable.",
+      "!= is accepted by PostgreSQL.",
+      "NULL comparisons still return unknown."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE marks <> 80;",
+      "output": "Rows whose marks are not 80."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Greater Than and Less Than",
+     "simple": "> bada aur < chhota compare karta hai.",
+     "pro": "> and < compare values using the type’s ordering; they work for numbers, dates and text under the database collation.",
+     "points": [
+      "> is strict greater than.",
+      "< is strict less than.",
+      "Dates compare chronologically."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE marks > 80;",
+      "output": "Students above 80."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "Greater Than or Equal and Less Than or Equal",
+     "simple": ">= aur <= boundary value ko bhi include karte hain.",
+     "pro": ">= keeps values greater than or equal to the boundary; <= keeps values less than or equal to it.",
+     "points": [
+      ">= includes the boundary.",
+      "<= includes the boundary.",
+      "Combine both for a range."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE marks >= 80;",
+      "output": "Students with 80 or more."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "AND",
+     "simple": "AND tab true hota hai jab dono conditions true hon.",
+     "pro": "AND combines predicates with logical conjunction; both sides must be true for the row to pass.",
+     "points": [
+      "AND is stricter than OR.",
+      "One false side rejects the row.",
+      "Parentheses clarify mixed logic."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE marks >= 60 AND marks <= 90;",
+      "output": "Students inside the 60–90 range."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "OR",
+     "simple": "OR tab true hota hai jab koi ek condition true ho.",
+     "pro": "OR combines predicates with logical disjunction; at least one side must be true for the row to pass.",
+     "points": [
+      "OR is broader than AND.",
+      "Two false sides reject the row.",
+      "NULL on both sides yields unknown."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE name = 'Aarav' OR name = 'Meera';",
+      "output": "Aarav and Meera."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "NOT",
+     "simple": "NOT condition ko ulta karta hai.",
+     "pro": "NOT negates a boolean predicate; NOT true is false, NOT false is true and NOT unknown is unknown.",
+     "points": [
+      "NOT is not the same as !=.",
+      "Negating a NULL predicate stays unknown.",
+      "Use parentheses after NOT."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE NOT (marks < 60);",
+      "output": "Students with 60 or more, excluding NULL marks."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Combining AND, OR and NOT",
+     "simple": "Mixed conditions me precedence aur parentheses bahut important hain.",
+     "pro": "Mixed predicates combine with NOT, AND and OR; AND binds tighter than OR, so parentheses should state the intended grouping.",
+     "points": [
+      "AND runs before OR.",
+      "NOT applies to the expression that follows.",
+      "Parentheses prevent logic bugs."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE (name = 'Aarav' OR name = 'Meera') AND marks > 80;",
+      "output": "Aarav or Meera, only above 80."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "BETWEEN and NOT BETWEEN",
+     "simple": "BETWEEN inclusive range check karta hai.",
+     "pro": "BETWEEN low AND high is inclusive on both ends; NOT BETWEEN keeps values outside the range.",
+     "points": [
+      "Both boundaries are included.",
+      "Low must come first.",
+      "NOT BETWEEN excludes the range."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE marks BETWEEN 60 AND 90;",
+      "output": "60 through 90 inclusive."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "IN and NOT IN",
+     "simple": "IN list me se koi match check karta hai.",
+     "pro": "IN tests membership in a value list; NOT IN tests exclusion, with a dangerous NULL behaviour.",
+     "points": [
+      "IN is shorthand for several ORs.",
+      "NOT IN with a NULL in the list returns no rows.",
+      "The list values must be comparable."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE name IN ('Aarav', 'Meera', 'Kabir');",
+      "output": "The three listed names."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "LIKE and NOT LIKE",
+     "simple": "LIKE pattern matching karta hai, NOT LIKE ulta.",
+     "pro": "LIKE matches text against a pattern with % and _ wildcards; it is case-sensitive in PostgreSQL, while ILIKE is case-insensitive.",
+     "points": [
+      "LIKE is case-sensitive.",
+      "NOT LIKE excludes matches.",
+      "Use ILIKE for case-insensitive matching."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE name LIKE 'A%';",
+      "output": "Names starting with A."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "Percent Wildcard",
+     "simple": "% kisi bhi length ke characters ko match karta hai.",
+     "pro": "The % wildcard matches zero or more characters in a LIKE pattern.",
+     "points": [
+      "A% matches names starting with A.",
+      "%a% matches a anywhere.",
+      "A leading % usually prevents a plain index scan."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE name LIKE '%a%';",
+      "output": "Names containing a."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Underscore Wildcard",
+     "simple": "_ exactly ek character match karta hai.",
+     "pro": "The _ wildcard matches exactly one character, so it is useful for fixed-position patterns.",
+     "points": [
+      "_ is one character.",
+      "% is any number.",
+      "Combine them for shape-based filters."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE name LIKE '_a%';",
+      "output": "Names whose second character is a."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "IS NULL",
+     "simple": "NULL check karne ke liye IS NULL use karo, = NULL nahi.",
+     "pro": "IS NULL is the only reliable null test; equality with NULL returns unknown and filters every row out.",
+     "points": [
+      "NULL means unknown.",
+      "= NULL never matches.",
+      "IS NULL is the correct predicate."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE email IS NULL;",
+      "output": "Students without an email."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "IS NOT NULL",
+     "simple": "IS NOT NULL aise rows deta hai jahan value present ho.",
+     "pro": "IS NOT NULL keeps rows where the column has a real value rather than NULL.",
+     "points": [
+      "It is the negation of IS NULL.",
+      "It does not treat empty string as NULL.",
+      "Use it before comparing optional columns."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE email IS NOT NULL;",
+      "output": "Students with an email."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Boolean Filtering",
+     "simple": "Boolean column ko seedha WHERE me use kar sakte hain.",
+     "pro": "A boolean column is itself a predicate; WHERE active keeps true, WHERE NOT active keeps false, and NULL is excluded from both.",
+     "points": [
+      "WHERE active means true.",
+      "WHERE NOT active means false.",
+      "Use IS NOT TRUE to include NULL."
+     ],
+     "example": {
+      "sql": "SELECT name FROM users WHERE active;",
+      "output": "Only active users."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Operator Precedence",
+     "simple": "Comparison pehle, phir NOT, phir AND, phir OR.",
+     "pro": "Comparison operators bind tighter than NOT, NOT binds tighter than AND, and AND binds tighter than OR; rely on parentheses when mixing.",
+     "points": [
+      "AND beats OR.",
+      "NOT applies before AND.",
+      "Comparison is evaluated first."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE marks > 80 OR name = 'Aarav' AND marks > 60;",
+      "output": "Students above 80, plus Aarav above 60."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Parentheses",
+     "simple": "Parentheses se condition ka group clear karo.",
+     "pro": "Parentheses override precedence and make the intended logic readable; they are the cheapest way to prevent a filter bug.",
+     "points": [
+      "Group OR before AND when needed.",
+      "Parenthesize NOT.",
+      "Readable logic is reviewable logic."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE (name = 'Aarav' OR name = 'Meera') AND marks > 80;",
+      "output": "Only Aarav or Meera above 80."
+     }
+    },
+    {
+     "id": "t21",
+     "title": "Case Sensitivity and ILIKE",
+     "simple": "PostgreSQL text comparison case-sensitive hai; ILIKE case-insensitive match deta hai.",
+     "pro": "LIKE and = compare text case-sensitively under the collation; ILIKE lowercases both sides for matching, and LOWER(name) is the portable alternative.",
+     "points": [
+      "= is case-sensitive.",
+      "ILIKE is PostgreSQL-specific.",
+      "LOWER() can match but may not use a plain index."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE name ILIKE 'aarav';",
+      "output": "Aarav (case-insensitive match)."
+     }
+    },
+    {
+     "id": "t22",
+     "title": "Escaping Wildcards",
+     "simple": "Literal % ya _ match karna ho to ESCAPE use karo.",
+     "pro": "A backslash escapes % and _ in a LIKE pattern when ESCAPE is declared; without escaping, the wildcard keeps its special meaning.",
+     "points": [
+      "Escape % as \\%.",
+      "Escape _ as \\_.",
+      "Declare ESCAPE explicitly for clarity."
+     ],
+     "example": {
+      "sql": "SELECT code FROM items WHERE code LIKE 'A\\_%' ESCAPE '\\';",
+      "output": "Codes starting with the literal A_."
+     }
+    },
+    {
+     "id": "t23",
+     "title": "Complex WHERE Conditions",
+     "simple": "Real filters me multiple AND, OR, IN, LIKE aur NULL checks combine hote hain.",
+     "pro": "A complex predicate should be built in layers: isolate each rule, parenthesize OR groups, and test the row count before trusting the result.",
+     "points": [
+      "Write one rule at a time.",
+      "Parenthesize mixed AND/OR.",
+      "Use IS NULL explicitly."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE (name LIKE 'A%' OR name LIKE 'M%') AND marks BETWEEN 60 AND 95 AND email IS NOT NULL;",
+      "output": "Matching names with marks in range and a known email."
+     }
+    },
+    {
+     "id": "t24",
+     "title": "Practical Student Filtering",
+     "simple": "Ab multiple filters ko mila kar ek useful student report banao.",
+     "pro": "A production filter combines range, membership, pattern and null checks while keeping each predicate readable and index-friendly.",
+     "points": [
+      "Filter on selective columns first.",
+      "Avoid leading wildcards on large tables.",
+      "Verify the row count before shipping."
+     ],
+     "example": {
+      "sql": "SELECT name, marks FROM students WHERE marks BETWEEN 70 AND 90 AND name LIKE 'A%' AND email IS NOT NULL ORDER BY marks DESC;",
+      "output": "Students in range whose name starts with A and have an email."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What does WHERE do?",
+      "options": [
+       "Filters rows before grouping",
+       "Sorts rows",
+       "Groups rows",
+       "Creates a table"
+      ],
+      "answer": "Filters rows before grouping",
+      "why": "WHERE keeps rows whose predicate is true."
+     },
+     {
+      "q": "Which operator tests equality?",
+      "options": [
+       "=",
+       "==",
+       "===",
+       "eq"
+      ],
+      "answer": "=",
+      "why": "SQL uses a single = for equality."
+     },
+     {
+      "q": "Which two operators mean not equal?",
+      "options": [
+       "<> and !=",
+       "== and =",
+       "= and <=",
+       "! and ?"
+      ],
+      "answer": "<> and !=",
+      "why": "Both are accepted; <> is standard SQL."
+     },
+     {
+      "q": "Is BETWEEN inclusive?",
+      "options": [
+       "Yes, both ends",
+       "No, both ends excluded",
+       "Only the low end",
+       "Only the high end"
+      ],
+      "answer": "Yes, both ends",
+      "why": "BETWEEN low AND high includes both boundaries."
+     },
+     {
+      "q": "What is IN shorthand for?",
+      "options": [
+       "Several OR equality checks",
+       "Several AND checks",
+       "A range check",
+       "A null check"
+      ],
+      "answer": "Several OR equality checks",
+      "why": "name IN (a, b) matches either value."
+     },
+     {
+      "q": "Is LIKE case-sensitive in PostgreSQL?",
+      "options": [
+       "Yes",
+       "No",
+       "Only for numbers",
+       "Only with %"
+      ],
+      "answer": "Yes",
+      "why": "LIKE is case-sensitive; ILIKE is case-insensitive."
+     },
+     {
+      "q": "Which operator is case-insensitive?",
+      "options": [
+       "ILIKE",
+       "LIKE",
+       "=",
+       "<>"
+      ],
+      "answer": "ILIKE",
+      "why": "ILIKE lowercases both sides for matching."
+     },
+     {
+      "q": "What does % match in a LIKE pattern?",
+      "options": [
+       "Any sequence of characters",
+       "Exactly one character",
+       "Only digits",
+       "Only spaces"
+      ],
+      "answer": "Any sequence of characters",
+      "why": "% matches zero or more characters."
+     },
+     {
+      "q": "What does _ match in a LIKE pattern?",
+      "options": [
+       "Exactly one character",
+       "Any sequence",
+       "A literal underscore",
+       "Nothing"
+      ],
+      "answer": "Exactly one character",
+      "why": "_ is a single-character wildcard."
+     },
+     {
+      "q": "How do you test for NULL?",
+      "options": [
+       "IS NULL",
+       "= NULL",
+       "== NULL",
+       "NULL()"
+      ],
+      "answer": "IS NULL",
+      "why": "Equality with NULL is unknown and never matches."
+     },
+     {
+      "q": "What does name = NULL return?",
+      "options": [
+       "No rows",
+       "All rows",
+       "Rows with empty names",
+       "An error"
+      ],
+      "answer": "No rows",
+      "why": "The comparison is unknown for every row."
+     },
+     {
+      "q": "What does NOT IN (1, NULL) return?",
+      "options": [
+       "No rows for non-null values",
+       "Every row",
+       "Only NULL rows",
+       "A syntax error"
+      ],
+      "answer": "No rows for non-null values",
+      "why": "Each comparison with NULL becomes unknown, so the NOT IN predicate never passes."
+     },
+     {
+      "q": "Which binds tighter: AND or OR?",
+      "options": [
+       "AND",
+       "OR",
+       "They are equal",
+       "NOT"
+      ],
+      "answer": "AND",
+      "why": "AND has higher precedence than OR."
+     },
+     {
+      "q": "Why use parentheses in mixed conditions?",
+      "options": [
+       "To state the intended grouping",
+       "To make queries slower",
+       "To remove NULLs",
+       "To create an index"
+      ],
+      "answer": "To state the intended grouping",
+      "why": "Parentheses override precedence and prevent logic bugs."
+     },
+     {
+      "q": "What does WHERE active keep?",
+      "options": [
+       "Only true rows",
+       "Only false rows",
+       "True and NULL rows",
+       "All rows"
+      ],
+      "answer": "Only true rows",
+      "why": "A boolean predicate passes only when it is true."
+     },
+     {
+      "q": "What does WHERE active IS NOT TRUE keep?",
+      "options": [
+       "False and NULL rows",
+       "Only true rows",
+       "Only NULL rows",
+       "All rows"
+      ],
+      "answer": "False and NULL rows",
+      "why": "IS NOT TRUE is true for false and unknown."
+     },
+     {
+      "q": "Can a column alias be used in WHERE?",
+      "options": [
+       "No",
+       "Yes, always",
+       "Only with AS",
+       "Only for numbers"
+      ],
+      "answer": "No",
+      "why": "WHERE is evaluated before SELECT defines the alias."
+     },
+     {
+      "q": "Can WHERE use aggregate functions?",
+      "options": [
+       "No",
+       "Yes, always",
+       "Only COUNT",
+       "Only with GROUP BY"
+      ],
+      "answer": "No",
+      "why": "Aggregates are not allowed in WHERE; use HAVING after grouping."
+     },
+     {
+      "q": "Which pattern matches names starting with A?",
+      "options": [
+       "LIKE 'A%'",
+       "LIKE '%A'",
+       "LIKE '_A'",
+       "LIKE 'A_'"
+      ],
+      "answer": "LIKE 'A%'",
+      "why": "A% means A followed by any sequence."
+     },
+     {
+      "q": "Which pattern matches a second character of a?",
+      "options": [
+       "LIKE '_a%'",
+       "LIKE 'a_%'",
+       "LIKE '%a'",
+       "LIKE 'a%'"
+      ],
+      "answer": "LIKE '_a%'",
+      "why": "_ matches the first character and a is the second."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is WHERE?",
+      "answer": "A row-level filter evaluated after FROM and before GROUP BY; only rows whose predicate is true pass."
+     },
+     {
+      "q": "What is the difference between WHERE and HAVING?",
+      "answer": "WHERE filters rows before grouping; HAVING filters groups after aggregation."
+     },
+     {
+      "q": "What comparison operators does SQL provide?",
+      "answer": "=, <>, !=, >, <, >= and <=, plus BETWEEN, IN, LIKE and IS NULL predicates."
+     },
+     {
+      "q": "What is the difference between <> and !=?",
+      "answer": "Both mean not equal in PostgreSQL; <> is the SQL-standard spelling."
+     },
+     {
+      "q": "Is BETWEEN inclusive?",
+      "answer": "Yes, both the low and high boundaries are included."
+     },
+     {
+      "q": "What is IN equivalent to?",
+      "answer": "A chain of OR equality comparisons, such as x = a OR x = b."
+     },
+     {
+      "q": "Why is NOT IN with NULL dangerous?",
+      "answer": "Every comparison with NULL is unknown, so the NOT IN predicate can return no rows unexpectedly."
+     },
+     {
+      "q": "What is the difference between LIKE and ILIKE?",
+      "answer": "LIKE is case-sensitive; ILIKE is case-insensitive in PostgreSQL."
+     },
+     {
+      "q": "What do % and _ mean in LIKE?",
+      "answer": "% matches any sequence of characters; _ matches exactly one character."
+     },
+     {
+      "q": "How do you match a literal % or _?",
+      "answer": "Escape it with a backslash and declare ESCAPE, for example LIKE A\\_% ESCAPE '\\'."
+     },
+     {
+      "q": "How do you test for NULL?",
+      "answer": "Use IS NULL or IS NOT NULL; = NULL never matches."
+     },
+     {
+      "q": "What is three-valued logic?",
+      "answer": "SQL predicates can be true, false or unknown; unknown arises from NULL comparisons and is filtered like false."
+     },
+     {
+      "q": "How does WHERE treat a boolean column?",
+      "answer": "The column is itself the predicate: WHERE active keeps true rows."
+     },
+     {
+      "q": "How do you include false and NULL boolean rows?",
+      "answer": "Use WHERE active IS NOT TRUE; WHERE NOT active keeps only false."
+     },
+     {
+      "q": "What is the precedence of NOT, AND and OR?",
+      "answer": "NOT binds tighter than AND, and AND binds tighter than OR."
+     },
+     {
+      "q": "Why use parentheses?",
+      "answer": "They override precedence and document the intended grouping."
+     },
+     {
+      "q": "Can a SELECT alias be used in WHERE?",
+      "answer": "No, because WHERE is evaluated before SELECT."
+     },
+     {
+      "q": "Can WHERE use functions?",
+      "answer": "Yes, but a function on a column can prevent a plain index scan."
+     },
+     {
+      "q": "Why can a leading % hurt performance?",
+      "answer": "It prevents a normal B-tree index scan because the pattern has no fixed prefix."
+     },
+     {
+      "q": "How do you filter a date range?",
+      "answer": "Use >= start AND < next_day for a half-open range, or BETWEEN for inclusive dates."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Filter by marks",
+      "task": "Return students above 80.",
+      "solution": "SELECT name, marks FROM students WHERE marks > 80;",
+      "expected": "Only students above 80."
+     },
+     {
+      "title": "Filter by name",
+      "task": "Return the row for Aarav.",
+      "solution": "SELECT name, marks FROM students WHERE name = 'Aarav';",
+      "expected": "Aarav row."
+     },
+     {
+      "title": "Not equal",
+      "task": "Return students whose marks are not 80.",
+      "solution": "SELECT name, marks FROM students WHERE marks <> 80;",
+      "expected": "Rows excluding marks 80."
+     },
+     {
+      "title": "Inclusive range",
+      "task": "Return students with marks from 60 to 90.",
+      "solution": "SELECT name, marks FROM students WHERE marks BETWEEN 60 AND 90;",
+      "expected": "60 through 90 inclusive."
+     },
+     {
+      "title": "Greater or equal",
+      "task": "Return students with 80 or more.",
+      "solution": "SELECT name, marks FROM students WHERE marks >= 80;",
+      "expected": "80 and above."
+     },
+     {
+      "title": "AND filter",
+      "task": "Return students between 60 and 90 using AND.",
+      "solution": "SELECT name, marks FROM students WHERE marks >= 60 AND marks <= 90;",
+      "expected": "60 through 90 inclusive."
+     },
+     {
+      "title": "OR filter",
+      "task": "Return Aarav or Meera.",
+      "solution": "SELECT name FROM students WHERE name = 'Aarav' OR name = 'Meera';",
+      "expected": "Two rows if both exist."
+     },
+     {
+      "title": "NOT filter",
+      "task": "Return students not below 60.",
+      "solution": "SELECT name, marks FROM students WHERE NOT (marks < 60);",
+      "expected": "60 and above, NULL excluded."
+     },
+     {
+      "title": "IN list",
+      "task": "Return Aarav, Meera and Kabir.",
+      "solution": "SELECT name FROM students WHERE name IN ('Aarav', 'Meera', 'Kabir');",
+      "expected": "The three names."
+     },
+     {
+      "title": "NOT IN list",
+      "task": "Exclude Aarav and Meera.",
+      "solution": "SELECT name FROM students WHERE name NOT IN ('Aarav', 'Meera');",
+      "expected": "All other non-null names."
+     },
+     {
+      "title": "Prefix match",
+      "task": "Return names starting with A.",
+      "solution": "SELECT name FROM students WHERE name LIKE 'A%';",
+      "expected": "Names starting with A."
+     },
+     {
+      "title": "Contains match",
+      "task": "Return names containing a.",
+      "solution": "SELECT name FROM students WHERE name LIKE '%a%';",
+      "expected": "Names with a anywhere."
+     },
+     {
+      "title": "Second character",
+      "task": "Return names whose second character is a.",
+      "solution": "SELECT name FROM students WHERE name LIKE '_a%';",
+      "expected": "Names with a in position two."
+     },
+     {
+      "title": "Missing email",
+      "task": "Return students with no email.",
+      "solution": "SELECT name FROM students WHERE email IS NULL;",
+      "expected": "Students with NULL email."
+     },
+     {
+      "title": "Present email",
+      "task": "Return students with an email.",
+      "solution": "SELECT name FROM students WHERE email IS NOT NULL;",
+      "expected": "Students with a non-null email."
+     },
+     {
+      "title": "Case-insensitive name",
+      "task": "Match aarav regardless of case.",
+      "solution": "SELECT name FROM students WHERE name ILIKE 'aarav';",
+      "expected": "Aarav."
+     },
+     {
+      "title": "Escaped underscore",
+      "task": "Match codes starting with the literal A_.",
+      "solution": "SELECT code FROM items WHERE code LIKE 'A\\_%' ESCAPE '\\';",
+      "expected": "Codes beginning A_."
+     },
+     {
+      "title": "Boolean true",
+      "task": "Return active users.",
+      "solution": "SELECT name FROM users WHERE active;",
+      "expected": "Only active users."
+     },
+     {
+      "title": "Boolean not true",
+      "task": "Return users who are false or NULL.",
+      "solution": "SELECT name FROM users WHERE active IS NOT TRUE;",
+      "expected": "Inactive and unknown users."
+     },
+     {
+      "title": "Complex filter",
+      "task": "Return A/M names with marks 60–95 and a known email.",
+      "solution": "SELECT name FROM students WHERE (name LIKE 'A%' OR name LIKE 'M%') AND marks BETWEEN 60 AND 95 AND email IS NOT NULL;",
+      "expected": "Rows satisfying all three rules."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why does name = NULL return no rows?",
+      "answer": "Equality with an unknown value is unknown, and WHERE keeps only true rows."
+     },
+     {
+      "q": "Why does NOT IN (1, NULL) return no rows?",
+      "answer": "Each comparison against NULL is unknown, so the NOT IN predicate never becomes true."
+     },
+     {
+      "q": "Why does AND bind tighter than OR?",
+      "answer": "SQL gives AND higher precedence, so a OR b AND c means a OR (b AND c)."
+     },
+     {
+      "q": "Why use parentheses even when precedence is known?",
+      "answer": "They document intent and prevent a later edit from changing the logic."
+     },
+     {
+      "q": "Why is BETWEEN inclusive?",
+      "answer": "It expands to low <= x AND x <= high, including both boundaries."
+     },
+     {
+      "q": "Why is LIKE case-sensitive?",
+      "answer": "It compares text under the collation without case folding; ILIKE performs the case-insensitive match."
+     },
+     {
+      "q": "Why can ILIKE be slower?",
+      "answer": "It cannot use a plain B-tree index on the original text; it may need a scan or a special index."
+     },
+     {
+      "q": "Why can LOWER(name) prevent an index scan?",
+      "answer": "A plain index on name does not index LOWER(name); use an expression index if needed."
+     },
+     {
+      "q": "Why does WHERE active exclude NULL?",
+      "answer": "A NULL boolean is unknown, and WHERE keeps only true."
+     },
+     {
+      "q": "Why does IS NOT TRUE include NULL?",
+      "answer": "It is true for both false and unknown values."
+     },
+     {
+      "q": "Why does a leading % hurt performance?",
+      "answer": "The pattern has no fixed prefix, so a normal B-tree cannot seek to a starting point."
+     },
+     {
+      "q": "Why does _ match exactly one character?",
+      "answer": "It is the single-character wildcard in LIKE patterns."
+     },
+     {
+      "q": "Why use ESCAPE?",
+      "answer": "It tells LIKE which character makes the next wildcard literal."
+     },
+     {
+      "q": "Why can a SELECT alias not be used in WHERE?",
+      "answer": "WHERE is evaluated before SELECT, so the alias does not exist yet."
+     },
+     {
+      "q": "Why does WHERE run before GROUP BY?",
+      "answer": "Rows are filtered first, then the surviving rows are grouped and aggregated."
+     }
+    ],
+    "debug": [
+     {
+      "title": "NULL with equality",
+      "broken": "SELECT name FROM students WHERE email = NULL;",
+      "fix": "SELECT name FROM students WHERE email IS NULL;",
+      "error": "Returns no rows",
+      "expected": "Students with no email."
+     },
+     {
+      "title": "Double-quoted string",
+      "broken": "SELECT name FROM students WHERE name = \"Aarav\";",
+      "fix": "SELECT name FROM students WHERE name = 'Aarav';",
+      "error": "column \"Aarav\" does not exist",
+      "expected": "Aarav row."
+     },
+     {
+      "title": "Reversed BETWEEN",
+      "broken": "SELECT name FROM students WHERE marks BETWEEN 90 AND 60;",
+      "fix": "SELECT name FROM students WHERE marks BETWEEN 60 AND 90;",
+      "error": "Returns no rows",
+      "expected": "60 through 90 inclusive."
+     },
+     {
+      "title": "NOT IN with NULL",
+      "broken": "SELECT name FROM students WHERE marks NOT IN (60, NULL);",
+      "fix": "SELECT name FROM students WHERE marks NOT IN (60) AND marks IS NOT NULL;",
+      "error": "Returns no rows",
+      "expected": "Rows not equal to 60 with known marks."
+     },
+     {
+      "title": "Boolean NULL",
+      "broken": "SELECT name FROM users WHERE active = NULL;",
+      "fix": "SELECT name FROM users WHERE active IS NULL;",
+      "error": "Returns no rows",
+      "expected": "Users with unknown active."
+     },
+     {
+      "title": "Missing parentheses",
+      "broken": "SELECT name FROM students WHERE name = 'Aarav' OR name = 'Meera' AND marks > 80;",
+      "fix": "SELECT name FROM students WHERE (name = 'Aarav' OR name = 'Meera') AND marks > 80;",
+      "error": "Returns Aarav even below 80",
+      "expected": "Only Aarav or Meera above 80."
+     },
+     {
+      "title": "Trailing AND",
+      "broken": "SELECT name FROM students WHERE marks > 80 AND;",
+      "fix": "SELECT name FROM students WHERE marks > 80 AND email IS NOT NULL;",
+      "error": "syntax error at or near \";\"",
+      "expected": "Rows above 80 with an email."
+     },
+     {
+      "title": "Aggregate in WHERE",
+      "broken": "SELECT name FROM students WHERE COUNT(*) > 1;",
+      "fix": "SELECT name FROM students GROUP BY name HAVING COUNT(*) > 1;",
+      "error": "aggregate functions are not allowed in WHERE",
+      "expected": "Duplicate names."
+     },
+     {
+      "title": "Alias in WHERE",
+      "broken": "SELECT name AS n FROM students WHERE n = 'Aarav';",
+      "fix": "SELECT name AS n FROM students WHERE name = 'Aarav';",
+      "error": "column \"n\" does not exist",
+      "expected": "Aarav row."
+     },
+     {
+      "title": "Unescaped underscore",
+      "broken": "SELECT code FROM items WHERE code LIKE 'A_%';",
+      "fix": "SELECT code FROM items WHERE code LIKE 'A\\_%' ESCAPE '\\';",
+      "error": "Matches any second character, not a literal underscore",
+      "expected": "Codes starting with A_."
+     }
+    ],
+    "revision": [
+     {
+      "q": "What does WHERE do?",
+      "answer": "Filters rows before grouping; only true predicates pass."
+     },
+     {
+      "q": "Which operator means not equal?",
+      "answer": "<> or !=."
+     },
+     {
+      "q": "Is BETWEEN inclusive?",
+      "answer": "Yes, both boundaries."
+     },
+     {
+      "q": "What is IN shorthand for?",
+      "answer": "A chain of OR equality checks."
+     },
+     {
+      "q": "How do you match a prefix?",
+      "answer": "LIKE 'A%'."
+     },
+     {
+      "q": "How do you test for NULL?",
+      "answer": "IS NULL or IS NOT NULL."
+     },
+     {
+      "q": "Which binds tighter, AND or OR?",
+      "answer": "AND."
+     },
+     {
+      "q": "What does WHERE active keep?",
+      "answer": "Only true rows."
+     },
+     {
+      "q": "What does ILIKE do?",
+      "answer": "Case-insensitive LIKE matching."
+     },
+     {
+      "q": "Why use parentheses?",
+      "answer": "To state the intended logic and override precedence."
      }
     ]
    }
