@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Bug, CheckCircle2, Code2, GraduationCap, HelpCircle, Layers, ListChecks, Lock } from 'lucide-react';
 import { useSqlMasterclass, type SqlMasterclassFile, type SqlModule, type SqlQuiz } from '../../core/data/sqlmasterclass';
-import { masterclassTopicDone } from '../../core/platform/keys';
-import { forgetAttempt, recordAttempt, useStore } from '../../core/storage/store';
+import { levelForXp, masterclassCourseReward, masterclassTopicDone } from '../../core/platform/keys';
+import { addXp, forgetAttempt, recordAttempt, useStore } from '../../core/storage/store';
 
 type BankKey = 'learn' | 'interview' | 'labs' | 'logic' | 'debug' | 'revision';
 const BANKS: { key: BankKey; label: string; icon: typeof BookOpen }[] = [
@@ -13,6 +14,31 @@ const BANKS: { key: BankKey; label: string; icon: typeof BookOpen }[] = [
   { key: 'debug', label: 'Debug', icon: Bug },
   { key: 'revision', label: 'Revision', icon: ListChecks },
 ];
+
+/** One completion reward per masterclass course, recorded so re-completion cannot pay twice. */
+const MASTERCLASS_COMPLETION_XP = 100;
+const NEXT_MASTERCLASS: Record<string, { to: string; title: string; why: string }> = {
+  'sql-masterclass': {
+    to: '/mysql',
+    title: 'MySQL Complete Masterclass',
+    why: 'Apply the same SQL in MySQL and see where the dialects differ — LIMIT, AUTO_INCREMENT, string and date functions.',
+  },
+  'mysql-masterclass': {
+    to: '/sqlite',
+    title: 'Complete SQLite Masterclass',
+    why: 'Learn the embedded database used in mobile apps, browsers and local-first tools.',
+  },
+  'sqlite-masterclass': {
+    to: '/practice',
+    title: 'SQL Practice & Interview Bank',
+    why: 'Keep your query skills sharp with mixed practice and interview-style questions.',
+  },
+};
+const FALLBACK_NEXT = {
+  to: '/courses',
+  title: 'Browse courses',
+  why: 'Continue with the next course in the catalog.',
+};
 
 function Quiz({ item }: { item: SqlQuiz }) {
   const [picked, setPicked] = useState<string | null>(null);
@@ -128,6 +154,18 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
         .map((t) => t.id),
     );
   }, [module, state.attempts, file.course.id]);
+  const bankItems = file.stats.learn + file.stats.interview + file.stats.labs + file.stats.logic + file.stats.debug + file.stats.revision;
+  const courseDone = modules.length > 0 && completed.size === modules.length;
+  const nextCourse = NEXT_MASTERCLASS[file.course.id] ?? FALLBACK_NEXT;
+  const rewardRef = useRef(false);
+  useEffect(() => {
+    if (!courseDone || rewardRef.current) return;
+    const key = masterclassCourseReward(file.course.id);
+    if (state.attempts[key]?.done) { rewardRef.current = true; return; }
+    rewardRef.current = true;
+    recordAttempt(key, { done: true });
+    addXp(MASTERCLASS_COMPLETION_XP, 'course', `${file.course.title} complete`);
+  }, [courseDone, state.attempts, file.course.id, file.course.title]);
   const moduleIndex = module ? modules.findIndex((m) => m.id === module.id) : -1;
   const nextModule = moduleIndex >= 0 ? modules[moduleIndex + 1] : undefined;
   const currentDone = module ? completed.has(module.id) : false;
@@ -180,7 +218,7 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
         </button>
       </div>
       <p className="small muted" style={{ margin: '6px 0 0' }}>
-        Module {String(module.no).padStart(2, '0')} — {module.title}. Check every topic to complete it; the last check unlocks and opens the next module. {file.course.tagline}
+        Module {String(module.no).padStart(2, '0')} — {module.title}. Check every topic to complete it{nextModule ? '; the last check unlocks and opens the next module' : ''}. {file.course.tagline}
       </p>
 
       {open && (
@@ -211,6 +249,7 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
 
           <div className="row spread" style={{ gap: 8, marginTop: 10 }}>
             <span className="small muted"><CheckCircle2 size={12} /> {completed.size} of {modules.length} modules complete</span>
+            {courseDone && <span className="chip easy"><CheckCircle2 size={11} /> Course complete</span>}
             {nextModule && <span className="small muted">Next: Module {String(nextModule.no).padStart(2, '0')} · {nextModule.title}</span>}
           </div>
           <div style={{ height: 6, marginTop: 6, borderRadius: 999, background: 'var(--line, #e5e7eb)', overflow: 'hidden' }}>
@@ -289,39 +328,65 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: Sq
             <Bank module={module} bank={bank} />
           </div>
 
-          <div className="card" style={{ marginTop: 10, borderColor: currentDone ? 'var(--ok, #2e7d32)' : undefined }}>
-            <div className="row spread" style={{ gap: 10, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 220 }}>
-                <b className="small">{currentDone ? 'Module complete' : 'Topic checklist'}</b>
-                <p className="small muted" style={{ margin: '4px 0 0' }}>
-                  {currentDone
-                    ? nextModule
-                      ? `All ${module.topics.length} topics checked. Module ${String(nextModule.no).padStart(2, '0')} is unlocked.`
-                      : `All ${module.topics.length} topics checked. You have finished every published module.`
-                    : `${doneTopics.size} of ${module.topics.length} topics checked. Check every topic to complete this module and unlock the next one.`}
-                </p>
-                <div style={{ height: 6, marginTop: 8, borderRadius: 999, background: 'var(--line, #e5e7eb)', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${module.topics.length ? (doneTopics.size / module.topics.length) * 100 : 0}%`,
-                      borderRadius: 999,
-                      background: 'var(--accent, #2563eb)',
-                      transition: 'width 240ms ease',
-                    }}
-                  />
+          {!courseDone && (
+            <div className="card" style={{ marginTop: 10, borderColor: currentDone ? 'var(--ok, #2e7d32)' : undefined }}>
+              <div className="row spread" style={{ gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <b className="small">{currentDone ? 'Module complete' : 'Topic checklist'}</b>
+                  <p className="small muted" style={{ margin: '4px 0 0' }}>
+                    {currentDone
+                      ? nextModule
+                        ? `All ${module.topics.length} topics checked. Module ${String(nextModule.no).padStart(2, '0')} is unlocked.`
+                        : `All ${module.topics.length} topics checked. You have finished every published module.`
+                      : `${doneTopics.size} of ${module.topics.length} topics checked. ${nextModule ? 'Check every topic to complete this module and unlock the next one.' : 'Check every topic to complete the course.'}`}
+                  </p>
+                  <div style={{ height: 6, marginTop: 8, borderRadius: 999, background: 'var(--line, #e5e7eb)', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${module.topics.length ? (doneTopics.size / module.topics.length) * 100 : 0}%`,
+                        borderRadius: 999,
+                        background: 'var(--accent, #2563eb)',
+                        transition: 'width 240ms ease',
+                      }}
+                    />
+                  </div>
+                </div>
+                {currentDone && nextModule && (
+                  <button type="button" className="btn small primary" onClick={openNext}>
+                    Open Module {String(nextModule.no).padStart(2, '0')} <ArrowRight size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {courseDone && (
+            <div className="card" style={{ marginTop: 10, borderColor: 'var(--ok, #2e7d32)' }}>
+              <div className="row spread" style={{ gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, minWidth: 230 }}>
+                  <span className="chip easy"><CheckCircle2 size={11} /> Course complete</span>
+                  <b className="small" style={{ display: 'block', marginTop: 8 }}>
+                    {file.course.title} — every published module finished
+                  </b>
+                  <p className="small muted" style={{ margin: '4px 0 0' }}>
+                    {modules.length} modules · {file.stats.topics} topics · {bankItems} bank items completed.
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <b>+{MASTERCLASS_COMPLETION_XP} XP</b>
+                  <p className="small muted" style={{ margin: '2px 0 0' }}>Level {levelForXp(state.xp)} · {state.xp} XP total</p>
                 </div>
               </div>
-              {currentDone && nextModule && (
-                <button type="button" className="btn small primary" onClick={openNext}>
-                  Open Module {String(nextModule.no).padStart(2, '0')} <ArrowRight size={13} />
-                </button>
-              )}
-              {currentDone && !nextModule && (
-                <span className="chip easy"><CheckCircle2 size={11} /> Course complete</span>
-              )}
+              <div style={{ borderTop: '1px solid var(--line, #e5e7eb)', marginTop: 10, paddingTop: 10 }}>
+                <b className="small">Next course</b>
+                <p className="small muted" style={{ margin: '4px 0 8px' }}>{nextCourse.why}</p>
+                <Link to={nextCourse.to} className="btn small primary">
+                  {nextCourse.title} <ArrowRight size={13} />
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
 
           <details className="card" style={{ marginTop: 10 }}>
             <summary className="small" style={{ cursor: 'pointer' }}><b>Module outcomes and dialect note</b></summary>

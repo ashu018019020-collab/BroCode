@@ -158,6 +158,12 @@ export const ASSISTANT_MODULE_KEY = 'aiml:assistant:module';
  */
 export const masterclassTopicDone = (courseId: string, moduleId: string, topicId: string) => `mt:${courseId}:${moduleId}:${topicId}`;
 export const MASTERCLASS_TOPIC_PREFIX = 'mt:';
+/**
+ * Masterclass course-completion reward: `mcr:<courseId>`. One record per course so the completion
+ * XP is granted once, even if a learner unchecks and rechecks the final topic.
+ */
+export const masterclassCourseReward = (courseId: string) => `mcr:${courseId}`;
+export const MASTERCLASS_COURSE_REWARD_PREFIX = 'mcr:';
 
 // ---- the Java course's records ----
 /**
