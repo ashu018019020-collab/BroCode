@@ -18,14 +18,14 @@
   ]
  },
  "stats": {
-  "modules": 10,
-  "topics": 217,
-  "learn": 200,
-  "interview": 200,
-  "labs": 200,
-  "logic": 150,
-  "debug": 100,
-  "revision": 100
+  "modules": 11,
+  "topics": 237,
+  "learn": 220,
+  "interview": 220,
+  "labs": 220,
+  "logic": 165,
+  "debug": 110,
+  "revision": 110
  },
  "modules": [
   {
@@ -9421,6 +9421,921 @@
      {
       "q": "What is the safest workflow?",
       "answer": "Preview, transact, modify, verify the count, then commit or roll back."
+     }
+    ]
+   }
+  },
+  {
+   "id": "sql10",
+   "no": 10,
+   "title": "Joins",
+   "goal": "Combine related tables correctly and choose the join type by which rows must survive.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Introduction to Joins",
+     "simple": "Join do tables ko ek related result me combine karta hai.",
+     "pro": "A join combines rows from two relations using a predicate, typically matching a foreign key to a primary key.",
+     "points": [
+      "Joins combine columns from multiple tables.",
+      "The join key defines the relationship.",
+      "A missing join condition creates a cross product."
+     ],
+     "example": {
+      "sql": "SELECT s.name, e.course_id FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "output": "Each student with their enrolled course ids."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "INNER JOIN",
+     "simple": "INNER JOIN sirf matching rows deta hai.",
+     "pro": "INNER JOIN returns only pairs where the ON condition is true; unmatched rows from either side disappear.",
+     "points": [
+      "Only matches survive.",
+      "Non-matching rows are dropped.",
+      "Duplicate matches multiply rows."
+     ],
+     "example": {
+      "sql": "SELECT s.name, e.course_id FROM students s INNER JOIN enrollments e ON e.student_id = s.id;",
+      "output": "Students who have at least one enrollment."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "LEFT JOIN",
+     "simple": "LEFT JOIN left table ke saare rows rakhta hai.",
+     "pro": "LEFT JOIN preserves every row from the left relation and fills unmatched right columns with NULL.",
+     "points": [
+      "All left rows survive.",
+      "Unmatched right columns are NULL.",
+      "Filtering the right table in WHERE can remove the preserved rows."
+     ],
+     "example": {
+      "sql": "SELECT s.name, e.course_id FROM students s LEFT JOIN enrollments e ON e.student_id = s.id;",
+      "output": "Every student, with NULL course_id when unenrolled."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "RIGHT JOIN",
+     "simple": "RIGHT JOIN right table ke saare rows rakhta hai.",
+     "pro": "RIGHT JOIN preserves every row from the right relation and fills unmatched left columns with NULL; it is a mirrored LEFT JOIN.",
+     "points": [
+      "All right rows survive.",
+      "Unmatched left columns are NULL.",
+      "Prefer LEFT JOIN for readability."
+     ],
+     "example": {
+      "sql": "SELECT s.name, e.course_id FROM enrollments e RIGHT JOIN students s ON s.id = e.student_id;",
+      "output": "Every student, including unenrolled ones."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "FULL OUTER JOIN",
+     "simple": "FULL JOIN dono tables ke saare rows rakhta hai.",
+     "pro": "FULL OUTER JOIN returns matched rows plus unmatched rows from both sides, with NULLs on the missing side.",
+     "points": [
+      "Both sides are preserved.",
+      "Use COALESCE to pick a non-null key.",
+      "It is the union of LEFT and RIGHT joins."
+     ],
+     "example": {
+      "sql": "SELECT s.name, e.course_id FROM students s FULL OUTER JOIN enrollments e ON s.id = e.student_id;",
+      "output": "Every student and every enrollment, matched where possible."
+     }
+    },
+    {
+     "id": "t06",
+     "title": "CROSS JOIN",
+     "simple": "CROSS JOIN har left row ko har right row se pair karta hai.",
+     "pro": "CROSS JOIN produces the Cartesian product: every row from the first relation paired with every row from the second.",
+     "points": [
+      "Rows multiply: left × right.",
+      "There is no ON condition.",
+      "Accidental cross joins are expensive."
+     ],
+     "example": {
+      "sql": "SELECT s.name, c.title FROM students s CROSS JOIN courses c;",
+      "output": "Every student-course pair."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "SELF JOIN",
+     "simple": "Self join ek hi table ko do aliases se join karta hai.",
+     "pro": "A self join uses two aliases for the same table so rows can be compared with other rows in that table.",
+     "points": [
+      "Both copies need aliases.",
+      "The ON condition defines the relationship.",
+      "It is common for hierarchies and comparisons."
+     ],
+     "example": {
+      "sql": "SELECT a.name AS lower, b.name AS higher FROM students a JOIN students b ON a.marks < b.marks;",
+      "output": "Pairs where the first student scored lower."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "Join Conditions",
+     "simple": "ON join ka matching rule likhta hai.",
+     "pro": "ON defines the boolean condition that decides which row pairs are joined; it is required for INNER and OUTER joins unless USING is used.",
+     "points": [
+      "ON belongs to the join.",
+      "It can include extra predicates.",
+      "A wrong key silently produces wrong rows."
+     ],
+     "example": {
+      "sql": "SELECT s.name, e.course_id FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "output": "One row per matching student-enrollment pair."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "Joining on Multiple Columns",
+     "simple": "Composite key ko ON me AND se match karo.",
+     "pro": "When the relationship uses a composite key, every key column must appear in the join condition.",
+     "points": [
+      "Match all key columns.",
+      "Missing one column multiplies matches.",
+      "Use AND between key predicates."
+     ],
+     "example": {
+      "sql": "SELECT e.student_id, cs.room FROM enrollments e JOIN course_sections cs ON cs.course_id = e.course_id AND cs.semester = e.semester;",
+      "output": "Enrollments matched to their section room."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "Joining Multiple Tables",
+     "simple": "Ek query me teen ya zyada tables chain ki tarah join hoti hain.",
+     "pro": "Multi-table joins chain relationships: each new JOIN adds a relation and an ON condition connecting it to the existing result.",
+     "points": [
+      "Add one join per relationship.",
+      "Join on indexed keys.",
+      "Check row counts after each added table."
+     ],
+     "example": {
+      "sql": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "output": "Student names with course titles."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Table Aliases",
+     "simple": "Aliases lambi table names ko short aur readable banate hain.",
+     "pro": "Aliases give each relation a short name used to qualify columns and are mandatory when the same table appears twice.",
+     "points": [
+      "Alias after the table name.",
+      "Qualify columns with the alias.",
+      "Self joins require distinct aliases."
+     ],
+     "example": {
+      "sql": "SELECT s.name, c.title FROM students AS s JOIN enrollments AS e ON e.student_id = s.id JOIN courses AS c ON c.id = e.course_id;",
+      "output": "Readable three-table join."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Ambiguous Columns",
+     "simple": "Same column name do tables me ho to qualify karo.",
+     "pro": "If a column name exists in more than one joined relation, an unqualified reference is ambiguous and PostgreSQL raises an error.",
+     "points": [
+      "Qualify with the table alias.",
+      "Do not rely on column order.",
+      "Alias every joined table."
+     ],
+     "example": {
+      "sql": "SELECT s.id, s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "output": "Student id and name plus course title."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "JOIN vs Subquery",
+     "simple": "JOIN columns combine karta hai; subquery value ya membership deta hai.",
+     "pro": "A join returns columns from both relations, while a subquery is often used for a scalar value, IN membership or EXISTS existence checks.",
+     "points": [
+      "JOIN is natural for output columns.",
+      "EXISTS is natural for existence.",
+      "Semi-joins avoid duplicate output rows."
+     ],
+     "example": {
+      "sql": "SELECT name FROM students WHERE id IN (SELECT student_id FROM enrollments WHERE course_id = 10);",
+      "output": "Students enrolled in course 10, once each."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "JOIN with Aggregation",
+     "simple": "Join ke baad GROUP BY se counts nikal sakte hain.",
+     "pro": "Joining and grouping lets you aggregate related rows; LEFT JOIN plus COUNT(right_key) reports zero for rows with no match.",
+     "points": [
+      "GROUP BY the non-aggregated columns.",
+      "COUNT(right_key) counts matches.",
+      "COUNT(*) counts the preserved row too."
+     ],
+     "example": {
+      "sql": "SELECT c.title, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "output": "Every course with its enrollment count, including zero."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "JOIN with Filtering",
+     "simple": "Filter join ke baad WHERE se hota hai.",
+     "pro": "WHERE filters the joined result; for INNER JOIN it is equivalent to putting the predicate in ON, but for OUTER JOIN the placement changes which rows survive.",
+     "points": [
+      "WHERE filters the final rows.",
+      "ON filters the match.",
+      "Placement matters for outer joins."
+     ],
+     "example": {
+      "sql": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id WHERE c.credits = 3;",
+      "output": "Only three-credit courses."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "ON vs WHERE in Outer Joins",
+     "simple": "LEFT JOIN me right-table filter ON me rakho, WHERE me nahi.",
+     "pro": "A predicate on the right table in ON filters only the match, preserving left rows; the same predicate in WHERE removes non-matching left rows and turns the join into an inner join.",
+     "points": [
+      "ON keeps the outer join.",
+      "WHERE can remove preserved rows.",
+      "This is a common reporting bug."
+     ],
+     "example": {
+      "sql": "SELECT s.name, e.course_id FROM students s LEFT JOIN enrollments e ON e.student_id = s.id AND e.course_id = 10;",
+      "output": "Every student, with course 10 only where enrolled."
+     }
+    },
+    {
+     "id": "t17",
+     "title": "Anti-Joins and Missing Rows",
+     "simple": "Anti-join un rows ko dhoondhta hai jinka match nahi hai.",
+     "pro": "A LEFT JOIN with WHERE right_key IS NULL, or a NOT EXISTS subquery, returns rows with no matching row on the other side.",
+     "points": [
+      "LEFT JOIN plus IS NULL is an anti-join.",
+      "NOT EXISTS is usually clearer.",
+      "Avoid NOT IN when NULLs are possible."
+     ],
+     "example": {
+      "sql": "SELECT s.name FROM students s LEFT JOIN enrollments e ON e.student_id = s.id WHERE e.student_id IS NULL;",
+      "output": "Students with no enrollments."
+     }
+    },
+    {
+     "id": "t18",
+     "title": "Common Join Errors",
+     "simple": "Missing ON, wrong key aur duplicate matches sabse common join bugs hain.",
+     "pro": "Most join bugs come from a missing or wrong join condition, an ambiguous column, a filter in the wrong clause or a one-to-many relationship that multiplies rows.",
+     "points": [
+      "Every join needs a condition.",
+      "Qualify shared column names.",
+      "Check the row count before aggregating."
+     ],
+     "example": {
+      "sql": "SELECT s.name, e.course_id FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "output": "One row per enrollment, not one per student."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "Join Performance",
+     "simple": "Join keys par index aur selective filters performance decide karte hain.",
+     "pro": "The planner chooses nested loop, hash or merge join based on statistics, indexes and selectivity; indexes on foreign keys and selective WHERE predicates usually help most.",
+     "points": [
+      "Index the join keys.",
+      "Filter early and selectively.",
+      "Read EXPLAIN plans."
+     ],
+     "example": {
+      "sql": "EXPLAIN SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id WHERE c.id = 10;",
+      "output": "A plan showing the chosen join strategy."
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Join Examples",
+     "simple": "Ab joins ko real reports me combine karo.",
+     "pro": "Practical join work combines the right join type, a correct condition, a filter and an aggregate, and verifies the grain of the result before trusting it.",
+     "points": [
+      "Choose the join type by which rows must survive.",
+      "State the output grain.",
+      "Check counts and NULLs.",
+      "Review the plan for large joins."
+     ],
+     "example": {
+      "sql": "SELECT c.title, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title ORDER BY enrolled DESC, c.title ASC;",
+      "output": "Course enrollment report, largest first."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What does a join do?",
+      "options": [
+       "Combines related rows from two tables",
+       "Deletes rows",
+       "Creates an index",
+       "Sorts one table"
+      ],
+      "answer": "Combines related rows from two tables",
+      "why": "A join pairs rows using a condition."
+     },
+     {
+      "q": "Which join returns only matching rows?",
+      "options": [
+       "INNER JOIN",
+       "LEFT JOIN",
+       "RIGHT JOIN",
+       "FULL JOIN"
+      ],
+      "answer": "INNER JOIN",
+      "why": "INNER JOIN drops non-matching rows."
+     },
+     {
+      "q": "Which join keeps every left row?",
+      "options": [
+       "LEFT JOIN",
+       "INNER JOIN",
+       "RIGHT JOIN",
+       "CROSS JOIN"
+      ],
+      "answer": "LEFT JOIN",
+      "why": "LEFT JOIN preserves the left relation."
+     },
+     {
+      "q": "Which join keeps every right row?",
+      "options": [
+       "RIGHT JOIN",
+       "LEFT JOIN",
+       "INNER JOIN",
+       "CROSS JOIN"
+      ],
+      "answer": "RIGHT JOIN",
+      "why": "RIGHT JOIN preserves the right relation."
+     },
+     {
+      "q": "Which join keeps unmatched rows from both sides?",
+      "options": [
+       "FULL OUTER JOIN",
+       "INNER JOIN",
+       "LEFT JOIN",
+       "CROSS JOIN"
+      ],
+      "answer": "FULL OUTER JOIN",
+      "why": "FULL JOIN preserves both sides."
+     },
+     {
+      "q": "What does CROSS JOIN produce?",
+      "options": [
+       "Every pair of rows",
+       "Only matches",
+       "Only unmatched rows",
+       "One row"
+      ],
+      "answer": "Every pair of rows",
+      "why": "It is the Cartesian product."
+     },
+     {
+      "q": "What is a self join?",
+      "options": [
+       "A table joined to itself with aliases",
+       "A join with no condition",
+       "A join across databases",
+       "A join on one column"
+      ],
+      "answer": "A table joined to itself with aliases",
+      "why": "Two aliases let rows of one table be compared."
+     },
+     {
+      "q": "Which clause defines the join condition?",
+      "options": [
+       "ON",
+       "WHERE",
+       "GROUP BY",
+       "ORDER BY"
+      ],
+      "answer": "ON",
+      "why": "ON belongs to the JOIN and defines matches."
+     },
+     {
+      "q": "Which clause can also filter joined rows?",
+      "options": [
+       "WHERE",
+       "LIMIT",
+       "OFFSET",
+       "RETURNING"
+      ],
+      "answer": "WHERE",
+      "why": "WHERE filters the final joined rows."
+     },
+     {
+      "q": "What does USING do?",
+      "options": [
+       "Joins on same-named columns",
+       "Deletes rows",
+       "Creates an alias",
+       "Sorts rows"
+      ],
+      "answer": "Joins on same-named columns",
+      "why": "USING (col) is shorthand for equality on that column."
+     },
+     {
+      "q": "Why alias joined tables?",
+      "options": [
+       "To qualify columns and shorten names",
+       "To create indexes",
+       "To sort rows",
+       "To remove duplicates"
+      ],
+      "answer": "To qualify columns and shorten names",
+      "why": "Aliases disambiguate shared column names."
+     },
+     {
+      "q": "What causes an ambiguous column error?",
+      "options": [
+       "The same column name exists in both tables",
+       "The table has no primary key",
+       "The join uses ON",
+       "The query has ORDER BY"
+      ],
+      "answer": "The same column name exists in both tables",
+      "why": "Qualify the column with a table alias."
+     },
+     {
+      "q": "How do you join three tables?",
+      "options": [
+       "Chain two JOIN clauses",
+       "Use three FROM clauses only",
+       "Use CROSS JOIN only",
+       "Use one ON for all"
+      ],
+      "answer": "Chain two JOIN clauses",
+      "why": "Each JOIN adds one relation and its condition."
+     },
+     {
+      "q": "What fills unmatched columns in a LEFT JOIN?",
+      "options": [
+       "NULL",
+       "Zero",
+       "An empty string",
+       "The previous row"
+      ],
+      "answer": "NULL",
+      "why": "The missing side has no value."
+     },
+     {
+      "q": "Which count reports zero for a course with no enrollments?",
+      "options": [
+       "COUNT(e.student_id)",
+       "COUNT(*)",
+       "SUM(*)",
+       "COUNT(1)"
+      ],
+      "answer": "COUNT(e.student_id)",
+      "why": "COUNT(column) ignores NULL; COUNT(*) counts the preserved row."
+     },
+     {
+      "q": "Where should a right-table filter go in a LEFT JOIN?",
+      "options": [
+       "In ON to preserve left rows",
+       "In WHERE to preserve left rows",
+       "In ORDER BY",
+       "In LIMIT"
+      ],
+      "answer": "In ON to preserve left rows",
+      "why": "A WHERE predicate on the right side removes non-matching left rows."
+     },
+     {
+      "q": "What is an anti-join?",
+      "options": [
+       "Rows with no match on the other side",
+       "A join with no ON",
+       "A cross join",
+       "A join on all columns"
+      ],
+      "answer": "Rows with no match on the other side",
+      "why": "LEFT JOIN plus IS NULL finds missing matches."
+     },
+     {
+      "q": "What happens when a join key has duplicate matches?",
+      "options": [
+       "Rows multiply",
+       "Rows are deleted",
+       "The query fails",
+       "Duplicates are removed automatically"
+      ],
+      "answer": "Rows multiply",
+      "why": "Each matching pair becomes an output row."
+     },
+     {
+      "q": "Which index usually helps a join?",
+      "options": [
+       "An index on the join key",
+       "An index on every text column",
+       "No index",
+       "An index on ORDER BY only"
+      ],
+      "answer": "An index on the join key",
+      "why": "The planner can find matches faster."
+     },
+     {
+      "q": "Does NULL = NULL match in a join?",
+      "options": [
+       "No",
+       "Yes",
+       "Only with LEFT JOIN",
+       "Only with CROSS JOIN"
+      ],
+      "answer": "No",
+      "why": "NULL equality is unknown; use a null-safe comparison if needed."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is a join?",
+      "answer": "An operation that combines rows from two relations using a matching condition."
+     },
+     {
+      "q": "What is a join key?",
+      "answer": "The column or columns used to match rows, usually a foreign key to a primary key."
+     },
+     {
+      "q": "What is the difference between INNER and LEFT JOIN?",
+      "answer": "INNER keeps only matches; LEFT keeps every left row and NULL-fills unmatched right columns."
+     },
+     {
+      "q": "What is the difference between LEFT and RIGHT JOIN?",
+      "answer": "They preserve opposite sides; a RIGHT JOIN is a mirrored LEFT JOIN."
+     },
+     {
+      "q": "What is a FULL OUTER JOIN?",
+      "answer": "A join that preserves unmatched rows from both sides, NULL-filling the missing side."
+     },
+     {
+      "q": "What is a CROSS JOIN?",
+      "answer": "The Cartesian product: every row from one relation paired with every row from the other."
+     },
+     {
+      "q": "When do you use a self join?",
+      "answer": "When rows in one table must be compared with other rows in the same table, such as hierarchies or pairs."
+     },
+     {
+      "q": "What is the difference between ON and WHERE in an outer join?",
+      "answer": "ON filters the match while preserving the outer side; WHERE filters the final rows and can remove preserved rows."
+     },
+     {
+      "q": "What does USING do?",
+      "answer": "It joins on same-named columns and outputs one copy of the join column."
+     },
+     {
+      "q": "Why is NATURAL JOIN risky?",
+      "answer": "It joins on every same-named column, so a schema change can silently change the condition."
+     },
+     {
+      "q": "How do you find rows with no match?",
+      "answer": "Use LEFT JOIN ... WHERE right_key IS NULL or NOT EXISTS."
+     },
+     {
+      "q": "Why is NOT IN risky for an anti-join?",
+      "answer": "A NULL in the subquery makes the predicate unknown and can return no rows."
+     },
+     {
+      "q": "What is the grain of a joined result?",
+      "answer": "What one output row represents, such as one student-course pair; a one-to-many join changes the grain."
+     },
+     {
+      "q": "Why can COUNT(*) differ from COUNT(right_key) after a LEFT JOIN?",
+      "answer": "COUNT(*) counts the preserved row even when the right side is NULL; COUNT(right_key) counts only real matches."
+     },
+     {
+      "q": "How do you join multiple tables?",
+      "answer": "Chain JOIN clauses, adding one relation and its ON condition for each relationship."
+     },
+     {
+      "q": "What are the main join algorithms?",
+      "answer": "Nested loop, hash join and merge join; the planner chooses based on statistics, indexes and selectivity."
+     },
+     {
+      "q": "Why qualify columns in a join?",
+      "answer": "Shared column names are ambiguous, and qualification documents which table a value comes from."
+     },
+     {
+      "q": "Can a join use a non-unique key?",
+      "answer": "Yes, but each matching pair becomes a row, so the result can multiply."
+     },
+     {
+      "q": "How do you join on a composite key?",
+      "answer": "Put every key column in the ON condition, combined with AND."
+     },
+     {
+      "q": "Does join order in SQL determine execution order?",
+      "answer": "No; the planner may reorder joins while preserving the result."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Inner join",
+      "task": "Return student names with enrolled course ids.",
+      "solution": "SELECT s.name, e.course_id FROM students s INNER JOIN enrollments e ON e.student_id = s.id;",
+      "expected": "One row per enrollment."
+     },
+     {
+      "title": "Three-table join",
+      "task": "Return student names with course titles.",
+      "solution": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "expected": "Student-course pairs."
+     },
+     {
+      "title": "Left join",
+      "task": "Return every student with their course ids.",
+      "solution": "SELECT s.name, e.course_id FROM students s LEFT JOIN enrollments e ON e.student_id = s.id;",
+      "expected": "Every student, NULL where unenrolled."
+     },
+     {
+      "title": "Left join count",
+      "task": "Count enrollments per student, including zero.",
+      "solution": "SELECT s.name, COUNT(e.student_id) AS courses FROM students s LEFT JOIN enrollments e ON e.student_id = s.id GROUP BY s.id, s.name;",
+      "expected": "Every student with a count, including 0."
+     },
+     {
+      "title": "Right join",
+      "task": "Return every student using a RIGHT JOIN from enrollments.",
+      "solution": "SELECT s.name, e.course_id FROM enrollments e RIGHT JOIN students s ON s.id = e.student_id;",
+      "expected": "Every student."
+     },
+     {
+      "title": "Full join",
+      "task": "Return matched and unmatched students and enrollments.",
+      "solution": "SELECT s.name, e.course_id FROM students s FULL OUTER JOIN enrollments e ON s.id = e.student_id;",
+      "expected": "Both sides preserved."
+     },
+     {
+      "title": "Cross join",
+      "task": "Return every student-course pair.",
+      "solution": "SELECT s.name, c.title FROM students s CROSS JOIN courses c;",
+      "expected": "Students × courses rows."
+     },
+     {
+      "title": "Self join",
+      "task": "Return pairs where the first student scored lower.",
+      "solution": "SELECT a.name AS lower, b.name AS higher FROM students a JOIN students b ON a.marks < b.marks;",
+      "expected": "Every lower-higher pair."
+     },
+     {
+      "title": "Composite join",
+      "task": "Match enrollments to sections on course and semester.",
+      "solution": "SELECT e.student_id, cs.room FROM enrollments e JOIN course_sections cs ON cs.course_id = e.course_id AND cs.semester = e.semester;",
+      "expected": "Enrollment-section matches."
+     },
+     {
+      "title": "Aliases",
+      "task": "Rewrite a three-table join with short aliases.",
+      "solution": "SELECT s.name, c.title FROM students AS s JOIN enrollments AS e ON e.student_id = s.id JOIN courses AS c ON c.id = e.course_id;",
+      "expected": "Student-course pairs."
+     },
+     {
+      "title": "Ambiguous column",
+      "task": "Return student id and name without ambiguity.",
+      "solution": "SELECT s.id, s.name FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "expected": "One row per enrollment."
+     },
+     {
+      "title": "Join vs subquery",
+      "task": "Return students enrolled in course 10 once each.",
+      "solution": "SELECT name FROM students WHERE id IN (SELECT student_id FROM enrollments WHERE course_id = 10);",
+      "expected": "Distinct student names."
+     },
+     {
+      "title": "Aggregate join",
+      "task": "Count enrollments per course, including zero.",
+      "solution": "SELECT c.title, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "expected": "Every course with a count."
+     },
+     {
+      "title": "Filter after join",
+      "task": "Return students in three-credit courses.",
+      "solution": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id WHERE c.credits = 3;",
+      "expected": "Only three-credit courses."
+     },
+     {
+      "title": "ON vs WHERE",
+      "task": "Keep every student while showing only course 10.",
+      "solution": "SELECT s.name, e.course_id FROM students s LEFT JOIN enrollments e ON e.student_id = s.id AND e.course_id = 10;",
+      "expected": "All students; course id only for course 10."
+     },
+     {
+      "title": "Anti-join",
+      "task": "Return students with no enrollments.",
+      "solution": "SELECT s.name FROM students s LEFT JOIN enrollments e ON e.student_id = s.id WHERE e.student_id IS NULL;",
+      "expected": "Unenrolled students."
+     },
+     {
+      "title": "NOT EXISTS anti-join",
+      "task": "Return unenrolled students with NOT EXISTS.",
+      "solution": "SELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM enrollments e WHERE e.student_id = s.id);",
+      "expected": "Unenrolled students."
+     },
+     {
+      "title": "Explain a join",
+      "task": "Explain the course filter plan.",
+      "solution": "EXPLAIN SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id WHERE c.id = 10;",
+      "expected": "A plan with the chosen join strategy."
+     },
+     {
+      "title": "Course report",
+      "task": "Return course enrollment counts, largest first.",
+      "solution": "SELECT c.title, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title ORDER BY enrolled DESC, c.title ASC;",
+      "expected": "Course report sorted by count."
+     },
+     {
+      "title": "Grain check",
+      "task": "Count rows and distinct students for the enrollment join.",
+      "solution": "SELECT COUNT(*) AS row_count, COUNT(DISTINCT e.student_id) AS students FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "expected": "Rows may exceed students."
+     }
+    ],
+    "logic": [
+     {
+      "q": "When should you use INNER JOIN instead of LEFT JOIN?",
+      "answer": "When only rows with matches are meaningful and unmatched rows should be excluded."
+     },
+     {
+      "q": "When should you use LEFT JOIN?",
+      "answer": "When every row from the left side must appear, even without a match."
+     },
+     {
+      "q": "Why is RIGHT JOIN often rewritten as LEFT JOIN?",
+      "answer": "Swapping the table order makes the preserved side the left side, which is easier to read."
+     },
+     {
+      "q": "Why use FULL OUTER JOIN?",
+      "answer": "When unmatched rows from both sides matter, such as reconciling two systems."
+     },
+     {
+      "q": "Why is a CROSS JOIN dangerous by accident?",
+      "answer": "It multiplies every row by every row, producing a huge result and misleading aggregates."
+     },
+     {
+      "q": "Why does a self join need aliases?",
+      "answer": "The same table appears twice, so aliases distinguish the two row roles."
+     },
+     {
+      "q": "Why does a right-table filter in WHERE break a LEFT JOIN?",
+      "answer": "The WHERE predicate rejects NULL right-side rows, removing the preserved left rows."
+     },
+     {
+      "q": "Why can NULL join keys fail to match?",
+      "answer": "Equality with NULL is unknown, so NULL = NULL is not true."
+     },
+     {
+      "q": "Why can a one-to-many join inflate a SUM?",
+      "answer": "A parent row repeated for each child is summed once per child, not once per parent."
+     },
+     {
+      "q": "Why is COUNT(*) different after a LEFT JOIN?",
+      "answer": "It counts the preserved row even when the right side has no match."
+     },
+     {
+      "q": "Why prefer NOT EXISTS over NOT IN for anti-joins?",
+      "answer": "NOT EXISTS handles NULLs predictably; NOT IN with a NULL can return no rows."
+     },
+     {
+      "q": "Why use a join instead of a subquery?",
+      "answer": "A join returns columns from both tables; a subquery is often better for a scalar or an existence check."
+     },
+     {
+      "q": "Why index foreign keys?",
+      "answer": "The planner can find matching rows without scanning the child table repeatedly."
+     },
+     {
+      "q": "Does the written join order control execution?",
+      "answer": "No; the planner can reorder joins while preserving the result."
+     },
+     {
+      "q": "Why is NATURAL JOIN fragile?",
+      "answer": "It silently joins on every same-named column, so schema changes alter the condition."
+     }
+    ],
+    "debug": [
+     {
+      "title": "Missing ON",
+      "broken": "SELECT * FROM students s JOIN enrollments e;",
+      "fix": "SELECT * FROM students s JOIN enrollments e ON e.student_id = s.id;",
+      "error": "syntax error: JOIN requires ON or USING",
+      "expected": "Matching student-enrollment pairs."
+     },
+     {
+      "title": "Ambiguous id",
+      "broken": "SELECT id FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "fix": "SELECT s.id FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "error": "column reference \"id\" is ambiguous",
+      "expected": "Student ids."
+     },
+     {
+      "title": "Wrong join key",
+      "broken": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.student_id;",
+      "fix": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "error": "Joins courses to the student id, not the course id",
+      "expected": "Correct student-course pairs."
+     },
+     {
+      "title": "LEFT JOIN filtered in WHERE",
+      "broken": "SELECT s.name, e.course_id FROM students s LEFT JOIN enrollments e ON e.student_id = s.id WHERE e.course_id = 10;",
+      "fix": "SELECT s.name, e.course_id FROM students s LEFT JOIN enrollments e ON e.student_id = s.id AND e.course_id = 10;",
+      "error": "Unenrolled students disappear",
+      "expected": "All students preserved."
+     },
+     {
+      "title": "COUNT(*) inflates zero",
+      "broken": "SELECT c.title, COUNT(*) FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "fix": "SELECT c.title, COUNT(e.student_id) FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "error": "Empty courses count as 1",
+      "expected": "Empty courses count as 0."
+     },
+     {
+      "title": "Accidental cross join",
+      "broken": "SELECT s.name, c.title FROM students s, courses c;",
+      "fix": "SELECT s.name, c.title FROM students s CROSS JOIN courses c;",
+      "error": "No join condition: every pair is returned",
+      "expected": "Explicit Cartesian product."
+     },
+     {
+      "title": "Self join without aliases",
+      "broken": "SELECT name FROM students JOIN students ON students.id = students.id;",
+      "fix": "SELECT a.name FROM students a JOIN students b ON a.id = b.id;",
+      "error": "table name \"students\" specified more than once",
+      "expected": "Self join with aliases."
+     },
+     {
+      "title": "USING column missing",
+      "broken": "SELECT * FROM enrollments e JOIN assignments a USING (student_id);",
+      "fix": "SELECT * FROM enrollments e JOIN assignments a USING (course_id);",
+      "error": "column \"student_id\" specified in USING clause does not exist in left table",
+      "expected": "Join on the shared course_id."
+     },
+     {
+      "title": "NULL email join",
+      "broken": "SELECT s.name, a.marks FROM students s JOIN applicants a ON s.email = a.email;",
+      "fix": "SELECT s.name, a.marks FROM students s JOIN applicants a ON s.email = a.email AND s.email IS NOT NULL;",
+      "error": "Rows with NULL email never match",
+      "expected": "Only rows with known emails."
+     },
+     {
+      "title": "Aggregate without GROUP BY",
+      "broken": "SELECT c.title, COUNT(e.student_id) FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id;",
+      "fix": "SELECT c.title, COUNT(e.student_id) FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;",
+      "error": "column \"c.title\" must appear in the GROUP BY clause or be used in an aggregate function",
+      "expected": "One row per course."
+     }
+    ],
+    "revision": [
+     {
+      "q": "What does INNER JOIN return?",
+      "answer": "Only matching row pairs."
+     },
+     {
+      "q": "What does LEFT JOIN preserve?",
+      "answer": "Every row from the left table."
+     },
+     {
+      "q": "What does RIGHT JOIN preserve?",
+      "answer": "Every row from the right table."
+     },
+     {
+      "q": "What does FULL JOIN preserve?",
+      "answer": "Unmatched rows from both sides."
+     },
+     {
+      "q": "What is a CROSS JOIN?",
+      "answer": "Every row paired with every row."
+     },
+     {
+      "q": "What is a self join?",
+      "answer": "A table joined to itself with two aliases."
+     },
+     {
+      "q": "Which clause defines the match?",
+      "answer": "ON, or USING for same-named columns."
+     },
+     {
+      "q": "Where does a right-table filter go in a LEFT JOIN?",
+      "answer": "In ON to preserve left rows."
+     },
+     {
+      "q": "How do you find missing matches?",
+      "answer": "LEFT JOIN ... WHERE right_key IS NULL, or NOT EXISTS."
+     },
+     {
+      "q": "Why can joins multiply rows?",
+      "answer": "Every matching pair becomes an output row."
      }
     ]
    }
