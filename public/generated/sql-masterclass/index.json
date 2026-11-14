@@ -18,14 +18,14 @@
   ]
  },
  "stats": {
-  "modules": 14,
-  "topics": 297,
-  "learn": 280,
-  "interview": 280,
-  "labs": 280,
-  "logic": 210,
-  "debug": 140,
-  "revision": 140
+  "modules": 15,
+  "topics": 317,
+  "learn": 300,
+  "interview": 300,
+  "labs": 300,
+  "logic": 225,
+  "debug": 150,
+  "revision": 150
  },
  "modules": [
   {
@@ -13082,6 +13082,924 @@
      {
       "q": "What does a CHECK do with NULL?",
       "answer": "It passes as UNKNOWN."
+     }
+    ]
+   }
+  },
+  {
+   "id": "sql14",
+   "no": 14,
+   "title": "String, Date and Numeric Functions",
+   "goal": "Transform text, dates and numbers correctly at query time.",
+   "level": "intermediate",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "Introduction to SQL Functions",
+     "simple": "SQL functions values ko transform karte hain.",
+     "pro": "Functions take input values and return a computed value; string, date and numeric functions let you clean, format and calculate without changing stored data.",
+     "points": [
+      "Functions do not modify the table.",
+      "They can be used in SELECT, WHERE and ORDER BY.",
+      "NULL input often produces NULL output."
+     ],
+     "example": {
+      "sql": "SELECT UPPER(name) AS shout FROM students;",
+      "output": "Names in uppercase."
+     }
+    },
+    {
+     "id": "t02",
+     "title": "String Concatenation",
+     "simple": "|| aur CONCAT strings ko jodte hain.",
+     "pro": "The || operator concatenates strings and propagates NULL, while CONCAT ignores NULL arguments and CONCAT_WS joins only non-null values with a separator.",
+     "points": [
+      "|| with NULL returns NULL.",
+      "CONCAT skips NULL.",
+      "CONCAT_WS adds a separator."
+     ],
+     "example": {
+      "sql": "SELECT name || ' (' || COALESCE(email, 'none') || ')' AS label FROM students;",
+      "output": "A label with a visible fallback."
+     }
+    },
+    {
+     "id": "t03",
+     "title": "LENGTH and CHAR_LENGTH",
+     "simple": "LENGTH string ke characters ginata hai.",
+     "pro": "LENGTH and CHAR_LENGTH return the number of characters in a string; OCTET_LENGTH counts bytes and BIT_LENGTH counts bits.",
+     "points": [
+      "LENGTH counts characters.",
+      "NULL input returns NULL.",
+      "OCTET_LENGTH counts bytes."
+     ],
+     "example": {
+      "sql": "SELECT name, LENGTH(name) AS chars FROM students;",
+      "output": "Each name with its character count."
+     }
+    },
+    {
+     "id": "t04",
+     "title": "UPPER and LOWER",
+     "simple": "UPPER uppercase aur LOWER lowercase karta hai.",
+     "pro": "UPPER and LOWER change letter case using the database collation, which is useful for display and case-insensitive comparisons.",
+     "points": [
+      "They do not change stored data.",
+      "Case mapping can be locale-sensitive.",
+      "LOWER is common in comparisons."
+     ],
+     "example": {
+      "sql": "SELECT UPPER(name) AS uppercase, LOWER(name) AS lowercase FROM students;",
+      "output": "Each name in both cases."
+     }
+    },
+    {
+     "id": "t05",
+     "title": "TRIM, LTRIM and RTRIM",
+     "simple": "TRIM whitespace ya chosen characters hataata hai.",
+     "pro": "TRIM removes leading and trailing characters, LTRIM only leading and RTRIM only trailing; BTRIM is the explicit both-sides function.",
+     "points": [
+      "TRIM defaults to spaces.",
+      "You can specify the character set.",
+      "It does not remove inner spaces."
+     ],
+     "example": {
+      "sql": "SELECT TRIM('  Aarav  ') AS cleaned;",
+      "output": "Aarav"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "SUBSTRING",
+     "simple": "SUBSTRING string ka slice nikaalta hai.",
+     "pro": "SUBSTRING(text FROM start FOR length) returns a one-indexed slice; a missing length returns the rest of the string.",
+     "points": [
+      "Positions start at 1.",
+      "Length is optional.",
+      "Out-of-range slices return available characters or empty."
+     ],
+     "example": {
+      "sql": "SELECT SUBSTRING(name FROM 1 FOR 3) AS short FROM students;",
+      "output": "The first three characters."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "REPLACE",
+     "simple": "REPLACE matching text ko naye text se badalta hai.",
+     "pro": "REPLACE(text, from, to) replaces every occurrence of a substring and returns the original when no match exists.",
+     "points": [
+      "All occurrences are replaced.",
+      "It is case-sensitive.",
+      "NULL input returns NULL."
+     ],
+     "example": {
+      "sql": "SELECT REPLACE(email, '@example.com', '@school.edu') AS school_email FROM students;",
+      "output": "Example addresses rewritten."
+     }
+    },
+    {
+     "id": "t08",
+     "title": "POSITION and STRPOS",
+     "simple": "POSITION substring ka index batata hai.",
+     "pro": "POSITION(sub IN text) and STRPOS(text, sub) return the one-indexed position of the first match, or 0 when absent.",
+     "points": [
+      "Positions start at 1.",
+      "A missing match returns 0.",
+      "It is case-sensitive."
+     ],
+     "example": {
+      "sql": "SELECT name, POSITION('a' IN name) AS first_a FROM students;",
+      "output": "The first lowercase-a position or 0."
+     }
+    },
+    {
+     "id": "t09",
+     "title": "LEFT, RIGHT, LPAD and RPAD",
+     "simple": "LEFT/RIGHT slice karte hain; LPAD/RPAD padding add karte hain.",
+     "pro": "LEFT and RIGHT return a prefix or suffix, while LPAD and RPAD pad a string to a target length with a fill string.",
+     "points": [
+      "LEFT/RIGHT take a length.",
+      "LPAD/RPAD can truncate if the target is shorter.",
+      "Padding is useful for fixed-width codes."
+     ],
+     "example": {
+      "sql": "SELECT LEFT(name, 3) AS prefix, LPAD(id::text, 5, '0') AS padded_id FROM students;",
+      "output": "A prefix and a zero-padded id."
+     }
+    },
+    {
+     "id": "t10",
+     "title": "STRING_AGG and ARRAY_AGG",
+     "simple": "STRING_AGG values ko ek string me jodta hai; ARRAY_AGG array banata hai.",
+     "pro": "STRING_AGG concatenates values per group with a separator and optional ORDER BY, while ARRAY_AGG collects them into an array.",
+     "points": [
+      "Use with GROUP BY.",
+      "ORDER BY inside controls the order.",
+      "NULL values are skipped."
+     ],
+     "example": {
+      "sql": "SELECT s.name, STRING_AGG(c.title, ', ' ORDER BY c.title) AS courses FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id GROUP BY s.id, s.name;",
+      "output": "One comma-separated course list per student."
+     }
+    },
+    {
+     "id": "t11",
+     "title": "Date and Time Types",
+     "simple": "DATE, TIME, TIMESTAMP aur INTERVAL alag concepts hain.",
+     "pro": "DATE stores a calendar date, TIME stores a time of day, TIMESTAMP stores date and time, TIMESTAMPTZ stores an instant with time zone, and INTERVAL stores a duration.",
+     "points": [
+      "DATE has no time.",
+      "TIMESTAMP has no zone.",
+      "TIMESTAMPTZ stores an instant.",
+      "INTERVAL is a duration."
+     ],
+     "example": {
+      "sql": "SELECT enrolled_on, enrolled_on::timestamp AS at_midnight FROM enrollments;",
+      "output": "A date and its timestamp form."
+     }
+    },
+    {
+     "id": "t12",
+     "title": "Current Date and Time",
+     "simple": "CURRENT_DATE aur CURRENT_TIMESTAMP current values dete hain.",
+     "pro": "CURRENT_DATE returns the session date, CURRENT_TIMESTAMP and NOW() return the transaction start time, and CURRENT_TIME returns the time of day.",
+     "points": [
+      "NOW() is transaction start time.",
+      "CURRENT_DATE is a date.",
+      "Use one clock source consistently."
+     ],
+     "example": {
+      "sql": "SELECT CURRENT_DATE AS today, CURRENT_TIMESTAMP AS now;",
+      "output": "The session date and transaction timestamp."
+     }
+    },
+    {
+     "id": "t13",
+     "title": "EXTRACT",
+     "simple": "EXTRACT date ke part ko number me nikaalta hai.",
+     "pro": "EXTRACT(field FROM timestamp) returns a numeric component such as year, month, day, hour or epoch.",
+     "points": [
+      "Fields are keywords, not strings.",
+      "It returns a number.",
+      "Epoch is seconds since 1970."
+     ],
+     "example": {
+      "sql": "SELECT EXTRACT(YEAR FROM enrolled_on) AS year, EXTRACT(MONTH FROM enrolled_on) AS month FROM enrollments;",
+      "output": "Year and month numbers."
+     }
+    },
+    {
+     "id": "t14",
+     "title": "DATE_TRUNC",
+     "simple": "DATE_TRUNC date ko chosen unit ke start par le aata hai.",
+     "pro": "DATE_TRUNC('unit', value) truncates a timestamp to the beginning of the unit, which is the standard way to group by month, week or year.",
+     "points": [
+      "Returns a timestamp.",
+      "Units include day, week, month, quarter and year.",
+      "It is ideal for GROUP BY."
+     ],
+     "example": {
+      "sql": "SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY month ORDER BY month;",
+      "output": "Monthly enrollment counts."
+     }
+    },
+    {
+     "id": "t15",
+     "title": "Date Arithmetic and Intervals",
+     "simple": "Dates aur intervals ko add/subtract kar sakte hain.",
+     "pro": "Date arithmetic adds or subtracts INTERVAL values, while subtracting two dates yields an integer day count and subtracting timestamps yields an interval.",
+     "points": [
+      "Use INTERVAL for units.",
+      "Date - date is days.",
+      "Timestamp - timestamp is an interval."
+     ],
+     "example": {
+      "sql": "SELECT enrolled_on, enrolled_on + INTERVAL '30 days' AS due_on FROM enrollments;",
+      "output": "A due date thirty days later."
+     }
+    },
+    {
+     "id": "t16",
+     "title": "AGE and Duration",
+     "simple": "AGE do timestamps ka human-readable difference deta hai.",
+     "pro": "AGE(later, earlier) returns an interval broken into years, months and days, while AGE(timestamp) compares against the current date.",
+     "points": [
+      "It returns an interval.",
+      "It handles calendar months.",
+      "It is useful for tenure and age."
+     ],
+     "example": {
+      "sql": "SELECT AGE(DATE '2026-01-15', DATE '2025-01-15') AS duration;",
+      "output": "1 year"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "ROUND, CEIL, FLOOR and TRUNC",
+     "simple": "Rounding functions decimal ko nearest, up, down ya cut karte hain.",
+     "pro": "ROUND rounds to a scale, CEIL rounds up, FLOOR rounds down and TRUNC cuts toward zero without rounding.",
+     "points": [
+      "ROUND can take a scale.",
+      "CEIL always goes up.",
+      "FLOOR always goes down.",
+      "TRUNC does not round."
+     ],
+     "example": {
+      "sql": "SELECT ROUND(7.0 / 2, 1) AS rounded, CEIL(4.2) AS up, FLOOR(4.8) AS down, TRUNC(4.8) AS cut;",
+      "output": "3.5 | 5 | 4 | 4"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "ABS, MOD, POWER and SQRT",
+     "simple": "Numeric helpers absolute value, remainder, power aur root dete hain.",
+     "pro": "ABS returns magnitude, MOD returns the remainder, POWER raises a number and SQRT returns the square root.",
+     "points": [
+      "ABS removes the sign.",
+      "MOD can be negative.",
+      "SQRT of a negative is an error."
+     ],
+     "example": {
+      "sql": "SELECT ABS(-5) AS distance, MOD(10, 3) AS remainder, POWER(2, 3) AS cubed, SQRT(16) AS root;",
+      "output": "5 | 1 | 8 | 4"
+     }
+    },
+    {
+     "id": "t19",
+     "title": "CAST and Type Conversion",
+     "simple": "CAST value ko doosre type me badalta hai.",
+     "pro": "CAST(value AS type) and the :: shorthand convert between compatible types; invalid text raises an error rather than silently becoming NULL.",
+     "points": [
+      "CAST is standard SQL.",
+      ":: is PostgreSQL shorthand.",
+      "Invalid values raise errors.",
+      "Use TO_DATE/TO_TIMESTAMP for formatted dates."
+     ],
+     "example": {
+      "sql": "SELECT CAST('42' AS INTEGER) AS number, '2026-01-15'::date AS day;",
+      "output": "42 | 2026-01-15"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Practical Reporting with Functions",
+     "simple": "Ab text, date aur numeric functions ko report me combine karo.",
+     "pro": "A practical report cleans text, formats dates, rounds numbers and handles NULL explicitly so the output is stable and readable.",
+     "points": [
+      "Clean text before display.",
+      "Truncate dates before grouping.",
+      "Round at the presentation layer.",
+      "Handle NULL explicitly."
+     ],
+     "example": {
+      "sql": "SELECT UPPER(LEFT(TRIM(s.name), 1)) || LOWER(SUBSTRING(TRIM(s.name) FROM 2)) AS display_name, TO_CHAR(MIN(e.enrolled_on), 'DD Mon YYYY') AS first_enrolled, ROUND(AVG(s.marks), 2) AS average_marks FROM students s LEFT JOIN enrollments e ON e.student_id = s.id GROUP BY s.id, s.name ORDER BY s.name;",
+      "output": "A formatted student report."
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What does || do with NULL?",
+      "options": [
+       "Returns NULL",
+       "Skips NULL",
+       "Treats NULL as empty",
+       "Raises an error"
+      ],
+      "answer": "Returns NULL",
+      "why": "NULL propagation makes the whole concatenation NULL."
+     },
+     {
+      "q": "Which function ignores NULL arguments when concatenating?",
+      "options": [
+       "CONCAT",
+       "||",
+       "LENGTH",
+       "SUBSTRING"
+      ],
+      "answer": "CONCAT",
+      "why": "CONCAT treats NULL as empty in PostgreSQL."
+     },
+     {
+      "q": "What does LENGTH return?",
+      "options": [
+       "The number of characters",
+       "The number of bytes",
+       "The number of rows",
+       "The number of bits"
+      ],
+      "answer": "The number of characters",
+      "why": "OCTET_LENGTH and BIT_LENGTH count bytes and bits."
+     },
+     {
+      "q": "What does UPPER do?",
+      "options": [
+       "Converts text to uppercase",
+       "Converts text to lowercase",
+       "Removes spaces",
+       "Counts characters"
+      ],
+      "answer": "Converts text to uppercase",
+      "why": "It changes letter case for the result."
+     },
+     {
+      "q": "What does TRIM remove by default?",
+      "options": [
+       "Spaces at both ends",
+       "All spaces",
+       "Digits",
+       "Newlines only"
+      ],
+      "answer": "Spaces at both ends",
+      "why": "TRIM removes leading and trailing spaces by default."
+     },
+     {
+      "q": "What is the first character position in SUBSTRING?",
+      "options": [
+       "1",
+       "0",
+       "-1",
+       "It depends on the column"
+      ],
+      "answer": "1",
+      "why": "SQL string positions are one-indexed."
+     },
+     {
+      "q": "What does REPLACE do?",
+      "options": [
+       "Replaces every occurrence of a substring",
+       "Replaces only the first occurrence",
+       "Deletes a column",
+       "Sorts text"
+      ],
+      "answer": "Replaces every occurrence of a substring",
+      "why": "All matching occurrences are replaced."
+     },
+     {
+      "q": "What does POSITION return when there is no match?",
+      "options": [
+       "0",
+       "NULL",
+       "-1",
+       "An error"
+      ],
+      "answer": "0",
+      "why": "No match is reported as position 0."
+     },
+     {
+      "q": "What does LEFT(name, 3) return?",
+      "options": [
+       "The first three characters",
+       "The last three characters",
+       "Three rows",
+       "The third character"
+      ],
+      "answer": "The first three characters",
+      "why": "LEFT takes a prefix."
+     },
+     {
+      "q": "What does STRING_AGG do?",
+      "options": [
+       "Joins values into one string per group",
+       "Counts values",
+       "Splits a string",
+       "Sorts rows"
+      ],
+      "answer": "Joins values into one string per group",
+      "why": "It concatenates values with a separator."
+     },
+     {
+      "q": "Which type stores a calendar date without time?",
+      "options": [
+       "DATE",
+       "TIMESTAMP",
+       "TIME",
+       "INTERVAL"
+      ],
+      "answer": "DATE",
+      "why": "DATE has no time component."
+     },
+     {
+      "q": "What does CURRENT_TIMESTAMP return?",
+      "options": [
+       "The transaction start timestamp",
+       "The current row timestamp",
+       "A date only",
+       "An interval"
+      ],
+      "answer": "The transaction start timestamp",
+      "why": "It is stable within a transaction."
+     },
+     {
+      "q": "What does EXTRACT return?",
+      "options": [
+       "A numeric component",
+       "A formatted string",
+       "A date",
+       "An interval"
+      ],
+      "answer": "A numeric component",
+      "why": "It extracts a field such as year or month."
+     },
+     {
+      "q": "What does DATE_TRUNC do?",
+      "options": [
+       "Truncates to the start of a unit",
+       "Rounds to the nearest unit",
+       "Removes dates",
+       "Adds an interval"
+      ],
+      "answer": "Truncates to the start of a unit",
+      "why": "It is used to group by month, week or year."
+     },
+     {
+      "q": "What does DATE - DATE return?",
+      "options": [
+       "An integer day count",
+       "An interval",
+       "A timestamp",
+       "A boolean"
+      ],
+      "answer": "An integer day count",
+      "why": "PostgreSQL subtracts dates to days."
+     },
+     {
+      "q": "What does AGE return?",
+      "options": [
+       "An interval",
+       "An integer",
+       "A date",
+       "A string"
+      ],
+      "answer": "An interval",
+      "why": "It expresses a calendar difference."
+     },
+     {
+      "q": "What does CEIL(4.2) return?",
+      "options": [
+       "5",
+       "4",
+       "4.2",
+       "0"
+      ],
+      "answer": "5",
+      "why": "CEIL rounds up."
+     },
+     {
+      "q": "What does FLOOR(4.8) return?",
+      "options": [
+       "4",
+       "5",
+       "4.8",
+       "0"
+      ],
+      "answer": "4",
+      "why": "FLOOR rounds down."
+     },
+     {
+      "q": "What does MOD(10, 3) return?",
+      "options": [
+       "1",
+       "3",
+       "10",
+       "0"
+      ],
+      "answer": "1",
+      "why": "It is the remainder."
+     },
+     {
+      "q": "What does CAST do with invalid text?",
+      "options": [
+       "Raises an error",
+       "Returns NULL",
+       "Returns zero",
+       "Skips the row"
+      ],
+      "answer": "Raises an error",
+      "why": "Invalid input syntax is an error."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is the difference between || and CONCAT?",
+      "answer": "|| returns NULL if any operand is NULL; CONCAT ignores NULL arguments."
+     },
+     {
+      "q": "What does LENGTH count?",
+      "answer": "Characters, not bytes."
+     },
+     {
+      "q": "How do you make a case-insensitive comparison?",
+      "answer": "Compare LOWER(column) to LOWER(value), or use a case-insensitive collation."
+     },
+     {
+      "q": "How do you remove both leading and trailing spaces?",
+      "answer": "Use TRIM(text)."
+     },
+     {
+      "q": "How do you extract the first three characters?",
+      "answer": "Use LEFT(text, 3) or SUBSTRING(text FROM 1 FOR 3)."
+     },
+     {
+      "q": "How do you replace part of a string?",
+      "answer": "Use REPLACE(text, from, to)."
+     },
+     {
+      "q": "How do you find a substring position?",
+      "answer": "Use POSITION(sub IN text) or STRPOS(text, sub)."
+     },
+     {
+      "q": "How do you concatenate values per group?",
+      "answer": "Use STRING_AGG(column, separator ORDER BY ...) with GROUP BY."
+     },
+     {
+      "q": "What is the difference between DATE and TIMESTAMP?",
+      "answer": "DATE stores only a calendar date; TIMESTAMP stores date and time."
+     },
+     {
+      "q": "What is TIMESTAMPTZ?",
+      "answer": "A timestamp with time zone that stores an instant."
+     },
+     {
+      "q": "What is the difference between NOW() and CURRENT_DATE?",
+      "answer": "NOW() returns the transaction start timestamp; CURRENT_DATE returns the session date."
+     },
+     {
+      "q": "How do you get the year from a date?",
+      "answer": "Use EXTRACT(YEAR FROM date)."
+     },
+     {
+      "q": "How do you group by month?",
+      "answer": "Use DATE_TRUNC('month', date_column) in GROUP BY."
+     },
+     {
+      "q": "How do you add thirty days to a date?",
+      "answer": "Use date + INTERVAL '30 days'."
+     },
+     {
+      "q": "What does timestamp subtraction return?",
+      "answer": "An interval."
+     },
+     {
+      "q": "How do you calculate age or tenure?",
+      "answer": "Use AGE(later, earlier) or subtract the dates."
+     },
+     {
+      "q": "What is the difference between ROUND and TRUNC?",
+      "answer": "ROUND changes the value to the nearest scale; TRUNC cuts digits without rounding."
+     },
+     {
+      "q": "What does CEIL do?",
+      "answer": "Rounds up to the next integer or scale."
+     },
+     {
+      "q": "How do you convert text to an integer?",
+      "answer": "Use CAST(text AS INTEGER) or text::integer."
+     },
+     {
+      "q": "How do you format a date for display?",
+      "answer": "Use TO_CHAR(date, 'YYYY-MM-DD') or another format pattern."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Concatenate with fallback",
+      "task": "Build a name and email label, showing none for missing email.",
+      "solution": "SELECT name || ' (' || COALESCE(email, 'none') || ')' AS label FROM students;",
+      "expected": "A label per student."
+     },
+     {
+      "title": "Length",
+      "task": "Return each name with its character count.",
+      "solution": "SELECT name, LENGTH(name) AS chars FROM students;",
+      "expected": "Name and count."
+     },
+     {
+      "title": "Case conversion",
+      "task": "Return each name in uppercase and lowercase.",
+      "solution": "SELECT UPPER(name) AS uppercase, LOWER(name) AS lowercase FROM students;",
+      "expected": "Both cases."
+     },
+     {
+      "title": "Trim",
+      "task": "Remove surrounding spaces from a literal.",
+      "solution": "SELECT TRIM('  Aarav  ') AS cleaned;",
+      "expected": "Aarav"
+     },
+     {
+      "title": "Substring",
+      "task": "Return the first three characters of each name.",
+      "solution": "SELECT SUBSTRING(name FROM 1 FOR 3) AS short FROM students;",
+      "expected": "Three-character prefixes."
+     },
+     {
+      "title": "Replace",
+      "task": "Rewrite example.com emails to school.edu.",
+      "solution": "SELECT REPLACE(email, '@example.com', '@school.edu') AS school_email FROM students;",
+      "expected": "Rewritten addresses."
+     },
+     {
+      "title": "Position",
+      "task": "Return the first lowercase-a position in each name.",
+      "solution": "SELECT name, POSITION('a' IN name) AS first_a FROM students;",
+      "expected": "Position or 0."
+     },
+     {
+      "title": "Left and pad",
+      "task": "Return a three-character prefix and a zero-padded id.",
+      "solution": "SELECT LEFT(name, 3) AS prefix, LPAD(id::text, 5, '0') AS padded_id FROM students;",
+      "expected": "Prefix and padded id."
+     },
+     {
+      "title": "String aggregate",
+      "task": "Return a comma-separated course list per student.",
+      "solution": "SELECT s.name, STRING_AGG(c.title, ', ' ORDER BY c.title) AS courses FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id GROUP BY s.id, s.name;",
+      "expected": "One list per student."
+     },
+     {
+      "title": "Date parts",
+      "task": "Return the year and month of each enrollment.",
+      "solution": "SELECT EXTRACT(YEAR FROM enrolled_on) AS year, EXTRACT(MONTH FROM enrolled_on) AS month FROM enrollments;",
+      "expected": "Year and month numbers."
+     },
+     {
+      "title": "Monthly grouping",
+      "task": "Count enrollments by month.",
+      "solution": "SELECT DATE_TRUNC('month', enrolled_on) AS month, COUNT(*) AS total FROM enrollments GROUP BY month ORDER BY month;",
+      "expected": "Monthly counts."
+     },
+     {
+      "title": "Date arithmetic",
+      "task": "Return a due date thirty days after enrollment.",
+      "solution": "SELECT enrolled_on, enrolled_on + INTERVAL '30 days' AS due_on FROM enrollments;",
+      "expected": "A due date."
+     },
+     {
+      "title": "Age",
+      "task": "Return the calendar difference between two dates.",
+      "solution": "SELECT AGE(DATE '2026-01-15', DATE '2025-01-15') AS duration;",
+      "expected": "1 year"
+     },
+     {
+      "title": "Rounding",
+      "task": "Round 3.5, round up 4.2, round down 4.8 and truncate 4.8.",
+      "solution": "SELECT ROUND(7.0 / 2, 1) AS rounded, CEIL(4.2) AS up, FLOOR(4.8) AS down, TRUNC(4.8) AS cut;",
+      "expected": "3.5 | 5 | 4 | 4"
+     },
+     {
+      "title": "Numeric helpers",
+      "task": "Return absolute value, remainder, power and square root.",
+      "solution": "SELECT ABS(-5) AS distance, MOD(10, 3) AS remainder, POWER(2, 3) AS cubed, SQRT(16) AS root;",
+      "expected": "5 | 1 | 8 | 4"
+     },
+     {
+      "title": "Cast text to number",
+      "task": "Convert the text 42 to an integer and a date string to date.",
+      "solution": "SELECT CAST('42' AS INTEGER) AS number, '2026-01-15'::date AS day;",
+      "expected": "42 | 2026-01-15"
+     },
+     {
+      "title": "Format a date",
+      "task": "Format the current date as DD Mon YYYY.",
+      "solution": "SELECT TO_CHAR(CURRENT_DATE, 'DD Mon YYYY') AS formatted;",
+      "expected": "A readable date."
+     },
+     {
+      "title": "Split a string",
+      "task": "Return the second comma-separated part of a,b,c.",
+      "solution": "SELECT SPLIT_PART('a,b,c', ',', 2) AS second;",
+      "expected": "b"
+     },
+     {
+      "title": "Initcap",
+      "task": "Capitalize each word in a name.",
+      "solution": "SELECT INITCAP('aarav sharma') AS display_name;",
+      "expected": "Aarav Sharma"
+     },
+     {
+      "title": "Formatted report",
+      "task": "Build a formatted student report.",
+      "solution": "SELECT UPPER(LEFT(TRIM(s.name), 1)) || LOWER(SUBSTRING(TRIM(s.name) FROM 2)) AS display_name, TO_CHAR(MIN(e.enrolled_on), 'DD Mon YYYY') AS first_enrolled, ROUND(AVG(s.marks), 2) AS average_marks FROM students s LEFT JOIN enrollments e ON e.student_id = s.id GROUP BY s.id, s.name ORDER BY s.name;",
+      "expected": "A formatted report."
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why does || return NULL when one side is NULL?",
+      "answer": "NULL means unknown, so the concatenated result is unknown rather than partially known."
+     },
+     {
+      "q": "Why is CONCAT useful for labels?",
+      "answer": "It ignores NULL arguments, so a missing field does not erase the whole label."
+     },
+     {
+      "q": "Why use COALESCE before concatenation?",
+      "answer": "It gives a readable fallback and keeps the result non-null."
+     },
+     {
+      "q": "Why can LOWER comparisons be slow?",
+      "answer": "A function on the column can prevent a plain index from being used; a functional or case-insensitive index may be needed."
+     },
+     {
+      "q": "Why are SQL string positions one-indexed?",
+      "answer": "SQL follows a one-based convention for string positions."
+     },
+     {
+      "q": "Why does DATE_TRUNC help grouping?",
+      "answer": "It maps every date in a month to the same timestamp, producing one group per month."
+     },
+     {
+      "q": "Why is NOW() stable inside a transaction?",
+      "answer": "It returns the transaction start time, so multiple calls agree."
+     },
+     {
+      "q": "Why does date subtraction return days?",
+      "answer": "PostgreSQL defines date minus date as an integer day difference."
+     },
+     {
+      "q": "Why is timestamp subtraction an interval?",
+      "answer": "Timestamps have time-of-day precision, so the difference is a duration."
+     },
+     {
+      "q": "Why use INTERVAL instead of adding 30?",
+      "answer": "Adding an integer to a date adds days, but INTERVAL makes the unit explicit and supports months, hours and minutes."
+     },
+     {
+      "q": "Why can ROUND behave differently on double precision?",
+      "answer": "PostgreSQL’s two-argument ROUND requires numeric, so a double may need an explicit cast."
+     },
+     {
+      "q": "Why is TRUNC different from ROUND?",
+      "answer": "TRUNC cuts digits; ROUND changes the value based on the next digit."
+     },
+     {
+      "q": "Why can SQRT of a negative fail?",
+      "answer": "The square root of a negative real number is not defined in this numeric context."
+     },
+     {
+      "q": "Why does CAST fail instead of returning NULL?",
+      "answer": "Invalid input is an error; silently returning NULL would hide bad data."
+     },
+     {
+      "q": "Why format dates at the presentation layer?",
+      "answer": "Stored dates should stay typed; display formatting belongs in the report or UI."
+     }
+    ],
+    "debug": [
+     {
+      "title": "NULL concatenation",
+      "broken": "SELECT name || ' (' || email || ')' AS label FROM students;",
+      "fix": "SELECT name || ' (' || COALESCE(email, 'none') || ')' AS label FROM students;",
+      "error": "The whole label becomes NULL when email is NULL",
+      "expected": "A visible fallback."
+     },
+     {
+      "title": "LENGTH of NULL",
+      "broken": "SELECT LENGTH(NULL) AS chars;",
+      "fix": "SELECT LENGTH(COALESCE(NULL, '')) AS chars;",
+      "error": "Returns NULL, not 0",
+      "expected": "0"
+     },
+     {
+      "title": "ROUND on double",
+      "broken": "SELECT ROUND(4.567::double precision, 2) AS rounded;",
+      "fix": "SELECT ROUND(4.567::numeric, 2) AS rounded;",
+      "error": "function round(double precision, integer) does not exist",
+      "expected": "4.57"
+     },
+     {
+      "title": "Invalid integer cast",
+      "broken": "SELECT CAST('abc' AS INTEGER);",
+      "fix": "SELECT CAST('42' AS INTEGER);",
+      "error": "invalid input syntax for type integer: \"abc\"",
+      "expected": "42"
+     },
+     {
+      "title": "Text plus number",
+      "broken": "SELECT name + 1 FROM students;",
+      "fix": "SELECT LENGTH(name) + 1 FROM students;",
+      "error": "operator does not exist: text + integer",
+      "expected": "A numeric result."
+     },
+     {
+      "title": "Aggregate without GROUP BY",
+      "broken": "SELECT s.name, STRING_AGG(c.title, ', ') FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "fix": "SELECT s.name, STRING_AGG(c.title, ', ') FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id GROUP BY s.id, s.name;",
+      "error": "column \"s.name\" must appear in the GROUP BY clause or be used in an aggregate function",
+      "expected": "One list per student."
+     },
+     {
+      "title": "Implicit string date",
+      "broken": "SELECT DATE_TRUNC('month', '2026-01-15') AS month;",
+      "fix": "SELECT DATE_TRUNC('month', DATE '2026-01-15') AS month;",
+      "error": "The literal type is ambiguous",
+      "expected": "2026-01-01 00:00:00"
+     },
+     {
+      "title": "Bad date format",
+      "broken": "SELECT TO_DATE('2026-13-01', 'YYYY-MM-DD');",
+      "fix": "SELECT TO_DATE('2026-01-15', 'YYYY-MM-DD');",
+      "error": "date/time field value out of range",
+      "expected": "2026-01-15"
+     },
+     {
+      "title": "Wrong substring order",
+      "broken": "SELECT SUBSTRING(3, 1, name) FROM students;",
+      "fix": "SELECT SUBSTRING(name FROM 1 FOR 3) FROM students;",
+      "error": "function substring(integer, integer, text) does not exist",
+      "expected": "Three-character prefixes."
+     },
+     {
+      "title": "Format ambiguity",
+      "broken": "SELECT TO_CHAR('2026-01-15', 'DD Mon YYYY');",
+      "fix": "SELECT TO_CHAR(DATE '2026-01-15', 'DD Mon YYYY');",
+      "error": "function to_char(unknown, unknown) is not unique",
+      "expected": "15 Jan 2026"
+     }
+    ],
+    "revision": [
+     {
+      "q": "How do you concatenate strings safely with NULL?",
+      "answer": "Use CONCAT or COALESCE the nullable value."
+     },
+     {
+      "q": "What does LENGTH count?",
+      "answer": "Characters."
+     },
+     {
+      "q": "How do you uppercase text?",
+      "answer": "Use UPPER(text)."
+     },
+     {
+      "q": "How do you remove surrounding spaces?",
+      "answer": "Use TRIM(text)."
+     },
+     {
+      "q": "How do you take a substring?",
+      "answer": "SUBSTRING(text FROM start FOR length)."
+     },
+     {
+      "q": "How do you aggregate strings per group?",
+      "answer": "STRING_AGG(column, separator)."
+     },
+     {
+      "q": "How do you group by month?",
+      "answer": "DATE_TRUNC('month', date)."
+     },
+     {
+      "q": "How do you add days to a date?",
+      "answer": "date + INTERVAL '30 days'."
+     },
+     {
+      "q": "How do you round to two decimals?",
+      "answer": "ROUND(value, 2) on a numeric value."
+     },
+     {
+      "q": "How do you convert text to an integer?",
+      "answer": "CAST(text AS INTEGER) or text::integer."
      }
     ]
    }
