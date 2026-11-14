@@ -55,6 +55,7 @@ const CppCoursePage = lazy(() => import('../features/cpp-mastery/CppCoursePage')
 const HtmlCoursePage = lazy(() => import('../features/html-mastery/HtmlCoursePage'));
 const CssCoursePage = lazy(() => import('../features/css-mastery/CssCoursePage'));
 const MysqlCoursePage = lazy(() => import('../features/mysql-mastery/MysqlCoursePage'));
+const SqliteCoursePage = lazy(() => import('../features/sqlite-mastery/SqliteCoursePage'));
 const JLessonPage = lazy(() => import('../features/java-programming/JLessonPage'));
 const TrackOverview = lazy(() => import('../features/learning/TrackOverview'));
 const QuestionBank = lazy(() => import('../features/practice/QuestionBank'));
@@ -952,6 +953,7 @@ function Shell() {
               <Route path="/html" element={<Protect><HtmlCoursePage /></Protect>} />
               <Route path="/css" element={<Protect><CssCoursePage /></Protect>} />
               <Route path="/mysql" element={<Protect><MysqlCoursePage /></Protect>} />
+              <Route path="/sqlite" element={<Protect><SqliteCoursePage /></Protect>} />
               <Route path="/java/:moduleId" element={<Protect><JLessonPage /></Protect>} />
               <Route path="/course/:slug" element={<Protect><CoursePage /></Protect>} />
               <Route path="/course/:slug/:step" element={<Protect><StepPage /></Protect>} />

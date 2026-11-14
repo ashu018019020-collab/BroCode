@@ -20,6 +20,7 @@ import { useCppCourse } from '../../core/data/cppcourse';
 import { useHtmlCourse } from '../../core/data/htmlcourse';
 import { useCssCourse } from '../../core/data/csscourse';
 import { useMysqlMasterclass } from '../../core/data/mysqlmasterclass';
+import { useSqliteMasterclass } from '../../core/data/sqlitemasterclass';
 import { CLogo } from '../c-programming/CLogo';
 import { JLogo } from '../java-programming/JLogo';
 import { NLogo } from '../numpy-mastery/NLogo';
@@ -28,6 +29,7 @@ import { CppLogo } from '../cpp-mastery/CppLogo';
 import { HtmlLogo } from '../html-mastery/HtmlLogo';
 import { CssLogo } from '../css-mastery/CssLogo';
 import { MysqlLogo } from '../mysql-mastery/MysqlLogo';
+import { SqliteLogo } from '../sqlite-mastery/SqliteLogo';
 
 /**
  * /courses — ONE grid of course cards, in the learning sequence.
@@ -54,6 +56,7 @@ export default function CoursesHome() {
   const htmlCourse = useHtmlCourse();
   const cssCourse = useCssCourse();
   const mysqlCourse = useMysqlMasterclass();
+  const sqliteCourse = useSqliteMasterclass();
   const pctOf = useSectionPct();
   /** Owner overrides when the database has them; the code-authored journey otherwise. */
   const { placements } = useCoursePlacements();
@@ -259,6 +262,23 @@ export default function CoursesHome() {
     );
   };
 
+  /** Complete SQLite Masterclass — its own card and page, next to the other database courses. */
+  const renderSqlite = () => {
+    if (!sqliteCourse) return null;
+    return (
+      <Link
+        to="/sqlite"
+        className="course-card cc-simple tone-blue"
+        data-agent-action="course:sqlite-masterclass"
+        data-agent-label="Complete SQLite Masterclass"
+        title="Complete SQLite Masterclass"
+      >
+        <span className="cc-logo"><SqliteLogo size={88} /></span>
+        <b className="cc-name">Complete SQLite Masterclass</b>
+      </Link>
+    );
+  };
+
   const renderCpp = () => {
     if (!cppCourse) return null;
     return (
@@ -349,6 +369,7 @@ export default function CoursesHome() {
           {renderP()}
           {renderCpp()}
           {renderMysql()}
+          {renderSqlite()}
           <Link
             to="/java"
             className="course-card cc-simple tone-amber"
