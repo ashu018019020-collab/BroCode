@@ -1,0 +1,948 @@
+{
+ "course": {
+  "id": "sql-masterclass",
+  "title": "SQL Masterclass",
+  "tagline": "Zero to advanced, one module at a time.",
+  "level": "beginner",
+  "hours": 18,
+  "standard": "PostgreSQL-first, with MySQL, SQLite and SQL Server notes.",
+  "prerequisites": [
+   "Module 00",
+   "Module 01",
+   "Module 02",
+   "Module 03",
+   "Module 04",
+   "Module 05",
+   "Module 06",
+   "Module 07",
+   "Module 08"
+  ],
+  "description": "Module 09 teaches safe UPDATE and DELETE: assignments, expressions, subqueries, UPDATE FROM, DELETE USING, RETURNING and the difference from TRUNCATE.",
+  "outcomes": [
+   "Update one or many rows safely",
+   "Use expressions and CASE in SET",
+   "Update from another table",
+   "Delete with conditions and subqueries",
+   "Return changed rows",
+   "Choose between DELETE and TRUNCATE",
+   "Avoid destructive modification mistakes"
+  ]
+ },
+ "modules": [
+  {
+   "id": "sql09",
+   "no": 9,
+   "title": "UPDATE, DELETE and Data Modification",
+   "goal": "Modify and remove rows safely, with verification and rollback.",
+   "level": "beginner",
+   "hours": 2,
+   "topics": [
+    {
+     "id": "t01",
+     "title": "What Is UPDATE?",
+     "simple": "UPDATE existing rows ke values badalta hai.",
+     "pro": "UPDATE is DML that changes column values for rows matched by an optional WHERE clause and returns a count of affected rows.",
+     "points": [
+      "UPDATE changes data, not structure.",
+      "Without WHERE it targets every row.",
+      "The statement is atomic."
+     ],
+     "example": {
+      "sql": "UPDATE students SET marks = 90 WHERE id = 1;",
+      "output": "UPDATE 1"
+     }
+    },
+    {
+     "id": "t02",
+     "title": "UPDATE Syntax",
+     "simple": "Basic shape: UPDATE table SET column = value WHERE condition.",
+     "pro": "The syntax is UPDATE table SET column = expression [, ...] [FROM ...] [WHERE ...] [RETURNING ...].",
+     "points": [
+      "SET lists assignments separated by commas.",
+      "WHERE limits the target rows.",
+      "RETURNING returns changed rows."
+     ],
+     "example": {
+      "sql": "UPDATE students SET name = 'Aarav S' WHERE id = 1;",
+      "output": "UPDATE 1"
+     }
+    },
+    {
+     "id": "t03",
+     "title": "Updating One Column",
+     "simple": "Ek column ki value badalne ke liye ek assignment likho.",
+     "pro": "A single-column UPDATE assigns one expression to one column for every matched row.",
+     "points": [
+      "Use the primary key in WHERE for a single row.",
+      "The new value must satisfy the column type.",
+      "Check the affected count."
+     ],
+     "example": {
+      "sql": "UPDATE students SET marks = 95 WHERE id = 1;",
+      "output": "UPDATE 1"
+     }
+    },
+    {
+     "id": "t04",
+     "title": "Updating Multiple Columns",
+     "simple": "Multiple columns ko comma se update karo.",
+     "pro": "Multiple assignments run in one statement; all expressions see the row values from before the statement, not the just-assigned values.",
+     "points": [
+      "Separate assignments with commas.",
+      "Assignments are evaluated from the old row.",
+      "The whole statement is atomic."
+     ],
+     "example": {
+      "sql": "UPDATE students SET name = 'Aarav S', marks = 90 WHERE id = 1;",
+      "output": "UPDATE 1"
+     }
+    },
+    {
+     "id": "t05",
+     "title": "Updating Specific Rows",
+     "simple": "WHERE se sirf intended rows update karo.",
+     "pro": "A WHERE predicate targets specific rows; a unique key gives the smallest and safest target.",
+     "points": [
+      "Match on a key when possible.",
+      "Preview the rows with SELECT.",
+      "Check the reported row count."
+     ],
+     "example": {
+      "sql": "UPDATE students SET marks = 88 WHERE id = 2;",
+      "output": "UPDATE 1"
+     }
+    },
+    {
+     "id": "t06",
+     "title": "UPDATE with WHERE",
+     "simple": "WHERE ke bina UPDATE poore table ko chhu sakta hai.",
+     "pro": "WHERE filters the target rows before assignment; omitting it updates every row in the table.",
+     "points": [
+      "No WHERE means every row.",
+      "Use IS NULL for null checks.",
+      "Test the predicate with SELECT first."
+     ],
+     "example": {
+      "sql": "UPDATE students SET marks = 0 WHERE marks IS NULL;",
+      "output": "UPDATE N (only NULL marks)."
+     }
+    },
+    {
+     "id": "t07",
+     "title": "UPDATE with Expressions",
+     "simple": "New value purani value par calculation ho sakti hai.",
+     "pro": "The SET expression can reference existing columns, arithmetic, functions and CASE, and is evaluated for each matched row.",
+     "points": [
+      "marks + 5 uses the old marks.",
+      "CASE handles conditional updates.",
+      "The result must fit the column type."
+     ],
+     "example": {
+      "sql": "UPDATE students SET marks = marks + 5 WHERE marks IS NOT NULL;",
+      "output": "UPDATE N"
+     }
+    },
+    {
+     "id": "t08",
+     "title": "UPDATE with CASE and COALESCE",
+     "simple": "CASE conditional value deta hai; COALESCE fallback deta hai.",
+     "pro": "CASE chooses a value per row, while COALESCE replaces NULL with a fallback; both are common in data-repair updates.",
+     "points": [
+      "CASE avoids separate statements.",
+      "COALESCE fills missing values.",
+      "Both are evaluated per row."
+     ],
+     "example": {
+      "sql": "UPDATE students SET email = COALESCE(email, 'unknown@example.com');",
+      "output": "UPDATE N"
+     }
+    },
+    {
+     "id": "t09",
+     "title": "UPDATE with Subquery",
+     "simple": "Subquery se naya value compute kar sakte hain.",
+     "pro": "A scalar subquery in SET must return at most one row and one column; a multi-row result raises an error.",
+     "points": [
+      "The subquery must be scalar.",
+      "A NULL subquery result assigns NULL.",
+      "Test the subquery separately."
+     ],
+     "example": {
+      "sql": "UPDATE students SET marks = (SELECT AVG(marks) FROM students) WHERE marks IS NULL;",
+      "output": "UPDATE N"
+     }
+    },
+    {
+     "id": "t10",
+     "title": "UPDATE with FROM",
+     "simple": "PostgreSQL me UPDATE FROM doosri table se values laata hai.",
+     "pro": "UPDATE ... FROM joins the target to a source relation; each target row should match at most one source row to keep the result deterministic.",
+     "points": [
+      "FROM adds a source table.",
+      "Join in WHERE.",
+      "Duplicate source matches make the update unpredictable."
+     ],
+     "example": {
+      "sql": "UPDATE students s SET marks = a.marks FROM applicants a WHERE s.email = a.email;",
+      "output": "UPDATE N"
+     }
+    },
+    {
+     "id": "t11",
+     "title": "RETURNING with UPDATE",
+     "simple": "RETURNING updated rows wapas deta hai.",
+     "pro": "RETURNING returns the new row values for every updated row, including generated values and expressions.",
+     "points": [
+      "RETURNING is PostgreSQL syntax.",
+      "It shows exactly what changed.",
+      "It can return old values only via a CTE or trigger."
+     ],
+     "example": {
+      "sql": "UPDATE students SET marks = 95 WHERE id = 1 RETURNING id, name, marks;",
+      "output": "1 | Aarav | 95"
+     }
+    },
+    {
+     "id": "t12",
+     "title": "What Is DELETE?",
+     "simple": "DELETE rows ko table se hataata hai.",
+     "pro": "DELETE is DML that removes rows matched by WHERE and returns the number deleted.",
+     "points": [
+      "DELETE keeps the table structure.",
+      "Without WHERE it removes every row.",
+      "It fires row-level DELETE triggers."
+     ],
+     "example": {
+      "sql": "DELETE FROM students WHERE id = 3;",
+      "output": "DELETE 1"
+     }
+    },
+    {
+     "id": "t13",
+     "title": "DELETE Syntax",
+     "simple": "Basic shape: DELETE FROM table WHERE condition.",
+     "pro": "The syntax is DELETE FROM table [USING ...] [WHERE ...] [RETURNING ...].",
+     "points": [
+      "FROM names the target table.",
+      "WHERE limits the rows.",
+      "RETURNING shows removed rows."
+     ],
+     "example": {
+      "sql": "DELETE FROM students WHERE marks < 60;",
+      "output": "DELETE N"
+     }
+    },
+    {
+     "id": "t14",
+     "title": "DELETE Specific Rows",
+     "simple": "WHERE se specific row delete karo.",
+     "pro": "A precise predicate deletes only the intended rows; a primary key is the safest target.",
+     "points": [
+      "Preview with SELECT.",
+      "Use a key when possible.",
+      "Check the affected count."
+     ],
+     "example": {
+      "sql": "DELETE FROM students WHERE id = 4;",
+      "output": "DELETE 1"
+     }
+    },
+    {
+     "id": "t15",
+     "title": "DELETE with Conditions",
+     "simple": "Range, list aur NULL conditions delete me bhi kaam karte hain.",
+     "pro": "DELETE accepts the same boolean predicates as SELECT, including comparisons, IN, LIKE and IS NULL.",
+     "points": [
+      "Use IS NULL for null checks.",
+      "BETWEEN and IN work normally.",
+      "One statement is atomic."
+     ],
+     "example": {
+      "sql": "DELETE FROM students WHERE marks IS NULL;",
+      "output": "DELETE N"
+     }
+    },
+    {
+     "id": "t16",
+     "title": "DELETE with Subquery",
+     "simple": "Subquery se decide kar sakte hain kaunse rows delete honge.",
+     "pro": "DELETE with IN or EXISTS uses a subquery to choose rows; beware NOT IN with NULLs, which can match nothing.",
+     "points": [
+      "IN works for a list of keys.",
+      "NOT EXISTS is safer with NULLs.",
+      "The subquery must be correct before deleting."
+     ],
+     "example": {
+      "sql": "DELETE FROM students WHERE id IN (SELECT student_id FROM enrollments WHERE course_id = 10);",
+      "output": "DELETE N"
+     }
+    },
+    {
+     "id": "t17",
+     "title": "DELETE with USING",
+     "simple": "PostgreSQL me DELETE USING doosri table se join karke rows delete karta hai.",
+     "pro": "DELETE ... USING adds source relations to the WHERE join, removing target rows that match the source.",
+     "points": [
+      "USING is PostgreSQL syntax.",
+      "Join the target and source in WHERE.",
+      "A row is deleted at most once."
+     ],
+     "example": {
+      "sql": "DELETE FROM students s USING enrollments e WHERE s.id = e.student_id AND e.course_id = 10;",
+      "output": "DELETE N"
+     }
+    },
+    {
+     "id": "t18",
+     "title": "RETURNING with DELETE",
+     "simple": "RETURNING deleted rows ko wapas deta hai — archive ke liye useful.",
+     "pro": "RETURNING returns the deleted row values, which can be inserted into an archive table in the same statement.",
+     "points": [
+      "Return the rows before they disappear.",
+      "Combine with a CTE to archive.",
+      "RETURNING does not prevent the delete."
+     ],
+     "example": {
+      "sql": "DELETE FROM students WHERE marks < 60 RETURNING id, name, marks;",
+      "output": "The deleted rows."
+     }
+    },
+    {
+     "id": "t19",
+     "title": "DELETE vs TRUNCATE",
+     "simple": "DELETE filtered aur trigger-friendly hai; TRUNCATE poora table jaldi khali karta hai.",
+     "pro": "DELETE removes selected rows, fires row triggers and is transactional; TRUNCATE removes all rows, has no WHERE, does not fire row DELETE triggers and is transactional in PostgreSQL.",
+     "points": [
+      "DELETE supports WHERE.",
+      "TRUNCATE has no WHERE.",
+      "TRUNCATE resets storage; RESTART IDENTITY resets sequences."
+     ],
+     "example": {
+      "sql": "TRUNCATE TABLE students RESTART IDENTITY CASCADE;",
+      "output": "TRUNCATE TABLE"
+     }
+    },
+    {
+     "id": "t20",
+     "title": "Safe Modification Practices and Common Errors",
+     "simple": "Bade UPDATE/DELETE se pehle SELECT, transaction aur row count check karo.",
+     "pro": "Safe modification means previewing the target rows, wrapping the change in a transaction, checking the affected count and using RETURNING or a backup before committing.",
+     "points": [
+      "Preview with SELECT.",
+      "Use BEGIN and verify.",
+      "Commit only after the count matches.",
+      "Use RETURNING for an audit trail."
+     ],
+     "example": {
+      "sql": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1 RETURNING id, marks;\nCOMMIT;",
+      "output": "BEGIN\nUPDATE 1\nCOMMIT"
+     }
+    }
+   ],
+   "banks": {
+    "learn": [
+     {
+      "q": "What does UPDATE do?",
+      "options": [
+       "Changes existing rows",
+       "Adds rows",
+       "Removes rows",
+       "Creates a table"
+      ],
+      "answer": "Changes existing rows",
+      "why": "UPDATE is DML that changes column values."
+     },
+     {
+      "q": "What does DELETE do?",
+      "options": [
+       "Removes rows",
+       "Changes rows",
+       "Adds rows",
+       "Creates a table"
+      ],
+      "answer": "Removes rows",
+      "why": "DELETE is DML that removes rows."
+     },
+     {
+      "q": "What happens to UPDATE without WHERE?",
+      "options": [
+       "Every row is updated",
+       "No row is updated",
+       "Only the first row is updated",
+       "The statement fails"
+      ],
+      "answer": "Every row is updated",
+      "why": "Without a predicate, UPDATE targets the whole table."
+     },
+     {
+      "q": "What happens to DELETE without WHERE?",
+      "options": [
+       "Every row is deleted",
+       "No row is deleted",
+       "Only the first row is deleted",
+       "The table is dropped"
+      ],
+      "answer": "Every row is deleted",
+      "why": "Without a predicate, DELETE removes all rows."
+     },
+     {
+      "q": "Which clause limits UPDATE or DELETE?",
+      "options": [
+       "WHERE",
+       "LIMIT",
+       "ORDER BY",
+       "GROUP BY"
+      ],
+      "answer": "WHERE",
+      "why": "WHERE selects the target rows."
+     },
+     {
+      "q": "How do you update two columns at once?",
+      "options": [
+       "Comma-separated SET assignments",
+       "Two SET keywords",
+       "Two UPDATE statements only",
+       "A CREATE TABLE"
+      ],
+      "answer": "Comma-separated SET assignments",
+      "why": "SET name = ..., marks = ... updates both."
+     },
+     {
+      "q": "What does RETURNING do?",
+      "options": [
+       "Returns affected rows",
+       "Rolls back the change",
+       "Creates an index",
+       "Sorts the rows"
+      ],
+      "answer": "Returns affected rows",
+      "why": "RETURNING exposes changed or deleted rows."
+     },
+     {
+      "q": "Which value does SET marks = marks + 5 use?",
+      "options": [
+       "The old marks value",
+       "The new marks value",
+       "Zero",
+       "NULL"
+      ],
+      "answer": "The old marks value",
+      "why": "Assignments read the row as it was before the statement."
+     },
+     {
+      "q": "Which function supplies a fallback for NULL?",
+      "options": [
+       "COALESCE",
+       "COUNT",
+       "LOWER",
+       "ROUND"
+      ],
+      "answer": "COALESCE",
+      "why": "COALESCE returns the first non-null argument."
+     },
+     {
+      "q": "What must a scalar subquery in SET return?",
+      "options": [
+       "At most one row and one column",
+       "Any number of rows",
+       "Exactly two columns",
+       "A table"
+      ],
+      "answer": "At most one row and one column",
+      "why": "A scalar subquery must produce a single value."
+     },
+     {
+      "q": "Which PostgreSQL clause joins a source table to UPDATE?",
+      "options": [
+       "FROM",
+       "USING",
+       "JOIN",
+       "INTO"
+      ],
+      "answer": "FROM",
+      "why": "UPDATE ... FROM adds source relations."
+     },
+     {
+      "q": "Which PostgreSQL clause joins a source table to DELETE?",
+      "options": [
+       "USING",
+       "FROM",
+       "JOIN",
+       "INTO"
+      ],
+      "answer": "USING",
+      "why": "DELETE ... USING adds source relations."
+     },
+     {
+      "q": "Does DELETE keep the table structure?",
+      "options": [
+       "Yes",
+       "No",
+       "Only with CASCADE",
+       "Only without WHERE"
+      ],
+      "answer": "Yes",
+      "why": "DELETE removes rows; the table remains."
+     },
+     {
+      "q": "Does TRUNCATE support WHERE?",
+      "options": [
+       "No",
+       "Yes",
+       "Only with CASCADE",
+       "Only on small tables"
+      ],
+      "answer": "No",
+      "why": "TRUNCATE always targets the whole table."
+     },
+     {
+      "q": "Does DELETE fire row-level DELETE triggers?",
+      "options": [
+       "Yes",
+       "No",
+       "Only with RETURNING",
+       "Only with CASCADE"
+      ],
+      "answer": "Yes",
+      "why": "DELETE removes rows individually and fires row triggers."
+     },
+     {
+      "q": "Does TRUNCATE fire row-level DELETE triggers?",
+      "options": [
+       "No",
+       "Yes",
+       "Only with RESTART IDENTITY",
+       "Only with CASCADE"
+      ],
+      "answer": "No",
+      "why": "TRUNCATE does not delete rows one by one."
+     },
+     {
+      "q": "Does DELETE reset an identity sequence?",
+      "options": [
+       "No",
+       "Yes",
+       "Only with CASCADE",
+       "Only without WHERE"
+      ],
+      "answer": "No",
+      "why": "TRUNCATE ... RESTART IDENTITY resets it."
+     },
+     {
+      "q": "Can DELETE be rolled back in PostgreSQL?",
+      "options": [
+       "Yes",
+       "No",
+       "Only with TRUNCATE",
+       "Only outside a transaction"
+      ],
+      "answer": "Yes",
+      "why": "DELETE is transactional."
+     },
+     {
+      "q": "What does UPDATE ... RETURNING show?",
+      "options": [
+       "The new row values",
+       "The old row values by default",
+       "The table definition",
+       "The query plan"
+      ],
+      "answer": "The new row values",
+      "why": "RETURNING returns the updated row as stored."
+     },
+     {
+      "q": "What is the safest target for UPDATE?",
+      "options": [
+       "A primary key",
+       "A text column with duplicates",
+       "A NULL column",
+       "Every row"
+      ],
+      "answer": "A primary key",
+      "why": "A unique key targets exactly the intended row."
+     }
+    ],
+    "interview": [
+     {
+      "q": "What is UPDATE?",
+      "answer": "DML that changes column values for rows matched by WHERE and returns the affected count."
+     },
+     {
+      "q": "What is DELETE?",
+      "answer": "DML that removes rows matched by WHERE and returns the deleted count."
+     },
+     {
+      "q": "What happens without WHERE in UPDATE or DELETE?",
+      "answer": "The statement targets every row in the table."
+     },
+     {
+      "q": "How do multiple SET assignments evaluate?",
+      "answer": "All expressions read the row values from before the statement, not values assigned earlier in the same SET list."
+     },
+     {
+      "q": "How do you update from another table in PostgreSQL?",
+      "answer": "Use UPDATE ... FROM source WHERE join_condition; each target row should match at most one source row."
+     },
+     {
+      "q": "How do you delete using another table in PostgreSQL?",
+      "answer": "Use DELETE FROM target USING source WHERE join_condition; each target row is deleted at most once."
+     },
+     {
+      "q": "What does RETURNING do?",
+      "answer": "Returns the changed or deleted rows in the same statement."
+     },
+     {
+      "q": "What is a scalar subquery?",
+      "answer": "A subquery that returns at most one row and one column, usable where a single value is expected."
+     },
+     {
+      "q": "What happens if a SET subquery returns multiple rows?",
+      "answer": "PostgreSQL raises an error because the subquery is not scalar."
+     },
+     {
+      "q": "What is the difference between DELETE and TRUNCATE?",
+      "answer": "DELETE supports WHERE, fires row triggers and removes selected rows; TRUNCATE removes all rows, has no WHERE, does not fire row DELETE triggers and resets storage."
+     },
+     {
+      "q": "Is TRUNCATE transactional in PostgreSQL?",
+      "answer": "Yes, it can be rolled back there; MySQL performs an implicit commit."
+     },
+     {
+      "q": "Does DELETE reset identity?",
+      "answer": "No; use TRUNCATE ... RESTART IDENTITY or reset the sequence explicitly."
+     },
+     {
+      "q": "How do you archive deleted rows?",
+      "answer": "Use DELETE ... RETURNING inside a CTE and insert the returned rows into an archive table."
+     },
+     {
+      "q": "Why is DELETE with NOT IN and NULL dangerous?",
+      "answer": "The NULL comparison makes the predicate unknown, so no rows may be deleted; NOT EXISTS is safer."
+     },
+     {
+      "q": "Why can a foreign key block DELETE?",
+      "answer": "Child rows still reference the parent and the constraint has no cascade action."
+     },
+     {
+      "q": "What happens if UPDATE changes a primary key?",
+      "answer": "It can break foreign keys or fail on duplicates; use ON UPDATE CASCADE only when the relationship requires it."
+     },
+     {
+      "q": "Why use a transaction around a large modification?",
+      "answer": "It lets you verify the affected count and roll back cleanly if the change is wrong."
+     },
+     {
+      "q": "Why can a large UPDATE be expensive?",
+      "answer": "It creates new row versions, writes WAL, updates indexes and can bloat the table until vacuum runs."
+     },
+     {
+      "q": "Why can a large DELETE be expensive?",
+      "answer": "It creates dead tuples, writes WAL and must maintain indexes; batching reduces lock time."
+     },
+     {
+      "q": "What is the safest modification workflow?",
+      "answer": "Preview with SELECT, open a transaction, run the change with RETURNING, verify the count, then commit or roll back."
+     }
+    ],
+    "labs": [
+     {
+      "title": "Update one column",
+      "task": "Set marks to 95 for id 1.",
+      "solution": "UPDATE students SET marks = 95 WHERE id = 1;",
+      "expected": "UPDATE 1"
+     },
+     {
+      "title": "Update two columns",
+      "task": "Set name and marks for id 1.",
+      "solution": "UPDATE students SET name = 'Aarav S', marks = 90 WHERE id = 1;",
+      "expected": "UPDATE 1"
+     },
+     {
+      "title": "Update a specific row",
+      "task": "Set marks to 88 for id 2.",
+      "solution": "UPDATE students SET marks = 88 WHERE id = 2;",
+      "expected": "UPDATE 1"
+     },
+     {
+      "title": "Update with an expression",
+      "task": "Add five marks to every known mark.",
+      "solution": "UPDATE students SET marks = marks + 5 WHERE marks IS NOT NULL;",
+      "expected": "UPDATE N"
+     },
+     {
+      "title": "Update with CASE",
+      "task": "Raise every mark below 60 to 60.",
+      "solution": "UPDATE students SET marks = CASE WHEN marks < 60 THEN 60 ELSE marks END;",
+      "expected": "UPDATE N"
+     },
+     {
+      "title": "Fill missing emails",
+      "task": "Replace NULL emails with unknown@example.com.",
+      "solution": "UPDATE students SET email = COALESCE(email, 'unknown@example.com');",
+      "expected": "UPDATE N"
+     },
+     {
+      "title": "Update from a subquery",
+      "task": "Set NULL marks to the average marks.",
+      "solution": "UPDATE students SET marks = (SELECT AVG(marks) FROM students) WHERE marks IS NULL;",
+      "expected": "UPDATE N"
+     },
+     {
+      "title": "Update from another table",
+      "task": "Copy marks from applicants by matching email.",
+      "solution": "UPDATE students s SET marks = a.marks FROM applicants a WHERE s.email = a.email;",
+      "expected": "UPDATE N"
+     },
+     {
+      "title": "Update with RETURNING",
+      "task": "Update id 1 and return the new row.",
+      "solution": "UPDATE students SET marks = 95 WHERE id = 1 RETURNING id, name, marks;",
+      "expected": "1 | Aarav | 95"
+     },
+     {
+      "title": "Update with a transaction",
+      "task": "Update id 1 inside a transaction and commit.",
+      "solution": "BEGIN;\nUPDATE students SET marks = 90 WHERE id = 1 RETURNING id, marks;\nCOMMIT;",
+      "expected": "BEGIN\nUPDATE 1\nCOMMIT"
+     },
+     {
+      "title": "Delete one row",
+      "task": "Delete id 4.",
+      "solution": "DELETE FROM students WHERE id = 4;",
+      "expected": "DELETE 1"
+     },
+     {
+      "title": "Delete with a condition",
+      "task": "Delete students below 60.",
+      "solution": "DELETE FROM students WHERE marks < 60;",
+      "expected": "DELETE N"
+     },
+     {
+      "title": "Delete by subquery",
+      "task": "Delete students enrolled in course 10.",
+      "solution": "DELETE FROM students WHERE id IN (SELECT student_id FROM enrollments WHERE course_id = 10);",
+      "expected": "DELETE N"
+     },
+     {
+      "title": "Delete with USING",
+      "task": "Delete students enrolled in course 10 using a join.",
+      "solution": "DELETE FROM students s USING enrollments e WHERE s.id = e.student_id AND e.course_id = 10;",
+      "expected": "DELETE N"
+     },
+     {
+      "title": "Delete with RETURNING",
+      "task": "Delete id 3 and return the row.",
+      "solution": "DELETE FROM students WHERE id = 3 RETURNING *;",
+      "expected": "The deleted row."
+     },
+     {
+      "title": "Archive deleted rows",
+      "task": "Delete marks below 60 and insert them into students_archive.",
+      "solution": "WITH deleted AS (DELETE FROM students WHERE marks < 60 RETURNING *) INSERT INTO students_archive SELECT * FROM deleted;",
+      "expected": "INSERT 0 N"
+     },
+     {
+      "title": "Truncate the table",
+      "task": "Remove every row and reset identity.",
+      "solution": "TRUNCATE TABLE students RESTART IDENTITY CASCADE;",
+      "expected": "TRUNCATE TABLE"
+     },
+     {
+      "title": "Safe update",
+      "task": "Preview, update, verify and commit in one transaction.",
+      "solution": "BEGIN;\nSELECT id, marks FROM students WHERE id = 1;\nUPDATE students SET marks = 91 WHERE id = 1 RETURNING id, marks;\nCOMMIT;",
+      "expected": "One row previewed and updated."
+     },
+     {
+      "title": "Safe delete",
+      "task": "Delete id 5 inside a transaction and roll back.",
+      "solution": "BEGIN;\nDELETE FROM students WHERE id = 5 RETURNING id, name;\nROLLBACK;",
+      "expected": "The row is returned but the delete is undone."
+     },
+     {
+      "title": "No-op delete",
+      "task": "Delete id 999 and observe the count.",
+      "solution": "DELETE FROM students WHERE id = 999;",
+      "expected": "DELETE 0"
+     }
+    ],
+    "logic": [
+     {
+      "q": "Why is UPDATE without WHERE dangerous?",
+      "answer": "It changes every row in the table, often with one mistaken statement."
+     },
+     {
+      "q": "Why is DELETE without WHERE dangerous?",
+      "answer": "It removes every row and leaves an empty table."
+     },
+     {
+      "q": "Why preview with SELECT first?",
+      "answer": "The SELECT shows exactly which rows the predicate matches before you modify them."
+     },
+     {
+      "q": "Why wrap a modification in a transaction?",
+      "answer": "You can verify the affected count and roll back if the change is wrong."
+     },
+     {
+      "q": "Why use RETURNING?",
+      "answer": "It shows the changed rows and supports an audit or archive without a second query."
+     },
+     {
+      "q": "Why does DELETE support WHERE but TRUNCATE does not?",
+      "answer": "DELETE removes selected rows one by one; TRUNCATE is a whole-table storage operation."
+     },
+     {
+      "q": "Why does DELETE fire row triggers but TRUNCATE does not?",
+      "answer": "DELETE processes rows individually; TRUNCATE does not visit them as row deletes."
+     },
+     {
+      "q": "Why is changing a primary key risky?",
+      "answer": "Foreign keys reference the old value; without ON UPDATE CASCADE the change can fail or orphan relationships."
+     },
+     {
+      "q": "Why must a SET subquery be scalar?",
+      "answer": "A column assignment needs one value per row; multiple rows cannot fit."
+     },
+     {
+      "q": "Why can UPDATE FROM be unpredictable with duplicate sources?",
+      "answer": "A target row matched by several source rows may be updated more than once with no defined winner."
+     },
+     {
+      "q": "Why is NOT IN with a NULL subquery unsafe for DELETE?",
+      "answer": "The NULL comparison makes the predicate unknown, so it can delete nothing."
+     },
+     {
+      "q": "Why can a foreign key block DELETE?",
+      "answer": "Referencing child rows still exist and the constraint has no cascade action."
+     },
+     {
+      "q": "Why batch a very large DELETE?",
+      "answer": "Small batches reduce lock time, WAL spikes and blocking for other sessions."
+     },
+     {
+      "q": "Why vacuum after many updates or deletes?",
+      "answer": "The old row versions become dead tuples; vacuum reclaims that space."
+     },
+     {
+      "q": "Why does DELETE not reset identity?",
+      "answer": "The sequence is a separate object; only an explicit restart changes it."
+     }
+    ],
+    "debug": [
+     {
+      "title": "UPDATE without WHERE",
+      "broken": "UPDATE students SET marks = 0;",
+      "fix": "UPDATE students SET marks = 0 WHERE id = 1;",
+      "error": "Every row is reset",
+      "expected": "Only id 1 changes."
+     },
+     {
+      "title": "DELETE without WHERE",
+      "broken": "DELETE FROM students;",
+      "fix": "DELETE FROM students WHERE id = 1;",
+      "error": "Every row is deleted",
+      "expected": "Only id 1 is deleted."
+     },
+     {
+      "title": "Missing equals",
+      "broken": "UPDATE students SET marks 90 WHERE id = 1;",
+      "fix": "UPDATE students SET marks = 90 WHERE id = 1;",
+      "error": "syntax error at or near \"90\"",
+      "expected": "UPDATE 1"
+     },
+     {
+      "title": "Missing FROM",
+      "broken": "DELETE students WHERE id = 1;",
+      "fix": "DELETE FROM students WHERE id = 1;",
+      "error": "syntax error at or near \"students\"",
+      "expected": "DELETE 1"
+     },
+     {
+      "title": "Multi-row SET subquery",
+      "broken": "UPDATE students SET marks = (SELECT marks FROM applicants);",
+      "fix": "UPDATE students SET marks = (SELECT marks FROM applicants LIMIT 1);",
+      "error": "more than one row returned by a subquery used as an expression",
+      "expected": "UPDATE N"
+     },
+     {
+      "title": "NULL comparison in subquery",
+      "broken": "DELETE FROM students WHERE id IN (SELECT student_id FROM enrollments WHERE course_id = NULL);",
+      "fix": "DELETE FROM students WHERE id IN (SELECT student_id FROM enrollments WHERE course_id IS NULL);",
+      "error": "Deletes no rows",
+      "expected": "Rows with a NULL course id."
+     },
+     {
+      "title": "TRUNCATE with WHERE",
+      "broken": "TRUNCATE TABLE students WHERE id = 1;",
+      "fix": "DELETE FROM students WHERE id = 1;",
+      "error": "syntax error at or near \"WHERE\"",
+      "expected": "DELETE 1"
+     },
+     {
+      "title": "CHECK violation on update",
+      "broken": "UPDATE students SET marks = 101 WHERE id = 1;",
+      "fix": "UPDATE students SET marks = 100 WHERE id = 1;",
+      "error": "violates check constraint",
+      "expected": "UPDATE 1"
+     },
+     {
+      "title": "Foreign key blocks delete",
+      "broken": "DELETE FROM courses WHERE id = 10;",
+      "fix": "DELETE FROM enrollments WHERE course_id = 10;\nDELETE FROM courses WHERE id = 10;",
+      "error": "violates foreign key constraint",
+      "expected": "Child rows removed first."
+     },
+     {
+      "title": "Empty RETURNING",
+      "broken": "DELETE FROM students WHERE id = 1 RETURNING;",
+      "fix": "DELETE FROM students WHERE id = 1 RETURNING id, name;",
+      "error": "syntax error at or near \";\"",
+      "expected": "The deleted row."
+     }
+    ],
+    "revision": [
+     {
+      "q": "What does UPDATE do?",
+      "answer": "Changes existing rows matched by WHERE."
+     },
+     {
+      "q": "What does DELETE do?",
+      "answer": "Removes rows matched by WHERE."
+     },
+     {
+      "q": "What happens without WHERE?",
+      "answer": "The statement targets every row."
+     },
+     {
+      "q": "How do you update two columns?",
+      "answer": "SET a = ..., b = ... ."
+     },
+     {
+      "q": "How do you return changed rows?",
+      "answer": "Add RETURNING columns."
+     },
+     {
+      "q": "How do you update from another table?",
+      "answer": "UPDATE ... FROM source WHERE join."
+     },
+     {
+      "q": "How do you delete using another table?",
+      "answer": "DELETE ... USING source WHERE join."
+     },
+     {
+      "q": "DELETE vs TRUNCATE?",
+      "answer": "DELETE filters and fires row triggers; TRUNCATE removes all rows and keeps the table."
+     },
+     {
+      "q": "Does DELETE reset identity?",
+      "answer": "No."
+     },
+     {
+      "q": "What is the safest workflow?",
+      "answer": "Preview, transact, modify, verify the count, then commit or roll back."
+     }
+    ]
+   }
+  }
+ ]
+}
