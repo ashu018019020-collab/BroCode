@@ -151,6 +151,14 @@ export const C_LAB_PREFIX = 'clab:';
  */
 export const ASSISTANT_MODULE_KEY = 'aiml:assistant:module';
 
+/**
+ * Masterclass module completion: `mc:<courseId>:<moduleId>`.
+ * One record per module, written when the learner finishes that module. The course id is part of the
+ * key so SQL, MySQL and SQLite modules can never unlock each other.
+ */
+export const masterclassModuleDone = (courseId: string, moduleId: string) => `mc:${courseId}:${moduleId}`;
+export const MASTERCLASS_PREFIX = 'mc:';
+
 // ---- the Java course's records ----
 /**
  * One record per answered Java module MCQ: `jquiz:<module>:<index>`, with the chosen option in
