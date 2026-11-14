@@ -1,0 +1,1162 @@
+{
+ "p01": {
+  "tasks": [
+   {
+    "title": "Count rows and columns (P01)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P01)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P01)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P01)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "KeyError on missing column (P01)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P01)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P01)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P01)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   }
+  ]
+ },
+ "p02": {
+  "tasks": [
+   {
+    "title": "Select a column (P02)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P02)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P02)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P02)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "shape called as method (P02)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P02)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P02)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P02)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   }
+  ]
+ },
+ "p03": {
+  "tasks": [
+   {
+    "title": "Filter rows (P03)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P03)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P03)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P03)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "TypeError adding types (P03)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P03)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P03)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P03)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   }
+  ]
+ },
+ "p04": {
+  "tasks": [
+   {
+    "title": "Add a column (P04)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P04)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P04)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P04)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Wrong axis for drop (P04)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P04)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P04)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P04)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   }
+  ]
+ },
+ "p05": {
+  "tasks": [
+   {
+    "title": "Count rows and columns (P05)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P05)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P05)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P05)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "KeyError on missing column (P05)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P05)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P05)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P05)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   }
+  ]
+ },
+ "p06": {
+  "tasks": [
+   {
+    "title": "Select a column (P06)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P06)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P06)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P06)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "shape called as method (P06)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P06)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P06)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P06)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   }
+  ]
+ },
+ "p07": {
+  "tasks": [
+   {
+    "title": "Filter rows (P07)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P07)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P07)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P07)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "TypeError adding types (P07)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P07)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P07)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P07)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   }
+  ]
+ },
+ "p08": {
+  "tasks": [
+   {
+    "title": "Add a column (P08)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P08)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P08)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P08)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Wrong axis for drop (P08)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P08)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P08)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P08)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   }
+  ]
+ },
+ "p09": {
+  "tasks": [
+   {
+    "title": "Count rows and columns (P09)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P09)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P09)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P09)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "KeyError on missing column (P09)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P09)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P09)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P09)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   }
+  ]
+ },
+ "p10": {
+  "tasks": [
+   {
+    "title": "Select a column (P10)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P10)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P10)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P10)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "shape called as method (P10)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P10)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P10)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P10)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   }
+  ]
+ },
+ "p11": {
+  "tasks": [
+   {
+    "title": "Filter rows (P11)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P11)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P11)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P11)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "TypeError adding types (P11)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P11)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P11)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P11)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   }
+  ]
+ },
+ "p12": {
+  "tasks": [
+   {
+    "title": "Add a column (P12)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P12)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P12)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P12)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Wrong axis for drop (P12)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P12)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P12)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P12)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   }
+  ]
+ },
+ "p13": {
+  "tasks": [
+   {
+    "title": "Count rows and columns (P13)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P13)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P13)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P13)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "KeyError on missing column (P13)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P13)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P13)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P13)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   }
+  ]
+ },
+ "p14": {
+  "tasks": [
+   {
+    "title": "Select a column (P14)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P14)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P14)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P14)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "shape called as method (P14)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P14)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P14)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P14)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   }
+  ]
+ },
+ "p15": {
+  "tasks": [
+   {
+    "title": "Filter rows (P15)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P15)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P15)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P15)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "TypeError adding types (P15)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P15)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P15)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P15)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   }
+  ]
+ },
+ "p16": {
+  "tasks": [
+   {
+    "title": "Add a column (P16)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P16)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P16)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P16)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Wrong axis for drop (P16)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P16)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P16)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P16)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   }
+  ]
+ },
+ "p17": {
+  "tasks": [
+   {
+    "title": "Count rows and columns (P17)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P17)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P17)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P17)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "KeyError on missing column (P17)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P17)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P17)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P17)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   }
+  ]
+ },
+ "p18": {
+  "tasks": [
+   {
+    "title": "Select a column (P18)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P18)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P18)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P18)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   }
+  ],
+  "debug": [
+   {
+    "title": "shape called as method (P18)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P18)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P18)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P18)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   }
+  ]
+ },
+ "p19": {
+  "tasks": [
+   {
+    "title": "Filter rows (P19)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   },
+   {
+    "title": "Add a column (P19)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P19)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P19)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   }
+  ],
+  "debug": [
+   {
+    "title": "TypeError adding types (P19)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   },
+   {
+    "title": "Wrong axis for drop (P19)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P19)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P19)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   }
+  ]
+ },
+ "p20": {
+  "tasks": [
+   {
+    "title": "Add a column (P20)",
+    "statement": "Add column \"c\" as a + b and print the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\ndf[\"c\"] = df[\"a\"] + df[\"b\"]\nprint(df.to_string(index=False))",
+    "expected": " a  b  c\n 1  3  4\n 2  4  6"
+   },
+   {
+    "title": "Count rows and columns (P20)",
+    "statement": "Print the number of rows and columns of the DataFrame.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(len(df), len(df.columns))",
+    "expected": "3 2"
+   },
+   {
+    "title": "Select a column (P20)",
+    "statement": "Print the values of column \"b\" as a list.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df[\"b\"].tolist())",
+    "expected": "[3, 4]"
+   },
+   {
+    "title": "Filter rows (P20)",
+    "statement": "Print rows where column \"a\" is greater than 1.",
+    "solution": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [4, 5, 6]})\nprint(df[df[\"a\"] > 1].to_string(index=False))",
+    "expected": " a  b\n 2  5\n 3  6"
+   }
+  ],
+  "debug": [
+   {
+    "title": "Wrong axis for drop (P20)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=0))",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2], \"b\": [3, 4]})\nprint(df.drop(\"a\", axis=1))",
+    "error": "KeyError: \"['a'] not found in axis\"",
+    "fixedOutput": "   b\n0  3\n1  4"
+   },
+   {
+    "title": "KeyError on missing column (P20)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"b\"])",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.get(\"b\", \"missing\"))",
+    "error": "KeyError: 'b'",
+    "fixedOutput": "missing"
+   },
+   {
+    "title": "shape called as method (P20)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape())",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df.shape)",
+    "error": "TypeError: 'tuple' object is not callable",
+    "fixedOutput": "(2, 1)"
+   },
+   {
+    "title": "TypeError adding types (P20)",
+    "broken": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"] + \"x\")",
+    "fix": "import pandas as pd\ndf = pd.DataFrame({\"a\": [1, 2]})\nprint(df[\"a\"].astype(str) + \"x\")",
+    "error": "numpy._core._exceptions._UFuncNoLoopError: ufunc 'add' did not contain a loop with signature matching types (dtype('int64'), dtype('<U1')) -> None",
+    "fixedOutput": "0    1x\n1    2x\nName: a, dtype: str"
+   }
+  ]
+ }
+}
