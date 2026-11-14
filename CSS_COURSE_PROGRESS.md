@@ -20,12 +20,12 @@ editing the module files or the generator.
   adding CSS, selectors, colour, units, typography, box model, display, borders, positioning,
   flexbox, grid, responsive, pseudo-classes, pseudo-elements, transitions/transforms, animation,
   variables/functions, modern CSS, forms/UI, architecture, debugging.
-- **1192 records** across the ten sections:
+- **1912 records** across the ten sections:
 
 | Section | Records |
 |---|---|
 | Learn | 80 |
-| Interview | 480 |
+| Interview | 1200 |
 | Coding Lab | 28 |
 | Logic | 80 |
 | Debug | 52 |
@@ -80,9 +80,8 @@ editing the module files or the generator.
 
 ## Honest gaps
 
-1. **Question-bank target:** foundation modules css01–css08 now ship 50 unique interview items each
-   (400 total); the 16 applied modules ship 5 each (80 total), 480 interview items across the course.
-   Closing the applied modules to 50 each is the next growth step, via `deepening-*.json` layers.
+1. **Question-bank target:** all 24 modules now ship 50 unique interview items each (1200 total),
+   with every answer distinct. The bank target is met for every module.
 2. **Coding Lab target:** 20 exercises per module was the brief; the course ships one independent
    task per module plus Practice rebuilds from each topic. The Practice section is not the same as
    twenty graded exercises.

@@ -100,7 +100,7 @@ export default function CssCoursePage() {
           <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
             <span className="chip"><BookOpen size={12} /> {stats.modules} modules</span>
             <span className="chip"><Target size={12} /> {stats.entries.toLocaleString()} records</span>
-            <span className="chip">{foundationModules.length} foundation · 50 interview items each</span>
+            <span className="chip">24 modules · 50 interview items each</span>
             <span className="chip">{modules.reduce((a, m) => a + (m.hours || 0), 0)}h total</span>
           </div>
         </div>
@@ -219,12 +219,9 @@ export default function CssCoursePage() {
           <span className="chip">{stats.bank.total} unique items</span>
         </div>
         <p className="small muted" style={{ margin: '6px 0 0' }}>
-          {foundationModules.length} foundation modules carry 50 unique interview items each
-          ({foundationModules.reduce((a, m) => a + (m.sections?.interview?.length ?? 0), 0)} total);
-          the {modules.length - foundationModules.length} applied modules carry the remaining
-          {stats.bank.total - foundationModules.reduce((a, m) => a + (m.sections?.interview?.length ?? 0), 0)}
-          interview items. All {stats.bank.total} interview answers are distinct. Counts come from the
-          records that shipped; the ledger in `CSS_COURSE_PROGRESS.md` states what is still open.
+          All {modules.length} modules now carry 50 unique interview items each ({stats.bank.total} total),
+          and all {stats.bank.total} interview answers are distinct. Counts come from the records that
+          shipped; the ledger in `CSS_COURSE_PROGRESS.md` states what is still open.
         </p>
       </div>
 
