@@ -1,0 +1,730 @@
+{
+ "cpp01": {
+  "topics": [
+   {
+    "title": "sizeof and types",
+    "body": "sizeof reports the size in bytes of a type or object.",
+    "code": "#include <iostream>\nint main() {\n  std::cout << sizeof(int) << '\\n';\n  std::cout << sizeof(double) << '\\n';\n  return 0;\n}",
+    "output": "4\n8"
+   },
+   {
+    "title": "structured bindings",
+    "body": "Structured bindings unpack a pair or tuple.",
+    "code": "#include <iostream>\n#include <utility>\nint main() {\n  auto p = std::make_pair(10, 20);\n  auto [a, b] = p;\n  std::cout << a << ' ' << b << '\\n';\n  return 0;\n}",
+    "output": "10 20"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP01, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP01, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp02": {
+  "topics": [
+   {
+    "title": "auto deduction",
+    "body": "auto deduces the type from the initializer.",
+    "code": "#include <iostream>\nint main() {\n  auto x = 42;\n  auto y = 3.14;\n  std::cout << x << ' ' << y << '\\n';\n  return 0;\n}",
+    "output": "42 3.14"
+   },
+   {
+    "title": "lambda capture",
+    "body": "Lambdas can capture variables by value or reference.",
+    "code": "#include <iostream>\nint main() {\n  int x = 5;\n  auto f = [x]() { return x * 2; };\n  std::cout << f() << '\\n';\n  return 0;\n}",
+    "output": "10"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP02, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP02, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp03": {
+  "topics": [
+   {
+    "title": "range-based for",
+    "body": "Range-based for loops iterate over a container.",
+    "code": "#include <iostream>\n#include <vector>\nint main() {\n  std::vector<int> v{1,2,3};\n  for (int x : v) std::cout << x << ' ';\n  std::cout << '\\n';\n  return 0;\n}",
+    "output": "1 2 3"
+   },
+   {
+    "title": "std::optional",
+    "body": "std::optional represents a value that may be absent.",
+    "code": "#include <iostream>\n#include <optional>\nint main() {\n  std::optional<int> o = 7;\n  if (o) std::cout << *o << '\\n';\n  std::optional<int> e;\n  std::cout << e.has_value() << '\\n';\n  return 0;\n}",
+    "output": "7\n0"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP03, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP03, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp04": {
+  "topics": [
+   {
+    "title": "structured bindings",
+    "body": "Structured bindings unpack a pair or tuple.",
+    "code": "#include <iostream>\n#include <utility>\nint main() {\n  auto p = std::make_pair(10, 20);\n  auto [a, b] = p;\n  std::cout << a << ' ' << b << '\\n';\n  return 0;\n}",
+    "output": "10 20"
+   },
+   {
+    "title": "std::variant",
+    "body": "std::variant holds one of several types.",
+    "code": "#include <iostream>\n#include <variant>\nint main() {\n  std::variant<int, double> v = 3.5;\n  std::cout << std::get<double>(v) << '\\n';\n  return 0;\n}",
+    "output": "3.5"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP04, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP04, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp05": {
+  "topics": [
+   {
+    "title": "lambda capture",
+    "body": "Lambdas can capture variables by value or reference.",
+    "code": "#include <iostream>\nint main() {\n  int x = 5;\n  auto f = [x]() { return x * 2; };\n  std::cout << f() << '\\n';\n  return 0;\n}",
+    "output": "10"
+   },
+   {
+    "title": "constexpr function",
+    "body": "constexpr functions can run at compile time.",
+    "code": "#include <iostream>\nconstexpr int square(int n) { return n * n; }\nint main() {\n  std::cout << square(6) << '\\n';\n  return 0;\n}",
+    "output": "36"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP05, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP05, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp06": {
+  "topics": [
+   {
+    "title": "std::optional",
+    "body": "std::optional represents a value that may be absent.",
+    "code": "#include <iostream>\n#include <optional>\nint main() {\n  std::optional<int> o = 7;\n  if (o) std::cout << *o << '\\n';\n  std::optional<int> e;\n  std::cout << e.has_value() << '\\n';\n  return 0;\n}",
+    "output": "7\n0"
+   },
+   {
+    "title": "static_cast",
+    "body": "static_cast converts between related types.",
+    "code": "#include <iostream>\nint main() {\n  double d = 3.7;\n  int i = static_cast<int>(d);\n  std::cout << i << '\\n';\n  return 0;\n}",
+    "output": "3"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP06, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP06, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp07": {
+  "topics": [
+   {
+    "title": "std::variant",
+    "body": "std::variant holds one of several types.",
+    "code": "#include <iostream>\n#include <variant>\nint main() {\n  std::variant<int, double> v = 3.5;\n  std::cout << std::get<double>(v) << '\\n';\n  return 0;\n}",
+    "output": "3.5"
+   },
+   {
+    "title": "std::array",
+    "body": "std::array is a fixed-size container.",
+    "code": "#include <iostream>\n#include <array>\nint main() {\n  std::array<int,3> a{1,2,3};\n  std::cout << a.size() << ' ' << a[1] << '\\n';\n  return 0;\n}",
+    "output": "3 2"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP07, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP07, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp08": {
+  "topics": [
+   {
+    "title": "constexpr function",
+    "body": "constexpr functions can run at compile time.",
+    "code": "#include <iostream>\nconstexpr int square(int n) { return n * n; }\nint main() {\n  std::cout << square(6) << '\\n';\n  return 0;\n}",
+    "output": "36"
+   },
+   {
+    "title": "sizeof and types",
+    "body": "sizeof reports the size in bytes of a type or object.",
+    "code": "#include <iostream>\nint main() {\n  std::cout << sizeof(int) << '\\n';\n  std::cout << sizeof(double) << '\\n';\n  return 0;\n}",
+    "output": "4\n8"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP08, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP08, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp09": {
+  "topics": [
+   {
+    "title": "static_cast",
+    "body": "static_cast converts between related types.",
+    "code": "#include <iostream>\nint main() {\n  double d = 3.7;\n  int i = static_cast<int>(d);\n  std::cout << i << '\\n';\n  return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "auto deduction",
+    "body": "auto deduces the type from the initializer.",
+    "code": "#include <iostream>\nint main() {\n  auto x = 42;\n  auto y = 3.14;\n  std::cout << x << ' ' << y << '\\n';\n  return 0;\n}",
+    "output": "42 3.14"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP09, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP09, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp10": {
+  "topics": [
+   {
+    "title": "std::array",
+    "body": "std::array is a fixed-size container.",
+    "code": "#include <iostream>\n#include <array>\nint main() {\n  std::array<int,3> a{1,2,3};\n  std::cout << a.size() << ' ' << a[1] << '\\n';\n  return 0;\n}",
+    "output": "3 2"
+   },
+   {
+    "title": "range-based for",
+    "body": "Range-based for loops iterate over a container.",
+    "code": "#include <iostream>\n#include <vector>\nint main() {\n  std::vector<int> v{1,2,3};\n  for (int x : v) std::cout << x << ' ';\n  std::cout << '\\n';\n  return 0;\n}",
+    "output": "1 2 3"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP10, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP10, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp11": {
+  "topics": [
+   {
+    "title": "sizeof and types",
+    "body": "sizeof reports the size in bytes of a type or object.",
+    "code": "#include <iostream>\nint main() {\n  std::cout << sizeof(int) << '\\n';\n  std::cout << sizeof(double) << '\\n';\n  return 0;\n}",
+    "output": "4\n8"
+   },
+   {
+    "title": "structured bindings",
+    "body": "Structured bindings unpack a pair or tuple.",
+    "code": "#include <iostream>\n#include <utility>\nint main() {\n  auto p = std::make_pair(10, 20);\n  auto [a, b] = p;\n  std::cout << a << ' ' << b << '\\n';\n  return 0;\n}",
+    "output": "10 20"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP11, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP11, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp12": {
+  "topics": [
+   {
+    "title": "auto deduction",
+    "body": "auto deduces the type from the initializer.",
+    "code": "#include <iostream>\nint main() {\n  auto x = 42;\n  auto y = 3.14;\n  std::cout << x << ' ' << y << '\\n';\n  return 0;\n}",
+    "output": "42 3.14"
+   },
+   {
+    "title": "lambda capture",
+    "body": "Lambdas can capture variables by value or reference.",
+    "code": "#include <iostream>\nint main() {\n  int x = 5;\n  auto f = [x]() { return x * 2; };\n  std::cout << f() << '\\n';\n  return 0;\n}",
+    "output": "10"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP12, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP12, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp13": {
+  "topics": [
+   {
+    "title": "range-based for",
+    "body": "Range-based for loops iterate over a container.",
+    "code": "#include <iostream>\n#include <vector>\nint main() {\n  std::vector<int> v{1,2,3};\n  for (int x : v) std::cout << x << ' ';\n  std::cout << '\\n';\n  return 0;\n}",
+    "output": "1 2 3"
+   },
+   {
+    "title": "std::optional",
+    "body": "std::optional represents a value that may be absent.",
+    "code": "#include <iostream>\n#include <optional>\nint main() {\n  std::optional<int> o = 7;\n  if (o) std::cout << *o << '\\n';\n  std::optional<int> e;\n  std::cout << e.has_value() << '\\n';\n  return 0;\n}",
+    "output": "7\n0"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP13, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP13, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp14": {
+  "topics": [
+   {
+    "title": "structured bindings",
+    "body": "Structured bindings unpack a pair or tuple.",
+    "code": "#include <iostream>\n#include <utility>\nint main() {\n  auto p = std::make_pair(10, 20);\n  auto [a, b] = p;\n  std::cout << a << ' ' << b << '\\n';\n  return 0;\n}",
+    "output": "10 20"
+   },
+   {
+    "title": "std::variant",
+    "body": "std::variant holds one of several types.",
+    "code": "#include <iostream>\n#include <variant>\nint main() {\n  std::variant<int, double> v = 3.5;\n  std::cout << std::get<double>(v) << '\\n';\n  return 0;\n}",
+    "output": "3.5"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP14, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP14, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp15": {
+  "topics": [
+   {
+    "title": "lambda capture",
+    "body": "Lambdas can capture variables by value or reference.",
+    "code": "#include <iostream>\nint main() {\n  int x = 5;\n  auto f = [x]() { return x * 2; };\n  std::cout << f() << '\\n';\n  return 0;\n}",
+    "output": "10"
+   },
+   {
+    "title": "constexpr function",
+    "body": "constexpr functions can run at compile time.",
+    "code": "#include <iostream>\nconstexpr int square(int n) { return n * n; }\nint main() {\n  std::cout << square(6) << '\\n';\n  return 0;\n}",
+    "output": "36"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP15, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP15, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp16": {
+  "topics": [
+   {
+    "title": "std::optional",
+    "body": "std::optional represents a value that may be absent.",
+    "code": "#include <iostream>\n#include <optional>\nint main() {\n  std::optional<int> o = 7;\n  if (o) std::cout << *o << '\\n';\n  std::optional<int> e;\n  std::cout << e.has_value() << '\\n';\n  return 0;\n}",
+    "output": "7\n0"
+   },
+   {
+    "title": "static_cast",
+    "body": "static_cast converts between related types.",
+    "code": "#include <iostream>\nint main() {\n  double d = 3.7;\n  int i = static_cast<int>(d);\n  std::cout << i << '\\n';\n  return 0;\n}",
+    "output": "3"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP16, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP16, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp17": {
+  "topics": [
+   {
+    "title": "std::variant",
+    "body": "std::variant holds one of several types.",
+    "code": "#include <iostream>\n#include <variant>\nint main() {\n  std::variant<int, double> v = 3.5;\n  std::cout << std::get<double>(v) << '\\n';\n  return 0;\n}",
+    "output": "3.5"
+   },
+   {
+    "title": "std::array",
+    "body": "std::array is a fixed-size container.",
+    "code": "#include <iostream>\n#include <array>\nint main() {\n  std::array<int,3> a{1,2,3};\n  std::cout << a.size() << ' ' << a[1] << '\\n';\n  return 0;\n}",
+    "output": "3 2"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP17, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP17, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp18": {
+  "topics": [
+   {
+    "title": "constexpr function",
+    "body": "constexpr functions can run at compile time.",
+    "code": "#include <iostream>\nconstexpr int square(int n) { return n * n; }\nint main() {\n  std::cout << square(6) << '\\n';\n  return 0;\n}",
+    "output": "36"
+   },
+   {
+    "title": "sizeof and types",
+    "body": "sizeof reports the size in bytes of a type or object.",
+    "code": "#include <iostream>\nint main() {\n  std::cout << sizeof(int) << '\\n';\n  std::cout << sizeof(double) << '\\n';\n  return 0;\n}",
+    "output": "4\n8"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP18, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP18, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp19": {
+  "topics": [
+   {
+    "title": "static_cast",
+    "body": "static_cast converts between related types.",
+    "code": "#include <iostream>\nint main() {\n  double d = 3.7;\n  int i = static_cast<int>(d);\n  std::cout << i << '\\n';\n  return 0;\n}",
+    "output": "3"
+   },
+   {
+    "title": "auto deduction",
+    "body": "auto deduces the type from the initializer.",
+    "code": "#include <iostream>\nint main() {\n  auto x = 42;\n  auto y = 3.14;\n  std::cout << x << ' ' << y << '\\n';\n  return 0;\n}",
+    "output": "42 3.14"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP19, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP19, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp20": {
+  "topics": [
+   {
+    "title": "std::array",
+    "body": "std::array is a fixed-size container.",
+    "code": "#include <iostream>\n#include <array>\nint main() {\n  std::array<int,3> a{1,2,3};\n  std::cout << a.size() << ' ' << a[1] << '\\n';\n  return 0;\n}",
+    "output": "3 2"
+   },
+   {
+    "title": "range-based for",
+    "body": "Range-based for loops iterate over a container.",
+    "code": "#include <iostream>\n#include <vector>\nint main() {\n  std::vector<int> v{1,2,3};\n  for (int x : v) std::cout << x << ' ';\n  std::cout << '\\n';\n  return 0;\n}",
+    "output": "1 2 3"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP20, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP20, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp21": {
+  "topics": [
+   {
+    "title": "sizeof and types",
+    "body": "sizeof reports the size in bytes of a type or object.",
+    "code": "#include <iostream>\nint main() {\n  std::cout << sizeof(int) << '\\n';\n  std::cout << sizeof(double) << '\\n';\n  return 0;\n}",
+    "output": "4\n8"
+   },
+   {
+    "title": "structured bindings",
+    "body": "Structured bindings unpack a pair or tuple.",
+    "code": "#include <iostream>\n#include <utility>\nint main() {\n  auto p = std::make_pair(10, 20);\n  auto [a, b] = p;\n  std::cout << a << ' ' << b << '\\n';\n  return 0;\n}",
+    "output": "10 20"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP21, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP21, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp22": {
+  "topics": [
+   {
+    "title": "auto deduction",
+    "body": "auto deduces the type from the initializer.",
+    "code": "#include <iostream>\nint main() {\n  auto x = 42;\n  auto y = 3.14;\n  std::cout << x << ' ' << y << '\\n';\n  return 0;\n}",
+    "output": "42 3.14"
+   },
+   {
+    "title": "lambda capture",
+    "body": "Lambdas can capture variables by value or reference.",
+    "code": "#include <iostream>\nint main() {\n  int x = 5;\n  auto f = [x]() { return x * 2; };\n  std::cout << f() << '\\n';\n  return 0;\n}",
+    "output": "10"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP22, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP22, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp23": {
+  "topics": [
+   {
+    "title": "range-based for",
+    "body": "Range-based for loops iterate over a container.",
+    "code": "#include <iostream>\n#include <vector>\nint main() {\n  std::vector<int> v{1,2,3};\n  for (int x : v) std::cout << x << ' ';\n  std::cout << '\\n';\n  return 0;\n}",
+    "output": "1 2 3"
+   },
+   {
+    "title": "std::optional",
+    "body": "std::optional represents a value that may be absent.",
+    "code": "#include <iostream>\n#include <optional>\nint main() {\n  std::optional<int> o = 7;\n  if (o) std::cout << *o << '\\n';\n  std::optional<int> e;\n  std::cout << e.has_value() << '\\n';\n  return 0;\n}",
+    "output": "7\n0"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP23, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP23, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp24": {
+  "topics": [
+   {
+    "title": "structured bindings",
+    "body": "Structured bindings unpack a pair or tuple.",
+    "code": "#include <iostream>\n#include <utility>\nint main() {\n  auto p = std::make_pair(10, 20);\n  auto [a, b] = p;\n  std::cout << a << ' ' << b << '\\n';\n  return 0;\n}",
+    "output": "10 20"
+   },
+   {
+    "title": "std::variant",
+    "body": "std::variant holds one of several types.",
+    "code": "#include <iostream>\n#include <variant>\nint main() {\n  std::variant<int, double> v = 3.5;\n  std::cout << std::get<double>(v) << '\\n';\n  return 0;\n}",
+    "output": "3.5"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP24, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP24, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp25": {
+  "topics": [
+   {
+    "title": "lambda capture",
+    "body": "Lambdas can capture variables by value or reference.",
+    "code": "#include <iostream>\nint main() {\n  int x = 5;\n  auto f = [x]() { return x * 2; };\n  std::cout << f() << '\\n';\n  return 0;\n}",
+    "output": "10"
+   },
+   {
+    "title": "constexpr function",
+    "body": "constexpr functions can run at compile time.",
+    "code": "#include <iostream>\nconstexpr int square(int n) { return n * n; }\nint main() {\n  std::cout << square(6) << '\\n';\n  return 0;\n}",
+    "output": "36"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP25, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP25, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ },
+ "cpp26": {
+  "topics": [
+   {
+    "title": "std::optional",
+    "body": "std::optional represents a value that may be absent.",
+    "code": "#include <iostream>\n#include <optional>\nint main() {\n  std::optional<int> o = 7;\n  if (o) std::cout << *o << '\\n';\n  std::optional<int> e;\n  std::cout << e.has_value() << '\\n';\n  return 0;\n}",
+    "output": "7\n0"
+   },
+   {
+    "title": "static_cast",
+    "body": "static_cast converts between related types.",
+    "code": "#include <iostream>\nint main() {\n  double d = 3.7;\n  int i = static_cast<int>(d);\n  std::cout << i << '\\n';\n  return 0;\n}",
+    "output": "3"
+   }
+  ],
+  "interview": [
+   {
+    "q": "What does this print? (CPP26, snippet 1)",
+    "code": "#include <iostream>\nint main() {\n  int a = 4, b = 2;\n  std::cout << (a & b) << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n0\nbitwise AND"
+   },
+   {
+    "q": "What does this print? (CPP26, snippet 2)",
+    "code": "#include <iostream>\nint main() {\n  int x = 1;\n  x <<= 3;\n  std::cout << x << '\\n';\n  return 0;\n}",
+    "answer": "Output:\n8\nleft shift"
+   }
+  ]
+ }
+}
