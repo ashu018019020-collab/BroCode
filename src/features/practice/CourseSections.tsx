@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, ListChecks, Search } from 'lucide-react';
 import { SubjectLogo } from '../../components/shared/SubjectLogo';
@@ -17,6 +17,18 @@ export interface PythonSectionRow {
 }
 export interface CModuleRow {
   id: string; no: number; title: string; level: string; brief: string; questions: number;
+}
+
+/** A course-owned bank that already has its own question surface, rendered as an in-page QB card. */
+export interface MoreCourseBank {
+  id: string;
+  title: string;
+  href: string;
+  modules: number;
+  questions: number;
+  tone: string;
+  icon: ReactElement;
+  emoji: string;
 }
 
 /** The eight subject ranges, from the track registry — never re-typed here. */
@@ -49,11 +61,15 @@ const C_EMOJI = '⚙️';
  * accuracy tally the page already computed.
  */
 export default function CourseSections({
-  baseline, python, cModules, java, selected, course, track, answered = {}, accuracy = {}, cAnswered = {}, cCorrect = 0, onPick, onPickTrack,
+  baseline, python, cModules, cBank, moreCourses, java, selected, course, track, answered = {}, accuracy = {}, cAnswered = {}, cCorrect = 0, activeCourseBank = null, onPick, onPickTrack, onPickCourseBank,
 }: {
   baseline: number;
   python: PythonSectionRow[];
   cModules: CModuleRow[];
+  /** Published C counts, so the box is complete before its full MCQ bank is opened. */
+  cBank?: { modules: number; questions: number };
+  /** Newly added course banks that open their own question surface in the pane below. */
+  moreCourses: MoreCourseBank[];
   /**
    * The Java course's own bank, as a box that opens it.
    *
@@ -82,8 +98,11 @@ export default function CourseSections({
   cAnswered?: Record<string, number>;
   /** How many of C's answered MCQs were right — every pick is graded, so `cAnswered` is the denominator. */
   cCorrect?: number;
+  /** The course-owned bank currently open in the Question Bank pane below these boxes. */
+  activeCourseBank?: string | null;
   onPick: (course: CourseKey, id: string) => void;
   onPickTrack: (id: string) => void;
+  onPickCourseBank: (id: string) => void;
 }) {
   const { t } = useI18n();
   const [search, setSearch] = useState('');
@@ -133,12 +152,14 @@ export default function CourseSections({
 
   const activeTrack = TRACK_DEFS.find((d) => d.id === track) ?? TRACK_DEFS[0];
   const activeRows = rowsByTrack.get(activeTrack.id) ?? [];
-  const cQuestions = cModules.reduce((n, m) => n + m.questions, 0);
+  const cQuestions = cBank?.questions ?? cModules.reduce((n, m) => n + m.questions, 0);
+  const cModuleCount = cBank?.modules ?? cModules.length;
+  const moreQuestions = moreCourses.reduce((n, c) => n + c.questions, 0);
   /** C's own tally, keyed by module id — the same rail, so the one course box is not a gap. */
   const cDone = cModules.reduce((n, m) => n + (cAnswered[m.id] ?? 0), 0);
   const cAcc = accPct(cDone, cCorrect);
 
-  const total = questionsOf(python) + cQuestions + java.questions;
+  const total = questionsOf(python) + cQuestions + java.questions + moreQuestions;
 
   /**
    * Search is GLOBAL on purpose. A box holds one subject, but a learner looking for "Tuples" does
@@ -207,7 +228,7 @@ export default function CourseSections({
       <div className="row spread">
         <h2 className="row" style={{ gap: 8, margin: 0 }}><ListChecks size={16} /> Subjects</h2>
         <span className="small muted">
-          {TRACK_DEFS.length + 2} boxes · {total} questions
+          {TRACK_DEFS.length + 2 + moreCourses.length} boxes · {total} questions
         </span>
       </div>
       <div className="row" style={{ margin: '10px 0', border: '1px solid var(--border)', borderRadius: 10, padding: '2px 8px', background: 'rgba(0,0,0,.3)' }}>
@@ -263,7 +284,7 @@ export default function CourseSections({
               onClick={() => onPickTrack('c')}
               data-agent-action="qb:track:c"
               aria-pressed={course === 'c'}
-              title={`C Programming — ${cModules.length} modules · ${cQuestions} MCQs`}
+              title={`C Programming — ${cModuleCount} modules · ${cQuestions} MCQs`}
             >
               <span className="cc-logo">
                 <CLogo size={72} />
@@ -271,7 +292,7 @@ export default function CourseSections({
               </span>
               <b className="cc-name">C Programming</b>
               <span className="cc-meta">
-                <span className="cc-level">{cModules.length} modules</span>
+                <span className="cc-level">{cModuleCount} modules</span>
                 <span>{cQuestions} questions</span>
               </span>
               <span className="qb-progress-block">
@@ -307,6 +328,36 @@ export default function CourseSections({
                 <span className="qb-progress-label">Open the Java test bank →</span>
               </span>
             </Link>
+            {/* Newly added course banks: same card, real counts, and an in-page opener. They are NOT
+                mixed into a subject's lessons: a module belongs to its own course, and its answers
+                stay in that course's own bank instead of re-keying the 29-section bank. */}
+            {moreCourses.map((c) => {
+              const open = activeCourseBank === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`course-card cc-simple qb-track tone-${c.tone}${open ? ' on' : ''}`}
+                  onClick={() => onPickCourseBank(c.id)}
+                  data-agent-action={`qb:course:${c.id}`}
+                  aria-pressed={open}
+                  title={`${c.title} — ${c.modules} modules · ${c.questions} questions`}
+                >
+                  <span className="cc-logo">
+                    {c.icon}
+                    <span className="qb-emoji" aria-hidden="true">{c.emoji}</span>
+                  </span>
+                  <b className="cc-name">{c.title}</b>
+                  <span className="cc-meta">
+                    <span className="cc-level">{c.modules} {c.modules === 1 ? 'module' : 'modules'}</span>
+                    <span>{c.questions} questions</span>
+                  </span>
+                  <span className="qb-progress-block">
+                    <span className="qb-progress-label">{open ? 'Open below ↓' : 'Open questions →'}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           {/* The open subject's own index, directly under its boxes. */}
@@ -319,7 +370,7 @@ export default function CourseSections({
                 <b>{course === 'c' ? 'C Programming' : t(activeTrack.nameKey as LocaleKey)}</b>
                 <span className="small muted" style={{ display: 'block' }}>
                   {course === 'c'
-                    ? `${cModules.length} modules · ${cQuestions} MCQs`
+                    ? `${cModuleCount} modules · ${cQuestions} MCQs`
                     : `${activeRows.length} lessons · ${questionsOf(activeRows)} questions${answeredOf(activeRows) > 0 ? ` · ${answeredOf(activeRows)} answered` : ''}${accPct(gradedOf(activeRows), correctOf(activeRows)) !== null ? ` · ${accPct(gradedOf(activeRows), correctOf(activeRows))}% accuracy` : ''}`}
                 </span>
               </span>

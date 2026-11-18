@@ -13,14 +13,7 @@ import {
   ALL_PLACEMENTS, nextCourse, placementOf, sortByCourseOrder, withoutHidden,
 } from '../../core/learning/course-levels';
 import type { CourseCard } from '../../core/learning/courses';
-import { useCIndex } from '../../core/data/ccourse';
-import { useNumpyCourse } from '../../core/data/ncourse';
-import { usePandasCourse } from '../../core/data/pcourse';
-import { useCppCourse } from '../../core/data/cppcourse';
-import { useHtmlCourse } from '../../core/data/htmlcourse';
-import { useCssCourse } from '../../core/data/csscourse';
-import { useMysqlMasterclass } from '../../core/data/mysqlmasterclass';
-import { useSqliteMasterclass } from '../../core/data/sqlitemasterclass';
+import { useCourseBanks } from '../../core/data/course-banks';
 import { CLogo } from '../c-programming/CLogo';
 import { JLogo } from '../java-programming/JLogo';
 import { NLogo } from '../numpy-mastery/NLogo';
@@ -49,14 +42,8 @@ import { SqliteLogo } from '../sqlite-mastery/SqliteLogo';
 export default function CoursesHome() {
   const { t } = useI18n();
   const index = useCourseIndex();
-  const cIndex = useCIndex();
-  const nCourse = useNumpyCourse();
-  const pCourse = usePandasCourse();
-  const cppCourse = useCppCourse();
-  const htmlCourse = useHtmlCourse();
-  const cssCourse = useCssCourse();
-  const mysqlCourse = useMysqlMasterclass();
-  const sqliteCourse = useSqliteMasterclass();
+  const bankIndex = useCourseBanks();
+  const publishedBanks = new Set((bankIndex?.courses ?? []).map((course) => course.id));
   const pctOf = useSectionPct();
   /** Owner overrides when the database has them; the code-authored journey otherwise. */
   const { placements } = useCoursePlacements();
@@ -163,7 +150,7 @@ export default function CoursesHome() {
   );
 
   const renderC = () => {
-    if (!cIndex || cHidden) return null;
+    if (!publishedBanks.has('c-programming') || cHidden) return null;
     return (
       <Link
         to="/c-programming"
@@ -187,7 +174,7 @@ export default function CoursesHome() {
    * mark, and present only once its published artifact has loaded.
    */
   const renderP = () => {
-    if (!pCourse) return null;
+    if (!publishedBanks.has('pandas-mastery')) return null;
     return (
       <Link
         to="/pandas"
@@ -203,15 +190,12 @@ export default function CoursesHome() {
   };
 
   /**
-   * C++ Mastery is its own course page like NumPy and Pandas: a real card in the same grid, its own
-   * mark, and present only once its published artifact has loaded.
-   */
-  /**
    * HTML Mastery is the frontend sequence's FIRST course: it renders before the catalog's CSS and
-   * JavaScript cards, so a beginner meets structure before styling or behaviour.
+   * JavaScript cards, so a beginner meets structure before styling or behaviour. The course-bank
+   * summary supplies presence for all five cards below (one small request, not five artifacts).
    */
   const renderHtml = () => {
-    if (!htmlCourse) return null;
+    if (!publishedBanks.has('html-mastery')) return null;
     return (
       <Link
         to="/html"
@@ -230,7 +214,7 @@ export default function CoursesHome() {
    * CSS Mastery follows HTML: a learner styles what they already know how to structure.
    */
   const renderCss = () => {
-    if (!cssCourse) return null;
+    if (!publishedBanks.has('css-mastery')) return null;
     return (
       <Link
         to="/css"
@@ -247,7 +231,7 @@ export default function CoursesHome() {
 
   /** MySQL Complete Masterclass is its own course page and card, beside the other mastery courses. */
   const renderMysql = () => {
-    if (!mysqlCourse) return null;
+    if (!publishedBanks.has('mysql-masterclass')) return null;
     return (
       <Link
         to="/mysql"
@@ -264,7 +248,7 @@ export default function CoursesHome() {
 
   /** Complete SQLite Masterclass — its own card and page, next to the other database courses. */
   const renderSqlite = () => {
-    if (!sqliteCourse) return null;
+    if (!publishedBanks.has('sqlite-masterclass')) return null;
     return (
       <Link
         to="/sqlite"
@@ -279,8 +263,9 @@ export default function CoursesHome() {
     );
   };
 
+  /** C++ Mastery is its own course page like NumPy and Pandas: a real card in the same grid. */
   const renderCpp = () => {
-    if (!cppCourse) return null;
+    if (!publishedBanks.has('cpp-mastery')) return null;
     return (
       <Link
         to="/cpp"
@@ -296,7 +281,7 @@ export default function CoursesHome() {
   };
 
   const renderN = () => {
-    if (!nCourse) return null;
+    if (!publishedBanks.has('numpy-mastery')) return null;
     return (
       <Link
         to="/numpy"
@@ -324,9 +309,14 @@ export default function CoursesHome() {
           </div>
           {index && (
             <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-              {/* Java is a real card in the grid below, so it is counted here too — the header may
-                  never say 12 while 13 cards are on screen. */}
-              <span className="chip">{visible.length + (cHidden ? 0 : 1) + 1 + (nCourse ? 1 : 0) + (pCourse ? 1 : 0) + (cppCourse ? 1 : 0) + (htmlCourse ? 1 : 0) + (cssCourse ? 1 : 0) + ownerVisible.length} {t('courses.coursesUnit')}</span>
+              {/* Java and the five mastery banks are real cards below, so they are counted here
+                  too — the header must agree with the grid. */}
+              <span className="chip">
+                {visible.length + (cHidden ? 0 : 1) + 1
+                  + ['numpy-mastery', 'pandas-mastery', 'cpp-mastery', 'html-mastery', 'css-mastery', 'mysql-masterclass', 'sqlite-masterclass']
+                    .filter((id) => publishedBanks.has(id)).length
+                  + ownerVisible.length} {t('courses.coursesUnit')}
+              </span>
               <span className="chip">{steps} {t('courses.stepsUnit')}</span>
               <span className="chip">{index.totals.items} {t('courses.itemsUnit')}</span>
             </div>

@@ -48,9 +48,14 @@ export function useCInterview(): CInterviewItem[] {
   return data;
 }
 
-export function useCAssessments(): CAssessmentSet[] {
+export function useCAssessments(enabled = true): CAssessmentSet[] {
   const [data, setData] = useState<CAssessmentSet[]>([]);
-  useEffect(() => { let live = true; load<{ sets: CAssessmentSet[] }>('assessments.json').then((d) => live && setData(d.sets)).catch(() => {}); return () => { live = false; }; }, []);
+  useEffect(() => {
+    if (!enabled) { setData([]); return; }
+    let live = true;
+    load<{ sets: CAssessmentSet[] }>('assessments.json').then((d) => live && setData(d.sets)).catch(() => {});
+    return () => { live = false; };
+  }, [enabled]);
   return data;
 }
 

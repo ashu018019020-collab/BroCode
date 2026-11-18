@@ -19,15 +19,50 @@ import { bankPractised } from '../../core/learning/coverage';
 import { JupyterNotebook } from '../../components/code/JupyterNotebook';
 import { AssistantCard } from '../../components/shared/AssistantCard';
 import { useCAssessments, useCIndex } from '../../core/data/ccourse';
-import { useJAssessments, useJIndex } from '../../core/data/jcourse';
+import { useCourseBanks } from '../../core/data/course-banks';
+import { CourseLogo } from '../../components/shared/CourseLogo';
+import { MysqlLogo } from '../mysql-mastery/MysqlLogo';
+import { SqliteLogo } from '../sqlite-mastery/SqliteLogo';
+import { HtmlLogo } from '../html-mastery/HtmlLogo';
+import { CssLogo } from '../css-mastery/CssLogo';
+import { CppLogo } from '../cpp-mastery/CppLogo';
 import { cQuizTally } from '../../core/learning/ccourse';
-import CourseSections, { type CourseKey } from './CourseSections';
+import CourseSections, { type CourseKey, type MoreCourseBank } from './CourseSections';
+import CourseBankPanel from './CourseBankPanel';
 import CQuiz from './CQuiz';
 import { TRACK_DEFS } from '../../app/App';
 import { subjectsOf, type SubjectRange } from '../../core/learning/subjects';
 
 const EMPTY_FILTER: BankFilter = { type: 'all', difficulty: 'all', search: '', includeDrafts: false };
 const XP_PER_CORRECT = 2;
+
+/** The course-owned banks rendered beside the subject boxes; counts come from the summary. */
+const BANK_CARDS: Omit<MoreCourseBank, 'modules' | 'questions'>[] = [
+  {
+    id: 'sql-masterclass', title: 'SQL Masterclass', href: '/course/sql', tone: 'orange',
+    icon: <CourseLogo logo="postgresql" name="SQL Masterclass" size={72} />, emoji: '🐘',
+  },
+  {
+    id: 'mysql-masterclass', title: 'MySQL Masterclass', href: '/mysql', tone: 'amber',
+    icon: <MysqlLogo size={72} />, emoji: '🐬',
+  },
+  {
+    id: 'sqlite-masterclass', title: 'SQLite Masterclass', href: '/sqlite', tone: 'blue',
+    icon: <SqliteLogo size={72} />, emoji: '🪶',
+  },
+  {
+    id: 'html-mastery', title: 'HTML Mastery', href: '/html', tone: 'orange',
+    icon: <HtmlLogo size={72} />, emoji: '🧱',
+  },
+  {
+    id: 'css-mastery', title: 'CSS Mastery', href: '/css', tone: 'blue',
+    icon: <CssLogo size={72} />, emoji: '🎨',
+  },
+  {
+    id: 'cpp-mastery', title: 'C++ Mastery', href: '/cpp', tone: 'blue',
+    icon: <CppLogo size={72} />, emoji: '⚡',
+  },
+];
 
 /** The eight subject ranges, straight from the track registry — one owner, as the practice pillar.
  *  A section's box is decided by `subjectsOf`, never by a second copy of the numbers. */
@@ -118,6 +153,9 @@ export default function QuestionBank() {
   const state = useStore();
   const [selected, setSelected] = useState<string | null>(() => urlParams().get('section'));
   const [course, setCourse] = useState<CourseKey>(() => (urlParams().get('course') === 'c' ? 'c' : 'python'));
+  // The course-owned bank open INSIDE this page. It stays separate from `course` (Python/C):
+  // opening a course card must not overwrite the learner's place in the subject bank.
+  const [courseBank, setCourseBank] = useState<string | null>(null);
   // The open subject box. `?track=ml` deep-links one; without it the box follows the selected
   // section (see the sync effect below), so a bare `?section=s23` still lands in Agentic AI's box.
   const [track, setTrack] = useState<string>(() => urlParams().get('track') ?? 'python');
@@ -141,9 +179,9 @@ export default function QuestionBank() {
   const [groupShown, setGroupShown] = useState<Record<string, number>>({});
   const [params] = useSearchParams();
 
-  useEffect(() => {
-    if (manifest && !selected && manifest.sections.length) setSelected(manifest.sections[0].sectionId);
-  }, [manifest, selected]);
+  // The page opens on the boxes and the published counts only. A full section bank is fetched
+  // when the learner opens one (or when a deep link names one), never merely because the page
+  // mounted — the first section used to auto-select here and download its ~350 KB file immediately.
 
   // `?section=s23` — the Playbook page's chapter links open THIS section's bank. The section resets
   // the other view state on change (see below), which is what a section change should do anyway.
@@ -166,21 +204,34 @@ export default function QuestionBank() {
 
   // C Programming's own bank: one MCQ set per module, titled by the module it belongs to.
   const cIndex = useCIndex();
-  const cSets = useCAssessments();
+  const cSets = useCAssessments(course === 'c');
   const cModules = useMemo(() => (cIndex?.modules ?? []).map((m) => {
     const set = cSets.find((s) => s.module === m.id);
     return { id: m.id, no: m.no, title: m.title, level: m.level, brief: m.brief, mcqs: set?.questions ?? [] };
   }), [cIndex, cSets]);
   const cModule = cModules.find((m) => m.id === cModuleId) ?? cModules[0] ?? null;
-  const cQuestionCount = cModules.reduce((n, m) => n + m.mcqs.length, 0);
   /**
-   * Java's test bank, counted from the published assessment sets — the same file its Tests tab
-   * renders. The generated `index.json` summary overstates it (165 MCQs), so the box prints what
-   * the file actually holds instead.
+   * The course-owned banks, in the same card grid as C and Java.
+   *
+   * Each course already owns its question surface (the SQL Masterclass panel, the MySQL/SQLite
+   * panel, and the HTML/CSS/C++ module banks), so this list contributes REAL published counts and
+   * opens that surface in the pane below these cards. It deliberately does not re-key their records
+   * into the 29-section bank: those courses write their own progress families, and mixing them here
+   * would make one answer update two unrelated progress systems.
+   *
+   * `course-banks/index.json` is generated from the published course artifacts; the Question Bank
+   * must not load any of those full artifacts just to read two numbers.
    */
-  const jIndex = useJIndex();
-  const jSets = useJAssessments();
-  const jQuestionCount = useMemo(() => jSets.reduce((n, s) => n + s.questions.length, 0), [jSets]);
+  const bankIndex = useCourseBanks();
+  const bankCounts = new Map((bankIndex?.courses ?? []).map((course) => [course.id, course] as const));
+  /** C's full MCQ bank is deferred until its box opens; its published counts come from the summary. */
+  const cBank = bankCounts.get('c-programming');
+  /** Java's box is a link, so its counts can come from the same summary without loading its bank. */
+  const javaBank = bankCounts.get('java-programming');
+  const moreCourses: MoreCourseBank[] = BANK_CARDS.flatMap((card) => {
+    const counts = bankCounts.get(card.id);
+    return counts ? [{ ...card, modules: counts.modules, questions: counts.questions }] : [];
+  });
   /** The index rows carry only a count; the full MCQ list stays with `CQuiz`. */
   const cRows = useMemo(() => cModules.map((m) => ({ ...m, questions: m.mcqs.length })), [cModules]);
   /**
@@ -240,6 +291,7 @@ export default function QuestionBank() {
    * belongs to the clicked box is left selected — the learner's place is not thrown away.
    */
   const pickTrack = (id: string) => {
+    setCourseBank(null);
     if (id === 'c') {
       setCourse('c');
       setCModuleId((cur) => cur ?? cModules[0]?.id ?? null);
@@ -253,10 +305,12 @@ export default function QuestionBank() {
 
   const attemptOf = (id: string) => state.attempts[bankAttempt(id)];
   const pickCourse = (next: CourseKey, id: string) => {
+    setCourseBank(null);
     setCourse(next);
     if (next === 'c') setCModuleId(id);
     else setSelected(id);
   };
+  const activeCourseCard = moreCourses.find((c) => c.id === courseBank) ?? null;
 
   const entry = manifest?.sections.find((s) => s.sectionId === selected) ?? null;
   const rows = useMemo(() => {
@@ -446,8 +500,10 @@ export default function QuestionBank() {
       <h1 className="row" style={{ gap: 10 }}><Database size={22} /> Question Bank</h1>
       <p className="muted small">
         Local content pack — <b>{manifest.published}</b> Python &amp; AI questions across <b>{manifest.sections.length}</b> sections,
-        plus <b>{cQuestionCount}</b> C Programming MCQs across <b>{cModules.length}</b> modules, and <b>{jQuestionCount}</b> Java
-        test questions across <b>{jIndex?.modules.length ?? '…'}</b> modules.
+        plus <b>{cBank?.questions ?? '…'}</b> C Programming MCQs across <b>{cBank?.modules ?? '…'}</b> modules, and <b>{javaBank?.questions ?? '…'}</b> Java
+        test questions across <b>{javaBank?.modules ?? '…'}</b> modules. The newly added course banks — SQL Masterclass,
+        MySQL, SQLite, HTML, CSS and C++ — are in the same grid with their published counts. Open one to pick a
+        module and answer its questions here; “Full course” stays available for the complete course page.
         They sit in one box per subject — pick a subject and its own lessons open under the boxes; pick a lesson and its
         questions open here. Write an answer (it saves automatically) or open the Code Bro for code, then grade yourself:
         you decide correct or wrong, and the app computes no score.
@@ -521,7 +577,9 @@ export default function QuestionBank() {
           baseline={manifest.baseline}
           python={manifest.sections}
           cModules={cRows}
-          java={{ modules: jIndex?.modules.length ?? 0, questions: jQuestionCount }}
+          cBank={cBank}
+          moreCourses={moreCourses}
+          java={{ modules: javaBank?.modules ?? 0, questions: javaBank?.questions ?? 0 }}
           selected={course === 'c' ? cModule?.id ?? cModuleId : selected}
           course={course}
           track={track}
@@ -529,11 +587,21 @@ export default function QuestionBank() {
           accuracy={accuracyBySection}
           cAnswered={cAnsweredByModule}
           cCorrect={cCorrectTotal}
+          activeCourseBank={courseBank}
           onPick={pickCourse}
           onPickTrack={pickTrack}
+          onPickCourseBank={(id) => setCourseBank((open) => (open === id ? null : id))}
         />
 
-        {/* The bank itself — now the full width of the page. */}
+        {activeCourseCard ? (
+          <CourseBankPanel
+            key={activeCourseCard.id}
+            course={activeCourseCard.id}
+            title={activeCourseCard.title}
+            href={activeCourseCard.href}
+            onClose={() => setCourseBank(null)}
+          />
+        ) : (
         <div className="card">
           {course === 'c' ? (
             <CQuiz module={cModule} />
@@ -695,6 +763,7 @@ export default function QuestionBank() {
             </>
           )}
         </div>
+        )}
       </div>
     </div>
   );
