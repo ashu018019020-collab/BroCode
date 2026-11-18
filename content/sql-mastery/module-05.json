@@ -937,7 +937,12 @@
       "answer": "To commit or roll back related inserts as one unit."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS settings (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL DEFAULT 'default');",
+    "CREATE TABLE IF NOT EXISTS students_backup (LIKE students INCLUDING ALL);",
+    "CREATE TABLE IF NOT EXISTS top_students (LIKE students INCLUDING ALL);"
+   ]
   }
  ]
 }

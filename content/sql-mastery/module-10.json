@@ -943,7 +943,13 @@
       "answer": "Every matching pair becomes an output row."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS course_sections (course_id INTEGER REFERENCES courses(id), semester TEXT NOT NULL, room TEXT NOT NULL, PRIMARY KEY (course_id, semester));",
+    "CREATE TABLE IF NOT EXISTS assignments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), marks INTEGER, PRIMARY KEY (student_id, course_id));",
+    "CREATE TABLE IF NOT EXISTS applicants (id BIGINT PRIMARY KEY, email TEXT, marks INTEGER);",
+    "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS semester TEXT;"
+   ]
   }
  ]
 }

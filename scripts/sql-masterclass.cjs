@@ -39,6 +39,12 @@ for (const m of modules) {
   if (seenModules.has(m.id)) fail(`duplicate module id ${m.id}`);
   seenModules.add(m.id);
   if (!m.title || !m.goal) fail(`${m.id}: title and goal are required`);
+  if (m.setup !== undefined) {
+    if (!Array.isArray(m.setup) || m.setup.length === 0) fail(`${m.id}: setup must be a non-empty array`);
+    for (const statement of m.setup || []) {
+      if (typeof statement !== 'string' || !statement.trim()) fail(`${m.id}: setup entries must be non-empty SQL strings`);
+    }
+  }
   if (!Array.isArray(m.topics) || m.topics.length < 3) fail(`${m.id}: needs 3+ topics`);
   const topicTitles = new Set();
   for (const t of m.topics || []) {

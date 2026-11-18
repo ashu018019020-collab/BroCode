@@ -912,7 +912,11 @@
       "answer": "Order is by name."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS student_audit (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, student_id BIGINT, action TEXT, changed_at TIMESTAMPTZ DEFAULT NOW());",
+    "CREATE TABLE IF NOT EXISTS audit_log (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, table_name TEXT, action TEXT, row_data JSONB, changed_at TIMESTAMPTZ DEFAULT NOW());"
+   ]
   }
  ]
 }

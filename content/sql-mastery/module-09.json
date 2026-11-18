@@ -942,7 +942,11 @@
       "answer": "Preview, transact, modify, verify the count, then commit or roll back."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS applicants (id BIGINT PRIMARY KEY, email TEXT, marks INTEGER);",
+    "CREATE TABLE IF NOT EXISTS students_archive (LIKE students INCLUDING ALL);"
+   ]
   }
  ]
 }

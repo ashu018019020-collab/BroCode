@@ -2967,7 +2967,10 @@
       "answer": "gen_random_uuid() on modern PostgreSQL."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS people (id BIGINT PRIMARY KEY, name TEXT, age TEXT);"
+   ]
   },
   {
    "id": "sql03",
@@ -5709,7 +5712,12 @@
       "answer": "To commit or roll back related inserts as one unit."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS settings (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL DEFAULT 'default');",
+    "CREATE TABLE IF NOT EXISTS students_backup (LIKE students INCLUDING ALL);",
+    "CREATE TABLE IF NOT EXISTS top_students (LIKE students INCLUDING ALL);"
+   ]
   },
   {
    "id": "sql06",
@@ -7597,7 +7605,11 @@
       "answer": "To state the intended logic and override precedence."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS items (id BIGINT PRIMARY KEY, code TEXT NOT NULL);",
+    "CREATE TABLE IF NOT EXISTS users (id BIGINT PRIMARY KEY, name TEXT, active BOOLEAN);"
+   ]
   },
   {
    "id": "sql08",
@@ -9427,7 +9439,11 @@
       "answer": "Preview, transact, modify, verify the count, then commit or roll back."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS applicants (id BIGINT PRIMARY KEY, email TEXT, marks INTEGER);",
+    "CREATE TABLE IF NOT EXISTS students_archive (LIKE students INCLUDING ALL);"
+   ]
   },
   {
    "id": "sql10",
@@ -10342,7 +10358,13 @@
       "answer": "Every matching pair becomes an output row."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS course_sections (course_id INTEGER REFERENCES courses(id), semester TEXT NOT NULL, room TEXT NOT NULL, PRIMARY KEY (course_id, semester));",
+    "CREATE TABLE IF NOT EXISTS assignments (student_id BIGINT REFERENCES students(id), course_id INTEGER REFERENCES courses(id), marks INTEGER, PRIMARY KEY (student_id, course_id));",
+    "CREATE TABLE IF NOT EXISTS applicants (id BIGINT PRIMARY KEY, email TEXT, marks INTEGER);",
+    "ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS semester TEXT;"
+   ]
   },
   {
    "id": "sql11",
@@ -11257,7 +11279,11 @@
       "answer": "NOT EXISTS."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS applicants (id BIGINT PRIMARY KEY, email TEXT, marks INTEGER);",
+    "CREATE TABLE IF NOT EXISTS employees (id BIGINT PRIMARY KEY, name TEXT, manager_id BIGINT REFERENCES employees(id));"
+   ]
   },
   {
    "id": "sql12",
@@ -13088,7 +13114,10 @@
       "answer": "It passes as UNKNOWN."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS applicants (id BIGINT PRIMARY KEY, email TEXT, marks INTEGER);"
+   ]
   },
   {
    "id": "sql14",
@@ -19494,7 +19523,11 @@
       "answer": "INITIALLY IMMEDIATE is the default."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE EXTENSION IF NOT EXISTS btree_gist;",
+    "CREATE TABLE IF NOT EXISTS bookings (id BIGINT PRIMARY KEY, room_id INTEGER NOT NULL, during TSRANGE NOT NULL);"
+   ]
   },
   {
    "id": "sql21",
@@ -24066,7 +24099,11 @@
       "answer": "Order is by name."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS student_audit (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, student_id BIGINT, action TEXT, changed_at TIMESTAMPTZ DEFAULT NOW());",
+    "CREATE TABLE IF NOT EXISTS audit_log (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, table_name TEXT, action TEXT, row_data JSONB, changed_at TIMESTAMPTZ DEFAULT NOW());"
+   ]
   },
   {
    "id": "sql26",
@@ -26813,7 +26850,10 @@
       "answer": "Create on the parent."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS old_events (id BIGINT, created_at DATE NOT NULL, payload JSONB);"
+   ]
   },
   {
    "id": "sql29",
@@ -27728,7 +27768,10 @@
       "answer": "Use sparingly."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE OR REPLACE VIEW enrollment_report AS SELECT c.title AS course, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;"
+   ]
   },
   {
    "id": "sql30",
@@ -28643,7 +28686,10 @@
       "answer": "Log internally."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS events (id BIGINT PRIMARY KEY, created_at DATE NOT NULL, payload JSONB NOT NULL DEFAULT '{}'::jsonb);"
+   ]
   },
   {
    "id": "sql31",
@@ -29562,7 +29608,10 @@
       "answer": "Know the lock level."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());"
+   ]
   },
   {
    "id": "sql32",
@@ -30477,7 +30526,10 @@
       "answer": "Define retention."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS backups (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, completed_at TIMESTAMPTZ NOT NULL);"
+   ]
   },
   {
    "id": "sql33",
@@ -32309,7 +32361,10 @@
       "answer": "Rank by the measure."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS monthly_counts (month DATE PRIMARY KEY, total NUMERIC NOT NULL);"
+   ]
   },
   {
    "id": "sql35",
@@ -34151,7 +34206,11 @@
       "answer": "Test results."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS events (id BIGINT, created_at DATE NOT NULL, payload JSONB) PARTITION BY RANGE (created_at);",
+    "CREATE TABLE IF NOT EXISTS events_2024 PARTITION OF events FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');"
+   ]
   }
  ]
 }

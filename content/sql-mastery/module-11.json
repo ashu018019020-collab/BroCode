@@ -944,7 +944,11 @@
       "answer": "NOT EXISTS."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS applicants (id BIGINT PRIMARY KEY, email TEXT, marks INTEGER);",
+    "CREATE TABLE IF NOT EXISTS employees (id BIGINT PRIMARY KEY, name TEXT, manager_id BIGINT REFERENCES employees(id));"
+   ]
   }
  ]
 }

@@ -1,5 +1,6 @@
 import { BookOpen, GraduationCap, Layers, ShieldCheck } from 'lucide-react';
 import { useSqliteMasterclass } from '../../core/data/sqlitemasterclass';
+import { masterclassQuestionCount } from '../../core/learning/masterclass';
 import { MasterclassPanel } from '../labs/SqlMasterclass';
 import { SqliteLogo } from './SqliteLogo';
 
@@ -23,7 +24,7 @@ export default function SqliteCoursePage() {
   }
 
   const { course, stats } = file;
-  const bankItems = stats.learn + stats.interview + stats.labs + stats.logic + stats.debug + stats.revision;
+  const bankItems = masterclassQuestionCount(stats);
 
   return (
     <div>

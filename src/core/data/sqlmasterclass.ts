@@ -18,6 +18,8 @@ export interface SqlLab { title: string; task: string; solution: string; expecte
 export interface SqlDebug { title: string; broken: string; fix: string; error: string; expected: string }
 export interface SqlModule {
   id: string; no: number; title: string; goal: string; level: string; hours: number;
+  /** Module-local DDL/SQL that must run before this module's examples. */
+  setup?: string[];
   topics: SqlTopic[];
   banks: {
     learn: SqlQuiz[]; interview: SqlQA[]; labs: SqlLab[];

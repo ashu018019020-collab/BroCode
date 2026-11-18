@@ -164,6 +164,18 @@ export const MASTERCLASS_TOPIC_PREFIX = 'mt:';
  */
 export const masterclassCourseReward = (courseId: string) => `mcr:${courseId}`;
 export const MASTERCLASS_COURSE_REWARD_PREFIX = 'mcr:';
+/**
+ * One record per answered Masterclass learn question: `mq:<courseId>:<moduleId>:<i>`, with the chosen
+ * option in `answer` and the verdict in `done`. Its own family on purpose — the Python bank (`qb:`),
+ * the C course (`cquiz:`) and the Java course (`jquiz:`) must never count an answer they did not serve.
+ *
+ * The question's INDEX is its identity (the learn bank is an authored, ordered list), which is what
+ * the C and Java quizzes do too; `SqlQuiz` carries no id of its own.
+ */
+export const masterclassQuizAttempt = (courseId: string, moduleId: string, i: number) => `mq:${courseId}:${moduleId}:${i}`;
+export const MASTERCLASS_QUIZ_PREFIX = 'mq:';
+/** One module's question family, e.g. `masterclassQuizFamily('sql-masterclass', 'sql13')`. */
+export const masterclassQuizFamily = (courseId: string, moduleId: string) => `mq:${courseId}:${moduleId}:`;
 
 // ---- the Java course's records ----
 /**

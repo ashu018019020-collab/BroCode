@@ -913,7 +913,10 @@
       "answer": "Use sparingly."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE OR REPLACE VIEW enrollment_report AS SELECT c.title AS course, COUNT(e.student_id) AS enrolled FROM courses c LEFT JOIN enrollments e ON e.course_id = c.id GROUP BY c.id, c.title;"
+   ]
   }
  ]
 }

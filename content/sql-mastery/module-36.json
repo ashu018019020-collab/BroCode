@@ -925,7 +925,11 @@
       "answer": "Test results."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS events (id BIGINT, created_at DATE NOT NULL, payload JSONB) PARTITION BY RANGE (created_at);",
+    "CREATE TABLE IF NOT EXISTS events_2024 PARTITION OF events FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');"
+   ]
   }
  ]
 }

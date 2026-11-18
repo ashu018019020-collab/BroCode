@@ -913,7 +913,10 @@
       "answer": "Define retention."
      }
     ]
-   }
+   },
+   "setup": [
+    "CREATE TABLE IF NOT EXISTS backups (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, completed_at TIMESTAMPTZ NOT NULL);"
+   ]
   }
  ]
 }

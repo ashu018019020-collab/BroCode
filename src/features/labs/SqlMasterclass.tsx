@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, Bug, CheckCircle2, Code2, GraduationCap, HelpCircle, Layers, ListChecks, Lock } from 'lucide-react';
+import { ArrowRight, BookOpen, Bug, CheckCircle2, Code2, Flag, GraduationCap, HelpCircle, Layers, ListChecks, Lock, Trophy } from 'lucide-react';
 import { useSqlMasterclass, type SqlMasterclassFile, type SqlModule, type SqlQuiz } from '../../core/data/sqlmasterclass';
-import { levelForXp, masterclassCourseReward, masterclassTopicDone } from '../../core/platform/keys';
+import { masterclassPractice, masterclassQuestionCount, masterclassQuizTally } from '../../core/learning/masterclass';
+import { levelForXp, masterclassCourseReward, masterclassQuizAttempt, masterclassTopicDone } from '../../core/platform/keys';
 import { addXp, forgetAttempt, recordAttempt, useStore } from '../../core/storage/store';
 
 type BankKey = 'learn' | 'interview' | 'labs' | 'logic' | 'debug' | 'revision';
@@ -40,22 +41,40 @@ const FALLBACK_NEXT = {
   why: 'Continue with the next course in the catalog.',
 };
 
-function Quiz({ item }: { item: SqlQuiz }) {
-  const [picked, setPicked] = useState<string | null>(null);
+/** The page that can actually run a module's setup — only the SQL course has one today. */
+const LAB_ROUTE: Record<string, string> = {
+  'sql-masterclass': '/sql',
+};
+
+/**
+ * A learn-bank question whose answer lives in the attempt record, not in this component.
+ *
+ * It used to hold the pick in local state, so every answer vanished on refresh and the course counted
+ * only the manual topic ticks. The panel passes the stored pick in and writes the verdict on click,
+ * which also keeps one store subscription here instead of one per question.
+ */
+function Quiz({ item, index, picked, onPick }: {
+  item: SqlQuiz;
+  index: number;
+  /** Stored option index, or `null` when the question has not been answered. */
+  picked: number | null;
+  onPick: (optionIndex: number) => void;
+}) {
   return (
-    <div className="card" style={{ marginBottom: 8 }}>
+    <div className="card" style={{ marginBottom: 8 }} data-quiz={index}>
       <b className="small">{item.q}</b>
       <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-        {item.options.map((option) => {
-          const chosen = picked === option;
+        {item.options.map((option, optionIndex) => {
+          const chosen = picked === optionIndex;
           const right = option === item.answer;
-          const tone = picked ? (right ? 'easy' : chosen ? 'hard' : '') : '';
+          const tone = picked === null ? '' : right ? 'easy' : chosen ? 'hard' : '';
           return (
             <button
               key={option}
               type="button"
               className={`chip ${tone}`}
-              onClick={() => setPicked(option)}
+              onClick={() => onPick(optionIndex)}
+              aria-pressed={chosen}
               style={{ cursor: 'pointer', height: 'auto', whiteSpace: 'normal', textAlign: 'left', padding: '4px 8px' }}
             >
               {option}
@@ -63,9 +82,9 @@ function Quiz({ item }: { item: SqlQuiz }) {
           );
         })}
       </div>
-      {picked && (
+      {picked !== null && (
         <p className="small" style={{ margin: '8px 0 0' }}>
-          {picked === item.answer ? 'Correct. ' : 'Not yet. '}
+          {item.options[picked] === item.answer ? 'Correct. ' : 'Not yet. '}
           <span className="muted">{item.why}</span>
         </p>
       )}
@@ -73,10 +92,32 @@ function Quiz({ item }: { item: SqlQuiz }) {
   );
 }
 
-function Bank({ module, bank }: { module: SqlModule; bank: BankKey }) {
+function Bank({ module, bank, courseId, attempts, onPick }: {
+  module: SqlModule;
+  bank: BankKey;
+  courseId: string;
+  attempts: Record<string, { done?: boolean; answer?: string } | undefined>;
+  onPick: (index: number, optionIndex: number, answerIndex: number) => void;
+}) {
   const items = module.banks[bank];
   if (bank === 'learn') {
-    return <>{(items as SqlQuiz[]).map((item) => <Quiz key={item.q} item={item} />)}</>;
+    return (
+      <>
+        {(items as SqlQuiz[]).map((item, index) => {
+          const stored = attempts[masterclassQuizAttempt(courseId, module.id, index)]?.answer;
+          const picked = stored === undefined ? null : Number(stored);
+          return (
+            <Quiz
+              key={item.q}
+              item={item}
+              index={index}
+              picked={Number.isInteger(picked) ? picked : null}
+              onPick={(optionIndex) => onPick(index, optionIndex, item.options.indexOf(item.answer))}
+            />
+          );
+        })}
+      </>
+    );
   }
   if (bank === 'labs') {
     return (
@@ -154,9 +195,22 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
         .map((t) => t.id),
     );
   }, [module, state.attempts, file.course.id]);
-  const bankItems = file.stats.learn + file.stats.interview + file.stats.labs + file.stats.logic + file.stats.debug + file.stats.revision;
+  const moduleQuestions = module?.banks.learn.length ?? 0;
+  const moduleTally = masterclassQuizTally(state.attempts, file.course.id, module?.id ?? '', moduleQuestions);
+  const practice = useMemo(
+    () => masterclassPractice(
+      state.attempts,
+      file.course.id,
+      modules.map((m) => ({ id: m.id, questions: m.banks.learn.length })),
+    ),
+    [state.attempts, file.course.id, modules],
+  );
+  const bankItems = masterclassQuestionCount(file.stats);
   const courseDone = modules.length > 0 && completed.size === modules.length;
+  const firstUnfinished = modules.find((m) => !completed.has(m.id));
+  const remainingModules = Math.max(0, modules.length - completed.size);
   const nextCourse = NEXT_MASTERCLASS[file.course.id] ?? FALLBACK_NEXT;
+  const labRoute = LAB_ROUTE[file.course.id];
   const rewardRef = useRef(false);
   useEffect(() => {
     if (!courseDone || rewardRef.current) return;
@@ -204,14 +258,25 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
     openNext();
   };
 
+  /** One record per answered question, keyed by course + module + the question's position. */
+  const pickQuiz = (moduleId: string, index: number, optionIndex: number, answerIndex: number) => {
+    const correct = optionIndex === answerIndex;
+    recordAttempt(masterclassQuizAttempt(file.course.id, moduleId, index), {
+      answer: String(optionIndex),
+      done: correct,
+      score: correct ? 100 : 0,
+    });
+  };
+
   return (
     <div className="card" ref={panelRef} style={{ marginTop: 10 }}>
       <div className="row spread" style={{ gap: 10, flexWrap: 'wrap' }}>
         <div className="row" style={{ gap: 8 }}>
           <span className="chip"><GraduationCap size={12} /> {label}</span>
           <b>{file.course.title}</b>
+          <span className="chip">{modules.length} modules</span>
           <span className="chip">{file.stats.topics} topics</span>
-          <span className="chip">{file.stats.learn + file.stats.interview + file.stats.labs + file.stats.logic + file.stats.debug + file.stats.revision} bank items</span>
+          <span className="chip">{bankItems} bank items</span>
         </div>
         <button type="button" className="btn small" onClick={() => setOpen((v) => !v)}>
           {open ? 'Hide course' : 'Open course'}
@@ -223,6 +288,74 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
 
       {open && (
         <>
+          {labRoute && module.setup && module.setup.length > 0 && (
+            <div style={{ marginTop: 10 }}>
+              <Link to={`${labRoute}?module=${module.id}`} className="btn small primary">
+                <Code2 size={13} /> Run this module in SQL Lab
+              </Link>
+              <details style={{ marginTop: 6 }}>
+                <summary className="small muted" style={{ cursor: 'pointer' }}>
+                  Module schema — {module.setup.length} statement{module.setup.length === 1 ? '' : 's'} the lab loads first
+                </summary>
+                <pre className="codeblock" style={{ margin: '6px 0 0' }}>{module.setup.join('\n')}</pre>
+              </details>
+            </div>
+          )}
+
+          <div
+            className="kpi-row"
+            role="group"
+            aria-label="Course progress overview"
+            style={{ marginTop: 10, marginBottom: 4 }}
+          >
+            <div className="kpi tone-green">
+              <span className="ic" aria-hidden="true"><CheckCircle2 size={16} /></span>
+              <div className="kpi-body">
+                <div className="n">{completed.size} / {modules.length}</div>
+                <div className="l">Completed modules</div>
+                <div className="kpi-sub">
+                  {remainingModules === 0
+                    ? 'All published modules finished'
+                    : `${remainingModules} module${remainingModules === 1 ? '' : 's'} remaining`}
+                </div>
+              </div>
+            </div>
+            <div className="kpi tone-amber">
+              <span className="ic" aria-hidden="true"><Trophy size={16} /></span>
+              <div className="kpi-body">
+                <div className="n">{state.xp} XP</div>
+                <div className="l">Total XP</div>
+                <div className="kpi-sub">Level {levelForXp(state.xp)}</div>
+              </div>
+            </div>
+            <div className="kpi tone-violet">
+              <span className="ic" aria-hidden="true"><Flag size={16} /></span>
+              <div className="kpi-body">
+                <div className="n">
+                  {firstUnfinished
+                    ? `Module ${String(firstUnfinished.no).padStart(2, '0')}`
+                    : 'Course complete'}
+                </div>
+                <div className="l">Next unfinished module</div>
+                <div className="kpi-sub">
+                  {firstUnfinished ? firstUnfinished.title : 'All published modules finished'}
+                </div>
+              </div>
+            </div>
+            <div className="kpi tone-blue">
+              <span className="ic" aria-hidden="true"><ListChecks size={16} /></span>
+              <div className="kpi-body">
+                <div className="n">{practice.answered} / {practice.total}</div>
+                <div className="l">Learn bank answered</div>
+                <div className="kpi-sub">
+                  {practice.answered === 0
+                    ? 'Answers are saved and count here'
+                    : `${practice.correct} correct · ${practice.pct ?? 0}% answered`}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
             {modules.map((m, index) => {
               const isOpen = unlocked(index);
@@ -244,13 +377,13 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
             })}
             <span className="chip"><Layers size={11} /> {module.topics.length} topics</span>
             <span className="chip"><CheckCircle2 size={11} /> {doneTopics.size}/{module.topics.length} checked</span>
+            <span className="chip"><ListChecks size={11} /> {moduleTally.answered}/{moduleQuestions} answered</span>
             <span className="chip"><ListChecks size={11} /> {module.hours}h</span>
           </div>
 
           <div className="row spread" style={{ gap: 8, marginTop: 10 }}>
             <span className="small muted"><CheckCircle2 size={12} /> {completed.size} of {modules.length} modules complete</span>
             {courseDone && <span className="chip easy"><CheckCircle2 size={11} /> Course complete</span>}
-            {nextModule && <span className="small muted">Next: Module {String(nextModule.no).padStart(2, '0')} · {nextModule.title}</span>}
           </div>
           <div style={{ height: 6, marginTop: 6, borderRadius: 999, background: 'var(--line, #e5e7eb)', overflow: 'hidden' }}>
             <div
@@ -325,7 +458,13 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
             })}
           </div>
           <div style={{ marginTop: 10 }}>
-            <Bank module={module} bank={bank} />
+            <Bank
+              module={module}
+              bank={bank}
+              courseId={file.course.id}
+              attempts={state.attempts}
+              onPick={(index, optionIndex, answerIndex) => pickQuiz(module.id, index, optionIndex, answerIndex)}
+            />
           </div>
 
           {!courseDone && (
@@ -370,7 +509,7 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
                     {file.course.title} — every published module finished
                   </b>
                   <p className="small muted" style={{ margin: '4px 0 0' }}>
-                    {modules.length} modules · {file.stats.topics} topics · {bankItems} bank items completed.
+                    {modules.length} modules · {file.stats.topics} topics read · {practice.answered} of {bankItems} questions answered.
                   </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>

@@ -1,5 +1,6 @@
 import { BookOpen, GraduationCap, Layers, ShieldCheck } from 'lucide-react';
 import { useMysqlMasterclass } from '../../core/data/mysqlmasterclass';
+import { masterclassQuestionCount } from '../../core/learning/masterclass';
 import { MasterclassPanel } from '../labs/SqlMasterclass';
 import { MysqlLogo } from './MysqlLogo';
 
@@ -23,7 +24,7 @@ export default function MysqlCoursePage() {
   }
 
   const { course, stats } = file;
-  const bankItems = stats.learn + stats.interview + stats.labs + stats.logic + stats.debug + stats.revision;
+  const bankItems = masterclassQuestionCount(stats);
 
   return (
     <div>
