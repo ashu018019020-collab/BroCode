@@ -128,10 +128,10 @@ function Bank({ module, bank }: { module: SqlModule; bank: BankKey }) {
   );
 }
 
-export function MasterclassPanel({ file, label = 'SQL MASTERCLASS' }: { file: SqlMasterclassFile; label?: string }) {
+export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen = false }: { file: SqlMasterclassFile; label?: string; defaultOpen?: boolean }) {
   const state = useStore();
   const panelRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [level, setLevel] = useState<'simple' | 'pro'>('simple');
   const [moduleId, setModuleId] = useState('sql00');
   const [bank, setBank] = useState<BankKey>('learn');

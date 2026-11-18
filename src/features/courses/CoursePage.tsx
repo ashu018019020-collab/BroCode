@@ -9,6 +9,7 @@ import {
 } from '../../core/learning/courses';
 import { STEPS, phaseOf } from '../../core/learning/roadmap';
 import type { LocaleKey } from '../../app/i18n/locales';
+import SqlCoursePage from './SqlCoursePage';
 
 /**
  * /course/:slug — one course, line by line.
@@ -21,6 +22,11 @@ import type { LocaleKey } from '../../app/i18n/locales';
  */
 export default function CoursePage() {
   const { slug = '' } = useParams();
+  return slug === 'sql' ? <SqlCoursePage /> : <CatalogCoursePage slug={slug} />;
+}
+
+/** The catalog course page for every course except SQL, which owns a masterclass page. */
+function CatalogCoursePage({ slug }: { slug: string }) {
   const { t } = useI18n();
   const index = useCourseIndex();
   const course = useCourse(slug);
