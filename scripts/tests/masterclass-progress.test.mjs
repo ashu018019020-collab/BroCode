@@ -20,8 +20,8 @@ register('./_ts-resolve.mjs', import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const load = (relative) => import(pathToFileURL(path.join(ROOT, relative)).href);
 
-const { masterclassPractice, masterclassQuestionCount, masterclassQuizTally } = await load('src/core/learning/masterclass.ts');
-const { MASTERCLASS_QUIZ_PREFIX, masterclassQuizAttempt, masterclassQuizFamily } = await load('src/core/platform/keys.ts');
+const { MASTERCLASS_BANKS, masterclassHref, masterclassPractice, masterclassQuestionCount, masterclassQuizTally, masterclassSelection } = await load('src/core/learning/masterclass.ts');
+const { MASTERCLASS_QUIZ_PREFIX, masterclassModuleReward, masterclassQuizAttempt, masterclassQuizFamily } = await load('src/core/platform/keys.ts');
 
 test('masterclass quiz: one family per course module, keyed by question position', () => {
   assert.equal(masterclassQuizAttempt('sql-masterclass', 'sql13', 4), 'mq:sql-masterclass:sql13:4');
@@ -100,4 +100,63 @@ test('masterclass quiz: the panel records the answer and reads it back from the 
   );
   // `done` is the verdict, matching the C and Java quizzes: correct/incorrect, not "viewed".
   assert.match(panel, /done: correct,/);
+});
+
+test('masterclass url: the selection is validated against what the course publishes', () => {
+  const modules = [
+    { id: 'sql12', topics: [{ id: 't01' }] },
+    { id: 'sql13', topics: [{ id: 't01' }, { id: 't04' }] },
+  ];
+  const read = (query) => masterclassSelection(new URLSearchParams(query), modules);
+  assert.deepEqual(
+    read('module=sql13&bank=logic&example=t04&level=pro'),
+    { moduleId: 'sql13', bank: 'logic', topicId: 't04', level: 'pro' },
+  );
+  // A link can outlive an edit that renumbers a module or a topic: an unknown id is ignored.
+  assert.deepEqual(read('module=sql99&example=t04'), { moduleId: undefined, bank: undefined, topicId: undefined, level: undefined });
+  assert.deepEqual(read('module=sql13&example=t99'), { moduleId: 'sql13', bank: undefined, topicId: undefined, level: undefined });
+  assert.deepEqual(read('module=sql13&bank=answers'), { moduleId: 'sql13', bank: undefined, topicId: undefined, level: undefined });
+  // The level is a panel-wide choice, so it stands on its own; only the two authored values count.
+  assert.deepEqual(read('level=pro'), { moduleId: undefined, bank: undefined, topicId: undefined, level: 'pro' });
+  assert.deepEqual(read('level=expert'), { moduleId: undefined, bank: undefined, topicId: undefined, level: undefined });
+  assert.deepEqual(read(''), { moduleId: undefined, bank: undefined, topicId: undefined, level: undefined });
+  assert.equal(MASTERCLASS_BANKS.length, 6);
+});
+
+test('masterclass url: writing the selection keeps the page’s other params', () => {
+  const params = new URLSearchParams('module=sql12&tab=notes');
+  const next = masterclassHref(params, { moduleId: 'sql13', bank: 'logic', example: 't04', level: 'pro' });
+  assert.equal(next.get('module'), 'sql13');
+  assert.equal(next.get('bank'), 'logic');
+  assert.equal(next.get('example'), 't04');
+  assert.equal(next.get('level'), 'pro');
+  assert.equal(next.get('tab'), 'notes');
+  assert.equal(params.get('module'), 'sql12', 'the page’s current params are not mutated');
+
+  // An example belongs to its module: opening another one drops the stale topic.
+  const moved = masterclassHref(new URLSearchParams('module=sql12&example=t01&bank=logic'), { moduleId: 'sql13' });
+  assert.equal(moved.get('module'), 'sql13');
+  assert.equal(moved.get('example'), null);
+  assert.equal(moved.get('bank'), 'logic', 'the bank is still the learner’s choice');
+});
+
+test('masterclass xp: topics and modules each pay once, through their own receipts', () => {
+  const panel = fs.readFileSync(path.join(ROOT, 'src/features/labs/SqlMasterclass.tsx'), 'utf8');
+  assert.equal(masterclassModuleReward('sql-masterclass', 'sql13'), 'mmr:sql-masterclass:sql13');
+
+  // A topic pays the first time its mt: record appears — the record is the receipt, so unchecking
+  // keeps it (done: false) instead of deleting it, and checking again cannot pay twice.
+  assert.match(panel, /if \(!state\.attempts\[key\]\) addXp\(MASTERCLASS_TOPIC_XP/, 'topic XP is gated by the record');
+  assert.match(panel, /recordAttempt\(key, \{ done: false \}\)/, 'unchecking must keep the receipt');
+  assert.doesNotMatch(panel, /forgetAttempt\(/, 'deleting the record would re-pay on the next check');
+
+  // A module pays once through mmr:, not through the derived completion set, and says so.
+  assert.match(panel, /masterclassModuleReward\(/, 'module XP needs its own receipt');
+  assert.match(panel, /if \(state\.attempts\[key\]\?\.done\) return;/, 'the module receipt is checked before paying');
+  assert.match(panel, /addXp\(MASTERCLASS_MODULE_XP/, 'completing a module awards XP');
+  assert.match(panel, /\+\$\{MASTERCLASS_MODULE_XP\} XP/, 'the notice names the award');
+
+  // The course-wide bonus is unchanged: mcr:, once, at full completion.
+  assert.match(panel, /masterclassCourseReward\(/, 'the course reward stays on mcr:');
+  assert.match(panel, /addXp\(MASTERCLASS_COMPLETION_XP/, 'the course bonus still pays at the end');
 });

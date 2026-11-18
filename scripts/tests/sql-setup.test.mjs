@@ -20,7 +20,7 @@ register('./_ts-resolve.mjs', import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const load = (relative) => import(pathToFileURL(path.join(ROOT, relative)).href);
 
-const { sqliteSchema, withModuleSchema } = await load('src/core/learning/sql-setup.ts');
+const { sqliteSchema, moduleRun } = await load('src/core/learning/sql-setup.ts');
 const { DATASETS, seedForSQL } = await load('src/core/data/datasets.ts');
 
 const require = createRequire(import.meta.url);
@@ -29,9 +29,9 @@ const SQL = await initSqlJs({ locateFile: (file) => path.join(ROOT, 'node_module
 
 /** The Lab's own seeding step (`runSQL` in `features/coding/runners.ts`), reproduced so the DDL is
  *  exercised against the tables a learner actually has. sql.js is the browser engine, run in Node. */
-function labDatabase() {
+function labDatabase(datasets = DATASETS) {
   const db = new SQL.Database();
-  for (const { name, rows } of DATASETS.map(seedForSQL)) {
+  for (const { name, rows } of datasets.map(seedForSQL)) {
     db.run(`CREATE TABLE ${name} (${rows[0].map((column) => `"${column}"`).join(',')});`);
     for (let i = 1; i < rows.length; i += 1) {
       const values = rows[i].map((value) => (typeof value === 'number' ? value : `'${String(value).replace(/'/g, "''")}'`));
@@ -106,11 +106,71 @@ test('sql-setup: what SQLite cannot run is reported with a reason', () => {
 test('sql-setup: the schema runs before the query, and never replaces it', () => {
   const plan = sqliteSchema(['CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY);'], SEEDED);
   assert.equal(
-    withModuleSchema(plan, 'SELECT * FROM people;'),
+    moduleRun(plan, 'SELECT * FROM people;').sql,
     'CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY);\nSELECT * FROM people;',
   );
-  assert.equal(withModuleSchema(sqliteSchema(undefined, SEEDED), 'SELECT 1;'), 'SELECT 1;');
-  assert.equal(withModuleSchema(null, 'SELECT 1;'), 'SELECT 1;');
+  assert.equal(moduleRun(sqliteSchema(undefined, SEEDED), 'SELECT 1;').sql, 'SELECT 1;');
+  assert.equal(moduleRun(null, 'SELECT 1;').sql, 'SELECT 1;');
+});
+
+test('sql-setup: a query that defines or alters a table owns it', () => {
+  const plan = sqliteSchema(['CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY, email TEXT);'], SEEDED);
+
+  // A DDL example creates the table it is teaching, so nothing may pre-create it or seed it.
+  const creates = moduleRun(plan, 'CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT);');
+  assert.equal(creates.sql, 'CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT);');
+  assert.deepEqual(creates.shadowed, ['students']);
+
+  // An ALTER example needs the table, but not with the column it adds: the demo table is the base.
+  const alters = moduleRun(plan, 'ALTER TABLE students ADD COLUMN email TEXT;', SEEDED);
+  assert.equal(alters.sql, 'ALTER TABLE students ADD COLUMN email TEXT;');
+  assert.deepEqual(alters.shadowed, []);
+  const db = labDatabase(DATASETS.filter((dataset) => !alters.shadowed.includes(dataset.name)));
+  assert.doesNotThrow(() => db.exec(alters.sql), 'the demo students table has no email column yet');
+  db.close();
+});
+
+test('sql-setup: the course’s shared tables make a school-schema join run', () => {
+  const courseSchema = artifact.course.schema;
+  assert.ok(Array.isArray(courseSchema) && courseSchema.length >= 3, 'the course publishes its school tables');
+  const joins = artifact.modules.find((module) => module.id === 'sql10');
+  const topic = joins.topics.find((t) => /\benrollments\b/.test(t.example.sql));
+  assert.ok(topic, 'sql10 has an example that joins enrollments');
+
+  const plan = sqliteSchema([...courseSchema, ...(joins.setup ?? [])], SEEDED);
+  const run = moduleRun(plan, topic.example.sql, SEEDED);
+  const db = labDatabase(DATASETS.filter((dataset) => !run.shadowed.includes(dataset.name)));
+  const results = db.exec(run.sql);
+  db.close();
+  const result = results[results.length - 1];
+  assert.ok(result && result.values.length > 0, 'the join reads the shared roster instead of failing on a missing table');
+});
+
+test('sql-setup: no example is missing the course’s school tables', () => {
+  const courseSchema = artifact.course.schema;
+  const missing = [];
+  let ran = 0;
+  let total = 0;
+  for (const module of artifact.modules) {
+    const plan = sqliteSchema([...courseSchema, ...(module.setup ?? [])], SEEDED);
+    for (const topic of module.topics) {
+      total += 1;
+      const run = moduleRun(plan, topic.example.sql, SEEDED);
+      const db = labDatabase(DATASETS.filter((dataset) => !run.shadowed.includes(dataset.name)));
+      try {
+        db.exec(run.sql);
+        ran += 1;
+      } catch (error) {
+        const message = String(error instanceof Error ? error.message : error);
+        if (/no such table: (students|courses|enrollments)\b/i.test(message)) missing.push(`${module.id} ${topic.id}: ${message}`);
+      } finally {
+        db.close();
+      }
+    }
+  }
+  assert.deepEqual(missing, [], 'every module must find the school tables the course shares');
+  // The floor measured when the shared schema landed; PostgreSQL-only examples are the rest.
+  assert.ok(ran >= 400, `only ${ran} of ${total} examples run with their module’s schema`);
 });
 
 test('sql-setup: every authored module setup is runnable on sql.js or reported', () => {
@@ -163,6 +223,8 @@ test('sql-setup: the SQL Lab loads the module named in the URL', () => {
   const lab = fs.readFileSync(path.join(ROOT, 'src/features/labs/SQLLab.tsx'), 'utf8');
   assert.match(lab, /useSearchParams\(\)/, 'the module must come from ?module=');
   assert.match(lab, /sqliteSchema\(/, 'the setup must go through the translator');
-  assert.match(lab, /withModuleSchema\(/, 'every run must prepend the module schema');
-  assert.match(lab, /runSQL\(withModuleSchema\(/, 'the query that runs is the schema plus the learner query');
+  assert.match(lab, /moduleRun\(/, 'every run must prepend the module schema');
+  assert.match(lab, /course\.schema/, 'the course’s shared tables load with the module setup');
+  assert.match(lab, /module \? \[/, 'the shared tables load only when a module is selected');
+  assert.match(lab, /DATASETS\.filter\(/, 'a table the learner’s query creates must not be seeded');
 });

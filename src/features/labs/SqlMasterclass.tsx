@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, Bug, CheckCircle2, Code2, Flag, GraduationCap, HelpCircle, Layers, ListChecks, Lock, Trophy } from 'lucide-react';
+import { ArrowRight, BookOpen, Bug, CheckCircle2, Code2, Copy, Flag, GraduationCap, HelpCircle, Layers, ListChecks, Lock, Trophy } from 'lucide-react';
 import { useSqlMasterclass, type SqlMasterclassFile, type SqlModule, type SqlQuiz } from '../../core/data/sqlmasterclass';
-import { masterclassPractice, masterclassQuestionCount, masterclassQuizTally } from '../../core/learning/masterclass';
-import { levelForXp, masterclassCourseReward, masterclassQuizAttempt, masterclassTopicDone } from '../../core/platform/keys';
-import { addXp, forgetAttempt, recordAttempt, useStore } from '../../core/storage/store';
+import { masterclassPractice, masterclassQuestionCount, masterclassQuizTally, type MasterclassBank, type MasterclassLevel } from '../../core/learning/masterclass';
+import { levelForXp, masterclassCourseReward, masterclassModuleReward, masterclassQuizAttempt, masterclassTopicDone } from '../../core/platform/keys';
+import { addXp, recordAttempt, useStore } from '../../core/storage/store';
 
-type BankKey = 'learn' | 'interview' | 'labs' | 'logic' | 'debug' | 'revision';
-const BANKS: { key: BankKey; label: string; icon: typeof BookOpen }[] = [
+const BANKS: { key: MasterclassBank; label: string; icon: typeof BookOpen }[] = [
   { key: 'learn', label: 'Learn', icon: BookOpen },
   { key: 'interview', label: 'Interview', icon: HelpCircle },
   { key: 'labs', label: 'Coding Lab', icon: Code2 },
@@ -18,6 +17,9 @@ const BANKS: { key: BankKey; label: string; icon: typeof BookOpen }[] = [
 
 /** One completion reward per masterclass course, recorded so re-completion cannot pay twice. */
 const MASTERCLASS_COMPLETION_XP = 100;
+/** Finishing one topic, and finishing every topic in a module. Both pay once, never per re-tick. */
+const MASTERCLASS_TOPIC_XP = 10;
+const MASTERCLASS_MODULE_XP = 50;
 const NEXT_MASTERCLASS: Record<string, { to: string; title: string; why: string }> = {
   'sql-masterclass': {
     to: '/mysql',
@@ -94,7 +96,7 @@ function Quiz({ item, index, picked, onPick }: {
 
 function Bank({ module, bank, courseId, attempts, onPick }: {
   module: SqlModule;
-  bank: BankKey;
+  bank: MasterclassBank;
   courseId: string;
   attempts: Record<string, { done?: boolean; answer?: string } | undefined>;
   onPick: (index: number, optionIndex: number, answerIndex: number) => void;
@@ -169,13 +171,52 @@ function Bank({ module, bank, courseId, attempts, onPick }: {
   );
 }
 
-export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen = false }: { file: SqlMasterclassFile; label?: string; defaultOpen?: boolean }) {
+export function MasterclassPanel({
+  file,
+  label = 'SQL MASTERCLASS',
+  defaultOpen = false,
+  moduleId: selectedModuleId,
+  bank: selectedBank,
+  level: selectedLevel,
+  onModuleChange,
+  onBankChange,
+  onLevelChange,
+}: {
+  file: SqlMasterclassFile;
+  label?: string;
+  defaultOpen?: boolean;
+  /** The open module, when the page keeps it in the URL. */
+  moduleId?: string;
+  /** The open bank, when the page keeps it in the URL. */
+  bank?: MasterclassBank;
+  /** The explanation level, when the page keeps it in the URL. */
+  level?: MasterclassLevel;
+  onModuleChange?: (moduleId: string) => void;
+  onBankChange?: (bank: MasterclassBank) => void;
+  onLevelChange?: (level: MasterclassLevel) => void;
+}) {
   const state = useStore();
   const panelRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(defaultOpen);
-  const [level, setLevel] = useState<'simple' | 'pro'>('simple');
-  const [moduleId, setModuleId] = useState('sql00');
-  const [bank, setBank] = useState<BankKey>('learn');
+  const [levelState, setLevelState] = useState<MasterclassLevel>('simple');
+  const [moduleIdState, setModuleIdState] = useState('sql00');
+  const [bankState, setBankState] = useState<MasterclassBank>('learn');
+  /** The page may own the selection (a URL); otherwise the panel does. */
+  const moduleId = selectedModuleId ?? moduleIdState;
+  const bank = selectedBank ?? bankState;
+  const level = selectedLevel ?? levelState;
+  const pickLevel = (value: MasterclassLevel) => {
+    setLevelState(value);
+    onLevelChange?.(value);
+  };
+  const openModule = (id: string) => {
+    setModuleIdState(id);
+    onModuleChange?.(id);
+  };
+  const pickBank = (key: MasterclassBank) => {
+    setBankState(key);
+    onBankChange?.(key);
+  };
   const [notice, setNotice] = useState<string | null>(null);
   const modules = file?.modules ?? [];
   const module = useMemo(() => modules.find((m) => m.id === moduleId) ?? modules[0], [modules, moduleId]);
@@ -211,6 +252,8 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
   const remainingModules = Math.max(0, modules.length - completed.size);
   const nextCourse = NEXT_MASTERCLASS[file.course.id] ?? FALLBACK_NEXT;
   const labRoute = LAB_ROUTE[file.course.id];
+  /** What the Lab runs first: the course's shared school tables, then this module's own setup. */
+  const labSchema = [...(file.course.schema ?? []), ...(module?.setup ?? [])];
   const rewardRef = useRef(false);
   useEffect(() => {
     if (!courseDone || rewardRef.current) return;
@@ -229,22 +272,42 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
     return <div className="card"><div className="skeleton" style={{ height: 90 }} /></div>;
   }
 
+  /** The authored DDL these examples assume — shown, copyable, and what the Lab runs first. */
+  const schemaText = [
+    file.course.schema?.length ? `-- shared school tables, every module\n${file.course.schema.join('\n')}` : '',
+    module.setup?.length ? `-- module ${String(module.no).padStart(2, '0')} setup\n${module.setup.join('\n')}` : '',
+  ].filter(Boolean).join('\n\n');
+
   const openNext = () => {
     if (!nextModule) {
       setNotice('Course complete — every published module is finished.');
       return;
     }
-    setModuleId(nextModule.id);
-    setBank('learn');
-    setLevel('simple');
-    setNotice(`Module ${String(module.no).padStart(2, '0')} complete. Module ${String(nextModule.no).padStart(2, '0')} unlocked and opened.`);
+    openModule(nextModule.id);
+    pickBank('learn');
+    pickLevel('simple');
+    setNotice(`Module ${String(module.no).padStart(2, '0')} complete (+${MASTERCLASS_MODULE_XP} XP). Module ${String(nextModule.no).padStart(2, '0')} unlocked and opened.`);
     requestAnimationFrame(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+
+  /** Module XP pays once: the `mmr:` record is the receipt, independent of the derived completion set. */
+  const rewardModule = (doneModule: SqlModule) => {
+    const key = masterclassModuleReward(file.course.id, doneModule.id);
+    if (state.attempts[key]?.done) return;
+    recordAttempt(key, { done: true });
+    addXp(MASTERCLASS_MODULE_XP, 'course', `${doneModule.title} complete`);
   };
 
   const toggleTopic = (topicId: string, checked: boolean) => {
     const key = masterclassTopicDone(file.course.id, module.id, topicId);
-    if (checked) recordAttempt(key, { done: true });
-    else forgetAttempt(key);
+    // The `mt:` record doubles as the topic's XP receipt: unchecking keeps it (`done: false`)
+    // instead of deleting it, so checking the same topic again cannot pay twice.
+    if (checked) {
+      if (!state.attempts[key]) addXp(MASTERCLASS_TOPIC_XP, 'course', module.title);
+      recordAttempt(key, { done: true });
+    } else {
+      recordAttempt(key, { done: false });
+    }
 
     const nextDone = new Set(doneTopics);
     if (checked) nextDone.add(topicId);
@@ -255,6 +318,7 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
       return;
     }
     if (currentDone) return;
+    rewardModule(module);
     openNext();
   };
 
@@ -288,16 +352,28 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
 
       {open && (
         <>
-          {labRoute && module.setup && module.setup.length > 0 && (
+          {labSchema.length > 0 && (
             <div style={{ marginTop: 10 }}>
-              <Link to={`${labRoute}?module=${module.id}`} className="btn small primary">
-                <Code2 size={13} /> Run this module in SQL Lab
-              </Link>
+              <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                {labRoute && (
+                  <Link to={`${labRoute}?module=${module.id}&bank=${bank}&level=${level}`} className="btn small primary">
+                    <Code2 size={13} /> Run this module in SQL Lab
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  className="btn small"
+                  onClick={() => void navigator.clipboard?.writeText(schemaText).catch(() => {})}
+                >
+                  <Copy size={12} /> Copy setup
+                </button>
+              </div>
               <details style={{ marginTop: 6 }}>
                 <summary className="small muted" style={{ cursor: 'pointer' }}>
-                  Module schema — {module.setup.length} statement{module.setup.length === 1 ? '' : 's'} the lab loads first
+                  Module schema — {labSchema.length} statement{labSchema.length === 1 ? '' : 's'}
+                  {labRoute ? ' the lab loads before every query' : ' these examples assume'}
                 </summary>
-                <pre className="codeblock" style={{ margin: '6px 0 0' }}>{module.setup.join('\n')}</pre>
+                <pre className="codeblock" style={{ margin: '6px 0 0' }}>{schemaText}</pre>
               </details>
             </div>
           )}
@@ -365,7 +441,7 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
                   key={m.id}
                   type="button"
                   className={`chip ${m.id === module.id ? 'easy' : ''}`}
-                  onClick={() => { if (!isOpen) return; setModuleId(m.id); setBank('learn'); setNotice(null); }}
+                  onClick={() => { if (!isOpen) return; openModule(m.id); pickBank('learn'); setNotice(null); }}
                   disabled={!isOpen}
                   title={isOpen ? m.title : `Finish Module ${String(modules[index - 1].no).padStart(2, '0')} to unlock this module`}
                   style={{ cursor: isOpen ? 'pointer' : 'not-allowed', opacity: isOpen ? 1 : 0.55 }}
@@ -404,7 +480,7 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
                 key={value}
                 type="button"
                 className={`chip ${level === value ? 'easy' : ''}`}
-                onClick={() => setLevel(value)}
+                onClick={() => pickLevel(value)}
                 style={{ cursor: 'pointer' }}
               >
                 {value === 'simple' ? 'Simple Hinglish' : 'Professional English'}
@@ -435,6 +511,17 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
                     {topic.points.map((point) => <li key={point}>{point}</li>)}
                   </ul>
                   <pre className="codeblock" style={{ margin: '8px 0 0' }}>{topic.example.sql}</pre>
+                  {labRoute && (
+                    <div className="row" style={{ gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                      <Link
+                        to={`${labRoute}?module=${module.id}&bank=${bank}&level=${level}&example=${topic.id}`}
+                        className="btn small"
+                      >
+                        <Code2 size={12} /> Run this example in SQL Lab
+                      </Link>
+                      <span className="small muted">Opens the Lab with this module’s schema and this example loaded.</span>
+                    </div>
+                  )}
                   <p className="small muted" style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap' }}><b>Output</b>{'\n'}{topic.example.output}</p>
                 </div>
               );
@@ -449,7 +536,7 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
                   key={entry.key}
                   type="button"
                   className={`chip ${bank === entry.key ? 'easy' : ''}`}
-                  onClick={() => setBank(entry.key)}
+                  onClick={() => pickBank(entry.key)}
                   style={{ cursor: 'pointer' }}
                 >
                   <Icon size={11} /> {entry.label} · {module.banks[entry.key].length}
@@ -541,8 +628,15 @@ export function MasterclassPanel({ file, label = 'SQL MASTERCLASS', defaultOpen 
 }
 
 /** SQL Lab wrapper: the panel plus the SQL Masterclass artifact. */
-export function SqlMasterclass() {
+export function SqlMasterclass(props: {
+  moduleId?: string;
+  bank?: MasterclassBank;
+  level?: MasterclassLevel;
+  onModuleChange?: (moduleId: string) => void;
+  onBankChange?: (bank: MasterclassBank) => void;
+  onLevelChange?: (level: MasterclassLevel) => void;
+}) {
   const file = useSqlMasterclass();
   if (!file) return <div className="card"><div className="skeleton" style={{ height: 90 }} /></div>;
-  return <MasterclassPanel file={file} />;
+  return <MasterclassPanel file={file} {...props} />;
 }

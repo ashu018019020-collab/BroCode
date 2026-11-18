@@ -165,6 +165,12 @@ export const MASTERCLASS_TOPIC_PREFIX = 'mt:';
 export const masterclassCourseReward = (courseId: string) => `mcr:${courseId}`;
 export const MASTERCLASS_COURSE_REWARD_PREFIX = 'mcr:';
 /**
+ * Masterclass module-completion reward: `mmr:<courseId>:<moduleId>`. One record per module so
+ * unchecking and rechecking a topic cannot pay the module XP twice. Topics need no record of their
+ * own — the `mt:` completion record doubles as their receipt.
+ */
+export const masterclassModuleReward = (courseId: string, moduleId: string) => `mmr:${courseId}:${moduleId}`;
+/**
  * One record per answered Masterclass learn question: `mq:<courseId>:<moduleId>:<i>`, with the chosen
  * option in `answer` and the verdict in `done`. Its own family on purpose — the Python bank (`qb:`),
  * the C course (`cquiz:`) and the Java course (`jquiz:`) must never count an answer they did not serve.

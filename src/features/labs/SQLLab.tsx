@@ -4,7 +4,8 @@ import { HubCrumb } from '../../components/learning/SectionChrome';
 import { runSQL } from '../coding/runners';
 import { DATASETS, seedForSQL } from '../../core/data/datasets';
 import { useSqlMasterclass } from '../../core/data/sqlmasterclass';
-import { sqliteSchema, withModuleSchema } from '../../core/learning/sql-setup';
+import { sqliteSchema, moduleRun } from '../../core/learning/sql-setup';
+import { masterclassHref, masterclassSelection, type MasterclassBank, type MasterclassLevel } from '../../core/learning/masterclass';
 import { useStore, setState } from '../../core/storage/store';
 import { codeSlot } from '../../core/platform/keys';
 import { parseTraceback } from '../../core/platform/traceback';
@@ -26,16 +27,26 @@ const EXAMPLES = [
 
 export default function SQLLab() {
   const state = useStore();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   /**
-   * `?module=sql13` is how a Masterclass module brings its schema here: the panel links to it and
-   * `module.setup` is what the authored examples assume, so without it the first Run answers
+   * `?module=sql13&bank=logic` is how a Masterclass module brings its schema here: the panel links to
+   * it and `module.setup` is what the authored examples assume, so without it the first Run answers
    * "no such table". The artifact is already fetched by the panel on this page (one cached load).
    */
   const sqlFile = useSqlMasterclass();
-  const moduleId = params.get('module');
-  const module = moduleId ? sqlFile?.modules.find((m) => m.id === moduleId) ?? null : null;
-  const schema = useMemo(() => sqliteSchema(module?.setup, DATASETS.map((d) => d.name)), [module]);
+  const selection = masterclassSelection(params, sqlFile?.modules ?? []);
+  const module = selection.moduleId ? sqlFile?.modules.find((m) => m.id === selection.moduleId) ?? null : null;
+  /** Functional update: one click can change two parts (a chip opens its module and resets the bank). */
+  const select = (next: { moduleId?: string; bank?: MasterclassBank; level?: MasterclassLevel }) =>
+    setParams((current) => masterclassHref(current, next), { replace: true });
+  /** No module, no module schema: the plain Lab keeps its demo datasets. */
+  const schema = useMemo(
+    () => sqliteSchema(
+      module ? [...(sqlFile?.course.schema ?? []), ...(module.setup ?? [])] : [],
+      DATASETS.map((d) => d.name),
+    ),
+    [sqlFile, module],
+  );
   const [q, setQ] = useState(state.savedCode[codeSlot.sqlLab] ?? EXAMPLES[0].q);
   const [res, setRes] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -43,21 +54,31 @@ export default function SQLLab() {
   const [busy, setBusy] = useState(false);
   /** Only fill the editor from the module while the learner has not started writing. */
   const edited = useRef(false);
-  const filledModule = useRef<string | null>(null);
+  const filledExample = useRef<string | null>(null);
+  /** The example a link named (`?module=sql13&example=t04`), else the module's first one. */
+  const linkedExample = selection.topicId
+    ? module?.topics.find((topic) => topic.id === selection.topicId)
+    : undefined;
+  const exampleSql = (linkedExample ?? module?.topics[0])?.example.sql;
   useEffect(() => {
-    if (!module || filledModule.current === module.id) return;
-    filledModule.current = module.id;
-    if (edited.current) return;
-    const first = module.topics[0]?.example.sql;
-    if (first) setQ(first);
-  }, [module]);
+    if (!module) return;
+    const key = `${module.id}:${selection.topicId ?? ''}`;
+    if (filledExample.current === key) return;
+    filledExample.current = key;
+    // A link to one example is a request for that example, so it wins over an edit in progress;
+    // a plain module link still leaves the learner's own query alone.
+    if (edited.current && !selection.topicId) return;
+    if (exampleSql) setQ(exampleSql);
+  }, [module, selection.topicId, exampleSql]);
 
   const run = async () => {
     if (busy) return;
     setBusy(true);
     setErr(null); setRes(null);
     try {
-      const r = await runSQL(withModuleSchema(schema, q), DATASETS.map(seedForSQL));
+      const { sql, shadowed } = moduleRun(schema, q, DATASETS.map((d) => d.name));
+      const seeds = DATASETS.filter((d) => !shadowed.includes(d.name)).map(seedForSQL);
+      const r = await runSQL(sql, seeds);
       if (r.error) setErr(r.error); else setRes(r);
       setState((s) => ({ ...s, savedCode: { ...s.savedCode, [codeSlot.sqlLab]: q } }));
     } catch (e: any) {
@@ -100,7 +121,9 @@ export default function SQLLab() {
                 </span>
               )}
             </span>
-            <Link to="/course/sql" className="small">Back to the course →</Link>
+            <Link to={`/course/sql?module=${module.id}&bank=${selection.bank ?? 'learn'}&level=${selection.level ?? 'simple'}`} className="small">
+              Back to the course →
+            </Link>
           </div>
           {schema.adapted.length > 0 && (
             <p className="small muted" style={{ margin: '6px 0 0' }}>
@@ -121,7 +144,14 @@ export default function SQLLab() {
         </div>
       )}
 
-      <SqlMasterclass />
+      <SqlMasterclass
+        moduleId={selection.moduleId}
+        bank={selection.bank}
+        level={selection.level}
+        onModuleChange={(moduleId) => select({ moduleId })}
+        onBankChange={(bank) => select({ bank })}
+        onLevelChange={(level) => select({ level })}
+      />
 
       <div className="grid2" style={{ margin: '12px 0' }}>
         {DATASETS.map((d) => (

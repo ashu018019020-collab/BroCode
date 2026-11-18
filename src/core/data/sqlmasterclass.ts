@@ -30,6 +30,8 @@ export interface SqlMasterclassFile {
   course: {
     id: string; title: string; tagline: string; level: string; hours: number;
     standard: string; prerequisites: string[]; description: string; outcomes: string[];
+    /** Shared school tables every module's examples may assume, authored once for the course. */
+    schema?: string[];
   };
   stats: {
     modules: number; topics: number; learn: number; interview: number;

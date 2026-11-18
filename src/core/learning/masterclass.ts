@@ -74,3 +74,77 @@ export function masterclassPractice(
   }
   return { answered, correct, total, pct: total > 0 ? Math.round((answered / total) * 100) : null };
 }
+
+/** The six bank families every masterclass publishes, in tab order. */
+export const MASTERCLASS_BANKS = ['learn', 'interview', 'labs', 'logic', 'debug', 'revision'] as const;
+export type MasterclassBank = (typeof MASTERCLASS_BANKS)[number];
+
+/** How a module is explained: the short Hinglish version, or the professional English one. */
+export const MASTERCLASS_LEVELS = ['simple', 'pro'] as const;
+export type MasterclassLevel = (typeof MASTERCLASS_LEVELS)[number];
+
+export interface MasterclassSelection {
+  /** The module the URL names, when this course publishes it. */
+  moduleId?: string;
+  /** The bank the URL names, when it is one of the six. */
+  bank?: MasterclassBank;
+  /** The topic whose example the link asked to load, when the named module publishes it. */
+  topicId?: string;
+  /** The explanation level the URL names, when it is one of the two. */
+  level?: MasterclassLevel;
+}
+
+/** The read half of `URLSearchParams`, so this rule needs no router. */
+export interface MasterclassParams {
+  get(name: string): string | null;
+}
+
+/** What the selection is validated against: the ids a course publishes. */
+export interface MasterclassModuleRef {
+  id: string;
+  topics: readonly { id: string }[];
+}
+
+/**
+ * The open module, bank and example as named by the URL — `?module=sql13&bank=logic&example=t04`.
+ *
+ * A link outlives the edit that renumbers a module or a topic, so an unknown id is ignored rather
+ * than trusted: the panel keeps its own default instead of showing an empty course. This is the ONE
+ * mapping the course page and the SQL Lab both read, which is what makes one shared link open the
+ * same place in either.
+ */
+export function masterclassSelection(
+  params: MasterclassParams,
+  modules: readonly MasterclassModuleRef[],
+): MasterclassSelection {
+  const moduleParam = params.get('module');
+  const module = moduleParam ? modules.find((candidate) => candidate.id === moduleParam) : undefined;
+  const bankParam = params.get('bank');
+  const exampleParam = params.get('example');
+  const levelParam = params.get('level');
+  return {
+    moduleId: module?.id,
+    bank: MASTERCLASS_BANKS.includes(bankParam as MasterclassBank) ? (bankParam as MasterclassBank) : undefined,
+    topicId: module && exampleParam && module.topics.some((topic) => topic.id === exampleParam)
+      ? exampleParam
+      : undefined,
+    level: MASTERCLASS_LEVELS.includes(levelParam as MasterclassLevel) ? (levelParam as MasterclassLevel) : undefined,
+  };
+}
+
+/** The same page with the selection written into it; every other param is left alone. */
+export function masterclassHref(
+  params: URLSearchParams,
+  next: { moduleId?: string; bank?: string; example?: string; level?: string },
+): URLSearchParams {
+  const search = new URLSearchParams(params);
+  if (next.moduleId) {
+    search.set('module', next.moduleId);
+    // An example belongs to its module: opening another module must not carry a stale topic id.
+    if (!next.example) search.delete('example');
+  }
+  if (next.bank) search.set('bank', next.bank);
+  if (next.example) search.set('example', next.example);
+  if (next.level) search.set('level', next.level);
+  return search;
+}

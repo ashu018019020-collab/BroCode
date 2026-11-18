@@ -31,6 +31,12 @@ for (const key of ['id', 'title', 'tagline', 'description', 'level', 'hours', 'p
   if (!course?.[key]) fail(`course: missing ${key}`);
 }
 if (course && course.id !== 'sql-masterclass') fail('course.id must be sql-masterclass');
+if (course?.schema !== undefined) {
+  if (!Array.isArray(course.schema) || course.schema.length === 0) fail('course.schema must be a non-empty array');
+  for (const statement of course.schema || []) {
+    if (typeof statement !== 'string' || !statement.trim()) fail('course.schema entries must be non-empty SQL strings');
+  }
+}
 if (!modules.length) fail('no modules found');
 
 const seenModules = new Set();
