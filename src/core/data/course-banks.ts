@@ -20,7 +20,7 @@ export interface CourseBankIndex {
 let cached: Promise<CourseBankIndex | null> | null = null;
 
 /** Fetch once per session; the promise is cached, not just the result. */
-export const loadCourseBanks = () => (cached ??= fetch('generated/course-banks/index.json')
+const load = () => (cached ??= fetch('generated/course-banks/index.json')
   .then((response) => {
     if (!response.ok) throw new Error(`course-banks/index.json: ${response.status}`);
     return response.json() as Promise<CourseBankIndex>;
@@ -28,5 +28,5 @@ export const loadCourseBanks = () => (cached ??= fetch('generated/course-banks/i
   .catch(() => null));
 
 export function useCourseBanks(): CourseBankIndex | null {
-  return useAsync(loadCourseBanks);
+  return useAsync(load);
 }

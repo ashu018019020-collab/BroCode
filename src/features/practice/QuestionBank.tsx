@@ -501,9 +501,9 @@ export default function QuestionBank() {
       <p className="muted small">
         Local content pack — <b>{manifest.published}</b> Python &amp; AI questions across <b>{manifest.sections.length}</b> sections,
         plus <b>{cBank?.questions ?? '…'}</b> C Programming MCQs across <b>{cBank?.modules ?? '…'}</b> modules, and <b>{javaBank?.questions ?? '…'}</b> Java
-        test questions across <b>{javaBank?.modules ?? '…'}</b> modules. The newly added course banks — SQL Masterclass,
-        MySQL, SQLite, HTML, CSS and C++ — are in the same grid with their published counts. Open one to pick a
-        module and answer its questions here; “Full course” stays available for the complete course page.
+        test questions across <b>{javaBank?.modules ?? '…'}</b> modules. The other course banks sit in the same grid
+        with their published counts: open one to pick a module and answer its questions here, and “Full course”
+        stays available for that course's own page.
         They sit in one box per subject — pick a subject and its own lessons open under the boxes; pick a lesson and its
         questions open here. Write an answer (it saves automatically) or open the Code Bro for code, then grade yourself:
         you decide correct or wrong, and the app computes no score.

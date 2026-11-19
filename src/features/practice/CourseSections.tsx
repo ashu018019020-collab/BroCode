@@ -152,8 +152,9 @@ export default function CourseSections({
 
   const activeTrack = TRACK_DEFS.find((d) => d.id === track) ?? TRACK_DEFS[0];
   const activeRows = rowsByTrack.get(activeTrack.id) ?? [];
-  const cQuestions = cBank?.questions ?? cModules.reduce((n, m) => n + m.questions, 0);
-  const cModuleCount = cBank?.modules ?? cModules.length;
+  /** C's published counts come from the summary — the module rows here never carried the bank. */
+  const cQuestions = cBank?.questions ?? 0;
+  const cModuleCount = cBank?.modules ?? 0;
   const moreQuestions = moreCourses.reduce((n, c) => n + c.questions, 0);
   /** C's own tally, keyed by module id — the same rail, so the one course box is not a gap. */
   const cDone = cModules.reduce((n, m) => n + (cAnswered[m.id] ?? 0), 0);

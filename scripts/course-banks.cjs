@@ -2,13 +2,17 @@
 /**
  * npm run course-banks | course-banks:write
  *
- * Publishes the small counts summary used by the Question Bank and Courses home cards. The cards
- * need only `modules` and `questions`; loading the full course artifacts to obtain those two numbers
- * was unnecessary (the SQL artifact alone is 1.4 MB, NumPy is 2.8 MB).
+ * Publishes the small counts summary the Question Bank and Courses home cards need. A card prints
+ * only `modules` and `questions`, and loading the full course artifacts to obtain two numbers was
+ * unnecessary (the SQL file alone is 1.4 MB, NumPy is 2.8 MB).
  *
- * The source of truth is the published artifacts, not a second hand-maintained list. Dry run by
- * default; `--write` publishes `public/generated/course-banks/index.json`. The test compares the
- * published file byte-for-byte with a fresh build.
+ * Every value comes from the published artifact, including the id: `course.id` is the course's own
+ * identity, so this list cannot disagree with the course it describes. A masterclass counts its
+ * actual bank items rather than restating the app's six-family sum — `masterclassQuestionCount`
+ * stays the only place that formula is written.
+ *
+ * Dry run by default; `--write` publishes `public/generated/course-banks/index.json`. The test
+ * compares the published file byte-for-byte with a fresh build.
  */
 'use strict';
 const fs = require('fs');
@@ -17,24 +21,29 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'public', 'generated', 'course-banks', 'index.json');
 
-const masterclassQuestions = (stats) =>
-  stats.learn + stats.interview + stats.labs + stats.logic + stats.debug + stats.revision;
+/** A masterclass publishes six banks per module; the items in them ARE its question count. */
+const bankItems = (course) =>
+  (course.modules ?? []).reduce(
+    (total, module) => total + Object.values(module.banks ?? {}).reduce((n, items) => n + items.length, 0),
+    0,
+  );
+/** HTML, CSS, C++, NumPy and Pandas publish their bank total on `stats`. */
+const publishedBank = (course) => course.stats?.bank?.total;
+/** C and Java keep their questions in a separate assessment file. */
+const assessmentQuestions = (course) => course.sets?.reduce((total, set) => total + (set.questions?.length ?? 0), 0);
 
-const bankQuestions = (data) => data.stats?.bank?.total;
-const assessmentQuestions = (data) =>
-  data.sets?.reduce((total, set) => total + (set.questions?.length ?? 0), 0);
-
+/** `questions` is named only where a course's counts live in a second artifact. */
 const SOURCES = [
-  { id: 'sql-masterclass', modules: 'sql-masterclass/index.json', questions: 'sql-masterclass/index.json', count: (data) => masterclassQuestions(data.stats ?? {}) },
-  { id: 'mysql-masterclass', modules: 'mysql-masterclass/index.json', questions: 'mysql-masterclass/index.json', count: (data) => masterclassQuestions(data.stats ?? {}) },
-  { id: 'sqlite-masterclass', modules: 'sqlite-masterclass/index.json', questions: 'sqlite-masterclass/index.json', count: (data) => masterclassQuestions(data.stats ?? {}) },
-  { id: 'html-mastery', modules: 'html-course/index.json', questions: 'html-course/index.json', count: bankQuestions },
-  { id: 'css-mastery', modules: 'css-course/index.json', questions: 'css-course/index.json', count: bankQuestions },
-  { id: 'cpp-mastery', modules: 'cpp-course/index.json', questions: 'cpp-course/index.json', count: bankQuestions },
-  { id: 'c-programming', modules: 'c-course/index.json', questions: 'c-course/assessments.json', count: assessmentQuestions },
-  { id: 'java-programming', modules: 'java-course/index.json', questions: 'java-course/assessments.json', count: assessmentQuestions },
-  { id: 'numpy-mastery', modules: 'numpy-course/index.json', questions: 'numpy-course/index.json', count: bankQuestions },
-  { id: 'pandas-mastery', modules: 'pandas-course/index.json', questions: 'pandas-course/index.json', count: bankQuestions },
+  { file: 'sql-masterclass/index.json', count: bankItems },
+  { file: 'mysql-masterclass/index.json', count: bankItems },
+  { file: 'sqlite-masterclass/index.json', count: bankItems },
+  { file: 'html-course/index.json', count: publishedBank },
+  { file: 'css-course/index.json', count: publishedBank },
+  { file: 'cpp-course/index.json', count: publishedBank },
+  { file: 'c-course/index.json', questions: 'c-course/assessments.json', count: assessmentQuestions },
+  { file: 'java-course/index.json', questions: 'java-course/assessments.json', count: assessmentQuestions },
+  { file: 'numpy-course/index.json', count: publishedBank },
+  { file: 'pandas-course/index.json', count: publishedBank },
 ];
 
 function readArtifact(file, cache) {
@@ -46,22 +55,24 @@ function readArtifact(file, cache) {
 
 function build() {
   const cache = new Map();
-  const courses = SOURCES.map(({ id, modules: modulesFile, questions: questionsFile, count }) => {
-    const modules = readArtifact(modulesFile, cache).stats?.modules;
-    const questions = count(readArtifact(questionsFile, cache));
-    if (!Number.isInteger(modules) || modules < 1) {
-      throw new Error(`${id}: published stats.modules must be a positive integer`);
-    }
-    if (!Number.isInteger(questions) || questions < 1) {
-      throw new Error(`${id}: published question count must be a positive integer`);
-    }
-    return { id, modules, questions };
-  });
-
-  if (new Set(courses.map((course) => course.id)).size !== courses.length) {
-    throw new Error('course-banks: duplicate course id');
-  }
-  return { courses };
+  return {
+    courses: SOURCES.map(({ file, questions, count }) => {
+      const course = readArtifact(file, cache);
+      const id = course.course?.id;
+      const modules = course.stats?.modules;
+      const items = count(readArtifact(questions ?? file, cache));
+      if (typeof id !== 'string' || id.length === 0) {
+        throw new Error(`${file}: the artifact must name its course`);
+      }
+      if (!Number.isInteger(modules) || modules < 1) {
+        throw new Error(`${id}: published stats.modules must be a positive integer`);
+      }
+      if (!Number.isInteger(items) || items < 1) {
+        throw new Error(`${id}: the published question count must be a positive integer`);
+      }
+      return { id, modules, questions: items };
+    }),
+  };
 }
 
 function main() {
@@ -89,4 +100,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { build, SOURCES };
+module.exports = { build };
