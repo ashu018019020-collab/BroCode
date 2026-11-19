@@ -282,7 +282,11 @@ export default function CoursesHome() {
   };
 
   const renderML = () => {
-    if (!publishedBanks.has('ml-mastery')) return null;
+    /*
+     * The ML artifact ships inside this build, so the card must not depend on a second request for
+     * the bank summary. A stale/failed summary is exactly how a shipped course disappears from the
+     * chooser; the course page still verifies its own artifact before rendering records.
+     */
     return (
       <Link
         to="/ml"
@@ -329,8 +333,8 @@ export default function CoursesHome() {
               {/* Java and the five mastery banks are real cards below, so they are counted here
                   too — the header must agree with the grid. */}
               <span className="chip">
-                {visible.length + (cHidden ? 0 : 1) + 1
-                  + ['numpy-mastery', 'pandas-mastery', 'ml-mastery', 'cpp-mastery', 'html-mastery', 'css-mastery', 'mysql-masterclass', 'sqlite-masterclass']
+                {visible.length + (cHidden ? 0 : 1) + 1 + 1
+                  + ['numpy-mastery', 'pandas-mastery', 'cpp-mastery', 'html-mastery', 'css-mastery', 'mysql-masterclass', 'sqlite-masterclass']
                     .filter((id) => publishedBanks.has(id)).length
                   + ownerVisible.length} {t('courses.coursesUnit')}
               </span>
