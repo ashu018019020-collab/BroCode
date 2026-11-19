@@ -17,6 +17,7 @@ import { useCourseBanks } from '../../core/data/course-banks';
 import { CLogo } from '../c-programming/CLogo';
 import { JLogo } from '../java-programming/JLogo';
 import { NLogo } from '../numpy-mastery/NLogo';
+import { MLogo } from '../ml-mastery/MLogo';
 import { PLogo } from '../pandas-mastery/PLogo';
 import { CppLogo } from '../cpp-mastery/CppLogo';
 import { HtmlLogo } from '../html-mastery/HtmlLogo';
@@ -280,6 +281,22 @@ export default function CoursesHome() {
     );
   };
 
+  const renderML = () => {
+    if (!publishedBanks.has('ml-mastery')) return null;
+    return (
+      <Link
+        to="/ml"
+        className="course-card cc-simple tone-violet"
+        data-agent-action="course:ml-mastery"
+        data-agent-label="Machine Learning"
+        title="Machine Learning — Zero to Professional"
+      >
+        <span className="cc-logo"><MLogo size={88} /></span>
+        <b className="cc-name">Machine Learning</b>
+      </Link>
+    );
+  };
+
   const renderN = () => {
     if (!publishedBanks.has('numpy-mastery')) return null;
     return (
@@ -313,7 +330,7 @@ export default function CoursesHome() {
                   too — the header must agree with the grid. */}
               <span className="chip">
                 {visible.length + (cHidden ? 0 : 1) + 1
-                  + ['numpy-mastery', 'pandas-mastery', 'cpp-mastery', 'html-mastery', 'css-mastery', 'mysql-masterclass', 'sqlite-masterclass']
+                  + ['numpy-mastery', 'pandas-mastery', 'ml-mastery', 'cpp-mastery', 'html-mastery', 'css-mastery', 'mysql-masterclass', 'sqlite-masterclass']
                     .filter((id) => publishedBanks.has(id)).length
                   + ownerVisible.length} {t('courses.coursesUnit')}
               </span>
@@ -357,6 +374,7 @@ export default function CoursesHome() {
           {renderCss()}
           {renderN()}
           {renderP()}
+          {renderML()}
           {renderCpp()}
           {renderMysql()}
           {renderSqlite()}

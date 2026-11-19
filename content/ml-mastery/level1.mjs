@@ -1,0 +1,118 @@
+import { c, t, q, k, d, m, mini, lab, def } from './_shared.mjs';
+
+export default [
+  {
+    id: 'ml01', no: 1, title: 'Introduction to Machine Learning', level: 'beginner', hours: 6,
+    goal: 'Understand what learning from data means, where ML helps, and the vocabulary every later module uses.',
+    topics: [
+      c('What is machine learning?', 'Machine learning is a way to write programs that improve at a task by finding patterns in examples instead of being given every rule by hand. The program is the model; the examples are the data; the answer it produces is the prediction. A model is not magic: it is a mathematical rule whose numbers are fitted from data.', 'correct = 8\ntotal = 10\nprint(correct / total)', '0.8'),
+      c('A first learning loop', 'A tiny model can already make predictions. Here the model has learned (or been given) slope 2 and intercept 1, and predicts an output for each input. Real training finds those two numbers from data by minimising error; the prediction step looks exactly like this.', 'samples = [(1, 3), (2, 5), (3, 7)]\nslope = 2\nintercept = 1\nprint([slope * x + intercept for x, _ in samples])', '[3, 5, 7]'),
+      t('Types of machine learning', 'Supervised learning learns from labelled examples (features plus the right answer). Unsupervised learning looks for structure without labels, such as clusters. Semi-supervised learning uses a few labels and many unlabelled examples. Reinforcement learning learns a policy by acting and receiving rewards. Classification predicts a category; regression predicts a number.'),
+    ],
+    interview: [q('When should you not use machine learning?', 'Do not use ML when a deterministic rule is cheaper, auditable and complete; when the data is too small, biased or unavailable; when a single wrong prediction is catastrophic and cannot be reviewed; or when the problem has no learnable pattern. Start with the simplest rule or baseline, and add ML only when measured value justifies its cost and risk.')],
+    coding: [k('Accuracy from two counts', 'A test set has 15 correct predictions out of 20. Print the accuracy as a decimal.', '# compute accuracy\n', 'correct = 15\ntotal = 20\nprint(correct / total)', '0.75', 'Accuracy is correct predictions divided by all predictions.')],
+    debug: [d('The denominator is wrong', 'correct = 8\ntotal = 10\nprint(correct / (total + 1))', 'The code prints 0.727..., but 8 of 10 correct is 0.8. Adding 1 to the denominator invents a sample that does not exist.', 'correct = 8\ntotal = 10\nprint(correct / total)')],
+    mini: mini('Study hours → pass prediction', 'Create five students with study hours and pass/fail labels, print the majority class, and make a one-rule predictor. Explain why this is a classification problem.', ['Make a small list of (hours, passed) records.', 'Count passes and fails.', 'Predict the majority class for a new student.', 'Write one sentence on what data would improve the rule.']),
+    lab: lab('Frame an ML problem for a library', 'A library wants to predict which borrowed books will be returned late. Write the problem frame before choosing an algorithm.', ['Name the decision the prediction supports.', 'Define one row and the target.', 'List three features available before the due date.', 'State the cost of a false "on time" prediction.', 'Choose classification or regression and justify it.']),
+    defense: [def('Why is a baseline required before a complex model?', 'A baseline turns "the model looks good" into a measurable claim. A majority-class or simple-rule baseline is cheap, exposes class imbalance, and gives the complex model a number it must beat on the same split and metric.', ['State the baseline rule.', 'Report its metric.', 'Compare on one held-out split.'])],
+    checkpoint: [
+      m('Which task is supervised learning?', ['Predicting house price from labelled sales', 'Grouping customers without labels', 'Learning a game by reward alone'], 'Predicting house price from labelled sales', 'The target price is known in the training examples.'),
+      m('A model gets 99% accuracy on a fraud dataset with 1% fraud. What should you check?', ['Precision and recall on the fraud class', 'Only training accuracy', 'The number of columns'], 'Precision and recall on the fraud class', 'A majority-class predictor can score 99% while catching no fraud.'),
+    ],
+  },
+  {
+    id: 'ml02', no: 2, title: 'Python Programming for Machine Learning', level: 'beginner', hours: 8,
+    goal: 'Write the Python you will use daily: collections, functions, files, errors, packages and a reproducible environment.',
+    topics: [
+      c('Functions and comprehensions', 'A function packages a calculation so it can be tested and reused. A list comprehension builds a new list from an iterable in one readable expression. Both appear constantly in feature preparation.', 'def normalise(marks):\n    top = max(marks)\n    return [round(mark / top, 2) for mark in marks]\nprint(normalise([40, 60, 80]))', '[0.5, 0.75, 1.0]'),
+      c('Dictionaries count categories', 'A dictionary maps keys to values. Counting category frequencies with `.get(key, 0) + 1` is a small but essential data-cleaning pattern, and it is the idea behind value counts and vocabulary building.', 'counts = {}\nfor label in ["spam", "ham", "spam"]:\n    counts[label] = counts.get(label, 0) + 1\nprint(counts)', "{'spam': 2, 'ham': 1}"),
+      t('Virtual environments and pip', 'A virtual environment isolates the packages for one project. Create it once, activate it, install exact versions with pip, and record them in requirements.txt. Isolation prevents a course experiment from breaking another project, and pinned versions make an experiment reproducible.'),
+    ],
+    interview: [q('What is the difference between a list and a tuple?', 'A list is mutable and normally holds a homogeneous sequence you will change. A tuple is immutable, can be hashed if its contents are hashable, and is useful for fixed records, multiple return values and dictionary keys. Immutability is a correctness tool, not just a speed choice.')],
+    coding: [k('Clean a list of marks', 'Given marks containing a missing value represented by None, return only the valid marks as floats.', 'raw = [80, None, 90, 70]\n# build clean\n', 'raw = [80, None, 90, 70]\nclean = [float(mark) for mark in raw if mark is not None]\nprint(clean)', '[80.0, 90.0, 70.0]', 'Filter first, then convert.')],
+    debug: [d('Off-by-one in the mean', 'marks = [40, 60, 80]\nprint(sum(marks) / len(marks) - 1)', 'The result is 59.0 instead of the mean 60.0. The stray `- 1` changes the statistic; remove it rather than adjusting the data.', 'marks = [40, 60, 80]\nprint(sum(marks) / len(marks))')],
+    mini: mini('A reusable data-cleaning script', 'Read a small CSV of names and marks, drop rows without a mark, and print a sorted report. Keep the cleaning in functions so it can be tested.', ['Write `load(path)` and `clean(rows)`.', 'Handle a missing file with a clear error.', 'Print name and mark sorted by mark.', 'Add one assertion for a known row.']),
+    lab: lab('Package a preprocessing utility', 'Turn the cleaning functions into a small importable module with a command-line entry point.', ['Create `cleaner.py` with pure functions.', 'Add `if __name__ == "__main__"` handling.', 'Write `test_cleaner.py` for two cases.', 'Document install and run in README.']),
+    defense: [def('Why pin package versions in an ML project?', 'A model result is only meaningful if the code and data that produced it can be rerun. Pinning prevents a silent library upgrade from changing defaults, metrics or serialization. Record Python, package and dataset versions together; a lockfile is part of the experiment, not paperwork.', ['Pin direct dependencies.', 'Record the Python version.', 'Store the lockfile with the experiment.'])],
+    checkpoint: [
+      m('Which structure is the best fit for fixed feature names in order?', ['A tuple', 'A set', 'A dictionary with duplicate keys'], 'A tuple', 'The order and count are fixed, and mutability is not needed.'),
+      m('What does a virtual environment isolate?', ['Project Python packages', 'The operating system kernel', 'The dataset licence'], 'Project Python packages', 'It gives each project its own interpreter packages and versions.'),
+    ],
+  },
+  {
+    id: 'ml03', no: 3, title: 'NumPy for Machine Learning', level: 'beginner', hours: 8,
+    goal: 'Use ndarrays, vectorised arithmetic, broadcasting, aggregation and linear algebra as the numerical language of ML.',
+    topics: [
+      c('Arrays and vectorisation', 'A NumPy array stores numbers in one compact block and applies operations to all elements without a Python loop. Vectorisation is both shorter and faster; it is how feature matrices and model maths are expressed.', 'import numpy as np\na = np.array([1, 2, 3])\nprint(a * 2)', '[2 4 6]'),
+      c('Aggregation along an axis', 'An axis is the direction you reduce. `axis=0` collapses rows and leaves one value per column; `axis=1` collapses columns and leaves one value per row. Reading the axis correctly prevents most shape bugs.', 'import numpy as np\na = np.array([[1, 2], [3, 4]])\nprint(a.sum(axis=0))', '[4 6]'),
+      t('Broadcasting and linear algebra', 'Broadcasting lets arrays with compatible trailing shapes combine without copying, such as subtracting one mean per column from every row. A matrix product is a sum of products, written `X @ w`; it is the core of linear regression, neural layers and PCA.'),
+    ],
+    interview: [q('What is the difference between a NumPy view and a copy?', 'A view shares the original data buffer; changing it can change the base array. A copy owns new memory. Slicing usually returns a view, while boolean indexing and `.copy()` return a copy. Use `.copy()` when you need independent data, and know which one your preprocessing step produced.')],
+    coding: [k('Mean squared error', 'Compute the mean squared error between actual [3, 5, 7] and predicted [2, 5, 8], rounded to two decimals.', 'import numpy as np\ny = np.array([3, 5, 7])\np = np.array([2, 5, 8])\n# print mse\n', 'import numpy as np\ny = np.array([3, 5, 7])\np = np.array([2, 5, 8])\nprint(round(float(np.mean((y - p) ** 2)), 2))', '0.67', 'Square the differences first, then take the mean.')],
+    debug: [d('Reducing a 1-D array along axis 1', 'import numpy as np\na = np.array([1, 2, 3])\nprint(a.sum(axis=1))', 'NumPy raises AxisError because a 1-D array has axis 0 only. The intended total is 6, so reduce along axis 0 (or call `a.sum()`).', 'import numpy as np\na = np.array([1, 2, 3])\nprint(a.sum(axis=0))')],
+    mini: mini('A NumPy statistics analyser', 'Given a 2-D matrix of student marks, print each student total and the subject means without Python loops over individual cells.', ['Create a 4×3 integer matrix.', 'Compute row totals with axis 1.', 'Compute column means with axis 0.', 'Normalise every cell by its column maximum using broadcasting.']),
+    lab: lab('Implement linear regression maths with NumPy', 'Use the normal equation or gradient descent on a small synthetic dataset and compare with a hand calculation.', ['Create X with a bias column.', 'Compute weights with `np.linalg.lstsq`.', 'Predict and calculate MSE.', 'Explain each array shape in the README.']),
+    defense: [def('Why does `axis` matter when computing feature means?', 'A feature mean must be computed per column across rows, which is `axis=0`. Using `axis=1` computes one mean per row and silently produces the wrong shape for later subtraction. Assert shapes before and after; a correct number with the wrong axis is still a bug.', ['State the desired output shape.', 'Reduce the matching axis.', 'Assert the result shape.'])],
+    checkpoint: [
+      m('What shape does `a.sum(axis=0)` return for a (5, 3) array?', ['A length-3 vector', 'A length-5 vector', 'A scalar'], 'A length-3 vector', 'Summing down rows leaves one total for each of the 3 columns.'),
+      m('Which operation usually returns a view?', ['A basic slice', 'Boolean filtering', 'Calling `.copy()`'], 'A basic slice', 'Basic slicing shares memory; boolean indexing and copy create new arrays.'),
+    ],
+  },
+  {
+    id: 'ml04', no: 4, title: 'Pandas for Machine Learning', level: 'beginner', hours: 9,
+    goal: 'Load, inspect, filter, group, join and clean tabular data without losing track of rows or types.',
+    topics: [
+      c('Series, DataFrames and groupby', 'A Series is one labelled column; a DataFrame is a table of aligned Series. `groupby` splits rows by a key, applies an aggregation and combines the result, which is the fastest way to turn raw transactions into features.', 'import pandas as pd\ndf = pd.DataFrame({"city": ["Pune", "Delhi", "Pune"], "marks": [80, 90, 70]})\nprint(df.groupby("city")["marks"].mean()["Pune"])', '75.0'),
+      c('Finding missing values', 'Missing data is a fact to measure, not an error to hide. `isna().sum()` reports how many values are absent per column; that count decides whether to drop, impute or investigate the collection process.', 'import pandas as pd\ns = pd.Series([10, None, 30])\nprint(int(s.isna().sum()))', '1'),
+      t('Merging, selection and safe assignment', 'Use `merge` for key-based joins, `loc` for label-based selection and `iloc` for position-based selection. Prefer one explicit assignment such as `df.loc[mask, "col"] = value` over chained indexing, which can silently operate on a copy. Always check row counts before and after a join.'),
+    ],
+    interview: [q('What is the difference between `.loc` and `.iloc`?', '`.loc` selects by index/column labels and supports boolean masks. `.iloc` selects by integer position, like normal Python indexing. Mixing them causes confusing errors, especially with a non-default index; choose based on whether you mean a name or a position.')],
+    coding: [k('Revenue for one product', 'Given a product/revenue DataFrame, print the total revenue for product A as an integer.', 'import pandas as pd\ndf = pd.DataFrame({"product": ["A", "B", "A"], "revenue": [10, 20, 15]})\n# print A total\n', 'import pandas as pd\ndf = pd.DataFrame({"product": ["A", "B", "A"], "revenue": [10, 20, 15]})\nprint(int(df.groupby("product")["revenue"].sum()["A"]))', '25', 'Group first, then select A.')],
+    debug: [d('Forgetting to call the aggregation', 'import pandas as pd\ndf = pd.DataFrame({"marks": [40, 60, 80]})\nprint(df["marks"].mean)', 'This prints a bound method object, not 60.0. `mean` is a method; call it with parentheses.', 'import pandas as pd\ndf = pd.DataFrame({"marks": [40, 60, 80]})\nprint(df["marks"].mean())')],
+    mini: mini('A sales report with missing values', 'Build a small orders table with a missing discount, fill it with 0 only where that is business-correct, and report revenue by region.', ['Create orders with region, amount, discount.', 'Inspect null counts.', 'Fill discount with 0 and calculate net revenue.', 'Group and sort by region.']),
+    lab: lab('Profile a messy customer table', 'Take a 20-row customer CSV with duplicate ids, mixed date strings and missing ages; produce a clean table and a short profiling log.', ['Record shape, dtypes and missing counts before cleaning.', 'Resolve duplicates by a documented rule.', 'Parse dates and reject invalid ones.', 'Write a before/after summary.']),
+    defense: [def('Why is chained assignment dangerous in Pandas?', 'Chained indexing can return a temporary copy, so the assignment may not modify the original DataFrame. Pandas also warns about it. Use a single `.loc[row_mask, column]` assignment, and verify the affected row count.', ['Use one `.loc` call.', 'Check the changed rows.', 'Avoid silent SettingWithCopy warnings.'])],
+    checkpoint: [
+      m('Which call counts missing values per column?', ['`df.isna().sum()`', '`df.sum().isna()`', '`df.dropna()`'], '`df.isna().sum()`', '`isna` creates booleans; `sum` counts True per column.'),
+      m('What should you check immediately after a many-to-one merge?', ['The row count and unmatched keys', 'Only the column order', 'The colour of the notebook'], 'The row count and unmatched keys', 'A wrong join can duplicate rows or silently drop records.'),
+    ],
+  },
+  {
+    id: 'ml05', no: 5, title: 'Mathematics for Machine Learning', level: 'beginner', hours: 10,
+    goal: 'Build the vectors, matrices, derivatives, gradients and optimisation intuition behind model training.',
+    topics: [
+      c('Vectors, dot products and predictions', 'A feature row and a weight vector are both vectors. Their dot product multiplies matching entries and adds them, producing one prediction. This one operation underlies linear regression, logistic regression and every neural-network layer.', 'import numpy as np\nw = np.array([2.0, -1.0])\nx = np.array([3.0, 4.0])\nprint(float(w @ x))', '2.0'),
+      c('A gradient descent step', 'A gradient points in the direction of steepest increase. To reduce a loss, move the parameter in the opposite direction, scaled by a learning rate. One step is `w_new = w - learning_rate * gradient`.', 'w = 4.0\ngradient = 8.0\nlearning_rate = 0.1\nprint(round(w - learning_rate * gradient, 2))', '3.2'),
+      t('Derivatives, chain rule and loss', 'A derivative measures how a tiny change in an input changes an output. The chain rule composes those rates through nested operations, which is exactly what backpropagation does. A loss function turns "how wrong" into a number that optimisation can reduce; mean squared error and log loss are two common choices.'),
+    ],
+    interview: [q('Why do we subtract the gradient instead of adding it?', 'The gradient points toward increasing loss. Training wants lower loss, so we step in the negative-gradient direction. The learning rate controls the step size; too large can overshoot, too small is slow.', )],
+    coding: [k('One gradient descent update', 'Start with w = 2.0, gradient = 6.0 and learning rate 0.5. Print the updated w.', 'w = 2.0\ngradient = 6.0\nlr = 0.5\n# update\n', 'w = 2.0\ngradient = 6.0\nlr = 0.5\nw = w - lr * gradient\nprint(w)', '-1.0', 'Move opposite to the gradient.')],
+    debug: [d('Gradient ascent by mistake', 'w = 4.0\ngradient = 8.0\nlr = 0.1\nw = w + lr * gradient\nprint(round(w, 2))', 'The parameter moves to 4.8, increasing the loss. Minimisation needs a subtraction. The expected one-step value is 3.2.', 'w = 4.0\ngradient = 8.0\nlr = 0.1\nw = w - lr * gradient\nprint(round(w, 2))')],
+    mini: mini('Linear regression from mathematics', 'Fit y = wx + b on three points by hand and with NumPy, then compare the fitted line with the data.', ['Write the prediction equation.', 'Compute residuals and squared error by hand.', 'Use `np.polyfit` to fit degree 1.', 'Explain the slope and intercept in one sentence.']),
+    lab: lab('Visualise a loss surface', 'For a one-parameter model, print loss at several values of w and identify the minimum.', ['Define a small dataset.', 'Compute MSE for w from -2 to 4.', 'Find the w with the smallest loss.', 'Describe the shape of the loss curve.']),
+    defense: [def('Why can a very large learning rate make training worse?', 'A large step can jump across the minimum to a point with a higher loss, then oscillate or diverge. The gradient is only a local linear approximation; a step larger than that approximation can support breaks it.', ['Show a step overshooting the minimum.', 'Reduce the rate.', 'Monitor loss per epoch.'])],
+    checkpoint: [
+      m('What does a dot product of features and weights produce?', ['A single weighted sum', 'A new training set', 'A probability always'], 'A single weighted sum', 'It is the linear score before any activation.'),
+      m('The derivative of x² at x = 3 is:', ['6', '9', '3'], '6', 'The derivative 2x evaluates to 6.'),
+    ],
+  },
+  {
+    id: 'ml06', no: 6, title: 'Probability and Statistics', level: 'beginner', hours: 10,
+    goal: 'Describe uncertainty, compare groups and interpret evidence instead of trusting a single average.',
+    topics: [
+      c('Mean and standard deviation', 'The mean is the balance point of a distribution; standard deviation describes typical distance from it. Together they summarise centre and spread, and they are the basis of standardisation and z-scores.', 'import numpy as np\nxs = np.array([2, 4, 6])\nprint(float(np.mean(xs)), round(float(np.std(xs)), 2))', '4.0 1.63'),
+      c('Bayes theorem in one calculation', 'Bayes updates a prior belief with evidence. The posterior is prior × likelihood ÷ evidence. It is the foundation of Naive Bayes and of reasoning about false positives in medical or fraud screening.', 'prior = 0.1\nlikelihood = 0.8\nevidence = 0.2\nprint(round(prior * likelihood / evidence, 2))', '0.4'),
+      t('Sampling, intervals and hypothesis tests', 'A sample statistic varies from sample to sample. A confidence interval expresses that uncertainty, while a hypothesis test asks whether an observed difference is plausible under a null model. A p-value is not the probability that the null is true, and statistical significance is not business importance.'),
+    ],
+    interview: [q('What does a p-value actually mean?', 'It is the probability of observing data at least as extreme as ours, assuming the null hypothesis is true. It is not the probability that the null is true, nor the probability of replication. Report an effect size and interval alongside it.', )],
+    coding: [k('A Bayes update', 'A prior of 0.2 and likelihood of 0.5 meet evidence 0.25. Print the posterior rounded to two decimals.', 'prior = 0.2\nlikelihood = 0.5\nevidence = 0.25\n# posterior\n', 'prior = 0.2\nlikelihood = 0.5\nevidence = 0.25\nprint(round(prior * likelihood / evidence, 2))', '0.4', 'Multiply prior by likelihood, then divide by evidence.')],
+    debug: [d('Adding a constant to Bayes', 'prior = 0.2\nlikelihood = 0.5\nevidence = 0.25\nposterior = prior * likelihood / evidence + 0.1\nprint(round(posterior, 2))', 'The result is 0.5, but the Bayes posterior is 0.4. The extra 0.1 is not part of the formula.', 'prior = 0.2\nlikelihood = 0.5\nevidence = 0.25\nposterior = prior * likelihood / evidence\nprint(round(posterior, 2))')],
+    mini: mini('An A/B test readout', 'Compare conversion counts for two variants and write a careful conclusion that separates significance from practical impact.', ['Calculate conversion rates.', 'Calculate absolute and relative lift.', 'State the uncertainty you would need.', 'Recommend a decision for the business.']),
+    lab: lab('Statistical analysis of a real dataset', 'Use a public dataset with a numeric outcome and a group column; report distribution, group comparison and limitations.', ['Clean the two columns you need.', 'Report mean, median, standard deviation and n.', 'Compare groups with an appropriate test.', 'Write what the result does not prove.']),
+    defense: [def('Why can a statistically significant result be useless in production?', 'With a large enough sample, a tiny effect becomes statistically significant. Production cares about effect size, cost, latency and user impact. A significant 0.01% lift can be smaller than noise in revenue or more expensive to ship than it returns.', ['Report effect size.', 'Compare with the cost of change.', 'Check the interval, not just p.'])],
+    checkpoint: [
+      m('The mean of [2, 4, 6] is:', ['4', '2', '6'], '4', 'The values balance around 4.'),
+      m('A p-value is the probability that:', ['Data this extreme occurs under the null', 'The null hypothesis is true', 'The model is production-ready'], 'Data this extreme occurs under the null', 'It is computed assuming the null, not the posterior probability of the null.'),
+    ],
+  },
+];

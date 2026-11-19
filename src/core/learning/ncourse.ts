@@ -12,7 +12,7 @@
  * under `node --test`.
  */
 
-export type NCourseLevel = 'beginner' | 'intermediate' | 'advanced';
+export type NCourseLevel = 'beginner' | 'intermediate' | 'advanced' | 'professional';
 export type NSectionKey =
   | 'learn' | 'interview' | 'coding' | 'logic' | 'debug'
   | 'practice' | 'miniProject' | 'projectLab' | 'defense' | 'checkpoint';
@@ -51,6 +51,8 @@ export interface NEntry {
   hint?: string;
   output?: string;
   answer?: string;
+  /** The authored reason a checkpoint answer is right, shown after a choice. */
+  why?: string;
   solution?: string;
   expected?: string;
   error?: string;

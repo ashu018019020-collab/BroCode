@@ -44,6 +44,7 @@ const SOURCES = [
   { file: 'java-course/index.json', questions: 'java-course/assessments.json', count: assessmentQuestions },
   { file: 'numpy-course/index.json', count: publishedBank },
   { file: 'pandas-course/index.json', count: publishedBank },
+  { file: 'ml-course/index.json', count: publishedBank },
 ];
 
 function readArtifact(file, cache) {

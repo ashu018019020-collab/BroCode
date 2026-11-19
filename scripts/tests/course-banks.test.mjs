@@ -37,6 +37,7 @@ const COUNTS = [
   { id: 'java-programming', modules: 20, questions: 80 },
   { id: 'numpy-mastery', modules: 20, questions: 4058 },
   { id: 'pandas-mastery', modules: 20, questions: 2200 },
+  { id: 'ml-mastery', modules: 27, questions: 459 },
 ];
 
 /** The invented cards beside the subject boxes: identity and destination, never the counts. */
