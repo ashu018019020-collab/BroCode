@@ -119,8 +119,8 @@
       "SQL is the standard query language."
      ],
      "example": {
-      "sql": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
-      "output": "name | title\nAarav | SQL Basics"
+      "sql": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id ORDER BY s.name, c.title;",
+      "output": "name | title\nAarav | Data Modelling\nAarav | SQL Fundamentals\nIra | Analytics with SQL\nIra | Database Operations\nKabir | Data Modelling\nMeera | Analytics with SQL\nMeera | SQL Fundamentals\nZoya | SQL Fundamentals"
      }
     },
     {
@@ -404,8 +404,8 @@
       "Joins answer questions spanning entities."
      ],
      "example": {
-      "sql": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
-      "output": "name | title\nAarav | SQL Basics"
+      "sql": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id ORDER BY s.name, c.title;",
+      "output": "name | title\nAarav | Data Modelling\nAarav | SQL Fundamentals\nIra | Analytics with SQL\nIra | Database Operations\nKabir | Data Modelling\nMeera | Analytics with SQL\nMeera | SQL Fundamentals\nZoya | SQL Fundamentals"
      }
     }
    ],
@@ -766,7 +766,7 @@
      {
       "title": "Join courses",
       "task": "Return student name and course title.",
-      "solution": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "solution": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id ORDER BY s.name, c.title;",
       "expected": "One row per matching student-course pair."
      },
      {
@@ -949,11 +949,11 @@
       "expected": "Cities with more than one student."
      },
      {
-      "title": "Ambiguous column",
-      "broken": "SELECT name FROM students JOIN courses ON id = course_id;",
-      "fix": "SELECT s.name FROM students s JOIN courses c ON c.id = s.course_id;",
-      "error": "ambiguous column name: id",
-      "expected": "Student names."
+      "title": "Join on a missing column",
+      "broken": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "fix": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "error": "no such column: s.course_id",
+      "expected": "One row per enrollment — the link lives in enrollments, not on students."
      },
      {
       "title": "LIMIT before ORDER BY",
@@ -1770,7 +1770,7 @@
      {
       "title": "Join courses",
       "task": "Return student name and course title.",
-      "solution": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "solution": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id ORDER BY s.name, c.title;",
       "expected": "Matching student-course pairs."
      },
      {
@@ -1799,8 +1799,8 @@
      },
      {
       "title": "Add a column",
-      "task": "Add an email column to students.",
-      "solution": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "task": "Add a phone column to students.",
+      "solution": "ALTER TABLE students ADD COLUMN phone TEXT;",
       "expected": "ALTER TABLE"
      },
      {
@@ -1923,11 +1923,11 @@
       "expected": "Cities with more than one student."
      },
      {
-      "title": "Ambiguous column",
-      "broken": "SELECT name FROM students JOIN courses ON id = course_id;",
-      "fix": "SELECT s.name FROM students s JOIN courses c ON c.id = s.course_id;",
-      "error": "column reference \"id\" is ambiguous",
-      "expected": "Student names."
+      "title": "Join on a missing column",
+      "broken": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "fix": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "error": "column s.course_id does not exist",
+      "expected": "One row per enrollment — the link lives in enrollments, not on students."
      },
      {
       "title": "LIMIT before ORDER BY",
@@ -3104,7 +3104,7 @@
       "Use USING when a type change needs an explicit cast."
      ],
      "example": {
-      "sql": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "sql": "ALTER TABLE students ADD COLUMN phone TEXT;",
       "output": "ALTER TABLE"
      }
     },
@@ -3603,8 +3603,8 @@
      },
      {
       "title": "Alter the table",
-      "task": "Add an email column.",
-      "solution": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "task": "Add a phone column.",
+      "solution": "ALTER TABLE students ADD COLUMN phone TEXT;",
       "expected": "ALTER TABLE"
      },
      {
@@ -3823,8 +3823,8 @@
      },
      {
       "title": "ADD COLUMN without a type",
-      "broken": "ALTER TABLE students ADD COLUMN email;",
-      "fix": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "broken": "ALTER TABLE students ADD COLUMN phone;",
+      "fix": "ALTER TABLE students ADD COLUMN phone TEXT;",
       "error": "syntax error at or near \";\"",
       "expected": "ALTER TABLE"
      },
@@ -4744,9 +4744,9 @@
      },
      {
       "title": "IF NOT EXISTS hides a mismatch",
-      "broken": "CREATE TABLE students (id INTEGER);\nCREATE TABLE IF NOT EXISTS students (id INTEGER, name TEXT);",
-      "fix": "ALTER TABLE students ADD COLUMN name TEXT;",
-      "error": "The second CREATE is skipped; name is never added",
+      "broken": "CREATE TABLE courses (id INTEGER);\nCREATE TABLE IF NOT EXISTS courses (id INTEGER, room TEXT);",
+      "fix": "ALTER TABLE courses ADD COLUMN room TEXT;",
+      "error": "The second CREATE is skipped; room is never added",
       "expected": "ALTER TABLE"
      },
      {
@@ -29505,8 +29505,8 @@
     "debug": [
      {
       "title": "Long lock",
-      "broken": "ALTER TABLE students ADD COLUMN email TEXT NOT NULL DEFAULT md5(random()::text);",
-      "fix": "ALTER TABLE students ADD COLUMN email TEXT;\nUPDATE students SET email = 'unknown@example.com' WHERE email IS NULL;\nALTER TABLE students ALTER COLUMN email SET NOT NULL;",
+      "broken": "ALTER TABLE students ADD COLUMN phone TEXT NOT NULL DEFAULT md5(random()::text);",
+      "fix": "ALTER TABLE students ADD COLUMN phone TEXT;\nUPDATE students SET phone = 'unknown' WHERE phone IS NULL;\nALTER TABLE students ALTER COLUMN phone SET NOT NULL;",
       "error": "A volatile default can rewrite the table under a lock",
       "expected": "A staged migration."
      },

@@ -873,9 +873,9 @@
      },
      {
       "title": "IF NOT EXISTS hides a mismatch",
-      "broken": "CREATE TABLE students (id INTEGER);\nCREATE TABLE IF NOT EXISTS students (id INTEGER, name TEXT);",
-      "fix": "ALTER TABLE students ADD COLUMN name TEXT;",
-      "error": "The second CREATE is skipped; name is never added",
+      "broken": "CREATE TABLE courses (id INTEGER);\nCREATE TABLE IF NOT EXISTS courses (id INTEGER, room TEXT);",
+      "fix": "ALTER TABLE courses ADD COLUMN room TEXT;",
+      "error": "The second CREATE is skipped; room is never added",
       "expected": "ALTER TABLE"
      },
      {

@@ -806,8 +806,8 @@
     "debug": [
      {
       "title": "Long lock",
-      "broken": "ALTER TABLE students ADD COLUMN email TEXT NOT NULL DEFAULT md5(random()::text);",
-      "fix": "ALTER TABLE students ADD COLUMN email TEXT;\nUPDATE students SET email = 'unknown@example.com' WHERE email IS NULL;\nALTER TABLE students ALTER COLUMN email SET NOT NULL;",
+      "broken": "ALTER TABLE students ADD COLUMN phone TEXT NOT NULL DEFAULT md5(random()::text);",
+      "fix": "ALTER TABLE students ADD COLUMN phone TEXT;\nUPDATE students SET phone = 'unknown' WHERE phone IS NULL;\nALTER TABLE students ALTER COLUMN phone SET NOT NULL;",
       "error": "A volatile default can rewrite the table under a lock",
       "expected": "A staged migration."
      },

@@ -12,12 +12,12 @@ export const DATASETS: Dataset[] = [
     ],
   },
   {
-    name: 'sales', desc: 'Order lines: product, qty, revenue — for aggregation practice.',
-    columns: ['order_id', 'product', 'qty', 'revenue'],
+    name: 'sales', desc: 'Order lines keyed by customer — joins and aggregation practice.',
+    columns: ['order_id', 'customer_id', 'product', 'qty', 'revenue'],
     rows: [
-      [101, 'Laptop', 1, 55000], [101, 'Mouse', 2, 1500], [102, 'Laptop', 1, 52000],
-      [103, 'Phone', 3, 45000], [104, 'Mouse', 5, 3750], [104, 'Keyboard', 2, 4000],
-      [105, 'Phone', 1, 15000], [106, 'Monitor', 2, 24000], [106, 'Keyboard', 1, 2000],
+      [101, 1, 'Laptop', 1, 55000], [101, 1, 'Mouse', 2, 1500], [102, 2, 'Laptop', 1, 52000],
+      [103, 3, 'Phone', 3, 45000], [104, 4, 'Mouse', 5, 3750], [104, 4, 'Keyboard', 2, 4000],
+      [105, 5, 'Phone', 1, 15000], [106, 1, 'Monitor', 2, 24000], [106, 1, 'Keyboard', 1, 2000],
     ],
   },
   {

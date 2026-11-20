@@ -92,6 +92,8 @@ export interface MasterclassSelection {
   topicId?: string;
   /** The explanation level the URL names, when it is one of the two. */
   level?: MasterclassLevel;
+  /** The lab/debug item the URL names (0-based, within that bank). */
+  exercise?: number;
 }
 
 /** The read half of `URLSearchParams`, so this rule needs no router. */
@@ -122,6 +124,7 @@ export function masterclassSelection(
   const bankParam = params.get('bank');
   const exampleParam = params.get('example');
   const levelParam = params.get('level');
+  const itemParam = params.get('item');
   return {
     moduleId: module?.id,
     bank: MASTERCLASS_BANKS.includes(bankParam as MasterclassBank) ? (bankParam as MasterclassBank) : undefined,
@@ -129,13 +132,15 @@ export function masterclassSelection(
       ? exampleParam
       : undefined,
     level: MASTERCLASS_LEVELS.includes(levelParam as MasterclassLevel) ? (levelParam as MasterclassLevel) : undefined,
+    // Only a whole number can name an item; a bad index is ignored like a bad module id.
+    ...(itemParam && /^\d+$/.test(itemParam) ? { exercise: Number(itemParam) } : {}),
   };
 }
 
 /** The same page with the selection written into it; every other param is left alone. */
 export function masterclassHref(
   params: URLSearchParams,
-  next: { moduleId?: string; bank?: string; example?: string; level?: string },
+  next: { moduleId?: string; bank?: string; example?: string; level?: string; item?: string },
 ): URLSearchParams {
   const search = new URLSearchParams(params);
   if (next.moduleId) {
@@ -146,5 +151,6 @@ export function masterclassHref(
   if (next.bank) search.set('bank', next.bank);
   if (next.example) search.set('example', next.example);
   if (next.level) search.set('level', next.level);
+  if (next.item) search.set('item', next.item);
   return search;
 }

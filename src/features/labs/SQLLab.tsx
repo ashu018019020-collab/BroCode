@@ -3,12 +3,12 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { HubCrumb } from '../../components/learning/SectionChrome';
 import { runSQL } from '../coding/runners';
 import { DATASETS, seedForSQL } from '../../core/data/datasets';
-import { useSqlMasterclass } from '../../core/data/sqlmasterclass';
+import { useSqlMasterclass, type SqlDebug, type SqlLab } from '../../core/data/sqlmasterclass';
 import { sqliteSchema, moduleRun } from '../../core/learning/sql-setup';
+import { gradeSqlResult, isGradeableSql, type SqlGrade } from '../../core/learning/sql-exercise';
 import { masterclassHref, masterclassSelection, type MasterclassBank, type MasterclassLevel } from '../../core/learning/masterclass';
 import { useStore, setState } from '../../core/storage/store';
 import { codeSlot } from '../../core/platform/keys';
-import { parseTraceback } from '../../core/platform/traceback';
 import { SqlMasterclass } from './SqlMasterclass';
 
 /** Same Monaco editor the Playground and lessons use — one editor experience app-wide. */
@@ -18,12 +18,17 @@ type IdeError = import('../../components/code/MonacoIDE').IdeError;
 const EXAMPLES = [
   { title: 'SELECT + WHERE', q: 'SELECT name, marks FROM students WHERE marks > 80;' },
   { title: 'GROUP BY + HAVING', q: 'SELECT city, COUNT(*) AS n, AVG(marks) AS avg_marks FROM students GROUP BY city HAVING COUNT(*) > 2;' },
-  { title: 'INNER JOIN', q: 'SELECT c.name, o.product, o.qty FROM customers c INNER JOIN sales o ON c.id = o.order_id;' },
+  { title: 'INNER JOIN', q: 'SELECT c.name, o.product, o.qty FROM customers c INNER JOIN sales o ON c.id = o.customer_id;' },
   { title: 'ORDER BY + LIMIT', q: 'SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 3;' },
   { title: 'Subquery', q: 'SELECT name FROM students WHERE marks = (SELECT MAX(marks) FROM students);' },
   { title: 'CTE', q: 'WITH top AS (SELECT * FROM employees WHERE salary > 80000) SELECT name, salary FROM top;' },
   { title: 'Window function', q: 'SELECT name, dept, salary, RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS rk FROM employees;' },
 ];
+
+/** The Lab's demo tables; a run that provides its own table by the same name skips its seed. */
+const DEMO_TABLES = DATASETS.map((dataset) => dataset.name);
+const seedsFor = (shadowed: readonly string[]) =>
+  DATASETS.filter((dataset) => !shadowed.includes(dataset.name)).map(seedForSQL);
 
 export default function SQLLab() {
   const state = useStore();
@@ -36,6 +41,16 @@ export default function SQLLab() {
   const sqlFile = useSqlMasterclass();
   const selection = masterclassSelection(params, sqlFile?.modules ?? []);
   const module = selection.moduleId ? sqlFile?.modules.find((m) => m.id === selection.moduleId) ?? null : null;
+  /** `?bank=labs|debug&item=2` opens one authored exercise, with the module's setup applied. */
+  const exerciseBank = selection.bank === 'labs' || selection.bank === 'debug' ? selection.bank : null;
+  const exercises = exerciseBank && module ? module.banks[exerciseBank] : [];
+  const exercise = exerciseBank && module && selection.exercise !== undefined
+    ? exercises[selection.exercise] as SqlLab | SqlDebug | undefined
+    : undefined;
+  /** What a correct answer must return: the authored solution, graded by its result, not its text. */
+  const referenceSql = exercise
+    ? exerciseBank === 'labs' ? (exercise as SqlLab).solution : (exercise as SqlDebug).fix
+    : '';
   /** Functional update: one click can change two parts (a chip opens its module and resets the bank). */
   const select = (next: { moduleId?: string; bank?: MasterclassBank; level?: MasterclassLevel }) =>
     setParams((current) => masterclassHref(current, next), { replace: true });
@@ -43,7 +58,7 @@ export default function SQLLab() {
   const schema = useMemo(
     () => sqliteSchema(
       module ? [...(sqlFile?.course.schema ?? []), ...(module.setup ?? [])] : [],
-      DATASETS.map((d) => d.name),
+      DEMO_TABLES,
     ),
     [sqlFile, module],
   );
@@ -52,6 +67,9 @@ export default function SQLLab() {
   const [err, setErr] = useState<string | null>(null);
   /** Running is a real state: without it a double-click ran the query twice and nothing said "wait". */
   const [busy, setBusy] = useState(false);
+  const [grade, setGrade] = useState<SqlGrade | null>(null);
+  /** Set only when the reference cannot run here, so showing it is the one honest fallback. */
+  const [revealReference, setRevealReference] = useState(false);
   /** Only fill the editor from the module while the learner has not started writing. */
   const edited = useRef(false);
   const filledExample = useRef<string | null>(null);
@@ -61,7 +79,7 @@ export default function SQLLab() {
     : undefined;
   const exampleSql = (linkedExample ?? module?.topics[0])?.example.sql;
   useEffect(() => {
-    if (!module) return;
+    if (!module || exercise) return;
     const key = `${module.id}:${selection.topicId ?? ''}`;
     if (filledExample.current === key) return;
     filledExample.current = key;
@@ -69,16 +87,26 @@ export default function SQLLab() {
     // a plain module link still leaves the learner's own query alone.
     if (edited.current && !selection.topicId) return;
     if (exampleSql) setQ(exampleSql);
-  }, [module, selection.topicId, exampleSql]);
+  }, [module, selection.topicId, exampleSql, exercise]);
+  /** Opening an exercise is a request for THAT exercise: a debug item starts from its broken query. */
+  const filledExercise = useRef<string | null>(null);
+  useEffect(() => {
+    if (!module || !exerciseBank || !exercise) return;
+    const key = `${module.id}:${exerciseBank}:${selection.exercise}`;
+    if (filledExercise.current === key) return;
+    filledExercise.current = key;
+    edited.current = true;
+    setGrade(null);
+    setQ(exerciseBank === 'debug' ? (exercise as SqlDebug).broken : `-- ${exercise.title}\n`);
+  }, [module, exercise, exerciseBank, selection.exercise]);
 
   const run = async () => {
     if (busy) return;
     setBusy(true);
     setErr(null); setRes(null);
     try {
-      const { sql, shadowed } = moduleRun(schema, q, DATASETS.map((d) => d.name));
-      const seeds = DATASETS.filter((d) => !shadowed.includes(d.name)).map(seedForSQL);
-      const r = await runSQL(sql, seeds);
+      const { sql, shadowed } = moduleRun(schema, q);
+      const r = await runSQL(sql, seedsFor(shadowed));
       if (r.error) setErr(r.error); else setRes(r);
       setState((s) => ({ ...s, savedCode: { ...s.savedCode, [codeSlot.sqlLab]: q } }));
     } catch (e: any) {
@@ -88,6 +116,35 @@ export default function SQLLab() {
     }
   };
   const save = () => setState((s) => ({ ...s, savedCode: { ...s.savedCode, [codeSlot.sqlLab]: q } }));
+
+  /**
+   * Grade by RESULT: run the learner's SQL and the authored solution on the same schema and compare
+   * the result sets. The solution's text is never shown, so a right answer in different phrasing counts.
+   */
+  const checkAnswer = async () => {
+    if (busy || !exercise || !referenceSql) return;
+    setBusy(true);
+    setErr(null); setRes(null); setGrade(null); setRevealReference(false);
+    try {
+      const { sql, shadowed } = moduleRun(schema, q);
+      const mine = await runSQL(sql, seedsFor(shadowed));
+      if (!mine.ok) { setErr(mine.error ?? 'Your query did not run.'); return; }
+      const referenceRun = moduleRun(schema, referenceSql);
+      const reference = await runSQL(referenceRun.sql, seedsFor(referenceRun.shadowed));
+      if (!reference.ok) {
+        // A PostgreSQL-only reference cannot be graded by this SQLite engine — say that, not "wrong".
+        setErr(`This exercise can’t be graded here: its reference solution does not run on SQLite (${reference.error}).`);
+        setRevealReference(true);
+        return;
+      }
+      setRes(mine);
+      setGrade(gradeSqlResult(mine, reference));
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   // Squiggle the failing token's line straight from the SQLite error message.
   const sqlErrLine = (() => {
@@ -139,6 +196,46 @@ export default function SQLLab() {
                   <li key={item.statement}><code>{item.statement}</code> — {item.reason}</li>
                 ))}
               </ul>
+            </details>
+          )}
+        </div>
+      )}
+
+      {exercise && module && (
+        <div className="card" style={{ margin: '10px 0' }} data-exercise={exerciseBank}>
+          <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <span className="chip easy">{exerciseBank === 'labs' ? 'Lab' : 'Debug'} · {exercise.title}</span>
+            <Link to={`/course/sql?module=${module.id}&bank=${exerciseBank}&level=${selection.level ?? 'simple'}`} className="small">
+              Back to the course →
+            </Link>
+          </div>
+          <p className="small" style={{ margin: '6px 0 0' }}>
+            {exerciseBank === 'labs' ? (exercise as SqlLab).task : (exercise as SqlDebug).error}
+          </p>
+          <div className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            {isGradeableSql(referenceSql) ? (
+              <>
+                <button className="btn small primary" onClick={checkAnswer} disabled={busy}>Check answer</button>
+                <span className="small muted">Runs your SQL and the authored solution on this module’s schema, then compares the results.</span>
+              </>
+            ) : (
+              <span className="small muted">
+                This item’s reference is a statement rather than a query, so it is not graded by result — run it here to try it.
+              </span>
+            )}
+          </div>
+          {grade && (
+            <p className="small" role="status" style={{ margin: '8px 0 0', color: grade.ok ? 'var(--green, #2e7d32)' : 'var(--red)' }}>
+              {grade.ok
+                ? `Correct — ${grade.rows} row${grade.rows === 1 ? '' : 's'} match the reference.`
+                : `Not yet — ${grade.reason}.`}
+            </p>
+          )}
+          {revealReference && (
+            <details style={{ marginTop: 8 }}>
+              <summary className="small" style={{ cursor: 'pointer' }}>Reference solution and expected output</summary>
+              <pre className="codeblock" style={{ margin: '4px 0 0' }}>{referenceSql}</pre>
+              <p className="small muted" style={{ margin: '6px 0 0' }}><b>Expected:</b> {exercise.expected}</p>
             </details>
           )}
         </div>

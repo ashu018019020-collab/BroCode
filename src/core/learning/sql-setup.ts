@@ -36,6 +36,10 @@ const tableRefs = (sql: string): string[] => {
   return [...refs];
 };
 
+/** The table a CREATE TABLE / CREATE VIEW statement creates, lowercased. */
+const createdTable = (statement: string): string | null =>
+  statement.match(/^create\s+(?:table|view)\s+(?:if\s+not\s+exists\s+)?"?([a-zA-Z_][\w]*)"?/i)?.[1].toLowerCase() ?? null;
+
 /**
  * @param setup    authored module setup (PostgreSQL)
  * @param seeded   tables the Lab creates from its demo datasets before any query runs
@@ -53,13 +57,13 @@ export function sqliteSchema(
       plan.skipped.push({ statement: original, reason: 'needs a PostgreSQL server' });
       continue;
     }
-    const created = translated.sql.match(/^create\s+(?:table|view)\s+(?:if\s+not\s+exists\s+)?([a-zA-Z_][\w]*)/i);
+    const created = createdTable(translated.sql);
     const unknown = tableRefs(translated.sql).filter((table) => !known.has(table));
     if (unknown.length) {
       plan.skipped.push({ statement: original, reason: `needs the table ${unknown[0]}, which this module does not create` });
       continue;
     }
-    if (created) known.add(created[1].toLowerCase());
+    if (created) known.add(created);
     plan.statements.push(translated.sql);
     if (translated.adapted) plan.adapted.push(original);
   }
@@ -67,52 +71,41 @@ export function sqliteSchema(
   return plan;
 }
 
-/** Tables a query creates or drops itself: it starts from an empty slate, so nothing may pre-create them. */
-const definedTables = (query: string): string[] => [
-  ...query.matchAll(/\b(?:create|drop)\s+(?:table|view)\s+(?:if\s+(?:not\s+)?exists\s+)?"?([a-zA-Z_][\w]*)"?/gi),
+/** Tables a query creates itself: nothing may pre-create them. */
+const queryCreatedTables = (query: string): string[] => [
+  ...query.matchAll(/\bcreate\s+(?:table|view)\s+(?:if\s+(?:not\s+)?exists\s+)?"?([a-zA-Z_][\w]*)"?/gi),
 ].map((match) => match[1].toLowerCase());
-
-/** Tables a query ALTERs: the table must already exist, but not with the column the query adds. */
-const alteredTables = (query: string): string[] => [
-  ...query.matchAll(/\balter\s+table\s+(?:if\s+exists\s+)?"?([a-zA-Z_][\w]*)"?/gi),
-].map((match) => match[1].toLowerCase());
-
-const createdTable = (statement: string): string | null =>
-  statement.match(/^create\s+(?:table|view)\s+(?:if\s+not\s+exists\s+)?"?([a-zA-Z_][\w]*)"?/i)?.[1].toLowerCase() ?? null;
 
 export interface SqlModuleRun {
   /** The module's schema first, then what the learner wrote. */
   sql: string;
-  /** Tables this run creates itself: the Lab must not seed its demo datasets for them. */
+  /** Tables this run provides itself: the Lab must not seed its demo datasets for them. */
   shadowed: string[];
 }
 
 /**
- * One run, assembled. The Lab rebuilds its database per run, so a table the learner's own query
- * creates must not already exist — a DDL example would answer "table students already exists" for
- * the very schema it is teaching. Those tables step aside, and the Lab keeps its demo dataset for
- * them out of the seed for the same reason. An ALTER example needs its table to exist but not with
- * the column it adds, so when the Lab has a demo table of that name it seeds that one instead of
- * the shared schema; without one, the shared schema is the only way the table exists at all.
+ * One run, assembled from one schema source. The Lab rebuilds its database per run, so a table the
+ * learner's own query creates must not already exist — a DDL example would answer "table students
+ * already exists" for the very schema it is teaching. Those tables step aside, and the Lab keeps
+ * its demo dataset for them out of the seed for the same reason.
+ *
+ * Everything else is owned by the module schema. An ALTER or DROP needs its table to exist, so the
+ * plan's CREATE stays and the demo tables with the same name are not seeded: the run has exactly
+ * one definition of the table. When the plan does not create the table at all, the demo dataset is
+ * the only source, and it is left in the seed.
  */
-export function moduleRun(
-  plan: SqlSchemaPlan | null | undefined,
-  query: string,
-  demo: readonly string[] = [],
-): SqlModuleRun {
-  const defined = definedTables(query);
-  const demoed = new Set(demo.map((table) => table.toLowerCase()));
-  const altered = alteredTables(query).filter((table) => demoed.has(table));
-  if (!plan || plan.statements.length === 0) return { sql: query, shadowed: defined };
+export function moduleRun(plan: SqlSchemaPlan | null | undefined, query: string): SqlModuleRun {
+  const created = queryCreatedTables(query);
+  if (!plan || plan.statements.length === 0) return { sql: query, shadowed: created };
 
-  const own = new Set([...defined, ...altered]);
+  const own = new Set(created);
   const statements = plan.statements.filter((statement) => {
-    const created = createdTable(statement);
-    if (created && own.has(created)) return false;
-    return !tableRefs(statement).some((table) => own.has(table));
+    const table = createdTable(statement);
+    if (table && own.has(table)) return false;
+    return !tableRefs(statement).some((referenced) => own.has(referenced));
   });
 
-  const shadowed = [...new Set([...defined, ...statements.map(createdTable).filter((name): name is string => !!name)])];
+  const shadowed = [...new Set([...created, ...statements.map(createdTable).filter((name): name is string => !!name)])];
   return {
     sql: statements.length ? `${statements.map((statement) => `${statement};`).join('\n')}\n${query}` : query,
     shadowed,

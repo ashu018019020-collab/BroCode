@@ -775,7 +775,7 @@
      {
       "title": "Join courses",
       "task": "Return student name and course title.",
-      "solution": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "solution": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id ORDER BY s.name, c.title;",
       "expected": "Matching student-course pairs."
      },
      {
@@ -804,8 +804,8 @@
      },
      {
       "title": "Add a column",
-      "task": "Add an email column to students.",
-      "solution": "ALTER TABLE students ADD COLUMN email TEXT;",
+      "task": "Add a phone column to students.",
+      "solution": "ALTER TABLE students ADD COLUMN phone TEXT;",
       "expected": "ALTER TABLE"
      },
      {
@@ -928,11 +928,11 @@
       "expected": "Cities with more than one student."
      },
      {
-      "title": "Ambiguous column",
-      "broken": "SELECT name FROM students JOIN courses ON id = course_id;",
-      "fix": "SELECT s.name FROM students s JOIN courses c ON c.id = s.course_id;",
-      "error": "column reference \"id\" is ambiguous",
-      "expected": "Student names."
+      "title": "Join on a missing column",
+      "broken": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "fix": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "error": "column s.course_id does not exist",
+      "expected": "One row per enrollment — the link lives in enrollments, not on students."
      },
      {
       "title": "LIMIT before ORDER BY",

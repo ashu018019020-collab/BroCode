@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Bug, CheckCircle2, Code2, Copy, Flag, GraduationCap, HelpCircle, Layers, ListChecks, Lock, Trophy } from 'lucide-react';
 import { useSqlMasterclass, type SqlMasterclassFile, type SqlModule, type SqlQuiz } from '../../core/data/sqlmasterclass';
 import { masterclassPractice, masterclassQuestionCount, masterclassQuizTally, type MasterclassBank, type MasterclassLevel } from '../../core/learning/masterclass';
+import { isGradeableSql } from '../../core/learning/sql-exercise';
 import { levelForXp, masterclassCourseReward, masterclassModuleReward, masterclassQuizAttempt, masterclassTopicDone } from '../../core/platform/keys';
 import { addXp, recordAttempt, useStore } from '../../core/storage/store';
 
@@ -94,12 +95,15 @@ function Quiz({ item, index, picked, onPick }: {
   );
 }
 
-function Bank({ module, bank, courseId, attempts, onPick }: {
+function Bank({ module, bank, courseId, attempts, onPick, labRoute, level }: {
   module: SqlModule;
   bank: MasterclassBank;
   courseId: string;
   attempts: Record<string, { done?: boolean; answer?: string } | undefined>;
   onPick: (index: number, optionIndex: number, answerIndex: number) => void;
+  /** Where the course can actually run SQL; without it the banks stay static reading. */
+  labRoute?: string;
+  level: MasterclassLevel;
 }) {
   const items = module.banks[bank];
   if (bank === 'learn') {
@@ -124,35 +128,76 @@ function Bank({ module, bank, courseId, attempts, onPick }: {
   if (bank === 'labs') {
     return (
       <>
-        {(items as SqlModule['banks']['labs']).map((item) => (
-          <div key={item.title} className="card" style={{ marginBottom: 8 }}>
-            <b className="small">{item.title}</b>
-            <p className="small" style={{ margin: '6px 0 0' }}>{item.task}</p>
-            <details style={{ marginTop: 8 }}>
-              <summary className="small" style={{ cursor: 'pointer' }}>Reference solution and expected output</summary>
-              <pre className="codeblock" style={{ margin: '4px 0 0' }}>{item.solution}</pre>
-              <p className="small muted" style={{ margin: '6px 0 0' }}><b>Expected:</b> {item.expected}</p>
-            </details>
-          </div>
-        ))}
+        {(items as SqlModule['banks']['labs']).map((item, index) => {
+          // A query can be graded by its result; a DDL/DML lab cannot, so it keeps its reference.
+          const gradeable = Boolean(labRoute) && isGradeableSql(item.solution);
+          return (
+            <div key={item.title} className="card" style={{ marginBottom: 8 }}>
+              <b className="small">{item.title}</b>
+              <p className="small" style={{ margin: '6px 0 0' }}>{item.task}</p>
+              {gradeable ? (
+                <Link
+                  to={`${labRoute}?module=${module.id}&bank=labs&level=${level}&item=${index}`}
+                  className="btn small"
+                  style={{ marginTop: 8 }}
+                >
+                  Solve in SQL Lab →
+                </Link>
+              ) : (
+                <>
+                  <details style={{ marginTop: 8 }}>
+                    <summary className="small" style={{ cursor: 'pointer' }}>Reference solution and expected output</summary>
+                    <pre className="codeblock" style={{ margin: '4px 0 0' }}>{item.solution}</pre>
+                    <p className="small muted" style={{ margin: '6px 0 0' }}><b>Expected:</b> {item.expected}</p>
+                  </details>
+                  {labRoute && (
+                    <Link to={`${labRoute}?module=${module.id}&bank=labs&level=${level}&item=${index}`} className="small" style={{ display: 'inline-block', marginTop: 8 }}>
+                      Open in SQL Lab →
+                    </Link>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
       </>
     );
   }
   if (bank === 'debug') {
     return (
       <>
-        {(items as SqlModule['banks']['debug']).map((item) => (
-          <div key={item.title} className="card" style={{ marginBottom: 8 }}>
-            <b className="small">{item.title}</b>
-            <pre className="codeblock" style={{ margin: '6px 0 0' }}>{item.broken}</pre>
-            <p className="small" style={{ margin: '6px 0 0' }}><b>Why it fails · </b><span className="muted">{item.error}</span></p>
-            <details style={{ marginTop: 8 }}>
-              <summary className="small" style={{ cursor: 'pointer' }}>Fix and expected output</summary>
-              <pre className="codeblock" style={{ margin: '4px 0 0' }}>{item.fix}</pre>
-              <p className="small muted" style={{ margin: '6px 0 0' }}><b>Expected:</b> {item.expected}</p>
-            </details>
-          </div>
-        ))}
+        {(items as SqlModule['banks']['debug']).map((item, index) => {
+          const gradeable = Boolean(labRoute) && isGradeableSql(item.fix);
+          return (
+            <div key={item.title} className="card" style={{ marginBottom: 8 }}>
+              <b className="small">{item.title}</b>
+              <pre className="codeblock" style={{ margin: '6px 0 0' }}>{item.broken}</pre>
+              <p className="small" style={{ margin: '6px 0 0' }}><b>Why it fails · </b><span className="muted">{item.error}</span></p>
+              {gradeable ? (
+                <Link
+                  to={`${labRoute}?module=${module.id}&bank=debug&level=${level}&item=${index}`}
+                  className="btn small"
+                  style={{ marginTop: 8 }}
+                >
+                  Debug in SQL Lab →
+                </Link>
+              ) : (
+                <>
+                  <details style={{ marginTop: 8 }}>
+                    <summary className="small" style={{ cursor: 'pointer' }}>Fix and expected output</summary>
+                    <pre className="codeblock" style={{ margin: '4px 0 0' }}>{item.fix}</pre>
+                    <p className="small muted" style={{ margin: '6px 0 0' }}><b>Expected:</b> {item.expected}</p>
+                  </details>
+                  {labRoute && (
+                    <Link to={`${labRoute}?module=${module.id}&bank=debug&level=${level}&item=${index}`} className="small" style={{ display: 'inline-block', marginTop: 8 }}>
+                      Open in SQL Lab →
+                    </Link>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
       </>
     );
   }
@@ -551,6 +596,8 @@ export function MasterclassPanel({
               courseId={file.course.id}
               attempts={state.attempts}
               onPick={(index, optionIndex, answerIndex) => pickQuiz(module.id, index, optionIndex, answerIndex)}
+              labRoute={labRoute}
+              level={level}
             />
           </div>
 

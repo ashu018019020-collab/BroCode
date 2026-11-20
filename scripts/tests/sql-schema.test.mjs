@@ -118,6 +118,21 @@ test('sql-schema: every table reference resolves within its module or the core s
   assert.deepEqual(failures, [], `undefined SQL table references:\n${failures.join('\n\n')}`);
 });
 
+test('sql-schema: students has no course_id — the link is modelled by enrollments', () => {
+  const shared = readJson(path.join(SOURCE_DIR, 'module-00.json')).course?.schema ?? [];
+  const students = shared.find((statement) => /CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+students\b/i.test(statement));
+  assert.ok(students, 'the shared course schema must create students');
+  assert.doesNotMatch(students, /\bcourse_id\b/i, 'students must not repeat the enrollment link');
+
+  const failures = [];
+  for (const module of sourceModules) {
+    for (const { where, sql } of moduleSources(module)) {
+      if (/\b(?:s|students)\.course_id\b/i.test(strip(sql))) failures.push(`${module.id} ${where}`);
+    }
+  }
+  assert.deepEqual(failures, [], 'join courses through enrollments (e.course_id), not students.course_id');
+});
+
 test('sql-schema: composite section lab has the semester column it joins on', () => {
   const module = sourceModules.find((candidate) => candidate.id === 'sql10');
   assert.ok(module, 'module sql10 is missing');

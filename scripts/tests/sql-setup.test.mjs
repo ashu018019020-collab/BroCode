@@ -22,6 +22,7 @@ const load = (relative) => import(pathToFileURL(path.join(ROOT, relative)).href)
 
 const { sqliteSchema, moduleRun } = await load('src/core/learning/sql-setup.ts');
 const { DATASETS, seedForSQL } = await load('src/core/data/datasets.ts');
+const { gradeSqlResult, isGradeableSql } = await load('src/core/learning/sql-exercise.ts');
 
 const require = createRequire(import.meta.url);
 const initSqlJs = require('sql.js');
@@ -113,7 +114,7 @@ test('sql-setup: the schema runs before the query, and never replaces it', () =>
   assert.equal(moduleRun(null, 'SELECT 1;').sql, 'SELECT 1;');
 });
 
-test('sql-setup: a query that defines or alters a table owns it', () => {
+test('sql-setup: a query that creates a table owns it; an ALTER uses the module schema', () => {
   const plan = sqliteSchema(['CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY, email TEXT);'], SEEDED);
 
   // A DDL example creates the table it is teaching, so nothing may pre-create it or seed it.
@@ -121,12 +122,63 @@ test('sql-setup: a query that defines or alters a table owns it', () => {
   assert.equal(creates.sql, 'CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT);');
   assert.deepEqual(creates.shadowed, ['students']);
 
-  // An ALTER example needs the table, but not with the column it adds: the demo table is the base.
-  const alters = moduleRun(plan, 'ALTER TABLE students ADD COLUMN email TEXT;', SEEDED);
-  assert.equal(alters.sql, 'ALTER TABLE students ADD COLUMN email TEXT;');
-  assert.deepEqual(alters.shadowed, []);
+  // An ALTER needs the table to exist. When the module creates it, that definition is the only
+  // source: the demo students table is not seeded, so the ALTER cannot run against two schemas.
+  const alters = moduleRun(plan, 'ALTER TABLE students ADD COLUMN phone TEXT;');
+  assert.equal(
+    alters.sql,
+    'CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY, email TEXT);\nALTER TABLE students ADD COLUMN phone TEXT;',
+  );
+  assert.deepEqual(alters.shadowed, ['students']);
   const db = labDatabase(DATASETS.filter((dataset) => !alters.shadowed.includes(dataset.name)));
-  assert.doesNotThrow(() => db.exec(alters.sql), 'the demo students table has no email column yet');
+  assert.doesNotThrow(() => db.exec(alters.sql), 'the module students table gains the authored column');
+  const columns = db.exec('PRAGMA table_info(students)')[0].values.map((row) => row[1]);
+  assert.ok(columns.includes('email') && columns.includes('phone'), 'the run kept the module schema');
+  db.close();
+
+  // A table the module does not create is still the demo dataset's job; the plan must not hide it.
+  const fallback = moduleRun(plan, 'ALTER TABLE employees ADD COLUMN room TEXT;');
+  assert.equal(fallback.sql, 'CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY, email TEXT);\nALTER TABLE employees ADD COLUMN room TEXT;');
+  assert.deepEqual(fallback.shadowed, ['students'], 'only the table the plan creates is shadowed');
+  const fallbackDb = labDatabase(DATASETS.filter((dataset) => !fallback.shadowed.includes(dataset.name)));
+  assert.doesNotThrow(() => fallbackDb.exec(fallback.sql), 'the demo employees table is the one schema source');
+  fallbackDb.close();
+});
+
+test('sql-setup: an ALTER lab never re-adds a column its module schema owns', () => {
+  const duplicates = [];
+  for (const module of artifact.modules) {
+    const plan = sqliteSchema([...artifact.course.schema, ...(module.setup ?? [])], SEEDED);
+    for (const bank of ['labs', 'debug']) {
+      for (const item of module.banks[bank]) {
+        const sql = bank === 'labs' ? item.solution : item.fix;
+        if (!/^\s*ALTER\s+TABLE\s+\w+\s+ADD\s+COLUMN\s+(?!IF\s+NOT\s+EXISTS)/i.test(sql)) continue;
+        const run = moduleRun(plan, sql);
+        const db = labDatabase(DATASETS.filter((dataset) => !run.shadowed.includes(dataset.name)));
+        try {
+          db.exec(run.sql);
+        } catch (error) {
+          const message = String(error instanceof Error ? error.message : error);
+          if (/duplicate column name/i.test(message)) duplicates.push(`${module.id} ${bank} “${item.title}”: ${message}`);
+        } finally {
+          db.close();
+        }
+      }
+    }
+  }
+  assert.deepEqual(duplicates, [], 'the module schema is the only source; a lab adds a new column, not an existing one');
+});
+
+test('sql-setup: a DROP runs against the table the module schema creates', () => {
+  const plan = sqliteSchema(['CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY, email TEXT);'], SEEDED);
+  const drops = moduleRun(plan, 'DROP TABLE students;');
+  assert.equal(
+    drops.sql,
+    'CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY, email TEXT);\nDROP TABLE students;',
+  );
+  assert.deepEqual(drops.shadowed, ['students']);
+  const db = labDatabase(DATASETS.filter((dataset) => !drops.shadowed.includes(dataset.name)));
+  assert.doesNotThrow(() => db.exec(drops.sql), 'the plan creates the table the DROP removes');
   db.close();
 });
 
@@ -138,7 +190,7 @@ test('sql-setup: the course’s shared tables make a school-schema join run', ()
   assert.ok(topic, 'sql10 has an example that joins enrollments');
 
   const plan = sqliteSchema([...courseSchema, ...(joins.setup ?? [])], SEEDED);
-  const run = moduleRun(plan, topic.example.sql, SEEDED);
+  const run = moduleRun(plan, topic.example.sql);
   const db = labDatabase(DATASETS.filter((dataset) => !run.shadowed.includes(dataset.name)));
   const results = db.exec(run.sql);
   db.close();
@@ -155,7 +207,7 @@ test('sql-setup: no example is missing the course’s school tables', () => {
     const plan = sqliteSchema([...courseSchema, ...(module.setup ?? [])], SEEDED);
     for (const topic of module.topics) {
       total += 1;
-      const run = moduleRun(plan, topic.example.sql, SEEDED);
+      const run = moduleRun(plan, topic.example.sql);
       const db = labDatabase(DATASETS.filter((dataset) => !run.shadowed.includes(dataset.name)));
       try {
         db.exec(run.sql);
@@ -227,4 +279,51 @@ test('sql-setup: the SQL Lab loads the module named in the URL', () => {
   assert.match(lab, /course\.schema/, 'the course’s shared tables load with the module setup');
   assert.match(lab, /module \? \[/, 'the shared tables load only when a module is selected');
   assert.match(lab, /DATASETS\.filter\(/, 'a table the learner’s query creates must not be seeded');
+});
+
+test('sql lab: the shipped INNER JOIN example returns real rows', () => {
+  const lab = fs.readFileSync(path.join(ROOT, 'src/features/labs/SQLLab.tsx'), 'utf8');
+  assert.match(lab, /INNER JOIN sales o ON c\.id = o\.customer_id/, 'the example must join on the seeded customer key');
+  // The old example joined customers.id to sales.order_id, where no value can ever match.
+  const db = labDatabase();
+  const [result] = db.exec('SELECT c.name, o.product, o.qty FROM customers c INNER JOIN sales o ON c.id = o.customer_id;');
+  db.close();
+  assert.ok(result && result.values.length >= 3, `the first join example returned ${result?.values.length ?? 0} rows`);
+});
+
+
+test('sql-setup: a sampled lab and debug reference runs, or fails like any PostgreSQL-only example', () => {
+  const courseSchema = artifact.course.schema;
+  const crashes = [];
+  let graded = 0;
+  let postgresOnly = 0;
+  for (const module of artifact.modules) {
+    const plan = sqliteSchema([...courseSchema, ...(module.setup ?? [])], SEEDED);
+    const picks = [
+      { kind: 'lab', item: module.banks.labs.find((item) => isGradeableSql(item.solution)) },
+      { kind: 'debug', item: module.banks.debug.find((item) => isGradeableSql(item.fix)) },
+    ].filter((pick) => pick.item);
+    for (const { kind, item } of picks) {
+      const referenceSql = kind === 'lab' ? item.solution : item.fix;
+      const run = moduleRun(plan, referenceSql);
+      const db = labDatabase(DATASETS.filter((dataset) => !run.shadowed.includes(dataset.name)));
+      try {
+        // A reference that runs gives the Lab a result set to compare against.
+        db.exec(run.sql);
+        graded += 1;
+      } catch (error) {
+        // Anything else must be a statement the Lab can name as PostgreSQL-only, never a crash.
+        const message = String(error instanceof Error ? error.message : error);
+        if (!/unrecognized token|no such table|no such column|syntax error|no such function|near \"|not supported/i.test(message)) {
+          crashes.push(`${module.id} ${kind} “${item.title}”: ${message}`);
+        }
+        postgresOnly += 1;
+      } finally {
+        db.close();
+      }
+    }
+  }
+  assert.deepEqual(crashes, [], 'an ungradeable reference must fail as SQLite syntax, not as a bug');
+  assert.ok(graded >= 30, `only ${graded} sampled references produced a result set`);
+  assert.ok(postgresOnly <= 30, `${postgresOnly} sampled references are PostgreSQL-only`);
 });

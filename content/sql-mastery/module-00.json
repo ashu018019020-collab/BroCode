@@ -109,8 +109,8 @@
       "SQL is the standard query language."
      ],
      "example": {
-      "sql": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
-      "output": "name | title\nAarav | SQL Basics"
+      "sql": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id ORDER BY s.name, c.title;",
+      "output": "name | title\nAarav | Data Modelling\nAarav | SQL Fundamentals\nIra | Analytics with SQL\nIra | Database Operations\nKabir | Data Modelling\nMeera | Analytics with SQL\nMeera | SQL Fundamentals\nZoya | SQL Fundamentals"
      }
     },
     {
@@ -394,8 +394,8 @@
       "Joins answer questions spanning entities."
      ],
      "example": {
-      "sql": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
-      "output": "name | title\nAarav | SQL Basics"
+      "sql": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id ORDER BY s.name, c.title;",
+      "output": "name | title\nAarav | Data Modelling\nAarav | SQL Fundamentals\nIra | Analytics with SQL\nIra | Database Operations\nKabir | Data Modelling\nMeera | Analytics with SQL\nMeera | SQL Fundamentals\nZoya | SQL Fundamentals"
      }
     }
    ],
@@ -756,7 +756,7 @@
      {
       "title": "Join courses",
       "task": "Return student name and course title.",
-      "solution": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "solution": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id ORDER BY s.name, c.title;",
       "expected": "One row per matching student-course pair."
      },
      {
@@ -939,11 +939,11 @@
       "expected": "Cities with more than one student."
      },
      {
-      "title": "Ambiguous column",
-      "broken": "SELECT name FROM students JOIN courses ON id = course_id;",
-      "fix": "SELECT s.name FROM students s JOIN courses c ON c.id = s.course_id;",
-      "error": "ambiguous column name: id",
-      "expected": "Student names."
+      "title": "Join on a missing column",
+      "broken": "SELECT s.name, c.title FROM students s JOIN courses c ON c.id = s.course_id;",
+      "fix": "SELECT s.name, c.title FROM students s JOIN enrollments e ON e.student_id = s.id JOIN courses c ON c.id = e.course_id;",
+      "error": "no such column: s.course_id",
+      "expected": "One row per enrollment — the link lives in enrollments, not on students."
      },
      {
       "title": "LIMIT before ORDER BY",

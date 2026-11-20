@@ -160,3 +160,19 @@ test('masterclass xp: topics and modules each pay once, through their own receip
   assert.match(panel, /masterclassCourseReward\(/, 'the course reward stays on mcr:');
   assert.match(panel, /addXp\(MASTERCLASS_COMPLETION_XP/, 'the course bonus still pays at the end');
 });
+
+test('masterclass url: a lab or debug item is addressable, and only as a whole index', () => {
+  const modules = [{ id: 'sql13', topics: [{ id: 't01' }] }];
+  const read = (query) => masterclassSelection(new URLSearchParams(query), modules);
+  assert.equal(read('module=sql13&bank=labs&item=2').exercise, 2, 'the panel links one item at a time');
+  assert.equal(read('module=sql13&bank=debug&item=0').exercise, 0);
+  assert.equal(read('module=sql13&bank=labs&item=nope').exercise, undefined);
+  assert.equal(read('module=sql13&bank=labs&item=-1').exercise, undefined);
+  assert.equal(read('module=sql13&bank=labs&item=1.5').exercise, undefined);
+  // The item stays a bank item: the Lab only opens it for the two banks that hold runnable SQL.
+  assert.equal(read('module=sql13&bank=learn&item=1').exercise, 1, 'the URL is read as written');
+
+  const next = masterclassHref(new URLSearchParams('module=sql13'), { bank: 'labs', item: '2' });
+  assert.equal(next.get('item'), '2');
+  assert.equal(next.get('bank'), 'labs');
+});
