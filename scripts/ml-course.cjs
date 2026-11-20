@@ -114,8 +114,13 @@ function buildSections(module) {
     difficulty: difficultyAt(index),
   }));
   const checkpoint = (module.checkpoint ?? []).map((item, index) => ({
-    id: id('checkpoint', index), q: item.q, options: item.options, answer: item.answer,
+    id: id('checkpoint', index), q: item.q, format: item.format ?? 'mcq', answer: item.answer,
+    ...(item.options ? { options: item.options } : {}),
+    ...(item.code ? { code: item.code } : {}),
+    ...(item.solution ? { solution: item.solution } : {}),
+    ...(item.expected ? { expected: item.expected } : {}),
     ...(item.why ? { why: item.why } : {}),
+    ...(item.rubric ? { rubric: item.rubric } : {}),
     difficulty: difficultyAt(index),
   }));
   return { learn, interview, coding, logic, debug, practice, miniProject, projectLab, defense, checkpoint };
@@ -166,9 +171,25 @@ async function build() {
       }
     }
     for (const entry of sections.checkpoint) {
-      if (!Array.isArray(entry.options) || entry.options.length !== 3) problems.push(`${entry.id}: checkpoint needs 3 options`);
-      if (Array.isArray(entry.options) && new Set(entry.options).size !== entry.options.length) problems.push(`${entry.id}: checkpoint options must be distinct`);
-      if (Array.isArray(entry.options) && !entry.options.includes(entry.answer)) problems.push(`${entry.id}: checkpoint answer must be one option`);
+      if (!String(entry.answer ?? '').trim()) problems.push(`${entry.id}: checkpoint needs an answer`);
+      if (!String(entry.why ?? '').trim()) problems.push(`${entry.id}: checkpoint needs an explanation`);
+      if (entry.format === 'truefalse') {
+        if (!Array.isArray(entry.options) || entry.options.length !== 2) problems.push(`${entry.id}: true/false needs 2 options`);
+        if (Array.isArray(entry.options) && new Set(entry.options).size !== 2) problems.push(`${entry.id}: true/false options must be distinct`);
+        if (Array.isArray(entry.options) && !entry.options.includes(entry.answer)) problems.push(`${entry.id}: true/false answer must be an option`);
+      } else if (entry.format === 'blank') {
+        if (!String(entry.code ?? '').includes('___')) problems.push(`${entry.id}: blank checkpoint needs a ___ in its code`);
+        if (!entry.solution || !entry.expected) problems.push(`${entry.id}: blank checkpoint needs a solution and expected output`);
+      } else if (entry.format === 'output') {
+        if (!entry.code) problems.push(`${entry.id}: code-output checkpoint needs code`);
+      } else if (entry.format === 'rubric') {
+        if (!Array.isArray(entry.rubric) || entry.rubric.length !== 3) problems.push(`${entry.id}: written checkpoint needs 3 rubric lines`);
+        if (Array.isArray(entry.rubric) && entry.rubric.some((line) => typeof line !== 'string' || !line.trim())) problems.push(`${entry.id}: rubric lines must be non-empty`);
+      } else {
+        if (!Array.isArray(entry.options) || entry.options.length !== 3) problems.push(`${entry.id}: MCQ checkpoint needs 3 options`);
+        if (Array.isArray(entry.options) && new Set(entry.options).size !== 3) problems.push(`${entry.id}: checkpoint options must be distinct`);
+        if (Array.isArray(entry.options) && !entry.options.includes(entry.answer)) problems.push(`${entry.id}: checkpoint answer must be one option`);
+      }
     }
     for (const entry of sections.coding) {
       if (!entry.starter || !entry.solution || !entry.expected) problems.push(`${module.id}: coding task needs starter, solution and expected`);

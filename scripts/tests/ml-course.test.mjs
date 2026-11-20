@@ -61,9 +61,59 @@ test('ml course: records are unique and every checkpoint answer is one of its op
       }
     }
     for (const entry of module.sections.checkpoint) {
-      assert.equal(entry.options.length, 3, `${entry.id}: three options`);
-      assert.equal(new Set(entry.options).size, 3, `${entry.id}: distinct options`);
+      if (!entry.options) continue;
+      const expected = entry.format === 'truefalse' ? 2 : 3;
+      assert.equal(entry.options.length, expected, `${entry.id}: ${expected} options`);
+      assert.equal(new Set(entry.options).size, expected, `${entry.id}: distinct options`);
       assert.ok(entry.options.includes(entry.answer), `${entry.id}: answer must be an option`);
+    }
+  }
+});
+
+test('ml course: every authored question is answered and the expansion reaches every module', () => {
+  for (const module of artifact.modules) {
+    for (const section of ['interview', 'logic', 'defense', 'checkpoint']) {
+      for (const entry of module.sections[section]) {
+        assert.ok(String(entry.answer ?? '').trim(), `${entry.id}: ${section} answer is empty`);
+      }
+    }
+    for (const entry of module.sections.coding) {
+      assert.ok(entry.starter && entry.solution && entry.expected, `${entry.id}: coding task is incomplete`);
+    }
+    // Expansion batch 1: one new authored interview, coding and logic record per tied module.
+    assert.ok(module.sections.interview.filter((entry) => !entry.code).length >= 2, `${module.id}: no new interview record`);
+    assert.ok(module.sections.coding.length >= 2, `${module.id}: no new coding record`);
+    assert.ok(module.sections.logic.filter((entry) => !entry.code).length >= 1, `${module.id}: no new logic record`);
+  }
+});
+
+test('ml course: every module has the four new checkpoint formats beside its MCQs', () => {
+  for (const module of artifact.modules) {
+    const checkpoints = module.sections.checkpoint;
+    assert.equal(checkpoints.length, 6, `${module.id}: expected 2 MCQs + 4 new formats`);
+    assert.equal(checkpoints.filter((entry) => entry.format === 'mcq').length, 2, `${module.id}: original MCQs must remain`);
+    for (const format of ['truefalse', 'blank', 'output', 'rubric']) {
+      assert.equal(checkpoints.filter((entry) => entry.format === format).length, 1, `${module.id}: one ${format} checkpoint`);
+    }
+    for (const entry of checkpoints) {
+      assert.ok(String(entry.answer ?? '').trim(), `${entry.id}: answer is empty`);
+      assert.ok(String(entry.why ?? '').trim(), `${entry.id}: explanation is empty`);
+      if (entry.format === 'truefalse') {
+        assert.deepEqual(entry.options, ['True', 'False'], `${entry.id}: true/false options`);
+        assert.ok(entry.options.includes(entry.answer), `${entry.id}: true/false answer`);
+      }
+      if (entry.format === 'blank') {
+        assert.ok(entry.code.includes('___'), `${entry.id}: blank marker`);
+        assert.equal(entry.code.replace('___', entry.answer), entry.solution, `${entry.id}: blank restores its solution`);
+        assert.ok(entry.solution && entry.expected, `${entry.id}: blank solution and output`);
+      }
+      if (entry.format === 'output') {
+        assert.ok(entry.code, `${entry.id}: output checkpoint needs code`);
+      }
+      if (entry.format === 'rubric') {
+        assert.equal(entry.rubric.length, 3, `${entry.id}: three rubric criteria`);
+        assert.ok(entry.rubric.every((line) => line.trim()), `${entry.id}: non-empty rubric`);
+      }
     }
   }
 });
@@ -100,11 +150,18 @@ test('ml course: Learn samples and Coding Lab solutions match real Python output
   for (const module of artifact.modules) {
     for (const entry of module.sections.learn) if (entry.code) runs.push([entry.id, entry.code, entry.output]);
     for (const entry of module.sections.coding) runs.push([entry.id, entry.solution, entry.expected]);
+    for (const entry of module.sections.checkpoint) {
+      if (entry.format === 'blank') {
+        runs.push([`${entry.id}:solution`, entry.solution, entry.expected]);
+        runs.push([`${entry.id}:filled`, entry.code.replace('___', entry.answer), entry.expected]);
+      }
+      if (entry.format === 'output') runs.push([entry.id, entry.code, entry.answer]);
+    }
   }
   for (const [id, code, expected] of runs) {
     const result = spawnSync('python3', ['-c', code], { encoding: 'utf8' });
     assert.equal(result.status, 0, `${id}: Python failed: ${result.stderr.trim()}`);
     assert.equal(result.stdout.trim(), expected, `${id}: output does not match the published expectation`);
   }
-  assert.ok(runs.length >= 70, `expected the Learn and Coding Lab runs, got ${runs.length}`);
+  assert.ok(runs.length >= 189, `expected Learn, Coding Lab and checkpoint executions, got ${runs.length}`);
 });

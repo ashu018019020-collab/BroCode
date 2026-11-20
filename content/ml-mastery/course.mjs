@@ -5,14 +5,16 @@
  * project lab, defense answer and checkpoint questions. `scripts/ml-course.cjs` adds the derived
  * output/logic/practice records and publishes `public/generated/ml-course/index.json`.
  *
- * This is the first complete authored batch (all 27 modules × all 10 sections). The published
- * counts are real, not inflated to the 13,500 target; expansion work belongs in new authored
- * records here, never in a counter.
+ * This is the base authored batch (all 27 modules × all 10 sections). The first expansion batch
+ * lives in `expansion.mjs` and is merged below. The published counts are real, not inflated to the
+ * 13,500 target; further expansion work belongs in new authored records, never in a counter.
  */
 import level1 from './level1.mjs';
 import level2 from './level2.mjs';
 import level3 from './level3.mjs';
 import level4 from './level4.mjs';
+import { expansions } from './expansion.mjs';
+import { checkpointAdditions } from './checkpoint-expansion.mjs';
 
 export const course = {
   id: 'ml-mastery',
@@ -47,5 +49,18 @@ export const course = {
   ],
 };
 
-export const modules = [...level1, ...level2, ...level3, ...level4];
+const baseModules = [...level1, ...level2, ...level3, ...level4];
+
+export const modules = baseModules.map((module) => {
+  const extra = expansions[module.id];
+  if (!extra) return module;
+  return {
+    ...module,
+    interview: [...(module.interview ?? []), ...(extra.interview ?? [])],
+    coding: [...(module.coding ?? []), ...(extra.coding ?? [])],
+    logic: [...(module.logic ?? []), ...(extra.logic ?? [])],
+    checkpoint: [...(module.checkpoint ?? []), ...checkpointAdditions(module)],
+  };
+});
+
 export default { course, modules };

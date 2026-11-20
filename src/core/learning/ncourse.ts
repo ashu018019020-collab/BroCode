@@ -58,10 +58,10 @@ export interface NEntry {
   error?: string;
   fix?: string;
   steps?: string[];
-  /** A checkpoint quiz offers three real, distinct outputs; the answer is one of them. */
+  /** A checkpoint quiz's answer options: MCQs have three, true/false has two. */
   options?: string[];
-  /** Checkpoint shape: the original three-option quiz, a true/false claim, or a blank to fill in. */
-  format?: 'truefalse' | 'blank';
+  /** Checkpoint shape: MCQ, true/false, fill-in-the-blank, exact code output, or written rubric. */
+  format?: 'mcq' | 'truefalse' | 'blank' | 'output' | 'rubric';
   /** The output a true/false checkpoint claims the code prints. */
   claim?: string;
   /** A written checkpoint is self-assessed against three criteria built from real content. */

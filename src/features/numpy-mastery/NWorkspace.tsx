@@ -102,6 +102,9 @@ function ShortAnswerCard({ entry, done, onPass }: { entry: NEntry; done: boolean
           <b>Model answer: </b><span className="muted" style={{ whiteSpace: 'pre-wrap' }}>{entry.answer}</span>
         </p>
       )}
+      {revealed && entry.why && (
+        <p className="small muted" style={{ margin: '4px 0 0' }}><b>Why: </b>{entry.why}</p>
+      )}
     </div>
   );
 }
@@ -145,10 +148,67 @@ function BlankCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPa
       </div>
       {checked && (
         <p className="small" style={{ margin: '8px 0 0', color: right ? 'var(--green, #177245)' : 'var(--red, #b42318)' }}>
-          {right ? 'Correct — this section is recorded.' : 'Not the missing token — try again, then check the code on the right.'}
+          {right ? 'Correct — this section is recorded.' : 'Not the missing token — try again, then check the code on the left.'}
         </p>
       )}
+      {(revealed || (checked && right)) && entry.why && (
+        <p className="small muted" style={{ margin: '4px 0 0' }}><b>Why: </b>{entry.why}</p>
+      )}
       {revealed && <pre className="codeblock" style={{ margin: '6px 0 0' }}>{answer}</pre>}
+    </div>
+  );
+}
+
+/**
+ * A code-output checkpoint: the learner types exactly what the executed sample prints, then compares
+ * the result and reads the authored explanation. The code is visible; the answer is not.
+ */
+function OutputCard({ entry, done, onPass }: { entry: NEntry; done: boolean; onPass: () => void }) {
+  const [typed, setTyped] = useState('');
+  const [checked, setChecked] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const answer = (entry.answer ?? '').trim();
+  const right = typed.trim() === answer;
+  return (
+    <div className="card" style={{ margin: 0, padding: '12px 14px' }}>
+      <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <span className={`chip ${DIFF_TONE[entry.difficulty]}`}>{entry.difficulty}</span>
+        <span className="row" style={{ gap: 6 }}>
+          {done && <span className="chip easy"><Check size={11} /> done</span>}
+          <span className="chip">code output</span>
+        </span>
+      </div>
+      <strong className="small" style={{ display: 'block', margin: '8px 0 4px' }}>{entry.q}</strong>
+      {entry.code && <pre className="codeblock" style={{ margin: '6px 0' }}>{entry.code}</pre>}
+      <textarea
+        value={typed}
+        onChange={(e) => { setTyped(e.target.value); setChecked(false); }}
+        aria-label={`Exact output for ${entry.id}`}
+        placeholder="Type the exact printed output"
+        spellCheck={false}
+        style={{
+          width: '100%', minHeight: 58, padding: 8, borderRadius: 8, resize: 'vertical',
+          border: '1px solid var(--line, #d6dbe4)', background: 'var(--bg2, #fff)', color: 'inherit',
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 13,
+        }}
+      />
+      <div className="row" style={{ gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+        <button type="button" className="btn small primary" onClick={() => { setChecked(true); if (typed.trim() === answer) onPass(); }}>
+          Check output
+        </button>
+        <button type="button" className="btn small ghost" onClick={() => setRevealed((v) => !v)}>
+          {revealed ? 'Hide answer' : 'Show answer'}
+        </button>
+      </div>
+      {checked && (
+        <p className="small" style={{ margin: '8px 0 0', color: right ? 'var(--green, #177245)' : 'var(--red, #b42318)' }}>
+          {right ? 'Correct — this section is recorded.' : 'That output differs from the verified result; compare it line by line.'}
+        </p>
+      )}
+      {(revealed || (checked && right)) && entry.why && (
+        <p className="small muted" style={{ margin: '4px 0 0' }}><b>Why: </b>{entry.why}</p>
+      )}
+      {revealed && <pre className="codeblock" style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap' }}>{answer}</pre>}
     </div>
   );
 }
@@ -654,7 +714,8 @@ export function NModuleWorkspace({
     ],
     briefing: `${courseTitle} · ${module.title}: ${module.goal} You are in ${N_SECTION_LABEL[section]}${entry ? ` on "${entry.title ?? entry.q}"` : ''}.`,
   });
-  const cells = useMemo(() => entries.filter((e) => e.code || e.starter || extraOf(e).solution), [entries]);
+  const cells = useMemo(() => entries.filter((e) => e.format !== 'blank' && e.format !== 'output'
+    && (e.code || e.starter || extraOf(e).solution)), [entries]);
   const cellIndex = Math.max(0, cells.findIndex((c) => c.id === entry?.id));
 
   useEffect(() => { setIndex(0); }, [module.id]);
@@ -831,6 +892,8 @@ export function NModuleWorkspace({
           </div>
           {entry && (entry.format === 'blank'
             ? <BlankCard key={entry.id} entry={entry} done={done} onPass={onDone} />
+            : entry.format === 'output'
+            ? <OutputCard key={entry.id} entry={entry} done={done} onPass={onDone} />
             : entry.options?.length
             ? <QuizCard key={entry.id} entry={entry} done={done} onPass={onDone} />
             : entry.rubric?.length
