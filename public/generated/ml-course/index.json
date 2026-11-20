@@ -120371,5 +120371,137 @@
    },
    "entries": 500
   }
- ]
+ ],
+ "capstone": {
+  "title": "Capstone: a churn list a retention team could actually use",
+  "brief": "A retention team can call only a small share of at-risk accounts each week. Build one reproducible churn pipeline that turns raw account history into a ranked call list: a leakage-safe split, a majority-class baseline, a model that beats it on a metric the team can act on, a threshold chosen from capacity and costs, and subgroup evidence that the list does not fail one group. Then package the result as a model card and a small prediction service with drift checks.",
+  "dataset": "Use a churn dataset you are permitted to use, for example the IBM Telco Customer Churn sample; record its source URL, licence or terms, retrieval date and row count in your repository. Drop direct identifiers before modelling and state the prediction moment and label window. The twelve scored rows in the starter are a fixture for the metric contract, not evidence for your model.",
+  "starter": {
+   "code": "import numpy as np\nscores = np.array([0.91, 0.84, 0.77, 0.63, 0.58, 0.52, 0.47, 0.41, 0.33, 0.27, 0.19, 0.08])\nlabels = np.array([1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0])\nprint('rows:', len(labels), '| positives:', int(labels.sum()), '| base rate:', round(float(labels.mean()), 2))\nfor threshold in (0.3, 0.5, 0.7):\n    flagged = scores >= threshold\n    tp = int(((flagged == 1) & (labels == 1)).sum())\n    fp = int(((flagged == 1) & (labels == 0)).sum())\n    fn = int(((flagged == 0) & (labels == 1)).sum())\n    precision = tp / (tp + fp) if tp + fp else 0.0\n    recall = tp / (tp + fn) if tp + fn else 0.0\n    print(f'threshold {threshold:.2f} | flagged {int(flagged.sum()):2d} | precision {precision:.2f} | recall {recall:.2f}')",
+   "output": "rows: 12 | positives: 4 | base rate: 0.33\nthreshold 0.30 | flagged  9 | precision 0.44 | recall 1.00\nthreshold 0.50 | flagged  6 | precision 0.50 | recall 0.75\nthreshold 0.70 | flagged  3 | precision 0.67 | recall 0.50"
+  },
+  "tiers": [
+   {
+    "name": "Beginner",
+    "goal": "Frame the retention decision and reproduce a trustworthy baseline on a leakage-safe split.",
+    "requirements": [
+     "Write the user, decision, unit of analysis, prediction moment and label window before touching a model.",
+     "Document the data source and licence, drop direct identifiers, and split by customer or time before fitting.",
+     "Build a majority-class baseline and one learned baseline with a fixed random seed.",
+     "Report precision, recall and base rate at a stated threshold; accuracy alone is not an answer."
+    ],
+    "deliverables": [
+     "A README with the decision frame, data card and split diagram.",
+     "A runnable script that prints split sizes, base rate, and baseline versus learned-model metrics."
+    ],
+    "stretch": [
+     "Compare two operating thresholds and explain which one fits a ten-call weekly capacity."
+    ]
+   },
+   {
+    "name": "Intermediate",
+    "goal": "Beat the baseline and defend one operating point with error and subgroup evidence.",
+    "requirements": [
+     "Tune one model on validation data only, then evaluate the frozen model once on the held-out test set.",
+     "Choose the threshold from retention capacity and the relative cost of a missed churn versus a wasted call.",
+     "Report the confusion matrix, calibration evidence and concrete false-positive and false-negative examples.",
+     "Audit recall and precision by at least two subgroups, with sample sizes and an honest small-sample caveat."
+    ],
+    "deliverables": [
+     "A metric table that separates validation from test results and names the chosen threshold.",
+     "An error-analysis note with three inspected mistakes and one subgroup table.",
+     "A calibration plot or reliability table with the bins and counts shown."
+    ],
+    "stretch": [
+     "Add bootstrap confidence intervals for the headline metric and explain what they do not cover."
+    ]
+   },
+   {
+    "name": "Advanced",
+    "goal": "Package the model so another person can run, serve, monitor and roll it back.",
+    "requirements": [
+     "Make the pipeline reproducible with one command, pinned dependencies, a fixed seed and a versioned artifact.",
+     "Write a model card covering intended use, prohibited use, training window, metrics, limitations and owner.",
+     "Serve predictions behind schema validation, with no raw personal data in logs or responses.",
+     "Define monitoring for input drift, score distribution, delayed labels and a concrete retrain trigger."
+    ],
+    "deliverables": [
+     "A clean repository with a one-command reproduction and an artifact checksum.",
+     "A complete model card and a small prediction API with a request example.",
+     "A monitoring checklist or dashboard with thresholds that would trigger review."
+    ],
+    "stretch": [
+     "Design a shadow deployment and a rollback step, then state the evidence required before promotion."
+    ]
+   }
+  ],
+  "milestones": [
+   {
+    "title": "1 · Frame the decision and the label",
+    "detail": "Write the user, the action, the prediction moment and the label window. Decide what a false positive costs and what a missed churn costs before choosing any metric."
+   },
+   {
+    "title": "2 · Build the split and the baseline",
+    "detail": "Check leakage, split by customer or time, and reproduce the majority-class baseline. Record row counts and the base rate so every later score has context."
+   },
+   {
+    "title": "3 · Model and choose the operating point",
+    "detail": "Tune on validation only, freeze the model, evaluate once on test, and choose a threshold from team capacity and costs. Report precision and recall together."
+   },
+   {
+    "title": "4 · Inspect errors and subgroups",
+    "detail": "Read real false positives and false negatives, then compare recall and precision across at least two subgroups. Name the sample-size limits instead of hiding them."
+   },
+   {
+    "title": "5 · Package, document and monitor",
+    "detail": "Make the run reproducible, write the model card, expose a validated prediction endpoint, and define the drift and retrain signals an owner will watch."
+   }
+  ],
+  "rubric": [
+   {
+    "criterion": "Decision frame",
+    "weight": 10,
+    "evidence": "The user, action, prediction moment, label window and the cost of each error are stated before modelling."
+   },
+   {
+    "criterion": "Leakage-safe evaluation",
+    "weight": 15,
+    "evidence": "The split is by customer or time, the test set is untouched during tuning, and the split diagram matches the code."
+   },
+   {
+    "criterion": "Baseline and metric",
+    "weight": 15,
+    "evidence": "A majority baseline is reproduced and the headline metric includes base rate, precision and recall rather than accuracy alone."
+   },
+   {
+    "criterion": "Model and threshold",
+    "weight": 15,
+    "evidence": "The frozen model beats the baseline on validation, and the threshold is justified by capacity, costs and a confusion matrix."
+   },
+   {
+    "criterion": "Error and subgroup analysis",
+    "weight": 15,
+    "evidence": "Real mistakes are inspected and recall and precision are compared across at least two subgroups with sample sizes shown."
+   },
+   {
+    "criterion": "Reproducibility",
+    "weight": 10,
+    "evidence": "One command reruns the pipeline from a clean checkout with pinned dependencies, a fixed seed and a versioned artifact."
+   },
+   {
+    "criterion": "Deployment and monitoring",
+    "weight": 10,
+    "evidence": "A validated prediction service and a monitoring plan cover input drift, score distribution, delayed labels and a retrain trigger."
+   },
+   {
+    "criterion": "Model card and limitations",
+    "weight": 10,
+    "evidence": "The model card names intended and prohibited use, training window, metrics, owners, limitations and a review date."
+   }
+  ],
+  "assessment": {
+   "pass": "All five milestones produce evidence you can explain, and the rubric totals at least 70.",
+   "excellent": "90 or more, with the test-set evaluation, subgroup audit, model card and monitoring plan strong enough for another engineer to run and challenge."
+  }
+ }
 }

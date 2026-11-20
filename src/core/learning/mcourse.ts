@@ -5,10 +5,12 @@
  * progress family: `mmod:<module>:<section>`. Sharing `nmod:` would make the NumPy course's
  * achievement tally count ML sections, so the family is deliberately separate.
  */
-import { N_SECTIONS, type NSectionKey } from './ncourse';
+import { N_SECTIONS, courseCertificate, type NCertificate, type NSectionKey } from './ncourse';
 
 export const M_SECTION_KEY_PREFIX = 'mmod:';
 export const M_LAST_KEY = 'ml:last';
+/** The capstone rubric self-check is a JSON array of criteria under this key ('ncap' is NumPy's). */
+export const M_CAPSTONE_KEY = 'mcap';
 
 export function mSectionKey(moduleId: string, section: NSectionKey): string {
   return `${M_SECTION_KEY_PREFIX}${moduleId}:${section}`;
@@ -29,6 +31,18 @@ export interface MProgress {
   pct: number;
   sectionsDone: number;
   sectionsTotal: number;
+}
+
+/**
+ * ML's certificate uses the same derived rule as NumPy: every section recorded AND the capstone
+ * rubric at the published pass mark. It never treats a module count or a checkpoint score as enough.
+ */
+export function mlCertificate(
+  progress: MProgress,
+  rubric: { criterion: string; weight: number }[],
+  checked: string[],
+): NCertificate {
+  return courseCertificate(progress, rubric, checked);
 }
 
 export function mProgress(modules: { id: string }[], attempts: Record<string, unknown>): MProgress {

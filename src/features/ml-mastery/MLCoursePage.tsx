@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, ChevronLeft, ChevronRight, GraduationCap, Play, Search, Target, Trophy } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, GraduationCap, Play, Search, ShieldCheck, Target, Trophy } from 'lucide-react';
 import { Bar } from '../../components/ui/ui';
 import { useMLCourse } from '../../core/data/mlcourse';
 import { N_SECTION_LABEL, searchCourse } from '../../core/learning/ncourse';
-import { mIsModuleComplete, mNextPlace, mProgress, mSectionKey, mSectionsDone, M_LAST_KEY } from '../../core/learning/mcourse';
+import { mIsModuleComplete, mNextPlace, mProgress, mSectionKey, mSectionsDone, mlCertificate, M_CAPSTONE_KEY, M_LAST_KEY } from '../../core/learning/mcourse';
 import { collectMlProgress, mergeMlProgress, mlSyncSummary } from '../../core/learning/ml-sync';
 import { loadMlProgress, saveMlProgress } from '../../core/data/ml-progress';
 import { useAuth } from '../../core/auth/AuthProvider';
-import { setState, useStore } from '../../core/storage/store';
+import { setState, useSavedAnswer, useStore } from '../../core/storage/store';
 import { NModuleWorkspace, type NCourseWorkspace } from '../numpy-mastery/NWorkspace';
 import { MLogo } from './MLogo';
 import { MLTools } from './MLTools';
@@ -43,8 +43,21 @@ export default function MLCoursePage() {
   const progress = useMemo(() => mProgress(modules, state.attempts), [modules, state.attempts]);
   const next = useMemo(() => mNextPlace(modules, state.attempts), [modules, state.attempts]);
   const hits = useMemo(() => searchCourse(modules, query), [modules, query]);
-
+  const [capRaw, saveCap] = useSavedAnswer(M_CAPSTONE_KEY);
+  const checked = useMemo<string[]>(() => {
+    try {
+      const parsed = JSON.parse(capRaw || '[]');
+      return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : [];
+    } catch { return []; }
+  }, [capRaw]);
+  const rubric = file?.capstone?.rubric ?? [];
+  const certificate = useMemo(() => mlCertificate(progress, rubric, checked), [progress, rubric, checked]);
+  const toggleCriterion = (criterion: string) => {
+    const nextList = checked.includes(criterion) ? checked.filter((item) => item !== criterion) : [...checked, criterion];
+    saveCap(JSON.stringify(nextList));
+  };
   const { user } = useAuth();
+  const learnerName = (state.profile.name || user?.name || 'Learner').trim();
   /*
    * Dedicated ML sync. Only `mmod:` records are collected, sent to `/api/ml/progress`, or written
    * through `save_my_ml_progress`; NumPy's `nmod:` / `nans:` / `ntick:` keys never enter this path.
@@ -288,6 +301,120 @@ export default function MLCoursePage() {
         <ol className="small muted" style={{ margin: 0, paddingLeft: 18, columns: 2, columnGap: 24 }}>
           {course.outcomes.map((outcome) => <li key={outcome} style={{ marginBottom: 6 }}>{outcome}</li>)}
         </ol>
+      </div>
+
+      {file.capstone && (
+        <>
+          <div className="sec-head"><h2><GraduationCap size={16} color="var(--blue)" /> Capstone project</h2><span className="line" /></div>
+          <div className="card">
+            <h3 style={{ margin: 0 }}>{file.capstone.title}</h3>
+            <p className="small" style={{ margin: '6px 0 0' }}>{file.capstone.brief}</p>
+            <p className="small muted" style={{ margin: '6px 0 0' }}><b>Dataset · </b>{file.capstone.dataset}</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, marginTop: 12 }}>
+              {file.capstone.tiers.map((tier) => (
+                <div key={tier.name} className="card" style={{ padding: 10 }}>
+                  <div className="row spread" style={{ gap: 6 }}>
+                    <b className="small">{tier.name}</b>
+                    <span className="chip">{tier.requirements.length} requirements</span>
+                  </div>
+                  <p className="small muted" style={{ margin: '4px 0 6px' }}>{tier.goal}</p>
+                  <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
+                    {tier.requirements.map((requirement) => <li key={requirement}>{requirement}</li>)}
+                  </ul>
+                  <p className="small" style={{ margin: '6px 0 0' }}><b>Deliverables · </b>{tier.deliverables.join(' ')}</p>
+                  <p className="small muted" style={{ margin: '4px 0 0' }}><b>Stretch · </b>{tier.stretch.join(' ')}</p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <b className="small">Starter — the metric contract, executed</b>
+              <pre className="codeblock" style={{ margin: '6px 0 0' }}>{file.capstone.starter.code}</pre>
+              <pre className="codeblock" style={{ margin: '6px 0 0', whiteSpace: 'pre-wrap' }}>{file.capstone.starter.output}</pre>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <b className="small">Milestones</b>
+              <ol className="small" style={{ margin: '4px 0 0', paddingLeft: 20 }}>
+                {file.capstone.milestones.map((milestone) => (
+                  <li key={milestone.title} style={{ marginBottom: 4 }}><b>{milestone.title}</b> — <span className="muted">{milestone.detail}</span></li>
+                ))}
+              </ol>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <b className="small">Assessment rubric (weights total 100)</b>
+              <div className="small" style={{ marginTop: 4 }}>
+                {rubric.map((row) => (
+                  <div key={row.criterion} className="row" style={{ gap: 8, alignItems: 'flex-start', marginBottom: 3 }}>
+                    <span className="chip">{row.weight}</span>
+                    <span><b>{row.criterion}</b> — <span className="muted">{row.evidence}</span></span>
+                  </div>
+                ))}
+              </div>
+              <p className="small muted" style={{ margin: '6px 0 0' }}>Pass: {file.capstone.assessment.pass} Excellent: {file.capstone.assessment.excellent}</p>
+            </div>
+          </div>
+        </>
+      )}
+
+      <div className="sec-head"><h2><ShieldCheck size={16} color="var(--blue)" /> Proof of work</h2><span className="line" /></div>
+      <div className="card">
+        <div className="row spread" style={{ gap: 10, flexWrap: 'wrap' }}>
+          <div>
+            <b className="small">Certificate eligibility</b>
+            <p className="small muted" style={{ margin: '4px 0 0' }}>
+              {certificate.reason} Both conditions are measured, not assumed: all {progress.sectionsTotal} sections
+              recorded and a capstone rubric at or above the course's own pass mark.
+            </p>
+          </div>
+          <span className={`chip ${certificate.eligible ? 'easy' : ''}`}>
+            {progress.sectionsDone}/{progress.sectionsTotal} sections{' · '}rubric {certificate.score}/100
+            {certificate.eligible ? ` · ${certificate.grade}` : ''}
+          </span>
+        </div>
+
+        {rubric.length > 0 && (
+          <div style={{ marginTop: 10 }}>
+            <b className="small">Evidence checklist — tick only what you can show</b>
+            <div style={{ marginTop: 4 }}>
+              {rubric.map((row) => (
+                <label key={row.criterion} className="row small" style={{ gap: 6, alignItems: 'flex-start', marginBottom: 4, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={checked.includes(row.criterion)} onChange={() => toggleCriterion(row.criterion)} style={{ marginTop: 2 }} />
+                  <span><b>{row.weight}</b> · {row.criterion} <span className="muted">— {row.evidence}</span></span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {certificate.eligible ? (
+          <div className="card" style={{ marginTop: 12, padding: 14, border: '1px solid var(--blue, #2563eb)' }}>
+            <div className="row spread" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <b>Certificate of completion — {course.title}</b>
+              <span className="chip easy">{certificate.grade}</span>
+            </div>
+            <p className="small" style={{ margin: '8px 0 0' }}>
+              <b>{learnerName}</b> completed all {progress.modulesTotal} modules and {progress.sectionsTotal} sections
+              of BroCode's Machine Learning course ({stats.entries.toLocaleString()} published items) and self-assessed the capstone at{' '}
+              <b>{certificate.score}/100</b>.
+            </p>
+            <p className="small muted" style={{ margin: '6px 0 0' }}>
+              Issued {new Date().toLocaleDateString()} · Self-issued proof of work from your own progress records;
+              it is not an accredited qualification. Print it or save it as a PDF from your browser.
+            </p>
+            <button type="button" className="btn small primary" style={{ marginTop: 8 }} onClick={() => window.print()}>
+              Print / save as PDF
+            </button>
+          </div>
+        ) : (
+          <p className="small muted" style={{ margin: '10px 0 0' }}>
+            {next
+              ? `Next untouched: ${N_SECTION_LABEL[next.section]} in ${modules.find((module) => module.id === next.moduleId)?.title}.`
+              : 'Every section is recorded — finish the capstone evidence checklist to unlock the certificate.'}
+          </p>
+        )}
       </div>
 
       <div className="sec-head"><h2><Target size={16} color="var(--blue)" /> Prerequisites and sequence</h2><span className="line" /></div>

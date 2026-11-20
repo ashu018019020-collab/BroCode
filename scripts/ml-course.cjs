@@ -22,6 +22,7 @@ const { pathToFileURL } = require('url');
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'content', 'ml-mastery', 'course.mjs');
+const CAPSTONE = path.join(ROOT, 'content', 'ml-mastery', 'capstone.json');
 const OUT = path.join(ROOT, 'public', 'generated', 'ml-course');
 const WRITE = process.argv.includes('--write');
 
@@ -145,6 +146,42 @@ async function build() {
     if (JSON.stringify(course.modules) !== JSON.stringify(expected)) problems.push('course.modules must equal the module order');
   }
 
+  /*
+   * The course-level capstone is one assessable project, separate from ml27's project lab. Its
+   * rubric is the evidence checklist the UI ticks, so the weights must total 100 and every row
+   * needs evidence a reviewer could actually inspect.
+   */
+  let capstone = null;
+  try {
+    capstone = JSON.parse(fs.readFileSync(CAPSTONE, 'utf8'));
+  } catch (error) {
+    problems.push(`capstone: could not read content/ml-mastery/capstone.json (${error.message})`);
+  }
+  if (capstone) {
+    if (!String(capstone.title || '').trim() || !String(capstone.brief || '').trim() || !String(capstone.dataset || '').trim()) {
+      problems.push('capstone: title, brief and dataset are required');
+    }
+    if (!capstone.starter?.code || !capstone.starter?.output) problems.push('capstone: starter code and executed output are required');
+    if (!Array.isArray(capstone.tiers) || capstone.tiers.length !== 3) problems.push('capstone: three tiers are required');
+    for (const tier of capstone.tiers ?? []) {
+      if (!tier.name || !tier.goal) problems.push('capstone: every tier needs a name and a goal');
+      if (!Array.isArray(tier.requirements) || tier.requirements.length < 3) problems.push(`capstone: ${tier.name || 'tier'} needs three requirements`);
+      if (!Array.isArray(tier.deliverables) || !tier.deliverables.length) problems.push(`capstone: ${tier.name || 'tier'} needs a deliverable`);
+      if (!Array.isArray(tier.stretch) || !tier.stretch.length) problems.push(`capstone: ${tier.name || 'tier'} needs a stretch goal`);
+    }
+    if (!Array.isArray(capstone.milestones) || capstone.milestones.length < 4) problems.push('capstone: four milestones are required');
+    if (!Array.isArray(capstone.rubric) || !capstone.rubric.length) problems.push('capstone: rubric is required');
+    const weights = (capstone.rubric ?? []).reduce((sum, row) => sum + (row.weight || 0), 0);
+    if (weights !== 100) problems.push(`capstone: rubric weights sum to ${weights}, expected 100`);
+    const criteria = new Set();
+    for (const row of capstone.rubric ?? []) {
+      if (!row.criterion || !row.evidence) problems.push('capstone: every rubric row needs a criterion and evidence');
+      if (criteria.has(row.criterion)) problems.push(`capstone: duplicate rubric criterion ${row.criterion}`);
+      criteria.add(row.criterion);
+    }
+    if (!capstone.assessment?.pass || !capstone.assessment?.excellent) problems.push('capstone: pass and excellent assessment notes are required');
+  }
+
   const { expandModule } = await import(pathToFileURL(path.join(ROOT, 'content', 'ml-mastery', 'expansion-bank.mjs')).href);
   const moduleIds = new Set();
   const moduleTitles = new Set();
@@ -265,7 +302,7 @@ async function build() {
     error.problems = problems;
     throw error;
   }
-  return { course, stats, modules: published };
+  return { course, stats, modules: published, ...(capstone ? { capstone } : {}) };
 }
 
 async function main() {

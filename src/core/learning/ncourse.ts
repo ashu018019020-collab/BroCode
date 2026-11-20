@@ -339,19 +339,29 @@ export interface NCertificate {
 /**
  * A certificate is a claim, so it is derived, never assumed: the course must be complete (all sections
  * recorded) AND the capstone rubric must reach the pass mark the course publishes. The grade mirrors
- * the same thresholds (70 pass, 90 excellent) instead of inventing a second scale.
+ * the same thresholds (70 pass, 90 excellent) instead of inventing a second scale. This rule is shared
+ * by every mastery course; each course supplies its own progress report and rubric.
  */
-export function numpyCertificate(report: NReport, rubric: { criterion: string; weight: number }[], checked: string[]): NCertificate {
+export function courseCertificate(
+  progress: { sectionsDone: number; sectionsTotal: number },
+  rubric: { criterion: string; weight: number }[],
+  checked: string[],
+): NCertificate {
   const score = rubric.reduce((a, row) => a + (checked.includes(row.criterion) ? row.weight : 0), 0);
-  const complete = report.sectionsDone === report.sectionsTotal && report.sectionsTotal > 0;
+  const complete = progress.sectionsDone === progress.sectionsTotal && progress.sectionsTotal > 0;
   const capstonePassed = score >= 70;
   const grade: NCertificate['grade'] = score >= 90 ? 'excellent' : score >= 70 ? 'pass' : 'none';
   const reason = !complete
-    ? `${report.sectionsTotal - report.sectionsDone} sections are still untouched.`
+    ? `${progress.sectionsTotal - progress.sectionsDone} sections are still untouched.`
     : !capstonePassed
       ? 'The capstone rubric is below 70 — tick the evidence you can actually show.'
       : 'Every section is recorded and the capstone rubric is at or above the pass mark.';
   return { complete, capstonePassed, eligible: complete && capstonePassed, score, grade, reason };
+}
+
+/** NumPy's report is one input to the shared certificate rule. */
+export function numpyCertificate(report: NReport, rubric: { criterion: string; weight: number }[], checked: string[]): NCertificate {
+  return courseCertificate(report, rubric, checked);
 }
 
 export interface NSearchHit {
