@@ -287,7 +287,7 @@ test('progress endpoint accepts aggregate counters without accepting private rec
   assert.equal(invalid.status, 400);
 });
 
-test('the ML route accepts only mmod records and never mixes in NumPy keys', async () => {
+test('the ML route accepts mmod records and mcap, and never mixes in NumPy keys', async () => {
   const guest = await call('/api/ml/progress', {
     method: 'POST',
     body: { action: 'load' },
@@ -305,12 +305,21 @@ test('the ML route accepts only mmod records and never mixes in NumPy keys', asy
   const saved = await call('/api/ml/progress', {
     method: 'POST',
     token: 'learner-token',
-    body: { action: 'save', payload: { 'mmod:ml01:learn': { done: true, tries: 2 } } },
+    body: {
+      action: 'save',
+      payload: {
+        'mmod:ml01:learn': { done: true, tries: 2 },
+        mcap: { answer: '["Decision frame"]' },
+      },
+    },
   });
   assert.equal(saved.status, 200);
   assert.deepEqual(lastMlProgress, {
     id: ids.learner,
-    payload: { 'mmod:ml01:learn': { done: true, tries: 2 } },
+    payload: {
+      'mmod:ml01:learn': { done: true, tries: 2 },
+      mcap: { answer: '["Decision frame"]' },
+    },
   });
 
   const loaded = await call('/api/ml/progress', {
@@ -321,7 +330,10 @@ test('the ML route accepts only mmod records and never mixes in NumPy keys', asy
   assert.equal(loaded.status, 200);
   assert.deepEqual(await loaded.json(), {
     ok: true,
-    payload: { 'mmod:ml01:learn': { done: true, tries: 2 } },
+    payload: {
+      'mmod:ml01:learn': { done: true, tries: 2 },
+      mcap: { answer: '["Decision frame"]' },
+    },
   });
 
   const mixed = await call('/api/ml/progress', {
@@ -330,8 +342,10 @@ test('the ML route accepts only mmod records and never mixes in NumPy keys', asy
     body: { action: 'save', payload: { 'nmod:n01:learn': { done: true } } },
   });
   assert.equal(mixed.status, 400);
-  assert.deepEqual(lastMlProgress.payload, { 'mmod:ml01:learn': { done: true, tries: 2 } },
-    'a rejected NumPy key must not reach the ML column');
+  assert.deepEqual(lastMlProgress.payload, {
+    'mmod:ml01:learn': { done: true, tries: 2 },
+    mcap: { answer: '["Decision frame"]' },
+  }, 'a rejected NumPy key must not reach the ML column');
 
   const draft = await call('/api/ml/progress', {
     method: 'POST',

@@ -400,6 +400,65 @@ async function buildAiIndex() {
     }
   }
 
+  /**
+   * The course-level capstone is ONE assessable project, not a module section, so it would otherwise
+   * be invisible to the tutor even though the page publishes its brief, milestones and rubric. Each
+   * record gets the exact capstone JSON path and the course page route that renders it, so the
+   * assistant can cite the rubric row or milestone a learner is actually asking about instead of
+   * pointing at the course as a whole. No `type` is set: these are teaching/project records, not
+   * assessment items, so retrieval does not demote them below the course's generated quizzes.
+   */
+  if (mlCourse.capstone) {
+    const capstone = mlCourse.capstone;
+    const capstoneChapter = mlCourse.modules?.find((module) => module.no === 27)?.title
+      ?? 'Responsible AI, Capstone and Professional Readiness';
+    const provenance = {
+      course: 'ml-mastery',
+      chapter: 27,
+      chapterTitle: capstoneChapter,
+      route: '/ml',
+    };
+    add({
+      ...provenance,
+      id: 'ml:capstone',
+      kind: 'project',
+      title: capstone.title,
+      body: textOf(
+        capstone.brief, capstone.dataset,
+        capstone.tiers?.map((tier) => [tier.name, tier.goal, tier.requirements, tier.deliverables, tier.stretch]),
+        capstone.starter?.code, capstone.starter?.output,
+        capstone.assessment?.pass, capstone.assessment?.excellent,
+      ),
+      source: 'Machine Learning capstone',
+      sourceRef: 'public/generated/ml-course/index.json#capstone',
+      tags: ['ml', 'capstone', 'project'],
+    });
+    for (const [index, milestone] of (capstone.milestones ?? []).entries()) {
+      add({
+        ...provenance,
+        id: `ml:capstone:milestone:${index}`,
+        kind: 'project',
+        title: `Capstone project milestone ${index + 1}: ${milestone.title}`,
+        body: milestone.detail,
+        source: 'Machine Learning capstone project · milestone',
+        sourceRef: `public/generated/ml-course/index.json#capstone.milestones[${index}]`,
+        tags: ['ml', 'capstone', 'project', 'milestone', 'milestones'],
+      });
+    }
+    for (const [index, row] of (capstone.rubric ?? []).entries()) {
+      add({
+        ...provenance,
+        id: `ml:capstone:rubric:${index}`,
+        kind: 'project',
+        title: `Capstone project rubric · ${row.criterion}`,
+        body: `Weight ${row.weight}/100. Evidence required: ${row.evidence}`,
+        source: 'Machine Learning capstone project · assessment rubric',
+        sourceRef: `public/generated/ml-course/index.json#capstone.rubric[${index}]`,
+        tags: [`weight:${row.weight}`, 'ml', 'capstone', 'project', 'rubric', 'rubrics'],
+      });
+    }
+  }
+
   const bankFiles = fs.readdirSync(questionsDir).filter((name) => name.endsWith('.json') && name !== 'manifest.json').sort();
   let bankQuestions = 0;
   for (const file of bankFiles) {

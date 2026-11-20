@@ -268,16 +268,19 @@ test('every Machine Learning course entry is retrievable with a traceable source
     0,
   );
   const mlDocs = index.documents.filter((document) => document.course === 'ml-mastery');
-  assert.equal(mlDocs.length, expected, 'every published ML course record must be indexed');
-  assert.equal(new Set(mlDocs.map((document) => document.id)).size, expected, 'ML document ids must be unique');
-  assert.ok(mlDocs.every((document) =>
+  const moduleDocs = mlDocs.filter((document) => document.id.startsWith('ml:ml'));
+  assert.equal(moduleDocs.length, expected, 'every published ML module record must be indexed');
+  assert.equal(new Set(moduleDocs.map((document) => document.id)).size, expected, 'ML module document ids must be unique');
+  assert.ok(moduleDocs.every((document) =>
     document.courseTitle === course.course.title
     && document.id.startsWith('ml:')
     && document.route.startsWith('/ml?module=ml')
     && document.sourceRef.startsWith('public/generated/ml-course/index.json#modules[')
-    && document.sourceRef.includes('.sections.')), 'an ML document must carry its course, route and exact record path');
-  assert.ok(mlDocs.some((document) => document.type === 'learn' && document.body?.length > 100),
+    && document.sourceRef.includes('.sections.')), 'an ML module document must carry its course, route and exact record path');
+  assert.ok(moduleDocs.some((document) => document.type === 'learn' && document.body?.length > 100),
     'a Learn lesson must carry the explanation, not just its title');
+  assert.ok(mlDocs.every((document) => document.courseTitle === course.course.title),
+    'the capstone records carry the same canonical course title');
 
   const context = assistantContextForPage('/ml', '?module=ml01&section=learn', sections, blankState(), index);
   assert.equal(context.courseSlug, 'ml-mastery');
@@ -297,6 +300,69 @@ test('every Machine Learning course entry is retrievable with a traceable source
   assert.equal(answer.kind, 'curriculum');
   assert.ok(answer.sources[0].route.startsWith('/ml?module=ml'));
   assert.match(answer.sources[0].reference, /public\/generated\/ml-course\/index\.json#/);
+});
+
+test('the ML capstone, its milestones and every rubric row are indexed with exact provenance', async () => {
+  const index = await buildAiIndex();
+  const course = JSON.parse(read('public/generated/ml-course/index.json'));
+  const capstone = course.capstone;
+  assert.ok(capstone, 'the published ML course must carry its capstone');
+
+  const docs = index.documents.filter((document) =>
+    document.id === 'ml:capstone' || document.id.startsWith('ml:capstone:'));
+  assert.equal(docs.length, 1 + capstone.milestones.length + capstone.rubric.length,
+    'the capstone, every milestone and every rubric row must be indexed');
+  const byId = new Map(docs.map((document) => [document.id, document]));
+
+  const overview = byId.get('ml:capstone');
+  assert.equal(overview?.kind, 'project');
+  assert.equal(overview?.course, 'ml-mastery');
+  assert.equal(overview?.route, '/ml', 'the citation opens the page that renders the capstone');
+  assert.equal(overview?.sourceRef, 'public/generated/ml-course/index.json#capstone');
+  assert.ok(overview?.body?.includes(capstone.brief), 'the brief must be teachable, not only the title');
+  assert.ok(overview?.body?.includes(capstone.dataset), 'the dataset note must travel with the brief');
+
+  for (const [at, milestone] of capstone.milestones.entries()) {
+    const document = byId.get(`ml:capstone:milestone:${at}`);
+    assert.equal(document?.kind, 'project');
+    assert.equal(document?.course, 'ml-mastery');
+    assert.equal(document?.route, '/ml');
+    assert.equal(document?.sourceRef, `public/generated/ml-course/index.json#capstone.milestones[${at}]`);
+    assert.match(document?.title ?? '', /capstone.*milestone/i);
+    assert.equal(document?.body, milestone.detail);
+  }
+
+  for (const [at, row] of capstone.rubric.entries()) {
+    const document = byId.get(`ml:capstone:rubric:${at}`);
+    assert.equal(document?.kind, 'project');
+    assert.equal(document?.course, 'ml-mastery');
+    assert.equal(document?.route, '/ml');
+    assert.equal(document?.sourceRef, `public/generated/ml-course/index.json#capstone.rubric[${at}]`);
+    assert.match(document?.title ?? '', /capstone.*rubric/i);
+    assert.ok(document?.body?.includes(String(row.weight)) && document?.body?.includes(row.evidence),
+      'a rubric document must carry its weight and the evidence it asks for');
+  }
+
+  for (const query of ['capstone rubric', 'capstone project rubric']) {
+    const rubricHits = retrieveKnowledge(index, query, { course: 'ml-mastery' }, 10);
+    assert.ok(rubricHits.some(({ document }) => document.id.startsWith('ml:capstone:rubric:')),
+      `${query} must retrieve a rubric row`);
+  }
+  for (const query of ['capstone milestones', 'ML capstone project milestones']) {
+    const milestoneHits = retrieveKnowledge(index, query, { course: 'ml-mastery' }, 10);
+    assert.ok(milestoneHits.some(({ document }) => document.id.startsWith('ml:capstone:milestone:')),
+      `${query} must retrieve a milestone`);
+  }
+
+  const context = assistantContextForPage('/ml', '', sections, blankState(), index);
+  const answer = askLocal('capstone rubric', sections, blankState(), context, 0, index);
+  assert.ok(answer.sources.some((source) => source.reference?.includes('#capstone.rubric[')),
+    'the tutor must cite the exact rubric row, not just the course');
+  const natural = askLocal('What does the capstone rubric require?', sections, blankState(), context, 0, index);
+  assert.ok(natural.sources.some((source) => source.reference?.includes('#capstone.rubric[')),
+    'a natural rubric question must still cite the exact rubric row');
+  assert.ok(natural.sources.every((source) => source.route === '/ml'),
+    'every capstone citation must open the page that renders the capstone');
 });
 
 test('ML records never enter NumPy-scoped retrieval and leave its ranking unchanged', async () => {

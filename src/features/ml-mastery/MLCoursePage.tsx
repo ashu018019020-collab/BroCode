@@ -8,7 +8,7 @@ import { mIsModuleComplete, mNextPlace, mProgress, mSectionKey, mSectionsDone, m
 import { collectMlProgress, mergeMlProgress, mlSyncSummary } from '../../core/learning/ml-sync';
 import { loadMlProgress, saveMlProgress } from '../../core/data/ml-progress';
 import { useAuth } from '../../core/auth/AuthProvider';
-import { setState, useSavedAnswer, useStore } from '../../core/storage/store';
+import { saveAnswer, setState, useStore } from '../../core/storage/store';
 import { NModuleWorkspace, type NCourseWorkspace } from '../numpy-mastery/NWorkspace';
 import { MLogo } from './MLogo';
 import { MLTools } from './MLTools';
@@ -43,7 +43,11 @@ export default function MLCoursePage() {
   const progress = useMemo(() => mProgress(modules, state.attempts), [modules, state.attempts]);
   const next = useMemo(() => mNextPlace(modules, state.attempts), [modules, state.attempts]);
   const hits = useMemo(() => searchCourse(modules, query), [modules, query]);
-  const [capRaw, saveCap] = useSavedAnswer(M_CAPSTONE_KEY);
+  // Read the capstone checklist straight from the store so a checklist merged in from another
+  // device (see the ML sync pull above) replaces this view instead of being hidden behind the
+  // stale local copy that `useSavedAnswer` keeps while typing.
+  const capRaw = state.attempts[M_CAPSTONE_KEY]?.answer ?? '';
+  const saveCap = (value: string) => saveAnswer(M_CAPSTONE_KEY, value);
   const checked = useMemo<string[]>(() => {
     try {
       const parsed = JSON.parse(capRaw || '[]');
@@ -59,8 +63,9 @@ export default function MLCoursePage() {
   const { user } = useAuth();
   const learnerName = (state.profile.name || user?.name || 'Learner').trim();
   /*
-   * Dedicated ML sync. Only `mmod:` records are collected, sent to `/api/ml/progress`, or written
-   * through `save_my_ml_progress`; NumPy's `nmod:` / `nans:` / `ntick:` keys never enter this path.
+   * Dedicated ML sync. Only `mmod:` section records and the exact `mcap` capstone checklist are
+   * collected, sent to `/api/ml/progress`, or written through `save_my_ml_progress`; NumPy's
+   * `nmod:` / `nans:` / `ntick:` / `ncap` keys never enter this path.
    * Pull once on account arrival, merge local-first, then push a debounced copy after changes.
    */
   const [syncState, setSyncState] = useState<'idle' | 'pulling' | 'synced' | 'local' | 'saving' | 'rejected'>('idle');
@@ -85,7 +90,11 @@ export default function MLCoursePage() {
       }
       const merged = mergeMlProgress(syncPayload, result.payload);
       if (merged.added.length) {
-        setState((s) => ({ ...s, attempts: { ...merged.payload, ...s.attempts } }));
+        // Apply only the keys the merge added. For `mcap`, the added value is the UNION of this
+        // device's ticks and the account's, so spreading the old local attempts over it would undo
+        // the very merge that made the certificate portable.
+        const patch = Object.fromEntries(merged.added.map((key) => [key, merged.payload[key]]));
+        setState((s) => ({ ...s, attempts: { ...s.attempts, ...patch } }));
       }
       // The remote copy is the baseline we just observed. If this device has a record the remote
       // does not, the save effect still needs one run to upload the local-first merge instead of

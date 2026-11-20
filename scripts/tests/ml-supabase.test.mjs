@@ -18,6 +18,7 @@ const code = (relative) => read(relative)
   .replace(/(^|[^:])\/\/[^\n]*/g, (match, lead) => lead + ' '.repeat(match.length - lead.length));
 
 const SQL_PATH = 'prisma/migrations/20261120120000_ml_progress/migration.sql';
+const CAPSTONE_SQL_PATH = 'prisma/migrations/20261120130000_ml_capstone_sync/migration.sql';
 
 test('ML gets an additive column separate from NumPy per_course', () => {
   const sql = read(SQL_PATH);
@@ -30,7 +31,7 @@ test('ML gets an additive column separate from NumPy per_course', () => {
     'Prisma must know the dedicated column');
 });
 
-test('the ML RPC is identity-bound and only accepts mmod records', () => {
+test('the ML RPC is identity-bound and only accepts ML records', () => {
   const sql = read(SQL_PATH);
   assert.match(sql, /me uuid := auth\.uid\(\)/, 'the caller comes from the signed JWT');
   assert.match(sql, /SECURITY DEFINER/, 'the writer must bypass RLS only for its own upsert');
@@ -47,6 +48,20 @@ test('the ML RPC is identity-bound and only accepts mmod records', () => {
   assert.doesNotMatch(sql, /save_my_ml_progress[\s\S]{0,900}xp\s*=/, 'the ML path must not write XP');
   assert.match(sql, /REVOKE ALL ON FUNCTION public\.save_my_ml_progress\(jsonb\) FROM PUBLIC, anon/);
   assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.save_my_ml_progress\(jsonb\) TO authenticated/);
+});
+
+test('the capstone checklist is accepted by the later ML validator migration', () => {
+  const sql = read(CAPSTONE_SQL_PATH);
+  assert.match(sql, /CREATE OR REPLACE FUNCTION public\.checked_ml_per_course\(/);
+  assert.match(sql, /entry\.key LIKE 'mmod:%'/);
+  assert.match(sql, /entry\.key = 'mcap'/, 'the exact mcap key is part of the ML allowlist');
+  assert.doesNotMatch(sql, /entry\.key LIKE 'nmod:%'/, 'the NumPy prefix must not be accepted');
+  assert.doesNotMatch(sql, /entry\.key = 'ncap'/, 'the NumPy capstone key must not be accepted');
+  assert.match(sql, /octet_length\(payload::text\) > 65536/, 'the whole payload is bounded');
+  assert.match(sql, /jsonb_object_keys\(payload\)\) > 600/, 'the record count is bounded');
+  assert.match(sql, /char_length\(entry\.value ->> 'answer'\) > 20000/, 'a draft value is bounded');
+  assert.doesNotMatch(sql, /ADD COLUMN|CREATE POLICY|ALTER POLICY|GRANT\s+(?:ALL|INSERT|UPDATE|DELETE)/i,
+    'the validator migration stays additive and does not widen table access');
 });
 
 test('the NumPy writer remains separate from the ML column', () => {

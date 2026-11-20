@@ -17,6 +17,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { validateTaskDiversity } = require('./lib/pandas-diversity.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'content', 'pandas-mastery');
@@ -95,6 +96,7 @@ modules.forEach((m, index) => {
     if (!t.title || !t.statement || !t.solution) fail(`${m.id}: task needs title/statement/solution`);
     if (!t.expected) fail(`${m.id}: task "${t.title}" has no executed output — run node scripts/pandas-fill-outputs.cjs`);
   }
+  for (const p of validateTaskDiversity(m.tasks || [], m.id)) fail(p);
   for (const [bank, min] of [['interviewBank', 2], ['defenseBank', 2]]) {
     const list = m[bank] || [];
     if (list.length < min) fail(`${m.id}: needs ${min}+ authored ${bank} entries`);

@@ -196,6 +196,7 @@ const NUMPY_MAX_DRAFT = 20_000;
 const NUMPY_MAX_BYTES = 64 * 1024;
 
 const ML_SYNC_PREFIX = 'mmod:';
+const ML_SYNC_EXACT = ['mcap'];
 const ML_MAX_DRAFT = 20_000;
 const ML_MAX_BYTES = 64 * 1024;
 
@@ -227,8 +228,9 @@ function validateNumpyPayload(input) {
 }
 
 /**
- * The ML payload, validated independently from NumPy's allowlist. Only `mmod:` records may travel;
- * a NumPy key, a written-draft key, or a free-form field is rejected before it can reach storage.
+ * The ML payload, validated independently from NumPy's allowlist. `mmod:` section records and the
+ * exact `mcap` evidence checklist may travel; a NumPy key, a written-draft key, or a free-form field
+ * is rejected before it can reach storage.
  */
 function validateMlPayload(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
@@ -238,7 +240,9 @@ function validateMlPayload(input) {
   if (entries.length > 600) throw new HttpError(413, 'ML progress holds too many records.');
   const clean = {};
   for (const [key, value] of entries) {
-    if (!key.startsWith(ML_SYNC_PREFIX)) throw new HttpError(400, `ML progress key ${key} is not allowed.`);
+    if (!ML_SYNC_EXACT.includes(key) && !key.startsWith(ML_SYNC_PREFIX)) {
+      throw new HttpError(400, `ML progress key ${key} is not allowed.`);
+    }
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
       throw new HttpError(400, `ML progress record ${key} must be an object.`);
     }
