@@ -16,9 +16,10 @@ export function MLTools() {
         <span className="chip">Python · NumPy · Pandas run here</span>
       </div>
       <p className="small muted" style={{ margin: '6px 0 0' }}>
-        The in-browser Code Bro kernel is deliberately limited to the wheels the app ships. Use the
-        Python Playground for the dependency-light labs in this course; open Scikit-learn, XGBoost,
-        LightGBM, CatBoost and SHAP work in Google Colab or a local virtual environment.
+        The in-browser Code Bro kernel is deliberately limited to the wheels the app ships. The ML
+        course page has five pure-NumPy labs with canonical datasets already seeded, plus separate
+        Scikit-learn/XGBoost packs for Google Colab or a local virtual environment. LightGBM,
+        CatBoost and SHAP work also belongs in Colab or a local environment.
       </p>
       <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
         <Link className="btn small" to="/notebooks"><BookOpen size={12} /> Code Bro</Link>

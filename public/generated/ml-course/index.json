@@ -120503,5 +120503,248 @@
    "pass": "All five milestones produce evidence you can explain, and the rubric totals at least 70.",
    "excellent": "90 or more, with the test-set evaluation, subgroup audit, model card and monitoring plan strong enough for another engineer to run and challenge."
   }
- }
+ },
+ "labs": [
+  {
+   "id": "numpy-linear-regression",
+   "title": "Linear regression from the normal equation",
+   "module": "ml10",
+   "notebook": "ml-linear-regression-numpy.ipynb",
+   "datasets": [
+    "diabetes"
+   ],
+   "runtime": "offline",
+   "description": "Train-only scaling, normal equation, ridge and gradient descent on the canonical Diabetes progression data. Every cell uses NumPy only."
+  },
+  {
+   "id": "numpy-logistic-regression",
+   "title": "Logistic regression from scratch",
+   "module": "ml12",
+   "notebook": "ml-logistic-regression-numpy.ipynb",
+   "datasets": [
+    "breast_cancer"
+   ],
+   "runtime": "offline",
+   "description": "Sigmoid, gradient descent, confusion matrix and a threshold sweep on Breast Cancer Wisconsin — no scikit-learn import."
+  },
+  {
+   "id": "numpy-knn-kmeans",
+   "title": "KNN and K-means from distances",
+   "module": "ml16",
+   "notebook": "ml-knn-kmeans-numpy.ipynb",
+   "datasets": [
+    "iris"
+   ],
+   "runtime": "offline",
+   "description": "Implement neighbour voting and Lloyd's algorithm, then compare k values and inspect cluster purity."
+  },
+  {
+   "id": "numpy-decision-tree",
+   "title": "A decision tree from Gini impurity",
+   "module": "ml14",
+   "notebook": "ml-decision-tree-numpy.ipynb",
+   "datasets": [
+    "wine"
+   ],
+   "runtime": "offline",
+   "description": "Search threshold splits, build a recursive CART tree, sweep depth and count feature usage on the Wine data."
+  },
+  {
+   "id": "numpy-pca",
+   "title": "PCA with SVD",
+   "module": "ml17",
+   "notebook": "ml-pca-numpy.ipynb",
+   "datasets": [
+    "breast_cancer"
+   ],
+   "runtime": "offline",
+   "description": "Standardise, decompose with SVD, read explained variance, project to two dimensions and measure reconstruction error."
+  }
+ ],
+ "colabPacks": [
+  {
+   "id": "sklearn-classification",
+   "title": "Scikit-learn classification pack",
+   "file": "ml-sklearn-classification.ipynb",
+   "datasets": [
+    "breast_cancer"
+   ],
+   "requirements": [
+    "scikit-learn==1.5.2",
+    "pandas==2.2.3",
+    "xgboost==2.1.3"
+   ],
+   "description": "Pipelines, logistic regression, random forest, cross-validation and permutation importance on Breast Cancer Wisconsin."
+  },
+  {
+   "id": "xgboost-regression",
+   "title": "XGBoost regression pack",
+   "file": "ml-xgboost-regression.ipynb",
+   "datasets": [
+    "diabetes"
+   ],
+   "requirements": [
+    "scikit-learn==1.5.2",
+    "pandas==2.2.3",
+    "xgboost==2.1.3"
+   ],
+   "description": "Linear, random-forest and XGBoost regressors with MAE/RMSE/R², residual inspection and feature importance."
+  },
+  {
+   "id": "sklearn-xgboost-trees",
+   "title": "Trees and XGBoost classifiers",
+   "file": "ml-sklearn-xgboost-trees.ipynb",
+   "datasets": [
+    "iris"
+   ],
+   "requirements": [
+    "scikit-learn==1.5.2",
+    "pandas==2.2.3",
+    "xgboost==2.1.3"
+   ],
+   "description": "Decision tree, random forest and XGBoost classifier side by side on Iris, with a depth sweep and confusion matrix."
+  }
+ ],
+ "datasets": [
+  {
+   "id": "iris",
+   "file": "iris.csv",
+   "title": "Iris",
+   "task": "classification",
+   "target": "species",
+   "classes": [
+    "setosa",
+    "versicolor",
+    "virginica"
+   ],
+   "description": "150 iris flowers, four measurements, three species. The canonical classification and clustering dataset.",
+   "source": "https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/datasets/data/iris.csv",
+   "license": "BSD-3-Clause (scikit-learn distribution); original UCI Iris dataset",
+   "columns": [
+    "sepal_length_cm",
+    "sepal_width_cm",
+    "petal_length_cm",
+    "petal_width_cm",
+    "species"
+   ],
+   "rows": 150,
+   "featureCount": 4,
+   "bytes": 2770,
+   "sha256": "3a6fc062ef64e75ac2e711cf140609279c55c7d9e17c794fc15ddc46c77287a0"
+  },
+  {
+   "id": "wine",
+   "file": "wine.csv",
+   "title": "Wine",
+   "task": "classification",
+   "target": "class",
+   "classes": [
+    "class_0",
+    "class_1",
+    "class_2"
+   ],
+   "description": "178 wine samples, 13 chemical measurements, three cultivars. Useful for trees, scaling and multiclass evaluation.",
+   "source": "https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/datasets/data/wine_data.csv",
+   "license": "BSD-3-Clause (scikit-learn distribution); original UCI Wine dataset",
+   "columns": [
+    "alcohol",
+    "malic_acid",
+    "ash",
+    "alcalinity_of_ash",
+    "magnesium",
+    "total_phenols",
+    "flavanoids",
+    "nonflavanoid_phenols",
+    "proanthocyanins",
+    "color_intensity",
+    "hue",
+    "od280_od315_of_diluted_wines",
+    "proline",
+    "class"
+   ],
+   "rows": 178,
+   "featureCount": 13,
+   "bytes": 11302,
+   "sha256": "f31eca90e60d109d79f7a515b95eeab05cedd3ed9af21ebe3da3133a24c34af0"
+  },
+  {
+   "id": "breast_cancer",
+   "file": "breast_cancer.csv",
+   "title": "Breast Cancer Wisconsin",
+   "task": "classification",
+   "target": "diagnosis",
+   "classes": [
+    "malignant",
+    "benign"
+   ],
+   "description": "569 diagnostic records, 30 numeric features, binary diagnosis. A canonical binary-classification and PCA dataset.",
+   "source": "https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/datasets/data/breast_cancer.csv",
+   "license": "BSD-3-Clause (scikit-learn distribution); original UCI Breast Cancer Wisconsin dataset",
+   "columns": [
+    "mean_radius",
+    "mean_texture",
+    "mean_perimeter",
+    "mean_area",
+    "mean_smoothness",
+    "mean_compactness",
+    "mean_concavity",
+    "mean_concave_points",
+    "mean_symmetry",
+    "mean_fractal_dimension",
+    "radius_error",
+    "texture_error",
+    "perimeter_error",
+    "area_error",
+    "smoothness_error",
+    "compactness_error",
+    "concavity_error",
+    "concave_points_error",
+    "symmetry_error",
+    "fractal_dimension_error",
+    "worst_radius",
+    "worst_texture",
+    "worst_perimeter",
+    "worst_area",
+    "worst_smoothness",
+    "worst_compactness",
+    "worst_concavity",
+    "worst_concave_points",
+    "worst_symmetry",
+    "worst_fractal_dimension",
+    "diagnosis"
+   ],
+   "rows": 569,
+   "featureCount": 30,
+   "bytes": 120384,
+   "sha256": "1f573a6153eb57b183b3bb3e49cc79e0f37e5e105d8337f9c7eb75b5fb04d347"
+  },
+  {
+   "id": "diabetes",
+   "file": "diabetes.csv",
+   "title": "Diabetes progression",
+   "task": "regression",
+   "target": "target",
+   "classes": [],
+   "description": "442 patients, ten baseline variables, one-year disease progression target. A canonical regression dataset.",
+   "source": "https://github.com/scikit-learn/scikit-learn/tree/main/sklearn/datasets/data",
+   "license": "BSD-3-Clause (scikit-learn distribution); original source: UCI / Efron et al. diabetes study",
+   "columns": [
+    "age",
+    "sex",
+    "bmi",
+    "bp",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "target"
+   ],
+   "rows": 442,
+   "featureCount": 10,
+   "bytes": 30686,
+   "sha256": "5fefaea5c29657e07fd52696de024cae4aaef487d29a8037398ac538b714bda5"
+  }
+ ]
 }

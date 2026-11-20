@@ -23,6 +23,10 @@ const { pathToFileURL } = require('url');
 const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'content', 'ml-mastery', 'course.mjs');
 const CAPSTONE = path.join(ROOT, 'content', 'ml-mastery', 'capstone.json');
+const LABS = path.join(ROOT, 'content', 'ml-mastery', 'labs.json');
+const DATASETS = path.join(ROOT, 'content', 'datasets', 'ml', 'datasets.json');
+const NOTEBOOKS = path.join(ROOT, 'content', 'notebooks');
+const COLAB = path.join(ROOT, 'content', 'colab-ml');
 const OUT = path.join(ROOT, 'public', 'generated', 'ml-course');
 const WRITE = process.argv.includes('--write');
 
@@ -182,6 +186,77 @@ async function build() {
     if (!capstone.assessment?.pass || !capstone.assessment?.excellent) problems.push('capstone: pass and excellent assessment notes are required');
   }
 
+  /*
+   * Labs are the runnable middle layer between a lesson and the capstone. NumPy labs must stay
+   * inside the offline kernel; Colab packs are separate downloadable files, never app-runtime
+   * notebooks. Both point at real authored files and canonical datasets, so a dead link or a
+   * missing dependency fails the build instead of reaching the learner.
+   */
+  let labs = null;
+  let colabPacks = null;
+  let datasets = null;
+  try {
+    labs = JSON.parse(fs.readFileSync(LABS, 'utf8'));
+    datasets = JSON.parse(fs.readFileSync(DATASETS, 'utf8'));
+  } catch (error) {
+    problems.push(`labs: could not read labs.json or datasets.json (${error.message})`);
+  }
+  const datasetIds = new Set((datasets ?? []).map((dataset) => dataset.id));
+  const datasetFiles = new Set((datasets ?? []).map((dataset) => dataset.file));
+  const datasetManifestPath = path.join(ROOT, 'public', 'datasets', 'ml', 'manifest.json');
+  const datasetManifest = fs.existsSync(datasetManifestPath) ? JSON.parse(fs.readFileSync(datasetManifestPath, 'utf8')) : { datasets: [] };
+  const datasetDetails = new Map((datasetManifest.datasets ?? []).map((dataset) => [dataset.id, dataset]));
+  datasets = (datasets ?? []).map((dataset) => ({ ...dataset, ...(datasetDetails.get(dataset.id) ?? {}) }));
+  if (!Array.isArray(datasets) || datasets.length < 4) problems.push('datasets: at least four canonical datasets are required');
+  for (const dataset of datasets ?? []) {
+    if (!dataset.id || !dataset.file || !dataset.title || !dataset.description) problems.push('datasets: every entry needs id, file, title and description');
+    if (!dataset.source || !dataset.license) problems.push(`datasets: ${dataset.id || '?'} needs source and licence`);
+    if (!['classification', 'regression'].includes(dataset.task)) problems.push(`datasets: ${dataset.id || '?'} has an invalid task`);
+    if (!fs.existsSync(path.join(ROOT, 'content', 'datasets', 'ml', dataset.file))) problems.push(`datasets: ${dataset.file} is missing`);
+  }
+
+  const notebookFiles = new Set(fs.existsSync(NOTEBOOKS) ? fs.readdirSync(NOTEBOOKS) : []);
+  const colabFiles = new Set(fs.existsSync(COLAB) ? fs.readdirSync(COLAB) : []);
+  const labIds = new Set();
+  const referencedDatasets = new Set();
+  if (!Array.isArray(labs?.labs) || labs.labs.length < 4) problems.push('labs: at least four NumPy labs are required');
+  for (const lab of labs?.labs ?? []) {
+    if (!lab.id || !lab.title || !lab.notebook || !lab.description) problems.push('labs: every lab needs id, title, notebook and description');
+    if (labIds.has(lab.id)) problems.push(`labs: duplicate id ${lab.id}`);
+    labIds.add(lab.id);
+    if (lab.runtime !== 'offline') problems.push(`labs: ${lab.id} must declare runtime "offline"`);
+    if (!notebookFiles.has(lab.notebook)) problems.push(`labs: ${lab.id} points at missing notebook ${lab.notebook}`);
+    if (!modules.some((module) => module.id === lab.module)) problems.push(`labs: ${lab.id} points at unknown module ${lab.module}`);
+    for (const dataset of lab.datasets ?? []) {
+      if (!datasetIds.has(dataset)) problems.push(`labs: ${lab.id} points at unknown dataset ${dataset}`);
+      referencedDatasets.add(dataset);
+    }
+    if (notebookFiles.has(lab.notebook)) {
+      const notebook = JSON.parse(fs.readFileSync(path.join(NOTEBOOKS, lab.notebook), 'utf8'));
+      const source = notebook.cells.filter((cell) => cell.cell_type === 'code').map((cell) => (cell.source ?? []).join('')).join('\n');
+      if (/^\s*(?:import|from)\s+(?:sklearn|xgboost)\b/m.test(source)) problems.push(`labs: ${lab.id} imports sklearn/xgboost; offline labs must use NumPy only`);
+    }
+  }
+
+  if (!Array.isArray(labs?.colabPacks) || labs.colabPacks.length < 2) problems.push('labs: at least two Colab packs are required');
+  for (const pack of labs?.colabPacks ?? []) {
+    if (!pack.id || !pack.title || !pack.file || !pack.description) problems.push('colab: every pack needs id, title, file and description');
+    if (!colabFiles.has(pack.file)) problems.push(`colab: ${pack.id} points at missing pack ${pack.file}`);
+    if (!Array.isArray(pack.requirements) || !pack.requirements.some((req) => /^scikit-learn==/.test(req)) || !pack.requirements.some((req) => /^xgboost==/.test(req))) {
+      problems.push(`colab: ${pack.id} must pin scikit-learn and xgboost`);
+    }
+    for (const dataset of pack.datasets ?? []) {
+      if (!datasetIds.has(dataset)) problems.push(`colab: ${pack.id} points at unknown dataset ${dataset}`);
+      referencedDatasets.add(dataset);
+    }
+  }
+  for (const dataset of datasetIds) {
+    if (!referencedDatasets.has(dataset)) problems.push(`datasets: ${dataset} is not used by any lab or pack`);
+  }
+  for (const file of datasetFiles) {
+    if (!fs.existsSync(path.join(ROOT, 'public', 'datasets', 'ml', file))) problems.push(`datasets: public copy of ${file} is missing — run npm run ml:datasets:write`);
+  }
+
   const { expandModule } = await import(pathToFileURL(path.join(ROOT, 'content', 'ml-mastery', 'expansion-bank.mjs')).href);
   const moduleIds = new Set();
   const moduleTitles = new Set();
@@ -302,7 +377,14 @@ async function build() {
     error.problems = problems;
     throw error;
   }
-  return { course, stats, modules: published, ...(capstone ? { capstone } : {}) };
+  return {
+    course,
+    stats,
+    modules: published,
+    ...(capstone ? { capstone } : {}),
+    ...(labs ? { labs: labs.labs, colabPacks: labs.colabPacks } : {}),
+    ...(datasets ? { datasets } : {}),
+  };
 }
 
 async function main() {

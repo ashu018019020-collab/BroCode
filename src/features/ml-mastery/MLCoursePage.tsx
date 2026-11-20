@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { BookOpen, ChevronLeft, ChevronRight, GraduationCap, Play, Search, ShieldCheck, Target, Trophy } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, Download, FlaskConical, GraduationCap, Play, Search, ShieldCheck, Target, Trophy } from 'lucide-react';
 import { Bar } from '../../components/ui/ui';
 import { useMLCourse } from '../../core/data/mlcourse';
 import { N_SECTION_LABEL, searchCourse } from '../../core/learning/ncourse';
@@ -305,7 +305,80 @@ export default function MLCoursePage() {
 
       {file.capstone && (
         <>
-          <div className="sec-head"><h2><GraduationCap size={16} color="var(--blue)" /> Capstone project</h2><span className="line" /></div>
+          <div className="sec-head" id="ml-labs"><h2><FlaskConical size={16} color="var(--blue)" /> Labs, canonical datasets and Colab packs</h2><span className="line" /></div>
+      <div className="card">
+        <p className="small muted" style={{ margin: 0 }}>
+          The five NumPy labs run in Code Bro with the bundled offline kernel. The canonical CSVs are
+          already seeded into that kernel, so <code>np.genfromtxt(&apos;iris.csv&apos;)</code> works without a
+          download. Scikit-learn and XGBoost packs are separate downloads for Colab or a local environment.
+        </p>
+
+        {file.labs && file.labs.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, marginTop: 12 }}>
+            {file.labs.map((lab) => {
+              const module = modules.find((item) => item.id === lab.module);
+              const datasets = (lab.datasets ?? []).map((id) => file.datasets?.find((dataset) => dataset.id === id)?.title ?? id);
+              return (
+                <div key={lab.id} className="card" style={{ padding: 10 }}>
+                  <div className="row spread" style={{ gap: 6 }}>
+                    <b className="small">{lab.title}</b>
+                    <span className="chip">NumPy</span>
+                  </div>
+                  <p className="small muted" style={{ margin: '4px 0 6px' }}>{lab.description}</p>
+                  <p className="small muted" style={{ margin: '0 0 6px' }}>
+                    {module ? `Module ${module.no}: ${module.title}` : lab.module} · {datasets.join(', ')}
+                  </p>
+                  <Link className="btn small primary" to={`/notebooks?nb=${lab.notebook}`}>Open offline lab</Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {file.datasets && file.datasets.length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            <b className="small">Canonical datasets — bundled, not fetched</b>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8, marginTop: 6 }}>
+              {file.datasets.map((dataset) => (
+                <div key={dataset.id} className="card" style={{ padding: 10 }}>
+                  <div className="row spread" style={{ gap: 6 }}>
+                    <b className="small">{dataset.title}</b>
+                    <span className="chip">{dataset.task}</span>
+                  </div>
+                  <p className="small muted" style={{ margin: '4px 0 6px' }}>
+                    {dataset.rows ?? '?'} rows × {dataset.featureCount ?? '?'} features · target <code>{dataset.target}</code>
+                  </p>
+                  <p className="small muted" style={{ margin: '0 0 6px' }}>{dataset.description}</p>
+                  <a className="btn small ghost" href={`${import.meta.env.BASE_URL ?? '/'}datasets/ml/${dataset.file}`} download>
+                    <Download size={11} /> Download CSV
+                  </a>
+                  <p className="small muted" style={{ margin: '6px 0 0', fontSize: 10 }}>{dataset.license}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {file.colabPacks && file.colabPacks.length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            <b className="small">Scikit-learn / XGBoost Colab packs — download, upload to Colab, Run all</b>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 8, marginTop: 6 }}>
+              {file.colabPacks.map((pack) => (
+                <div key={pack.id} className="card" style={{ padding: 10 }}>
+                  <b className="small">{pack.title}</b>
+                  <p className="small muted" style={{ margin: '4px 0 6px' }}>{pack.description}</p>
+                  <p className="small muted" style={{ margin: '0 0 6px', fontSize: 10 }}>{pack.requirements.join(' · ')}</p>
+                  <a className="btn small ghost" href={`${import.meta.env.BASE_URL ?? '/'}colab-ml/${pack.file}`} download>
+                    <Download size={11} /> Download .ipynb
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="sec-head"><h2><GraduationCap size={16} color="var(--blue)" /> Capstone project</h2><span className="line" /></div>
           <div className="card">
             <h3 style={{ margin: 0 }}>{file.capstone.title}</h3>
             <p className="small" style={{ margin: '6px 0 0' }}>{file.capstone.brief}</p>

@@ -68,7 +68,7 @@ self.addEventListener('fetch', (e) => {
           const ct = res.headers.get('content-type') ?? '';
           // Images are the brand tile + install icons; nothing else in `public/` is a bitmap. Without
           // this, a cached load falls back to cached HTML but the sidebar logo stays broken.
-          const cacheable = res.ok && !ct.includes('text/html') && (url.pathname.startsWith('/assets') || url.pathname.includes('/pyodide') || url.pathname.includes('/generated') || url.pathname.includes('/pdf') || url.pathname.includes('/sqljs') || /\.(png|svg|ico)$/i.test(url.pathname));
+          const cacheable = res.ok && !ct.includes('text/html') && (url.pathname.startsWith('/assets') || url.pathname.includes('/pyodide') || url.pathname.includes('/generated') || url.pathname.includes('/datasets') || url.pathname.includes('/pdf') || url.pathname.includes('/sqljs') || /\.(png|svg|ico)$/i.test(url.pathname));
           if (cacheable) {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put(req, copy));

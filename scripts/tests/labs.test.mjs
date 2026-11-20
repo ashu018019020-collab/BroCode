@@ -192,11 +192,12 @@ test('labs: a subject reaches the lab its course files, including a later stepâ€
   assert.ok(view('agentic').summary.labs.includes('/agentic'));
   assert.ok(view('interview').summary.labs.includes('/projects'), 'the portfolio builds are a lab too');
 
-  // Honest empty: the ML + NLP course files no runtime, and the page must say so instead of
-  // borrowing a neighbour's lab.
+  // The ML + NLP course now files five pure-NumPy labs under s20. It has no separate runtime
+  // route, but the notebook count makes hasContent true instead of pretending the shelf is empty.
   const ml = view('ml');
   assert.deepEqual(ml.summary.labs, []);
-  assert.equal(ml.summary.hasContent, false);
+  assert.equal(ml.summary.notebooks, 5, 'the five ML NumPy labs belong to this subject');
+  assert.equal(ml.summary.hasContent, true);
   assert.ok(ml.summary.exercises > 0, 'and its coding exercises are still real content');
 });
 

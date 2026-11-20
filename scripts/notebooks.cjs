@@ -88,7 +88,7 @@ function validateNotebook(nb, at) {
  * notebooks are written), so executing each cell in a fresh process would reject correct
  * notebooks. Isolated runs are kept for cells that are SUPPOSED to raise.
  */
-function runSequential(cells) {
+function runSequential(cells, datasets = []) {
   const body = [];
   const starts = []; // { index, id, line } — first line of each cell in the concatenated script
   for (const { index, cell } of cells) {
@@ -96,11 +96,19 @@ function runSequential(cells) {
     body.push(`print('@@CELL:${index}@@')`);
     body.push(cell.source.join(''));
   }
-  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'aiml-nb-')), 'notebook.py');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aiml-nb-'));
+  // A locally-verified ML lab reads its canonical CSV by name. Copy only the declared
+  // datasets into this notebook's own temp cwd, so a lab cannot silently depend on a
+  // file another notebook happened to leave behind.
+  for (const id of datasets) {
+    const source = path.join(ROOT, 'content', 'datasets', 'ml', `${id}.csv`);
+    if (fs.existsSync(source)) fs.copyFileSync(source, path.join(dir, `${id}.csv`));
+  }
+  const file = path.join(dir, 'notebook.py');
   fs.writeFileSync(file, body.join('\n') + '\n');
   let stdout = '', stderr = '', failed = null;
   try {
-    stdout = execFileSync('python', [file], { stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000, cwd: path.dirname(file) }).toString();
+    stdout = execFileSync('python', [file], { stdio: ['ignore', 'pipe', 'pipe'], timeout: 60000, cwd: dir }).toString();
   } catch (e) {
     stdout = String(e.stdout || '');
     stderr = String(e.stderr || '');
@@ -211,18 +219,27 @@ function main() {
     // Per-notebook tallies — the manifest flags this notebook only, never the previous one.
     let nbVerified = 0, nbExpected = 0, nbApp = 0;
 
+    /*
+     * A notebook may opt into local verification of its bundled imports (`aiml.localRun`).
+     * The NumPy labs use this: NumPy is bundled for the browser, but it is also installed
+     * here, so every cell can run in one session and store real stdout. Without the flag the
+     * old rule still applies and an import of NumPy is an app-runtime cell.
+     */
+    const localRun = out.metadata?.aiml?.localRun === true;
+    const notebookDatasets = Array.isArray(out.metadata?.aiml?.datasets) ? out.metadata.aiml.datasets : [];
+
     // 1. Cells that must run together, in order (shared kernel state).
     const sequential = out.cells
       .map((cell, index) => ({ index, cell }))
       .filter(({ cell }) => cell.cell_type === 'code'
         && !cell.metadata?.appOnly
         && cell.metadata?.expectError !== true
-        && !topImports(cell.source.join('')).some((m) => BUNDLED.includes(m)));
+        && (localRun || !topImports(cell.source.join('')).some((m) => BUNDLED.includes(m))));
 
     for (const { index, cell } of sequential) codeCells++;
 
     if (sequential.length) {
-      const { outputs, failure } = runSequential(sequential);
+      const { outputs, failure } = runSequential(sequential, notebookDatasets);
       if (failure) {
         problems.push(`${name} cell ${failure.index} (${failure.id}) raised: ${failure.reason}` +
           (failure.unreached.length ? ` — later cells never ran: ${failure.unreached.join(', ')}` : ''));

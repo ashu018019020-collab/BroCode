@@ -182,6 +182,40 @@ export interface NCourseFile {
     };
   };
   modules: NModule[];
+  /** Offline, pure-NumPy algorithm labs authored for this course. */
+  labs?: {
+    id: string;
+    title: string;
+    module: string;
+    notebook: string;
+    datasets: string[];
+    runtime: 'offline';
+    description: string;
+  }[];
+  /** Downloadable Colab/local packs; never claimed to run in the offline kernel. */
+  colabPacks?: {
+    id: string;
+    title: string;
+    file: string;
+    datasets: string[];
+    requirements: string[];
+    description: string;
+  }[];
+  /** Canonical datasets bundled with the course and seeded into the offline Python kernel. */
+  datasets?: {
+    id: string;
+    file: string;
+    title: string;
+    task: 'classification' | 'regression';
+    target: string;
+    classes: string[];
+    description: string;
+    source: string;
+    license: string;
+    rows?: number;
+    featureCount?: number;
+    columns?: string[];
+  }[];
   /** The one assessable project for the whole course, when the build carries it. */
   capstone?: {
     title: string;

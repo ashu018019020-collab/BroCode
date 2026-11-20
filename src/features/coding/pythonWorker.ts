@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import { DATASETS, datasetAsCSV } from '../../core/data/datasets';
+import { ML_DATASETS } from '../../core/data/mlDatasets';
 /**
  * In-browser Python worker. The main thread passes the absolute URL of
  * ./pyodide/pyodide.mjs (computed against document.baseURI), so this works in
@@ -52,6 +53,9 @@ async function init(pyodideUrl: string) {
   pyodide.setStdin({ stdin: () => (stdinQueue.length ? stdinQueue.shift() + '\n' : undefined) });
   // Seed the bundled datasets into the virtual FS so pd.read_csv('students.csv') works in the browser.
   for (const d of DATASETS) pyodide.FS.writeFile(`${d.name}.csv`, datasetAsCSV(d), { encoding: 'utf8' });
+  // The canonical ML datasets travel inside this bundle too, so `np.genfromtxt('iris.csv')`
+  // works offline without a fetch or an external data URL.
+  for (const d of ML_DATASETS) pyodide.FS.writeFile(d.file, d.csv, { encoding: 'utf8' });
 }
 
 self.onmessage = (e: MessageEvent) => {

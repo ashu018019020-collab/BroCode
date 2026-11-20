@@ -71,7 +71,7 @@ test('AI index regeneration exactly matches the published artifact and current s
   assert.equal(index.counts.courses, courses.courses.length);
   assert.equal(index.counts.playbook, playbook.items.length);
   assert.equal(index.counts.tracks, 8);
-  assert.equal(index.counts.notebooks, 5);
+  assert.equal(index.counts.notebooks, 10);
   assert.equal(index.counts.mockInterviews, extras.mockInterview.reduce((sum, round) => sum + round.questions.length, 0));
   assert.equal(index.counts.intensiveInterviewQuestions, extras.intensive.length);
   assert.equal(new Set(index.documents.map((item) => item.id)).size, index.documents.length);

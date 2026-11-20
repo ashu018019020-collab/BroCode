@@ -12,6 +12,7 @@
  */
 import { useEffect, useState } from 'react';
 import { DATASETS } from './datasets';
+import { ML_DATASETS } from './mlDatasets';
 
 export interface NotebookMeta {
   file: string;
@@ -40,7 +41,13 @@ export const NOTEBOOK_LIBS = [
 export const NOTEBOOK_LIBS_SNIPPET = `import numpy as np\nimport pandas as pd\n\nprint("numpy", np.__version__)\nprint("pandas", pd.__version__)\n`;
 
 /** Dataset file names pre-seeded in the in-browser filesystem — `pd.read_csv('students.csv')` works. */
-export const NB_DATASETS = DATASETS.map((d) => ({ name: `${d.name}.csv`, desc: d.desc }));
+export const NB_DATASETS = [
+  ...DATASETS.map((d) => ({ name: `${d.name}.csv`, desc: d.desc })),
+  ...ML_DATASETS.map((d) => ({
+    name: d.file,
+    desc: `${d.title} · ${d.rows} rows × ${d.featureCount} features · canonical ${d.task} dataset`,
+  })),
+];
 
 const listDir = () => (import.meta.env.BASE_URL ?? '/');
 
