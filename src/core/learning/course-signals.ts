@@ -1,15 +1,14 @@
 /**
  * One honest reading of the non-Python courses' records, for XP and achievements.
  *
- * The Python curriculum already has `isMastered` and `doneRecords`; the C, Java and NumPy courses
- * store their own attempt families (`ccourse:*`, `jcourse:*`, `nmod:*`). This module counts those
- * families in ONE place so a badge, the XP award and the course pages cannot disagree about what
- * "finished" means.
+ * The Python curriculum already has `isMastered` and `doneRecords`; the C, Java, NumPy and ML courses
+ * store their own attempt families (`ccourse:*`, `jcourse:*`, `nmod:*`, `mmod:*`). This module owns
+ * the shared XP rule so the workspaces cannot disagree about what a completed section pays.
  */
 import type { Attempt } from '../../types';
 import { N_SECTIONS } from './ncourse';
 
-export type CourseId = 'numpy' | 'c' | 'java';
+export type CourseId = 'numpy' | 'c' | 'java' | 'ml';
 
 export interface CourseSignals {
   /** NumPy sections recorded (`nmod:<module>:<section>`), one per section. */
@@ -28,7 +27,9 @@ export interface CourseSignals {
 
 /** XP for finishing a section/module, paid once. */
 export function sectionXp(course: CourseId): number {
-  return course === 'numpy' ? 12 : 30;
+  if (course === 'numpy') return 12;
+  if (course === 'ml') return 10;
+  return 30;
 }
 
 /** NumPy's module-completion bonus, paid when the tenth section lands. */

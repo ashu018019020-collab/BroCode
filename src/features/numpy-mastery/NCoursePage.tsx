@@ -121,20 +121,18 @@ export default function NCoursePage() {
 
   if (open) {
     return (
-      <div>
-        <NModuleWorkspace
-          module={open}
-          modules={modules}
-          bank={stats.bank.modules[open.id]}
-          initialSection={params.get('section')}
-          onOpen={(id) => setParams({ module: id })}
-          onBack={() => {
-            const p = new URLSearchParams(params);
-            p.delete('module');
-            setParams(p);
-          }}
-        />
-      </div>
+      <NModuleWorkspace
+        module={open}
+        modules={modules}
+        bank={stats.bank.modules[open.id]}
+        initialSection={params.get('section')}
+        onOpen={(id) => setParams({ module: id })}
+        onBack={() => {
+          const p = new URLSearchParams(params);
+          p.delete('module');
+          setParams(p);
+        }}
+      />
     );
   }
 

@@ -123,6 +123,29 @@ export function createSupabaseStore(prisma = new PrismaClient()) {
       });
     },
 
+    /**
+     * The caller's own ML payload, stored on the snapshot row beside — never inside — NumPy's
+     * `per_course` column. A missing row is null; malformed JSON is null rather than a crash.
+     */
+    async getMlProgress(userId) {
+      const row = await prisma.progressSnapshot.findUnique({
+        where: { userId },
+        select: { mlPerCourse: true },
+      });
+      if (!row) return null;
+      const parsed = row.mlPerCourse;
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+    },
+
+    /** Course-only ML write: the aggregate counters and NumPy payload are never in this update. */
+    async saveMlProgress(userId, payload, now = new Date()) {
+      return prisma.progressSnapshot.upsert({
+        where: { userId },
+        create: { userId, mlPerCourse: payload, updatedAt: now },
+        update: { mlPerCourse: payload, updatedAt: now },
+      });
+    },
+
     async listAdminUsers() {
       const profiles = await prisma.profile.findMany({
         include: { progress: true },

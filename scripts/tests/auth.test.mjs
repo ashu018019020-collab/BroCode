@@ -44,6 +44,7 @@ const tokens = new Map([
 ]);
 let lastProgress;
 const signInEvents = [];
+let lastMlProgress;
 let server;
 let baseUrl;
 let secureServer;
@@ -90,6 +91,12 @@ const store = {
   },
   async saveProgress(id, progress) {
     lastProgress = { id, ...progress };
+  },
+  async getMlProgress() {
+    return lastMlProgress?.payload ?? {};
+  },
+  async saveMlProgress(id, payload) {
+    lastMlProgress = { id, payload };
   },
   async listAdminUsers() {
     return [...profiles.values()];
@@ -278,6 +285,60 @@ test('progress endpoint accepts aggregate counters without accepting private rec
     body: { ...progress, xp: -1 },
   });
   assert.equal(invalid.status, 400);
+});
+
+test('the ML route accepts only mmod records and never mixes in NumPy keys', async () => {
+  const guest = await call('/api/ml/progress', {
+    method: 'POST',
+    body: { action: 'load' },
+  });
+  assert.equal(guest.status, 401);
+
+  const foreign = await call('/api/ml/progress', {
+    method: 'POST',
+    token: 'learner-token',
+    origin: 'https://attacker.example',
+    body: { action: 'load' },
+  });
+  assert.equal(foreign.status, 403);
+
+  const saved = await call('/api/ml/progress', {
+    method: 'POST',
+    token: 'learner-token',
+    body: { action: 'save', payload: { 'mmod:ml01:learn': { done: true, tries: 2 } } },
+  });
+  assert.equal(saved.status, 200);
+  assert.deepEqual(lastMlProgress, {
+    id: ids.learner,
+    payload: { 'mmod:ml01:learn': { done: true, tries: 2 } },
+  });
+
+  const loaded = await call('/api/ml/progress', {
+    method: 'POST',
+    token: 'learner-token',
+    body: { action: 'load' },
+  });
+  assert.equal(loaded.status, 200);
+  assert.deepEqual(await loaded.json(), {
+    ok: true,
+    payload: { 'mmod:ml01:learn': { done: true, tries: 2 } },
+  });
+
+  const mixed = await call('/api/ml/progress', {
+    method: 'POST',
+    token: 'learner-token',
+    body: { action: 'save', payload: { 'nmod:n01:learn': { done: true } } },
+  });
+  assert.equal(mixed.status, 400);
+  assert.deepEqual(lastMlProgress.payload, { 'mmod:ml01:learn': { done: true, tries: 2 } },
+    'a rejected NumPy key must not reach the ML column');
+
+  const draft = await call('/api/ml/progress', {
+    method: 'POST',
+    token: 'learner-token',
+    body: { action: 'save', payload: { 'nans:e-1': { answer: 'must not travel' } } },
+  });
+  assert.equal(draft.status, 400);
 });
 
 test('the resume position is validated, stored with the snapshot, and returned by the session', async () => {

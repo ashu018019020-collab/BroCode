@@ -4,7 +4,7 @@ import {
   ArrowLeft, BookOpen, Check, ChevronLeft, ChevronRight, Code2, Copy, Eye, EyeOff, Play, RotateCcw, Terminal,
 } from 'lucide-react';
 import { useStore, recordAttempt, useSavedAnswer, addXp, bumpStreak } from '../../core/storage/store';
-import { N_LAST_KEY, N_LEVEL_KEY, N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, isModuleComplete, nProgress, nSectionKey, nWrittenAnswerKey, nWrittenTicksKey, outputMatches, type NEntry, type NModule, type NSectionKey, N_BANK_CATEGORY_ORDER, N_BANK_CATEGORY_LABEL, bankItems, type NBankFilter } from '../../core/learning/ncourse';
+import { N_LAST_KEY, N_LEVEL_KEY, N_SECTIONS, N_SECTION_LABEL, decodeTicks, encodeTicks, nSectionKey, nWrittenAnswerKey, nWrittenTicksKey, outputMatches, type NEntry, type NModule, type NSectionKey, N_BANK_CATEGORY_ORDER, N_BANK_CATEGORY_LABEL, bankItems, type NBankFilter } from '../../core/learning/ncourse';
 import { completionAward } from '../../core/learning/course-signals';
 import { NLogo } from './NLogo';
 import { NTools } from './NTools';
@@ -613,37 +613,41 @@ export interface NBankBreakdown {
   difficulty: Record<string, number>;
 }
 
+/** Everything that differs between the courses sharing this workspace. */
+export interface NCourseWorkspace {
+  id: 'numpy' | 'ml';
+  pageTitle: string;
+  route: string;
+  sectionKey: (moduleId: string, section: NSectionKey) => string;
+  lastKey: string;
+  xpLabel: string;
+  logo: ReactNode;
+  /** `null` hides the tool shelf for a course that has no tools yet. */
+  tools?: ReactNode;
+}
+
+const NUMPY_WORKSPACE: NCourseWorkspace = {
+  id: 'numpy',
+  pageTitle: 'NumPy Mastery',
+  route: '/numpy',
+  sectionKey: nSectionKey,
+  lastKey: N_LAST_KEY,
+  xpLabel: 'NumPy',
+  logo: <NLogo size={48} />,
+  tools: <NTools />,
+};
+
 export function NModuleWorkspace({
   module, modules = [], bank, initialSection, onOpen, onBack,
-  sectionKey = nSectionKey,
-  isComplete = isModuleComplete,
-  lastKey = N_LAST_KEY,
+  course = NUMPY_WORKSPACE,
   courseTitle = 'NumPy Mastery',
-  pageTitle = 'NumPy Mastery',
-  route = '/numpy',
-  logo = <NLogo size={48} />,
-  tools = <NTools />,
-  award: fixedAward,
-  scopePrefix = 'numpy',
-  xpLabel = 'NumPy',
 }: {
   module: NModule; modules?: NModule[]; bank?: NBankBreakdown; initialSection?: string | null;
   onOpen?: (id: string) => void; onBack: () => void;
-  /** The course's progress family; module ids are only unique inside a course. */
-  sectionKey?: (moduleId: string, section: NSectionKey) => string;
-  isComplete?: (moduleId: string, attempts: Record<string, unknown>) => boolean;
-  lastKey?: string;
+  course?: NCourseWorkspace;
   courseTitle?: string;
-  pageTitle?: string;
-  route?: string;
-  logo?: ReactNode;
-  /** `null` hides the tool shelf for a course that has no tools yet. */
-  tools?: ReactNode;
-  /** A flat XP award, for a course that is not in `completionAward`'s three-course registry. */
-  award?: number;
-  scopePrefix?: string;
-  xpLabel?: string;
 }) {
+  const { id, pageTitle, route, sectionKey, lastKey, xpLabel, logo, tools } = course;
   const state = useStore();
   const [section, setSection] = useState<NSectionKey>(() => (
     N_SECTIONS.some((s) => s.key === initialSection) ? (initialSection as NSectionKey) : 'learn'
@@ -663,24 +667,21 @@ export function NModuleWorkspace({
   const safe = Math.min(index, Math.max(0, entries.length - 1));
   const entry = entries[safe];
   const done = Boolean(state.attempts[sectionKey(module.id, section)]);
+  const recorded = N_SECTIONS.filter((s) => Boolean(state.attempts[sectionKey(module.id, s.key)])).length;
+  const complete = recorded === N_SECTIONS.length;
+  const progressPct = Math.round((recorded / N_SECTIONS.length) * 100);
   /**
    * Recording a section feeds the SAME learner signals as every other course: a one-time XP award
-   * (plus the module bonus on the tenth section), today's streak, and the achievement panel — which
-   * derives its course badges from these very `nmod:` keys. `done` is checked first, so a second
-   * click cannot farm XP.
+   * (plus the module bonus on the tenth section for NumPy), today's streak, and the achievement
+   * panel. `done` is checked first, so a second click cannot farm XP.
    */
   const onDone = () => {
     if (done) return;
-    const recorded = N_SECTIONS.filter((s) => Boolean(state.attempts[sectionKey(module.id, s.key)])).length;
-    const award = fixedAward ?? completionAward('numpy', false, recorded === N_SECTIONS.length - 1);
+    const award = completionAward(id, false, recorded === N_SECTIONS.length - 1);
     recordAttempt(sectionKey(module.id, section), { done: true, tries: 1 });
     addXp(award, 'course', `${xpLabel} · ${module.title} · ${N_SECTION_LABEL[section]}`);
     bumpStreak();
   };
-  const progress = useMemo(() => {
-    const doneSections = N_SECTIONS.filter((s) => Boolean(state.attempts[sectionKey(module.id, s.key)])).length;
-    return { pct: Math.round((doneSections / N_SECTIONS.length) * 100) };
-  }, [module, state.attempts, sectionKey]);
   const [levelRaw, setLevelRaw] = useSavedAnswer(N_LEVEL_KEY);
   /* "Resume" needs a real place: every section change records it, so the course page can jump back. */
   const [, saveLast] = useSavedAnswer(lastKey);
@@ -745,8 +746,8 @@ export function NModuleWorkspace({
                 <span className="chip">{module.level}</span>
                 <span className="chip">{module.hours}h</span>
                 <span className="chip">{module.entries} records</span>
-                <span className={`chip${isComplete(module.id, state.attempts) ? ' easy' : ''}`}>
-                  {isComplete(module.id, state.attempts) ? 'module complete' : `${N_SECTIONS.filter((s) => state.attempts[sectionKey(module.id, s.key)]).length}/10 sections`}
+                <span className={`chip${complete ? ' easy' : ''}`}>
+                  {complete ? 'module complete' : `${recorded}/10 sections`}
                 </span>
               </div>
             </div>
@@ -768,7 +769,7 @@ export function NModuleWorkspace({
                 onClick={() => setLevelRaw('pro')}
               >Professional</button>
             </div>
-            <ModuleRing pct={progress.pct} label="Module progress" />
+            <ModuleRing pct={progressPct} label="Module progress" />
           </div>
         </div>
       </div>
@@ -910,7 +911,7 @@ export function NModuleWorkspace({
               const at = entries.findIndex((e) => e.id === target?.id);
               if (at >= 0) setIndex(at);
             }}
-            scope={`${scopePrefix}:${module.id}:${entry?.id ?? 'cell'}`}
+            scope={`${id}:${module.id}:${entry?.id ?? 'cell'}`}
             done={done}
             onDone={onDone}
           />

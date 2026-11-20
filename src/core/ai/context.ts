@@ -33,6 +33,15 @@ export function assistantContextForPage(
       : track?.course
         ? index?.courses.find((item) => item.slug === track.course)
         : undefined;
+  /*
+   * `/ml` is a self-contained course artifact, not a `courses/index.json` entry. Give its tutor the
+   * same course scope other course pages get so retrieval can stay inside the ML corpus and cite
+   * `ml-course/index.json` records instead of the older ML/NLP curriculum.
+   */
+  const mlCourse = pathname === '/ml' && index?.documents.find((item) => item.course === 'ml-mastery');
+  const dedicatedCourse = mlCourse
+    ? { slug: 'ml-mastery', title: mlCourse.courseTitle ?? 'Machine Learning — Zero to Professional' }
+    : undefined;
   const courseStep = courseRoute?.[2]
     ? course?.steps.find((step) => step.number === Number(courseRoute[2]))
     : undefined;
@@ -66,8 +75,8 @@ export function assistantContextForPage(
     pageTitle: pageTitle || undefined,
     sectionId,
     where: where || undefined,
-    courseSlug: course?.slug,
-    courseTitle: course?.title ?? track?.title,
+    courseSlug: course?.slug ?? dedicatedCourse?.slug,
+    courseTitle: course?.title ?? track?.title ?? dedicatedCourse?.title,
     chapterTitle: courseStep?.title,
     lessonTitle: section?.title,
     topic: params.get('topic') ?? undefined,

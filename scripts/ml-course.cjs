@@ -8,8 +8,10 @@
  * The generator validates the authored course and expands each module into the SAME ten sections
  * the NumPy/Pandas mastery workspace renders. Every published record is a projection of authored
  * material — a topic body/code/output, a task, a debug challenge, an interview answer, a project
- * brief, a defense answer or a checkpoint question. Nothing is padded to reach a target; the
- * published `stats` carry the actual count and the shortfall beside the target.
+ * brief, a defense answer or a checkpoint question. `expansion-bank.mjs` raises every module to the
+ * 500-record contract from six authored concept atoms and ten parameterised drill families; the
+ * generated drill solutions are executed by `ml-course.test.mjs`. The published `stats` carry the
+ * actual count, not a counter padded to the target.
  *
  * Dry run by default; `--write` publishes.
  */
@@ -143,8 +145,11 @@ async function build() {
     if (JSON.stringify(course.modules) !== JSON.stringify(expected)) problems.push('course.modules must equal the module order');
   }
 
+  const { expandModule } = await import(pathToFileURL(path.join(ROOT, 'content', 'ml-mastery', 'expansion-bank.mjs')).href);
   const moduleIds = new Set();
   const moduleTitles = new Set();
+  const courseText = new Set();
+  const placeholder = /\b(?:TODO|TBD|lorem ipsum|placeholder|dummy question)\b/i;
   const published = modules.map((module, index) => {
     if (!/^ml\d{2}$/.test(module.id || '')) problems.push(`${module.id || index}: id must be mlNN`);
     if (module.id !== `ml${String(index + 1).padStart(2, '0')}`) problems.push(`${module.id}: id must be ml${String(index + 1).padStart(2, '0')}`);
@@ -160,6 +165,8 @@ async function build() {
       if (topic.code && !topic.output) problems.push(`${module.id}/${topic.title}: code needs a verified output`);
     }
     const sections = buildSections(module);
+    const expansion = expandModule(module, sections);
+    for (const [key] of SECTIONS) sections[key].push(...(expansion[key] ?? []));
     for (const [key, label] of SECTIONS) {
       if (!sections[key].length) problems.push(`${module.id}: ${label} is empty`);
       const ids = new Set();
@@ -167,7 +174,14 @@ async function build() {
       for (const entry of sections[key]) {
         seen(ids, entry.id, `${module.id}/${label} ids`, problems);
         const text = entry.q || entry.title || '';
-        if (text) seen(questions, text, `${module.id}/${label} questions`, problems);
+        if (text) {
+          seen(questions, text, `${module.id}/${label} questions`, problems);
+          seen(courseText, text, `${module.id}/${label} course text`, problems);
+          if (placeholder.test(text)) problems.push(`${entry.id}: placeholder text in title/question`);
+        }
+        for (const value of [entry.body, entry.answer, entry.task, entry.statement, entry.error, entry.fix, entry.expected, entry.hint, ...(entry.steps ?? [])]) {
+          if (typeof value === 'string' && placeholder.test(value)) problems.push(`${entry.id}: placeholder text in content`);
+        }
       }
     }
     for (const entry of sections.checkpoint) {

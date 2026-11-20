@@ -1,8 +1,8 @@
 /**
  * Course XP and achievement signals.
  *
- * The C, Java and NumPy courses store their own attempt families. These tests pin the one module that
- * counts them, the one-time XP rule, and the badge definitions — so a badge cannot be earned by
+ * The C, Java, NumPy and ML courses store their own attempt families. These tests pin the one module
+ * that counts them, the one-time XP rule, and the badge definitions — so a badge cannot be earned by
  * opening a page, and a second click cannot pay again.
  */
 import test from 'node:test';
@@ -69,6 +69,9 @@ test('completion XP is paid once, and the NumPy module bonus only on the tenth s
   assert.equal(signals.completionAward('numpy', false, true), 32);
   assert.equal(signals.completionAward('c', false), 30);
   assert.equal(signals.completionAward('java', true), 0);
+  assert.equal(signals.completionAward('ml', true), 0, 'a recorded ML section pays nothing again');
+  assert.equal(signals.completionAward('ml', false), 10);
+  assert.equal(signals.completionAward('ml', false, true), 10, 'ML has no module-completion bonus');
 });
 
 test('the course badges derive from those counts and stay unearned at zero', () => {
@@ -88,8 +91,8 @@ test('the course badges derive from those counts and stay unearned at zero', () 
 test('every course page feeds the same XP, streak and achievement signals', () => {
   const numpy = read('src/features/numpy-mastery/NWorkspace.tsx');
   assert.match(numpy, /if \(done\) return;/, 'a recorded section cannot pay XP twice');
-  assert.match(numpy, /completionAward\('numpy', false, recorded === N_SECTIONS\.length - 1\)/,
-    'NumPy pays the section XP and the final-section bonus');
+  assert.match(numpy, /completionAward\(id, false, recorded === N_SECTIONS\.length - 1\)/,
+    'the workspace pays the course section XP and NumPy’s final-section bonus through the shared registry');
   assert.match(numpy, /addXp\(award, 'course'/, 'the award goes through the ONE XP path');
   assert.match(numpy, /bumpStreak\(\)/, 'recording a section feeds the streak');
 

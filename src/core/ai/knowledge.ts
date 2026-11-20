@@ -106,6 +106,10 @@ const NAVIGATION_KINDS = new Set(['career', 'roadmap', 'track-topic', 'playbook'
  * asks for an interview/project question, and are demoted — never dropped — otherwise.
  */
 function isAssessmentItem(document: KnowledgeDocument): boolean {
+  // The ML artifact uses the section key (`learn`) as `type` for routing. A Learn record is the
+  // teaching passage, not a quiz; treating it as an assessment demoted it below the many generated
+  // checkpoint prompts. This exception is scoped to ML so NumPy's existing ranking is untouched.
+  if (document.course === 'ml-mastery' && document.type === 'learn') return false;
   return QUESTION_KINDS.has(document.kind) || Boolean(document.type);
 }
 
@@ -173,6 +177,12 @@ export function retrieveKnowledge(
     const overlap = matchedTerms.size;
     const document = index.documents[docIndex];
     if (!document) continue;
+    // The ML course is a large, self-contained corpus. Keep it out of another course's scoped
+    // answers (so NumPy's ranking is byte-for-byte unchanged), and keep the ML tutor on its own
+    // records when the learner is inside that course. Unscoped questions may still reach ML.
+    if (context.course === 'ml-mastery') {
+      if (document.course && document.course !== 'ml-mastery') continue;
+    } else if (context.course && document.course === 'ml-mastery') continue;
     if (intent === 'interview' && document.kind !== 'interview' && document.type !== 'interview') continue;
     if (intent === 'project' && document.kind !== 'project') continue;
     // A document with no body, answer or explanation can only contribute its title, so it cannot be

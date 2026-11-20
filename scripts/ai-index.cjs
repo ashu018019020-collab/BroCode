@@ -78,9 +78,10 @@ async function buildAiIndex() {
   const tracksIndexPath = path.join(GENERATED, 'tracks', 'index.json');
   const notebookManifestPath = path.join(ROOT, 'public', 'notebooks', 'manifest.json');
   const numpyCoursePath = path.join(GENERATED, 'numpy-course', 'index.json');
+  const mlCoursePath = path.join(GENERATED, 'ml-course', 'index.json');
   const inputPaths = [
     sectionsPath, extrasPath, playbookPath, playbookManifestPath, coursesIndexPath, tracksIndexPath,
-    notebookManifestPath, numpyCoursePath,
+    notebookManifestPath, numpyCoursePath, mlCoursePath,
   ];
   const sectionsRaw = readJson(sectionsPath);
   const sections = Array.isArray(sectionsRaw) ? sectionsRaw : sectionsRaw.sections;
@@ -91,6 +92,7 @@ async function buildAiIndex() {
   const playbookManifest = readJson(playbookManifestPath);
   const notebookManifest = readJson(notebookManifestPath);
   const numpyCourse = readJson(numpyCoursePath);
+  const mlCourse = readJson(mlCoursePath);
 
   const [roadmap, career] = await Promise.all([
     import(pathToFileURL(path.join(ROOT, 'src', 'core', 'learning', 'roadmap.ts')).href),
@@ -110,9 +112,10 @@ async function buildAiIndex() {
    */
   const courseTitleBySlug = new Map();
   for (const course of courseIndex.courses ?? []) courseTitleBySlug.set(course.slug, plain(course.name));
-  // NumPy Mastery publishes its own artifact rather than a `courses/index.json` entry; its documents
-  // still need the canonical title every other course-tagged document carries.
+  // NumPy Mastery and the ML course publish their own artifacts rather than `courses/index.json`
+  // entries; their documents still need the canonical title every other course-tagged document carries.
   if (numpyCourse?.course?.title) courseTitleBySlug.set('numpy-mastery', plain(numpyCourse.course.title));
+  if (mlCourse?.course?.title) courseTitleBySlug.set('ml-mastery', plain(mlCourse.course.title));
   const nameOfCourse = (slug) => courseTitleBySlug.get(slug) ?? '';
 
   const courseBySection = new Map();
@@ -351,6 +354,47 @@ async function buildAiIndex() {
           route: `/numpy?module=${encodeURIComponent(module.id)}&section=${encodeURIComponent(sectionKey)}`,
           source: 'NumPy Mastery course',
           sourceRef: `public/generated/numpy-course/index.json#modules[${module.id}].sections.${sectionKey}[${index}]`,
+        });
+      }
+    }
+  }
+
+  /**
+   * Machine Learning — Zero to Professional is the second self-contained course artifact. Like the
+   * NumPy pass above, every published record gets an exact `ml-course/index.json#modules[...]`
+   * sourceRef and a route that opens its module/section, so an answer can never cite the course as
+   * a whole when it used one specific lesson. The id namespace (`ml:`) keeps these records distinct
+   * from curriculum sections, question-bank items and NumPy's own `numpy:` namespace.
+   */
+  const ML_KIND = {
+    learn: 'concept', interview: 'interview', coding: 'coding', logic: 'logic', debug: 'debug',
+    practice: 'practice', miniProject: 'project', projectLab: 'project', defense: 'defense',
+    checkpoint: 'checkpoint',
+  };
+  for (const module of mlCourse.modules ?? []) {
+    for (const [sectionKey, entries] of Object.entries(module.sections ?? {})) {
+      for (const [index, entry] of (entries ?? []).entries()) {
+        const title = entry.title ?? entry.q ?? entry.task ?? entry.statement;
+        if (!title) continue;
+        const body = textOf(
+          entry.body, entry.realWorld, entry.simple, entry.pro, entry.task, entry.statement,
+          entry.code, entry.output, entry.expected, entry.error, entry.fix, entry.steps,
+          entry.why, entry.rubric, entry.options, entry.solution, entry.hint,
+        );
+        add({
+          id: `ml:${module.id}:${sectionKey}:${index}`,
+          kind: ML_KIND[sectionKey] ?? 'concept',
+          type: sectionKey,
+          difficulty: entry.difficulty,
+          title,
+          answer: entry.answer,
+          body,
+          course: 'ml-mastery',
+          chapter: module.no,
+          chapterTitle: module.title,
+          route: `/ml?module=${encodeURIComponent(module.id)}&section=${encodeURIComponent(sectionKey)}`,
+          source: 'Machine Learning course',
+          sourceRef: `public/generated/ml-course/index.json#modules[${module.id}].sections.${sectionKey}[${index}]`,
         });
       }
     }

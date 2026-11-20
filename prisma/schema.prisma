@@ -54,6 +54,9 @@ model ProgressSnapshot {
   /// The NumPy course's own records (sections, drafts, capstone ticks), validated before storage.
   /// One bounded JSON object, so a static deployment syncs course progress without the account API.
   perCourse        Json     @default("{}") @map("per_course")
+  /// The ML course's own `mmod:` section records. A dedicated column keeps an ML save from
+  /// replacing NumPy's `per_course` payload (and vice versa).
+  mlPerCourse      Json     @default("{}") @map("ml_per_course")
   updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
   user             Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
 

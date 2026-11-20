@@ -15,6 +15,7 @@ import level3 from './level3.mjs';
 import level4 from './level4.mjs';
 import { expansions } from './expansion.mjs';
 import { checkpointAdditions } from './checkpoint-expansion.mjs';
+import { checkpointAdditions2 } from './checkpoint-batch2.mjs';
 
 export const course = {
   id: 'ml-mastery',
@@ -59,7 +60,7 @@ export const modules = baseModules.map((module) => {
     interview: [...(module.interview ?? []), ...(extra.interview ?? [])],
     coding: [...(module.coding ?? []), ...(extra.coding ?? [])],
     logic: [...(module.logic ?? []), ...(extra.logic ?? [])],
-    checkpoint: [...(module.checkpoint ?? []), ...checkpointAdditions(module)],
+    checkpoint: [...(module.checkpoint ?? []), ...checkpointAdditions(module), ...checkpointAdditions2(module)],
   };
 });
 

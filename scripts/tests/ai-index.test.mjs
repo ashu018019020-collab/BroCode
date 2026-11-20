@@ -98,7 +98,8 @@ test('the AI index corpus is plain strings everywhere — a localized { en, hi }
   assert.ok(titled.every((document) => typeof document.courseTitle === 'string'));
   assert.deepEqual([...new Set(titled.map((document) => document.courseTitle))].sort(), [
     'AI Career Foundations', 'Agentic AI', 'Build, Production & System Design', 'Data Engineering',
-    'Generative AI', 'Interview & Career', 'Machine Learning & NLP', 'NumPy & Pandas', 'NumPy Mastery',
+    'Generative AI', 'Interview & Career', 'Machine Learning & NLP',
+    'Machine Learning — Zero to Professional', 'NumPy & Pandas', 'NumPy Mastery',
     'Python', 'SQL', 'Statistics & Data Analysis',
   ]);
   // `KnowledgeCourse.title` is rendered by the assistant's course list, so it is plain too.
@@ -257,6 +258,56 @@ test('section and course context measurably promote the matching lesson material
   assert.ok(cold.length && warm.length);
   assert.equal(warm[0].document.sectionId, 's01');
   assert.ok(warm[0].score > cold[0].score);
+});
+
+test('every Machine Learning course entry is retrievable with a traceable source', async () => {
+  const index = await buildAiIndex();
+  const course = JSON.parse(read('public/generated/ml-course/index.json'));
+  const expected = course.modules.reduce(
+    (total, module) => total + Object.values(module.sections).reduce((sum, entries) => sum + entries.length, 0),
+    0,
+  );
+  const mlDocs = index.documents.filter((document) => document.course === 'ml-mastery');
+  assert.equal(mlDocs.length, expected, 'every published ML course record must be indexed');
+  assert.equal(new Set(mlDocs.map((document) => document.id)).size, expected, 'ML document ids must be unique');
+  assert.ok(mlDocs.every((document) =>
+    document.courseTitle === course.course.title
+    && document.id.startsWith('ml:')
+    && document.route.startsWith('/ml?module=ml')
+    && document.sourceRef.startsWith('public/generated/ml-course/index.json#modules[')
+    && document.sourceRef.includes('.sections.')), 'an ML document must carry its course, route and exact record path');
+  assert.ok(mlDocs.some((document) => document.type === 'learn' && document.body?.length > 100),
+    'a Learn lesson must carry the explanation, not just its title');
+
+  const context = assistantContextForPage('/ml', '?module=ml01&section=learn', sections, blankState(), index);
+  assert.equal(context.courseSlug, 'ml-mastery');
+  assert.equal(context.courseTitle, course.course.title);
+  const hits = retrieveKnowledge(index, 'What is overfitting?', { course: 'ml-mastery' }, 20);
+  assert.ok(hits.length > 0, 'an ML question must retrieve an ML course record');
+  assert.ok(hits.every(({ document }) => !document.course || document.course === 'ml-mastery'),
+    'the ML course scope must not mix in another course');
+  const learned = hits.map(({ document }) => document)
+    .find((document) => document.type === 'learn' && document.body?.includes('overfitting'));
+  assert.ok(learned, 'the ML Learn material must be retrievable, not only its assessment items');
+  assert.equal(learned.courseTitle, course.course.title);
+  assert.match(learned.route, /^\/ml\?module=ml\d+&section=learn$/);
+  assert.match(learned.sourceRef, /^public\/generated\/ml-course\/index\.json#/);
+
+  const answer = askLocal('What is overfitting?', sections, blankState(), context, 0, index);
+  assert.equal(answer.kind, 'curriculum');
+  assert.ok(answer.sources[0].route.startsWith('/ml?module=ml'));
+  assert.match(answer.sources[0].reference, /public\/generated\/ml-course\/index\.json#/);
+});
+
+test('ML records never enter NumPy-scoped retrieval and leave its ranking unchanged', async () => {
+  const index = await buildAiIndex();
+  const hits = retrieveKnowledge(index, 'NumPy array shape', { course: 'numpy-mastery' }, 20);
+  assert.ok(hits.length > 0);
+  assert.ok(hits.every(({ document }) => document.course !== 'ml-mastery'),
+    'a NumPy question must not be answered from the ML course');
+  // This is the pre-ML top hit for this query: the older NumPy & Pandas lesson. Scoping to NumPy
+  // must preserve that result even though the corpus now contains 13,500 ML records.
+  assert.equal(hits[0].document.id, 'lesson:s17:concept:2');
 });
 
 test('notebook source cells and the career readiness registry are indexed without outputs or private archives', async () => {

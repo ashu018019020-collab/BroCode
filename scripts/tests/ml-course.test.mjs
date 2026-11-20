@@ -19,6 +19,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const artifact = JSON.parse(fs.readFileSync(path.join(ROOT, 'public', 'generated', 'ml-course', 'index.json'), 'utf8'));
 register('./_ts-resolve.mjs', import.meta.url);
 const engine = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/mcourse.ts')).href);
+const courseSearch = await import(pathToFileURL(path.join(ROOT, 'src/core/learning/ncourse.ts')).href);
 const SECTIONS = ['learn', 'interview', 'coding', 'logic', 'debug', 'practice', 'miniProject', 'projectLab', 'defense', 'checkpoint'];
 
 test('ml course: 27 modules, in the authored order', () => {
@@ -87,14 +88,15 @@ test('ml course: every authored question is answered and the expansion reaches e
   }
 });
 
-test('ml course: every module has the four new checkpoint formats beside its MCQs', () => {
+test('ml course: every module keeps the authored checkpoint formats beside its MCQs', () => {
   for (const module of artifact.modules) {
     const checkpoints = module.sections.checkpoint;
-    assert.equal(checkpoints.length, 6, `${module.id}: expected 2 MCQs + 4 new formats`);
-    assert.equal(checkpoints.filter((entry) => entry.format === 'mcq').length, 2, `${module.id}: original MCQs must remain`);
-    for (const format of ['truefalse', 'blank', 'output', 'rubric']) {
-      assert.equal(checkpoints.filter((entry) => entry.format === format).length, 1, `${module.id}: one ${format} checkpoint`);
+    assert.ok(checkpoints.length >= 50, `${module.id}: expected at least 50 checkpoints`);
+    assert.ok(checkpoints.filter((entry) => entry.format === 'mcq').length >= 2, `${module.id}: original MCQs must remain`);
+    for (const format of ['truefalse', 'blank', 'rubric']) {
+      assert.ok(checkpoints.filter((entry) => entry.format === format).length >= 2, `${module.id}: at least two ${format} checkpoints`);
     }
+    assert.equal(checkpoints.filter((entry) => entry.format === 'output').length, 1, `${module.id}: one output checkpoint`);
     for (const entry of checkpoints) {
       assert.ok(String(entry.answer ?? '').trim(), `${entry.id}: answer is empty`);
       assert.ok(String(entry.why ?? '').trim(), `${entry.id}: explanation is empty`);
@@ -118,13 +120,21 @@ test('ml course: every module has the four new checkpoint formats beside its MCQ
   }
 });
 
-test('ml course: the published target is honest, not padded', () => {
+test('ml course: the published target is met by real records, not padding', () => {
   assert.equal(artifact.stats.targetTotal, 13500);
   assert.equal(artifact.stats.bank.target, 500);
-  assert.equal(artifact.stats.bank.perModule, Math.round(artifact.stats.entries / 27));
-  assert.equal(artifact.stats.bank.shortfall, 27 * 500 - artifact.stats.entries);
-  assert.equal(artifact.stats.bank.shortPerModule, 500 - artifact.stats.bank.perModule);
-  assert.ok(artifact.stats.entries > 0 && artifact.stats.entries < 13500);
+  assert.equal(artifact.stats.bank.perModule, 500);
+  assert.equal(artifact.stats.bank.shortfall, 0);
+  assert.equal(artifact.stats.bank.shortPerModule, 0);
+  assert.equal(artifact.stats.entries, 13500);
+  for (const module of artifact.modules) assert.ok(module.entries >= 500, `${module.id}: ${module.entries} records`);
+});
+
+test('ml course: the shared record search reaches the lesson that teaches the topic', () => {
+  const hits = courseSearch.searchCourse(artifact.modules, 'overfitting', 10);
+  assert.ok(hits.some((hit) => hit.moduleId === 'ml09' && hit.section === 'learn'),
+    'record search must reach the ML Learn lesson, not only a module title');
+  assert.ok(hits.every((hit) => hit.title && hit.snippet), 'every search hit must carry published text');
 });
 
 test('ml course: mmod: is its own family and a module needs every section', () => {

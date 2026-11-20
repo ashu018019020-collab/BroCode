@@ -195,6 +195,10 @@ const NUMPY_SYNC_EXACT = ['ncap', 'nlast', 'nlevel'];
 const NUMPY_MAX_DRAFT = 20_000;
 const NUMPY_MAX_BYTES = 64 * 1024;
 
+const ML_SYNC_PREFIX = 'mmod:';
+const ML_MAX_DRAFT = 20_000;
+const ML_MAX_BYTES = 64 * 1024;
+
 function validateNumpyPayload(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new HttpError(400, 'NumPy progress must be an object.');
@@ -218,6 +222,36 @@ function validateNumpyPayload(input) {
   }
   if (JSON.stringify(clean).length > NUMPY_MAX_BYTES) {
     throw new HttpError(413, 'NumPy progress exceeds the payload limit.');
+  }
+  return clean;
+}
+
+/**
+ * The ML payload, validated independently from NumPy's allowlist. Only `mmod:` records may travel;
+ * a NumPy key, a written-draft key, or a free-form field is rejected before it can reach storage.
+ */
+function validateMlPayload(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new HttpError(400, 'ML progress must be an object.');
+  }
+  const entries = Object.entries(input);
+  if (entries.length > 600) throw new HttpError(413, 'ML progress holds too many records.');
+  const clean = {};
+  for (const [key, value] of entries) {
+    if (!key.startsWith(ML_SYNC_PREFIX)) throw new HttpError(400, `ML progress key ${key} is not allowed.`);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      throw new HttpError(400, `ML progress record ${key} must be an object.`);
+    }
+    if (value.answer !== undefined && typeof value.answer !== 'string') {
+      throw new HttpError(400, `ML progress record ${key} has a non-string answer.`);
+    }
+    if (typeof value.answer === 'string' && value.answer.length > ML_MAX_DRAFT) {
+      throw new HttpError(413, `ML progress record ${key} exceeds the draft limit.`);
+    }
+    clean[key] = value;
+  }
+  if (JSON.stringify(clean).length > ML_MAX_BYTES) {
+    throw new HttpError(413, 'ML progress exceeds the payload limit.');
   }
   return clean;
 }
@@ -691,6 +725,30 @@ export function createAuthServer({
         if (action === 'save') {
           const payload = validateNumpyPayload(input.payload);
           await store.saveNumpyProgress(user.profile.id, payload, new Date(now()));
+          json(response, 200, { ok: true, saved: Object.keys(payload).length }, headers);
+          return;
+        }
+        throw new HttpError(400, 'action must be load or save.');
+      }
+
+      /**
+       * Per-course ML progress. This is the same API shape as NumPy but a different route, column
+       * and key family: an ML save can never replace a NumPy payload, and a NumPy key is rejected.
+       * A static deployment has no API here; the client falls back to save_my_ml_progress.
+       */
+      if (request.method === 'POST' && url.pathname === '/api/ml/progress') {
+        ensureSameOrigin(request, allowedOrigin);
+        const user = await requireUser(request);
+        const input = await readJson(request);
+        const action = input?.action;
+        if (action === 'load') {
+          const payload = await store.getMlProgress(user.profile.id);
+          json(response, 200, { ok: true, payload: payload ?? {} }, headers);
+          return;
+        }
+        if (action === 'save') {
+          const payload = validateMlPayload(input.payload);
+          await store.saveMlProgress(user.profile.id, payload, new Date(now()));
           json(response, 200, { ok: true, saved: Object.keys(payload).length }, headers);
           return;
         }

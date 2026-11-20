@@ -1,14 +1,28 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronLeft, ChevronRight, GraduationCap, Play, Search, Target, Trophy } from 'lucide-react';
 import { Bar } from '../../components/ui/ui';
 import { useMLCourse } from '../../core/data/mlcourse';
-import { N_SECTIONS, N_SECTION_LABEL, type NModule } from '../../core/learning/ncourse';
+import { N_SECTION_LABEL, searchCourse } from '../../core/learning/ncourse';
 import { mIsModuleComplete, mNextPlace, mProgress, mSectionKey, mSectionsDone, M_LAST_KEY } from '../../core/learning/mcourse';
-import { useStore } from '../../core/storage/store';
-import { NModuleWorkspace } from '../numpy-mastery/NWorkspace';
+import { collectMlProgress, mergeMlProgress, mlSyncSummary } from '../../core/learning/ml-sync';
+import { loadMlProgress, saveMlProgress } from '../../core/data/ml-progress';
+import { useAuth } from '../../core/auth/AuthProvider';
+import { setState, useStore } from '../../core/storage/store';
+import { NModuleWorkspace, type NCourseWorkspace } from '../numpy-mastery/NWorkspace';
 import { MLogo } from './MLogo';
 import { MLTools } from './MLTools';
+
+const ML_WORKSPACE: NCourseWorkspace = {
+  id: 'ml',
+  pageTitle: 'Machine Learning',
+  route: '/ml',
+  sectionKey: mSectionKey,
+  lastKey: M_LAST_KEY,
+  xpLabel: 'Machine Learning',
+  logo: <MLogo size={48} />,
+  tools: <MLTools />,
+};
 
 /**
  * /ml — Machine Learning: Zero to Professional.
@@ -28,13 +42,64 @@ export default function MLCoursePage() {
   const open = modules.find((module) => module.id === params.get('module')) ?? null;
   const progress = useMemo(() => mProgress(modules, state.attempts), [modules, state.attempts]);
   const next = useMemo(() => mNextPlace(modules, state.attempts), [modules, state.attempts]);
-  const hits = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (needle.length < 2) return [];
-    return modules.filter((module) =>
-      `${module.title} ${module.goal} ${module.sections.learn.map((entry) => entry.title ?? entry.q ?? '').join(' ')}`.toLowerCase().includes(needle),
-    );
-  }, [modules, query]);
+  const hits = useMemo(() => searchCourse(modules, query), [modules, query]);
+
+  const { user } = useAuth();
+  /*
+   * Dedicated ML sync. Only `mmod:` records are collected, sent to `/api/ml/progress`, or written
+   * through `save_my_ml_progress`; NumPy's `nmod:` / `nans:` / `ntick:` keys never enter this path.
+   * Pull once on account arrival, merge local-first, then push a debounced copy after changes.
+   */
+  const [syncState, setSyncState] = useState<'idle' | 'pulling' | 'synced' | 'local' | 'saving' | 'rejected'>('idle');
+  const [syncEpoch, setSyncEpoch] = useState(0);
+  const pushed = useRef('');
+  const pulled = useRef(false);
+  const syncPayload = useMemo(() => collectMlProgress(state.attempts), [state.attempts]);
+  const syncSignature = useMemo(() => JSON.stringify(syncPayload), [syncPayload]);
+
+  useEffect(() => { pulled.current = false; setSyncState('idle'); }, [user?.id]);
+
+  useEffect(() => {
+    if (!user || pulled.current) return;
+    pulled.current = true;
+    setSyncState('pulling');
+    let alive = true;
+    loadMlProgress().then((result) => {
+      if (!alive) return;
+      if (!result.ok) {
+        setSyncState(result.reason === 'rejected' || result.reason === 'invalid' ? 'rejected' : 'local');
+        return;
+      }
+      const merged = mergeMlProgress(syncPayload, result.payload);
+      if (merged.added.length) {
+        setState((s) => ({ ...s, attempts: { ...merged.payload, ...s.attempts } }));
+      }
+      // The remote copy is the baseline we just observed. If this device has a record the remote
+      // does not, the save effect still needs one run to upload the local-first merge instead of
+      // waiting for the learner to complete another section.
+      pushed.current = JSON.stringify(result.payload);
+      setSyncState('synced');
+      setSyncEpoch((epoch) => epoch + 1);
+    });
+    return () => { alive = false; };
+  }, [user, syncPayload]);
+
+  useEffect(() => {
+    if (!user || !pulled.current) return;
+    if (!Object.keys(syncPayload).length || syncSignature === pushed.current) return;
+    const timer = window.setTimeout(() => {
+      setSyncState('saving');
+      saveMlProgress(syncPayload).then((result) => {
+        if (result.ok) {
+          pushed.current = syncSignature;
+          setSyncState('synced');
+        } else {
+          setSyncState(result.reason === 'rejected' ? 'rejected' : 'local');
+        }
+      });
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [user, syncPayload, syncSignature, syncEpoch]);
 
   const openModule = (moduleId: string, section?: string) => {
     const nextParams = new URLSearchParams(params);
@@ -58,28 +123,19 @@ export default function MLCoursePage() {
   if (open) {
     return (
       <NModuleWorkspace
+        course={ML_WORKSPACE}
+        courseTitle={course.title}
         module={open}
         modules={modules}
         bank={stats.bank.modules[open.id]}
         initialSection={params.get('section')}
-        onOpen={(id) => openModule(id)}
+        onOpen={openModule}
         onBack={() => {
           const nextParams = new URLSearchParams(params);
           nextParams.delete('module');
           nextParams.delete('section');
           setParams(nextParams);
         }}
-        sectionKey={mSectionKey}
-        isComplete={mIsModuleComplete}
-        lastKey={M_LAST_KEY}
-        courseTitle={course.title}
-        pageTitle="Machine Learning"
-        route="/ml"
-        logo={<MLogo size={48} />}
-        tools={<MLTools />}
-        award={10}
-        scopePrefix="ml"
-        xpLabel="Machine Learning"
       />
     );
   }
@@ -103,7 +159,7 @@ export default function MLCoursePage() {
           <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
             <span className="chip"><BookOpen size={12} /> {stats.modules} modules</span>
             <span className="chip"><Target size={12} /> {stats.entries.toLocaleString()} records</span>
-            <span className="chip">{modules.reduce((total, module) => total + module.hours, 0)}h total</span>
+            <span className="chip">{course.hours}h total</span>
           </div>
         </div>
         <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -144,20 +200,20 @@ export default function MLCoursePage() {
           <div style={{ marginTop: 8 }}>
             {hits.length ? (
               <>
-                {hits.map((module) => (
+                {hits.map((hit) => (
                   <button
-                    key={module.id}
+                    key={hit.id}
                     type="button"
-                    onClick={() => openModule(module.id)}
+                    onClick={() => openModule(hit.moduleId, hit.section)}
                     style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, borderTop: '1px solid var(--line, #e6e8ee)', padding: '6px 0', cursor: 'pointer', color: 'inherit' }}
                   >
-                    <span className="small"><b>{module.title}</b> <span className="muted">· Module {String(module.no).padStart(2, '0')}</span></span>
-                    <span className="small muted" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{module.goal}</span>
+                    <span className="small"><b>{hit.title}</b> <span className="muted">· {hit.label} · {hit.moduleTitle}</span></span>
+                    <span className="small muted" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hit.snippet}</span>
                   </button>
                 ))}
-                <p className="small muted" style={{ margin: '6px 0 0' }}>{hits.length} matching module{hits.length === 1 ? '' : 's'}.</p>
+                <p className="small muted" style={{ margin: '6px 0 0' }}>{hits.length} result{hits.length === 1 ? '' : 's'} shown, ranked with title matches first.</p>
               </>
-            ) : <p className="small muted" style={{ margin: '8px 0 0' }}>No module matches “{query.trim()}”.</p>}
+            ) : <p className="small muted" style={{ margin: '8px 0 0' }}>No record matches “{query.trim()}”. Try a shorter word.</p>}
           </div>
         )}
       </div>
@@ -201,6 +257,21 @@ export default function MLCoursePage() {
           every record that actually ships; it never pads a counter to hit the target.
         </p>
       </div>
+
+      <p className="small muted" style={{ margin: '8px 0 0' }}>
+        <b>Account sync · </b>
+        {syncState === 'synced'
+          ? `saved to your account (${mlSyncSummary(syncPayload)})`
+          : syncState === 'saving'
+            ? `saving ${mlSyncSummary(syncPayload)}…`
+            : syncState === 'pulling'
+              ? 'loading this account\u2019s ML section records…'
+              : syncState === 'rejected'
+                ? 'the account API rejected this payload; progress stays on this device'
+                : syncState === 'local'
+                  ? 'no account API on this deployment — progress stays on this device'
+                  : 'sign in to sync mmod section records across devices'}
+      </p>
 
       <details className="card" style={{ marginTop: 10 }}>
         <summary className="small" style={{ cursor: 'pointer' }}><b>About this course</b> — description, standard and prerequisites</summary>

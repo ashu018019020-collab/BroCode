@@ -3,6 +3,7 @@ import { SERVICE_UNAVAILABLE_COPY } from './messages';
 import { PUBLIC_SUPABASE_CONFIG } from './public-config';
 import type { ProgressSummary } from './progress';
 import type { NumpySyncPayload } from '../learning/numpy-sync';
+import type { MlSyncPayload } from '../learning/ml-sync';
 
 export type AccountRole = 'user' | 'admin';
 export type AccountStatus = 'active' | 'disabled';
@@ -463,6 +464,46 @@ export async function saveOwnNumpyProgress(payload: NumpySyncPayload): Promise<b
     return true;
   } catch (error) {
     console.warn('[BroCode] Could not save NumPy progress directly to Supabase.', error);
+    return false;
+  }
+}
+
+/**
+ * The ML course payload on the caller's OWN snapshot row.
+ *
+ * This reads `ml_per_course`, never NumPy's `per_course`; the existing SELECT policy already limits
+ * the row to `auth.uid() = user_id`, so no new table grant or policy is needed. A missing row is `{}`
+ * (nothing synced yet); a failed read is null, so the caller can say "unavailable" instead of
+ * "empty" and overwrite a real remote payload.
+ */
+export async function loadOwnMlProgress(): Promise<MlSyncPayload | null> {
+  try {
+    const { data, error } = await getSupabaseClient()
+      .from('progress_snapshots')
+      .select('ml_per_course')
+      .maybeSingle();
+    if (error) throw authError(error);
+    const raw = data?.ml_per_course;
+    if (raw === undefined || raw === null) return {};
+    return typeof raw === 'object' && !Array.isArray(raw) ? (raw as MlSyncPayload) : null;
+  } catch (error) {
+    console.warn('[BroCode] Could not read ML progress directly from Supabase.', error);
+    return null;
+  }
+}
+
+/**
+ * Course-only write for deployments without the account API.
+ * `save_my_ml_progress` touches only `ml_per_course`, so it cannot overwrite XP, the resume
+ * position, NumPy's `per_course`, or any `nmod:` record.
+ */
+export async function saveOwnMlProgress(payload: MlSyncPayload): Promise<boolean> {
+  try {
+    const { error } = await getSupabaseClient().rpc('save_my_ml_progress', { per_course: payload });
+    if (error) throw authError(error);
+    return true;
+  } catch (error) {
+    console.warn('[BroCode] Could not save ML progress directly to Supabase.', error);
     return false;
   }
 }
