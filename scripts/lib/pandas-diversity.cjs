@@ -3,13 +3,25 @@
 /**
  * Content-diversity gate for the Pandas Mastery coding tasks.
  *
- * The gate is intentionally scoped to one module: the course repeats the same four warm-up
- * exercises in every module on purpose, but a module's own task bank should not repeat itself.
- * A module fails when two tasks ask the same thing, when a task title is a placeholder, or when
- * the tasks collapse onto only a handful of distinct solutions.
+ * The hard gate is intentionally per module: the course repeats the same warm-up exercises across
+ * modules on purpose, but a module's own task bank must not repeat itself. A module fails when two
+ * tasks ask the same thing, when a title is only filler, or when two tasks use the same solution.
  */
 
-const GENERIC_TITLE = /^(?:(?:pandas|dataframe|series|python|data|coding|code|mini|practice|quick|warm[\s-]?up|bonus)\s+)*(?:task|exercise|practice|problem|question|challenge|activity|assignment|lab|project|mini[\s-]?project|example|demo|solution|answer|untitled|todo|try[\s-]?it|your[\s-]?turn)(?:\s*(?:#|no\.?)?\s*\d+)?$/;
+/*
+ * Titles made only of these words say nothing about the task. Keeping the list as tokens (instead of
+ * one large regex) also catches bare prefixes such as "Warm up" or "Pandas" that the old pattern let
+ * through, while a title like "Practice with groupby" keeps its meaningful word and passes.
+ */
+const TITLE_FILLER = new Set([
+  'pandas', 'dataframe', 'frame', 'data', 'dataset', 'series', 'python',
+  'coding', 'code', 'programming', 'mini', 'practice', 'quick', 'warm', 'warmup', 'up', 'bonus',
+  'task', 'tasks', 'exercise', 'exercises', 'problem', 'problems', 'question', 'questions',
+  'challenge', 'challenges', 'activity', 'activities', 'assignment', 'assignments',
+  'lab', 'labs', 'project', 'projects', 'example', 'examples', 'demo', 'demos',
+  'solution', 'solutions', 'answer', 'answers', 'untitled', 'todo', 'try', 'it', 'your', 'turn',
+  'no', 'number', 'part', 'a', 'an', 'the', 'of', 'for', 'to', 'in', 'on', 'with', 'using', 'and', 'or', 'by', 'from',
+]);
 
 /** Case/whitespace-insensitive text key; trailing sentence punctuation is ignored. */
 function normalizeText(value) {
@@ -21,13 +33,22 @@ function normalizeText(value) {
     .trim();
 }
 
-/** A title is generic when it is only a placeholder word (plus optional numbering/module suffix). */
-function isGenericTitle(value) {
-  const cleaned = normalizeText(value)
-    .replace(/\(p\d{2}\)/g, '')
+/** Code key: collapse whitespace but preserve case, because column names are case-sensitive. */
+function normalizeCode(value) {
+  return String(value ?? '')
     .replace(/\s+/g, ' ')
     .trim();
-  return !cleaned || !/[a-z]/i.test(cleaned) || GENERIC_TITLE.test(cleaned);
+}
+
+/** A title is generic when nothing remains after filler words, numbers, and a `(pNN)` suffix. */
+function isGenericTitle(value) {
+  const meaningful = normalizeText(value)
+    .replace(/\(p\d{2}\)/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .filter((word) => !/^\d+$/.test(word) && !/^p\d{2}$/.test(word) && !TITLE_FILLER.has(word));
+  return meaningful.length === 0;
 }
 
 /**
@@ -42,7 +63,7 @@ function validateTaskDiversity(tasks, moduleId = 'module') {
   const problems = [];
   const statementOwners = new Map();
   const titleOwners = new Map();
-  const solutions = [];
+  const solutionOwners = new Map();
 
   for (const [index, task] of tasks.entries()) {
     const at = task?.title ? `"${task.title}"` : `task ${index + 1}`;
@@ -64,21 +85,17 @@ function validateTaskDiversity(tasks, moduleId = 'module') {
       }
     }
 
-    const solutionKey = normalizeText(task?.solution);
-    if (solutionKey) solutions.push({ at, key: solutionKey });
-  }
-
-  if (tasks.length >= 2) {
-    const distinct = new Set(solutions.map((s) => s.key)).size;
-    const required = Math.max(2, Math.ceil(tasks.length / 2));
-    if (distinct < required) {
-      problems.push(
-        `${moduleId}: ${tasks.length} tasks use only ${distinct} distinct solution${distinct === 1 ? '' : 's'} (need ${required})`,
-      );
+    const solutionKey = normalizeCode(task?.solution);
+    if (solutionKey) {
+      if (solutionOwners.has(solutionKey)) {
+        problems.push(`${moduleId}: task ${at} repeats the solution of ${solutionOwners.get(solutionKey)}`);
+      } else {
+        solutionOwners.set(solutionKey, at);
+      }
     }
   }
 
   return problems;
 }
 
-module.exports = { validateTaskDiversity, isGenericTitle, normalizeText, GENERIC_TITLE };
+module.exports = { validateTaskDiversity };

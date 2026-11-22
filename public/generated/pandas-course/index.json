@@ -24545,15 +24545,15 @@
     },
     {
      "title": "Three equal-count buckets",
-     "statement": "Split into three equal-count buckets and print the bucket sizes.",
-     "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4, 5, 6])\nprint(pd.qcut(s, 3).value_counts().sort_index().tolist())",
-     "expected": "[2, 2, 2]"
+     "statement": "Assign each value to one of three equal-count buckets and print the zero-based bucket labels as a list.",
+     "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4, 5, 6])\nprint(pd.qcut(s, 3, labels=False).tolist())",
+     "expected": "[0, 0, 1, 1, 2, 2]"
     },
     {
-     "title": "Rank correlation",
-     "statement": "Print the Spearman correlation rounded to two decimals.",
-     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4], \"b\": [1, 4, 9, 16]})\nprint(round(float(df[\"a\"].corr(df[\"b\"], method=\"spearman\")), 2))",
-     "expected": "1.0"
+     "title": "Kendall rank correlation",
+     "statement": "Print the Kendall rank correlation between the two columns rounded to two decimals.",
+     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4], \"b\": [1, 3, 2, 4]})\nprint(round(float(df[\"a\"].corr(df[\"b\"], method=\"kendall\")), 2))",
+     "expected": "0.67"
     }
    ],
    "interviewBank": [
@@ -24972,21 +24972,21 @@
      {
       "id": "p17:coding:t13",
       "title": "Three equal-count buckets",
-      "statement": "Split into three equal-count buckets and print the bucket sizes.",
+      "statement": "Assign each value to one of three equal-count buckets and print the zero-based bucket labels as a list.",
       "kind": "task",
       "starter": "import pandas as pd\n\n# read the task, then print the result it asks for\n",
-      "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4, 5, 6])\nprint(pd.qcut(s, 3).value_counts().sort_index().tolist())",
-      "expected": "[2, 2, 2]",
+      "solution": "import pandas as pd\n\ns = pd.Series([1, 2, 3, 4, 5, 6])\nprint(pd.qcut(s, 3, labels=False).tolist())",
+      "expected": "[0, 0, 1, 1, 2, 2]",
       "difficulty": "medium"
      },
      {
       "id": "p17:coding:t14",
-      "title": "Rank correlation",
-      "statement": "Print the Spearman correlation rounded to two decimals.",
+      "title": "Kendall rank correlation",
+      "statement": "Print the Kendall rank correlation between the two columns rounded to two decimals.",
       "kind": "task",
       "starter": "import pandas as pd\n\n# read the task, then print the result it asks for\n",
-      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4], \"b\": [1, 4, 9, 16]})\nprint(round(float(df[\"a\"].corr(df[\"b\"], method=\"spearman\")), 2))",
-      "expected": "1.0",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"a\": [1, 2, 3, 4], \"b\": [1, 3, 2, 4]})\nprint(round(float(df[\"a\"].corr(df[\"b\"], method=\"kendall\")), 2))",
+      "expected": "0.67",
       "difficulty": "hard"
      }
     ],
@@ -27472,8 +27472,8 @@
     },
     {
      "title": "Count a mask in numpy",
-     "statement": "Convert the mask to numpy and print how many True values it holds.",
-     "solution": "import pandas as pd\n\ns = pd.Series([1, 5, 9])\nprint(int(s.gt(4).to_numpy().sum()))",
+     "statement": "Convert the mask to a numpy array and count its True values with numpy.",
+     "solution": "import numpy as np\nimport pandas as pd\n\ns = pd.Series([1, 5, 9])\nprint(int(np.count_nonzero(s.gt(4).to_numpy())))",
      "expected": "2"
     },
     {
@@ -27899,10 +27899,10 @@
      {
       "id": "p19:coding:t13",
       "title": "Count a mask in numpy",
-      "statement": "Convert the mask to numpy and print how many True values it holds.",
+      "statement": "Convert the mask to a numpy array and count its True values with numpy.",
       "kind": "task",
       "starter": "import pandas as pd\n\n# read the task, then print the result it asks for\n",
-      "solution": "import pandas as pd\n\ns = pd.Series([1, 5, 9])\nprint(int(s.gt(4).to_numpy().sum()))",
+      "solution": "import numpy as np\nimport pandas as pd\n\ns = pd.Series([1, 5, 9])\nprint(int(np.count_nonzero(s.gt(4).to_numpy())))",
       "expected": "2",
       "difficulty": "medium"
      },
@@ -28925,9 +28925,9 @@
     },
     {
      "title": "Pass rate per city",
-     "statement": "Print learners and pass rate per city rounded to two decimals.",
-     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nprint(df.groupby(\"city\")[\"passed\"].agg(learners=\"size\", rate=\"mean\").round(2).to_dict(\"index\"))",
-     "expected": "{'Delhi': {'learners': 1, 'rate': 1.0}, 'Pune': {'learners': 2, 'rate': 0.5}}"
+     "statement": "Use a crosstab of city and passed to print learners and pass rate per city rounded to two decimals.",
+     "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nct = pd.crosstab(df[\"city\"], df[\"passed\"])\nprint({city: (int(ct.loc[city].sum()), round(float(ct.loc[city, True] / ct.loc[city].sum()), 2)) for city in ct.index})",
+     "expected": "{'Delhi': (1, 1.0), 'Pune': (2, 0.5)}"
     },
     {
      "title": "Distinct users",
@@ -29344,11 +29344,11 @@
      {
       "id": "p20:coding:t11",
       "title": "Pass rate per city",
-      "statement": "Print learners and pass rate per city rounded to two decimals.",
+      "statement": "Use a crosstab of city and passed to print learners and pass rate per city rounded to two decimals.",
       "kind": "task",
       "starter": "import pandas as pd\n\n# read the task, then print the result it asks for\n",
-      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nprint(df.groupby(\"city\")[\"passed\"].agg(learners=\"size\", rate=\"mean\").round(2).to_dict(\"index\"))",
-      "expected": "{'Delhi': {'learners': 1, 'rate': 1.0}, 'Pune': {'learners': 2, 'rate': 0.5}}",
+      "solution": "import pandas as pd\n\ndf = pd.DataFrame({\"city\": [\"Pune\", \"Pune\", \"Delhi\"], \"passed\": [True, False, True]})\nct = pd.crosstab(df[\"city\"], df[\"passed\"])\nprint({city: (int(ct.loc[city].sum()), round(float(ct.loc[city, True] / ct.loc[city].sum()), 2)) for city in ct.index})",
+      "expected": "{'Delhi': (1, 1.0), 'Pune': (2, 0.5)}",
       "difficulty": "hard"
      },
      {
