@@ -69,6 +69,17 @@ function load() {
   }));
 }
 
+/** `generated` is a publication timestamp, not content; ignore it when checking freshness. */
+function comparableManifest(text) {
+  try {
+    const parsed = JSON.parse(text);
+    delete parsed.generated;
+    return JSON.stringify(parsed);
+  } catch {
+    return null;
+  }
+}
+
 function main() {
   const notebooks = load();
   if (!notebooks.length) fail(['no packs in content/colab-ml']);
@@ -101,7 +112,8 @@ function main() {
 
   if (CHECK) {
     const stale = [];
-    if (!fs.existsSync(path.join(OUT, 'manifest.json')) || fs.readFileSync(path.join(OUT, 'manifest.json'), 'utf8') !== payload) stale.push('public/colab-ml/manifest.json');
+    const manifestPath = path.join(OUT, 'manifest.json');
+    if (!fs.existsSync(manifestPath) || comparableManifest(fs.readFileSync(manifestPath, 'utf8')) !== comparableManifest(payload)) stale.push('public/colab-ml/manifest.json');
     for (const { file, nb } of notebooks) {
       const dest = path.join(OUT, file);
       if (!fs.existsSync(dest) || fs.readFileSync(dest, 'utf8') !== JSON.stringify(nb, null, 1) + '\n') stale.push(`public/colab-ml/${file}`);
