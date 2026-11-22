@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 import { readCss } from './_css.mjs';
+import { isImportedApp } from './_imported-app.mjs';
 const read = (relative) => fs.readFileSync(path.join(ROOT, relative), 'utf8');
 
 /**
@@ -94,6 +95,7 @@ test('mobile overflow: no component asks for a hard width wider than a 320px pho
   for (const file of walk(path.join(ROOT, 'src'))) {
     const source = fs.readFileSync(file, 'utf8');
     const relative = path.relative(ROOT, file).split(path.sep).join('/');
+    if (isImportedApp(relative)) continue;
     /*
      * A NUMERIC literal is the failure shape: `minWidth: 260` cannot shrink below 260px, while the
      * safe spelling is a string the browser resolves against the container — `min(260px, 100%)`

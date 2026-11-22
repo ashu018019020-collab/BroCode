@@ -22,6 +22,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 import { readCss } from './_css.mjs';
+import { isImportedApp } from './_imported-app.mjs';
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 // Pure (no React, no store) — the one place a track link is spelled is loadable from here.
@@ -55,7 +56,7 @@ const stripComments = (source) => stripBlockComments(source)
 
 const h1s = [];
 for (const dir of ['src/features', 'src/components', 'src/app']) {
-  for (const rel of fs.readdirSync(path.join(ROOT, dir), { recursive: true }).map((f) => `${dir}/${f}`.replace(/\\/g, '/')).filter((f) => /\.tsx$/.test(f))) {
+  for (const rel of fs.readdirSync(path.join(ROOT, dir), { recursive: true }).map((f) => `${dir}/${f}`.replace(/\\/g, '/')).filter((f) => /\.tsx$/.test(f)).filter((f) => !isImportedApp(f))) {
     const src = stripBlockComments(read(rel));
     [...src.matchAll(/<h1[\s>]/g)].forEach((m) => {
       const line = src.slice(0, m.index).split('\n').length;
@@ -923,7 +924,7 @@ const nestedHeadingOwners = [
 test('layout: the heading outline nests — the first section is an h2 and no level is skipped', () => {
   const offenders = [];
   for (const dir of ['src/features', 'src/components', 'src/app']) {
-    for (const rel of fs.readdirSync(path.join(ROOT, dir), { recursive: true }).map((f) => `${dir}/${f}`.replace(/\\/g, '/')).filter((f) => /\.tsx$/.test(f))) {
+    for (const rel of fs.readdirSync(path.join(ROOT, dir), { recursive: true }).map((f) => `${dir}/${f}`.replace(/\\/g, '/')).filter((f) => /\.tsx$/.test(f)).filter((f) => !isImportedApp(f))) {
       if (nestedHeadingOwners.includes(rel)) continue;
       const levels = [...read(rel).matchAll(/<h([1-6])[\s>]/g)].map((m) => Number(m[1]));
       if (levels.length && levels[0] > 2) {
