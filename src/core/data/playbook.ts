@@ -20,7 +20,10 @@ export type { PbIndex, PbItem, PbChapter, PbTotals, PbTrackRow, PbTarget, PbTrac
  */
 let indexPromise: Promise<PbIndex | null> | null = null;
 let itemsPromise: Promise<{ count: number; items: PbItem[] } | null> | null = null;
-let publishedPromise: Promise<{ total: number; sections: number; interview: number } | null> | null = null;
+let publishedPromise: Promise<{
+  total: number; sections: number; interview: number;
+  byType: Record<string, number>; generatedAt: string | null;
+} | null> | null = null;
 let notebooksPromise: Promise<{ notebooks: number; cells: number } | null> | null = null;
 
 const loadJson = <T,>(url: string, fail: () => T): Promise<T> =>
@@ -31,7 +34,7 @@ export const loadPlaybookItems = () =>
   (itemsPromise ??= loadJson<{ count: number; items: PbItem[] } | null>('./generated/playbook/items.json', () => null));
 
 /** Only the two columns of the bank manifest the path needs — the file itself is much richer. */
-interface BankManifestLite { total: number; sections: { byType?: Record<string, number> }[] }
+interface BankManifestLite { total: number; generatedAt?: string; sections: { byType?: Record<string, number> }[] }
 interface NotebookManifestLite { notebooks: { cells?: number }[] }
 
 /** Published question count + the interview slice, read from the bank manifest, never hard-coded. */
@@ -39,7 +42,11 @@ export const loadPublished = () =>
   (publishedPromise ??= loadJson<BankManifestLite | null>('./generated/questions/manifest.json', () => null).then((m) => {
     if (!m?.sections) return null;
     const interview = m.sections.reduce((a, b) => a + (b.byType?.interview ?? 0), 0);
-    return { total: m.total, sections: m.sections.length, interview };
+    const byType: Record<string, number> = {};
+    for (const section of m.sections) {
+      for (const [kind, count] of Object.entries(section.byType ?? {})) byType[kind] = (byType[kind] ?? 0) + count;
+    }
+    return { total: m.total, sections: m.sections.length, interview, byType, generatedAt: m.generatedAt ?? null };
   }));
 
 /** Notebook count + total cells: the denominator for "cells run" on the Notebook Lab card. */

@@ -105,6 +105,7 @@ export function usePathCtx(): PathCtx {
           labs: pbIndex.totals.labs,
           miniProjects: pbIndex.totals.miniProjectBlueprints + pbIndex.totals.miniProjectCapstones,
           methodAnswers: pbIndex.totals.methodAnswers,
+          byType: pbIndex.totals.byType,
         }
         : null,
       notebooks,

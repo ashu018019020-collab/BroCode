@@ -87,7 +87,7 @@ export interface PathCtx {
     bookmarksPlaybook: number;
   };
   /** public/generated/questions/manifest.json */
-  published: { total: number; sections: number; interview: number } | null;
+  published: { total: number; sections: number; interview: number; byType: Record<string, number>; generatedAt: string | null } | null;
   /** public/generated/playbook/manifest.json (pages/chapters/items + the document's own tallies). */
   playbook: {
     pages: number;
@@ -97,6 +97,7 @@ export interface PathCtx {
     labs: number;
     miniProjects: number;
     methodAnswers: number;
+    byType: Record<string, number>;
   } | null;
   /** public/notebooks/manifest.json */
   notebooks: { notebooks: number; cells: number } | null;

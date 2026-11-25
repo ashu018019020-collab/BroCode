@@ -1,9 +1,13 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, FlaskConical, ListChecks, Play, Sparkles, Code2, NotebookPen, Mic2, GraduationCap, FolderGit2 } from 'lucide-react';
+import {
+  ArrowRight, BookOpen, FlaskConical, ListChecks, Play, Sparkles, Code2, NotebookPen, Mic2,
+  GraduationCap, FolderGit2, Target, Trophy, Layers,
+} from 'lucide-react';
 import { TRACK_DEFS } from '../../app/App';
 import { trackHref } from '../../core/learning/surfaces';
 import { AUTH_SIGN_IN_ACTION } from '../../core/ai/actions';
 import { useCurriculum } from '../../core/data/curriculum';
+import { useCourseIndex } from '../../core/data/courses';
 import { useAuth } from '../../core/auth/AuthProvider';
 import { usePathCtx } from '../../core/data/paths';
 import { useStore } from '../../core/storage/store';
@@ -12,33 +16,34 @@ import { resumeTarget } from '../../core/learning/resume';
 /**
  * The front door — the PUBLIC page an unauthenticated visitor sees at `/`.
  *
- * Every figure is read from a real content manifest or from the path context — the headline numbers
- * ARE the app's own (8 tracks, 29 modules, the published question count, the Playbook's item count).
- * No seeded, rounded-up or invented figure appears on this page: a study app that lies about its size
- * on the first screen has spent its only first impression.
+ * Every figure is read from a published manifest: the curriculum's 29 sections, the bank
+ * manifest's 13,865 questions, the courses index's 11 courses / 36 roadmap steps / 87 projects,
+ * and the bundled Practice Archive's 476 items. A missing manifest prints an em dash — never a
+ * zero, never a rounded-up number.
+ *
+ * The archive is labelled for what it is. The 476 items were called "Playbook Items" on the old
+ * homepage, but they are imported PRACTICE items (384 interview drills, 51 checkpoints, 27 coding,
+ * 7 theory, 1 logic, 6 defense). Calling them Playbooks made the product look like it sold a
+ * second learning library it does not have; the band below says so plainly and links to the real
+ * route (`/playbook`), whose nav label is also "Practice Archive".
  *
  * WHAT CHANGED WHEN ACCOUNTS BECAME MANDATORY: this page used to be an entry point INTO the app
- * ("Start Learning Free" went straight to onboarding, and the pillar tiles walked a visitor in). It
- * is now a public OVERVIEW: the two buttons that lead anywhere are Sign in and Create account, and
- * the pillar/domain links still name where each subject lives (they are honest previews — the guard
- * sends a visitor to sign-in and brings them back to that exact page afterwards).
+ * ("Start Learning Free" went straight to onboarding). It is now a public OVERVIEW: the buttons
+ * that lead anywhere are Create account, Sign in and the preview links; every private destination
+ * is guarded and returns the visitor to that exact page after signing in.
  *
- * Everything private is gone from it: no progress, no streak, no XP, no "continue learning". A
- * visitor must not be able to read another learner's data from the marketing page.
- *
- * The page answers four questions in order, and each band is a real link into the product rather
- * than a claim about it: what this is (hero + figures), what I can learn (domains), where each part
- * lives (pillars), how the loop works (four steps), what I actually open (the surfaces), and what a
- * stranger reasonably asks next (FAQ). Nothing here promises a job, a salary or a user count.
+ * Everything private is gone from it: no progress, no streak, no XP, no "continue learning" for a
+ * visitor. A signed-in learner who reaches this page gets the same public content plus a Continue
+ * Learning action resolved from their own state — never another learner's.
  */
-const PILLARS: { to: string; label: string; sub: string }[] = [
-  { to: '/courses', label: 'Courses', sub: '11 courses · the 36-step roadmap' },
-  { to: '/practice', label: 'Practice', sub: 'Bank, exams, review' },
-  { to: '/labs', label: 'Labs', sub: 'Python, SQL, data' },
-  { to: '/projects', label: 'Projects', sub: 'Real builds' },
-  { to: '/interviews', label: 'Interview', sub: 'Mock + defense' },
-  { to: '/career', label: 'Career', sub: 'Defense + job prep' },
-  { to: '/progress', label: 'Progress', sub: 'Mastery analytics' },
+const PILLARS: { to: string; label: string; sub: string; icon: typeof BookOpen }[] = [
+  { to: '/courses', label: 'Courses', sub: 'Structured courses, beginner to advanced, on one 36-step roadmap.', icon: GraduationCap },
+  { to: '/practice', label: 'Practice', sub: 'Topic questions, timed exams, revision and a mistake tracker.', icon: ListChecks },
+  { to: '/labs', label: 'Coding Labs', sub: 'Python, SQL, NumPy and Pandas run in the browser — no install.', icon: FlaskConical },
+  { to: '/projects', label: 'Projects', sub: 'Guided real-world builds with a project gate you can actually pass.', icon: FolderGit2 },
+  { to: '/interviews', label: 'Interview Prep', sub: 'Question rounds, mock interviews, coding rounds and defense.', icon: Mic2 },
+  { to: '/career', label: 'Career', sub: 'Roadmaps, resume readiness, job-prep checklist and portfolio picks.', icon: Target },
+  { to: '/progress', label: 'My Progress', sub: 'Mastery, accuracy, streak and mistakes measured from real records.', icon: Trophy },
 ];
 
 /**
@@ -46,41 +51,89 @@ const PILLARS: { to: string; label: string; sub: string }[] = [
  * opens — a "how it works" band whose rows are not links is a diagram of nothing.
  */
 const STEPS: { n: string; label: string; sub: string; to: string; icon: typeof BookOpen }[] = [
-  { n: '01', label: 'Learn the concept', sub: 'A numbered step with an objective, examples, line-by-line code and common mistakes.', to: '/courses', icon: BookOpen },
-  { n: '02', label: 'Practise it', sub: 'Graded questions from that exact section, with review and a mistake tracker.', to: '/practice', icon: ListChecks },
-  { n: '03', label: 'Build it', sub: 'Run the code in the browser, finish a lab, then ship a project step by step.', to: '/projects', icon: FolderGit2 },
-  { n: '04', label: 'Prove it', sub: 'Mock interviews, a project defense and a job-prep checklist that report real numbers.', to: '/interviews', icon: Mic2 },
+  { n: '01', label: 'Understand', sub: 'Clear concepts, runnable examples, line-by-line code and the mistakes everyone makes.', to: '/courses', icon: BookOpen },
+  { n: '02', label: 'Practice', sub: 'Topic-based questions with difficulty levels, hints, solutions and explanations.', to: '/practice', icon: ListChecks },
+  { n: '03', label: 'Build', sub: 'Browser labs, debugging drills, mini projects and guided real-world builds.', to: '/projects', icon: FolderGit2 },
+  { n: '04', label: 'Prove', sub: 'Interview questions, assessments, a project defense and career preparation.', to: '/interviews', icon: Mic2 },
+];
+
+/** The journey strip in the hero — the same four stages, written for a first-time visitor. */
+const JOURNEY: { n: string; label: string; sub: string }[] = [
+  { n: '01', label: 'LEARN', sub: 'Numbered lessons and runnable examples.' },
+  { n: '02', label: 'PRACTICE', sub: 'Questions, review and a mistake tracker.' },
+  { n: '03', label: 'BUILD', sub: 'Labs, projects and debugging practice.' },
+  { n: '04', label: 'PROVE', sub: 'Mock interviews, defense and job prep.' },
 ];
 
 /** The working surfaces, named the way the rail names them (one place, one name). */
 const SURFACES: { to: string; label: string; sub: string; icon: typeof BookOpen }[] = [
   { to: '/playground', label: 'Code Playground', sub: 'A Python editor that runs in the browser, with error explanations and an AI coach.', icon: Code2 },
   { to: '/notebooks', label: 'Code Bro Lab', sub: 'Notebook cells with a real kernel: run all, restart, and export your work.', icon: NotebookPen },
-  { to: '/labs', label: 'Labs', sub: 'Python, SQL, NumPy + Pandas, AI, RAG and agentic labs — datasets included.', icon: FlaskConical },
-  { to: '/ai-mentor', label: 'AI Mentor', sub: 'Ask about the lesson you are on, by voice or text, and get guided rather than handed the answer.', icon: Sparkles },
+  { to: '/labs', label: 'Interactive Labs', sub: 'Python, SQL, NumPy + Pandas, AI, RAG and agentic labs — datasets included.', icon: FlaskConical },
+  { to: '/ai-mentor', label: 'AI Mentor', sub: 'Ask about the lesson you are on and get guided explanations and hints, not just the answer.', icon: Sparkles },
+  { to: '/playbook', label: 'Practice Archive', sub: '476 practice items covering interview drills, checkpoints, coding and theory.', icon: Layers },
 ];
 
-/**
- * Honest answers only: what the product is, what it needs from you, and what it does not promise.
- * The account answer is the same sentence the hero prints, because a visitor meets both.
- */
-const FAQ: { q: string; a: string }[] = [
-  { q: 'Is BroCode free?', a: 'Yes. The courses, the practice bank and the labs are free to use. An account is required so your progress is saved to you rather than to this browser.' },
-  { q: 'Do I need an account?', a: 'Yes — an account is required to open courses, lessons, practice questions, labs and your progress. Creating one takes a minute.' },
-  { q: 'Do I need to install anything?', a: 'No. Python, SQL, the notebook and the editor run inside the page. The C course compiles on a connected compiler service and says so when it is not reachable.' },
-  { q: 'Does my progress follow me to another device?', a: 'Yes. Your progress snapshot is stored against your account, so signing in on a new device resumes where you stopped.' },
-  { q: 'Is there a Hinglish version?', a: 'Yes. The interface and the course names can switch between English and Hinglish from Profile & Settings.' },
-  { q: 'Will this get me a job?', a: 'It prepares you: real projects, interview practice, a project defense and a job-prep checklist. It does not promise or invent placements, and no employer is claimed as a partner.' },
+/** Honest answers only: what the product is, what it needs from you, and what it does not promise. */
+const FAQ: { q: string; a: string; links?: { to: string; label: string }[] }[] = [
+  {
+    q: 'I am completely new to coding. Where should I start?',
+    a: 'Start at step 1 of the roadmap and work in order: variables, operators, strings, loops, lists, then the data and AI tracks. Every lesson has a runnable example, so you can read and run the same idea before practising it.',
+    links: [{ to: '/courses', label: 'Open the roadmap' }],
+  },
+  {
+    q: 'Which course should I learn first?',
+    a: 'Python. It is the language the rest of the platform uses — pandas, SQL labs, machine learning and the AI labs all assume it. The Python course is the largest in the catalogue and starts from zero.',
+    links: [{ to: '/course/python', label: 'Start Python' }],
+  },
+  {
+    q: 'Do I need previous programming experience?',
+    a: 'No. The first roadmap steps assume no experience: they start with what a variable is and run a first program in the browser. If you already code, the later steps and the interview tracks are the useful entry point.',
+    links: [{ to: '/courses', label: 'See all 11 courses' }],
+  },
+  {
+    q: 'Can I practice coding directly in my browser?',
+    a: 'Yes. The Playground, Code Bro Lab notebooks and the interactive labs run Python, SQL, NumPy and Pandas in the page — there is nothing to install. Saved work stays with your account.',
+    links: [{ to: '/playground', label: 'Open Playground' }, { to: '/labs', label: 'Browse labs' }],
+  },
+  {
+    q: 'How can I build real-world projects?',
+    a: 'Each course step ends in a build, and the Projects surface walks you through complete builds with a gate: a project only counts when its build record exists. That is the work you put on a resume.',
+    links: [{ to: '/projects', label: 'Open Projects' }],
+  },
+  {
+    q: 'Can AI Mentor explain my coding mistakes?',
+    a: 'Yes. AI Mentor reads the lesson or lab you are on and guides you through the error with explanations and hints instead of only handing over the answer. It is available from the rail and every lesson.',
+    links: [{ to: '/ai-mentor', label: 'Meet AI Mentor' }],
+  },
+  {
+    q: 'How can I prepare for technical interviews?',
+    a: 'Use interview mode for question rounds, mock interviews for a timed sitting, and the defense surface for a project walkthrough. The bank also has 1,936 interview questions filed under the sections that teach them.',
+    links: [{ to: '/interviews', label: 'Interview prep' }],
+  },
+  {
+    q: 'How do I track my learning progress?',
+    a: 'Every lesson, question, lab and project writes a real record. My Progress turns those records into mastery and accuracy, and Review resurfaces what is due — there are no guessed percentages.',
+    links: [{ to: '/progress', label: 'My Progress' }],
+  },
+  {
+    q: 'What are Learning Playbooks?',
+    a: 'BroCode does not sell a separate Playbook library. The bundled 476-item archive is the Practice Archive — interview drills, checkpoints, coding, theory and defense questions. Long-form guidance lives in the courses and project labs, which are the structured guides.',
+    links: [{ to: '/playbook', label: 'Open Practice Archive' }, { to: '/courses', label: 'Browse courses' }],
+  },
+  {
+    q: 'How does BroCode help me become job-ready?',
+    a: 'It builds the evidence: finished projects, a defended build, interview answers and a 16-item job-prep checklist. Career pulls those records into one readiness view. It prepares you — it does not promise a job or invent placements.',
+    links: [{ to: '/career', label: 'Open Career' }],
+  },
 ];
 
 /**
  * The learning domains, in homepage order — mirrored by the schema ItemList in index.html.
  * Each chip is a real internal link into the surface that teaches the domain (not a dead span):
- * crawlable `<a href>`s from the front door are how a hash-routed SPA gets its pages discovered,
- * and they give the first-impression list a click path. Track targets are built with `trackHref`
- * and NOT from the track id — `/track/python` loads a file that does not exist (see surfaces.ts),
- * and a hash URL that matches a route but never resolves does not 404, it just sits there loading.
- * `scripts/tests/layout.test.mjs` re-resolves every target below against the real registries.
+ * crawlable `<a href>`s from the front door are how a hash-routed SPA gets its pages discovered.
+ * Track targets are built with `trackHref` and NOT from the track id — `/track/python` loads a
+ * file that does not exist (see surfaces.ts). ORDER AND SHAPE ARE PINNED by layout.test.mjs.
  */
 const DOMAINS: { name: string; to: string }[] = [
   { name: 'Programming', to: trackHref('python') },
@@ -95,101 +148,180 @@ const DOMAINS: { name: string; to: string }[] = [
   { name: 'Career & Interview', to: '/interviews' },
 ];
 
+/** A count, formatted for reading. `null` means the manifest has not arrived — never print 0. */
+const fmt = (value: number | null | undefined) => (typeof value === 'number' ? value.toLocaleString('en-US') : '—');
+const CHALLENGE_LABEL: Record<string, string> = {
+  interview: 'Interview drills', checkpoint: 'Checkpoints', coding: 'Coding', theory: 'Theory', logic: 'Logic', defense: 'Defense',
+};
+
 export default function Landing() {
   const { user } = useAuth();
   const { sections } = useCurriculum();
+  const courses = useCourseIndex();
   const ctx = usePathCtx();
   const state = useStore();
-  /**
-   * A signed-in learner's "Continue Learning" is not a link to `/` — that was a self-link that
-   * looked like a dead button. It resolves the same resume position the dashboard and the footer
-   * use, so all three controls land on the same real lesson.
-   */
   const resume = resumeTarget(state, sections);
+  const signedIn = !!user;
+
+  const featured = courses?.courses.find((c) => c.slug === 'python') ?? courses?.courses[0] ?? null;
+  const archive = ctx.playbook;
+  const published = ctx.published;
+  const updatedAt = published?.generatedAt
+    ? new Date(published.generatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    : null;
 
   const stats = [
-    { icon: Sparkles, n: `${TRACK_DEFS.length}`, l: 'Learning Tracks' },
-    { icon: BookOpen, n: `${sections.length}`, l: 'Hands-on Modules' },
-    { icon: ListChecks, n: ctx.published ? `${ctx.published.total}` : '—', l: 'Practice Questions' },
-    { icon: FlaskConical, n: ctx.playbook ? `${ctx.playbook.items}` : '—', l: 'Playbook Items' },
+    {
+      to: '/practice', icon: Sparkles, value: fmt(TRACK_DEFS.length), label: 'Learning Tracks',
+      note: 'Eight subject tracks, from Python to agentic AI.', ready: true,
+    },
+    {
+      to: '/courses', icon: BookOpen, value: fmt(sections.length), label: 'Hands-on Modules',
+      note: 'Every module has lessons, practice and a build.', ready: true,
+    },
+    {
+      to: '/questions', icon: ListChecks, value: fmt(published?.total), label: 'Practice Questions',
+      note: 'Published questions filed under the section that teaches them.', ready: !!published,
+    },
+    {
+      to: '/playbook', icon: Layers, value: fmt(archive?.items), label: 'Practice Archive',
+      note: 'Practice items — not a separate Playbook product.', ready: !!archive,
+    },
   ];
 
-  /*
-   * The call to action depends on who is looking, and a SIGNED-IN learner can still reach this page
-   * (they are redirected to `/` after signing in, but a bookmark or the footer can bring them back).
-   * They get a way into the app; a visitor gets the two doors, and nothing that leads into protected
-   * content without one.
-   */
-  const signedIn = !!user;
+  const facts = [
+    { to: '/courses', label: 'Courses', value: fmt(courses?.totals.courses) },
+    { to: '/courses', label: 'Roadmap steps', value: fmt(courses?.families.steps) },
+    { to: '/questions?type=coding', label: 'Coding challenges', value: fmt(published?.byType.coding) },
+    { to: '/interviews', label: 'Interview questions', value: fmt(published?.interview) },
+    { to: '/projects', label: 'Projects', value: fmt(courses?.families.projects) },
+    { to: '/labs', label: 'Coding labs', value: fmt(archive?.labs) },
+  ];
+
+  const archiveBreakdown = archive
+    ? Object.entries(archive.byType)
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([kind, count]) => ({ label: CHALLENGE_LABEL[kind] ?? kind, value: count }))
+    : [];
 
   return (
     <div className="fadeup">
-      <section className="card glow" style={{ padding: '26px 22px' }}>
-        <div className="chip" style={{ marginBottom: 10 }}>BROCODE · COMPLETE TECHNOLOGY LEARNING PLATFORM</div>
-        <h1 style={{ margin: '0 0 8px', fontSize: '1.9rem', lineHeight: 1.15 }}>
-          Learn. Practice. Build. Become job ready.
-        </h1>
-        <p className="muted small" style={{ margin: '0 0 16px', maxWidth: 640 }}>
-          Interactive courses, hands-on practice, coding labs, real-world projects, interview
-          preparation aur career-focused learning — sab ek jagah.
-        </p>
-        <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-          {signedIn ? (
-            <Link className="btn primary" to={resume.route} title={resume.reason}>
-              <Play size={14} /> Continue Learning
-            </Link>
-          ) : (
-            <>
-              <Link className="btn primary" to="/login" state={{ from: '/courses' }}>
-                <Play size={14} /> Create account &amp; start
+      <section className="card glow home-hero">
+        <div className="home-hero-grid">
+          <div>
+            <div className="chip" style={{ marginBottom: 10 }}>BROCODE · COMPLETE TECHNOLOGY LEARNING PLATFORM</div>
+            <h1 style={{ margin: '0 0 8px', fontSize: 'clamp(1.7rem, 4vw, 2.35rem)', lineHeight: 1.12 }}>
+              Learn. Practice. Build. Become Job-Ready.
+            </h1>
+            <p className="muted small" style={{ margin: '0 0 16px', maxWidth: 640 }}>
+              Everything you need to master technology — structured courses, hands-on practice,
+              interactive coding labs, real-world projects and AI-powered learning guidance, all in
+              one place.
+            </p>
+            <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+              {signedIn ? (
+                <Link className="btn primary" to={resume.route} title={resume.reason}>
+                  <Play size={14} /> Continue Learning
+                </Link>
+              ) : (
+                <>
+                  <Link className="btn primary" to="/login" state={{ from: '/courses' }}>
+                    <Play size={14} /> Create Free Account
+                  </Link>
+                  <Link className="btn" to="/login" data-agent-action={AUTH_SIGN_IN_ACTION}>Sign in</Link>
+                </>
+              )}
+              <Link className="btn" to="/courses">
+                Explore Courses <ArrowRight size={14} />
               </Link>
-              <Link className="btn" to="/login" data-agent-action={AUTH_SIGN_IN_ACTION}>Sign in</Link>
-            </>
-          )}
-          <Link className="btn" to="/courses">
-            Browse Courses <ArrowRight size={14} />
-          </Link>
+              <Link className="btn" to="/ai-mentor">
+                <Sparkles size={14} /> Meet AI Mentor
+              </Link>
+            </div>
+            {!signedIn && (
+              <p className="muted small" style={{ margin: '12px 0 0' }}>
+                An account is required to open courses, lessons, practice questions, labs and your
+                progress. Creating one takes a minute.
+              </p>
+            )}
+          </div>
+
+          <div className="home-journey" aria-label="Your learning journey">
+            {JOURNEY.map((step) => (
+              <div key={step.n} className="home-step">
+                <span className="n" aria-hidden="true">{step.n}</span>
+                <span className="t"><b>{step.label}</b><span>{step.sub}</span></span>
+              </div>
+            ))}
+            <Link className="home-featured" to={featured ? `/course/${featured.slug}` : '/courses'}>
+              <span className="tiny">FEATURED COURSE</span>
+              {featured ? (
+                <>
+                  <b>{featured.name}</b>
+                  <span className="muted small">
+                    {fmt(featured.counts.lesson)} lessons · {fmt(featured.counts.question)} practice questions ·
+                    {' '}{fmt(featured.counts.project)} projects
+                  </span>
+                  <span className="home-featured-cta">Open course <ArrowRight size={12} /></span>
+                </>
+              ) : (
+                <span className="muted small">Course catalogue is loading…</span>
+              )}
+            </Link>
+          </div>
         </div>
-        {!signedIn && (
-          <p className="muted small" style={{ margin: '12px 0 0' }}>
-            An account is required to open courses, lessons, practice questions, labs and your
-            progress. Creating one takes a minute.
-          </p>
-        )}
       </section>
 
-      <div className="kpi-row">
+      <div className="kpi-row home-kpis">
         {stats.map((s) => (
-          <div key={s.l} className="kpi tone-cyan">
+          <Link key={s.label} to={s.to} className="kpi tone-cyan home-kpi" aria-busy={!s.ready}>
             <span className="ic"><s.icon size={18} /></span>
             <div className="kpi-body">
-              <div className="n">{s.n}</div>
-              <div className="l">{s.l}</div>
+              <div className="n">{s.value}</div>
+              <div className="l">{s.label}</div>
+              <div className="home-kpi-note">{s.ready ? s.note : 'Loading the published manifest…'}</div>
             </div>
-          </div>
+          </Link>
         ))}
+      </div>
+
+      <div className="home-facts" aria-label="Published content at a glance">
+        {facts.map((fact) => (
+          <Link key={fact.label} to={fact.to} className="home-fact">
+            <b>{fact.value}</b>
+            <span>{fact.label}</span>
+          </Link>
+        ))}
+        <span className="home-updated">
+          {updatedAt ? `Content updated ${updatedAt}` : 'Content timestamps load with the manifests.'}
+        </span>
       </div>
 
       <div className="sec-head"><h2>Explore learning domains</h2><span className="line" /></div>
       <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
         {DOMAINS.map((d) => <Link key={d.name} to={d.to} className="chip">{d.name}</Link>)}
       </div>
+      <p className="small muted" style={{ margin: '8px 0 0' }}>
+        Each domain opens the track or course that teaches it. A chip never points at an empty page.
+      </p>
 
       <div className="sec-head"><h2>Pick a pillar</h2><span className="line" /></div>
       <div className="tile-grid">
         {PILLARS.map((p) => (
           <Link key={p.to} to={p.to} className="tile">
-            <span className="ic"><ArrowRight size={16} /></span>
+            <span className="ic"><p.icon size={16} /></span>
             <span className="t" style={{ flex: 1, minWidth: 0 }}>
               <b>{p.label}</b>
               <span>{p.sub}</span>
             </span>
+            <ArrowRight size={14} className="home-tile-arrow" />
           </Link>
         ))}
       </div>
 
       {/* How the loop works — each row opens the page it names, so the band is a path, not a diagram. */}
-      <div className="sec-head"><h2>How BroCode works</h2><span className="line" /></div>
+      <div className="sec-head"><h2>The BroCode learning loop</h2><span className="line" /></div>
       <div className="tile-grid">
         {STEPS.map((s) => (
           <Link key={s.n} to={s.to} className="tile">
@@ -216,13 +348,59 @@ export default function Landing() {
         ))}
       </div>
 
+      <section className="card home-archive" aria-busy={!archive}>
+        <div className="row spread" style={{ gap: 12, alignItems: 'flex-start' }}>
+          <div style={{ minWidth: 0 }}>
+            <div className="row" style={{ gap: 8 }}>
+              <Layers size={18} color="var(--cyan)" aria-hidden="true" />
+              <h2 style={{ margin: 0, fontSize: '1.05rem' }}>Practice Archive</h2>
+              <span className="chip" title="Practice questions that test knowledge. Guided project walkthroughs live in the courses and project labs.">
+                {archive ? `${fmt(archive.items)} items` : 'loading'}
+              </span>
+            </div>
+            <p className="muted small" style={{ margin: '8px 0 0', maxWidth: 660 }}>
+              A bundled collection of practice items to turn reading into recall — interview drills,
+              checkpoints, coding, theory and defense questions, filed under the sections that teach
+              them. It is a practice archive, not a separate Playbook product.
+            </p>
+          </div>
+          <Link className="btn" to="/playbook">Open Practice Archive <ArrowRight size={14} /></Link>
+        </div>
+        <div className="home-archive-grid">
+          {archiveBreakdown.length ? archiveBreakdown.map((item) => (
+            <div key={item.label} className="home-archive-stat">
+              <b>{fmt(item.value)}</b><span>{item.label}</span>
+            </div>
+          )) : (
+            <p className="small muted" style={{ margin: 0 }}>Archive counts load with the bundled manifest.</p>
+          )}
+          {archive && (
+            <div className="home-archive-stat">
+              <b>{fmt(archive.labs)}</b><span>Coding labs</span>
+            </div>
+          )}
+          {archive && (
+            <div className="home-archive-stat">
+              <b>{fmt(archive.miniProjects)}</b><span>Mini projects</span>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* FAQ — native <details>, so it works with the keyboard and with no JavaScript of its own. */}
       <div className="sec-head"><h2>Questions a beginner actually asks</h2><span className="line" /></div>
       <div style={{ display: 'grid', gap: 8 }}>
         {FAQ.map((f) => (
-          <details key={f.q} className="card" style={{ padding: '12px 14px' }}>
+          <details key={f.q} className="card home-faq" style={{ padding: '12px 14px' }}>
             <summary style={{ cursor: 'pointer', fontWeight: 600 }}>{f.q}</summary>
             <p className="muted small" style={{ margin: '8px 0 0' }}>{f.a}</p>
+            {f.links?.length ? (
+              <div className="row" style={{ gap: 8, marginTop: 8 }}>
+                {f.links.map((link) => (
+                  <Link key={link.to} className="chip" to={link.to}>{link.label} <ArrowRight size={11} /></Link>
+                ))}
+              </div>
+            ) : null}
           </details>
         ))}
       </div>
@@ -248,7 +426,7 @@ export default function Landing() {
       <p className="small muted" style={{ marginTop: 14 }}>
         {signedIn
           ? 'Progress, notes and code are saved to your account.'
-          : 'Sign in to open any of these — your progress is saved to your account.'}
+          : 'Sign in to open any of these — your progress is saved to your account. Counts come from the published content manifests, not from this page.'}
       </p>
     </div>
   );
